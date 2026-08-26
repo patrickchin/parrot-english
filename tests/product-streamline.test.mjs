@@ -63,7 +63,7 @@ test("home gives children four clear, working learning choices", () => {
   );
 });
 
-test("guardian dashboard presents focused grown-up destinations", () => {
+test("guardian dashboard presents one learner-management destination", () => {
   assert.equal(
     typeof GuardianDashboardView,
     "function",
@@ -82,27 +82,65 @@ test("guardian dashboard presents focused grown-up destinations", () => {
     ([, href]) => href,
   );
 
-  for (const heading of [
-    "Learner profiles",
-    "Learner details",
-    "My Lessons",
-    "Story settings",
-    "Voice dubbing",
-    "Account and privacy",
-  ]) {
-    assert.match(html, new RegExp(`<h2[^>]*>${heading}</h2>`));
-  }
-  assert.equal((html.match(/<h2/g) ?? []).length, 6);
+  assert.equal((html.match(/>Manage learners<\/h2>/g) ?? []).length, 1);
+  assert.equal((html.match(/>Manage learners<\/a>/g) ?? []).length, 1);
+  assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
+  assert.match(html, /<bdi[^>]*>Mia<\/bdi> is using learner mode/);
+  assert.match(html, /Add a learner, select who uses learner mode, or edit learner details/);
+  assert.doesNotMatch(html, /Learner profiles|Learner details|Manage learner details/);
+});
+
+test("guardian dashboard groups the three learning and content tools", () => {
+  const html = renderInRouter(
+    createElement(GuardianDashboardView, {
+      error: "",
+      isSwitching: false,
+      learnerName: "Mia",
+      onSwitchToLearner() {},
+    }),
+    "/guardian",
+  );
+  assert.match(
+    html,
+    /<section[^>]*aria-labelledby="learning-content-heading"[^>]*>/,
+  );
+  assert.match(
+    html,
+    /<h2[^>]*id="learning-content-heading"[^>]*>Learning &amp; content<\/h2>/,
+  );
+  assert.deepEqual(
+    [...html.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map(([, heading]) =>
+      heading,
+    ),
+    ["My Lessons", "Story settings", "Voice dubbing"],
+  );
+});
+
+test("guardian dashboard links a separate account and privacy destination", () => {
+  const html = renderInRouter(
+    createElement(GuardianDashboardView, {
+      error: "",
+      isSwitching: false,
+      learnerName: "Mia",
+      onSwitchToLearner() {},
+    }),
+    "/guardian",
+  );
+  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+
   assert.deepEqual(hrefs, [
     "/guardian/learners",
-    "/guardian/profile?returnTo=%2Fguardian",
     "/guardian/lessons",
     "/guardian/stories",
     "/guardian/dubbing",
+    "/guardian/account",
   ]);
-  assert.match(html, /Managing <bdi[^>]*>Mia<\/bdi>/);
-  assert.match(html, /Manage learner details/);
+  assert.match(html, /<h2[^>]*>Account &amp; privacy<\/h2>/);
+  assert.match(html, />Open account &amp; privacy<\/a>/);
   assert.match(html, /AI and saved data.*sign out.*delete/i);
+  assert.doesNotMatch(html, /profile dropdown/i);
   assert.match(html, /Switch to learner/);
 });
 

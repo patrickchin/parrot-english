@@ -316,6 +316,25 @@ async function preparePage(
   await page.setViewportSize(viewport);
 }
 
+test("shared menu items do not move when hovered", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto(guardianPath("/lessons"));
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
+  const manageLearners = page.getByRole("menuitem", {
+    name: "Manage learners",
+  });
+  const before = await manageLearners.boundingBox();
+
+  await manageLearners.hover();
+  await manageLearners.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished)),
+  );
+
+  expect(await manageLearners.boundingBox()).toEqual(before);
+});
+
 for (const viewport of viewports) {
   test(`account menu actions keep rendered contrast on a ${viewport.name}`, async ({
     page,

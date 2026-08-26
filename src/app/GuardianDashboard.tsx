@@ -1,4 +1,11 @@
-import { LogOut } from "lucide-react";
+import {
+  BookOpen,
+  LogOut,
+  Mic,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
@@ -9,12 +16,11 @@ import {
   RouteHeader,
 } from "./AppHeader";
 import {
+  getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
-  getGuardianPath,
   getGuardianLessonsPath,
   getGuardianStoriesPath,
-  getProfilePath,
 } from "./app-routes";
 
 export function GuardianDashboardView({
@@ -42,7 +48,7 @@ export function GuardianDashboardView({
         </HeaderButton>
       </RouteHeader>
 
-      <section className="mx-auto grid w-full max-w-5xl gap-6">
+      <section className="mx-auto grid w-full max-w-5xl gap-8">
         <header className="grid gap-2 text-center">
           <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
@@ -59,82 +65,169 @@ export function GuardianDashboardView({
           </p>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="grid content-start gap-4 p-6">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Learner profiles
-            </h2>
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Add a learner, choose who is active, or manage each learner&apos;s
-              details.
-            </p>
-            <ActionLink className="mt-auto" to={getGuardianLearnersPath()}>
-              Manage learner profiles
-            </ActionLink>
-          </Card>
-
-          <Card className="grid content-start gap-4 p-6">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Learner details
-            </h2>
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review and update the learner&apos;s name, age, and profile
-              details.
-            </p>
-            <ActionLink
-              className="mt-auto"
-              to={getProfilePath(getGuardianPath())}
+        <Card
+          aria-labelledby="manage-learners-heading"
+          className="grid items-center gap-5 overflow-hidden p-6 ring-4 ring-brand-pink/15 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
+          tone="solid"
+        >
+          <span
+            aria-hidden="true"
+            className="grid size-14 place-items-center rounded-2xl bg-brand-pink/20 text-brand-navy"
+          >
+            <UsersRound className="size-8" strokeWidth={2.5} />
+          </span>
+          <div className="grid min-w-0 gap-2">
+            <h2
+              className="m-0 text-3xl leading-tight text-brand-navy"
+              id="manage-learners-heading"
             >
-              Manage learner details
-            </ActionLink>
-          </Card>
-
-          <Card className="grid content-start gap-4 p-6">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              My Lessons
+              Manage learners
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Create and edit custom lessons for the learner.
+              <bdi dir="auto">{learnerName}</bdi> is using learner mode. Add a
+              learner, select who uses learner mode, or edit learner details.
             </p>
-            <ActionLink className="mt-auto" to={getGuardianLessonsPath()}>
-              Manage lessons
-            </ActionLink>
-          </Card>
+          </div>
+          <ActionLink
+            className="w-full sm:col-start-2 sm:w-auto sm:justify-self-start md:col-start-auto md:justify-self-end"
+            to={getGuardianLearnersPath()}
+          >
+            Manage learners
+          </ActionLink>
+        </Card>
 
-          <Card className="grid content-start gap-4 p-6">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Story settings
+        <section
+          aria-labelledby="learning-content-heading"
+          className="grid gap-4"
+        >
+          <h2
+            className="m-0 text-2xl leading-tight text-brand-navy"
+            id="learning-content-heading"
+          >
+            Learning &amp; content
+          </h2>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card
+              aria-labelledby="my-lessons-heading"
+              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-sky-100 sm:p-6"
+              tone="muted"
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-12 place-items-center rounded-2xl bg-sky-100 text-sky-800"
+              >
+                <BookOpen className="size-7" strokeWidth={2.5} />
+              </span>
+              <h3
+                className="m-0 text-2xl leading-tight text-brand-navy"
+                id="my-lessons-heading"
+              >
+                My Lessons
+              </h3>
+              <p className="m-0 font-bold leading-relaxed text-slate-600">
+                Create and edit custom lessons for the learner.
+              </p>
+              <ActionLink
+                className="mt-auto"
+                fullWidth
+                to={getGuardianLessonsPath()}
+              >
+                Manage lessons
+              </ActionLink>
+            </Card>
+
+            <Card
+              aria-labelledby="story-settings-heading"
+              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-violet-100 sm:p-6"
+              tone="muted"
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-12 place-items-center rounded-2xl bg-violet-100 text-violet-800"
+              >
+                <Sparkles className="size-7" strokeWidth={2.5} />
+              </span>
+              <h3
+                className="m-0 text-2xl leading-tight text-brand-navy"
+                id="story-settings-heading"
+              >
+                Story settings
+              </h3>
+              <p className="m-0 font-bold leading-relaxed text-slate-600">
+                Choose the story level and personalized story options.
+              </p>
+              <ActionLink
+                className="mt-auto"
+                fullWidth
+                to={getGuardianStoriesPath()}
+              >
+                Open story settings
+              </ActionLink>
+            </Card>
+
+            <Card
+              aria-labelledby="voice-dubbing-heading"
+              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-amber-100 sm:p-6"
+              tone="muted"
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-12 place-items-center rounded-2xl bg-amber-100 text-amber-800"
+              >
+                <Mic className="size-7" strokeWidth={2.5} />
+              </span>
+              <h3
+                className="m-0 text-2xl leading-tight text-brand-navy"
+                id="voice-dubbing-heading"
+              >
+                Voice dubbing
+              </h3>
+              <p className="m-0 font-bold leading-relaxed text-slate-600">
+                Allow private voice clips or turn dubbing off and remove them.
+              </p>
+              <ActionLink
+                className="mt-auto"
+                fullWidth
+                to={getGuardianDubbingPath()}
+              >
+                Manage voice dubbing
+              </ActionLink>
+            </Card>
+          </div>
+        </section>
+
+        <Card
+          aria-labelledby="account-privacy-heading"
+          className="grid items-center gap-5 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
+          elevation="soft"
+          tone="muted"
+        >
+          <span
+            aria-hidden="true"
+            className="grid size-12 place-items-center rounded-2xl bg-emerald-100 text-emerald-800"
+          >
+            <ShieldCheck className="size-7" strokeWidth={2.5} />
+          </span>
+          <div className="grid min-w-0 gap-2">
+            <h2
+              className="m-0 text-2xl leading-tight text-brand-navy"
+              id="account-privacy-heading"
+            >
+              Account &amp; privacy
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Choose the story level and personalized story options.
+              Review AI and saved data controls, sign out, or delete your
+              account.
             </p>
-            <ActionLink className="mt-auto" to={getGuardianStoriesPath()}>
-              Open story settings
-            </ActionLink>
-          </Card>
-
-          <Card className="grid content-start gap-4 p-6">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Voice dubbing
-            </h2>
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Allow private voice clips or turn dubbing off and remove them.
-            </p>
-            <ActionLink className="mt-auto" to={getGuardianDubbingPath()}>
-              Manage voice dubbing
-            </ActionLink>
-          </Card>
-
-          <Card className="grid content-start gap-4 p-6">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Account and privacy
-            </h2>
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Open the profile dropdown for AI and saved data, sign out, or
-              delete the account.
-            </p>
-          </Card>
-        </div>
+          </div>
+          <ActionLink
+            className="w-full sm:col-start-2 sm:w-auto sm:justify-self-start md:col-start-auto md:justify-self-end"
+            to={getGuardianAccountPath()}
+            variant="navy"
+          >
+            Open account &amp; privacy
+          </ActionLink>
+        </Card>
       </section>
     </main>
   );

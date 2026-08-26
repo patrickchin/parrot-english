@@ -176,10 +176,12 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveText("Guardian mode unlocked for 15 minutes");
 
   for (const heading of [
-    "Learner details",
+    "Manage learners",
+    "Learning & content",
     "My Lessons",
     "Story settings",
-    "Account and privacy",
+    "Voice dubbing",
+    "Account & privacy",
   ]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }

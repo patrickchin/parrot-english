@@ -75,14 +75,14 @@ export function controlClassName({
   size?: ControlSize | "none";
 } = {}) {
   return cx(
-    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[translate,filter] duration-150 ease-out motion-reduce:transition-none",
+    "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[filter] duration-150 ease-out motion-reduce:transition-none",
     focusClassName,
     interaction === "button" &&
-      "enabled:cursor-pointer enabled:hover:-translate-y-0.5 enabled:active:translate-y-0.5 enabled:active:brightness-95 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0",
+      "enabled:cursor-pointer enabled:active:brightness-95",
     interaction === "button" &&
-      "aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:transition-none aria-disabled:hover:translate-y-0 aria-disabled:hover:brightness-100 aria-disabled:active:translate-y-0 aria-disabled:active:brightness-100",
+      "aria-disabled:pointer-events-none aria-disabled:cursor-not-allowed aria-disabled:opacity-60 aria-disabled:transition-none aria-disabled:hover:brightness-100 aria-disabled:active:brightness-100",
     interaction === "link" &&
-      "cursor-pointer hover:-translate-y-0.5 active:translate-y-0.5 active:brightness-95 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+      "cursor-pointer active:brightness-95",
     interaction === "button" &&
       (variant === "rose" || variant === "dangerSurface"
         ? "enabled:hover:brightness-95"
@@ -379,7 +379,7 @@ export function SegmentedButton({
       aria-pressed={role === "tab" ? undefined : selected}
       aria-selected={role === "tab" ? selected : undefined}
       className={cx(
-        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[translate,filter] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:translate-y-0.5 motion-reduce:enabled:active:translate-y-0 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex min-h-12 min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-0 px-3 font-ui font-black transition-[filter] duration-150 ease-out enabled:cursor-pointer enabled:hover:brightness-95 enabled:active:brightness-90 motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-60",
         focusClassName,
         selected
           ? "bg-brand-navy text-white shadow-control-navy"
@@ -450,12 +450,12 @@ function interactiveCardClassName({
 } = {}) {
   return cx(
     cardClassName({ tone }),
-    "touch-manipulation no-underline transition-[translate,filter] duration-150 ease-out motion-reduce:transition-none",
+    "touch-manipulation no-underline transition-[filter] duration-150 ease-out motion-reduce:transition-none",
     tone === "muted" ? "text-slate-700" : "text-slate-900",
     !button &&
-      "cursor-pointer hover:-translate-y-1 hover:brightness-105 active:translate-y-0.5 motion-reduce:hover:translate-y-0 motion-reduce:active:translate-y-0",
+      "cursor-pointer hover:brightness-105 active:brightness-95",
     button &&
-      "enabled:cursor-pointer enabled:hover:-translate-y-1 enabled:hover:brightness-105 enabled:active:translate-y-0.5 motion-reduce:enabled:hover:translate-y-0 motion-reduce:enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-80",
+      "enabled:cursor-pointer enabled:hover:brightness-105 enabled:active:brightness-95 disabled:cursor-not-allowed disabled:opacity-80",
     focusClassName,
     className,
   );
