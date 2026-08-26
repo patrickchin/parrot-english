@@ -134,12 +134,14 @@ function renderSceneEditor(viewProps = {}) {
     onBack() {},
     onHearGuide() {},
     onHearTake() {},
+    onNext() {},
     onRecord() {},
     onRetrySave() {},
     onSelectLine() {},
     onToggleScenePlayback() {},
     operation: "idle",
     pendingTake: null,
+    recordingElapsedMs: 0,
     locked: false,
     saveRecovery: null,
     saved: {},
@@ -531,18 +533,19 @@ describe("duck dubbing storyboard presentation", () => {
       saved: { "line-1": "saved" },
     });
     assert.match(html, /aria-label="Back to full video"/);
-    assert.match(html, /aria-label="Play this scene"/);
+    assert.match(html, /aria-label="Play scene"/);
     assert.match(html, /aria-current="page"[^>]*>Scene 1 of 6/);
     assert.match(html, /<h1[^>]*>Five little ducks<\/h1>/);
     assert.match(html, /aria-current="true"[^>]*aria-label="Line 1, selected, recorded"/);
     assert.match(html, /aria-label="Line 2, generated"/);
     assert.match(html, /aria-label="Line 3, needs retake"/);
     assert.doesNotMatch(html, />Choose a line<|>Selected · Recorded<|>Generated<|>Needs retake</);
-    assert.match(html, /<details(?![^>]*\bopen\b)[^>]*>[\s\S]*<summary[^>]*aria-label="Listen"/);
+    assert.doesNotMatch(html, /<details|<summary|aria-label="Listen"/);
     assert.match(html, /Hear example/);
     assert.match(html, /aria-label="Record line"/);
-    assert.ok(html.indexOf('aria-label="Record line"') < html.indexOf('aria-label="Listen"'));
-    assert.doesNotMatch(html, /Next line/);
+    assert.match(html, /aria-label="Next line"/);
+    assert.ok(html.indexOf("Hear example") < html.indexOf('aria-label="Record line"'));
+    assert.ok(html.indexOf('aria-label="Record line"') < html.indexOf('aria-label="Next line"'));
   });
 
   it("uses playback progress only for the scene visual, not selection or prompt", () => {
@@ -556,11 +559,28 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, /aria-current="true"[^>]*aria-label="Line 4, selected/);
   });
 
-  it("turns the fixed record action into the immediate stop action", () => {
-    const html = renderSceneEditor({ operation: "recording" });
+  it("turns the fixed record action into an immediate stop action with elapsed time", () => {
+    const html = renderSceneEditor({
+      operation: "recording",
+      recordingElapsedMs: 2_100,
+    });
     assert.match(html, /aria-label="Stop recording"/);
-    assert.match(html, />Recording…</);
+    assert.match(html, /role="timer"[\s\S]*?Recording[\s\S]*?0:02 \/ 0:06/);
+    assert.match(html, /<div(?=[^>]*aria-label="Recording time")(?=[^>]*aria-valuemax="6000")(?=[^>]*aria-valuenow="2100")(?=[^>]*role="progressbar")[^>]*>/);
+    assert.match(html, /aria-label="Next line"/);
     assert.doesNotMatch(html, /countdown|Get ready/i);
+  });
+
+  it("makes microphone startup and saving visible in the fixed record slot", () => {
+    const opening = renderSceneEditor({ operation: "mic-opening" });
+    const saving = renderSceneEditor({ operation: "saving" });
+
+    assert.match(opening, /<button(?=[^>]*aria-label="Starting microphone")(?=[^>]*disabled)[^>]*>/);
+    assert.match(opening, />Starting…</);
+    assert.match(opening, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
+    assert.match(saving, /<button(?=[^>]*aria-label="Saving recording")(?=[^>]*disabled)[^>]*>/);
+    assert.match(saving, />Saving…</);
+    assert.match(saving, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
   });
 
   it("preserves a retryable take while locking navigation", () => {
@@ -570,6 +590,8 @@ describe("duck dubbing storyboard presentation", () => {
       saveRecovery: "save",
     });
     assert.match(html, /aria-label="Your recording waveform"/);
+    assert.match(html, />Not saved</);
+    assert.doesNotMatch(html, />Saved ✓</);
     assert.match(html, />Save again</);
     assert.match(html, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /aria-label="Line 2, generated"[^>]*disabled/);
@@ -594,7 +616,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     const sceneLoading = renderSceneEditor({ operation: "playback-loading" });
     assert.match(sceneLoading, /aria-label="Loading scene…"[^>]*disabled/);
-    assert.doesNotMatch(sceneLoading, /aria-label="Play this scene"/);
+    assert.doesNotMatch(sceneLoading, /aria-label="Play scene"/);
   });
 
   it("keeps load recovery learner-safe", () => {
@@ -635,7 +657,7 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("names playing full, scene, and local-take controls as stop actions", () => {
     assert.match(renderProjectHome({ playback: "playing" }), /aria-label="Stop full video"/);
-    assert.match(renderSceneEditor({ operation: "playback" }), /aria-label="Stop this scene"/);
+    assert.match(renderSceneEditor({ operation: "playback" }), /aria-label="Stop scene"/);
     assert.match(renderSceneEditor({
       operation: "take-playing",
       pendingTake: new Blob([new Uint8Array([1])], { type: "audio/webm" }),
