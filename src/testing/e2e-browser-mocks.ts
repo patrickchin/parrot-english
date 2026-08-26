@@ -1221,6 +1221,34 @@ function createE2eLearnerAccount(
       const index = questionnaire.questions.findIndex(
         (question) => question.answerKey === body.questionKey,
       );
+      const question = questionnaire.questions[index];
+      if (!question) {
+        return e2eJson(
+          {
+            error: "invalid_answer",
+            fieldError: "This question is no longer available.",
+          },
+          409,
+        );
+      }
+      if (learner.profile.currentQuestionKey !== question.answerKey) {
+        return e2eJson(
+          {
+            error: "invalid_answer",
+            fieldError: "Please answer the current question first.",
+          },
+          409,
+        );
+      }
+      if (question.required) {
+        return e2eJson(
+          {
+            error: "invalid_answer",
+            fieldError: "This question is required.",
+          },
+          400,
+        );
+      }
       learner.profile.currentQuestionKey =
         questionnaire.questions[index + 1]?.answerKey ?? null;
       persist();

@@ -38,7 +38,7 @@ const targetedLessonBody = JSON.stringify({
   source: "uploaded",
 });
 
-const targetedRequestCases: TargetedRequestCase[] = [
+const targetedAuthorizationCases: TargetedRequestCase[] = [
   { method: "GET", name: "learner-profile alias", path: "/api/learner-profile" },
   {
     body: JSON.stringify({ questionKey: "name", rawAnswer: "Target changed" }),
@@ -46,13 +46,6 @@ const targetedRequestCases: TargetedRequestCase[] = [
     method: "PUT",
     name: "learner-profile answer",
     path: "/api/learner-profile/answer",
-  },
-  {
-    body: JSON.stringify({ questionKey: "favoriteAnimals" }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-    name: "learner-profile question skip",
-    path: "/api/learner-profile/question/skip",
   },
   {
     method: "POST",
@@ -484,7 +477,7 @@ async function exerciseTargetedRequests(
       }
       return { parseCalls, responses };
     },
-    { requests: targetedRequestCases, targetQueries: queries },
+    { requests: targetedAuthorizationCases, targetQueries: queries },
   );
 }
 
@@ -2343,7 +2336,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     .toBe("learner-mia");
 });
 
-test("locked targeted reads and mutations authorize all 52 requests before parsing or resolution", async ({
+test("locked targeted authorization matrix handles all 50 requests before parsing or resolution", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
@@ -2366,7 +2359,7 @@ test("locked targeted reads and mutations authorize all 52 requests before parsi
   await setGuardianAccess(page, "guardian");
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(52);
+  expect(result.responses).toHaveLength(50);
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "guardian_required" });
     expect(response.cacheControl, response.name).toBe("no-store");
@@ -2378,7 +2371,125 @@ test("locked targeted reads and mutations authorize all 52 requests before parsi
   expect(after).toEqual(before);
 });
 
-test("unlocked malformed targeted reads and mutations resolve once to generic not-found without state changes", async ({
+test("question skip rejects a learner's current required question without changing account state", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian", "multiple"));
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
+
+  const created = await page.evaluate(async () => {
+    const response = await fetch("/api/learner-profiles", {
+      body: JSON.stringify({ activate: false, name: "Ava" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    return { body: await response.json(), status: response.status };
+  });
+  expect(created).toMatchObject({
+    body: {
+      activeProfileId: "learner-mia",
+      profiles: [
+        { id: "learner-mia" },
+        { id: "learner-noah" },
+        { id: "learner-ava-3" },
+      ],
+    },
+    status: 200,
+  });
+
+  const readAva = () =>
+    page.evaluate(async () => {
+      const response = await fetch(
+        "/api/learner-profile?learnerProfileId=learner-ava-3",
+      );
+      return { body: await response.json(), status: response.status };
+    });
+  const beforeAccount = await readTargetedAccountState(page);
+  const beforeAva = await readAva();
+  expect(beforeAva).toMatchObject({
+    body: {
+      profile: { currentQuestionKey: "name", profileStatus: "not_started" },
+      question: { answerKey: "name", required: true },
+    },
+    status: 200,
+  });
+
+  const skipped = await page.evaluate(async () => {
+    const response = await fetch(
+      "/api/learner-profile/question/skip?learnerProfileId=learner-ava-3",
+      {
+        body: JSON.stringify({ questionKey: "name" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+    return { body: await response.json(), status: response.status };
+  });
+  expect(skipped).toEqual({
+    body: {
+      error: "invalid_answer",
+      fieldError: "This question is required.",
+    },
+    status: 400,
+  });
+
+  expect(await readAva()).toEqual(beforeAva);
+  expect(await readTargetedAccountState(page)).toEqual(beforeAccount);
+});
+
+test("question skip rejects a non-current question without changing either learner or active selection", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian", "multiple"));
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
+
+  const before = await readTargetedAccountState(page);
+  expect(before).toMatchObject({
+    activeProfileId: "learner-mia",
+    learners: {
+      mia: {
+        learnerProfile: {
+          body: {
+            profile: { currentQuestionKey: null, profileStatus: "completed" },
+          },
+        },
+      },
+      noah: {
+        learnerProfile: {
+          body: {
+            profile: { currentQuestionKey: null, profileStatus: "completed" },
+          },
+        },
+      },
+    },
+  });
+
+  const skipped = await page.evaluate(async () => {
+    const response = await fetch(
+      "/api/learner-profile/question/skip?learnerProfileId=learner-mia",
+      {
+        body: JSON.stringify({ questionKey: "favoriteAnimals" }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+    return { body: await response.json(), status: response.status };
+  });
+  expect(skipped).toEqual({
+    body: {
+      error: "invalid_answer",
+      fieldError: "Please answer the current question first.",
+    },
+    status: 409,
+  });
+  expect(await readTargetedAccountState(page)).toEqual(before);
+});
+
+test("unlocked malformed targets in the 25-row matrix resolve once without state changes", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian", "multiple"));
@@ -2403,7 +2514,7 @@ test("unlocked malformed targeted reads and mutations resolve once to generic no
   const result = await exerciseTargetedRequests(page, invalidQueries);
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(182);
+  expect(result.responses).toHaveLength(175);
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "not_found" });
     expect(response.cacheControl, response.name).toBe("no-store");

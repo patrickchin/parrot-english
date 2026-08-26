@@ -448,3 +448,93 @@ reversed and the production mock is unchanged in the final diff.
 ### Review-round concerns
 
 None. All requested focused and full verification commands are green.
+
+---
+
+## Review fix round 4/5 — production-faithful questionnaire skip coverage
+
+### Root cause and resolution
+
+The round-3 questionnaire-skip row used a real deployed key, but it still did
+not describe a production-valid mutation. Production first requires the
+submitted key to equal the learner's computed current question and then rejects
+that question when it is required. Authorization Mia is completed with
+`currentQuestionKey: null`, and all six questions in the checked-in v2
+questionnaire are required. There is therefore no legitimate optional state in
+which the deployed question-skip endpoint can mutate this fixture.
+
+The browser mock had hidden that fact by advancing to the question after any
+recognized key, without checking either the learner's current question or the
+question's `required` flag. The fix:
+
+- removes question skip from the authorization matrix, narrowing it from 26 to
+  25 rows (50 locked requests and 175 malformed/unowned requests) without
+  claiming mutation coverage the deployed questionnaire cannot provide;
+- retains the endpoint as a targeted browser-mock surface and checks it in two
+  dedicated production-semantic cases; and
+- makes the mock reject an unavailable key, a non-current key, and a current
+  required key in the same order and with the same status/error payloads as the
+  Worker before its existing transition can run.
+
+One dedicated case creates Ava through the real roster API with
+`activate: false`, observes the returned `learner-ava-3` profile at its exact
+current `name` question, and proves the required-question 400 leaves Ava, Mia,
+Noah, the roster, and active Mia unchanged. The other uses completed Mia's
+original `favoriteAnimals` payload and proves the production-authentic 409
+leaves both original learners and active selection unchanged.
+
+### RED, restore, and GREEN evidence
+
+| Evidence | Result |
+| --- | --- |
+| Required-current regression before the mock fix: `npx playwright test tests/e2e/multiple-learners.spec.ts --grep "question skip rejects a learner's current required question" --reporter=line` | RED: 0/1. The mock returned 200 and moved Ava from current `name` to `age`; production requires `400 { error: "invalid_answer", fieldError: "This question is required." }`. |
+| Non-current regression before the mock fix: `npx playwright test tests/e2e/multiple-learners.spec.ts --grep "question skip rejects a non-current question" --reporter=line` | RED: 0/1. The mock returned 200 and moved completed Mia from `currentQuestionKey: null` to `favoriteActivities`; production requires the current-question 409. |
+| Temporary malformed-target fallback through the remaining valid profile-edit row | RED: 0/1. All 175 outward responses still met the generic 404 contract, but the full state oracle showed active Mia renamed from `Mia` to `Target changed` in learner-profile, profile-editor, and roster state. The fault was restored immediately and is absent from the final diff. |
+| Focused skip and authorization group after restore | GREEN: 4/4 (1.3s): both skip semantics, the 50-request locked matrix, and the 175-request malformed-target matrix. |
+| Complete `tests/e2e/multiple-learners.spec.ts` | GREEN: 33/33 (8.8s). |
+| `npm test` | GREEN: 1,323/1,323 tests, 115 suites, 0 failed (4.330s). |
+| `npm run test:browser` | GREEN: 458/458 tests, 0 failed (1.8m). |
+| `npm run lint` | GREEN: exit 0, 0 errors. The same two generated `worker-configuration.d.ts` unused-disable warnings remain. |
+| `npm run build` | GREEN: TypeScript and Vite build succeeded; 1,914 modules transformed. The existing chunk-size advisory remains. |
+| `git diff --check` | GREEN: exit 0, no whitespace errors. |
+
+### Changed files in this review round
+
+- `src/testing/e2e-browser-mocks.ts` — production-equivalent current-question
+  and required-question guards for the account-scoped question-skip handler.
+- `tests/e2e/multiple-learners.spec.ts` — 25-row authorization surface and two
+  dedicated production-semantic skip regressions with complete account-state
+  invariants.
+- `.superpowers/sdd/2026-08-26-guardian-information-architecture/task-9-report.md`
+  — round-4 root cause, mutation evidence, verification, and self-review.
+
+### Self-review
+
+- Traced the Worker handler through `prepareLearnerProfile`,
+  `getV2CurrentQuestion`, the current-key check, the required check, and only
+  then `skipProfileQuestion`/`saveTransition`; the browser mock now preserves
+  that relevant guard order.
+- Verified directly that every question in
+  `content/learner-profile/questionnaire-v2.json` has `required: true`; no
+  optional fixture or setup seam was invented.
+- Verified the valid creation setup explicitly sends `activate: false`, returns
+  Ava without changing active Mia, and observes all three roster entries before
+  the skip request.
+- Verified the completed-Mia case observes both Mia and Noah at
+  `currentQuestionKey: null`, plus `activeProfileId: learner-mia`, before and
+  after the exact round-3 payload.
+- Verified the authorization matrix no longer includes or claims mutation
+  coverage for `/api/learner-profile/question/skip`; its exact final scope is 25
+  rows, exercised twice while locked and seven times with malformed/unowned
+  targets.
+- Verified the temporary fallback fault is absent and the final mock still has
+  one `activeProfileId` assignment, only in the explicit selection endpoint.
+- No Worker behavior, dependency, arbitrary sleep, destructive action,
+  source/class assertion, or unrelated user file was changed. The two untracked
+  plan/spec files under `docs/superpowers/` remain untouched and uncommitted.
+
+### Review-round concerns
+
+None. The deployed questionnaire intentionally offers no successful per-question
+skip path today; the matrix now says so accurately instead of manufacturing one
+in the mock.
