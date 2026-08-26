@@ -166,6 +166,7 @@ export function DuckDub() {
   const [loadError, setLoadError] = useState("");
   const [loadSequence, setLoadSequence] = useState(0);
   const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
+  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
   const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [takePreview, setTakePreview] = useState<TakePreview | null>(null);
 
@@ -178,6 +179,8 @@ export function DuckDub() {
   const playbackControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const recordingSessionRef = useRef<SpeechRecordingSession | null>(null);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const recordingProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playbackRef = useRef<{ stop(): void } | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
@@ -187,6 +190,7 @@ export function DuckDub() {
   const sceneHeadingRef = useRef<HTMLHeadingElement>(null);
   const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
   const lineHeadingRef = useRef<HTMLHeadingElement>(null);
+  const nextButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -214,6 +218,15 @@ export function DuckDub() {
     setTakePreview(preview);
   }, [clearTakePreview]);
 
+  const clearRecordingProgress = useCallback((reset: boolean) => {
+    if (recordingProgressTimerRef.current !== null) {
+      clearInterval(recordingProgressTimerRef.current);
+      recordingProgressTimerRef.current = null;
+    }
+    recordingStartedAtRef.current = null;
+    if (reset && mountedRef.current) setRecordingElapsedMs(0);
+  }, []);
+
   const cancelMedia = useCallback((discardTake: boolean) => {
     mediaGenerationRef.current += 1;
     guideControllerRef.current?.abort();
@@ -234,13 +247,14 @@ export function DuckDub() {
       clearTimeout(recordingTimerRef.current);
       recordingTimerRef.current = null;
     }
+    clearRecordingProgress(true);
     if (discardTake) {
       pendingBlobRef.current = null;
       pendingLineIdRef.current = null;
       clearTakePreview();
     }
     return mediaGenerationRef.current;
-  }, [clearTakePreview]);
+  }, [clearRecordingProgress, clearTakePreview]);
 
   const handleConsentLoss = useCallback(() => {
     cancelMedia(true);
@@ -304,7 +318,7 @@ export function DuckDub() {
       pendingBlobRef.current = null;
       pendingLineIdRef.current = null;
       dispatch({ type: "SAVE_SUCCEEDED", lineId, recordedAt: result.recordedAt });
-      focusAfterRender(recordButtonRef, generation);
+      focusAfterRender(nextButtonRef, generation);
     } catch (error) {
       if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
       if (error instanceof DubNotEnabledError) {
@@ -337,6 +351,8 @@ export function DuckDub() {
       clearTimeout(recordingTimerRef.current);
       recordingTimerRef.current = null;
     }
+    clearRecordingProgress(false);
+    dispatch({ type: "OPERATION_STARTED", operation: "saving" });
     try {
       const blob = await session.stop();
       if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
@@ -345,7 +361,6 @@ export function DuckDub() {
       if (!lineId) return;
       pendingBlobRef.current = blob;
       replaceTakePreview(blob, lineId);
-      dispatch({ type: "OPERATION_STARTED", operation: "saving" });
       await uploadPendingTake(generation);
     } catch (error) {
       if (generation !== mediaGenerationRef.current || isAbortError(error)) return;
@@ -372,8 +387,18 @@ export function DuckDub() {
         return;
       }
       recordingSessionRef.current = session;
+      recordingStartedAtRef.current = Date.now();
+      setRecordingElapsedMs(0);
       dispatch({ type: "OPERATION_STARTED", operation: "recording" });
+      recordingProgressTimerRef.current = setInterval(() => {
+        const startedAt = recordingStartedAtRef.current;
+        if (!mountedRef.current || generation !== mediaGenerationRef.current || startedAt === null) return;
+        setRecordingElapsedMs(Math.min(DUB_RECORDING_MS, Date.now() - startedAt));
+      }, 100);
       recordingTimerRef.current = setTimeout(() => {
+        if (mountedRef.current && generation === mediaGenerationRef.current) {
+          setRecordingElapsedMs(DUB_RECORDING_MS);
+        }
         void finishRecording(generation);
       }, DUB_RECORDING_MS);
     } catch (error) {
@@ -546,10 +571,21 @@ export function DuckDub() {
     focusAfterRender(lineHeadingRef, generation);
   }
 
+  function handleNext() {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    const sceneLineIndex = state.selectedLineIndex % DUB_LINES_PER_VERSE;
+    if (sceneLineIndex < DUB_LINES_PER_VERSE - 1) {
+      handleSelectLine(DUB_LINES[state.selectedLineIndex + 1].id);
+      return;
+    }
+    handleBack();
+  }
+
   function handleBack() {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    cancelMedia(true);
+    const generation = cancelMedia(true);
     dispatch({ type: "BACK_TO_PROJECT" });
+    focusAfterRender(fullPlaybackButtonRef, generation);
   }
 
   function handleRetrySave() {
@@ -665,12 +701,15 @@ export function DuckDub() {
         onBack={handleBack}
         onHearGuide={handleHearGuide}
         onHearTake={handleHearTake}
+        onNext={handleNext}
         onRecord={handleRecord}
         onRetrySave={handleRetrySave}
         onSelectLine={handleSelectLine}
         onToggleScenePlayback={() => void startPlayback("scene")}
         operation={state.operation}
         pendingTake={takePreview?.blob ?? null}
+        recordingElapsedMs={recordingElapsedMs}
+        nextButtonRef={nextButtonRef}
         playbackButtonRef={scenePlaybackButtonRef}
         recordButtonRef={recordButtonRef}
         saveButtonRef={saveButtonRef}
