@@ -168,9 +168,14 @@ Guardian story settings offer four progressive learner levels:
 The choice is stored on the active learner profile. The learner shelf always
 opens at that learner's stored level and contains no level selector or
 art-management controls.
-Each level contains five curated stories. A story card shows its cover, title,
-and one Listen action. Prompt experiments, vocabulary audit data, uncontrolled
-baselines, and teaching diagnostics stay out of the learner interface.
+Each learner level contains five curated stories. Beneath the active-level
+section, the shelf always publishes two public Long stories with saved
+narration. Long stories are not a learner preference and do not appear among
+the four Guardian setting choices. All stories use the same authenticated shelf
+and reader routes; there is no preview-only story shell. A story card shows its
+cover, title, and one Listen action. Prompt experiments, vocabulary audit data,
+uncontrolled baselines, and teaching diagnostics stay out of the learner
+interface.
 
 The reader moves page by page, presents one join-in line, and keeps narration
 controls separate from page navigation. Returning from a story restores the
@@ -185,24 +190,32 @@ Five Little Ducks is a durable authenticated studio at
 **Ask a grown-up to turn on voice dubbing in Guardian mode.** It never asks the
 learner to self-attest as an adult. A guardian grants the durable
 `guardian-voice-r2-v2` consent for the active learner at `/guardian/dubbing`,
-then switches back to learner mode. The learner records the authentic
-traditional six-stanza rhyme one line at a time. Its 24 lines count down from
-five ducklings to none, then
-end with sad mother duck bringing all five home. Progress is saved to that
-learner profile, resumes at the first missing line, and is presented as six
-four-line verses rather than one long 24-step task. Completing each verse plays
-those four saved voice clips with the matching animation and music before the
-next verse opens. All six verses unlock one synchronized 98-second final
-performance.
+then switches back to learner mode. The learner opens a full-video project home:
+the 98-second duck video is prominent, its six scene controls are always
+selectable, and the project bar shows how many of the traditional rhyme's 24
+clips are recorded. **Continue Scene** opens the first missing line, but the
+learner can open any scene at any time. Each scene contains four independent
+line clips; an incomplete scene selects its first missing line, while a
+completed scene opens for review.
 
-Voice clips and consent are private to one learner within the account. Entering
-a line autoplays its checked-in ElevenLabs narrator example; **Replay example**
-remains available. The current **Now read** lyric dominates the compact title,
-and the responsive studio keeps the animated scene clear. After recording, the
-learner can choose **Hear my voice** and see a waveform decoded from the actual
-local take before the primary **Next line** action. **Record again**, **Record
-another take**, and **Watch my dub** remain learner capabilities; consent,
-`Grown-up options`, reset, and deletion controls do not.
+The full video and every four-line scene can play as a draft at any completion
+level. Saved clips use private audio for the active learner and unfinished clips
+use checked-in ElevenLabs guide audio, synchronized with the matching animation
+and music. A saved clip that cannot load or decode falls back to its guide and
+marks that line's scene **Needs retake** for this browser session only. If both
+sources fail, the animation and music continue without that voice and identify
+the affected line. Reloading clears the marker until playback discovers the
+failure again.
+
+The focused scene recorder shows the selected lyric, **Hear example**, and a
+fixed recording action that changes among **Record line**, **Stop recording**,
+and **Record again**. There is no countdown: recording starts as soon as
+microphone access is ready and stops early or after its six-second limit. After
+recording, the learner can see the decoded waveform and use **Hear my voice**.
+Saving keeps the learner on the same line for review, replacement, scene
+playback, another line choice, or return to the full video; there is no required
+Next action or automatic advancement. Consent, `Grown-up options`, reset, and
+deletion controls do not appear in learner mode.
 
 Only a live Guardian session can turn dubbing off and delete the active
 learner's saved clips. The original migrated learner retains the exact legacy
@@ -224,8 +237,8 @@ publicly or sent to speech recognition.
   primitives.
 - Respect reduced motion and prevent horizontal overflow from 280 px upward.
 - Keep lesson controls clear of characters, speech, and the account header.
-- In the dubbing studio, keep the active lyric visually dominant, the title
-  compact, and the fixed Record/Next action slots in the same physical places.
+- In the dubbing studio, keep the full video dominant on project home and the
+  selected lyric and fixed recording action clear in the scene editor.
 
 ## Content Boundaries
 

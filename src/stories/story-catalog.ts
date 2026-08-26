@@ -1,9 +1,9 @@
+import type { StoryLevelId } from "../../lib/story-level.ts";
+import { LONG_STORIES } from "./long-stories.ts";
 import { STORY_SCRIPT_CANDIDATES } from "./story-script-candidates.ts";
-import { PRIVATE_STORY_PREVIEW_STORIES } from "./private-story-preview.ts";
 import type {
   Story,
   StoryLevel,
-  StoryLevelId,
   StoryVocabularyProfile,
   StoryVocabularyProfileId,
 } from "./story-types.ts";
@@ -130,7 +130,7 @@ export const STORY_VOCABULARY_PROFILES: readonly StoryVocabularyProfile[] = [
   },
 ];
 
-const DEFAULT_STORY_LEVELS: readonly StoryLevel[] = [
+export const STORY_LEVELS: readonly StoryLevel[] = [
   {
     id: "first-words",
     label: "Start here",
@@ -175,23 +175,17 @@ const DEFAULT_STORY_LEVELS: readonly StoryLevel[] = [
     targetWordRange: [7, 8],
     vocabularyProfileId: "early-a1-v1",
   },
-];
-
-const LONG_STORY_LEVEL: StoryLevel = {
-  id: "long-stories",
-  label: "Long stories",
-  cefrReference: "Private preview",
-  description: "Longer stories with saved narration.",
-  maxAssumedKnownWords: 0,
-  maxNarrativeWordsPerPage: 90,
-  maxNarrativeWordsTotal: 2_000,
-  targetWordRange: [0, 0],
-  vocabularyProfileId: "early-a1-v1",
-};
-
-export const STORY_LEVELS: readonly StoryLevel[] = [
-  ...DEFAULT_STORY_LEVELS,
-  ...(PRIVATE_STORY_PREVIEW_STORIES.length ? [LONG_STORY_LEVEL] : []),
+  {
+    id: "long-stories",
+    label: "Long stories",
+    cefrReference: "Read aloud",
+    description: "Longer stories with saved narration.",
+    maxAssumedKnownWords: 0,
+    maxNarrativeWordsPerPage: 90,
+    maxNarrativeWordsTotal: 2_000,
+    targetWordRange: [0, 0],
+    vocabularyProfileId: "early-a1-v1",
+  },
 ];
 
 const STORY_LEVEL_ORDER = new Map(
@@ -200,7 +194,7 @@ const STORY_LEVEL_ORDER = new Map(
 
 export const STORIES: readonly Story[] = [
   ...STORY_SCRIPT_CANDIDATES,
-  ...PRIVATE_STORY_PREVIEW_STORIES,
+  ...LONG_STORIES,
 ].sort(
   (firstStory, secondStory) =>
     (STORY_LEVEL_ORDER.get(firstStory.level) ?? 0) -

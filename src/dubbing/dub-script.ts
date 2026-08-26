@@ -70,6 +70,15 @@ export const DUB_VERSES: readonly (readonly DubLine[])[] = Object.freeze(
   ),
 );
 
+export const DUB_SCENE_TITLES = Object.freeze([
+  "Five little ducks",
+  "Four little ducks",
+  "Three little ducks",
+  "Two little ducks",
+  "One little duck",
+  "Sad mother duck",
+] as const);
+
 export function getDubVerseLineAtElapsed(verseIndex: number, elapsedMs: number): DubLine {
   const verse = DUB_VERSES[verseIndex];
   if (!verse) throw new RangeError("Unknown dub verse.");

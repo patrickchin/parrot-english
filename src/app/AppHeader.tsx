@@ -8,6 +8,7 @@ import {
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -180,6 +181,7 @@ export function AccountHeader({
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
+  const previousModeRef = useRef(activeMode);
   const signOutAlertId = useId();
   const managedLearnerLabel = learnerLabel.trim() || "Learner";
   const activeLabel =
@@ -189,7 +191,9 @@ export function AccountHeader({
   const showSignOutRecovery =
     activeMode === "guardian" && Boolean(signOutError) && !isSigningOut;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    if (previousModeRef.current === activeMode) return;
+    previousModeRef.current = activeMode;
     setIsMenuOpen(false);
     if (activeMode === "guardian") return;
     setIsAboutOpen(false);

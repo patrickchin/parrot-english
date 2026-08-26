@@ -66,14 +66,12 @@ export function StoryReader({
   onNavigatePage,
   pageIndex,
   personalizedOverrides,
-  playAudioLine: playAudioLineOverride = playAudioLine,
   story,
 }: {
   backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
   personalizedOverrides?: PersonalizedStoryArtMetadata["stories"];
-  playAudioLine?: typeof playAudioLine;
   story: Story;
 }) {
   const [error, setError] = useState("");
@@ -177,17 +175,7 @@ export function StoryReader({
     const narrationAudioId = page.narrationAudioId;
     const joinInAudioId = page.joinInAudioId;
     try {
-      if (page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
-        narrationPromise = playAudioLineOverride({
-          audioId: `${story.id}-${page.id}-private-narration`,
-          audioSrc: page.narrationAudioSrc,
-          env: audioEnvironmentRef.current ?? undefined,
-          lang: "en-GB",
-          onPlaybackControl,
-          signal: controller.signal,
-          text: page.text,
-        });
-      } else if (!page.narrationAudioSrc && narrationAudioId && joinInAudioId) {
+      if (narrationAudioId) {
         narrationPromise = (async () => {
           await playSavedStoryLine(
             narrationAudioId,
@@ -195,6 +183,7 @@ export function StoryReader({
             controller.signal,
             onPlaybackControl,
           );
+          if (!joinInAudioId) return;
           if (generation !== playbackGenerationRef.current) return;
           revealWithinPane(
             readingPaneRef.current,
@@ -209,7 +198,7 @@ export function StoryReader({
             onPlaybackControl,
           );
         })();
-      } else if (!page.narrationAudioSrc && !narrationAudioId && !joinInAudioId) {
+      } else if (!narrationAudioId && !joinInAudioId) {
         narrationPromise = (async () => {
           await playDeviceSpeech({
             onPlaybackControl,

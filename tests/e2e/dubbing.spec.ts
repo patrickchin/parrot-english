@@ -1,12 +1,21 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-type Rect = { height: number; width: number; x: number; y: number };
 type DubStoreSnapshot = {
-  audioFetches: string[];
   audioContextDoubleCloses: number;
+  createdObjectUrls: string[];
+  guideFetches: string[];
   playedAudioSources: string[];
+  privateFetches: string[];
+  revokedObjectUrls: string[];
   uploads: string[];
 };
+
+type DubStoreController = {
+  releaseDelete(): boolean;
+  releaseUpload(): boolean;
+  snapshot(): DubStoreSnapshot;
+};
+
 type MicrophoneSnapshot = {
   pending: number;
   requests: number;
@@ -15,14 +24,7 @@ type MicrophoneSnapshot = {
   stoppedTracks: number;
 };
 
-const studioViewports = [
-  { height: 568, width: 280 },
-  { height: 844, width: 390 },
-  { height: 360, width: 640 },
-  { height: 800, width: 1280 },
-] as const;
-
-async function enterStudio(
+async function confirmDub(
   page: Page,
   action: "Continue dubbing" | "Start dubbing",
 ) {
@@ -44,28 +46,47 @@ async function expectNoLearnerAdultControls(page: Page) {
 
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
-  const box = await locator.boundingBox();
-  expect(box).not.toBeNull();
-  return box!;
+  return boundingBoxOrThrow(locator);
 }
 
-function boxesOverlap(first: Rect, second: Rect) {
-  return !(
-    first.x + first.width <= second.x ||
-    second.x + second.width <= first.x ||
-    first.y + first.height <= second.y ||
-    second.y + second.height <= first.y
-  );
+async function openScene(page: Page, sceneNumber: number) {
+  await page.getByRole("button", { name: new RegExp(`^Scene ${sceneNumber},`) }).click();
+  await expect(page.getByText(`Scene ${sceneNumber} of 6`, { exact: true })).toBeVisible();
 }
 
-async function dubStoreSnapshot(page: Page) {
-  return page.evaluate(() =>
-    (
+async function stopAndSave(page: Page) {
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("main").getByText("Recording…", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+}
+
+async function dubStoreSnapshot(page: Page): Promise<DubStoreSnapshot> {
+  return page.evaluate(() => {
+    const store = (
       window as typeof window & {
         __parrotE2eDub?: { snapshot(): DubStoreSnapshot };
       }
-    ).__parrotE2eDub?.snapshot(),
-  );
+    ).__parrotE2eDub;
+    if (!store) throw new Error("Dub store is missing.");
+    return store.snapshot();
+  });
+}
+
+function revocationCount(snapshot: DubStoreSnapshot, url: string) {
+  return snapshot.revokedObjectUrls.filter((revoked) => revoked === url).length;
+}
+
+async function releaseDubOperation(page: Page, operation: "delete" | "upload") {
+  await expect.poll(async () => page.evaluate((requestedOperation) => {
+    const store = (
+      window as typeof window & { __parrotE2eDub?: DubStoreController }
+    ).__parrotE2eDub;
+    if (!store) throw new Error("Dub store is missing.");
+    return requestedOperation === "delete"
+      ? store.releaseDelete()
+      : store.releaseUpload();
+  }, operation)).toBe(true);
 }
 
 async function microphoneSnapshot(page: Page) {
@@ -98,15 +119,13 @@ async function resolveDelayedMicrophone(page: Page) {
   expect(resolved).toBe(true);
 }
 
-test("guardian consent unlocks learner recording without exposing adult controls", async ({
+test("guardian consent unlocks the storyboard without exposing adult controls", async ({
   page,
 }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=not-granted");
 
   await expect(
-    page
-      .getByRole("region", { name: "Five Little Ducks" })
-      .getByRole("paragraph"),
+    page.getByRole("main").getByRole("paragraph"),
   ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
   await expectNoLearnerAdultControls(page);
   const lockedGrant = await page.evaluate(async (consentVersion) => {
@@ -148,10 +167,12 @@ test("guardian consent unlocks learner recording without exposing adult controls
   await expect(
     page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Start dubbing" }).click();
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
+  await confirmDub(page, "Start dubbing");
+  await expect(
+    page.getByRole("region", { name: "Full video player" }),
+  ).toBeVisible();
+  await openScene(page, 1);
+  await stopAndSave(page);
   await expectNoLearnerAdultControls(page);
 });
 
@@ -161,573 +182,11 @@ test("keeps revoking consent unavailable on the learner surface", async ({
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
 
   await expect(
-    page
-      .getByRole("region", { name: "Five Little Ducks" })
-      .getByRole("paragraph"),
+    page.getByRole("main").getByRole("paragraph"),
   ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
   await expect(
     page.getByRole("button", { name: /Start dubbing|Continue dubbing/ }),
   ).toHaveCount(0);
-  await expectNoLearnerAdultControls(page);
-});
-
-test("guides, records, replays, and resumes verse 1 at line 2", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await enterStudio(page, "Start dubbing");
-
-  await expect(
-    page.getByRole("button", { name: "Record line 1" }),
-  ).toBeVisible();
-  await expect(page.getByText("Now read", { exact: true })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Replay example" }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await dubStoreSnapshot(page))?.playedAudioSources)
-    .toContain("/assets/audio/five-little-ducks-v2-guide-line-1.mp3");
-  await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Record again" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("img", { name: "Your recording waveform" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Hear my voice" }).click();
-  await expect
-    .poll(async () =>
-      (await dubStoreSnapshot(page))?.playedAudioSources.some((source) =>
-        source.startsWith("blob:"),
-      ),
-    )
-    .toBe(true);
-  await page.getByRole("button", { name: "Next line" }).click();
-  await expect(
-    page.getByText("Verse 1 of 6 · Line 2 of 4", { exact: true }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await dubStoreSnapshot(page))?.audioContextDoubleCloses)
-    .toBe(0);
-
-  await page.reload();
-  await enterStudio(page, "Continue dubbing");
-  await expect(
-    page.getByText("Verse 1 of 6 · Line 2 of 4", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Over the hill and far away.", { exact: true }),
-  ).toBeVisible();
-});
-
-test("keeps fixed actions and previews a completed four-line verse before continuing", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
-  await enterStudio(page, "Continue dubbing");
-
-  await expect(
-    page.getByText("Verse 1 of 6 · Line 4 of 4", { exact: true }),
-  ).toBeVisible();
-  const record = page.getByRole("button", { name: "Record line 4" });
-  const next = page.getByRole("button", { name: "Next line" });
-  const recordBefore = await visibleBox(record);
-  const nextBefore = await visibleBox(next);
-  await expect(next).toBeDisabled();
-
-  await record.click();
-  await expect(
-    page.getByRole("button", { name: "Stop recording line 4" }),
-  ).toBeVisible();
-  await expect(next).toBeDisabled();
-  await page.getByRole("button", { name: "Stop recording line 4" }).click();
-
-  const recordAgain = page.getByRole("button", { name: "Record again line 4" });
-  await expect(recordAgain).toBeVisible();
-  await expect(next).toBeEnabled();
-  await page.mouse.move(0, 0);
-  await expect.poll(() => recordAgain.boundingBox()).toEqual(recordBefore);
-  await expect.poll(() => next.boundingBox()).toEqual(nextBefore);
-  await expect(
-    page.getByRole("img", { name: "Your recording waveform" }),
-  ).toBeVisible();
-
-  await next.click();
-  await expect(
-    page.getByText("Playing verse 1…", { exact: true }),
-  ).toBeVisible();
-  await expect
-    .poll(() => dubStoreSnapshot(page))
-    .toMatchObject({
-      audioFetches: [
-        "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
-        "/api/dubs/five-little-ducks-v2/lines/line-2/audio",
-        "/api/dubs/five-little-ducks-v2/lines/line-3/audio",
-        "/api/dubs/five-little-ducks-v2/lines/line-4/audio",
-      ],
-    });
-
-  await expect(
-    page.getByText("Verse 2 of 6 · Line 1 of 4", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Record line 5" }),
-  ).toBeEnabled();
-  await expect(next).toBeDisabled();
-});
-
-test("keeps a failed verse preview retryable and lets Next skip the retry", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=verse-fetch-failed");
-  await enterStudio(page, "Continue dubbing");
-
-  await page.getByRole("button", { name: "Record line 4" }).click();
-  await page.getByRole("button", { name: "Stop recording line 4" }).click();
-  const next = page.getByRole("button", { name: "Next line" });
-  await next.click();
-
-  await expect(
-    page.getByRole("alert").filter({ hasText: "could not play" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Verse 1 of 6 · Line 4 of 4", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("img", { name: "Your recording waveform" }),
-  ).toBeVisible();
-  await expect(next).toBeEnabled();
-
-  await next.click();
-  await expect(
-    page.getByText("Playing verse 1…", { exact: true }),
-  ).toBeVisible();
-  await next.click();
-  await expect(
-    page.getByText("Verse 2 of 6 · Line 1 of 4", { exact: true }),
-  ).toBeVisible();
-});
-
-test("previews the final verse once and treats its default line as a replacement", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=almost-complete");
-  await enterStudio(page, "Continue dubbing");
-
-  await expect(
-    page.getByText("Verse 6 of 6 · Line 4 of 4", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Record line 24" }).click();
-  await page.getByRole("button", { name: "Stop recording line 24" }).click();
-  await page.getByRole("button", { name: "Next line" }).click();
-  await expect(
-    page.getByText("Playing verse 6…", { exact: true }),
-  ).toBeVisible();
-  const watch = page.getByRole("button", { name: "Watch my dub" });
-  await expect(watch).toBeVisible();
-  await expect(watch).toBeFocused();
-
-  await page.getByLabel("Record another take").click();
-  await expect(
-    page.getByRole("combobox", { name: "Choose a saved line" }),
-  ).toHaveValue("line-24");
-  await page.getByRole("button", { name: "Record selected line" }).click();
-  await page.getByRole("button", { name: "Record line 24" }).click();
-  await page.getByRole("button", { name: "Stop recording line 24" }).click();
-  await page.getByRole("button", { name: "Next line" }).click();
-  await expect(
-    page.getByRole("button", { name: "Watch my dub" }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await dubStoreSnapshot(page))?.audioFetches)
-    .toEqual([
-      "/api/dubs/five-little-ducks-v2/lines/line-21/audio",
-      "/api/dubs/five-little-ducks-v2/lines/line-22/audio",
-      "/api/dubs/five-little-ducks-v2/lines/line-23/audio",
-      "/api/dubs/five-little-ducks-v2/lines/line-24/audio",
-    ]);
-});
-
-test("keeps the same take available when its first upload fails", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-failed");
-  await enterStudio(page, "Start dubbing");
-
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
-  await expect(
-    page.getByRole("alert").filter({ hasText: "not saved" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Record again line 1" }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
-  await page.getByRole("button", { name: "Save again" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
-});
-
-test("mirrors the durable line-upload response contract", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expect(
-    page.getByRole("button", { name: "Start dubbing" }),
-  ).toBeVisible();
-
-  const upload = await page.evaluate(async () => {
-    const response = await fetch(
-      "/api/dubs/five-little-ducks-v2/lines/line-1",
-      {
-        body: new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00])], {
-          type: "audio/webm",
-        }),
-        headers: { "Content-Type": "audio/webm" },
-        method: "PUT",
-      },
-    );
-    return {
-      body: await response.text(),
-      contentType: response.headers.get("Content-Type"),
-      status: response.status,
-    };
-  });
-
-  expect(upload.status).toBe(201);
-  expect(upload.contentType).toBe("application/json");
-  expect(JSON.parse(upload.body)).toEqual({
-    lineId: "line-1",
-    recordedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
-  });
-});
-
-test("browser mock rejects obsolete v1 and out-of-range v2 routes", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expect(
-    page.getByRole("button", { name: "Start dubbing" }),
-  ).toBeVisible();
-
-  const results = await page.evaluate(async () => {
-    const requests: Array<[string, RequestInit]> = [
-      ["/api/dubs/five-little-ducks-v1", {}],
-      [
-        "/api/dubs/five-little-ducks-v1/consent",
-        {
-          body: JSON.stringify({ accepted: true }),
-          headers: { "Content-Type": "application/json" },
-          method: "PUT",
-        },
-      ],
-      [
-        "/api/dubs/five-little-ducks-v2/lines/line-25",
-        {
-          body: new Blob(["clip"], { type: "audio/webm" }),
-          headers: { "Content-Type": "audio/webm" },
-          method: "PUT",
-        },
-      ],
-      ["/api/dubs/five-little-ducks-v2/lines/line-25/audio", {}],
-    ];
-    return Promise.all(
-      requests.map(async ([path, init]) => {
-        const response = await fetch(path, init);
-        return {
-          body: await response.text(),
-          cacheControl: response.headers.get("Cache-Control"),
-          status: response.status,
-        };
-      }),
-    );
-  });
-
-  expect(results).toEqual(
-    Array.from({ length: 4 }, () => ({
-      body: JSON.stringify({ error: "not_found", message: "not_found" }),
-      cacheControl: "private, no-store",
-      status: 404,
-    })),
-  );
-});
-
-test("asks for one new take when the upload rejects the recording", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
-  await enterStudio(page, "Start dubbing");
-
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
-  await expect(
-    page.getByRole("alert").filter({ hasText: "too long" }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Save again" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Record again" }).click();
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
-  await expect
-    .poll(() => dubStoreSnapshot(page))
-    .toMatchObject({
-      uploads: [
-        "/api/dubs/five-little-ducks-v2/lines/line-1",
-        "/api/dubs/five-little-ducks-v2/lines/line-1",
-      ],
-    });
-});
-
-test("replaces selected middle line 5 and keeps the complete dub after reload", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
-  await page.reload();
-  await enterStudio(page, "Continue dubbing");
-
-  await expect(
-    page.getByText("All 6 verses recorded", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Your dub is ready!", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Verse 1 of 6 · Line 1 of 4", { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Watch my dub" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("combobox", { name: "Choose a saved line" }),
-  ).toBeHidden();
-  await page.getByLabel("Record another take").click();
-  const lineSelect = page.getByRole("combobox", {
-    name: "Choose a saved line",
-  });
-  await lineSelect.selectOption("line-5");
-  await expect(lineSelect).toHaveValue("line-5");
-  await expect(
-    page.getByText("Your dub is ready!", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Record selected line" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeEnabled();
-  await page.getByRole("button", { name: "Next line" }).click();
-  await expect(
-    page.getByRole("button", { name: "Watch my dub" }),
-  ).toBeVisible();
-  await page.getByLabel("Record another take").click();
-  await page.getByRole("button", { name: "Record selected line" }).click();
-  await page.getByRole("button", { name: "Record line 5" }).click();
-  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Stop recording line 5" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
-  await expect
-    .poll(() => dubStoreSnapshot(page))
-    .toMatchObject({
-      uploads: ["/api/dubs/five-little-ducks-v2/lines/line-5"],
-    });
-  await page.getByRole("button", { name: "Next line" }).click();
-  await expect(
-    page.getByRole("button", { name: "Watch my dub" }),
-  ).toBeVisible();
-
-  await page.reload();
-  await enterStudio(page, "Continue dubbing");
-  await page.getByLabel("Record another take").click();
-  const reloadedLineSelect = page.getByRole("combobox", {
-    name: "Choose a saved line",
-  });
-  await reloadedLineSelect.selectOption("line-5");
-  await expect(reloadedLineSelect).toHaveValue("line-5");
-  await expect(
-    page.getByText("Your dub is ready!", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("button", { name: "Stop playback" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Stop playback" }).click();
-});
-
-test("returns an undecodable line 5 to a focused replacement action", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=corrupt-line-5");
-  await enterStudio(page, "Continue dubbing");
-
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("alert").filter({
-      hasText: "That take could not play. Record this line again.",
-    }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Verse 2 of 6 · Line 1 of 4", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Four little ducks went out one day.", { exact: true }),
-  ).toBeVisible();
-  await expect
-    .poll(async () => (await dubStoreSnapshot(page))?.playedAudioSources)
-    .toContain("/assets/audio/five-little-ducks-v2-guide-line-5.mp3");
-  const record = page.getByRole("button", { name: "Record line 5" });
-  await expect(record).toBeVisible();
-  await expect(record).toBeFocused();
-
-  await record.click();
-  await page.getByRole("button", { name: "Stop recording line 5" }).click();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
-  await page.getByRole("button", { name: "Next line" }).click();
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("button", { name: "Stop playback" }),
-  ).toBeVisible();
-});
-
-test("keeps a complete dub ready when a saved-line audio fetch fails", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=audio-fetch-failed");
-  await enterStudio(page, "Continue dubbing");
-
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("alert").filter({
-      hasText: "Your saved dub could not be played. Try again.",
-    }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("All 6 verses recorded", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Your dub is ready!", { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Record line/ })).toHaveCount(
-    0,
-  );
-
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("button", { name: "Stop playback" }),
-  ).toBeVisible();
-});
-
-test("hides generic playback setup details and keeps final controls usable", async ({
-  page,
-}) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=playback-setup-failed");
-  await enterStudio(page, "Continue dubbing");
-
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("alert").filter({
-      hasText: "Your saved dub could not be played. Try again.",
-    }),
-  ).toBeVisible();
-  await expect(page.getByText(/sample-rate mismatch at graph 7/i)).toHaveCount(
-    0,
-  );
-  await page.getByLabel("Record another take").click();
-  const lineSelect = page.getByRole("combobox", {
-    name: "Choose a saved line",
-  });
-  await expect(lineSelect).toBeEnabled();
-  await lineSelect.selectOption("line-5");
-  await expect(lineSelect).toHaveValue("line-5");
-  await expect(
-    page.getByText("Your dub is ready!", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Watch my dub" }),
-  ).toBeEnabled();
-});
-
-test("automatically finishes and saves a six-second recording", async ({
-  page,
-}) => {
-  test.setTimeout(15_000);
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await enterStudio(page, "Start dubbing");
-
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await expect(page.getByText("Recording…", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Next line" })).toBeVisible({
-    timeout: 8_000,
-  });
-});
-
-test("stops a delayed microphone stream that resolves after leaving the dub", async ({
-  page,
-}) => {
-  await page.goto(
-    "/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=delayed",
-  );
-  await enterStudio(page, "Start dubbing");
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await expect(
-    page.getByText("Opening microphone…", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Record line 1" }),
-  ).toBeDisabled();
-  await expect
-    .poll(() => microphoneSnapshot(page))
-    .toMatchObject({
-      pending: 1,
-      requests: 1,
-      stoppedTracks: 0,
-    });
-
-  await page.getByRole("link", { name: "Back to home" }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await resolveDelayedMicrophone(page);
-  await expect
-    .poll(() => microphoneSnapshot(page))
-    .toMatchObject({
-      pending: 0,
-      resolved: 1,
-      stoppedTracks: 1,
-    });
-  await expect(
-    page.getByText("Five Little Ducks", { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("alert").filter({ hasText: /microphone|recording/i }),
-  ).toHaveCount(0);
-});
-
-test("keeps retake options closed and gives learner controls 48px touch targets", async ({
-  page,
-}) => {
-  await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
-  await enterStudio(page, "Continue dubbing");
-
-  const retakeOptions = page.getByLabel("Record another take");
-  await expect(retakeOptions).toBeVisible();
-  await expect(
-    page.getByRole("combobox", { name: "Choose a saved line" }),
-  ).toBeHidden();
-  expect((await visibleBox(retakeOptions)).height).toBeGreaterThanOrEqual(48);
-  await retakeOptions.focus();
-  await expect(retakeOptions).toBeFocused();
-  await retakeOptions.press("Enter");
-  await expect(
-    page.getByRole("combobox", { name: "Choose a saved line" }),
-  ).toBeVisible();
-  await retakeOptions.press("Space");
-  await expect(
-    page.getByRole("combobox", { name: "Choose a saved line" }),
-  ).toBeHidden();
-  await retakeOptions.press("Enter");
-  expect(
-    (
-      await visibleBox(
-        page.getByRole("button", { name: "Record selected line" }),
-      )
-    ).height,
-  ).toBeGreaterThanOrEqual(48);
   await expectNoLearnerAdultControls(page);
 });
 
@@ -971,250 +430,845 @@ test("reconciles a lost cleanup response from durable status", async ({
   ).toBeVisible();
 });
 
-for (const microphone of ["denied", "unsupported"] as const) {
-  test(`keeps line 1 and record focus after a ${microphone} microphone`, async ({
-    page,
-  }) => {
-    await page.goto(
-      `/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=${microphone}`,
-    );
-    await enterStudio(page, "Start dubbing");
+test("confirmation opens the project home instead of line 1", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
 
-    const record = page.getByRole("button", { name: "Record line 1" });
-    await record.click();
-    const message =
-      microphone === "denied"
-        ? "The microphone is off. Ask a grown-up to allow it, then try again."
-        : "This browser cannot record yet. Try another device or browser.";
-    await expect(
-      page.getByRole("alert").filter({ hasText: message }),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Verse 1 of 6 · Line 1 of 4", { exact: true }),
-    ).toBeVisible();
-    await expect(record).toBeVisible();
-    await expect(record).toBeFocused();
+  await expect(page.getByRole("region", { name: "Full video player" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+  await expect(page.getByText("0 of 24 voice clips recorded", { exact: true })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("0 of 24 voice clips recorded.");
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Record line" })).toHaveCount(0);
+  await expect(page.getByText("Five little ducks went out one day.", { exact: true })).toHaveCount(0);
+});
+
+test("an empty project plays a fully generated draft", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(/Playing full video: Scene \d, line \d\./);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toHaveLength(24);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toEqual([]);
+  expect((await dubStoreSnapshot(page)).guideFetches.every((url) =>
+    url.startsWith("/assets/audio/five-little-ducks-v2-guide-line-"),
+  )).toBe(true);
+  await page.getByRole("button", { name: "Stop full video" }).click();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+});
+
+test("a partial project mixes saved and generated audio for full and scene playback", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toEqual([
+    "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+    "/api/dubs/five-little-ducks-v2/lines/line-2/audio",
+    "/api/dubs/five-little-ducks-v2/lines/line-3/audio",
+  ]);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toHaveLength(21);
+
+  await openScene(page, 2);
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await expect(page.getByRole("button", { name: "Stop this scene" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toHaveLength(3);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toHaveLength(25);
+});
+
+test("Continue opens the first missing slot while scenes and lines remain freely selectable", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Continue Scene 1" }).click();
+  await expect(page.getByText("Scene 1 of 6", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Line 4, selected, generated" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Back to full video" }).click();
+  await openScene(page, 5);
+  await page.getByRole("button", { name: "Line 4, generated" }).click();
+  await expect(page.getByRole("button", { name: "Line 4, selected, generated" })).toBeVisible();
+  await expect(page.getByText("But none of the five little ducks came back.", { exact: true })).toBeVisible();
+});
+
+test("recording starts without a countdown and saves without leaving the selected line", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 3);
+  await page.getByRole("button", { name: "Line 3, generated" }).click();
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("main").getByText("Recording…", { exact: true })).toBeVisible();
+  await expect(page.getByText(/get ready|3…|2…|1…/i)).toHaveCount(0);
+  await page.getByRole("button", { name: "Stop recording" }).click();
+
+  await expect(page.getByRole("button", { name: "Line 3, selected, recorded" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hear my voice" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
+  await expect(page.getByText("Mother duck said, “Quack, quack, quack, quack.”", { exact: true })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toEqual([
+    "/api/dubs/five-little-ducks-v2/lines/line-11",
+  ]);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).playedAudioSources).toEqual([]);
+});
+
+test("Back keeps progress and reload resumes the saved scene statuses", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+  await page.getByRole("button", { name: "Back to full video" }).click();
+  await expect(page.getByRole("button", { name: "Scene 1, 1 / 4" })).toBeVisible();
+  await expect(page.getByText("1 of 24 voice clips recorded", { exact: true })).toBeVisible();
+
+  await page.reload();
+  await confirmDub(page, "Continue dubbing");
+  await expect(page.getByRole("button", { name: "Scene 1, 1 / 4" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Continue Scene 1" })).toBeVisible();
+});
+
+test("a replacement overwrites the chosen canonical slot", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await confirmDub(page, "Continue dubbing");
+  await openScene(page, 2);
+  await expect(page.getByRole("button", { name: "Line 1, selected, recorded" })).toBeVisible();
+  await stopAndSave(page);
+  await expect(page.getByRole("button", { name: "Line 1, selected, recorded" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toEqual([
+    "/api/dubs/five-little-ducks-v2/lines/line-5",
+  ]);
+});
+
+test("reselecting the active line keeps its saved local review URL", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+
+  await expect.poll(async () => (await dubStoreSnapshot(page)).createdObjectUrls).toHaveLength(1);
+  const [objectUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
+  expect(revocationCount(await dubStoreSnapshot(page), objectUrl)).toBe(0);
+
+  await page.getByRole("button", { name: "Line 1, selected, recorded" }).click();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+  expect(revocationCount(await dubStoreSnapshot(page), objectUrl)).toBe(0);
+
+  await page.getByRole("button", { name: "Hear my voice" }).click();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).playedAudioSources).toContain(objectUrl);
+});
+
+test("replacing a take revokes the previous object URL exactly once", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+  const [firstUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
+
+  await page.getByRole("button", { name: "Record again" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).createdObjectUrls).toHaveLength(2);
+  const snapshot = await dubStoreSnapshot(page);
+  const secondUrl = snapshot.createdObjectUrls[1];
+  expect(revocationCount(snapshot, firstUrl)).toBe(1);
+  expect(revocationCount(snapshot, secondUrl)).toBe(0);
+});
+
+test("changed-line selection and Back never double-revoke review URLs", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+  const [firstUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
+
+  await page.getByRole("button", { name: "Line 2, generated" }).click();
+  let snapshot = await dubStoreSnapshot(page);
+  expect(revocationCount(snapshot, firstUrl)).toBe(1);
+
+  await stopAndSave(page);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).createdObjectUrls).toHaveLength(2);
+  const secondUrl = (await dubStoreSnapshot(page)).createdObjectUrls[1];
+  await page.getByRole("button", { name: "Back to full video" }).click();
+  snapshot = await dubStoreSnapshot(page);
+  expect(revocationCount(snapshot, firstUrl)).toBe(1);
+  expect(revocationCount(snapshot, secondUrl)).toBe(1);
+});
+
+test("route unmount revokes the retained review URL exactly once", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+  const [objectUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
+
+  await page.getByRole("link", { name: "Back to home" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect.poll(async () =>
+    revocationCount(await dubStoreSnapshot(page), objectUrl)).toBe(1);
+});
+
+test("scene playback advances only the visual before recording the selected canonical slot", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 2);
+  await page.getByRole("button", { name: "Line 1, selected, generated" }).click();
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await expect(page.getByRole("button", { name: "Stop this scene" })).toBeVisible();
+  await expect(page.getByRole("figure")).toHaveAccessibleName(
+    "The flock swims toward a green hill.",
+  );
+
+  await expect(page.getByRole("button", { name: "Line 1, selected, generated" })).toBeVisible();
+  await expect(page.getByText("Four little ducks went out one day.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Recording…");
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("button", { name: "Line 1, selected, recorded" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toEqual([
+    "/api/dubs/five-little-ducks-v2/lines/line-5",
+  ]);
+});
+
+test("retryable save survives guide and Blob replay while retry remains exclusive", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held&parrotE2eDubPlayback=held");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Line 2, generated" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Line 1, selected, generated" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back to full video" })).toBeDisabled();
+  await expect(page.getByText("Scene 1 of 6", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Hear example" }).click();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Playing example for Scene 1, line 1.",
+  );
+  await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Line 2, generated" })).toBeDisabled();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).playedAudioSources).toContain(
+    "/assets/audio/five-little-ducks-v2-guide-line-1.mp3",
+  );
+
+  await page.getByRole("button", { name: "Hear my voice" }).click();
+  await expect(page.getByRole("button", { name: "Stop my voice" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Playing your recording for Scene 1, line 1.",
+  );
+  await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back to full video" })).toBeDisabled();
+  await expect.poll(async () =>
+    (await dubStoreSnapshot(page)).playedAudioSources.some((source) => source.startsWith("blob:")),
+  ).toBe(true);
+
+  await page.getByRole("button", { name: "Save again" }).click();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Saving your take…");
+  await expect(page.getByRole("button", { name: "Hear example" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Hear my voice" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Save again" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Line 2, generated" })).toBeDisabled();
+  await releaseDubOperation(page, "upload");
+  await expect(page.getByRole("button", { name: "Line 1, selected, recorded" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save again" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hear my voice" })).toBeEnabled();
+});
+
+test("a rejected upload discards the take and offers Record again", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "too long" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Save again" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toHaveCount(0);
+  const snapshot = await dubStoreSnapshot(page);
+  expect(snapshot.createdObjectUrls).toHaveLength(1);
+  expect(revocationCount(snapshot, snapshot.createdObjectUrls[0])).toBe(1);
+});
+
+test("corrupt private audio falls back to its guide and marks the scene Needs retake", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=corrupt-line-5");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  await expect(page.getByText("Draft", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Scene 2, Needs retake" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toContain(
+    "/assets/audio/five-little-ducks-v2-guide-line-5.mp3",
+  );
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible({ timeout: 8_000 });
+  await openScene(page, 2);
+  await stopAndSave(page);
+  await page.getByRole("button", { name: "Back to full video" }).click();
+  await expect(page.getByRole("button", { name: "Scene 2, Done" })).toBeVisible();
+});
+
+test("a double-source failure names the exact slot while video and music continue", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=both-source-failed");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("alert").filter({
+    hasText: "Scene 2, line 1 could not play. The video will continue without it.",
+  })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    /Playing full video: Scene \d, line \d\./,
+  );
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Full video player" }).getByRole("figure"),
+  ).toHaveAccessibleName(/duck/i);
+});
+
+test("multiple unavailable voices are announced once in canonical order", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=multiple-source-failed");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+
+  await expect(page.getByRole("alert").filter({ hasText: "could not play" })).toHaveText(
+    "Scene 2, line 1 could not play. The video will continue without it. " +
+      "Scene 2, line 4 could not play. The video will continue without it.",
+  );
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+});
+
+test("scene and line navigation cancel scoped playback", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await expect(page.getByRole("button", { name: "Stop this scene" })).toBeVisible();
+  await page.getByRole("button", { name: "Line 2, generated" }).click();
+  await expect(page.getByRole("button", { name: "Play this scene" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Line 2, selected, generated" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Scene 1, line 2 selected. Generated.");
+  await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
+});
+
+test("recording silences guide and scene playback", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Hear example" }).click();
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await expect(page.getByRole("button", { name: "Stop this scene" })).toBeVisible();
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("main").getByText("Recording…", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play this scene" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
+});
+
+test("automatically stops and saves one six-second recording", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("main").getByText("Recording…", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible({ timeout: 8_000 });
+  await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toHaveLength(1);
+});
+
+test("held microphone readiness keeps every scene action locked behind one live status", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=delayed");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Opening microphone…");
+  await expect(page.getByRole("button", { name: "Back to full video" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Play this scene" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Hear example" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Record line" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Line 2, generated" })).toBeDisabled();
+
+  await resolveDelayedMicrophone(page);
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Recording…");
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+});
+
+test("stops a delayed microphone stream that resolves after route exit", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=delayed");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("main").getByText("Opening microphone…", { exact: true })).toBeVisible();
+  await expect.poll(() => microphoneSnapshot(page)).toMatchObject({ pending: 1, requests: 1 });
+  await page.getByRole("link", { name: "Back to home" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await resolveDelayedMicrophone(page);
+  await expect.poll(() => microphoneSnapshot(page)).toMatchObject({
+    pending: 0,
+    resolved: 1,
+    stoppedTracks: 1,
+  });
+});
+
+for (const microphone of ["denied", "unsupported"] as const) {
+  test(`keeps the selected slot after a ${microphone} microphone`, async ({ page }) => {
+    await page.goto(`/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=${microphone}`);
+    await confirmDub(page, "Start dubbing");
+    await openScene(page, 4);
+    await page.getByRole("button", { name: "Line 2, generated" }).click();
+    await page.getByRole("button", { name: "Record line" }).click();
+    const message = microphone === "denied"
+      ? "The microphone is off. Ask a grown-up to allow it, then try again."
+      : "This browser cannot record yet. Try another device or browser.";
+    await expect(page.getByRole("alert").filter({ hasText: message })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Line 2, selected, generated" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Record line" })).toBeFocused();
   });
 }
+
+test("a held Guardian delete is exclusive until removal succeeds", async ({ page }) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=delete-held&parrotE2eGuardian=guardian",
+  );
+  await page
+    .getByRole("button", {
+      name: "Turn off Mia's voice dubbing and delete saved clips",
+    })
+    .click();
+
+  await expect(
+    page.getByRole("button", { name: "Removing voice clips…" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Switch to Mia and start dubbing" }),
+  ).toBeDisabled();
+
+  await releaseDubOperation(page, "delete");
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+});
+
+test("a failed Guardian delete stays actionable only in Guardian mode", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=delete-failed&parrotE2eGuardian=guardian",
+  );
+  await page
+    .getByRole("button", {
+      name: "Turn off Mia's voice dubbing and delete saved clips",
+    })
+    .click();
+
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub was not deleted.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish removing voice clips" }),
+  ).toBeEnabled();
+});
+
+test("every dubbing route shell owns the constrained vertical scroll viewport", async ({ page }) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=load-held");
+  await expect(page.getByRole("button", { name: "Loading your private dub…" })).toBeVisible();
+  await expectDubScrollViewport(page);
+
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=reset-interrupted");
+  await expect(
+    page.getByRole("main").getByRole("paragraph"),
+  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  await expectNoLearnerAdultControls(page);
+  await expectDubScrollViewport(page);
+
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await expectDubScrollViewport(page);
+  await confirmDub(page, "Start dubbing");
+  await expectDubScrollViewport(page);
+  await openScene(page, 1);
+  await expectDubScrollViewport(page);
+});
+
+test("a real wheel scroll reaches an initially offscreen narrow-phone action", async ({ page }) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Continue Scene 1" }).click();
+  const viewport = page.getByRole("main");
+  const record = page.getByRole("button", { name: "Record line" });
+  await expect(record).not.toBeInViewport();
+  await page.mouse.move(140, 500);
+  await page.mouse.wheel(0, 1_200);
+  await expect.poll(() => viewport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect(record).toBeInViewport();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("reduced motion disables playing duck animation and playback cleanup stays idempotent", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  const sceneSvg = page.getByRole("region", { name: "Full video player" }).locator("svg");
+  await expect(sceneSvg).toHaveAttribute("aria-hidden", "true");
+  const animationNames = await sceneSvg.locator("g").evaluateAll((groups) =>
+    groups
+      .filter((group) => (group as SVGElement).style.animationDelay !== "")
+      .map((group) => getComputedStyle(group).animationName),
+  );
+  expect(animationNames.length).toBeGreaterThan(0);
+  expect(animationNames.every((name) => name === "none")).toBe(true);
+  await page.getByRole("button", { name: "Stop full video" }).click();
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await page.getByRole("button", { name: "Stop this scene" }).click();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
+});
+
+async function boundingBoxOrThrow(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error("Expected a visible element with a bounding box.");
+  return box;
+}
+
+async function expectDubScrollViewport(page: Page) {
+  const metrics = await page.getByRole("main").evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      bottom: rect.bottom,
+      height: rect.height,
+      left: rect.left,
+      overflowX: style.overflowX,
+      overflowY: style.overflowY,
+      overscrollY: style.overscrollBehaviorY,
+      right: rect.right,
+      viewportHeight: innerHeight,
+      viewportWidth: innerWidth,
+    };
+  });
+  expect(metrics).toMatchObject({
+    left: 0,
+    overflowX: "hidden",
+    overflowY: "auto",
+    overscrollY: "contain",
+  });
+  expect(metrics.height).toBe(metrics.viewportHeight);
+  expect(metrics.bottom).toBe(metrics.viewportHeight);
+  expect(metrics.right).toBe(metrics.viewportWidth);
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+}
+
+async function expectLearnerTargetsAtLeast48px(page: Page) {
+  const targets = page.getByRole("main").getByRole("button");
+  const sizes = await targets.evaluateAll((elements) => elements.map((element) => {
+    const { height, width } = element.getBoundingClientRect();
+    return { height, name: element.getAttribute("aria-label") ?? element.textContent?.trim(), width };
+  }));
+  expect(sizes).not.toEqual([]);
+  for (const target of sizes) {
+    expect(target.width, `${target.name} is narrower than 48px`).toBeGreaterThanOrEqual(48);
+    expect(target.height, `${target.name} is shorter than 48px`).toBeGreaterThanOrEqual(48);
+  }
+}
+
+test("the desktop project is a wide video workspace with a six-scene dock", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+
+  const workspace = page.getByRole("region", { name: "Dub project workspace" });
+  const player = page.getByRole("region", { name: "Full video player" });
+  const dock = page.getByRole("navigation", { name: "Scenes" });
+  const workspaceBox = await boundingBoxOrThrow(workspace);
+  const playerBox = await boundingBoxOrThrow(player);
+  const dockBox = await boundingBoxOrThrow(dock);
+
+  expect(workspaceBox.width).toBeGreaterThanOrEqual(1440 * 0.9);
+  expect(playerBox.width / playerBox.height).toBeGreaterThan(1.7);
+  expect(playerBox.width / playerBox.height).toBeLessThan(1.8);
+  expect(playerBox.width).toBeGreaterThanOrEqual(workspaceBox.width * 0.9);
+  expect(dockBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  await expect(dock.getByRole("button")).toHaveCount(6);
+  for (const scene of await dock.getByRole("button").all()) {
+    const sceneBox = await boundingBoxOrThrow(scene);
+    expect(sceneBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  }
+});
+
+test("the desktop scene editor keeps the stage left of its selected-line controls", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await openScene(page, 1);
+
+  const workspace = page.getByRole("region", { name: "Scene editor workspace" });
+  const stage = page.getByRole("region", { name: "Scene video" });
+  const controls = page.getByRole("complementary", { name: "Scene line controls" });
+  const [workspaceBox, stageBox, controlsBox] = await Promise.all([
+    boundingBoxOrThrow(workspace),
+    boundingBoxOrThrow(stage),
+    boundingBoxOrThrow(controls),
+  ]);
+
+  expect(workspaceBox.width).toBeGreaterThanOrEqual(1440 * 0.9);
+  expect(stageBox.x + stageBox.width).toBeLessThanOrEqual(controlsBox.x);
+  expect(stageBox.y + stageBox.height).toBeGreaterThan(controlsBox.y);
+  await expect(stage).toBeInViewport();
+  await expect(controls).toBeInViewport();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("the narrow scene editor reads stage, selectors, selected lyric, then controls", async ({ page }) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  await openScene(page, 1);
+
+  const stage = page.getByRole("region", { name: "Scene video" });
+  const selectors = page.getByRole("region", { name: "Scene line selectors" });
+  const lyric = page.getByRole("heading", { name: "But only four little ducks came back." });
+  const scenePlayback = page.getByRole("button", { name: "Play this scene" });
+  const record = page.getByRole("button", { name: "Record line" });
+  const [stageBox, selectorsBox, lyricBox, playbackBox, recordBox] = await Promise.all([
+    boundingBoxOrThrow(stage),
+    boundingBoxOrThrow(selectors),
+    boundingBoxOrThrow(lyric),
+    boundingBoxOrThrow(scenePlayback),
+    boundingBoxOrThrow(record),
+  ]);
+
+  expect(selectorsBox.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height);
+  expect(lyricBox.y).toBeGreaterThanOrEqual(selectorsBox.y + selectorsBox.height);
+  expect(playbackBox.y).toBeGreaterThanOrEqual(lyricBox.y + lyricBox.height);
+  expect(recordBox.y).toBeGreaterThanOrEqual(lyricBox.y + lyricBox.height);
+  await expect(page.getByRole("region", { name: "Scene lyrics" })).toHaveCount(0);
+});
 
 for (const viewport of [
   { height: 568, width: 280 },
-  { height: 800, width: 1280 },
+  { height: 844, width: 390 },
 ]) {
-  test(`keeps the intro action inside the initial viewport at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-
-    const privacy = page.getByText(
-      "Your voice clips stay private in this account.",
-      { exact: true },
-    );
-    const start = page.getByRole("button", { name: "Start dubbing" });
-    await expect(privacy).toBeVisible();
-    await expect(start).toBeVisible();
-    await expect(privacy).toBeInViewport();
-    await expect(start).toBeInViewport();
-    await expectNoLearnerAdultControls(page);
-  });
-}
-
-for (const viewport of studioViewports) {
-  test(`contains the studio without header, stage, or action overlap at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
+  test(`phone project and scene controls remain reachable at ${viewport.width} by ${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
-    await enterStudio(page, "Continue dubbing");
+    await confirmDub(page, "Continue dubbing");
 
-    const main = page.getByRole("main");
-    const back = page.getByRole("link", { name: "Back to home" });
-    const account = page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
-    });
-    const stage = page.getByRole("figure");
-    await expect(stage).toHaveAccessibleName(/ducklings come back/i);
-    const action = page.getByRole("button", { name: "Record line 4" });
+    const dock = page.getByRole("navigation", { name: "Scenes" });
+    const sceneSix = dock.getByRole("button", { name: "Scene 6, Not started" });
+    await expectNoHorizontalOverflow(page);
+    await expect.poll(() => dock.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    await page.mouse.move(viewport.width / 2, viewport.height - 24);
+    await page.mouse.wheel(0, 800);
+    await expect(dock).toBeInViewport();
+    await dock.hover();
+    await page.mouse.wheel(1_000, 0);
+    await expect.poll(() => dock.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    const [dockBox, sceneBox] = await Promise.all([
+      boundingBoxOrThrow(dock),
+      boundingBoxOrThrow(sceneSix),
+    ]);
+    expect(sceneBox.x).toBeGreaterThanOrEqual(dockBox.x);
+    expect(sceneBox.x + sceneBox.width).toBeLessThanOrEqual(dockBox.x + dockBox.width + 1);
+    await expectLearnerTargetsAtLeast48px(page);
 
-    await main.evaluate((element) => {
-      element.scrollTop = 0;
-    });
-    const topBoxes = await Promise.all([back, account, stage].map(visibleBox));
-    for (const box of topBoxes) {
+    await sceneSix.focus();
+    await page.keyboard.press("Enter");
+    const sceneHeading = page.getByRole("heading", { name: "Sad mother duck", exact: true });
+    await expect(sceneHeading).toBeFocused();
+    await expect(page.getByText("Scene 6 of 6", { exact: true })).toHaveAttribute("aria-current", "page");
+
+    for (const selector of await page.getByRole("region", { name: "Scene line selectors" }).getByRole("button").all()) {
+      const box = await boundingBoxOrThrow(selector);
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
     }
-    for (let first = 0; first < topBoxes.length; first += 1) {
-      for (let second = first + 1; second < topBoxes.length; second += 1) {
-        expect(boxesOverlap(topBoxes[first], topBoxes[second])).toBe(false);
-      }
-    }
 
-    await action.scrollIntoViewIfNeeded();
-    const actionBox = await visibleBox(action);
-    const headerBoxes = await Promise.all([back, account].map(visibleBox));
-    expect(actionBox.x).toBeGreaterThanOrEqual(0);
-    expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(viewport.width);
-    expect(actionBox.y).toBeGreaterThanOrEqual(0);
-    expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(viewport.height);
-    for (const headerBox of headerBoxes) {
-      expect(boxesOverlap(headerBox, actionBox)).toBe(false);
-    }
-    const contentBoxes = await Promise.all(
-      [stage, action].map(async (region) => {
-        const box = await visibleBox(region);
-        const scrollTop = await main.evaluate((element) => element.scrollTop);
-        return { ...box, y: box.y + scrollTop };
-      }),
-    );
-    expect(boxesOverlap(contentBoxes[0], contentBoxes[1])).toBe(false);
-    await expect
-      .poll(() =>
-        page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-      )
-      .toBe(true);
+    const record = page.getByRole("button", { name: "Record line" });
+    await page.mouse.move(viewport.width / 2, viewport.height - 24);
+    await page.mouse.wheel(0, 1_000);
+    await expect(record).toBeInViewport();
+    await expectNoHorizontalOverflow(page);
+    await expectLearnerTargetsAtLeast48px(page);
   });
 }
 
-test("lets a narrow-phone learner scroll to the active recording action", async ({
-  page,
-}) => {
-  await page.setViewportSize({ height: 568, width: 280 });
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
-  await enterStudio(page, "Continue dubbing");
-
-  const main = page.getByRole("main");
-  const record = page.getByRole("button", { name: "Record line 4" });
-  await main.evaluate((element) => {
-    element.scrollTop = 0;
-  });
-  await expect(record).not.toBeInViewport();
-
-  await page.mouse.move(140, 450);
-  await page.mouse.wheel(0, 1_000);
-
-  await expect
-    .poll(() => main.evaluate((element) => element.scrollTop))
-    .toBeGreaterThan(0);
-  await expect(record).toBeInViewport();
-});
-
-for (const viewport of [
-  { height: 360, width: 640 },
-  { height: 360, width: 800 },
-  { height: 360, width: 840 },
-]) {
-  test(`keeps the untouched short-landscape prompt and action visible after Continue at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
-    await enterStudio(page, "Continue dubbing");
-
-    const back = page.getByRole("link", { name: "Back to home" });
-    const account = page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
-    });
-    const content = [
-      page.getByRole("figure"),
-      page.getByRole("region", { name: "Current line" }),
-      page.getByRole("button", { name: "Record line 4" }),
-    ];
-    const headerBottom = Math.max(
-      ...(await Promise.all([back, account].map(visibleBox))).map(
-        ({ y, height }) => y + height,
-      ),
-    );
-
-    for (const locator of content) {
-      const box = await visibleBox(locator);
-      expect(box.y).toBeGreaterThanOrEqual(headerBottom);
-      expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
-    }
-  });
-}
-
-test("uses the desktop viewport and makes the current lyric more prominent than the title", async ({
-  page,
-}) => {
-  const viewport = { height: 900, width: 1440 };
-  await page.setViewportSize(viewport);
+test("keyboard navigation exposes current selections and focuses scene and line headings", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await enterStudio(page, "Start dubbing");
+  await confirmDub(page, "Start dubbing");
+  const sceneTwo = page.getByRole("button", { name: "Scene 2, Not started" });
+  await expect(page.getByRole("button", { name: "Scene 1, Not started" })).toHaveAttribute("aria-current", "page");
 
-  const studio = page.getByRole("region", { name: "Five Little Ducks" });
-  const stage = page.getByRole("figure");
-  const title = page.getByRole("heading", { name: "Five Little Ducks" });
-  const lyric = page.getByText("Five little ducks went out one day.", {
-    exact: true,
-  });
-  const studioBox = await visibleBox(studio);
-  const stageBox = await visibleBox(stage);
-  expect(studioBox.width).toBeGreaterThanOrEqual(viewport.width * 0.9);
-  expect(stageBox.width).toBeGreaterThanOrEqual(viewport.width * 0.58);
-  expect(stageBox.height).toBeGreaterThanOrEqual(viewport.height * 0.65);
+  await sceneTwo.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { name: "Four little ducks", exact: true })).toBeFocused();
+  await expect(page.getByText("Scene 2 of 6", { exact: true })).toHaveAttribute("aria-current", "page");
 
-  const [titleSize, lyricSize] = await Promise.all(
-    [title, lyric].map((locator) =>
-      locator.evaluate((element) =>
-        Number.parseFloat(getComputedStyle(element).fontSize),
-      ),
-    ),
+  const lineTwo = page.getByRole("button", { name: "Line 2, generated" });
+  await lineTwo.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("button", { name: "Line 2, selected, generated" })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByRole("heading", { name: "Over the hill and far away." })).toBeFocused();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveCount(1);
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Scene 2, line 2 selected. Generated.",
   );
-  expect(lyricSize).toBeGreaterThan(titleSize);
 });
 
-test("contains the recorded waveform and review actions on the narrowest phone", async ({
-  page,
-}) => {
-  const viewport = { height: 568, width: 280 };
-  await page.setViewportSize(viewport);
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await enterStudio(page, "Start dubbing");
-  await page.getByRole("button", { name: "Record line 1" }).click();
-  await page.getByRole("button", { name: "Stop recording line 1" }).click();
+test("keyboard Continue focuses the selected scene heading", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+  const continueButton = page.getByRole("button", { name: "Continue Scene 1" });
+  await continueButton.focus();
+  await page.keyboard.press("Enter");
 
-  const reviewControls = [
-    page.getByRole("img", { name: "Your recording waveform" }),
-    page.getByRole("button", { name: "Hear my voice" }),
-    page.getByRole("button", { name: "Next line" }),
-    page.getByRole("button", { name: "Record again" }),
-  ];
-  for (const control of reviewControls) {
-    await control.scrollIntoViewIfNeeded();
-    const box = await visibleBox(control);
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
-  }
-  await expect
-    .poll(() =>
-      page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-    )
-    .toBe(true);
+  await expect(page.getByRole("heading", { name: "Five little ducks" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Line 4, selected, generated" })).toBeVisible();
 });
 
-test("reduced motion disables every playing duck animation without exposing the SVG", async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+test("save recovery and completed scoped playback restore focus to their fixed action", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expect(page.getByRole("button", { name: "Save again" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Save again" }).click();
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Saving your take…");
+  await releaseDubOperation(page, "upload");
+  await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Play this scene" }).click();
+  await page.getByRole("button", { name: "Hear example" }).focus();
+  await expect(page.getByRole("button", { name: "Play this scene" })).toBeFocused({ timeout: 8_000 });
+});
+
+test("completed full playback restores focus to the full-video play action", async ({ page }) => {
+  test.setTimeout(15_000);
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
-  await enterStudio(page, "Continue dubbing");
-  await page.getByRole("button", { name: "Watch my dub" }).click();
-  await expect(
-    page.getByRole("button", { name: "Stop playback" }),
-  ).toBeVisible();
-
-  const sceneSvg = page.getByRole("figure").locator("svg");
-  await expect(sceneSvg).toHaveAttribute("aria-hidden", "true");
-  await expect(page.getByRole("img")).toHaveCount(0);
-  const duckAnimationNames = await sceneSvg
-    .locator("g")
-    .evaluateAll((groups) =>
-      groups
-        .filter((group) => (group as SVGElement).style.animationDelay !== "")
-        .map((group) => getComputedStyle(group).animationName),
-    );
-  expect(duckAnimationNames.length).toBeGreaterThan(0);
-  expect(duckAnimationNames.every((name) => name === "none")).toBe(true);
+  await confirmDub(page, "Continue dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await page
+    .getByRole("button", { name: /Profile for Mia, learner mode/ })
+    .focus();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused({ timeout: 8_000 });
 });
+
+test("a stale microphone-error animation-frame callback cannot steal focus", async ({ page }) => {
+  await page.addInitScript(() => {
+    const callbacks: FrameRequestCallback[] = [];
+    Object.defineProperty(window, "requestAnimationFrame", {
+      configurable: true,
+      value: (callback: FrameRequestCallback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      },
+    });
+    Object.defineProperty(window, "__flushAnimationFrames", {
+      configurable: true,
+      value: () => callbacks.splice(0).forEach((callback) => callback(performance.now())),
+    });
+  });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=denied");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "The microphone is off." })).toBeVisible();
+
+  const hearExample = page.getByRole("button", { name: "Hear example" });
+  await hearExample.click();
+  await page.evaluate(() => {
+    (window as typeof window & { __flushAnimationFrames(): void }).__flushAnimationFrames();
+  });
+  await expect(hearExample).toBeFocused();
+});
+
+test("short landscape keeps project and scene actions clear of the route header", async ({ page }) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await confirmDub(page, "Continue dubbing");
+
+  const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
+  const player = page.getByRole("region", { name: "Full video player" });
+  const dock = page.getByRole("navigation", { name: "Scenes" });
+  const playFull = page.getByRole("button", { name: "Play full video" });
+  const continueScene = page.getByRole("button", { name: "Continue Scene 1" });
+  const [headerBox, playerBox, dockBox, playFullBox, continueBox] = await Promise.all([
+    boundingBoxOrThrow(routeHeader),
+    boundingBoxOrThrow(player),
+    boundingBoxOrThrow(dock),
+    boundingBoxOrThrow(playFull),
+    boundingBoxOrThrow(continueScene),
+  ]);
+  for (const box of [playerBox, dockBox, playFullBox, continueBox]) {
+    expect(box.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+    expect(box.y + box.height).toBeLessThanOrEqual(360);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(640);
+  }
+  expect(boxesOverlap(playerBox, dockBox)).toBe(false);
+  expect(boxesOverlap(playerBox, playFullBox)).toBe(false);
+  expect(boxesOverlap(playerBox, continueBox)).toBe(false);
+  expect(boxesOverlap(dockBox, playFullBox)).toBe(false);
+  expect(boxesOverlap(dockBox, continueBox)).toBe(false);
+  expect(boxesOverlap(playFullBox, continueBox)).toBe(false);
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: "Scene 1, 3 / 4" }).click();
+  const sceneStage = page.getByRole("region", { name: "Scene video" });
+  const sceneControls = page.getByRole("complementary", { name: "Scene line controls" });
+  const selectors = page.getByRole("region", { name: "Scene line selectors" });
+  const lineHeading = page.getByRole("heading", { name: "But only four little ducks came back." });
+  const scenePlayback = page.getByRole("button", { name: "Play this scene" });
+  const hearExample = page.getByRole("button", { name: "Hear example" });
+  const record = page.getByRole("button", { name: "Record line" });
+  const [sceneHeaderBox, stageBox, controlsBox, selectorsBox, lineBox, playbackBox, exampleBox, recordBox] = await Promise.all([
+    boundingBoxOrThrow(routeHeader),
+    boundingBoxOrThrow(sceneStage),
+    boundingBoxOrThrow(sceneControls),
+    boundingBoxOrThrow(selectors),
+    boundingBoxOrThrow(lineHeading),
+    boundingBoxOrThrow(scenePlayback),
+    boundingBoxOrThrow(hearExample),
+    boundingBoxOrThrow(record),
+  ]);
+  expect(stageBox.x + stageBox.width).toBeLessThanOrEqual(controlsBox.x);
+  for (const box of [stageBox, controlsBox, selectorsBox, lineBox, playbackBox, exampleBox, recordBox]) {
+    expect(box.y).toBeGreaterThanOrEqual(sceneHeaderBox.y + sceneHeaderBox.height);
+    expect(box.y + box.height).toBeLessThanOrEqual(360);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(640);
+  }
+  expect(boxesOverlap(stageBox, controlsBox)).toBe(false);
+  expect(recordBox.y).toBeGreaterThanOrEqual(lineBox.y + lineBox.height);
+  await expectNoHorizontalOverflow(page);
+});
+
+function boxesOverlap(
+  first: { height: number; width: number; x: number; y: number },
+  second: { height: number; width: number; x: number; y: number },
+) {
+  return first.x < second.x + second.width &&
+    first.x + first.width > second.x &&
+    first.y < second.y + second.height &&
+    first.y + first.height > second.y;
+}

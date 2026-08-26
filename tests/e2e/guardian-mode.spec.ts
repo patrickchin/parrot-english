@@ -549,7 +549,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
     if (watchDub) {
       await page.getByRole("button", { name: "Continue dubbing" }).click();
       await expect(
-        page.getByRole("button", { name: "Watch my dub" }),
+        page.getByRole("button", { name: "Play full video" }),
       ).toBeVisible();
       await expectNoLearnerAdultControls(page);
     }

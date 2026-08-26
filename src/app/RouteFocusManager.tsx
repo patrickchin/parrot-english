@@ -12,6 +12,8 @@ export function RouteFocusManager() {
     if (hasLocalFocusLifecycle(pathname)) return;
 
     const activeElement = document.activeElement;
+    if (activeElement !== document.body) return;
+
     const heading = document.querySelector("main h1");
     const routeMain = heading?.closest("main");
     const frame = window.requestAnimationFrame(() => {

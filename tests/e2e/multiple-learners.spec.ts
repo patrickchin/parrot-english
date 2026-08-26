@@ -645,7 +645,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     if (path === "/dubs/five-little-ducks") {
       await expect(
         page
-          .getByRole("region", { name: "Five Little Ducks" })
+          .getByRole("main")
           .getByRole("paragraph")
           .filter({
             hasText:

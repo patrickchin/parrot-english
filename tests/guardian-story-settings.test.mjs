@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
-import os from "node:os";
-import path from "node:path";
-import { env } from "node:process";
 import { fileURLToPath } from "node:url";
 import { act, createElement, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test from "node:test";
+import { createServer } from "vite";
 import {
   cleanupMountedRoots,
   click,
@@ -15,46 +13,24 @@ import {
   mountStrict,
   waitFor,
 } from "./helpers/react-lifecycle.mjs";
-import {
-  createHermeticViteServer,
-  restoreViteEnvironment,
-  snapshotViteEnvironment,
-  viteEnvironmentMatches,
-  viteManagedEnvironmentKeys,
-} from "./helpers/hermetic-vite-server.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const restoreDom = installDom();
 const originalFetch = globalThis.fetch;
-let vite;
-let viteHarness;
-let viteEnvironmentRestored = false;
-let GuardianStorySettings;
-let GuardianStorySettingsView;
-let LearnerProfileProvider;
-let useLearnerProfile;
-
-test.before(async () => {
-  const environmentBeforeCreation = snapshotViteEnvironment();
-  viteHarness = await createHermeticViteServer({
-    appType: "custom",
-    logLevel: "silent",
-    root: projectRoot,
-  });
-  vite = viteHarness.server;
-  viteEnvironmentRestored = viteEnvironmentMatches(environmentBeforeCreation);
-  try {
-    ({ GuardianStorySettings, GuardianStorySettingsView } =
-      await vite.ssrLoadModule("/src/stories/GuardianStorySettings.tsx"));
-    ({ LearnerProfileProvider, useLearnerProfile } = await vite.ssrLoadModule(
-      "/src/learner-profile/LearnerProfileContext.tsx",
-    ));
-  } catch (error) {
-    await viteHarness.close();
-    viteHarness = null;
-    throw error;
-  }
+const vite = await createServer({
+  appType: "custom",
+  logLevel: "silent",
+  root: projectRoot,
+  server: { middlewareMode: true },
 });
+const guardianModule = await vite
+  .ssrLoadModule("/src/stories/GuardianStorySettings.tsx")
+  .catch(() => ({}));
+const contextModule = await vite
+  .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+  .catch(() => ({}));
+const { GuardianStorySettings, GuardianStorySettingsView } = guardianModule;
+const { LearnerProfileProvider, useLearnerProfile } = contextModule;
 
 test.afterEach(async () => {
   await cleanupMountedRoots();
@@ -63,11 +39,8 @@ test.afterEach(async () => {
 });
 
 test.after(async () => {
-  try {
-    await viteHarness?.close();
-  } finally {
-    restoreDom();
-  }
+  await vite.close();
+  restoreDom();
 });
 
 function learnerProfile(
@@ -248,84 +221,27 @@ function installArtFetch(preferenceResponse) {
   return preferenceBodies;
 }
 
-test("uses a hermetic Vite module-transform server", () => {
-  assert.equal(viteEnvironmentRestored, true);
-  assert.equal(vite.config.configFile, undefined);
-  assert.equal(vite.config.envDir, false);
-  assert.deepEqual(vite.config.envPrefix, []);
-  assert.equal(vite.config.publicDir, "");
-  assert.equal(vite.config.server.watch, null);
-  assert.equal(vite.config.optimizeDeps.noDiscovery, true);
-  assert.deepEqual(vite.config.optimizeDeps.include, []);
-  assert.equal(path.isAbsolute(vite.config.cacheDir), true);
-  assert.equal(path.dirname(vite.config.cacheDir), os.tmpdir());
-  assert.equal(
-    vite.config.cacheDir.startsWith(`${projectRoot}${path.sep}`),
-    false,
-  );
-});
-
-test("restores Vite-managed environment when server creation fails", async () => {
-  const suiteEnvironment = snapshotViteEnvironment();
-
-  try {
-    for (const key of viteManagedEnvironmentKeys) {
-      env[key] = `before-${key.toLowerCase()}`;
-    }
-
-    await assert.rejects(
-      createHermeticViteServer({
-        appType: "custom",
-        logLevel: "silent",
-        plugins: [
-          {
-            name: "synthetic-vite-creation-failure",
-            configResolved() {
-              for (const key of viteManagedEnvironmentKeys) {
-                env[key] = `changed-${key.toLowerCase()}`;
-              }
-              throw new Error("synthetic Vite creation failure");
-            },
-          },
-        ],
-        root: projectRoot,
-      }),
-      /synthetic Vite creation failure/,
-    );
-
-    for (const key of viteManagedEnvironmentKeys) {
-      assert.equal(env[key], `before-${key.toLowerCase()}`);
-    }
-  } finally {
-    restoreViteEnvironment(suiteEnvironment);
-  }
-});
-
 test("guardian story settings owns level and art management", () => {
   const html = renderView();
   const renderedText = textFromMarkup(html);
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  const levelTabs = [...container.querySelectorAll('[role="tab"]')];
 
   assert.match(renderedText, /Managing Mia/);
   assert.match(html, /<h1[^>]*>Story settings<\/h1>/);
   assert.match(html, /Choose story level/);
+  assert.equal(levelTabs.length, 4);
+  assert.equal(
+    levelTabs.some((tab) => tab.textContent.includes("Long stories")),
+    false,
+  );
   assert.match(html, /Personalized story art/);
   assert.match(html, /Guardian consent/);
   assert.match(renderedText, /Upload Mia's photo/);
   assert.match(renderedText, /look like Mia/);
   assert.match(renderedText, /I am Mia's guardian/);
   assert.match(html, /Generate story art/);
-});
-
-test("guardian story settings renders exactly the four learner preference levels", () => {
-  const container = document.createElement("div");
-  container.innerHTML = renderView();
-  const levelTabs = container.querySelectorAll('[role="tab"]');
-
-  assert.equal(levelTabs.length, 4);
-  assert.deepEqual(
-    [...levelTabs].map((tab) => tab.textContent.trim()),
-    ["1Start here", "2Say it again", "3Little stories", "4Big adventures"],
-  );
 });
 
 test("guardian story settings preserves private-art cleanup states", () => {

@@ -25,13 +25,21 @@ type StartDubPlaybackOptions = {
   fetch?: typeof globalThis.fetch;
   lines?: readonly DubLine[];
   onEnded?: () => void;
+  onLineFallback?: (lineId: DubLine["id"], stage: DubLinePlaybackStage) => void;
+  onLineUnavailable?: (lineId: DubLine["id"]) => void;
   onTick: (elapsedMs: number) => void;
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
+  resolveAudioSource?: (line: DubLine) => DubAudioSource;
   setTimeout?: typeof globalThis.setTimeout;
   signal?: AbortSignal;
 };
 
 export type DubLinePlaybackStage = "fetch" | "decode";
+
+export type DubAudioSource = {
+  fallbackUrl?: string;
+  preferredUrl: string;
+};
 
 export class DubLinePlaybackError extends Error {
   readonly lineId: DubLine["id"];
@@ -150,7 +158,12 @@ function getPlaybackScope(lines: readonly DubLine[]) {
   const endLineIndex = firstLineIndex + lines.length;
   const fullDub = firstLineIndex === 0 && endLineIndex === DUB_LINES.length;
   const cueOffsetMs = fullDub ? 0 : lines[0].cueMs;
-  return { cueOffsetMs, fullDub };
+  const authoredEndMs = DUB_LINES[endLineIndex]?.cueMs ?? DUB_DURATION_MS;
+  return {
+    authoredDurationMs: authoredEndMs - cueOffsetMs,
+    cueOffsetMs,
+    fullDub,
+  };
 }
 
 export async function startDubPlayback({
@@ -159,12 +172,15 @@ export async function startDubPlayback({
   fetch: request = globalThis.fetch,
   lines = DUB_LINES,
   onEnded,
+  onLineFallback,
+  onLineUnavailable,
   onTick,
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
+  resolveAudioSource = ({ id }) => ({ preferredUrl: getDubLineAudioUrl(id) }),
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
-  const { cueOffsetMs, fullDub } = getPlaybackScope(lines);
+  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines);
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -214,27 +230,10 @@ export async function startDubPlayback({
   try {
     if (signal?.aborted) throw createAbortError();
 
-    let firstLineFailure: Error | null = null;
-    let rejectLineFailure!: (failure: Error) => void;
-    const lineFailure = new Promise<never>((_, reject) => {
-      rejectLineFailure = reject;
-    });
-    const failPlayback = (failure: Error) => {
-      // The first observed line failure is the origin; later AbortErrors are
-      // consequences of cancelling its sibling work.
-      if (!firstLineFailure) {
-        firstLineFailure = failure;
-        rejectLineFailure(failure);
-        loadController.abort();
-      }
-      return failure;
-    };
-    const failLine = (lineId: DubLine["id"], stage: DubLinePlaybackStage) =>
-      failPlayback(new DubLinePlaybackError(lineId, stage));
-    const lineLoads = lines.map(async ({ id }) => {
+    const loadAndDecode = async (url: string, lineId: DubLine["id"]) => {
       let response: Response;
       try {
-        response = await request(getDubLineAudioUrl(id), {
+        response = await request(url, {
           credentials: "same-origin",
           signal: loadController.signal,
         });
@@ -242,13 +241,15 @@ export async function startDubPlayback({
         if (signal?.aborted || loadController.signal.aborted) {
           throw createAbortError();
         }
-        throw failLine(id, "fetch");
+        throw new DubLinePlaybackError(lineId, "fetch");
       }
       if (!response.ok) {
         if (signal?.aborted) throw createAbortError();
-        const consentLoss = await dubConsentLossError(response);
-        if (consentLoss) throw failPlayback(consentLoss);
-        throw failLine(id, "fetch");
+        if (response.status === 403 || response.status === 409) {
+          const consentLoss = await dubConsentLossError(response);
+          if (consentLoss) throw consentLoss;
+        }
+        throw new DubLinePlaybackError(lineId, "fetch");
       }
       let bytes: ArrayBuffer;
       try {
@@ -257,30 +258,63 @@ export async function startDubPlayback({
         if (signal?.aborted || loadController.signal.aborted) {
           throw createAbortError();
         }
-        throw failLine(id, "fetch");
+        throw new DubLinePlaybackError(lineId, "fetch");
       }
-      let buffer: AudioBuffer;
       try {
-        buffer = await context.decodeAudioData(bytes);
+        return await context.decodeAudioData(bytes);
       } catch {
         if (signal?.aborted || loadController.signal.aborted) {
           throw createAbortError();
         }
-        throw failLine(id, "decode");
+        throw new DubLinePlaybackError(lineId, "decode");
       }
-      return [id, buffer] as const;
+    };
+    const lineLoads = lines.map(async (line) => {
+      let source: DubAudioSource;
+      try {
+        source = resolveAudioSource(line);
+      } catch {
+        onLineUnavailable?.(line.id);
+        return null;
+      }
+      const { fallbackUrl, preferredUrl } = source;
+      try {
+        return [line, await loadAndDecode(preferredUrl, line.id)] as const;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") throw error;
+        if (!(error instanceof DubLinePlaybackError)) throw error;
+        if (!fallbackUrl) {
+          onLineUnavailable?.(line.id);
+          return null;
+        }
+        const stage = error instanceof DubLinePlaybackError ? error.stage : "fetch";
+        onLineFallback?.(line.id, stage);
+        try {
+          return [line, await loadAndDecode(fallbackUrl, line.id)] as const;
+        } catch (fallbackError) {
+          if (fallbackError instanceof Error && fallbackError.name === "AbortError") {
+            throw fallbackError;
+          }
+          if (!(fallbackError instanceof DubLinePlaybackError)) throw fallbackError;
+          onLineUnavailable?.(line.id);
+          return null;
+        }
+      }
     });
-    const decodedLines = await Promise.race([
+    const decodedLineResults = await Promise.race([
       Promise.all(lineLoads),
-      lineFailure,
       startupAbort,
     ]);
+    const decodedLines = decodedLineResults.filter((line): line is readonly [
+      DubLine,
+      AudioBuffer,
+    ] => line !== null);
 
     if (signal?.aborted) throw createAbortError();
     const durationMs = fullDub
       ? DUB_DURATION_MS
-      : Math.max(...decodedLines.map(([, buffer], index) =>
-          lines[index].cueMs - cueOffsetMs + buffer.duration * 1_000));
+      : Math.max(authoredDurationMs, ...decodedLines.map(([line, buffer]) =>
+          line.cueMs - cueOffsetMs + buffer.duration * 1_000));
     await Promise.race([context.resume(), startupAbort]);
     if (signal?.aborted) throw createAbortError();
 
@@ -292,10 +326,10 @@ export async function startDubPlayback({
     music.connect(master);
 
     const lineSources = new Map<string, AudioBufferSourceNode>();
-    for (const [id, buffer] of decodedLines) {
+    for (const [line, buffer] of decodedLines) {
       const source = context.createBufferSource();
       source.buffer = buffer;
-      lineSources.set(id, source);
+      lineSources.set(line.id, source);
     }
 
     const startAt = context.currentTime + 0.12;

@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement, useEffect, useRef, useState } from "react";
+import {
+  act,
+  createElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
@@ -339,6 +346,33 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.equal(document.activeElement.tagName, "H1");
     assert.equal(document.activeElement.tabIndex, -1);
+  });
+
+  it("does not steal focus when route focus starts after an account interaction", async () => {
+    function FocusedAccountHarness() {
+      const accountRef = useRef(null);
+      useLayoutEffect(() => accountRef.current?.focus(), []);
+      return createElement(
+        MemoryRouter,
+        { initialEntries: ["/"] },
+        createElement(RouteFocusManager),
+        createElement(
+          "button",
+          { ref: accountRef, type: "button" },
+          "Account",
+        ),
+        createElement("main", null, createElement("h1", null, "Home")),
+      );
+    }
+
+    await mountStrict(createElement(FocusedAccountHarness));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    assert.equal(
+      document.activeElement === button("Account"),
+      true,
+      "Route focus replaced an interaction that already owned focus.",
+    );
   });
 
   it("leaves Space to focused captions and links, then removes its shortcut on unmount", async () => {
