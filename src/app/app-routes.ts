@@ -101,6 +101,10 @@ export function getGuardianLearnerRouteId(pathname: string) {
   }
 }
 
+export function isGuardianLearnerChildRoute(pathname: string) {
+  return GUARDIAN_LEARNER_ROUTE_PATH.test(pathname);
+}
+
 export function isGuardianLearnerManagerRoute(pathname: string) {
   return (
     GUARDIAN_LEARNERS_ROUTE_PATH.test(pathname) ||

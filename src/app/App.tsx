@@ -70,9 +70,10 @@ import {
   getSafeReturnTo,
   getStoryPagePath,
   getStoryShelfPath,
-  isRedoLearnerProfileRequest,
+  isGuardianLearnerChildRoute,
   isGuardianLearnerManagerRoute,
   isGuardianRoute,
+  isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
   resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
@@ -1396,11 +1397,16 @@ export function AuthenticatedApplication({
   const isLearnerProfileRoute = gateRoute === "learner-profile";
   const isProfileRoute = gateRoute === "profile";
   const isConversationRoute = isTalkToPeppaRoute(location.pathname);
+  const guardianLearnerChildRoute = isGuardianLearnerChildRoute(
+    location.pathname,
+  );
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const guardianBoundaryRoute = guardianRoute || guardianLearnerChildRoute;
   const guardianDashboardRoute =
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
     null;
   const learnerManagerRoute =
+    guardianLearnerChildRoute ||
     isGuardianLearnerManagerRoute(location.pathname) ||
     matchPath(
       { end: true, path: "/guardian/profile" },
@@ -1443,7 +1449,7 @@ export function AuthenticatedApplication({
     <LearnerProfileGate
       completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
       guardianDashboardRoute={guardianDashboardRoute}
-      guardianRoute={guardianRoute}
+      guardianRoute={guardianBoundaryRoute}
       guardianSelectionFallback={
         <Navigate replace to={getGuardianLearnersPath()} />
       }
@@ -1481,7 +1487,7 @@ export function AuthenticatedApplication({
     return routeContent;
   }
 
-  if (guardianRoute) {
+  if (guardianBoundaryRoute) {
     return (
       <GuardianModeBoundary onBeforeNavigate={onExitLessonRoute}>
         {routeContent}

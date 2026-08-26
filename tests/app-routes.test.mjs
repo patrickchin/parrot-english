@@ -250,6 +250,33 @@ describe("app route helpers", () => {
     );
   });
 
+  it("recognizes structurally matched learner children without accepting unsafe IDs", () => {
+    for (const pathname of [
+      "/guardian/learners/learner-noah",
+      "/guardian/learners/%20",
+      "/guardian/learners/%E0%A4%A",
+    ]) {
+      assert.equal(routes.isGuardianLearnerChildRoute(pathname), true);
+    }
+    for (const pathname of [
+      "/guardian/learners",
+      "/guardian/learners/learner-noah/extra",
+    ]) {
+      assert.equal(routes.isGuardianLearnerChildRoute(pathname), false);
+    }
+
+    assert.equal(
+      routes.isGuardianLearnerManagerRoute("/guardian/learners/%20"),
+      false,
+    );
+    assert.equal(
+      routes.getSafeReturnTo(
+        returnToSearch("/guardian/learners/%E0%A4%A"),
+      ),
+      null,
+    );
+  });
+
   it("returns guardian gates only to non-gate guardian destinations", () => {
     assert.equal(routes.getSafeGuardianReturnTo(""), "/guardian");
     assert.equal(
@@ -806,6 +833,8 @@ describe("app route helpers", () => {
       "//lessons",
       "/guardianish",
       "/guardian/lessons/extra",
+      "/guardian/learners/%20",
+      "/guardian/learners/%E0%A4%A",
       "/guardian%2Fstories",
     ]) {
       assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);

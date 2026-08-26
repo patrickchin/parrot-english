@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router";
-import { isSafeRouteId } from "../../lib/route-id";
+import { Navigate, useLocation, useNavigate } from "react-router";
 import {
+  getGuardianLearnerRouteId,
   getGuardianLearnersPath,
 } from "../app/app-routes";
 import { FeaturePlaceholder } from "../app/FeaturePlaceholder";
@@ -27,7 +27,7 @@ function isAbortError(error: unknown) {
 }
 
 export function GuardianLearnerDetails() {
-  const { learnerId } = useParams();
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const { activeProfileId, reloadSelectedLearner } = useLearnerSelection();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -39,7 +39,7 @@ export function GuardianLearnerDetails() {
   const [profileState, setProfileState] = useState<ProfileState | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const validLearnerId = isSafeRouteId(learnerId) ? learnerId : null;
+  const validLearnerId = getGuardianLearnerRouteId(pathname);
 
   useEffect(() => {
     if (!validLearnerId) return;

@@ -4781,6 +4781,55 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(requests.some((request) => request.includes("/active")), false);
   });
 
+  it("returns structurally matched invalid learner details to Manage learners before the learner-mode boundary", async () => {
+    const api = {
+      async loadGuardianAccess() {
+        return {
+          expiresAt: "2099-01-01T00:00:00.000Z",
+          mode: "guardian",
+        };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian" };
+      },
+    };
+
+    for (const initialEntry of [
+      "/guardian/learners/%20",
+      "/guardian/learners/%E0%A4%A",
+    ]) {
+      let targetedProfileLoads = 0;
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/learner-profile" && init.method === "GET") {
+          return json({ mode: "selection-required" });
+        }
+        if (path === "/api/learner-profiles" && init.method === "GET") {
+          return json({ activeProfileId: null, profiles: [] });
+        }
+        if (String(path).startsWith("/api/profile?")) {
+          targetedProfileLoads += 1;
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        authenticatedApplicationInMemory({ api, initialEntry }),
+      );
+
+      await waitFor(() => {
+        assert.equal(currentRoute().path, "/guardian/learners");
+        text(/Manage learners/);
+        noText(/Switch to learner mode/);
+      });
+      assert.equal(targetedProfileLoads, 0);
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+    }
+  });
+
   it("redirects the legacy Guardian profile route to Manage learners without opening the gate editor", async () => {
     let profileEditorLoads = 0;
     globalThis.fetch = async (path, init = {}) => {
