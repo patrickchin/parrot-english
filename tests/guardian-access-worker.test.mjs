@@ -39,6 +39,17 @@ const LEARNER_SAFE_REQUESTS = [
   ["DELETE", "/api/dubs/five-little-ducks-v1"],
 ];
 
+const TARGETABLE_LEARNER_REQUESTS = [
+  ["GET", "/api/learner-profile"],
+  ["GET", "/api/profile/preferences"],
+  ["GET", "/api/lesson-recordings/consent"],
+  ["GET", "/api/lessons/my"],
+  ["GET", "/api/stories/the-red-ball/personalized-art"],
+  ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
+  ["GET", "/api/dubs/five-little-ducks-v2"],
+  ["GET", "/api/dubs/five-little-ducks-v2/lines/line-1/audio"],
+];
+
 function insertIdentity(sqlite, sessionId, userId = `user-for-${sessionId}`) {
   const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
   sqlite.prepare(
@@ -58,6 +69,40 @@ function insertIdentity(sqlite, sessionId, userId = `user-for-${sessionId}`) {
     timestamp,
     userId,
   );
+}
+
+function insertLearner(
+  sqlite,
+  learnerProfileId,
+  userId,
+  { legacyStorageOwner = false, name = "Leo" } = {},
+) {
+  const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+  sqlite
+    .prepare(
+      `INSERT INTO learner_profile
+        (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, 'not_started', ?, ?)`,
+    )
+    .run(
+      learnerProfileId,
+      userId,
+      legacyStorageOwner ? 1 : 0,
+      name,
+      timestamp,
+      timestamp,
+    );
+}
+
+function insertSelection(sqlite, sessionId, userId, learnerProfileId) {
+  const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
+  sqlite
+    .prepare(
+      `INSERT INTO session_learner_selection
+        (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+    .run(sessionId, userId, learnerProfileId, timestamp, timestamp);
 }
 
 function guardianRequest(method = "GET", body) {
@@ -228,6 +273,202 @@ describe("guardian management authorization", () => {
       }
       assert.equal(handlerCalls, GUARDED_REQUESTS.length);
       assert.equal(limiterCalls, 3);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("blocks targeted learner reads while locked before validating the target", async () => {
+    const state = createTestD1Database();
+    try {
+      insertIdentity(state.sqlite, "session-1", "user-1");
+      let handlerCalls = 0;
+      const routed = async () => {
+        handlerCalls += 1;
+        return Response.json({ routed: true });
+      };
+      const worker = createWorker({
+        createAuth: () => ({
+          api: {
+            async getSession() {
+              return {
+                session: { id: "session-1" },
+                user: { id: "user-1", name: "Guardian" },
+              };
+            },
+          },
+          async handler() {
+            return new Response("auth");
+          },
+        }),
+        handleLearnerProfileRequest: routed,
+        handleMyLessonRequest: routed,
+        handleLessonRecordingRequest: routed,
+        handlePersonalizedStoryArtRequest: routed,
+        handleDubRequest: routed,
+      });
+      const env = {
+        ASSETS: { async fetch() { return new Response("asset"); } },
+        DB: state.d1,
+      };
+
+      for (const [method, path] of [
+        ...TARGETABLE_LEARNER_REQUESTS,
+        ["GET", "/api/lessons/my?learnerProfileId="],
+        ["GET", "/api/lessons/my?learnerProfileId=foreign"],
+      ]) {
+        const separator = path.includes("?") ? "&" : "?";
+        const targetPath = path.includes("learnerProfileId=")
+          ? path
+          : `${path}${separator}learnerProfileId=learner-b`;
+        const response = await worker.fetch(
+          new Request(`https://example.test${targetPath}`, { method }),
+          env,
+        );
+        assert.equal(response.status, 403, `${method} ${targetPath}`);
+        assert.deepEqual(await response.json(), { error: "guardian_required" });
+      }
+      assert.equal(handlerCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("routes every targeted learner request with the owned identity without changing selection", async () => {
+    const state = createTestD1Database();
+    try {
+      insertIdentity(state.sqlite, "session-1", "user-1");
+      insertLearner(state.sqlite, "learner-a", "user-1", {
+        legacyStorageOwner: true,
+        name: "Mia",
+      });
+      insertLearner(state.sqlite, "learner-b", "user-1");
+      insertSelection(state.sqlite, "session-1", "user-1", "learner-a");
+      const calls = [];
+      const routed = async (input) => {
+        calls.push(input);
+        return Response.json({ routed: true });
+      };
+      const worker = createWorker({
+        createAuth: () => ({
+          api: {
+            async getSession() {
+              return {
+                session: { id: "session-1" },
+                user: { id: "user-1", name: "Guardian" },
+              };
+            },
+          },
+          async handler() {
+            return new Response("auth");
+          },
+        }),
+        handleLearnerProfileRequest: routed,
+        handleMyLessonRequest: routed,
+        handleLessonRecordingRequest: routed,
+        handlePersonalizedStoryArtRequest: routed,
+        handleDubRequest: routed,
+      });
+      const env = {
+        ASSETS: { async fetch() { return new Response("asset"); } },
+        DB: state.d1,
+      };
+      await createGuardianAccessRepository(createDatabase(state.d1)).unlock(
+        "session-1",
+      );
+
+      for (const [method, path] of TARGETABLE_LEARNER_REQUESTS) {
+        const response = await worker.fetch(
+          new Request(
+            `https://example.test${path}?learnerProfileId=learner-b`,
+            { method },
+          ),
+          env,
+        );
+        assert.equal(response.status, 200, `${method} ${path}`);
+      }
+      assert.equal(calls.length, TARGETABLE_LEARNER_REQUESTS.length);
+      for (const call of calls) {
+        assert.deepEqual(call.identity, {
+          sessionId: "session-1",
+          userId: "user-1",
+          userName: "Guardian",
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        });
+      }
+      assert.equal(
+        state.sqlite
+          .prepare(
+            `SELECT learner_profile_id FROM session_learner_selection
+             WHERE session_id = 'session-1'`,
+          )
+          .get().learner_profile_id,
+        "learner-a",
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns the same no-store 404 for invalid and unowned targets", async () => {
+    const state = createTestD1Database();
+    try {
+      insertIdentity(state.sqlite, "session-1", "user-1");
+      insertIdentity(state.sqlite, "session-2", "user-2");
+      insertLearner(state.sqlite, "foreign", "user-2");
+      let handlerCalls = 0;
+      const worker = createWorker({
+        createAuth: () => ({
+          api: {
+            async getSession() {
+              return {
+                session: { id: "session-1" },
+                user: { id: "user-1", name: "Guardian" },
+              };
+            },
+          },
+          async handler() {
+            return new Response("auth");
+          },
+        }),
+        async handleMyLessonRequest() {
+          handlerCalls += 1;
+          return Response.json({ routed: true });
+        },
+      });
+      const env = {
+        ASSETS: { async fetch() { return new Response("asset"); } },
+        DB: state.d1,
+      };
+      await createGuardianAccessRepository(createDatabase(state.d1)).unlock(
+        "session-1",
+      );
+
+      for (const query of [
+        "learnerProfileId=missing",
+        "learnerProfileId=foreign",
+        "learnerProfileId=",
+        "learnerProfileId=%20%20",
+        "learnerProfileId=one&learnerProfileId=two",
+        `learnerProfileId=${"p".repeat(129)}`,
+      ]) {
+        const response = await worker.fetch(
+          new Request(`https://example.test/api/lessons/my?${query}`),
+          env,
+        );
+        assert.equal(response.status, 404, query);
+        assert.equal(response.headers.get("Cache-Control"), "no-store", query);
+        assert.deepEqual(await response.json(), { error: "not_found" }, query);
+      }
+      assert.equal(handlerCalls, 0);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM session_learner_selection")
+          .get().count,
+        0,
+      );
     } finally {
       state.close();
     }

@@ -11,6 +11,7 @@ import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
 import { createDatabase } from "./database.ts";
+import type { Database } from "./database.ts";
 import {
   handleBuildInfoRequest,
   type BuildInfoEnv,
@@ -46,8 +47,12 @@ import { handleDubRequest, type DubEnv } from "./dubs.ts";
 import { isEncodedDubRouteAlias } from "./dub-route.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
 import {
+  LEARNER_PROFILE_TARGET_QUERY_KEY,
+  parseLearnerProfileTarget,
   resolveLearnerIdentity,
+  resolveOwnedLearnerIdentity,
   type AccountIdentity,
+  type LearnerIdentity,
 } from "./request-identity.ts";
 
 interface AssetFetcher {
@@ -136,6 +141,47 @@ function learnerSelectionRequired() {
   return Response.json(
     { error: "learner_selection_required" },
     { status: 409, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+function targetedLearnerNotFound() {
+  return Response.json(
+    { error: "not_found" },
+    { status: 404, headers: { "Cache-Control": "no-store" } },
+  );
+}
+
+async function resolveExplicitLearnerTarget(input: {
+  account: AccountIdentity;
+  database: Database;
+  request: Request;
+  url: URL;
+}): Promise<LearnerIdentity | Response | null> {
+  const hasLearnerTarget = input.url.searchParams.has(
+    LEARNER_PROFILE_TARGET_QUERY_KEY,
+  );
+  if (
+    requiresGuardianAccess(
+      input.url.pathname,
+      input.request.method,
+      hasLearnerTarget,
+    )
+  ) {
+    const denied = await requireGuardianAccess({
+      database: input.database,
+      sessionId: input.account.sessionId,
+    });
+    if (denied) return denied;
+  }
+  if (!hasLearnerTarget) return null;
+  const learnerProfileId = parseLearnerProfileTarget(input.url.searchParams);
+  if (learnerProfileId === null) return targetedLearnerNotFound();
+  return (
+    (await resolveOwnedLearnerIdentity(
+      input.database,
+      input.account,
+      learnerProfileId,
+    )) ?? targetedLearnerNotFound()
   );
 }
 
@@ -306,7 +352,16 @@ export function createWorker(
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
-        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        const explicitLearner = await resolveExplicitLearnerTarget({
+          account: accountIdentity,
+          database,
+          request,
+          url,
+        });
+        if (explicitLearner instanceof Response) return explicitLearner;
+        const learner = explicitLearner
+          ? { status: "selected" as const, identity: explicitLearner }
+          : await resolveLearnerIdentity(database, accountIdentity);
         if (learner.status === "selection_required") {
           return learnerSelectionRequired();
         }
@@ -336,6 +391,14 @@ export function createWorker(
           userId: session.user.id,
           userName: session.user.name?.trim() || null,
         };
+        const database = createDatabase(env.DB);
+        const explicitLearner = await resolveExplicitLearnerTarget({
+          account: accountIdentity,
+          database,
+          request,
+          url,
+        });
+        if (explicitLearner instanceof Response) return explicitLearner;
         if (isEncodedDubRouteAlias(url.pathname)) {
           return Response.json(
             { error: "not_found", message: "not_found" },
@@ -345,15 +408,9 @@ export function createWorker(
             },
           );
         }
-        const database = createDatabase(env.DB);
-        if (requiresGuardianAccess(url.pathname, request.method)) {
-          const denied = await requireGuardianAccess({
-            database,
-            sessionId: accountIdentity.sessionId,
-          });
-          if (denied) return denied;
-        }
-        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        const learner = explicitLearner
+          ? { status: "selected" as const, identity: explicitLearner }
+          : await resolveLearnerIdentity(database, accountIdentity);
         if (learner.status === "selection_required") {
           return learnerSelectionRequired();
         }
@@ -424,13 +481,13 @@ export function createWorker(
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
-        if (requiresGuardianAccess(url.pathname, request.method)) {
-          const denied = await requireGuardianAccess({
-            database,
-            sessionId: accountIdentity.sessionId,
-          });
-          if (denied) return denied;
-        }
+        const explicitLearner = await resolveExplicitLearnerTarget({
+          account: accountIdentity,
+          database,
+          request,
+          url,
+        });
+        if (explicitLearner instanceof Response) return explicitLearner;
 
         if (
           url.pathname === "/api/learner-profile/transcribe" &&
@@ -456,7 +513,9 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
 
-        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        const learner = explicitLearner
+          ? { status: "selected" as const, identity: explicitLearner }
+          : await resolveLearnerIdentity(database, accountIdentity);
         if (learner.status === "selection_required") {
           return learnerSelectionRequired();
         }
@@ -515,14 +574,16 @@ export function createWorker(
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
-        if (requiresGuardianAccess(url.pathname, request.method)) {
-          const denied = await requireGuardianAccess({
-            database,
-            sessionId: accountIdentity.sessionId,
-          });
-          if (denied) return denied;
-        }
-        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        const explicitLearner = await resolveExplicitLearnerTarget({
+          account: accountIdentity,
+          database,
+          request,
+          url,
+        });
+        if (explicitLearner instanceof Response) return explicitLearner;
+        const learner = explicitLearner
+          ? { status: "selected" as const, identity: explicitLearner }
+          : await resolveLearnerIdentity(database, accountIdentity);
         if (learner.status === "selection_required") {
           return learnerSelectionRequired();
         }
@@ -558,14 +619,16 @@ export function createWorker(
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
-        if (requiresGuardianAccess(url.pathname, request.method)) {
-          const denied = await requireGuardianAccess({
-            database,
-            sessionId: accountIdentity.sessionId,
-          });
-          if (denied) return denied;
-        }
-        const learner = await resolveLearnerIdentity(database, accountIdentity);
+        const explicitLearner = await resolveExplicitLearnerTarget({
+          account: accountIdentity,
+          database,
+          request,
+          url,
+        });
+        if (explicitLearner instanceof Response) return explicitLearner;
+        const learner = explicitLearner
+          ? { status: "selected" as const, identity: explicitLearner }
+          : await resolveLearnerIdentity(database, accountIdentity);
         if (learner.status === "selection_required") {
           return learnerSelectionRequired();
         }
