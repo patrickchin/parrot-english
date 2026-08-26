@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import { DUB_LINES, type DubLine } from "./dub-script.ts";
 
 const MEDIA_BASE = "https://media.parrotbook.com/assets/v4/dubbing/five-little-ducks";
@@ -13,6 +13,8 @@ const artwork = {
   motherSwim: `${MEDIA_BASE}/mother-swim.webp`,
   pond: `${MEDIA_BASE}/pond-scene.webp`,
 } as const;
+
+const artworkPreloads = Object.values(artwork);
 
 const sceneDescriptions = {
   depart: "The ducklings set out together.",
@@ -68,6 +70,7 @@ function DuckActor({
   animated,
   delay,
   expression = "bright",
+  fallbackImage,
   image,
   motion,
   pose,
@@ -79,6 +82,7 @@ function DuckActor({
   animated: boolean;
   delay: number;
   expression?: "bright" | "sad";
+  fallbackImage: string;
   image: string;
   motion: StoryMotion;
   pose: string;
@@ -88,6 +92,15 @@ function DuckActor({
 }) {
   const [x, y] = position;
   const mother = actor === "mother";
+  const [loadResult, setLoadResult] = useState<{
+    image: string;
+    status: "failed" | "ready";
+  } | null>(null);
+  const imageState = loadResult?.image === image ? loadResult.status : "loading";
+  const hasFallback = fallbackImage !== image;
+  const fallbackVisible = hasFallback && imageState !== "ready";
+  const imageVisible = hasFallback ? imageState === "ready" : imageState !== "failed";
+  const moving = animated && visible;
   const motionClass = motion === "call"
     ? "animate-duck-call"
     : motion === "walk"
@@ -96,9 +109,15 @@ function DuckActor({
 
   return (
     <div
-      className="absolute z-20 aspect-square origin-bottom transition-[left,top,opacity,width] duration-700 ease-out motion-reduce:transition-none"
+      className={`absolute z-20 aspect-square origin-bottom ${
+        moving
+          ? "transition-[left,top,opacity,width] duration-700 ease-out motion-reduce:transition-none"
+          : ""
+      }`}
       data-duck-actor={actor}
       data-expression={expression}
+      data-image-state={imageState}
+      data-moving={moving ? "true" : undefined}
       data-pose={pose}
       data-visible={visible ? "true" : "false"}
       data-x={x}
@@ -109,20 +128,27 @@ function DuckActor({
           mother ? motion === "walk" ? "18%" : "23%" : motion === "walk" ? "11.75%" : y <= 320 ? "13.5%" : "15.25%",
         ),
         "--actor-opacity": visible ? 1 : 0,
-        pointerEvents: visible ? "auto" : "none",
+        backgroundImage: fallbackVisible ? `url("${fallbackImage}")` : undefined,
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "contain",
+        pointerEvents: "none",
       } as CSSProperties}
     >
       <img
         alt=""
         aria-hidden="true"
         className={`relative block size-full select-none object-contain drop-shadow-[0_0.35rem_0.3rem_rgb(40_72_54_/_0.18)] motion-reduce:animate-none ${
-          animated ? motionClass : ""
+          moving ? motionClass : ""
         }`}
         data-motion={motion}
         draggable="false"
+        key={image}
         loading={thumbnail ? "lazy" : "eager"}
+        onError={() => setLoadResult({ image, status: "failed" })}
+        onLoad={() => setLoadResult({ image, status: "ready" })}
         src={image}
-        style={{ animationDelay: `${delay}ms` }}
+        style={{ animationDelay: `${delay}ms`, opacity: imageVisible ? 1 : 0 }}
       />
     </div>
   );
@@ -255,6 +281,11 @@ export function DuckScene({
       data-animated={animated ? "true" : undefined}
       data-story-stage="five-little-ducks"
     >
+      {!thumbnail
+        ? artworkPreloads.map((source) => (
+            <link as="image" href={source} key={source} rel="preload" />
+          ))
+        : null}
       <img
         alt=""
         aria-hidden="true"
@@ -271,6 +302,7 @@ export function DuckScene({
           actor={`duckling-${index + 1}`}
           animated={animated}
           delay={index * 120}
+          fallbackImage={artwork.ducklingSwim}
           image={ducklingWalks ? artwork.ducklingWalk : artwork.ducklingSwim}
           key={`duckling-${index + 1}`}
           motion={ducklingWalks ? "walk" : "swim"}
@@ -285,6 +317,7 @@ export function DuckScene({
         animated={animated}
         delay={0}
         expression={sad ? "sad" : "bright"}
+        fallbackImage={sad ? artwork.motherSadSwim : artwork.motherSwim}
         image={motherImage}
         motion={motherCalling ? "call" : motherPose === "sad-walk" ? "walk" : "swim"}
         pose={motherPose}

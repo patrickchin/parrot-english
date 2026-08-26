@@ -683,6 +683,45 @@ test("stopping playback stops visible actor motion immediately", async ({ page }
   ).not.toHaveAttribute("data-animated", "true");
 });
 
+test("stopping after a cue change cancels both pose motion and actor transitions", async ({ page }) => {
+  test.setTimeout(15_000);
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+
+  const stage = page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]");
+  await expect(stage.locator('[data-duck-actor="duckling-1"] img')).toHaveAttribute(
+    "data-motion",
+    "walk",
+    { timeout: 7_000 },
+  );
+  await page.getByRole("button", { name: "Stop full video" }).click();
+
+  await expect.poll(() => stage.evaluate((element) =>
+    element.getAnimations({ subtree: true }).filter(({ playState }) => playState === "running").length
+  )).toBe(0);
+});
+
+test("a failed painted pose uses a safe fallback without broken-image UI", async ({ page }) => {
+  await page.route("**/duckling-walk.webp", (route) => route.abort());
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await page.getByRole("button", { name: "Line 2, generated" }).click();
+
+  const visibleActors = page
+    .getByRole("region", { name: "Scene video" })
+    .locator('[data-duck-actor][data-visible="true"]');
+  await expect(visibleActors).toHaveCount(5);
+  await expect.poll(() => visibleActors.evaluateAll((actors) => actors.every((actor) => {
+    const image = actor.querySelector("img");
+    return actor.getAttribute("data-image-state") === "failed"
+      && image instanceof HTMLImageElement
+      && getComputedStyle(image).opacity === "0"
+      && getComputedStyle(actor).backgroundImage.includes("duckling-swim.webp");
+  }))).toBe(true);
+});
+
 test("reduced motion disables playing duck animation and playback cleanup stays idempotent", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");

@@ -172,6 +172,34 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal((reunion.match(/loading="lazy"/g) ?? []).length, 7);
   });
 
+  it("preloads every painted pose and only moves visible actors during playback", () => {
+    const idle = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[0] }),
+    );
+    const calling = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
+    );
+
+    for (const filename of [
+      "duckling-swim.webp",
+      "duckling-walk.webp",
+      "mother-swim.webp",
+      "mother-call.webp",
+      "mother-sad-swim.webp",
+      "mother-sad-walk.webp",
+      "mother-sad-call.webp",
+      "pond-scene.webp",
+    ]) {
+      assert.match(
+        idle,
+        new RegExp(`<link(?=[^>]+rel="preload")(?=[^>]+href="[^"]+/${filename}")[^>]*>`),
+      );
+    }
+    assert.doesNotMatch(idle, /data-moving="true"|duration-700/);
+    assert.equal((calling.match(/data-moving="true"/g) ?? []).length, 1);
+    assert.equal((calling.match(/duration-700/g) ?? []).length, 1);
+  });
+
   it("keeps mother duck waiting when the ducklings return or stay away", () => {
     const returning = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[3] }));
     const noneReturn = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[19] }));
