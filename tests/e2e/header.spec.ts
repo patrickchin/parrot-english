@@ -190,16 +190,6 @@ async function renderedColors(locator: Locator) {
   });
 }
 
-function relativeLuminance([red, green, blue]: number[]) {
-  const linear = (channel: number) => {
-    const normalized = channel / 255;
-    return normalized <= 0.04045
-      ? normalized / 12.92
-      : ((normalized + 0.055) / 1.055) ** 2.4;
-  };
-  return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
-}
-
 async function installAccountIdentity(
   page: Page,
   currentIdentity: () => AccountIdentity,
@@ -529,19 +519,10 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBe(currentCase.direction);
 
     const firstAction = page.getByRole("menuitem", {
-      name: "Guardian dashboard",
+      name: "Dashboard",
     });
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
-    const deleteAccount = page.getByRole("menuitem", {
-      name: "Delete account",
-    });
-    await expect(deleteAccount).toBeFocused();
-    const deletePaint = await focusedPaintBox(deleteAccount);
-    expectBoxInside(deletePaint, await overflowClipBox(panel));
-    await expectPointerCenterOwnedBy(deleteAccount);
-
-    await page.keyboard.press("ArrowUp");
     const signOut = page.getByRole("menuitem", { name: "Sign out" });
     await expect(signOut).toBeFocused();
     const signOutPaint = await focusedPaintBox(signOut);
@@ -682,10 +663,6 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   await expect(retry).toBeVisible();
 
   await page.keyboard.press("End");
-  await expect(
-    page.getByRole("menuitem", { name: "Delete account" }),
-  ).toBeFocused();
-  await page.keyboard.press("ArrowUp");
   const signOut = page.getByRole("menuitem", { name: "Sign out" });
   await expect(signOut).toBeFocused();
   const signOutPaint = await focusedPaintBox(signOut);
@@ -870,7 +847,58 @@ test("the learner profile opens a locked grown-up access gateway", async ({ page
   ).toHaveCount(0);
 });
 
-test("account actions separate routine sign out from staged deletion", async ({
+test("Guardian menu opens the protected Account & privacy page with deletion only in its Danger zone", async ({
+  page,
+}) => {
+  await page.goto(guardianPath("/guardian"));
+  await page
+    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .click();
+
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Dashboard",
+    "Manage learners",
+    "Account & privacy",
+    "Sign out",
+  ]);
+  await expect(
+    menu.getByRole("menuitem", {
+      name: /Manage .*details|Switch to |AI and saved data|Delete account/,
+    }),
+  ).toHaveCount(0);
+
+  await menu.getByRole("menuitem", { name: "Account & privacy" }).click();
+  await expect(page).toHaveURL("/guardian/account");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Account & privacy" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "How Parrot uses AI" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Technical build details" }),
+  ).toBeVisible();
+
+  const danger = page.getByRole("region", { name: "Danger zone" });
+  const deleteAccount = danger.getByRole("button", { name: "Delete account" });
+  await expect(deleteAccount).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Delete account", exact: true }),
+  ).toHaveCount(1);
+  await deleteAccount.click();
+  const dialog = page.getByRole("dialog", { name: "Delete account" });
+  await expect(dialog.getByLabel("Password")).toBeFocused();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("link", { name: "Back to Guardian dashboard" }).click();
+  await expect(page).toHaveURL("/guardian");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Guardian dashboard" }),
+  ).toBeVisible();
+});
+
+test("account actions keep routine sign out in the menu and stage deletion on its page", async ({
   page,
 }) => {
   const viewports: Viewport[] = [
@@ -890,55 +918,46 @@ test("account actions separate routine sign out from staged deletion", async ({
     const menu = page.getByRole("menu", { name: "Account menu" });
     const items = menu.getByRole("menuitem");
     await expect(items).toHaveText([
-      "Guardian dashboard",
-      "Learner profiles",
-      "Manage Mia's details",
-      "Switch to Mia",
-      "AI and saved data",
+      "Dashboard",
+      "Manage learners",
+      "Account & privacy",
       "Sign out",
-      "Delete account",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),
     ).toHaveCount(0);
 
-    const about = menu.getByRole("menuitem", { name: "AI and saved data" });
-    const signOut = menu.getByRole("menuitem", { name: "Sign out" });
-    const deleteAccount = menu.getByRole("menuitem", {
-      name: "Delete account",
+    const accountPrivacy = menu.getByRole("menuitem", {
+      name: "Account & privacy",
     });
-    const [aboutColors, signOutColors, deleteColors] = await Promise.all([
-      renderedColors(about),
+    const signOut = menu.getByRole("menuitem", { name: "Sign out" });
+    const [accountColors, signOutColors] = await Promise.all([
+      renderedColors(accountPrivacy),
       renderedColors(signOut),
-      renderedColors(deleteAccount),
     ]);
 
-    expect(signOutColors).toEqual(aboutColors);
-    expect(deleteColors.background).not.toEqual(signOutColors.background);
-    expect(deleteColors.foreground).not.toEqual(signOutColors.foreground);
-    expect(relativeLuminance(deleteColors.background)).toBeGreaterThan(0.8);
+    expect(signOutColors).toEqual(accountColors);
 
-    const itemBoxes = [];
     for (let index = 0; index < (await items.count()); index += 1) {
       const box = await visibleBox(items.nth(index));
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.height).toBeGreaterThanOrEqual(44);
-      itemBoxes.push(box);
     }
-    const ordinaryGap = itemBoxes[5].y - (itemBoxes[4].y + itemBoxes[4].height);
-    const destructiveGap =
-      itemBoxes[6].y - (itemBoxes[5].y + itemBoxes[5].height);
-    expect(ordinaryGap).toBeGreaterThanOrEqual(4);
-    expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 8);
-
     await expect(items.first()).toBeFocused();
     await page.keyboard.press("End");
-    await expect(deleteAccount).toBeFocused();
-    await page.keyboard.press("ArrowUp");
     await expect(signOut).toBeFocused();
+    await page.keyboard.press("ArrowUp");
+    await expect(accountPrivacy).toBeFocused();
 
     if (viewport.name === "regular phone") {
-      const menuDeleteColors = deleteColors;
+      await accountPrivacy.click();
+      const deleteAccount = page.getByRole("button", {
+        exact: true,
+        name: "Delete account",
+      });
+      await deleteAccount.scrollIntoViewIfNeeded();
+      const deleteColors = await renderedColors(deleteAccount);
+      expect(deleteColors).not.toEqual(signOutColors);
       await deleteAccount.click();
       const dialog = page.getByRole("dialog", { name: "Delete account" });
       await dialog.getByLabel("Password").fill("not-submitted");
@@ -952,7 +971,6 @@ test("account actions separate routine sign out from staged deletion", async ({
         renderedColors(confirm),
       ]);
       expect(confirmColors).not.toEqual(cancelColors);
-      expect(confirmColors).not.toEqual(menuDeleteColors);
       await cancel.click();
     }
   }
@@ -993,7 +1011,7 @@ test("unlocking guardian mode opens learner details in the guardian profile edit
   ).toBeVisible();
 });
 
-test("forced colors keeps both account exit actions visibly focused", async ({
+test("forced colors keeps account exit actions visibly focused", async ({
   page,
 }) => {
   const viewport = { height: 360, name: "short landscape", width: 640 };
@@ -1015,22 +1033,28 @@ test("forced colors keeps both account exit actions visibly focused", async ({
   const menu = page.getByRole("menu", { name: "Account menu" });
   const panel = menu.locator("..");
   const signOut = menu.getByRole("menuitem", { name: "Sign out" });
-  const deleteAccount = menu.getByRole("menuitem", {
-    name: "Delete account",
-  });
 
   await page.keyboard.press("End");
-  for (const action of [deleteAccount, signOut]) {
-    await action.focus();
-    await expect(action).toBeFocused();
-    const outline = await renderedFocusOutline(action);
-    expect(outline.style).not.toBe("none");
-    expect(Number.parseFloat(outline.width)).toBeGreaterThanOrEqual(2);
-    expectBoxInside(await focusedPaintBox(action), await overflowClipBox(panel));
-  }
+  await expect(signOut).toBeFocused();
+  const signOutOutline = await renderedFocusOutline(signOut);
+  expect(signOutOutline.style).not.toBe("none");
+  expect(Number.parseFloat(signOutOutline.width)).toBeGreaterThanOrEqual(2);
+  expectBoxInside(await focusedPaintBox(signOut), await overflowClipBox(panel));
+
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("Enter");
+  const deleteAccount = page.getByRole("button", {
+    exact: true,
+    name: "Delete account",
+  });
+  await deleteAccount.scrollIntoViewIfNeeded();
+  await deleteAccount.focus();
+  const deleteOutline = await renderedFocusOutline(deleteAccount);
+  expect(deleteOutline.style).not.toBe("none");
+  expect(Number.parseFloat(deleteOutline.width)).toBeGreaterThanOrEqual(2);
 });
 
-test("AI and saved data explains caregiver facts before optional technical details", async ({
+test("Account & privacy explains caregiver facts before optional technical details", async ({
   page,
 }) => {
   const viewport = mobileViewports.find(({ name }) => name === "small phone")!;
@@ -1039,76 +1063,76 @@ test("AI and saved data explains caregiver facts before optional technical detai
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  await page.getByRole("menuitem", { name: "AI and saved data" }).click();
+  await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
-  const about = page.getByRole("dialog", { name: "AI and saved data" });
-  await expectInsideViewport(about, viewport);
+  const accountPage = page.getByRole("main");
   await expect(
-    about.getByRole("heading", { name: "How Parrot uses AI" }),
+    accountPage.getByRole("heading", { level: 1, name: "Account & privacy" }),
+  ).toBeFocused();
+  await expect(
+    accountPage.getByRole("heading", { name: "How Parrot uses AI" }),
   ).toBeVisible();
   await expect(
-    about.getByRole("heading", { name: "What this account keeps" }),
+    accountPage.getByRole("heading", { name: "What this account keeps" }),
   ).toBeVisible();
   await expect(
-    about.getByText(
+    accountPage.getByText(
       "With guardian permission, lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
       { exact: true },
     ),
   ).toBeVisible();
   await expect(
-    about.getByText("Raw audio is not added to the Parrot account.", {
+    accountPage.getByText("Raw audio is not added to the Parrot account.", {
       exact: false,
     }),
   ).toHaveCount(0);
   await expect(
-    about.getByText("Talk to Peppa does not change learner profiles.", {
+    accountPage.getByText("Talk to Peppa does not change learner profiles.", {
       exact: false,
     }),
   ).toBeVisible();
-  await expect(about.getByRole("heading", { name: "Web app" })).toBeHidden();
+  await expect(
+    accountPage.getByRole("heading", { name: "Web app" }),
+  ).toBeHidden();
 
-  const closeAbout = page.getByRole("button", {
-    name: "Close AI and saved data",
-  });
-  const technicalDetails = about.getByLabel("Technical build details");
-  const done = about.getByRole("button", { name: "Done" });
-  await expect(closeAbout).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(technicalDetails).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(done).toBeFocused();
-  await page.keyboard.press("Shift+Tab");
-  await expect(technicalDetails).toBeFocused();
+  const technicalDetails = accountPage.getByLabel("Technical build details");
 
   await technicalDetails.click();
-  await expect(about.getByRole("heading", { name: "Web app" })).toBeVisible();
   await expect(
-    about.getByRole("heading", { name: "Cloudflare Worker" }),
+    accountPage.getByRole("heading", { name: "Web app" }),
   ).toBeVisible();
   await expect(
-    about.getByRole("heading", { name: "Conversation agent" }),
+    accountPage.getByRole("heading", { name: "Cloudflare Worker" }),
   ).toBeVisible();
-  await expect(about.getByText("e2e-web", { exact: true })).toBeVisible();
-  await expect(about.getByText("e2e-api", { exact: true })).toBeVisible();
-  await expect(about.getByText("e2e-agent", { exact: true })).toBeVisible();
   await expect(
-    about.getByText("Worker deployment e2e-deployment"),
+    accountPage.getByRole("heading", { name: "Conversation agent" }),
   ).toBeVisible();
-  await expect(about.getByText("Lesson script LLM")).toBeVisible();
-  await expect(about.getByText("openai/gpt-5.6-luna")).toBeVisible();
-  await expect(about.getByText("Realtime voice model")).toBeVisible();
-  await expect(about.getByText("gpt-realtime-2.1-mini")).toBeVisible();
-  await expect(about.getByText("Input transcription")).toBeVisible();
-  await expect(about.getByText("gpt-4o-mini-transcribe")).toBeVisible();
+  await expect(
+    accountPage.getByText("e2e-web", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    accountPage.getByText("e2e-api", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    accountPage.getByText("e2e-agent", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    accountPage.getByText("Worker deployment e2e-deployment"),
+  ).toBeVisible();
+  await expect(accountPage.getByText("Lesson script LLM")).toBeVisible();
+  await expect(accountPage.getByText("openai/gpt-5.6-luna")).toBeVisible();
+  await expect(accountPage.getByText("Realtime voice model")).toBeVisible();
+  await expect(accountPage.getByText("gpt-realtime-2.1-mini")).toBeVisible();
+  await expect(accountPage.getByText("Input transcription")).toBeVisible();
+  await expect(
+    accountPage.getByText("gpt-4o-mini-transcribe"),
+  ).toBeVisible();
 
-  const closeBox = await visibleBox(closeAbout);
-  expect(closeBox.width).toBeGreaterThanOrEqual(44);
-  expect(closeBox.height).toBeGreaterThanOrEqual(44);
-  await closeAbout.click();
-  await expect(about).toBeHidden();
+  await page.getByRole("link", { name: "Back to Guardian dashboard" }).click();
+  await expect(page).toHaveURL("/guardian");
 });
 
-test("AI and saved data stays usable on a 280px by 480px screen when technical details fail", async ({
+test("Account & privacy stays usable on a 280px by 480px screen when technical details fail", async ({
   page,
 }) => {
   const viewport = {
@@ -1124,25 +1148,24 @@ test("AI and saved data stays usable on a 280px by 480px screen when technical d
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  await page.getByRole("menuitem", { name: "AI and saved data" }).click();
+  await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
-  const about = page.getByRole("dialog", { name: "AI and saved data" });
-  await expectInsideViewport(about, viewport);
+  const accountPage = page.getByRole("main");
   await expect(
-    about.getByRole("heading", { name: "How Parrot uses AI" }),
+    accountPage.getByRole("heading", { name: "How Parrot uses AI" }),
   ).toBeVisible();
   await expect(
-    about.getByRole("heading", { name: "What this account keeps" }),
+    accountPage.getByRole("heading", { name: "What this account keeps" }),
   ).toBeVisible();
 
-  const technicalDetails = about.getByLabel("Technical build details");
+  const technicalDetails = accountPage.getByLabel("Technical build details");
   await technicalDetails.scrollIntoViewIfNeeded();
   const technicalBox = await visibleBox(technicalDetails);
   expect(technicalBox.width).toBeGreaterThanOrEqual(44);
   expect(technicalBox.height).toBeGreaterThanOrEqual(44);
   await technicalDetails.click();
   await expect(
-    about
+    accountPage
       .getByText(
         "Technical details could not load. The AI and saved data notes above are still available.",
         { exact: true },
@@ -1150,11 +1173,6 @@ test("AI and saved data stays usable on a 280px by 480px screen when technical d
       .first(),
   ).toBeVisible();
 
-  const done = about.getByRole("button", { name: "Done" });
-  await done.scrollIntoViewIfNeeded();
-  const doneBox = await visibleBox(done);
-  expect(doneBox.width).toBeGreaterThanOrEqual(44);
-  expect(doneBox.height).toBeGreaterThanOrEqual(44);
   await expect
     .poll(() =>
       page.evaluate(
@@ -1162,8 +1180,8 @@ test("AI and saved data stays usable on a 280px by 480px screen when technical d
       ),
     )
     .toBe(true);
-  await done.click();
-  await expect(about).toBeHidden();
+  await page.getByRole("link", { name: "Back to Guardian dashboard" }).click();
+  await expect(page).toHaveURL("/guardian");
 });
 
 test("account menu stays visible after scrolling a short lesson list", async ({

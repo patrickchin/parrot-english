@@ -1,13 +1,6 @@
-import { ChevronDown, Database, Settings2, Sparkles, X } from "lucide-react";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
-import { ActionButton, Card, cx, IconButton } from "../shared/ui";
-import { useDialogFocus } from "./useDialogFocus";
+import { ChevronDown, Database, Settings2, Sparkles } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Card, cx } from "../shared/ui";
 
 type BackendBuild = {
   commitSha: string;
@@ -163,24 +156,9 @@ async function loadBuildInfo(signal: AbortSignal) {
   return (await response.json()) as BuildInfo;
 }
 
-export function AboutDialog({
-  onClose,
-  returnFocusRef,
-}: {
-  onClose: () => void;
-  returnFocusRef?: RefObject<HTMLElement | null>;
-}) {
+export function AccountPrivacySections() {
   const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
   const [error, setError] = useState("");
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLElement>(null);
-
-  useDialogFocus({
-    dialogRef,
-    initialFocusRef: closeRef,
-    onClose,
-    returnFocusRef,
-  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -205,21 +183,9 @@ export function AboutDialog({
   const agentModels = agent?.details?.models;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-end overflow-y-auto bg-brand-navy/55 p-3 pt-18 short:pt-16 md:p-7 md:pt-24"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <section
-        aria-labelledby="ai-data-title"
-        aria-modal="true"
-        className="grid max-h-[calc(100dvh-5rem)] w-full max-w-lg gap-4 overflow-y-auto rounded-3xl border-4 border-white bg-sky-50 p-4 text-left font-ui text-slate-900 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)] md:p-5"
-        ref={dialogRef}
-        role="dialog"
-        tabIndex={-1}
-      >
-        <header className="flex items-center justify-between gap-3">
+    <div className="grid gap-6">
+      <section aria-labelledby="ai-data-title" className="grid gap-4">
+        <header>
           <div>
             <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-blue">
               For grown-ups
@@ -231,14 +197,6 @@ export function AboutDialog({
               AI and saved data
             </h2>
           </div>
-          <IconButton
-            aria-label="Close AI and saved data"
-            onClick={onClose}
-            ref={closeRef}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-6" strokeWidth={3} />
-          </IconButton>
         </header>
 
         <AboutSection
@@ -321,18 +279,24 @@ export function AboutDialog({
             art cannot return.
           </p>
         </AboutSection>
+      </section>
 
-        <details className="group rounded-2xl border-3 border-sky-200 bg-white">
+      <details className="group rounded-2xl border-3 border-sky-200 bg-white">
           <summary
             aria-label="Technical build details"
             className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2 font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
           >
-            <span>
-              <span className="block">Technical build details</span>
+            <div>
+              <h2
+                className="m-0 text-base font-black leading-tight"
+                id="technical-build-title"
+              >
+                Technical build details
+              </h2>
               <span className="mt-0.5 block text-xs font-bold text-slate-500">
                 Versions and AI services for troubleshooting
               </span>
-            </span>
+            </div>
             <ChevronDown
               aria-hidden="true"
               className="size-5 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
@@ -433,11 +397,7 @@ export function AboutDialog({
               </p>
             ) : null}
           </div>
-        </details>
-        <ActionButton fullWidth onClick={onClose} type="button" variant="navy">
-          Done
-        </ActionButton>
-      </section>
+      </details>
     </div>
   );
 }

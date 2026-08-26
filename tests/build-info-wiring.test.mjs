@@ -2,13 +2,17 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 
-test("the account AI and saved data panel is wired to deployed component metadata", () => {
+test("the Account & privacy page is wired to deployed component metadata", () => {
   const header = readFileSync(
     new URL("../src/app/AppHeader.tsx", import.meta.url),
     "utf8",
   );
   const about = readFileSync(
     new URL("../src/app/AboutDialog.tsx", import.meta.url),
+    "utf8",
+  );
+  const accountPage = readFileSync(
+    new URL("../src/app/AccountPrivacyPage.tsx", import.meta.url),
     "utf8",
   );
   const worker = readFileSync(
@@ -51,7 +55,12 @@ test("the account AI and saved data panel is wired to deployed component metadat
     "utf8",
   );
 
-  assert.match(header, />\s*AI and saved data\s*</s);
+  assert.match(header, />\s*Account &amp; privacy\s*</s);
+  assert.doesNotMatch(header, />\s*AI and saved data\s*</s);
+  assert.doesNotMatch(header, />\s*Delete account\s*</s);
+  assert.match(accountPage, /AccountPrivacySections/);
+  assert.match(accountPage, /Danger zone/);
+  assert.match(accountPage, />\s*Delete account\s*</s);
   assert.match(about, /AI and saved data/);
   assert.match(about, /How Parrot uses AI/);
   assert.match(about, /all learner profiles and their saved data/);

@@ -716,7 +716,7 @@ test("guardian learner details returns to the manager that opened it", async ({
   ).toBeVisible();
 });
 
-test("account menu separates learner details from account sign-out", async ({
+test("account menu separates account navigation from sign-out", async ({
   page,
 }) => {
   let signedOut = false;
@@ -748,8 +748,16 @@ test("account menu separates learner details from account sign-out", async ({
     .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(
-    menu.getByRole("menuitem", { name: "Manage Mia's details" }),
+    menu.getByRole("menuitem", { name: "Manage learners" }),
   ).toBeVisible();
+  await expect(
+    menu.getByRole("menuitem", { name: "Account & privacy" }),
+  ).toBeVisible();
+  await expect(
+    menu.getByRole("menuitem", {
+      name: /Manage Mia's details|Delete account/,
+    }),
+  ).toHaveCount(0);
   await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
 
@@ -791,7 +799,12 @@ test("account deletion requires the password and returns to sign in only after p
   await page
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
-  await page.getByRole("menuitem", { name: "Delete account" }).click();
+  await page.getByRole("menuitem", { name: "Account & privacy" }).click();
+  await expect(page).toHaveURL("/guardian/account");
+  await page
+    .getByRole("region", { name: "Danger zone" })
+    .getByRole("button", { name: "Delete account" })
+    .click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
     "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips from Five Little Ducks, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
@@ -802,7 +815,9 @@ test("account deletion requires the password and returns to sign in only after p
   await expect(confirm).toBeEnabled();
   await confirm.click();
 
-  await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian/);
+  await expect(page).toHaveURL(
+    /\/login\?returnTo=%2Fguardian%2Faccount/,
+  );
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeFocused();

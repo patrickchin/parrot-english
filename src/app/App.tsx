@@ -57,6 +57,7 @@ import {
 } from "../media/audio-playback";
 import {
   getGateRouteKind,
+  getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
   getGuardianPath,
@@ -86,6 +87,7 @@ import { AuthGate } from "../auth/AuthGate";
 import { useAccountExperience } from "../auth/account-actions";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { HeaderButton, RouteHeader } from "./AppHeader";
+import { AccountPrivacyPage } from "./AccountPrivacyPage";
 import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
@@ -148,6 +150,7 @@ const LessonCreator = import.meta.env.SSR
 const APPLICATION_ROUTE_PATTERNS = [
   "/",
   "/guardian",
+  "/guardian/account",
   "/guardian/dubbing",
   "/guardian/learners",
   "/guardian/learners/:learnerId",
@@ -1288,6 +1291,10 @@ export function ApplicationRoutes({
           path={getGuardianPath()}
         />
         <Route
+          element={<AccountPrivacyPage />}
+          path={getGuardianAccountPath()}
+        />
+        <Route
           element={<GuardianLearnerProfiles />}
           path={getGuardianLearnersPath()}
         />
@@ -1389,6 +1396,10 @@ export function AuthenticatedApplication({
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
     null;
   const learnerManagerRoute =
+    matchPath(
+      { end: true, path: getGuardianAccountPath() },
+      location.pathname,
+    ) !== null ||
     guardianLearnerChildRoute ||
     isGuardianLearnerManagerRoute(location.pathname) ||
     matchPath(

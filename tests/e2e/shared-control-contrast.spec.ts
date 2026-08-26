@@ -333,9 +333,9 @@ for (const viewport of viewports) {
       page,
     });
     await expectPointerStateContrast({
-      interaction: page.getByRole("menuitem", { name: "Delete account" }),
+      interaction: page.getByRole("menuitem", { name: "Account & privacy" }),
       minimum: 4.5,
-      name: "Muted Delete account",
+      name: "Account & privacy",
       page,
     });
   });
@@ -367,7 +367,11 @@ for (const viewport of viewports) {
     await page
       .getByRole("button", { name: "Profile for Mia, guardian mode" })
       .click();
-    await page.getByRole("menuitem", { name: "Delete account" }).click();
+    await page.getByRole("menuitem", { name: "Account & privacy" }).click();
+    await page
+      .getByRole("region", { name: "Danger zone" })
+      .getByRole("button", { name: "Delete account" })
+      .click();
     const dialog = page.getByRole("dialog", { name: "Delete account" });
     const password = dialog.getByRole("textbox", { name: "Password" });
     const deleteAccount = dialog.getByRole("button", {

@@ -172,6 +172,12 @@ describe("app route helpers", () => {
   });
 
   it("builds and classifies only canonical guardian routes", () => {
+    assert.equal(
+      typeof routes.getGuardianAccountPath,
+      "function",
+      "Expected a canonical Account & privacy path helper",
+    );
+    assert.equal(routes.getGuardianAccountPath(), "/guardian/account");
     assert.equal(routes.getGuardianPath(), "/guardian");
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
@@ -204,6 +210,7 @@ describe("app route helpers", () => {
 
     for (const [pathname, search = ""] of [
       ["/guardian"],
+      ["/guardian/account"],
       ["/guardian/dubbing"],
       ["/guardian/lessons"],
       ["/guardian/learners/learner-noah"],
@@ -303,6 +310,10 @@ describe("app route helpers", () => {
       routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Fstories"),
       "/guardian/stories",
     );
+    assert.equal(
+      routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Faccount"),
+      "/guardian/account",
+    );
     for (const value of [
       "/",
       "/lessons",
@@ -319,6 +330,14 @@ describe("app route helpers", () => {
   });
 
   it("resumes only a validated Guardian destination after a header unlock", () => {
+    assert.equal(
+      routes.getSafeGuardianUnlockDestination(
+        "/guardian/account",
+        "",
+        "#danger-zone",
+      ),
+      "/guardian/account#danger-zone",
+    );
     assert.equal(
       routes.getSafeGuardianUnlockDestination(
         "/guardian/stories",

@@ -28,6 +28,7 @@ const GUARDIAN_LEARNER_ROUTE_PATH =
   /^\/guardian\/learners\/([^/]+)\/*$/i;
 const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/*$/i,
+  /^\/guardian\/account\/*$/i,
   /^\/guardian\/dubbing\/*$/i,
   GUARDIAN_LEARNERS_ROUTE_PATH,
   /^\/guardian\/lessons\/*$/i,
@@ -67,6 +68,10 @@ export const DEFAULT_STORY_LEVEL_ID: StoryLevelId = "first-words";
 
 export function getGuardianPath() {
   return "/guardian";
+}
+
+export function getGuardianAccountPath() {
+  return "/guardian/account" as const;
 }
 
 function withLearnerProfileTarget(path: string, learnerProfileId?: string) {

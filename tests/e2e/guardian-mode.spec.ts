@@ -190,13 +190,10 @@ test("successful unlock opens guardian management and announces the fifteen-minu
     .getByRole("button", { name: /Profile for Mia, guardian mode/ })
     .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Guardian dashboard",
-    "Learner profiles",
-    "Manage Mia's details",
-    "Switch to Mia",
-    "AI and saved data",
+    "Dashboard",
+    "Manage learners",
+    "Account & privacy",
     "Sign out",
-    "Delete account",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
@@ -430,6 +427,7 @@ test("a locked guardian deep link never flashes protected content", async ({
 
 for (const { path, protectedName, seedEditLesson, unlockedPath } of [
   { path: "/guardian", protectedName: "Guardian dashboard" },
+  { path: "/guardian/account", protectedName: "Account & privacy" },
   {
     path: "/guardian/profile?returnTo=%2Fguardian",
     protectedName: "Learner details",
@@ -725,30 +723,24 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   await guardianTrigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   const dashboard = menu.getByRole("menuitem", {
-    name: "Guardian dashboard",
+    name: "Dashboard",
   });
-  const learnerProfiles = menu.getByRole("menuitem", {
-    name: "Learner profiles",
+  const manageLearners = menu.getByRole("menuitem", {
+    name: "Manage learners",
   });
-  const switchToLearner = menu.getByRole("menuitem", {
-    name: "Switch to Mia",
+  const accountPrivacy = menu.getByRole("menuitem", {
+    name: "Account & privacy",
   });
-  const profile = menu.getByRole("menuitem", {
-    name: "Manage Mia's details",
-  });
-  const data = menu.getByRole("menuitem", { name: "AI and saved data" });
-  const deletion = menu.getByRole("menuitem", { name: "Delete account" });
+  const signOut = menu.getByRole("menuitem", { name: "Sign out" });
   await expect(dashboard).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(learnerProfiles).toBeFocused();
+  await expect(manageLearners).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(profile).toBeFocused();
+  await expect(accountPrivacy).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(switchToLearner).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await expect(data).toBeFocused();
+  await expect(signOut).toBeFocused();
   await page.keyboard.press("End");
-  await expect(deletion).toBeFocused();
+  await expect(signOut).toBeFocused();
   await page.keyboard.press("Home");
   await expect(dashboard).toBeFocused();
   await page.keyboard.press("Escape");

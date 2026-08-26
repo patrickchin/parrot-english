@@ -245,8 +245,9 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   });
   await account.focus();
   await account.press("ArrowDown");
-  await page.getByRole("menuitem", { name: "Delete account" }).press("ArrowUp");
-  await page.getByRole("menuitem", { name: "Sign out" }).press("Enter");
+  await page.keyboard.press("End");
+  await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeFocused();
+  await page.keyboard.press("Enter");
 
   const status = page.getByRole("status").filter({ hasText: "Signing out…" });
   const pendingAccount = page.getByRole("button", {

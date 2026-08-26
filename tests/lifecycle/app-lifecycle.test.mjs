@@ -460,23 +460,45 @@ function conversationSurfaceProps(overrides = {}) {
   };
 }
 
-function ProfileRouteHarness({ children, initialRoute = "/guardian" }) {
+function ProfileRouteHarness({
+  children,
+  initialRoute = "/guardian",
+  showOpenProfileAction = false,
+}) {
   const [route, setRoute] = useState(initialRoute);
   const isProfileRoute = route === "/guardian/profile";
 
   return createElement(
-    LearnerProfileGate,
-    {
-      completedLearnerProfileFallback: children,
-      guardianRoute: route.startsWith("/guardian"),
-      isLearnerProfileRoute: false,
-      isProfileRoute,
-      learnerProfileFallback: createElement("p", null, "LEARNER_PROFILE ROUTE"),
-      onCloseProfileRoute: () => setRoute("/guardian"),
-      onOpenLessons() {},
-      onOpenProfileRoute: () => setRoute("/guardian/profile"),
-    },
-    children,
+    Fragment,
+    null,
+    showOpenProfileAction && !isProfileRoute
+      ? createElement(
+          "button",
+          {
+            onClick: () => setRoute("/guardian/profile"),
+            type: "button",
+          },
+          "Open learner details",
+        )
+      : null,
+    createElement(
+      LearnerProfileGate,
+      {
+        completedLearnerProfileFallback: children,
+        guardianRoute: route.startsWith("/guardian"),
+        isLearnerProfileRoute: false,
+        isProfileRoute,
+        learnerProfileFallback: createElement(
+          "p",
+          null,
+          "LEARNER_PROFILE ROUTE",
+        ),
+        onCloseProfileRoute: () => setRoute("/guardian"),
+        onOpenLessons() {},
+        onOpenProfileRoute: () => setRoute("/guardian/profile"),
+      },
+      children,
+    ),
   );
 }
 
@@ -9104,7 +9126,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/COMPLETED LESSONS/));
   });
 
-  it("registers the profile account action and saves mounted profile edits", async () => {
+  it("saves mounted profile edits opened from an explicit route action", async () => {
     const client = createSessionClient({
       data: { user: { email: "mia@example.com", name: "Mia" } },
       error: null,
@@ -9148,15 +9170,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         null,
         createElement(
           ProfileRouteHarness,
-          null,
+          { showOpenProfileAction: true },
           createElement("p", null, "PROFILE LESSONS"),
         ),
       ),
     );
 
     await waitFor(() => text(/PROFILE LESSONS/));
-    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
-    await click(button("Manage Mia's details"));
+    await click(button("Open learner details"));
     await waitFor(() => text(/Learner details/));
     await input(document.querySelector("#profile-name"), "Maya");
     await input(document.querySelector("#profile-age"), "almost nine");
