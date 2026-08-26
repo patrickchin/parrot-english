@@ -203,6 +203,42 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveCount(0);
 });
 
+test("account-menu unlock resumes the current Guardian deep link", async ({
+  page,
+}) => {
+  const requestedUrl = "/guardian/stories?section=art#cover";
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
+  ).toBeVisible();
+  await page.evaluate((destination) => {
+    window.history.pushState(null, "", destination);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, requestedUrl);
+  await expect(
+    page.getByRole("heading", { name: "Unlock guardian mode" }),
+  ).toBeVisible();
+  const historyLengthBeforeUnlock = await page.evaluate(
+    () => window.history.length,
+  );
+
+  await unlockFromMenu(page);
+
+  await expect(page).toHaveURL(requestedUrl);
+  expect(await page.evaluate(() => window.history.length)).toBe(
+    historyLengthBeforeUnlock,
+  );
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toBeVisible();
+
+  await page.goBack();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("heading", { name: "Switch to learner mode" }),
+  ).toBeVisible();
+});
+
 for (const viewport of lessonPrivacyViewports) {
   test(`guardian grants and confirms revocation of lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
     page,
@@ -625,6 +661,33 @@ test("successful lock returns to learner home before exposing activities", async
   await expect(
     page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
   ).toBeVisible();
+});
+
+test("locking guardian access in one tab immediately hides guardian UI in a sibling tab", async ({
+  page,
+}) => {
+  const url = guardianUrl("/guardian", "guardian");
+  const sibling = await page.context().newPage();
+  try {
+    await Promise.all([page.goto(url), sibling.goto(url)]);
+    await expect(
+      page.getByRole("heading", { name: "Guardian dashboard" }),
+    ).toBeVisible();
+    await expect(
+      sibling.getByRole("heading", { name: "Guardian dashboard" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "Switch to learner" }).click();
+
+    await expect(
+      sibling.getByRole("heading", { name: "Unlock guardian mode" }),
+    ).toBeVisible();
+    await expect(
+      sibling.getByRole("heading", { name: "Guardian dashboard" }),
+    ).toHaveCount(0);
+  } finally {
+    await sibling.close();
+  }
 });
 
 test("cancel and Escape restore focus while account-menu keys follow rendered items", async ({

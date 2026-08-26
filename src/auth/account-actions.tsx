@@ -23,6 +23,7 @@ type AccountExperienceSetter = Dispatch<
 
 type AccountActionContextValue = {
   action: AccountExperience | null;
+  sessionIdentity: string | null;
   setAction: AccountExperienceSetter;
 };
 
@@ -33,15 +34,21 @@ const AccountActionContext = createContext<AccountActionContextValue | null>(
 export function AccountActionProvider({
   children,
   profileAction = null,
+  sessionIdentity = null,
   setProfileAction,
 }: {
   children: ReactNode;
   profileAction?: AccountExperience | null;
+  sessionIdentity?: string | null;
   setProfileAction: AccountExperienceSetter;
 }) {
   const value = useMemo(
-    () => ({ action: profileAction, setAction: setProfileAction }),
-    [profileAction, setProfileAction],
+    () => ({
+      action: profileAction,
+      sessionIdentity,
+      setAction: setProfileAction,
+    }),
+    [profileAction, sessionIdentity, setProfileAction],
   );
   return (
     <AccountActionContext.Provider value={value}>
@@ -68,4 +75,8 @@ export function useClearProfileAccountAction() {
 
 export function useAccountExperience() {
   return useContext(AccountActionContext)?.action ?? null;
+}
+
+export function useAccountSessionIdentity() {
+  return useContext(AccountActionContext)?.sessionIdentity ?? null;
 }

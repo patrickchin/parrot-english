@@ -73,6 +73,7 @@ before(async () => {
 afterEach(async () => {
   await cleanupMountedRoots();
   document.body.replaceChildren();
+  window.localStorage.clear();
   globalThis.fetch = originalFetch;
 });
 
@@ -677,6 +678,7 @@ describe("keyboard accessibility lifecycles", () => {
 
         await cleanupMountedRoots();
         document.body.replaceChildren();
+        window.localStorage.clear();
       }
     }
   });
@@ -1282,6 +1284,45 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(
       document.body.textContent,
       /Guardian mode unlocked for 15 minutes/,
+    );
+  });
+
+  it("lets the stable account shell resume a validated Guardian deep link", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi(),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    const navigations = [];
+    await mountStrict(
+      createElement(
+        TestAuthGate,
+        {
+          guardianUnlockDestination:
+            "/guardian/stories?section=art#cover",
+          navigate: (path) => navigations.push(path),
+        },
+        "LOCKED GUARDIAN PAGE",
+      ),
+    );
+
+    await click(
+      await waitFor(() => button("Profile for Learner, learner mode")),
+    );
+    await click(button("Grown-up accessAccount password required"));
+    await input(
+      document.querySelector('input[name="password"]'),
+      "correct-password",
+    );
+    await click(button("Unlock guardian mode"));
+
+    await waitFor(() =>
+      assert.deepEqual(navigations, [
+        "/guardian/stories?section=art#cover",
+      ]),
     );
   });
 

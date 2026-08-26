@@ -1,19 +1,81 @@
+/* global process */
+
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   createBuildMetadata,
   resolveBuildCommitSha,
 } from "../scripts/build-metadata.mjs";
 import {
+  assertWorkersCiIsNotProduction,
   ensureWorkersCiHistory,
   injectWorkersCiMetadata,
+  prepareWorkersCiMetadata,
 } from "../scripts/prepare-workers-ci-metadata.mjs";
 
 describe("deployment build metadata", () => {
+  it("blocks ambiguous Workers builds in the configured prebuild before Git", (context) => {
+    const temporaryRoot = mkdtempSync(join(tmpdir(), "parrot-prebuild-guard-"));
+    const binDirectory = join(temporaryRoot, "bin");
+    const gitMarker = join(temporaryRoot, "git-called");
+    mkdirSync(binDirectory);
+    writeFileSync(
+      join(binDirectory, "git"),
+      '#!/bin/sh\n: > "$PARROT_GIT_SENTINEL"\nexit 42\n',
+      { mode: 0o755 },
+    );
+    context.after(() => rmSync(temporaryRoot, { force: true, recursive: true }));
+
+    for (const branch of [undefined, "", "   ", "main", " main "]) {
+      const env = {
+        ...process.env,
+        PATH: `${binDirectory}${delimiter}${process.env.PATH ?? ""}`,
+        PARROT_GIT_SENTINEL: gitMarker,
+        WORKERS_CI: "1",
+      };
+      if (branch === undefined) delete env.WORKERS_CI_BRANCH;
+      else env.WORKERS_CI_BRANCH = branch;
+
+      assert.throws(
+        () =>
+          execFileSync("npm", ["run", "prebuild"], {
+            cwd: fileURLToPath(new URL("../", import.meta.url)),
+            encoding: "utf8",
+            env,
+            stdio: ["ignore", "pipe", "pipe"],
+          }),
+        (error) => {
+          assert.match(error.stderr, /explicit non-production branch/i);
+          return true;
+        },
+      );
+      assert.equal(existsSync(gitMarker), false);
+    }
+  });
+
+  it("preserves preview Workers builds and the guarded GitHub workflow", () => {
+    assert.doesNotThrow(() =>
+      assertWorkersCiIsNotProduction({
+        env: { WORKERS_CI: "1", WORKERS_CI_BRANCH: "feature-preview" },
+      }),
+    );
+    assert.equal(
+      prepareWorkersCiMetadata({ env: { GITHUB_REF_NAME: "main" } }),
+      false,
+    );
+  });
+
   it("creates one semver version and short Git SHA for every deployed component", () => {
     assert.deepEqual(
       createBuildMetadata({

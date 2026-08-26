@@ -1186,7 +1186,8 @@ describe("onboarding and profile gate", () => {
     assert.match(failed, /role="alert"/);
     assert.match(failed, /Profile service is unavailable\./);
     assert.match(failed, />Retry</);
-    assert.match(failed, />Back to home</);
+    assert.match(failed, />Back</);
+    assert.doesNotMatch(failed, /Back to home/);
     assert.doesNotMatch(failed, /LESSON CONTENT/);
   });
 

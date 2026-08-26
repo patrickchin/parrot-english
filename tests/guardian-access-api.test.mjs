@@ -24,13 +24,17 @@ describe("guardian access browser API", () => {
       mode: "guardian",
       expiresAt: "2026-08-25T08:15:00.000Z",
     });
+    const lockRequest = createFetchRecorder({ mode: "learner" });
 
     await loadGuardianAccess({ fetch: request.fetch });
     await unlockGuardianAccess("secret", { fetch: request.fetch });
-    await lockGuardianAccess({ fetch: request.fetch });
+    await lockGuardianAccess({ fetch: lockRequest.fetch });
 
     assert.deepEqual(
-      request.calls.map(({ path, method }) => [method, path]),
+      [...request.calls, ...lockRequest.calls].map(({ path, method }) => [
+        method,
+        path,
+      ]),
       [
         ["GET", "/api/guardian-access"],
         ["POST", "/api/guardian-access"],
@@ -38,7 +42,7 @@ describe("guardian access browser API", () => {
       ],
     );
     assert.equal(request.calls[1].body, JSON.stringify({ password: "secret" }));
-    assert.deepEqual(request.calls.map(({ cache }) => cache), [
+    assert.deepEqual([...request.calls, ...lockRequest.calls].map(({ cache }) => cache), [
       "no-store",
       "no-store",
       "no-store",
@@ -83,5 +87,26 @@ describe("guardian access browser API", () => {
         return true;
       });
     }
+  });
+
+  it("fails closed when a lock response claims guardian mode", async () => {
+    await assert.rejects(
+      lockGuardianAccess({
+        fetch: createFetchRecorder({
+          mode: "guardian",
+          expiresAt: "2026-08-25T08:15:00.000Z",
+        }).fetch,
+      }),
+      (error) => {
+        assert.ok(error instanceof GuardianAccessApiError);
+        assert.equal(error.status, 200);
+        assert.equal(error.code, "invalid_response");
+        assert.equal(
+          error.message,
+          "Guardian access could not be checked. Please try again.",
+        );
+        return true;
+      },
+    );
   });
 });

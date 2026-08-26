@@ -103,6 +103,72 @@ describe("duck dub browser API", () => {
     });
   });
 
+  it("notifies guardian access only for guardian-required failures before rejection", async () => {
+    const previousDocument = globalThis.document;
+    const eventTarget = new globalThis.EventTarget();
+    const events = [];
+    Object.defineProperty(globalThis, "document", {
+      configurable: true,
+      value: eventTarget,
+    });
+    eventTarget.addEventListener("guardian-access-required", () => events.push("notification"));
+
+    try {
+      const expectRejection = async (operation, message, expectedEvents) => {
+        await assert.rejects(operation, (error) => {
+          events.push("rejection");
+          assert.equal(error.message, message);
+          return true;
+        });
+        assert.deepEqual(events, expectedEvents);
+        events.length = 0;
+      };
+
+      const guardianRequired = () =>
+        Response.json({ error: "guardian_required" }, { status: 403 });
+      await expectRejection(
+        () => grantDubConsent({ fetch: async () => guardianRequired() }),
+        "Voice dubbing could not be turned on.",
+        ["notification", "rejection"],
+      );
+      await expectRejection(
+        () => deleteDub({ fetch: async () => guardianRequired() }),
+        "Your saved dub was not deleted.",
+        ["notification", "rejection"],
+      );
+
+      await expectRejection(
+        () => grantDubConsent({
+          fetch: async () =>
+            Response.json({ error: "dubbing_not_enabled" }, { status: 403 }),
+        }),
+        "Voice dubbing could not be turned on.",
+        ["rejection"],
+      );
+      await expectRejection(
+        () => deleteDub({
+          fetch: async () => new Response("not json", { status: 403 }),
+        }),
+        "Your saved dub was not deleted.",
+        ["rejection"],
+      );
+      await expectRejection(
+        () => grantDubConsent({
+          fetch: async () =>
+            Response.json({ error: "guardian_required" }, { status: 500 }),
+        }),
+        "Voice dubbing could not be turned on.",
+        ["rejection"],
+      );
+    } finally {
+      if (previousDocument === undefined) Reflect.deleteProperty(globalThis, "document");
+      else Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: previousDocument,
+      });
+    }
+  });
+
   it("maps a revoked upload to DubNotEnabledError", async () => {
     for (const [status, error] of [
       [403, "dubbing_not_enabled"],

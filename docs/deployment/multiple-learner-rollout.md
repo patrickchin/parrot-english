@@ -47,6 +47,20 @@ not enabled. Do not manually dispatch a duplicate workflow after either merge,
 and do not apply migrations manually ahead of their corresponding Worker
 release.
 
+The Cloudflare Workers Builds Git integration for this Worker is disconnected
+and must remain disconnected. This is the control that leaves the guarded
+GitHub Actions workflow as the sole production deployment owner. The
+repository's `prebuild` step is defense in depth only: it rejects a Workers CI
+build when the branch is missing or is `main`, but Cloudflare configuration can
+change the build command or its environment.
+
+Do not reconnect the Git integration without an approved preview-only setup.
+Its deploy command must upload an unpromoted version with
+`npx wrangler versions upload`; then externally verify that both `main` and
+feature-branch builds leave production traffic and routes unchanged before
+using it. A passing repository prebuild check does not authorize or prove that
+configuration.
+
 ## Ownership Invariants to Preserve
 
 - Better Auth identifies the Guardian account.

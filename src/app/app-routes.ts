@@ -218,6 +218,16 @@ export function getSafeGuardianReturnTo(search: string) {
   return safe;
 }
 
+export function getSafeGuardianUnlockDestination(
+  pathname: string,
+  search: string,
+  hash: string,
+) {
+  return isGuardianRoute(pathname, search)
+    ? `${pathname}${search}${hash}`
+    : getGuardianPath();
+}
+
 export function getRequestedProtectedTarget(
   pathname: string,
   search: string,

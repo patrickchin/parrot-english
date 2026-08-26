@@ -1,4 +1,5 @@
 import { DUB_ID } from "./dub-script.ts";
+import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
@@ -66,6 +67,19 @@ export async function dubConsentLossError(response: Response) {
 function requireOk(response: Response, fallback: string) {
   if (!response.ok) throw new Error(fallback);
   return response;
+}
+
+async function notifyGuardianAccessRequiredForResponse(response: Response) {
+  if (response.status !== 403) return;
+  const body: unknown = await response.clone().json().catch(() => null);
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "error" in body &&
+    body.error === "guardian_required"
+  ) {
+    notifyGuardianAccessRequired();
+  }
 }
 
 function friendlyFailure(error: unknown, message: string): never {
@@ -211,6 +225,7 @@ export async function grantDubConsent(options: DubRequestOptions = {}) {
     },
     "Voice dubbing could not be turned on.",
   );
+  await notifyGuardianAccessRequiredForResponse(response);
   requireOk(response, "Voice dubbing could not be turned on.");
 }
 
@@ -225,5 +240,6 @@ export async function deleteDub(options: DubRequestOptions = {}) {
     },
     DELETE_FAILURE,
   );
+  await notifyGuardianAccessRequiredForResponse(response);
   requireOk(response, DELETE_FAILURE);
 }

@@ -45,6 +45,7 @@ const REQUEST_FAILED_MESSAGE =
 function parseState(
   payload: unknown,
   status: number,
+  expectedMode?: GuardianAccessState["mode"],
 ): GuardianAccessState {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
     throw new GuardianAccessApiError(
@@ -54,8 +55,11 @@ function parseState(
     );
   }
   const state = payload as { expiresAt?: unknown; mode?: unknown };
-  if (state.mode === "learner") return { mode: "learner" };
+  if (state.mode === "learner" && expectedMode !== "guardian") {
+    return { mode: "learner" };
+  }
   if (
+    expectedMode !== "learner" &&
     state.mode === "guardian" &&
     typeof state.expiresAt === "string" &&
     Number.isFinite(Date.parse(state.expiresAt))
@@ -115,7 +119,11 @@ async function requestGuardianAccess(
         : REQUEST_FAILED_MESSAGE,
     );
   }
-  return parseState(payload, response.status);
+  return parseState(
+    payload,
+    response.status,
+    method === "DELETE" ? "learner" : undefined,
+  );
 }
 
 export function loadGuardianAccess(options?: GuardianAccessRequestOptions) {

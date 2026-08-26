@@ -13,6 +13,17 @@ function executeGit(args, { cwd } = {}) {
   }).trim();
 }
 
+export function assertWorkersCiIsNotProduction({ env = process.env } = {}) {
+  if (env.WORKERS_CI !== "1") return;
+
+  const branch = env.WORKERS_CI_BRANCH?.trim();
+  if (!branch || branch === "main") {
+    throw new Error(
+      "Cloudflare Workers Builds requires an explicit non-production branch; use the guarded GitHub Actions workflow for every production deployment.",
+    );
+  }
+}
+
 export function ensureWorkersCiHistory({
   cwd,
   env = process.env,
@@ -60,6 +71,7 @@ export function prepareWorkersCiMetadata({
 } = {}) {
   if (env.WORKERS_CI !== "1") return false;
 
+  assertWorkersCiIsNotProduction({ env });
   ensureWorkersCiHistory({ env });
   const metadata = readBuildMetadata({ env });
   const configSource = readFileSync(configUrl, "utf8");

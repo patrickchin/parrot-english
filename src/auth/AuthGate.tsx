@@ -11,12 +11,13 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { AccountHeader } from "../app/AppHeader";
 import {
   getGuardianLearnersPath,
   getGuardianPath,
   getProfilePath,
+  getSafeGuardianUnlockDestination,
 } from "../app/app-routes";
 import {
   getAuthErrorMessage,
@@ -206,7 +207,7 @@ interface AuthGateViewProps {
   onDeleteAccount: (password: string) => Promise<string | null>;
   onFieldChange: (field: keyof AuthFields, value: string) => void;
   onModeChange: (mode: AuthMode) => void;
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, options?: { replace?: boolean }) => void;
   onOpenProfile: (() => void) | null;
   onRetry: () => void;
   onSignOut: () => void;
@@ -218,9 +219,13 @@ interface AuthGateViewProps {
   signedOutFallback: ReactNode | null;
 }
 
-function navigateInBrowser(path: string) {
+function navigateInBrowser(path: string, options?: { replace?: boolean }) {
   if (typeof window === "undefined") return;
-  window.history.pushState(null, "", path);
+  window.history[options?.replace ? "replaceState" : "pushState"](
+    null,
+    "",
+    path,
+  );
   window.dispatchEvent(new window.PopStateEvent("popstate"));
 }
 
@@ -245,7 +250,7 @@ function AccountExperienceHeader({
   isSigningOut: boolean;
   learnerName: string | null;
   onDeleteAccount: (password: string) => Promise<string | null>;
-  onNavigate: (path: string) => void;
+  onNavigate: (path: string, options?: { replace?: boolean }) => void;
   onOpenProfile: (() => void) | null;
   onSignOut: () => void;
   signOutError: string;
@@ -324,7 +329,9 @@ function AccountExperienceHeader({
           onClose={() => setIsUnlockOpen(false)}
           onUnlocked={() => {
             setIsUnlockOpen(false);
-            onNavigate(guardianUnlockDestination ?? getGuardianPath());
+            onNavigate(guardianUnlockDestination ?? getGuardianPath(), {
+              replace: true,
+            });
           }}
           returnFocusRef={unlockButtonRef}
         />
@@ -595,7 +602,8 @@ export function AuthGateView({
 
 interface AuthGateProps {
   children: ReactNode;
-  navigate?: (path: string) => void;
+  guardianUnlockDestination?: string | null;
+  navigate?: (path: string, options?: { replace?: boolean }) => void;
   signedOutFallback?: ReactNode;
 }
 
@@ -671,6 +679,7 @@ export function createAuthGate({
 }: CreateAuthGateOptions) {
   return function AuthGateContainer({
     children,
+    guardianUnlockDestination,
     navigate = navigateInBrowser,
     signedOutFallback,
   }: AuthGateProps) {
@@ -796,6 +805,7 @@ export function createAuthGate({
     return (
       <AccountActionProvider
         profileAction={profileAction}
+        sessionIdentity={sessionIdentity}
         setProfileAction={setProfileAction}
       >
         <GuardianAccessBoundary
@@ -812,7 +822,9 @@ export function createAuthGate({
             hasActiveLearner={profileAction?.hasActiveLearner ?? false}
             learnerName={profileAction?.learnerName ?? null}
             guardianUnlockDestination={
-              profileAction?.guardianUnlockDestination ?? null
+              profileAction?.guardianUnlockDestination ??
+              guardianUnlockDestination ??
+              null
             }
             mode={mode}
             onDeleteAccount={handleDeleteAccount}
@@ -842,6 +854,17 @@ export function createAuthGate({
 const ProductionAuthGate = createAuthGate({ client: authClient });
 
 export function AuthGate(props: Omit<AuthGateProps, "navigate">) {
+  const location = useLocation();
   const navigate = useNavigate();
-  return <ProductionAuthGate {...props} navigate={navigate} />;
+  return (
+    <ProductionAuthGate
+      {...props}
+      guardianUnlockDestination={getSafeGuardianUnlockDestination(
+        location.pathname,
+        location.search,
+        location.hash,
+      )}
+      navigate={navigate}
+    />
+  );
 }
