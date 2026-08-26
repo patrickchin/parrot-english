@@ -256,6 +256,13 @@ test("scopes learner selections to authenticated browser sessions", async ({
         ),
       ),
     ]);
+    await Promise.all(
+      [firstSession, sameSessionTab, secondSession].map((sessionPage) =>
+        expect(
+          sessionPage.getByRole("heading", { name: "Learner profiles" }),
+        ).toBeVisible(),
+      ),
+    );
 
     const identities = await Promise.all(
       [firstSession, secondSession].map((sessionPage) =>
