@@ -85,7 +85,7 @@ describe("static audio cache metadata", () => {
     }
   });
 
-  it("resolves every story page to separate saved narration and join-in audio", () => {
+  it("resolves every story page to saved narration and optional join-in audio", () => {
     for (const story of STORIES) {
       for (const page of story.pages) {
         const narration = getStaticAudioLineForSpeech(
@@ -97,6 +97,7 @@ describe("static audio cache metadata", () => {
           narration.src,
           `/assets/audio/${page.narrationAudioId}.mp3`,
         );
+        if (!page.joinInAudioId) continue;
         const joinIn = getStaticAudioLineForSpeech("narrator", page.joinIn);
         assert.equal(joinIn.id, page.joinInAudioId);
         assert.equal(
@@ -104,6 +105,29 @@ describe("static audio cache metadata", () => {
           `/assets/audio/${page.joinInAudioId}.mp3`,
         );
       }
+    }
+  });
+
+  it("serves every long-story page from the standard saved-audio directory", () => {
+    const longStories = STORIES.filter(
+      ({ level }) => level === "long-stories",
+    );
+    const pages = longStories.flatMap(({ pages: storyPages }) => storyPages);
+
+    assert.equal(longStories.length, 2);
+    assert.equal(pages.length, 17);
+    for (const page of pages) {
+      const narration = getStaticAudioLineForSpeech("narrator", page.text);
+      assert.equal(narration.id, page.narrationAudioId);
+      assert.equal(
+        narration.src,
+        `/assets/audio/${page.narrationAudioId}.mp3`,
+      );
+      assert.equal(page.joinInAudioId, null);
+      assert.equal(
+        existsSync(new URL(`../public${narration.src}`, import.meta.url)),
+        true,
+      );
     }
   });
 

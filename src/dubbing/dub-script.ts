@@ -1,6 +1,7 @@
 export const DUB_ID = "five-little-ducks-v2" as const;
 export const DUB_ROUTE = "/dubs/five-little-ducks" as const;
 export const DUB_DURATION_MS = 98_000;
+export const DUB_LINES_PER_VERSE = 4;
 export const DUB_RECORDING_MS = 6_000;
 
 export type DubVisualBeat =
@@ -58,6 +59,34 @@ export const DUB_LINES: readonly DubLine[] = Object.freeze(texts.map((text, inde
   text,
   visualBeat: beats[index],
 })));
+
+export const DUB_VERSES: readonly (readonly DubLine[])[] = Object.freeze(
+  Array.from(
+    { length: DUB_LINES.length / DUB_LINES_PER_VERSE },
+    (_, index) => Object.freeze(DUB_LINES.slice(
+      index * DUB_LINES_PER_VERSE,
+      (index + 1) * DUB_LINES_PER_VERSE,
+    )),
+  ),
+);
+
+export const DUB_SCENE_TITLES = Object.freeze([
+  "Five little ducks",
+  "Four little ducks",
+  "Three little ducks",
+  "Two little ducks",
+  "One little duck",
+  "Sad mother duck",
+] as const);
+
+export function getDubVerseLineAtElapsed(verseIndex: number, elapsedMs: number): DubLine {
+  const verse = DUB_VERSES[verseIndex];
+  if (!verse) throw new RangeError("Unknown dub verse.");
+  const cueOffsetMs = verse[0].cueMs;
+  return [...verse].reverse().find(
+    ({ cueMs }) => elapsedMs >= cueMs - cueOffsetMs,
+  ) ?? verse[0];
+}
 
 export function getDubLineAtElapsed(elapsedMs: number): DubLine {
   return [...DUB_LINES].reverse().find(({ cueMs }) => elapsedMs >= cueMs) ?? DUB_LINES[0];

@@ -265,6 +265,70 @@ describe("child-first story reader behavior", () => {
     assert.match(container.textContent, /Your turn/);
   });
 
+  it("plays saved narration when a read-aloud has no join-in clip", async () => {
+    const finishAudio = [];
+    const playedUrls = [];
+
+    class TestAudio {
+      constructor(url) {
+        this.url = url;
+      }
+
+      set src(url) {
+        this.url = url;
+      }
+
+      pause() {}
+
+      play() {
+        playedUrls.push(this.url);
+        const onended = this.onended;
+        finishAudio.push(() => onended?.(new window.Event("ended")));
+        return Promise.resolve();
+      }
+    }
+
+    Object.defineProperty(globalThis, "Audio", {
+      configurable: true,
+      value: TestAudio,
+    });
+    const savedNarrationStory = {
+      ...firstStory,
+      id: "saved-narration-only-test",
+      pages: [
+        {
+          ...firstStory.pages[0],
+          joinInAudioId: null,
+          narrationAudioId: "narrator-copy-dolly",
+          text: "Let's copy Dolly!",
+        },
+      ],
+    };
+    const container = await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/stories/saved-narration-only-test/pages/1"] },
+        createElement(StoryReader, {
+          backToStories: "/stories",
+          onNavigatePage() {},
+          pageIndex: 0,
+          story: savedNarrationStory,
+        }),
+      ),
+    );
+
+    await click(container.querySelector('[aria-label="Listen"]'));
+    await waitFor(() => assert.equal(finishAudio.length, 1));
+    assert.deepEqual(playedUrls, [
+      "/assets/audio/narrator-copy-dolly.mp3",
+    ]);
+
+    await act(async () => finishAudio.shift()());
+    await waitFor(() =>
+      assert.ok(container.querySelector('[aria-label="Listen again"]')),
+    );
+  });
+
   it("starts and advances when whole-story playback is enabled", async () => {
     const navigatedPages = [];
     const finishAudio = [];

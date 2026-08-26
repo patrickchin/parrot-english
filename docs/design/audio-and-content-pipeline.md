@@ -25,8 +25,12 @@ ElevenLabs narrator MP3s provide the line examples; there is no device-speech
 fallback for those guides. Final playback uses one native Web Audio clock to
 schedule the 24 private voice clips, procedural music, and original SVG scene
 beats across the 98-second timeline. Authored cues are four seconds apart and
-each recording has a six-second maximum. The path does not use a third-party
-player or a mixed downloadable video.
+each recording has a six-second maximum. The same player can fetch one four-line
+verse, rebase its cues to a short local clock, and play it as immediate feedback
+without downloading the other 20 recordings. The scoped clock extends through
+the decoded fourth take so the preview never cuts off a valid six-second
+recording, while the scoped visual clock holds on that fourth cue until audio
+ends. The path does not use a third-party player or a mixed downloadable video.
 
 ## Sources of Truth
 
@@ -198,7 +202,7 @@ URL rather than overwriting an existing object.
   remains explicitly nullable.
 - Confirm dubbing clips stay private, replaceable, resettable, and covered by
   account deletion; verify 24-slot native Web Audio replay against the original
-  SVG and procedural music timeline.
+  SVG and procedural music timeline, plus scoped four-line verse replay.
 - Confirm every dubbing guide resolves to a checked-in ElevenLabs MP3 and that
   each completed take can be replayed locally with a decoded waveform before
   **Next line**.

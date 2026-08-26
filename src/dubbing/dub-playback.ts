@@ -9,6 +9,8 @@ type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
 type ScheduleDubAudioOptions = {
   context: Pick<AudioContext, "currentTime">;
+  cueOffsetMs?: number;
+  lines?: readonly DubLine[];
   lineSources: Map<string, VoiceSource>;
   output: AudioNode;
   startAt: number;
@@ -18,13 +20,23 @@ type StartDubPlaybackOptions = {
   AudioContext?: typeof globalThis.AudioContext;
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
   fetch?: typeof globalThis.fetch;
+  lines?: readonly DubLine[];
+  onEnded?: () => void;
+  onLineFallback?: (lineId: DubLine["id"], stage: DubLinePlaybackStage) => void;
+  onLineUnavailable?: (lineId: DubLine["id"]) => void;
   onTick: (elapsedMs: number) => void;
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
+  resolveAudioSource?: (line: DubLine) => DubAudioSource;
   setTimeout?: typeof globalThis.setTimeout;
   signal?: AbortSignal;
 };
 
 export type DubLinePlaybackStage = "fetch" | "decode";
+
+export type DubAudioSource = {
+  fallbackUrl?: string;
+  preferredUrl: string;
+};
 
 export class DubLinePlaybackError extends Error {
   readonly lineId: DubLine["id"];
@@ -50,15 +62,21 @@ function stopNode(node: Pick<AudioScheduledSourceNode, "stop">) {
 }
 
 export function scheduleDubAudio(options: ScheduleDubAudioOptions) {
-  const { lineSources, output, startAt } = options;
+  const {
+    cueOffsetMs = 0,
+    lines = DUB_LINES,
+    lineSources,
+    output,
+    startAt,
+  } = options;
   const scheduled: VoiceSource[] = [];
 
   try {
-    for (const line of DUB_LINES) {
+    for (const line of lines) {
       const source = lineSources.get(line.id);
       if (!source) continue;
       source.connect(output);
-      source.start(startAt + line.cueMs / 1_000);
+      source.start(startAt + (line.cueMs - cueOffsetMs) / 1_000);
       scheduled.push(source);
     }
   } catch (error) {
@@ -80,11 +98,12 @@ function midiFrequency(note: number) {
 
 function scheduleDubMusic(
   context: AudioContext,
+  durationMs: number,
   output: AudioNode,
   startAt: number,
 ) {
   const beatSeconds = 60 / MUSIC_BPM;
-  const noteCount = Math.ceil(DUB_DURATION_MS / 1_000 / beatSeconds);
+  const noteCount = Math.ceil(durationMs / 1_000 / beatSeconds);
   const oscillators: OscillatorNode[] = [];
 
   try {
@@ -122,15 +141,43 @@ function createAbortError() {
   return error;
 }
 
+function getPlaybackScope(lines: readonly DubLine[]) {
+  if (lines.length === 0) {
+    throw new TypeError("Dub playback lines must be one non-empty authored range.");
+  }
+  const firstLineIndex = DUB_LINES.indexOf(lines[0]);
+  const canonical = firstLineIndex >= 0 && lines.every(
+    (line, index) => DUB_LINES[firstLineIndex + index] === line,
+  );
+  if (!canonical) {
+    throw new TypeError("Dub playback lines must be one non-empty authored range.");
+  }
+  const endLineIndex = firstLineIndex + lines.length;
+  const fullDub = firstLineIndex === 0 && endLineIndex === DUB_LINES.length;
+  const cueOffsetMs = fullDub ? 0 : lines[0].cueMs;
+  const authoredEndMs = DUB_LINES[endLineIndex]?.cueMs ?? DUB_DURATION_MS;
+  return {
+    authoredDurationMs: authoredEndMs - cueOffsetMs,
+    cueOffsetMs,
+    fullDub,
+  };
+}
+
 export async function startDubPlayback({
   AudioContext: AudioContextClass = globalThis.AudioContext,
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
   fetch: request = globalThis.fetch,
+  lines = DUB_LINES,
+  onEnded,
+  onLineFallback,
+  onLineUnavailable,
   onTick,
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
+  resolveAudioSource = ({ id }) => ({ preferredUrl: getDubLineAudioUrl(id) }),
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
+  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines);
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -180,26 +227,10 @@ export async function startDubPlayback({
   try {
     if (signal?.aborted) throw createAbortError();
 
-    let firstLineFailure: DubLinePlaybackError | null = null;
-    let rejectLineFailure!: (failure: DubLinePlaybackError) => void;
-    const lineFailure = new Promise<never>((_, reject) => {
-      rejectLineFailure = reject;
-    });
-    const failLine = (lineId: DubLine["id"], stage: DubLinePlaybackStage) => {
-      const failure = new DubLinePlaybackError(lineId, stage);
-      // The first observed line failure is the origin; later AbortErrors are
-      // consequences of cancelling its sibling work.
-      if (!firstLineFailure) {
-        firstLineFailure = failure;
-        rejectLineFailure(failure);
-        loadController.abort();
-      }
-      return failure;
-    };
-    const lineLoads = DUB_LINES.map(async ({ id }) => {
+    const loadAndDecode = async (url: string, lineId: DubLine["id"]) => {
       let response: Response;
       try {
-        response = await request(getDubLineAudioUrl(id), {
+        response = await request(url, {
           credentials: "same-origin",
           signal: loadController.signal,
         });
@@ -207,11 +238,11 @@ export async function startDubPlayback({
         if (signal?.aborted || loadController.signal.aborted) {
           throw createAbortError();
         }
-        throw failLine(id, "fetch");
+        throw new DubLinePlaybackError(lineId, "fetch");
       }
       if (!response.ok) {
         if (signal?.aborted) throw createAbortError();
-        throw failLine(id, "fetch");
+        throw new DubLinePlaybackError(lineId, "fetch");
       }
       let bytes: ArrayBuffer;
       try {
@@ -220,26 +251,61 @@ export async function startDubPlayback({
         if (signal?.aborted || loadController.signal.aborted) {
           throw createAbortError();
         }
-        throw failLine(id, "fetch");
+        throw new DubLinePlaybackError(lineId, "fetch");
       }
-      let buffer: AudioBuffer;
       try {
-        buffer = await context.decodeAudioData(bytes);
+        return await context.decodeAudioData(bytes);
       } catch {
         if (signal?.aborted || loadController.signal.aborted) {
           throw createAbortError();
         }
-        throw failLine(id, "decode");
+        throw new DubLinePlaybackError(lineId, "decode");
       }
-      return [id, buffer] as const;
+    };
+    const lineLoads = lines.map(async (line) => {
+      let source: DubAudioSource;
+      try {
+        source = resolveAudioSource(line);
+      } catch {
+        onLineUnavailable?.(line.id);
+        return null;
+      }
+      const { fallbackUrl, preferredUrl } = source;
+      try {
+        return [line, await loadAndDecode(preferredUrl, line.id)] as const;
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") throw error;
+        if (!fallbackUrl) {
+          onLineUnavailable?.(line.id);
+          return null;
+        }
+        const stage = error instanceof DubLinePlaybackError ? error.stage : "fetch";
+        onLineFallback?.(line.id, stage);
+        try {
+          return [line, await loadAndDecode(fallbackUrl, line.id)] as const;
+        } catch (fallbackError) {
+          if (fallbackError instanceof Error && fallbackError.name === "AbortError") {
+            throw fallbackError;
+          }
+          onLineUnavailable?.(line.id);
+          return null;
+        }
+      }
     });
-    const decodedLines = await Promise.race([
+    const decodedLineResults = await Promise.race([
       Promise.all(lineLoads),
-      lineFailure,
       startupAbort,
     ]);
+    const decodedLines = decodedLineResults.filter((line): line is readonly [
+      DubLine,
+      AudioBuffer,
+    ] => line !== null);
 
     if (signal?.aborted) throw createAbortError();
+    const durationMs = fullDub
+      ? DUB_DURATION_MS
+      : Math.max(authoredDurationMs, ...decodedLines.map(([line, buffer]) =>
+          line.cueMs - cueOffsetMs + buffer.duration * 1_000));
     await Promise.race([context.resume(), startupAbort]);
     if (signal?.aborted) throw createAbortError();
 
@@ -251,28 +317,31 @@ export async function startDubPlayback({
     music.connect(master);
 
     const lineSources = new Map<string, AudioBufferSourceNode>();
-    for (const [id, buffer] of decodedLines) {
+    for (const [line, buffer] of decodedLines) {
       const source = context.createBufferSource();
       source.buffer = buffer;
-      lineSources.set(id, source);
+      lineSources.set(line.id, source);
     }
 
     const startAt = context.currentTime + 0.12;
     stopVoices = scheduleDubAudio({
       context,
+      cueOffsetMs,
+      lines,
       lineSources,
       output: master,
       startAt,
     });
-    oscillators = scheduleDubMusic(context, music, startAt);
+    oscillators = scheduleDubMusic(context, durationMs, music, startAt);
 
     const tick = () => {
       frameId = null;
       const elapsedMs = Math.max(0, (context.currentTime - startAt) * 1_000);
-      onTick(Math.min(DUB_DURATION_MS, elapsedMs));
+      onTick(Math.min(durationMs, elapsedMs));
       if (stopped) return;
-      if (elapsedMs >= DUB_DURATION_MS) {
+      if (elapsedMs >= durationMs) {
         void stopPlayback();
+        onEnded?.();
         return;
       }
       frameId = requestFrame(tick);

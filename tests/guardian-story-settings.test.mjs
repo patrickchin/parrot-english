@@ -178,9 +178,17 @@ function installArtFetch(preferenceResponse) {
 
 test("guardian story settings owns level and art management", () => {
   const html = renderView();
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  const levelTabs = [...container.querySelectorAll('[role="tab"]')];
 
   assert.match(html, /<h1[^>]*>Story settings<\/h1>/);
   assert.match(html, /Choose story level/);
+  assert.equal(levelTabs.length, 4);
+  assert.equal(
+    levelTabs.some((tab) => tab.textContent.includes("Long stories")),
+    false,
+  );
   assert.match(html, /Personalized story art/);
   assert.match(html, /Guardian consent/);
   assert.match(html, /Upload learner photo/);

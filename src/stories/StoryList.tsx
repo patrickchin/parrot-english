@@ -9,7 +9,12 @@ import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import { InteractiveCardLink } from "../shared/ui";
 import { StoryArtwork } from "./StoryArtwork";
-import { getStoryLevel, STORIES } from "./story-catalog";
+import {
+  getStoryLevel,
+  STORIES,
+  type Story,
+  type StoryLevel,
+} from "./story-catalog";
 
 const STORY_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 273px";
@@ -21,6 +26,7 @@ export function StoryList() {
   const activeLevelId = profile.storyLevel;
   const activeLevel = getStoryLevel(activeLevelId);
   const stories = STORIES.filter((story) => story.level === activeLevelId);
+  const longStories = STORIES.filter((story) => story.level === "long-stories");
   const canonicalPath = getStoryShelfPath(activeLevelId);
 
   useEffect(() => {
@@ -53,63 +59,82 @@ export function StoryList() {
         aria-label="Read-aloud stories"
         className="mx-auto grid w-full max-w-6xl gap-4 sm:gap-5"
       >
-        <section
-          aria-label={`${activeLevel.label} stories`}
-          className="grid gap-3 sm:gap-4"
-          id="story-level-panel"
-          role="region"
-        >
-          <header className="grid gap-1 text-center">
-            <h2
-              className="m-0 text-xl leading-none text-brand-navy sm:text-2xl"
-              id="story-level-heading"
-            >
-              {activeLevel.label}
-            </h2>
-            <p className="m-0 text-xs font-extrabold leading-snug text-brand-blue sm:text-sm">
-              {activeLevel.description}
-            </p>
-          </header>
-
-          <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {stories.map((story, storyIndex) => (
-              <article
-                aria-labelledby={`story-card-${story.id}`}
-                key={story.id}
-              >
-                <InteractiveCardLink
-                  aria-label={`Listen to story: ${story.title}`}
-                  className="grid min-h-full grid-rows-[auto_1fr] overflow-hidden"
-                  to={getStoryPagePath(story.id, 0)}
-                >
-                  <div className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
-                    <StoryArtwork
-                      artwork={story.cover}
-                      priority={storyIndex === 0}
-                      sizes={STORY_SHELF_IMAGE_SIZES}
-                    />
-                  </div>
-
-                  <div className="grid content-between gap-3 p-3.5 sm:p-4">
-                    <h3
-                      className="m-0 text-2xl leading-tight text-brand-ink"
-                      id={`story-card-${story.id}`}
-                    >
-                      {story.title}
-                    </h3>
-
-                    <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-brand-action-ink shadow-control-pink">
-                      <Headphones aria-hidden="true" className="size-5" />
-                      Listen
-                    </span>
-                  </div>
-                </InteractiveCardLink>
-              </article>
-            ))}
-          </div>
-        </section>
-
+        <StoryShelfSection
+          id="story-level"
+          level={activeLevel}
+          stories={stories}
+        />
+        <StoryShelfSection
+          id="long-stories"
+          level={getStoryLevel("long-stories")}
+          stories={longStories}
+        />
       </section>
     </main>
+  );
+}
+
+function StoryShelfSection({
+  id,
+  level,
+  stories,
+}: {
+  id: string;
+  level: StoryLevel;
+  stories: readonly Story[];
+}) {
+  return (
+    <section
+      aria-label={level.id === "long-stories" ? level.label : `${level.label} stories`}
+      className="grid gap-3 sm:gap-4"
+      id={`${id}-panel`}
+      role="region"
+    >
+      <header className="grid gap-1 text-center">
+        <h2
+          className="m-0 text-xl leading-none text-brand-navy sm:text-2xl"
+          id={`${id}-heading`}
+        >
+          {level.label}
+        </h2>
+        <p className="m-0 text-xs font-extrabold leading-snug text-brand-blue sm:text-sm">
+          {level.description}
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {stories.map((story, storyIndex) => (
+          <article aria-labelledby={`story-card-${story.id}`} key={story.id}>
+            <InteractiveCardLink
+              aria-label={`Listen to story: ${story.title}`}
+              className="grid min-h-full grid-rows-[auto_1fr] overflow-hidden"
+              to={getStoryPagePath(story.id, 0)}
+            >
+              <div className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
+                <StoryArtwork
+                  artwork={story.cover}
+                  priority={storyIndex === 0}
+                  sizes={STORY_SHELF_IMAGE_SIZES}
+                />
+              </div>
+
+              <div className="grid content-between gap-3 p-3.5 sm:p-4">
+                <h3
+                  className="m-0 text-2xl leading-tight text-brand-ink"
+                  id={`story-card-${story.id}`}
+                >
+                  {story.title}
+                </h3>
+
+                <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-brand-action-ink shadow-control-pink">
+                  <Headphones aria-hidden="true" className="size-5" />
+                  Listen
+                </span>
+              </div>
+            </InteractiveCardLink>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }

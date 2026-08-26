@@ -6,20 +6,30 @@ const MOCK_AUDIO_DELAY_MS = 200;
 const MOCK_FEEDBACK_AUDIO_DELAY_MS = 5000;
 const MOCK_RECORDING_DELAY_MS = 5000;
 const playedAudioSources: string[] = [];
+const createdObjectUrls: string[] = [];
+const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
   "audio-fetch-failed",
+  "almost-complete",
+  "both-source-failed",
   "corrupt-line-5",
+  "delete-failed",
+  "delete-held",
   "empty",
+  "load-held",
+  "multiple-source-failed",
   "partial",
   "complete",
   "playback-setup-failed",
   "reset-delete-failed",
   "reset-interrupted",
   "upload-failed",
+  "upload-retry-held",
   "upload-rejected",
+  "verse-fetch-failed",
 ]);
 const E2E_DUB_LINE_IDS = Array.from(
   { length: 24 },
@@ -340,6 +350,20 @@ function getE2eDubScenario() {
   return scenario && E2E_DUB_SCENARIOS.has(scenario) ? scenario : null;
 }
 
+if (getE2eDubScenario()) {
+  const createObjectURL = URL.createObjectURL.bind(URL);
+  const revokeObjectURL = URL.revokeObjectURL.bind(URL);
+  URL.createObjectURL = (blob) => {
+    const url = createObjectURL(blob);
+    createdObjectUrls.push(url);
+    return url;
+  };
+  URL.revokeObjectURL = (url) => {
+    revokedObjectUrls.push(url);
+    revokeObjectURL(url);
+  };
+}
+
 function getE2eProfileScenario() {
   const scenario = new URL(window.location.href).searchParams.get(
     "parrotE2eProfile",
@@ -361,6 +385,13 @@ function hasHeldE2eProfilePlayback() {
     new URL(window.location.href).searchParams.get(
       "parrotE2eProfilePlayback",
     ) === "held"
+  );
+}
+
+function hasHeldE2eDubPlayback() {
+  return (
+    new URL(window.location.href).searchParams.get("parrotE2eDubPlayback") ===
+    "held"
   );
 }
 
@@ -472,15 +503,25 @@ function createE2eDubBlob(scenario = "correct") {
 function initialE2eDubLineIds(scenario: string) {
   if (
     scenario === "audio-fetch-failed" ||
+    scenario === "both-source-failed" ||
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
+    scenario === "multiple-source-failed" ||
     scenario === "playback-setup-failed" ||
     scenario === "reset-delete-failed" ||
     scenario === "reset-interrupted"
   ) {
     return [...E2E_DUB_LINE_IDS];
   }
-  if (scenario === "partial") return E2E_DUB_LINE_IDS.slice(0, 3);
+  if (scenario === "almost-complete") return E2E_DUB_LINE_IDS.slice(0, 23);
+  if (
+    scenario === "delete-failed" ||
+    scenario === "delete-held" ||
+    scenario === "partial" ||
+    scenario === "verse-fetch-failed"
+  ) {
+    return E2E_DUB_LINE_IDS.slice(0, 3);
+  }
   return [];
 }
 
@@ -507,7 +548,7 @@ function createE2eDubStore(scenario: string | null) {
     ]),
   );
   let failedUpload: Uint8Array | null = null;
-  let failAudioFetch = scenario === "audio-fetch-failed";
+  let failAudioFetch = scenario === "audio-fetch-failed" || scenario === "verse-fetch-failed";
   let resetInterrupted =
     (scenario === "reset-delete-failed" || scenario === "reset-interrupted") &&
     sessionStorage.getItem(resetKey) !== "yes";
@@ -515,6 +556,14 @@ function createE2eDubStore(scenario: string | null) {
     scenario === "reset-delete-failed" &&
     sessionStorage.getItem(resetDeleteFailureKey) !== "used";
   let delayNextStatus = false;
+  let pendingDelete: ((response: Response) => void) | null = null;
+  let pendingRetryUpload: {
+    blob: Blob;
+    lineId: string;
+    resolve(response: Response): void;
+  } | null = null;
+  const guideFetches: string[] = [];
+  const privateFetches: string[] = [];
   const uploads: string[] = [];
 
   function persist() {
@@ -524,8 +573,25 @@ function createE2eDubStore(scenario: string | null) {
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
+      const guideMatch = url.pathname.match(
+        /^\/assets\/audio\/five-little-ducks-v2-guide-(line-(?:[1-9]|1[0-9]|2[0-4]))\.mp3$/,
+      );
+      if (method === "GET" && guideMatch) {
+        guideFetches.push(url.pathname);
+        if (
+          (scenario === "both-source-failed" && guideMatch[1] === "line-5") ||
+          (scenario === "multiple-source-failed" && ["line-5", "line-8"].includes(guideMatch[1]))
+        ) {
+          if (scenario === "multiple-source-failed" && guideMatch[1] === "line-5") {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 50));
+          }
+          return new Response(null, { status: 503 });
+        }
+        return null;
+      }
       if (url.pathname === E2E_DUB_API) {
         if (method === "GET") {
+          if (scenario === "load-held") return new Promise<Response>(() => {});
           if (resetInterrupted) {
             return Response.json(
               {
@@ -557,6 +623,14 @@ function createE2eDubStore(scenario: string | null) {
           });
         }
         if (method === "DELETE") {
+          if (scenario === "delete-failed") {
+            return new Response(null, { status: 503 });
+          }
+          if (scenario === "delete-held") {
+            return new Promise<Response>((resolve) => {
+              pendingDelete = resolve;
+            });
+          }
           if (resetInterrupted) {
             await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
             resetInterrupted = false;
@@ -585,6 +659,13 @@ function createE2eDubStore(scenario: string | null) {
       if (!lineMatch) return null;
       const [, lineId, audioPath] = lineMatch;
       if (method === "GET" && audioPath) {
+        privateFetches.push(url.pathname);
+        if (
+          (scenario === "both-source-failed" && lineId === "line-5") ||
+          (scenario === "multiple-source-failed" && ["line-5", "line-8"].includes(lineId))
+        ) {
+          return new Response(null, { status: 503 });
+        }
         if (failAudioFetch) {
           failAudioFetch = false;
           return new Response(null, { status: 503 });
@@ -616,7 +697,7 @@ function createE2eDubStore(scenario: string | null) {
         return new Response(null, { status: 413 });
       }
       if (
-        scenario === "upload-failed" &&
+        (scenario === "upload-failed" || scenario === "upload-retry-held") &&
         sessionStorage.getItem(failureKey) !== "used"
       ) {
         failedUpload = bytes;
@@ -630,6 +711,11 @@ function createE2eDubStore(scenario: string | null) {
       ) {
         return new Response(null, { status: 409 });
       }
+      if (scenario === "upload-retry-held") {
+        return new Promise<Response>((resolve) => {
+          pendingRetryUpload = { blob: clip, lineId, resolve };
+        });
+      }
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
       return e2eJson({ recordedAt: E2E_DUB_RECORDED_AT });
@@ -637,9 +723,34 @@ function createE2eDubStore(scenario: string | null) {
     snapshot() {
       return {
         audioContextDoubleCloses,
+        createdObjectUrls: [...createdObjectUrls],
+        guideFetches: [...guideFetches],
         playedAudioSources: [...playedAudioSources],
+        privateFetches: [...privateFetches],
+        revokedObjectUrls: [...revokedObjectUrls],
         uploads: [...uploads],
       };
+    },
+    releaseDelete() {
+      if (!pendingDelete) return false;
+      const resolve = pendingDelete;
+      pendingDelete = null;
+      clips.clear();
+      persist();
+      resolve(new Response(null, {
+        headers: { "Cache-Control": "private, no-store" },
+        status: 204,
+      }));
+      return true;
+    },
+    releaseUpload() {
+      if (!pendingRetryUpload) return false;
+      const pending = pendingRetryUpload;
+      pendingRetryUpload = null;
+      clips.set(pending.lineId, pending.blob);
+      persist();
+      pending.resolve(e2eJson({ recordedAt: E2E_DUB_RECORDED_AT }));
+      return true;
     },
   };
 }
@@ -1060,7 +1171,11 @@ function installE2eProfileFetchMock() {
   if (dubStore) {
     Object.defineProperty(window, "__parrotE2eDub", {
       configurable: true,
-      value: { snapshot: () => dubStore.snapshot() },
+      value: {
+        releaseDelete: () => dubStore.releaseDelete(),
+        releaseUpload: () => dubStore.releaseUpload(),
+        snapshot: () => dubStore.snapshot(),
+      },
     });
   }
 
@@ -1208,8 +1323,9 @@ class MockAudioElement {
   async play() {
     playedAudioSources.push(this.src);
     if (
-      hasHeldE2eProfilePlayback() &&
-      this.src.includes("learner-profile")
+      (hasHeldE2eProfilePlayback() && this.src.includes("learner-profile")) ||
+      (hasHeldE2eDubPlayback() &&
+        (this.src.includes("five-little-ducks") || this.src.startsWith("blob:")))
     ) {
       if (!this.held) {
         this.held = true;
@@ -1439,6 +1555,7 @@ class MockAudioContext {
       throw new DOMException("Mock undecodable dub line.", "EncodingError");
     }
     return {
+      duration: 4,
       getChannelData: () => Float32Array.from([0, 0.25, -0.8, 0.45, -1, 0.15]),
     } as unknown as AudioBuffer;
   }

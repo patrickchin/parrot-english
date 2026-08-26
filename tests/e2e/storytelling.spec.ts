@@ -519,6 +519,18 @@ test("a stale shelf level query returns to the learner's saved level", async ({ 
   ).toContainText("The Red Ball");
 });
 
+test("story prose preserves authored line breaks", async ({ page }) => {
+  await page.goto(firstStoryPath);
+
+  const pageText = page.getByLabel(/^Page 1 of 5\./);
+  await expect(pageText).toBeVisible();
+  await expect
+    .poll(() =>
+      pageText.evaluate((element) => getComputedStyle(element).whiteSpace),
+    )
+    .toBe("pre-line");
+});
+
 test("a phone keeps learner story cards contained without management controls", async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/stories");
@@ -983,15 +995,21 @@ test("every saved-audio story prompt is fully visible when narration ends", asyn
           `/assets/audio/${storyPage.narrationAudioId}.mp3`,
         ]);
       await finishSavedStoryAudio(page);
-      await expect(
-        prompt.getByText("Listen and say it", { exact: true }),
-      ).toBeVisible();
-      await expect
-        .poll(async () => (await savedStoryAudioState(page)).active)
-        .toEqual([
-          `/assets/audio/${storyPage.joinInAudioId}.mp3`,
-        ]);
-      await finishSavedStoryAudio(page);
+      if (storyPage.joinInAudioId) {
+        await expect(
+          prompt.getByText("Listen and say it", { exact: true }),
+        ).toBeVisible();
+        await expect
+          .poll(async () => (await savedStoryAudioState(page)).active)
+          .toEqual([
+            `/assets/audio/${storyPage.joinInAudioId}.mp3`,
+          ]);
+        await finishSavedStoryAudio(page);
+      } else {
+        await expect
+          .poll(async () => (await savedStoryAudioState(page)).active)
+          .toEqual([]);
+      }
       await expect(
         prompt.getByText("Your turn", { exact: true }),
       ).toBeVisible();

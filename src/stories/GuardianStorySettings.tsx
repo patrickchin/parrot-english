@@ -11,12 +11,16 @@ import {
 import { PersonalizedStoryArtPanel } from "./PersonalizedStoryArtPanel";
 import {
   getStoryLevel,
-  STORY_LEVELS,
-  type StoryLevelId,
+  LEARNER_STORY_LEVEL_IDS,
+  type LearnerStoryLevelId,
 } from "./story-catalog";
 import { usePersonalizedStoryArt } from "./usePersonalizedStoryArt";
 
 type PersonalizedStoryArtState = ReturnType<typeof usePersonalizedStoryArt>;
+const LEARNER_STORY_LEVELS = LEARNER_STORY_LEVEL_IDS.map((levelId) => ({
+  ...getStoryLevel(levelId),
+  id: levelId,
+}));
 
 export function GuardianStorySettingsView({
   art,
@@ -29,8 +33,8 @@ export function GuardianStorySettingsView({
   art: PersonalizedStoryArtState;
   error: string;
   isSaving: boolean;
-  onSelectLevel: (level: StoryLevelId) => void;
-  selectedLevel: StoryLevelId;
+  onSelectLevel: (level: LearnerStoryLevelId) => void;
+  selectedLevel: LearnerStoryLevelId;
   statusMessage: string;
 }) {
   const showArt =
@@ -73,7 +77,7 @@ export function GuardianStorySettingsView({
             className="grid grid-cols-2 lg:grid-cols-4"
             role="tablist"
           >
-            {STORY_LEVELS.map((level, levelIndex) => (
+            {LEARNER_STORY_LEVELS.map((level, levelIndex) => (
               <SegmentedButton
                 aria-controls="guardian-story-level-status"
                 aria-disabled={isSaving ? true : undefined}
@@ -151,7 +155,7 @@ export function GuardianStorySettings() {
   const [statusMessage, setStatusMessage] = useState("");
   const savingRef = useRef(false);
 
-  async function selectLevel(level: StoryLevelId) {
+  async function selectLevel(level: LearnerStoryLevelId) {
     if (savingRef.current || level === profile.storyLevel) return;
     savingRef.current = true;
     setError("");

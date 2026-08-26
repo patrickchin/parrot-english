@@ -560,12 +560,13 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("rejects unknown story levels and extra preference keys", async () => {
+  it("rejects non-learner story levels and extra preference keys", async () => {
     const state = createSeededDatabase();
     try {
       await callLearnerProfile(state.database, "/api/profile");
       for (const body of [
         { storyLevel: "expert" },
+        { storyLevel: "long-stories" },
         { storyLevel: "first-words", extra: true },
       ]) {
         const response = await callLearnerProfile(
