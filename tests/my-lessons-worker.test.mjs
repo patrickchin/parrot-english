@@ -324,8 +324,8 @@ describe("My Lessons persistence and API", () => {
 
       assert.equal(response.status, 200);
       assert.deepEqual(lists, [
-        { prefix },
-        { prefix, cursor: "page-2" },
+        { include: ["customMetadata"], prefix },
+        { cursor: "page-2", include: ["customMetadata"], prefix },
       ]);
       assert.deepEqual(deletions, []);
       assert.deepEqual(writes.map(({ key, options }) => ({

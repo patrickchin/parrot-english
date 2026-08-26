@@ -324,7 +324,13 @@ describe("onboarding persistence and API", () => {
         enabled: false,
       });
       assert.deepEqual(calls, [
-        ["list", { prefix: "personalized-story-art/user-1/lesson-recordings/" }],
+        [
+          "list",
+          {
+            include: ["customMetadata"],
+            prefix: "personalized-story-art/user-1/lesson-recordings/",
+          },
+        ],
         [
           "put",
           "personalized-story-art/user-1/lesson-recordings/clip-1.webm",

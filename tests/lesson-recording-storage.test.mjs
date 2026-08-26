@@ -53,7 +53,7 @@ describe("lesson recording storage", () => {
         return current;
       },
       async list(options) {
-        assert.deepEqual(options, { prefix });
+        assert.deepEqual(options, { include: ["customMetadata"], prefix });
         const page = { objects: [stale], truncated: false };
         current = newer;
         return page;
@@ -151,8 +151,8 @@ describe("lesson recording storage", () => {
     await storage.deleteAllLessonRecordings(state.bucket, "user/one", 1, async () => {});
 
     assert.deepEqual(state.lists, [
-      { prefix },
-      { prefix, cursor: "page-2" },
+      { include: ["customMetadata"], prefix },
+      { cursor: "page-2", include: ["customMetadata"], prefix },
     ]);
     assert.deepEqual(state.deletions, []);
     assert.deepEqual(state.writes.map(({ key, options }) => ({
@@ -194,7 +194,7 @@ describe("lesson recording storage", () => {
       async () => {},
     );
 
-    assert.deepEqual(state.lists, [{ prefix }]);
+    assert.deepEqual(state.lists, [{ include: ["customMetadata"], prefix }]);
     assert.deepEqual(state.deletions, []);
     assert.deepEqual(state.writes.map(({ key, options }) => ({
       key,

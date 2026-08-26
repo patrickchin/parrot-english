@@ -249,6 +249,7 @@ async function purgePrefix(
   while (true) {
     const page = await retryRateLimited(
       () => bucket.list({
+        include: ["customMetadata"],
         prefix,
         ...(cursor === undefined ? {} : { cursor }),
       }),
