@@ -190,7 +190,7 @@ test("successful unlock opens guardian management and announces the fifteen-minu
     .getByRole("button", { name: /Profile for Mia, guardian mode/ })
     .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Dashboard",
+    "Guardian dashboard",
     "Manage learners",
     "Account & privacy",
     "Sign out",
@@ -723,7 +723,7 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
   await guardianTrigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   const dashboard = menu.getByRole("menuitem", {
-    name: "Dashboard",
+    name: "Guardian dashboard",
   });
   const manageLearners = menu.getByRole("menuitem", {
     name: "Manage learners",

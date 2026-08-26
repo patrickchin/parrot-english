@@ -142,3 +142,79 @@ migrated; no Task 9-owned learner/profile route assertions were changed.
   Task 7's focused and cross-suite browser coverage is green.
 - Lint retains two pre-existing generated declaration warnings, and the build
   retains the existing Vite chunk-size advisory.
+
+## Fix round 1/5: exact menu label and test hygiene
+
+Status: DONE_WITH_CONCERNS
+
+### Review findings addressed
+
+- Corrected the first Guardian menu label from `Dashboard` to the exact
+  required `Guardian dashboard` contract in the shared `AccountHeader`.
+- Updated every Task 7 rendered exact-order and focus expectation to the same
+  literal label.
+- Removed Task 7's JSX source-regex assertions from
+  `tests/build-info-wiring.test.mjs`, including menu inclusion/exclusion,
+  `AccountPrivacySections`, Danger zone, and Delete account opener checks.
+  Those behaviors remain covered through mounted lifecycle and Playwright
+  assertions; the build-info test retains its pre-existing metadata wiring
+  coverage.
+- Deliberately did not add the deferred zero-learner end-to-end gate case; the
+  review assigns that Minor to Task 9.
+
+### RED evidence
+
+The rendered expectations were changed before production.
+
+1. `node --test tests/build-info-wiring.test.mjs tests/lifecycle/accessibility-lifecycle.test.mjs`
+   - Exit 1: 25 passed, 5 failed.
+   - `tests/build-info-wiring.test.mjs` passed after removing the UI source
+     assertions. All five lifecycle failures showed the same intended mismatch:
+     actual `Dashboard`, expected `Guardian dashboard`.
+2. `npx playwright test tests/e2e/header.spec.ts tests/e2e/guardian-mode.spec.ts tests/e2e/shared-focus-visibility.spec.ts --project=chromium --grep "Account menu keeps arbitrary|Guardian menu opens the protected|account actions keep routine|successful unlock opens guardian management|cancel and Escape restore focus|dark-surface focus does not fade"`
+   - Exit 1: 0 passed, 6 failed.
+   - Every case failed at the rendered menu text or accessible-name locator,
+     with actual `Dashboard` and expected `Guardian dashboard`.
+
+### GREEN and command results
+
+- The same focused node command
+  - Exit 0: 30 passed, 0 failed.
+- The same focused Playwright command
+  - Exit 0: 6 passed, 0 failed.
+- `npm test`
+  - Exit 0: 1,320 passed, 0 failed across 115 suites.
+- `npx playwright test tests/e2e/header.spec.ts --project=chromium`
+  - Completed: 46 passed, 5 failed.
+  - The five failures are unchanged legacy `/guardian/profile` assertions
+    reserved for Task 9; all Task 7 exact-menu, Account & privacy, responsive,
+    deletion, and focus cases passed.
+- `npm run lint`
+  - Exit 0: 0 errors and the two pre-existing unused-disable warnings in
+    generated `worker-configuration.d.ts`.
+- `npm run build`
+  - Exit 0: TypeScript and Vite production build succeeded; the existing
+    large-chunk advisory remains.
+- `rg -n '\"Dashboard\"|>\\s*Dashboard\\s*<' src tests`
+  - No bare exact menu label or expectation remains.
+
+### Fix-round self-review
+
+- Mentally mutated the production label back to `Dashboard`: five mounted
+  lifecycle assertions and six focused Playwright cases fail on rendered text,
+  exact order, or focus, proving the contract is behavior-covered.
+- Verified the implementation change is one shared rendered string; no routing,
+  callbacks, keyboard mechanics, styling, or account behavior changed.
+- Verified menu exclusion, sole Delete account placement, Danger zone, and
+  password-dialog behavior are asserted only through rendered lifecycle and
+  Playwright surfaces added or migrated by Task 7, not Task 7 source regexes.
+- Verified no Task 9 legacy route assertions or deferred zero-learner E2E
+  coverage were changed.
+- Verified the untracked user-owned plan and design documents remain untouched.
+
+### Fix-round concerns
+
+- The zero-learner account availability end-to-end gate regression remains the
+  explicitly deferred Minor for Task 9.
+- The known Task 9 legacy route failures, two generated lint warnings, and Vite
+  chunk-size advisory remain unchanged.

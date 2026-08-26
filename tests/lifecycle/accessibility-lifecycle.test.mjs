@@ -555,7 +555,7 @@ describe("keyboard accessibility lifecycles", () => {
         text: item.textContent.trim(),
       })),
       [
-        { role: "menuitem", text: "Dashboard" },
+        { role: "menuitem", text: "Guardian dashboard" },
         { role: "menuitem", text: "Manage learners" },
         { role: "menuitem", text: "Account & privacy" },
         { role: "menuitem", text: "Sign out" },
@@ -827,7 +827,7 @@ describe("keyboard accessibility lifecycles", () => {
         item.textContent.trim(),
       ),
       [
-        "Dashboard",
+        "Guardian dashboard",
         "Manage learners",
         "Account & privacy",
         "Sign out",
@@ -874,13 +874,13 @@ describe("keyboard accessibility lifecycles", () => {
         item.textContent.trim(),
       ),
       [
-        "Dashboard",
+        "Guardian dashboard",
         "Manage learners",
         "Account & privacy",
         "Sign out",
       ],
     );
-    await click(button("Dashboard"));
+    await click(button("Guardian dashboard"));
     await click(button("Profile for Patrick, guardian mode"));
     await click(button("Manage learners"));
     await click(button("Profile for Patrick, guardian mode"));
@@ -935,7 +935,7 @@ describe("keyboard accessibility lifecycles", () => {
         item.textContent.trim(),
       ),
       [
-        "Dashboard",
+        "Guardian dashboard",
         "Manage learners",
         "Account & privacy",
         "Sign out",
@@ -1447,7 +1447,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.deepEqual(
       items.map((item) => item.textContent.trim()),
       [
-        "Dashboard",
+        "Guardian dashboard",
         "Manage learners",
         "Account & privacy",
         "Sign out",

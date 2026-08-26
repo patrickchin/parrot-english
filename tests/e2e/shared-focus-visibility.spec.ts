@@ -1446,7 +1446,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
     .getByRole("button", { name: "Profile for Mia, guardian mode" })
     .click();
   await expect(
-    page.getByRole("menuitem", { name: "Dashboard" }),
+    page.getByRole("menuitem", { name: "Guardian dashboard" }),
   ).toBeFocused();
   await page.keyboard.press("ArrowDown");
   const manageLearners = page.getByRole("menuitem", {

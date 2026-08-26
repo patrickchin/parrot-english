@@ -451,7 +451,7 @@ export function AccountHeader({
                   role="menuitem"
                   type="button"
                 >
-                  Dashboard
+                  Guardian dashboard
                 </MenuButton>
                 <MenuButton
                   onClick={() => selectAction(onOpenLearnerProfiles)}

@@ -519,7 +519,7 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBe(currentCase.direction);
 
     const firstAction = page.getByRole("menuitem", {
-      name: "Dashboard",
+      name: "Guardian dashboard",
     });
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
@@ -857,7 +857,7 @@ test("Guardian menu opens the protected Account & privacy page with deletion onl
 
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Dashboard",
+    "Guardian dashboard",
     "Manage learners",
     "Account & privacy",
     "Sign out",
@@ -918,7 +918,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
     const menu = page.getByRole("menu", { name: "Account menu" });
     const items = menu.getByRole("menuitem");
     await expect(items).toHaveText([
-      "Dashboard",
+      "Guardian dashboard",
       "Manage learners",
       "Account & privacy",
       "Sign out",
