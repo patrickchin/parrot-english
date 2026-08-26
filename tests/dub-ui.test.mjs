@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { after, afterEach, describe, it } from "node:test";
-import { createElement } from "react";
+import { act, createElement, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { createServer } from "vite";
@@ -246,6 +246,50 @@ describe("duck dubbing storyboard presentation", () => {
       null,
     ));
     assert.ok(container.querySelector('[aria-label="Original audio waveform"]'));
+  });
+
+  it("keeps the live overlay absent after audio resume rejection", async () => {
+    let advanceElapsed = () => {
+      throw new Error("Waveform harness was not mounted.");
+    };
+    const recordingStream = { getTracks: () => [] };
+    globalThis.AudioContext = class AudioContext {
+      close() { return Promise.resolve(); }
+      createAnalyser() {
+        return {
+          fftSize: 256,
+          getFloatTimeDomainData(samples) { samples.fill(0.5); },
+          smoothingTimeConstant: 0,
+        };
+      }
+      createMediaStreamSource() {
+        return { connect() {}, disconnect() {} };
+      }
+      resume() { return Promise.reject(new Error("Audio context stayed suspended.")); }
+    };
+
+    function WaveformHarness() {
+      const [elapsed, setElapsed] = useState(500);
+      advanceElapsed = () => setElapsed((current) => current + 100);
+      return createElement(DubTakeWaveform, {
+        blob: null,
+        guideAudioId: "five-little-ducks-v2-guide-line-1",
+        recordingElapsedMs: elapsed,
+        recordingStream,
+      });
+    }
+
+    const container = await mountStrict(createElement(WaveformHarness));
+    await waitFor(() => assert.equal(
+      container.querySelector('[aria-label="Your live recording waveform"]'),
+      null,
+    ));
+    await act(async () => advanceElapsed());
+    await act(async () => advanceElapsed());
+    assert.equal(
+      container.querySelector('[aria-label="Your live recording waveform"]'),
+      null,
+    );
   });
 
   it("uses painted raster artwork with an adjacent scene description", () => {

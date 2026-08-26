@@ -111,10 +111,12 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const samplesRef = useRef<Float32Array<ArrayBuffer> | null>(null);
   const [rawPeaks, setRawPeaks] = useState(BASELINE_BARS);
+  const [graphReady, setGraphReady] = useState(false);
   const [available, setAvailable] = useState(false);
 
   useEffect(() => {
     setRawPeaks(BASELINE_BARS);
+    setGraphReady(false);
     setAvailable(false);
     analyserRef.current = null;
     samplesRef.current = null;
@@ -142,9 +144,19 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
       source.connect(analyser);
       analyserRef.current = analyser;
       samplesRef.current = new Float32Array(analyser.fftSize);
-      void context.resume().catch(() => {
-        if (!cancelled) setAvailable(false);
-      });
+      void context.resume()
+        .then(() => {
+          if (!cancelled) setGraphReady(true);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          analyserRef.current = null;
+          samplesRef.current = null;
+          disconnectAudioNode(source);
+          closeAudioContext(context);
+          setGraphReady(false);
+          setAvailable(false);
+        });
     } catch {
       disconnectAudioNode(source);
       closeAudioContext(context);
@@ -163,10 +175,11 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
   useEffect(() => {
     const analyser = analyserRef.current;
     const samples = samplesRef.current;
-    if (!stream || !analyser || !samples) return;
+    if (!stream || !graphReady || !analyser || !samples) return;
     try {
       analyser.getFloatTimeDomainData(samples);
     } catch {
+      setGraphReady(false);
       setAvailable(false);
       analyserRef.current = null;
       return;
@@ -184,7 +197,7 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
       return next;
     });
     setAvailable(true);
-  }, [elapsedMs, stream]);
+  }, [elapsedMs, graphReady, stream]);
 
   return {
     available,

@@ -1524,6 +1524,15 @@ for (const recovery of [
     const feedback = page.getByRole("region", { name: "Recording feedback" });
     await expect(controls.getByRole("alert")).toBeVisible();
     await expect(page.getByRole("button", { name: recovery.action })).toBeVisible();
+    const alertFontSize = await controls.getByRole("alert").evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize));
+    expect(alertFontSize).toBeGreaterThanOrEqual(12);
+    const feedbackActions = feedback.getByRole("button");
+    for (let index = 0; index < await feedbackActions.count(); index += 1) {
+      const target = await boundingBoxOrThrow(feedbackActions.nth(index));
+      expect(target.width).toBeGreaterThanOrEqual(48);
+      expect(target.height).toBeGreaterThanOrEqual(48);
+    }
     for (const region of [controls, feedback]) {
       const metrics = await region.evaluate((element) => ({
         clientHeight: element.clientHeight,
