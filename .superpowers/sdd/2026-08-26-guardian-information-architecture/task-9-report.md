@@ -269,3 +269,106 @@ or build advisories and are not Task 9 regressions.
 None. The final required unit and browser suites are green. The first full
 browser audit also surfaced unrelated load-sensitive failures, but the final
 full run passed all 457 tests without changing those tests or product code.
+
+---
+
+## Review fix round 2/5 — mutation-sensitive authorization matrix
+
+### Finding addressed
+
+The round-1 method/path matrix had the correct response contracts but its
+oracles were not sufficiently mutation-sensitive. The locked parser
+instrumentation covered only one profile GET, the before/after snapshot covered
+only Noah and omitted several internal recording fields, the My Lessons detail
+and edit rows named a nonexistent descriptor, and the preference payload used
+an invalid value. Those gaps could allow an early parser call or an invalid
+target falling back to active Mia to escape detection.
+
+The updated coverage now:
+
+- instruments `URLSearchParams.getAll` around all 52 locked requests and
+  requires zero target-parser calls while independently checking every 403,
+  no-store header, browser marker, JSON content type, and response body;
+- seeds a production-valid custom lesson for both Mia and Noah, asserts their
+  deterministic IDs, and uses Mia's existing descriptor for the detail/edit
+  rows so an active-learner fallback reaches a real mutable resource;
+- snapshots both learners' full learner-profile and profile-editor responses,
+  preferences, recording consent plus cleanup/pending/upload descriptors,
+  custom lessons, dubbing consent and saved-line status, story-art feature and
+  stored-art metadata, along with the account roster and `activeProfileId`;
+- sends endpoint-valid JSON, WebM-signature bytes, browser-created multipart
+  forms, and a valid tiny PNG, including the accepted `tiny-stories`
+  preference literal; and
+- applies the same full before/after oracle to all 182 unlocked malformed or
+  unowned requests and proves exactly one target parse per request.
+
+### Mutation-sensitive RED evidence
+
+| Injected temporary fault | Result | What it proved |
+| --- | --- | --- |
+| Called `parseExplicitLearnerTarget` before authorization only for targeted `/api/profile/preferences` requests. | RED: focused locked test failed 0/1, expected 0 parser calls and received exactly 2. Every response still returned 403. | Instrumentation spans the complete 26-row x 2-query locked table rather than only `/api/profile`. |
+| Dispatched invalid targeted `PUT /api/lessons/my/lesson-learner-mia-1` into the active learner handler before returning the shared 404. | RED: focused unlocked test failed 0/1 because Mia's seeded lesson title changed from `Mia authorization fixture` to `Edited targeted lesson`, even though the response contract remained 404. | The valid fixture ID and both-learner state oracle detect an invalid target mutating active Mia; a missing descriptor or Noah-only snapshot cannot mask it. |
+
+Both temporary faults were restored immediately with patch reversals and are
+absent from the final diff. No production file is changed in this round.
+
+### Changed files in this review round
+
+- `tests/e2e/multiple-learners.spec.ts` — valid binary/multipart/request
+  fixtures, deterministic Mia/Noah lesson seeding, shared exhaustive parser
+  instrumentation, and the expanded two-learner account-state oracle.
+- `.superpowers/sdd/2026-08-26-guardian-information-architecture/task-9-report.md`
+  — this review-round failure inventory, evidence, and self-review.
+
+### GREEN verification
+
+| Evidence | Result |
+| --- | --- |
+| `npx playwright test tests/e2e/multiple-learners.spec.ts --grep "locked targeted reads\|unlocked malformed targeted" --reporter=line` after restoring both mutations | GREEN: 2/2 (1.2s). |
+| `npx playwright test tests/e2e/multiple-learners.spec.ts --reporter=line` | GREEN: 31/31 (8.8s). |
+| `npm test` | GREEN: 1,323/1,323 tests, 115 suites, 0 failed (4.225s). |
+| `npm run test:browser` | GREEN: 456/456 tests, 0 failed (1.8m). |
+| `npm run lint` | GREEN: exit 0, 0 errors. The same two generated `worker-configuration.d.ts` unused-disable warnings remain. |
+| `npm run build` | GREEN: TypeScript and Vite build succeeded; 1,914 modules transformed. The existing chunk-size advisory remains. |
+| `git diff --check` | GREEN: exit 0, no whitespace errors. |
+
+The browser total is 456 instead of round 1's 457 because the redundant
+single-profile locked parser test was folded into the exhaustive 52-request
+test. The parser invariant now has strictly broader coverage in one test.
+
+### No-state-mutation proof
+
+- Both tests seed and verify exact existing descriptors
+  `lesson-learner-mia-1` and `lesson-learner-noah-1` before taking the baseline.
+- The locked test compares the complete Mia/Noah/account snapshot before and
+  after every one of its 52 requests and observes zero `getAll` calls.
+- The unlocked test compares the same snapshot before and after all 182
+  requests and observes exactly 182 `getAll` calls.
+- The oracle intentionally excludes only the mock's consent-read request
+  counter because reading the state itself increments that instrumentation;
+  it includes the actual recording consent, cleanup, pending-upload, and
+  persisted upload state.
+- The active learner remains Mia and the roster remains unchanged in both
+  matrices.
+
+### Self-review
+
+- Confirmed all 26 documented targetable method/path rows still participate in
+  both matrices; no undocumented endpoint was added to satisfy the classifier.
+- Confirmed the locked parser patch encloses the complete 52-request
+  `Promise.all` and is restored in `finally`.
+- Confirmed the My Lessons detail/edit row targets an existing Mia descriptor
+  and its body is a complete valid lesson, making fallback mutation observable.
+- Confirmed both aliases and every relevant route-family state are represented
+  for both learners in the before/after oracle.
+- Confirmed the valid media and multipart bodies would enter their production
+  family handlers if invalid-target resolution were accidentally discarded.
+- Confirmed the final production mock is byte-for-byte unchanged in this round;
+  the work is limited to tests and this report.
+- No dependency, arbitrary sleep, weakened assertion, destructive action,
+  source/class assertion, cross-origin behavior change, or unrelated user-file
+  edit was introduced.
+
+### Review-round concerns
+
+None. All requested focused and full verification commands are green.

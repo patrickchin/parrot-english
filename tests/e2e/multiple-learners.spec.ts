@@ -11,14 +11,30 @@ const GUARDIAN_PASSWORD = "e2e-guardian-password";
 
 type TargetedRequestCase = {
   body?: string;
+  bodyBytes?: number[];
+  formData?: {
+    fields?: Record<string, string>;
+    file: {
+      base64?: string;
+      bytes?: number[];
+      field: string;
+      name: string;
+      type: string;
+    };
+  };
   headers?: Record<string, string>;
   method: "DELETE" | "GET" | "POST" | "PUT";
   name: string;
   path: string;
 };
 
+const TARGETED_MIA_LESSON_ID = "lesson-learner-mia-1";
+const TARGETED_NOAH_LESSON_ID = "lesson-learner-noah-1";
+const TARGETED_WEBM_BYTES = [0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00];
+const TARGETED_TINY_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGPQqNjyH4QZYAwATjwJTSZS7G8AAAAASUVORK5CYII=";
 const targetedLessonBody = JSON.stringify({
-  lesson: createLessonScript({ childName: "Noah", title: "Targeted lesson" }),
+  lesson: createLessonScript({ childName: "Mia", title: "Targeted lesson" }),
   source: "uploaded",
 });
 
@@ -49,10 +65,13 @@ const targetedRequestCases: TargetedRequestCase[] = [
     path: "/api/learner-profile/complete",
   },
   {
-    body:
-      "--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"speech.webm\"\r\nContent-Type: audio/webm\r\n\r\ntargeted speech\r\n--ParrotTargetBoundary--\r\n",
-    headers: {
-      "Content-Type": "multipart/form-data; boundary=ParrotTargetBoundary",
+    formData: {
+      file: {
+        bytes: TARGETED_WEBM_BYTES,
+        field: "audio",
+        name: "speech.webm",
+        type: "audio/webm",
+      },
     },
     method: "POST",
     name: "learner-profile transcription",
@@ -67,7 +86,7 @@ const targetedRequestCases: TargetedRequestCase[] = [
     path: "/api/profile",
   },
   {
-    body: JSON.stringify({ storyLevel: "stretch" }),
+    body: JSON.stringify({ storyLevel: "tiny-stories" }),
     headers: { "Content-Type": "application/json" },
     method: "PUT",
     name: "profile preferences",
@@ -86,7 +105,7 @@ const targetedRequestCases: TargetedRequestCase[] = [
     path: "/api/profile/lesson-recording-consent",
   },
   {
-    body: "targeted lesson recording",
+    bodyBytes: TARGETED_WEBM_BYTES,
     headers: {
       "Content-Type": "audio/webm",
       "X-Parrot-Expected-Learner-Profile": "learner-noah",
@@ -113,19 +132,19 @@ const targetedRequestCases: TargetedRequestCase[] = [
   {
     method: "GET",
     name: "My Lessons detail",
-    path: "/api/lessons/my/targeted-detail",
+    path: `/api/lessons/my/${TARGETED_MIA_LESSON_ID}`,
   },
   {
     body: JSON.stringify({
       lesson: createLessonScript({
-        childName: "Noah",
+        childName: "Mia",
         title: "Edited targeted lesson",
       }),
     }),
     headers: { "Content-Type": "application/json" },
     method: "PUT",
     name: "My Lessons edit",
-    path: "/api/lessons/my/targeted-detail",
+    path: `/api/lessons/my/${TARGETED_MIA_LESSON_ID}`,
   },
   {
     method: "GET",
@@ -143,7 +162,7 @@ const targetedRequestCases: TargetedRequestCase[] = [
     path: "/api/dubs/five-little-ducks-v2/consent",
   },
   {
-    body: "targeted dubbing clip",
+    bodyBytes: TARGETED_WEBM_BYTES,
     headers: { "Content-Type": "audio/webm" },
     method: "PUT",
     name: "dubbing clip",
@@ -170,10 +189,17 @@ const targetedRequestCases: TargetedRequestCase[] = [
     path: "/api/stories/the-red-ball/personalized-art/asset",
   },
   {
-    body:
-      "--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"guardianConsentAccepted\"\r\n\r\ntrue\r\n--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"guardianConsentVersion\"\r\n\r\nguardian-photo-cloudflare-v1\r\n--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"source\"; filename=\"source.png\"\r\nContent-Type: image/png\r\n\r\ntargeted image\r\n--ParrotTargetBoundary--\r\n",
-    headers: {
-      "Content-Type": "multipart/form-data; boundary=ParrotTargetBoundary",
+    formData: {
+      fields: {
+        guardianConsentAccepted: "true",
+        guardianConsentVersion: "guardian-photo-cloudflare-v1",
+      },
+      file: {
+        base64: TARGETED_TINY_PNG_BASE64,
+        field: "source",
+        name: "source.png",
+        type: "image/png",
+      },
     },
     method: "POST",
     name: "story-art generation",
@@ -204,6 +230,247 @@ function learnerScenarioUrl(
   url.searchParams.set("parrotE2eLearners", scenario);
   if (sessionId) url.searchParams.set("parrotE2eSession", sessionId);
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+type TargetedQueryCase = {
+  name: string;
+  value: string;
+};
+
+async function setGuardianAccess(
+  page: Page,
+  mode: "guardian" | "learner",
+) {
+  const result = await page.evaluate(
+    async ({ password, requestedMode }) => {
+      const response = await fetch("/api/guardian-access", {
+        ...(requestedMode === "guardian"
+          ? {
+              body: JSON.stringify({ password }),
+              headers: { "Content-Type": "application/json" },
+              method: "POST",
+            }
+          : { method: "DELETE" }),
+      });
+      return { body: await response.json(), status: response.status };
+    },
+    { password: GUARDIAN_PASSWORD, requestedMode: mode },
+  );
+
+  expect(result.status).toBe(200);
+  expect(result.body).toMatchObject({ mode });
+}
+
+async function seedTargetedAuthorizationState(page: Page) {
+  const result = await page.evaluate(
+    async ({ miaLesson, noahLesson }) => {
+      const create = async (
+        lesson: ReturnType<typeof createLessonScript>,
+        target: string,
+      ) => {
+        const response = await fetch(`/api/lessons/my${target}`, {
+          body: JSON.stringify({ lesson, source: "uploaded" }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const body = (await response.json()) as {
+          lesson?: { id?: string };
+        };
+        return { id: body.lesson?.id ?? null, status: response.status };
+      };
+
+      return {
+        mia: await create(miaLesson, ""),
+        noah: await create(
+          noahLesson,
+          "?learnerProfileId=learner-noah",
+        ),
+      };
+    },
+    {
+      miaLesson: createLessonScript({
+        childName: "Mia",
+        title: "Mia authorization fixture",
+      }),
+      noahLesson: createLessonScript({
+        childName: "Noah",
+        title: "Noah authorization fixture",
+      }),
+    },
+  );
+
+  expect(result).toEqual({
+    mia: { id: TARGETED_MIA_LESSON_ID, status: 201 },
+    noah: { id: TARGETED_NOAH_LESSON_ID, status: 201 },
+  });
+}
+
+async function readTargetedAccountState(page: Page) {
+  return page.evaluate(async () => {
+    const account = (
+      window as Window & {
+        __parrotE2eLearners?: {
+          snapshot(profileId?: string): {
+            activeProfileId: string | null;
+            lessonRecording: {
+              cleanupPending: boolean;
+              consent: boolean;
+              pendingUploads: number;
+              uploads: unknown[];
+            } | null;
+            profiles: Array<unknown>;
+          };
+        };
+      }
+    ).__parrotE2eLearners;
+    if (!account) throw new Error("Learner controller is missing.");
+
+    const json = async (path: string) => {
+      const response = await fetch(path);
+      if (!response.ok) {
+        throw new Error(`State read failed for ${path}: ${response.status}`);
+      }
+      return { body: await response.json(), status: response.status };
+    };
+    const learner = async (profileId: string) => {
+      const target = new URLSearchParams({
+        learnerProfileId: profileId,
+      }).toString();
+      const [learnerProfile, profile, recording, lessons, dubbing, storyArt] =
+        await Promise.all([
+          json(`/api/learner-profile?${target}`),
+          json(`/api/profile?${target}`),
+          json(`/api/lesson-recordings/consent?${target}`),
+          json(`/api/lessons/my?${target}`),
+          json(`/api/dubs/five-little-ducks-v2?${target}`),
+          json(`/api/stories/the-red-ball/personalized-art?${target}`),
+        ]);
+      const lessonRecording = account.snapshot(profileId).lessonRecording;
+      if (!lessonRecording) {
+        throw new Error(`Missing recording state for ${profileId}.`);
+      }
+      return {
+        dubbing,
+        learnerProfile,
+        lessons,
+        profile,
+        recording: {
+          endpoint: recording,
+          fixture: {
+            cleanupPending: lessonRecording.cleanupPending,
+            consent: lessonRecording.consent,
+            pendingUploads: lessonRecording.pendingUploads,
+            uploads: lessonRecording.uploads,
+          },
+        },
+        storyArt,
+      };
+    };
+
+    const [roster, mia, noah] = await Promise.all([
+      json("/api/learner-profiles"),
+      learner("learner-mia"),
+      learner("learner-noah"),
+    ]);
+    return {
+      activeProfileId: account.snapshot().activeProfileId,
+      learners: { mia, noah },
+      roster,
+    };
+  });
+}
+
+async function exerciseTargetedRequests(
+  page: Page,
+  queries: TargetedQueryCase[],
+) {
+  return page.evaluate(
+    async ({ requests, targetQueries }) => {
+      const initFor = (requestCase: TargetedRequestCase): RequestInit => {
+        let body: BodyInit | undefined;
+        if (requestCase.formData) {
+          const form = new FormData();
+          for (const [key, value] of Object.entries(
+            requestCase.formData.fields ?? {},
+          )) {
+            form.set(key, value);
+          }
+          const file = requestCase.formData.file;
+          const bytes = file.base64
+            ? Uint8Array.from(atob(file.base64), (character) =>
+                character.charCodeAt(0),
+              )
+            : new Uint8Array(file.bytes ?? []);
+          form.set(
+            file.field,
+            new File([bytes], file.name, { type: file.type }),
+          );
+          body = form;
+        } else if (requestCase.bodyBytes) {
+          body = new Blob([new Uint8Array(requestCase.bodyBytes)], {
+            type: requestCase.headers?.["Content-Type"],
+          });
+        } else {
+          body = requestCase.body;
+        }
+        return {
+          ...(body === undefined
+            ? {}
+            : {
+                body,
+                ...(requestCase.formData
+                  ? {}
+                  : { headers: requestCase.headers }),
+              }),
+          method: requestCase.method,
+        };
+      };
+
+      const originalGetAll = URLSearchParams.prototype.getAll;
+      let parseCalls = 0;
+      URLSearchParams.prototype.getAll = function (
+        this: URLSearchParams,
+        name: string,
+      ) {
+        if (name === "learnerProfileId") parseCalls += 1;
+        return originalGetAll.call(this, name);
+      };
+      let responses: Array<{
+        body: unknown;
+        cacheControl: string | null;
+        contentType: string | null;
+        method: TargetedRequestCase["method"];
+        mockApi: string | null;
+        name: string;
+        status: number;
+      }>;
+      try {
+        responses = await Promise.all(
+          requests.flatMap((requestCase) =>
+            targetQueries.map(async (query) => {
+              const response = await fetch(
+                `${requestCase.path}?${query.value}`,
+                initFor(requestCase),
+              );
+              return {
+                body: await response.clone().json().catch(() => null),
+                cacheControl: response.headers.get("Cache-Control"),
+                contentType: response.headers.get("Content-Type"),
+                method: requestCase.method,
+                mockApi: response.headers.get("X-Parrot-Mock-Api"),
+                name: `${requestCase.name} / ${query.name}`,
+                status: response.status,
+              };
+            }),
+          ),
+        );
+      } finally {
+        URLSearchParams.prototype.getAll = originalGetAll;
+      }
+      return { parseCalls, responses };
+    },
+    { requests: targetedRequestCases, targetQueries: queries },
+  );
 }
 
 async function createAuthenticatedBrowserContext(
@@ -2061,7 +2328,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     .toBe("learner-mia");
 });
 
-test("locked explicit learner authorization never parses the target query", async ({
+test("locked targeted reads and mutations authorize all 52 requests before parsing or resolution", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
@@ -2069,133 +2336,31 @@ test("locked explicit learner authorization never parses the target query", asyn
     page.getByRole("heading", { name: "Tap a picture." }),
   ).toBeVisible();
 
-  const result = await page.evaluate(async () => {
-    const originalGetAll = URLSearchParams.prototype.getAll;
-    let parseCalls = 0;
-    let outcome:
-      | { body: unknown; status: number }
-      | { rejected: string };
-    URLSearchParams.prototype.getAll = function (
-      this: URLSearchParams,
-      name: string,
-    ) {
-      if (name === "learnerProfileId") {
-        parseCalls += 1;
-        throw new Error("learner target parsed before authorization");
-      }
-      return originalGetAll.call(this, name);
-    };
-    try {
-      const response = await fetch(
-        "/api/profile?learnerProfileId=foreign-learner",
-      );
-      outcome = { body: await response.json(), status: response.status };
-    } catch (error) {
-      outcome = {
-        rejected: error instanceof Error ? error.message : String(error),
-      };
-    } finally {
-      URLSearchParams.prototype.getAll = originalGetAll;
-    }
-    return { ...outcome, parseCalls };
-  });
-
-  expect(result).toEqual({
-    body: { error: "guardian_required" },
-    parseCalls: 0,
-    status: 403,
-  });
-});
-
-test("locked targeted reads and mutations authorize before invalid or foreign resolution", async ({
-  page,
-}) => {
-  await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
-  await expect(
-    page.getByRole("heading", { name: "Tap a picture." }),
-  ).toBeVisible();
-
-  const result = await page.evaluate(
-    async ({ password, requests }) => {
-      const guardianAccess = (method: "DELETE" | "POST") =>
-        fetch("/api/guardian-access", {
-          ...(method === "POST"
-            ? {
-                body: JSON.stringify({ password }),
-                headers: { "Content-Type": "application/json" },
-              }
-            : {}),
-          method,
-        });
-      const readState = async () => {
-        const target = "learnerProfileId=learner-noah";
-        const json = async (path: string) => {
-          const response = await fetch(path);
-          return { body: await response.json(), status: response.status };
-        };
-        const [roster, profile, recording, lessons, dub, art] =
-          await Promise.all([
-            json("/api/learner-profiles"),
-            json(`/api/profile?${target}`),
-            json(`/api/lesson-recordings/consent?${target}`),
-            json(`/api/lessons/my?${target}`),
-            json(`/api/dubs/five-little-ducks-v2?${target}`),
-            json(
-              `/api/stories/the-red-ball/personalized-art?${target}`,
-            ),
-          ]);
-        return { art, dub, lessons, profile, recording, roster };
-      };
-      const initFor = (requestCase: TargetedRequestCase): RequestInit => ({
-        ...(requestCase.body === undefined
-          ? {}
-          : { body: requestCase.body, headers: requestCase.headers }),
-        method: requestCase.method,
-      });
-
-      await guardianAccess("POST");
-      const before = await readState();
-      await guardianAccess("DELETE");
-      const queries = [
-        {
-          name: "duplicate",
-          value:
-            "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
-        },
-        { name: "foreign", value: "learnerProfileId=foreign-learner" },
-      ];
-      const responses = await Promise.all(
-        requests.flatMap((requestCase) =>
-          queries.map(async (query) => {
-            const response = await fetch(
-              `${requestCase.path}?${query.value}`,
-              initFor(requestCase),
-            );
-            return {
-              body: await response.clone().json().catch(() => null),
-              cacheControl: response.headers.get("Cache-Control"),
-              method: requestCase.method,
-              mockApi: response.headers.get("X-Parrot-Mock-Api"),
-              name: `${requestCase.name} / ${query.name}`,
-              status: response.status,
-            };
-          }),
-        ),
-      );
-      await guardianAccess("POST");
-      const after = await readState();
-      return { after, before, responses };
+  await setGuardianAccess(page, "guardian");
+  await seedTargetedAuthorizationState(page);
+  const before = await readTargetedAccountState(page);
+  await setGuardianAccess(page, "learner");
+  const queries: TargetedQueryCase[] = [
+    {
+      name: "duplicate",
+      value: "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
     },
-    { password: GUARDIAN_PASSWORD, requests: targetedRequestCases },
-  );
+    { name: "foreign", value: "learnerProfileId=foreign-learner" },
+  ];
+  const result = await exerciseTargetedRequests(page, queries);
+  await setGuardianAccess(page, "guardian");
+  const after = await readTargetedAccountState(page);
 
+  expect(result.responses).toHaveLength(52);
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "guardian_required" });
     expect(response.cacheControl, response.name).toBe("no-store");
+    expect(response.contentType, response.name).toContain("application/json");
     expect(response.mockApi, response.name).toBe("browser");
     expect(response.status, response.name).toBe(403);
   }
-  expect(result.after).toEqual(result.before);
+  expect(result.parseCalls).toBe(0);
+  expect(after).toEqual(before);
 });
 
 test("unlocked malformed targeted reads and mutations resolve once to generic not-found without state changes", async ({
@@ -2206,88 +2371,24 @@ test("unlocked malformed targeted reads and mutations resolve once to generic no
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
 
-  const result = await page.evaluate(async (requests) => {
-    const readState = async () => {
-      const target = "learnerProfileId=learner-noah";
-      const json = async (path: string) => {
-        const response = await fetch(path);
-        return { body: await response.json(), status: response.status };
-      };
-      const [roster, profile, recording, lessons, dub, art] = await Promise.all([
-        json("/api/learner-profiles"),
-        json(`/api/profile?${target}`),
-        json(`/api/lesson-recordings/consent?${target}`),
-        json(`/api/lessons/my?${target}`),
-        json(`/api/dubs/five-little-ducks-v2?${target}`),
-        json(`/api/stories/the-red-ball/personalized-art?${target}`),
-      ]);
-      return { art, dub, lessons, profile, recording, roster };
-    };
-    const initFor = (requestCase: TargetedRequestCase): RequestInit => ({
-      ...(requestCase.body === undefined
-        ? {}
-        : { body: requestCase.body, headers: requestCase.headers }),
-      method: requestCase.method,
-    });
-    const invalidQueries = [
-      { name: "blank", value: "learnerProfileId=" },
-      { name: "whitespace", value: "learnerProfileId=%20%20" },
-      {
-        name: "duplicate",
-        value: "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
-      },
-      { name: "unknown", value: "learnerProfileId=unknown-learner" },
-      { name: "foreign", value: "learnerProfileId=foreign-learner" },
-      { name: "malformed encoding", value: "learnerProfileId=%E0%A4%A" },
-      { name: "129-byte", value: `learnerProfileId=${"x".repeat(129)}` },
-    ];
+  await seedTargetedAuthorizationState(page);
+  const before = await readTargetedAccountState(page);
+  const invalidQueries: TargetedQueryCase[] = [
+    { name: "blank", value: "learnerProfileId=" },
+    { name: "whitespace", value: "learnerProfileId=%20%20" },
+    {
+      name: "duplicate",
+      value: "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
+    },
+    { name: "unknown", value: "learnerProfileId=unknown-learner" },
+    { name: "foreign", value: "learnerProfileId=foreign-learner" },
+    { name: "malformed encoding", value: "learnerProfileId=%E0%A4%A" },
+    { name: "129-byte", value: `learnerProfileId=${"x".repeat(129)}` },
+  ];
+  const result = await exerciseTargetedRequests(page, invalidQueries);
+  const after = await readTargetedAccountState(page);
 
-    const before = await readState();
-    const originalGetAll = URLSearchParams.prototype.getAll;
-    let parseCalls = 0;
-    URLSearchParams.prototype.getAll = function (
-      this: URLSearchParams,
-      name: string,
-    ) {
-      if (name === "learnerProfileId") parseCalls += 1;
-      return originalGetAll.call(this, name);
-    };
-    let responses: Array<{
-      body: unknown;
-      cacheControl: string | null;
-      contentType: string | null;
-      method: TargetedRequestCase["method"];
-      mockApi: string | null;
-      name: string;
-      status: number;
-    }>;
-    try {
-      responses = await Promise.all(
-        requests.flatMap((requestCase) =>
-          invalidQueries.map(async (query) => {
-            const response = await fetch(
-              `${requestCase.path}?${query.value}`,
-              initFor(requestCase),
-            );
-            return {
-              body: await response.clone().json().catch(() => null),
-              cacheControl: response.headers.get("Cache-Control"),
-              contentType: response.headers.get("Content-Type"),
-              method: requestCase.method,
-              mockApi: response.headers.get("X-Parrot-Mock-Api"),
-              name: `${requestCase.name} / ${query.name}`,
-              status: response.status,
-            };
-          }),
-        ),
-      );
-    } finally {
-      URLSearchParams.prototype.getAll = originalGetAll;
-    }
-    const after = await readState();
-    return { after, before, parseCalls, responses };
-  }, targetedRequestCases);
-
+  expect(result.responses).toHaveLength(182);
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "not_found" });
     expect(response.cacheControl, response.name).toBe("no-store");
@@ -2296,7 +2397,7 @@ test("unlocked malformed targeted reads and mutations resolve once to generic no
     expect(response.status, response.name).toBe(404);
   }
   expect(result.parseCalls).toBe(result.responses.length);
-  expect(result.after).toEqual(result.before);
+  expect(after).toEqual(before);
 });
 
 test("targeted profile aliases and mutations stay on Noah while Mia remains in learner mode", async ({
