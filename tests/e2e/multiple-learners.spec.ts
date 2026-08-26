@@ -9,6 +9,183 @@ import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const GUARDIAN_PASSWORD = "e2e-guardian-password";
 
+type TargetedRequestCase = {
+  body?: string;
+  headers?: Record<string, string>;
+  method: "DELETE" | "GET" | "POST" | "PUT";
+  name: string;
+  path: string;
+};
+
+const targetedLessonBody = JSON.stringify({
+  lesson: createLessonScript({ childName: "Noah", title: "Targeted lesson" }),
+  source: "uploaded",
+});
+
+const targetedRequestCases: TargetedRequestCase[] = [
+  { method: "GET", name: "learner-profile alias", path: "/api/learner-profile" },
+  {
+    body: JSON.stringify({ questionKey: "name", rawAnswer: "Target changed" }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    name: "learner-profile answer",
+    path: "/api/learner-profile/answer",
+  },
+  {
+    body: JSON.stringify({ questionKey: "description" }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+    name: "learner-profile question skip",
+    path: "/api/learner-profile/question/skip",
+  },
+  {
+    method: "POST",
+    name: "learner-profile skip",
+    path: "/api/learner-profile/skip",
+  },
+  {
+    method: "POST",
+    name: "learner-profile completion",
+    path: "/api/learner-profile/complete",
+  },
+  {
+    body:
+      "--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"speech.webm\"\r\nContent-Type: audio/webm\r\n\r\ntargeted speech\r\n--ParrotTargetBoundary--\r\n",
+    headers: {
+      "Content-Type": "multipart/form-data; boundary=ParrotTargetBoundary",
+    },
+    method: "POST",
+    name: "learner-profile transcription",
+    path: "/api/learner-profile/transcribe",
+  },
+  { method: "GET", name: "profile alias read", path: "/api/profile" },
+  {
+    body: JSON.stringify({ answers: { name: "Target changed" } }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    name: "profile alias write",
+    path: "/api/profile",
+  },
+  {
+    body: JSON.stringify({ storyLevel: "stretch" }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    name: "profile preferences",
+    path: "/api/profile/preferences",
+  },
+  {
+    method: "GET",
+    name: "recording consent read",
+    path: "/api/lesson-recordings/consent",
+  },
+  {
+    body: JSON.stringify({ enabled: true }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    name: "recording consent write",
+    path: "/api/profile/lesson-recording-consent",
+  },
+  {
+    body: "targeted lesson recording",
+    headers: {
+      "Content-Type": "audio/webm",
+      "X-Parrot-Expected-Learner-Profile": "learner-noah",
+    },
+    method: "PUT",
+    name: "lesson recording slot",
+    path: "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/0",
+  },
+  { method: "GET", name: "My Lessons list", path: "/api/lessons/my" },
+  {
+    body: targetedLessonBody,
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+    name: "My Lessons create",
+    path: "/api/lessons/my",
+  },
+  {
+    body: JSON.stringify({ topic: "targeted practice" }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+    name: "My Lessons generate",
+    path: "/api/lessons/my/generate",
+  },
+  {
+    method: "GET",
+    name: "My Lessons detail",
+    path: "/api/lessons/my/targeted-detail",
+  },
+  {
+    body: JSON.stringify({
+      lesson: createLessonScript({
+        childName: "Noah",
+        title: "Edited targeted lesson",
+      }),
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    name: "My Lessons edit",
+    path: "/api/lessons/my/targeted-detail",
+  },
+  {
+    method: "GET",
+    name: "dubbing status",
+    path: "/api/dubs/five-little-ducks-v2",
+  },
+  {
+    body: JSON.stringify({
+      accepted: true,
+      consentVersion: "guardian-voice-r2-v2",
+    }),
+    headers: { "Content-Type": "application/json" },
+    method: "PUT",
+    name: "dubbing consent",
+    path: "/api/dubs/five-little-ducks-v2/consent",
+  },
+  {
+    body: "targeted dubbing clip",
+    headers: { "Content-Type": "audio/webm" },
+    method: "PUT",
+    name: "dubbing clip",
+    path: "/api/dubs/five-little-ducks-v2/lines/line-1",
+  },
+  {
+    method: "GET",
+    name: "dubbing asset",
+    path: "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+  },
+  {
+    method: "DELETE",
+    name: "dubbing deletion",
+    path: "/api/dubs/five-little-ducks-v2",
+  },
+  {
+    method: "GET",
+    name: "story-art metadata",
+    path: "/api/stories/the-red-ball/personalized-art",
+  },
+  {
+    method: "GET",
+    name: "story-art asset",
+    path: "/api/stories/the-red-ball/personalized-art/asset",
+  },
+  {
+    body:
+      "--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"guardianConsentAccepted\"\r\n\r\ntrue\r\n--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"guardianConsentVersion\"\r\n\r\nguardian-photo-cloudflare-v1\r\n--ParrotTargetBoundary\r\nContent-Disposition: form-data; name=\"source\"; filename=\"source.png\"\r\nContent-Type: image/png\r\n\r\ntargeted image\r\n--ParrotTargetBoundary--\r\n",
+    headers: {
+      "Content-Type": "multipart/form-data; boundary=ParrotTargetBoundary",
+    },
+    method: "POST",
+    name: "story-art generation",
+    path: "/api/stories/the-red-ball/personalized-art",
+  },
+  {
+    method: "DELETE",
+    name: "story-art deletion",
+    path: "/api/stories/the-red-ball/personalized-art",
+  },
+];
+
 type LearnerScenario =
   | "create-error"
   | "multiple"
@@ -1884,7 +2061,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     .toBe("learner-mia");
 });
 
-test("locked explicit learner targets are denied before target validation for every route family", async ({
+test("locked explicit learner authorization never parses the target query", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
@@ -1892,46 +2069,136 @@ test("locked explicit learner targets are denied before target validation for ev
     page.getByRole("heading", { name: "Tap a picture." }),
   ).toBeVisible();
 
-  const responses = await page.evaluate(async () => {
-    const paths = [
-      "/api/profile?learnerProfileId=foreign-learner",
-      "/api/lessons/my?learnerProfileId=foreign-learner",
-      "/api/lesson-recordings/consent?learnerProfileId=foreign-learner",
-      "/api/dubs/five-little-ducks-v2?learnerProfileId=foreign-learner",
-      "/api/stories/the-red-ball/personalized-art?learnerProfileId=foreign-learner",
-    ];
-    return Promise.all(
-      paths.map(async (path) => {
-        const response = await fetch(path);
-        return { body: await response.json(), path, status: response.status };
-      }),
-    );
+  const result = await page.evaluate(async () => {
+    const originalGetAll = URLSearchParams.prototype.getAll;
+    let parseCalls = 0;
+    let outcome:
+      | { body: unknown; status: number }
+      | { rejected: string };
+    URLSearchParams.prototype.getAll = function (
+      this: URLSearchParams,
+      name: string,
+    ) {
+      if (name === "learnerProfileId") {
+        parseCalls += 1;
+        throw new Error("learner target parsed before authorization");
+      }
+      return originalGetAll.call(this, name);
+    };
+    try {
+      const response = await fetch(
+        "/api/profile?learnerProfileId=foreign-learner",
+      );
+      outcome = { body: await response.json(), status: response.status };
+    } catch (error) {
+      outcome = {
+        rejected: error instanceof Error ? error.message : String(error),
+      };
+    } finally {
+      URLSearchParams.prototype.getAll = originalGetAll;
+    }
+    return { ...outcome, parseCalls };
   });
 
-  expect(responses).toEqual(
-    responses.map(({ path }) => ({
-      body: { error: "guardian_required" },
-      path,
-      status: 403,
-    })),
-  );
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as Window & {
-              __parrotE2eLearners?: {
-                snapshot(): { activeProfileId: string | null };
-              };
-            }
-          ).__parrotE2eLearners?.snapshot().activeProfileId,
-      ),
-    )
-    .toBe("learner-mia");
+  expect(result).toEqual({
+    body: { error: "guardian_required" },
+    parseCalls: 0,
+    status: 403,
+  });
 });
 
-test("unlocked explicit learner targets share one generic not-found contract", async ({
+test("locked targeted reads and mutations authorize before invalid or foreign resolution", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
+  await expect(
+    page.getByRole("heading", { name: "Tap a picture." }),
+  ).toBeVisible();
+
+  const result = await page.evaluate(
+    async ({ password, requests }) => {
+      const guardianAccess = (method: "DELETE" | "POST") =>
+        fetch("/api/guardian-access", {
+          ...(method === "POST"
+            ? {
+                body: JSON.stringify({ password }),
+                headers: { "Content-Type": "application/json" },
+              }
+            : {}),
+          method,
+        });
+      const readState = async () => {
+        const target = "learnerProfileId=learner-noah";
+        const json = async (path: string) => {
+          const response = await fetch(path);
+          return { body: await response.json(), status: response.status };
+        };
+        const [roster, profile, recording, lessons, dub, art] =
+          await Promise.all([
+            json("/api/learner-profiles"),
+            json(`/api/profile?${target}`),
+            json(`/api/lesson-recordings/consent?${target}`),
+            json(`/api/lessons/my?${target}`),
+            json(`/api/dubs/five-little-ducks-v2?${target}`),
+            json(
+              `/api/stories/the-red-ball/personalized-art?${target}`,
+            ),
+          ]);
+        return { art, dub, lessons, profile, recording, roster };
+      };
+      const initFor = (requestCase: TargetedRequestCase): RequestInit => ({
+        ...(requestCase.body === undefined
+          ? {}
+          : { body: requestCase.body, headers: requestCase.headers }),
+        method: requestCase.method,
+      });
+
+      await guardianAccess("POST");
+      const before = await readState();
+      await guardianAccess("DELETE");
+      const queries = [
+        {
+          name: "duplicate",
+          value:
+            "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
+        },
+        { name: "foreign", value: "learnerProfileId=foreign-learner" },
+      ];
+      const responses = await Promise.all(
+        requests.flatMap((requestCase) =>
+          queries.map(async (query) => {
+            const response = await fetch(
+              `${requestCase.path}?${query.value}`,
+              initFor(requestCase),
+            );
+            return {
+              body: await response.clone().json().catch(() => null),
+              cacheControl: response.headers.get("Cache-Control"),
+              method: requestCase.method,
+              mockApi: response.headers.get("X-Parrot-Mock-Api"),
+              name: `${requestCase.name} / ${query.name}`,
+              status: response.status,
+            };
+          }),
+        ),
+      );
+      await guardianAccess("POST");
+      const after = await readState();
+      return { after, before, responses };
+    },
+    { password: GUARDIAN_PASSWORD, requests: targetedRequestCases },
+  );
+
+  for (const response of result.responses) {
+    expect(response.body, response.name).toEqual({ error: "guardian_required" });
+    expect(response.cacheControl, response.name).toBe("no-store");
+    expect(response.mockApi, response.name).toBe("browser");
+    expect(response.status, response.name).toBe(403);
+  }
+  expect(result.after).toEqual(result.before);
+});
+
+test("unlocked malformed targeted reads and mutations resolve once to generic not-found without state changes", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian", "multiple"));
@@ -1939,57 +2206,97 @@ test("unlocked explicit learner targets share one generic not-found contract", a
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
 
-  const responses = await page.evaluate(async () => {
-    const paths = [
-      "/api/profile",
-      "/api/lessons/my",
-      "/api/lesson-recordings/consent",
-      "/api/dubs/five-little-ducks-v2",
-      "/api/stories/the-red-ball/personalized-art",
-    ];
-    const queries = [
-      "learnerProfileId=",
-      "learnerProfileId=%20%20",
-      "learnerProfileId=unknown-learner",
-      "learnerProfileId=foreign-learner",
-      "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
-    ];
-    return Promise.all(
-      paths.flatMap((path) =>
-        queries.map(async (query) => {
-          const response = await fetch(`${path}?${query}`);
-          return {
-            body: await response.json(),
-            cacheControl: response.headers.get("Cache-Control"),
-            request: `${path}?${query}`,
-            status: response.status,
-          };
-        }),
-      ),
-    );
-  });
-
-  for (const response of responses) {
-    expect(response, response.request).toMatchObject({
-      body: { error: "not_found" },
-      cacheControl: "no-store",
-      status: 404,
+  const result = await page.evaluate(async (requests) => {
+    const readState = async () => {
+      const target = "learnerProfileId=learner-noah";
+      const json = async (path: string) => {
+        const response = await fetch(path);
+        return { body: await response.json(), status: response.status };
+      };
+      const [roster, profile, recording, lessons, dub, art] = await Promise.all([
+        json("/api/learner-profiles"),
+        json(`/api/profile?${target}`),
+        json(`/api/lesson-recordings/consent?${target}`),
+        json(`/api/lessons/my?${target}`),
+        json(`/api/dubs/five-little-ducks-v2?${target}`),
+        json(`/api/stories/the-red-ball/personalized-art?${target}`),
+      ]);
+      return { art, dub, lessons, profile, recording, roster };
+    };
+    const initFor = (requestCase: TargetedRequestCase): RequestInit => ({
+      ...(requestCase.body === undefined
+        ? {}
+        : { body: requestCase.body, headers: requestCase.headers }),
+      method: requestCase.method,
     });
+    const invalidQueries = [
+      { name: "blank", value: "learnerProfileId=" },
+      { name: "whitespace", value: "learnerProfileId=%20%20" },
+      {
+        name: "duplicate",
+        value: "learnerProfileId=learner-mia&learnerProfileId=learner-noah",
+      },
+      { name: "unknown", value: "learnerProfileId=unknown-learner" },
+      { name: "foreign", value: "learnerProfileId=foreign-learner" },
+      { name: "malformed encoding", value: "learnerProfileId=%E0%A4%A" },
+      { name: "129-byte", value: `learnerProfileId=${"x".repeat(129)}` },
+    ];
+
+    const before = await readState();
+    const originalGetAll = URLSearchParams.prototype.getAll;
+    let parseCalls = 0;
+    URLSearchParams.prototype.getAll = function (
+      this: URLSearchParams,
+      name: string,
+    ) {
+      if (name === "learnerProfileId") parseCalls += 1;
+      return originalGetAll.call(this, name);
+    };
+    let responses: Array<{
+      body: unknown;
+      cacheControl: string | null;
+      contentType: string | null;
+      method: TargetedRequestCase["method"];
+      mockApi: string | null;
+      name: string;
+      status: number;
+    }>;
+    try {
+      responses = await Promise.all(
+        requests.flatMap((requestCase) =>
+          invalidQueries.map(async (query) => {
+            const response = await fetch(
+              `${requestCase.path}?${query.value}`,
+              initFor(requestCase),
+            );
+            return {
+              body: await response.clone().json().catch(() => null),
+              cacheControl: response.headers.get("Cache-Control"),
+              contentType: response.headers.get("Content-Type"),
+              method: requestCase.method,
+              mockApi: response.headers.get("X-Parrot-Mock-Api"),
+              name: `${requestCase.name} / ${query.name}`,
+              status: response.status,
+            };
+          }),
+        ),
+      );
+    } finally {
+      URLSearchParams.prototype.getAll = originalGetAll;
+    }
+    const after = await readState();
+    return { after, before, parseCalls, responses };
+  }, targetedRequestCases);
+
+  for (const response of result.responses) {
+    expect(response.body, response.name).toEqual({ error: "not_found" });
+    expect(response.cacheControl, response.name).toBe("no-store");
+    expect(response.contentType, response.name).toContain("application/json");
+    expect(response.mockApi, response.name).toBe("browser");
+    expect(response.status, response.name).toBe(404);
   }
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            window as Window & {
-              __parrotE2eLearners?: {
-                snapshot(): { activeProfileId: string | null };
-              };
-            }
-          ).__parrotE2eLearners?.snapshot().activeProfileId,
-      ),
-    )
-    .toBe("learner-mia");
+  expect(result.parseCalls).toBe(result.responses.length);
+  expect(result.after).toEqual(result.before);
 });
 
 test("targeted profile aliases and mutations stay on Noah while Mia remains in learner mode", async ({

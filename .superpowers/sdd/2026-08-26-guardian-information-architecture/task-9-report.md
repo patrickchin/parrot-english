@@ -181,3 +181,91 @@ Documentation:
 
 None. The two lint warnings and Vite chunk advisory are pre-existing generated
 or build advisories and are not Task 9 regressions.
+
+---
+
+## Review fix round 1/5 — targeted authorization and resolver hardening
+
+### Findings addressed
+
+1. The browser mock used the value parser before Guardian authorization and
+   parsed the same query again inside the authorization and family handlers.
+   It now performs a presence-only `searchParams.has` check for a documented
+   targetable path, authorizes from that boolean, and only then parses all
+   values and resolves ownership exactly once.
+2. The former route-family classifier included undocumented exact collection
+   paths and allowed a family handler to discard invalid resolution before a
+   native fetch. The classifier now names only the production endpoints used
+   by the application. Malformed and unowned targets return the shared generic
+   no-store 404 centrally before any family dispatch. A valid resolved fixture
+   can still reach a test-specific Playwright route, preserving the existing
+   deterministic override contract.
+3. The former locked/malformed coverage exercised five GET requests. The new
+   table contains 26 documented method/path/body combinations spanning both
+   profile aliases, all profile mutations, preferences, recording consent and
+   recording slots, My Lessons list/create/generate/detail/edit, dubbing
+   status/consent/clip/audio/delete, and story-art metadata/asset/generate/delete.
+   Mutation rows carry endpoint-appropriate JSON, multipart, or media bodies
+   and headers.
+
+### Failure inventory and root causes
+
+| Phase | Observed result | Root cause | Resolution |
+| --- | ---: | --- | --- |
+| Focused authorization RED | 1 passed, 2 failed | A locked request invoked `getAll` once before returning 403, and the unlocked 182-request matrix observed 574 parses instead of exactly 182. | Split target presence from parsing, pass the presence boolean into the Guardian guard, resolve once centrally, and pass the resolved learner into family handlers. |
+| First post-change full browser audit | 441 passed, 16 failed | Thirteen failures across Guardian recording consent, custom lessons, and personalized art showed that the initial central fallback was too strict: it converted already-valid fixture targets to 404 before test-specific Playwright routes could fulfill them. The other three failures were unrelated load-sensitive geometry/focus checks. | Kept malformed/unowned targets fenced before dispatch, but restored native handoff for already-resolved valid fixture targets. The 13 affected tests passed together; the three unrelated cases were reproduced separately and the final unchanged full run passed. |
+
+### Changed files in this review round
+
+- `src/testing/e2e-browser-mocks.ts` — presence-only pre-authorization check,
+  narrow documented route classifier, one post-authorization parser/ownership
+  resolution, and resolved-learner injection into recording, dubbing, art,
+  profile, preference, and lesson handlers.
+- `tests/e2e/multiple-learners.spec.ts` — explicit 26-row method/path/body
+  matrix; locked no-parse and 52-request authorization coverage; 182-request
+  malformed/unowned generic-404 coverage; exact parse count, browser-mock
+  marker, cache, content type, and full before/after state assertions.
+- `.superpowers/sdd/2026-08-26-guardian-information-architecture/task-9-report.md`
+  — this review-round evidence.
+
+### RED and GREEN evidence
+
+| Evidence | Result |
+| --- | --- |
+| `npx playwright test tests/e2e/multiple-learners.spec.ts --grep 'locked explicit learner authorization\|locked targeted reads\|unlocked malformed targeted'` before the mock change | RED: 1 passed, 2 failed. Locked parsing threw `learner target parsed before authorization` with 1 parse call; the unlocked matrix counted 574 parses instead of 182. |
+| Same focused authorization command after the final mock change | GREEN: 3/3 (1.3s). |
+| `npx playwright test tests/e2e/multiple-learners.spec.ts` | GREEN: 32/32 (14.5s). |
+| Thirteen existing valid-target route-fixture regressions after restoring resolved-target native handoff | GREEN: 13/13 (4.7s). |
+| `npm test` after the final change | GREEN: 1,323/1,323 tests, 115 suites, 0 failed (4.346s). |
+| `npm run test:browser` after the final change | GREEN: 457/457 tests, 0 failed (1.8m). |
+| `npm run lint` | GREEN: exit 0, 0 errors. The same two generated `worker-configuration.d.ts` unused-disable warnings remain. |
+| `npm run build` | GREEN: TypeScript and Vite build succeeded; 1,914 modules transformed. The existing chunk-size advisory remains. |
+| `git diff --check` | GREEN: exit 0, no whitespace errors. |
+
+### Self-review
+
+- Confirmed `hasExplicitLearnerTarget` performs only documented-path
+  classification and query-key presence detection; no `getAll`, trimming, byte
+  bounding, or ownership lookup occurs before Guardian authorization.
+- Confirmed `parseExplicitLearnerTarget` has one call site in the global fetch
+  mock, after the Guardian guard, and family handlers no longer parse targets.
+- Confirmed blank, whitespace, duplicate, unknown, foreign, malformed-encoded,
+  and 129-byte values all use the exact shared `404 {"error":"not_found"}`
+  no-store response with the browser-mock marker and no state mutation.
+- Confirmed the 52 locked requests return the same no-store 403 without target
+  parsing or state mutation, including GET reads and every documented mutation.
+- Confirmed the classifier no longer declares exact `/api/dubs`, exact
+  `/api/lesson-recordings`, or arbitrary recording/dubbing subpaths targetable.
+- Confirmed valid owned targets retain their target query and can reach
+  deterministic Playwright route overrides; only invalid/unowned targets are
+  prohibited from native fallback.
+- Confirmed the active learner selection remains unchanged across both matrices
+  and no new write to `activeProfileId` was introduced.
+- No production routing change, dependency, arbitrary sleep, destructive
+  confirmation, source/class assertion, or unrelated user-file edit was made.
+
+### Review-round concerns
+
+None. The final required unit and browser suites are green. The first full
+browser audit also surfaced unrelated load-sensitive failures, but the final
+full run passed all 457 tests without changing those tests or product code.

@@ -354,48 +354,55 @@ type MockLearnerScenario =
   | "stale-selection"
   | "zero-learners";
 
-type ExplicitLearnerTarget =
-  | { present: false; profileId: null }
-  | { present: true; profileId: string | null };
-
 const LEARNER_PROFILE_TARGET_QUERY_KEY = "learnerProfileId";
 const MAX_LEARNER_PROFILE_ID_BYTES = 128;
+const TARGETABLE_LEARNER_PROFILE_PATHS = new Set([
+  "/api/learner-profile",
+  "/api/learner-profile/answer",
+  "/api/learner-profile/complete",
+  "/api/learner-profile/question/skip",
+  "/api/learner-profile/skip",
+  "/api/learner-profile/transcribe",
+  "/api/profile",
+  "/api/profile/lesson-recording-consent",
+  "/api/profile/preferences",
+]);
 
 function isTargetableLearnerPath(pathname: string) {
   return (
-    pathname === "/api/learner-profile" ||
-    pathname.startsWith("/api/learner-profile/") ||
-    pathname === "/api/profile" ||
-    pathname === "/api/profile/preferences" ||
-    pathname === "/api/profile/lesson-recording-consent" ||
-    pathname === "/api/lesson-recordings" ||
-    pathname.startsWith("/api/lesson-recordings/") ||
+    TARGETABLE_LEARNER_PROFILE_PATHS.has(pathname) ||
+    pathname === "/api/lesson-recordings/consent" ||
+    lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
     pathname === "/api/lessons/my" ||
-    pathname.startsWith("/api/lessons/my/") ||
-    pathname === "/api/dubs" ||
-    pathname.startsWith("/api/dubs/") ||
+    /^\/api\/lessons\/my\/[^/]+$/.test(pathname) ||
+    pathname === E2E_DUB_API ||
+    pathname === `${E2E_DUB_API}/consent` ||
+    /^\/api\/dubs\/five-little-ducks-v2\/lines\/line-(?:[1-9]|1[0-9]|2[0-4])(?:\/audio)?$/.test(
+      pathname,
+    ) ||
     /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
   );
 }
 
-function explicitLearnerTarget(url: URL): ExplicitLearnerTarget {
-  if (
-    !isTargetableLearnerPath(url.pathname) ||
-    !url.searchParams.has(LEARNER_PROFILE_TARGET_QUERY_KEY)
-  ) {
-    return { present: false, profileId: null };
-  }
+function hasExplicitLearnerTarget(url: URL) {
+  return (
+    isTargetableLearnerPath(url.pathname) &&
+    url.searchParams.has(LEARNER_PROFILE_TARGET_QUERY_KEY)
+  );
+}
+
+function parseExplicitLearnerTarget(url: URL) {
   const values = url.searchParams.getAll(LEARNER_PROFILE_TARGET_QUERY_KEY);
-  if (values.length !== 1) return { present: true, profileId: null };
+  if (values.length !== 1) return null;
   const profileId = values[0]!;
   if (
     profileId.trim() === "" ||
     new TextEncoder().encode(profileId).byteLength >
       MAX_LEARNER_PROFILE_ID_BYTES
   ) {
-    return { present: true, profileId: null };
+    return null;
   }
-  return { present: true, profileId };
+  return profileId;
 }
 
 function targetedLearnerNotFound() {
@@ -738,13 +745,8 @@ function createE2eLearnerAccount(
     );
   }
 
-  function requestLearner(url: URL): MockLearnerState | Response {
-    const target = explicitLearnerTarget(url);
-    if (target.present) {
-      if (target.profileId === null) return targetedLearnerNotFound();
-      return state.learners.get(target.profileId) ?? targetedLearnerNotFound();
-    }
-    return selectedLearner() ?? selectionRequired();
+  function requestLearner(explicitLearner: MockLearnerState | null) {
+    return explicitLearner ?? selectedLearner() ?? selectionRequired();
   }
 
   function fullProfileState(learner: MockLearnerState) {
@@ -839,9 +841,14 @@ function createE2eLearnerAccount(
     };
   }
 
-  async function handleDub(url: URL, method: string, request: Request) {
+  async function handleDub(
+    url: URL,
+    method: string,
+    request: Request,
+    explicitLearner: MockLearnerState | null,
+  ) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
-    const resolvedLearner = requestLearner(url);
+    const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
 
@@ -900,13 +907,16 @@ function createE2eLearnerAccount(
     return e2eDubJson({ error: "method_not_allowed" }, 405);
   }
 
-  async function handleArt(url: URL, method: string): Promise<Response | null> {
+  async function handleArt(
+    url: URL,
+    method: string,
+    explicitLearner: MockLearnerState | null,
+  ): Promise<Response | null> {
     const match = url.pathname.match(
       /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
     );
     if (!match) return null;
-    const target = explicitLearnerTarget(url);
-    const resolvedLearner = requestLearner(url);
+    const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
     const storyId = decodeURIComponent(match[1]!);
@@ -935,8 +945,8 @@ function createE2eLearnerAccount(
                     src: `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset?${new URLSearchParams(
                       {
                         v: "1786276800000",
-                        ...(target.present && target.profileId
-                          ? { learnerProfileId: target.profileId }
+                        ...(explicitLearner
+                          ? { learnerProfileId: explicitLearner.profile.id }
                           : {}),
                       },
                     )}`,
@@ -954,7 +964,11 @@ function createE2eLearnerAccount(
         updatedAt: E2E_DUB_RECORDED_AT,
       });
       persist();
-      const created: Response | null = await handleArt(url, "GET");
+      const created: Response | null = await handleArt(
+        url,
+        "GET",
+        explicitLearner,
+      );
       return e2eJson(await created!.json(), 201);
     }
     if (method === "DELETE") {
@@ -994,6 +1008,7 @@ function createE2eLearnerAccount(
     url: URL,
     method: string,
     request: Request,
+    explicitLearner: MockLearnerState | null,
   ) {
     const isLessonRecordingPath =
       url.pathname === "/api/lesson-recordings/consent" ||
@@ -1002,7 +1017,7 @@ function createE2eLearnerAccount(
       url.pathname === "/api/profile/lesson-recording-consent";
     if (!isLessonRecordingPath && !isProfileConsentPath) return null;
 
-    const resolvedLearner = requestLearner(url);
+    const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
     if (isProfileConsentPath) {
@@ -1039,7 +1054,11 @@ function createE2eLearnerAccount(
     );
   }
 
-  async function handle(input: RequestInfo | URL, init?: RequestInit) {
+  async function handle(
+    input: RequestInfo | URL,
+    init: RequestInit | undefined,
+    explicitLearner: MockLearnerState | null,
+  ) {
     const request =
       input instanceof Request
         ? input
@@ -1053,9 +1072,9 @@ function createE2eLearnerAccount(
     if (url.origin !== window.location.origin) return null;
     const method = (init?.method ?? request.method ?? "GET").toUpperCase();
 
-    const dub = await handleDub(url, method, request);
+    const dub = await handleDub(url, method, request, explicitLearner);
     if (dub) return dub;
-    const art = await handleArt(url, method);
+    const art = await handleArt(url, method, explicitLearner);
     if (art) return art;
     const lessonRecording = await handleLessonRecording(
       input,
@@ -1063,6 +1082,7 @@ function createE2eLearnerAccount(
       url,
       method,
       request,
+      explicitLearner,
     );
     if (lessonRecording) return lessonRecording;
 
@@ -1137,7 +1157,7 @@ function createE2eLearnerAccount(
       return response;
     }
 
-    const resolvedLearner = requestLearner(url);
+    const resolvedLearner = requestLearner(explicitLearner);
     const learner =
       resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
@@ -1364,6 +1384,9 @@ function createE2eLearnerAccount(
       heldSelection = null;
       pending.resolve(pending.response);
       return true;
+    },
+    resolveExplicitLearner(profileId: string) {
+      return state.learners.get(profileId) ?? null;
     },
     snapshot(profileId?: string) {
       const learner = profileId
@@ -2044,8 +2067,12 @@ function currentGuardianAccess() {
   return guardianAccess;
 }
 
-function requiresGuardianAccess(url: URL, method: string) {
-  if (explicitLearnerTarget(url).present) return true;
+function requiresGuardianAccess(
+  url: URL,
+  method: string,
+  hasLearnerTarget = false,
+) {
+  if (hasLearnerTarget) return true;
   if (url.pathname === "/api/learner-profiles") {
     return method === "GET" || method === "POST";
   }
@@ -2081,6 +2108,7 @@ async function guardianResponse(
   init: RequestInit | undefined,
   url: URL,
   method: string,
+  hasLearnerTarget: boolean,
 ) {
   if (url.origin !== window.location.origin) return null;
   if (url.pathname === "/api/guardian-access") {
@@ -2131,7 +2159,7 @@ async function guardianResponse(
     return e2eJson({ error: "method_not_allowed" }, 405);
   }
   if (
-    requiresGuardianAccess(url, method) &&
+    requiresGuardianAccess(url, method, hasLearnerTarget) &&
     currentGuardianAccess().mode === "learner"
   ) {
     return e2eJson({ error: "guardian_required" }, 403);
@@ -2498,20 +2526,38 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
-    const target = explicitLearnerTarget(url);
-    const fallbackTarget = target.profileId;
+    const hasLearnerTarget = hasExplicitLearnerTarget(url);
     if (
       getE2eLessonScenario() &&
       url.pathname === "/api/evaluate-speech"
     ) {
       lessonMediaMetrics.evaluateRequests += 1;
     }
-    const guardedResponse = await guardianResponse(input, init, url, method);
+    const guardedResponse = await guardianResponse(
+      input,
+      init,
+      url,
+      method,
+      hasLearnerTarget,
+    );
     if (guardedResponse) return guardedResponse;
+
+    const fallbackTarget = hasLearnerTarget
+      ? parseExplicitLearnerTarget(url)
+      : null;
+    if (hasLearnerTarget && fallbackTarget === null) {
+      return targetedLearnerNotFound();
+    }
+
+    let explicitLearner: MockLearnerState | null = null;
+    if (learnerAccount && fallbackTarget !== null) {
+      explicitLearner = learnerAccount.resolveExplicitLearner(fallbackTarget);
+      if (!explicitLearner) return targetedLearnerNotFound();
+    }
     if (
       !learnerAccount &&
-      target.present &&
-      target.profileId !== E2E_VIEWPORT_EDITOR_STATE.profile.id
+      fallbackTarget !== null &&
+      fallbackTarget !== E2E_VIEWPORT_EDITOR_STATE.profile.id
     ) {
       return targetedLearnerNotFound();
     }
@@ -2533,7 +2579,11 @@ function installE2eProfileFetchMock() {
       if (dubResponse) return dubResponse;
     }
     if (learnerAccount) {
-      const learnerResponse = await learnerAccount.handle(input, init);
+      const learnerResponse = await learnerAccount.handle(
+        input,
+        init,
+        explicitLearner,
+      );
       if (learnerResponse) return learnerResponse;
     }
     if (
