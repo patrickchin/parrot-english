@@ -84,10 +84,15 @@ describe("guardian access persistence", () => {
     assert.match(sql, /story_level[^\n]*first-words[^\n]*early-a1/i);
   });
 
-  it("stores nullable recording consent on the one learner profile per auth user", () => {
+  it("stores recording consent generation and its durable cleanup boundary", () => {
     const columns = getTableColumns(schema.learnerProfile);
     assert.equal(columns.lessonRecordingConsentVersion.name, "lesson_recording_consent_version");
     assert.equal(columns.lessonRecordingConsentAt.name, "lesson_recording_consent_at");
+    assert.equal(columns.lessonRecordingGeneration.name, "lesson_recording_generation");
+    assert.equal(
+      columns.lessonRecordingCleanupBeforeGeneration.name,
+      "lesson_recording_cleanup_before_generation",
+    );
 
     const database = createMigratedDatabase();
     database
@@ -105,11 +110,47 @@ describe("guardian access persistence", () => {
 
     const row = database
       .prepare(
-        `SELECT lesson_recording_consent_version, lesson_recording_consent_at
+        `SELECT lesson_recording_consent_version, lesson_recording_consent_at,
+                lesson_recording_generation,
+                lesson_recording_cleanup_before_generation
          FROM learner_profile WHERE auth_user_id = ?`,
       )
       .get("user-1");
     assert.equal(row.lesson_recording_consent_version, null);
     assert.equal(row.lesson_recording_consent_at, null);
+    assert.equal(row.lesson_recording_generation, 0);
+    assert.equal(row.lesson_recording_cleanup_before_generation, null);
+  });
+
+  it("stores a recording generation and durable cleanup boundary per My Lesson", () => {
+    const columns = getTableColumns(schema.learnerLesson);
+    assert.equal(columns.recordingGeneration.name, "recording_generation");
+    assert.equal(
+      columns.recordingCleanupBeforeGeneration.name,
+      "recording_cleanup_before_generation",
+    );
+
+    const database = createMigratedDatabase();
+    database
+      .prepare(
+        `INSERT INTO user (id, name, email, email_verified)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .run("user-1", "Guardian", "guardian@example.test", 1);
+    database
+      .prepare(
+        `INSERT INTO learner_lesson (id, auth_user_id, source, lesson_json)
+         VALUES (?, ?, ?, ?)`,
+      )
+      .run("lesson-1", "user-1", "uploaded", '{"scenes":[]}');
+
+    const row = database
+      .prepare(
+        `SELECT recording_generation, recording_cleanup_before_generation
+         FROM learner_lesson WHERE id = ?`,
+      )
+      .get("lesson-1");
+    assert.equal(row.recording_generation, 0);
+    assert.equal(row.recording_cleanup_before_generation, null);
   });
 });

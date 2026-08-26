@@ -290,7 +290,11 @@ const E2E_VIEWPORT_EDITOR_GATE = {
 };
 
 const E2E_VIEWPORT_EDITOR_STATE = {
-  profile: E2E_VIEWPORT_EDITOR_PROFILE,
+  profile: {
+    ...E2E_VIEWPORT_EDITOR_PROFILE,
+    lessonRecordingCleanupPending: false,
+    lessonRecordingConsent: false,
+  },
   questions: E2E_VIEWPORT_QUESTIONS,
 };
 

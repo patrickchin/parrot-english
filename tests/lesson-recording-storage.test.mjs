@@ -32,7 +32,11 @@ describe("lesson recording storage", () => {
     const key = `${prefix}my/lesson-1/scene-0/step-1.audio`;
     const stale = { etag: "etag-a", key, version: "version-a" };
     const newer = {
-      customMetadata: { state: "audio", uploadNonce: "upload-b" },
+      customMetadata: {
+        consentGeneration: "2",
+        state: "audio",
+        uploadNonce: "upload-b",
+      },
       etag: "etag-b",
       key,
       version: "version-b",
@@ -44,6 +48,9 @@ describe("lesson recording storage", () => {
       async delete(keys) {
         deletions.push(keys);
         current = null;
+      },
+      async head() {
+        return current;
       },
       async list(options) {
         assert.deepEqual(options, { prefix });
@@ -64,7 +71,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, "user-1");
+    await storage.deleteAllLessonRecordings(bucket, "user-1", 2, async () => {});
 
     assert.strictEqual(current, newer);
     assert.deepEqual(deletions, []);
@@ -72,6 +79,50 @@ describe("lesson recording storage", () => {
     assert.deepEqual(conditionalWrites[0].options.onlyIf, {
       etagMatches: stale.etag,
     });
+  });
+
+  it("fences an older-generation take that replaces a listed object", async () => {
+    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const key = `${prefix}parrot/lesson-1/scene-0/step-1.audio`;
+    const listed = {
+      customMetadata: { consentGeneration: "0", state: "audio" },
+      etag: "listed-etag",
+      key,
+      version: "listed-version",
+    };
+    const replacement = {
+      customMetadata: { consentGeneration: "0", state: "audio" },
+      etag: "replacement-etag",
+      key,
+      version: "replacement-version",
+    };
+    let current = listed;
+    const writes = [];
+    const bucket = {
+      async head() { return current; },
+      async list() { return { objects: [listed], truncated: false }; },
+      async put(putKey, _value, options) {
+        writes.push({ key: putKey, options });
+        if (writes.length === 1) {
+          current = replacement;
+          return null;
+        }
+        assert.equal(options.onlyIf.etagMatches, replacement.etag);
+        current = {
+          customMetadata: options.customMetadata,
+          etag: "purge-etag",
+          key: putKey,
+          version: "purge-version",
+        };
+        return current;
+      },
+    };
+
+    await storage.deleteAllLessonRecordings(bucket, "user-1", 1, async () => {});
+
+    assert.equal(writes.length, 2);
+    assert.equal(current.customMetadata.state, "purged");
+    assert.equal(current.customMetadata.invalidatedVersion, replacement.version);
   });
 
   it("fences every listed object only below the encoded owner prefix", async () => {
@@ -97,7 +148,7 @@ describe("lesson recording storage", () => {
       ]),
     );
 
-    await storage.deleteAllLessonRecordings(state.bucket, "user/one");
+    await storage.deleteAllLessonRecordings(state.bucket, "user/one", 1, async () => {});
 
     assert.deepEqual(state.lists, [
       { prefix },
@@ -139,6 +190,8 @@ describe("lesson recording storage", () => {
       state.bucket,
       "user-1",
       "lesson/one",
+      1,
+      async () => {},
     );
 
     assert.deepEqual(state.lists, [{ prefix }]);
@@ -166,7 +219,7 @@ describe("lesson recording storage", () => {
     );
 
     await assert.rejects(
-      storage.deleteAllLessonRecordings(state.bucket, "user-1"),
+      storage.deleteAllLessonRecordings(state.bucket, "user-1", 1, async () => {}),
       /outside the lesson recording prefix/i,
     );
     assert.deepEqual(state.deletions, []);
@@ -189,7 +242,7 @@ describe("lesson recording storage", () => {
         ]),
       );
       await assert.rejects(
-        storage.deleteAllLessonRecordings(state.bucket, "user-1"),
+        storage.deleteAllLessonRecordings(state.bucket, "user-1", 1, async () => {}),
         /did not advance its cursor/i,
       );
       assert.deepEqual(state.deletions, []);
@@ -209,10 +262,150 @@ describe("lesson recording storage", () => {
       ]),
     );
     await assert.rejects(
-      storage.deleteAllLessonRecordings(repeated.bucket, "user-1"),
+      storage.deleteAllLessonRecordings(repeated.bucket, "user-1", 1, async () => {}),
       /did not advance its cursor/i,
     );
     assert.deepEqual(repeated.deletions, []);
     assert.deepEqual(repeated.writes, []);
+  });
+
+  it("keeps re-consented takes that already exist when revocation cleanup lists", async () => {
+    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const old = {
+      customMetadata: { consentGeneration: "1", state: "audio" },
+      etag: "old-etag",
+      key: `${prefix}parrot/lesson-1/old.audio`,
+      version: "old-version",
+    };
+    const reconsented = {
+      customMetadata: { consentGeneration: "3", state: "audio" },
+      etag: "new-etag",
+      key: `${prefix}parrot/lesson-1/new.audio`,
+      version: "new-version",
+    };
+    const accountFence = {
+      customMetadata: { state: "account-deleting" },
+      etag: "account-etag",
+      key: `${prefix}parrot/lesson-1/account.audio`,
+      version: "account-version",
+    };
+    const writes = [];
+    const bucket = {
+      async list() {
+        return { objects: [old, reconsented, accountFence], truncated: false };
+      },
+      async put(key, _value, options) {
+        writes.push({ key, options });
+        return { etag: `fence-${writes.length}`, key };
+      },
+    };
+
+    await storage.deleteAllLessonRecordings(bucket, "user-1", 2, async () => {});
+
+    assert.deepEqual(writes.map(({ key }) => key), [old.key]);
+  });
+
+  it("keeps new-revision takes that already exist when lesson cleanup lists", async () => {
+    const prefix =
+      "personalized-story-art/user-1/lesson-recordings/my/lesson-1/";
+    const old = {
+      customMetadata: { lessonGeneration: "0", state: "audio" },
+      etag: "old-etag",
+      key: `${prefix}old.audio`,
+      version: "old-version",
+    };
+    const edited = {
+      customMetadata: { lessonGeneration: "1", state: "audio" },
+      etag: "edited-etag",
+      key: `${prefix}edited.audio`,
+      version: "edited-version",
+    };
+    const writes = [];
+    const bucket = {
+      async list() {
+        return { objects: [old, edited], truncated: false };
+      },
+      async put(key, _value, options) {
+        writes.push({ key, options });
+        return { etag: `fence-${writes.length}`, key };
+      },
+    };
+
+    await storage.deleteLessonRecordingsForLesson(
+      bucket,
+      "user-1",
+      "lesson-1",
+      1,
+      async () => {},
+    );
+
+    assert.deepEqual(writes.map(({ key }) => key), [old.key]);
+  });
+
+  it("retries transient purge listing and conditional fences with bounded pacing", async () => {
+    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const object = {
+      etag: "old-etag",
+      key: `${prefix}legacy.audio`,
+      version: "old-version",
+    };
+    let listAttempts = 0;
+    let putAttempts = 0;
+    const waits = [];
+    const bucket = {
+      async list() {
+        listAttempts += 1;
+        if (listAttempts === 1) throw new Error("list: TooManyRequests (10058)");
+        return { objects: [object], truncated: false };
+      },
+      async put(key) {
+        putAttempts += 1;
+        if (putAttempts === 1) throw new Error("put: TooManyRequests (10058)");
+        return { etag: "fence", key };
+      },
+    };
+
+    await storage.deleteAllLessonRecordings(bucket, "user-1", 1, async (delay) => {
+      waits.push(delay);
+    });
+
+    assert.equal(listAttempts, 2);
+    assert.equal(putAttempts, 2);
+    assert.equal(waits.length, 2);
+    assert.equal(waits.every((delay) => delay >= 1_000), true);
+  });
+
+  it("retries a transient head while fencing the exact uploaded take", async () => {
+    const key = "lesson.audio";
+    const stored = {
+      customMetadata: { state: "audio", uploadNonce: "upload-1" },
+      etag: "audio-etag",
+      key,
+      version: "audio-version",
+    };
+    let headAttempts = 0;
+    const waits = [];
+    const bucket = {
+      async head() {
+        headAttempts += 1;
+        if (headAttempts === 1) throw new Error("head: TooManyRequests (10058)");
+        return stored;
+      },
+      async put(putKey) {
+        return { etag: "fence", key: putKey };
+      },
+    };
+
+    await storage.fenceLessonRecordingUpload(
+      bucket,
+      key,
+      stored,
+      "upload-1",
+      "consent-revoked",
+      async (delay) => { waits.push(delay); },
+    );
+
+    assert.equal(headAttempts, 2);
+    assert.equal(waits.length, 1);
   });
 });

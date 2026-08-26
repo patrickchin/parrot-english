@@ -189,7 +189,13 @@ async function callLearnerProfile(
   return handleLearnerProfileRequest(
     {
       database,
-      env: { DB: database.$client },
+      env: {
+        DB: database.$client,
+        PERSONALIZED_STORY_ART_BUCKET: {
+          async list() { return { objects: [], truncated: false }; },
+          async put() { return null; },
+        },
+      },
       identity: {
         sessionId: "session-1",
         userId: "user-1",
@@ -214,16 +220,21 @@ describe("onboarding persistence and API", () => {
         { enabled: true },
       );
       assert.equal(enabled.status, 200);
-      assert.deepEqual(await enabled.json(), { enabled: true });
+      assert.deepEqual(await enabled.json(), {
+        cleanupPending: false,
+        enabled: true,
+      });
 
       const row = state.sqlite
         .prepare(
-          `SELECT lesson_recording_consent_version, lesson_recording_consent_at
+          `SELECT lesson_recording_consent_version, lesson_recording_consent_at,
+                  lesson_recording_generation
            FROM learner_profile WHERE auth_user_id = ?`,
         )
         .get("user-1");
       assert.equal(row.lesson_recording_consent_version, "lesson-join-in-recording-v1");
       assert.ok(Number.isInteger(row.lesson_recording_consent_at));
+      assert.equal(row.lesson_recording_generation, 1);
 
       const readFromAnotherSession = await callLearnerProfile(
         state.database,
@@ -233,7 +244,10 @@ describe("onboarding persistence and API", () => {
         { sessionId: "session-2" },
       );
       assert.equal(readFromAnotherSession.headers.get("Cache-Control"), "no-store");
-      assert.deepEqual(await readFromAnotherSession.json(), { enabled: true });
+      assert.deepEqual(await readFromAnotherSession.json(), {
+        cleanupPending: false,
+        enabled: true,
+      });
 
       const profile = await callLearnerProfile(state.database, "/api/profile");
       assert.equal((await profile.json()).profile.lessonRecordingConsent, true);
@@ -258,12 +272,16 @@ describe("onboarding persistence and API", () => {
           calls.push(["list", options]);
           const row = state.sqlite
             .prepare(
-              `SELECT lesson_recording_consent_version, lesson_recording_consent_at
+              `SELECT lesson_recording_consent_version, lesson_recording_consent_at,
+                      lesson_recording_generation,
+                      lesson_recording_cleanup_before_generation
                FROM learner_profile WHERE auth_user_id = ?`,
             )
             .get("user-1");
           assert.equal(row.lesson_recording_consent_version, null);
           assert.equal(row.lesson_recording_consent_at, null);
+          assert.equal(row.lesson_recording_generation, 2);
+          assert.equal(row.lesson_recording_cleanup_before_generation, 2);
           return {
             objects: [
               {
@@ -301,7 +319,10 @@ describe("onboarding persistence and API", () => {
       });
 
       assert.equal(disabled.status, 200);
-      assert.deepEqual(await disabled.json(), { enabled: false });
+      assert.deepEqual(await disabled.json(), {
+        cleanupPending: false,
+        enabled: false,
+      });
       assert.deepEqual(calls, [
         ["list", { prefix: "personalized-story-art/user-1/lesson-recordings/" }],
         [
@@ -317,6 +338,166 @@ describe("onboarding persistence and API", () => {
           },
         ],
       ]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            `SELECT lesson_recording_cleanup_before_generation AS pending
+             FROM learner_profile WHERE auth_user_id = ?`,
+          )
+          .get("user-1").pending,
+        null,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps exhausted revocation cleanup pending and retries without advancing its generation", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callLearnerProfile(state.database, "/api/profile");
+      await callLearnerProfile(
+        state.database,
+        "/api/profile/lesson-recording-consent",
+        "PUT",
+        { enabled: true },
+      );
+      let listAttempts = 0;
+      const waits = [];
+      const failed = await handleLearnerProfileRequest(
+        {
+          database: state.database,
+          env: {
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: {
+              async list() {
+                listAttempts += 1;
+                throw new Error("R2 unavailable (10058)");
+              },
+              async put() { throw new Error("unexpected put"); },
+            },
+          },
+          identity: {
+            sessionId: "session-1",
+            userId: "user-1",
+            userName: "Mia",
+          },
+          request: request(
+            "/api/profile/lesson-recording-consent",
+            "PUT",
+            { enabled: false },
+          ),
+        },
+        createDependencies({
+          wait: async (delay) => { waits.push(delay); },
+        }),
+      );
+
+      assert.equal(failed.status, 200);
+      assert.deepEqual(await failed.json(), {
+        cleanupPending: true,
+        enabled: false,
+      });
+      assert.equal(listAttempts, 3);
+      assert.equal(waits.length, 2);
+      assert.deepEqual(
+        { ...state.sqlite
+          .prepare(
+            `SELECT lesson_recording_generation AS generation,
+                    lesson_recording_cleanup_before_generation AS pending
+             FROM learner_profile WHERE auth_user_id = ?`,
+          )
+          .get("user-1") },
+        { generation: 2, pending: 2 },
+      );
+
+      const writes = [];
+      const retried = await handleLearnerProfileRequest(
+        {
+          database: state.database,
+          env: {
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: {
+              async list() {
+                return {
+                  objects: [{
+                    etag: "legacy-etag",
+                    key: "personalized-story-art/user-1/lesson-recordings/legacy.audio",
+                    version: "legacy-version",
+                  }],
+                  truncated: false,
+                };
+              },
+              async put(key, _value, options) {
+                writes.push({ key, options });
+                return { etag: "fence", key };
+              },
+            },
+          },
+          identity: {
+            sessionId: "session-1",
+            userId: "user-1",
+            userName: "Mia",
+          },
+          request: request(
+            "/api/profile/lesson-recording-consent",
+            "PUT",
+            { enabled: false },
+          ),
+        },
+        createDependencies({ wait: async () => {} }),
+      );
+
+      assert.equal(retried.status, 200);
+      assert.deepEqual(await retried.json(), {
+        cleanupPending: false,
+        enabled: false,
+      });
+      assert.equal(writes.length, 1);
+      assert.deepEqual(
+        { ...state.sqlite
+          .prepare(
+            `SELECT lesson_recording_generation AS generation,
+                    lesson_recording_cleanup_before_generation AS pending
+             FROM learner_profile WHERE auth_user_id = ?`,
+          )
+          .get("user-1") },
+        { generation: 2, pending: null },
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("never clears a later consent cleanup boundary with an older reconciliation", async () => {
+    const state = createSeededDatabase();
+    try {
+      await callLearnerProfile(state.database, "/api/profile");
+      const repository = createLearnerProfileRepository(state.database);
+      assert.equal((await repository.saveLessonRecordingConsent("user-1", true)).generation, 1);
+      const firstRevoke = await repository.saveLessonRecordingConsent("user-1", false);
+      assert.equal(firstRevoke.cleanupBeforeGeneration, 2);
+      assert.equal((await repository.saveLessonRecordingConsent("user-1", true)).generation, 3);
+      const laterRevoke = await repository.saveLessonRecordingConsent("user-1", false);
+      assert.equal(laterRevoke.cleanupBeforeGeneration, 4);
+
+      assert.equal(
+        await repository.clearLessonRecordingCleanup("user-1", 2),
+        false,
+      );
+      assert.deepEqual(await repository.readLessonRecordingConsentState("user-1"), {
+        cleanupBeforeGeneration: 4,
+        enabled: false,
+        generation: 4,
+      });
+      assert.deepEqual(
+        await repository.saveLessonRecordingConsent("user-1", false),
+        {
+          cleanupBeforeGeneration: 4,
+          enabled: false,
+          generation: 4,
+        },
+      );
     } finally {
       state.close();
     }

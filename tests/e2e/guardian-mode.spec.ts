@@ -228,6 +228,7 @@ for (const viewport of lessonPrivacyViewports) {
       storyLevel: "first-words",
     };
     let consent = false;
+    let cleanupPending = false;
     const mutations: boolean[] = [];
 
     await page.setViewportSize(viewport);
@@ -247,7 +248,11 @@ for (const viewport of lessonPrivacyViewports) {
     await page.route("**/api/profile", (route) =>
       route.fulfill({
         json: {
-          profile: { ...profile, lessonRecordingConsent: consent },
+          profile: {
+            ...profile,
+            lessonRecordingCleanupPending: cleanupPending,
+            lessonRecordingConsent: consent,
+          },
           questions: [],
         },
       }),
@@ -256,7 +261,8 @@ for (const viewport of lessonPrivacyViewports) {
       const body = route.request().postDataJSON() as { enabled: boolean };
       consent = body.enabled;
       mutations.push(consent);
-      await route.fulfill({ json: { enabled: consent } });
+      cleanupPending = !consent && mutations.filter((value) => !value).length === 1;
+      await route.fulfill({ json: { cleanupPending, enabled: consent } });
     });
 
     await page.goto(guardianUrl("/profile", "guardian"));
@@ -314,13 +320,26 @@ for (const viewport of lessonPrivacyViewports) {
     });
     await revoke.click();
 
+    const finishDeletion = consentSection.getByRole("button", {
+      name: "Finish deleting lesson recordings",
+    });
+    await expect(finishDeletion).toHaveAccessibleName(
+      "Finish deleting lesson recordings",
+    );
+    await expect(recordingState).toHaveText(
+      "Lesson recording is off. Saved clips are still being deleted.",
+    );
+    await expectInsideViewport(finishDeletion, viewport);
+    expect(await horizontalOverflow(page)).toBe(false);
+    expect(mutations).toEqual([true, false]);
+
+    await finishDeletion.click();
     await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
     await expect(recordingState).toHaveText(
       "Lesson recording is currently off.",
     );
     await expectInsideViewport(grant, viewport);
-    expect(await horizontalOverflow(page)).toBe(false);
-    expect(mutations).toEqual([true, false]);
+    expect(mutations).toEqual([true, false, false]);
   });
 }
 

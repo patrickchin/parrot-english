@@ -668,6 +668,8 @@ export function LearnerProfileGate({
             ...current,
             profile: {
               ...profile,
+              lessonRecordingCleanupPending:
+                current.profile.lessonRecordingCleanupPending,
               lessonRecordingConsent:
                 current.profile.lessonRecordingConsent,
             },
@@ -1281,6 +1283,7 @@ export function LearnerProfileGate({
               ...current,
               profile: {
                 ...current.profile,
+                lessonRecordingCleanupPending: saved.cleanupPending,
                 lessonRecordingConsent: saved.enabled,
               },
             }
@@ -1452,6 +1455,8 @@ export function LearnerProfileGate({
               drafts: profileDrafts,
               fieldErrors: profileFieldErrors,
               isSaving: isProfileSaving,
+              lessonRecordingCleanupPending:
+                profileState.profile.lessonRecordingCleanupPending,
               lessonRecordingConsent:
                 profileState.profile.lessonRecordingConsent,
               onCancel: closeProfileEditor,

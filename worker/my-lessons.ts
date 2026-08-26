@@ -37,6 +37,7 @@ type HandlerDependencies = {
   createId: () => string;
   generateLesson: typeof generateLessonScript;
   now: () => Date;
+  wait: (delay: number) => Promise<void>;
 };
 
 class MyLessonApiError extends Error {
@@ -120,14 +121,40 @@ export async function handleMyLessonRequest(
     createId: overrides.createId ?? (() => crypto.randomUUID()),
     generateLesson: overrides.generateLesson ?? generateLessonScript,
     now: overrides.now ?? (() => new Date()),
+    wait: overrides.wait ?? ((delay) => scheduler.wait(delay)),
   };
   const repository = createMyLessonRepository(input.database, dependencies);
   const url = new URL(input.request.url);
   const detailMatch = url.pathname.match(/^\/api\/lessons\/my\/([^/]+)$/);
 
+  async function reconcileRecordingCleanup(row: {
+    id: string;
+    recordingCleanupBeforeGeneration: number | null;
+  }) {
+    const boundary = row.recordingCleanupBeforeGeneration;
+    if (boundary === null) return;
+    try {
+      await deleteLessonRecordingsForLesson(
+        input.env.PERSONALIZED_STORY_ART_BUCKET,
+        input.identity.userId,
+        row.id,
+        boundary,
+        dependencies.wait,
+      );
+      await repository.clearRecordingCleanup(
+        row.id,
+        input.identity.userId,
+        boundary,
+      );
+    } catch {
+      // The row keeps the exact cleanup boundary for a later idempotent retry.
+    }
+  }
+
   try {
     if (url.pathname === "/api/lessons/my" && input.request.method === "GET") {
       const rows = await repository.listOwned(input.identity.userId);
+      for (const row of rows) await reconcileRecordingCleanup(row);
       return json({ lessons: await Promise.all(rows.map(clientLesson)) });
     }
 
@@ -197,11 +224,7 @@ export async function handleMyLessonRequest(
         draft.lesson,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
-      await deleteLessonRecordingsForLesson(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
-        input.identity.userId,
-        row.id,
-      );
+      await reconcileRecordingCleanup(row);
       return json({ lesson: await clientLesson(row), warnings: draft.warnings });
     }
 
@@ -211,6 +234,7 @@ export async function handleMyLessonRequest(
         input.identity.userId,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
+      await reconcileRecordingCleanup(row);
       return json({ lesson: await clientLesson(row) });
     }
 

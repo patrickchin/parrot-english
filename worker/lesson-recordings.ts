@@ -136,10 +136,12 @@ export async function handleLessonRecordingRequest(
           Allow: "GET",
         });
       }
+      const consent = await repository.readLessonRecordingConsentState(
+        input.identity.userId,
+      );
       return json({
-        enabled: await repository.readLessonRecordingConsent(
-          input.identity.userId,
-        ),
+        cleanupPending: consent.cleanupBeforeGeneration !== null,
+        enabled: consent.enabled,
       });
     }
     if (input.request.method !== "PUT") {
@@ -149,18 +151,29 @@ export async function handleLessonRecordingRequest(
     }
 
     const accessState = async () => ({
-      consent: await repository.readLessonRecordingConsent(input.identity.userId),
+      consent: await repository.readLessonRecordingConsentState(
+        input.identity.userId,
+      ),
       deletion: await isDeletionPending(input.database, input.identity.userId),
     });
-    const requireAccess = (state: Awaited<ReturnType<typeof accessState>>) => {
+    const requireAccess = (
+      state: Awaited<ReturnType<typeof accessState>>,
+      consentGeneration?: number,
+    ) => {
       if (state.deletion) {
         throw new LessonRecordingApiError(409, "account_deletion_pending");
       }
-      if (!state.consent) {
+      if (
+        !state.consent.enabled ||
+        (consentGeneration !== undefined &&
+          state.consent.generation !== consentGeneration)
+      ) {
         throw new LessonRecordingApiError(403, "guardian_consent_required");
       }
     };
-    requireAccess(await accessState());
+    const initialAccess = await accessState();
+    requireAccess(initialAccess);
+    const consentGeneration = initialAccess.consent.generation;
 
     const target = await resolveLessonRecordingTarget(
       input.database,
@@ -168,6 +181,7 @@ export async function handleLessonRecordingRequest(
       route,
     );
     if (!target) throw new LessonRecordingApiError(404, "not_found");
+    const lessonGeneration = target.lessonGeneration;
     if (
       route.source === "my" &&
       input.request.headers.get("X-Parrot-Lesson-Revision") !== target.revision
@@ -208,8 +222,12 @@ export async function handleLessonRecordingRequest(
     const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
     const putOptions: R2PutOptions = {
       customMetadata: {
+        consentGeneration: String(consentGeneration),
         consentVersion: LESSON_RECORDING_CONSENT_VERSION,
         lessonId: route.lessonId,
+        ...(lessonGeneration === null
+          ? {}
+          : { lessonGeneration: String(lessonGeneration) }),
         ...(target.revision === null
           ? {}
           : { lessonRevision: target.revision }),
@@ -233,16 +251,21 @@ export async function handleLessonRecordingRequest(
         bucket,
         key,
         uploadNonce,
+        { consentGeneration, lessonGeneration },
         wait,
       );
-      requireAccess(await accessState());
+      requireAccess(await accessState(), consentGeneration);
       if (route.source === "my") {
         const currentTarget = await resolveLessonRecordingTarget(
           input.database,
           input.identity.userId,
           route,
         );
-        if (!currentTarget || currentTarget.revision !== target.revision) {
+        if (
+          !currentTarget ||
+          currentTarget.revision !== target.revision ||
+          currentTarget.lessonGeneration !== lessonGeneration
+        ) {
           throw new LessonRecordingApiError(409, "lesson_changed");
         }
       }
@@ -255,14 +278,18 @@ export async function handleLessonRecordingRequest(
         wait,
       );
       if (stored) break;
-      requireAccess(await accessState());
+      requireAccess(await accessState(), consentGeneration);
       if (route.source === "my") {
         const currentTarget = await resolveLessonRecordingTarget(
           input.database,
           input.identity.userId,
           route,
         );
-        if (!currentTarget || currentTarget.revision !== target.revision) {
+        if (
+          !currentTarget ||
+          currentTarget.revision !== target.revision ||
+          currentTarget.lessonGeneration !== lessonGeneration
+        ) {
           throw new LessonRecordingApiError(409, "lesson_changed");
         }
       }
@@ -283,7 +310,11 @@ export async function handleLessonRecordingRequest(
       );
       throw error;
     }
-    if (after.deletion || !after.consent) {
+    if (
+      after.deletion ||
+      !after.consent.enabled ||
+      after.consent.generation !== consentGeneration
+    ) {
       await fenceLessonRecordingUpload(
         bucket,
         key,
@@ -292,7 +323,7 @@ export async function handleLessonRecordingRequest(
         after.deletion ? "account-deleting" : "consent-revoked",
         wait,
       );
-      requireAccess(after);
+      requireAccess(after, consentGeneration);
     }
     if (route.source === "my") {
       let currentTarget: Awaited<ReturnType<typeof resolveLessonRecordingTarget>>;
@@ -313,7 +344,11 @@ export async function handleLessonRecordingRequest(
         );
         throw error;
       }
-      if (!currentTarget || currentTarget.revision !== target.revision) {
+      if (
+        !currentTarget ||
+        currentTarget.revision !== target.revision ||
+        currentTarget.lessonGeneration !== lessonGeneration
+      ) {
         await fenceLessonRecordingUpload(
           bucket,
           key,

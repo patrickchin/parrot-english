@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
 import { handleMyLessonRequest } from "../worker/my-lessons.ts";
+import { createMyLessonRepository } from "../worker/my-lessons-repository.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
@@ -59,6 +60,7 @@ function call(state, path, method = "GET", body, options = {}) {
       createId: options.createId ?? (() => "lesson-1"),
       generateLesson: options.generateLesson,
       now: () => new Date("2026-07-14T08:00:00.000Z"),
+      wait: options.wait,
     },
   );
 }
@@ -206,6 +208,15 @@ describe("My Lessons persistence and API", () => {
         payload.lesson.revision,
         createHash("sha256").update(storedJson).digest("hex"),
       );
+      const generations = state.sqlite
+        .prepare(
+          `SELECT recording_generation AS generation,
+                  recording_cleanup_before_generation AS pending
+           FROM learner_lesson WHERE id = ?`,
+        )
+        .get("lesson-1");
+      assert.equal(generations.generation, 1);
+      assert.equal(generations.pending, null);
       assert.ok(payload.warnings.some((warning) => /background/i.test(warning)));
       assert.equal(
         JSON.parse(
@@ -335,7 +346,7 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
-  it("does not report a fully successful edit when recording purge fails", async () => {
+  it("keeps failed edit cleanup durable and reconciles it on a later detail load", async () => {
     const state = seedDatabase();
     try {
       await call(state, "/api/lessons/my", "POST", {
@@ -355,11 +366,7 @@ describe("My Lessons persistence and API", () => {
         },
       );
 
-      assert.equal(response.status, 500);
-      assert.deepEqual(await response.json(), {
-        error: "internal_error",
-        message: "The lesson request failed.",
-      });
+      assert.equal(response.status, 200);
       assert.equal(
         JSON.parse(
           state.sqlite
@@ -367,8 +374,92 @@ describe("My Lessons persistence and API", () => {
             .get("lesson-1").lesson_json,
         ).title,
         "Edited before purge",
-        "The API must fail safely because the owned update committed before R2 cleanup",
       );
+      assert.deepEqual(
+        { ...state.sqlite
+          .prepare(
+            `SELECT recording_generation AS generation,
+                    recording_cleanup_before_generation AS pending
+             FROM learner_lesson WHERE id = ?`,
+          )
+          .get("lesson-1") },
+        { generation: 1, pending: 1 },
+      );
+
+      const writes = [];
+      const loaded = await call(
+        state,
+        "/api/lessons/my/lesson-1",
+        "GET",
+        undefined,
+        {
+          bucket: {
+            async list() {
+              return {
+                objects: [{
+                  etag: "old-etag",
+                  key: "personalized-story-art/user-1/lesson-recordings/my/lesson-1/old.audio",
+                  version: "old-version",
+                }],
+                truncated: false,
+              };
+            },
+            async put(key, _value, options) {
+              writes.push({ key, options });
+              return { etag: "fence", key };
+            },
+          },
+          wait: async () => {},
+        },
+      );
+
+      assert.equal(loaded.status, 200);
+      assert.equal((await loaded.json()).lesson.lesson.title, "Edited before purge");
+      assert.equal(writes.length, 1);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            `SELECT recording_cleanup_before_generation AS pending
+             FROM learner_lesson WHERE id = ?`,
+          )
+          .get("lesson-1").pending,
+        null,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("never clears a later lesson cleanup boundary with an older reconciliation", async () => {
+    const state = seedDatabase();
+    try {
+      await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: createLessonScript(),
+      });
+      const repository = createMyLessonRepository(state.database);
+      const first = await repository.updateOwned(
+        "lesson-1",
+        "user-1",
+        createLessonScript({ title: "First edit" }),
+      );
+      assert.equal(first.recordingGeneration, 1);
+      assert.equal(first.recordingCleanupBeforeGeneration, 1);
+      const later = await repository.updateOwned(
+        "lesson-1",
+        "user-1",
+        createLessonScript({ title: "Later edit" }),
+      );
+      assert.equal(later.recordingGeneration, 2);
+      assert.equal(later.recordingCleanupBeforeGeneration, 2);
+
+      assert.equal(
+        await repository.clearRecordingCleanup("lesson-1", "user-1", 1),
+        false,
+      );
+      const retained = await repository.findOwned("lesson-1", "user-1");
+      assert.equal(retained.recordingGeneration, 2);
+      assert.equal(retained.recordingCleanupBeforeGeneration, 2);
     } finally {
       state.close();
     }

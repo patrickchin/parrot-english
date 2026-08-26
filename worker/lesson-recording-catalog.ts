@@ -50,7 +50,9 @@ export async function resolveLessonRecordingTarget(
 ) {
   if (slot.source === "parrot") {
     const targetText = userTarget(BUILT_IN_LESSONS.get(slot.lessonId), slot);
-    return targetText ? { revision: null, targetText } : null;
+    return targetText
+      ? { lessonGeneration: null, revision: null, targetText }
+      : null;
   }
   const row = await createMyLessonRepository(database).findOwned(
     slot.lessonId,
@@ -59,6 +61,10 @@ export async function resolveLessonRecordingTarget(
   if (!row) return null;
   const targetText = userTarget(JSON.parse(row.lessonJson), slot);
   return targetText
-    ? { revision: await lessonJsonRevision(row.lessonJson), targetText }
+    ? {
+        lessonGeneration: row.recordingGeneration,
+        revision: await lessonJsonRevision(row.lessonJson),
+        targetText,
+      }
     : null;
 }

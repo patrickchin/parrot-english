@@ -4,7 +4,7 @@ import {
   retryDelay,
 } from "./dub-storage.ts";
 
-type LessonRecordingBucket = Pick<R2Bucket, "list" | "put">;
+type LessonRecordingBucket = Pick<R2Bucket, "head" | "list" | "put">;
 type LessonRecordingWriteBucket = Pick<R2Bucket, "head" | "put">;
 type Wait = (delay: number) => Promise<void>;
 
@@ -12,6 +12,23 @@ const AUDIO_FORMAT = "parrot-lesson-recording-audio-v1";
 const FENCE_FORMAT = "parrot-lesson-recording-fence-v1";
 const PURGE_FORMAT = "parrot-lesson-recording-purge-v1";
 const MAX_WRITE_CONFLICTS = 16;
+
+async function retryRateLimited<T>(operation: () => Promise<T>, wait: Wait) {
+  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (
+        !isR2WriteRateError(error) ||
+        attempt === MAX_R2_WRITE_ATTEMPTS - 1
+      ) {
+        throw error;
+      }
+      await wait(retryDelay(attempt));
+    }
+  }
+  throw new Error("R2 retry limit exceeded.");
+}
 
 export type LessonRecordingSlot = {
   lessonId: string;
@@ -60,10 +77,14 @@ export async function reserveLessonRecordingUpload(
   bucket: LessonRecordingWriteBucket,
   key: string,
   uploadNonce: string,
+  generations: {
+    consentGeneration: number;
+    lessonGeneration: number | null;
+  },
   wait: Wait,
 ) {
   for (let conflict = 0; conflict < MAX_WRITE_CONFLICTS; conflict += 1) {
-    const current = await bucket.head(key);
+    const current = await retryRateLimited(() => bucket.head(key), wait);
     if (current) return current;
     for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
       try {
@@ -73,7 +94,14 @@ export async function reserveLessonRecordingUpload(
             JSON.stringify([FENCE_FORMAT, uploadNonce, "uploading"]),
           ),
           {
-            customMetadata: { state: "uploading", uploadNonce },
+            customMetadata: {
+              consentGeneration: String(generations.consentGeneration),
+              ...(generations.lessonGeneration === null
+                ? {}
+                : { lessonGeneration: String(generations.lessonGeneration) }),
+              state: "uploading",
+              uploadNonce,
+            },
             onlyIf: conditionalWrite(null),
           },
         );
@@ -109,7 +137,7 @@ export async function putLessonRecordingAudio(
       });
     } catch (error) {
       if (!isR2WriteRateError(error)) throw error;
-      const current = await bucket.head(key);
+      const current = await retryRateLimited(() => bucket.head(key), wait);
       if (!sameObject(current, observed)) return null;
       if (attempt === MAX_R2_WRITE_ATTEMPTS - 1) throw error;
       await wait(retryDelay(attempt));
@@ -131,7 +159,7 @@ export async function fenceLessonRecordingUpload(
   wait: Wait,
 ) {
   for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
-    const current = await bucket.head(key);
+    const current = await retryRateLimited(() => bucket.head(key), wait);
     if (
       !current ||
       current.etag !== stored.etag ||
@@ -165,15 +193,67 @@ export async function fenceLessonRecordingUpload(
   }
 }
 
-async function purgePrefix(bucket: LessonRecordingBucket, prefix: string) {
+function isOlderGeneration(
+  object: R2Object,
+  metadataKey: "consentGeneration" | "lessonGeneration",
+  boundary: number,
+) {
+  if (object.customMetadata?.state === "account-deleting") return false;
+  const generation = Number(object.customMetadata?.[metadataKey]);
+  return !Number.isSafeInteger(generation) || generation < boundary;
+}
+
+async function purgeOlderObject(
+  bucket: LessonRecordingBucket,
+  listed: R2Object,
+  metadataKey: "consentGeneration" | "lessonGeneration",
+  boundary: number,
+  wait: Wait,
+) {
+  let current: R2Object | null = listed;
+  for (let conflict = 0; conflict < MAX_WRITE_CONFLICTS; conflict += 1) {
+    if (!isOlderGeneration(current, metadataKey, boundary)) return;
+    const purged = await retryRateLimited(
+      () => bucket.put(
+        current!.key,
+        new TextEncoder().encode(
+          JSON.stringify([PURGE_FORMAT, current!.version]),
+        ),
+        {
+          customMetadata: {
+            invalidatedVersion: current!.version,
+            state: "purged",
+          },
+          onlyIf: { etagMatches: current!.etag },
+        },
+      ),
+      wait,
+    );
+    if (purged !== null) return;
+    current = await retryRateLimited(() => bucket.head(listed.key), wait);
+    if (!current) return;
+  }
+  throw new Error("Lesson recording purge contention exceeded.");
+}
+
+async function purgePrefix(
+  bucket: LessonRecordingBucket,
+  prefix: string,
+  metadataKey: "consentGeneration" | "lessonGeneration",
+  boundary: number,
+  wait: Wait,
+) {
   let cursor: string | undefined;
   const seenCursors = new Set<string>();
 
   while (true) {
-    const page = await bucket.list({
-      prefix,
-      ...(cursor === undefined ? {} : { cursor }),
-    });
+    const page = await retryRateLimited(
+      () => bucket.list({
+        prefix,
+        ...(cursor === undefined ? {} : { cursor }),
+      }),
+      wait,
+    );
     const keys = page.objects.map(({ key }) => key);
     if (keys.some((key) => !key.startsWith(prefix))) {
       throw new Error("R2 returned an object outside the lesson recording prefix.");
@@ -185,19 +265,7 @@ async function purgePrefix(bucket: LessonRecordingBucket, prefix: string) {
       seenCursors.add(page.cursor);
     }
     for (const object of page.objects) {
-      await bucket.put(
-        object.key,
-        new TextEncoder().encode(
-          JSON.stringify([PURGE_FORMAT, object.version]),
-        ),
-        {
-          customMetadata: {
-            invalidatedVersion: object.version,
-            state: "purged",
-          },
-          onlyIf: { etagMatches: object.etag },
-        },
-      );
+      await purgeOlderObject(bucket, object, metadataKey, boundary, wait);
     }
     if (!page.truncated) return;
     cursor = page.cursor;
@@ -207,17 +275,30 @@ async function purgePrefix(bucket: LessonRecordingBucket, prefix: string) {
 export function deleteAllLessonRecordings(
   bucket: LessonRecordingBucket,
   userId: string,
+  consentGenerationBoundary: number,
+  wait: Wait,
 ) {
-  return purgePrefix(bucket, ownerPrefix(userId));
+  return purgePrefix(
+    bucket,
+    ownerPrefix(userId),
+    "consentGeneration",
+    consentGenerationBoundary,
+    wait,
+  );
 }
 
 export function deleteLessonRecordingsForLesson(
   bucket: LessonRecordingBucket,
   userId: string,
   lessonId: string,
+  lessonGenerationBoundary: number,
+  wait: Wait,
 ) {
   return purgePrefix(
     bucket,
     `${ownerPrefix(userId)}my/${encodeURIComponent(lessonId)}/`,
+    "lessonGeneration",
+    lessonGenerationBoundary,
+    wait,
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "../worker/account-deletion.ts";
 import { createDatabase } from "../worker/database.ts";
 import { markerKey } from "../worker/dub-storage.ts";
+import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
 import { handleMyLessonRequest } from "../worker/my-lessons.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
@@ -47,6 +48,7 @@ function createBucket() {
     onBeforeAudioPut: null,
     onConditionalPut: null,
     onHead: null,
+    onList: null,
     stored,
     async delete(keys) {
       calls.delete.push(keys);
@@ -60,6 +62,7 @@ function createBucket() {
     },
     async list(options = {}) {
       calls.list.push(options);
+      await bucket.onList?.(options);
       return {
         objects: [...stored.values()]
           .map(({ object }) => object)
@@ -173,13 +176,27 @@ function seedDatabase({ consent = true } = {}) {
 }
 
 function setConsent(state, enabled) {
+  const current = state.sqlite
+    .prepare(
+      `SELECT lesson_recording_consent_version AS version,
+              lesson_recording_generation AS generation,
+              lesson_recording_cleanup_before_generation AS pending
+       FROM learner_profile WHERE auth_user_id = ?`,
+    )
+    .get(USER_ID);
+  const wasEnabled = current.version === CONSENT_VERSION;
+  const generation = current.generation + (wasEnabled === enabled ? 0 : 1);
   state.sqlite.prepare(
     `UPDATE learner_profile
-     SET lesson_recording_consent_version = ?, lesson_recording_consent_at = ?
+     SET lesson_recording_consent_version = ?, lesson_recording_consent_at = ?,
+         lesson_recording_generation = ?,
+         lesson_recording_cleanup_before_generation = ?
      WHERE auth_user_id = ?`,
   ).run(
     enabled ? CONSENT_VERSION : null,
     enabled ? Date.parse(RECORDED_AT) : null,
+    generation,
+    !enabled && wasEnabled ? generation : current.pending,
     USER_ID,
   );
 }
@@ -188,7 +205,10 @@ function setMyLessonTarget(state, targetText) {
   const lesson = createLessonScript();
   lesson.scenes[0].steps[1].dialogue = targetText;
   state.sqlite.prepare(
-    "UPDATE learner_lesson SET lesson_json = ? WHERE id = ? AND auth_user_id = ?",
+    `UPDATE learner_lesson
+     SET lesson_json = ?, recording_generation = recording_generation + 1,
+         recording_cleanup_before_generation = recording_generation + 1
+     WHERE id = ? AND auth_user_id = ?`,
   ).run(JSON.stringify(lesson), "lesson-1", USER_ID);
 }
 
@@ -258,6 +278,29 @@ function editMyLesson(state, bucket, lesson) {
   });
 }
 
+function saveRecordingConsent(state, bucket, enabled) {
+  return handleLearnerProfileRequest(
+    {
+      database: state.database,
+      env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+      identity: {
+        sessionId: "session-1",
+        userId: USER_ID,
+        userName: "Parent",
+      },
+      request: new Request(
+        "https://example.test/api/profile/lesson-recording-consent",
+        {
+          body: JSON.stringify({ enabled }),
+          headers: { "Content-Type": "application/json" },
+          method: "PUT",
+        },
+      ),
+    },
+    { wait: async () => {} },
+  );
+}
+
 describe("lesson recording Worker handler", () => {
   it("returns only the persisted consent state and supports only GET", async () => {
     const state = seedDatabase();
@@ -271,7 +314,10 @@ describe("lesson recording Worker handler", () => {
       );
       assert.equal(response.status, 200);
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
-      assert.deepEqual(await response.json(), { enabled: true });
+      assert.deepEqual(await response.json(), {
+        cleanupPending: false,
+        enabled: true,
+      });
 
       const denied = await call(
         state,
@@ -316,6 +362,7 @@ describe("lesson recording Worker handler", () => {
         contentType: "audio/webm",
       });
       assert.deepEqual(audioWrite.options.customMetadata, {
+        consentGeneration: "0",
         consentVersion: CONSENT_VERSION,
         lessonId: "01-peppas-high-ball",
         payloadOffset: String(payloadOffset),
@@ -350,6 +397,10 @@ describe("lesson recording Worker handler", () => {
       assert.equal(
         audioWrites(bucket)[0].options.customMetadata.lessonRevision,
         myLessonRevision(state),
+      );
+      assert.equal(
+        audioWrites(bucket)[0].options.customMetadata.lessonGeneration,
+        "0",
       );
 
       for (const path of [
@@ -433,6 +484,171 @@ describe("lesson recording Worker handler", () => {
       );
     } finally {
       releaseUpload.resolve();
+      state.close();
+    }
+  });
+
+  it("keeps a re-consented take completed before stale revocation cleanup lists", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const revokeReachedList = deferred();
+    const releaseRevokeList = deferred();
+    let held = false;
+    bucket.onList = async () => {
+      if (held) return;
+      held = true;
+      revokeReachedList.resolve();
+      await releaseRevokeList.promise;
+    };
+
+    try {
+      const revoking = saveRecordingConsent(state, bucket, false);
+      await revokeReachedList.promise;
+
+      const regranted = await saveRecordingConsent(state, bucket, true);
+      assert.equal(regranted.status, 200);
+      const newer = await call(state, bucket, BUILT_IN_PATH, {
+        createUploadNonce: () => "reconsented-before-list",
+      });
+      assert.equal(newer.status, 201);
+
+      releaseRevokeList.resolve();
+      assert.equal((await revoking).status, 200);
+      const current = [...bucket.stored.values()][0];
+      assert.equal(current.options.customMetadata.state, "audio");
+      assert.equal(
+        current.options.customMetadata.uploadNonce,
+        "reconsented-before-list",
+      );
+      assert.equal(current.options.customMetadata.consentGeneration, "2");
+    } finally {
+      releaseRevokeList.resolve();
+      state.close();
+    }
+  });
+
+  it("keeps a new-revision take completed before stale edit cleanup lists", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const editReachedList = deferred();
+    const releaseEditList = deferred();
+    let held = false;
+    bucket.onList = async () => {
+      if (held) return;
+      held = true;
+      editReachedList.resolve();
+      await releaseEditList.promise;
+    };
+
+    try {
+      const editedLesson = createLessonScript({ title: "Fresh revision" });
+      const editing = editMyLesson(state, bucket, editedLesson);
+      await editReachedList.promise;
+
+      const newer = await call(
+        state,
+        bucket,
+        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
+        {
+          createUploadNonce: () => "new-revision-before-list",
+          lessonRevision: myLessonRevision(state),
+        },
+      );
+      assert.equal(newer.status, 201);
+
+      releaseEditList.resolve();
+      assert.equal((await editing).status, 200);
+      const current = [...bucket.stored.values()][0];
+      assert.equal(current.options.customMetadata.state, "audio");
+      assert.equal(
+        current.options.customMetadata.uploadNonce,
+        "new-revision-before-list",
+      );
+      assert.equal(current.options.customMetadata.lessonGeneration, "1");
+    } finally {
+      releaseEditList.resolve();
+      state.close();
+    }
+  });
+
+  it("rejects an old consent generation even when consent is regranted mid-write", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const writeReached = deferred();
+    const releaseWrite = deferred();
+    bucket.onBeforeAudioPut = async () => {
+      writeReached.resolve();
+      await releaseWrite.promise;
+    };
+
+    try {
+      const stale = call(state, bucket, BUILT_IN_PATH, {
+        createUploadNonce: () => "old-consent-generation",
+      });
+      await writeReached.promise;
+      setConsent(state, false);
+      setConsent(state, true);
+      releaseWrite.resolve();
+
+      const response = await stale;
+      assert.equal(response.status, 403);
+      assert.deepEqual(await response.json(), {
+        error: "guardian_consent_required",
+      });
+      assert.equal(
+        [...bucket.stored.values()].some(
+          ({ options }) => options.customMetadata?.state === "audio",
+        ),
+        false,
+      );
+    } finally {
+      releaseWrite.resolve();
+      state.close();
+    }
+  });
+
+  it("rejects an old My Lesson generation after an identical-json edit mid-write", async () => {
+    const state = seedDatabase();
+    const bucket = createBucket();
+    const writeReached = deferred();
+    const releaseWrite = deferred();
+    bucket.onBeforeAudioPut = async () => {
+      writeReached.resolve();
+      await releaseWrite.promise;
+    };
+
+    try {
+      const revision = myLessonRevision(state);
+      const stale = call(
+        state,
+        bucket,
+        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
+        {
+          createUploadNonce: () => "old-lesson-generation",
+          lessonRevision: revision,
+        },
+      );
+      await writeReached.promise;
+      state.sqlite.prepare(
+        `UPDATE learner_lesson
+         SET recording_generation = recording_generation + 1,
+             recording_cleanup_before_generation = recording_generation + 1
+         WHERE id = ? AND auth_user_id = ?`,
+      ).run("lesson-1", USER_ID);
+      assert.equal(myLessonRevision(state), revision);
+      releaseWrite.resolve();
+
+      const response = await stale;
+      assert.equal(response.status, 409);
+      assert.deepEqual(await response.json(), { error: "lesson_changed" });
+      assert.equal(
+        [...bucket.stored.values()].some(
+          ({ options }) => options.customMetadata?.state === "audio",
+        ),
+        false,
+      );
+    } finally {
+      releaseWrite.resolve();
       state.close();
     }
   });

@@ -16,6 +16,7 @@ type ProfileEditorViewProps = {
   drafts: Record<string, string>;
   fieldErrors: Record<string, string>;
   isSaving: boolean;
+  lessonRecordingCleanupPending: boolean;
   lessonRecordingConsent: boolean;
   onCancel: () => void;
   onClose: () => void;
@@ -30,6 +31,7 @@ export function ProfileEditorView({
   drafts,
   fieldErrors,
   isSaving,
+  lessonRecordingCleanupPending,
   lessonRecordingConsent,
   onCancel,
   onClose,
@@ -45,6 +47,10 @@ export function ProfileEditorView({
   }
 
   function changeLessonRecordingConsent() {
+    if (lessonRecordingCleanupPending && !lessonRecordingConsent) {
+      onLessonRecordingConsentChange(false);
+      return;
+    }
     if (
       lessonRecordingConsent &&
       !window.confirm(
@@ -185,8 +191,11 @@ export function ProfileEditorView({
                 className="m-0 text-sm font-black text-brand-ink"
                 role="status"
               >
-                Lesson recording is currently{" "}
-                {lessonRecordingConsent ? "allowed" : "off"}.
+                {lessonRecordingCleanupPending
+                  ? lessonRecordingConsent
+                    ? "Lesson recording is currently allowed. Earlier saved clips are still being deleted."
+                    : "Lesson recording is off. Saved clips are still being deleted."
+                  : `Lesson recording is currently ${lessonRecordingConsent ? "allowed" : "off"}.`}
               </p>
             </div>
             <ActionButton
@@ -199,6 +208,8 @@ export function ProfileEditorView({
             >
               {lessonRecordingConsent
                 ? "Stop and delete lesson recordings"
+                : lessonRecordingCleanupPending
+                  ? "Finish deleting lesson recordings"
                 : "Allow lesson voice recordings"}
             </ActionButton>
           </section>

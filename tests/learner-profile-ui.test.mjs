@@ -473,6 +473,32 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
+  it("renders a durable pending-deletion state with an explicit retry action", () => {
+    const html = renderToStaticMarkup(
+      createElement(ProfileEditorView, {
+        drafts: { name: "Mia", age: "8" },
+        fieldErrors: {},
+        isSaving: false,
+        lessonRecordingCleanupPending: true,
+        lessonRecordingConsent: false,
+        onCancel() {},
+        onClose() {},
+        onLessonRecordingConsentChange() {},
+        onRedoLearnerProfile() {},
+        onSave() {},
+        onValueChange() {},
+        pageError: "",
+      }),
+    );
+
+    assert.match(
+      html,
+      /Lesson recording is off\. Saved clips are still being deleted\./,
+    );
+    assert.match(html, />Finish deleting lesson recordings<\/button>/);
+    assert.doesNotMatch(html, />Allow lesson voice recordings<\/button>/);
+  });
+
   it("renders learner details separately from the profile-setup action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {

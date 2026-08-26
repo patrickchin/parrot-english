@@ -142,22 +142,22 @@ describe("learnerProfile browser API", () => {
     assert.equal(typeof learnerProfileApi.loadLessonRecordingConsent, "function");
     assert.equal(typeof learnerProfileApi.saveLessonRecordingConsent, "function");
 
-    const loaded = jsonFetch({ enabled: false });
+    const loaded = jsonFetch({ cleanupPending: true, enabled: false });
     assert.deepEqual(
       await learnerProfileApi.loadLessonRecordingConsent({ fetch: loaded.fetch }),
-      { enabled: false },
+      { cleanupPending: true, enabled: false },
     );
     assert.deepEqual(loaded.calls[0], [
       "/api/lesson-recordings/consent",
       { method: "GET", signal: undefined },
     ]);
 
-    const saved = jsonFetch({ enabled: true });
+    const saved = jsonFetch({ cleanupPending: false, enabled: true });
     assert.deepEqual(
       await learnerProfileApi.saveLessonRecordingConsent(true, {
         fetch: saved.fetch,
       }),
-      { enabled: true },
+      { cleanupPending: false, enabled: true },
     );
     assert.deepEqual(saved.calls[0], [
       "/api/profile/lesson-recording-consent",

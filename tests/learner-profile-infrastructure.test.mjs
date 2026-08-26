@@ -26,6 +26,8 @@ const EXPECTED_MODELS = {
       "completedAt",
       "lessonRecordingConsentVersion",
       "lessonRecordingConsentAt",
+      "lessonRecordingGeneration",
+      "lessonRecordingCleanupBeforeGeneration",
       "createdAt",
       "updatedAt",
     ],

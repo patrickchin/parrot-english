@@ -56,6 +56,7 @@ export interface LearnerProfileRequestInput {
 type HandlerDependencies = {
   enrichAnswer: typeof enrichLearnerProfileAnswer;
   now: () => Date;
+  wait: (delay: number) => Promise<void>;
 };
 
 type Repository = ReturnType<typeof createLearnerProfileRepository>;
@@ -231,6 +232,8 @@ function profilePayload(profile: Profile) {
       lessonRecordingConsent:
         profile.lessonRecordingConsentVersion ===
         LESSON_RECORDING_CONSENT_VERSION,
+      lessonRecordingCleanupPending:
+        profile.lessonRecordingCleanupBeforeGeneration !== null,
     },
     questions: LEARNER_PROFILE_QUESTIONNAIRE.questions.map(serializeQuestion),
   };
@@ -672,10 +675,35 @@ export async function handleLearnerProfileRequest(
   const dependencies: HandlerDependencies = {
     enrichAnswer: enrichLearnerProfileAnswer,
     now: () => new Date(),
+    wait: (delay) => scheduler.wait(delay),
     ...dependencyOverrides,
   };
-  const repository = createLearnerProfileRepository(input.database);
+  const repository = createLearnerProfileRepository(input.database, {
+    now: dependencies.now,
+  });
   const url = new URL(input.request.url);
+
+  async function reconcileLessonRecordingCleanup() {
+    const state = await repository.readLessonRecordingConsentState(
+      input.identity.userId,
+    );
+    if (state.cleanupBeforeGeneration === null) return state;
+    try {
+      await deleteAllLessonRecordings(
+        input.env.PERSONALIZED_STORY_ART_BUCKET,
+        input.identity.userId,
+        state.cleanupBeforeGeneration,
+        dependencies.wait,
+      );
+      await repository.clearLessonRecordingCleanup(
+        input.identity.userId,
+        state.cleanupBeforeGeneration,
+      );
+    } catch {
+      // Durable D1 state keeps cleanup retryable while R2 is unavailable.
+    }
+    return repository.readLessonRecordingConsentState(input.identity.userId);
+  }
 
   try {
     if (url.pathname === "/api/learner-profile/transcribe") {
@@ -825,6 +853,8 @@ export async function handleLearnerProfileRequest(
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "GET") {
+      await repository.loadProfile(input.identity);
+      await reconcileLessonRecordingCleanup();
       const profile = await repository.loadProfile(input.identity);
       return jsonResponse(profilePayload(profile));
     }
@@ -833,10 +863,12 @@ export async function handleLearnerProfileRequest(
       url.pathname === "/api/lesson-recordings/consent" &&
       input.request.method === "GET"
     ) {
+      const consent = await repository.readLessonRecordingConsentState(
+        input.identity.userId,
+      );
       return jsonResponse({
-        enabled: await repository.readLessonRecordingConsent(
-          input.identity.userId,
-        ),
+        cleanupPending: consent.cleanupBeforeGeneration !== null,
+        enabled: consent.enabled,
       });
     }
 
@@ -851,17 +883,17 @@ export async function handleLearnerProfileRequest(
       ) {
         throw new ApiError(400, "invalid_lesson_recording_consent");
       }
-      const enabled = await repository.saveLessonRecordingConsent(
+      const saved = await repository.saveLessonRecordingConsent(
         input.identity.userId,
         record.enabled,
       );
-      if (!enabled) {
-        await deleteAllLessonRecordings(
-          input.env.PERSONALIZED_STORY_ART_BUCKET,
-          input.identity.userId,
-        );
-      }
-      return jsonResponse({ enabled });
+      const reconciled = saved.cleanupBeforeGeneration === null
+        ? saved
+        : await reconcileLessonRecordingCleanup();
+      return jsonResponse({
+        cleanupPending: reconciled.cleanupBeforeGeneration !== null,
+        enabled: reconciled.enabled,
+      });
     }
 
     if (url.pathname === "/api/profile" && input.request.method === "PUT") {

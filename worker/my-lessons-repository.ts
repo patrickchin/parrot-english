@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { learnerLesson, learnerProfile } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 
@@ -57,10 +57,13 @@ export function createMyLessonRepository(
   }
 
   async function updateOwned(id: string, userId: string, lesson: unknown) {
-    await database
+    const [updated] = await database
       .update(learnerLesson)
       .set({
         lessonJson: JSON.stringify(lesson),
+        recordingCleanupBeforeGeneration:
+          sql`${learnerLesson.recordingGeneration} + 1`,
+        recordingGeneration: sql`${learnerLesson.recordingGeneration} + 1`,
         updatedAt: now(),
       })
       .where(
@@ -68,8 +71,31 @@ export function createMyLessonRepository(
           eq(learnerLesson.id, id),
           eq(learnerLesson.authUserId, userId),
         ),
-      );
-    return findOwned(id, userId);
+      )
+      .returning();
+    return updated ?? null;
+  }
+
+  async function clearRecordingCleanup(
+    id: string,
+    userId: string,
+    cleanupBeforeGeneration: number,
+  ) {
+    const cleared = await database
+      .update(learnerLesson)
+      .set({ recordingCleanupBeforeGeneration: null, updatedAt: now() })
+      .where(
+        and(
+          eq(learnerLesson.id, id),
+          eq(learnerLesson.authUserId, userId),
+          eq(
+            learnerLesson.recordingCleanupBeforeGeneration,
+            cleanupBeforeGeneration,
+          ),
+        ),
+      )
+      .returning({ id: learnerLesson.id });
+    return cleared.length > 0;
   }
 
   async function listOwned(userId: string) {
@@ -89,5 +115,12 @@ export function createMyLessonRepository(
     return profile?.name?.trim() || null;
   }
 
-  return { create, findOwned, learnerName, listOwned, updateOwned };
+  return {
+    clearRecordingCleanup,
+    create,
+    findOwned,
+    learnerName,
+    listOwned,
+    updateOwned,
+  };
 }

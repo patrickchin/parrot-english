@@ -212,6 +212,12 @@ export const learnerProfile = sqliteTable(
     lessonRecordingConsentAt: integer("lesson_recording_consent_at", {
       mode: "timestamp_ms",
     }),
+    lessonRecordingGeneration: integer("lesson_recording_generation")
+      .default(0)
+      .notNull(),
+    lessonRecordingCleanupBeforeGeneration: integer(
+      "lesson_recording_cleanup_before_generation",
+    ),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -265,6 +271,10 @@ export const learnerLesson = sqliteTable(
       .references(() => user.id, { onDelete: "cascade" }),
     source: text("source").notNull(),
     lessonJson: text("lesson_json").notNull(),
+    recordingGeneration: integer("recording_generation").default(0).notNull(),
+    recordingCleanupBeforeGeneration: integer(
+      "recording_cleanup_before_generation",
+    ),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
