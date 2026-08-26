@@ -215,6 +215,53 @@ describe("My Lessons browser API", () => {
     });
   });
 
+  it("targets every My Lessons request with one exact learner query", async () => {
+    const learnerProfileId = "learner /Noah";
+    const lesson = createLessonScript();
+    const descriptor = {
+      id: "lesson/id",
+      lesson,
+      revision: REVISION,
+      source: "uploaded",
+    };
+    const generation = jsonFetch({ lesson, warnings: [] });
+    const save = jsonFetch({ lesson: descriptor }, 201);
+    const list = jsonFetch({ lessons: [descriptor] });
+    const detail = jsonFetch({ lesson: descriptor });
+    const update = jsonFetch({ lesson: descriptor, warnings: [] });
+
+    await generateMyLesson("ordering ice cream", {
+      fetch: generation.fetch,
+      learnerProfileId,
+    });
+    await saveMyLesson(lesson, "uploaded", {
+      fetch: save.fetch,
+      learnerProfileId,
+    });
+    await loadMyLessons({ fetch: list.fetch, learnerProfileId });
+    await loadMyLesson("lesson/id", {
+      fetch: detail.fetch,
+      learnerProfileId,
+    });
+    await updateMyLesson("lesson/id", lesson, {
+      fetch: update.fetch,
+      learnerProfileId,
+    });
+
+    assert.deepEqual(
+      [generation, save, list, detail, update].map(
+        ({ calls }) => calls[0][0],
+      ),
+      [
+        "/api/lessons/my/generate?learnerProfileId=learner+%2FNoah",
+        "/api/lessons/my?learnerProfileId=learner+%2FNoah",
+        "/api/lessons/my?learnerProfileId=learner+%2FNoah",
+        "/api/lessons/my/lesson%2Fid?learnerProfileId=learner+%2FNoah",
+        "/api/lessons/my/lesson%2Fid?learnerProfileId=learner+%2FNoah",
+      ],
+    );
+  });
+
   it("exposes safe server errors to the creator", async () => {
     const failed = jsonFetch(
       { error: "invalid_topic", message: "Please describe a topic." },

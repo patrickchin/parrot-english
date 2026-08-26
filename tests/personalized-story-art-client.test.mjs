@@ -101,6 +101,62 @@ describe("personalized story art client API", () => {
     });
   });
 
+  it("accepts only canonical unscoped and learner-scoped asset URLs", () => {
+    const { parsePersonalizedStoryArtMetadata } = requireClientApi();
+    const parseSrc = (src, learnerProfileId) =>
+      parsePersonalizedStoryArtMetadata(
+        {
+          stories: {
+            "the-red-ball": {
+              pages: {
+                "my-red-ball": {
+                  alt: "You holding a bright red ball",
+                  src,
+                },
+              },
+            },
+          },
+        },
+        learnerProfileId,
+      ).stories["the-red-ball"]?.pages["my-red-ball"]?.src ?? null;
+    const asset = "/api/stories/the-red-ball/personalized-art/asset";
+
+    assert.equal(parseSrc(asset), asset);
+    assert.equal(parseSrc(`${asset}?v=123`), `${asset}?v=123`);
+    assert.equal(
+      parseSrc(`${asset}?v=123&learnerProfileId=learner-a`),
+      `${asset}?v=123&learnerProfileId=learner-a`,
+    );
+    assert.equal(
+      parseSrc(
+        `${asset}?v=123&learnerProfileId=learner+%2FNoah`,
+        "learner /Noah",
+      ),
+      `${asset}?v=123&learnerProfileId=learner+%2FNoah`,
+    );
+
+    for (const malformed of [
+      `${asset}?learnerProfileId=learner-a`,
+      `${asset}?learnerProfileId=learner-a&v=123`,
+      `${asset}?v=bad&learnerProfileId=learner-a`,
+      `${asset}?v=123&learnerProfileId=`,
+      `${asset}?v=123&learnerProfileId=learner-a&extra=1`,
+      `${asset}?v=123&learnerProfileId=learner-a&learnerProfileId=learner-b`,
+      `${asset}?v=123#learnerProfileId=learner-a`,
+      `${asset}/foreign?v=123&learnerProfileId=learner-a`,
+    ]) {
+      assert.equal(parseSrc(malformed), null, malformed);
+    }
+    assert.equal(
+      parseSrc(
+        `${asset}?v=123&learnerProfileId=learner-a`,
+        "learner-b",
+      ),
+      null,
+    );
+    assert.equal(parseSrc(`${asset}?v=123`, "learner-b"), null);
+  });
+
   it("normalizes uploaded art to one metadata-free centered PNG below the provider's 512px limit", async () => {
     const { normalizePersonalizedStoryArtUpload } = requireClientApi();
 
@@ -372,6 +428,62 @@ describe("personalized story art client API", () => {
       "/api/stories/the-red-ball/personalized-art",
     );
     assert.equal(request.calls[0][1].method, "DELETE");
+  });
+
+  it("targets load, generation, and removal with one exact learner query", async () => {
+    const {
+      generatePersonalizedStoryArt,
+      loadPersonalizedStoryArt,
+      removePersonalizedStoryArt,
+    } = requireClientApi();
+    const learnerProfileId = "learner /Noah";
+    const load = jsonFetch({ enabled: true, stories: {} });
+    const generation = jsonFetch({ enabled: true, stories: {} }, 201);
+    const remove = jsonFetch({ ok: true });
+    const source = new File([new Uint8Array([1, 2, 3])], "camera.png", {
+      type: "image/png",
+    });
+    const normalization = {
+      createCanvas() {
+        return {
+          convertToBlob: async () => new Blob(["png"], { type: "image/png" }),
+          getContext() {
+            return { clearRect() {}, drawImage() {} };
+          },
+          height: 480,
+          width: 480,
+        };
+      },
+      async decodeImage() {
+        return { height: 480, width: 480 };
+      },
+    };
+
+    await loadPersonalizedStoryArt("the-red-ball", {
+      fetch: load.fetch,
+      learnerProfileId,
+    });
+    await generatePersonalizedStoryArt(
+      {
+        guardianConsentVersion: "storybook-consent-v1",
+        photo: source,
+        storyId: "the-red-ball",
+      },
+      { fetch: generation.fetch, learnerProfileId, normalization },
+    );
+    await removePersonalizedStoryArt(
+      { storyId: "the-red-ball" },
+      { fetch: remove.fetch, learnerProfileId },
+    );
+
+    assert.deepEqual(
+      [load, generation, remove].map(({ calls }) => calls[0][0]),
+      [
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner+%2FNoah",
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner+%2FNoah",
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner+%2FNoah",
+      ],
+    );
   });
 
   it("notifies guardian access before exposing its typed guardian-required error", async () => {

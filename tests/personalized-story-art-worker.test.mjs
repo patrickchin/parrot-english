@@ -422,6 +422,34 @@ describe("personalized story art Worker handler", () => {
     }
   });
 
+  it("keeps a targeted metadata asset on the same learner and preserves its version", async () => {
+    const state = seedDatabase();
+    enableSiblingLearner(state);
+    try {
+      insertReadyArt(state, {
+        id: "art-b",
+        learnerProfileId: "learner-b",
+        objectKey:
+          "personalized-story-art/user-1/learners/learner-b/the-red-ball/versions/b.webp",
+        updatedAt: 123,
+      });
+
+      const response = await call(state, {
+        learnerProfileId: "learner-b",
+        legacyStorageOwner: false,
+        path: `${ROUTE}?learnerProfileId=learner-b`,
+      });
+
+      assert.equal(response.status, 200);
+      assert.equal(
+        (await response.json()).stories[STORY_ID].pages[PAGE_ID].src,
+        `${ASSET_ROUTE}?v=123&learnerProfileId=learner-b`,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("loads the generation scene reference from immutable public R2 media", async () => {
     const state = seedDatabase();
     const sourcePng = await sharp({

@@ -103,6 +103,46 @@ describe("duck dub browser API", () => {
     });
   });
 
+  it("targets every dub request and audio URL with one exact learner query", async () => {
+    const learnerProfileId = "learner /Noah";
+    const status = {
+      complete: false,
+      consentState: "granted",
+      dubId: "five-little-ducks-v2",
+      guardianConsentVersion: "guardian-voice-r2-v2",
+      lines: [],
+      recordingEnabled: true,
+    };
+    const load = requestRecorder(Response.json(status));
+    const upload = requestRecorder(
+      Response.json({ recordedAt: "2026-08-25T10:00:00.000Z" }),
+    );
+    const consent = requestRecorder(new Response(null, { status: 204 }));
+    const remove = requestRecorder(new Response(null, { status: 204 }));
+
+    await loadDubStatus({ fetch: load.fetch, learnerProfileId });
+    await saveDubLine("line/1", new Blob(["take"], { type: "audio/webm" }), {
+      fetch: upload.fetch,
+      learnerProfileId,
+    });
+    await grantDubConsent({ fetch: consent.fetch, learnerProfileId });
+    await deleteDub({ fetch: remove.fetch, learnerProfileId });
+
+    assert.deepEqual(
+      [load, upload, consent, remove].map(({ calls }) => calls[0][0]),
+      [
+        "/api/dubs/five-little-ducks-v2?learnerProfileId=learner+%2FNoah",
+        "/api/dubs/five-little-ducks-v2/lines/line%2F1?learnerProfileId=learner+%2FNoah",
+        "/api/dubs/five-little-ducks-v2/consent?learnerProfileId=learner+%2FNoah",
+        "/api/dubs/five-little-ducks-v2?learnerProfileId=learner+%2FNoah",
+      ],
+    );
+    assert.equal(
+      getDubLineAudioUrl("line/1", { learnerProfileId }),
+      "/api/dubs/five-little-ducks-v2/lines/line%2F1/audio?learnerProfileId=learner+%2FNoah",
+    );
+  });
+
   it("notifies guardian access only for guardian-required failures before rejection", async () => {
     const previousDocument = globalThis.document;
     const eventTarget = new globalThis.EventTarget();

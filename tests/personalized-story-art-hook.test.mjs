@@ -98,7 +98,10 @@ test.after(async () => {
   }
 });
 
-function metadata(alt, version = 1) {
+function metadata(alt, version = 1, learnerProfileId) {
+  const target = learnerProfileId
+    ? `&${new globalThis.URLSearchParams({ learnerProfileId })}`
+    : "";
   return {
     enabled: true,
     guardianConsentVersion: "storybook-consent-v1",
@@ -108,7 +111,7 @@ function metadata(alt, version = 1) {
         pages: {
           "my-red-ball": {
             alt,
-            src: `/api/stories/the-red-ball/personalized-art/asset?v=${version}`,
+            src: `/api/stories/the-red-ball/personalized-art/asset?v=${version}${target}`,
           },
         },
       },
@@ -116,15 +119,19 @@ function metadata(alt, version = 1) {
   };
 }
 
-function ArtHookProbe({ learnerId = "learner-a", onArt }) {
-  const art = usePersonalizedStoryArt();
+function ArtHookProbe({ learnerProfileId, onArt }) {
+  const art = usePersonalizedStoryArt({ learnerProfileId });
   useEffect(() => {
     onArt(art);
   }, [art, onArt]);
   return createElement(
     "section",
-    { "aria-label": `Art for ${learnerId}` },
-    createElement("output", { "aria-label": "Learner" }, learnerId),
+    { "aria-label": `Art for ${learnerProfileId ?? "active learner"}` },
+    createElement(
+      "output",
+      { "aria-label": "Learner" },
+      learnerProfileId ?? "active",
+    ),
     createElement(
       "output",
       { "aria-label": "Artwork" },
@@ -141,11 +148,21 @@ function ArtHookProbe({ learnerId = "learner-a", onArt }) {
       { "aria-label": "Art busy" },
       art.isGenerating ? "yes" : "no",
     ),
+    createElement(
+      "output",
+      { "aria-label": "Art consent" },
+      art.consentChecked ? "yes" : "no",
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Art photo" },
+      art.hasSelectedPhoto ? "yes" : "no",
+    ),
   );
 }
 
-function KeyedArtHarness({ onArt, onSwitch }) {
-  const [learnerId, setLearnerId] = useState("learner-a");
+function TargetedArtHarness({ onArt, onSwitch }) {
+  const [learnerProfileId, setLearnerProfileId] = useState("learner-a");
   return createElement(
     "section",
     null,
@@ -154,13 +171,13 @@ function KeyedArtHarness({ onArt, onSwitch }) {
       {
         onClick: () => {
           onSwitch("learner-b");
-          setLearnerId("learner-b");
+          setLearnerProfileId("learner-b");
         },
         type: "button",
       },
       "Use learner B",
     ),
-    createElement(ArtHookProbe, { key: learnerId, learnerId, onArt }),
+    createElement(ArtHookProbe, { learnerProfileId, onArt }),
   );
 }
 
@@ -324,17 +341,25 @@ test("a generate replacement keeps a late delete from clearing art or loading", 
   assert.equal(output(container, "Art status"), "Story art ready");
 });
 
-test("a keyed learner switch during normalization cannot post old learner art", async () => {
+test("a target switch during normalization aborts old learner art and clears its file state", async () => {
   const normalization = deferred();
   decodeImage = async () => normalization.promise;
-  let activeLearner = "learner-a";
   let postCalls = 0;
-  globalThis.fetch = async (_path, init = {}) => {
+  const loadSignals = [];
+  globalThis.fetch = async (path, init = {}) => {
     if (init.method === "GET") {
+      loadSignals.push(init.signal);
+      const learnerProfileId = new URL(path, "https://example.test").searchParams.get(
+        "learnerProfileId",
+      );
+      const resolvedLearnerProfileId = learnerProfileId ?? "learner-a";
       return Response.json(
         metadata(
-          activeLearner === "learner-a" ? "learner A art" : "learner B art",
-          activeLearner === "learner-a" ? 1 : 2,
+          resolvedLearnerProfileId === "learner-a"
+            ? "learner A art"
+            : "learner B art",
+          resolvedLearnerProfileId === "learner-a" ? 1 : 2,
+          learnerProfileId ?? undefined,
         ),
       );
     }
@@ -346,15 +371,17 @@ test("a keyed learner switch during normalization cannot post old learner art", 
   };
   let art;
   const container = await mountStrict(
-    createElement(KeyedArtHarness, {
+    createElement(TargetedArtHarness, {
       onArt: (nextArt) => (art = nextArt),
-      onSwitch: (learnerId) => (activeLearner = learnerId),
+      onSwitch() {},
     }),
   );
   await waitFor(() => assert.equal(output(container, "Artwork"), "learner A art"));
   await prepareGeneration(() => art);
   await act(() => void art.generate());
   await waitFor(() => assert.equal(output(container, "Art busy"), "yes"));
+  assert.equal(output(container, "Art consent"), "yes");
+  assert.equal(output(container, "Art photo"), "yes");
 
   await click(
     [...container.querySelectorAll("button")].find(
@@ -362,6 +389,9 @@ test("a keyed learner switch during normalization cannot post old learner art", 
     ),
   );
   await waitFor(() => assert.equal(output(container, "Artwork"), "learner B art"));
+  assert.equal(output(container, "Art consent"), "no");
+  assert.equal(output(container, "Art photo"), "no");
+  assert.ok(loadSignals.some((signal) => signal.aborted));
   await act(async () => {
     normalization.resolve({ height: 480, width: 480 });
     await normalization.promise;
@@ -374,6 +404,54 @@ test("a keyed learner switch during normalization cannot post old learner art", 
   assert.equal(output(container, "Art error"), "none");
   assert.equal(output(container, "Art status"), "none");
   assert.equal(output(container, "Art busy"), "no");
+});
+
+test("a target switch clears old metadata and status before the next learner loads", async () => {
+  const learnerBLoad = deferred();
+  let currentTarget = "learner-a";
+  globalThis.fetch = async (path, init = {}) => {
+    const learnerProfileId = new URL(path, "https://example.test").searchParams.get(
+      "learnerProfileId",
+    );
+    if (init.method === "GET") {
+      if (learnerProfileId === "learner-b") return learnerBLoad.promise;
+      return Response.json(
+        metadata("learner A art", 1, learnerProfileId ?? undefined),
+      );
+    }
+    if (init.method === "POST") {
+      return Response.json(metadata("generated learner A art", 2, currentTarget));
+    }
+    throw new Error(`Unexpected art request: ${init.method}`);
+  };
+  let art;
+  const container = await mountStrict(
+    createElement(TargetedArtHarness, {
+      onArt: (nextArt) => (art = nextArt),
+      onSwitch: (nextTarget) => (currentTarget = nextTarget),
+    }),
+  );
+  await waitFor(() => assert.equal(output(container, "Artwork"), "learner A art"));
+  await prepareGeneration(() => art);
+  await act(() => void art.generate());
+  await waitFor(() => assert.equal(output(container, "Art status"), "Story art ready"));
+
+  await click(
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent === "Use learner B",
+    ),
+  );
+  await waitFor(() => assert.equal(output(container, "Learner"), "learner-b"));
+  assert.equal(output(container, "Artwork"), "none");
+  assert.equal(output(container, "Art status"), "none");
+  assert.equal(output(container, "Art consent"), "no");
+  assert.equal(output(container, "Art busy"), "no");
+
+  await act(async () => {
+    learnerBLoad.resolve(Response.json(metadata("learner B art", 3, "learner-b")));
+    await learnerBLoad.promise;
+  });
+  await waitFor(() => assert.equal(output(container, "Artwork"), "learner B art"));
 });
 
 test("uses a hermetic Vite module-transform server", () => {

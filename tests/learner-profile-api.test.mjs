@@ -372,6 +372,59 @@ describe("learnerProfile browser API", () => {
     ]);
   });
 
+  it("targets Guardian profile, preference, and recording requests with one exact learner query", async () => {
+    const learnerProfileId = "learner /Noah";
+    const profilePayload = {
+      profile: { id: learnerProfileId, storyLevel: "tiny-stories" },
+      questions: [],
+    };
+    const request = jsonFetch(profilePayload);
+
+    await learnerProfileApi.loadProfile({
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveProfileAnswer("name", "Noah", {
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveProfileAnswers({ name: "Noah" }, {
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveStoryLevel("tiny-stories", {
+      fetch: request.fetch,
+      learnerProfileId,
+    });
+
+    const consent = jsonFetch({ cleanupPending: false, enabled: true });
+    await learnerProfileApi.loadLessonRecordingConsent({
+      fetch: consent.fetch,
+      learnerProfileId,
+    });
+    await learnerProfileApi.saveLessonRecordingConsent(true, {
+      fetch: consent.fetch,
+      learnerProfileId,
+    });
+
+    assert.deepEqual(
+      request.calls.map(([url]) => url),
+      [
+        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/profile/preferences?learnerProfileId=learner+%2FNoah",
+      ],
+    );
+    assert.deepEqual(
+      consent.calls.map(([url]) => url),
+      [
+        "/api/lesson-recordings/consent?learnerProfileId=learner+%2FNoah",
+        "/api/profile/lesson-recording-consent?learnerProfileId=learner+%2FNoah",
+      ],
+    );
+  });
+
   it("posts skip and completion transitions", async () => {
     const skipped = jsonFetch({ canBypass: true });
     await skipLearnerProfile({ fetch: skipped.fetch });

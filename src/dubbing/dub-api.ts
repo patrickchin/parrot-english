@@ -15,8 +15,9 @@ export type DubStatus = {
   recordingEnabled: boolean;
 };
 
-type DubRequestOptions = {
+export type DubRequestOptions = {
   fetch?: typeof globalThis.fetch;
+  learnerProfileId?: string;
   signal?: AbortSignal;
 };
 
@@ -139,13 +140,30 @@ function isSaveResult(value: unknown): value is { recordedAt: string } {
   );
 }
 
-export const getDubLineAudioUrl = (lineId: string) =>
-  `/api/dubs/${DUB_ID}/lines/${encodeURIComponent(lineId)}/audio`;
+function appendLearnerProfileTarget(
+  path: string,
+  learnerProfileId: string | undefined,
+) {
+  if (learnerProfileId === undefined) return path;
+  return `${path}?${new URLSearchParams({ learnerProfileId })}`;
+}
+
+export const getDubLineAudioUrl = (
+  lineId: string,
+  { learnerProfileId }: Pick<DubRequestOptions, "learnerProfileId"> = {},
+) =>
+  appendLearnerProfileTarget(
+    `/api/dubs/${DUB_ID}/lines/${encodeURIComponent(lineId)}/audio`,
+    learnerProfileId,
+  );
 
 export async function loadDubStatus(options: DubRequestOptions = {}) {
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
-    `/api/dubs/${DUB_ID}`,
+    appendLearnerProfileTarget(
+      `/api/dubs/${DUB_ID}`,
+      options.learnerProfileId,
+    ),
     {
       credentials: "same-origin",
       signal: options.signal,
@@ -176,7 +194,10 @@ export async function saveDubLine(
 ) {
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
-    `/api/dubs/${DUB_ID}/lines/${encodeURIComponent(lineId)}`,
+    appendLearnerProfileTarget(
+      `/api/dubs/${DUB_ID}/lines/${encodeURIComponent(lineId)}`,
+      options.learnerProfileId,
+    ),
     {
       body: blob,
       credentials: "same-origin",
@@ -215,7 +236,10 @@ export async function saveDubLine(
 export async function grantDubConsent(options: DubRequestOptions = {}) {
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
-    `/api/dubs/${DUB_ID}/consent`,
+    appendLearnerProfileTarget(
+      `/api/dubs/${DUB_ID}/consent`,
+      options.learnerProfileId,
+    ),
     {
       body: JSON.stringify({ accepted: true, consentVersion: GUARDIAN_CONSENT_VERSION }),
       credentials: "same-origin",
@@ -232,7 +256,10 @@ export async function grantDubConsent(options: DubRequestOptions = {}) {
 export async function deleteDub(options: DubRequestOptions = {}) {
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
-    `/api/dubs/${DUB_ID}`,
+    appendLearnerProfileTarget(
+      `/api/dubs/${DUB_ID}`,
+      options.learnerProfileId,
+    ),
     {
       credentials: "same-origin",
       method: "DELETE",
