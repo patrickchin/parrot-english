@@ -170,17 +170,22 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(
       container.querySelector('[aria-label="Original audio waveform"]'),
     ));
+    assert.equal(
+      container.querySelector('[aria-label="Your live recording waveform"]'),
+      null,
+    );
   });
 
-  it("samples a broad live window and treats analyser read failures as optional", async () => {
+  it("samples a broad live window and renders changing microphone peaks", async () => {
     const analysers = [];
     globalThis.AudioContext = class AudioContext {
       close() { return Promise.resolve(); }
       createAnalyser() {
         const analyser = {
           fftSize: 256,
-          getFloatTimeDomainData() {
-            throw new Error("Microphone graph ended.");
+          getFloatTimeDomainData(samples) {
+            samples.fill(0);
+            samples[Math.floor(samples.length / 2)] = 0.75;
           },
           smoothingTimeConstant: 0,
         };
@@ -205,6 +210,42 @@ describe("duck dubbing storyboard presentation", () => {
     ));
     assert.ok(analysers.length > 0);
     assert.ok(analysers.every(({ fftSize }) => fftSize === 16_384));
+    const liveBars = [...container.querySelectorAll(
+      '[aria-label="Your live recording waveform"] rect',
+    )];
+    assert.ok(liveBars.some((bar) => Number(bar.getAttribute("height")) > 4));
+  });
+
+  it("removes a misleading live overlay when analyser sampling fails", async () => {
+    globalThis.AudioContext = class AudioContext {
+      close() { return Promise.resolve(); }
+      createAnalyser() {
+        return {
+          fftSize: 256,
+          getFloatTimeDomainData() {
+            throw new Error("Microphone graph ended.");
+          },
+          smoothingTimeConstant: 0,
+        };
+      }
+      createMediaStreamSource() {
+        return { connect() {}, disconnect() {} };
+      }
+      resume() { return Promise.resolve(); }
+    };
+
+    const container = await mountStrict(createElement(DubTakeWaveform, {
+      blob: null,
+      guideAudioId: "five-little-ducks-v2-guide-line-1",
+      recordingElapsedMs: 500,
+      recordingStream: { getTracks: () => [] },
+    }));
+
+    await waitFor(() => assert.equal(
+      container.querySelector('[aria-label="Your live recording waveform"]'),
+      null,
+    ));
+    assert.ok(container.querySelector('[aria-label="Original audio waveform"]'));
   });
 
   it("uses painted raster artwork with an adjacent scene description", () => {
@@ -619,7 +660,6 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /role="timer"[\s\S]*?Recording[\s\S]*?0:02 \/ 0:06/);
     assert.match(html, /<div(?=[^>]*aria-label="Recording time")(?=[^>]*aria-valuemax="6000")(?=[^>]*aria-valuenow="2100")(?=[^>]*role="progressbar")[^>]*>/);
     assert.match(html, /aria-label="Original audio waveform"/);
-    assert.match(html, /aria-label="Your live recording waveform"/);
     assert.match(html, /aria-label="Next line"/);
     assert.doesNotMatch(html, /countdown|Get ready/i);
   });
@@ -645,7 +685,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Your recording waveform"/);
     assert.match(html, />Not saved</);
     assert.doesNotMatch(html, />Saved ✓</);
-    assert.match(html, />Save again</);
+    assert.match(html, /aria-label="Save again"/);
     assert.match(html, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /role="alert"/);
@@ -659,7 +699,7 @@ describe("duck dubbing storyboard presentation", () => {
     });
     assert.match(html, /<button[^>]*disabled[^>]*>[^<]*<svg[^>]*>.*Hear line<\/button>/s);
     assert.match(html, /<button(?=[^>]*aria-label="Hear my voice")(?=[^>]*disabled)[^>]*>/);
-    assert.match(html, /<button[^>]*disabled[^>]*>Save again<\/button>/);
+    assert.match(html, /<button(?=[^>]*aria-label="Save again")(?=[^>]*disabled)[^>]*>/);
   });
 
   it("exposes an accurate full-video loading name", () => {

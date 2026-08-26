@@ -87,6 +87,20 @@ export function DubSceneEditor({
           : "Record line";
   const takeLabel = operation === "take-playing" ? "Stop my voice" : "Hear my voice";
   const guideAudioId = getGuideAudioId(activeLine.text);
+  const feedbackError = Boolean(error)
+    && operation !== "mic-opening"
+    && operation !== "saving";
+  const feedbackLabel = operation === "mic-opening"
+    ? "Starting microphone…"
+    : operation === "saving"
+      ? "Saving your voice…"
+      : saveRecovery === "save"
+        ? "Not saved"
+        : error
+          ? error
+          : pendingTake
+            ? "Saved ✓"
+            : `Up to ${DUB_RECORDING_MS / 1_000} seconds`;
 
   return (
     <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-[3.75rem] short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
@@ -142,7 +156,7 @@ export function DubSceneEditor({
                     : "Record"}
           </ActionButton>
 
-          <section aria-label="Recording feedback" className="grid h-36 content-start gap-1.5 overflow-y-auto rounded-2xl bg-sky-50 p-2 short-wide:h-18 short-wide:gap-1 short-wide:p-0.5">
+          <section aria-label="Recording feedback" className="grid h-36 content-start gap-1.5 overflow-visible rounded-2xl bg-sky-50 p-2 short-wide:h-18 short-wide:gap-1 short-wide:p-0.5">
             <DubTakeWaveform
               blob={pendingTake}
               guideAudioId={guideAudioId}
@@ -172,28 +186,26 @@ export function DubSceneEditor({
                 </div>
               </>
             ) : (
-              <div className="flex min-h-10 items-center justify-between gap-2 short-wide:min-h-8">
-                <p className={`m-0 shrink-0 whitespace-nowrap text-sm font-black short-wide:text-xs ${operation === "mic-opening" || operation === "saving" ? "text-brand-rose" : "text-slate-600"}`}>
-                  {operation === "mic-opening"
-                    ? "Starting microphone…"
-                    : operation === "saving"
-                      ? "Saving your voice…"
-                      : saveRecovery === "save"
-                        ? "Not saved"
-                        : pendingTake
-                          ? "Saved ✓"
-                          : `Up to ${DUB_RECORDING_MS / 1_000} seconds`}
+              <div className="flex min-h-10 items-center justify-between gap-1 short-wide:min-h-8">
+                <p
+                  aria-label={feedbackError ? error : undefined}
+                  className={`m-0 min-w-0 flex-1 text-sm font-black short-wide:text-xs ${feedbackError ? "text-red-800 short-wide:line-clamp-2 short-wide:text-[0.68rem] short-wide:leading-tight" : operation === "mic-opening" || operation === "saving" ? "truncate whitespace-nowrap text-brand-rose" : "truncate whitespace-nowrap text-slate-600"}`}
+                  role={feedbackError ? "alert" : undefined}
+                >
+                  {feedbackLabel}
                 </p>
-                {pendingTake ? (
-                  <TextButton aria-label={takeLabel} className="min-h-10 shrink-0 gap-1 short-wide:min-h-8 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
-                    {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {takeLabel}
-                  </TextButton>
-                ) : null}
+                <div className="flex shrink-0 items-center gap-1">
+                  {pendingTake ? (
+                    <TextButton aria-label={takeLabel} className="relative z-0 min-h-10 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-8 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
+                      {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Hear") : takeLabel}
+                    </TextButton>
+                  ) : null}
+                  {pendingTake && saveRecovery === "save" ? (
+                    <TextButton aria-label="Save again" className="relative z-0 min-h-10 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-8 short-wide:text-sm" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save</TextButton>
+                  ) : null}
+                </div>
               </div>
             )}
-            {pendingTake && saveRecovery === "save" ? (
-              <TextButton className="min-h-10 justify-self-start" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save again</TextButton>
-            ) : null}
           </section>
 
           <ActionButton
@@ -207,8 +219,6 @@ export function DubSceneEditor({
           >
             Next <ArrowRight aria-hidden="true" />
           </ActionButton>
-
-          {error ? <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">{error}</p> : null}
         </aside>
       </section>
     </main>

@@ -1505,6 +1505,39 @@ test("short landscape keeps project and scene actions clear of the route header"
   await expectNoHorizontalOverflow(page);
 });
 
+for (const recovery of [
+  { action: "Save again", microphone: "", scenario: "upload-retry-held" },
+  { action: "Record again", microphone: "", scenario: "upload-rejected" },
+  { action: "Record line", microphone: "&parrotE2eMicrophone=denied", scenario: "empty" },
+] as const) {
+  test(`short landscape contains ${recovery.scenario} recovery without nested scrolling`, async ({ page }) => {
+    await page.setViewportSize({ height: 360, width: 640 });
+    await page.goto(`/dubs/five-little-ducks?parrotE2eDub=${recovery.scenario}${recovery.microphone}`);
+    await confirmDub(page, "Start dubbing");
+    await openScene(page, 1);
+    await page.getByRole("button", { name: "Record line" }).click();
+    if (recovery.microphone === "") {
+      await page.getByRole("button", { name: "Stop recording" }).click();
+    }
+
+    const controls = page.getByRole("complementary", { name: "Scene line controls" });
+    const feedback = page.getByRole("region", { name: "Recording feedback" });
+    await expect(controls.getByRole("alert")).toBeVisible();
+    await expect(page.getByRole("button", { name: recovery.action })).toBeVisible();
+    for (const region of [controls, feedback]) {
+      const metrics = await region.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        scrollTop: element.scrollTop,
+      }));
+      expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
+      expect(metrics.scrollTop).toBe(0);
+    }
+    await expectFullyInViewport(page, page.getByRole("button", { name: recovery.action }));
+    await expectNoHorizontalOverflow(page);
+  });
+}
+
 function boxesOverlap(
   first: { height: number; width: number; x: number; y: number },
   second: { height: number; width: number; x: number; y: number },
