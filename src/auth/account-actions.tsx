@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -10,6 +11,8 @@ import {
 
 export type AccountExperience = {
   error: string;
+  guardianUnlockDestination?: string | null;
+  hasActiveLearner: boolean;
   learnerName: string | null;
   onOpenProfile: (() => void) | null;
 };
@@ -23,7 +26,9 @@ type AccountActionContextValue = {
   setAction: AccountExperienceSetter;
 };
 
-const AccountActionContext = createContext<AccountActionContextValue | null>(null);
+const AccountActionContext = createContext<AccountActionContextValue | null>(
+  null,
+);
 
 export function AccountActionProvider({
   children,
@@ -54,6 +59,11 @@ export function useProfileAccountAction(action: AccountExperience | null) {
     return () =>
       setProfileAction((current) => (current === action ? null : current));
   }, [action, setProfileAction]);
+}
+
+export function useClearProfileAccountAction() {
+  const setProfileAction = useContext(AccountActionContext)?.setAction;
+  return useCallback(() => setProfileAction?.(null), [setProfileAction]);
 }
 
 export function useAccountExperience() {

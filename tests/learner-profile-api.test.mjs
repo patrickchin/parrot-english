@@ -33,12 +33,211 @@ describe("learnerProfile browser API", () => {
     assert.equal(learnerProfile.calls[0][0], "/api/learner-profile");
     assert.equal(learnerProfile.calls[0][1].method, "GET");
 
-    const profile = jsonFetch({ questions: [] });
+    const profile = jsonFetch({ profile: { id: "learner-1" }, questions: [] });
     assert.deepEqual(await loadProfile({ fetch: profile.fetch }), {
+      profile: { id: "learner-1" },
       questions: [],
     });
     assert.equal(profile.calls[0][0], "/api/profile");
     assert.equal(profile.calls[0][1].method, "GET");
+  });
+
+  it("uses the Guardian roster routes with exact JSON bodies and encoded profile IDs", async () => {
+    assert.equal(
+      typeof learnerProfileApi.loadLearnerProfiles,
+      "function",
+      "Expected the Guardian roster loader",
+    );
+    assert.equal(
+      typeof learnerProfileApi.createLearnerProfile,
+      "function",
+      "Expected the Guardian roster creator",
+    );
+    assert.equal(
+      typeof learnerProfileApi.selectLearnerProfile,
+      "function",
+      "Expected the Guardian roster selector",
+    );
+
+    const request = jsonFetch({
+      activeProfileId: "learner/a",
+      profiles: [
+        {
+          age: 6,
+          createdAt: "2026-08-26T08:00:00.000Z",
+          id: "learner/a",
+          name: "Mia",
+          profileStatus: "completed",
+        },
+      ],
+    });
+
+    await learnerProfileApi.loadLearnerProfiles({ fetch: request.fetch });
+    await learnerProfileApi.createLearnerProfile("Mia", {
+      fetch: request.fetch,
+    });
+    await learnerProfileApi.selectLearnerProfile("learner/a", {
+      fetch: request.fetch,
+    });
+
+    assert.equal(request.calls[0][0], "/api/learner-profiles");
+    assert.deepEqual(request.calls[0][1], {
+      method: "GET",
+      signal: undefined,
+    });
+    assert.equal(request.calls[1][0], "/api/learner-profiles");
+    assert.deepEqual(request.calls[1][1], {
+      body: '{"name":"Mia"}',
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+      signal: undefined,
+    });
+    assert.equal(
+      request.calls[2][0],
+      "/api/learner-profiles/learner%2Fa/active",
+    );
+    assert.deepEqual(request.calls[2][1], {
+      method: "PUT",
+      signal: undefined,
+    });
+  });
+
+  it("rejects malformed Guardian rosters from every roster endpoint", async () => {
+    const validProfile = {
+      age: 6,
+      createdAt: "2026-08-26T08:00:00.000Z",
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const malformedRosters = [
+      { activeProfileId: "learner-mia", profiles: null },
+      {
+        activeProfileId: "learner-mia",
+        profiles: [validProfile, { ...validProfile }],
+      },
+      {
+        activeProfileId: "learner-mia",
+        profiles: [{ ...validProfile, id: " \t " }],
+      },
+      {
+        activeProfileId: "learner-mia",
+        profiles: [{ ...validProfile, name: " \n " }],
+      },
+      { activeProfileId: "learner-noah", profiles: [validProfile] },
+    ];
+    const invocations = [
+      (fetch) => learnerProfileApi.loadLearnerProfiles({ fetch }),
+      (fetch) => learnerProfileApi.createLearnerProfile("Ava", { fetch }),
+      (fetch) =>
+        learnerProfileApi.selectLearnerProfile("learner-mia", { fetch }),
+    ];
+
+    for (const invoke of invocations) {
+      for (const malformedRoster of malformedRosters) {
+        const request = jsonFetch(malformedRoster);
+        await assert.rejects(
+          invoke(request.fetch),
+          (error) =>
+            error instanceof LearnerProfileApiError &&
+            error.code === "invalid_roster",
+        );
+      }
+    }
+  });
+
+  it("turns only the active-profile selection-required response into explicit state", async () => {
+    const required = jsonFetch({ error: "learner_selection_required" }, 409);
+
+    assert.deepEqual(await loadLearnerProfile({ fetch: required.fetch }), {
+      mode: "selection-required",
+    });
+
+    const otherConflict = jsonFetch({ error: "another_conflict" }, 409);
+    await assert.rejects(
+      loadLearnerProfile({ fetch: otherConflict.fetch }),
+      (error) =>
+        error instanceof LearnerProfileApiError &&
+        error.status === 409 &&
+        error.code === "another_conflict",
+    );
+
+    const wrongStatus = jsonFetch({ error: "learner_selection_required" }, 400);
+    await assert.rejects(
+      loadLearnerProfile({ fetch: wrongStatus.fetch }),
+      (error) =>
+        error instanceof LearnerProfileApiError &&
+        error.status === 400 &&
+        error.code === "learner_selection_required",
+    );
+  });
+
+  it("rejects malformed full and Guardian profile responses before they can cross a learner boundary", async () => {
+    for (const id of ["", "   "]) {
+      const malformedLearner = jsonFetch({
+        mode: "full",
+        profile: { id },
+      });
+      await assert.rejects(
+        loadLearnerProfile({ fetch: malformedLearner.fetch }),
+        (error) =>
+          error instanceof LearnerProfileApiError &&
+          error.code === "invalid_profile",
+      );
+
+      const malformedProfile = jsonFetch({ profile: { id }, questions: [] });
+      await assert.rejects(
+        loadProfile({ fetch: malformedProfile.fetch }),
+        (error) =>
+          error instanceof LearnerProfileApiError &&
+          error.code === "invalid_profile",
+      );
+    }
+  });
+
+  it("rejects malformed learner IDs from mutation responses", async () => {
+    const invalidLearnerState = {
+      mode: "full",
+      profile: { id: " \t " },
+    };
+    const invalidProfileState = {
+      profile: { id: " \n " },
+      questions: [],
+    };
+
+    for (const invoke of [
+      (fetch) =>
+        saveLearnerProfileAnswer("favoriteAnimals", "Ducks", { fetch }),
+      (fetch) => skipLearnerProfile({ fetch }),
+      (fetch) =>
+        learnerProfileApi.skipLearnerProfileQuestion("favoriteAnimals", {
+          fetch,
+        }),
+      (fetch) => completeLearnerProfile({ fetch }),
+    ]) {
+      const request = jsonFetch(invalidLearnerState);
+      await assert.rejects(
+        invoke(request.fetch),
+        (error) =>
+          error instanceof LearnerProfileApiError &&
+          error.code === "invalid_profile",
+      );
+    }
+
+    for (const invoke of [
+      (fetch) => saveProfileAnswer("name", "Mia", { fetch }),
+      (fetch) =>
+        learnerProfileApi.saveProfileAnswers({ name: "Mia" }, { fetch }),
+      (fetch) => learnerProfileApi.saveStoryLevel("tiny-stories", { fetch }),
+    ]) {
+      const request = jsonFetch(invalidProfileState);
+      await assert.rejects(
+        invoke(request.fetch),
+        (error) =>
+          error instanceof LearnerProfileApiError &&
+          error.code === "invalid_profile",
+      );
+    }
   });
 
   it("submits prose and retains the acknowledgment response", async () => {
@@ -68,7 +267,7 @@ describe("learnerProfile browser API", () => {
       signal: undefined,
     });
 
-    const profile = jsonFetch({ profile: { name: "Maya" } });
+    const profile = jsonFetch({ profile: { id: "learner-1", name: "Maya" } });
     await saveProfileAnswer("name", "Maya", { fetch: profile.fetch });
     assert.equal(profile.calls[0][0], "/api/profile");
     assert.equal(profile.calls[0][1].method, "PUT");
@@ -81,7 +280,7 @@ describe("learnerProfile browser API", () => {
   it("submits all prose profile edits in one request", async () => {
     assert.equal(typeof learnerProfileApi.saveProfileAnswers, "function");
     const payload = {
-      profile: { name: "Maya" },
+      profile: { id: "learner-1", name: "Maya" },
       acknowledgments: [
         {
           text: "Thank you!",
@@ -120,7 +319,10 @@ describe("learnerProfile browser API", () => {
 
   it("saves exactly one story-level preference", async () => {
     assert.equal(typeof learnerProfileApi.saveStoryLevel, "function");
-    const payload = { profile: { storyLevel: "tiny-stories" }, questions: [] };
+    const payload = {
+      profile: { id: "learner-1", storyLevel: "tiny-stories" },
+      questions: [],
+    };
     const request = jsonFetch(payload);
 
     assert.deepEqual(
@@ -183,8 +385,15 @@ describe("learnerProfile browser API", () => {
   });
 
   it("posts an explicit optional-question skip", async () => {
-    assert.equal(typeof learnerProfileApi.skipLearnerProfileQuestion, "function");
-    const request = jsonFetch({ mode: "full", question: null });
+    assert.equal(
+      typeof learnerProfileApi.skipLearnerProfileQuestion,
+      "function",
+    );
+    const request = jsonFetch({
+      mode: "full",
+      profile: { id: "learner-1" },
+      question: null,
+    });
 
     await learnerProfileApi.skipLearnerProfileQuestion("favoriteCartoons", {
       fetch: request.fetch,
@@ -225,13 +434,17 @@ describe("learnerProfile browser API", () => {
         assert.equal(error.status, 400);
         assert.equal(error.code, "invalid_answer");
         assert.equal(error.message, "Please enter a whole number.");
+        assert.equal(error.isFieldError, true);
         return true;
       },
     );
 
     const controller = new AbortController();
     const request = jsonFetch({ ok: true });
-    await loadLearnerProfile({ fetch: request.fetch, signal: controller.signal });
+    await loadLearnerProfile({
+      fetch: request.fetch,
+      signal: controller.signal,
+    });
     assert.equal(request.calls[0][1].signal, controller.signal);
   });
 
@@ -258,11 +471,13 @@ describe("learnerProfile browser API", () => {
       });
       assert.deepEqual(order, ["notification", "error"]);
     } finally {
-      if (previousDocument === undefined) Reflect.deleteProperty(globalThis, "document");
-      else Object.defineProperty(globalThis, "document", {
-        configurable: true,
-        value: previousDocument,
-      });
+      if (previousDocument === undefined)
+        Reflect.deleteProperty(globalThis, "document");
+      else
+        Object.defineProperty(globalThis, "document", {
+          configurable: true,
+          value: previousDocument,
+        });
     }
   });
 

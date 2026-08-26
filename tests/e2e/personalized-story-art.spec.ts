@@ -6,7 +6,7 @@ const narrowPhone = { width: 280, height: 568 };
 const storyPath = "/stories/the-red-ball/pages/1";
 const lessonPath = "/lessons/my/personalized-speaking-turn/scenes/1";
 const guardianConsentLabel =
-  "I am 18 or older. I confirm I am the child's guardian or have permission to use this photo, and I agree to send a cropped copy to Cloudflare Workers AI to make the illustration.";
+  "I am 18 or older. I confirm I am Mia's guardian or have permission to use this photo, and I agree to send a cropped copy to Cloudflare Workers AI to make the illustration.";
 const personalizedStoryAlt = "You holding a bright red ball";
 const defaultArtworkAlt = "A child holding one bright red ball";
 const tinyPng = Buffer.from(
@@ -260,7 +260,7 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
 
   const panel = page.getByRole("region", { name: "Personalized story art" });
   const consent = panel.getByRole("checkbox", { name: guardianConsentLabel });
-  const upload = panel.getByLabel("Upload learner photo");
+  const upload = panel.getByLabel("Upload Mia's photo");
   const generate = panel.getByRole("button", { name: "Generate story art" });
 
   await expectInsideViewportHorizontally(panel, page);
@@ -299,7 +299,7 @@ test("disabled generation keeps one cleanup path and confirms deletion", async (
   await expect(
     panel.getByRole("button", { name: "Delete stored story art" }),
   ).toBeVisible();
-  await expect(panel.getByLabel("Upload learner photo")).toHaveCount(0);
+  await expect(panel.getByLabel("Upload Mia's photo")).toHaveCount(0);
   await expect(
     panel.getByRole("button", { name: "Generate story art" }),
   ).toHaveCount(0);

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
 import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
 import {
   scheduleDubAudio,
@@ -855,6 +856,50 @@ describe("duck dub playback", () => {
     assert.equal(context.closeCalls, 1);
     assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
     assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
+  });
+
+  it("preserves consent loss instead of falling back to a generated guide", async () => {
+    for (const [status, code] of [
+      [403, "dubbing_not_enabled"],
+      [409, "dub_consent_revoking"],
+    ]) {
+      const audio = createAudioHarness();
+      const raf = createRaf();
+      const urls = [];
+      const line = DUB_LINES[0];
+      const preferredUrl = `/api/dubs/five-little-ducks-v2/lines/${line.id}/audio`;
+
+      const error = await startDubPlayback({
+        AudioContext: audio.AudioContext,
+        cancelAnimationFrame: raf.cancelAnimationFrame,
+        async fetch(url) {
+          urls.push(url);
+          if (url === preferredUrl) {
+            return Response.json({ error: code }, { status });
+          }
+          return new Response(new Uint8Array([1, 2, 3, 4]));
+        },
+        lines: [line],
+        onTick() {},
+        requestAnimationFrame: raf.requestAnimationFrame,
+        resolveAudioSource: () => ({
+          fallbackUrl: guideUrl(line.id),
+          preferredUrl,
+        }),
+      }).then(
+        (playback) => {
+          playback.stop();
+          return new Error("Playback unexpectedly used the generated guide.");
+        },
+        (cause) => cause,
+      );
+
+      assert.ok(error instanceof DubNotEnabledError, `${status} ${code}`);
+      assert.equal(error.code, "dubbing_not_enabled");
+      assert.deepEqual(urls, [preferredUrl]);
+      assert.equal(audio.contexts[0].closeCalls, 1);
+      assert.equal(audio.contexts[0].resumeCalls, 0);
+    }
   });
 
   it("propagates a pending external abort to every load and keeps AbortError", async () => {

@@ -31,7 +31,9 @@ export type QuestionStatus =
 
 type LearnerProfileQuestionViewProps = {
   fieldError: string;
+  fieldErrorIsAnswer?: boolean;
   mode: "learner-profile" | "profile";
+  onBack?: () => void;
   onReplay: () => void;
   onSkip: () => void;
   onSkipQuestion: () => void;
@@ -48,7 +50,9 @@ type LearnerProfileQuestionViewProps = {
 
 export function LearnerProfileQuestionView({
   fieldError,
+  fieldErrorIsAnswer = false,
   mode,
+  onBack,
   onReplay,
   onSkip,
   onSkipQuestion,
@@ -76,7 +80,9 @@ export function LearnerProfileQuestionView({
               ? "Ready."
               : "";
   const inputId = `learner-profile-answer-${question.answerKey}`;
+  const fieldErrorId = `${inputId}-error`;
   const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const microphoneOwnsPending = pending && pendingAction === "microphone";
   const skipOwnsPending = pending && pendingAction === "skip";
   const skipQuestionOwnsPending = pending && pendingAction === "skip-question";
@@ -84,6 +90,11 @@ export function LearnerProfileQuestionView({
 
   useIsomorphicLayoutEffect(() => {
     if (!fieldError) return;
+    if (fieldErrorIsAnswer) {
+      inputRef.current?.focus();
+      inputRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      return;
+    }
     const active = document.activeElement;
     if (
       !(active instanceof HTMLElement) ||
@@ -92,7 +103,7 @@ export function LearnerProfileQuestionView({
       return;
     }
     active.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [fieldError]);
+  }, [fieldError, fieldErrorIsAnswer]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -139,10 +150,7 @@ export function LearnerProfileQuestionView({
             {question.promptEn}
           </LearnerProfileStepHeading>
           {question.promptZh ? (
-            <p
-              className="mb-0 mt-2.5 font-bold text-slate-500"
-              lang="zh-CN"
-            >
+            <p className="mb-0 mt-2.5 font-bold text-slate-500" lang="zh-CN">
               {question.promptZh}
             </p>
           ) : null}
@@ -173,6 +181,8 @@ export function LearnerProfileQuestionView({
             </div>
             <span className="flex items-stretch gap-2">
               <textarea
+                aria-describedby={fieldErrorIsAnswer ? fieldErrorId : undefined}
+                aria-invalid={fieldErrorIsAnswer || undefined}
                 className={fieldClassName({
                   className:
                     "min-h-28 min-w-0 flex-1 scroll-m-2 resize-y leading-relaxed short:h-20 short:min-h-20",
@@ -182,6 +192,7 @@ export function LearnerProfileQuestionView({
                 maxLength={question.maxLength}
                 onChange={(event) => onValueChange(event.target.value)}
                 rows={4}
+                ref={inputRef}
                 value={value}
               />
               <IconButton
@@ -207,6 +218,7 @@ export function LearnerProfileQuestionView({
           {fieldError ? (
             <p
               className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
+              id={fieldErrorIsAnswer ? fieldErrorId : undefined}
               role="alert"
             >
               {fieldError}
@@ -214,6 +226,11 @@ export function LearnerProfileQuestionView({
           ) : null}
 
           <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-[360px]:mt-0 max-[360px]:gap-2 short:mt-0 short:gap-2 max-sm:justify-between">
+            {mode === "profile" && onBack ? (
+              <TextButton onClick={onBack} type="button">
+                Back
+              </TextButton>
+            ) : null}
             {mode === "learner-profile" && !question.required ? (
               <TextButton
                 aria-disabled={skipQuestionOwnsPending || undefined}

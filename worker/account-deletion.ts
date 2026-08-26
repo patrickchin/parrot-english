@@ -1,22 +1,33 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   accountDeletionTombstone,
+  learnerProfile,
+  learnerStoryArtGenerationLease,
   personalizedStoryArt,
+  personalizedStoryArtGenerationLease,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import {
+  createDubStorageKeys,
+  type DubStorageKeys,
   fenceBody,
   hasState,
   isR2WriteRateError,
-  markerKey,
+  LEGACY_DUB_LINE_IDS,
   MAX_R2_WRITE_ATTEMPTS,
-  objectKey,
   retryDelay,
 } from "./dub-storage.ts";
+import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 type Clock = () => Date;
 type Wait = (delay: number) => Promise<void>;
+type LearnerStorageIdentity = Pick<
+  LearnerIdentity,
+  "userId" | "learnerProfileId" | "legacyStorageOwner"
+>;
+type StoredLearnerStorageIdentity = Omit<LearnerStorageIdentity, "userId">;
 
 type AccountDeletionInput = {
   bucket: Pick<R2Bucket, "delete" | "head" | "list" | "put">;
@@ -27,13 +38,233 @@ type AccountDeletionInput = {
 };
 
 const MAX_FENCE_CONFLICTS = 16;
+const MAX_TOMBSTONE_CONFLICTS = 16;
+const MAX_PARALLEL_FENCE_WRITES = 4;
 
 function r2PrefixForUser(userId: string) {
   return `personalized-story-art/${encodeURIComponent(userId)}/`;
 }
 
-function lessonRecordingPrefix(userId: string) {
-  return `${r2PrefixForUser(userId)}lesson-recordings/`;
+export async function listLearnerStorageIdentities(
+  database: Database,
+  userId: string,
+): Promise<LearnerStorageIdentity[]> {
+  return database
+    .select({
+      learnerProfileId: learnerProfile.id,
+      legacyStorageOwner: learnerProfile.legacyStorageOwner,
+      userId: learnerProfile.authUserId,
+    })
+    .from(learnerProfile)
+    .where(eq(learnerProfile.authUserId, userId));
+}
+
+function parseLearnerStorageClosure(serialized: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch {
+    throw new Error("Account deletion learner storage closure is invalid.");
+  }
+  if (!Array.isArray(parsed)) {
+    throw new Error("Account deletion learner storage closure is invalid.");
+  }
+  return parsed.map((identity): StoredLearnerStorageIdentity => {
+    if (
+      typeof identity !== "object" ||
+      identity === null ||
+      typeof (identity as Record<string, unknown>).learnerProfileId !==
+        "string" ||
+      (identity as Record<string, unknown>).learnerProfileId === "" ||
+      typeof (identity as Record<string, unknown>).legacyStorageOwner !==
+        "boolean"
+    ) {
+      throw new Error("Account deletion learner storage closure is invalid.");
+    }
+    return {
+      learnerProfileId: (identity as Record<string, unknown>)
+        .learnerProfileId as string,
+      legacyStorageOwner: (identity as Record<string, unknown>)
+        .legacyStorageOwner as boolean,
+    };
+  });
+}
+
+function parsePersonalizedArtCandidateClosure(serialized: string) {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch {
+    throw new Error(
+      "Account deletion personalized-art candidate closure is invalid.",
+    );
+  }
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((key) => typeof key !== "string" || key === "")
+  ) {
+    throw new Error(
+      "Account deletion personalized-art candidate closure is invalid.",
+    );
+  }
+  return parsed as string[];
+}
+
+function mergeLearnerStorageClosure(
+  stored: StoredLearnerStorageIdentity[],
+  identities: LearnerStorageIdentity[],
+  userId: string,
+) {
+  const merged = new Map<string, StoredLearnerStorageIdentity>();
+  for (const identity of stored) {
+    merged.set(
+      `${identity.legacyStorageOwner ? 1 : 0}:${identity.learnerProfileId}`,
+      identity,
+    );
+  }
+  for (const identity of identities) {
+    if (identity.userId !== userId || identity.learnerProfileId === "") {
+      throw new Error("Account deletion learner storage identity is invalid.");
+    }
+    const storedIdentity = {
+      learnerProfileId: identity.learnerProfileId,
+      legacyStorageOwner: identity.legacyStorageOwner,
+    };
+    merged.set(
+      `${identity.legacyStorageOwner ? 1 : 0}:${identity.learnerProfileId}`,
+      storedIdentity,
+    );
+  }
+  return [...merged.values()].sort((left, right) => {
+    if (left.learnerProfileId < right.learnerProfileId) return -1;
+    if (left.learnerProfileId > right.learnerProfileId) return 1;
+    return Number(right.legacyStorageOwner) - Number(left.legacyStorageOwner);
+  });
+}
+
+async function persistLearnerStorageClosure(
+  database: Database,
+  userIdHash: string,
+  userId: string,
+  identities: LearnerStorageIdentity[],
+): Promise<LearnerStorageIdentity[]> {
+  for (let conflict = 0; conflict < MAX_TOMBSTONE_CONFLICTS; conflict += 1) {
+    const [tombstone] = await database
+      .select({
+        learnerStorageIdentitiesJson:
+          accountDeletionTombstone.learnerStorageIdentitiesJson,
+      })
+      .from(accountDeletionTombstone)
+      .where(eq(accountDeletionTombstone.userIdHash, userIdHash))
+      .limit(1);
+    if (!tombstone) {
+      throw new Error("Account deletion tombstone could not be persisted.");
+    }
+    const merged = mergeLearnerStorageClosure(
+      parseLearnerStorageClosure(tombstone.learnerStorageIdentitiesJson),
+      identities,
+      userId,
+    );
+    const serialized = JSON.stringify(merged);
+    if (serialized === tombstone.learnerStorageIdentitiesJson) {
+      return merged.map((identity) => ({ ...identity, userId }));
+    }
+
+    const updated = await database
+      .update(accountDeletionTombstone)
+      .set({ learnerStorageIdentitiesJson: serialized })
+      .where(
+        and(
+          eq(accountDeletionTombstone.userIdHash, userIdHash),
+          eq(
+            accountDeletionTombstone.learnerStorageIdentitiesJson,
+            tombstone.learnerStorageIdentitiesJson,
+          ),
+        ),
+      )
+      .returning({ userIdHash: accountDeletionTombstone.userIdHash });
+    if (updated.length === 1) {
+      return merged.map((identity) => ({ ...identity, userId }));
+    }
+  }
+  throw new Error(
+    "Account deletion learner storage closure contention exceeded.",
+  );
+}
+
+async function listPersonalizedArtCandidateKeys(
+  database: Database,
+  userId: string,
+) {
+  const legacy = await database
+    .select({
+      key: personalizedStoryArtGenerationLease.candidateR2ObjectKey,
+    })
+    .from(personalizedStoryArtGenerationLease)
+    .where(eq(personalizedStoryArtGenerationLease.authUserId, userId));
+  const learner = await database
+    .select({ key: learnerStoryArtGenerationLease.candidateR2ObjectKey })
+    .from(learnerStoryArtGenerationLease)
+    .where(eq(learnerStoryArtGenerationLease.authUserId, userId));
+  return [...legacy, ...learner].flatMap(({ key }) => (key ? [key] : []));
+}
+
+async function persistPersonalizedArtCandidateClosure(
+  database: Database,
+  userIdHash: string,
+  r2Prefix: string,
+  keys: string[],
+) {
+  for (let conflict = 0; conflict < MAX_TOMBSTONE_CONFLICTS; conflict += 1) {
+    const [tombstone] = await database
+      .select({
+        personalizedArtCandidateKeysJson:
+          accountDeletionTombstone.personalizedArtCandidateKeysJson,
+      })
+      .from(accountDeletionTombstone)
+      .where(eq(accountDeletionTombstone.userIdHash, userIdHash))
+      .limit(1);
+    if (!tombstone) {
+      throw new Error("Account deletion tombstone could not be persisted.");
+    }
+    const merged = [
+      ...new Set([
+        ...parsePersonalizedArtCandidateClosure(
+          tombstone.personalizedArtCandidateKeysJson,
+        ),
+        ...keys,
+      ]),
+    ].sort();
+    if (
+      merged.some((key) => !key.startsWith(r2Prefix) || key === r2Prefix)
+    ) {
+      throw new Error(
+        "Account deletion personalized-art candidate closure is invalid.",
+      );
+    }
+    const serialized = JSON.stringify(merged);
+    if (serialized === tombstone.personalizedArtCandidateKeysJson) {
+      return merged;
+    }
+
+    const updated = await database
+      .update(accountDeletionTombstone)
+      .set({ personalizedArtCandidateKeysJson: serialized })
+      .where(
+        and(
+          eq(accountDeletionTombstone.userIdHash, userIdHash),
+          eq(
+            accountDeletionTombstone.personalizedArtCandidateKeysJson,
+            tombstone.personalizedArtCandidateKeysJson,
+          ),
+        ),
+      )
+      .returning({ userIdHash: accountDeletionTombstone.userIdHash });
+    if (updated.length === 1) return merged;
+  }
+  throw new Error(
+    "Account deletion personalized-art candidate closure contention exceeded.",
+  );
 }
 
 export async function accountDeletionTombstoneKey(userId: string) {
@@ -116,10 +347,7 @@ async function deleteWithRetry(
       await bucket.delete(keys);
       return;
     } catch (error) {
-      if (
-        !isR2WriteRateError(error) ||
-        attempt === MAX_R2_WRITE_ATTEMPTS - 1
-      ) {
+      if (!isR2WriteRateError(error) || attempt === MAX_R2_WRITE_ATTEMPTS - 1) {
         throw error;
       }
       await wait(retryDelay(attempt));
@@ -128,9 +356,7 @@ async function deleteWithRetry(
 }
 
 function conditionalWrite(object: R2Object | null) {
-  return object
-    ? { etagMatches: object.etag }
-    : { etagDoesNotMatch: "*" };
+  return object ? { etagMatches: object.etag } : { etagDoesNotMatch: "*" };
 }
 
 async function persistFence(
@@ -163,6 +389,52 @@ async function persistFence(
   throw new Error("Account-deletion fence contention exceeded.");
 }
 
+function storageClosureKeys(storage: DubStorageKeys) {
+  const keys = [
+    storage.markerKey,
+    ...DUB_LINES.map(({ id }) => storage.objectKey(id)),
+  ];
+  if (storage.retiredLegacyMarkerKey) {
+    keys.push(storage.retiredLegacyMarkerKey);
+    for (const lineId of LEGACY_DUB_LINE_IDS) {
+      const key = storage.retiredLegacyObjectKey(lineId);
+      if (key) keys.push(key);
+    }
+  }
+  return keys;
+}
+
+async function runBoundedFenceWrites(tasks: Array<() => Promise<void>>) {
+  let nextTask = 0;
+  let failed = false;
+  let failure: unknown;
+
+  async function worker() {
+    while (!failed) {
+      const taskIndex = nextTask;
+      nextTask += 1;
+      const task = tasks[taskIndex];
+      if (!task) return;
+      try {
+        await task();
+      } catch (error) {
+        if (!failed) {
+          failed = true;
+          failure = error;
+        }
+      }
+    }
+  }
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(MAX_PARALLEL_FENCE_WRITES, tasks.length) },
+      () => worker(),
+    ),
+  );
+  if (failed) throw failure;
+}
+
 export async function prepareAccountDeletion({
   bucket,
   database,
@@ -171,17 +443,44 @@ export async function prepareAccountDeletion({
   wait = (delay: number) => scheduler.wait(delay),
 }: AccountDeletionInput) {
   const tombstone = await markAccountDeletionPending(database, userId, now);
+  const liveIdentities = await listLearnerStorageIdentities(database, userId);
+  const identities = await persistLearnerStorageClosure(
+    database,
+    tombstone.userIdHash,
+    userId,
+    liveIdentities,
+  );
+  const personalizedArtCandidateKeys =
+    await persistPersonalizedArtCandidateClosure(
+      database,
+      tombstone.userIdHash,
+      tombstone.r2Prefix,
+      await listPersonalizedArtCandidateKeys(database, userId),
+    );
+  const legacyIdentity = identities.find(
+    ({ legacyStorageOwner }) => legacyStorageOwner,
+  );
+  const storageIdentities = [
+    legacyIdentity ?? {
+      learnerProfileId: "",
+      legacyStorageOwner: true,
+      userId,
+    },
+    ...identities
+      .filter(({ legacyStorageOwner }) => !legacyStorageOwner),
+  ];
+  const storages = storageIdentities.map(createDubStorageKeys);
   const { r2Prefix } = tombstone;
   const generation = accountDeletionGeneration(
     tombstone.userIdHash,
     tombstone.requestedAt,
   );
   const closureKeys = new Set([
-    markerKey(userId),
-    ...DUB_LINES.map(({ id }) => objectKey(userId, id)),
+    ...storages.flatMap(storageClosureKeys),
+    ...personalizedArtCandidateKeys,
   ]);
   const lessonRecordingKeys = new Set<string>();
-  const recordingPrefix = lessonRecordingPrefix(userId);
+  const recordingPrefixes = storageIdentities.map(lessonRecordingOwnerPrefix);
   let cursor: string | undefined;
   let hasMore = true;
   const seenCursors = new Set<string>();
@@ -193,10 +492,14 @@ export async function prepareAccountDeletion({
     });
     const listedKeys = page.objects.map(({ key }) => key);
     if (listedKeys.some((key) => !key.startsWith(r2Prefix))) {
-      throw new Error("R2 returned an object outside the account deletion prefix.");
+      throw new Error(
+        "R2 returned an object outside the account deletion prefix.",
+      );
     }
     for (const key of listedKeys) {
-      if (key.startsWith(recordingPrefix)) lessonRecordingKeys.add(key);
+      if (recordingPrefixes.some((prefix) => key.startsWith(prefix))) {
+        lessonRecordingKeys.add(key);
+      }
     }
     const keys = listedKeys.filter(
       (key) => !closureKeys.has(key) && !lessonRecordingKeys.has(key),
@@ -206,39 +509,41 @@ export async function prepareAccountDeletion({
     hasMore = page.truncated;
     if (page.truncated) {
       if (!page.cursor || seenCursors.has(page.cursor)) {
-        throw new Error("R2 account deletion listing did not advance its cursor.");
+        throw new Error(
+          "R2 account deletion listing did not advance its cursor.",
+        );
       }
       seenCursors.add(page.cursor);
       cursor = page.cursor;
     }
   }
 
-  await persistFence(
-    bucket,
-    markerKey(userId),
-    "marker",
-    generation,
-    "account-deleting",
-    wait,
+  const fenceTask = (key: string, kind: "marker" | "slot") => () =>
+    persistFence(bucket, key, kind, generation, "account-deleting", wait);
+
+  await runBoundedFenceWrites(
+    storages.map((storage) => fenceTask(storage.markerKey, "marker")),
   );
-  for (const { id } of DUB_LINES) {
-    await persistFence(
-      bucket,
-      objectKey(userId, id),
-      "slot",
-      generation,
-      "account-deleting",
-      wait,
-    );
-  }
-  for (const key of lessonRecordingKeys) {
-    await persistFence(
-      bucket,
-      key,
-      "slot",
-      generation,
-      "account-deleting",
-      wait,
-    );
-  }
+  await runBoundedFenceWrites(
+    storages.flatMap((storage) =>
+      storage.retiredLegacyMarkerKey
+        ? [fenceTask(storage.retiredLegacyMarkerKey, "marker")]
+        : [],
+    ),
+  );
+  await runBoundedFenceWrites(
+    storages.flatMap((storage) => [
+      ...DUB_LINES.map(({ id }) => fenceTask(storage.objectKey(id), "slot")),
+      ...LEGACY_DUB_LINE_IDS.flatMap((lineId) => {
+        const key = storage.retiredLegacyObjectKey(lineId);
+        return key ? [fenceTask(key, "slot")] : [];
+      }),
+    ]),
+  );
+  await runBoundedFenceWrites(
+    [...lessonRecordingKeys].map((key) => fenceTask(key, "slot")),
+  );
+  await runBoundedFenceWrites(
+    personalizedArtCandidateKeys.map((key) => fenceTask(key, "slot")),
+  );
 }

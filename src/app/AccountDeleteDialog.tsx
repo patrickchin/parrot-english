@@ -79,10 +79,10 @@ export function AccountDeleteDialog({
         </header>
 
         <p className="m-0 font-bold leading-relaxed text-slate-700">
-          This removes your account, learner profile, My Lessons, saved
-          conversation text, Five Little Ducks voice clips, lesson voice
-          recordings, and private story art from Parrot. A small deletion marker
-          stays so old private art cannot return.
+          This removes your account, all learner profiles and their My Lessons,
+          saved conversation text, private voice clips from Five Little Ducks,
+          lesson voice recordings, and private story art from Parrot. A small
+          deletion marker stays so old private art cannot return.
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>
@@ -121,11 +121,7 @@ export function AccountDeleteDialog({
             ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <ActionButton
-                onClick={onClose}
-                type="button"
-                variant="surface"
-              >
+              <ActionButton onClick={onClose} type="button" variant="surface">
                 Cancel
               </ActionButton>
               <ActionButton disabled={!password} type="submit" variant="rose">

@@ -2,6 +2,17 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as storage from "../worker/lesson-recording-storage.ts";
 
+const LEGACY_IDENTITY = {
+  learnerProfileId: "learner-a",
+  legacyStorageOwner: true,
+  userId: "user-1",
+};
+const SIBLING_IDENTITY = {
+  learnerProfileId: "learner-b",
+  legacyStorageOwner: false,
+  userId: "user-1",
+};
+
 function pagedBucket(pages) {
   const lists = [];
   const deletions = [];
@@ -27,6 +38,23 @@ function pagedBucket(pages) {
 }
 
 describe("lesson recording storage", () => {
+  it("keeps the legacy prefix and isolates additional learner subtrees", () => {
+    const slot = {
+      lessonId: "lesson-1",
+      sceneIndex: 0,
+      source: "parrot",
+      stepIndex: 1,
+    };
+    assert.equal(
+      storage.lessonRecordingObjectKey(LEGACY_IDENTITY, slot),
+      "personalized-story-art/user-1/lesson-recordings/parrot/lesson-1/scene-0/step-1.audio",
+    );
+    assert.equal(
+      storage.lessonRecordingObjectKey(SIBLING_IDENTITY, slot),
+      "personalized-story-art/user-1/learners/learner-b/lesson-recordings/parrot/lesson-1/scene-0/step-1.audio",
+    );
+  });
+
   it("does not purge a newer take that replaced the listed object", async () => {
     const prefix = "personalized-story-art/user-1/lesson-recordings/";
     const key = `${prefix}my/lesson-1/scene-0/step-1.audio`;
@@ -71,7 +99,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, "user-1", 2, async () => {});
+    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 2, async () => {});
 
     assert.strictEqual(current, newer);
     assert.deepEqual(deletions, []);
@@ -118,7 +146,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, "user-1", 1, async () => {});
+    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 1, async () => {});
 
     assert.equal(writes.length, 2);
     assert.equal(current.customMetadata.state, "purged");
@@ -148,7 +176,12 @@ describe("lesson recording storage", () => {
       ]),
     );
 
-    await storage.deleteAllLessonRecordings(state.bucket, "user/one", 1, async () => {});
+    await storage.deleteAllLessonRecordings(
+      state.bucket,
+      { ...LEGACY_IDENTITY, userId: "user/one" },
+      1,
+      async () => {},
+    );
 
     assert.deepEqual(state.lists, [
       { include: ["customMetadata"], prefix },
@@ -188,7 +221,7 @@ describe("lesson recording storage", () => {
 
     await storage.deleteLessonRecordingsForLesson(
       state.bucket,
-      "user-1",
+      LEGACY_IDENTITY,
       "lesson/one",
       1,
       async () => {},
@@ -219,7 +252,7 @@ describe("lesson recording storage", () => {
     );
 
     await assert.rejects(
-      storage.deleteAllLessonRecordings(state.bucket, "user-1", 1, async () => {}),
+      storage.deleteAllLessonRecordings(state.bucket, LEGACY_IDENTITY, 1, async () => {}),
       /outside the lesson recording prefix/i,
     );
     assert.deepEqual(state.deletions, []);
@@ -242,7 +275,7 @@ describe("lesson recording storage", () => {
         ]),
       );
       await assert.rejects(
-        storage.deleteAllLessonRecordings(state.bucket, "user-1", 1, async () => {}),
+        storage.deleteAllLessonRecordings(state.bucket, LEGACY_IDENTITY, 1, async () => {}),
         /did not advance its cursor/i,
       );
       assert.deepEqual(state.deletions, []);
@@ -262,7 +295,7 @@ describe("lesson recording storage", () => {
       ]),
     );
     await assert.rejects(
-      storage.deleteAllLessonRecordings(repeated.bucket, "user-1", 1, async () => {}),
+      storage.deleteAllLessonRecordings(repeated.bucket, LEGACY_IDENTITY, 1, async () => {}),
       /did not advance its cursor/i,
     );
     assert.deepEqual(repeated.deletions, []);
@@ -300,7 +333,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, "user-1", 2, async () => {});
+    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 2, async () => {});
 
     assert.deepEqual(writes.map(({ key }) => key), [old.key]);
   });
@@ -333,7 +366,7 @@ describe("lesson recording storage", () => {
 
     await storage.deleteLessonRecordingsForLesson(
       bucket,
-      "user-1",
+      LEGACY_IDENTITY,
       "lesson-1",
       1,
       async () => {},
@@ -365,7 +398,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, "user-1", 1, async (delay) => {
+    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 1, async (delay) => {
       waits.push(delay);
     });
 

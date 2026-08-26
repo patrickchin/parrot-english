@@ -20,6 +20,9 @@ import {
 
 const MAX_CLIP_BYTES = 512 * 1024;
 const MAX_TARGET_TEXT_BYTES = 4096;
+const MAX_EXPECTED_LEARNER_PROFILE_BYTES = 128;
+const EXPECTED_LEARNER_PROFILE_HEADER =
+  "X-Parrot-Expected-Learner-Profile";
 const MIME_SIGNATURES = {
   "audio/mp4": (bytes: Uint8Array) =>
     bytes.length >= 8 &&
@@ -137,7 +140,7 @@ export async function handleLessonRecordingRequest(
         });
       }
       const consent = await repository.readLessonRecordingConsentState(
-        input.identity.userId,
+        input.identity,
       );
       return json({
         cleanupPending: consent.cleanupBeforeGeneration !== null,
@@ -149,10 +152,20 @@ export async function handleLessonRecordingRequest(
         Allow: "PUT",
       });
     }
+    const expectedLearnerProfileId = input.request.headers.get(
+      EXPECTED_LEARNER_PROFILE_HEADER,
+    );
+    if (
+      expectedLearnerProfileId !== input.identity.learnerProfileId ||
+      new TextEncoder().encode(expectedLearnerProfileId ?? "").byteLength >
+        MAX_EXPECTED_LEARNER_PROFILE_BYTES
+    ) {
+      throw new LessonRecordingApiError(409, "learner_selection_changed");
+    }
 
     const accessState = async () => ({
       consent: await repository.readLessonRecordingConsentState(
-        input.identity.userId,
+        input.identity,
       ),
       deletion: await isDeletionPending(input.database, input.identity.userId),
     });
@@ -177,7 +190,7 @@ export async function handleLessonRecordingRequest(
 
     const target = await resolveLessonRecordingTarget(
       input.database,
-      input.identity.userId,
+      input.identity,
       route,
     );
     if (!target) throw new LessonRecordingApiError(404, "not_found");
@@ -217,7 +230,7 @@ export async function handleLessonRecordingRequest(
       throw new Error("Lesson recording upload nonce is invalid.");
     }
     const recordedAt = now().toISOString();
-    const key = lessonRecordingObjectKey(input.identity.userId, route);
+    const key = lessonRecordingObjectKey(input.identity, route);
     const encoded = lessonRecordingAudioBody(bytes, uploadNonce);
     const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
     const putOptions: R2PutOptions = {
@@ -258,7 +271,7 @@ export async function handleLessonRecordingRequest(
       if (route.source === "my") {
         const currentTarget = await resolveLessonRecordingTarget(
           input.database,
-          input.identity.userId,
+          input.identity,
           route,
         );
         if (
@@ -282,7 +295,7 @@ export async function handleLessonRecordingRequest(
       if (route.source === "my") {
         const currentTarget = await resolveLessonRecordingTarget(
           input.database,
-          input.identity.userId,
+          input.identity,
           route,
         );
         if (
@@ -330,7 +343,7 @@ export async function handleLessonRecordingRequest(
       try {
         currentTarget = await resolveLessonRecordingTarget(
           input.database,
-          input.identity.userId,
+          input.identity,
           route,
         );
       } catch (error) {

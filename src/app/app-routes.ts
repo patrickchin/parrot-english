@@ -20,11 +20,16 @@ export type StoryRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
   | { kind: "story"; pageIndex: number; story: Story };
 
-const GATE_ROUTE_PATH = /^\/(login|profile\/setup|profile)\/*$/i;
+const GATE_ROUTE_PATH =
+  /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/*$/i,
+  /^\/guardian\/dubbing\/*$/i,
+  /^\/guardian\/learners\/*$/i,
   /^\/guardian\/lessons\/*$/i,
+  /^\/guardian\/profile\/*$/i,
+  /^\/guardian\/profile\/setup\/*$/i,
   /^\/guardian\/stories\/*$/i,
 ];
 const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
@@ -61,8 +66,16 @@ export function getGuardianPath() {
   return "/guardian";
 }
 
+export function getGuardianDubbingPath() {
+  return "/guardian/dubbing" as const;
+}
+
 export function getGuardianLessonsPath() {
   return "/guardian/lessons";
+}
+
+export function getGuardianLearnersPath() {
+  return "/guardian/learners" as const;
 }
 
 export function getGuardianStoriesPath() {
@@ -140,11 +153,11 @@ export function getLearnerProfilePath(returnTo: string) {
 }
 
 export function getProfilePath(returnTo: string) {
-  return `/profile?returnTo=${encodeURIComponent(returnTo)}`;
+  return `/guardian/profile?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 export function getRedoLearnerProfilePath(returnTo: string) {
-  return `/profile/setup?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
+  return `/guardian/profile/setup?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 export function isRedoLearnerProfileRequest(search: string) {
@@ -162,7 +175,12 @@ export function getGateRouteKind(pathname: string): GateRouteKind | null {
   const match = GATE_ROUTE_PATH.exec(pathname);
   if (!match) return null;
   const route = match[1].toLowerCase();
-  return route === "profile/setup" ? "learner-profile" : (route as GateRouteKind);
+  if (route === "profile/setup" || route === "guardian/profile/setup") {
+    return "learner-profile";
+  }
+  return route === "profile" || route === "guardian/profile"
+    ? "profile"
+    : "login";
 }
 
 export function isTalkToPeppaRoute(pathname: string) {
@@ -190,13 +208,26 @@ export function getSafeReturnTo(search: string) {
   return `${destination.pathname}${destination.search}${destination.hash}`;
 }
 
+export function getSafeGuardianReturnTo(search: string) {
+  const safe = getSafeReturnTo(search);
+  if (!safe) return getGuardianPath();
+  const { pathname } = new URL(safe, RETURN_TO_ORIGIN);
+  if (!isGuardianRoute(pathname) || getGateRouteKind(pathname)) {
+    return getGuardianPath();
+  }
+  return safe;
+}
+
 export function getRequestedProtectedTarget(
   pathname: string,
   search: string,
   hash: string,
 ) {
   const gateRoute = getGateRouteKind(pathname);
-  if (gateRoute === "login" || gateRoute === "learner-profile") {
+  if (
+    gateRoute === "login" ||
+    (gateRoute === "learner-profile" && !isGuardianRoute(pathname, search))
+  ) {
     return getSafeReturnTo(search) ?? "/";
   }
 

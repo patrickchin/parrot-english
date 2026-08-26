@@ -761,10 +761,10 @@ for (const viewport of targetViewports) {
     });
 
     await page.goto(
-      "/profile?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
+      "/guardian/profile?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
     );
     const editorHeading = page.getByRole("heading", {
-      name: "Learner profile",
+      name: "Learner details",
     });
     const redoHeading = page.getByRole("heading", {
       name: "Redo learner setup",
@@ -782,7 +782,7 @@ for (const viewport of targetViewports) {
   });
 }
 
-test("profile Replay and learner mode switch remain independently operable", async ({
+test("profile Replay and grown-up access gateway remain independently operable", async ({
   page,
 }) => {
   const viewport = targetViewports[0];
@@ -823,12 +823,19 @@ test("profile Replay and learner mode switch remain independently operable", asy
 
   const account = page.getByRole("button", { name: /^Profile for / });
   await account.click();
-  const switcher = page.getByRole("group", { name: "Choose profile mode" });
-  await expect(switcher).toBeVisible();
-  await expect(switcher.getByRole("button", { name: "Guardian" })).toBeVisible();
-  await expect(account).toBeFocused();
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  const grownUpAccess = menu.getByRole("menuitem", {
+    name: /Grown-up access/,
+  });
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Grown-up accessAccount password required",
+  ]);
+  await expect(
+    page.getByRole("group", { name: "Choose profile mode" }),
+  ).toHaveCount(0);
+  await expect(grownUpAccess).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(switcher).toBeHidden();
+  await expect(menu).toHaveCount(0);
   await expect(account).toBeFocused();
 });
 

@@ -11,6 +11,7 @@ import {
   createMyLessonRepository,
   lessonJsonRevision,
 } from "./my-lessons-repository.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 const BUILT_IN_LESSONS = new Map<string, unknown>([
   ["01-peppas-high-ball", lesson01],
@@ -45,7 +46,7 @@ function userTarget(lesson: unknown, slot: LessonRecordingSlot) {
 
 export async function resolveLessonRecordingTarget(
   database: Database,
-  userId: string,
+  identity: LearnerIdentity,
   slot: LessonRecordingSlot,
 ) {
   if (slot.source === "parrot") {
@@ -56,7 +57,7 @@ export async function resolveLessonRecordingTarget(
   }
   const row = await createMyLessonRepository(database).findOwned(
     slot.lessonId,
-    userId,
+    identity,
   );
   if (!row) return null;
   const targetText = userTarget(JSON.parse(row.lessonJson), slot);

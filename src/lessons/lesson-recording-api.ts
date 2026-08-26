@@ -9,6 +9,7 @@ export type LessonRecordingSlot = {
 };
 
 export type LessonRecordingRequestOptions = {
+  expectedLearnerProfileId: string;
   fetch?: typeof globalThis.fetch;
   signal?: AbortSignal;
 };
@@ -16,9 +17,16 @@ export type LessonRecordingRequestOptions = {
 export type LessonRecordingSaveResult =
   | { recordedAt: string; saved: true }
   | {
-      reason: "lesson_changed" | "recording_disabled";
+      reason:
+        | "learner_selection_changed"
+        | "lesson_changed"
+        | "recording_disabled";
       saved: false;
     };
+
+const EXPECTED_LEARNER_PROFILE_HEADER =
+  "X-Parrot-Expected-Learner-Profile";
+const MAX_EXPECTED_LEARNER_PROFILE_BYTES = 128;
 
 export class LessonRecordingApiError extends Error {
   readonly code: string;
@@ -36,11 +44,28 @@ export async function saveLessonRecording(
   blob: Blob,
   slot: LessonRecordingSlot,
   {
+    expectedLearnerProfileId,
     fetch: request = globalThis.fetch,
     signal,
-  }: LessonRecordingRequestOptions = {},
+  }: LessonRecordingRequestOptions,
 ): Promise<LessonRecordingSaveResult> {
-  const headers: Record<string, string> = { "Content-Type": blob.type };
+  if (
+    typeof expectedLearnerProfileId !== "string" ||
+    !expectedLearnerProfileId ||
+    expectedLearnerProfileId.trim() !== expectedLearnerProfileId ||
+    new TextEncoder().encode(expectedLearnerProfileId).byteLength >
+      MAX_EXPECTED_LEARNER_PROFILE_BYTES
+  ) {
+    throw new LessonRecordingApiError(
+      0,
+      "invalid_expected_learner_profile",
+      "The learner selection is invalid.",
+    );
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": blob.type,
+    [EXPECTED_LEARNER_PROFILE_HEADER]: expectedLearnerProfileId,
+  };
   if (slot.source === "my" && slot.lessonRevision) {
     headers["X-Parrot-Lesson-Revision"] = slot.lessonRevision;
   }
@@ -72,6 +97,9 @@ export async function saveLessonRecording(
   }
   if (response.status === 409 && code === "lesson_changed") {
     return { reason: "lesson_changed", saved: false };
+  }
+  if (response.status === 409 && code === "learner_selection_changed") {
+    return { reason: "learner_selection_changed", saved: false };
   }
   if (!response.ok) {
     throw new LessonRecordingApiError(

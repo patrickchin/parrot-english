@@ -73,6 +73,10 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
     });
   });
   await page.route("**/api/lessons/my", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
     const body = route.request().postDataJSON() as {
       lesson: typeof generatedLesson;
       source: string;
@@ -132,7 +136,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
   await expect(languageNotes).toContainText("question has 11 words");
   await expect(languageNotes).not.toHaveAttribute("role", "status");
   await expect(
-    page.getByRole("button", { exact: true, name: "Save and play lesson" }),
+    page.getByRole("button", { exact: true, name: "Save lesson" }),
   ).toBeEnabled();
   await page
     .getByRole("group", { name: "Dialogue 1" })
@@ -152,9 +156,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
       request.method() === "POST" &&
       new URL(request.url()).pathname === "/api/lessons/my",
   );
-  await page
-    .getByRole("button", { exact: true, name: "Save and play lesson" })
-    .click();
+  await page.getByRole("button", { exact: true, name: "Save lesson" }).click();
   const saveRequest = await saveRequestPromise;
   const payload = saveRequest.postDataJSON() as {
     lesson: typeof generatedLesson;
@@ -163,7 +165,7 @@ test("AI lesson creation opens the GUI and saves visual edits", async ({
 
   expect(payload.source).toBe("generated");
   expect(payload.lesson.title).toBe("My Visual Garden Lesson");
-  await expect(page).toHaveURL("/lessons/my/ai-gui-lesson/scenes/1");
+  await expect(page).toHaveURL("/guardian/lessons");
 });
 
 test("lesson editor leads with a visual storyboard and progressively reveals fields", async ({
@@ -338,7 +340,9 @@ test("lesson editor scrolls to its GUI save control on a short phone", async ({
   await page.setViewportSize(shortPhone);
   await page.goto(guardianPath("/lessons/my/scroll-test/edit"));
 
-  await expect(page.getByRole("heading", { name: "Edit Lesson" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Edit Lesson" }),
+  ).toBeVisible();
   await page.getByText("Lesson setup and goals", { exact: true }).click();
   await expect(page.getByLabel("Lesson title")).toHaveValue("Garden Help");
   await expect(page.getByLabel("Learner's name")).toHaveValue("Mia");
@@ -355,14 +359,14 @@ test("lesson editor scrolls to its GUI save control on a short phone", async ({
     page.getByRole("button", { name: "Add dialogue" }),
   ).toBeVisible();
   await expect(page.locator("#lesson-script-editor")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Review script" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Review script" })).toHaveCount(
+    0,
+  );
   await expectMainHasNoHorizontalOverflow(page);
 
   const saveButton = page.getByRole("button", {
     exact: true,
-    name: "Save changes and play",
+    name: "Save changes",
   });
   await expect(saveButton).toBeEnabled();
   await expectMainScrollsTo(page, saveButton);
@@ -438,9 +442,7 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
       request.method() === "PUT" &&
       new URL(request.url()).pathname === "/api/lessons/my/gui-edit-test",
   );
-  await page
-    .getByRole("button", { exact: true, name: "Save changes and play" })
-    .click();
+  await page.getByRole("button", { exact: true, name: "Save changes" }).click();
   const saveRequest = await saveRequestPromise;
   const payload = saveRequest.postDataJSON() as {
     lesson: typeof originalLesson;
@@ -459,5 +461,5 @@ test("lesson editor saves GUI changes to nested lesson data", async ({
     dialogue: "The flowers have all the water they need.",
     speaker: "peppa",
   });
-  await expect(page).toHaveURL("/lessons/my/gui-edit-test/scenes/1");
+  await expect(page).toHaveURL("/guardian/lessons");
 });

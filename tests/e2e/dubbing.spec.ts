@@ -24,9 +24,29 @@ type MicrophoneSnapshot = {
   stoppedTracks: number;
 };
 
-async function confirmDub(page: Page, action: "Continue dubbing" | "Start dubbing") {
-  await page.getByRole("checkbox", { name: /I’m the grown-up/ }).check();
+async function confirmDub(
+  page: Page,
+  action: "Continue dubbing" | "Start dubbing",
+) {
   await page.getByRole("button", { name: action }).click();
+  await expectNoLearnerAdultControls(page);
+}
+
+async function expectNoLearnerAdultControls(page: Page) {
+  await expect(
+    page.getByRole("checkbox", {
+      name: /I’m the grown-up|I am (?:the learner|.+)'s guardian/i,
+    }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Grown-up options")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Delete (my )?dub/i }),
+  ).toHaveCount(0);
+}
+
+async function visibleBox(locator: Locator) {
+  await expect(locator).toBeVisible();
+  return boundingBoxOrThrow(locator);
 }
 
 async function openScene(page: Page, sceneNumber: number) {
@@ -98,6 +118,317 @@ async function resolveDelayedMicrophone(page: Page) {
   });
   expect(resolved).toBe(true);
 }
+
+test("guardian consent unlocks the storyboard without exposing adult controls", async ({
+  page,
+}) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=not-granted");
+
+  await expect(
+    page.getByRole("main").getByRole("paragraph"),
+  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  await expectNoLearnerAdultControls(page);
+  const lockedGrant = await page.evaluate(async (consentVersion) => {
+    const response = await fetch("/api/dubs/five-little-ducks-v2/consent", {
+      body: JSON.stringify({ accepted: true, consentVersion }),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    });
+    return { body: await response.json(), status: response.status };
+  }, "guardian-voice-r2-v2");
+  expect(lockedGrant).toEqual({
+    body: { error: "guardian_required" },
+    status: 403,
+  });
+
+  await page
+    .getByRole("button", { name: /Profile for Mia, learner mode/ })
+    .click();
+  await page
+    .getByRole("menu", { name: "Account menu" })
+    .getByRole("menuitem", { name: /Grown-up access/ })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  await dialog.getByLabel("Password").fill("e2e-guardian-password");
+  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
+  await page.getByRole("link", { name: "Manage voice dubbing" }).click();
+
+  await page.getByRole("checkbox", { name: /I am Mia's guardian/i }).check();
+  await page.getByRole("button", { name: "Allow voice dubbing" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Voice dubbing is on" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Switch to Mia and start dubbing" })
+    .click();
+
+  await expect(page).toHaveURL("/dubs/five-little-ducks");
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
+  ).toBeVisible();
+  await confirmDub(page, "Start dubbing");
+  await expect(
+    page.getByRole("region", { name: "Full video player" }),
+  ).toBeVisible();
+  await openScene(page, 1);
+  await stopAndSave(page);
+  await expectNoLearnerAdultControls(page);
+});
+
+test("keeps revoking consent unavailable on the learner surface", async ({
+  page,
+}) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
+
+  await expect(
+    page.getByRole("main").getByRole("paragraph"),
+  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  await expect(
+    page.getByRole("button", { name: /Start dubbing|Continue dubbing/ }),
+  ).toHaveCount(0);
+  await expectNoLearnerAdultControls(page);
+});
+
+test("guardian mode deletes a complete private dub and revokes consent", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=complete&parrotE2eGuardian=guardian",
+  );
+
+  await expect(
+    page.getByRole("heading", { name: "Voice dubbing is on" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("24 of 24 lines saved", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: "Turn off Mia's voice dubbing and delete saved clips",
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+});
+
+const guardianResponsiveStates = [
+  {
+    action: "Turn off Mia's voice dubbing and delete saved clips",
+    heading: "Voice dubbing is on",
+    scenario: "complete",
+  },
+  {
+    action: "Allow voice dubbing",
+    heading: "Turn on private voice dubbing",
+    scenario: "not-granted",
+  },
+  {
+    action: "Finish removing voice clips",
+    heading: "Voice clip removal needs to finish",
+    scenario: "reset-delete-failed",
+  },
+] as const;
+
+for (const viewport of [
+  { height: 568, width: 280 },
+  { height: 844, width: 390 },
+  { height: 360, width: 640 },
+]) {
+  for (const state of guardianResponsiveStates) {
+    test(`keeps guardian ${state.scenario} settings usable at ${viewport.width}x${viewport.height}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await page.goto(
+        `/guardian/dubbing?parrotE2eDub=${state.scenario}&parrotE2eGuardian=guardian`,
+      );
+
+      const back = page.getByRole("link", {
+        name: "Back to guardian dashboard",
+      });
+      const account = page.getByRole("button", {
+        name: /Profile for Mia, guardian mode/,
+      });
+      const pageHeading = page.getByRole("heading", {
+        exact: true,
+        name: "Voice dubbing",
+      });
+      const stateHeading = page.getByRole("heading", {
+        exact: true,
+        name: state.heading,
+      });
+      const action = page.getByRole("button", { name: state.action });
+
+      const headerBoxes = await Promise.all([back, account].map(visibleBox));
+      for (const box of headerBoxes) {
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+      }
+      expect(boxesOverlap(headerBoxes[0], headerBoxes[1])).toBe(false);
+      await expect(pageHeading).toBeVisible();
+      await expect(stateHeading).toBeVisible();
+      await action.scrollIntoViewIfNeeded();
+      const actionBox = await visibleBox(action);
+      expect(actionBox.x).toBeGreaterThanOrEqual(0);
+      expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(viewport.width);
+      expect(actionBox.y).toBeGreaterThanOrEqual(0);
+      expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(
+        viewport.height,
+      );
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        )
+        .toBe(true);
+    });
+  }
+}
+
+test("guardian mode recovers a legacy interrupted reset after a fresh grant", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=reset-interrupted&parrotE2eGuardian=guardian",
+  );
+
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+  await page
+    .getByRole("checkbox", {
+      name: /I am Mia's guardian/,
+    })
+    .check();
+  await page.getByRole("button", { name: "Allow voice dubbing" }).click();
+
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Allow voice dubbing" }),
+  ).toHaveCount(0);
+  const interruptedStatus = await page.evaluate(async () => {
+    const response = await fetch("/api/dubs/five-little-ducks-v2");
+    return { body: await response.json(), status: response.status };
+  });
+  expect(interruptedStatus).toEqual({
+    body: { error: "dub_reset_in_progress" },
+    status: 409,
+  });
+
+  await page
+    .getByRole("button", { name: "Finish removing voice clips" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+  const finalConsentState = await page.evaluate(async () => {
+    const response = await fetch("/api/dubs/five-little-ducks-v2");
+    const body: unknown = await response.json();
+    return typeof body === "object" && body !== null && "consentState" in body
+      ? body.consentState
+      : null;
+  });
+  expect(finalConsentState).toBe("not_granted");
+});
+
+test("keeps a failed cleanup revoking until the guardian retries", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=reset-delete-failed&parrotE2eGuardian=guardian",
+  );
+  await page
+    .getByRole("button", { name: "Finish removing voice clips" })
+    .click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub was not deleted.",
+    }),
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish removing voice clips" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish removing voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Allow voice dubbing" }),
+  ).toHaveCount(0);
+
+  const blockedRegrant = await page.evaluate(async (consentVersion) => {
+    const response = await fetch("/api/dubs/five-little-ducks-v2/consent", {
+      body: JSON.stringify({ accepted: true, consentVersion }),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    });
+    return { body: await response.json(), status: response.status };
+  }, "guardian-voice-r2-v2");
+  expect(blockedRegrant).toEqual({
+    body: { error: "dub_consent_revoking" },
+    status: 409,
+  });
+
+  const blockedMedia = await page.evaluate(async () => {
+    const responses = await Promise.all([
+      fetch("/api/dubs/five-little-ducks-v2/lines/line-1/audio"),
+      fetch("/api/dubs/five-little-ducks-v2/lines/line-1", {
+        body: new Blob(["blocked clip"], { type: "audio/webm" }),
+        headers: { "Content-Type": "audio/webm" },
+        method: "PUT",
+      }),
+    ]);
+    return Promise.all(
+      responses.map(async (response) => ({
+        body: await response.json(),
+        status: response.status,
+      })),
+    );
+  });
+  expect(blockedMedia).toEqual([
+    { body: { error: "dub_consent_revoking" }, status: 409 },
+    { body: { error: "dub_consent_revoking" }, status: 409 },
+  ]);
+
+  await page
+    .getByRole("button", { name: "Finish removing voice clips" })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+});
+
+test("reconciles a lost cleanup response from durable status", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=reset-delete-lost-response&parrotE2eGuardian=guardian",
+  );
+  await page
+    .getByRole("button", { name: "Finish removing voice clips" })
+    .click();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub was not deleted.",
+    }),
+  ).toBeVisible();
+
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
+});
 
 test("confirmation opens the project home instead of line 1", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
@@ -242,7 +573,7 @@ test("replacing a take revokes the previous object URL exactly once", async ({ p
   expect(revocationCount(snapshot, secondUrl)).toBe(0);
 });
 
-test("changed-line selection, Back, and deletion never double-revoke review URLs", async ({ page }) => {
+test("changed-line selection and Back never double-revoke review URLs", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await confirmDub(page, "Start dubbing");
   await openScene(page, 1);
@@ -257,14 +588,6 @@ test("changed-line selection, Back, and deletion never double-revoke review URLs
   await expect.poll(async () => (await dubStoreSnapshot(page)).createdObjectUrls).toHaveLength(2);
   const secondUrl = (await dubStoreSnapshot(page)).createdObjectUrls[1];
   await page.getByRole("button", { name: "Back to full video" }).click();
-  snapshot = await dubStoreSnapshot(page);
-  expect(revocationCount(snapshot, firstUrl)).toBe(1);
-  expect(revocationCount(snapshot, secondUrl)).toBe(1);
-
-  await page.getByLabel("Grown-up options").click();
-  page.once("dialog", async (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Delete my dub" }).click();
-  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
   snapshot = await dubStoreSnapshot(page);
   expect(revocationCount(snapshot, firstUrl)).toBe(1);
   expect(revocationCount(snapshot, secondUrl)).toBe(1);
@@ -508,78 +831,52 @@ for (const microphone of ["denied", "unsupported"] as const) {
   });
 }
 
-test("deletes a complete dub and recovers an interrupted reset", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
-  await confirmDub(page, "Continue dubbing");
-  await page.getByLabel("Grown-up options").click();
-  page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toBe("Grown-up: delete every saved voice clip in this dub?");
-    await dialog.accept();
-  });
-  await page.getByRole("button", { name: "Delete my dub" }).click();
-  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+test("a held Guardian delete is exclusive until removal succeeds", async ({ page }) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=delete-held&parrotE2eGuardian=guardian",
+  );
+  await page
+    .getByRole("button", {
+      name: "Turn off Mia's voice dubbing and delete saved clips",
+    })
+    .click();
 
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=reset-interrupted");
-  await expect(page.getByRole("button", { name: "Finish deleting my dub" })).toBeVisible();
-  page.once("dialog", async (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Finish deleting my dub" }).click();
-  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
-});
-
-test("a held project delete is exclusive until reset succeeds", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=delete-held");
-  await confirmDub(page, "Continue dubbing");
-  await page.getByLabel("Grown-up options").click();
-  page.once("dialog", async (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Delete my dub" }).click();
-
-  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Deleting your dub…");
-  await expect(page.locator("main")).toHaveAttribute("aria-busy", "true");
-  await expect(page.getByRole("button", { name: "Play full video" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Continue Scene 1" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Scene 1, 3 / 4" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Deleting my dub…" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Removing voice clips…" }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Switch to Mia and start dubbing" }),
+  ).toBeDisabled();
 
   await releaseDubOperation(page, "delete");
-  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Turn on private voice dubbing" }),
+  ).toBeVisible();
 });
 
-test("a held pre-confirmation delete marks the intro route busy", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=delete-held");
-  await page.getByLabel("Grown-up options").click();
-  page.once("dialog", async (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Delete saved recordings" }).click();
+test("a failed Guardian delete stays actionable only in Guardian mode", async ({
+  page,
+}) => {
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=delete-failed&parrotE2eGuardian=guardian",
+  );
+  await page
+    .getByRole("button", {
+      name: "Turn off Mia's voice dubbing and delete saved clips",
+    })
+    .click();
 
-  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Deleting your dub…");
-  await expect(page.getByRole("main")).toHaveAttribute("aria-busy", "true");
-  await expect(page.getByRole("button", { name: "Deleting saved recordings…" })).toBeDisabled();
-
-  await releaseDubOperation(page, "delete");
-  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
-});
-
-test("an ordinary delete failure stays actionable in the project view", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=delete-failed");
-  await confirmDub(page, "Continue dubbing");
-  await page.getByLabel("Grown-up options").click();
-  page.once("dialog", async (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Delete my dub" }).click();
-
-  await expect(page.getByRole("alert").filter({ hasText: "Your saved dub was not deleted." })).toBeVisible();
-  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Your saved dub was not deleted.");
-  await expect(page.getByRole("region", { name: "Full video player" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Play full video" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Scene 1, 3 / 4" })).toBeEnabled();
-});
-
-test("keeps reset retry available after a failed recovery delete", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=reset-delete-failed");
-  await expect(page.getByRole("button", { name: "Finish deleting my dub" })).toBeVisible();
-  page.once("dialog", async (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Finish deleting my dub" }).click();
-  await expect(page.getByRole("alert").filter({ hasText: "not deleted" })).toBeVisible();
-  await page.getByRole("button", { name: "Try loading again" }).click();
-  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({
+      hasText: "Your saved dub was not deleted.",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Finish removing voice clips" }),
+  ).toBeEnabled();
 });
 
 test("every dubbing route shell owns the constrained vertical scroll viewport", async ({ page }) => {
@@ -590,7 +887,10 @@ test("every dubbing route shell owns the constrained vertical scroll viewport", 
   await expectDubScrollViewport(page);
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=reset-interrupted");
-  await expect(page.getByRole("button", { name: "Finish deleting my dub" })).toBeVisible();
+  await expect(
+    page.getByRole("main").getByRole("paragraph"),
+  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  await expectNoLearnerAdultControls(page);
   await expectDubScrollViewport(page);
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
@@ -867,7 +1167,9 @@ test("completed full playback restores focus to the full-video play action", asy
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
   await confirmDub(page, "Continue dubbing");
   await page.getByRole("button", { name: "Play full video" }).click();
-  await page.getByLabel("Grown-up options").focus();
+  await page
+    .getByRole("button", { name: /Profile for Mia, learner mode/ })
+    .focus();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused({ timeout: 8_000 });
 });
 

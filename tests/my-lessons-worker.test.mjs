@@ -15,10 +15,11 @@ function seedDatabase() {
   insertUser.run("user-1", "Parent One", "one@example.test", 1_000, 1_000);
   insertUser.run("user-2", "Parent Two", "two@example.test", 1_000, 1_000);
   const insertProfile = state.sqlite.prepare(
-    "INSERT INTO learner_profile (id, auth_user_id, name, onboarding_status, created_at, updated_at) VALUES (?, ?, ?, 'completed', ?, ?)",
+    "INSERT INTO learner_profile (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at) VALUES (?, ?, ?, ?, 'completed', ?, ?)",
   );
-  insertProfile.run("profile-1", "user-1", "Mia", 1_000, 1_000);
-  insertProfile.run("profile-2", "user-2", "Noah", 1_000, 1_000);
+  insertProfile.run("learner-a", "user-1", 1, "Mia", 1_000, 1_000);
+  insertProfile.run("learner-b", "user-1", 0, "Leo", 1_000, 1_000);
+  insertProfile.run("learner-c", "user-2", 1, "Noah", 1_000, 1_000);
   return { ...state, database: createDatabase(state.d1) };
 }
 
@@ -40,6 +41,7 @@ function emptyRecordingBucket() {
 }
 
 function call(state, path, method = "GET", body, options = {}) {
+  const userId = options.userId ?? "user-1";
   return handleMyLessonRequest(
     {
       database: state.database,
@@ -51,8 +53,18 @@ function call(state, path, method = "GET", body, options = {}) {
       },
       identity: {
         sessionId: "session-1",
-        userId: options.userId ?? "user-1",
+        userId,
         userName: "Parent",
+        learnerProfileId:
+          options.learnerProfileId ??
+          (userId === "user-1" ? "learner-a" : "learner-c"),
+        learnerName:
+          "learnerName" in options
+            ? options.learnerName
+            : userId === "user-1"
+              ? "Mia"
+              : "Noah",
+        legacyStorageOwner: options.legacyStorageOwner ?? true,
       },
       request: request(path, method, body),
     },
@@ -83,6 +95,7 @@ describe("My Lessons persistence and API", () => {
         .prepare("SELECT * FROM learner_lesson WHERE id = ?")
         .get("lesson-1");
       assert.equal(stored.auth_user_id, "user-1");
+      assert.equal(stored.learner_profile_id, "learner-a");
       assert.equal(JSON.parse(stored.lesson_json).title, "Garden Help");
       assert.equal(
         payload.lesson.revision,
@@ -174,6 +187,127 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
+  it("lists and loads only lessons owned by the selected same-account sibling", async () => {
+    const state = seedDatabase();
+    try {
+      await call(
+        state,
+        "/api/lessons/my",
+        "POST",
+        { source: "uploaded", lesson: createLessonScript() },
+        { createId: () => "lesson-a" },
+      );
+      await call(
+        state,
+        "/api/lessons/my",
+        "POST",
+        { source: "uploaded", lesson: createLessonScript({ childName: "Leo" }) },
+        {
+          createId: () => "lesson-b",
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        },
+      );
+
+      const listResponse = await call(state, "/api/lessons/my");
+      assert.deepEqual(
+        (await listResponse.json()).lessons.map(({ id }) => id),
+        ["lesson-a"],
+      );
+
+      const siblingLesson = await call(state, "/api/lessons/my/lesson-b");
+      assert.equal(siblingLesson.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("shows null-profile legacy lessons only to the marked legacy learner", async () => {
+    const state = seedDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_lesson
+            (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
+           VALUES (?, ?, NULL, 'uploaded', ?, ?, ?)`,
+        )
+        .run(
+          "legacy-lesson",
+          "user-1",
+          JSON.stringify(createLessonScript()),
+          1_000,
+          1_000,
+        );
+
+      const legacyList = await call(state, "/api/lessons/my");
+      assert.deepEqual(
+        (await legacyList.json()).lessons.map(({ id }) => id),
+        ["legacy-lesson"],
+      );
+
+      const siblingOptions = {
+        learnerProfileId: "learner-b",
+        learnerName: "Leo",
+        legacyStorageOwner: false,
+      };
+      const siblingList = await call(
+        state,
+        "/api/lessons/my",
+        "GET",
+        undefined,
+        siblingOptions,
+      );
+      assert.deepEqual((await siblingList.json()).lessons, []);
+      const siblingDetail = await call(
+        state,
+        "/api/lessons/my/legacy-lesson",
+        "GET",
+        undefined,
+        siblingOptions,
+      );
+      assert.equal(siblingDetail.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not update a null-profile compatibility lesson", async () => {
+    const state = seedDatabase();
+    try {
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_lesson
+            (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
+           VALUES (?, ?, NULL, 'uploaded', ?, ?, ?)`,
+        )
+        .run(
+          "legacy-lesson",
+          "user-1",
+          JSON.stringify(createLessonScript()),
+          1_000,
+          1_000,
+        );
+      const storedLesson = state.sqlite.prepare(
+        "SELECT lesson_json, updated_at FROM learner_lesson WHERE id = ?",
+      );
+      const before = storedLesson.get("legacy-lesson");
+
+      const response = await call(
+        state,
+        "/api/lessons/my/legacy-lesson",
+        "PUT",
+        { lesson: createLessonScript({ title: "Rewritten legacy lesson" }) },
+      );
+
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      assert.deepEqual(storedLesson.get("legacy-lesson"), before);
+    } finally {
+      state.close();
+    }
+  });
+
   it("updates an owned lesson with lenient repairs while preserving its source", async () => {
     const state = seedDatabase();
     try {
@@ -231,7 +365,7 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
-  it("does not update a lesson owned by another user", async () => {
+  it("does not update a lesson owned by a same-account sibling", async () => {
     const state = seedDatabase();
     try {
       await call(state, "/api/lessons/my", "POST", {
@@ -244,7 +378,11 @@ describe("My Lessons persistence and API", () => {
         "/api/lessons/my/lesson-1",
         "PUT",
         { lesson: createLessonScript({ title: "Stolen edit" }) },
-        { userId: "user-2" },
+        {
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
+        },
       );
 
       assert.equal(response.status, 404);
@@ -346,6 +484,56 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
+  it("purges an edited sibling lesson only below that learner's recording subtree", async () => {
+    const state = seedDatabase();
+    const sibling = {
+      learnerProfileId: "learner-b",
+      learnerName: "Leo",
+      legacyStorageOwner: false,
+    };
+    try {
+      await call(
+        state,
+        "/api/lessons/my",
+        "POST",
+        { source: "uploaded", lesson: createLessonScript({ childName: "Leo" }) },
+        { ...sibling, createId: () => "sibling/lesson" },
+      );
+      const prefix =
+        "personalized-story-art/user-1/learners/learner-b/lesson-recordings/my/sibling%2Flesson/";
+      const lists = [];
+      const response = await call(
+        state,
+        "/api/lessons/my/sibling%2Flesson",
+        "PUT",
+        { lesson: createLessonScript({ childName: "Leo", title: "Edited" }) },
+        {
+          ...sibling,
+          bucket: {
+            async list(options) {
+              lists.push(options);
+              return {
+                objects: [{
+                  etag: "sibling-etag",
+                  key: `${prefix}scene-0/step-1.audio`,
+                  version: "sibling-version",
+                }],
+                truncated: false,
+              };
+            },
+            async put(key) { return { etag: "fence", key }; },
+          },
+          wait: async () => {},
+        },
+      );
+
+      assert.equal(response.status, 200);
+      assert.deepEqual(lists, [{ include: ["customMetadata"], prefix }]);
+    } finally {
+      state.close();
+    }
+  });
+
   it("keeps failed edit cleanup durable and reconciles it on a later detail load", async () => {
     const state = seedDatabase();
     try {
@@ -438,26 +626,34 @@ describe("My Lessons persistence and API", () => {
         lesson: createLessonScript(),
       });
       const repository = createMyLessonRepository(state.database);
+      const identity = {
+        sessionId: "session-1",
+        userId: "user-1",
+        userName: "Parent",
+        learnerProfileId: "learner-a",
+        learnerName: "Mia",
+        legacyStorageOwner: true,
+      };
       const first = await repository.updateOwned(
         "lesson-1",
-        "user-1",
+        identity,
         createLessonScript({ title: "First edit" }),
       );
       assert.equal(first.recordingGeneration, 1);
       assert.equal(first.recordingCleanupBeforeGeneration, 1);
       const later = await repository.updateOwned(
         "lesson-1",
-        "user-1",
+        identity,
         createLessonScript({ title: "Later edit" }),
       );
       assert.equal(later.recordingGeneration, 2);
       assert.equal(later.recordingCleanupBeforeGeneration, 2);
 
       assert.equal(
-        await repository.clearRecordingCleanup("lesson-1", "user-1", 1),
+        await repository.clearRecordingCleanup("lesson-1", identity, 1),
         false,
       );
-      const retained = await repository.findOwned("lesson-1", "user-1");
+      const retained = await repository.findOwned("lesson-1", identity);
       assert.equal(retained.recordingGeneration, 2);
       assert.equal(retained.recordingCleanupBeforeGeneration, 2);
     } finally {
@@ -475,6 +671,9 @@ describe("My Lessons persistence and API", () => {
         "POST",
         { topic: "buying a train ticket" },
         {
+          learnerProfileId: "learner-b",
+          learnerName: "Leo",
+          legacyStorageOwner: false,
           generateLesson(input) {
             calls.push(input);
             return Promise.resolve({
@@ -487,14 +686,40 @@ describe("My Lessons persistence and API", () => {
 
       assert.equal(response.status, 200);
       const payload = await response.json();
-      assert.equal(payload.lesson.childName, "Mia");
+      assert.equal(payload.lesson.childName, "Leo");
       assert.deepEqual(payload.warnings, ["Generated warning"]);
       assert.equal(calls[0].topic, "buying a train ticket");
-      assert.equal(calls[0].childName, "Mia");
+      assert.equal(calls[0].childName, "Leo");
       assert.equal(
         state.sqlite.prepare("SELECT count(*) AS count FROM learner_lesson").get().count,
         0,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("does not fall back to the Guardian account name for lesson generation", async () => {
+    const state = seedDatabase();
+    let generationCalls = 0;
+    try {
+      const response = await call(
+        state,
+        "/api/lessons/my/generate",
+        "POST",
+        { topic: "buying a train ticket" },
+        {
+          learnerName: null,
+          generateLesson() {
+            generationCalls += 1;
+            return Promise.resolve({ lesson: createLessonScript(), warnings: [] });
+          },
+        },
+      );
+
+      assert.equal(response.status, 400);
+      assert.equal((await response.json()).error, "learner_name_required");
+      assert.equal(generationCalls, 0);
     } finally {
       state.close();
     }

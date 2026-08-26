@@ -16,7 +16,6 @@ import {
 import type { Database } from "./database.ts";
 import { requireGuardianAccess } from "./guardian-access.ts";
 import type { ApiEnv } from "./groq.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import {
   ConversationRepositoryError,
@@ -27,6 +26,7 @@ import {
   type LiveKitTokenEnv,
 } from "./livekit-token.ts";
 import { readBoundedText, RequestBodyTooLargeError } from "./request-body.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 
 const MAX_BODY_BYTES = 32 * 1024;
 const CONVERSATION_SCENARIOS = {
@@ -71,7 +71,7 @@ export interface ConversationEnv extends AuthEnv, LiveKitTokenEnv, ApiEnv {
 export interface ConversationRequestInput {
   database: Database;
   env: ConversationEnv;
-  identity: LearnerProfileIdentity | null;
+  identity: LearnerIdentity | null;
   request: Request;
 }
 
@@ -134,7 +134,9 @@ function isAgentAuthorized(request: Request, env: ConversationEnv) {
 
 function clientConversation(
   loaded: Awaited<
-    ReturnType<ReturnType<typeof createConversationRepository>["loadOwnedConversation"]>
+    ReturnType<
+      ReturnType<typeof createConversationRepository>["loadBrowserConversation"]
+    >
   >,
 ) {
   if (!loaded) return null;
@@ -147,14 +149,14 @@ function clientConversation(
 
 async function requireProfileConversationAccess(input: {
   database: Database;
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   purpose: ConversationPurpose;
 }) {
   if (!updatesLearnerProfile(input.purpose)) return;
   let needsGuardian = input.purpose === "profile-edit";
   if (input.purpose === "onboarding") {
     const profileRepository = createLearnerProfileRepository(input.database);
-    const profile = await profileRepository.findProfile(input.identity.userId);
+    const profile = await profileRepository.findProfile(input.identity);
     needsGuardian =
       Boolean(
         profile &&
@@ -259,11 +261,15 @@ export async function handleConversationRequest(
     if (!agentAction && !input.identity) {
       throw new ConversationApiError(401, "unauthorized");
     }
+    if (agentAction) {
+      const loaded = await repository.loadConversationWithTurns(conversationId);
+      if (!loaded) throw new ConversationApiError(404, "not_found");
+    }
 
     if (!action && input.request.method === "GET") {
-      const loaded = await repository.loadOwnedConversation(
+      const loaded = await repository.loadBrowserConversation(
         conversationId,
-        input.identity!.userId,
+        input.identity!,
       );
       if (!loaded) throw new ConversationApiError(404, "not_found");
       return json({ conversation: clientConversation(loaded) });
@@ -308,9 +314,9 @@ export async function handleConversationRequest(
 
     if (action === "finish" && input.request.method === "POST") {
       const body = await readJson(input.request);
-      const owned = await repository.loadOwnedConversation(
+      const owned = await repository.loadBrowserConversation(
         conversationId,
-        input.identity!.userId,
+        input.identity!,
       );
       if (!owned) throw new ConversationApiError(404, "not_found");
       const conversation = await repository.endConversation(
@@ -323,9 +329,9 @@ export async function handleConversationRequest(
 
     if (action === "review" && input.request.method === "PUT") {
       await readJson(input.request);
-      const loaded = await repository.loadOwnedConversation(
+      const loaded = await repository.loadBrowserConversation(
         conversationId,
-        input.identity!.userId,
+        input.identity!,
       );
       if (!loaded) throw new ConversationApiError(404, "not_found");
       if (!isConversationPurpose(loaded.conversation.scenarioKey)) {

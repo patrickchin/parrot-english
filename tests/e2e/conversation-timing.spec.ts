@@ -110,6 +110,8 @@ for (const viewport of viewports) {
       name: "Conversation controls",
     });
     const finish = page.getByRole("button", { name: "Finish chat" });
+    await page.mouse.move(1, 1);
+    await waitForControlMotion(start);
     const before = await box(start);
     const controlsBefore = await box(controls);
     const finishBefore = await box(finish);

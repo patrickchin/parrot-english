@@ -140,13 +140,17 @@ export function createPersonalizedStoryArtGenerationLeaseRepository(
     token: string,
     candidateR2ObjectKey: string,
     now: number,
+    accountDeletionTombstoneKey: string,
   ) {
     const result = await database
       .prepare(
         `UPDATE personalized_story_art_generation_lease
         SET candidate_r2_object_key = ?, lease_expires_at = ?, updated_at = ?
         WHERE auth_user_id = ? AND story_id = ? AND generation_token = ?
-          AND candidate_r2_object_key IS NULL AND lease_expires_at > ?`,
+          AND candidate_r2_object_key IS NULL AND lease_expires_at > ?
+          AND NOT EXISTS (
+            SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
+          )`,
       )
       .bind(
         candidateR2ObjectKey,
@@ -156,6 +160,7 @@ export function createPersonalizedStoryArtGenerationLeaseRepository(
         storyId,
         token,
         now,
+        accountDeletionTombstoneKey,
       )
       .run();
     return changed(result);

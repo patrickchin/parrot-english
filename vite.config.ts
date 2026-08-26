@@ -18,6 +18,7 @@ const MOCK_API_DELAY_MS = Number.parseInt(
 const E2E_TIMESTAMP = "2026-07-10T08:00:00.000Z";
 
 const E2E_PROFILE = {
+  id: "e2e-learner",
   name: "Mia",
   age: 8,
   answers: {

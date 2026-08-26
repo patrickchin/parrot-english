@@ -50,7 +50,10 @@ describe("lesson recording browser API", () => {
     );
 
     assert.deepEqual(
-      await saveLessonRecording(blob, SLOT, { fetch: request.fetch }),
+      await saveLessonRecording(blob, SLOT, {
+        expectedLearnerProfileId: "profile-1",
+        fetch: request.fetch,
+      }),
       {
         recordedAt: "2026-08-26T08:00:00.000Z",
         saved: true,
@@ -62,11 +65,43 @@ describe("lesson recording browser API", () => {
     );
     assert.deepEqual(request.calls[0][1], {
       body: blob,
-      headers: { "Content-Type": "audio/webm;codecs=opus" },
+      headers: {
+        "Content-Type": "audio/webm;codecs=opus",
+        "X-Parrot-Expected-Learner-Profile": "profile-1",
+      },
       method: "PUT",
       signal: undefined,
     });
     assert.strictEqual(request.calls[0][1].body, blob);
+  });
+
+  it("rejects an invalid expected learner profile before making a request", async () => {
+    const request = responseFetch(
+      { recordedAt: "2026-08-26T08:00:00.000Z" },
+      201,
+    );
+
+    for (const expectedLearnerProfileId of [
+      "",
+      " profile-1 ",
+      "p".repeat(129),
+    ]) {
+      await assert.rejects(
+        saveLessonRecording(
+          new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+            type: "audio/webm",
+          }),
+          SLOT,
+          { expectedLearnerProfileId, fetch: request.fetch },
+        ),
+        (error) => {
+          assert.ok(error instanceof LessonRecordingApiError);
+          assert.equal(error.code, "invalid_expected_learner_profile");
+          return true;
+        },
+      );
+    }
+    assert.equal(request.calls.length, 0);
   });
 
   it("encodes a My Lesson ID without sending target or user metadata", async () => {
@@ -86,7 +121,10 @@ describe("lesson recording browser API", () => {
         lessonId: "lesson/one",
         lessonRevision: MY_LESSON_REVISION,
       },
-      { fetch: request.fetch },
+      {
+        expectedLearnerProfileId: "profile-1",
+        fetch: request.fetch,
+      },
     );
 
     assert.equal(
@@ -95,6 +133,7 @@ describe("lesson recording browser API", () => {
     );
     assert.deepEqual(request.calls[0][1].headers, {
       "Content-Type": "audio/ogg",
+      "X-Parrot-Expected-Learner-Profile": "profile-1",
       "X-Parrot-Lesson-Revision": MY_LESSON_REVISION,
     });
   });
@@ -111,7 +150,10 @@ describe("lesson recording browser API", () => {
           type: "audio/webm",
         }),
         SLOT,
-        { fetch: request.fetch },
+        {
+          expectedLearnerProfileId: "profile-1",
+          fetch: request.fetch,
+        },
       ),
       { reason: "recording_disabled", saved: false },
     );
@@ -129,7 +171,10 @@ describe("lesson recording browser API", () => {
           type: "audio/webm",
         }),
         SLOT,
-        { fetch: request.fetch },
+        {
+          expectedLearnerProfileId: "profile-1",
+          fetch: request.fetch,
+        },
       ),
       { reason: "recording_disabled", saved: false },
     );
@@ -149,9 +194,33 @@ describe("lesson recording browser API", () => {
           lessonRevision: MY_LESSON_REVISION,
           source: "my",
         },
-        { fetch: request.fetch },
+        {
+          expectedLearnerProfileId: "profile-1",
+          fetch: request.fetch,
+        },
       ),
       { reason: "lesson_changed", saved: false },
+    );
+  });
+
+  it("turns a changed learner selection into a terminal stale-profile result", async () => {
+    const request = responseFetch(
+      { error: "learner_selection_changed" },
+      409,
+    );
+
+    assert.deepEqual(
+      await saveLessonRecording(
+        new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+          type: "audio/webm",
+        }),
+        SLOT,
+        {
+          expectedLearnerProfileId: "profile-1",
+          fetch: request.fetch,
+        },
+      ),
+      { reason: "learner_selection_changed", saved: false },
     );
   });
 
@@ -165,7 +234,10 @@ describe("lesson recording browser API", () => {
       saveLessonRecording(
         new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
         SLOT,
-        { fetch: request.fetch },
+        {
+          expectedLearnerProfileId: "profile-1",
+          fetch: request.fetch,
+        },
       ),
       (error) => {
         assert.ok(error instanceof LessonRecordingApiError);

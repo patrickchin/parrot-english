@@ -57,9 +57,9 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to lessons", role: "link" },
   },
   {
-    name: "learner profile",
+    name: "learner details",
     mode: "guardian",
-    path: "/profile",
+    path: "/guardian/profile",
     control: { name: "Back", role: "button" },
   },
   {
@@ -529,7 +529,7 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBe(currentCase.direction);
 
     const firstAction = page.getByRole("menuitem", {
-      name: "Learner profile",
+      name: "Guardian dashboard",
     });
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
@@ -845,7 +845,7 @@ test("wide pending sign out keeps its established 180px frame", async ({
   ).toBeVisible();
 });
 
-test("the learner profile opens a mode-only account menu", async ({ page }) => {
+test("the learner profile opens a locked grown-up access gateway", async ({ page }) => {
   await page.goto("/lessons");
 
   const accountMenu = page.getByRole("button", {
@@ -857,10 +857,17 @@ test("the learner profile opens a mode-only account menu", async ({ page }) => {
 
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Grown-up accessAccount password required",
+  ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
-  ).toBeVisible();
-  await expect(menu.getByRole("menuitem")).toHaveCount(0);
+  ).toHaveCount(0);
+  await expect(
+    menu.getByRole("menuitem", {
+      name: /AI and saved data|Sign out|Delete account/,
+    }),
+  ).toHaveCount(0);
 });
 
 test("account actions separate routine sign out from staged deletion", async ({
@@ -883,11 +890,17 @@ test("account actions separate routine sign out from staged deletion", async ({
     const menu = page.getByRole("menu", { name: "Account menu" });
     const items = menu.getByRole("menuitem");
     await expect(items).toHaveText([
-      "Learner profile",
+      "Guardian dashboard",
+      "Learner profiles",
+      "Manage Mia's details",
+      "Switch to Mia",
       "AI and saved data",
       "Sign out",
       "Delete account",
     ]);
+    await expect(
+      page.getByRole("group", { name: "Choose profile mode" }),
+    ).toHaveCount(0);
 
     const about = menu.getByRole("menuitem", { name: "AI and saved data" });
     const signOut = menu.getByRole("menuitem", { name: "Sign out" });
@@ -912,9 +925,9 @@ test("account actions separate routine sign out from staged deletion", async ({
       expect(box.height).toBeGreaterThanOrEqual(44);
       itemBoxes.push(box);
     }
-    const ordinaryGap = itemBoxes[2].y - (itemBoxes[1].y + itemBoxes[1].height);
+    const ordinaryGap = itemBoxes[5].y - (itemBoxes[4].y + itemBoxes[4].height);
     const destructiveGap =
-      itemBoxes[3].y - (itemBoxes[2].y + itemBoxes[2].height);
+      itemBoxes[6].y - (itemBoxes[5].y + itemBoxes[5].height);
     expect(ordinaryGap).toBeGreaterThanOrEqual(4);
     expect(destructiveGap).toBeGreaterThanOrEqual(ordinaryGap + 8);
 
@@ -943,6 +956,41 @@ test("account actions separate routine sign out from staged deletion", async ({
       await cancel.click();
     }
   }
+});
+
+test("unlocking guardian mode opens learner details in the guardian profile editor", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .click();
+  await page
+    .getByRole("menuitem", { name: /Grown-up access/ })
+    .click();
+
+  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  await dialog.getByLabel("Password").fill("e2e-guardian-password");
+  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
+
+  await page.getByRole("link", { name: "Manage learner details" }).click();
+
+  await expect(page).toHaveURL("/guardian/profile?returnTo=%2Fguardian");
+  await expect(
+    page.getByRole("heading", { name: "Learner details" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { exact: true, name: "Name" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { exact: true, name: "Age" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { exact: true, name: "About Mia" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Redo setup questions" }),
+  ).toBeVisible();
 });
 
 test("forced colors keeps both account exit actions visibly focused", async ({
@@ -1013,7 +1061,7 @@ test("AI and saved data explains caregiver facts before optional technical detai
     }),
   ).toHaveCount(0);
   await expect(
-    about.getByText("Talk to Peppa does not change the learner profile.", {
+    about.getByText("Talk to Peppa does not change learner profiles.", {
       exact: false,
     }),
   ).toBeVisible();

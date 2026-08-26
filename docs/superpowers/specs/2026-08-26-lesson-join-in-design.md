@@ -8,11 +8,11 @@ the learner sees a short phrase and hears a quiet group say it, so they can join
 in whenever they feel ready. The lesson never waits for an answer and never
 corrects, scores, transcribes, retries, or praises an individual attempt.
 
-When a guardian has granted the one-time lesson-recording consent in the learner
+When a guardian has granted lesson-recording consent for the selected learner
 profile, the microphone starts automatically for each join-in moment and the
-latest clip for that moment is saved privately to the signed-in account. Without
-consent, permission, browser support, or a working microphone, the identical
-cartoon and join-in cues continue without recording.
+latest clip for that moment is saved privately to that learner. Without consent,
+permission, browser support, or a working microphone, the identical cartoon and
+join-in cues continue without recording.
 
 This change replaces the existing flow for both ready-made Parrot lessons and
 guardian-created My Lessons. Scoring and recording review are deliberately out
@@ -26,7 +26,7 @@ The single primary action remains **Let's go**.
 
 Starting a lesson does three things:
 
-1. Read the account's saved guardian-consent state.
+1. Read the selected learner's saved guardian-consent state.
 2. If recording is allowed, request microphone permission from that user gesture
    and release the preflight stream immediately.
 3. Start the episode whether permission succeeded, failed, or was not requested.
@@ -140,10 +140,10 @@ but have no runtime effect.
 
 ## Guardian Consent
 
-Consent version `lesson-join-in-recording-v1` is stored on the one learner
-profile as `lesson_recording_consent_version` and
-`lesson_recording_consent_at`. It is account-level, persists across sessions,
-and is not tied to a 15-minute guardian unlock.
+Consent version `lesson-join-in-recording-v1` is stored on each learner profile
+as `lesson_recording_consent_version` and `lesson_recording_consent_at`. It is
+learner-level, persists across sessions, and is not tied to a 15-minute Guardian
+unlock. Selecting a sibling never grants that learner consent implicitly.
 
 The guardian-only Learner profile page gains a **Lesson voice recordings**
 section. Before consent, it explains that Parrot can automatically save the
@@ -151,11 +151,12 @@ learner's private voice during join-in moments and provides **Allow lesson voice
 recordings**. After consent, it reports that recording is allowed and provides
 **Stop and delete lesson recordings**.
 
-Revocation first clears the stored consent and then deletes every lesson clip
-under that user's exact lesson-recording prefix. The destructive action requires
-confirmation and explains that it cannot be undone. Clearing consent before the
-R2 sweep makes new uploads fail closed; upload post-checks remove any request
-that raced with revocation. Consent can be granted again later.
+Revocation first clears the selected learner's stored consent and then deletes
+every lesson clip under that learner's exact lesson-recording prefix. The
+destructive action requires confirmation and explains that it cannot be undone.
+Clearing consent before the R2 sweep makes new uploads fail closed; upload
+post-checks remove any request that raced with revocation. Consent can be granted
+again later without affecting siblings.
 
 An authenticated learner route may read only `{ enabled: boolean }`. Only a
 currently unlocked guardian session may grant or revoke consent. The browser
@@ -174,15 +175,22 @@ table or history model is added. Each deterministic object key is the one
 current slot:
 
 ```text
-personalized-story-art/{encoded-user-id}/lesson-recordings/
+personalized-story-art/{encoded-user-id}/lesson-recordings/ # legacy learner
+  parrot/{encoded-lesson-id}/scene-{scene-index}/step-{step-index}.audio
+  my/{encoded-lesson-id}/scene-{scene-index}/step-{step-index}.audio
+
+personalized-story-art/{encoded-user-id}/learners/{encoded-profile-id}/lesson-recordings/
   parrot/{encoded-lesson-id}/scene-{scene-index}/step-{step-index}.audio
   my/{encoded-lesson-id}/scene-{scene-index}/step-{step-index}.audio
 ```
 
 Putting a replayed clip to the same key replaces the previous bytes, satisfying
-the latest-only rule without orphaning attempts. Custom metadata records source,
-lesson ID, zero-based scene and step indices, exact target text, recorded time,
-and consent version. The user ID always comes from the authenticated session.
+the latest-only rule without orphaning attempts. The original migrated learner
+retains the account-level prefix for storage compatibility; every additional
+learner uses its encoded profile subtree. Custom metadata records source, lesson
+ID, zero-based scene and step indices, exact target text, recorded time, and
+consent version. The user and profile IDs always come from the authenticated,
+server-resolved learner identity.
 
 The authenticated API is intentionally write-only for this release:
 
@@ -190,22 +198,31 @@ The authenticated API is intentionally write-only for this release:
 - `PUT /api/lesson-recordings/:source/:lessonId/scenes/:scene/steps/:step`
   replaces the owned slot with the raw browser-recorded blob;
 - `PUT /api/profile/lesson-recording-consent` grants or revokes consent, with
-  revocation also deleting the lesson-recording prefix.
+  revocation also deleting the selected learner's lesson-recording prefix.
 
 The Worker resolves the target step itself. Ready-made IDs resolve against the
 checked-in catalog; My Lesson IDs resolve against an owner-scoped D1 row. The
 indices must address a `user` step. This prevents a browser from inventing a
-target or writing clips for another account. Updating a My Lesson clears that
-lesson's recording prefix because positional prompts may have changed.
+target or writing clips for another account or sibling learner. Updating a My
+Lesson clears that learner's recording prefix for the lesson because positional
+prompts may have changed.
+
+Each upload also carries the learner profile ID captured when that lesson player
+was mounted as an expected-selection precondition. The Worker first resolves the
+active learner from the authenticated session, then compares the precondition;
+it never uses the browser value to choose an owner. If a queued upload begins
+after a Guardian has selected a sibling, the mismatch is rejected before the
+audio body is read and the stale clip is not retried under the sibling.
 
 Uploads are limited to 512 KiB and browser-recordable WebM, MP4, or Ogg. The
 Worker validates the normalized MIME type and container signature, stores
 `Cache-Control: private, no-store` semantics where applicable, and checks the
-permanent account-deletion tombstone plus current consent both before and after
-the write. If either becomes invalid during the request, the exact slot is
-deleted and the upload fails. The existing account-deletion sweep already owns
-the parent `personalized-story-art/{user}/` prefix, so it removes all lesson
-recordings with the account.
+permanent account-deletion tombstone plus the selected learner's current consent
+both before and after the write. If either becomes invalid during the request,
+the exact slot is deleted and the upload fails. Revocation purges only the
+selected learner's namespace. The existing account-deletion sweep owns the
+parent `personalized-story-art/{user}/` prefix and enumerates every learner
+namespace, so it removes all lesson recordings with the account.
 
 ## Failure and Privacy Rules
 
@@ -221,6 +238,8 @@ recordings with the account.
   completion-screen retry; never alter the story state.
 - Consent revoked or account deletion pending: the server rejects the write and
   removes racing bytes; the client treats recording as disabled.
+- Active learner changed before a queued upload starts: reject and discard that
+  stale clip without reading or storing it for the newly selected learner.
 - Recordings are not sent to speech recognition, evaluation, analytics, public
   storage, or a third-party player in this release.
 

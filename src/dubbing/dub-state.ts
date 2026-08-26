@@ -10,8 +10,7 @@ export type DubOperation =
   | "saving"
   | "take-playing"
   | "playback-loading"
-  | "playback"
-  | "deleting";
+  | "playback";
 export type DubPlaybackScope = "full" | "scene" | null;
 export type DubState = {
   error: string;
@@ -31,7 +30,7 @@ export type DubSceneStatus =
   | { kind: "needs-retake"; recorded: number };
 export type DubEvent =
   | { type: "LOADED"; savedLineIds: string[] }
-  | { type: "CONFIRMED" }
+  | { type: "STARTED" }
   | { type: "OPEN_SCENE"; sceneIndex: number }
   | { type: "CONTINUE" }
   | { type: "SELECT_LINE"; lineId: string }
@@ -42,11 +41,9 @@ export type DubEvent =
   | { type: "SAVE_SUCCEEDED"; lineId: string; recordedAt: string }
   | { type: "MARK_NEEDS_RETAKE"; lineId: string }
   | { type: "CLEAR_NEEDS_RETAKE"; lineId: string }
-  | { type: "SET_ERROR"; message: string }
-  | { type: "RESET_SUCCEEDED" };
+  | { type: "SET_ERROR"; message: string };
 
 const DUB_UNSAFE_OPERATIONS = new Set<DubOperation>([
-  "deleting",
   "mic-opening",
   "recording",
   "saving",
@@ -157,7 +154,7 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
       view: "intro",
     };
   }
-  if (event.type === "CONFIRMED") {
+  if (event.type === "STARTED") {
     return state.view === "loading" || state.view === "intro"
       ? { ...state, error: "", view: "project" }
       : state;
@@ -248,6 +245,5 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
     return { ...state, needsRetake };
   }
   if (event.type === "SET_ERROR") return { ...state, error: event.message };
-  if (event.type === "RESET_SUCCEEDED") return { ...createInitialDubState(), view: "intro" };
   return state;
 }

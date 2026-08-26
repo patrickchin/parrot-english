@@ -12,11 +12,11 @@ import {
   createMyLessonRepository,
   lessonJsonRevision,
 } from "./my-lessons-repository.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
 import {
   readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
+import type { LearnerIdentity } from "./request-identity.ts";
 import type { ApiEnv } from "./groq.ts";
 
 const MAX_BODY_BYTES = 256 * 1024;
@@ -29,7 +29,7 @@ export type MyLessonsEnv = ApiEnv &
 export type MyLessonRequestInput = {
   database: Database;
   env: MyLessonsEnv;
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   request: Request;
 };
 
@@ -136,14 +136,14 @@ export async function handleMyLessonRequest(
     try {
       await deleteLessonRecordingsForLesson(
         input.env.PERSONALIZED_STORY_ART_BUCKET,
-        input.identity.userId,
+        input.identity,
         row.id,
         boundary,
         dependencies.wait,
       );
       await repository.clearRecordingCleanup(
         row.id,
-        input.identity.userId,
+        input.identity,
         boundary,
       );
     } catch {
@@ -153,7 +153,7 @@ export async function handleMyLessonRequest(
 
   try {
     if (url.pathname === "/api/lessons/my" && input.request.method === "GET") {
-      const rows = await repository.listOwned(input.identity.userId);
+      const rows = await repository.listOwned(input.identity);
       for (const row of rows) await reconcileRecordingCleanup(row);
       return json({ lessons: await Promise.all(rows.map(clientLesson)) });
     }
@@ -165,7 +165,7 @@ export async function handleMyLessonRequest(
       }
       const draft = preparedLesson(body.lesson);
       const row = await repository.create(
-        input.identity.userId,
+        input.identity,
         body.source,
         draft.lesson,
       );
@@ -189,9 +189,7 @@ export async function handleMyLessonRequest(
           "Please describe the lesson topic in 500 characters or fewer.",
         );
       }
-      const childName =
-        (await repository.learnerName(input.identity.userId)) ??
-        input.identity.userName?.trim();
+      const childName = input.identity.learnerName?.trim();
       if (!childName) {
         throw new MyLessonApiError(
           400,
@@ -220,7 +218,7 @@ export async function handleMyLessonRequest(
       const draft = preparedLesson(body.lesson, "edited lesson");
       const row = await repository.updateOwned(
         decodeURIComponent(detailMatch[1]),
-        input.identity.userId,
+        input.identity,
         draft.lesson,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
@@ -231,7 +229,7 @@ export async function handleMyLessonRequest(
     if (detailMatch && input.request.method === "GET") {
       const row = await repository.findOwned(
         decodeURIComponent(detailMatch[1]),
-        input.identity.userId,
+        input.identity,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");
       await reconcileRecordingCleanup(row);

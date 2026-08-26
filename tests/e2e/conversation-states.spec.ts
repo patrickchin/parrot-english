@@ -32,11 +32,6 @@ test("each purpose has its own framing and only profile flows offer save complet
   await expect(
     page.getByRole("button", { name: /Save and finish|Save changes/ }),
   ).toHaveCount(0);
-  const chatStyle = page.getByRole("combobox", { name: "Chat style" });
-  await expect(chatStyle).toBeHidden();
-  await page.getByLabel(/^Grown-up chat style:/).click();
-  await expect(chatStyle).toHaveValue("tiny-turns");
-
   await useIncompleteProfile(page);
   await page.goto("/profile/setup");
   await expect(

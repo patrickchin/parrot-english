@@ -1,10 +1,6 @@
 import { ImagePlus, ShieldCheck, Trash2 } from "lucide-react";
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  type FocusEvent,
-} from "react";
+import { useEffect, useLayoutEffect, useRef, type FocusEvent } from "react";
+import { BidiLearnerName } from "../app/AppHeader";
 import { ActionButton, fieldClassName } from "../shared/ui";
 import type { PersonalizedStoryArtwork } from "./personalized-story-art-client";
 
@@ -21,6 +17,7 @@ export function PersonalizedStoryArtPanel({
   hasStoredArt = false,
   generateDisabled,
   isGenerating,
+  learnerName,
   onConsentChange,
   onFileChange,
   onGenerate,
@@ -37,6 +34,7 @@ export function PersonalizedStoryArtPanel({
   hasStoredArt?: boolean;
   generateDisabled?: boolean;
   isGenerating: boolean;
+  learnerName: string;
   onConsentChange: (checked: boolean) => void;
   onFileChange?: (file: File | null) => void;
   onGenerate: () => void;
@@ -45,6 +43,7 @@ export function PersonalizedStoryArtPanel({
   statusMessage?: string;
   storyTitle: string;
 }) {
+  const managedLearnerName = learnerName.trim() || "Learner";
   const removeActionRef = useRef<HTMLButtonElement | null>(null);
   const removeFocusHandoffRef = useRef(false);
   const statusRef = useRef<HTMLParagraphElement | null>(null);
@@ -89,12 +88,21 @@ export function PersonalizedStoryArtPanel({
                 <ShieldCheck aria-hidden="true" className="size-4" />
                 Private art cleanup
               </p>
-              <h2 className="m-0 text-xl leading-tight text-brand-navy sm:text-2xl">
-                Remove stored story art
+              <h2
+                className="m-0 min-w-0 text-xl leading-tight text-brand-navy [overflow-wrap:anywhere] sm:text-2xl"
+                dir="ltr"
+              >
+                Remove <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s stored story art
               </h2>
-              <p className="m-0 text-sm font-bold leading-relaxed text-slate-700">
-                New generation is unavailable, but your private derivative can
-                still be deleted. If an earlier purge failed, this retries it.
+              <p
+                className="m-0 min-w-0 text-sm font-bold leading-relaxed text-slate-700 [overflow-wrap:anywhere]"
+                dir="ltr"
+              >
+                New generation is unavailable, but{" "}
+                <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s private story art can still be deleted. If an earlier
+                purge failed, this retries it.
               </p>
               <div>
                 <ActionButton
@@ -149,24 +157,41 @@ export function PersonalizedStoryArtPanel({
               <ShieldCheck aria-hidden="true" className="size-4" />
               Guardian consent
             </p>
-            <h2 className="m-0 text-xl leading-tight text-brand-navy sm:text-2xl">
-              Make page one of {storyTitle} look like your child
+            <h2
+              className="m-0 min-w-0 text-xl leading-tight text-brand-navy [overflow-wrap:anywhere] sm:text-2xl"
+              dir="ltr"
+            >
+              Make page one of {storyTitle} look like{" "}
+              <BidiLearnerName learnerName={managedLearnerName} />
             </h2>
-            <p className="m-0 text-sm font-bold leading-relaxed text-slate-700">
+            <p
+              className="m-0 min-w-0 text-sm font-bold leading-relaxed text-slate-700 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
               This is optional. A cropped copy goes to Cloudflare Workers AI.
-              Parrot adds only the private storybook-style picture to this
-              account, and you can delete it anytime.
+              Parrot adds only{" "}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s private storybook-style picture to this account, and you
+              can delete it anytime.
             </p>
           </div>
 
-          <label className="grid gap-1.5" htmlFor="personalized-story-photo">
-            <span className="text-sm font-black text-brand-navy">
-              Upload learner photo
+          <label
+            className="grid min-w-0 gap-1.5"
+            htmlFor="personalized-story-photo"
+          >
+            <span
+              className="min-w-0 text-sm font-black text-brand-navy [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              Upload <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s photo
             </span>
             <input
               accept="image/*"
               className={fieldClassName({
-                className: "cursor-pointer rounded-xl bg-sky-50 px-3 py-2 text-sm",
+                className:
+                  "cursor-pointer rounded-xl bg-sky-50 px-3 py-2 text-sm",
                 tone: "tinted",
               })}
               id="personalized-story-photo"
@@ -184,26 +209,26 @@ export function PersonalizedStoryArtPanel({
             </span>
           </label>
 
-          <label className="flex items-start gap-3 rounded-2xl bg-sky-50 px-3 py-3 text-sm font-bold leading-relaxed text-slate-700">
+          <label className="flex min-w-0 items-start gap-3 rounded-2xl bg-sky-50 px-3 py-3 text-sm font-bold leading-relaxed text-slate-700">
             <input
               checked={consentChecked}
               className="mt-1 size-4 shrink-0 accent-brand-blue"
               onChange={(event) => onConsentChange(event.currentTarget.checked)}
               type="checkbox"
             />
-            <span>
-              I am 18 or older. I confirm I am the child&apos;s guardian or have
-              permission to use this photo, and I agree to send a cropped copy
-              to Cloudflare Workers AI to make the illustration.
+            <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
+              I am 18 or older. I confirm I am{" "}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s guardian or have permission to use this photo, and I agree
+              to send a cropped copy to Cloudflare Workers AI to make the
+              illustration.
             </span>
           </label>
 
           <div className="flex flex-wrap gap-3">
             <ActionButton
               className="gap-2 rounded-full border-4 border-white"
-              disabled={
-                generateDisabled ?? (!consentChecked || isGenerating)
-              }
+              disabled={generateDisabled ?? (!consentChecked || isGenerating)}
               onClick={onGenerate}
               type="button"
             >
@@ -264,8 +289,12 @@ export function PersonalizedStoryArtPanel({
                 <span className="text-sm font-black uppercase tracking-wider text-brand-blue">
                   Preview
                 </span>
-                <p className="m-0 text-base font-extrabold leading-snug text-slate-700">
-                  Your private storybook-style portrait will appear here.
+                <p
+                  className="m-0 min-w-0 text-base font-extrabold leading-snug text-slate-700 [overflow-wrap:anywhere]"
+                  dir="ltr"
+                >
+                  <BidiLearnerName learnerName={managedLearnerName} />
+                  &apos;s private storybook-style portrait will appear here.
                 </p>
               </div>
             </div>
