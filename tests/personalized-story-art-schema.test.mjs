@@ -1,24 +1,14 @@
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
-import { readdirSync, readFileSync } from "node:fs";
 import { getTableColumns, getTableName } from "drizzle-orm";
 import { describe, it } from "node:test";
 import * as schema from "../src/db/schema.ts";
-
-function readMigrations() {
-  return readdirSync(new URL("../migrations/", import.meta.url))
-    .filter((name) => name.endsWith(".sql"))
-    .sort()
-    .map((name) => ({
-      name,
-      sql: readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
-    }));
-}
+import { readTestMigrations } from "./helpers/test-migrations.mjs";
 
 function createMigratedDatabase() {
   const database = new DatabaseSync(":memory:");
   database.exec("PRAGMA foreign_keys = ON");
-  for (const migration of readMigrations()) database.exec(migration.sql);
+  for (const migration of readTestMigrations()) database.exec(migration.sql);
   return database;
 }
 
@@ -51,7 +41,7 @@ describe("personalized story art persistence contract", () => {
   });
 
   it("keeps final story art unique per learner with an account lookup index", () => {
-    const migrations = readMigrations();
+    const migrations = readTestMigrations();
     const artMigration = migrations.find(({ sql }) =>
       /CREATE TABLE [`"]?personalized_story_art[`"]?/i.test(sql),
     );

@@ -1,5 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
-import { readdirSync, readFileSync } from "node:fs";
+import { readTestMigrations } from "./test-migrations.mjs";
 
 class TestD1PreparedStatement {
   constructor(database, sql, parameters = []) {
@@ -57,11 +57,8 @@ export function createTestD1Database() {
   const sqlite = new DatabaseSync(":memory:");
   sqlite.exec("PRAGMA foreign_keys = ON");
 
-  const migrationDirectory = new URL("../../migrations/", import.meta.url);
-  for (const name of readdirSync(migrationDirectory)
-    .filter((entry) => entry.endsWith(".sql"))
-    .sort()) {
-    sqlite.exec(readFileSync(new URL(name, migrationDirectory), "utf8"));
+  for (const migration of readTestMigrations()) {
+    sqlite.exec(migration.sql);
   }
 
   const d1 = {

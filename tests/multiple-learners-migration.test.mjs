@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import { it } from "node:test";
+import { readTestMigrations } from "./helpers/test-migrations.mjs";
 
 const LEGACY_ART_KEY = "users/guardian-1/stories/story-1.webp";
 const LEGACY_CANDIDATE_KEY = "users/guardian-1/stories/story-1-candidate.webp";
@@ -9,16 +9,6 @@ const LEGACY_PREVIOUS_KEY = "users/guardian-1/stories/story-1-previous.webp";
 const GAP_SKIPPED_AT = 301;
 const GAP_CONSENT_UPDATED_AT = 311;
 const GAP_LEASE_UPDATED_AT = 321;
-
-function readMigrations() {
-  return readdirSync(new URL("../migrations/", import.meta.url))
-    .filter((name) => name.endsWith(".sql"))
-    .sort()
-    .map((name) => ({
-      name,
-      sql: readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
-    }));
-}
 
 function seedLegacyAccount(database, { userId, profileId }) {
   database.exec(`
@@ -91,7 +81,7 @@ function unmappedCount(database, table) {
 }
 
 it("adds a durable personalized-art candidate closure without rewriting the staged learner migrations", () => {
-  const migrations = readMigrations();
+  const migrations = readTestMigrations();
   const closure = migrations.find(
     ({ name }) =>
       name === "0014_personalized_art_deletion_closure.sql",
@@ -145,7 +135,7 @@ it("adds a durable personalized-art candidate closure without rewriting the stag
 });
 
 it("expands legacy data into learner ownership without breaking singleton storage", () => {
-  const migrations = readMigrations();
+  const migrations = readTestMigrations();
   const before = migrations.filter(({ name }) => name < "0012_");
   const expansion = migrations.find(({ name }) => name === "0012_multi_learner_expand.sql");
   assert.ok(expansion, "Expected the 0012 multi-learner expansion migration");
@@ -370,12 +360,16 @@ it("expands legacy data into learner ownership without breaking singleton storag
 });
 
 it("catches every expansion gap write before enabling multiple learners", () => {
-  const migrations = readMigrations();
+  const migrations = readTestMigrations();
   const before = migrations.filter(({ name }) => name < "0012_");
   const expansion = migrations.find(({ name }) => name === "0012_multi_learner_expand.sql");
   const enable = migrations.find(({ name }) => name === "0013_multi_learner_enable.sql");
+  const closure = migrations.find(
+    ({ name }) => name === "0014_personalized_art_deletion_closure.sql",
+  );
   assert.ok(expansion, "Expected the 0012 multi-learner expansion migration");
   assert.ok(enable, "Expected the 0013 multi-learner enable migration");
+  assert.ok(closure, "Expected the 0014 personalized-art closure migration");
 
   const database = new DatabaseSync(":memory:");
   database.exec("PRAGMA foreign_keys = ON");
@@ -465,6 +459,7 @@ it("catches every expansion gap write before enabling multiple learners", () => 
       );
     `);
 
+    database.exec(closure.sql);
     database.exec(enable.sql);
 
     const generatedLegacy = database
@@ -696,7 +691,7 @@ it("catches every expansion gap write before enabling multiple learners", () => 
 });
 
 it("fails the enable migration when a compatibility child cannot be mapped", () => {
-  const migrations = readMigrations();
+  const migrations = readTestMigrations();
   const expansion = migrations.find(({ name }) => name === "0012_multi_learner_expand.sql");
   const enable = migrations.find(({ name }) => name === "0013_multi_learner_enable.sql");
   assert.ok(expansion);
