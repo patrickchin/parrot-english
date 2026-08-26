@@ -66,44 +66,48 @@ function learnerProfile(
   };
 }
 
+function learnerRoster() {
+  return {
+    activeProfileId: "learner-mia",
+    profiles: [
+      {
+        age: 6,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ],
+  };
+}
+
+function readyTarget(learnerProfileId = "learner-mia", learnerName = "Mia") {
+  const roster = learnerRoster();
+  return {
+    activeProfileId: roster.activeProfileId,
+    error: "",
+    learnerName,
+    learnerProfileId,
+    phase: "ready",
+    profiles: roster.profiles,
+    retry() {},
+    select() {},
+  };
+}
+
 function textFromMarkup(markup) {
   return markup
     .replace(/<[^>]+>/g, "")
     .replaceAll("&#x27;", "'")
     .replaceAll("&apos;", "'")
     .replaceAll("&amp;", "&");
-}
-
-function SwitchingSettingsProfileProvider({ children, onReplaceProfile }) {
-  const [profile, setProfile] = useState(() => learnerProfile());
-  return createElement(
-    "section",
-    null,
-    createElement(
-      "button",
-      {
-        onClick: () =>
-          setProfile(
-            learnerProfile("early-a1", { id: "learner-noah", name: "Noah" }),
-          ),
-        type: "button",
-      },
-      "Use Noah",
-    ),
-    createElement("output", { "aria-label": "Active learner" }, profile.id),
-    createElement(
-      LearnerProfileProvider,
-      {
-        key: profile.id,
-        profile,
-        replaceProfile(nextProfile) {
-          onReplaceProfile(nextProfile);
-          setProfile(nextProfile);
-        },
-      },
-      children,
-    ),
-  );
 }
 
 function artState(overrides = {}) {
@@ -141,10 +145,10 @@ function renderView(overrides = {}) {
         art: artState(),
         error: "",
         isSaving: false,
-        learnerName: "Mia",
         onSelectLevel() {},
         selectedLevel: "first-words",
         statusMessage: "",
+        target: readyTarget(),
         ...overrides,
       }),
     ),
@@ -185,7 +189,9 @@ function settingsHarness(storyLevel = "first-words") {
     { storyLevel },
     createElement(
       MemoryRouter,
-      { initialEntries: ["/guardian/stories"] },
+      {
+        initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
+      },
       createElement(GuardianStorySettings, { learnerName: "Mia" }),
       createElement(ProfileProbe),
     ),
@@ -206,13 +212,37 @@ function assertPendingFocusable(button) {
   assert.equal(document.activeElement, button);
 }
 
-function installArtFetch(preferenceResponse) {
+function statusMatching(container, pattern) {
+  return [...container.querySelectorAll('[role="status"]')].find((status) =>
+    pattern.test(status.textContent ?? ""),
+  );
+}
+
+function installArtFetch(preferenceResponse, storyLevel = "first-words") {
   const preferenceBodies = [];
   globalThis.fetch = async (path, init = {}) => {
-    if (path === "/api/stories/the-red-ball/personalized-art") {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-mia" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json({
+        profile: learnerProfile(storyLevel),
+        questions: [],
+      });
+    }
+    if (
+      path ===
+      "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-mia"
+    ) {
       return Response.json({ enabled: true, stories: {} });
     }
-    if (path === "/api/profile/preferences" && init.method === "PUT") {
+    if (
+      path === "/api/profile/preferences?learnerProfileId=learner-mia" &&
+      init.method === "PUT"
+    ) {
       preferenceBodies.push(JSON.parse(init.body));
       return preferenceResponse(init);
     }
@@ -228,7 +258,8 @@ test("guardian story settings owns level and art management", () => {
   container.innerHTML = html;
   const levelTabs = [...container.querySelectorAll('[role="tab"]')];
 
-  assert.match(renderedText, /Managing Mia/);
+  assert.match(renderedText, /Editing settings for Mia/);
+  assert.match(renderedText, /Noah/);
   assert.match(html, /<h1[^>]*>Story settings<\/h1>/);
   assert.match(html, /Choose story level/);
   assert.equal(levelTabs.length, 4);
@@ -293,10 +324,10 @@ test("saves a level before replacing the loaded profile and announces success wi
   assert.equal(
     container.querySelector('output[aria-label="Saved story level"]')
       ?.textContent,
-    "tiny-stories",
+    "first-words",
   );
   assert.match(
-    container.querySelector('[role="status"]')?.textContent ?? "",
+    statusMatching(container, /Story level saved/i)?.textContent ?? "",
     /Story level saved.*Little stories/i,
   );
   assert.equal(document.activeElement, tinyStories);
@@ -327,7 +358,7 @@ test("rejects a story-level response for a different learner without announcing 
     "first-words",
   );
   assert.doesNotMatch(
-    container.querySelector('[role="status"]')?.textContent ?? "",
+    statusMatching(container, /Story level saved/i)?.textContent ?? "",
     /Story level saved/i,
   );
 });
@@ -335,12 +366,43 @@ test("rejects a story-level response for a different learner without announcing 
 test("aborts and ignores an old learner's level save after a keyed learner change", async () => {
   const preference = deferred();
   const saveSignals = [];
-  const replacedProfiles = [];
   globalThis.fetch = async (path, init = {}) => {
-    if (path === "/api/stories/the-red-ball/personalized-art") {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-mia" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json({
+        profile: learnerProfile(),
+        questions: [],
+      });
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json({
+        profile: learnerProfile("early-a1", {
+          id: "learner-noah",
+          name: "Noah",
+        }),
+        questions: [],
+      });
+    }
+    if (
+      path ===
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-mia" ||
+      path ===
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-noah"
+    ) {
       return Response.json({ enabled: true, stories: {} });
     }
-    if (path === "/api/profile/preferences" && init.method === "PUT") {
+    if (
+      path === "/api/profile/preferences?learnerProfileId=learner-mia" &&
+      init.method === "PUT"
+    ) {
       saveSignals.push(init.signal);
       return preference.promise;
     }
@@ -350,20 +412,18 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
   const container = await mountStrict(
     createElement(
       MemoryRouter,
-      { initialEntries: ["/guardian/stories"] },
-      createElement(
-        SwitchingSettingsProfileProvider,
-        { onReplaceProfile: (profile) => replacedProfiles.push(profile) },
-        createElement(GuardianStorySettings, { learnerName: "Mia" }),
-        createElement(ProfileProbe),
-      ),
+      {
+        initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
+      },
+      createElement(GuardianStorySettings, { learnerName: "Mia" }),
     ),
   );
+  await waitFor(() => assert.ok(levelButton(container, "Little stories")));
   await click(levelButton(container, "Little stories"));
   await waitFor(() => assert.equal(saveSignals.length, 1));
   await click(
     [...container.querySelectorAll("button")].find(
-      (candidate) => candidate.textContent === "Use Noah",
+      (candidate) => candidate.getAttribute("aria-label") === "Noah",
     ),
   );
 
@@ -380,20 +440,128 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
     await Promise.resolve();
   });
 
-  assert.deepEqual(replacedProfiles, []);
-  assert.equal(
-    container.querySelector('output[aria-label="Active learner"]')?.textContent,
-    "learner-noah",
+  await waitFor(() =>
+    assert.match(container.textContent, /Editing settings for Noah/),
   );
   assert.equal(
-    container.querySelector('output[aria-label="Saved story level"]')
-      ?.textContent,
-    "early-a1",
+    levelButton(container, "Big adventures").getAttribute("aria-selected"),
+    "true",
   );
   assert.equal(container.querySelector('[role="alert"]'), null);
   assert.doesNotMatch(
-    container.querySelector('[role="status"]')?.textContent ?? "",
+    statusMatching(container, /Story level saved|Saving story level/i)
+      ?.textContent ?? "",
     /Story level saved|Saving story level/i,
+  );
+});
+
+test("loads and saves Noah's story settings and art through explicit target requests", async () => {
+  const requests = [];
+  globalThis.fetch = async (path, init = {}) => {
+    requests.push({ method: init.method ?? "GET", path });
+    if (path === "/api/learner-profiles") {
+      return Response.json({
+        activeProfileId: "learner-mia",
+        profiles: [
+          {
+            age: 6,
+            createdAt: "2026-08-01T08:00:00.000Z",
+            id: "learner-mia",
+            name: "Mia",
+            profileStatus: "completed",
+          },
+          {
+            age: 10,
+            createdAt: "2026-08-02T08:00:00.000Z",
+            id: "learner-noah",
+            name: "Noah",
+            profileStatus: "completed",
+          },
+        ],
+      });
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json({
+        profile: learnerProfile("early-a1", {
+          id: "learner-noah",
+          name: "Noah",
+        }),
+        questions: [],
+      });
+    }
+    if (
+      path ===
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-noah" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json({ enabled: true, stories: {} });
+    }
+    if (
+      path === "/api/profile/preferences?learnerProfileId=learner-noah" &&
+      init.method === "PUT"
+    ) {
+      return Response.json({
+        profile: learnerProfile("tiny-stories", {
+          id: "learner-noah",
+          name: "Noah",
+        }),
+        questions: [],
+      });
+    }
+    if (path === "/api/stories/the-red-ball/personalized-art") {
+      return Response.json({ enabled: true, stories: {} });
+    }
+    if (path === "/api/profile/preferences" && init.method === "PUT") {
+      return Response.json({
+        profile: learnerProfile("tiny-stories"),
+        questions: [],
+      });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      SettingsProfileProvider,
+      { storyLevel: "first-words" },
+      createElement(
+        MemoryRouter,
+        {
+          initialEntries: ["/guardian/stories?learnerProfileId=learner-noah"],
+        },
+        createElement(GuardianStorySettings, { learnerName: "Mia" }),
+      ),
+    ),
+  );
+
+  await waitFor(() =>
+    assert.match(container.textContent, /Editing settings for Noah/),
+  );
+  assert.equal(
+    levelButton(container, "Big adventures").getAttribute("aria-selected"),
+    "true",
+  );
+  await click(levelButton(container, "Little stories"));
+  await waitFor(() =>
+    assert.match(
+      statusMatching(container, /Story level saved/i)?.textContent ?? "",
+      /Story level saved.*Little stories/i,
+    ),
+  );
+
+  const featureRequests = requests.filter(
+    ({ path }) =>
+      path.startsWith("/api/profile") ||
+      path.startsWith("/api/stories/the-red-ball/personalized-art"),
+  );
+  assert.ok(featureRequests.length > 0);
+  assert.ok(
+    featureRequests.every(({ path }) =>
+      path.endsWith("?learnerProfileId=learner-noah"),
+    ),
   );
 });
 

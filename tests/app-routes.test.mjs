@@ -71,6 +71,14 @@ describe("app route helpers", () => {
       routes.getMyLessonEditPath("lesson/id"),
       "/lessons/my/lesson%2Fid/edit",
     );
+    assert.equal(
+      routes.getMyLessonCreatePath("learner /Noah"),
+      "/lessons/my/create?learnerProfileId=learner+%2FNoah",
+    );
+    assert.equal(
+      routes.getMyLessonEditPath("lesson/id", "learner /Noah"),
+      "/lessons/my/lesson%2Fid/edit?learnerProfileId=learner+%2FNoah",
+    );
   });
 
   it("rejects empty, dot-segment, and unencodable lesson IDs", () => {
@@ -167,12 +175,24 @@ describe("app route helpers", () => {
     assert.equal(routes.getGuardianPath(), "/guardian");
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
     assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
+    assert.equal(
+      routes.getGuardianDubbingPath("learner /Noah"),
+      "/guardian/dubbing?learnerProfileId=learner+%2FNoah",
+    );
+    assert.equal(
+      routes.getGuardianLessonsPath("learner /Noah"),
+      "/guardian/lessons?learnerProfileId=learner+%2FNoah",
+    );
     assert.equal(routes.getGuardianLearnersPath(), "/guardian/learners");
     assert.equal(
       routes.getGuardianLearnerPath("learner/noah"),
       "/guardian/learners/learner%2Fnoah",
     );
     assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
+    assert.equal(
+      routes.getGuardianStoriesPath("learner /Noah"),
+      "/guardian/stories?learnerProfileId=learner+%2FNoah",
+    );
     assert.equal(
       routes.getProfilePath("/guardian"),
       "/guardian/profile?returnTo=%2Fguardian",

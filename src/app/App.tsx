@@ -1295,21 +1295,10 @@ export function ApplicationRoutes({
           element={<GuardianLearnerDetails />}
           path="/guardian/learners/:learnerId"
         />
+        <Route element={<GuardianLessonManager />} path="/guardian/lessons" />
+        <Route element={<GuardianStorySettings />} path="/guardian/stories" />
         <Route
-          element={<GuardianLessonManager learnerName={learnerName} />}
-          path="/guardian/lessons"
-        />
-        <Route
-          element={<GuardianStorySettings learnerName={learnerName} />}
-          path="/guardian/stories"
-        />
-        <Route
-          element={
-            <GuardianDubbingSettings
-              learnerName={learnerName}
-              onBeforeNavigate={onBeforeModeNavigate}
-            />
-          }
+          element={<GuardianDubbingSettings />}
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
@@ -1327,14 +1316,8 @@ export function ApplicationRoutes({
           path="/talk-to-peppa"
         />
         <Route element={<LessonList />} path="/lessons" />
-        <Route
-          element={<LessonCreator learnerName={learnerName} />}
-          path="/lessons/my/create"
-        />
-        <Route
-          element={<LessonEditor learnerName={learnerName} />}
-          path="/lessons/my/:lessonId/edit"
-        />
+        <Route element={<LessonCreator />} path="/lessons/my/create" />
+        <Route element={<LessonEditor />} path="/lessons/my/:lessonId/edit" />
         <Route
           element={<ParrotLessonRedirect />}
           path="/lessons/parrot/:lessonId"

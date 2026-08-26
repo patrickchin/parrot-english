@@ -69,12 +69,18 @@ export function getGuardianPath() {
   return "/guardian";
 }
 
-export function getGuardianDubbingPath() {
-  return "/guardian/dubbing" as const;
+function withLearnerProfileTarget(path: string, learnerProfileId?: string) {
+  return learnerProfileId === undefined
+    ? path
+    : `${path}?${new URLSearchParams({ learnerProfileId })}`;
 }
 
-export function getGuardianLessonsPath() {
-  return "/guardian/lessons";
+export function getGuardianDubbingPath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/guardian/dubbing", learnerProfileId);
+}
+
+export function getGuardianLessonsPath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/guardian/lessons", learnerProfileId);
 }
 
 export function getGuardianLearnersPath() {
@@ -112,8 +118,8 @@ export function isGuardianLearnerManagerRoute(pathname: string) {
   );
 }
 
-export function getGuardianStoriesPath() {
-  return "/guardian/stories";
+export function getGuardianStoriesPath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/guardian/stories", learnerProfileId);
 }
 
 function parseSceneNumber(value: string | undefined) {
@@ -174,8 +180,18 @@ export function getLessonScenePath(
   return `${getLessonPath(source, lessonId)}/scenes/${sceneIndex + 1}`;
 }
 
-export function getMyLessonEditPath(lessonId: string) {
-  return `${getLessonPath("my", lessonId)}/edit`;
+export function getMyLessonCreatePath(learnerProfileId?: string) {
+  return withLearnerProfileTarget("/lessons/my/create", learnerProfileId);
+}
+
+export function getMyLessonEditPath(
+  lessonId: string,
+  learnerProfileId?: string,
+) {
+  return withLearnerProfileTarget(
+    `${getLessonPath("my", lessonId)}/edit`,
+    learnerProfileId,
+  );
 }
 
 export function getLoginPath(returnTo: string) {

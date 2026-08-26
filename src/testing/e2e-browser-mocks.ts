@@ -779,7 +779,10 @@ function createE2eLearnerAccount(
 
   async function handleDub(url: URL, method: string, request: Request) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
-    const learner = selectedLearner();
+    const targetedProfileId = url.searchParams.get("learnerProfileId");
+    const learner = targetedProfileId
+      ? (state.learners.get(targetedProfileId) ?? null)
+      : selectedLearner();
     if (!learner) return selectionRequired();
 
     if (url.pathname === `${E2E_DUB_API}/consent`) {
@@ -842,7 +845,10 @@ function createE2eLearnerAccount(
       /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
     );
     if (!match) return null;
-    const learner = selectedLearner();
+    const targetedProfileId = url.searchParams.get("learnerProfileId");
+    const learner = targetedProfileId
+      ? (state.learners.get(targetedProfileId) ?? null)
+      : selectedLearner();
     if (!learner) return selectionRequired();
     const storyId = decodeURIComponent(match[1]!);
     const art = learner.art.get(storyId) ?? {
@@ -867,7 +873,14 @@ function createE2eLearnerAccount(
                 pages: {
                   "my-red-ball": {
                     alt: `${learner.profile.name} holding a bright red ball`,
-                    src: `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset?v=1786276800000`,
+                    src: `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset?${new URLSearchParams(
+                      {
+                        v: "1786276800000",
+                        ...(targetedProfileId
+                          ? { learnerProfileId: targetedProfileId }
+                          : {}),
+                      },
+                    )}`,
                   },
                 },
               },
@@ -2360,6 +2373,17 @@ function installE2eProfileFetchMock() {
   const learnerAccount = learnerScenario
     ? createE2eLearnerAccount(learnerScenario, getE2eLearnerSessionId())
     : null;
+  let fallbackStoryLevel = E2E_VIEWPORT_EDITOR_STATE.profile.storyLevel;
+
+  function fallbackProfileState() {
+    return {
+      ...E2E_VIEWPORT_EDITOR_STATE,
+      profile: {
+        ...E2E_VIEWPORT_EDITOR_STATE.profile,
+        storyLevel: fallbackStoryLevel,
+      },
+    };
+  }
   scopedLessonRecordingMedia = learnerAccount
     ? {
         rejectNextUpload: () => learnerAccount.rejectNextLessonUpload(),
@@ -2410,6 +2434,7 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+    const fallbackTarget = url.searchParams.get("learnerProfileId");
     if (
       getE2eLessonScenario() &&
       url.pathname === "/api/evaluate-speech"
@@ -2438,6 +2463,47 @@ function installE2eProfileFetchMock() {
     if (learnerAccount) {
       const learnerResponse = await learnerAccount.handle(input, init);
       if (learnerResponse) return learnerResponse;
+    }
+    if (
+      !learnerAccount &&
+      url.origin === window.location.origin &&
+      url.pathname === "/api/learner-profiles" &&
+      method === "GET"
+    ) {
+      return e2eJson({
+        activeProfileId: E2E_VIEWPORT_EDITOR_STATE.profile.id,
+        profiles: [
+          {
+            age: E2E_VIEWPORT_EDITOR_STATE.profile.age,
+            createdAt: "2026-08-01T08:00:00.000Z",
+            id: E2E_VIEWPORT_EDITOR_STATE.profile.id,
+            name: E2E_VIEWPORT_EDITOR_STATE.profile.name,
+            profileStatus: E2E_VIEWPORT_EDITOR_STATE.profile.profileStatus,
+          },
+        ],
+      });
+    }
+    if (
+      !learnerAccount &&
+      fallbackTarget === E2E_VIEWPORT_EDITOR_STATE.profile.id &&
+      url.origin === window.location.origin &&
+      url.pathname === "/api/profile" &&
+      method === "GET"
+    ) {
+      return e2eJson(fallbackProfileState());
+    }
+    if (
+      !learnerAccount &&
+      fallbackTarget === E2E_VIEWPORT_EDITOR_STATE.profile.id &&
+      url.origin === window.location.origin &&
+      url.pathname === "/api/profile/preferences" &&
+      method === "PUT"
+    ) {
+      const body = (await (request ?? new Request(url.href, init))
+        .clone()
+        .json()) as { storyLevel?: typeof fallbackStoryLevel };
+      if (body.storyLevel) fallbackStoryLevel = body.storyLevel;
+      return e2eJson(fallbackProfileState());
     }
     const profileOperation = profileOperationForRequest(url, method);
 
