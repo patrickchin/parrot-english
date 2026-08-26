@@ -1370,10 +1370,31 @@ test("keyboard Continue focuses the first missing line heading", async ({ page }
 
 test("save recovery restores focus to the fixed Next action", async ({ page }) => {
   test.setTimeout(15_000);
+  await page.addInitScript(() => {
+    const nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+    let runEarly = false;
+    Object.defineProperty(window, "__runNextAnimationFrameEarly", {
+      configurable: true,
+      value: () => { runEarly = true; },
+    });
+    Object.defineProperty(window, "requestAnimationFrame", {
+      configurable: true,
+      value: (callback: FrameRequestCallback) => {
+        if (!runEarly) return nativeRequestAnimationFrame(callback);
+        runEarly = false;
+        callback(performance.now());
+        return -1;
+      },
+    });
+  });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
   await confirmDub(page, "Start dubbing");
   await openScene(page, 1);
   await page.getByRole("button", { name: "Record line" }).click();
+  await page.evaluate(() => {
+    (window as typeof window & { __runNextAnimationFrameEarly(): void })
+      .__runNextAnimationFrameEarly();
+  });
   await page.getByRole("button", { name: "Stop recording" }).click();
   await expect(page.getByRole("button", { name: "Save again" })).toBeFocused();
 

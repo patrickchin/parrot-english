@@ -194,11 +194,16 @@ export function DuckDub() {
   const saveButtonRef = useRef<HTMLButtonElement>(null);
 
   function focusAfterRender(ref: RefObject<HTMLElement | null>, generation: number) {
-    requestAnimationFrame(() => {
-      if (mountedRef.current && generation === mediaGenerationRef.current) {
-        ref.current?.focus();
-      }
-    });
+    let framesRemaining = 4;
+    const tryFocus = () => {
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
+      const target = ref.current;
+      target?.focus();
+      if (target && target.ownerDocument.activeElement === target) return;
+      framesRemaining -= 1;
+      if (framesRemaining > 0) requestAnimationFrame(tryFocus);
+    };
+    requestAnimationFrame(tryFocus);
   }
 
   const clearTakePreview = useCallback(() => {
