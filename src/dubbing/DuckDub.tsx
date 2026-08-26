@@ -118,7 +118,7 @@ export function DubEntry({
   return (
     <main aria-busy={deleting} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-2xl gap-4 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-card">
-        <h1 className="m-0 text-3xl text-brand-ink md:text-5xl">Five Little Ducks</h1>
+        <h1 className="m-0 text-3xl text-brand-ink md:text-4xl">Five Little Ducks</h1>
         {loading ? (
           <>
             <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">
@@ -135,8 +135,7 @@ export function DubEntry({
         ) : (
           <>
             <p className="m-0 font-bold leading-snug text-slate-700">
-              Your recordings are private and saved to the signed-in grown-up&apos;s account.
-              You can replay or replace them here, and they are deleted with the account.
+              Private voice clips are saved to your grown-up account and deleted with it.
             </p>
             <label className="flex min-h-12 items-start gap-3 rounded-2xl bg-sky-50 p-3 font-bold leading-snug text-brand-ink">
               <input
@@ -147,17 +146,17 @@ export function DubEntry({
                 required
                 type="checkbox"
               />
-              <span>I’m the grown-up and I agree to save these private voice clips.</span>
+              <span>I’m the grown-up and agree to save these voice clips.</span>
             </label>
             <ActionButton disabled={!confirmed || deleting} fullWidth onClick={onEnter} size="hero">
               {savedCount > 0 ? "Continue dubbing" : "Start dubbing"}
             </ActionButton>
             <details className="group rounded-2xl border-3 border-sky-200 bg-sky-50 p-3">
               <summary
-                aria-label="Grown-up options"
+                aria-label="More grown-up options"
                 className="flex min-h-12 cursor-pointer list-none items-center justify-center gap-2 font-ui font-black text-brand-blue"
               >
-                Grown-up options <span aria-hidden="true">▾</span>
+                More <span aria-hidden="true">▾</span>
               </summary>
               <TextButton className="mt-3 min-h-12 text-red-800" disabled={deleting} onClick={onDelete}>
                 {deleting ? "Deleting saved recordings…" : "Delete saved recordings"}

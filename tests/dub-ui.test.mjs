@@ -73,18 +73,124 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, /<img|https?:\/\//);
   });
 
+  it("keeps every duck actor mounted and gives sad mother a distinct story pose", () => {
+    const depart = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[20] }),
+    );
+    const hill = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[21] }),
+    );
+    const call = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[22] }),
+    );
+
+    for (const html of [depart, hill, call]) {
+      assert.equal((html.match(/data-duck-actor="duckling-[1-5]"/g) ?? []).length, 5);
+      assert.equal((html.match(/data-duck-actor="mother"/g) ?? []).length, 1);
+    }
+    assert.match(depart, /data-duck-actor="mother"[^>]*data-pose="sad-swim"/);
+    assert.match(hill, /data-duck-actor="mother"[^>]*data-pose="sad-walk"/);
+    assert.match(call, /data-duck-actor="mother"[^>]*data-pose="sad-call"/);
+  });
+
+  it("animates swimming, calling, and pond contact as distinct story actions", () => {
+    const swimming = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[0], playing: true }),
+    );
+    const calling = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
+    );
+
+    assert.match(swimming, /data-motion="swim"/);
+    assert.match(swimming, /data-motion="ripple"/);
+    assert.match(calling, /data-motion="call"/);
+    assert.match(calling, /data-motion="call"[^>]*keySplines="(?:\.4 0 \.2 1;){2}\.4 0 \.2 1"[^>]*values="0 0; -5 -3; 3 0; 0 0"/);
+  });
+
+  it("lets only mother call while hidden ducklings stay on the hill", () => {
+    const calling = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
+    );
+    const ducklings = [...calling.matchAll(
+      /data-duck-actor="duckling-\d"[^>]*data-pose="([^"]+)"[^>]*opacity="0"[^>]*transform="translate\((\d+) (\d+)\)/g,
+    )];
+
+    assert.equal((calling.match(/data-effect="call-rings"/g) ?? []).length, 1);
+    assert.deepEqual(
+      ducklings.map(([, pose, x, y]) => [pose, Number(x), Number(y)]),
+      [
+        ["wait", 330, 305],
+        ["wait", 445, 270],
+        ["wait", 560, 305],
+        ["wait", 675, 275],
+        ["wait", 795, 315],
+      ],
+    );
+  });
+
+  it("keeps every visible character inside the illustrated camera frame", () => {
+    for (const line of DUB_LINES) {
+      const html = renderToStaticMarkup(createElement(DuckScene, { line }));
+      const actors = [...html.matchAll(
+        /data-duck-actor="([^"]+)"[^>]*opacity="1"[^>]*transform="translate\((\d+) (\d+)\)/g,
+      )];
+      assert.ok(actors.length > 0 || line.duckCount === 0);
+      for (const [, actor, x, y] of actors) {
+        assert.ok(Number(x) >= 95 && Number(x) <= 840, `${line.id} ${actor} x=${x}`);
+        assert.ok(Number(y) >= 210 && Number(y) <= 410, `${line.id} ${actor} y=${y}`);
+      }
+    }
+  });
+
+  it("illustrates the call, sad turn, and reunion as distinct story moments", () => {
+    const call = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[2] }));
+    const sadCall = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[22] }));
+    const reunion = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[23] }));
+
+    assert.match(call, /data-effect="call-rings"/);
+    assert.match(sadCall, /data-expression="sad"/);
+    assert.match(sadCall, /data-effect="tear"/);
+    assert.match(reunion, /data-effect="celebration"/);
+    for (const html of [call, sadCall, reunion]) {
+      assert.match(html, /data-story-layer="sky"/);
+      assert.match(html, /data-story-layer="pond"/);
+      assert.match(html, /data-story-layer="foreground"/);
+    }
+  });
+
+  it("falls celebration pieces downward independently of their rotation", () => {
+    const reunion = renderToStaticMarkup(
+      createElement(DuckScene, { line: DUB_LINES[23], playing: true }),
+    );
+
+    assert.match(
+      reunion,
+      /<g transform="translate\(285 105\)"><animateTransform[^>]*data-motion="celebrate"[^>]*type="translate"[^>]*><\/animateTransform><path[^>]*transform="rotate\(0\)"/,
+    );
+    assert.doesNotMatch(
+      reunion,
+      /<path[^>]*transform="translate\([^)]*\) rotate\([^)]*\)"[^>]*><animateTransform[^>]*data-motion="celebrate"/,
+    );
+  });
+
+  it("keeps mother duck waiting when the ducklings return or stay away", () => {
+    const returning = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[3] }));
+    const noneReturn = renderToStaticMarkup(createElement(DuckScene, { line: DUB_LINES[19] }));
+
+    assert.match(returning, /data-duck-actor="mother"[^>]*data-expression="bright"[^>]*opacity="1"/);
+    assert.match(noneReturn, /data-duck-actor="mother"[^>]*data-expression="sad"[^>]*opacity="1"/);
+  });
+
   it("renders a selectable six-scene project workspace without line controls", () => {
     const html = renderProjectHome();
     assert.match(html, /aria-label="Full video player"/);
     assert.match(html, /aria-label="Play full video"/);
-    assert.match(html, />Draft</);
-    assert.match(html, />0 of 24 voice clips recorded</);
-    assert.match(html, />Continue Scene 1</);
+    assert.match(html, /aria-label="Continue Scene 1"[^>]*>Continue<\/button>/);
     for (let scene = 1; scene <= 6; scene += 1) {
       assert.match(html, new RegExp(`aria-label="Scene ${scene}, Not started"`));
       assert.match(html, new RegExp(`aria-label="Scene ${scene} thumbnail"[^>]*role="img"`));
     }
-    assert.equal((html.match(/>Not started</g) ?? []).length, 6);
+    assert.doesNotMatch(html, />Draft<|>Your dub<|>Not started<|voice clips recorded/);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
   });
 
@@ -104,7 +210,7 @@ describe("duck dubbing storyboard presentation", () => {
       ([svg]) => [...svg.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]),
     );
 
-    assert.equal(svgIds.length, 7);
+    assert.ok(svgIds.length >= 28);
     assert.equal(new Set(svgIds).size, svgIds.length);
   });
 
@@ -113,24 +219,21 @@ describe("duck dubbing storyboard presentation", () => {
       activeLine: DUB_LINES[23],
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.match(html, />Your dub</);
-    assert.match(html, />All scenes recorded</);
-    assert.doesNotMatch(html, /Continue Scene/);
+    assert.doesNotMatch(html, />Your dub<|>Draft<|All scenes recorded/);
+    assert.doesNotMatch(html, /aria-label="Continue Scene/);
     for (let scene = 1; scene <= 6; scene += 1) {
       assert.match(html, new RegExp(`aria-label="Scene ${scene}, Done"`));
     }
   });
 
-  it("keeps an all-saved project a Draft when a private take needs retake", () => {
+  it("keeps retake status when every clip has a saved object", () => {
     const html = renderProjectHome({
       activeLine: DUB_LINES[4],
       needsRetake: new Set(["line-5"]),
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.match(html, />Draft</);
-    assert.doesNotMatch(html, />Your dub</);
-    assert.match(html, />All scenes recorded</);
-    assert.doesNotMatch(html, /Continue Scene/);
+    assert.doesNotMatch(html, />Draft<|>Your dub<|All scenes recorded/);
+    assert.doesNotMatch(html, /aria-label="Continue Scene/);
     assert.match(html, /aria-label="Scene 2, Needs retake"/);
   });
 
@@ -139,8 +242,8 @@ describe("duck dubbing storyboard presentation", () => {
       activeLine: DUB_LINES[16],
       saved: { "line-1": "saved", "line-3": "saved" },
     });
-    assert.match(html, />Continue Scene 1</);
-    assert.doesNotMatch(html, /Continue Scene 5/);
+    assert.match(html, /aria-label="Continue Scene 1"/);
+    assert.doesNotMatch(html, /aria-label="Continue Scene 5"/);
   });
 
   it("shows non-blocking project playback errors and retake status", () => {
@@ -158,8 +261,34 @@ describe("duck dubbing storyboard presentation", () => {
   it("keeps deletion inside closed grown-up options", () => {
     const html = renderProjectHome();
     assert.match(html, /<details(?![^>]*\bopen\b)[^>]*>/);
-    assert.match(html, /<summary[^>]*aria-label="Grown-up options"/);
+    assert.match(html, /<summary[^>]*aria-label="More grown-up options"/);
     assert.match(html, />Delete my dub<\/button>/);
+  });
+
+  it("uses visible shapes as well as color for scene and line status", () => {
+    const project = renderProjectHome({
+      needsRetake: new Set(["line-5"]),
+      saved: {
+        "line-1": "saved",
+        "line-5": "saved",
+        "line-9": "saved",
+        "line-10": "saved",
+        "line-11": "saved",
+        "line-12": "saved",
+      },
+    });
+    const editor = renderSceneEditor({
+      needsRetake: new Set(["line-3"]),
+      saved: { "line-1": "saved" },
+    });
+
+    assert.match(project, /aria-label="Scene 1, 1 \/ 4"[\s\S]*?data-status-icon="in-progress"[^>]*>◐<\/span>/);
+    assert.match(project, /aria-label="Scene 2, Needs retake"[\s\S]*?data-status-icon="needs-retake"[^>]*>!<\/span>/);
+    assert.match(project, /aria-label="Scene 3, Done"[\s\S]*?data-status-icon="done"[^>]*>✓<\/span>/);
+    assert.match(project, /aria-label="Scene 4, Not started"[\s\S]*?data-status-icon="not-started"[^>]*>○<\/span>/);
+    assert.match(editor, /aria-label="Line 1, selected, recorded"[\s\S]*?data-status-icon="recorded"[^>]*>✓<\/span>/);
+    assert.match(editor, /aria-label="Line 2, generated"[\s\S]*?data-status-icon="generated"[^>]*>○<\/span>/);
+    assert.match(editor, /aria-label="Line 3, needs retake"[\s\S]*?data-status-icon="needs-retake"[^>]*>!<\/span>/);
   });
 
   it("renders the focused scene editor with explicit line states", () => {
@@ -167,19 +296,18 @@ describe("duck dubbing storyboard presentation", () => {
       needsRetake: new Set(["line-3"]),
       saved: { "line-1": "saved" },
     });
-    assert.match(html, />Back to full video</);
+    assert.match(html, /aria-label="Back to full video"/);
     assert.match(html, /aria-label="Play this scene"/);
     assert.match(html, /aria-current="page"[^>]*>Scene 1 of 6/);
     assert.match(html, /<h1[^>]*>Five little ducks<\/h1>/);
-    assert.match(html, />1 of 4 recorded</);
     assert.match(html, /aria-current="true"[^>]*aria-label="Line 1, selected, recorded"/);
     assert.match(html, /aria-label="Line 2, generated"/);
     assert.match(html, /aria-label="Line 3, needs retake"/);
-    assert.match(html, />Selected · Recorded</);
-    assert.match(html, />Generated</);
-    assert.match(html, />Needs retake</);
+    assert.doesNotMatch(html, />Choose a line<|>Selected · Recorded<|>Generated<|>Needs retake</);
+    assert.match(html, /<details(?![^>]*\bopen\b)[^>]*>[\s\S]*<summary[^>]*aria-label="Listen"/);
     assert.match(html, /Hear example/);
     assert.match(html, /aria-label="Record line"/);
+    assert.ok(html.indexOf('aria-label="Record line"') < html.indexOf('aria-label="Listen"'));
     assert.doesNotMatch(html, /Next line/);
   });
 
@@ -209,7 +337,7 @@ describe("duck dubbing storyboard presentation", () => {
     });
     assert.match(html, /aria-label="Your recording waveform"/);
     assert.match(html, />Save again</);
-    assert.match(html, /<button[^>]*disabled[^>]*>Back to full video<\/button>/);
+    assert.match(html, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /aria-label="Line 2, generated"[^>]*disabled/);
     assert.match(html, /role="alert"/);
   });
@@ -244,7 +372,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(deletingScene, /<main[^>]*aria-busy="true"/);
     assert.match(deletingScene, /aria-label="Play this scene"[^>]*disabled/);
     assert.match(deletingScene, /aria-label="Record line"[^>]*disabled/);
-    assert.match(deletingScene, /<button[^>]*disabled[^>]*>Back to full video<\/button>/);
+    assert.match(deletingScene, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
   });
 
   it("marks intro and reset-loading route shells busy during deletion", () => {
@@ -270,6 +398,25 @@ describe("duck dubbing storyboard presentation", () => {
     }));
     assert.match(entry, /<main[^>]*aria-busy="true"/);
     assert.match(loading, /<main[^>]*aria-busy="true"/);
+  });
+
+  it("keeps the consent screen concise and hides deletion behind More", () => {
+    const html = renderToStaticMarkup(createElement(DubEntry, {
+      confirmed: false,
+      deleting: false,
+      error: "",
+      onConfirm() {},
+      onDelete() {},
+      onEnter() {},
+      onRetryLoad() {},
+      resetInterrupted: false,
+      savedCount: 0,
+    }));
+
+    assert.match(html, /Private voice clips are saved to your grown-up account and deleted with it\./);
+    assert.match(html, /I’m the grown-up and agree to save these voice clips\./);
+    assert.match(html, /<summary[^>]*aria-label="More grown-up options"[^>]*>More/);
+    assert.doesNotMatch(html, /You can replay or replace them here|Grown-up options <span/);
   });
 
   it("discards rejected-take preview and exposes one Record again action", () => {
