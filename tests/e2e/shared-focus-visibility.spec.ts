@@ -931,7 +931,14 @@ async function expectLessonShelfOpenReadingCue(
     { markerEndTolerance: 2 },
   );
 
-  expect(await lessonShelfHeadingGeometry(page, heading)).toEqual(focused);
+  const blurred = await lessonShelfHeadingGeometry(page, heading);
+  // Linux Chromium can requantize this downstream block offset by a fraction
+  // of a CSS pixel while taking the focused and unfocused screenshots.
+  expect(
+    Math.abs(blurred.firstLesson.y - focused.firstLesson.y),
+  ).toBeLessThanOrEqual(0.25);
+  blurred.firstLesson.y = focused.firstLesson.y;
+  expect(blurred).toEqual(focused);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
