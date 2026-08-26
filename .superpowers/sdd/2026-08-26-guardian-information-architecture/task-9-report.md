@@ -538,3 +538,100 @@ leaves both original learners and active selection unchanged.
 None. The deployed questionnaire intentionally offers no successful per-question
 skip path today; the matrix now says so accurately instead of manufacturing one
 in the mock.
+
+---
+
+## Review fix round 5/5 — separate target security from mutation capability
+
+### Finding and resolution
+
+Round 4 correctly stopped claiming that the deployed questionnaire can perform
+a successful per-question skip, but the single 25-row table also drove the
+authorization and invalid-target matrices. Removing question skip from that
+table therefore removed two independent security guarantees for
+`POST /api/learner-profile/question/skip`: locked requests were no longer
+covered for 403-before-parse, and malformed or unowned targets were no longer
+covered for the shared generic 404.
+
+The test data now separates those contracts without duplicating endpoint
+fixtures:
+
+- `targetedSecurityCases` contains all 26 production targetable method/path/body
+  shapes, including question skip with its accepted one-field JSON body;
+- question skip alone carries `mutationCapable: false`;
+- `targetedMutationCases` is the one-line filtered 25-row subset used to label
+  only the successful-family mutation/state-sentinel portion of each matrix;
+- both outward security matrices are driven by all 26 rows, producing exactly
+  52 locked requests and 182 malformed/unowned combinations; and
+- the two valid-owned production-semantic skip tests remain unchanged: current
+  required Ava returns 400, completed Mia's non-current key returns 409, and
+  both preserve their full before/after account state.
+
+No optional question, successful skip mutation, new mock seam, or malformed-body
+parity claim was invented. The matrix retains the existing production-valid JSON
+request shape and tests target security before endpoint semantics.
+
+### Focused mutation RED, restore, and GREEN
+
+After adding the 26-row security coverage, the single
+`/api/learner-profile/question/skip` entry was temporarily removed from
+`TARGETABLE_LEARNER_PROFILE_PATHS`. No other classifier or endpoint changed.
+
+```bash
+npx playwright test tests/e2e/multiple-learners.spec.ts --grep 'locked 26-row targeted security matrix|unlocked malformed targets in the 26-row security matrix' --reporter=line
+```
+
+RED: 0 passed, 2 failed. The locked duplicate skip request returned the
+handler's non-current-question 409 instead of `403 guardian_required`; the
+unlocked blank-target skip request returned the same 409 instead of generic
+`404 not_found`. Both failures were labelled specifically
+`learner-profile question skip / ...`, proving that removing only skip from
+central target security is detected. The classifier line was restored
+immediately and is absent from the final diff.
+
+The same command after restoration passed 2/2. The combined security and skip
+semantic check then passed 4/4:
+
+```bash
+npx playwright test tests/e2e/multiple-learners.spec.ts --grep 'locked 26-row targeted security matrix|unlocked malformed targets in the 26-row security matrix|question skip rejects' --reporter=line
+```
+
+The locked matrix observes all 52 security responses, zero target-parser calls,
+and 50 responses belonging to the 25-row mutation-capable subset. The unlocked
+matrix observes all 182 security responses, exactly one parse per request, and
+175 responses belonging to that subset. Its remaining seven rows are exactly
+the question-skip request crossed with the seven malformed/unowned target
+shapes. Both matrices retain their complete account-state no-mutation oracle.
+
+### Final verification
+
+- Complete `tests/e2e/multiple-learners.spec.ts`: 33/33 passed.
+- `npm test`: 1,323/1,323 passed across 115 suites, 0 failed or skipped.
+- `npm run test:browser`: 458/458 passed in 1.8 minutes.
+- `npm run lint`: exit 0 with no errors and the same two generated
+  `worker-configuration.d.ts` unused-disable warnings.
+- `npm run build`: TypeScript and Vite succeeded; 1,914 modules transformed.
+  The existing chunk-size advisory remains.
+- `git diff --check`, staged diff check, and `git show --check HEAD`: exit 0.
+
+### Changed files and self-review
+
+- `tests/e2e/multiple-learners.spec.ts` — split the central security table from
+  its mutation-capable subset, restored skip to both security matrices, and
+  locked the exact 52/50 and 182/175 row boundaries with skip-specific labels.
+- `.superpowers/sdd/2026-08-26-guardian-information-architecture/task-9-report.md`
+  — round-5 root cause, RED/GREEN evidence, verification, and self-review.
+
+Confirmed the final `src/testing/e2e-browser-mocks.ts` is unchanged from the
+round-4 base and still classifies question skip centrally before authorization,
+parses the explicit target only after authorization, and applies current-key
+then required-question semantics only for a valid owned target. No Worker,
+questionnaire, dependency, arbitrary sleep, destructive action, source/class
+assertion, or unrelated user file changed. The two untracked user-owned
+plan/spec files under `docs/superpowers/` remain untouched and uncommitted.
+
+### Review-round concerns
+
+None. The 26-row security surface and 25-row mutation-capable subset now make
+their distinct guarantees explicit without manufacturing a successful deployed
+question skip.

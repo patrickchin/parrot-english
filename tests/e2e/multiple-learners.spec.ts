@@ -24,6 +24,7 @@ type TargetedRequestCase = {
   };
   headers?: Record<string, string>;
   method: "DELETE" | "GET" | "POST" | "PUT";
+  mutationCapable?: false;
   name: string;
   path: string;
 };
@@ -38,7 +39,7 @@ const targetedLessonBody = JSON.stringify({
   source: "uploaded",
 });
 
-const targetedAuthorizationCases: TargetedRequestCase[] = [
+const targetedSecurityCases: TargetedRequestCase[] = [
   { method: "GET", name: "learner-profile alias", path: "/api/learner-profile" },
   {
     body: JSON.stringify({ questionKey: "name", rawAnswer: "Target changed" }),
@@ -46,6 +47,14 @@ const targetedAuthorizationCases: TargetedRequestCase[] = [
     method: "PUT",
     name: "learner-profile answer",
     path: "/api/learner-profile/answer",
+  },
+  {
+    body: JSON.stringify({ questionKey: "favoriteAnimals" }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+    mutationCapable: false,
+    name: "learner-profile question skip",
+    path: "/api/learner-profile/question/skip",
   },
   {
     method: "POST",
@@ -204,6 +213,10 @@ const targetedAuthorizationCases: TargetedRequestCase[] = [
     path: "/api/stories/the-red-ball/personalized-art",
   },
 ];
+
+const targetedMutationCases = targetedSecurityCases.filter(
+  ({ mutationCapable }) => mutationCapable !== false,
+);
 
 type LearnerScenario =
   | "create-error"
@@ -393,7 +406,8 @@ async function exerciseTargetedRequests(
   queries: TargetedQueryCase[],
 ) {
   return page.evaluate(
-    async ({ requests, targetQueries }) => {
+    async ({ mutationCaseNames, requests, targetQueries }) => {
+      const mutationCases = new Set(mutationCaseNames);
       const initFor = (requestCase: TargetedRequestCase): RequestInit => {
         let body: BodyInit | undefined;
         if (requestCase.formData) {
@@ -449,6 +463,7 @@ async function exerciseTargetedRequests(
         contentType: string | null;
         method: TargetedRequestCase["method"];
         mockApi: string | null;
+        mutationCapable: boolean;
         name: string;
         status: number;
       }>;
@@ -466,6 +481,7 @@ async function exerciseTargetedRequests(
                 contentType: response.headers.get("Content-Type"),
                 method: requestCase.method,
                 mockApi: response.headers.get("X-Parrot-Mock-Api"),
+                mutationCapable: mutationCases.has(requestCase.name),
                 name: `${requestCase.name} / ${query.name}`,
                 status: response.status,
               };
@@ -477,7 +493,11 @@ async function exerciseTargetedRequests(
       }
       return { parseCalls, responses };
     },
-    { requests: targetedAuthorizationCases, targetQueries: queries },
+    {
+      mutationCaseNames: targetedMutationCases.map(({ name }) => name),
+      requests: targetedSecurityCases,
+      targetQueries: queries,
+    },
   );
 }
 
@@ -2336,7 +2356,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     .toBe("learner-mia");
 });
 
-test("locked targeted authorization matrix handles all 50 requests before parsing or resolution", async ({
+test("locked 26-row targeted security matrix handles all 52 requests before parsing or resolution", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
@@ -2359,7 +2379,19 @@ test("locked targeted authorization matrix handles all 50 requests before parsin
   await setGuardianAccess(page, "guardian");
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(50);
+  expect(result.responses).toHaveLength(52);
+  expect(
+    result.responses.filter(({ mutationCapable }) => mutationCapable),
+    "25-row mutation-capable subset across two locked target shapes",
+  ).toHaveLength(50);
+  expect(
+    result.responses
+      .filter(({ mutationCapable }) => !mutationCapable)
+      .map(({ name }) => name),
+  ).toEqual([
+    "learner-profile question skip / duplicate",
+    "learner-profile question skip / foreign",
+  ]);
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "guardian_required" });
     expect(response.cacheControl, response.name).toBe("no-store");
@@ -2489,7 +2521,7 @@ test("question skip rejects a non-current question without changing either learn
   expect(await readTargetedAccountState(page)).toEqual(before);
 });
 
-test("unlocked malformed targets in the 25-row matrix resolve once without state changes", async ({
+test("unlocked malformed targets in the 26-row security matrix resolve all 182 combinations once to generic 404", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian", "multiple"));
@@ -2514,7 +2546,20 @@ test("unlocked malformed targets in the 25-row matrix resolve once without state
   const result = await exerciseTargetedRequests(page, invalidQueries);
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(175);
+  expect(result.responses).toHaveLength(182);
+  expect(
+    result.responses.filter(({ mutationCapable }) => mutationCapable),
+    "25-row mutation-capable subset across seven invalid target shapes",
+  ).toHaveLength(175);
+  expect(
+    result.responses
+      .filter(({ mutationCapable }) => !mutationCapable)
+      .map(({ name }) => name),
+  ).toEqual(
+    invalidQueries.map(
+      ({ name }) => `learner-profile question skip / ${name}`,
+    ),
+  );
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "not_found" });
     expect(response.cacheControl, response.name).toBe("no-store");
