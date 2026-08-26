@@ -30,6 +30,7 @@ const vite = await createServer({
 const { DuckScene } = await vite.ssrLoadModule("/src/dubbing/DuckScene.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
+const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
 const {
   DuckDub,
   DubEntry,
@@ -141,6 +142,7 @@ function renderSceneEditor(viewProps = {}) {
     onToggleScenePlayback() {},
     operation: "idle",
     pendingTake: null,
+    recordingStream: null,
     recordingElapsedMs: 0,
     locked: false,
     saveRecovery: null,
@@ -151,6 +153,60 @@ function renderSceneEditor(viewProps = {}) {
 }
 
 describe("duck dubbing storyboard presentation", () => {
+  it("keeps optional waveform setup failures from interrupting recording", async () => {
+    globalThis.AudioContext = class AudioContext {
+      constructor() {
+        throw new Error("Audio graph unavailable.");
+      }
+    };
+
+    const container = await mountStrict(createElement(DubTakeWaveform, {
+      blob: null,
+      guideAudioId: "five-little-ducks-v2-guide-line-1",
+      recordingElapsedMs: 500,
+      recordingStream: { getTracks: () => [] },
+    }));
+
+    await waitFor(() => assert.ok(
+      container.querySelector('[aria-label="Original audio waveform"]'),
+    ));
+  });
+
+  it("samples a broad live window and treats analyser read failures as optional", async () => {
+    const analysers = [];
+    globalThis.AudioContext = class AudioContext {
+      close() { return Promise.resolve(); }
+      createAnalyser() {
+        const analyser = {
+          fftSize: 256,
+          getFloatTimeDomainData() {
+            throw new Error("Microphone graph ended.");
+          },
+          smoothingTimeConstant: 0,
+        };
+        analysers.push(analyser);
+        return analyser;
+      }
+      createMediaStreamSource() {
+        return { connect() {}, disconnect() {} };
+      }
+      resume() { return Promise.resolve(); }
+    };
+
+    const container = await mountStrict(createElement(DubTakeWaveform, {
+      blob: null,
+      guideAudioId: "five-little-ducks-v2-guide-line-1",
+      recordingElapsedMs: 500,
+      recordingStream: { getTracks: () => [] },
+    }));
+
+    await waitFor(() => assert.ok(
+      container.querySelector('[aria-label="Your live recording waveform"]'),
+    ));
+    assert.ok(analysers.length > 0);
+    assert.ok(analysers.every(({ fftSize }) => fftSize === 16_384));
+  });
+
   it("uses painted raster artwork with an adjacent scene description", () => {
     const html = renderToStaticMarkup(
       createElement(DuckScene, { line: DUB_LINES[2], playing: true }),
@@ -501,7 +557,7 @@ describe("duck dubbing storyboard presentation", () => {
     }
   });
 
-  it("uses visible shapes as well as color for scene and line status", () => {
+  it("uses visible shapes as well as color for scene status", () => {
     const project = renderProjectHome({
       needsRetake: new Set(["line-5"]),
       saved: {
@@ -513,60 +569,57 @@ describe("duck dubbing storyboard presentation", () => {
         "line-12": "saved",
       },
     });
-    const editor = renderSceneEditor({
-      needsRetake: new Set(["line-3"]),
-      saved: { "line-1": "saved" },
-    });
-
     assert.match(project, /aria-label="Scene 1, 1 \/ 4"[\s\S]*?data-status-icon="in-progress"[^>]*>◐<\/span>/);
     assert.match(project, /aria-label="Scene 2, Needs retake"[\s\S]*?data-status-icon="needs-retake"[^>]*>!<\/span>/);
     assert.match(project, /aria-label="Scene 3, Done"[\s\S]*?data-status-icon="done"[^>]*>✓<\/span>/);
     assert.match(project, /aria-label="Scene 4, Not started"[\s\S]*?data-status-icon="not-started"[^>]*>○<\/span>/);
-    assert.match(editor, /aria-label="Line 1, selected, recorded"[\s\S]*?data-status-icon="recorded"[^>]*>✓<\/span>/);
-    assert.match(editor, /aria-label="Line 2, generated"[\s\S]*?data-status-icon="generated"[^>]*>○<\/span>/);
-    assert.match(editor, /aria-label="Line 3, needs retake"[\s\S]*?data-status-icon="needs-retake"[^>]*>!<\/span>/);
   });
 
-  it("renders the focused scene editor with explicit line states", () => {
-    const html = renderSceneEditor({
-      needsRetake: new Set(["line-3"]),
-      saved: { "line-1": "saved" },
-    });
+  it("renders one Choicer-style line flow without competing editor controls", () => {
+    const html = renderSceneEditor();
     assert.match(html, /aria-label="Back to full video"/);
-    assert.match(html, /aria-label="Play scene"/);
-    assert.match(html, /aria-current="page"[^>]*>Scene 1 of 6/);
-    assert.match(html, /<h1[^>]*>Five little ducks<\/h1>/);
-    assert.match(html, /aria-current="true"[^>]*aria-label="Line 1, selected, recorded"/);
-    assert.match(html, /aria-label="Line 2, generated"/);
-    assert.match(html, /aria-label="Line 3, needs retake"/);
-    assert.doesNotMatch(html, />Choose a line<|>Selected · Recorded<|>Generated<|>Needs retake</);
-    assert.doesNotMatch(html, /<details|<summary|aria-label="Listen"/);
-    assert.match(html, /Hear example/);
+    assert.match(html, /aria-current="step"[^>]*>Line 1 of 4/);
+    assert.match(html, /<h1[^>]*>Five little ducks went out one day\.<\/h1>/);
+    assert.match(html, /aria-label="Original audio waveform"/);
+    assert.match(html, /Hear line/);
     assert.match(html, /aria-label="Record line"/);
     assert.match(html, /aria-label="Next line"/);
-    assert.ok(html.indexOf("Hear example") < html.indexOf('aria-label="Record line"'));
+    assert.ok(html.indexOf("Hear line") < html.indexOf('aria-label="Record line"'));
     assert.ok(html.indexOf('aria-label="Record line"') < html.indexOf('aria-label="Next line"'));
+    assert.doesNotMatch(html, /Scene line selectors|Play scene|Scene recording progress|0 \/ 4|Five little ducks<\/h1>/);
+    assert.doesNotMatch(html, /<details|<summary|aria-label="Listen"/);
   });
 
-  it("uses playback progress only for the scene visual, not selection or prompt", () => {
+  it("keeps the selected line synchronized with its visual and prompt", () => {
     const html = renderSceneEditor({
       activeLine: DUB_LINES[1],
-      visualLine: DUB_LINES[3],
     });
-    assert.match(html, /aria-current="true"[^>]*aria-label="Line 2, selected, generated"/);
-    assert.match(html, /<h2[^>]*>Over the hill and far away\.<\/h2>/);
-    assert.match(html, /The ducklings come back to the pond\./);
-    assert.doesNotMatch(html, /aria-current="true"[^>]*aria-label="Line 4, selected/);
+    assert.match(html, /aria-current="step"[^>]*>Line 2 of 4/);
+    assert.match(html, /<h1[^>]*>Over the hill and far away\.<\/h1>/);
+    assert.match(html, /The flock travels over a green hill\./);
+  });
+
+  it("keeps recording available when a guide waveform asset is missing", () => {
+    const html = renderSceneEditor({
+      activeLine: { ...DUB_LINES[0], text: "A newly authored duck line." },
+    });
+
+    assert.match(html, /A newly authored duck line\./);
+    assert.match(html, /aria-label="Original audio waveform"/);
+    assert.match(html, /aria-label="Record line"/);
   });
 
   it("turns the fixed record action into an immediate stop action with elapsed time", () => {
     const html = renderSceneEditor({
       operation: "recording",
+      recordingStream: { getTracks: () => [] },
       recordingElapsedMs: 2_100,
     });
     assert.match(html, /aria-label="Stop recording"/);
     assert.match(html, /role="timer"[\s\S]*?Recording[\s\S]*?0:02 \/ 0:06/);
     assert.match(html, /<div(?=[^>]*aria-label="Recording time")(?=[^>]*aria-valuemax="6000")(?=[^>]*aria-valuenow="2100")(?=[^>]*role="progressbar")[^>]*>/);
+    assert.match(html, /aria-label="Original audio waveform"/);
+    assert.match(html, /aria-label="Your live recording waveform"/);
     assert.match(html, /aria-label="Next line"/);
     assert.doesNotMatch(html, /countdown|Get ready/i);
   });
@@ -594,7 +647,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, />Saved ✓</);
     assert.match(html, />Save again</);
     assert.match(html, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
-    assert.match(html, /aria-label="Line 2, generated"[^>]*disabled/);
+    assert.match(html, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /role="alert"/);
   });
 
@@ -604,19 +657,15 @@ describe("duck dubbing storyboard presentation", () => {
       pendingTake: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
       saveRecovery: "save",
     });
-    assert.match(html, /<button[^>]*disabled[^>]*>[^<]*<svg[^>]*>.*Hear example<\/button>/s);
+    assert.match(html, /<button[^>]*disabled[^>]*>[^<]*<svg[^>]*>.*Hear line<\/button>/s);
     assert.match(html, /<button(?=[^>]*aria-label="Hear my voice")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /<button[^>]*disabled[^>]*>Save again<\/button>/);
   });
 
-  it("exposes accurate loading names", () => {
+  it("exposes an accurate full-video loading name", () => {
     const projectLoading = renderProjectHome({ playback: "loading" });
     assert.match(projectLoading, /aria-label="Loading full video…"[^>]*disabled/);
     assert.doesNotMatch(projectLoading, /aria-label="Play full video"/);
-
-    const sceneLoading = renderSceneEditor({ operation: "playback-loading" });
-    assert.match(sceneLoading, /aria-label="Loading scene…"[^>]*disabled/);
-    assert.doesNotMatch(sceneLoading, /aria-label="Play scene"/);
   });
 
   it("keeps load recovery learner-safe", () => {
@@ -655,9 +704,8 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, /Your recording waveform|Save again/);
   });
 
-  it("names playing full, scene, and local-take controls as stop actions", () => {
+  it("names playing full and local-take controls as stop actions", () => {
     assert.match(renderProjectHome({ playback: "playing" }), /aria-label="Stop full video"/);
-    assert.match(renderSceneEditor({ operation: "playback" }), /aria-label="Stop scene"/);
     assert.match(renderSceneEditor({
       operation: "take-playing",
       pendingTake: new Blob([new Uint8Array([1])], { type: "audio/webm" }),

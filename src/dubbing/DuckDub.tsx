@@ -187,7 +187,6 @@ export function DuckDub() {
   const pendingLineIdRef = useRef<string | null>(null);
   const takePreviewRef = useRef<TakePreview | null>(null);
   const fullPlaybackButtonRef = useRef<HTMLButtonElement>(null);
-  const sceneHeadingRef = useRef<HTMLHeadingElement>(null);
   const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
   const lineHeadingRef = useRef<HTMLHeadingElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
@@ -554,14 +553,14 @@ export function DuckDub() {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
     dispatch({ type: "CONTINUE" });
-    focusAfterRender(sceneHeadingRef, generation);
+    focusAfterRender(lineHeadingRef, generation);
   }
 
   function handleOpenScene(sceneIndex: number) {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
     dispatch({ type: "OPEN_SCENE", sceneIndex });
-    focusAfterRender(sceneHeadingRef, generation);
+    focusAfterRender(lineHeadingRef, generation);
   }
 
   function handleSelectLine(lineId: string) {
@@ -694,30 +693,23 @@ export function DuckDub() {
     content = (
       <DubSceneEditor
         activeLine={selectedLine}
-        activeSceneIndex={state.selectedSceneIndex}
         error={state.error}
         locked={locked}
-        needsRetake={new Set(Object.keys(state.needsRetake))}
         onBack={handleBack}
         onHearGuide={handleHearGuide}
         onHearTake={handleHearTake}
         onNext={handleNext}
         onRecord={handleRecord}
         onRetrySave={handleRetrySave}
-        onSelectLine={handleSelectLine}
-        onToggleScenePlayback={() => void startPlayback("scene")}
         operation={state.operation}
         pendingTake={takePreview?.blob ?? null}
         recordingElapsedMs={recordingElapsedMs}
+        recordingStream={recordingSessionRef.current?.stream ?? null}
         nextButtonRef={nextButtonRef}
-        playbackButtonRef={scenePlaybackButtonRef}
         recordButtonRef={recordButtonRef}
         saveButtonRef={saveButtonRef}
         saveRecovery={state.saveRecovery}
-        sceneHeadingRef={sceneHeadingRef}
-        saved={state.saved}
         lineHeadingRef={lineHeadingRef}
-        visualLine={visualLine}
       />
     );
   }
