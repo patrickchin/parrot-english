@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -320,6 +321,7 @@ export function GuardianLearnerProfiles() {
   const [statusMessage, setStatusMessage] = useState("");
   const activeHeadingRef = useRef<HTMLHeadingElement>(null);
   const controllerRef = useRef<AbortController | null>(null);
+  const focusActiveHeadingRef = useRef(false);
   const mountedRef = useRef(false);
   const operationRef = useRef(0);
   const restoreFocusRef = useRef<HTMLElement | null>(null);
@@ -388,6 +390,12 @@ export function GuardianLearnerProfiles() {
     }
   }, [contextActiveProfileId]);
 
+  useLayoutEffect(() => {
+    if (!focusActiveHeadingRef.current) return;
+    focusActiveHeadingRef.current = false;
+    activeHeadingRef.current?.focus();
+  }, [activeProfileId, statusMessage]);
+
   useEffect(() => {
     if (
       !contextActiveProfileId ||
@@ -445,9 +453,9 @@ export function GuardianLearnerProfiles() {
       const result = await selectLearner(profile.id);
       if (!operation.isCurrent()) return;
       const selectedProfile = requireActiveRosterProfile(result, profile.id);
+      focusActiveHeadingRef.current = true;
       applyRoster(result);
       setStatusMessage(`Now managing ${selectedProfile.name}`);
-      requestAnimationFrame(() => activeHeadingRef.current?.focus());
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
       const message = errorMessage(

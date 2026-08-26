@@ -95,7 +95,7 @@ for (const viewport of viewports) {
     await waitForVisualAssets(page);
 
     const account = page.getByRole("button", {
-      name: "Profile for Mia, guardian mode",
+      name: "Profile for Alex Guardian, guardian mode",
     });
     const heading = page.getByRole("heading", { name: "Guardian dashboard" });
     const status = page
@@ -112,7 +112,7 @@ for (const viewport of viewports) {
 
     const pendingAccount = page.getByRole("button", {
       exact: true,
-      name: "Signing out… Profile for Mia, guardian mode",
+      name: "Signing out… Profile for Alex Guardian, guardian mode",
     });
     await expect(pendingAccount).toBeFocused();
     await expect(pendingAccount).toHaveAttribute("aria-disabled", "true");
@@ -241,7 +241,7 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   await waitForVisualAssets(page);
 
   const account = page.getByRole("button", {
-    name: "Profile for Mia, guardian mode",
+    name: "Profile for Alex Guardian, guardian mode",
   });
   await account.focus();
   await account.press("ArrowDown");
@@ -252,7 +252,7 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   const status = page.getByRole("status").filter({ hasText: "Signing out…" });
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Profile for Mia, guardian mode",
+    name: "Signing out… Profile for Alex Guardian, guardian mode",
   });
   await expect(status).toBeVisible();
   await expect(pendingAccount).toBeFocused();
@@ -337,7 +337,7 @@ test("route heading focus does not override a faster account interaction", async
     .toBeGreaterThan(0);
 
   const account = page.getByRole("button", {
-    name: "Profile for Mia, guardian mode",
+    name: "Profile for Alex Guardian, guardian mode",
   });
   await account.focus();
   await expect(account).toBeFocused();
@@ -377,7 +377,7 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
     management.boundingBox(),
   ]);
   const account = page.getByRole("button", {
-    name: "Profile for Mia, guardian mode",
+    name: "Profile for Alex Guardian, guardian mode",
   });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -385,7 +385,7 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
   const pending = page.getByRole("status").filter({ hasText: "Signing out…" });
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Profile for Mia, guardian mode",
+    name: "Signing out… Profile for Alex Guardian, guardian mode",
   });
   await expect(pending).toBeVisible();
   await expect(pendingAccount).toBeFocused();
@@ -433,7 +433,7 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
 
   const heading = page.getByRole("heading", { name: "Guardian dashboard" });
   const account = page.getByRole("button", {
-    name: "Profile for Mia, guardian mode",
+    name: "Profile for Alex Guardian, guardian mode",
   });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();

@@ -670,49 +670,44 @@ test("an incomplete learner returns to the requested duck dub after profile setu
   ).toHaveCount(0);
 });
 
-test("guardian learner details has a clear dashboard exit and distinguishes setup from chat", async ({
+test("guardian learner details has one clear manager exit without a duplicate setup action", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 568, width: 320 });
-  await page.goto(guardianPath("/guardian/profile?returnTo=%2Fguardian"));
+  await page.goto(guardianPath("/guardian/learners/e2e-learner"));
 
   await expect(
     page.getByRole("heading", { name: "Learner details" }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Redo setup questions" }),
-  ).toBeVisible();
-  await expect(page.getByText(/normal chat/i)).toBeVisible();
-  await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian");
+  ).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Guardian dashboard" }),
+    page.getByRole("region", { name: "Lesson voice recordings" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(page).toHaveURL("/guardian/learners");
+  await expect(
+    page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
 });
 
-test("guardian learner details returns to the manager that opened it", async ({
+test("guardian learner details opens from and returns to Manage learners", async ({
   page,
 }) => {
   await page.goto(guardianPath("/guardian/lessons"));
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
-  await page.getByRole("menuitem", { name: "Manage Mia's details" }).click();
-
-  await expect(page).toHaveURL(
-    "/guardian/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
-  );
+  await page.getByRole("menuitem", { name: "Manage learners" }).click();
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { exact: true, name: "Edit Mia's profile" })
     .click();
-  await page.getByRole("menuitem", { name: "Manage Mia's details" }).click();
-  await expect(page).toHaveURL(
-    "/guardian/profile?returnTo=%2Fguardian%2Flessons%3FparrotE2eGuardian%3Dguardian",
-  );
+  await expect(page).toHaveURL("/guardian/learners/e2e-learner");
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL(guardianPath("/guardian/lessons"));
+  await expect(page).toHaveURL("/guardian/learners");
   await expect(
-    page.getByRole("heading", { exact: true, name: "My Lessons" }),
+    page.getByRole("heading", { exact: true, name: "Manage learners" }),
   ).toBeVisible();
 });
 
@@ -744,21 +739,15 @@ test("account menu separates account navigation from sign-out", async ({
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
-  await expect(
-    menu.getByRole("menuitem", { name: "Manage learners" }),
-  ).toBeVisible();
-  await expect(
-    menu.getByRole("menuitem", { name: "Account & privacy" }),
-  ).toBeVisible();
-  await expect(
-    menu.getByRole("menuitem", {
-      name: /Manage Mia's details|Delete account/,
-    }),
-  ).toHaveCount(0);
-  await expect(menu.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Guardian dashboard",
+    "Manage learners",
+    "Account & privacy",
+    "Sign out",
+  ]);
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
 
   await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian/);
@@ -797,7 +786,7 @@ test("account deletion requires the password and returns to sign in only after p
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
   await expect(page).toHaveURL("/guardian/account");

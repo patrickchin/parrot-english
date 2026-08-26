@@ -158,6 +158,7 @@ const E2E_LEARNER_SCENARIOS = new Set([
   "select-error",
   "create-error",
   "stale-selection",
+  "zero-learners",
 ]);
 const E2E_LEARNER_SCENARIO_KEY = "parrot-e2e-learners:active-scenario";
 const E2E_LEARNER_SESSION_KEY = "parrot-e2e-learners:active-session";
@@ -350,7 +351,56 @@ type MockLearnerScenario =
   | "multiple"
   | "select-error"
   | "selection-required"
-  | "stale-selection";
+  | "stale-selection"
+  | "zero-learners";
+
+type ExplicitLearnerTarget =
+  | { present: false; profileId: null }
+  | { present: true; profileId: string | null };
+
+const LEARNER_PROFILE_TARGET_QUERY_KEY = "learnerProfileId";
+const MAX_LEARNER_PROFILE_ID_BYTES = 128;
+
+function isTargetableLearnerPath(pathname: string) {
+  return (
+    pathname === "/api/learner-profile" ||
+    pathname.startsWith("/api/learner-profile/") ||
+    pathname === "/api/profile" ||
+    pathname === "/api/profile/preferences" ||
+    pathname === "/api/profile/lesson-recording-consent" ||
+    pathname === "/api/lesson-recordings" ||
+    pathname.startsWith("/api/lesson-recordings/") ||
+    pathname === "/api/lessons/my" ||
+    pathname.startsWith("/api/lessons/my/") ||
+    pathname === "/api/dubs" ||
+    pathname.startsWith("/api/dubs/") ||
+    /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
+  );
+}
+
+function explicitLearnerTarget(url: URL): ExplicitLearnerTarget {
+  if (
+    !isTargetableLearnerPath(url.pathname) ||
+    !url.searchParams.has(LEARNER_PROFILE_TARGET_QUERY_KEY)
+  ) {
+    return { present: false, profileId: null };
+  }
+  const values = url.searchParams.getAll(LEARNER_PROFILE_TARGET_QUERY_KEY);
+  if (values.length !== 1) return { present: true, profileId: null };
+  const profileId = values[0]!;
+  if (
+    profileId.trim() === "" ||
+    new TextEncoder().encode(profileId).byteLength >
+      MAX_LEARNER_PROFILE_ID_BYTES
+  ) {
+    return { present: true, profileId: null };
+  }
+  return { present: true, profileId };
+}
+
+function targetedLearnerNotFound() {
+  return e2eJson({ error: "not_found" }, 404);
+}
 
 type MockLearnerProfile = {
   age: number | null;
@@ -539,6 +589,9 @@ function createMockLearner(
 function initialMockAccountState(
   scenario: MockLearnerScenario,
 ): MockAccountState {
+  if (scenario === "zero-learners") {
+    return { activeProfileId: null, learners: new Map() };
+  }
   const learners = new Map<string, MockLearnerState>([
     [
       "learner-mia",
@@ -685,6 +738,15 @@ function createE2eLearnerAccount(
     );
   }
 
+  function requestLearner(url: URL): MockLearnerState | Response {
+    const target = explicitLearnerTarget(url);
+    if (target.present) {
+      if (target.profileId === null) return targetedLearnerNotFound();
+      return state.learners.get(target.profileId) ?? targetedLearnerNotFound();
+    }
+    return selectedLearner() ?? selectionRequired();
+  }
+
   function fullProfileState(learner: MockLearnerState) {
     const answered = Object.keys(learner.profile.answers.responses).length;
     const question = learner.profile.currentQuestionKey
@@ -779,11 +841,9 @@ function createE2eLearnerAccount(
 
   async function handleDub(url: URL, method: string, request: Request) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
-    const targetedProfileId = url.searchParams.get("learnerProfileId");
-    const learner = targetedProfileId
-      ? (state.learners.get(targetedProfileId) ?? null)
-      : selectedLearner();
-    if (!learner) return selectionRequired();
+    const resolvedLearner = requestLearner(url);
+    if (resolvedLearner instanceof Response) return resolvedLearner;
+    const learner = resolvedLearner;
 
     if (url.pathname === `${E2E_DUB_API}/consent`) {
       if (method !== "PUT")
@@ -845,11 +905,10 @@ function createE2eLearnerAccount(
       /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
     );
     if (!match) return null;
-    const targetedProfileId = url.searchParams.get("learnerProfileId");
-    const learner = targetedProfileId
-      ? (state.learners.get(targetedProfileId) ?? null)
-      : selectedLearner();
-    if (!learner) return selectionRequired();
+    const target = explicitLearnerTarget(url);
+    const resolvedLearner = requestLearner(url);
+    if (resolvedLearner instanceof Response) return resolvedLearner;
+    const learner = resolvedLearner;
     const storyId = decodeURIComponent(match[1]!);
     const art = learner.art.get(storyId) ?? {
       hasStoredArt: false,
@@ -876,8 +935,8 @@ function createE2eLearnerAccount(
                     src: `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset?${new URLSearchParams(
                       {
                         v: "1786276800000",
-                        ...(targetedProfileId
-                          ? { learnerProfileId: targetedProfileId }
+                        ...(target.present && target.profileId
+                          ? { learnerProfileId: target.profileId }
                           : {}),
                       },
                     )}`,
@@ -922,7 +981,7 @@ function createE2eLearnerAccount(
       isEnabled: () =>
         learner.lessonRecording.consent &&
         !learner.lessonRecording.cleanupPending,
-      learnerProfileId: () => state.activeProfileId,
+      learnerProfileId: () => learner.profile.id,
       pendingUploads,
       persist,
       uploads: learner.lessonRecording.uploads,
@@ -943,11 +1002,9 @@ function createE2eLearnerAccount(
       url.pathname === "/api/profile/lesson-recording-consent";
     if (!isLessonRecordingPath && !isProfileConsentPath) return null;
 
-    const targetedProfileId = url.searchParams.get("learnerProfileId");
-    const learner = targetedProfileId
-      ? (state.learners.get(targetedProfileId) ?? null)
-      : selectedLearner();
-    if (!learner) return selectionRequired();
+    const resolvedLearner = requestLearner(url);
+    if (resolvedLearner instanceof Response) return resolvedLearner;
+    const learner = resolvedLearner;
     if (isProfileConsentPath) {
       if (method !== "PUT") {
         return e2eJson({ error: "method_not_allowed" }, 405);
@@ -1044,7 +1101,6 @@ function createE2eLearnerAccount(
           false,
         );
         state.learners.set(id, learner);
-        if (body.activate !== false) state.activeProfileId = id;
         persist();
         return e2eJson(roster());
       }
@@ -1081,17 +1137,18 @@ function createE2eLearnerAccount(
       return response;
     }
 
-    const targetedProfileId = url.searchParams.get("learnerProfileId");
-    const learner = targetedProfileId
-      ? (state.learners.get(targetedProfileId) ?? null)
-      : selectedLearner();
+    const resolvedLearner = requestLearner(url);
+    const learner =
+      resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
       url.pathname === "/api/profile" ||
       url.pathname === "/api/profile/preferences" ||
       url.pathname.startsWith("/api/lessons/my") ||
       url.pathname.startsWith("/api/conversations");
-    if (learnerOwnedPath && !learner) return selectionRequired();
+    if (learnerOwnedPath && resolvedLearner instanceof Response) {
+      return resolvedLearner;
+    }
     if (!learner) return null;
 
     if (url.pathname === "/api/learner-profile" && method === "GET") {
@@ -1988,6 +2045,7 @@ function currentGuardianAccess() {
 }
 
 function requiresGuardianAccess(url: URL, method: string) {
+  if (explicitLearnerTarget(url).present) return true;
   if (url.pathname === "/api/learner-profiles") {
     return method === "GET" || method === "POST";
   }
@@ -2000,6 +2058,12 @@ function requiresGuardianAccess(url: URL, method: string) {
   if (url.pathname === "/api/profile/preferences") return method === "PUT";
   if (url.pathname === "/api/profile/lesson-recording-consent") {
     return method === "PUT";
+  }
+  if (/^\/api\/dubs\/[^/]+\/consent$/.test(url.pathname)) {
+    return method === "PUT";
+  }
+  if (/^\/api\/dubs\/[^/]+$/.test(url.pathname)) {
+    return method === "DELETE";
   }
   if (url.pathname === "/api/lessons/my") return method === "POST";
   if (url.pathname === "/api/lessons/my/generate") return method === "POST";
@@ -2434,12 +2498,22 @@ function installE2eProfileFetchMock() {
           : input.url;
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
-    const fallbackTarget = url.searchParams.get("learnerProfileId");
+    const target = explicitLearnerTarget(url);
+    const fallbackTarget = target.profileId;
     if (
       getE2eLessonScenario() &&
       url.pathname === "/api/evaluate-speech"
     ) {
       lessonMediaMetrics.evaluateRequests += 1;
+    }
+    const guardedResponse = await guardianResponse(input, init, url, method);
+    if (guardedResponse) return guardedResponse;
+    if (
+      !learnerAccount &&
+      target.present &&
+      target.profileId !== E2E_VIEWPORT_EDITOR_STATE.profile.id
+    ) {
+      return targetedLearnerNotFound();
     }
     if (!learnerAccount) {
       const recordingResponse = await lessonRecordingResponse(
@@ -2458,8 +2532,6 @@ function installE2eProfileFetchMock() {
       );
       if (dubResponse) return dubResponse;
     }
-    const guardedResponse = await guardianResponse(input, init, url, method);
-    if (guardedResponse) return guardedResponse;
     if (learnerAccount) {
       const learnerResponse = await learnerAccount.handle(input, init);
       if (learnerResponse) return learnerResponse;
@@ -2537,7 +2609,7 @@ function installE2eProfileFetchMock() {
         profileScenario === E2E_PROFILE_RESUME_SCENARIO
           ? E2E_VIEWPORT_RESUMED_PROFILE
           : profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO
-            ? window.location.pathname === "/guardian/profile"
+            ? window.location.pathname.startsWith("/guardian/learners/")
               ? E2E_VIEWPORT_EDITOR_GATE
               : E2E_VIEWPORT_INCOMPLETE_PROFILE
             : E2E_INCOMPLETE_PROFILE;

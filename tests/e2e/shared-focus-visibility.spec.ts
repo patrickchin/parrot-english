@@ -36,7 +36,7 @@ const focusScenarios: Array<{
     prepare: async (page) => {
       await page.goto(guardianPath("/guardian"));
       await page
-        .getByRole("button", { name: "Profile for Mia, guardian mode" })
+        .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
         .click();
       return page.getByRole("menuitem", { name: "Manage learners" });
     },
@@ -1443,7 +1443,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
     }),
   ).toBeFocused();
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
   await expect(
     page.getByRole("menuitem", { name: "Guardian dashboard" }),

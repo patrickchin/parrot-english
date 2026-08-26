@@ -150,6 +150,11 @@ function ArtHookProbe({ learnerProfileId, onArt }) {
     ),
     createElement(
       "output",
+      { "aria-label": "Art feature" },
+      art.featureEnabled ? "yes" : "no",
+    ),
+    createElement(
+      "output",
       { "aria-label": "Art consent" },
       art.consentChecked ? "yes" : "no",
     ),
@@ -452,6 +457,81 @@ test("a target switch clears old metadata and status before the next learner loa
     await learnerBLoad.promise;
   });
   await waitFor(() => assert.equal(output(container, "Artwork"), "learner B art"));
+});
+
+test("a target switch fences the old learner error and resets feature state for the next learner", async () => {
+  const oldGeneration = deferred();
+  const nextLearnerLoad = deferred();
+  let oldGenerationSignal;
+  globalThis.fetch = async (path, init = {}) => {
+    const learnerProfileId = new URL(path, "https://example.test").searchParams.get(
+      "learnerProfileId",
+    );
+    if (init.method === "GET") {
+      if (learnerProfileId === "learner-b") return nextLearnerLoad.promise;
+      return Response.json({
+        ...metadata("learner A art", 1, learnerProfileId ?? undefined),
+        enabled: false,
+      });
+    }
+    if (init.method === "POST") {
+      oldGenerationSignal = init.signal;
+      return oldGeneration.promise;
+    }
+    throw new Error(`Unexpected art request: ${init.method}`);
+  };
+  let art;
+  const container = await mountStrict(
+    createElement(TargetedArtHarness, {
+      onArt: (nextArt) => (art = nextArt),
+      onSwitch() {},
+    }),
+  );
+  await waitFor(() => assert.equal(output(container, "Artwork"), "learner A art"));
+  assert.equal(output(container, "Art feature"), "no");
+  await prepareGeneration(() => art);
+  await act(() => void art.generate());
+  await waitFor(() => assert.equal(output(container, "Art busy"), "yes"));
+
+  await click(
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent === "Use learner B",
+    ),
+  );
+  await waitFor(() => assert.equal(output(container, "Learner"), "learner-b"));
+  assert.equal(oldGenerationSignal.aborted, true);
+  assert.equal(output(container, "Artwork"), "none");
+  assert.equal(output(container, "Art error"), "none");
+  assert.equal(output(container, "Art status"), "none");
+  assert.equal(output(container, "Art busy"), "no");
+  assert.equal(output(container, "Art feature"), "yes");
+  assert.equal(output(container, "Art consent"), "no");
+  assert.equal(output(container, "Art photo"), "no");
+
+  await act(async () => {
+    oldGeneration.reject(new Error("old learner generation failed"));
+    await Promise.allSettled([oldGeneration.promise]);
+  });
+  await flush();
+  assert.equal(output(container, "Art error"), "none");
+  assert.equal(output(container, "Art feature"), "yes");
+
+  await act(async () => {
+    nextLearnerLoad.resolve(
+      Response.json(
+        { error: "unavailable", message: "Noah artwork is unavailable." },
+        { status: 503 },
+      ),
+    );
+    await nextLearnerLoad.promise;
+  });
+  await waitFor(() =>
+    assert.equal(output(container, "Art error"), "Noah artwork is unavailable."),
+  );
+  assert.equal(output(container, "Artwork"), "none");
+  assert.equal(output(container, "Art feature"), "yes");
+  assert.equal(output(container, "Art status"), "none");
+  assert.equal(output(container, "Art busy"), "no");
 });
 
 test("uses a hermetic Vite module-transform server", () => {

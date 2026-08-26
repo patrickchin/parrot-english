@@ -275,7 +275,7 @@ for (const viewport of [
         name: "Back to guardian dashboard",
       });
       const account = page.getByRole("button", {
-        name: /Profile for Mia, guardian mode/,
+        name: /Profile for Alex Guardian, guardian mode/,
       });
       const pageHeading = page.getByRole("heading", {
         exact: true,

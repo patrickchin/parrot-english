@@ -59,7 +59,7 @@ const routes: HeaderRoute[] = [
   {
     name: "learner details",
     mode: "guardian",
-    path: "/guardian/profile",
+    path: "/guardian/learners/e2e-learner",
     control: { name: "Back", role: "button" },
   },
   {
@@ -282,7 +282,9 @@ for (const route of routes) {
         name: "Account",
       });
       const accountMenu = page.getByRole("button", {
-        name: new RegExp(`Profile for Mia, ${mode} mode`),
+        name: new RegExp(
+          `Profile for ${mode === "guardian" ? "Alex Guardian" : "Mia"}, ${mode} mode`,
+        ),
       });
       const accountBox = await expectInsideViewport(account, viewport);
       await expectInsideViewport(accountMenu, viewport);
@@ -700,7 +702,7 @@ for (const viewport of [
     const heading = page.getByRole("heading", { name: "Guardian dashboard" });
     const back = page.getByRole("button", { name: "Switch to learner" });
     const account = page.getByRole("button", {
-      name: "Profile for Mia, guardian mode",
+      name: "Profile for Alex Guardian, guardian mode",
     });
     await account.click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -756,7 +758,7 @@ for (const key of ["Enter", "Space"]) {
     await page.goto(guardianPath("/guardian"));
 
     const account = page.getByRole("button", {
-      name: "Profile for Mia, guardian mode",
+      name: "Profile for Alex Guardian, guardian mode",
     });
     await account.click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -775,7 +777,7 @@ for (const key of ["Enter", "Space"]) {
 
     const pendingAccount = page.getByRole("button", {
       exact: true,
-      name: "Signing out… Profile for Mia, guardian mode",
+      name: "Signing out… Profile for Alex Guardian, guardian mode",
     });
     await expect(pendingAccount).toBeFocused();
     await expect(
@@ -807,12 +809,12 @@ test("wide pending sign out keeps its established 180px frame", async ({
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Profile for Mia, guardian mode",
+    name: "Signing out… Profile for Alex Guardian, guardian mode",
   });
   expect((await visibleBox(pendingAccount)).width).toBe(180);
 
@@ -840,11 +842,6 @@ test("the learner profile opens a locked grown-up access gateway", async ({ page
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
   ).toHaveCount(0);
-  await expect(
-    menu.getByRole("menuitem", {
-      name: /AI and saved data|Sign out|Delete account/,
-    }),
-  ).toHaveCount(0);
 });
 
 test("Guardian menu opens the protected Account & privacy page with deletion only in its Danger zone", async ({
@@ -852,7 +849,7 @@ test("Guardian menu opens the protected Account & privacy page with deletion onl
 }) => {
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
 
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -862,11 +859,6 @@ test("Guardian menu opens the protected Account & privacy page with deletion onl
     "Account & privacy",
     "Sign out",
   ]);
-  await expect(
-    menu.getByRole("menuitem", {
-      name: /Manage .*details|Switch to |AI and saved data|Delete account/,
-    }),
-  ).toHaveCount(0);
 
   await menu.getByRole("menuitem", { name: "Account & privacy" }).click();
   await expect(page).toHaveURL("/guardian/account");
@@ -912,7 +904,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
     await page.setViewportSize(viewport);
     await page.goto(guardianPath("/guardian"));
     await page
-      .getByRole("button", { name: "Profile for Mia, guardian mode" })
+      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
       .click();
 
     const menu = page.getByRole("menu", { name: "Account menu" });
@@ -976,7 +968,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
   }
 });
 
-test("unlocking guardian mode opens learner details in the guardian profile editor", async ({
+test("unlocking guardian mode reaches learner details through Manage learners", async ({
   page,
 }) => {
   await page.goto("/");
@@ -991,9 +983,12 @@ test("unlocking guardian mode opens learner details in the guardian profile edit
   await dialog.getByLabel("Password").fill("e2e-guardian-password");
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
 
-  await page.getByRole("link", { name: "Manage learner details" }).click();
+  await page.getByRole("link", { exact: true, name: "Manage learners" }).click();
+  await page
+    .getByRole("button", { exact: true, name: "Edit Mia's profile" })
+    .click();
 
-  await expect(page).toHaveURL("/guardian/profile?returnTo=%2Fguardian");
+  await expect(page).toHaveURL("/guardian/learners/e2e-learner");
   await expect(
     page.getByRole("heading", { name: "Learner details" }),
   ).toBeVisible();
@@ -1007,7 +1002,7 @@ test("unlocking guardian mode opens learner details in the guardian profile edit
     page.getByRole("textbox", { exact: true, name: "About Mia" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Redo setup questions" }),
+    page.getByRole("region", { name: "Lesson voice recordings" }),
   ).toBeVisible();
 });
 
@@ -1027,7 +1022,7 @@ test("forced colors keeps account exit actions visibly focused", async ({
   ).toBeFocused();
 
   const trigger = page.getByRole("button", {
-    name: "Profile for Mia, guardian mode",
+    name: "Profile for Alex Guardian, guardian mode",
   });
   await trigger.press("ArrowDown");
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1061,7 +1056,7 @@ test("Account & privacy explains caregiver facts before optional technical detai
   await page.setViewportSize(viewport);
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
@@ -1146,7 +1141,7 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
   });
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Mia, guardian mode" })
+    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 

@@ -33,6 +33,23 @@ for (const width of [280, 320, 390]) {
       )
       .toEqual({ documentOverflow: 0, left: 8, right: -8 });
 
+    if (width === 280) {
+      const visibleNames = ["Mia", ...longNames];
+      for (const name of visibleNames) {
+        await page.keyboard.press("Tab");
+        await expect(
+          selector.getByRole("button", { exact: true, name }),
+        ).toBeFocused();
+      }
+      await page.keyboard.press("Shift+Tab");
+      await expect(
+        selector.getByRole("button", { exact: true, name: longNames[0] }),
+      ).toBeFocused();
+      await expect(
+        selector.getByRole("button", { exact: true, name: "Mia" }),
+      ).toHaveAttribute("aria-pressed", "true");
+    }
+
     const noah = page.getByRole("button", { name: longNames[0] });
     await noah.focus();
     await page.keyboard.press("Enter");

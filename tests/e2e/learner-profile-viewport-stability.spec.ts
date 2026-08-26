@@ -716,7 +716,7 @@ for (const viewport of targetViewports) {
     await expectNoHorizontalOverflow(page);
   });
 
-  test(`profile Peppa art reserves its square geometry on a ${viewport.name}`, async ({
+  test(`profile art and direct learner details keep stable geometry on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
@@ -761,24 +761,22 @@ for (const viewport of targetViewports) {
     });
 
     await page.goto(
-      "/guardian/profile?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
+      "/guardian/learners/e2e-learner?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
     );
     const editorHeading = page.getByRole("heading", {
       name: "Learner details",
     });
-    const redoHeading = page.getByRole("heading", {
-      name: "Redo learner setup",
-    });
     await expect(editorHeading).toBeVisible();
-    await expectDelayedImageKeepsGeometry({
-      anchors: [
-        redoHeading,
-        page.getByRole("button", { name: "Redo setup questions" }),
-      ],
-      image: page.getByRole("img", { name: "Peppa smiling" }),
-      page,
-      token: `${viewport.width}-editor`,
+    await expectInsideViewport(editorHeading, viewport);
+    const recordings = page.getByRole("region", {
+      name: "Lesson voice recordings",
     });
+    await recordings.scrollIntoViewIfNeeded();
+    await expectInsideViewport(recordings, viewport);
+    await expect(
+      page.getByRole("button", { name: "Redo setup questions" }),
+    ).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
   });
 }
 
