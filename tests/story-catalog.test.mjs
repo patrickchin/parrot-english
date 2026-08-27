@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
@@ -190,20 +191,80 @@ describe("story script catalog", () => {
     }
   });
 
-  it("publishes two long read-alouds with 17 saved-narration pages", () => {
+  it("publishes two fully illustrated long read-alouds in short reading beats", () => {
     const longStories = STORIES.filter(
       ({ level }) => level === "long-stories",
     );
+    const expected = {
+      "the-gruffalo": {
+        pageCount: 23,
+        sceneCount: 12,
+        textHash:
+          "bf1663d2d5c89f3de41b47dbc91d53d98455a4ada04fc3a9144798442d84b035",
+      },
+      "we-re-going-on-a-bear-hunt": {
+        pageCount: 13,
+        sceneCount: 5,
+        textHash:
+          "c661e127071fbe49d34ef1ef415418c98f701ad2ea49c43b81ae643dccf89cd4",
+      },
+    };
 
     assert.equal(longStories.length, 2);
-    assert.equal(
-      longStories.reduce((total, story) => total + story.pages.length, 0),
-      17,
+    assert.deepEqual(
+      longStories.map(({ pages }) => pages.length),
+      [23, 13],
     );
     for (const story of longStories) {
-      for (const page of story.pages) {
-        assert.match(page.narrationAudioId, /^story-.+-narration$/);
+      const storyExpectation = expected[story.id];
+      const normalizedText = story.pages
+        .map(({ text }) => text)
+        .join(" ")
+        .replace(/\s+/gu, " ")
+        .trim();
+      const sceneSources = new Set(
+        story.pages.map(({ artwork }) => artwork.src),
+      );
+
+      assert.ok(storyExpectation, story.id);
+      assert.equal(story.pages.length, storyExpectation.pageCount);
+      assert.equal(sceneSources.size, storyExpectation.sceneCount);
+      assert.equal(
+        createHash("sha256").update(normalizedText).digest("hex"),
+        storyExpectation.textHash,
+        `${story.title} preserves its complete narration`,
+      );
+      assert.equal(
+        story.cover.src,
+        `https://media.parrotbook.com/assets/v5/stories/${story.id}-cover.webp`,
+      );
+      assert.ok(story.cover.alt.trim(), `${story.title} cover alt`);
+      assert.ok(story.cover.prompt.trim(), `${story.title} cover prompt`);
+
+      for (const [pageIndex, page] of story.pages.entries()) {
+        const pageId = `page-${String(pageIndex + 1).padStart(3, "0")}`;
+
+        assert.equal(page.id, pageId);
+        assert.equal(
+          page.narrationAudioId,
+          `story-${story.id}-${pageId}-narration`,
+        );
         assert.equal(page.joinInAudioId, null);
+        assert.ok(
+          countStoryWords(page.text) <= 45,
+          `${story.title}/${page.id} keeps the reading beat short`,
+        );
+        assert.match(
+          page.artwork.src,
+          new RegExp(
+            `^https://media\\.parrotbook\\.com/assets/v5/story-pages/${story.id}-page-\\d{3}\\.webp$`,
+          ),
+        );
+        assert.ok(page.artwork.alt.trim(), `${story.title}/${page.id} art alt`);
+        assert.ok(
+          page.artwork.prompt.trim(),
+          `${story.title}/${page.id} art prompt`,
+        );
       }
     }
   });
