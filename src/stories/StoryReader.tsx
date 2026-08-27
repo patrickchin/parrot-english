@@ -390,7 +390,7 @@ export function StoryReader({
           : "Listen";
 
   return (
-    <main className="relative h-dvh w-screen overflow-hidden bg-story-reader px-2.5 pb-4 pt-20 short:pt-16 sm:px-4 md:px-7 md:pb-7 md:pt-24">
+    <main className="relative grid h-dvh min-h-0 w-screen place-items-center overflow-hidden bg-story-reader px-2.5 pb-4 pt-20 short:pt-16 sm:px-4 md:px-7 md:pb-7 md:pt-24">
       <RouteHeader>
         <HeaderLink
           aria-label="Back to stories"
@@ -403,12 +403,12 @@ export function StoryReader({
 
       <section
         aria-label="Story reader"
-        className="mx-auto grid h-[calc(100dvh-6rem)] min-h-0 w-full max-w-7xl content-start overflow-x-hidden overflow-y-auto rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short-wide:grid-cols-[minmax(0,1.25fr)_minmax(19rem,0.75fr)] short-wide:grid-rows-[minmax(0,1fr)] short-wide:overflow-hidden md:rounded-[2.25rem] lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)]"
+        className="mx-auto grid h-full min-h-0 w-full max-w-7xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.9fr)] short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:aspect-[2.72/1] lg:h-auto lg:max-h-full lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:grid-rows-[minmax(0,1fr)]"
       >
-        <figure className="relative m-0 aspect-[3/2] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:h-40 short:aspect-auto short-wide:h-full short-wide:border-b-0 short-wide:border-r-4 lg:h-full lg:aspect-auto lg:border-b-0 lg:border-r-4">
+        <figure className="relative m-0 aspect-[3/2] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:landscape:h-full short:landscape:aspect-auto short:landscape:border-b-0 short:landscape:border-r-4 lg:h-full lg:aspect-auto lg:border-b-0 lg:border-r-4">
           <StoryArtwork
             artwork={page.artwork}
-            className="aspect-[3/2] max-h-[52dvh] min-h-40 short:h-40 short:aspect-auto short-wide:h-full short-wide:max-h-none lg:h-full lg:max-h-none"
+            className="aspect-[3/2] max-h-[52dvh] min-h-40 short:landscape:h-full short:landscape:max-h-none short:landscape:aspect-auto lg:h-full lg:max-h-none lg:aspect-auto"
             key={page.id}
             personalizedOverride={personalizedOverride}
             priority
@@ -418,13 +418,13 @@ export function StoryReader({
           </figcaption>
         </figure>
 
-        <div className="grid content-start gap-3 p-4 pb-24 short:p-3 short:pb-24 short-wide:min-h-0 short-wide:grid-rows-[minmax(0,1fr)_auto] short-wide:gap-2 short-wide:overflow-hidden short-wide:pb-3 sm:gap-4 sm:p-6 sm:pb-24 lg:min-h-[calc(100dvh-6.5rem)] lg:content-between lg:p-8">
+        <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3 overflow-hidden p-4 pb-3 max-[359px]:p-3 short:p-3 short:landscape:gap-2 sm:gap-4 sm:p-6 sm:pb-4 lg:p-8 lg:pb-6">
           <div
-            className="grid gap-3 short-wide:-mx-2 short-wide:min-h-0 short-wide:min-w-0 short-wide:gap-2 short-wide:overflow-x-hidden short-wide:overflow-y-auto short-wide:px-2 sm:gap-4"
+            className="-mx-2 grid min-h-0 min-w-0 content-start gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-2 short:landscape:gap-2 sm:gap-4"
             ref={readingPaneRef}
           >
-            <header className="grid gap-2.5 short-wide:grid-cols-[minmax(0,1fr)_auto] short-wide:items-center short-wide:gap-x-2 short-wide:gap-y-0">
-              <h1 className="m-0 text-xl leading-none text-brand-ink short-wide:col-start-1 short-wide:row-start-1 sm:text-3xl lg:text-4xl">
+            <header className="grid gap-2.5">
+              <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
                 {story.title}
               </h1>
               <div
@@ -433,7 +433,7 @@ export function StoryReader({
                 aria-valuemin={1}
                 aria-valuenow={pageIndex + 1}
                 aria-valuetext={`Page ${pageIndex + 1} of ${story.pages.length}`}
-                className="h-2 overflow-hidden rounded-full bg-sky-100 short-wide:col-span-2 short-wide:row-start-2 short-wide:h-1"
+                className="h-2 overflow-hidden rounded-full bg-sky-100 short:landscape:h-1"
                 role="progressbar"
               >
                 <span
@@ -443,27 +443,11 @@ export function StoryReader({
                   }}
                 />
               </div>
-              <ActionButton
-                aria-label="Play whole story"
-                aria-pressed={playWholeStory}
-                className="w-fit gap-2 rounded-xl px-3 short-wide:col-start-2 short-wide:row-start-1"
-                elevation="flat"
-                frame="soft"
-                onClick={toggleWholeStory}
-                shape="rounded"
-                size="inline"
-                type="button"
-                variant={playWholeStory ? "navy" : "surface"}
-              >
-                <Play aria-hidden="true" className="size-4 fill-current" />
-                <span className="short-wide:hidden">Whole story</span>
-                <span className="hidden short-wide:inline">Auto</span>
-              </ActionButton>
             </header>
 
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
-              className="relative m-0 whitespace-pre-line text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short-wide:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
+              className="relative m-0 whitespace-pre-line text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short:landscape:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
               ref={pageTextRef}
               tabIndex={-1}
             >
@@ -472,7 +456,7 @@ export function StoryReader({
 
             <aside
               aria-label={`Say it: ${page.joinIn}`}
-              className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 short-wide:gap-2 short-wide:p-2 sm:p-4"
+              className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 short:landscape:gap-2 short:landscape:p-2 sm:p-4"
               ref={joinInPromptRef}
             >
               <Sparkles
@@ -522,7 +506,7 @@ export function StoryReader({
 
           <nav
             aria-label="Story controls"
-            className="fixed bottom-[calc(0.5rem+env(safe-area-inset-bottom))] left-2 right-2 z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.8fr)] gap-2 rounded-2xl border-3 border-white bg-[#fffaf0]/95 p-2 shadow-card short-wide:static short-wide:rounded-none short-wide:border-x-0 short-wide:border-b-0 short-wide:border-t-3 short-wide:border-sky-100 short-wide:bg-[#fffaf0] short-wide:p-0 short-wide:pt-3 short-wide:shadow-none sm:gap-3 lg:static lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t-3 lg:border-sky-100 lg:bg-transparent lg:p-0 lg:pt-4 lg:shadow-none"
+            className="z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-1.5 border-t-3 border-sky-100 bg-[#fffaf0] pt-3 min-[360px]:gap-2 sm:gap-3 lg:bg-transparent lg:pt-4"
           >
             <ActionButton
               aria-label="Previous page"
@@ -535,7 +519,10 @@ export function StoryReader({
               type="button"
               variant="surface"
             >
-              <ChevronLeft aria-hidden="true" className="size-5 shrink-0" />
+              <ChevronLeft
+                aria-hidden="true"
+                className="hidden size-5 shrink-0 min-[360px]:block"
+              />
               <span>Back</span>
             </ActionButton>
 
@@ -553,15 +540,45 @@ export function StoryReader({
               variant={narrationState === "paused" ? "navy" : "brand"}
             >
               {narrationState === "playing" || narrationState === "join-in" ? (
-                <Pause aria-hidden="true" className="size-5 shrink-0 fill-current" />
+                <Pause
+                  aria-hidden="true"
+                  className="hidden size-5 shrink-0 fill-current min-[360px]:block"
+                />
               ) : narrationState === "complete" ? (
-                <RotateCcw aria-hidden="true" className="size-5 shrink-0" />
+                <RotateCcw
+                  aria-hidden="true"
+                  className="hidden size-5 shrink-0 min-[360px]:block"
+                />
               ) : narrationState === "paused" ? (
-                <Play aria-hidden="true" className="size-5 shrink-0 fill-current" />
+                <Play
+                  aria-hidden="true"
+                  className="hidden size-5 shrink-0 fill-current min-[360px]:block"
+                />
               ) : (
-                <Volume2 aria-hidden="true" className="size-5 shrink-0" />
+                <Volume2
+                  aria-hidden="true"
+                  className="hidden size-5 shrink-0 min-[360px]:block"
+                />
               )}
               <span className="leading-tight">{narrationLabel}</span>
+            </ActionButton>
+
+            <ActionButton
+              aria-label="Play whole story"
+              aria-pressed={playWholeStory}
+              className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-xs min-[360px]:text-sm"
+              frame="none"
+              onClick={toggleWholeStory}
+              shape="rounded"
+              size="inline"
+              type="button"
+              variant={playWholeStory ? "navy" : "surface"}
+            >
+              <Play
+                aria-hidden="true"
+                className="hidden size-4 shrink-0 fill-current min-[360px]:block"
+              />
+              <span className="leading-tight">Whole</span>
             </ActionButton>
 
             <ActionButton
@@ -578,9 +595,15 @@ export function StoryReader({
             >
               <span>{isLastPage ? "Done" : "Next"}</span>
               {isLastPage ? (
-                <BookOpenCheck aria-hidden="true" className="size-5 shrink-0" />
+                <BookOpenCheck
+                  aria-hidden="true"
+                  className="hidden size-5 shrink-0 min-[360px]:block"
+                />
               ) : (
-                <ChevronRight aria-hidden="true" className="size-5 shrink-0" />
+                <ChevronRight
+                  aria-hidden="true"
+                  className="hidden size-5 shrink-0 min-[360px]:block"
+                />
               )}
             </ActionButton>
           </nav>
