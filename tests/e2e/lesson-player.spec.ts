@@ -63,6 +63,13 @@ type LessonMicrophoneController = {
   stoppedTracks: number;
 };
 
+type ArtworkDecodeController = {
+  holdConnectedDecodes: boolean;
+  pendingDetachedDecodes: number;
+  releaseDetachedDecodes(): number;
+  resolvedDetachedDecodes: number;
+};
+
 const myLesson = {
   childName: "Mia",
   detailedSummary: "Mia joins Peppa for one bright kite line.",
@@ -268,6 +275,81 @@ async function controlLessonMicrophone(
   expect(acted).toBe(true);
 }
 
+async function installArtworkDecodeController(page: Page) {
+  await page.addInitScript(() => {
+    const nativeDecode = HTMLImageElement.prototype.decode;
+    const detachedDecodes: Array<() => void> = [];
+    const controller = {
+      holdConnectedDecodes: false,
+      get pendingDetachedDecodes() {
+        return detachedDecodes.length;
+      },
+      releaseDetachedDecodes() {
+        const pending = detachedDecodes.splice(0);
+        for (const decode of pending) decode();
+        return pending.length;
+      },
+      resolvedDetachedDecodes: 0,
+    };
+    (
+      window as Window & {
+        __parrotE2eArtworkDecode?: ArtworkDecodeController;
+      }
+    ).__parrotE2eArtworkDecode = controller;
+    HTMLImageElement.prototype.decode = function () {
+      if (!this.isConnected) {
+        return new Promise((resolve, reject) => {
+          detachedDecodes.push(() => {
+            nativeDecode.call(this).then((value) => {
+              controller.resolvedDetachedDecodes += 1;
+              resolve(value);
+            }, reject);
+          });
+        });
+      }
+      if (controller.holdConnectedDecodes) return new Promise(() => {});
+      return nativeDecode.call(this);
+    };
+  });
+}
+
+async function artworkDecodeSnapshot(page: Page) {
+  return page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eArtworkDecode?: ArtworkDecodeController;
+      }
+    ).__parrotE2eArtworkDecode;
+    if (!controller) throw new Error("Artwork decode controller is missing.");
+    return {
+      pendingDetachedDecodes: controller.pendingDetachedDecodes,
+      resolvedDetachedDecodes: controller.resolvedDetachedDecodes,
+    };
+  });
+}
+
+async function releaseDetachedArtworkDecodes(page: Page) {
+  const released = await page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eArtworkDecode?: ArtworkDecodeController;
+      }
+    ).__parrotE2eArtworkDecode;
+    if (!controller) throw new Error("Artwork decode controller is missing.");
+    return controller.releaseDetachedDecodes();
+  });
+  expect(released).toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await artworkDecodeSnapshot(page)).resolvedDetachedDecodes)
+    .toBeGreaterThanOrEqual(released);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
+}
+
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
@@ -367,6 +449,98 @@ test("the decoded artwork gates the focused start action", async ({ page }) => {
   await expect(page.getByRole("status", { name: "Lesson updates" })).toHaveText(
     "Press Let's go to begin",
   );
+});
+
+// Catches watching unrelated preloaded artwork when focusing the current start action.
+test("finishing a next-scene preload does not steal focus from lesson navigation", async ({
+  page,
+}) => {
+  await installArtworkDecodeController(page);
+  await openParrotLesson(page, "no-consent");
+  await expect
+    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .toBeGreaterThan(0);
+
+  const back = page.getByRole("button", { name: "Back to lesson list" });
+  await back.focus();
+  await expect(back).toBeFocused();
+  await releaseDetachedArtworkDecodes(page);
+
+  await expect(back).toBeFocused();
+});
+
+// Catches restarting current story playback when unrelated preloaded artwork becomes ready.
+test("finishing a next-scene preload does not restart active story audio", async ({
+  page,
+}) => {
+  await installArtworkDecodeController(page);
+  await openParrotLesson(page, "held-story");
+  await expect
+    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .toBeGreaterThan(0);
+  await startLesson(page);
+  await expect(page.getByRole("status", { name: "Peppa is speaking" })).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  const before = await mediaSnapshot(page);
+
+  await releaseDetachedArtworkDecodes(page);
+
+  const after = await mediaSnapshot(page);
+  expect(after.cueCancellations).toBe(before.cueCancellations);
+  expect(after.cues).toHaveLength(before.cues.length);
+  expect(after.pendingCues).toBe(1);
+});
+
+// Catches restarting the current join-in cue when unrelated preloaded artwork becomes ready.
+test("finishing a next-scene preload does not restart an active join-in cue", async ({
+  page,
+}) => {
+  await installArtworkDecodeController(page);
+  await openParrotLesson(page, "held-cue-no-consent");
+  await expect
+    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .toBeGreaterThan(0);
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  const before = await mediaSnapshot(page);
+
+  await releaseDetachedArtworkDecodes(page);
+
+  const after = await mediaSnapshot(page);
+  expect(after.cueCancellations).toBe(before.cueCancellations);
+  expect(after.cues).toHaveLength(before.cues.length);
+  expect(after.pendingCues).toBe(1);
+});
+
+// Catches removing the successful-preload handleArtworkDecoded call in LessonPlayer.
+test("a decoded next-scene preload never shows the loading picture layer during automatic transition", async ({
+  page,
+}) => {
+  await installArtworkDecodeController(page);
+  await openParrotLesson(page, "held-cue-no-consent");
+  await expect
+    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .toBeGreaterThan(0);
+  await releaseDetachedArtworkDecodes(page);
+  await page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eArtworkDecode?: ArtworkDecodeController;
+      }
+    ).__parrotE2eArtworkDecode;
+    if (!controller) throw new Error("Artwork decode controller is missing.");
+    controller.holdConnectedDecodes = true;
+  });
+
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await controlLessonMedia(page, "releaseNextCue");
+
+  await expect(page).toHaveURL(/\/scenes\/2/);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Loading picture…" }),
+  ).toHaveCount(0);
 });
 
 test("failed artwork can be retried before the story begins", async ({ page }) => {

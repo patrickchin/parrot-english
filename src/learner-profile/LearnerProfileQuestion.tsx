@@ -208,7 +208,7 @@ export function LearnerProfileQuestionView({
                 shape="rounded"
                 size="field"
                 type="button"
-                variant="brand"
+                variant="rose"
               >
                 <Mic aria-hidden="true" className="size-6" />
               </IconButton>

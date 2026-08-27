@@ -115,7 +115,7 @@ function LessonCardView({
         <div className="relative min-h-32 overflow-hidden bg-sky-100 min-[360px]:aspect-[4/3] min-[360px]:min-h-0">
           <img
             alt={lesson.artworkAlt}
-            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03] motion-reduce:transition-none"
+            className="h-full w-full object-cover"
             decoding="async"
             fetchPriority={source === "parrot" && index === 0 ? "high" : undefined}
             loading={source === "parrot" && index < 2 ? "eager" : "lazy"}

@@ -116,12 +116,12 @@ function MoodFields({
                 return (
                   <label
                     className={cx(
-                      "relative grid min-h-20 cursor-pointer place-items-center gap-1 rounded-2xl border-3 bg-sky-50 p-2 text-center text-xs font-black text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                      "relative grid min-h-20 cursor-pointer place-items-center gap-1 rounded-2xl border-3 bg-sky-50 p-2 text-center text-xs font-black text-slate-700 transition duration-200 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none",
                       selected
                         ? "border-brand-blue bg-white shadow-control-surface"
                         : "border-transparent",
                       disabled &&
-                        "cursor-not-allowed opacity-50 hover:translate-y-0",
+                        "cursor-not-allowed opacity-50",
                     )}
                     key={emote || "none"}
                   >
@@ -247,12 +247,12 @@ function DialogueEditor({
             return (
               <label
                 className={cx(
-                  "relative grid min-h-28 cursor-pointer place-items-center gap-1 rounded-2xl border-3 bg-white p-2 text-center font-black text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                  "relative grid min-h-28 cursor-pointer place-items-center gap-1 rounded-2xl border-3 bg-white p-2 text-center font-black text-slate-700 transition duration-200 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none",
                   selected
                     ? "border-brand-blue shadow-control-surface"
                     : "border-sky-100",
                   disabled &&
-                    "cursor-not-allowed opacity-50 hover:translate-y-0",
+                    "cursor-not-allowed opacity-50",
                 )}
                 key={id}
               >
@@ -485,12 +485,12 @@ function SceneEditor({
                 return (
                   <label
                     className={cx(
-                      "relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border-4 bg-white transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                      "relative min-w-0 cursor-pointer overflow-hidden rounded-2xl border-4 bg-white transition duration-200 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none",
                       selected
                         ? "border-brand-blue shadow-control-surface"
                         : "border-white",
                       disabled &&
-                        "cursor-not-allowed opacity-50 hover:translate-y-0",
+                        "cursor-not-allowed opacity-50",
                     )}
                     key={id}
                   >
@@ -536,12 +536,12 @@ function SceneEditor({
                 return (
                   <label
                     className={cx(
-                      "relative grid min-h-36 cursor-pointer place-items-center gap-1 rounded-3xl border-4 bg-white p-3 text-center font-black text-brand-navy transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                      "relative grid min-h-36 cursor-pointer place-items-center gap-1 rounded-3xl border-4 bg-white p-3 text-center font-black text-brand-navy transition duration-200 hover:border-brand-blue focus-within:outline-4 focus-within:outline-offset-2 focus-within:outline-brand-ink motion-reduce:transition-none",
                       selected
                         ? "border-brand-blue shadow-control-surface"
                         : "border-white",
                       disabled &&
-                        "cursor-not-allowed opacity-50 hover:translate-y-0",
+                        "cursor-not-allowed opacity-50",
                     )}
                     key={character.id}
                   >
@@ -1009,7 +1009,7 @@ export function LessonGuiEditor({
                   aria-label={`Edit Scene ${index + 1}: ${scene.title || "Untitled scene"}`}
                   aria-pressed={selected}
                   className={cx(
-                    "group relative w-52 shrink-0 snap-start overflow-hidden rounded-3xl border-4 bg-white text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-brand-blue focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-brand-ink motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                    "group relative w-52 shrink-0 snap-start overflow-hidden rounded-3xl border-4 bg-white text-left shadow-sm transition duration-200 hover:border-brand-blue focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-brand-ink motion-reduce:transition-none",
                     selected
                       ? "border-brand-blue shadow-control-surface"
                       : "border-white",

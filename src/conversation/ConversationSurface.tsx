@@ -553,7 +553,7 @@ function ConversationCaptions({
                 onClick={onRepeatAudio}
                 size="compact"
                 type="button"
-                variant="brand"
+                variant="rose"
               >
                 <Volume2 aria-hidden="true" className="size-5" />
               </IconButton>
