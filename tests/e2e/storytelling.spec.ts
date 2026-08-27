@@ -17,6 +17,16 @@ const completionViewports = [
   { height: 800, name: "desktop", width: 1280 },
 ] as const;
 
+const longStoryViewports = [
+  { cropsArtwork: false, height: 568, name: "ultra-narrow phone", width: 280 },
+  { cropsArtwork: false, height: 844, name: "tall ultra-narrow phone", width: 280 },
+  { cropsArtwork: false, height: 844, name: "regular phone", width: 390 },
+  { cropsArtwork: true, height: 360, name: "short-wide boundary", width: 559 },
+  { cropsArtwork: true, height: 360, name: "short-wide reader", width: 640 },
+  { cropsArtwork: false, height: 1024, name: "portrait tablet", width: 768 },
+  { cropsArtwork: false, height: 800, name: "desktop", width: 1280 },
+] as const;
+
 async function installStoryMediaGuard(page: Page) {
   await page.addInitScript(() => {
     let forbiddenStoryAudioConstructions = 0;
@@ -682,15 +692,25 @@ for (const viewport of completionViewports) {
 
     for (const scenario of [
       {
-        controls: ["Listen", "Next page"],
+        controls: ["Listen", "Play whole story", "Next page"],
         pageIndex: 0,
       },
       {
-        controls: ["Previous page", "Listen", "Next page"],
+        controls: [
+          "Previous page",
+          "Listen",
+          "Play whole story",
+          "Next page",
+        ],
         pageIndex: 2,
       },
       {
-        controls: ["Previous page", "Listen", "Finish story"],
+        controls: [
+          "Previous page",
+          "Listen",
+          "Play whole story",
+          "Finish story",
+        ],
         pageIndex: redBall.pages.length - 1,
       },
     ] as const) {
@@ -737,6 +757,134 @@ for (const viewport of completionViewports) {
       expect((await storySpeechState(page)).spoken).toEqual([]);
       await expectNoHorizontalOverflow(page);
     }
+  });
+}
+
+for (const viewport of longStoryViewports) {
+  test(`the dense long-story reader stays contained and groups playback on the ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/stories/the-gruffalo/pages/7");
+
+    const reader = page.getByRole("region", { name: "Story reader" });
+    const controls = reader.getByRole("navigation", {
+      name: "Story controls",
+    });
+    const pageText = reader.getByLabel(/^Page 7 of 12\./);
+    const readingPane = pageText.locator("..");
+    const artwork = reader.getByRole("img", { name: "Story picture" });
+    const previous = controls.getByRole("button", { name: "Previous page" });
+    const listen = controls.getByRole("button", {
+      exact: true,
+      name: "Listen",
+    });
+    const wholeStory = controls.getByRole("button", {
+      exact: true,
+      name: "Play whole story",
+    });
+    const next = controls.getByRole("button", { name: "Next page" });
+    const orderedControls = [previous, listen, wholeStory, next];
+
+    await expect(pageText).toBeFocused();
+    await expectContainedWithoutScrolling(reader, controls);
+    await expectFullyInsideViewportWithoutScrolling(controls, page);
+    await expect(wholeStory).toBeVisible();
+    await expect(
+      reader.evaluate((element) => ({
+        hasOuterScroll: element.scrollHeight > element.clientHeight + 1,
+        scrollTop: element.scrollTop,
+      })),
+    ).resolves.toEqual({ hasOuterScroll: false, scrollTop: 0 });
+
+    const layout = await readingPane.evaluate((pane) => {
+      const art = document.querySelector<HTMLElement>(
+        '[aria-label="Story reader"] [role="img"]',
+      );
+      if (!art) throw new Error("Expected story art and reading pane.");
+      const artBox = art.getBoundingClientRect();
+      const paneBox = pane.getBoundingClientRect();
+      return {
+        scrollRange: pane.scrollHeight - pane.clientHeight,
+        separated:
+          artBox.bottom <= paneBox.top + 1 ||
+          paneBox.bottom <= artBox.top + 1 ||
+          artBox.right <= paneBox.left + 1 ||
+          paneBox.right <= artBox.left + 1,
+      };
+    });
+    expect(layout.separated).toBe(true);
+    expect(layout.scrollRange).toBeGreaterThan(0);
+    if (!viewport.cropsArtwork) {
+      const artworkBox = await visibleBoxWithoutScrolling(artwork);
+      const artworkRatio = artworkBox.width / artworkBox.height;
+      expect(artworkRatio).toBeGreaterThanOrEqual(1.42);
+      expect(artworkRatio).toBeLessThanOrEqual(1.58);
+    }
+    await readingPane.evaluate((pane) => {
+      pane.scrollTop = pane.scrollHeight;
+    });
+    await expect
+      .poll(() => readingPane.evaluate((pane) => pane.scrollTop))
+      .toBeGreaterThan(0);
+
+    for (const button of orderedControls) {
+      const box = await visibleBoxWithoutScrolling(button);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+
+    const [listenBox, wholeStoryBox] = await Promise.all([
+      listen.boundingBox(),
+      wholeStory.boundingBox(),
+    ]);
+    expect(listenBox).not.toBeNull();
+    expect(wholeStoryBox).not.toBeNull();
+    const verticalOverlap = Math.min(
+      listenBox!.y + listenBox!.height,
+      wholeStoryBox!.y + wholeStoryBox!.height,
+    ) - Math.max(listenBox!.y, wholeStoryBox!.y);
+    const horizontalGap = Math.max(
+      0,
+      wholeStoryBox!.x - (listenBox!.x + listenBox!.width),
+      listenBox!.x - (wholeStoryBox!.x + wholeStoryBox!.width),
+    );
+    expect(verticalOverlap).toBeGreaterThan(0);
+    expect(horizontalGap).toBeLessThan(
+      Math.min(listenBox!.width, wholeStoryBox!.width),
+    );
+
+    for (const control of orderedControls) {
+      await page.keyboard.press("Tab");
+      await expect(control).toBeFocused();
+    }
+
+    await readingPane.evaluate((pane) => {
+      pane.scrollTop = pane.scrollHeight;
+    });
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/stories\/the-gruffalo\/pages\/8$/);
+    const nextText = reader.getByLabel(/^Page 8 of 12\./);
+    const nextPane = nextText.locator("..");
+    await expect(nextText).toBeFocused();
+    await expect
+      .poll(() => nextPane.evaluate((pane) => pane.scrollTop))
+      .toBe(0);
+    await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
+    await expect
+      .poll(() =>
+        nextText.evaluate((element) => {
+          const pane = element.parentElement;
+          if (!pane) return false;
+          const paneBox = pane.getBoundingClientRect();
+          const textBox = element.getBoundingClientRect();
+          return textBox.top >= paneBox.top - 1 && textBox.top < paneBox.bottom;
+        }),
+      )
+      .toBe(true);
+
+    await expectNoHorizontalOverflow(page);
+    await expect(artwork).toBeVisible();
   });
 }
 
