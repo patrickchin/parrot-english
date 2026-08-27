@@ -761,7 +761,7 @@ for (const viewport of completionViewports) {
 }
 
 for (const viewport of longStoryViewports) {
-  test(`the dense long-story reader stays contained and groups playback on the ${viewport.name}`, async ({
+  test(`the split long-story reader stays contained and groups playback on the ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -771,9 +771,11 @@ for (const viewport of longStoryViewports) {
     const controls = reader.getByRole("navigation", {
       name: "Story controls",
     });
-    const pageText = reader.getByLabel(/^Page 7 of 12\./);
+    const pageText = reader.getByLabel(/^Page 7 of 23\./);
     const readingPane = pageText.locator("..");
-    const artwork = reader.getByRole("img", { name: "Story picture" });
+    const artwork = reader.getByRole("img", {
+      name: "The mouse watches a startled owl fly away above a sparkling stream.",
+    });
     const previous = controls.getByRole("button", { name: "Previous page" });
     const listen = controls.getByRole("button", {
       exact: true,
@@ -799,7 +801,7 @@ for (const viewport of longStoryViewports) {
 
     const layout = await readingPane.evaluate((pane) => {
       const art = document.querySelector<HTMLElement>(
-        '[aria-label="Story reader"] [role="img"]',
+        '[aria-label="Story reader"] :is(img, [role="img"])',
       );
       if (!art) throw new Error("Expected story art and reading pane.");
       const artBox = art.getBoundingClientRect();
@@ -814,20 +816,17 @@ for (const viewport of longStoryViewports) {
       };
     });
     expect(layout.separated).toBe(true);
-    expect(layout.scrollRange).toBeGreaterThan(0);
+    expect(layout.scrollRange).toBeGreaterThanOrEqual(0);
+    await expect(artwork).toHaveAttribute(
+      "src",
+      "https://media.parrotbook.com/assets/v5/story-pages/the-gruffalo-page-004.webp",
+    );
     if (!viewport.cropsArtwork) {
       const artworkBox = await visibleBoxWithoutScrolling(artwork);
       const artworkRatio = artworkBox.width / artworkBox.height;
       expect(artworkRatio).toBeGreaterThanOrEqual(1.42);
       expect(artworkRatio).toBeLessThanOrEqual(1.58);
     }
-    await readingPane.evaluate((pane) => {
-      pane.scrollTop = pane.scrollHeight;
-    });
-    await expect
-      .poll(() => readingPane.evaluate((pane) => pane.scrollTop))
-      .toBeGreaterThan(0);
-
     for (const button of orderedControls) {
       const box = await visibleBoxWithoutScrolling(button);
       expect(box.width).toBeGreaterThanOrEqual(44);
@@ -864,7 +863,7 @@ for (const viewport of longStoryViewports) {
     });
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/stories\/the-gruffalo\/pages\/8$/);
-    const nextText = reader.getByLabel(/^Page 8 of 12\./);
+    const nextText = reader.getByLabel(/^Page 8 of 23\./);
     const nextPane = nextText.locator("..");
     await expect(nextText).toBeFocused();
     await expect
