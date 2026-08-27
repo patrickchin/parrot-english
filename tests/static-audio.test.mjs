@@ -115,7 +115,11 @@ describe("static audio cache metadata", () => {
     const pages = longStories.flatMap(({ pages: storyPages }) => storyPages);
 
     assert.equal(longStories.length, 2);
-    assert.equal(pages.length, 17);
+    assert.deepEqual(
+      longStories.map(({ pages: storyPages }) => storyPages.length),
+      [23, 13],
+    );
+    assert.equal(pages.length, 36);
     for (const page of pages) {
       const narration = getStaticAudioLineForSpeech("narrator", page.text);
       assert.equal(narration.id, page.narrationAudioId);

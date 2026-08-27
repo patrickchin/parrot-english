@@ -1,6 +1,6 @@
 import type { Story } from "./story-types.ts";
 
-export const LONG_STORIES = [
+const LONG_STORY_SOURCES = [
   {
     "assumedKnownWords": [],
     "category": "Long stories",
@@ -252,3 +252,135 @@ export const LONG_STORIES = [
     "title": "We’re Going on a Bear Hunt"
   }
 ] satisfies readonly Story[];
+
+const STORY_MEDIA_BASE = "https://media.parrotbook.com/assets/v5";
+
+const LONG_STORY_SPLITS = {
+  "the-gruffalo": [
+    ["Come and have lunch in my underground house.\""],
+    ["And his favourite food is roasted fox.\""],
+    ["Come and have tea in my treetop house.\""],
+    ["And his favourite food is owl ice cream.\""],
+    ["Come for a feast in my logpile house.\""],
+    ["And his favourite food is scrambled snake.\""],
+    ["And a poisonous wart at the end of his nose."],
+    ["Everyone is afraid of me.\""],
+    ["And off he slid to his logpile house."],
+    ["And off he flew to his treetop house."],
+    ["And off he ran to his underground house."],
+    [],
+  ],
+  "we-re-going-on-a-bear-hunt": [
+    ["Long, wavy, grass.", "Swishy swashy, swishy swashy."],
+    ["Squelch squelch, squelch squelch", "A deep, cold river."],
+    ["A big, dark forest.", "Stmble trip, stumble trip."],
+    ["Tiptoe, tiptoe.", "Quick!"],
+    [],
+  ],
+} as const;
+
+const LONG_STORY_VISUALS = {
+  "the-gruffalo": {
+    cover: {
+      alt: "A little brown mouse walks through a sunlit forest while a large tusked creature watches from the path.",
+      prompt: "A brave little woodland mouse begins a journey as a friendly-looking tusked forest creature appears between the trees.",
+    },
+    scenes: [
+      ["A little brown mouse politely greets a fox outside a tree-root burrow.", "A brave little mouse meets a friendly red fox beside an underground woodland den in warm dappled light."],
+      ["The mouse smiles by a pile of rocks as the frightened fox runs away.", "The confident mouse stands beside woodland rocks while a red fox flees down the path in comic alarm."],
+      ["The mouse greets a tawny owl leaning from a doorway high in an oak.", "A tawny owl invites the little mouse toward a cozy treetop hollow in a deep green forest."],
+      ["The mouse watches a startled owl fly away above a sparkling stream.", "A knowing mouse stands by a woodland stream while a tawny owl flaps quickly back to its tree hollow."],
+      ["The mouse greets a green snake curled inside a mossy log pile.", "A friendly green snake curls from a snug log-pile home to greet the little woodland mouse."],
+      ["The surprised mouse sees enormous purple-prickled feet as the snake flees by a lake.", "At a shadowy woodland lake, a snake escapes while the feet and prickles of a huge creature enter behind the astonished mouse."],
+      ["A huge tusked, purple-prickled creature bends toward the tiny mouse in a forest clearing.", "A full friendly-comic reveal of a towering tusked forest creature meeting a tiny quick-thinking mouse."],
+      ["The confident mouse leads the laughing creature along a woodland path.", "The little mouse marches ahead while the enormous purple-prickled creature follows through the deep forest."],
+      ["A green snake dives into its log pile after seeing the creature behind the mouse.", "The mouse calmly greets a snake as the huge creature watches and the startled snake retreats into its logs."],
+      ["A tawny owl flies toward its tree hollow after seeing the creature with the mouse.", "The mouse greets an owl beneath an oak while the amazed creature watches the owl hurry away."],
+      ["The triumphant mouse points as the fox and the huge creature run in opposite directions.", "At a woodland crossroads, the bold mouse sends both a fox and the enormous forest creature racing away."],
+      ["The little mouse sits peacefully on a mossy root and eats a nut.", "A quiet golden woodland ending with the contented mouse nibbling one hazelnut on a mossy tree root."],
+    ],
+  },
+  "we-re-going-on-a-bear-hunt": {
+    cover: {
+      alt: "Four children follow a meadow path toward a river, forest, cave, and distant bear.",
+      prompt: "Four diverse young adventurers set out across a bright layered landscape toward a distant gentle bear.",
+    },
+    scenes: [
+      ["Four children push through long grass toward a wide patch of thick mud.", "Four adventurous children swish through tall meadow grass as the youngest discovers the muddy path ahead."],
+      ["Four muddy children hold hands and splash through a cold blue river.", "The same four children laugh and help one another wade through a sparkling river toward a pine forest."],
+      ["Four children step over roots in a dark pine forest with a cave ahead.", "The children travel together through a big shadowy forest while a rocky cave waits beyond the trees."],
+      ["Four surprised children turn to run after meeting a gentle brown bear in a cave.", "Inside a rocky cave, the children discover one curious shaggy bear and wheel around in comic surprise."],
+      ["The four children cuddle safely under a patchwork quilt with the front door shut.", "A cozy moonlit ending with all four children laughing under one quilt after closing the door and lining up their muddy boots."],
+    ],
+  },
+} as const;
+
+function splitSceneText(text: string, markers: readonly string[]) {
+  const parts: string[] = [];
+  let remaining = text;
+
+  for (const marker of markers) {
+    const markerIndex = remaining.indexOf(marker);
+    if (markerIndex < 0) {
+      throw new Error("Missing long-story split marker: " + marker);
+    }
+    const boundary = markerIndex + marker.length;
+    parts.push(remaining.slice(0, boundary).trimEnd());
+    remaining = remaining.slice(boundary).replace(/^\n+/u, "");
+  }
+
+  parts.push(remaining);
+  return parts;
+}
+
+export const LONG_STORIES = LONG_STORY_SOURCES.map((sourceStory) => {
+  if (!(sourceStory.id in LONG_STORY_SPLITS)) {
+    throw new Error("Missing long-story plan: " + sourceStory.id);
+  }
+  const storyId = sourceStory.id as keyof typeof LONG_STORY_SPLITS;
+  const splitPlan = LONG_STORY_SPLITS[storyId];
+  const visuals = LONG_STORY_VISUALS[storyId];
+  let pageNumber = 0;
+
+  return {
+    ...sourceStory,
+    cover: {
+      ...visuals.cover,
+      src:
+        STORY_MEDIA_BASE +
+        "/stories/" +
+        sourceStory.id +
+        "-cover.webp",
+    },
+    pages: sourceStory.pages.flatMap((sourcePage, sceneIndex) => {
+      const [alt, prompt] = visuals.scenes[sceneIndex];
+      const artwork = {
+        alt,
+        prompt,
+        src:
+          STORY_MEDIA_BASE +
+          "/story-pages/" +
+          sourceStory.id +
+          "-page-" +
+          String(sceneIndex + 1).padStart(3, "0") +
+          ".webp",
+      };
+
+      return splitSceneText(sourcePage.text, splitPlan[sceneIndex]).map(
+        (text) => {
+          pageNumber += 1;
+          const id = "page-" + String(pageNumber).padStart(3, "0");
+          return {
+            artwork,
+            id,
+            joinIn: sourcePage.joinIn,
+            joinInAudioId: null,
+            narrationAudioId:
+              "story-" + sourceStory.id + "-" + id + "-narration",
+            text,
+          };
+        },
+      );
+    }),
+  };
+}) satisfies readonly Story[];

@@ -27,6 +27,13 @@ const longStoryViewports = [
   { cropsArtwork: false, height: 800, name: "desktop", width: 1280 },
 ] as const;
 
+const longStoryInventoryViewports = [
+  { height: 568, name: "ultra-narrow phone", width: 280 },
+  { height: 844, name: "regular phone", width: 390 },
+  { height: 360, name: "short-wide boundary", width: 559 },
+  { height: 800, name: "desktop", width: 1280 },
+] as const;
+
 async function installStoryMediaGuard(page: Page) {
   await page.addInitScript(() => {
     let forbiddenStoryAudioConstructions = 0;
@@ -761,7 +768,7 @@ for (const viewport of completionViewports) {
 }
 
 for (const viewport of longStoryViewports) {
-  test(`the dense long-story reader stays contained and groups playback on the ${viewport.name}`, async ({
+  test(`the split long-story reader stays contained and groups playback on the ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -771,9 +778,11 @@ for (const viewport of longStoryViewports) {
     const controls = reader.getByRole("navigation", {
       name: "Story controls",
     });
-    const pageText = reader.getByLabel(/^Page 7 of 12\./);
+    const pageText = reader.getByLabel(/^Page 7 of 23\./);
     const readingPane = pageText.locator("..");
-    const artwork = reader.getByRole("img", { name: "Story picture" });
+    const artwork = reader.getByRole("img", {
+      name: "The mouse watches a startled owl fly away above a sparkling stream.",
+    });
     const previous = controls.getByRole("button", { name: "Previous page" });
     const listen = controls.getByRole("button", {
       exact: true,
@@ -799,7 +808,7 @@ for (const viewport of longStoryViewports) {
 
     const layout = await readingPane.evaluate((pane) => {
       const art = document.querySelector<HTMLElement>(
-        '[aria-label="Story reader"] [role="img"]',
+        '[aria-label="Story reader"] :is(img, [role="img"])',
       );
       if (!art) throw new Error("Expected story art and reading pane.");
       const artBox = art.getBoundingClientRect();
@@ -814,20 +823,17 @@ for (const viewport of longStoryViewports) {
       };
     });
     expect(layout.separated).toBe(true);
-    expect(layout.scrollRange).toBeGreaterThan(0);
+    expect(layout.scrollRange).toBeLessThanOrEqual(1);
+    await expect(artwork).toHaveAttribute(
+      "src",
+      "https://media.parrotbook.com/assets/v5/story-pages/the-gruffalo-page-004.webp",
+    );
     if (!viewport.cropsArtwork) {
       const artworkBox = await visibleBoxWithoutScrolling(artwork);
       const artworkRatio = artworkBox.width / artworkBox.height;
       expect(artworkRatio).toBeGreaterThanOrEqual(1.42);
       expect(artworkRatio).toBeLessThanOrEqual(1.58);
     }
-    await readingPane.evaluate((pane) => {
-      pane.scrollTop = pane.scrollHeight;
-    });
-    await expect
-      .poll(() => readingPane.evaluate((pane) => pane.scrollTop))
-      .toBeGreaterThan(0);
-
     for (const button of orderedControls) {
       const box = await visibleBoxWithoutScrolling(button);
       expect(box.width).toBeGreaterThanOrEqual(44);
@@ -864,7 +870,7 @@ for (const viewport of longStoryViewports) {
     });
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/stories\/the-gruffalo\/pages\/8$/);
-    const nextText = reader.getByLabel(/^Page 8 of 12\./);
+    const nextText = reader.getByLabel(/^Page 8 of 23\./);
     const nextPane = nextText.locator("..");
     await expect(nextText).toBeFocused();
     await expect
@@ -885,6 +891,53 @@ for (const viewport of longStoryViewports) {
 
     await expectNoHorizontalOverflow(page);
     await expect(artwork).toBeVisible();
+  });
+}
+
+for (const viewport of longStoryInventoryViewports) {
+  test(`every split long-story page fits without a text scroller on the ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    const overflowing: Array<{ page: number; range: number; story: string }> = [];
+
+    for (const story of STORIES.filter(
+      ({ level }) => level === "long-stories",
+    )) {
+      await page.goto(`/stories/${story.id}/pages/1`);
+      const reader = page.getByRole("region", { name: "Story reader" });
+      const controls = reader.getByRole("navigation", {
+        name: "Story controls",
+      });
+
+      for (const [pageIndex] of story.pages.entries()) {
+        const pageText = reader.getByLabel(
+          new RegExp(`^Page ${pageIndex + 1} of ${story.pages.length}\\.`),
+        );
+        const readingPane = pageText.locator("..");
+        await expect(pageText).toBeVisible();
+        const range = await readingPane.evaluate(
+          (pane) => pane.scrollHeight - pane.clientHeight,
+        );
+        if (range > 1) {
+          overflowing.push({
+            page: pageIndex + 1,
+            range,
+            story: story.id,
+          });
+        }
+
+        if (pageIndex < story.pages.length - 1) {
+          await controls.getByRole("button", { name: "Next page" }).click();
+          await expect(page).toHaveURL(
+            new RegExp(
+              `/stories/${story.id}/pages/${pageIndex + 2}$`,
+            ),
+          );
+        }
+      }
+    }
+    expect(overflowing).toEqual([]);
   });
 }
 
@@ -1119,7 +1172,7 @@ for (const viewport of [
   });
 }
 
-test("every saved-audio story prompt is fully visible when narration ends", async ({
+test("every saved-audio story leaves its next action visible when narration ends", async ({
   page,
 }) => {
   test.setTimeout(180_000);
@@ -1154,14 +1207,25 @@ test("every saved-audio story prompt is fully visible when narration ends", asyn
           ]);
         await finishSavedStoryAudio(page);
       } else {
+        await expect(prompt).toHaveCount(0);
         await expect
           .poll(async () => (await savedStoryAudioState(page)).active)
           .toEqual([]);
       }
+      if (storyPage.joinInAudioId) {
+        await expect(
+          prompt.getByText("Your turn", { exact: true }),
+        ).toBeVisible();
+        await expectFullyVisibleInReadingPane(prompt);
+      }
       await expect(
-        prompt.getByText("Your turn", { exact: true }),
+        controls.getByRole("button", {
+          name:
+            pageIndex < story.pages.length - 1
+              ? "Next page"
+              : "Finish story",
+        }),
       ).toBeVisible();
-      await expectFullyVisibleInReadingPane(prompt);
       await expect(
         reader.evaluate((element) => element.scrollTop),
       ).resolves.toBe(0);
