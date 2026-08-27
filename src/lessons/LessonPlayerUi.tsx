@@ -923,7 +923,7 @@ export function LessonPlaybackControls({
         onClick={onPauseResume}
         size="large"
         type="button"
-        variant="brand"
+        variant="rose"
       >
         {isPaused ? (
           <Play aria-hidden="true" className="size-6 fill-current md:size-8" />

@@ -498,6 +498,10 @@ export function LessonPlayer({
     state.sceneIndex,
   ]);
 
+  const currentArtworkSrc = fullSceneArtwork?.[state.sceneIndex]?.src;
+  const currentArtworkDecoded =
+    !currentArtworkSrc || decodedArtworkSources.has(currentArtworkSrc);
+
   useEffect(() => {
     if (
       state.sceneIndex === routedSceneIndex &&
@@ -509,7 +513,7 @@ export function LessonPlayer({
     historyPopSequence,
     routedLocationKey,
     routedSceneIndex,
-    decodedArtworkSources,
+    currentArtworkDecoded,
     state.phase,
     state.sceneIndex,
   ]);
@@ -536,26 +540,38 @@ export function LessonPlayer({
     if (
       !currentArtwork ||
       !decodedArtworkSources.has(currentArtwork.src) ||
-      !nextArtwork
+      !nextArtwork ||
+      decodedArtworkSources.has(nextArtwork.src)
     ) {
       return;
     }
 
     const preload = new Image();
     preload.decoding = "async";
+    let active = true;
     preload.src = nextArtwork.src;
     if (typeof preload.decode === "function") {
-      void preload.decode().catch(() => undefined);
+      void preload
+        .decode()
+        .then(() => {
+          if (active) handleArtworkDecoded(nextArtwork.src);
+        })
+        .catch(() => undefined);
     }
-  }, [decodedArtworkSources, fullSceneArtwork, state.sceneIndex]);
+    return () => {
+      active = false;
+    };
+  }, [
+    decodedArtworkSources,
+    fullSceneArtwork,
+    handleArtworkDecoded,
+    state.sceneIndex,
+  ]);
 
   useEffect(() => {
     if (state.sceneIndex !== routedSceneRef.current) return;
     if (!storyPlaybackPhase) return;
-    const currentArtworkSrc = fullSceneArtwork?.[state.sceneIndex]?.src;
-    if (currentArtworkSrc && !decodedArtworkSources.has(currentArtworkSrc)) {
-      return;
-    }
+    if (!currentArtworkDecoded) return;
 
     let startPlayback: (
       signal: AbortSignal,
@@ -626,9 +642,8 @@ export function LessonPlayer({
   }, [
     audioRetrySequence,
     currentLesson,
-    decodedArtworkSources,
+    currentArtworkDecoded,
     dispatchLessonEvent,
-    fullSceneArtwork,
     routedSceneIndex,
     source,
     state.sceneIndex,
@@ -639,10 +654,7 @@ export function LessonPlayer({
   useEffect(() => {
     if (state.phase !== LessonPhase.JoiningIn) return;
     if (state.sceneIndex !== routedSceneRef.current) return;
-    const currentArtworkSrc = fullSceneArtwork?.[state.sceneIndex]?.src;
-    if (currentArtworkSrc && !decodedArtworkSources.has(currentArtworkSrc)) {
-      return;
-    }
+    if (!currentArtworkDecoded) return;
 
     const routeGeneration = routeActivityGuardRef.current.capture();
     const generation = playbackGenerationRef.current + 1;
@@ -780,9 +792,8 @@ export function LessonPlayer({
   }, [
     currentLesson,
     currentStep.dialogue,
-    decodedArtworkSources,
+    currentArtworkDecoded,
     dispatchLessonEvent,
-    fullSceneArtwork,
     lessonId,
     lessonRevision,
     recordingQueue,
