@@ -8,10 +8,11 @@ import {
   mkdir,
   readFile,
   readdir,
+  rename,
   rm,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { STORIES } from "../src/stories/story-catalog.ts";
 
@@ -32,6 +33,7 @@ const expectedFixtureOutputs = [
 ];
 const fixtureManifest = [
   {
+    boundaries: [{ at: 0.68, silenceEnd: 0.76, silenceStart: 0.6 }],
     duration: 1.36,
     filename: fixtureFilename,
     outputs: [
@@ -88,6 +90,33 @@ async function loadSplitter() {
 }
 
 describe("long-story narration splitter", () => {
+  it("rejects a split whose audited boundary is missing", async () => {
+    const { audioDir, workDir } = await createFixture();
+    const { splitLongStoryAudio } = await loadSplitter();
+    const manifest = [{ ...fixtureManifest[0], boundaries: [] }];
+
+    await assert.rejects(
+      splitLongStoryAudio({ audioDir, manifest, workDir }),
+      /must define exactly 1 audited silence boundary/,
+    );
+  });
+
+  it("rejects an audited cut that does not match its output junction", async () => {
+    const { audioDir, workDir } = await createFixture();
+    const { splitLongStoryAudio } = await loadSplitter();
+    const manifest = [
+      {
+        ...fixtureManifest[0],
+        boundaries: [{ ...fixtureManifest[0].boundaries[0], at: 0.67 }],
+      },
+    ];
+
+    await assert.rejects(
+      splitLongStoryAudio({ audioDir, manifest, workDir }),
+      /audited cut 0\.67 does not match output junction 0\.68/,
+    );
+  });
+
   it("defaults to a side-effect-free dry run", async () => {
     const { audioDir, workDir } = await createFixture();
     const sourceBefore = await readFile(join(audioDir, fixtureFilename));
@@ -143,6 +172,52 @@ describe("long-story narration splitter", () => {
       assert.ok(Number(probe.format.duration) >= 0.6, filename);
       assert.ok(Number(probe.format.duration) <= 0.8, filename);
     }
+  });
+
+  it("retains the recovery snapshot when rollback restoration fails", async () => {
+    const { audioDir, workDir } = await createFixture();
+    const { splitLongStoryAudio } = await loadSplitter();
+    const snapshotDir = join(workDir, "apply-snapshot");
+    let renameCount = 0;
+
+    await assert.rejects(
+      splitLongStoryAudio({
+        apply: true,
+        applyOperations: {
+          copyFile: async (source, destination) => {
+            if (source.startsWith(snapshotDir + sep)) {
+              throw new Error("injected restore failure");
+            }
+            return copyFile(source, destination);
+          },
+          rename: async (source, destination) => {
+            renameCount += 1;
+            if (renameCount === 2) {
+              throw new Error("injected apply failure");
+            }
+            return rename(source, destination);
+          },
+        },
+        audioDir,
+        manifest: fixtureManifest,
+        workDir,
+      }),
+      (error) => {
+        assert.match(error.message, /Apply failed: injected apply failure/);
+        assert.match(error.message, /Rollback failed: injected restore failure/);
+        assert.match(error.message, /Recovery snapshot retained at/);
+        return true;
+      },
+    );
+
+    assert.equal(
+      sha256(await readFile(join(snapshotDir, fixtureFilename))),
+      fixtureSha256,
+    );
+    assert.notEqual(
+      sha256(await readFile(join(audioDir, fixtureFilename))),
+      fixtureSha256,
+    );
   });
 
   it("rebuilds deterministically from the preserved source set", async () => {

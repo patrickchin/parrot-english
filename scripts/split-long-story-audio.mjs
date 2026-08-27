@@ -25,6 +25,7 @@ const AUDIO_FORMAT = {
   codec: "mp3",
   sampleRate: 44100,
 };
+const CUT_TIME_TOLERANCE_SECONDS = 1e-9;
 
 function createStoryManifest(storyId, sources) {
   let pageNumber = 0;
@@ -207,6 +208,15 @@ function validateManifest(manifest) {
     if (!(source.duration > 0) || !Array.isArray(source.outputs)) {
       throw new Error(`Invalid source duration or outputs: ${source.filename}`);
     }
+    const expectedBoundaryCount = source.outputs.length - 1;
+    if (
+      !Array.isArray(source.boundaries) ||
+      source.boundaries.length !== expectedBoundaryCount
+    ) {
+      throw new Error(
+        `${source.filename} must define exactly ${expectedBoundaryCount} audited silence ${expectedBoundaryCount === 1 ? "boundary" : "boundaries"}.`,
+      );
+    }
 
     let previousEnd = 0;
     for (const output of source.outputs) {
@@ -227,9 +237,15 @@ function validateManifest(manifest) {
     if (Math.abs(previousEnd - source.duration) > 0.001) {
       throw new Error(`Outputs do not cover all of ${source.filename}`);
     }
-    for (const boundary of source.boundaries ?? []) {
+    for (const [index, boundary] of source.boundaries.entries()) {
       if (!(boundary.at > boundary.silenceStart && boundary.at < boundary.silenceEnd)) {
         throw new Error(`Cut is outside audited silence in ${source.filename}`);
+      }
+      const junction = source.outputs[index].end;
+      if (Math.abs(boundary.at - junction) > CUT_TIME_TOLERANCE_SECONDS) {
+        throw new Error(
+          `${source.filename} audited cut ${boundary.at} does not match output junction ${junction}.`,
+        );
       }
     }
   }
@@ -384,10 +400,21 @@ async function validateOutputs(directory, manifest) {
   }
 }
 
-async function applyOutputs(audioDir, stageDir, snapshotDir, manifest) {
+async function applyOutputs(
+  audioDir,
+  stageDir,
+  snapshotDir,
+  manifest,
+  operationOverrides = {},
+) {
+  const {
+    copyFile: applyCopyFile = copyFile,
+    rename: applyRename = rename,
+    rm: applyRm = rm,
+  } = operationOverrides;
   const outputNames = expectedOutputNames(manifest);
   const preexisting = new Set();
-  await rm(snapshotDir, { force: true, recursive: true });
+  await applyRm(snapshotDir, { force: true, recursive: true });
   await mkdir(snapshotDir, { recursive: true });
   await mkdir(audioDir, { recursive: true });
 
@@ -395,7 +422,7 @@ async function applyOutputs(audioDir, stageDir, snapshotDir, manifest) {
     const destination = join(audioDir, filename);
     if (!existsSync(destination)) continue;
     preexisting.add(filename);
-    await copyFile(destination, join(snapshotDir, filename));
+    await applyCopyFile(destination, join(snapshotDir, filename));
   }
 
   const temporaryFiles = outputNames.map((filename) =>
@@ -403,26 +430,46 @@ async function applyOutputs(audioDir, stageDir, snapshotDir, manifest) {
   );
   try {
     for (let index = 0; index < outputNames.length; index += 1) {
-      await copyFile(join(stageDir, outputNames[index]), temporaryFiles[index]);
+      await applyCopyFile(join(stageDir, outputNames[index]), temporaryFiles[index]);
     }
     for (let index = 0; index < outputNames.length; index += 1) {
-      await rename(temporaryFiles[index], join(audioDir, outputNames[index]));
+      await applyRename(temporaryFiles[index], join(audioDir, outputNames[index]));
     }
     await validateOutputs(audioDir, manifest);
-  } catch (error) {
+  } catch (applyError) {
+    const rollbackErrors = [];
     for (let index = 0; index < outputNames.length; index += 1) {
       const filename = outputNames[index];
-      await rm(temporaryFiles[index], { force: true });
-      if (preexisting.has(filename)) {
-        await copyFile(join(snapshotDir, filename), join(audioDir, filename));
-      } else {
-        await rm(join(audioDir, filename), { force: true });
+      try {
+        await applyRm(temporaryFiles[index], { force: true });
+      } catch (error) {
+        rollbackErrors.push(error);
+      }
+      try {
+        if (preexisting.has(filename)) {
+          await applyCopyFile(join(snapshotDir, filename), join(audioDir, filename));
+        } else {
+          await applyRm(join(audioDir, filename), { force: true });
+        }
+      } catch (error) {
+        rollbackErrors.push(error);
       }
     }
-    throw error;
-  } finally {
-    await rm(snapshotDir, { force: true, recursive: true });
+    if (rollbackErrors.length > 0) {
+      const applyMessage =
+        applyError instanceof Error ? applyError.message : String(applyError);
+      const rollbackMessage = rollbackErrors
+        .map((error) => (error instanceof Error ? error.message : String(error)))
+        .join("; ");
+      throw new AggregateError(
+        [applyError, ...rollbackErrors],
+        `Apply failed: ${applyMessage}. Rollback failed: ${rollbackMessage}. Recovery snapshot retained at ${snapshotDir}.`,
+      );
+    }
+    await applyRm(snapshotDir, { force: true, recursive: true });
+    throw applyError;
   }
+  await applyRm(snapshotDir, { force: true, recursive: true });
 }
 
 function assertSeparateDirectories(audioDir, workDir) {
@@ -439,6 +486,7 @@ function assertSeparateDirectories(audioDir, workDir) {
 
 export async function splitLongStoryAudio({
   apply = false,
+  applyOperations,
   audioDir = defaultAudioDir,
   manifest = LONG_STORY_AUDIO_MANIFEST,
   workDir = defaultWorkDir,
@@ -479,7 +527,13 @@ export async function splitLongStoryAudio({
   }
   const stageDir = join(workDir, "stage");
   await stageOutputs(backupDir, stageDir, manifest);
-  await applyOutputs(audioDir, stageDir, join(workDir, "apply-snapshot"), manifest);
+  await applyOutputs(
+    audioDir,
+    stageDir,
+    join(workDir, "apply-snapshot"),
+    manifest,
+    applyOperations,
+  );
   await rm(stageDir, { force: true, recursive: true });
   return { ...result, mode: "applied" };
 }
