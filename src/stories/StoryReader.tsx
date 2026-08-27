@@ -97,6 +97,8 @@ export function StoryReader({
     story.id,
     page.id,
   );
+  const isLongStory = story.level === "long-stories";
+  const pageParagraphs = isLongStory ? page.text.split(/\n{2,}/u) : [];
   const isFirstPage = pageIndex === 0;
   const isLastPage = pageIndex === story.pages.length - 1;
 
@@ -403,7 +405,12 @@ export function StoryReader({
 
       <section
         aria-label="Story reader"
-        className="mx-auto grid h-full min-h-0 w-full max-w-7xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.9fr)] short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:aspect-[2.72/1] lg:h-auto lg:max-h-full lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:grid-rows-[minmax(0,1fr)]"
+        className={cx(
+          "mx-auto grid h-full min-h-0 w-full max-w-7xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:aspect-[2.72/1] lg:h-auto lg:max-h-full lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:grid-rows-[minmax(0,1fr)]",
+          isLongStory
+            ? "short:landscape:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)]"
+            : "short:landscape:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.9fr)]",
+        )}
       >
         <figure className="relative m-0 aspect-[3/2] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:landscape:h-full short:landscape:aspect-auto short:landscape:border-b-0 short:landscape:border-r-4 lg:h-full lg:aspect-auto lg:border-b-0 lg:border-r-4">
           <StoryArtwork
@@ -413,18 +420,9 @@ export function StoryReader({
             personalizedOverride={personalizedOverride}
             priority
           />
-          <figcaption className="absolute bottom-2 left-2 rounded-full border-2 border-white bg-brand-navy/90 px-3 py-1 text-xs font-black text-white sm:bottom-3 sm:left-3">
-            Page {pageIndex + 1} of {story.pages.length}
-          </figcaption>
-        </figure>
-
-        <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3 overflow-hidden p-4 pb-3 max-[359px]:p-3 short:p-3 short:landscape:gap-2 sm:gap-4 sm:p-6 sm:pb-4 lg:p-8 lg:pb-6">
-          <div
-            className="-mx-2 grid min-h-0 min-w-0 content-start gap-3 overflow-x-hidden overflow-y-auto overscroll-contain px-2 short:landscape:gap-2 sm:gap-4"
-            ref={readingPaneRef}
-          >
-            <header className="grid gap-2.5">
-              <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
+          {isLongStory ? (
+            <header className="absolute inset-x-2 top-2 grid gap-1 rounded-2xl border-2 border-white bg-brand-navy/90 px-3 py-2 text-white sm:inset-x-3 sm:top-3 sm:px-4">
+              <h1 className="m-0 text-base leading-none text-white sm:text-xl">
                 {story.title}
               </h1>
               <div
@@ -433,7 +431,7 @@ export function StoryReader({
                 aria-valuemin={1}
                 aria-valuenow={pageIndex + 1}
                 aria-valuetext={`Page ${pageIndex + 1} of ${story.pages.length}`}
-                className="h-2 overflow-hidden rounded-full bg-sky-100 short:landscape:h-1"
+                className="h-1.5 overflow-hidden rounded-full bg-white/35"
                 role="progressbar"
               >
                 <span
@@ -444,42 +442,99 @@ export function StoryReader({
                 />
               </div>
             </header>
+          ) : null}
+          <figcaption className="absolute bottom-2 left-2 rounded-full border-2 border-white bg-brand-navy/90 px-3 py-1 text-xs font-black text-white sm:bottom-3 sm:left-3">
+            Page {pageIndex + 1} of {story.pages.length}
+          </figcaption>
+        </figure>
+
+        <div
+          className={cx(
+            "grid min-h-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden",
+            isLongStory
+              ? "gap-1 p-1.5 sm:gap-3 sm:p-4 sm:pb-3 short:landscape:!gap-1 short:landscape:!p-1.5 lg:gap-4 lg:p-6 lg:pb-4"
+              : "gap-3 p-4 pb-3 max-[359px]:p-3 short:p-3 short:landscape:gap-2 sm:gap-4 sm:p-6 sm:pb-4 lg:p-8 lg:pb-6",
+          )}
+        >
+          <div
+            className={cx(
+              "-mx-2 grid min-h-0 min-w-0 content-start overflow-x-hidden overflow-y-auto overscroll-contain px-2",
+              isLongStory
+                ? "gap-2"
+                : "gap-3 short:landscape:gap-2 sm:gap-4",
+            )}
+            ref={readingPaneRef}
+          >
+            {!isLongStory ? (
+              <header className="grid gap-2.5">
+                <h1 className="m-0 text-xl leading-none text-brand-ink sm:text-3xl lg:text-4xl">
+                  {story.title}
+                </h1>
+                <div
+                  aria-label="Story progress"
+                  aria-valuemax={story.pages.length}
+                  aria-valuemin={1}
+                  aria-valuenow={pageIndex + 1}
+                  aria-valuetext={`Page ${pageIndex + 1} of ${story.pages.length}`}
+                  className="h-2 overflow-hidden rounded-full bg-sky-100 short:landscape:h-1"
+                  role="progressbar"
+                >
+                  <span
+                    className="block h-full rounded-full bg-brand-pink transition-[width] duration-300"
+                    style={{
+                      width: `${((pageIndex + 1) / story.pages.length) * 100}%`,
+                    }}
+                  />
+                </div>
+              </header>
+            ) : null}
 
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
-              className="relative m-0 whitespace-pre-line text-[1.35rem] font-black leading-snug text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 short:landscape:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug"
+              className={cx(
+                "relative m-0 whitespace-pre-line font-black text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2",
+                isLongStory
+                  ? "grid gap-1 text-[1.0625rem] leading-[1.125] min-[360px]:text-xl min-[360px]:leading-tight short:landscape:!text-base short:landscape:!leading-[1.1] lg:text-2xl lg:leading-tight"
+                  : "text-[1.35rem] leading-snug short:landscape:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug",
+              )}
               ref={pageTextRef}
               tabIndex={-1}
             >
-              {page.text}
+              {isLongStory
+                ? pageParagraphs.map((paragraph) => (
+                    <span key={paragraph}>{paragraph}</span>
+                  ))
+                : page.text}
             </p>
 
-            <aside
-              aria-label={`Say it: ${page.joinIn}`}
-              className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 short:landscape:gap-2 short:landscape:p-2 sm:p-4"
-              ref={joinInPromptRef}
-            >
-              <Sparkles
-                aria-hidden="true"
-                className="mt-0.5 size-6 shrink-0 text-amber-700"
-              />
-              <div className="grid gap-0.5">
-                <span className="text-xs font-black uppercase tracking-wider text-amber-800">
-                  {narrationState === "complete"
-                    ? "Your turn"
-                    : narrationState === "join-in"
-                      ? "Listen and say it"
-                      : narrationState === "playing"
-                        ? "Listen"
-                        : narrationState === "paused"
-                          ? "Story paused"
-                          : "Tap Listen"}
-                </span>
-                <span className="text-lg font-black leading-snug sm:text-xl">
-                  {page.joinIn}
-                </span>
-              </div>
-            </aside>
+            {!isLongStory ? (
+              <aside
+                aria-label={`Say it: ${page.joinIn}`}
+                className="flex items-start gap-3 rounded-2xl border-3 border-amber-300 bg-amber-100 p-3 text-amber-950 short:landscape:gap-2 short:landscape:p-2 sm:p-4"
+                ref={joinInPromptRef}
+              >
+                <Sparkles
+                  aria-hidden="true"
+                  className="mt-0.5 size-6 shrink-0 text-amber-700"
+                />
+                <div className="grid gap-0.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-800">
+                    {narrationState === "complete"
+                      ? "Your turn"
+                      : narrationState === "join-in"
+                        ? "Listen and say it"
+                        : narrationState === "playing"
+                          ? "Listen"
+                          : narrationState === "paused"
+                            ? "Story paused"
+                            : "Tap Listen"}
+                  </span>
+                  <span className="text-lg font-black leading-snug sm:text-xl">
+                    {page.joinIn}
+                  </span>
+                </div>
+              </aside>
+            ) : null}
 
             {error ? (
               <p
@@ -499,14 +554,19 @@ export function StoryReader({
                 : narrationState === "paused"
                   ? "Story paused."
                   : narrationState === "complete"
-                    ? `Your turn. Say: ${page.joinIn}`
+                    ? isLongStory
+                      ? `Finished reading page ${pageIndex + 1}. Choose ${isLastPage ? "Finish" : "Next"} or listen again.`
+                      : `Your turn. Say: ${page.joinIn}`
                     : ""}
             </p>
           </div>
 
           <nav
             aria-label="Story controls"
-            className="z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-1.5 border-t-3 border-sky-100 bg-[#fffaf0] pt-3 min-[360px]:gap-2 sm:gap-3 lg:bg-transparent lg:pt-4"
+            className={cx(
+              "z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-1.5 border-t-3 border-sky-100 bg-[#fffaf0] min-[360px]:gap-2 sm:gap-3 lg:bg-transparent",
+              isLongStory ? "pt-1.5 lg:pt-3" : "pt-3 lg:pt-4",
+            )}
           >
             <ActionButton
               aria-label="Previous page"

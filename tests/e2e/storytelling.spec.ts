@@ -27,6 +27,13 @@ const longStoryViewports = [
   { cropsArtwork: false, height: 800, name: "desktop", width: 1280 },
 ] as const;
 
+const longStoryInventoryViewports = [
+  { height: 568, name: "ultra-narrow phone", width: 280 },
+  { height: 844, name: "regular phone", width: 390 },
+  { height: 360, name: "short-wide boundary", width: 559 },
+  { height: 800, name: "desktop", width: 1280 },
+] as const;
+
 async function installStoryMediaGuard(page: Page) {
   await page.addInitScript(() => {
     let forbiddenStoryAudioConstructions = 0;
@@ -816,7 +823,7 @@ for (const viewport of longStoryViewports) {
       };
     });
     expect(layout.separated).toBe(true);
-    expect(layout.scrollRange).toBeGreaterThanOrEqual(0);
+    expect(layout.scrollRange).toBeLessThanOrEqual(1);
     await expect(artwork).toHaveAttribute(
       "src",
       "https://media.parrotbook.com/assets/v5/story-pages/the-gruffalo-page-004.webp",
@@ -884,6 +891,53 @@ for (const viewport of longStoryViewports) {
 
     await expectNoHorizontalOverflow(page);
     await expect(artwork).toBeVisible();
+  });
+}
+
+for (const viewport of longStoryInventoryViewports) {
+  test(`every split long-story page fits without a text scroller on the ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    const overflowing: Array<{ page: number; range: number; story: string }> = [];
+
+    for (const story of STORIES.filter(
+      ({ level }) => level === "long-stories",
+    )) {
+      await page.goto(`/stories/${story.id}/pages/1`);
+      const reader = page.getByRole("region", { name: "Story reader" });
+      const controls = reader.getByRole("navigation", {
+        name: "Story controls",
+      });
+
+      for (const [pageIndex] of story.pages.entries()) {
+        const pageText = reader.getByLabel(
+          new RegExp(`^Page ${pageIndex + 1} of ${story.pages.length}\\.`),
+        );
+        const readingPane = pageText.locator("..");
+        await expect(pageText).toBeVisible();
+        const range = await readingPane.evaluate(
+          (pane) => pane.scrollHeight - pane.clientHeight,
+        );
+        if (range > 1) {
+          overflowing.push({
+            page: pageIndex + 1,
+            range,
+            story: story.id,
+          });
+        }
+
+        if (pageIndex < story.pages.length - 1) {
+          await controls.getByRole("button", { name: "Next page" }).click();
+          await expect(page).toHaveURL(
+            new RegExp(
+              `/stories/${story.id}/pages/${pageIndex + 2}$`,
+            ),
+          );
+        }
+      }
+    }
+    expect(overflowing).toEqual([]);
   });
 }
 
@@ -1118,7 +1172,7 @@ for (const viewport of [
   });
 }
 
-test("every saved-audio story prompt is fully visible when narration ends", async ({
+test("every saved-audio story leaves its next action visible when narration ends", async ({
   page,
 }) => {
   test.setTimeout(180_000);
@@ -1153,14 +1207,25 @@ test("every saved-audio story prompt is fully visible when narration ends", asyn
           ]);
         await finishSavedStoryAudio(page);
       } else {
+        await expect(prompt).toHaveCount(0);
         await expect
           .poll(async () => (await savedStoryAudioState(page)).active)
           .toEqual([]);
       }
+      if (storyPage.joinInAudioId) {
+        await expect(
+          prompt.getByText("Your turn", { exact: true }),
+        ).toBeVisible();
+        await expectFullyVisibleInReadingPane(prompt);
+      }
       await expect(
-        prompt.getByText("Your turn", { exact: true }),
+        controls.getByRole("button", {
+          name:
+            pageIndex < story.pages.length - 1
+              ? "Next page"
+              : "Finish story",
+        }),
       ).toBeVisible();
-      await expectFullyVisibleInReadingPane(prompt);
       await expect(
         reader.evaluate((element) => element.scrollTop),
       ).resolves.toBe(0);

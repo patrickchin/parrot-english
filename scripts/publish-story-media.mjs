@@ -201,6 +201,9 @@ export async function runStoryMediaPublisher({
     );
   }
 
+  // Wrangler has no create-only R2 put. Keep this a single-writer operation:
+  // if an upload fails after preflight, increment the manifest's media version
+  // instead of retrying the partially consumed immutable key set.
   for (const upload of uploads) {
     const result = runCommand("npm", createPutArguments(upload), {
       cwd,
