@@ -31,18 +31,6 @@ const expectedFixtureOutputs = [
   "story-fixture-page-001-narration.mp3",
   "story-fixture-page-002-narration.mp3",
 ];
-const fixtureManifest = [
-  {
-    boundaries: [{ at: 0.68, silenceEnd: 0.76, silenceStart: 0.6 }],
-    duration: 1.36,
-    filename: fixtureFilename,
-    outputs: [
-      { end: 0.68, filename: expectedFixtureOutputs[0], start: 0 },
-      { end: 1.36, filename: expectedFixtureOutputs[1], start: 0.68 },
-    ],
-    sha256: fixtureSha256,
-  },
-];
 const temporaryDirectories = [];
 
 afterEach(async () => {
@@ -57,10 +45,24 @@ async function createFixture() {
   const root = await mkdtemp(join(tmpdir(), "parrot-long-story-audio-"));
   const audioDir = join(root, "audio");
   const workDir = join(root, "work");
+  const fixtureAudio = join(audioDir, fixtureFilename);
   temporaryDirectories.push(root);
   await mkdir(audioDir);
-  await copyFile(fixtureAudioUrl, join(audioDir, fixtureFilename));
-  return { audioDir, workDir };
+  await copyFile(fixtureAudioUrl, fixtureAudio);
+  const duration = Number(probeAudio(fixtureAudio).format.duration);
+  const manifest = [
+    {
+      boundaries: [{ at: 0.68, silenceEnd: 0.76, silenceStart: 0.6 }],
+      duration,
+      filename: fixtureFilename,
+      outputs: [
+        { end: 0.68, filename: expectedFixtureOutputs[0], start: 0 },
+        { end: duration, filename: expectedFixtureOutputs[1], start: 0.68 },
+      ],
+      sha256: fixtureSha256,
+    },
+  ];
+  return { audioDir, manifest, workDir };
 }
 
 function sha256(bytes) {
@@ -90,8 +92,43 @@ async function loadSplitter() {
 }
 
 describe("long-story narration splitter", () => {
+  it("binds fixture timing to ffprobe's encoded duration", async () => {
+    const { audioDir, manifest } = await createFixture();
+    const encodedDuration = Number(
+      probeAudio(join(audioDir, fixtureFilename)).format.duration,
+    );
+
+    assert.equal(Array.isArray(manifest), true);
+    assert.equal(manifest[0].duration, encodedDuration);
+    assert.equal(manifest[0].outputs.at(-1).end, encodedDuration);
+  });
+
+  it("rejects real source duration drift", async () => {
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
+    const { splitLongStoryAudio } = await loadSplitter();
+    const staleDuration = fixtureManifest[0].duration + 0.2;
+    const manifest = [
+      {
+        ...fixtureManifest[0],
+        duration: staleDuration,
+        outputs: fixtureManifest[0].outputs.map((output, index, outputs) =>
+          index === outputs.length - 1
+            ? { ...output, end: staleDuration }
+            : output,
+        ),
+      },
+    ];
+
+    await assert.rejects(
+      splitLongStoryAudio({ audioDir, manifest, workDir }),
+      /Duration mismatch/,
+    );
+  });
+
   it("rejects a split whose audited boundary is missing", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
     const manifest = [{ ...fixtureManifest[0], boundaries: [] }];
 
@@ -102,7 +139,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("rejects an audited cut that does not match its output junction", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
     const manifest = [
       {
@@ -118,7 +156,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("defaults to a side-effect-free dry run", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const sourceBefore = await readFile(join(audioDir, fixtureFilename));
     const { splitLongStoryAudio } = await loadSplitter();
 
@@ -143,7 +182,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("stages, validates, and applies every output before replacing a source", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
 
     assert.equal(typeof splitLongStoryAudio, "function");
@@ -175,7 +215,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("retains the recovery snapshot when rollback restoration fails", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
     const snapshotDir = join(workDir, "apply-snapshot");
     let renameCount = 0;
@@ -221,7 +262,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("rebuilds deterministically from the preserved source set", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
 
     assert.equal(typeof splitLongStoryAudio, "function");
@@ -253,7 +295,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("validates an already-applied output set without recreating local state", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
     assert.equal(typeof splitLongStoryAudio, "function");
     await splitLongStoryAudio({
@@ -293,7 +336,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("requires preserved originals before reapplying an already-migrated set", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
     assert.equal(typeof splitLongStoryAudio, "function");
     await splitLongStoryAudio({
@@ -331,7 +375,8 @@ describe("long-story narration splitter", () => {
   });
 
   it("rejects an unexpected source hash without writing outputs", async () => {
-    const { audioDir, workDir } = await createFixture();
+    const { audioDir, manifest: fixtureManifest, workDir } =
+      await createFixture();
     const { splitLongStoryAudio } = await loadSplitter();
     assert.equal(typeof splitLongStoryAudio, "function");
     await appendFile(join(audioDir, fixtureFilename), "unexpected");
