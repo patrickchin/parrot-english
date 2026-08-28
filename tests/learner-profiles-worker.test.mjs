@@ -366,6 +366,87 @@ describe("learner roster Worker routing", () => {
     );
   });
 
+  it("clears the selection-required marker when activating a created learner", async () => {
+    insertLearner(state, "learner-mary", { name: "Mary" });
+    requireLearnerSelection(state);
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("POST", "/api/learner-profiles", { name: "Rose" }),
+      env,
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.notEqual(payload.activeProfileId, "learner-mary");
+    assert.equal(
+      payload.profiles.find(({ id }) => id === payload.activeProfileId).name,
+      "Rose",
+    );
+    assert.deepEqual(
+      state.sqlite
+        .prepare(
+          `SELECT learner_profile_id
+           FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .all()
+        .map((row) => ({ ...row })),
+      [{ learner_profile_id: payload.activeProfileId }],
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM learner_selection_required
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
+    );
+  });
+
+  it("keeps the selection-required marker for non-activating creation", async () => {
+    insertLearner(state, "learner-mary", { name: "Mary" });
+    requireLearnerSelection(state);
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("POST", "/api/learner-profiles", {
+        activate: false,
+        name: "Rose",
+      }),
+      env,
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(payload.activeProfileId, null);
+    assert.deepEqual(
+      payload.profiles.map(({ name }) => name),
+      ["Mary", "Rose"],
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM learner_selection_required
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      1,
+    );
+  });
+
   it("persists additional learners in creation order when the database clock does not advance", async (t) => {
     state.sqlite.function(
       "unixepoch",
@@ -623,6 +704,51 @@ describe("learner roster Worker routing", () => {
           .get(),
       },
       { auth_user_id: "user-a", learner_profile_id: rows[0].id },
+    );
+  });
+
+  it("rolls back activating creation and selection when marker clearing fails", async () => {
+    insertLearner(state, "learner-mary", { name: "Mary" });
+    requireLearnerSelection(state);
+    state.sqlite.exec(
+      `CREATE TRIGGER reject_learner_marker_clear
+       BEFORE DELETE ON learner_selection_required
+       BEGIN
+         SELECT RAISE(ABORT, 'marker clear failed');
+       END`,
+    );
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    await assert.rejects(
+      createWorker({ createAuth: () => authStub() }).fetch(
+        request("POST", "/api/learner-profiles", { name: "Rose" }),
+        env,
+      ),
+      /marker clear failed/i,
+    );
+
+    assert.deepEqual(
+      learnerRows(state).map(({ id, name }) => ({ id, name })),
+      [{ id: "learner-mary", name: "Mary" }],
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM learner_selection_required
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      1,
     );
   });
 

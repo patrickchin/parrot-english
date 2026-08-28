@@ -36,6 +36,7 @@ const profiles = [
   {
     age: 6,
     createdAt: "2026-08-29T08:00:00.000Z",
+    deletionPending: false,
     id: "learner-bob",
     name: "Bob",
     profileStatus: "completed",
@@ -43,8 +44,17 @@ const profiles = [
   {
     age: 7,
     createdAt: "2026-08-29T08:01:00.000Z",
+    deletionPending: false,
     id: "learner-noah",
     name: "Mary",
+    profileStatus: "completed",
+  },
+  {
+    age: 8,
+    createdAt: "2026-08-29T08:02:00.000Z",
+    deletionPending: true,
+    id: "learner-rose",
+    name: "Rose",
     profileStatus: "completed",
   },
 ];
@@ -222,6 +232,30 @@ test("retries a failed protected roster load", async () => {
 
   await waitFor(() => assert.equal(selectedRadio(container, "learner-noah").disabled, false));
   assert.ok(requestCount() >= 2);
+  assert.deepEqual(operations, []);
+});
+
+test("offers normal learners but omits deletion-pending learners", async () => {
+  const operations = [];
+  installRosterFetch();
+  const container = await mountStrict(harness({ operations }));
+
+  await click(namedButton(container, "Open chooser"));
+  await waitFor(() =>
+    assert.equal(selectedRadio(container, "learner-bob").disabled, false),
+  );
+
+  assert.ok(selectedRadio(container, "learner-noah"));
+  const pendingLearnerRadio = container.querySelector(
+    'input[type="radio"][value="learner-rose"]',
+  );
+  const renderedText = container.textContent;
+  await click(namedButton(container, "Cancel"));
+  assert.ok(
+    !pendingLearnerRadio,
+    "Expected the chooser to omit the deletion-pending learner radio.",
+  );
+  assert.doesNotMatch(renderedText, /Rose/);
   assert.deepEqual(operations, []);
 });
 

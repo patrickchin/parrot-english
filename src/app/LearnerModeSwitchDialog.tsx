@@ -107,6 +107,13 @@ export function LearnerModeSwitchDialog({
     }
   }
 
+  const selectableProfiles =
+    rosterState.phase === "ready"
+      ? rosterState.roster.profiles.filter(({ deletionPending }) =>
+          !deletionPending
+        )
+      : [];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-navy/65 p-4 font-ui sm:p-8"
@@ -166,12 +173,12 @@ export function LearnerModeSwitchDialog({
               disabled={isSwitching}
             >
               <legend className="sr-only">Learner profiles</legend>
-              {rosterState.roster.profiles.length === 0 ? (
+              {selectableProfiles.length === 0 ? (
                 <p className="m-0 font-bold leading-relaxed text-slate-700">
                   Add a learner before switching to learner mode.
                 </p>
               ) : (
-                rosterState.roster.profiles.map((profile) => (
+                selectableProfiles.map((profile) => (
                   <label
                     className="flex min-h-13 cursor-pointer items-center gap-3 rounded-2xl border-3 border-sky-200 bg-white px-4 py-3 font-black text-brand-ink"
                     htmlFor={`learner-mode-${profile.id}`}

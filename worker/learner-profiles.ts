@@ -306,6 +306,12 @@ export async function handleLearnerProfilesRequest(input: {
             now,
             now,
           ),
+        input.database.$client
+          .prepare(
+            `DELETE FROM learner_selection_required
+             WHERE session_id = ?`,
+          )
+          .bind(input.identity.sessionId),
       ]);
       return json(await roster(input.database, input.identity));
     }

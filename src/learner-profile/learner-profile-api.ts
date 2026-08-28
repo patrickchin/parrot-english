@@ -85,6 +85,7 @@ export type GuardianLearnerProfileSummary = {
   age: number | null;
   profileStatus: LearnerProfileSummary["profileStatus"];
   createdAt: string;
+  deletionPending: boolean;
 };
 
 export type LearnerProfileRoster = {
