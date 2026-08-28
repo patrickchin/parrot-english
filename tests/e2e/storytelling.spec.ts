@@ -576,6 +576,7 @@ test("a saved-audio story has descriptive art, read-aloud, and obvious page cont
   const controls = reader.getByRole("navigation", {
     name: "Story controls",
   });
+  const listenControls = controls.getByRole("group", { name: "Listen" });
 
   await expect(
     reader.getByRole("heading", { exact: true, name: "The Red Ball" }),
@@ -594,8 +595,19 @@ test("a saved-audio story has descriptive art, read-aloud, and obvious page cont
   await expect(
     reader.getByText(/Artwork placeholder|Picture coming later/),
   ).toHaveCount(0);
-  const readToMe = controls.getByRole("button", { name: "Listen" });
+  const readToMe = listenControls.getByRole("button", {
+    name: "Listen to this page",
+  });
+  const keepGoing = listenControls.getByRole("button", {
+    name: "Keep playing to the end",
+  });
   await expect(readToMe).toBeEnabled();
+  await expect(readToMe).toContainText("This page");
+  await expect(keepGoing).toContainText("Keep going");
+  await expect(keepGoing).toHaveAttribute("aria-pressed", "false");
+  await expect(
+    reader.getByText("Choose how to listen", { exact: true }),
+  ).toBeVisible();
   await expect(controls.getByText("Back", { exact: true })).toBeVisible();
   await expect(controls.getByText("Next", { exact: true })).toBeVisible();
   await expect(controls.getByRole("button", { name: "Previous page" })).toBeDisabled();
@@ -648,7 +660,7 @@ test("whole-story playback advances every routed page and completes the story", 
   const redBall = STORIES.find(({ id }) => id === "the-red-ball");
   if (!redBall) throw new Error("Expected The Red Ball in the catalog.");
   const wholeStory = page.getByRole("button", {
-    name: "Play whole story",
+    name: "Keep playing to the end",
   });
   await expect(wholeStory).toHaveAttribute("aria-pressed", "false");
   await wholeStory.click();
@@ -699,14 +711,18 @@ for (const viewport of completionViewports) {
 
     for (const scenario of [
       {
-        controls: ["Listen", "Play whole story", "Next page"],
+        controls: [
+          "Listen to this page",
+          "Keep playing to the end",
+          "Next page",
+        ],
         pageIndex: 0,
       },
       {
         controls: [
           "Previous page",
-          "Listen",
-          "Play whole story",
+          "Listen to this page",
+          "Keep playing to the end",
           "Next page",
         ],
         pageIndex: 2,
@@ -714,8 +730,8 @@ for (const viewport of completionViewports) {
       {
         controls: [
           "Previous page",
-          "Listen",
-          "Play whole story",
+          "Listen to this page",
+          "Keep playing to the end",
           "Finish story",
         ],
         pageIndex: redBall.pages.length - 1,
@@ -786,11 +802,11 @@ for (const viewport of longStoryViewports) {
     const previous = controls.getByRole("button", { name: "Previous page" });
     const listen = controls.getByRole("button", {
       exact: true,
-      name: "Listen",
+      name: "Listen to this page",
     });
     const wholeStory = controls.getByRole("button", {
       exact: true,
-      name: "Play whole story",
+      name: "Keep playing to the end",
     });
     const next = controls.getByRole("button", { name: "Next page" });
     const orderedControls = [previous, listen, wholeStory, next];
@@ -971,7 +987,7 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
   await expectFullyVisibleInReadingPane(text);
   expect((await readingPaneGeometry(prompt)).paneScrollTop).toBe(0);
 
-  await controls.getByRole("button", { name: "Listen" }).click();
+  await controls.getByRole("button", { name: "Listen to this page" }).click();
   await expect(
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeFocused();
@@ -1007,7 +1023,7 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
   await expect(prompt.getByText("Your turn", { exact: true })).toBeVisible();
   await expectFullyVisibleInReadingPane(prompt);
   await expect(
-    controls.getByRole("button", { name: "Listen again" }),
+    controls.getByRole("button", { name: "Listen to this page again" }),
   ).toBeFocused();
 
   expectStablePosition(
@@ -1023,7 +1039,9 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
   ).resolves.toBe(0);
   expect((await readingPaneGeometry(prompt)).documentScrollTop).toBe(0);
 
-  await controls.getByRole("button", { name: "Listen again" }).click();
+  await controls
+    .getByRole("button", { name: "Listen to this page again" })
+    .click();
   await expect(
     controls.getByRole("button", { name: "Pause story" }),
   ).toBeFocused();
@@ -1047,7 +1065,7 @@ test("a stale sentence completion cannot reveal or speak on the next page", asyn
     name: "Story controls",
   });
 
-  await controls.getByRole("button", { name: "Listen" }).click();
+  await controls.getByRole("button", { name: "Listen to this page" }).click();
   await expect
     .poll(async () => (await savedStoryAudioState(page)).active)
     .toEqual([
@@ -1066,7 +1084,7 @@ test("a stale sentence completion cannot reveal or speak on the next page", asyn
   const nextPrompt = reader.getByLabel(`Say it: ${kite.pages[4].joinIn}`);
   expect((await readingPaneGeometry(nextPrompt)).paneScrollTop).toBe(0);
   await expect(
-    controls.getByRole("button", { name: "Listen" }),
+    controls.getByRole("button", { name: "Listen to this page" }),
   ).toBeVisible();
 });
 
@@ -1091,7 +1109,7 @@ test("read-aloud failure keeps the child prompt beside recovery", async ({
     controls,
   );
 
-  await controls.getByRole("button", { name: "Listen" }).click();
+  await controls.getByRole("button", { name: "Listen to this page" }).click();
   await expect
     .poll(async () => (await savedStoryAudioState(page)).active)
     .toEqual([
@@ -1105,10 +1123,10 @@ test("read-aloud failure keeps the child prompt beside recovery", async ({
   await expectFullyVisibleInReadingPane(prompt);
   await expectFullyVisibleInReadingPane(alert);
   await expect(
-    controls.getByRole("button", { name: "Listen" }),
+    controls.getByRole("button", { name: "Listen to this page" }),
   ).toBeFocused();
 
-  await controls.getByRole("button", { name: "Listen" }).click();
+  await controls.getByRole("button", { name: "Listen to this page" }).click();
   await expect
     .poll(async () => (await savedStoryAudioState(page)).active)
     .toEqual([
@@ -1122,7 +1140,7 @@ test("read-aloud failure keeps the child prompt beside recovery", async ({
   await expectFullyVisibleInReadingPane(prompt);
   await expectFullyVisibleInReadingPane(alert);
   await expect(
-    controls.getByRole("button", { name: "Listen" }),
+    controls.getByRole("button", { name: "Listen to this page" }),
   ).toBeFocused();
 
   expectStablePosition(
@@ -1155,7 +1173,9 @@ for (const viewport of [
       name: "Story controls",
     });
 
-    await controls.getByRole("button", { name: "Listen" }).click();
+    await controls
+      .getByRole("button", { name: "Listen to this page" })
+      .click();
     await expect
       .poll(async () => (await savedStoryAudioState(page)).active)
       .toHaveLength(1);
@@ -1189,7 +1209,9 @@ test("every saved-audio story leaves its next action visible when narration ends
         name: "Story controls",
       });
       const prompt = reader.getByLabel(`Say it: ${storyPage.joinIn}`);
-      await controls.getByRole("button", { name: "Listen" }).click();
+      await controls
+        .getByRole("button", { name: "Listen to this page" })
+        .click();
       await expect
         .poll(async () => (await savedStoryAudioState(page)).active)
         .toEqual([
@@ -1275,7 +1297,9 @@ for (const viewport of [
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
 
-    await controls.getByRole("button", { name: "Listen" }).click();
+    await controls
+      .getByRole("button", { name: "Listen to this page" })
+      .click();
     await expect(
       controls.getByRole("button", { name: "Pause story" }),
     ).toBeVisible();
@@ -1334,7 +1358,7 @@ test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) =
   await expect(reader.getByText(/Glow, Flicker, glow!/)).toBeVisible();
   await expect(reader.getByText(/At sunset|moonlight|lantern tree/i)).toHaveCount(0);
   await expect(
-    reader.getByRole("button", { name: "Listen" }),
+    reader.getByRole("button", { name: "Listen to this page" }),
   ).toBeEnabled();
 });
 
@@ -1410,7 +1434,9 @@ for (const viewport of completionViewports) {
     const reader = page.getByRole("region", { name: "Story reader" });
     const sentence = reader.getByText("Here is my red ball.", { exact: true });
     await expect(sentence).toBeFocused();
-    await expect(reader.getByRole("button", { name: "Listen" })).toBeEnabled();
+    await expect(
+      reader.getByRole("button", { name: "Listen to this page" }),
+    ).toBeEnabled();
     await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
     const promptGeometry = await readingPaneGeometry(
       reader.getByLabel("Say it: Red ball!"),
@@ -1428,7 +1454,9 @@ for (const viewport of completionViewports) {
     await expectNoHorizontalOverflow(page);
 
     await page.keyboard.press("Tab");
-    await expect(reader.getByRole("button", { name: "Listen" })).toBeFocused();
+    await expect(
+      reader.getByRole("button", { name: "Listen to this page" }),
+    ).toBeFocused();
   });
 }
 
@@ -1457,7 +1485,9 @@ test("keyboard completion and restart return to silent page-one context", async 
   await expect(page).toHaveURL(/\/stories\/the-red-ball\/pages\/1$/);
   const sentence = page.getByText("Here is my red ball.", { exact: true });
   await expect(sentence).toBeFocused();
-  await expect(page.getByRole("button", { name: "Listen" })).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Listen to this page" }),
+  ).toBeEnabled();
   const reader = page.getByRole("region", { name: "Story reader" });
   await expect(reader.evaluate((element) => element.scrollTop)).resolves.toBe(0);
   const promptGeometry = await readingPaneGeometry(
@@ -1519,7 +1549,7 @@ test("completion cancels active narration and ignores its stale callback", async
   await page.goto("/stories/the-red-ball/pages/5");
   await installSavedStoryAudio(page);
 
-  await page.getByRole("button", { name: "Listen" }).click();
+  await page.getByRole("button", { name: "Listen to this page" }).click();
   await expect
     .poll(async () => (await savedStoryAudioState(page)).active)
     .toEqual([
@@ -1581,7 +1611,7 @@ for (const viewport of viewports) {
     await expectInsideViewportHorizontally(progress, page);
     await expectInsideViewportHorizontally(controls, page);
     await expectInsideViewportHorizontally(
-      controls.getByRole("button", { name: "Listen" }),
+      controls.getByRole("button", { name: "Listen to this page" }),
       page,
     );
     await expectNoHorizontalOverflow(page);

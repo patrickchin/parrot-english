@@ -194,8 +194,8 @@ describe("personalized story art UI", () => {
       /<img[^>]*alt="You holding a bright red ball"[^>]*src="\/api\/stories\/the-red-ball\/personalized-art\/asset"/,
     );
     assert.doesNotMatch(html, /Picture coming later/);
-    assert.match(html, /Tap Listen/);
-    assert.match(html, /aria-label="Listen"/);
+    assert.match(html, /Choose how to listen/);
+    assert.match(html, /aria-label="Listen to this page"/);
     assert.doesNotMatch(html, /Words to notice|First words|One object/);
   });
 
