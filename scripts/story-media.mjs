@@ -7,9 +7,196 @@ import sharp from "sharp";
 
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 const COVER_WIDTHS = [1536, 768, 384];
-const EXPECTED_STORIES = new Map([
-  ["the-gruffalo", 12],
-  ["we-re-going-on-a-bear-hunt", 5],
+const LONG_STORY_PAGE_IDS = new Map([
+  [
+    "the-gruffalo",
+    Array.from(
+      { length: 12 },
+      (_, index) => `page-${String(index + 1).padStart(3, "0")}`,
+    ),
+  ],
+  [
+    "we-re-going-on-a-bear-hunt",
+    Array.from(
+      { length: 5 },
+      (_, index) => `page-${String(index + 1).padStart(3, "0")}`,
+    ),
+  ],
+]);
+const LEARNER_STORY_PAGE_IDS = new Map([
+  [
+    "boots-in-the-rain",
+    ["rain-falls", "wet-feet", "boots-on", "coat-on", "stay-dry", "warm-home"],
+  ],
+  [
+    "big-box-small-box",
+    [
+      "bo-big-box",
+      "pia-small-box",
+      "bo-does-not-fit",
+      "pia-box-too-big",
+      "big-for-bo",
+      "small-for-pia",
+    ],
+  ],
+  [
+    "lina-goes-to-sleep",
+    [
+      "it-is-night",
+      "one-star",
+      "moon-up",
+      "light-off",
+      "eyes-shut",
+      "sleep-well",
+    ],
+  ],
+  [
+    "seed-wake-up",
+    [
+      "seed-sleeps",
+      "seed-water",
+      "seed-sun",
+      "seed-starts-growing",
+      "seed-grows",
+      "hello-flower",
+    ],
+  ],
+  [
+    "a-snack-for-two",
+    [
+      "two-crackers",
+      "bo-hungry",
+      "cracker-please",
+      "we-can-share",
+      "one-for-each",
+      "thank-you",
+    ],
+  ],
+  [
+    "the-lantern-trail",
+    [
+      "pip-sees-light",
+      "flicker-is-lost",
+      "pip-can-help",
+      "walk-by-water",
+      "family-lights",
+      "flicker-home",
+    ],
+  ],
+  [
+    "the-noisy-little-band",
+    ["bo-drum", "mia-bell", "tomo-shaker", "too-loud", "play-quiet", "band-sings"],
+  ],
+  [
+    "robo-tries",
+    [
+      "robo-walks",
+      "robo-jumps",
+      "robo-runs",
+      "robo-tries-flying",
+      "robo-tries-swimming",
+      "robo-can-try",
+    ],
+  ],
+  [
+    "tess-can-help",
+    ["cart-broken", "can-i-help", "find-wheel", "put-wheel-on", "fix-cart", "cart-rolls"],
+  ],
+  [
+    "ready-maya-ready",
+    [
+      "maya-wakes",
+      "maya-washes",
+      "maya-dresses",
+      "maya-eats",
+      "maya-brushes",
+      "maya-ready",
+    ],
+  ],
+  [
+    "kite-come-back",
+    [
+      "kite-flies",
+      "wind-pulls",
+      "kite-stuck",
+      "ana-pulls",
+      "ask-dad",
+      "kite-free",
+      "fly-together",
+    ],
+  ],
+  [
+    "the-picnic-blanket-search",
+    [
+      "blanket-missing",
+      "little-hill",
+      "low-branch",
+      "little-bridge",
+      "short-tunnel",
+      "blanket-inside",
+      "picnic-time",
+    ],
+  ],
+  [
+    "soup-for-five",
+    [
+      "make-soup",
+      "carrots-in",
+      "peas-in",
+      "corn-in",
+      "mix-round",
+      "taste-soup",
+      "bowl-each",
+    ],
+  ],
+  [
+    "wally-finds-the-way",
+    [
+      "which-way-home",
+      "swim-straight",
+      "turn-left",
+      "turn-right",
+      "home-is-near",
+      "red-rock",
+      "wally-home",
+    ],
+  ],
+  [
+    "the-moon-bus",
+    [
+      "bus-to-moon",
+      "leo-ticket",
+      "rabbit-seats",
+      "three-stars",
+      "moon-bounce",
+      "blue-earth",
+      "bus-home",
+    ],
+  ],
+]);
+const COLLECTIONS = new Map([
+  [
+    "long-stories",
+    {
+      inventoryError:
+        "manifest.assets must contain exactly two covers and seventeen original scene images",
+      pageIdsByStory: LONG_STORY_PAGE_IDS,
+      pageIdPattern: /^page-\d{3}$/,
+      pageIdRequirement: "must use page-NNN",
+      supportsCovers: true,
+    },
+  ],
+  [
+    "learner-story-pages",
+    {
+      inventoryError:
+        "manifest.assets must contain exactly ninety-five learner story page images",
+      pageIdsByStory: LEARNER_STORY_PAGE_IDS,
+      pageIdPattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      pageIdRequirement: "must use a lowercase slug",
+      supportsCovers: false,
+    },
+  ],
 ]);
 
 function isRecord(value) {
@@ -44,20 +231,25 @@ function requireStagedFile(value, label, version, extensions) {
   return normalized;
 }
 
-function parseAsset(value, index, version) {
+function parseAsset(value, index, version, collection) {
   const asset = requireRecord(value, `assets[${index}]`);
   const storyId = requireText(asset.storyId, `assets[${index}].storyId`);
-  if (!EXPECTED_STORIES.has(storyId)) {
-    throw new Error(`assets[${index}].storyId is not a supported long story`);
+  if (!collection.pageIdsByStory.has(storyId)) {
+    throw new Error(`assets[${index}].storyId is not supported by this collection`);
   }
   if (!["cover", "page"].includes(asset.kind)) {
     throw new Error(`assets[${index}].kind must be cover or page`);
   }
+  if (asset.kind === "cover" && !collection.supportsCovers) {
+    throw new Error(`assets[${index}].kind must be page for this collection`);
+  }
   let pageId;
   if (asset.kind === "page") {
     pageId = requireText(asset.pageId, `assets[${index}].pageId`);
-    if (!/^page-\d{3}$/.test(pageId)) {
-      throw new Error(`assets[${index}].pageId must use page-NNN`);
+    if (!collection.pageIdPattern.test(pageId)) {
+      throw new Error(
+        `assets[${index}].pageId ${collection.pageIdRequirement}`,
+      );
     }
   } else if (asset.pageId !== undefined) {
     throw new Error(`assets[${index}].pageId is only valid for page assets`);
@@ -84,14 +276,23 @@ function parseAsset(value, index, version) {
   };
 }
 
-function expectedAssetIds() {
-  return [...EXPECTED_STORIES].flatMap(([storyId, pageCount]) => [
-    `${storyId}/cover`,
-    ...Array.from(
-      { length: pageCount },
-      (_, index) => `${storyId}/page-${String(index + 1).padStart(3, "0")}`,
-    ),
+function expectedAssetIds(collection) {
+  return [...collection.pageIdsByStory].flatMap(([storyId, pageIds]) => [
+    ...(collection.supportsCovers ? [`${storyId}/cover`] : []),
+    ...pageIds.map((pageId) => `${storyId}/${pageId}`),
   ]);
+}
+
+function validateInventory(assets, collection) {
+  const actualIds = assets.map(({ assetId }) => assetId);
+  const expectedIds = expectedAssetIds(collection);
+  if (
+    actualIds.length !== expectedIds.length ||
+    new Set(actualIds).size !== actualIds.length ||
+    expectedIds.some((id) => !actualIds.includes(id))
+  ) {
+    throw new Error(collection.inventoryError);
+  }
 }
 
 function sourceContentType(filename) {
@@ -130,21 +331,16 @@ export function createStoryMediaPublishPlan(manifestValue) {
   if (!Array.isArray(manifest.assets)) {
     throw new Error("manifest.assets must be an array");
   }
+  const collectionName = manifest.collection === undefined
+    ? "long-stories"
+    : requireText(manifest.collection, "manifest.collection");
+  const collection = COLLECTIONS.get(collectionName);
+  if (!collection) throw new Error("manifest.collection is not supported");
 
   const assets = manifest.assets.map((asset, index) =>
-    parseAsset(asset, index, manifest.version),
+    parseAsset(asset, index, manifest.version, collection),
   );
-  const actualIds = assets.map(({ assetId }) => assetId);
-  const expectedIds = expectedAssetIds();
-  if (
-    actualIds.length !== expectedIds.length ||
-    new Set(actualIds).size !== actualIds.length ||
-    expectedIds.some((id) => !actualIds.includes(id))
-  ) {
-    throw new Error(
-      "manifest.assets must contain exactly two covers and seventeen original scene images",
-    );
-  }
+  validateInventory(assets, collection);
   if (new Set(assets.map(({ sourceFile }) => sourceFile)).size !== assets.length) {
     throw new Error("story media source files must be unique");
   }
@@ -191,6 +387,7 @@ export function createStoryMediaPublishPlan(manifestValue) {
 
   return {
     assets,
+    collection: collectionName,
     privateObjects,
     publicOutputs,
     version: manifest.version,
@@ -319,6 +516,7 @@ export async function prepareStoryMediaUploads(planValue, options = {}) {
 
   return {
     assets: plan.assets,
+    collection: plan.collection,
     publicOutputs: publicUploads,
     uploads: [...privateUploads, ...publicUploads],
     version: plan.version,
@@ -353,7 +551,8 @@ function publicUrl(mediaOrigin, key) {
 }
 
 function createMappings(prepared, mediaOrigin) {
-  return [...EXPECTED_STORIES.keys()].map((storyId) => {
+  const storyIds = [...new Set(prepared.assets.map(({ storyId }) => storyId))];
+  return storyIds.map((storyId) => {
     const cover = prepared.publicOutputs.find(
       (output) =>
         output.assetId === `${storyId}/cover` && output.width === 1536,
@@ -369,7 +568,7 @@ function createMappings(prepared, mediaOrigin) {
         }),
     );
     return {
-      coverSrc: publicUrl(mediaOrigin, cover.key),
+      ...(cover ? { coverSrc: publicUrl(mediaOrigin, cover.key) } : {}),
       pageSrcById,
       storyId,
     };

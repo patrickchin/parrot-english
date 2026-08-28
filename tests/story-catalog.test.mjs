@@ -448,7 +448,7 @@ describe("story script catalog", () => {
     assert.match(story.pages[0].text, /^Ben the whale cannot see/);
   });
 
-  it("fully illustrates First words and assigns saved narration and join-in audio to every learner page", () => {
+  it("fully illustrates every learner page and assigns saved narration and join-in audio", () => {
     const joinInAudioByText = new Map();
 
     for (const story of STORIES.filter(({ level }) => level !== "long-stories")) {
@@ -462,19 +462,12 @@ describe("story script catalog", () => {
       assert.doesNotMatch(story.cover.alt, /placeholder/i);
 
       for (const page of story.pages) {
-        if (story.level === "first-words") {
-          assert.equal(
-            page.artwork.src,
-            `https://media.parrotbook.com/assets/v3/story-pages/${story.id}-${page.id}.webp`,
-            `${story.title}/${page.id} image source`,
-          );
-        } else {
-          assert.equal(
-            page.artwork.src,
-            null,
-            `${story.title}/${page.id} image source`,
-          );
-        }
+        const imageVersion = story.level === "first-words" ? 3 : 6;
+        assert.equal(
+          page.artwork.src,
+          `https://media.parrotbook.com/assets/v${imageVersion}/story-pages/${story.id}-${page.id}.webp`,
+          `${story.title}/${page.id} image source`,
+        );
         assert.equal(
           page.narrationAudioId,
           `story-${story.id}-${page.id}-narration`,

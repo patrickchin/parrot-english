@@ -72,10 +72,7 @@ function makePrototypeStory({
       artwork: pageArtwork({
         alt: `${artworkPrompt} in ${story.title}, page ${pageIndex + 1}`,
         prompt: artworkPrompt,
-        src:
-          story.level === "first-words"
-            ? `https://media.parrotbook.com/assets/v3/story-pages/${story.id}-${page.id}.webp`
-            : null,
+        src: `https://media.parrotbook.com/assets/v${story.level === "first-words" ? 3 : 6}/story-pages/${story.id}-${page.id}.webp`,
       }),
       joinInAudioId: joinInAudioId(page.joinIn),
       narrationAudioId: `story-${story.id}-${page.id}-narration`,
