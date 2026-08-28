@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { createElement, useState } from "react";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import test from "node:test";
@@ -35,10 +35,6 @@ const { GuardianLearnerDetails } = detailsModule;
 const { LearnerSelectionProvider } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileContext.tsx",
 );
-const { createLearnerProfile, selectLearnerProfile } = await vite.ssrLoadModule(
-  "/src/learner-profile/learner-profile-api.ts",
-);
-
 const mia = {
   age: 6,
   createdAt: "2026-08-25T08:00:00.000Z",
@@ -172,13 +168,12 @@ function renderView(overrides = {}) {
       MemoryRouter,
       { initialEntries: ["/guardian/learners"] },
       createElement(GuardianLearnerProfilesView, {
-        activeProfileId: mia.id,
         error: "",
         isLoading: false,
         onAdd() {},
+        onDelete() {},
         onManage() {},
         onRetry() {},
-        onSelect() {},
         pendingProfileId: null,
         profiles: [mia, noah],
         statusMessage: "",
@@ -212,40 +207,17 @@ function currentRoute(container) {
     ?.textContent;
 }
 
-function managerHarness({ activeProfileId = mia.id, reloadSelectedLearner }) {
+function managerHarness() {
   assert.equal(
     typeof GuardianLearnerProfiles,
     "function",
     "Expected an interactive Guardian learner manager",
   );
   return createElement(
-    LearnerSelectionProvider,
-    {
-      activeProfileId,
-      async createAndSelectLearner(name) {
-        const result = await createLearnerProfile(name);
-        if (!result.activeProfileId) {
-          throw new Error("The newly added learner could not be loaded.");
-        }
-        await reloadSelectedLearner(result.activeProfileId);
-        return result;
-      },
-      reloadSelectedLearner,
-      async selectLearner(profileId) {
-        const result = await selectLearnerProfile(profileId);
-        if (result.activeProfileId !== profileId) {
-          throw new Error("The selected learner could not be loaded.");
-        }
-        await reloadSelectedLearner(profileId);
-        return result;
-      },
-    },
-    createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/learners"] },
-      createElement(GuardianLearnerProfiles),
-      createElement(LocationProbe),
-    ),
+    MemoryRouter,
+    { initialEntries: ["/guardian/learners"] },
+    createElement(GuardianLearnerProfiles),
+    createElement(LocationProbe),
   );
 }
 
@@ -291,55 +263,7 @@ function detailsHarness({
   );
 }
 
-function changingContextManagerHarness({ onActivate, reloadSelectedLearner }) {
-  function Harness() {
-    const [activeProfileId, setActiveProfileId] = useState(mia.id);
-    return createElement(
-      LearnerSelectionProvider,
-      {
-        activeProfileId,
-        async createAndSelectLearner(name) {
-          const result = await createLearnerProfile(name);
-          if (!result.activeProfileId) {
-            throw new Error("The newly added learner could not be loaded.");
-          }
-          await reloadSelectedLearner(result.activeProfileId);
-          return result;
-        },
-        reloadSelectedLearner,
-        async selectLearner(profileId) {
-          const result = await selectLearnerProfile(profileId);
-          if (result.activeProfileId !== profileId) {
-            throw new Error("The selected learner could not be loaded.");
-          }
-          await reloadSelectedLearner(profileId);
-          return result;
-        },
-      },
-      createElement(
-        "button",
-        {
-          onClick: () => {
-            onActivate();
-            setActiveProfileId("learner-ava");
-          },
-          type: "button",
-        },
-        "Activate Ava in background",
-      ),
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/guardian/learners"] },
-        createElement(GuardianLearnerProfiles),
-        createElement(LocationProbe),
-      ),
-    );
-  }
-
-  return createElement(Harness);
-}
-
-test("learner manager distinguishes Guardian management from learner mode", () => {
+test("learner manager exposes administrative profile controls only", () => {
   const html = renderView();
 
   assert.match(html, /<h1[^>]*>Manage learners<\/h1>/);
@@ -347,13 +271,14 @@ test("learner manager distinguishes Guardian management from learner mode", () =
   assert.equal((html.match(/<li/g) ?? []).length, 2);
   assert.match(html, /<h3[^>]*><bdi[^>]*>Mia<\/bdi><\/h3>/);
   assert.match(html, /<h3[^>]*><bdi[^>]*>Noah<\/bdi><\/h3>/);
-  assert.match(html, /Learner mode/);
+  assert.doesNotMatch(html, /Learner mode|Use .* in learner mode|Managing /);
   assert.match(html, /Age 6/);
   assert.match(html, /Setup complete/);
   assert.match(html, /Setup not started/);
-  assert.match(html, /aria-label="Use Noah in learner mode"/);
   assert.match(html, /aria-label="Edit Mia&#x27;s profile"/);
+  assert.match(html, /aria-label="Delete Mia"/);
   assert.match(html, /aria-label="Edit Noah&#x27;s profile"/);
+  assert.match(html, /aria-label="Delete Noah"/);
   assert.match(
     html,
     /<label[^>]*for="preferred-name"[^>]*>Preferred name<\/label>/,
@@ -389,187 +314,61 @@ test("turns a malformed roster success into a retryable manager error", async ()
   });
   validResponse = true;
   await click(button(container, "Try again"));
-  await waitFor(() => button(container, "Use Noah in learner mode"));
+  await waitFor(() => button(container, "Delete Noah"));
 });
 
-test("keeps a missing-active roster refresh failure retryable", async () => {
-  const ava = {
-    age: null,
-    createdAt: "2026-08-27T08:00:00.000Z",
-    id: "learner-ava",
-    name: "Ava",
-    profileStatus: "not_started",
-  };
-  let contextChanged = false;
-  let retrySucceeds = false;
-  globalThis.fetch = async (input, init = {}) => {
-    assert.equal(String(input), "/api/learner-profiles");
-    assert.equal(init.method, "GET");
-    if (!contextChanged) return Response.json(roster());
-    if (!retrySucceeds) {
-      return Response.json(
-        { error: "roster_failed", message: "Roster refresh failed." },
-        { status: 503 },
-      );
-    }
-    return Response.json(roster(ava.id, [mia, noah, ava]));
-  };
-
+test("cancelling learner deletion preserves data and restores focus", async () => {
+  const deletions = [];
   const container = await mountStrict(
-    changingContextManagerHarness({
-      onActivate() {
-        contextChanged = true;
-      },
-      async reloadSelectedLearner() {
-        return fullProfile(ava);
-      },
-    }),
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/learners"] },
+      createElement(GuardianLearnerProfilesView, {
+        error: "",
+        isLoading: false,
+        onAdd() {},
+        onDelete(profile) {
+          deletions.push(profile.id);
+        },
+        onManage() {},
+        onRetry() {},
+        pendingProfileId: null,
+        profiles: [mia, noah],
+        statusMessage: "",
+      }),
+    ),
   );
 
-  await waitFor(() => button(container, "Use Noah in learner mode"));
-  await click(button(container, "Activate Ava in background"));
+  const deleteNoah = button(container, "Delete Noah");
+  deleteNoah.focus();
+  await click(deleteNoah);
   await waitFor(() => {
-    assert.match(
-      container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Roster refresh failed/,
-    );
-    assert.equal(
-      button(container, "Add learner").getAttribute("aria-disabled"),
-      "true",
-    );
-    button(container, "Try again");
+    const dialog = container.querySelector('[role="dialog"]');
+    assert.equal(dialog?.getAttribute("aria-modal"), "true");
+    assert.match(dialog?.textContent ?? "", /Delete Noah\?/);
   });
+  await click(button(container, "Cancel"));
 
-  retrySucceeds = true;
-  await click(button(container, "Try again"));
   await waitFor(() => {
-    assert.match(container.textContent, /Managing Ava/);
-    assert.equal(container.querySelector('[role="alert"]'), null);
+    assert.equal(deletions.length, 0);
+    assert.equal(container.querySelector('[role="dialog"]'), null);
+    assert.equal(document.activeElement, deleteNoah);
   });
 });
 
-test("plain selection reloads the authoritative learner before announcing and focusing context", async () => {
-  const operations = [];
-  globalThis.fetch = async (input, init = {}) => {
-    const path = String(input);
-    if (path === "/api/learner-profiles" && init.method === "GET") {
-      return Response.json(roster());
-    }
-    if (
-      path === "/api/learner-profiles/learner-noah/active" &&
-      init.method === "PUT"
-    ) {
-      operations.push("select");
-      return Response.json(roster(noah.id));
-    }
-    throw new Error(`Unexpected request: ${init.method} ${path}`);
-  };
-
-  const container = await mountStrict(
-    managerHarness({
-      async reloadSelectedLearner(id) {
-        operations.push(`reload:${id}`);
-        return fullProfile(noah);
-      },
-    }),
-  );
-
-  await waitFor(() => button(container, "Use Noah in learner mode"));
-  await click(button(container, "Use Noah in learner mode"));
-
-  await waitFor(() => {
-    assert.deepEqual(operations, ["select", "reload:learner-noah"]);
-    assert.match(container.textContent, /Now managing Noah/);
-    assert.match(container.textContent, /Learner mode/);
-    const context = [...container.querySelectorAll("h2")].find(
-      (heading) => heading.textContent === "Managing Noah",
-    );
-    assert.ok(context);
-    assert.equal(document.activeElement, context);
+test("final learner deletion is disabled and a pending learner can only finish deletion", () => {
+  const html = renderView({
+    profiles: [
+      { ...mia, deletionPending: true },
+      { ...noah, deletionPending: false },
+    ],
   });
-});
+  assert.match(html, /Finish deleting Mia/);
+  assert.doesNotMatch(html, /aria-label="Edit Mia&#x27;s profile"/);
 
-test("failed selection preserves the current learner and restores initiating focus", async () => {
-  let reloadCalls = 0;
-  globalThis.fetch = async (input, init = {}) => {
-    const path = String(input);
-    if (path === "/api/learner-profiles" && init.method === "GET") {
-      return Response.json(roster());
-    }
-    if (path.endsWith("/learner-noah/active") && init.method === "PUT") {
-      return Response.json(
-        { error: "selection_failed", message: "Could not select Noah." },
-        { status: 500 },
-      );
-    }
-    throw new Error(`Unexpected request: ${init.method} ${path}`);
-  };
-
-  const container = await mountStrict(
-    managerHarness({
-      async reloadSelectedLearner() {
-        reloadCalls += 1;
-        return fullProfile(noah);
-      },
-    }),
-  );
-  await waitFor(() => button(container, "Use Noah in learner mode"));
-  const useNoah = button(container, "Use Noah in learner mode");
-  useNoah.focus();
-  await click(useNoah);
-
-  await waitFor(() => {
-    assert.equal(reloadCalls, 0);
-    assert.match(
-      container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Could not select Noah/,
-    );
-    assert.match(container.textContent, /Managing Mia/);
-    assert.equal(
-      document.activeElement,
-      button(container, "Use Noah in learner mode"),
-    );
-  });
-});
-
-test("rejects a successful selection response that names a different active learner", async () => {
-  let reloadCalls = 0;
-  globalThis.fetch = async (input, init = {}) => {
-    const path = String(input);
-    if (path === "/api/learner-profiles" && init.method === "GET") {
-      return Response.json(roster());
-    }
-    if (path.endsWith("/learner-noah/active") && init.method === "PUT") {
-      return Response.json(roster(mia.id));
-    }
-    throw new Error(`Unexpected request: ${init.method} ${path}`);
-  };
-
-  const container = await mountStrict(
-    managerHarness({
-      async reloadSelectedLearner() {
-        reloadCalls += 1;
-        return fullProfile(noah);
-      },
-    }),
-  );
-  await waitFor(() => button(container, "Use Noah in learner mode"));
-  const useNoah = button(container, "Use Noah in learner mode");
-  useNoah.focus();
-  await click(useNoah);
-
-  await waitFor(() => {
-    assert.equal(reloadCalls, 0);
-    assert.match(
-      container.querySelector('[role="alert"]')?.textContent ?? "",
-      /selected learner could not be loaded/i,
-    );
-    assert.match(container.textContent, /Managing Mia/);
-    assert.equal(
-      document.activeElement,
-      button(container, "Use Noah in learner mode"),
-    );
-  });
+  const finalLearnerHtml = renderView({ profiles: [{ ...mia, deletionPending: false }] });
+  assert.match(finalLearnerHtml, /aria-label="Delete Mia"[^>]*disabled=""/);
+  assert.match(finalLearnerHtml, /Add another learner before deleting Mia/);
 });
 
 test("editing an inactive learner navigates by ID without selecting or reloading", async () => {

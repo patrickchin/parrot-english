@@ -2,20 +2,15 @@ import { ArrowLeft } from "lucide-react";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
-  type Ref,
 } from "react";
 import { useNavigate } from "react-router";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
-import {
-  getGuardianLearnerPath,
-  getGuardianPath,
-} from "../app/app-routes";
+import { getGuardianLearnerPath, getGuardianPath } from "../app/app-routes";
 import { ActionButton, Card, fieldClassName } from "../shared/ui";
-import { useLearnerSelection } from "./LearnerProfileContext";
+import { LearnerDeleteDialog } from "./LearnerDeleteDialog";
 import {
   createLearnerProfile,
   loadLearnerProfiles,
@@ -48,27 +43,6 @@ function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
 
-function requireActiveRosterProfile(
-  roster: LearnerProfileRoster,
-  expectedProfileId?: string,
-) {
-  const activeProfileId = roster.activeProfileId;
-  if (
-    typeof activeProfileId !== "string" ||
-    !activeProfileId.trim() ||
-    (expectedProfileId !== undefined && activeProfileId !== expectedProfileId)
-  ) {
-    throw new Error("The selected learner could not be loaded.");
-  }
-  const profile = roster.profiles.find(
-    ({ id, name }) => id === activeProfileId && Boolean(name.trim()),
-  );
-  if (!profile) {
-    throw new Error("The selected learner could not be loaded.");
-  }
-  return profile;
-}
-
 function requireCreatedRosterProfile(
   roster: LearnerProfileRoster,
   existingProfileIds: readonly string[],
@@ -87,37 +61,35 @@ function requireCreatedRosterProfile(
 }
 
 export function GuardianLearnerProfilesView({
-  activeHeadingRef,
-  activeProfileId,
   error,
   isLoading,
   onAdd,
+  onDelete,
   onManage,
   onRetry,
-  onSelect,
   pendingProfileId,
   profiles,
   statusMessage,
 }: {
-  activeHeadingRef?: Ref<HTMLHeadingElement>;
-  activeProfileId: string | null;
   error: string;
   isLoading: boolean;
   onAdd: (name: string) => void;
+  onDelete: (profile: GuardianLearnerProfileSummary) => void | Promise<void>;
   onManage: (profile: GuardianLearnerProfileSummary) => void;
   onRetry: () => void;
-  onSelect: (profile: GuardianLearnerProfileSummary) => void;
   pendingProfileId: string | null;
   profiles: GuardianLearnerProfileSummary[];
   statusMessage: string;
 }) {
   const [preferredName, setPreferredName] = useState("");
-  const activeProfile =
-    profiles.find(({ id }) => id === activeProfileId) ?? null;
+  const [profileToDelete, setProfileToDelete] =
+    useState<GuardianLearnerProfileSummary | null>(null);
+  const deleteTriggerRef = useRef<HTMLButtonElement>(null);
   const busy = isLoading || pendingProfileId !== null;
-  const activeProfileMissing = activeProfileId !== null && !activeProfile;
   const rosterUnavailable = Boolean(error && profiles.length === 0);
-  const controlsUnavailable = busy || rosterUnavailable || activeProfileMissing;
+  const controlsUnavailable = busy || rosterUnavailable;
+  const canDeleteAnotherLearner =
+    profiles.filter(({ deletionPending }) => !deletionPending).length > 1;
 
   function addLearner(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -143,22 +115,8 @@ export function GuardianLearnerProfilesView({
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Manage learners
           </h1>
-          <h2
-            className="m-0 min-w-0 text-base font-black text-brand-blue [overflow-wrap:anywhere] sm:text-lg"
-            dir="ltr"
-            ref={activeHeadingRef}
-            tabIndex={-1}
-          >
-            {activeProfile ? (
-              <>
-                Managing <BidiLearnerName learnerName={activeProfile.name} />
-              </>
-            ) : (
-              "Choose a learner"
-            )}
-          </h2>
           <p className="m-0 font-bold leading-relaxed text-slate-600">
-            Choose who is using Parrot English, or add another learner.
+            Add, update, or remove learner profiles.
           </p>
         </header>
 
@@ -176,7 +134,7 @@ export function GuardianLearnerProfilesView({
             <p className="m-0 font-extrabold text-red-900" role="alert">
               {error}
             </p>
-            {(!profiles.length || activeProfileMissing) && !busy ? (
+            {!profiles.length && !busy ? (
               <ActionButton
                 onClick={onRetry}
                 size="compact"
@@ -192,61 +150,71 @@ export function GuardianLearnerProfilesView({
         {profiles.length ? (
           <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2">
             {profiles.map((profile) => {
-              const isActive = profile.id === activeProfileId;
               const isPending = profile.id === pendingProfileId;
+              const finalLearner =
+                !profile.deletionPending && !canDeleteAnotherLearner;
               return (
                 <li className="min-w-0" key={profile.id}>
                   <Card className="grid h-full min-w-0 content-start gap-4 p-5 sm:p-6">
                     <div className="grid gap-1">
-                      <div className="flex min-w-0 flex-wrap items-center gap-2">
-                        <h3 className="m-0 min-w-0 text-2xl leading-tight text-brand-navy [overflow-wrap:anywhere]">
-                          <BidiLearnerName learnerName={profile.name} />
-                        </h3>
-                        {isActive ? (
-                          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-900">
-                            Learner mode
-                          </span>
-                        ) : null}
-                      </div>
+                      <h3 className="m-0 min-w-0 text-2xl leading-tight text-brand-navy [overflow-wrap:anywhere]">
+                        <BidiLearnerName learnerName={profile.name} />
+                      </h3>
                       <p className="m-0 text-sm font-bold text-slate-600">
                         {profile.age === null ? null : `Age ${profile.age} · `}
                         {setupStatusLabel(profile.profileStatus)}
                       </p>
+                      {finalLearner ? (
+                        <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
+                          Add another learner before deleting {profile.name}.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="mt-auto grid gap-3 min-[420px]:grid-cols-2">
-                      {!isActive ? (
+                      {profile.deletionPending ? (
                         <ActionButton
-                          aria-disabled={controlsUnavailable ? true : undefined}
-                          aria-label={`Use ${profile.name} in learner mode`}
+                          aria-label={`Finish deleting ${profile.name}`}
+                          disabled={controlsUnavailable}
                           onClick={(event) => {
-                            if (controlsUnavailable) return;
-                            event.currentTarget.focus();
-                            onSelect(profile);
+                            deleteTriggerRef.current = event.currentTarget;
+                            setProfileToDelete(profile);
                           }}
                           size="compact"
                           type="button"
-                          variant="success"
+                          variant="rose"
                         >
-                          {isPending ? "Selecting…" : "Use in learner mode"}
+                          {isPending
+                            ? `Deleting ${profile.name}…`
+                            : `Finish deleting ${profile.name}`}
                         </ActionButton>
                       ) : (
-                        <span aria-hidden="true" />
+                        <>
+                          <ActionButton
+                            aria-label={`Edit ${profile.name}'s profile`}
+                            disabled={controlsUnavailable}
+                            onClick={() => onManage(profile)}
+                            size="compact"
+                            type="button"
+                            variant="surface"
+                          >
+                            Edit profile
+                          </ActionButton>
+                          <ActionButton
+                            aria-label={`Delete ${profile.name}`}
+                            disabled={controlsUnavailable || finalLearner}
+                            onClick={(event) => {
+                              deleteTriggerRef.current = event.currentTarget;
+                              setProfileToDelete(profile);
+                            }}
+                            size="compact"
+                            type="button"
+                            variant="rose"
+                          >
+                            Delete
+                          </ActionButton>
+                        </>
                       )}
-                      <ActionButton
-                        aria-disabled={controlsUnavailable ? true : undefined}
-                        aria-label={`Edit ${profile.name}'s profile`}
-                        onClick={(event) => {
-                          if (controlsUnavailable) return;
-                          event.currentTarget.focus();
-                          onManage(profile);
-                        }}
-                        size="compact"
-                        type="button"
-                        variant="surface"
-                      >
-                        Edit profile
-                      </ActionButton>
                     </div>
                   </Card>
                 </li>
@@ -291,7 +259,7 @@ export function GuardianLearnerProfilesView({
               />
             </div>
             <ActionButton
-              aria-disabled={controlsUnavailable ? true : undefined}
+              disabled={controlsUnavailable}
               fullWidth
               type="submit"
               variant="navy"
@@ -303,29 +271,34 @@ export function GuardianLearnerProfilesView({
           </form>
         </Card>
       </section>
+
+      {profileToDelete ? (
+        <LearnerDeleteDialog
+          onClose={() => setProfileToDelete(null)}
+          onDelete={onDelete}
+          profile={profileToDelete}
+          returnFocusRef={deleteTriggerRef}
+        />
+      ) : null}
     </main>
   );
 }
 
-export function GuardianLearnerProfiles() {
+export function GuardianLearnerProfiles({
+  onDelete = () => {},
+}: {
+  onDelete?: (profile: GuardianLearnerProfileSummary) => void | Promise<void>;
+}) {
   const navigate = useNavigate();
-  const { activeProfileId: contextActiveProfileId, selectLearner } =
-    useLearnerSelection();
-  const [activeProfileId, setActiveProfileId] = useState<string | null>(
-    contextActiveProfileId,
-  );
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<GuardianLearnerProfileSummary[]>([]);
   const [statusMessage, setStatusMessage] = useState("");
-  const activeHeadingRef = useRef<HTMLHeadingElement>(null);
+  const activeProfileIdRef = useRef<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
-  const focusActiveHeadingRef = useRef(false);
   const mountedRef = useRef(false);
   const operationRef = useRef(0);
-  const restoreFocusRef = useRef<HTMLElement | null>(null);
-  const contextRosterReloadRef = useRef("");
 
   const beginOperation = useCallback(() => {
     controllerRef.current?.abort();
@@ -344,8 +317,8 @@ export function GuardianLearnerProfiles() {
   }, []);
 
   const applyRoster = useCallback((nextRoster: LearnerProfileRoster) => {
+    activeProfileIdRef.current = nextRoster.activeProfileId;
     setProfiles(nextRoster.profiles);
-    setActiveProfileId(nextRoster.activeProfileId);
   }, []);
 
   const loadRoster = useCallback(async () => {
@@ -358,8 +331,7 @@ export function GuardianLearnerProfiles() {
       const result = await loadLearnerProfiles({
         signal: operation.controller.signal,
       });
-      if (!operation.isCurrent()) return;
-      applyRoster(result);
+      if (operation.isCurrent()) applyRoster(result);
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
       setError(
@@ -384,45 +356,6 @@ export function GuardianLearnerProfiles() {
     };
   }, [loadRoster]);
 
-  useEffect(() => {
-    if (contextActiveProfileId) {
-      setActiveProfileId(contextActiveProfileId);
-    }
-  }, [contextActiveProfileId]);
-
-  useLayoutEffect(() => {
-    if (!focusActiveHeadingRef.current) return;
-    focusActiveHeadingRef.current = false;
-    activeHeadingRef.current?.focus();
-  }, [activeProfileId, statusMessage]);
-
-  useEffect(() => {
-    if (
-      !contextActiveProfileId ||
-      pendingProfileId !== null ||
-      isLoading ||
-      profiles.length === 0 ||
-      profiles.some(({ id }) => id === contextActiveProfileId)
-    ) {
-      if (
-        contextActiveProfileId &&
-        profiles.some(({ id }) => id === contextActiveProfileId)
-      ) {
-        contextRosterReloadRef.current = "";
-      }
-      return;
-    }
-    if (contextRosterReloadRef.current === contextActiveProfileId) return;
-    contextRosterReloadRef.current = contextActiveProfileId;
-    void loadRoster();
-  }, [
-    contextActiveProfileId,
-    isLoading,
-    loadRoster,
-    pendingProfileId,
-    profiles,
-  ]);
-
   async function reconcileRosterAfterMutation(
     operation: ReturnType<typeof beginOperation>,
   ) {
@@ -436,52 +369,10 @@ export function GuardianLearnerProfiles() {
     }
   }
 
-  async function selectProfile(profile: GuardianLearnerProfileSummary) {
-    if (profile.id === activeProfileId) {
-      return;
-    }
-
-    const operation = beginOperation();
-    restoreFocusRef.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
-    setError("");
-    setStatusMessage("");
-    setPendingProfileId(profile.id);
-    try {
-      const result = await selectLearner(profile.id);
-      if (!operation.isCurrent()) return;
-      const selectedProfile = requireActiveRosterProfile(result, profile.id);
-      focusActiveHeadingRef.current = true;
-      applyRoster(result);
-      setStatusMessage(`Now managing ${selectedProfile.name}`);
-    } catch (caughtError) {
-      if (!operation.isCurrent() || isAbortError(caughtError)) return;
-      const message = errorMessage(
-        caughtError,
-        `Could not select ${profile.name}.`,
-      );
-      await reconcileRosterAfterMutation(operation);
-      if (!operation.isCurrent()) return;
-      setError(message);
-      requestAnimationFrame(() => {
-        if (restoreFocusRef.current?.isConnected) {
-          restoreFocusRef.current.focus();
-        }
-      });
-    } finally {
-      if (operation.isCurrent()) setPendingProfileId(null);
-      if (controllerRef.current === operation.controller) {
-        controllerRef.current = null;
-      }
-    }
-  }
-
   async function addProfile(name: string) {
     const operation = beginOperation();
     const existingProfileIds = profiles.map(({ id }) => id);
-    const previousActiveProfileId = activeProfileId;
+    const previousActiveProfileId = activeProfileIdRef.current;
     setError("");
     setStatusMessage("");
     setPendingProfileId(ADD_PENDING_PROFILE_ID);
@@ -518,14 +409,12 @@ export function GuardianLearnerProfiles() {
 
   return (
     <GuardianLearnerProfilesView
-      activeHeadingRef={activeHeadingRef}
-      activeProfileId={activeProfileId}
       error={error}
       isLoading={isLoading}
       onAdd={(name) => void addProfile(name)}
+      onDelete={onDelete}
       onManage={(profile) => navigate(getGuardianLearnerPath(profile.id))}
       onRetry={() => void loadRoster()}
-      onSelect={(profile) => void selectProfile(profile)}
       pendingProfileId={pendingProfileId}
       profiles={profiles}
       statusMessage={statusMessage}
