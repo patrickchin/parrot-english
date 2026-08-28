@@ -11,6 +11,10 @@ import {
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
 import type { Database } from "./database.ts";
+import {
+  LearnerDeletionError,
+  prepareLearnerDeletion,
+} from "./learner-deletion.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
   readBoundedText,
@@ -23,6 +27,7 @@ import {
 
 export type LearnerProfilesEnv = {
   MULTI_LEARNER_PROFILES_ENABLED?: string;
+  PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
 };
 
 const MAX_ROSTER_BODY_BYTES = 8 * 1024;
@@ -224,6 +229,24 @@ function selectedProfileId(pathname: string) {
   }
 }
 
+function deletedProfileId(pathname: string) {
+  const match = /^\/api\/learner-profiles\/([^/]+)$/.exec(pathname);
+  if (!match) return null;
+  try {
+    const profileId = decodeURIComponent(match[1]);
+    if (
+      !profileId ||
+      profileId.includes("/") ||
+      new TextEncoder().encode(profileId).byteLength > 128
+    ) {
+      return null;
+    }
+    return profileId;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleLearnerProfilesRequest(input: {
   database: Database;
   env: LearnerProfilesEnv;
@@ -373,12 +396,29 @@ export async function handleLearnerProfilesRequest(input: {
       }
       return json(await roster(input.database, input.identity));
     }
+
+    if (input.request.method === "DELETE") {
+      const profileId = deletedProfileId(url.pathname);
+      if (!profileId || !input.env.PERSONALIZED_STORY_ART_BUCKET) {
+        return json({ error: "not_found" }, { status: 404 });
+      }
+      await prepareLearnerDeletion({
+        bucket: input.env.PERSONALIZED_STORY_ART_BUCKET,
+        database: input.database,
+        identity: input.identity,
+        profileId,
+      });
+      return json(await roster(input.database, input.identity));
+    }
   } catch (error) {
     if (error instanceof LearnerProfilesApiError) {
       return json(
         { error: error.code, message: error.responseMessage },
         { status: error.status },
       );
+    }
+    if (error instanceof LearnerDeletionError) {
+      return json({ error: error.code }, { status: error.status });
     }
     throw error;
   }

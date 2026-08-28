@@ -100,12 +100,15 @@ export function createLearnerStoryArtGenerationLeaseRepository(
           learner_profile_id, auth_user_id, story_id, generation_token,
           candidate_r2_object_key, previous_r2_object_key,
           lease_expires_at, created_at, updated_at
-        ) VALUES (
+        ) SELECT
           ?, ?, ?, ?, NULL,
           (SELECT r2_object_key FROM personalized_story_art
             WHERE learner_profile_id = ? AND auth_user_id = ? AND story_id = ?
             LIMIT 1),
           ?, ?, ?
+        WHERE NOT EXISTS (
+          SELECT 1 FROM learner_profile_deletion_tombstone
+          WHERE learner_profile_id = ?
         )
         ON CONFLICT(learner_profile_id, story_id) DO NOTHING`,
       )
@@ -120,6 +123,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         leaseExpiresAt,
         acquiredAt,
         acquiredAt,
+        identity.learnerProfileId,
       )
       .run();
     return changed(result);
@@ -142,6 +146,10 @@ export function createLearnerStoryArtGenerationLeaseRepository(
           AND lease_expires_at > ?
           AND NOT EXISTS (
             SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM learner_profile_deletion_tombstone
+            WHERE learner_profile_id = ?
           )`,
       )
       .bind(
@@ -154,6 +162,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         token,
         updatedAt,
         accountDeletionTombstoneKey,
+        identity.learnerProfileId,
       )
       .run();
     return changed(result);
@@ -183,6 +192,10 @@ export function createLearnerStoryArtGenerationLeaseRepository(
           AND NOT EXISTS (
             SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
           )
+          AND NOT EXISTS (
+            SELECT 1 FROM learner_profile_deletion_tombstone
+            WHERE learner_profile_id = ?
+          )
           ON CONFLICT(learner_profile_id, auth_user_id, story_id) DO NOTHING`,
         )
         .bind(
@@ -205,6 +218,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
           input.r2ObjectKey,
           input.updatedAt,
           input.accountDeletionTombstoneKey,
+          identity.learnerProfileId,
         )
         .run();
       return changed(result);
@@ -226,6 +240,10 @@ export function createLearnerStoryArtGenerationLeaseRepository(
           )
           AND NOT EXISTS (
             SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM learner_profile_deletion_tombstone
+            WHERE learner_profile_id = ?
           )`,
       )
       .bind(
@@ -248,6 +266,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         input.r2ObjectKey,
         input.updatedAt,
         input.accountDeletionTombstoneKey,
+        identity.learnerProfileId,
       )
       .run();
     return changed(result);
@@ -285,7 +304,11 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         `UPDATE learner_story_art_generation_lease
         SET generation_token = ?, lease_expires_at = ?, updated_at = ?
         WHERE learner_profile_id = ? AND auth_user_id = ? AND story_id = ?
-          AND lease_expires_at <= ?`,
+          AND lease_expires_at <= ?
+          AND NOT EXISTS (
+            SELECT 1 FROM learner_profile_deletion_tombstone
+            WHERE learner_profile_id = ?
+          )`,
       )
       .bind(
         token,
@@ -295,6 +318,7 @@ export function createLearnerStoryArtGenerationLeaseRepository(
         identity.userId,
         storyId,
         recoveredAt,
+        identity.learnerProfileId,
       )
       .run();
     if (!changed(result)) return null;

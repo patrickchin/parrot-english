@@ -163,6 +163,7 @@ export async function fenceLessonRecordingUpload(
   state:
     | "account-deleting"
     | "consent-revoked"
+    | "learner-deleting"
     | "lesson-changed"
     | "state-unknown",
   wait: Wait,

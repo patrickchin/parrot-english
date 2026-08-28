@@ -18,6 +18,7 @@ import {
 } from "./dub-storage.ts";
 import { parseDubRoute } from "./dub-route.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import { isLearnerDeletionPending } from "./request-identity.ts";
 import {
   readBoundedBytes,
   readBoundedText,
@@ -60,6 +61,7 @@ type DubHandlerOverrides = {
   createGeneration?: () => string;
   createUploadNonce?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
+  isLearnerDeletionPending?: typeof isLearnerDeletionPending;
   now?: () => Date;
   wait?: (delay: number) => Promise<void>;
 };
@@ -74,7 +76,11 @@ type DubMarker =
       generation: string;
       kind: "valid";
       object: R2Object;
-      state: "account-deleting" | "deleting" | "ready";
+      state:
+        | "account-deleting"
+        | "deleting"
+        | "learner-deleting"
+        | "ready";
     };
 
 type AudioStorage =
@@ -136,6 +142,7 @@ async function readMarker(
     (
       state !== "account-deleting" &&
       state !== "deleting" &&
+      state !== "learner-deleting" &&
       state !== "ready"
     )
   ) {
@@ -156,6 +163,9 @@ async function readyGeneration(bucket: R2Bucket, storage: DubStorageKeys) {
   if (marker.kind === "valid" && marker.state === "account-deleting") {
     throw new DubApiError(409, "account_deletion_pending");
   }
+  if (marker.kind === "valid" && marker.state === "learner-deleting") {
+    throw new DubApiError(409, "learner_deletion_pending");
+  }
   if (marker.kind !== "valid" || marker.state !== "ready") {
     throw new DubApiError(409, "dub_reset_in_progress");
   }
@@ -171,6 +181,9 @@ async function beginReset(
   const current = await readMarker(bucket, storage);
   if (current.kind === "valid" && current.state === "account-deleting") {
     throw new DubApiError(409, "account_deletion_pending");
+  }
+  if (current.kind === "valid" && current.state === "learner-deleting") {
+    throw new DubApiError(409, "learner_deletion_pending");
   }
   const marker = await conditionalPut(
     bucket,
@@ -573,11 +586,12 @@ function isDemonstrablyNonAudio(object: R2Object) {
   return state !== undefined && state !== "audio";
 }
 
-async function fenceAccountDeletingSlot(
+async function fenceDeletingSlot(
   bucket: R2Bucket,
   key: string,
   stored: R2Object,
   token: string,
+  state: "account-deleting" | "learner-deleting",
   wait: Wait,
 ) {
   let current: R2Object | null = stored;
@@ -589,11 +603,11 @@ async function fenceAccountDeletingSlot(
       tombstone = await conditionalPut(
         bucket,
         key,
-        fenceBody("slot", token, "account-deleting"),
-        { customMetadata: { generation: token, state: "account-deleting" } },
+        fenceBody("slot", token, state),
+        { customMetadata: { generation: token, state } },
         current,
         wait,
-        (object) => hasState(object, token, "account-deleting"),
+        (object) => hasState(object, token, state),
       );
     } catch (error) {
       current = await bucket.head(key);
@@ -755,6 +769,11 @@ export async function handleDubRequest(
     overrides.createUploadNonce ?? (() => crypto.randomUUID());
   const isDeletionPending =
     overrides.isDeletionPending ?? isAccountDeletionPending;
+  const learnerDeletionPending =
+    overrides.isLearnerDeletionPending ??
+    (overrides.isDeletionPending
+      ? async () => false
+      : isLearnerDeletionPending);
   const now = overrides.now ?? (() => new Date());
   const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
   const consentRepository = overrides.consentRepository ??
@@ -767,9 +786,20 @@ export async function handleDubRequest(
     const userId = input.identity.userId;
     const definition = route.definition;
     const storage = createDubStorageKeys(input.identity, route.dubId);
-    const assertAccountDeletionNotPending = async () => {
-      if (await isDeletionPending(input.database, userId)) {
+    const deletionState = async () => ({
+      account: await isDeletionPending(input.database, userId),
+      learner: await learnerDeletionPending(
+        input.database,
+        input.identity.learnerProfileId,
+      ),
+    });
+    const assertDeletionNotPending = async () => {
+      const pending = await deletionState();
+      if (pending.account) {
         throw new DubApiError(409, "account_deletion_pending");
+      }
+      if (pending.learner) {
+        throw new DubApiError(409, "learner_deletion_pending");
       }
     };
 
@@ -780,7 +810,7 @@ export async function handleDubRequest(
         });
       }
       await readConsentBody(input.request);
-      await assertAccountDeletionNotPending();
+      await assertDeletionNotPending();
       try {
         await consentRepository.grant(input.identity);
       } catch (error) {
@@ -789,7 +819,7 @@ export async function handleDubRequest(
         }
         throw error;
       }
-      await assertAccountDeletionNotPending();
+      await assertDeletionNotPending();
       return new Response(null, {
         headers: { "Cache-Control": "private, no-store" },
         status: 204,
@@ -798,10 +828,10 @@ export async function handleDubRequest(
 
     if (!route.lineId && !route.audio) {
       if (input.request.method === "GET") {
-        await assertAccountDeletionNotPending();
+        await assertDeletionNotPending();
         const consent = await consentRepository.status(input.identity);
         if (!isCurrentGrant(consent)) {
-          await assertAccountDeletionNotPending();
+          await assertDeletionNotPending();
           return json(emptyStatus(
             definition,
             consent.state === "revoking" ? "revoking" : "not_granted",
@@ -842,13 +872,13 @@ export async function handleDubRequest(
           consent.grantGeneration,
         )) {
           const current = await consentRepository.status(input.identity);
-          await assertAccountDeletionNotPending();
+          await assertDeletionNotPending();
           return json(emptyStatus(
             definition,
             current.state === "revoking" ? "revoking" : "not_granted",
           ));
         }
-        await assertAccountDeletionNotPending();
+        await assertDeletionNotPending();
         return json({
           complete: lines.every(({ saved }) => saved),
           consentState: "granted",
@@ -860,7 +890,7 @@ export async function handleDubRequest(
       }
 
       if (input.request.method === "DELETE") {
-        await assertAccountDeletionNotPending();
+        await assertDeletionNotPending();
         const resetTargets = DUB_DEFINITIONS.map((currentDefinition) => ({
           definition: currentDefinition,
           storage: createDubStorageKeys(input.identity, currentDefinition.id),
@@ -891,9 +921,7 @@ export async function handleDubRequest(
             ...target,
           })),
         );
-        if (await isDeletionPending(input.database, userId)) {
-          throw new DubApiError(409, "account_deletion_pending");
-        }
+        await assertDeletionNotPending();
         for (const target of deletingMarkers) {
           for (const { id } of target.definition.lines) {
             await tombstoneSlot(
@@ -906,9 +934,7 @@ export async function handleDubRequest(
             );
           }
         }
-        if (await isDeletionPending(input.database, userId)) {
-          throw new DubApiError(409, "account_deletion_pending");
-        }
+        await assertDeletionNotPending();
         const duckReset = deletingMarkers.find(({ definition: currentDefinition }) =>
           currentDefinition.id === "five-little-ducks-v2"
         );
@@ -920,9 +946,7 @@ export async function handleDubRequest(
           duckReset.deletingMarker.etag,
           wait,
         );
-        if (await isDeletionPending(input.database, userId)) {
-          throw new DubApiError(409, "account_deletion_pending");
-        }
+        await assertDeletionNotPending();
         await wait(R2_WRITE_INTERVAL_MS);
         for (const { deletingMarker, storage: targetStorage } of deletingMarkers) {
           const readyMarker = await conditionalPut(
@@ -940,9 +964,7 @@ export async function handleDubRequest(
             throw new DubApiError(409, "dub_reset_in_progress");
           }
         }
-        if (await isDeletionPending(input.database, userId)) {
-          throw new DubApiError(409, "account_deletion_pending");
-        }
+        await assertDeletionNotPending();
         await consentRepository.finishRevocation(
           input.identity,
           consentGeneration,
@@ -970,7 +992,7 @@ export async function handleDubRequest(
           { Allow: "GET" },
         );
       }
-      await assertAccountDeletionNotPending();
+      await assertDeletionNotPending();
       const consent = await consentRepository.status(input.identity);
       if (!isCurrentGrant(consent)) consentError(consent);
       const generation = await readyGeneration(bucket, storage);
@@ -996,7 +1018,7 @@ export async function handleDubRequest(
       )) {
         throw new DubApiError(403, "dubbing_not_enabled");
       }
-      await assertAccountDeletionNotPending();
+      await assertDeletionNotPending();
       const headers = new Headers();
       payload.object.writeHttpMetadata(headers);
       headers.set("Accept-Ranges", "bytes");
@@ -1026,9 +1048,7 @@ export async function handleDubRequest(
         { Allow: "PUT" },
       );
     }
-    if (await isDeletionPending(input.database, userId)) {
-      throw new DubApiError(409, "account_deletion_pending");
-    }
+    await assertDeletionNotPending();
     const consent = await consentRepository.status(input.identity);
     if (!isCurrentGrant(consent)) consentError(consent);
     const ready = await readyGeneration(bucket, storage);
@@ -1084,10 +1104,10 @@ export async function handleDubRequest(
       wait,
     );
     if (!stored) throw new DubApiError(409, "dub_reset_in_progress");
-    const throwIfAccountDeletionPending = async () => {
-      let pending: boolean;
+    const throwIfDeletionPending = async () => {
+      let pending: Awaited<ReturnType<typeof deletionState>>;
       try {
-        pending = await isDeletionPending(input.database, userId);
+        pending = await deletionState();
       } catch (error) {
         try {
           const token = createGeneration();
@@ -1099,13 +1119,19 @@ export async function handleDubRequest(
         }
         throw error;
       }
-      if (!pending) return;
+      if (!pending.account && !pending.learner) return;
       const token = createGeneration();
       if (!token) throw new Error("Dub cleanup generation is required.");
-      await fenceAccountDeletingSlot(bucket, key, stored, token, wait);
-      throw new DubApiError(409, "account_deletion_pending");
+      const state = pending.account ? "account-deleting" : "learner-deleting";
+      await fenceDeletingSlot(bucket, key, stored, token, state, wait);
+      throw new DubApiError(
+        409,
+        pending.account
+          ? "account_deletion_pending"
+          : "learner_deletion_pending",
+      );
     };
-    await throwIfAccountDeletionPending();
+    await throwIfDeletionPending();
     let consentChanged = false;
     try {
       consentChanged = !await consentRepository.requireCurrentGrant(
@@ -1134,10 +1160,10 @@ export async function handleDubRequest(
       markerConflict = error;
     }
     if (markerConflict !== undefined) {
-      await throwIfAccountDeletionPending();
+      await throwIfDeletionPending();
       throw markerConflict;
     }
-    await throwIfAccountDeletionPending();
+    await throwIfDeletionPending();
     return json(
       { lineId: route.lineId, recordedAt: recordedAt.toISOString() },
       { status: 201 },

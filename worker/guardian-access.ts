@@ -190,6 +190,9 @@ export function requiresGuardianAccess(
   if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(pathname)) {
     return method === "PUT";
   }
+  if (/^\/api\/learner-profiles\/[^/]+$/.test(pathname)) {
+    return method === "DELETE";
+  }
   const dubRoute = parseDubRoute(pathname);
   if (dubRoute?.consent) {
     return method === "PUT";
