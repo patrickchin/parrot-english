@@ -36,6 +36,31 @@ async function expectContained(parent: Locator, child: Locator) {
   );
 }
 
+async function expectReachableByPageScroll(page: Page, lastElement: Locator) {
+  const main = page.getByRole("main");
+  await expect(lastElement).toBeVisible();
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  const scrollState = await main.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    scrollTop: element.scrollTop,
+  }));
+
+  if (scrollState.scrollHeight > scrollState.clientHeight + 1) {
+    await page.mouse.move(viewport!.width / 2, viewport!.height / 2);
+    await page.mouse.wheel(0, scrollState.scrollHeight);
+    await expect
+      .poll(() => main.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(scrollState.scrollTop);
+  }
+
+  const lastBox = await visibleBox(lastElement);
+  expect(lastBox.y + lastBox.height).toBeGreaterThanOrEqual(-1);
+  expect(lastBox.y + lastBox.height).toBeLessThanOrEqual(viewport!.height + 1);
+  await expectNoHorizontalOverflow(page);
+}
+
 const readyMadeArtwork = [
   {
     alt: "Peppa reaching for a red ball high in a tree while Dolly flies up to help",
@@ -669,6 +694,94 @@ test("an incomplete learner returns to the requested duck dub after profile setu
     page.getByRole("heading", { name: "Five Little Ducks" }),
   ).toHaveCount(0);
 });
+
+const guardianContentPages = [
+  {
+    heading: "Guardian dashboard",
+    lastControl: (page: Page) =>
+      page.getByRole("link", { name: "Open account & privacy" }),
+    name: "dashboard",
+    path: "/guardian",
+  },
+  {
+    heading: "Manage learners",
+    lastControl: (page: Page) =>
+      page.getByRole("button", { name: "Add learner" }),
+    name: "learner manager",
+    path: "/guardian/learners",
+  },
+  {
+    heading: "My Lessons",
+    lastControl: (page: Page) =>
+      page.getByRole("link", { name: "Edit lesson: Saved lesson 5" }),
+    name: "lesson manager",
+    path: "/guardian/lessons",
+  },
+  {
+    heading: "Story settings",
+    lastControl: (page: Page) =>
+      page.getByRole("img", { name: "Storybook portrait preview" }),
+    name: "story settings",
+    path: "/guardian/stories",
+  },
+  {
+    heading: "Voice dubbing",
+    lastControl: (page: Page) =>
+      page.getByRole("button", { name: "Allow voice dubbing" }),
+    name: "dubbing settings",
+    path: "/guardian/dubbing?parrotE2eDub=not-granted",
+  },
+  {
+    heading: "Account & privacy",
+    lastControl: (page: Page) =>
+      page.getByRole("button", { name: "Delete account" }),
+    name: "account settings",
+    path: "/guardian/account",
+  },
+];
+
+for (const guardianPage of guardianContentPages) {
+  for (const viewport of [
+    { height: 568, width: 280 },
+    { height: 360, width: 640 },
+    { height: 900, width: 1440 },
+  ]) {
+    test(`${guardianPage.name} content stays reachable at ${viewport.width}x${viewport.height}`, async ({
+      page,
+    }) => {
+      if (guardianPage.path === "/guardian/lessons") {
+        await page.route(/\/api\/lessons\/my(?:\?.*)?$/, async (route) => {
+          await route.fulfill({
+            body: JSON.stringify({
+              lessons: Array.from({ length: 5 }, (_, index) => ({
+                id: `saved-lesson-${index + 1}`,
+                lesson: createLessonScript({
+                  title: `Saved lesson ${index + 1}`,
+                }),
+                revision: String(index + 1).repeat(64),
+                source: "uploaded",
+              })),
+            }),
+            contentType: "application/json",
+            status: 200,
+          });
+        });
+      }
+      await page.setViewportSize(viewport);
+      await page.goto(guardianPath(guardianPage.path));
+      await expect(
+        page.getByRole("heading", {
+          exact: true,
+          name: guardianPage.heading,
+        }),
+      ).toBeVisible();
+      await expectReachableByPageScroll(
+        page,
+        guardianPage.lastControl(page),
+      );
+    });
+  }
+}
 
 test("guardian learner details has one clear manager exit without a duplicate setup action", async ({
   page,
