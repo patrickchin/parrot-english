@@ -105,9 +105,12 @@ Starting deletion atomically verifies all of the following:
 - no conversation for that learner is starting or active.
 
 Once tombstoned, roster and identity resolution treat the learner as
-unavailable. New selections, targeted settings mutations, conversations,
-voice uploads, recordings, and story-art generation cannot start for it.
-Existing deletion attempts resume idempotently.
+unavailable for learner use. The Guardian roster retains it with a
+`deletionPending` flag so a failed cleanup can be retried after refresh; all
+chooser and settings-target lists filter it out. New selections, targeted
+settings mutations, conversations, voice uploads, recordings, and story-art
+generation cannot start for it. Existing deletion attempts resume
+idempotently.
 
 Before the profile row is cascaded, cleanup records and fences the full storage
 closure:
