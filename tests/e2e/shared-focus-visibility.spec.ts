@@ -642,14 +642,14 @@ test("long story focus stays visible inside the short-wide reading pane", async 
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/stories/kite-come-back/pages/4");
   const text = page.getByText(
-    "Ana gives the string one small pull. It will not move.",
+    "Rose gives the string one small pull. It will not move.",
     { exact: true },
   );
   const controls = page.getByRole("navigation", { name: "Story controls" });
 
   await expect(text).toHaveAttribute(
     "aria-label",
-    "Page 4 of 7. Ana gives the string one small pull. It will not move.",
+    "Page 4 of 7. Rose gives the string one small pull. It will not move.",
   );
   const containment = await text.evaluate((element) => {
     const style = getComputedStyle(element);
@@ -684,7 +684,7 @@ test("a threshold story line keeps its prompt visible in short-wide reading", as
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/stories/robo-tries/pages/6");
-  const text = page.getByText('Robo smiles. “I can try!”', { exact: true });
+  const text = page.getByText('Bob smiles. “I can try!”', { exact: true });
   const prompt = page.getByLabel("Say it: I can try!");
   const controls = page.getByRole("navigation", { name: "Story controls" });
 
@@ -737,7 +737,7 @@ for (const scenario of [
   {
     name: "short-wide reader",
     route: "/stories/kite-come-back/pages/4",
-    text: "Ana gives the string one small pull. It will not move.",
+    text: "Rose gives the string one small pull. It will not move.",
     viewport: { height: 360, width: 640 },
   },
 ] as const) {
