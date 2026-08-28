@@ -38,6 +38,7 @@ const {
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const { DUB_LINES } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
+const { OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
 
 afterEach(async () => {
   await cleanupMountedRoots();
@@ -447,6 +448,7 @@ describe("duck dubbing storyboard presentation", () => {
       assert.match(html, new RegExp(`aria-label="Scene ${scene} thumbnail"[^>]*role="img"`));
     }
     assert.doesNotMatch(html, />Draft<|>Your dub<|>Not started<|voice clips recorded/);
+    assert.doesNotMatch(html, />0 \/ 4<|>Done<|>Retake</);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
     assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
   });
@@ -470,6 +472,18 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(sceneSources.length, 49);
     assert.equal(new Set(sceneSources).size, 4);
     assert.doesNotMatch(html, /viewBox="0 0 960 540"|\bid=".*-sky"/);
+  });
+
+  it("derives the Old MacDonald project home from the passed dub definition", () => {
+    const html = renderProjectHome({
+      activeLine: OLD_MACDONALD_DUB.lines[0],
+      definition: OLD_MACDONALD_DUB,
+    });
+
+    assert.match(html, /Old MacDonald Had a Farm/);
+    assert.match(html, /aria-label="Project recording progress"[\s\S]*?>0 \/ 35</);
+    assert.equal((html.match(/aria-label="Scene \d, Not started"/g) ?? []).length, 5);
+    assert.match(html, /aria-label="Scene 1, Not started"[\s\S]*?>0 \/ 7</);
   });
 
   it("keeps every scene selectable after all clips are recorded", () => {
@@ -682,6 +696,16 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-current="step"[^>]*>Line 2 of 4/);
     assert.match(html, /<h1[^>]*>Over the hill and far away\.<\/h1>/);
     assert.match(html, /The flock travels over a green hill\./);
+  });
+
+  it("derives the scene editor line count from the passed dub definition", () => {
+    const html = renderSceneEditor({
+      activeLine: OLD_MACDONALD_DUB.lines[1],
+      definition: OLD_MACDONALD_DUB,
+    });
+
+    assert.match(html, /aria-current="step"[^>]*>Line 2 of 7/);
+    assert.match(html, /<h1[^>]*>And on his farm he had some cows, E-I-E-I-O!<\/h1>/);
   });
 
   it("keeps recording available when a guide waveform asset is missing", () => {

@@ -102,6 +102,7 @@ test("home menu prioritizes the four learner activities", () => {
     "/talk-to-peppa",
     "/stories",
     "/dubs/five-little-ducks",
+    "/dubs/old-macdonald",
   ]);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
   assert.match(html, /Tap a picture\./);
@@ -109,6 +110,7 @@ test("home menu prioritizes the four learner activities", () => {
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
   assert.match(html, />Dub a rhyme</);
+  assert.match(html, />Old MacDonald Had a Farm</);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 10);
   assert.equal((html.match(/data-story-layer="painted-environment"/g) ?? []).length, 1);
   assert.doesNotMatch(html, /<svg[^>]*viewBox="0 0 960 540"/);
@@ -199,6 +201,9 @@ test("authenticated application routes include the core learner activities", () 
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
   assert.match(dub, /Loading your private dub…/);
+  const farmDub = renderApplicationRoute("/dubs/old-macdonald");
+  assert.match(farmDub, /Old MacDonald Had a Farm/);
+  assert.match(farmDub, /Loading your private dub…/);
   assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
@@ -344,7 +349,6 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     "/stories",
     "/stories/:storyId",
     "/stories/:storyId/pages/:pageNumber",
-    "/dubs/five-little-ducks",
     "/login",
     "/profile/setup",
     "/profile",
@@ -352,6 +356,11 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
   ]) {
     assert.match(app, new RegExp(`path=["']${path.replace("*", "\\*")}["']`));
   }
+  assert.match(app, /path=(?:\{getDuckDubPath\(\)\}|["']\/dubs\/five-little-ducks["'])/);
+  assert.match(
+    app,
+    /path=(?:\{getOldMacDonaldDubPath\(\)\}|["']\/dubs\/old-macdonald["'])/,
+  );
   assert.match(
     app,
     /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,

@@ -1,5 +1,6 @@
 import questionnaire from "../../content/learner-profile/questionnaire-v2.json";
 import generatedLessonTemplate from "../../content/lessons/01-peppas-high-ball.json";
+import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
 
@@ -35,11 +36,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "upload-rejected",
   "verse-fetch-failed",
 ]);
-const E2E_DUB_LINE_IDS = Array.from(
-  { length: 24 },
-  (_, index) => `line-${index + 1}` as `line-${number}`,
-);
-const E2E_DUB_API = "/api/dubs/five-little-ducks-v2";
+const DEFAULT_E2E_DUB_ID = "five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
 const E2E_LESSON_REVISION = "a".repeat(64);
 const E2E_DUB_CONSENT_VERSION = "guardian-voice-r2-v2";
@@ -164,6 +161,53 @@ const E2E_LEARNER_SCENARIO_KEY = "parrot-e2e-learners:active-scenario";
 const E2E_LEARNER_SESSION_KEY = "parrot-e2e-learners:active-session";
 const E2E_LEARNER_ACCOUNT_KEY_PREFIX = "parrot-e2e-learners:account";
 const E2E_STORY_ART_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
+const DEFAULT_E2E_DUB_DEFINITION =
+  DUB_DEFINITIONS.find(({ id }) => id === DEFAULT_E2E_DUB_ID) ??
+  DUB_DEFINITIONS[0];
+
+function normalizeE2ePathname(pathname: string) {
+  const normalized = pathname.replace(/\/+$/u, "");
+  return normalized === "" ? "/" : normalized.toLowerCase();
+}
+
+function getActiveE2eDubDefinition() {
+  const pathname = normalizeE2ePathname(new URL(window.location.href).pathname);
+  return (
+    DUB_DEFINITIONS.find(
+      ({ route }) => normalizeE2ePathname(route) === pathname,
+    ) ?? DEFAULT_E2E_DUB_DEFINITION
+  );
+}
+
+function getActiveE2eDubApiPath() {
+  return `/api/dubs/${getActiveE2eDubDefinition().id}`;
+}
+
+function matchActiveE2eDubLinePath(pathname: string) {
+  const definition = getActiveE2eDubDefinition();
+  const apiPath = `/api/dubs/${definition.id}/lines/`;
+  if (!pathname.startsWith(apiPath)) return null;
+  const suffix = pathname.slice(apiPath.length);
+  const audioPath = suffix.endsWith("/audio");
+  const encodedLineId = audioPath ? suffix.slice(0, -"/audio".length) : suffix;
+  let lineId: string;
+  try {
+    lineId = decodeURIComponent(encodedLineId);
+  } catch {
+    return null;
+  }
+  return definition.lines.some((line) => line.id === lineId)
+    ? { audioPath, lineId }
+    : null;
+}
+
+function matchActiveE2eDubGuidePath(pathname: string) {
+  const definition = getActiveE2eDubDefinition();
+  const prefix = `/assets/audio/${definition.guideAudioPrefix}`;
+  if (!pathname.startsWith(prefix) || !pathname.endsWith(".mp3")) return null;
+  const suffix = pathname.slice(prefix.length, -4);
+  return definition.lines.find(({ id }) => id === suffix || id.endsWith(`-${suffix}`))?.id ?? null;
+}
 
 const E2E_INCOMPLETE_PROFILE = {
   canBypass: false,
@@ -375,11 +419,9 @@ function isTargetableLearnerPath(pathname: string) {
     lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
     pathname === "/api/lessons/my" ||
     /^\/api\/lessons\/my\/[^/]+$/.test(pathname) ||
-    pathname === E2E_DUB_API ||
-    pathname === `${E2E_DUB_API}/consent` ||
-    /^\/api\/dubs\/five-little-ducks-v2\/lines\/line-(?:[1-9]|1[0-9]|2[0-4])(?:\/audio)?$/.test(
-      pathname,
-    ) ||
+    pathname === getActiveE2eDubApiPath() ||
+    pathname === `${getActiveE2eDubApiPath()}/consent` ||
+    matchActiveE2eDubLinePath(pathname) !== null ||
     /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
   );
 }
@@ -421,21 +463,13 @@ function singletonUnsupportedTargetMethodResponse(
     allowedMethods = ["GET"];
   } else if (lessonRecordingSlot(url) !== null) {
     allowedMethods = ["PUT"];
-  } else if (pathname === E2E_DUB_API) {
+  } else if (pathname === getActiveE2eDubApiPath()) {
     allowedMethods = ["GET", "DELETE"];
-  } else if (pathname === `${E2E_DUB_API}/consent`) {
+  } else if (pathname === `${getActiveE2eDubApiPath()}/consent`) {
     allowedMethods = ["PUT"];
-  } else if (
-    /^\/api\/dubs\/five-little-ducks-v2\/lines\/line-(?:[1-9]|1[0-9]|2[0-4])\/audio$/.test(
-      pathname,
-    )
-  ) {
+  } else if (matchActiveE2eDubLinePath(pathname)?.audioPath) {
     allowedMethods = ["GET"];
-  } else if (
-    /^\/api\/dubs\/five-little-ducks-v2\/lines\/line-(?:[1-9]|1[0-9]|2[0-4])$/.test(
-      pathname,
-    )
-  ) {
+  } else if (matchActiveE2eDubLinePath(pathname) !== null) {
     allowedMethods = ["PUT"];
   } else if (pathname === "/api/lessons/my") {
     allowedMethods = ["GET", "POST"];
@@ -895,15 +929,17 @@ function createE2eLearnerAccount(
   }
 
   function dubStatus(learner: MockLearnerState) {
+    const activeDub = getActiveE2eDubDefinition();
+    const lineIds = activeDub.lines.map(({ id }) => id);
     const saved = new Set(learner.dub.savedLineIds);
     return {
       complete:
         learner.dub.consentState === "granted" &&
-        E2E_DUB_LINE_IDS.every((id) => saved.has(id)),
+        lineIds.every((id) => saved.has(id)),
       consentState: learner.dub.consentState,
-      dubId: "five-little-ducks-v2",
+      dubId: activeDub.id,
       guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
-      lines: E2E_DUB_LINE_IDS.map((id) => ({
+      lines: lineIds.map((id) => ({
         id,
         recordedAt: saved.has(id) ? E2E_DUB_RECORDED_AT : null,
         saved: learner.dub.consentState === "granted" && saved.has(id),
@@ -919,11 +955,12 @@ function createE2eLearnerAccount(
     explicitLearner: MockLearnerState | null,
   ) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
+    const dubApiPath = getActiveE2eDubApiPath();
     const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
 
-    if (url.pathname === `${E2E_DUB_API}/consent`) {
+    if (url.pathname === `${dubApiPath}/consent`) {
       if (method !== "PUT")
         return e2eDubJson({ error: "method_not_allowed" }, 405);
       if (currentGuardianAccess().mode !== "guardian") {
@@ -941,7 +978,7 @@ function createE2eLearnerAccount(
       return new Response(null, { status: 204 });
     }
 
-    if (url.pathname === E2E_DUB_API) {
+    if (url.pathname === dubApiPath) {
       if (method === "GET") return e2eDubJson(dubStatus(learner));
       if (method === "DELETE") {
         if (currentGuardianAccess().mode !== "guardian") {
@@ -953,22 +990,20 @@ function createE2eLearnerAccount(
       }
     }
 
-    const line = url.pathname.match(
-      /^\/api\/dubs\/five-little-ducks-v2\/lines\/(line-(?:[1-9]|1[0-9]|2[0-4]))(\/audio)?$/,
-    );
+    const line = matchActiveE2eDubLinePath(url.pathname);
     if (!line) return e2eDubJson({ error: "not_found" }, 404);
     if (learner.dub.consentState !== "granted") {
       return e2eDubJson({ error: "dubbing_not_enabled" }, 403);
     }
-    const [, lineId, audio] = line;
-    if (method === "GET" && audio) {
+    const { audioPath, lineId } = line;
+    if (method === "GET" && audioPath) {
       return learner.dub.savedLineIds.includes(lineId)
         ? new Response(createE2eDubBlob(), {
             headers: { "Content-Type": "audio/webm" },
           })
         : new Response(null, { status: 404 });
     }
-    if (method === "PUT" && !audio) {
+    if (method === "PUT" && !audioPath) {
       if (!learner.dub.savedLineIds.includes(lineId)) {
         learner.dub.savedLineIds.push(lineId);
       }
@@ -1733,7 +1768,10 @@ function createE2eDubBlob(scenario = "correct") {
   );
 }
 
-function initialE2eDubLineIds(scenario: string) {
+function initialE2eDubLineIds(
+  scenario: string,
+  lineIds: readonly string[],
+) {
   if (
     scenario === "audio-fetch-failed" ||
     scenario === "both-source-failed" ||
@@ -1745,23 +1783,26 @@ function initialE2eDubLineIds(scenario: string) {
     scenario === "reset-delete-lost-response" ||
     scenario === "reset-interrupted"
   ) {
-    return [...E2E_DUB_LINE_IDS];
+    return [...lineIds];
   }
-  if (scenario === "almost-complete") return E2E_DUB_LINE_IDS.slice(0, 23);
+  if (scenario === "almost-complete") return lineIds.slice(0, lineIds.length - 1);
   if (
     scenario === "delete-failed" ||
     scenario === "delete-held" ||
     scenario === "partial" ||
     scenario === "verse-fetch-failed"
   ) {
-    return E2E_DUB_LINE_IDS.slice(0, 3);
+    return lineIds.slice(0, 3);
   }
   return [];
 }
 
 function createE2eDubStore(scenario: string | null) {
   if (!scenario) return null;
-  const savedKey = `parrot-e2e-dub:${scenario}:saved`;
+  const definition = getActiveE2eDubDefinition();
+  const dubApiPath = `/api/dubs/${definition.id}`;
+  const dubLineIds = definition.lines.map(({ id }) => id);
+  const savedKey = `parrot-e2e-dub:${scenario}:${definition.id}:saved`;
   const consentKey = `parrot-e2e-dub:${scenario}:consent`;
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
   const resetDeleteFailureKey = `parrot-e2e-dub:${scenario}:reset-delete-failed`;
@@ -1769,7 +1810,7 @@ function createE2eDubStore(scenario: string | null) {
   const persisted = sessionStorage.getItem(savedKey);
   const savedLineIds = persisted
     ? (JSON.parse(persisted) as string[])
-    : initialE2eDubLineIds(scenario);
+    : initialE2eDubLineIds(scenario, dubLineIds);
   if (persisted === null)
     sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
   let consentState = (sessionStorage.getItem(consentKey) ??
@@ -1823,6 +1864,12 @@ function createE2eDubStore(scenario: string | null) {
     sessionStorage.setItem(savedKey, JSON.stringify([...clips.keys()]));
   }
 
+  function clearAllSavedClips() {
+    for (const { id } of DUB_DEFINITIONS) {
+      sessionStorage.removeItem(`parrot-e2e-dub:${scenario}:${id}:saved`);
+    }
+  }
+
   function persistConsent(state: typeof consentState) {
     consentState = state;
     sessionStorage.setItem(consentKey, state);
@@ -1839,9 +1886,8 @@ function createE2eDubStore(scenario: string | null) {
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
-      const guideMatch = url.pathname.match(
-        /^\/assets\/audio\/five-little-ducks-v2-guide-(line-(?:[1-9]|1[0-9]|2[0-4]))\.mp3$/,
-      );
+      const guideLineId = matchActiveE2eDubGuidePath(url.pathname);
+      const guideMatch = guideLineId ? [url.pathname, guideLineId] : null;
       if (method === "GET" && guideMatch) {
         guideFetches.push(url.pathname);
         if (
@@ -1861,7 +1907,7 @@ function createE2eDubStore(scenario: string | null) {
         }
         return null;
       }
-      if (url.pathname === `${E2E_DUB_API}/consent`) {
+      if (url.pathname === `${dubApiPath}/consent`) {
         if (method !== "PUT")
           return e2eDubJson({ error: "method_not_allowed" }, 405);
         if (currentGuardianAccess().mode !== "guardian") {
@@ -1893,7 +1939,7 @@ function createE2eDubStore(scenario: string | null) {
           status: 204,
         });
       }
-      if (url.pathname === E2E_DUB_API) {
+      if (url.pathname === dubApiPath) {
         if (method === "GET") {
           if (scenario === "load-held") return new Promise<Response>(() => {});
           if (delayNextStatus) {
@@ -1908,11 +1954,11 @@ function createE2eDubStore(scenario: string | null) {
           return e2eDubJson({
             complete:
               consentState === "granted" &&
-              E2E_DUB_LINE_IDS.every((id) => clips.has(id)),
+              dubLineIds.every((id) => clips.has(id)),
             consentState,
-            dubId: "five-little-ducks-v2",
+            dubId: definition.id,
             guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
-            lines: E2E_DUB_LINE_IDS.map((id) => ({
+            lines: dubLineIds.map((id) => ({
               id,
               recordedAt:
                 consentState === "granted" && clips.has(id)
@@ -1948,6 +1994,7 @@ function createE2eDubStore(scenario: string | null) {
             legacyResetPending = false;
             resetCleanupPending = false;
             sessionStorage.setItem(resetKey, "yes");
+            clearAllSavedClips();
             clips.clear();
             persist();
             persistConsent("not_granted");
@@ -1958,6 +2005,7 @@ function createE2eDubStore(scenario: string | null) {
               return new Response(null, { status: 503 });
             }
           }
+          clearAllSavedClips();
           clips.clear();
           persist();
           persistConsent("not_granted");
@@ -1968,15 +2016,13 @@ function createE2eDubStore(scenario: string | null) {
         }
       }
 
-      const lineMatch = url.pathname.match(
-        /^\/api\/dubs\/five-little-ducks-v2\/lines\/(line-(?:[1-9]|1[0-9]|2[0-4]))(\/audio)?$/,
-      );
+      const lineMatch = matchActiveE2eDubLinePath(url.pathname);
       if (!lineMatch) {
         return url.pathname.startsWith("/api/dubs/")
           ? e2eDubJson({ error: "not_found", message: "not_found" }, 404)
           : null;
       }
-      const [, lineId, audioPath] = lineMatch;
+      const { audioPath, lineId } = lineMatch;
       if (consentState !== "granted") return disabledDubResponse();
       if (method === "GET" && audioPath) {
         privateFetches.push(url.pathname);
@@ -2857,6 +2903,7 @@ class MockAudioElement {
       (hasHeldE2eProfilePlayback() && this.src.includes("learner-profile")) ||
       (hasHeldE2eDubPlayback() &&
         (this.src.includes("five-little-ducks") ||
+          this.src.includes("old-macdonald") ||
           this.src.startsWith("blob:")))
     ) {
       if (!this.held) {

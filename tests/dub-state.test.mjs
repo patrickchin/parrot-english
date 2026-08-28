@@ -15,6 +15,7 @@ import {
   getDubSceneStatus,
   reduceDubState,
 } from "../src/dubbing/dub-state.ts";
+import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
 
 describe("five little ducks dub domain", () => {
   it("authors the complete traditional rhyme as 24 four-second cues", () => {
@@ -114,6 +115,32 @@ describe("five little ducks dub domain", () => {
         saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
       }, 0),
       { kind: "needs-retake", recorded: 4 },
+    );
+  });
+
+  it("uses the active rhyme's scene size and line count", () => {
+    const state = reduceDubState(
+      createInitialDubState(OLD_MACDONALD_DUB),
+      {
+        type: "LOADED",
+        savedLineIds: OLD_MACDONALD_DUB.lines.slice(0, 6).map(({ id }) => id),
+      },
+      OLD_MACDONALD_DUB,
+    );
+    assert.equal(state.selectedSceneIndex, 0);
+    assert.equal(state.selectedLineIndex, 6);
+    assert.deepEqual(
+      getDubSceneStatus(
+        {
+          saved: Object.fromEntries(
+            OLD_MACDONALD_DUB.lines.slice(0, 6).map(({ id }) => [id, "saved"]),
+          ),
+          needsRetake: {},
+        },
+        0,
+        OLD_MACDONALD_DUB,
+      ),
+      { kind: "in-progress", recorded: 6 },
     );
   });
 

@@ -1,17 +1,15 @@
 import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
 import { ActionButton } from "../shared/ui";
+import type { DubSceneComponent } from "./DubSceneTypes";
 import { DuckScene } from "./DuckScene";
-import {
-  DUB_LINES,
-  DUB_LINES_PER_VERSE,
-  DUB_VERSES,
-  type DubLine,
-} from "./dub-script";
+import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import { getDubSceneStatus, type DubSceneStatus } from "./dub-state";
+import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 export type DubProjectHomeProps = {
   activeLine: DubLine;
+  definition?: DubDefinition;
   error?: string;
   locked: boolean;
   needsRetake: ReadonlySet<string>;
@@ -20,19 +18,37 @@ export type DubProjectHomeProps = {
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
   playbackButtonRef?: RefObject<HTMLButtonElement | null>;
+  Scene?: DubSceneComponent;
   saved: Readonly<Record<string, string>>;
   visualLine?: DubLine;
 };
 
-function sceneStatusLabel(status: DubSceneStatus) {
+function getSceneLines(definition: DubDefinition) {
+  return Array.from(
+    { length: definition.lines.length / definition.linesPerScene },
+    (_, index) => definition.lines.slice(
+      index * definition.linesPerScene,
+      (index + 1) * definition.linesPerScene,
+    ),
+  );
+}
+
+function sceneStatusLabel(status: DubSceneStatus, linesPerScene: number) {
   if (status.kind === "not-started") return "Not started";
-  if (status.kind === "in-progress") return `${status.recorded} / 4`;
+  if (status.kind === "in-progress") return `${status.recorded} / ${linesPerScene}`;
   if (status.kind === "done") return "Done";
   return "Needs retake";
 }
 
+function sceneStatusText(status: DubSceneStatus, linesPerScene: number) {
+  if (status.kind === "done") return "Done";
+  if (status.kind === "needs-retake") return "Retake";
+  return `${status.recorded} / ${linesPerScene}`;
+}
+
 export function DubProjectHome({
   activeLine,
+  definition = FIVE_LITTLE_DUCKS_DUB,
   error = "",
   locked,
   needsRetake,
@@ -41,19 +57,27 @@ export function DubProjectHome({
   onTogglePlayback,
   playback,
   playbackButtonRef,
+  Scene = DuckScene as unknown as DubSceneComponent,
   saved,
   visualLine = activeLine,
 }: DubProjectHomeProps) {
-  const recorded = DUB_LINES.filter(({ id }) => Object.hasOwn(saved, id)).length;
-  const allSaved = recorded === DUB_LINES.length;
+  const recorded = definition.lines.filter(({ id }) => Object.hasOwn(saved, id)).length;
+  const allSaved = recorded === definition.lines.length;
   const retakeState: Record<string, true> = Object.fromEntries(
     [...needsRetake].map((lineId) => [lineId, true]),
   );
-  const firstMissingLineIndex = DUB_LINES.findIndex(({ id }) => !Object.hasOwn(saved, id));
-  const continueSceneIndex = Math.floor(firstMissingLineIndex / DUB_LINES_PER_VERSE);
+  const firstMissingLineIndex = definition.lines.findIndex(({ id }) => !Object.hasOwn(saved, id));
+  const continueSceneIndex = Math.floor(
+    (firstMissingLineIndex < 0 ? 0 : firstMissingLineIndex) / definition.linesPerScene,
+  );
+  const sceneLines = getSceneLines(definition);
+  const activeLineIndex = Math.max(
+    0,
+    definition.lines.findIndex(({ id }) => id === activeLine.id),
+  );
   const activeSceneIndex = Math.max(
     0,
-    Math.floor(DUB_LINES.indexOf(activeLine) / DUB_LINES_PER_VERSE),
+    Math.floor(activeLineIndex / definition.linesPerScene),
   );
   const playbackLabel = playback === "playing"
     ? "Stop full video"
@@ -65,17 +89,17 @@ export function DubProjectHome({
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
       <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,3fr)_minmax(17rem,1fr)] short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:gap-2 tall-wide:h-full tall-wide:min-h-0 tall-wide:grid-cols-[minmax(0,3fr)_minmax(18rem,1fr)] tall-wide:grid-rows-[auto_minmax(0,1fr)]">
         <header className="flex min-w-0 items-center justify-between gap-3 short-wide:col-span-2 tall-wide:col-span-2">
-          <h1 className="m-0 truncate text-xl text-brand-ink short-wide:text-lg md:text-4xl">Five Little Ducks</h1>
+          <h1 className="m-0 truncate text-xl text-brand-ink short-wide:text-lg md:text-4xl">{definition.title}</h1>
           <p
             aria-label="Project recording progress"
-            aria-valuemax={DUB_LINES.length}
+            aria-valuemax={definition.lines.length}
             aria-valuemin={0}
             aria-valuenow={recorded}
-            aria-valuetext={`${recorded} of ${DUB_LINES.length} clips recorded`}
+            aria-valuetext={`${recorded} of ${definition.lines.length} clips recorded`}
             className="m-0 shrink-0 rounded-full bg-white/85 px-3 py-1.5 text-sm font-black text-brand-navy short-wide:px-2 short-wide:py-1 short-wide:text-xs"
             role="progressbar"
           >
-            {recorded} / {DUB_LINES.length}
+            {recorded} / {definition.lines.length}
           </p>
         </header>
 
@@ -84,7 +108,7 @@ export function DubProjectHome({
             aria-label="Full video player"
             className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:h-full short-wide:w-auto short-wide:max-w-full short-wide:justify-self-center short-wide:rounded-2xl tall-wide:h-full tall-wide:w-auto tall-wide:max-w-full tall-wide:justify-self-center"
           >
-            <DuckScene compact line={visualLine} playing={playback === "playing"} />
+            <Scene compact line={visualLine} playing={playback === "playing"} />
           </section>
           <ActionButton
             aria-label={playbackLabel}
@@ -110,9 +134,9 @@ export function DubProjectHome({
           </div>
 
           <nav aria-label="Scenes" className="relative grid min-w-0 max-w-full grid-flow-col auto-cols-[minmax(6.5rem,1fr)] gap-2 overflow-x-auto pb-2 short-wide:min-h-0 short-wide:grid-flow-row short-wide:grid-cols-3 short-wide:content-start short-wide:gap-1 short-wide:overflow-visible short-wide:pb-0 md:grid-flow-row md:grid-cols-6 md:overflow-visible short-wide:md:grid-cols-3 tall-wide:min-h-0 tall-wide:grid-flow-row tall-wide:grid-cols-2 tall-wide:content-start tall-wide:overflow-visible tall-wide:pb-0">
-            {DUB_VERSES.map((lines, sceneIndex) => {
-              const status = getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex);
-              const statusLabel = sceneStatusLabel(status);
+            {sceneLines.map((lines, sceneIndex) => {
+              const status = getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex, definition);
+              const statusLabel = sceneStatusLabel(status, definition.linesPerScene);
               const statusIcon = status.kind === "done"
                 ? "✓"
                 : status.kind === "needs-retake"
@@ -134,9 +158,14 @@ export function DubProjectHome({
                   variant={selected ? "navy" : "surface"}
                 >
                   <span aria-label={`Scene ${sceneIndex + 1} thumbnail`} className="block aspect-video w-full overflow-hidden rounded-xl" role="img">
-                    <DuckScene line={lines[0]} thumbnail />
+                    <Scene line={lines[0]} thumbnail />
                   </span>
                   <span aria-hidden="true" className="leading-none">{sceneIndex + 1}</span>
+                  {definition.showSceneStatusText ? (
+                    <span aria-hidden="true" className="text-[0.72rem] font-black leading-none short-wide:text-[0.65rem]">
+                      {sceneStatusText(status, definition.linesPerScene)}
+                    </span>
+                  ) : null}
                   <span
                     aria-hidden="true"
                     className={`absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-[0.72rem] font-black leading-none ring-2 ring-white ${

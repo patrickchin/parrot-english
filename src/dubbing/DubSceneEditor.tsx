@@ -2,18 +2,16 @@ import { ArrowRight, LoaderCircle, Mic, Square, Volume2 } from "lucide-react";
 import type { RefObject } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { ActionButton, TextButton } from "../shared/ui";
+import type { DubSceneComponent } from "./DubSceneTypes";
 import { DuckScene } from "./DuckScene";
 import { DubTakeWaveform } from "./DubTakeWaveform";
-import {
-  DUB_LINES,
-  DUB_LINES_PER_VERSE,
-  DUB_RECORDING_MS,
-  type DubLine,
-} from "./dub-script";
+import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import type { DubOperation } from "./dub-state";
+import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 export type DubSceneEditorProps = {
   activeLine: DubLine;
+  definition?: DubDefinition;
   error: string;
   locked: boolean;
   onBack(): void;
@@ -29,6 +27,7 @@ export type DubSceneEditorProps = {
   nextButtonRef?: RefObject<HTMLButtonElement | null>;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
   saveButtonRef?: RefObject<HTMLButtonElement | null>;
+  Scene?: DubSceneComponent;
   saveRecovery: "record" | "save" | null;
   lineHeadingRef?: RefObject<HTMLHeadingElement | null>;
 };
@@ -48,6 +47,7 @@ function getGuideAudioId(text: string) {
 
 export function DubSceneEditor({
   activeLine,
+  definition = FIVE_LITTLE_DUCKS_DUB,
   error,
   locked,
   onBack,
@@ -63,19 +63,23 @@ export function DubSceneEditor({
   nextButtonRef,
   recordButtonRef,
   saveButtonRef,
+  Scene = DuckScene as unknown as DubSceneComponent,
   saveRecovery,
   lineHeadingRef,
 }: DubSceneEditorProps) {
-  const activeLineIndex = Math.max(0, DUB_LINES.indexOf(activeLine));
-  const lineNumber = activeLineIndex % DUB_LINES_PER_VERSE + 1;
+  const activeLineIndex = Math.max(
+    0,
+    definition.lines.findIndex(({ id }) => id === activeLine.id),
+  );
+  const lineNumber = activeLineIndex % definition.linesPerScene + 1;
   const recording = operation === "recording";
   const recordAgain = pendingTake !== null || saveRecovery !== null;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
-  const elapsedMs = Math.min(DUB_RECORDING_MS, Math.max(0, recordingElapsedMs));
+  const elapsedMs = Math.min(definition.recordingMs, Math.max(0, recordingElapsedMs));
   const elapsedLabel = formatDuration(elapsedMs);
-  const recordingLimitLabel = formatDuration(DUB_RECORDING_MS);
-  const lastLineInScene = lineNumber === DUB_LINES_PER_VERSE;
+  const recordingLimitLabel = formatDuration(definition.recordingMs);
+  const lastLineInScene = lineNumber === definition.linesPerScene;
   const recordLabel = operation === "mic-opening"
     ? "Starting microphone"
     : operation === "saving"
@@ -100,7 +104,7 @@ export function DubSceneEditor({
           ? error
           : pendingTake
             ? "Saved ✓"
-            : `Up to ${DUB_RECORDING_MS / 1_000} seconds`;
+            : `Up to ${definition.recordingMs / 1_000} seconds`;
 
   return (
     <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-[3.75rem] short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
@@ -108,7 +112,7 @@ export function DubSceneEditor({
         <section className="grid content-start gap-2 short-wide:min-h-0 short-wide:grid-rows-[auto_minmax(0,1fr)_auto] short-wide:gap-1.5">
           <TextButton aria-label="Back to full video" className="min-h-12 justify-self-start gap-1" disabled={navigationLocked} onClick={onBack}>← Full video</TextButton>
           <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl">
-            <DuckScene compact line={activeLine} />
+            <Scene compact line={activeLine} />
           </section>
           <h1 className="m-0 rounded-2xl border-4 border-white bg-white/90 px-3 py-2 text-center text-xl font-black leading-snug text-brand-ink shadow-card short-wide:py-1.5 short-wide:text-base md:text-2xl" ref={lineHeadingRef} tabIndex={-1}>
             {activeLine.text}
@@ -117,7 +121,7 @@ export function DubSceneEditor({
 
         <aside aria-label="Scene line controls" className="grid content-start gap-2 self-start rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:max-h-full short-wide:min-h-0 short-wide:gap-0.5 short-wide:overflow-y-auto short-wide:rounded-2xl short-wide:p-2 md:gap-3 md:p-4 short-wide:md:gap-0.5 short-wide:md:p-2">
           <p aria-current="step" className="m-0 grid h-7 place-items-center text-center text-lg font-black leading-none text-brand-blue short-wide:h-6 short-wide:text-base md:text-xl">
-            Line {lineNumber} of {DUB_LINES_PER_VERSE}
+            Line {lineNumber} of {definition.linesPerScene}
           </p>
 
           <ActionButton
@@ -171,7 +175,7 @@ export function DubSceneEditor({
                 </p>
                 <div
                   aria-label="Recording time"
-                  aria-valuemax={DUB_RECORDING_MS}
+                  aria-valuemax={definition.recordingMs}
                   aria-valuemin={0}
                   aria-valuenow={elapsedMs}
                   aria-valuetext={`${elapsedLabel} of ${recordingLimitLabel}`}
@@ -181,7 +185,7 @@ export function DubSceneEditor({
                   <span
                     aria-hidden="true"
                     className="block h-full rounded-full bg-brand-rose transition-[width] duration-100 motion-reduce:transition-none"
-                    style={{ width: `${elapsedMs / DUB_RECORDING_MS * 100}%` }}
+                    style={{ width: `${elapsedMs / definition.recordingMs * 100}%` }}
                   />
                 </div>
               </>

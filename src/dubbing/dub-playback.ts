@@ -1,18 +1,17 @@
 import {
-  DUB_DURATION_MS,
-  DUB_LINES,
-  type DubLine,
+  FIVE_LITTLE_DUCKS_DUB,
 } from "./dub-script.ts";
 import {
   dubConsentLossError,
-  getDubLineAudioUrl,
 } from "./dub-api.ts";
+import type { DubDefinition, DubLine } from "./rhyme-catalog.ts";
 
 type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
 type ScheduleDubAudioOptions = {
   context: Pick<AudioContext, "currentTime">;
   cueOffsetMs?: number;
+  definition?: DubDefinition;
   lines?: readonly DubLine[];
   lineSources: Map<string, VoiceSource>;
   output: AudioNode;
@@ -22,6 +21,7 @@ type ScheduleDubAudioOptions = {
 type StartDubPlaybackOptions = {
   AudioContext?: typeof globalThis.AudioContext;
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
+  definition?: DubDefinition;
   fetch?: typeof globalThis.fetch;
   lines?: readonly DubLine[];
   onEnded?: () => void;
@@ -67,7 +67,8 @@ function stopNode(node: Pick<AudioScheduledSourceNode, "stop">) {
 export function scheduleDubAudio(options: ScheduleDubAudioOptions) {
   const {
     cueOffsetMs = 0,
-    lines = DUB_LINES,
+    definition = FIVE_LITTLE_DUCKS_DUB,
+    lines = definition.lines,
     lineSources,
     output,
     startAt,
@@ -144,21 +145,27 @@ function createAbortError() {
   return error;
 }
 
-function getPlaybackScope(lines: readonly DubLine[]) {
+function getPlaybackScope(
+  lines: readonly DubLine[],
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+) {
   if (lines.length === 0) {
     throw new TypeError("Dub playback lines must be one non-empty authored range.");
   }
-  const firstLineIndex = DUB_LINES.indexOf(lines[0]);
+  const firstLineIndex = definition.lines.indexOf(lines[0]);
   const canonical = firstLineIndex >= 0 && lines.every(
-    (line, index) => DUB_LINES[firstLineIndex + index] === line,
+    (line, index) => definition.lines[firstLineIndex + index] === line,
   );
   if (!canonical) {
     throw new TypeError("Dub playback lines must be one non-empty authored range.");
   }
   const endLineIndex = firstLineIndex + lines.length;
-  const fullDub = firstLineIndex === 0 && endLineIndex === DUB_LINES.length;
+  const fullDub = firstLineIndex === 0 && endLineIndex === definition.lines.length;
   const cueOffsetMs = fullDub ? 0 : lines[0].cueMs;
-  const authoredEndMs = DUB_LINES[endLineIndex]?.cueMs ?? DUB_DURATION_MS;
+  const authoredEndMs = fullDub
+    ? definition.durationMs
+    : definition.lines[endLineIndex]?.cueMs
+      ?? lines.at(-1)!.cueMs + definition.finalCueTailMs;
   return {
     authoredDurationMs: authoredEndMs - cueOffsetMs,
     cueOffsetMs,
@@ -169,18 +176,21 @@ function getPlaybackScope(lines: readonly DubLine[]) {
 export async function startDubPlayback({
   AudioContext: AudioContextClass = globalThis.AudioContext,
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
+  definition = FIVE_LITTLE_DUCKS_DUB,
   fetch: request = globalThis.fetch,
-  lines = DUB_LINES,
+  lines = definition.lines,
   onEnded,
   onLineFallback,
   onLineUnavailable,
   onTick,
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
-  resolveAudioSource = ({ id }) => ({ preferredUrl: getDubLineAudioUrl(id) }),
+  resolveAudioSource = ({ id }) => ({
+    preferredUrl: `/api/dubs/${definition.id}/lines/${encodeURIComponent(id)}/audio`,
+  }),
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
-  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines);
+  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines, definition);
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -312,7 +322,7 @@ export async function startDubPlayback({
 
     if (signal?.aborted) throw createAbortError();
     const durationMs = fullDub
-      ? DUB_DURATION_MS
+      ? definition.durationMs
       : Math.max(authoredDurationMs, ...decodedLines.map(([line, buffer]) =>
           line.cueMs - cueOffsetMs + buffer.duration * 1_000));
     await Promise.race([context.resume(), startupAbort]);
@@ -336,6 +346,7 @@ export async function startDubPlayback({
     stopVoices = scheduleDubAudio({
       context,
       cueOffsetMs,
+      definition,
       lines,
       lineSources,
       output: master,

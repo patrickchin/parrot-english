@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
 import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
+import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
 import {
   scheduleDubAudio,
   startDubPlayback,
@@ -14,8 +15,8 @@ function abortError() {
 }
 
 function lineIdFromUrl(url) {
-  return url.match(/\/lines\/(line-\d+)\/audio$/)?.[1]
-    ?? url.match(/five-little-ducks-v2-guide-(line-\d+)\.mp3$/)?.[1];
+  return url.match(/\/lines\/([^/]+)\/audio$/)?.[1]
+    ?? url.match(/(five-little-ducks-v2-guide-[^./]+|old-macdonald-v1-guide-[^./]+)\.mp3$/)?.[1]?.replace(/^(five-little-ducks-v2-guide-|old-macdonald-v1-guide-)/, "");
 }
 
 function guideUrl(lineId) {
@@ -117,6 +118,8 @@ function createAudioHarness({
   resumeDeferred,
 } = {}) {
   const contexts = [];
+  const lineMarkers = new Map();
+  let nextMarker = 1;
 
   class FakeParam {
     constructor() {
@@ -210,7 +213,7 @@ function createAudioHarness({
     }
 
     async decodeAudioData(bytes) {
-      const lineId = `line-${new Uint8Array(bytes)[0]}`;
+      const lineId = lineMarkers.get(new Uint8Array(bytes)[0]) ?? `line-${new Uint8Array(bytes)[0]}`;
       if (lineId === decodeNeverLineId) return new Promise(() => {});
       if (decodeFailure?.(bytes) || lineId === decodeFailureLineId) {
         throw new Error("codec detail");
@@ -227,8 +230,10 @@ function createAudioHarness({
   const fetchCalls = [];
   async function fetch(url, init) {
     fetchCalls.push([url, init]);
-    const lineNumber = Number(lineIdFromUrl(url)?.slice("line-".length));
-    return new Response(new Uint8Array([lineNumber, 2, 3, 4]));
+    const lineId = lineIdFromUrl(url);
+    const marker = nextMarker++;
+    lineMarkers.set(marker, lineId);
+    return new Response(new Uint8Array([marker, 2, 3, 4]));
   }
 
   return { AudioContext: FakeAudioContext, contexts, fetch, fetchCalls };
@@ -418,6 +423,146 @@ describe("duck dub playback", () => {
     raf.runNext();
     assert.deepEqual(ticks, [18_000]);
     assert.equal(ended, 1);
+  });
+
+  it("keeps the final Duck scene on its legacy 17.2-second clock", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      lines: DUB_VERSES[5],
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    audio.contexts[0].currentTime = 27.33;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [17_200]);
+    assert.equal(ended, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("plays an Old MacDonald scene from scene-relative zero without treating it as the full rhyme", async () => {
+    const audio = createAudioHarness({
+      decodeDurations: {
+        [OLD_MACDONALD_DUB.lines[13].id]: 6,
+      },
+    });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      fetch: audio.fetch,
+      lines: OLD_MACDONALD_DUB.lines.slice(7, 14),
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    assert.deepEqual(
+      audio.fetchCalls.map(([url]) => lineIdFromUrl(url)),
+      OLD_MACDONALD_DUB.lines.slice(7, 14).map(({ id }) => id),
+    );
+    const context = audio.contexts[0];
+    assert.deepEqual(
+      context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
+      [10.12, 14.12, 18.12, 22.12, 26.12, 30.12, 34.12],
+    );
+
+    context.currentTime = 40.12;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [30_000]);
+    assert.equal(ended, 1);
+  });
+
+  it("keeps all five complete Old MacDonald scenes on exact 28-second boundaries", async () => {
+    for (const [sceneIndex, sceneStart] of [0, 7, 14, 21, 28].entries()) {
+      const lines = OLD_MACDONALD_DUB.lines.slice(sceneStart, sceneStart + 7);
+      const audio = createAudioHarness({
+        decodeDurations: Object.fromEntries(lines.map(({ id }) => [id, 0.25])),
+      });
+      const raf = createRaf();
+      const ticks = [];
+      let ended = 0;
+
+      await startDubPlayback({
+        AudioContext: audio.AudioContext,
+        cancelAnimationFrame: raf.cancelAnimationFrame,
+        definition: OLD_MACDONALD_DUB,
+        fetch: audio.fetch,
+        lines,
+        onEnded: () => { ended += 1; },
+        onTick: (elapsedMs) => ticks.push(elapsedMs),
+        requestAnimationFrame: raf.requestAnimationFrame,
+      });
+
+      const context = audio.contexts[0];
+      context.currentTime = 38.119;
+      raf.runNext();
+
+      assert.equal(Math.round(ticks[0]), 27_999, `scene ${sceneIndex + 1}`);
+      assert.equal(ended, 0, `scene ${sceneIndex + 1}`);
+      assert.equal(context.closeCalls, 0, `scene ${sceneIndex + 1}`);
+      assert.equal(raf.callbacks.size, 1, `scene ${sceneIndex + 1}`);
+
+      context.currentTime = 38.121;
+      raf.runNext();
+
+      assert.equal(ticks.at(-1), 28_000, `scene ${sceneIndex + 1}`);
+      assert.equal(ended, 1, `scene ${sceneIndex + 1}`);
+      assert.equal(context.closeCalls, 1, `scene ${sceneIndex + 1}`);
+      assert.equal(raf.callbacks.size, 0, `scene ${sceneIndex + 1}`);
+      assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
+      assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
+    }
+  });
+
+  it("ends full Old MacDonald at the exact 150-second boundary", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      fetch: audio.fetch,
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    context.currentTime = 160.119;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [149_999]);
+    assert.equal(ended, 0);
+    assert.equal(context.closeCalls, 0);
+    assert.equal(raf.callbacks.size, 1);
+
+    context.currentTime = 160.121;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [149_999, 150_000]);
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+    assert.equal(raf.callbacks.size, 0);
+    assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
+    assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
   });
 
   it("loads guides for unsaved lines and private audio for saved lines", async () => {

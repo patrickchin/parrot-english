@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { basename } from "node:path";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
+import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
 import { STORIES } from "../src/stories/story-catalog.ts";
 
 const getStaticAudioLineForSpeech =
@@ -31,6 +34,34 @@ const learnerProfileAudio = {
   "learner-profile-v2-fun": "What do you like doing for fun?",
   "learner-profile-v2-stories": "What kind of stories do you like?",
 };
+const OLD_MACDONALD_GUIDE_FILES = [
+  "old-macdonald-v1-guide-line-1.mp3",
+  "old-macdonald-v1-guide-line-2.mp3",
+  "old-macdonald-v1-guide-line-3.mp3",
+  "old-macdonald-v1-guide-line-4.mp3",
+  "old-macdonald-v1-guide-line-5.mp3",
+  "old-macdonald-v1-guide-line-6.mp3",
+  "old-macdonald-v1-guide-line-9.mp3",
+  "old-macdonald-v1-guide-line-10.mp3",
+  "old-macdonald-v1-guide-line-11.mp3",
+  "old-macdonald-v1-guide-line-12.mp3",
+  "old-macdonald-v1-guide-line-13.mp3",
+  "old-macdonald-v1-guide-line-16.mp3",
+  "old-macdonald-v1-guide-line-17.mp3",
+  "old-macdonald-v1-guide-line-18.mp3",
+  "old-macdonald-v1-guide-line-19.mp3",
+  "old-macdonald-v1-guide-line-20.mp3",
+  "old-macdonald-v1-guide-line-23.mp3",
+  "old-macdonald-v1-guide-line-24.mp3",
+  "old-macdonald-v1-guide-line-25.mp3",
+  "old-macdonald-v1-guide-line-26.mp3",
+  "old-macdonald-v1-guide-line-27.mp3",
+  "old-macdonald-v1-guide-line-30.mp3",
+  "old-macdonald-v1-guide-line-31.mp3",
+  "old-macdonald-v1-guide-line-32.mp3",
+  "old-macdonald-v1-guide-line-33.mp3",
+  "old-macdonald-v1-guide-line-34.mp3",
+].sort();
 
 describe("static audio cache metadata", () => {
   it("registers one exact-text group cue for every supported built-in target", () => {
@@ -65,6 +96,43 @@ describe("static audio cache metadata", () => {
       guideLines.set(text, line.id);
     }
     assert.equal(guideLines.size, 15);
+  });
+
+  it("pins the complete non-empty decodable Old MacDonald guide inventory", () => {
+    const audioDirectory = new URL("../public/assets/audio/", import.meta.url);
+    const guideLines = new Map();
+    for (const { text } of OLD_MACDONALD_DUB.lines) {
+      const line = getStaticAudioLineForSpeech("narrator", text);
+      assert.match(line.id, /^old-macdonald-v1-guide-/);
+      assert.equal(line.text, text);
+      assert.match(line.ttsText, /^\[warm, rhythmic nursery-rhyme delivery\]/);
+      guideLines.set(text, line.id);
+    }
+    assert.equal(OLD_MACDONALD_DUB.lines.length, 35);
+    assert.equal(guideLines.size, 26);
+    assert.deepEqual(
+      [...guideLines.values()].map((id) => `${id}.mp3`).sort(),
+      OLD_MACDONALD_GUIDE_FILES,
+    );
+    const files = readdirSync(audioDirectory)
+      .filter((filename) => filename.startsWith("old-macdonald-v1-guide-") && filename.endsWith(".mp3"))
+      .sort();
+    assert.deepEqual(files, OLD_MACDONALD_GUIDE_FILES);
+    for (const filename of files) {
+      const file = new URL(filename, audioDirectory);
+      assert.equal(existsSync(file), true);
+      assert.ok(statSync(file).size > 0, `${filename} is empty`);
+      assert.notEqual(
+        execFileSync("ffprobe", [
+          "-v", "error",
+          "-show_entries", "format=duration",
+          "-of", "default=noprint_wrappers=1:nokey=1",
+          file.pathname,
+        ], { encoding: "utf8" }).trim(),
+        "",
+        `${basename(file.pathname)} is not decodable`,
+      );
+    }
   });
 
   it("covers every scripted non-user line", () => {
