@@ -1,4 +1,5 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
+import { BidiLearnerName } from "../app/AppHeader";
 import { useDialogFocus } from "../app/useDialogFocus";
 import { ActionButton } from "../shared/ui";
 import type { GuardianLearnerProfileSummary } from "./learner-profile-api";
@@ -42,7 +43,7 @@ export function LearnerDeleteDialog({
       setError(
         caughtError instanceof Error && caughtError.message
           ? caughtError.message
-          : `Could not delete ${profile.name}. Please try again.`,
+          : "Please try again.",
       );
     } finally {
       isDeletingRef.current = false;
@@ -63,26 +64,27 @@ export function LearnerDeleteDialog({
         aria-busy={isDeleting}
         aria-labelledby="delete-learner-title"
         aria-modal="true"
-        className="grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+        className="grid w-full min-w-0 max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
-        <header className="grid gap-2">
+        <header className="grid min-w-0 gap-2">
           <p className="m-0 text-xs font-black uppercase tracking-widest text-red-700">
             Cannot be undone
           </p>
           <h2
-            className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
+            className="m-0 min-w-0 whitespace-normal text-2xl font-black leading-tight text-brand-navy [overflow-wrap:anywhere] sm:text-3xl"
             id="delete-learner-title"
           >
-            Delete {profile.name}?
+            Delete <BidiLearnerName learnerName={profile.name} />?
           </h2>
         </header>
 
-        <p className="m-0 font-bold leading-relaxed text-slate-700">
-          This removes {profile.name}'s learner profile and private learner
-          data. Your Guardian account and other learners remain.
+        <p className="m-0 min-w-0 whitespace-normal font-bold leading-relaxed text-slate-700 [overflow-wrap:anywhere]">
+          This removes <BidiLearnerName learnerName={profile.name} />'s learner
+          profile and private learner data. Your Guardian account and other
+          learners remain.
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>
@@ -92,9 +94,10 @@ export function LearnerDeleteDialog({
           >
             {error ? (
               <p
-                className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
+                className="m-0 min-w-0 whitespace-normal rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900 [overflow-wrap:anywhere]"
                 role="alert"
               >
+                Could not delete <BidiLearnerName learnerName={profile.name} />.{" "}
                 {error}
               </p>
             ) : null}
@@ -108,8 +111,16 @@ export function LearnerDeleteDialog({
               >
                 Cancel
               </ActionButton>
-              <ActionButton type="submit" variant="rose">
-                {isDeleting ? `Deleting ${profile.name}…` : `Delete ${profile.name}`}
+              <ActionButton
+                className="min-w-0 whitespace-normal [overflow-wrap:anywhere]"
+                type="submit"
+                variant="rose"
+              >
+                <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
+                  {isDeleting ? "Deleting " : "Delete "}
+                  <BidiLearnerName learnerName={profile.name} />
+                  {isDeleting ? "…" : null}
+                </span>
               </ActionButton>
             </div>
           </fieldset>

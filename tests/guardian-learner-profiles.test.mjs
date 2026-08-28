@@ -28,6 +28,9 @@ const managerModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerProfiles.tsx")
   .catch(() => ({}));
 const { GuardianLearnerProfiles, GuardianLearnerProfilesView } = managerModule;
+const { LearnerDeleteDialog } = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerDeleteDialog.tsx",
+);
 const detailsModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerDetails.tsx")
   .catch(() => ({}));
@@ -363,16 +366,82 @@ test("final learner deletion is disabled and a pending learner can only finish d
       { ...noah, deletionPending: false },
     ],
   });
-  assert.match(html, /Finish deleting Mia/);
+  assert.match(html, /Finish deleting <bdi[^>]*dir="auto"[^>]*>Mia<\/bdi>/);
   assert.doesNotMatch(html, /aria-label="Edit Mia&#x27;s profile"/);
 
   const finalLearnerHtml = renderView({ profiles: [{ ...mia, deletionPending: false }] });
   assert.match(finalLearnerHtml, /aria-label="Delete Mia"[^>]*disabled=""/);
-  assert.match(finalLearnerHtml, /Add another learner before deleting Mia/);
+  assert.match(
+    finalLearnerHtml,
+    /Add another learner before deleting <bdi[^>]*dir="auto"[^>]*>Mia<\/bdi>\./,
+  );
 });
 
-test("editing an inactive learner navigates by ID without selecting or reloading", async () => {
-  let reloadCalls = 0;
+test("isolates learner names in visible deletion copy", () => {
+  const name = "م".repeat(120);
+  const finalLearnerHtml = renderView({
+    profiles: [{ ...mia, deletionPending: false, name }],
+  });
+  const pendingLearnerHtml = renderView({
+    profiles: [
+      { ...mia, deletionPending: true, name },
+      { ...noah, deletionPending: false },
+    ],
+  });
+  const dialogHtml = renderToStaticMarkup(
+    createElement(LearnerDeleteDialog, {
+      onClose() {},
+      onDelete() {},
+      profile: { ...mia, name },
+    }),
+  );
+
+  assert.match(
+    finalLearnerHtml,
+    /Add another learner before deleting <bdi[^>]*dir="auto"[^>]*>م{120}<\/bdi>\./,
+  );
+  assert.match(
+    pendingLearnerHtml,
+    /Finish deleting <bdi[^>]*dir="auto"[^>]*>م{120}<\/bdi>/,
+  );
+  assert.match(
+    dialogHtml,
+    /Delete <bdi[^>]*dir="auto"[^>]*>م{120}<\/bdi>\?/,
+  );
+  assert.match(
+    dialogHtml,
+    /This removes <bdi[^>]*dir="auto"[^>]*>م{120}<\/bdi>(?:'|&#x27;)s learner profile/,
+  );
+  assert.match(
+    dialogHtml,
+    /Delete <bdi[^>]*dir="auto"[^>]*>م{120}<\/bdi><\/span>/,
+  );
+});
+
+test("isolates the learner name in deletion error copy", async () => {
+  const name = "م".repeat(120);
+  const container = await mountStrict(
+    createElement(LearnerDeleteDialog, {
+      onClose() {},
+      onDelete() {
+        throw new Error("The deletion could not finish.");
+      },
+      profile: { ...mia, name },
+    }),
+  );
+
+  await click(button(container, `Delete ${name}`));
+  await waitFor(() => {
+    const alert = container.querySelector('[role="alert"]');
+    assert.match(alert?.textContent ?? "", /Could not delete/);
+    assert.equal(
+      alert?.querySelector('bdi[dir="auto"]')?.textContent,
+      name,
+    );
+  });
+});
+
+test("editing an inactive learner navigates by ID", async () => {
   globalThis.fetch = async (input, init = {}) => {
     const path = String(input);
     if (path === "/api/learner-profiles" && init.method === "GET") {
@@ -381,19 +450,11 @@ test("editing an inactive learner navigates by ID without selecting or reloading
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
 
-  const container = await mountStrict(
-    managerHarness({
-      async reloadSelectedLearner() {
-        reloadCalls += 1;
-        return fullProfile(noah);
-      },
-    }),
-  );
+  const container = await mountStrict(managerHarness());
   await waitFor(() => button(container, "Edit Noah's profile"));
   await click(button(container, "Edit Noah's profile"));
 
   await waitFor(() => {
-    assert.equal(reloadCalls, 0);
     assert.equal(
       currentRoute(container),
       "/guardian/learners/learner-noah",
@@ -409,7 +470,6 @@ test("adding a managed learner preserves learner mode and opens the new ID route
     name: "Ava",
     profileStatus: "not_started",
   };
-  let reloadCalls = 0;
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (path === "/api/learner-profiles" && init.method === "GET") {
@@ -425,20 +485,12 @@ test("adding a managed learner preserves learner mode and opens the new ID route
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
 
-  const container = await mountStrict(
-    managerHarness({
-      async reloadSelectedLearner() {
-        reloadCalls += 1;
-        return fullProfile(ava);
-      },
-    }),
-  );
+  const container = await mountStrict(managerHarness());
   await waitFor(() => button(container, "Add learner"));
   await input(container.querySelector("#preferred-name"), "  Ava  ");
   await click(button(container, "Add learner"));
 
   await waitFor(() => {
-    assert.equal(reloadCalls, 0);
     assert.equal(
       currentRoute(container),
       "/guardian/learners/learner-ava",

@@ -19,10 +19,10 @@
   pending/final-learner presentation.
 - GREEN: `node --test tests/guardian-learner-profiles.test.mjs
   tests/lifecycle/app-lifecycle.test.mjs` passed 145 tests.
-- Final: `npm test` passed 1400 tests; `npm run build` passed; the completed
-  `npm run test:browser` run reported Playwright status `passed`; `git diff
+- Final: `npm test` passed 1400 tests; `npm run build` passed; `git diff
   --check` passed. `npm run lint` had no errors and retained two pre-existing
-  warnings in generated `worker-configuration.d.ts`.
+  warnings in generated `worker-configuration.d.ts`. The prior browser result
+  is superseded as non-evidence by the unique-port correction below.
 
 ### Commit
 
@@ -42,3 +42,44 @@
 Task 2 leaves the container's `onDelete(profile)` callback as a deliberately
 minimal no-op compile boundary. Task 5 must replace it with the real queued
 deletion mutation and roster reconciliation.
+
+## Fix round 1: contain and isolate deletion names
+
+### Delivery
+
+- Wrapped every visible deletion-related learner name in `BidiLearnerName` and
+  made final-learner copy, pending retry copy, dialog title/body/action, and
+  error copy able to wrap an unbroken 120-character name.
+- Added rendered coverage for all deletion surfaces and error copy, plus
+  280px browser coverage that opens the administrative Delete dialog and
+  checks its named controls and visible content for horizontal containment.
+- Removed stale ignored manager-harness reload callbacks/counters from the
+  relevant administrative navigation and creation tests.
+
+### RED/GREEN evidence
+
+- RED: `node --test tests/guardian-learner-profiles.test.mjs` failed the new
+  Bidi expectation because the final-learner deletion message rendered the
+  raw name. On this worktree, `PLAYWRIGHT_PORT=4191 npm run test:browser --
+  tests/e2e/multiple-learners.spec.ts --grep 'wraps an unbroken|isolates a
+  right'` failed the unbroken-name case at 280px (`2085.171875`px content
+  against a `280`px viewport); the RTL case already passed.
+- GREEN: focused rendered tests passed 11/11. The same unique-port Playwright
+  command passed both long-name and RTL dialog cases (2/2).
+- Final: `npm run lint && npm test && npm run build && git diff --check`
+  completed successfully: lint had no errors (the same two generated-DTS
+  warnings), Node tests passed 1402/1402, production build passed, and the
+  diff check passed.
+
+### Environment correction
+
+The earlier port-4173 browser result is not evidence for this fix because that
+port was occupied by a Vite server from another worktree and could serve stale
+code. All browser RED/GREEN evidence above uses this branch's unique port 4191.
+
+### Self-review
+
+- No selection behavior, DELETE browser API call, or new dependency was
+  introduced.
+- The explicit profile-name segment in error feedback remains Bidi-isolated;
+  an API-provided error message is preserved as independent diagnostic text.

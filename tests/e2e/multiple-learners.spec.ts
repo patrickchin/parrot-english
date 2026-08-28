@@ -619,6 +619,26 @@ async function expectNameContentContained(page: Page, name: string) {
   return metrics.map(({ direction }) => direction);
 }
 
+async function expectLearnerDeletionDialogContained(page: Page, name: string) {
+  const card = learnerCard(page, name);
+  const deleteButton = card.getByRole("button", { name: `Delete ${name}` });
+  await expectContainedHorizontally(deleteButton, page);
+  await deleteButton.click();
+
+  const dialog = page.getByRole("dialog", { name: `Delete ${name}?` });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: `Delete ${name}?` })).toBeVisible();
+  await expect(dialog).toContainText(`This removes ${name}'s learner profile`);
+  const confirm = dialog.getByRole("button", { name: `Delete ${name}` });
+  const cancel = dialog.getByRole("button", { name: "Cancel" });
+  await expectContainedHorizontally(dialog, page);
+  await expectContainedHorizontally(confirm, page);
+  await expectContainedHorizontally(cancel, page);
+  await expectNameContentContained(page, name);
+  await expectNoHorizontalOverflow(page);
+  await cancel.click();
+}
+
 async function unlockGuardianScreen(page: Page) {
   const main = page.getByRole("main");
   await main.getByLabel("Password").fill(GUARDIAN_PASSWORD);
@@ -1979,8 +1999,9 @@ test("wraps an unbroken 120-character active learner name without horizontal ove
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
   await renameActiveLearner(page, longName);
 
-  await expect(learnerCard(page, longName)).toContainText("Learner mode");
+  await expect(learnerCard(page, longName)).toContainText(longName);
   await expectNameContentContained(page, longName);
+  await expectLearnerDeletionDialogContained(page, longName);
   const trigger = page.getByRole("button", {
     name: /Profile for Alex Guardian, guardian mode/,
   });
@@ -2010,9 +2031,10 @@ test("isolates a right-to-left learner name across every Guardian context at 280
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
   await renameActiveLearner(page, rtlName);
 
-  await expect(learnerCard(page, rtlName)).toContainText("Learner mode");
+  await expect(learnerCard(page, rtlName)).toContainText(rtlName);
   const rosterDirections = await expectNameContentContained(page, rtlName);
   expect(rosterDirections).toContain("rtl");
+  await expectLearnerDeletionDialogContained(page, rtlName);
   await expectNoHorizontalOverflow(page);
 
   const surfaceDirections = await expectGuardianNameSurfacesContained(

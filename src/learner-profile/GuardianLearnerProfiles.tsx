@@ -165,8 +165,9 @@ export function GuardianLearnerProfilesView({
                         {setupStatusLabel(profile.profileStatus)}
                       </p>
                       {finalLearner ? (
-                        <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                          Add another learner before deleting {profile.name}.
+                        <p className="m-0 min-w-0 whitespace-normal text-sm font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
+                          Add another learner before deleting{" "}
+                          <BidiLearnerName learnerName={profile.name} />.
                         </p>
                       ) : null}
                     </div>
@@ -184,9 +185,11 @@ export function GuardianLearnerProfilesView({
                           type="button"
                           variant="rose"
                         >
-                          {isPending
-                            ? `Deleting ${profile.name}…`
-                            : `Finish deleting ${profile.name}`}
+                          <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
+                            {isPending ? "Deleting " : "Finish deleting "}
+                            <BidiLearnerName learnerName={profile.name} />
+                            {isPending ? "…" : null}
+                          </span>
                         </ActionButton>
                       ) : (
                         <>
