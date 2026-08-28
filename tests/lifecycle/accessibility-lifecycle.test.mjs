@@ -1162,6 +1162,35 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(password.value, ""));
   });
 
+  it("submits an empty guardian password", async () => {
+    const passwords = [];
+    await mountStrict(
+      createElement(UnlockHarness, {
+        api: guardianApi({
+          async unlockGuardianAccess(password) {
+            passwords.push(password);
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        }),
+      }),
+    );
+    const password = document.querySelector('input[name="password"]');
+
+    await act(async () => password.form.requestSubmit());
+
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Guardian access mode"]')
+          .textContent,
+        "guardian",
+      ),
+    );
+    assert.deepEqual(passwords, [""]);
+  });
+
   it("announces a deep-link unlock from the stable account shell", async () => {
     let unlocked = 0;
     const Provider = createGuardianAccessProvider({

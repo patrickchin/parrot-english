@@ -85,7 +85,6 @@ async function openGuardianUnlock(page: Page) {
 
 async function unlockFromMenu(page: Page) {
   const dialog = await openGuardianUnlock(page);
-  await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
   await expect(dialog).toHaveCount(0);
 }
