@@ -36,6 +36,7 @@ import {
   reduceDubState,
   type DubOperation,
 } from "./dub-state";
+import type { DubLine as RhymeDubLine } from "./rhyme-catalog";
 
 type TakePreview = {
   blob: Blob;
@@ -72,7 +73,7 @@ function isControlLocked(operation: DubOperation) {
 }
 
 export function resolveDubLineAudioSource(
-  line: DubLine,
+  line: { id: string; text: string },
   saved: Readonly<Record<string, string>>,
   resolveGuide: typeof getStaticAudioLineForSpeech = getStaticAudioLineForSpeech,
 ): DubAudioSource {
@@ -480,7 +481,7 @@ export function DuckDub() {
       });
   }
 
-  function resolveLineAudio(line: DubLine): DubAudioSource {
+  function resolveLineAudio(line: Pick<RhymeDubLine, "id" | "text">): DubAudioSource {
     return resolveDubLineAudioSource(line, state.saved);
   }
 
@@ -498,7 +499,7 @@ export function DuckDub() {
     const controller = new AbortController();
     const sceneIndex = state.selectedSceneIndex;
     const lines = scope === "full" ? DUB_LINES : DUB_VERSES[sceneIndex];
-    const unavailableLineIds = new Set<DubLine["id"]>();
+    const unavailableLineIds = new Set<string>();
     playbackControllerRef.current = controller;
     setPlaybackLineIndex(scope === "full" ? 0 : sceneIndex * DUB_LINES_PER_VERSE);
     dispatch({ type: "OPERATION_STARTED", operation: "playback-loading", playbackScope: scope });

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
 import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
+import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
 import {
   scheduleDubAudio,
   startDubPlayback,
@@ -14,8 +15,8 @@ function abortError() {
 }
 
 function lineIdFromUrl(url) {
-  return url.match(/\/lines\/(line-\d+)\/audio$/)?.[1]
-    ?? url.match(/five-little-ducks-v2-guide-(line-\d+)\.mp3$/)?.[1];
+  return url.match(/\/lines\/([^/]+)\/audio$/)?.[1]
+    ?? url.match(/(five-little-ducks-v2-guide-[^./]+|old-macdonald-v1-guide-[^./]+)\.mp3$/)?.[1]?.replace(/^(five-little-ducks-v2-guide-|old-macdonald-v1-guide-)/, "");
 }
 
 function guideUrl(lineId) {
@@ -117,6 +118,8 @@ function createAudioHarness({
   resumeDeferred,
 } = {}) {
   const contexts = [];
+  const lineMarkers = new Map();
+  let nextMarker = 1;
 
   class FakeParam {
     constructor() {
@@ -210,7 +213,7 @@ function createAudioHarness({
     }
 
     async decodeAudioData(bytes) {
-      const lineId = `line-${new Uint8Array(bytes)[0]}`;
+      const lineId = lineMarkers.get(new Uint8Array(bytes)[0]) ?? `line-${new Uint8Array(bytes)[0]}`;
       if (lineId === decodeNeverLineId) return new Promise(() => {});
       if (decodeFailure?.(bytes) || lineId === decodeFailureLineId) {
         throw new Error("codec detail");
@@ -227,8 +230,10 @@ function createAudioHarness({
   const fetchCalls = [];
   async function fetch(url, init) {
     fetchCalls.push([url, init]);
-    const lineNumber = Number(lineIdFromUrl(url)?.slice("line-".length));
-    return new Response(new Uint8Array([lineNumber, 2, 3, 4]));
+    const lineId = lineIdFromUrl(url);
+    const marker = nextMarker++;
+    lineMarkers.set(marker, lineId);
+    return new Response(new Uint8Array([marker, 2, 3, 4]));
   }
 
   return { AudioContext: FakeAudioContext, contexts, fetch, fetchCalls };
@@ -417,6 +422,44 @@ describe("duck dub playback", () => {
     context.currentTime = 28.12;
     raf.runNext();
     assert.deepEqual(ticks, [18_000]);
+    assert.equal(ended, 1);
+  });
+
+  it("plays an Old MacDonald scene from scene-relative zero without treating it as the full rhyme", async () => {
+    const audio = createAudioHarness({
+      decodeDurations: {
+        [OLD_MACDONALD_DUB.lines[13].id]: 6,
+      },
+    });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      fetch: audio.fetch,
+      lines: OLD_MACDONALD_DUB.lines.slice(7, 14),
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    assert.deepEqual(
+      audio.fetchCalls.map(([url]) => lineIdFromUrl(url)),
+      OLD_MACDONALD_DUB.lines.slice(7, 14).map(({ id }) => id),
+    );
+    const context = audio.contexts[0];
+    assert.deepEqual(
+      context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
+      [10.12, 14.12, 18.12, 22.12, 26.12, 30.12, 34.12],
+    );
+
+    context.currentTime = 40.12;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [30_000]);
     assert.equal(ended, 1);
   });
 

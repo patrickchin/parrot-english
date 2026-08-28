@@ -1,4 +1,5 @@
-import { DUB_LINES, DUB_LINES_PER_VERSE } from "./dub-script.ts";
+import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";
+import type { DubDefinition } from "./rhyme-catalog.ts";
 
 export type DubSaveRecovery = "record" | "save";
 export type DubView = "loading" | "intro" | "project" | "scene";
@@ -25,8 +26,8 @@ export type DubState = {
 };
 export type DubSceneStatus =
   | { kind: "not-started"; recorded: 0 }
-  | { kind: "in-progress"; recorded: 1 | 2 | 3 }
-  | { kind: "done"; recorded: 4 }
+  | { kind: "in-progress"; recorded: number }
+  | { kind: "done"; recorded: number }
   | { kind: "needs-retake"; recorded: number };
 export type DubEvent =
   | { type: "LOADED"; savedLineIds: string[] }
@@ -49,7 +50,9 @@ const DUB_UNSAFE_OPERATIONS = new Set<DubOperation>([
   "saving",
 ]);
 
-export const createInitialDubState = (): DubState => ({
+export const createInitialDubState = (
+  _definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): DubState => ({
   error: "",
   needsRetake: {},
   operation: "idle",
@@ -61,22 +64,34 @@ export const createInitialDubState = (): DubState => ({
   view: "loading",
 });
 
-function getSceneIndexForLine(lineIndex: number): number {
-  return Math.floor(lineIndex / DUB_LINES_PER_VERSE);
+function getSceneIndexForLine(
+  lineIndex: number,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): number {
+  return Math.floor(lineIndex / definition.linesPerScene);
 }
 
-function getSceneStartIndex(sceneIndex: number): number {
-  return sceneIndex * DUB_LINES_PER_VERSE;
+function getSceneStartIndex(
+  sceneIndex: number,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): number {
+  return sceneIndex * definition.linesPerScene;
 }
 
-function isSceneIndex(sceneIndex: number): boolean {
+function isSceneIndex(
+  sceneIndex: number,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): boolean {
   return Number.isInteger(sceneIndex)
     && sceneIndex >= 0
-    && sceneIndex < DUB_LINES.length / DUB_LINES_PER_VERSE;
+    && sceneIndex < definition.lines.length / definition.linesPerScene;
 }
 
-function getLineIndex(lineId: string): number {
-  return DUB_LINES.findIndex(({ id }) => id === lineId);
+function getLineIndex(
+  lineId: string,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): number {
+  return definition.lines.findIndex(({ id }) => id === lineId);
 }
 
 function hasSavedLine(saved: Record<string, string>, lineId: string): boolean {
@@ -87,22 +102,31 @@ function canChangeSelection(state: DubState): boolean {
   return !DUB_UNSAFE_OPERATIONS.has(state.operation) && state.saveRecovery !== "save";
 }
 
-function getFirstMissingSceneLineIndex(savedLineIds: ReadonlySet<string>, sceneIndex: number): number {
-  const sceneStart = getSceneStartIndex(sceneIndex);
-  const index = DUB_LINES.findIndex(
+function getFirstMissingSceneLineIndex(
+  savedLineIds: ReadonlySet<string>,
+  sceneIndex: number,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): number {
+  const sceneStart = getSceneStartIndex(sceneIndex, definition);
+  const index = definition.lines.findIndex(
     ({ id }, lineIndex) =>
       lineIndex >= sceneStart
-      && lineIndex < sceneStart + DUB_LINES_PER_VERSE
+      && lineIndex < sceneStart + definition.linesPerScene
       && !savedLineIds.has(id),
   );
   return index < 0 ? sceneStart : index;
 }
 
-function selectScene(state: DubState, sceneIndex: number): DubState {
-  if (!isSceneIndex(sceneIndex)) return state;
+function selectScene(
+  state: DubState,
+  sceneIndex: number,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): DubState {
+  if (!isSceneIndex(sceneIndex, definition)) return state;
   const selectedLineIndex = getFirstMissingSceneLineIndex(
     new Set(Object.keys(state.saved)),
     sceneIndex,
+    definition,
   );
   return {
     ...state,
@@ -118,10 +142,11 @@ function selectScene(state: DubState, sceneIndex: number): DubState {
 export function getDubSceneStatus(
   state: Pick<DubState, "saved" | "needsRetake">,
   sceneIndex: number,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
 ): DubSceneStatus {
-  if (!isSceneIndex(sceneIndex)) throw new RangeError("Unknown dub scene.");
-  const sceneStart = getSceneStartIndex(sceneIndex);
-  const sceneLines = DUB_LINES.slice(sceneStart, sceneStart + DUB_LINES_PER_VERSE);
+  if (!isSceneIndex(sceneIndex, definition)) throw new RangeError("Unknown dub scene.");
+  const sceneStart = getSceneStartIndex(sceneIndex, definition);
+  const sceneLines = definition.lines.slice(sceneStart, sceneStart + definition.linesPerScene);
   const recorded = sceneLines.reduce(
     (count, { id }) => count + (hasSavedLine(state.saved, id) ? 1 : 0),
     0,
@@ -130,27 +155,35 @@ export function getDubSceneStatus(
     return { kind: "needs-retake", recorded };
   }
   if (recorded === 0) return { kind: "not-started", recorded: 0 };
-  if (recorded === DUB_LINES_PER_VERSE) return { kind: "done", recorded: 4 };
-  return { kind: "in-progress", recorded: recorded as 1 | 2 | 3 };
+  if (recorded === definition.linesPerScene) return { kind: "done", recorded };
+  return { kind: "in-progress", recorded };
 }
 
-export function firstMissingDubLineIndex(savedLineIds: ReadonlySet<string>): number {
-  const index = DUB_LINES.findIndex(({ id }) => !savedLineIds.has(id));
+export function firstMissingDubLineIndex(
+  savedLineIds: ReadonlySet<string>,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): number {
+  const index = definition.lines.findIndex(({ id }) => !savedLineIds.has(id));
   return index < 0 ? 0 : index;
 }
 
-export function reduceDubState(state: DubState, event: DubEvent): DubState {
+export function reduceDubState(
+  state: DubState,
+  event?: DubEvent,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): DubState {
+  if (!event) return state;
   if (event.type === "LOADED") {
     const savedLineIds = new Set(event.savedLineIds);
     const saved = Object.fromEntries(
-      DUB_LINES.filter(({ id }) => savedLineIds.has(id)).map(({ id }) => [id, ""]),
+      definition.lines.filter(({ id }) => savedLineIds.has(id)).map(({ id }) => [id, ""]),
     );
-    const selectedLineIndex = firstMissingDubLineIndex(new Set(Object.keys(saved)));
+    const selectedLineIndex = firstMissingDubLineIndex(new Set(Object.keys(saved)), definition);
     return {
-      ...createInitialDubState(),
+      ...createInitialDubState(definition),
       saved,
       selectedLineIndex,
-      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex),
+      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
       view: "intro",
     };
   }
@@ -161,18 +194,21 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
   }
   if (event.type === "OPEN_SCENE") {
     return canChangeSelection(state) && (state.view === "project" || state.view === "scene")
-      ? selectScene(state, event.sceneIndex)
+      ? selectScene(state, event.sceneIndex, definition)
       : state;
   }
   if (event.type === "CONTINUE") {
     if (!canChangeSelection(state) || state.view !== "project") return state;
-    const selectedLineIndex = firstMissingDubLineIndex(new Set(Object.keys(state.saved)));
-    return selectScene(state, getSceneIndexForLine(selectedLineIndex));
+    const selectedLineIndex = firstMissingDubLineIndex(new Set(Object.keys(state.saved)), definition);
+    return selectScene(state, getSceneIndexForLine(selectedLineIndex, definition), definition);
   }
   if (event.type === "SELECT_LINE") {
     if (!canChangeSelection(state) || state.view !== "scene") return state;
-    const selectedLineIndex = getLineIndex(event.lineId);
-    if (selectedLineIndex < 0 || getSceneIndexForLine(selectedLineIndex) !== state.selectedSceneIndex) {
+    const selectedLineIndex = getLineIndex(event.lineId, definition);
+    if (
+      selectedLineIndex < 0
+      || getSceneIndexForLine(selectedLineIndex, definition) !== state.selectedSceneIndex
+    ) {
       return state;
     }
     return {
@@ -217,7 +253,7 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
     };
   }
   if (event.type === "SAVE_SUCCEEDED") {
-    const selectedLineIndex = getLineIndex(event.lineId);
+    const selectedLineIndex = getLineIndex(event.lineId, definition);
     if (selectedLineIndex < 0) return state;
     const needsRetake = { ...state.needsRetake };
     delete needsRetake[event.lineId];
@@ -230,11 +266,11 @@ export function reduceDubState(state: DubState, event: DubEvent): DubState {
       saveRecovery: null,
       saved: { ...state.saved, [event.lineId]: event.recordedAt },
       selectedLineIndex,
-      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex),
+      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
     };
   }
   if (event.type === "MARK_NEEDS_RETAKE") {
-    return getLineIndex(event.lineId) < 0
+    return getLineIndex(event.lineId, definition) < 0
       ? state
       : { ...state, needsRetake: { ...state.needsRetake, [event.lineId]: true } };
   }
