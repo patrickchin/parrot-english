@@ -14,6 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import sharp from "sharp";
+import { STORY_SCRIPT_CANDIDATES } from "../src/stories/story-script-candidates.ts";
 
 const storyMedia = await import("../scripts/story-media.mjs").catch(() => ({}));
 const storyPublisher = await import("../scripts/publish-story-media.mjs").catch(
@@ -54,6 +55,30 @@ function createManifest() {
     }
   }
   return { assets, schemaVersion: 1, version: 5 };
+}
+
+function createLearnerPageManifest() {
+  const assets = [];
+  for (const { id: storyId, pages } of STORY_SCRIPT_CANDIDATES.filter(
+    ({ level }) => level !== "first-words",
+  )) {
+    const directory = `tmp/imagegen/story-media/v6/${storyId}`;
+    for (const { id: pageId } of pages) {
+      assets.push({
+        kind: "page",
+        pageId,
+        promptFile: `${directory}/${pageId}.prompt.json`,
+        sourceFile: `${directory}/${pageId}.png`,
+        storyId,
+      });
+    }
+  }
+  return {
+    assets,
+    collection: "learner-story-pages",
+    schemaVersion: 1,
+    version: 6,
+  };
 }
 
 async function createPublishFiles(manifest = createManifest()) {
@@ -188,6 +213,39 @@ describe("story media planning", () => {
     assert.throws(
       () => storyMedia.createStoryMediaPublishPlan(duplicatePrompt),
       /prompt files must be unique/,
+    );
+  });
+
+  it("plans exactly ninety-five learner page masters without replacing covers", () => {
+    const manifest = createLearnerPageManifest();
+    const plan = storyMedia.createStoryMediaPublishPlan(manifest);
+
+    assert.equal(plan.assets.length, 95);
+    assert.equal(plan.privateObjects.length, 190);
+    assert.equal(plan.publicOutputs.length, 95);
+    assert.equal(plan.version, 6);
+    assert.ok(plan.assets.every(({ kind }) => kind === "page"));
+    assert.ok(
+      plan.publicOutputs.every(
+        ({ height, key, width }) =>
+          height === 512 &&
+          width === 768 &&
+          key.startsWith("assets/v6/story-pages/") &&
+          key.endsWith(".webp"),
+      ),
+    );
+
+    manifest.assets.pop();
+    assert.throws(
+      () => storyMedia.createStoryMediaPublishPlan(manifest),
+      /exactly ninety-five learner story page images/,
+    );
+
+    const wrongPage = createLearnerPageManifest();
+    wrongPage.assets[0].pageId = "not-a-real-page";
+    assert.throws(
+      () => storyMedia.createStoryMediaPublishPlan(wrongPage),
+      /exactly ninety-five learner story page images/,
     );
   });
 });
@@ -383,6 +441,65 @@ describe("story media CDN verification", () => {
       storyId: "the-gruffalo",
     });
     assert.equal(Object.hasOwn(prepared, "mappings"), false);
+  });
+
+  it("returns page-only mappings for learner stories without inventing covers", async () => {
+    const plan = storyMedia.createStoryMediaPublishPlan(
+      createLearnerPageManifest(),
+    );
+    const bytes = await sharp({
+      create: {
+        background: "#ffffff",
+        channels: 3,
+        height: 512,
+        width: 768,
+      },
+    }).webp().toBuffer();
+    const prepared = {
+      assets: plan.assets,
+      publicOutputs: plan.publicOutputs.map((output) => ({
+        ...output,
+        bytes,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+      })),
+    };
+    const outputs = new Map(
+      prepared.publicOutputs.map((output) => [`/${output.key}`, output]),
+    );
+
+    const result = await storyMedia.verifyStoryMediaDelivery(prepared, {
+      cacheBust: "fixture",
+      fetch: async (url) =>
+        createCdnResponse(outputs.get(new URL(url).pathname)),
+      mediaOrigin: "https://media.example.com",
+    });
+
+    assert.equal(result.verified.length, 95);
+    assert.equal(result.mappings.length, 15);
+    assert.ok(
+      result.mappings.every((mapping) => !Object.hasOwn(mapping, "coverSrc")),
+    );
+    assert.deepEqual(
+      result.mappings.find(({ storyId }) => storyId === "boots-in-the-rain"),
+      {
+      pageSrcById: Object.fromEntries(
+        [
+          "rain-falls",
+          "wet-feet",
+          "boots-on",
+          "coat-on",
+          "stay-dry",
+          "warm-home",
+        ].map((pageId) => {
+          return [
+            pageId,
+            `https://media.example.com/assets/v6/story-pages/boots-in-the-rain-${pageId}.webp`,
+          ];
+        }),
+      ),
+      storyId: "boots-in-the-rain",
+      },
+    );
   });
 
   it("rejects shared-cache freshness overrides and withholds mappings", async () => {
