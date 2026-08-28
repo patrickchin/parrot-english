@@ -68,6 +68,7 @@ function learnerRoster() {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -75,6 +76,7 @@ function learnerRoster() {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",

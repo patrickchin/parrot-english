@@ -19,6 +19,7 @@ export type LearnerSelectionContextValue = {
     name: string,
     existingProfileIds: readonly string[],
   ) => Promise<LearnerProfileRoster>;
+  deleteLearner: (profileId: string) => Promise<LearnerProfileRoster>;
   reloadSelectedLearner: (
     expectedProfileId: string,
   ) => Promise<LearnerProfileSummary>;
@@ -50,6 +51,7 @@ export function LearnerSelectionProvider({
   activeProfileId,
   children,
   createAndSelectLearner,
+  deleteLearner,
   reloadSelectedLearner,
   selectLearner,
 }: LearnerSelectionContextValue & { children: ReactNode }) {
@@ -57,12 +59,14 @@ export function LearnerSelectionProvider({
     () => ({
       activeProfileId,
       createAndSelectLearner,
+      deleteLearner,
       reloadSelectedLearner,
       selectLearner,
     }),
     [
       activeProfileId,
       createAndSelectLearner,
+      deleteLearner,
       reloadSelectedLearner,
       selectLearner,
     ],

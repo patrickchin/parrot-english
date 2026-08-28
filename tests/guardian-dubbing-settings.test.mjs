@@ -36,6 +36,7 @@ function learnerRoster() {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -43,6 +44,7 @@ function learnerRoster() {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -474,6 +476,7 @@ test("loads and grants Noah's dubbing through explicit target requests only", as
           {
             age: 8,
             createdAt: "2026-08-01T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-mia",
             name: "Mia",
             profileStatus: "completed",
@@ -481,6 +484,7 @@ test("loads and grants Noah's dubbing through explicit target requests only", as
           {
             age: 10,
             createdAt: "2026-08-02T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-noah",
             name: "Noah",
             profileStatus: "completed",

@@ -19,9 +19,12 @@ import {
 import { selectConversationPurpose } from "../../lib/conversation-purpose";
 import {
   createLearnerProfile as createLearnerProfileRequest,
+  deleteLearnerProfile as deleteLearnerProfileRequest,
   loadLearnerProfile,
+  loadLearnerProfiles,
   loadProfile,
   LearnerProfileApiError,
+  LearnerProfileDeletionError,
   saveLearnerProfileAnswer,
   saveLessonRecordingConsent,
   saveProfileAnswer,
@@ -952,6 +955,7 @@ export function LearnerProfileGate({
   const learnerSelectionPendingRef = useRef<
     Map<string, "pending" | "uncertain">
   >(new Map());
+  const learnerSelectionLocallyNonblockingRef = useRef<Set<string>>(new Set());
   const learnerMutationControllerRef = useRef<AbortController | null>(null);
   const learnerMutationTailRef = useRef<Promise<void>>(Promise.resolve());
   const gateMountedRef = useRef(false);
@@ -970,6 +974,16 @@ export function LearnerProfileGate({
   > | null>(null);
   dataRef.current = data;
   learnerIdentityCheckRef.current = learnerIdentityCheck;
+
+  const excludeLocallyNonblockingLearnerMutations = useCallback(
+    (pending: Map<string, "pending" | "uncertain">) => {
+      for (const token of learnerSelectionLocallyNonblockingRef.current) {
+        pending.delete(token);
+      }
+      return pending;
+    },
+    [],
+  );
 
   const updateLearnerIdentityCheck = useCallback(
     (next: LearnerIdentityCheck) => {
@@ -1007,7 +1021,8 @@ export function LearnerProfileGate({
           pending.set(token, "uncertain");
         }
       }
-      learnerSelectionPendingRef.current = pending;
+      learnerSelectionPendingRef.current =
+        excludeLocallyNonblockingLearnerMutations(pending);
       if (pending.size > 0) return "pending";
       return storedLearnerSelectionMarker(
         `${scope}${LEARNER_SELECTION_STORAGE_SUFFIX}`,
@@ -1015,7 +1030,7 @@ export function LearnerProfileGate({
         ? "current"
         : "changed";
     },
-    [],
+    [excludeLocallyNonblockingLearnerMutations],
   );
 
   const loadStableLearnerProfile = useCallback(
@@ -1291,6 +1306,7 @@ export function LearnerProfileGate({
       learnerRevalidationRef.current = null;
       learnerRevalidationQueuedRef.current = false;
       learnerSelectionPendingRef.current.clear();
+      learnerSelectionLocallyNonblockingRef.current.clear();
       expectedLearnerReloadControllerRef.current = null;
       ownership?.unmount();
       abortQuestionPlayback(false);
@@ -1549,10 +1565,11 @@ export function LearnerProfileGate({
           stored.set(token, status);
         }
       }
-      learnerSelectionPendingRef.current = stored;
+      learnerSelectionPendingRef.current =
+        excludeLocallyNonblockingLearnerMutations(stored);
     }
     return learnerSelectionPendingRef.current;
-  }, []);
+  }, [excludeLocallyNonblockingLearnerMutations]);
 
   const blockForPendingLearnerSelection = useCallback(
     (abortLearnerMutation: boolean) => {
@@ -1573,7 +1590,7 @@ export function LearnerProfileGate({
   );
 
   const beginLearnerSelectionMutation = useCallback(
-    async (signal: AbortSignal) => {
+    async (signal: AbortSignal, blockLocal = true) => {
       const scope = await learnerSelectionSignal.scope;
       throwIfLearnerMutationAborted(signal);
       if (scope === null) {
@@ -1587,7 +1604,10 @@ export function LearnerProfileGate({
       if (!storeLearnerSelectionMarker(storageKey, "pending")) {
         throw new Error("The learner change could not be started safely.");
       }
-      if (learnerSelectionScopeRef.current === scope) {
+      if (!blockLocal) {
+        learnerSelectionLocallyNonblockingRef.current.add(token);
+      }
+      if (learnerSelectionScopeRef.current === scope && blockLocal) {
         learnerSelectionPendingRef.current.set(token, "pending");
         beginLearnerIdentityCheck();
       }
@@ -1609,6 +1629,7 @@ export function LearnerProfileGate({
   const markLearnerSelectionMutationUncertain = useCallback(
     (pending: LearnerSelectionPendingMutation | null) => {
       if (pending === null) return;
+      learnerSelectionLocallyNonblockingRef.current.delete(pending.token);
       storeLearnerSelectionMarker(pending.storageKey, "uncertain");
       if (learnerSelectionScopeRef.current === pending.scope) {
         learnerSelectionPendingRef.current.set(pending.token, "uncertain");
@@ -1646,6 +1667,7 @@ export function LearnerProfileGate({
         markLearnerSelectionMutationUncertain(pending);
         return false;
       }
+      learnerSelectionLocallyNonblockingRef.current.delete(pending.token);
       if (learnerSelectionScopeRef.current === pending.scope) {
         learnerSelectionPendingRef.current.delete(pending.token);
         refreshStoredLearnerSelectionPending();
@@ -1795,6 +1817,7 @@ export function LearnerProfileGate({
     learnerSelectionScopeReadyRef.current = sessionIdentity === null;
     learnerSelectionScopeRef.current = null;
     learnerSelectionPendingRef.current.clear();
+    learnerSelectionLocallyNonblockingRef.current.clear();
     learnerSelectionMarkerRef.current = null;
     if (sessionIdentity === null) {
       if (initialLearnerLoadSettledRef.current) {
@@ -1846,7 +1869,8 @@ export function LearnerProfileGate({
               stored.set(token, "uncertain");
             }
           }
-          learnerSelectionPendingRef.current = stored;
+          learnerSelectionPendingRef.current =
+            excludeLocallyNonblockingLearnerMutations(stored);
         } else if (status === null) {
           learnerSelectionPendingRef.current.delete(token);
         } else {
@@ -1921,9 +1945,12 @@ export function LearnerProfileGate({
       }
       const pending = storedLearnerSelectionPending(name);
       if (pending !== null) {
-        learnerSelectionPendingRef.current = new Map(
-          [...pending.keys()].map((token) => [token, "uncertain"]),
-        );
+        learnerSelectionPendingRef.current =
+          excludeLocallyNonblockingLearnerMutations(
+            new Map<string, "uncertain">(
+              [...pending.keys()].map((token) => [token, "uncertain"]),
+            ),
+          );
       }
       if (learnerSelectionPendingRef.current.size > 0) {
         blockForPendingLearnerSelection(true);
@@ -1944,6 +1971,7 @@ export function LearnerProfileGate({
         learnerSelectionScopeRef.current = null;
       }
       learnerSelectionPendingRef.current.clear();
+      learnerSelectionLocallyNonblockingRef.current.clear();
       if (receiveStorage !== null) {
         window.removeEventListener("storage", receiveStorage);
       }
@@ -1955,6 +1983,7 @@ export function LearnerProfileGate({
   }, [
     beginLearnerIdentityCheck,
     blockForPendingLearnerSelection,
+    excludeLocallyNonblockingLearnerMutations,
     learnerSelectionSignal,
     refreshStoredLearnerSelectionPending,
     revalidateActiveLearner,
@@ -2195,6 +2224,114 @@ export function LearnerProfileGate({
       reloadSelectedLearner,
       runLearnerMutation,
       settleLearnerSelectionMutation,
+    ],
+  );
+
+  const deleteLearner = useCallback(
+    (profileId: string) =>
+      runLearnerMutation(async (signal) => {
+        if (!profileId.trim()) {
+          throw new Error("The learner could not be deleted.");
+        }
+        const activeProfileIdAtStart =
+          dataRef.current?.mode === "full"
+            ? dataRef.current.profile.id
+            : null;
+        const pending = await beginLearnerSelectionMutation(signal, false);
+        throwIfLearnerMutationAborted(signal);
+
+        const uncertainError = () =>
+          new LearnerProfileDeletionError(
+            "learner_deletion_uncertain",
+            "We couldn't confirm whether this learner was deleted. Refresh learner profiles before trying again.",
+          );
+        const settle = (changed: boolean) => {
+          if (!settleLearnerSelectionMutation(pending, changed)) {
+            throw uncertainError();
+          }
+        };
+        const reconcileActiveDeletion = async () => {
+          if (
+            activeProfileIdAtStart !== profileId ||
+            signal.aborted ||
+            !gateMountedRef.current
+          ) {
+            return;
+          }
+          resetLearnerSelection();
+          try {
+            await startActiveLearnerLoad().promise;
+          } catch {
+            // A deleted active learner stays cleared when its safe state cannot reload.
+          }
+        };
+
+        let deleteRoster: LearnerProfileRoster | null = null;
+        let deleteError: unknown = null;
+        try {
+          deleteRoster = await deleteLearnerProfileRequest(profileId);
+        } catch (error) {
+          if (
+            error instanceof LearnerProfileApiError &&
+            error.status >= 400 &&
+            error.status < 500
+          ) {
+            settle(false);
+            throw error;
+          }
+          deleteError = error;
+        }
+
+        if (
+          deleteRoster !== null &&
+          !deleteRoster.profiles.some(({ id }) => id === profileId)
+        ) {
+          settle(true);
+          await reconcileActiveDeletion();
+          return deleteRoster;
+        }
+        if (deleteError === null) {
+          deleteError = new LearnerProfileApiError(
+            200,
+            "invalid_roster",
+            "The learner deletion response could not be verified.",
+          );
+        }
+
+        let roster: LearnerProfileRoster;
+        try {
+          roster = await loadLearnerProfiles();
+        } catch {
+          markLearnerSelectionMutationUncertain(pending);
+          throw uncertainError();
+        }
+
+        const target = roster.profiles.find(({ id }) => id === profileId);
+        if (!target) {
+          settle(true);
+          await reconcileActiveDeletion();
+          return roster;
+        }
+        if (target.deletionPending) {
+          settle(true);
+          await reconcileActiveDeletion();
+          throw new LearnerProfileDeletionError(
+            "learner_deletion_pending",
+            "Learner cleanup is still in progress. Try again.",
+            roster,
+          );
+        }
+
+        settle(false);
+        throw deleteError;
+      }),
+    [
+      beginLearnerSelectionMutation,
+      markLearnerSelectionMutationUncertain,
+      resetLearnerSelection,
+      runLearnerMutation,
+      settleLearnerSelectionMutation,
+      startActiveLearnerLoad,
     ],
   );
 
@@ -2986,6 +3123,7 @@ export function LearnerProfileGate({
     <LearnerSelectionProvider
       activeProfileId={data?.mode === "full" ? data.profile.id : null}
       createAndSelectLearner={createAndSelectLearner}
+      deleteLearner={deleteLearner}
       reloadSelectedLearner={reloadSelectedLearner}
       selectLearner={selectLearner}
     >

@@ -11,6 +11,7 @@ import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getGuardianLearnerPath, getGuardianPath } from "../app/app-routes";
 import { ActionButton, Card, fieldClassName } from "../shared/ui";
 import { LearnerDeleteDialog } from "./LearnerDeleteDialog";
+import { useLearnerSelection } from "./LearnerProfileContext";
 import {
   createLearnerProfile,
   loadLearnerProfiles,
@@ -37,6 +38,39 @@ function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message.trim()
     ? error.message
     : fallback;
+}
+
+function learnerDeletionErrorCode(error: unknown) {
+  return error !== null &&
+    typeof error === "object" &&
+    typeof (error as { code?: unknown }).code === "string"
+    ? (error as { code: string }).code
+    : null;
+}
+
+function learnerDeletionErrorMessage(error: unknown) {
+  switch (learnerDeletionErrorCode(error)) {
+    case "last_learner":
+      return "Add another learner before deleting this learner.";
+    case "learner_busy":
+      return "Finish this learner's current conversation, then try again.";
+    case "learner_deletion_pending":
+      return "Learner cleanup is still in progress. Try again.";
+    case "learner_deletion_uncertain":
+      return "We couldn't confirm whether this learner was deleted. Refresh learner profiles before trying again.";
+    default:
+      return "The learner was not deleted. Try again.";
+  }
+}
+
+function learnerDeletionRoster(error: unknown) {
+  if (error === null || typeof error !== "object") return null;
+  const roster = (error as { roster?: unknown }).roster;
+  return roster !== null &&
+    typeof roster === "object" &&
+    Array.isArray((roster as Partial<LearnerProfileRoster>).profiles)
+    ? (roster as LearnerProfileRoster)
+    : null;
 }
 
 function isAbortError(error: unknown) {
@@ -287,12 +321,9 @@ export function GuardianLearnerProfilesView({
   );
 }
 
-export function GuardianLearnerProfiles({
-  onDelete = () => {},
-}: {
-  onDelete?: (profile: GuardianLearnerProfileSummary) => void | Promise<void>;
-}) {
+export function GuardianLearnerProfiles() {
   const navigate = useNavigate();
+  const { deleteLearner } = useLearnerSelection();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
@@ -368,7 +399,7 @@ export function GuardianLearnerProfiles({
       });
       if (operation.isCurrent()) applyRoster(roster);
     } catch {
-      if (operation.isCurrent()) setProfiles([]);
+      // Keep the last authoritative roster available for a safe retry.
     }
   }
 
@@ -410,12 +441,36 @@ export function GuardianLearnerProfiles({
     }
   }
 
+  async function deleteProfile(profile: GuardianLearnerProfileSummary) {
+    const operation = beginOperation();
+    setError("");
+    setStatusMessage("");
+    setPendingProfileId(profile.id);
+    try {
+      const result = await deleteLearner(profile.id);
+      if (!operation.isCurrent()) return;
+      applyRoster(result);
+      setStatusMessage(`${profile.name} was deleted.`);
+    } catch (caughtError) {
+      if (operation.isCurrent()) {
+        const reconciledRoster = learnerDeletionRoster(caughtError);
+        if (reconciledRoster) applyRoster(reconciledRoster);
+      }
+      throw new Error(learnerDeletionErrorMessage(caughtError));
+    } finally {
+      if (operation.isCurrent()) setPendingProfileId(null);
+      if (controllerRef.current === operation.controller) {
+        controllerRef.current = null;
+      }
+    }
+  }
+
   return (
     <GuardianLearnerProfilesView
       error={error}
       isLoading={isLoading}
       onAdd={(name) => void addProfile(name)}
-      onDelete={onDelete}
+      onDelete={deleteProfile}
       onManage={(profile) => navigate(getGuardianLearnerPath(profile.id))}
       onRetry={() => void loadRoster()}
       pendingProfileId={pendingProfileId}

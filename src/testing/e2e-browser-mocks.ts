@@ -563,6 +563,7 @@ type MockLearnerState = {
   art: Map<string, MockStoryArtState>;
   conversationIds: Set<string>;
   createdAt: string;
+  deletionPending: boolean;
   dub: MockDubState;
   lessonRecording: MockLessonRecordingState;
   lessons: Map<string, MockLessonDescriptor>;
@@ -686,6 +687,7 @@ function createMockLearner(
     art: new Map(),
     conversationIds: new Set(),
     createdAt,
+    deletionPending: false,
     dub: { consentState: "not_granted", savedLineIds: [] },
     lessonRecording: {
       cleanupPending: false,
@@ -749,6 +751,7 @@ function restoreMockAccountState(
           ...learner,
           art: new Map(learner.art),
           conversationIds: new Set(learner.conversationIds),
+          deletionPending: learner.deletionPending === true,
           lessonRecording: {
             cleanupPending:
               learner.lessonRecording?.cleanupPending === true,
@@ -806,6 +809,7 @@ function createE2eLearnerAccount(
     resolve: (response: Response) => void;
     response: Response;
   } | null = null;
+  let failNextLearnerDelete = false;
   let failNextLearnerProfileLoad = false;
   let learnerProfileLoadFailures = 0;
   const pendingLessonUploadsByLearner = new Map<
@@ -824,13 +828,16 @@ function createE2eLearnerAccount(
   function roster() {
     return {
       activeProfileId: state.activeProfileId,
-      profiles: [...state.learners.values()].map(({ createdAt, profile }) => ({
-        age: profile.age,
-        createdAt,
-        id: profile.id,
-        name: profile.name,
-        profileStatus: profile.profileStatus,
-      })),
+      profiles: [...state.learners.values()].map(
+        ({ createdAt, deletionPending, profile }) => ({
+          age: profile.age,
+          createdAt,
+          deletionPending,
+          id: profile.id,
+          name: profile.name,
+          profileStatus: profile.profileStatus,
+        }),
+      ),
     };
   }
 
@@ -1243,7 +1250,8 @@ function createE2eLearnerAccount(
       } catch {
         return e2eJson({ error: "not_found" }, 404);
       }
-      if (!state.learners.has(profileId))
+      const learner = state.learners.get(profileId);
+      if (!learner || learner.deletionPending)
         return e2eJson({ error: "not_found" }, 404);
       if (scenario === "select-error" && profileId !== state.activeProfileId) {
         return e2eJson(
@@ -1261,6 +1269,37 @@ function createE2eLearnerAccount(
         });
       }
       return response;
+    }
+
+    const deletion = url.pathname.match(
+      /^\/api\/learner-profiles\/([^/]+)$/,
+    );
+    if (deletion && method === "DELETE") {
+      let profileId = "";
+      try {
+        profileId = decodeURIComponent(deletion[1]!);
+      } catch {
+        return e2eJson({ error: "not_found" }, 404);
+      }
+      const learner = state.learners.get(profileId);
+      if (!learner) return e2eJson({ error: "not_found" }, 404);
+      const usableLearners = [...state.learners.values()].filter(
+        ({ deletionPending }) => !deletionPending,
+      );
+      if (!learner.deletionPending && usableLearners.length <= 1) {
+        return e2eJson({ error: "last_learner" }, 409);
+      }
+      if (failNextLearnerDelete) {
+        failNextLearnerDelete = false;
+        learner.deletionPending = true;
+        if (state.activeProfileId === profileId) state.activeProfileId = null;
+        persist();
+        return e2eJson({ error: "delete_failed" }, 503);
+      }
+      state.learners.delete(profileId);
+      if (state.activeProfileId === profileId) state.activeProfileId = null;
+      persist();
+      return e2eJson(roster());
     }
 
     const resolvedLearner = requestLearner(explicitLearner);
@@ -1514,6 +1553,9 @@ function createE2eLearnerAccount(
   persist();
   return {
     handle,
+    failNextLearnerDelete() {
+      failNextLearnerDelete = true;
+    },
     failNextLearnerProfileLoad() {
       failNextLearnerProfileLoad = true;
     },
@@ -1525,7 +1567,8 @@ function createE2eLearnerAccount(
       return true;
     },
     resolveExplicitLearner(profileId: string) {
-      return state.learners.get(profileId) ?? null;
+      const learner = state.learners.get(profileId) ?? null;
+      return learner?.deletionPending ? null : learner;
     },
     snapshot(profileId?: string) {
       const learner = profileId
@@ -2229,6 +2272,9 @@ function requiresGuardianAccess(
   if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(url.pathname)) {
     return method === "PUT";
   }
+  if (/^\/api\/learner-profiles\/[^/]+$/.test(url.pathname)) {
+    return method === "DELETE";
+  }
   if (url.pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
   }
@@ -2657,6 +2703,7 @@ function installE2eProfileFetchMock() {
     Object.defineProperty(window, "__parrotE2eLearners", {
       configurable: true,
       value: {
+        failNextLearnerDelete: () => learnerAccount.failNextLearnerDelete(),
         failNextLearnerProfileLoad: () =>
           learnerAccount.failNextLearnerProfileLoad(),
         releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
@@ -2748,6 +2795,7 @@ function installE2eProfileFetchMock() {
           {
             age: E2E_VIEWPORT_EDITOR_STATE.profile.age,
             createdAt: "2026-08-01T08:00:00.000Z",
+            deletionPending: false,
             id: E2E_VIEWPORT_EDITOR_STATE.profile.id,
             name: E2E_VIEWPORT_EDITOR_STATE.profile.name,
             profileStatus: E2E_VIEWPORT_EDITOR_STATE.profile.profileStatus,

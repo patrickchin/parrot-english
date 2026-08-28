@@ -34,6 +34,7 @@ const { GuardianLearnerTarget, useGuardianLearnerTarget } = targetModule;
 const mia = {
   age: 6,
   createdAt: "2026-08-25T08:00:00.000Z",
+  deletionPending: false,
   id: "learner-mia",
   name: "Mia",
   profileStatus: "completed",
@@ -41,6 +42,7 @@ const mia = {
 const noah = {
   age: null,
   createdAt: "2026-08-26T08:00:00.000Z",
+  deletionPending: false,
   id: "learner-noah",
   name: "Noah the Space Explorer",
   profileStatus: "not_started",

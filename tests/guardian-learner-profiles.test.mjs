@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import test from "node:test";
@@ -41,6 +41,7 @@ const { LearnerSelectionProvider } = await vite.ssrLoadModule(
 const mia = {
   age: 6,
   createdAt: "2026-08-25T08:00:00.000Z",
+  deletionPending: false,
   id: "learner-mia",
   name: "Mia",
   profileStatus: "completed",
@@ -48,6 +49,7 @@ const mia = {
 const noah = {
   age: null,
   createdAt: "2026-08-26T08:00:00.000Z",
+  deletionPending: false,
   id: "learner-noah",
   name: "Noah",
   profileStatus: "not_started",
@@ -210,17 +212,45 @@ function currentRoute(container) {
     ?.textContent;
 }
 
-function managerHarness() {
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, reject, resolve };
+}
+
+function managerHarness({
+  deleteLearner = async () => roster(),
+} = {}) {
   assert.equal(
     typeof GuardianLearnerProfiles,
     "function",
     "Expected an interactive Guardian learner manager",
   );
   return createElement(
-    MemoryRouter,
-    { initialEntries: ["/guardian/learners"] },
-    createElement(GuardianLearnerProfiles),
-    createElement(LocationProbe),
+    LearnerSelectionProvider,
+    {
+      activeProfileId: mia.id,
+      async createAndSelectLearner() {
+        throw new Error("Learner management must not select a learner.");
+      },
+      deleteLearner,
+      async reloadSelectedLearner() {
+        return fullProfile(mia);
+      },
+      async selectLearner() {
+        throw new Error("Learner management must not select a learner.");
+      },
+    },
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/learners"] },
+      createElement(GuardianLearnerProfiles),
+      createElement(LocationProbe),
+    ),
   );
 }
 
@@ -359,6 +389,165 @@ test("cancelling learner deletion preserves data and restores focus", async () =
   });
 });
 
+test("deletes through learner context and applies the authoritative roster", async () => {
+  const deletedIds = [];
+  globalThis.fetch = async (input, init = {}) => {
+    assert.equal(String(input), "/api/learner-profiles");
+    assert.equal(init.method, "GET");
+    return Response.json(roster());
+  };
+  const remaining = roster(mia.id, [mia]);
+  const container = await mountStrict(
+    managerHarness({
+      async deleteLearner(profileId) {
+        deletedIds.push(profileId);
+        return remaining;
+      },
+    }),
+  );
+
+  await waitFor(() => button(container, "Delete Noah"));
+  await click(button(container, "Delete Noah"));
+  await click(button(container.querySelector('[role="dialog"]'), "Delete Noah"));
+
+  await waitFor(() => {
+    assert.deepEqual(deletedIds, [noah.id]);
+    assert.equal(container.querySelector('[role="dialog"]'), null);
+    assert.equal(
+      [...container.querySelectorAll("h3")].some(
+        (heading) => heading.textContent === noah.name,
+      ),
+      false,
+    );
+  });
+});
+
+test("keeps the same delete dialog and pending learner after cleanup needs a retry", async () => {
+  const attempts = [];
+  globalThis.fetch = async (input, init = {}) => {
+    assert.equal(String(input), "/api/learner-profiles");
+    assert.equal(init.method, "GET");
+    return Response.json(roster());
+  };
+  const pendingRoster = roster(mia.id, [
+    mia,
+    { ...noah, deletionPending: true },
+  ]);
+  const container = await mountStrict(
+    managerHarness({
+      async deleteLearner(profileId) {
+        attempts.push(profileId);
+        throw Object.assign(
+          new Error("Learner cleanup is still in progress. Try again."),
+          {
+            code: "learner_deletion_pending",
+            roster: pendingRoster,
+          },
+        );
+      },
+    }),
+  );
+
+  await waitFor(() => button(container, "Delete Noah"));
+  await click(button(container, "Delete Noah"));
+  const dialog = container.querySelector('[role="dialog"]');
+  await click(button(dialog, "Delete Noah"));
+
+  await waitFor(() => {
+    assert.equal(container.querySelector('[role="dialog"]'), dialog);
+    assert.match(
+      dialog.querySelector('[role="alert"]')?.textContent ?? "",
+      /cleanup is still in progress.*try again/i,
+    );
+    button(container, "Finish deleting Noah");
+  });
+  await click(button(dialog, "Delete Noah"));
+  await waitFor(() => assert.deepEqual(attempts, [noah.id, noah.id]));
+});
+
+test("maps deletion conflicts and preserves the roster when deletion is uncertain", async () => {
+  const failures = [
+    {
+      code: "last_learner",
+      expected: /add another learner before deleting/i,
+    },
+    {
+      code: "learner_busy",
+      expected: /finish.*conversation.*try again/i,
+    },
+    {
+      code: "learner_deletion_uncertain",
+      expected: /couldn't confirm whether.*deleted/i,
+    },
+  ];
+
+  for (const { code, expected } of failures) {
+    globalThis.fetch = async () => Response.json(roster());
+    const container = await mountStrict(
+      managerHarness({
+        async deleteLearner() {
+          throw Object.assign(new Error("Transport details are private."), {
+            code,
+            status: code.startsWith("learner_") ? 409 : undefined,
+          });
+        },
+      }),
+    );
+
+    await waitFor(() => button(container, "Delete Noah"));
+    await click(button(container, "Delete Noah"));
+    const dialog = container.querySelector('[role="dialog"]');
+    await click(button(dialog, "Delete Noah"));
+    await waitFor(() => {
+      assert.equal(container.querySelector('[role="dialog"]'), dialog);
+      assert.match(
+        dialog.querySelector('[role="alert"]')?.textContent ?? "",
+        expected,
+      );
+      assert.equal(
+        [...container.querySelectorAll("h3")].some(
+          (heading) => heading.textContent === noah.name,
+        ),
+        true,
+      );
+    });
+    await cleanupMountedRoots();
+    document.body.replaceChildren();
+  }
+});
+
+test("suppresses duplicate deletion and disables background learner controls", async () => {
+  const heldDelete = deferred();
+  let deleteCalls = 0;
+  globalThis.fetch = async () => Response.json(roster());
+  const container = await mountStrict(
+    managerHarness({
+      deleteLearner() {
+        deleteCalls += 1;
+        return heldDelete.promise;
+      },
+    }),
+  );
+
+  await waitFor(() => button(container, "Delete Noah"));
+  await click(button(container, "Delete Noah"));
+  const dialog = container.querySelector('[role="dialog"]');
+  const confirm = button(dialog, "Delete Noah");
+  act(() => {
+    confirm.click();
+    confirm.click();
+  });
+
+  await waitFor(() => {
+    assert.equal(deleteCalls, 1);
+    assert.equal(button(container, "Edit Mia's profile").disabled, true);
+    assert.equal(container.querySelector("#preferred-name")?.disabled, true);
+  });
+
+  await act(async () => heldDelete.resolve(roster(mia.id, [mia])));
+  await waitFor(() => assert.equal(container.querySelector('[role="dialog"]'), null));
+});
+
 test("final learner deletion is disabled and a pending learner can only finish deletion", () => {
   const html = renderView({
     profiles: [
@@ -466,6 +655,7 @@ test("adding a managed learner preserves learner mode and opens the new ID route
   const ava = {
     age: null,
     createdAt: "2026-08-27T08:00:00.000Z",
+    deletionPending: false,
     id: "learner-ava",
     name: "Ava",
     profileStatus: "not_started",

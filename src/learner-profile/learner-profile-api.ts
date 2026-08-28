@@ -135,6 +135,24 @@ export class LearnerProfileApiError extends Error {
   }
 }
 
+export class LearnerProfileDeletionError extends Error {
+  readonly code:
+    | "learner_deletion_pending"
+    | "learner_deletion_uncertain";
+  readonly roster?: LearnerProfileRoster;
+
+  constructor(
+    code: "learner_deletion_pending" | "learner_deletion_uncertain",
+    message: string,
+    roster?: LearnerProfileRoster,
+  ) {
+    super(message);
+    this.name = "LearnerProfileDeletionError";
+    this.code = code;
+    this.roster = roster;
+  }
+}
+
 function stringRecord(value: unknown) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return {};
@@ -269,6 +287,7 @@ function requireValidLearnerProfileRoster(
         typeof profile.id !== "string" ||
         !profile.id.trim() ||
         ids.has(profile.id) ||
+        typeof profile.deletionPending !== "boolean" ||
         typeof profile.name !== "string" ||
         !profile.name.trim()
       ) {
@@ -423,6 +442,17 @@ export function selectLearnerProfile(
   return learnerProfilesRequest(
     `/api/learner-profiles/${encodeURIComponent(profileId)}/active`,
     { method: "PUT" },
+    options,
+  );
+}
+
+export function deleteLearnerProfile(
+  profileId: string,
+  options?: LearnerProfileRequestOptions,
+) {
+  return learnerProfilesRequest(
+    `/api/learner-profiles/${encodeURIComponent(profileId)}`,
+    { method: "DELETE" },
     options,
   );
 }
