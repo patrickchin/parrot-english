@@ -9,7 +9,10 @@ import { createDubStorageKeys } from "../worker/dub-storage.ts";
 import { handleDubRequest } from "../worker/dubs.ts";
 import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
-import { prepareLearnerDeletion } from "../worker/learner-deletion.ts";
+import {
+  artCleanupUncertainGeneration,
+  prepareLearnerDeletion,
+} from "../worker/learner-deletion.ts";
 import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
 import { handlePersonalizedStoryArtRequest } from "../worker/personalized-story-art.ts";
@@ -965,6 +968,25 @@ describe("learner deletion endpoint", () => {
 });
 
 describe("learner deletion lifecycle", () => {
+  it("binds neutral art authority to every distinct JavaScript key string", async () => {
+    const loneHighSurrogate = "\uD800";
+    const nextLoneHighSurrogate = "\uD801";
+    const replacementCharacter = "\uFFFD";
+    const generations = await Promise.all([
+      loneHighSurrogate,
+      nextLoneHighSurrogate,
+      replacementCharacter,
+    ].map(artCleanupUncertainGeneration));
+
+    assert.equal(new Set(generations).size, 3);
+    assert.equal(
+      await artCleanupUncertainGeneration("external-art/valid-😀.webp"),
+      `art-cleanup-uncertain-v1:${createHash("sha256")
+        .update("external-art/valid-😀.webp")
+        .digest("hex")}`,
+    );
+  });
+
   it("cascades the target SQL graph and removes only its R2 subtree", async () => {
     const state = seedDatabase();
     addDeletionGraph(state);
@@ -1152,6 +1174,51 @@ describe("learner deletion lifecycle", () => {
       });
       assert.equal(profileCount(state), 1);
       assert.equal(profileCount(state, SIBLING_ID), 1);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects neutral takeover authority generated for a distinct ill-formed external key", async () => {
+    const state = seedDatabase();
+    const externalKey = "external-art/\uD800.webp";
+    const distinctKey = "external-art/\uD801.webp";
+    const bucket = createBucket([{
+      bytes: new Uint8Array([1]),
+      customMetadata: {
+        generation: await artCleanupUncertainGeneration(distinctKey),
+        state: "art-cleanup-uncertain",
+      },
+      key: externalKey,
+    }]);
+    state.sqlite.prepare(
+      `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
+         requested_at, storage_keys_json)
+       VALUES (?, ?, 0, 1, ?, ?)`,
+    ).run(
+      TARGET_ID,
+      createHash("sha256").update(USER_ID).digest("hex"),
+      NOW,
+      JSON.stringify({
+        markerKeys: [],
+        prefixes: [TARGET_PREFIX],
+        slotKeys: [externalKey],
+        version: 1,
+      }),
+    );
+
+    try {
+      await assert.rejects(
+        prepare(state, bucket),
+        /Learner deletion storage closure is invalid/,
+      );
+      assert.equal(profileCount(state), 1);
+      assert.equal(metadataState(bucket, externalKey), "art-cleanup-uncertain");
+      assert.equal(
+        bucket.calls.put.some(({ key }) => key === externalKey),
+        false,
+      );
     } finally {
       state.close();
     }

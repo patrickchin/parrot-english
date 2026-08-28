@@ -122,10 +122,39 @@ export async function learnerDeletionUserIdHash(userId: string) {
   ).join("");
 }
 
+function neutralArtKeyBytes(key: string) {
+  let wellFormed = true;
+  for (let index = 0; index < key.length; index += 1) {
+    const codeUnit = key.charCodeAt(index);
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = key.charCodeAt(index + 1);
+      if (!(next >= 0xdc00 && next <= 0xdfff)) {
+        wellFormed = false;
+        break;
+      }
+      index += 1;
+    } else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+      wellFormed = false;
+      break;
+    }
+  }
+  if (wellFormed) return new TextEncoder().encode(key);
+
+  // TextEncoder never emits ff/fe, so this domain cannot alias valid UTF-8.
+  const encoded = new Uint8Array(2 + key.length * 2);
+  encoded.set([0xff, 0xfe]);
+  for (let index = 0; index < key.length; index += 1) {
+    const codeUnit = key.charCodeAt(index);
+    encoded[2 + index * 2] = codeUnit >>> 8;
+    encoded[3 + index * 2] = codeUnit & 0xff;
+  }
+  return encoded;
+}
+
 export async function artCleanupUncertainGeneration(key: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
-    new TextEncoder().encode(key),
+    neutralArtKeyBytes(key),
   );
   return `art-cleanup-uncertain-v1:${
     Array.from(new Uint8Array(digest), (byte) =>
