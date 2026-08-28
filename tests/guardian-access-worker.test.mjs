@@ -508,6 +508,21 @@ describe("guardian access request handler", () => {
     assert.equal((await response.json()).mode, "guardian");
   });
 
+  it("temporarily unlocks with an empty password without verification", async () => {
+    let verificationCalls = 0;
+    const response = await handle(
+      guardianRequest("POST", JSON.stringify({ password: "" })),
+      async () => {
+        verificationCalls += 1;
+        return false;
+      },
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(verificationCalls, 0);
+    assert.equal((await response.json()).mode, "guardian");
+  });
+
   it("uses one generic response for an invalid password", async () => {
     const response = await handle(
       guardianRequest("POST", JSON.stringify({ password: "wrong" })),

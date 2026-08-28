@@ -45,7 +45,7 @@ export const GuardianUnlockForm = forwardRef<
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!password || pendingRef.current) return;
+    if (pendingRef.current) return;
 
     pendingRef.current = true;
     setIsPending(true);
@@ -110,7 +110,6 @@ export const GuardianUnlockForm = forwardRef<
               setError("");
             }}
             ref={passwordRef}
-            required
             type="password"
             value={password}
           />
@@ -128,7 +127,7 @@ export const GuardianUnlockForm = forwardRef<
           <ActionButton onClick={onCancel} type="button" variant="surface">
             Cancel
           </ActionButton>
-          <ActionButton disabled={!password} type="submit">
+          <ActionButton type="submit">
             {isPending ? "Unlocking guardian mode…" : "Unlock guardian mode"}
           </ActionButton>
         </div>
