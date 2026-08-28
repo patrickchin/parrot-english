@@ -814,6 +814,7 @@ export async function handleDubRequest(
       try {
         await consentRepository.grant(input.identity);
       } catch (error) {
+        await assertDeletionNotPending();
         if (error instanceof Error && error.message === "dub_consent_revoking") {
           throw new DubApiError(409, "dub_consent_revoking");
         }

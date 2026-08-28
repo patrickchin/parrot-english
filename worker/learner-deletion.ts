@@ -37,6 +37,13 @@ type LearnerDeletionInput = {
 };
 
 type DeletionTombstone = typeof learnerProfileDeletionTombstone.$inferSelect;
+type LearnerDeletionStorageOwner = Pick<
+  AccountIdentity,
+  "userId"
+> & {
+  learnerProfileId: string;
+  legacyStorageOwner: boolean;
+};
 
 export class LearnerDeletionError extends Error {
   readonly code: "last_learner" | "learner_busy" | "not_found";
@@ -135,7 +142,7 @@ async function markDeletionPending(
     throw new LearnerDeletionError(404, "not_found");
   }
   const requestedAt = Date.now();
-  await database.$client.batch([
+  const batchResults = await database.$client.batch([
     database.$client.prepare(
       `INSERT INTO learner_profile_deletion_tombstone (
          learner_profile_id, user_id_hash, legacy_storage_owner,
@@ -180,6 +187,33 @@ async function markDeletionPending(
            WHERE learner_profile_id = ? AND user_id_hash = ?
          )`,
     ).bind(profileId, identity.userId, profileId, userIdHash),
+    database.$client.prepare(
+      `SELECT
+         EXISTS (
+           SELECT 1 FROM learner_profile AS target
+           WHERE target.id = ? AND target.auth_user_id = ?
+         ) AS target_exists,
+         EXISTS (
+           SELECT 1
+           FROM learner_profile AS sibling
+           LEFT JOIN learner_profile_deletion_tombstone AS deletion
+             ON deletion.learner_profile_id = sibling.id
+           WHERE sibling.auth_user_id = ? AND sibling.id <> ?
+             AND deletion.learner_profile_id IS NULL
+         ) AS sibling_exists,
+         EXISTS (
+           SELECT 1 FROM conversation_session
+           WHERE learner_profile_id = ? AND auth_user_id = ?
+             AND status IN ('starting', 'active')
+         ) AS busy`,
+    ).bind(
+      profileId,
+      identity.userId,
+      identity.userId,
+      profileId,
+      profileId,
+      identity.userId,
+    ),
   ]);
 
   const tombstone = await findTombstone(database, profileId);
@@ -190,34 +224,24 @@ async function markDeletionPending(
     return tombstone;
   }
 
-  const target = await database.$client.prepare(
-    `SELECT id FROM learner_profile WHERE id = ? AND auth_user_id = ?`,
-  ).bind(profileId, identity.userId).first<{ id: string }>();
-  if (!target) throw new LearnerDeletionError(404, "not_found");
-  const sibling = await database.$client.prepare(
-    `SELECT sibling.id
-     FROM learner_profile AS sibling
-     LEFT JOIN learner_profile_deletion_tombstone AS deletion
-       ON deletion.learner_profile_id = sibling.id
-     WHERE sibling.auth_user_id = ? AND sibling.id <> ?
-       AND deletion.learner_profile_id IS NULL
-     LIMIT 1`,
-  ).bind(identity.userId, profileId).first<{ id: string }>();
-  if (!sibling) throw new LearnerDeletionError(409, "last_learner");
-  const busy = await database.$client.prepare(
-    `SELECT id FROM conversation_session
-     WHERE learner_profile_id = ? AND auth_user_id = ?
-       AND status IN ('starting', 'active')
-     LIMIT 1`,
-  ).bind(profileId, identity.userId).first<{ id: string }>();
-  if (busy) throw new LearnerDeletionError(409, "learner_busy");
+  const diagnostic = batchResults[3]?.results?.[0] as
+    | { busy?: number; sibling_exists?: number; target_exists?: number }
+    | undefined;
+  if (!diagnostic?.target_exists) {
+    throw new LearnerDeletionError(404, "not_found");
+  }
+  if (!diagnostic.sibling_exists) {
+    throw new LearnerDeletionError(409, "last_learner");
+  }
+  if (diagnostic.busy) {
+    throw new LearnerDeletionError(409, "learner_busy");
+  }
   throw new Error("Learner deletion tombstone could not be persisted.");
 }
 
 async function artKeys(
   database: Database,
-  identity: AccountIdentity,
-  tombstone: DeletionTombstone,
+  owner: LearnerDeletionStorageOwner,
 ) {
   const ready = await database.$client.prepare(
     `SELECT r2_object_key AS key
@@ -228,26 +252,26 @@ async function artKeys(
          OR (? = 1 AND learner_profile_id IS NULL)
        )`,
   ).bind(
-    identity.userId,
-    tombstone.learnerProfileId,
-    tombstone.legacyStorageOwner ? 1 : 0,
+    owner.userId,
+    owner.learnerProfileId,
+    owner.legacyStorageOwner ? 1 : 0,
   ).all<{ key: string }>();
   const learnerLease = await database.$client.prepare(
     `SELECT candidate_r2_object_key AS candidateKey,
             previous_r2_object_key AS previousKey
      FROM learner_story_art_generation_lease
      WHERE auth_user_id = ? AND learner_profile_id = ?`,
-  ).bind(identity.userId, tombstone.learnerProfileId).all<{
+  ).bind(owner.userId, owner.learnerProfileId).all<{
     candidateKey: string | null;
     previousKey: string | null;
   }>();
-  const legacyLease = tombstone.legacyStorageOwner
+  const legacyLease = owner.legacyStorageOwner
     ? await database.$client.prepare(
       `SELECT candidate_r2_object_key AS candidateKey,
               previous_r2_object_key AS previousKey
        FROM personalized_story_art_generation_lease
        WHERE auth_user_id = ?`,
-    ).bind(identity.userId).all<{
+    ).bind(owner.userId).all<{
       candidateKey: string | null;
       previousKey: string | null;
     }>()
@@ -295,6 +319,67 @@ function deletionOwner(identity: AccountIdentity, tombstone: DeletionTombstone) 
   };
 }
 
+export async function validateLearnerDeletionStorageClosure(
+  bucket: Pick<R2Bucket, "head">,
+  database: Database,
+  owner: LearnerDeletionStorageOwner,
+  closure: LearnerDeletionStorageClosure,
+) {
+  const accountPrefix =
+    `personalized-story-art/${encodeURIComponent(owner.userId)}/`;
+  const learnerPrefix =
+    `${accountPrefix}learners/${encodeURIComponent(owner.learnerProfileId)}/`;
+  const recordingPrefix = lessonRecordingOwnerPrefix(owner);
+  const allowedPrefixes = new Set([learnerPrefix]);
+  if (owner.legacyStorageOwner) {
+    allowedPrefixes.add(`${accountPrefix}learner-dubs/`);
+    allowedPrefixes.add(recordingPrefix);
+  }
+  if (closure.prefixes.some((prefix) => !allowedPrefixes.has(prefix))) {
+    throw new Error("Learner deletion storage closure is invalid.");
+  }
+
+  const dubClosure = DUB_DEFINITIONS.map(({ id }) =>
+    dubStorageClosureKeys(createDubStorageKeys(owner, id))
+  );
+  const allowedMarkers = new Set(
+    dubClosure.flatMap(({ markerKeys }) => markerKeys),
+  );
+  if (closure.markerKeys.some((key) => !allowedMarkers.has(key))) {
+    throw new Error("Learner deletion storage closure is invalid.");
+  }
+
+  const allowedSlots = new Set(dubClosure.flatMap(({ slotKeys }) => slotKeys));
+  const ownedArtKeys = new Set(await artKeys(database, owner));
+  const siblingNamespace = `${accountPrefix}learners/`;
+  for (const key of closure.slotKeys) {
+    if (
+      allowedSlots.has(key) ||
+      key.startsWith(recordingPrefix) ||
+      key.startsWith(learnerPrefix) ||
+      ownedArtKeys.has(key)
+    ) {
+      continue;
+    }
+    if (key.startsWith(siblingNamespace)) {
+      throw new Error("Learner deletion storage closure is invalid.");
+    }
+    const object = await bucket.head(key);
+    const state = object?.customMetadata?.state;
+    const generation = object?.customMetadata?.generation;
+    if (
+      state === "account-deleting" ||
+      (state === "learner-deleting" &&
+        generation?.startsWith(
+          `learner-deletion-v1:${owner.learnerProfileId}:`,
+        ))
+    ) {
+      continue;
+    }
+    throw new Error("Learner deletion storage closure is invalid.");
+  }
+}
+
 async function snapshotClosure(
   bucket: StorageDeletionBucket,
   database: Database,
@@ -327,14 +412,16 @@ async function snapshotClosure(
     slotKeys: unique([
       ...dubClosure.flatMap(({ slotKeys }) => slotKeys),
       ...recordingKeys,
-      ...await artKeys(database, identity, tombstone),
+      ...await artKeys(database, owner),
     ]),
     version: 1,
   } satisfies LearnerDeletionStorageClosure;
 }
 
 async function persistClosure(
+  bucket: Pick<R2Bucket, "head">,
   database: Database,
+  identity: AccountIdentity,
   tombstone: DeletionTombstone,
   snapshot: LearnerDeletionStorageClosure,
 ) {
@@ -343,10 +430,16 @@ async function persistClosure(
     if (!current || current.userIdHash !== tombstone.userIdHash) {
       throw new Error("Learner deletion tombstone could not be persisted.");
     }
-    const merged = mergeClosure(
-      parseLearnerDeletionStorageClosure(current.storageKeysJson),
-      snapshot,
+    const persisted = parseLearnerDeletionStorageClosure(
+      current.storageKeysJson,
     );
+    await validateLearnerDeletionStorageClosure(
+      bucket,
+      database,
+      deletionOwner(identity, current),
+      persisted,
+    );
+    const merged = mergeClosure(persisted, snapshot);
     const serialized = JSON.stringify(merged);
     if (serialized === current.storageKeysJson) return merged;
     const updated = await database
@@ -492,7 +585,9 @@ export async function prepareLearnerDeletion({
 }: LearnerDeletionInput) {
   const tombstone = await markDeletionPending(database, identity, profileId);
   const closure = await persistClosure(
+    bucket,
     database,
+    identity,
     tombstone,
     await snapshotClosure(bucket, database, identity, tombstone),
   );

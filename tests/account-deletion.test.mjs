@@ -744,6 +744,47 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
+  it("routes a DB-owned external art candidate through exact fencing", async () => {
+    const state = seedDatabase();
+    const externalCandidate = "legacy-exact/external-candidate.webp";
+    const bucket = createBucket([{
+      bytes: new Uint8Array([1, 2, 3]),
+      key: externalCandidate,
+    }]);
+
+    try {
+      state.sqlite.prepare(
+        `INSERT INTO personalized_story_art_generation_lease (
+           auth_user_id, story_id, generation_token,
+           candidate_r2_object_key, lease_expires_at, created_at, updated_at
+         ) VALUES (?, 'the-red-ball', 'external-held', ?, ?, 1, 1)`,
+      ).run(USER_ID, externalCandidate, 9_999_999_999_999);
+
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+
+      assert.deepEqual(
+        JSON.parse(
+          state.sqlite.prepare(
+            `SELECT personalized_art_candidate_keys_json
+             FROM account_deletion_tombstone`,
+          ).get().personalized_art_candidate_keys_json,
+        ),
+        [],
+      );
+      assert.deepEqual(
+        bucket.stored.get(externalCandidate)?.options.customMetadata,
+        { generation: DELETION_GENERATION, state: "account-deleting" },
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("fails closed before R2 work when a persisted candidate escapes the account prefix", async () => {
     const state = seedDatabase();
     const initialBucket = createBucket();

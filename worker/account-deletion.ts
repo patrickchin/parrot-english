@@ -15,7 +15,10 @@ import {
   LEGACY_DUB_LINE_IDS,
 } from "./dub-storage.ts";
 import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
-import { parseLearnerDeletionStorageClosure } from "./learner-deletion.ts";
+import {
+  parseLearnerDeletionStorageClosure,
+  validateLearnerDeletionStorageClosure,
+} from "./learner-deletion.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 import {
   deleteWithRetry,
@@ -65,6 +68,7 @@ export async function listLearnerStorageIdentities(
 }
 
 async function listUnfinishedLearnerDeletions(
+  bucket: Pick<R2Bucket, "head">,
   database: Database,
   userIdHash: string,
   userId: string,
@@ -77,20 +81,27 @@ async function listUnfinishedLearnerDeletions(
     })
     .from(learnerProfileDeletionTombstone)
     .where(eq(learnerProfileDeletionTombstone.userIdHash, userIdHash));
-  return tombstones.map((tombstone) => {
+  return Promise.all(tombstones.map(async (tombstone) => {
     const closure = parseLearnerDeletionStorageClosure(
       tombstone.storageKeysJson,
     );
+    const identity = {
+      learnerProfileId: tombstone.learnerProfileId,
+      legacyStorageOwner: tombstone.legacyStorageOwner,
+      userId,
+    };
+    await validateLearnerDeletionStorageClosure(
+      bucket,
+      database,
+      identity,
+      closure,
+    );
     return {
-      identity: {
-        learnerProfileId: tombstone.learnerProfileId,
-        legacyStorageOwner: tombstone.legacyStorageOwner,
-        userId,
-      },
+      identity,
       markerKeys: closure.markerKeys,
       slotKeys: closure.slotKeys,
     };
-  });
+  }));
 }
 
 function parseLearnerStorageClosure(serialized: string) {
@@ -416,6 +427,7 @@ export async function prepareAccountDeletion({
   const tombstone = await markAccountDeletionPending(database, userId, now);
   const unfinishedLearnerDeletions =
     await listUnfinishedLearnerDeletions(
+      bucket,
       database,
       tombstone.userIdHash,
       userId,
@@ -430,12 +442,16 @@ export async function prepareAccountDeletion({
       ...unfinishedLearnerDeletions.map(({ identity }) => identity),
     ],
   );
+  const livePersonalizedArtCandidateKeys =
+    await listPersonalizedArtCandidateKeys(database, userId);
   const personalizedArtCandidateKeys =
     await persistPersonalizedArtCandidateClosure(
       database,
       tombstone.userIdHash,
       tombstone.r2Prefix,
-      await listPersonalizedArtCandidateKeys(database, userId),
+      livePersonalizedArtCandidateKeys.filter(
+        (key) => key.startsWith(tombstone.r2Prefix) && key !== tombstone.r2Prefix,
+      ),
     );
   const externalPersonalizedArtKeys = await listExternalPersonalizedArtKeys(
     database,

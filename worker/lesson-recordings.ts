@@ -281,7 +281,27 @@ export async function handleLessonRecordingRequest(
         { consentGeneration, lessonGeneration },
         wait,
       );
-      requireAccess(await accessState(), consentGeneration);
+      let reservedAccess: Awaited<ReturnType<typeof accessState>> | undefined;
+      try {
+        reservedAccess = await accessState();
+        requireAccess(reservedAccess, consentGeneration);
+      } catch (error) {
+        await fenceLessonRecordingUpload(
+          bucket,
+          key,
+          observed,
+          uploadNonce,
+          reservedAccess?.accountDeletion
+            ? "account-deleting"
+            : reservedAccess?.learnerDeletion
+              ? "learner-deleting"
+              : reservedAccess
+                ? "consent-revoked"
+                : "state-unknown",
+          wait,
+        );
+        throw error;
+      }
       if (route.source === "my") {
         const currentTarget = await resolveLessonRecordingTarget(
           input.database,

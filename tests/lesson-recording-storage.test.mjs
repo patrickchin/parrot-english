@@ -153,6 +153,35 @@ describe("lesson recording storage", () => {
     assert.equal(current.customMetadata.invalidatedVersion, replacement.version);
   });
 
+  it("never replaces a permanent learner-deletion fence with a purge fence", async () => {
+    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const current = {
+      customMetadata: { state: "learner-deleting" },
+      etag: "learner-fence-etag",
+      key: `${prefix}parrot/lesson-1/scene-0/step-1.audio`,
+      version: "learner-fence-version",
+    };
+    const writes = [];
+    const bucket = {
+      async head() { return current; },
+      async list() { return { objects: [current], truncated: false }; },
+      async put(key, _value, options) {
+        writes.push({ key, options });
+        return null;
+      },
+    };
+
+    await storage.deleteAllLessonRecordings(
+      bucket,
+      LEGACY_IDENTITY,
+      1,
+      async () => {},
+    );
+
+    assert.deepEqual(writes, []);
+    assert.equal(current.customMetadata.state, "learner-deleting");
+  });
+
   it("fences every listed object only below the encoded owner prefix", async () => {
     assert.equal(typeof storage.deleteAllLessonRecordings, "function");
     const prefix = "personalized-story-art/user%2Fone/lesson-recordings/";

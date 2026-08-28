@@ -443,6 +443,64 @@ export async function handlePersonalizedStoryArtRequest(
     return Boolean(row);
   }
 
+  function deletionError(pending: { account: boolean; learner: boolean }) {
+    return pending.account
+      ? accountDeletionPendingError()
+      : learnerDeletionPendingError();
+  }
+
+  async function fenceArtObject(
+    key: string,
+    pending: { account: boolean; learner: boolean },
+  ) {
+    const account = pending.account;
+    await persistFence(
+      input.env.PERSONALIZED_STORY_ART_BUCKET,
+      key,
+      "slot",
+      account
+        ? `late-art-cleanup-v1:${await accountDeletionTombstoneKey(input.identity.userId)}`
+        : `late-art-cleanup-v1:${input.identity.learnerProfileId}`,
+      account ? "account-deleting" : "learner-deleting",
+      async () => {},
+      account ? [] : ["account-deleting"],
+    );
+  }
+
+  async function cleanupArtObject(key: string) {
+    const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
+    const head = (bucket as Partial<R2Bucket>).head;
+    const pendingBefore = await deletionPending(input.database, input.identity);
+    if (pendingBefore.account || pendingBefore.learner) {
+      if (typeof head === "function") {
+        await fenceArtObject(key, pendingBefore);
+      } else {
+        await deleteObjectOrThrow(bucket, key);
+      }
+      return pendingBefore;
+    }
+    const current = typeof head === "function"
+      ? await head.call(bucket, key)
+      : null;
+    const permanentState = current?.customMetadata?.state;
+    if (
+      permanentState === "account-deleting" ||
+      permanentState === "learner-deleting"
+    ) {
+      return {
+        account: permanentState === "account-deleting",
+        learner: permanentState === "learner-deleting",
+      };
+    }
+    await deleteObjectOrThrow(bucket, key);
+    const pendingAfter = await deletionPending(input.database, input.identity);
+    if (pendingAfter.account || pendingAfter.learner) {
+      await fenceArtObject(key, pendingAfter);
+      return pendingAfter;
+    }
+    return null;
+  }
+
   async function cleanupRecoveredLease(
     storyId: string,
     claimed: {
@@ -458,10 +516,8 @@ export async function handlePersonalizedStoryArtRequest(
         ? claimed.previousR2ObjectKey
         : claimed.candidateR2ObjectKey;
     if (cleanupKey && cleanupKey !== row?.r2ObjectKey) {
-      await deleteObjectOrThrow(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
-        cleanupKey,
-      );
+      const pending = await cleanupArtObject(cleanupKey);
+      if (pending) throw deletionError(pending);
     }
     await release();
   }
@@ -533,57 +589,9 @@ export async function handlePersonalizedStoryArtRequest(
     token: string,
     candidateKey: string,
   ) {
-    const pendingBefore = await deletionPending(
-      input.database,
-      input.identity,
-    );
-    if (pendingBefore.account || pendingBefore.learner) {
-      const head = (input.env.PERSONALIZED_STORY_ART_BUCKET as Partial<R2Bucket>)
-        .head;
-      const current = typeof head === "function"
-        ? await head.call(
-          input.env.PERSONALIZED_STORY_ART_BUCKET,
-          candidateKey,
-        )
-        : null;
-      if (
-        current?.customMetadata?.state !== "account-deleting" &&
-        current?.customMetadata?.state !== "learner-deleting"
-      ) {
-        await deleteObjectOrThrow(
-          input.env.PERSONALIZED_STORY_ART_BUCKET,
-          candidateKey,
-        );
-      }
-      await releaseLease(storyId, token);
-      throw pendingBefore.account
-        ? accountDeletionPendingError()
-        : learnerDeletionPendingError();
-    }
-    await deleteObjectOrThrow(
-      input.env.PERSONALIZED_STORY_ART_BUCKET,
-      candidateKey,
-    );
-    const pendingAfter = await deletionPending(input.database, input.identity);
-    if (pendingAfter.account || pendingAfter.learner) {
-      const account = pendingAfter.account;
-      await persistFence(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
-        candidateKey,
-        "slot",
-        account
-          ? `late-art-cleanup-v1:${await accountDeletionTombstoneKey(input.identity.userId)}`
-          : `late-art-cleanup-v1:${input.identity.learnerProfileId}`,
-        account ? "account-deleting" : "learner-deleting",
-        async () => {},
-        account ? [] : ["account-deleting"],
-      );
-      await releaseLease(storyId, token);
-      throw account
-        ? accountDeletionPendingError()
-        : learnerDeletionPendingError();
-    }
+    const pending = await cleanupArtObject(candidateKey);
     await releaseLease(storyId, token);
+    if (pending) throw deletionError(pending);
   }
 
   async function deleteOwnedArt(storyId: string) {
@@ -596,10 +604,8 @@ export async function handlePersonalizedStoryArtRequest(
           status: 204,
         });
       }
-      await deleteObjectOrThrow(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
-        row.r2ObjectKey,
-      );
+      const pending = await cleanupArtObject(row.r2ObjectKey);
+      if (pending) throw deletionError(pending);
       await repository.deleteByIdIfDeleting(input.identity, storyId, row.id);
       overrides.onAfterDeleteRow?.();
       return new Response(null, {
@@ -801,14 +807,7 @@ export async function handlePersonalizedStoryArtRequest(
       try {
         await assertDeletionNotPending(input.database, input.identity);
       } catch (error) {
-        if (
-          error instanceof PersonalizedStoryArtApiError &&
-          error.code === "learner_deletion_pending"
-        ) {
-          await releaseLease(route.storyId, token);
-        } else {
-          await cleanupCandidateAndRelease(route.storyId, token, key);
-        }
+        await cleanupCandidateAndRelease(route.storyId, token, key);
         throw error;
       }
 
@@ -847,11 +846,7 @@ export async function handlePersonalizedStoryArtRequest(
         } catch (error) {
           pendingCheckError = error;
         }
-        if (pending.learner) {
-          await releaseLease(route.storyId, token);
-        } else {
-          await cleanupCandidateAndRelease(route.storyId, token, key);
-        }
+        await cleanupCandidateAndRelease(route.storyId, token, key);
         if (pendingCheckError) throw pendingCheckError;
         if (pending.account) throw accountDeletionPendingError();
         if (pending.learner) throw learnerDeletionPendingError();
