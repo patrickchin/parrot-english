@@ -4,6 +4,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
+import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
 import { STORIES } from "../src/stories/story-catalog.ts";
 
 const getStaticAudioLineForSpeech =
@@ -65,6 +66,23 @@ describe("static audio cache metadata", () => {
       guideLines.set(text, line.id);
     }
     assert.equal(guideLines.size, 15);
+  });
+
+  it("registers an ElevenLabs narrator guide for every unique Old MacDonald lyric", () => {
+    const uniqueLines = new Set(OLD_MACDONALD_DUB.lines.map(({ text }) => text));
+    const guideLines = new Map();
+    for (const { text } of OLD_MACDONALD_DUB.lines) {
+      const line = getStaticAudioLineForSpeech("narrator", text);
+      assert.match(line.id, /^old-macdonald-v1-guide-/);
+      assert.equal(line.text, text);
+      assert.match(line.ttsText, /^\[warm, rhythmic nursery-rhyme delivery\]/);
+      assert.equal(
+        existsSync(new URL(`../public${line.src}`, import.meta.url)),
+        true,
+      );
+      guideLines.set(text, line.id);
+    }
+    assert.equal(guideLines.size, uniqueLines.size);
   });
 
   it("covers every scripted non-user line", () => {
