@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
+import { parseDubRoute } from "../worker/dub-route.ts";
+import { createDubStorageKeys, objectPrefix } from "../worker/dub-storage.ts";
 import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
+const OLD_DUB_PATH = "/api/dubs/old-macdonald-v1";
 
 function authStub(session, sessionCalls) {
   return {
@@ -79,6 +82,31 @@ function request(method, path, body) {
 }
 
 describe("dub Worker routing", () => {
+  it("routes Old MacDonald and isolates its storage namespace from ducks", () => {
+    const oldRoute = parseDubRoute(
+      "/api/dubs/old-macdonald-v1/lines/old-macdonald-v1-line-1",
+    );
+    assert.equal(oldRoute?.definition.id, "old-macdonald-v1");
+    assert.equal(oldRoute?.dubId, "old-macdonald-v1");
+    assert.equal(oldRoute?.lineId, "old-macdonald-v1-line-1");
+    assert.equal(
+      parseDubRoute("/api/dubs/old-macdonald-v1/lines/line-1"),
+      null,
+    );
+    assert.equal(
+      objectPrefix("user-1", "old-macdonald-v1"),
+      "personalized-story-art/user-1/learner-dubs/old-macdonald-v1/",
+    );
+    assert.equal(
+      createDubStorageKeys({
+        learnerProfileId: "learner-b",
+        legacyStorageOwner: false,
+        userId: "user-1",
+      }, "old-macdonald-v1").objectPrefix,
+      "personalized-story-art/user-1/learners/learner-b/learner-dubs/old-macdonald-v1/",
+    );
+  });
+
   it("guards only guardian dub mutations before the domain handler", async () => {
     const state = createTestD1Database();
     try {
@@ -118,6 +146,8 @@ describe("dub Worker routing", () => {
       for (const [method, path] of [
         ["PUT", `${DUB_PATH}/consent`],
         ["DELETE", DUB_PATH],
+        ["PUT", `${OLD_DUB_PATH}/consent`],
+        ["DELETE", OLD_DUB_PATH],
       ]) {
         const response = await worker.fetch(request(method, path), env);
         assert.equal(response.status, 403, `${method} ${path}`);
@@ -139,12 +169,15 @@ describe("dub Worker routing", () => {
         ["GET", DUB_PATH],
         ["PUT", `${DUB_PATH}/lines/line-1`],
         ["GET", `${DUB_PATH}/lines/line-1/audio`],
+        ["GET", OLD_DUB_PATH],
+        ["PUT", `${OLD_DUB_PATH}/lines/old-macdonald-v1-line-1`],
+        ["GET", `${OLD_DUB_PATH}/lines/old-macdonald-v1-line-1/audio`],
       ]) {
         const response = await worker.fetch(request(method, path), env);
         assert.equal(response.status, 200, `${method} ${path}`);
         assert.deepEqual(await response.json(), { routed: true });
       }
-      assert.equal(handlerCalls, 5);
+      assert.equal(handlerCalls, 8);
     } finally {
       state.close();
     }
@@ -188,6 +221,8 @@ describe("dub Worker routing", () => {
         ["DELETE", "/api/dubs/%66ive-little-ducks-v2"],
         ["PUT", "/api/dubs/%66ive-little-ducks-v2/consent"],
         ["PUT", "/api/dubs/five-little-ducks-v2/%63onsent"],
+        ["DELETE", "/api/dubs/%6fld-macdonald-v1"],
+        ["PUT", "/api/dubs/%6fld-macdonald-v1/consent"],
       ];
 
       for (const mode of ["locked", "unlocked"]) {
@@ -231,6 +266,10 @@ describe("dub Worker routing", () => {
       ["PUT", `${DUB_PATH}/lines/line-1`],
       ["GET", `${DUB_PATH}/lines/line-1/audio`],
       ["DELETE", DUB_PATH],
+      ["GET", OLD_DUB_PATH],
+      ["PUT", `${OLD_DUB_PATH}/lines/old-macdonald-v1-line-1`],
+      ["GET", `${OLD_DUB_PATH}/lines/old-macdonald-v1-line-1/audio`],
+      ["DELETE", OLD_DUB_PATH],
       ["POST", DUB_PATH],
       ["GET", `${DUB_PATH}/lines/line-1`],
       ["PUT", `${DUB_PATH}/lines/line-1/audio`],

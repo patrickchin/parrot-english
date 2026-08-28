@@ -1,5 +1,6 @@
 import { DUB_ID } from "./dub-script.ts";
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
+import { getDubDefinition } from "./rhyme-catalog.ts";
 
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
@@ -9,13 +10,14 @@ const DELETE_FAILURE = "Your saved dub was not deleted.";
 export type DubStatus = {
   complete: boolean;
   consentState: "granted" | "not_granted" | "revoking";
-  dubId: typeof DUB_ID;
+  dubId: string;
   guardianConsentVersion: typeof GUARDIAN_CONSENT_VERSION;
   lines: Array<{ id: string; recordedAt: string | null; saved: boolean }>;
   recordingEnabled: boolean;
 };
 
 export type DubRequestOptions = {
+  dubId?: string;
   fetch?: typeof globalThis.fetch;
   learnerProfileId?: string;
   signal?: AbortSignal;
@@ -112,12 +114,18 @@ async function parseJson(response: Response, failure: string) {
 function isDubStatus(value: unknown): value is DubStatus {
   if (typeof value !== "object" || value === null) return false;
   const status = value as Partial<DubStatus>;
+  if (typeof status.dubId !== "string") return false;
+  let definition;
+  try {
+    definition = getDubDefinition(status.dubId);
+  } catch {
+    return false;
+  }
   return (
     typeof status.complete === "boolean" &&
     (status.consentState === "granted" ||
       status.consentState === "not_granted" ||
       status.consentState === "revoking") &&
-    status.dubId === DUB_ID &&
     status.guardianConsentVersion === GUARDIAN_CONSENT_VERSION &&
     Array.isArray(status.lines) &&
     typeof status.recordingEnabled === "boolean" &&
@@ -125,6 +133,7 @@ function isDubStatus(value: unknown): value is DubStatus {
       typeof line === "object" &&
       line !== null &&
       typeof line.id === "string" &&
+      definition.lines.some(({ id }) => id === line.id) &&
       typeof line.saved === "boolean" &&
       (line.recordedAt === null || typeof line.recordedAt === "string")
     )
@@ -150,18 +159,22 @@ function appendLearnerProfileTarget(
 
 export const getDubLineAudioUrl = (
   lineId: string,
-  { learnerProfileId }: Pick<DubRequestOptions, "learnerProfileId"> = {},
+  {
+    dubId = DUB_ID,
+    learnerProfileId,
+  }: Pick<DubRequestOptions, "dubId" | "learnerProfileId"> = {},
 ) =>
   appendLearnerProfileTarget(
-    `/api/dubs/${DUB_ID}/lines/${encodeURIComponent(lineId)}/audio`,
+    `/api/dubs/${dubId}/lines/${encodeURIComponent(lineId)}/audio`,
     learnerProfileId,
   );
 
 export async function loadDubStatus(options: DubRequestOptions = {}) {
+  const dubId = options.dubId ?? DUB_ID;
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
-      `/api/dubs/${DUB_ID}`,
+      `/api/dubs/${dubId}`,
       options.learnerProfileId,
     ),
     {
@@ -193,10 +206,11 @@ export async function saveDubLine(
   blob: Blob,
   options: DubRequestOptions = {},
 ) {
+  const dubId = options.dubId ?? DUB_ID;
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
-      `/api/dubs/${DUB_ID}/lines/${encodeURIComponent(lineId)}`,
+      `/api/dubs/${dubId}/lines/${encodeURIComponent(lineId)}`,
       options.learnerProfileId,
     ),
     {
@@ -236,10 +250,11 @@ export async function saveDubLine(
 }
 
 export async function grantDubConsent(options: DubRequestOptions = {}) {
+  const dubId = options.dubId ?? DUB_ID;
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
-      `/api/dubs/${DUB_ID}/consent`,
+      `/api/dubs/${dubId}/consent`,
       options.learnerProfileId,
     ),
     {
@@ -256,10 +271,11 @@ export async function grantDubConsent(options: DubRequestOptions = {}) {
 }
 
 export async function deleteDub(options: DubRequestOptions = {}) {
+  const dubId = options.dubId ?? DUB_ID;
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
-      `/api/dubs/${DUB_ID}`,
+      `/api/dubs/${dubId}`,
       options.learnerProfileId,
     ),
     {

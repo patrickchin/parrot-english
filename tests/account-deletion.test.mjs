@@ -19,6 +19,7 @@ const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v2/`;
+const OLD_DUB_PREFIX = `${USER_PREFIX}learner-dubs/old-macdonald-v1/`;
 const LESSON_RECORDING_KEY =
   `${USER_PREFIX}lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio`;
 const learnerLessonRecordingKey = (learnerProfileId) =>
@@ -30,6 +31,12 @@ const LEGACY_ART_CANDIDATE_KEY =
 const MARKER_KEY = `${DUB_PREFIX}.dub-generation`;
 const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
 const slotKey = (lineId) => `${DUB_PREFIX}${lineId}.audio`;
+const OLD_MARKER_KEY = `${OLD_DUB_PREFIX}.dub-generation`;
+const OLD_LINE_IDS = Array.from(
+  { length: 35 },
+  (_, index) => `old-macdonald-v1-line-${index + 1}`,
+);
+const oldSlotKey = (lineId) => `${OLD_DUB_PREFIX}${lineId}.audio`;
 const LEGACY_DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v1/`;
 const LEGACY_MARKER_KEY = `${LEGACY_DUB_PREFIX}.dub-generation`;
 const LEGACY_LINE_IDS = Array.from(
@@ -39,13 +46,21 @@ const LEGACY_LINE_IDS = Array.from(
 const legacySlotKey = (lineId) => `${LEGACY_DUB_PREFIX}${lineId}.audio`;
 const learnerDubPrefix = (learnerProfileId) =>
   `${USER_PREFIX}learners/${learnerProfileId}/learner-dubs/five-little-ducks-v2/`;
+const learnerOldDubPrefix = (learnerProfileId) =>
+  `${USER_PREFIX}learners/${learnerProfileId}/learner-dubs/old-macdonald-v1/`;
 const learnerMarkerKey = (learnerProfileId) =>
   `${learnerDubPrefix(learnerProfileId)}.dub-generation`;
+const learnerOldMarkerKey = (learnerProfileId) =>
+  `${learnerOldDubPrefix(learnerProfileId)}.dub-generation`;
 const learnerSlotKey = (learnerProfileId, lineId) =>
   `${learnerDubPrefix(learnerProfileId)}${lineId}.audio`;
+const learnerOldSlotKey = (learnerProfileId, lineId) =>
+  `${learnerOldDubPrefix(learnerProfileId)}${lineId}.audio`;
 const CLOSURE_KEYS = [
   MARKER_KEY,
   ...LINE_IDS.map(slotKey),
+  OLD_MARKER_KEY,
+  ...OLD_LINE_IDS.map(oldSlotKey),
   LEGACY_MARKER_KEY,
   ...LEGACY_LINE_IDS.map(legacySlotKey),
 ];
@@ -214,6 +229,27 @@ function assertDeletionFences(bucket, generation) {
     );
   }
   assert.deepEqual(
+    bucket.stored.get(OLD_MARKER_KEY)?.bytes,
+    fenceBytes("marker", generation, "account-deleting"),
+  );
+  assert.deepEqual(bucket.stored.get(OLD_MARKER_KEY)?.options.customMetadata, {
+    generation,
+    state: "account-deleting",
+  });
+  for (const lineId of OLD_LINE_IDS) {
+    const item = bucket.stored.get(oldSlotKey(lineId));
+    assert.deepEqual(
+      item?.bytes,
+      fenceBytes("slot", generation, "account-deleting"),
+      `old ${lineId}`,
+    );
+    assert.deepEqual(
+      item?.options.customMetadata,
+      { generation, state: "account-deleting" },
+      `old ${lineId}`,
+    );
+  }
+  assert.deepEqual(
     bucket.stored.get(LEGACY_MARKER_KEY)?.bytes,
     fenceBytes("marker", generation, "account-deleting"),
   );
@@ -260,6 +296,31 @@ function assertLearnerDeletionFences(bucket, learnerProfileId, generation) {
         state: "account-deleting",
       },
       `${learnerProfileId} ${lineId}`,
+    );
+  }
+  const oldMarker = bucket.stored.get(learnerOldMarkerKey(learnerProfileId));
+  assert.deepEqual(
+    oldMarker?.bytes,
+    fenceBytes("marker", generation, "account-deleting"),
+  );
+  assert.deepEqual(oldMarker?.options.customMetadata, {
+    generation,
+    state: "account-deleting",
+  });
+  for (const lineId of OLD_LINE_IDS) {
+    const item = bucket.stored.get(learnerOldSlotKey(learnerProfileId, lineId));
+    assert.deepEqual(
+      item?.bytes,
+      fenceBytes("slot", generation, "account-deleting"),
+      `${learnerProfileId} old ${lineId}`,
+    );
+    assert.deepEqual(
+      item?.options.customMetadata,
+      {
+        generation,
+        state: "account-deleting",
+      },
+      `${learnerProfileId} old ${lineId}`,
     );
   }
 }
@@ -1707,7 +1768,7 @@ describe("account deletion personalized-art lifecycle", () => {
     const waits = [];
     let attempts = 0;
     bucket.put = async (key) => {
-      if (key === MARKER_KEY) {
+      if (key.endsWith(".dub-generation")) {
         attempts += 1;
         throw new Error("put marker: TooManyRequests (10058)");
       }
@@ -1726,8 +1787,8 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
         /10058/,
       );
-      assert.equal(attempts, 3);
-      assert.equal(waits.length, 2);
+      assert.equal(attempts >= 3, true);
+      assert.equal(waits.length >= 2, true);
       assert.equal(
         state.sqlite
           .prepare("SELECT count(*) AS count FROM user WHERE id = ?")

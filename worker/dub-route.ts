@@ -1,31 +1,34 @@
-import { DUB_ID, DUB_LINES } from "../src/dubbing/dub-script.ts";
+import { getDubDefinition, type DubDefinition } from "../src/dubbing/rhyme-catalog.ts";
 
 export type DubRoute = {
   audio: boolean;
   consent: boolean;
-  dubId: typeof DUB_ID;
+  definition: DubDefinition;
+  dubId: string;
   lineId: string | null;
 };
 
 export function parseDubRoute(pathname: string): DubRoute | null {
-  if (pathname === `/api/dubs/${DUB_ID}/consent`) {
-    return { audio: false, consent: true, dubId: DUB_ID, lineId: null };
-  }
-  const match = /^\/api\/dubs\/([^/]+)(?:\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
+  const match = /^\/api\/dubs\/([^/]+)(?:\/(consent)|\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
     pathname,
   );
-  if (
-    !match ||
-    match[1] !== DUB_ID ||
-    (match[2] && !DUB_LINES.some((line) => line.id === match[2]))
-  ) {
+  if (!match) return null;
+  let definition: DubDefinition;
+  try {
+    definition = getDubDefinition(match[1]);
+  } catch {
+    return null;
+  }
+  const lineId = match[3] ?? null;
+  if (lineId !== null && !definition.lines.some((line) => line.id === lineId)) {
     return null;
   }
   return {
-    audio: match[3] === "audio",
-    consent: false,
-    dubId: DUB_ID,
-    lineId: match[2] ?? null,
+    audio: match[4] === "audio",
+    consent: match[2] === "consent",
+    definition,
+    dubId: definition.id,
+    lineId,
   };
 }
 

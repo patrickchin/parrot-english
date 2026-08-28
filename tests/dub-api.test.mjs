@@ -143,6 +143,55 @@ describe("duck dub browser API", () => {
     );
   });
 
+  it("supports an explicit Old MacDonald dubId without changing the duck default", async () => {
+    const dubId = "old-macdonald-v1";
+    const lineId = "old-macdonald-v1-line-1";
+    const status = {
+      complete: false,
+      consentState: "granted",
+      dubId,
+      guardianConsentVersion: "guardian-voice-r2-v2",
+      lines: [{ id: lineId, recordedAt: null, saved: false }],
+      recordingEnabled: true,
+    };
+    const load = requestRecorder(Response.json(status));
+    const upload = requestRecorder(
+      Response.json({ recordedAt: "2026-08-25T10:00:00.000Z" }, { status: 201 }),
+    );
+    const consent = requestRecorder(new Response(null, { status: 204 }));
+    const remove = requestRecorder(new Response(null, { status: 204 }));
+    const take = new Blob(["take"], { type: "audio/webm" });
+
+    assert.deepEqual(
+      await loadDubStatus({ dubId, fetch: load.fetch }),
+      status,
+    );
+    assert.deepEqual(
+      await saveDubLine(lineId, take, { dubId, fetch: upload.fetch }),
+      { recordedAt: "2026-08-25T10:00:00.000Z" },
+    );
+    await grantDubConsent({ dubId, fetch: consent.fetch });
+    assert.equal(await deleteDub({ dubId, fetch: remove.fetch }), undefined);
+
+    assert.deepEqual(
+      [load, upload, consent, remove].map(({ calls }) => calls[0][0]),
+      [
+        "/api/dubs/old-macdonald-v1",
+        "/api/dubs/old-macdonald-v1/lines/old-macdonald-v1-line-1",
+        "/api/dubs/old-macdonald-v1/consent",
+        "/api/dubs/old-macdonald-v1",
+      ],
+    );
+    assert.equal(
+      getDubLineAudioUrl(lineId, { dubId }),
+      "/api/dubs/old-macdonald-v1/lines/old-macdonald-v1-line-1/audio",
+    );
+    assert.equal(
+      getDubLineAudioUrl("line-1"),
+      "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+    );
+  });
+
   it("notifies guardian access only for guardian-required failures before rejection", async () => {
     const previousDocument = globalThis.document;
     const eventTarget = new globalThis.EventTarget();

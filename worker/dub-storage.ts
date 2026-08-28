@@ -28,9 +28,9 @@ export type DubStorageKeys = {
   retiredLegacyObjectKey(lineId: string): string | null;
 };
 
-export function objectPrefix(userId: string) {
+export function objectPrefix(userId: string, dubId = DUB_ID) {
   // ponytail: shared private bucket; split when voice and art retention policies differ.
-  return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${DUB_ID}/`;
+  return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${dubId}/`;
 }
 
 export function legacyObjectPrefix(userId: string) {
@@ -45,12 +45,12 @@ export function legacyMarkerKey(userId: string) {
   return `${legacyObjectPrefix(userId)}${GENERATION_MARKER}`;
 }
 
-export function objectKey(userId: string, lineId: string) {
-  return `${objectPrefix(userId)}${lineId}.audio`;
+export function objectKey(userId: string, lineId: string, dubId = DUB_ID) {
+  return `${objectPrefix(userId, dubId)}${lineId}.audio`;
 }
 
-export function markerKey(userId: string) {
-  return `${objectPrefix(userId)}${GENERATION_MARKER}`;
+export function markerKey(userId: string, dubId = DUB_ID) {
+  return `${objectPrefix(userId, dubId)}${GENERATION_MARKER}`;
 }
 
 export function createDubStorageKeys(
@@ -58,18 +58,20 @@ export function createDubStorageKeys(
     LearnerIdentity,
     "userId" | "learnerProfileId" | "legacyStorageOwner"
   >,
+  dubId = DUB_ID,
 ): DubStorageKeys {
   const prefix = identity.legacyStorageOwner
-    ? objectPrefix(identity.userId)
-    : `personalized-story-art/${encodeURIComponent(identity.userId)}/learners/${encodeURIComponent(identity.learnerProfileId)}/learner-dubs/${DUB_ID}/`;
+    ? objectPrefix(identity.userId, dubId)
+    : `personalized-story-art/${encodeURIComponent(identity.userId)}/learners/${encodeURIComponent(identity.learnerProfileId)}/learner-dubs/${dubId}/`;
+  const includeLegacyCleanup = identity.legacyStorageOwner && dubId === DUB_ID;
   return {
     markerKey: `${prefix}${GENERATION_MARKER}`,
     objectKey: (lineId) => `${prefix}${lineId}.audio`,
     objectPrefix: prefix,
-    retiredLegacyMarkerKey: identity.legacyStorageOwner
+    retiredLegacyMarkerKey: includeLegacyCleanup
       ? legacyMarkerKey(identity.userId)
       : null,
-    retiredLegacyObjectKey: identity.legacyStorageOwner
+    retiredLegacyObjectKey: includeLegacyCleanup
       ? (lineId) => legacyObjectKey(identity.userId, lineId)
       : () => null,
   };

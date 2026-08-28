@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { DUB_LINES } from "../src/dubbing/dub-script.ts";
+import { DUB_DEFINITIONS, type DubDefinition } from "../src/dubbing/rhyme-catalog.ts";
 import {
   accountDeletionTombstone,
   learnerProfile,
@@ -390,9 +390,15 @@ async function persistFence(
 }
 
 function storageClosureKeys(storage: DubStorageKeys) {
+  const definition = DUB_DEFINITIONS.find(({ id }) =>
+    storage.objectPrefix.endsWith(`/learner-dubs/${id}/`)
+  );
+  if (!definition) {
+    throw new Error("Dub storage prefix did not match a supported definition.");
+  }
   const keys = [
     storage.markerKey,
-    ...DUB_LINES.map(({ id }) => storage.objectKey(id)),
+    ...definition.lines.map(({ id }) => storage.objectKey(id)),
   ];
   if (storage.retiredLegacyMarkerKey) {
     keys.push(storage.retiredLegacyMarkerKey);
@@ -469,14 +475,19 @@ export async function prepareAccountDeletion({
     ...identities
       .filter(({ legacyStorageOwner }) => !legacyStorageOwner),
   ];
-  const storages = storageIdentities.map(createDubStorageKeys);
+  const storages = storageIdentities.flatMap((identity) =>
+    DUB_DEFINITIONS.map((definition) => ({
+      definition,
+      storage: createDubStorageKeys(identity, definition.id),
+    }))
+  );
   const { r2Prefix } = tombstone;
   const generation = accountDeletionGeneration(
     tombstone.userIdHash,
     tombstone.requestedAt,
   );
   const closureKeys = new Set([
-    ...storages.flatMap(storageClosureKeys),
+    ...storages.flatMap(({ storage }) => storageClosureKeys(storage)),
     ...personalizedArtCandidateKeys,
   ]);
   const lessonRecordingKeys = new Set<string>();
@@ -522,18 +533,18 @@ export async function prepareAccountDeletion({
     persistFence(bucket, key, kind, generation, "account-deleting", wait);
 
   await runBoundedFenceWrites(
-    storages.map((storage) => fenceTask(storage.markerKey, "marker")),
+    storages.map(({ storage }) => fenceTask(storage.markerKey, "marker")),
   );
   await runBoundedFenceWrites(
-    storages.flatMap((storage) =>
+    storages.flatMap(({ storage }) =>
       storage.retiredLegacyMarkerKey
         ? [fenceTask(storage.retiredLegacyMarkerKey, "marker")]
         : [],
     ),
   );
   await runBoundedFenceWrites(
-    storages.flatMap((storage) => [
-      ...DUB_LINES.map(({ id }) => fenceTask(storage.objectKey(id), "slot")),
+    storages.flatMap(({ definition, storage }) => [
+      ...definition.lines.map(({ id }) => fenceTask(storage.objectKey(id), "slot")),
       ...LEGACY_DUB_LINE_IDS.flatMap((lineId) => {
         const key = storage.retiredLegacyObjectKey(lineId);
         return key ? [fenceTask(key, "slot")] : [];
