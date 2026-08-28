@@ -556,11 +556,19 @@ test("Old MacDonald route loads its public studio and opens the first scene", as
 
   const status = await page.evaluate(async () => {
     const response = await fetch("/api/dubs/old-macdonald-v1");
-    return response.json();
+    const body: unknown = await response.json();
+    if (typeof body !== "object" || body === null) {
+      throw new Error("Expected Old MacDonald status payload.");
+    }
+    const payload = body as { dubId?: unknown; lines?: unknown };
+    return {
+      dubId: payload.dubId,
+      linesLength: Array.isArray(payload.lines) ? payload.lines.length : -1,
+    };
   });
 
   expect(status.dubId).toBe("old-macdonald-v1");
-  expect(status.lines).toHaveLength(35);
+  expect(status.linesLength).toBe(35);
   await confirmDub(page, "Start dubbing");
   await expect(
     page.getByRole("region", { name: "Full video player" }),
@@ -572,6 +580,184 @@ test("Old MacDonald route loads its public studio and opens the first scene", as
       name: "Old MacDonald had a farm, E-I-E-I-O!",
     }),
   ).toBeVisible();
+});
+
+test("the Old MacDonald desktop project keeps the video and compact scene strip in one view", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1440 });
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+
+  const workspace = page.getByRole("region", { name: "Dub project workspace" });
+  const player = page.getByRole("region", { name: "Full video player" });
+  const stage = player.getByLabel("Farm scene");
+  const dock = page.getByRole("navigation", { name: "Scenes" });
+  const playButton = page.getByRole("button", { name: "Play full video" });
+  const [workspaceBox, playerBox, stageBox, dockBox, playBox] = await Promise.all([
+    boundingBoxOrThrow(workspace),
+    boundingBoxOrThrow(player),
+    boundingBoxOrThrow(stage),
+    boundingBoxOrThrow(dock),
+    boundingBoxOrThrow(playButton),
+  ]);
+
+  expect(workspaceBox.width).toBeGreaterThanOrEqual(1440 * 0.9);
+  expect(stageBox.width).toBeLessThanOrEqual(playerBox.width);
+  expect(stageBox.height).toBeLessThanOrEqual(playerBox.height);
+  expect(playerBox.x + playerBox.width).toBeLessThanOrEqual(dockBox.x);
+  expect(playBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  expect(boxesOverlap(playerBox, playBox)).toBe(false);
+  await expect(player).toBeInViewport();
+  await expect(dock).toBeInViewport();
+  await expect(dock.getByRole("button")).toHaveCount(5);
+  await expectNoHorizontalOverflow(page);
+
+  await openScene(page, 1);
+  const sceneWorkspace = page.getByRole("region", { name: "Scene editor workspace" });
+  const sceneStage = page.getByRole("region", { name: "Scene video" });
+  const sceneControls = page.getByRole("complementary", { name: "Scene line controls" });
+  const [sceneWorkspaceBox, sceneStageBox, sceneControlsBox] = await Promise.all([
+    boundingBoxOrThrow(sceneWorkspace),
+    boundingBoxOrThrow(sceneStage),
+    boundingBoxOrThrow(sceneControls),
+  ]);
+
+  expect(sceneWorkspaceBox.width).toBeGreaterThanOrEqual(1440 * 0.9);
+  expect(sceneStageBox.x + sceneStageBox.width).toBeLessThanOrEqual(sceneControlsBox.x);
+  expect(sceneStageBox.y + sceneStageBox.height).toBeGreaterThan(sceneControlsBox.y);
+  await expect(sceneStage).toBeInViewport();
+  await expect(sceneControls).toBeInViewport();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("the Old MacDonald narrow route keeps project and scene controls reachable", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 568, width: 280 });
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+
+  const title = page.getByRole("heading", { name: "Old MacDonald Had a Farm" });
+  await expect(title).toBeVisible();
+  await expectFullyInViewport(page, title);
+  const [playerBox, playBox] = await Promise.all([
+    boundingBoxOrThrow(page.getByRole("region", { name: "Full video player" })),
+    boundingBoxOrThrow(page.getByRole("button", { name: "Play full video" })),
+  ]);
+  expect(playBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  expect(boxesOverlap(playerBox, playBox)).toBe(false);
+  await expectLearnerTargetsAtLeast48px(page);
+  await expectNoHorizontalOverflow(page);
+
+  await openScene(page, 1);
+  const stage = page.getByRole("region", { name: "Scene video" });
+  const lyric = page.getByRole("heading", { name: "Old MacDonald had a farm, E-I-E-I-O!" });
+  const controls = page.getByRole("complementary", { name: "Scene line controls" });
+  const example = page.getByRole("button", { name: "Hear line" });
+  const record = page.getByRole("button", { name: "Record line" });
+  const next = page.getByRole("button", { name: "Next line" });
+  const [stageBox, lyricBox, controlsBox, exampleBox, recordBox, nextBox] = await Promise.all([
+    boundingBoxOrThrow(stage),
+    boundingBoxOrThrow(lyric),
+    boundingBoxOrThrow(controls),
+    boundingBoxOrThrow(example),
+    boundingBoxOrThrow(record),
+    boundingBoxOrThrow(next),
+  ]);
+
+  expect(lyricBox.y).toBeGreaterThanOrEqual(stageBox.y + stageBox.height);
+  expect(controlsBox.y).toBeGreaterThanOrEqual(lyricBox.y + lyricBox.height);
+  expect(recordBox.y).toBeGreaterThanOrEqual(exampleBox.y + exampleBox.height);
+  expect(nextBox.y).toBeGreaterThanOrEqual(recordBox.y + recordBox.height);
+  await expect(page.getByText("Line 1 of 7", { exact: true })).toHaveAttribute("aria-current", "step");
+  await expect(page.getByRole("region", { name: "Scene line selectors" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Play scene" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Scene lyrics" })).toHaveCount(0);
+  await expectLearnerTargetsAtLeast48px(page);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("the Old MacDonald short-landscape route keeps project and scene actions clear of the header", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+
+  const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
+  const player = page.getByRole("region", { name: "Full video player" });
+  const dock = page.getByRole("navigation", { name: "Scenes" });
+  const playFull = page.getByRole("button", { name: "Play full video" });
+  const firstScene = page.getByRole("button", { name: "Scene 1, Not started" });
+  const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox] = await Promise.all([
+    boundingBoxOrThrow(routeHeader),
+    boundingBoxOrThrow(player),
+    boundingBoxOrThrow(dock),
+    boundingBoxOrThrow(playFull),
+    boundingBoxOrThrow(firstScene),
+  ]);
+
+  for (const box of [playerBox, dockBox, playFullBox, firstSceneBox]) {
+    expect(box.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+    expect(box.y + box.height).toBeLessThanOrEqual(360);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(640);
+  }
+  expect(playFullBox.height).toBeGreaterThanOrEqual(48);
+  expect(firstSceneBox.height).toBeGreaterThanOrEqual(48);
+  expect(boxesOverlap(playerBox, dockBox)).toBe(false);
+  expect(boxesOverlap(playerBox, playFullBox)).toBe(false);
+  expect(boxesOverlap(dockBox, playFullBox)).toBe(false);
+  await expectNoHorizontalOverflow(page);
+
+  await firstScene.click();
+  const sceneStage = page.getByRole("region", { name: "Scene video" });
+  const sceneControls = page.getByRole("complementary", { name: "Scene line controls" });
+  const lineHeading = page.getByRole("heading", {
+    name: "Old MacDonald had a farm, E-I-E-I-O!",
+  });
+  const example = page.getByRole("button", { name: "Hear line" });
+  const record = page.getByRole("button", { name: "Record line" });
+  const next = page.getByRole("button", { name: "Next line" });
+  const waveform = page.getByRole("img", { name: "Original audio waveform" });
+  const [sceneHeaderBox, stageBox, controlsBox, lineBox] = await Promise.all([
+    boundingBoxOrThrow(routeHeader),
+    boundingBoxOrThrow(sceneStage),
+    boundingBoxOrThrow(sceneControls),
+    boundingBoxOrThrow(lineHeading),
+  ]);
+
+  expect(stageBox.x + stageBox.width).toBeLessThanOrEqual(controlsBox.x);
+  for (const box of [stageBox, controlsBox, lineBox]) {
+    expect(box.y).toBeGreaterThanOrEqual(sceneHeaderBox.y + sceneHeaderBox.height);
+    expect(box.y + box.height).toBeLessThanOrEqual(360);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(640);
+  }
+  expect(boxesOverlap(stageBox, controlsBox)).toBe(false);
+  for (const action of [example, record, waveform, next]) {
+    const actionBox = await boundingBoxOrThrow(action);
+    expect(actionBox.y).toBeGreaterThanOrEqual(controlsBox.y);
+    expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(controlsBox.y + controlsBox.height + 1);
+    await expectFullyInViewport(page, action);
+  }
+  for (const action of [example, record, next]) {
+    expect((await boundingBoxOrThrow(action)).height).toBeGreaterThanOrEqual(48);
+  }
+  await expect.poll(() => sceneControls.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+    scrollTop: element.scrollTop,
+  }))).toEqual(expect.objectContaining({ scrollTop: 0 }));
+  const controlScroll = await sceneControls.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(controlScroll.scrollHeight).toBeLessThanOrEqual(controlScroll.clientHeight + 1);
+  await expect(page.getByRole("button", { name: "Play scene" })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Scene line selectors" })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
 });
 
 test("recording shows elapsed time, saves, and leaves Next in its fixed action slot", async ({ page }) => {

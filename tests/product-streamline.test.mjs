@@ -40,7 +40,7 @@ function renderInRouter(element, initialEntry = "/") {
   );
 }
 
-test("home gives children four clear, working learning choices", () => {
+test("home gives children five clear, working learning choices", () => {
   const html = renderInRouter(createElement(HomeMenu));
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
@@ -51,6 +51,7 @@ test("home gives children four clear, working learning choices", () => {
     "/talk-to-peppa",
     "/stories",
     "/dubs/five-little-ducks",
+    "/dubs/old-macdonald",
   ]);
   assert.match(html, /Tap a picture\./i);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 10);
