@@ -421,6 +421,33 @@ describe("story script catalog", () => {
     }
   });
 
+  it("exempts only familiar beginner names from teaching vocabulary", () => {
+    const story = resolveStory("the-red-ball");
+    assert.ok(story);
+    const storyWithNames = {
+      ...story,
+      pages: story.pages.map((page, pageIndex) =>
+        pageIndex === 0
+          ? {
+              ...page,
+              text: `${page.text} Bob, Mary, Rose, Jack, Ben, Sam, and Jo.`,
+            }
+          : page,
+      ),
+    };
+
+    assert.deepEqual(auditStoryVocabulary(storyWithNames).unlistedWords, [
+      "jo",
+    ]);
+  });
+
+  it("keeps the whale word separate from Ben's name", () => {
+    const story = resolveStory("wally-finds-the-way");
+    assert.ok(story);
+
+    assert.match(story.pages[0].text, /^Ben the whale cannot see/);
+  });
+
   it("fully illustrates every learner page and assigns saved narration and join-in audio", () => {
     const joinInAudioByText = new Map();
 
@@ -517,8 +544,8 @@ describe("story script catalog", () => {
       narrative,
       /sunset|moonlight|patter|gust|whooshed|cupped|twinkled|hollow|hovered|beneath/i,
     );
-    assert.match(narrative, /Pip/);
-    assert.match(narrative, /Flicker/);
+    assert.match(narrative, /Ben/);
+    assert.match(narrative, /Sam/);
     assert.match(narrative, /family/);
   });
 

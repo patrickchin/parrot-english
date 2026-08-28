@@ -1,5 +1,14 @@
 # Parrot English Agent Notes
 
+## Learner Names
+
+- When authored learner content needs a personal name, reuse only Bob, Mary,
+  Rose, Jack, Ben, or Sam. Do not invent unusual names or nicknames.
+- Preserve names supplied by a learner or guardian. Peppa, Dolly, family roles,
+  and animal or object labels are not part of the authored-name pool.
+- Keep visible text, artwork descriptions, and saved audio consistent when a
+  name changes. Stable internal IDs do not need to be renamed.
+
 ## Frontend UI
 
 - Use Tailwind 4 utilities directly in React components, with shared controls

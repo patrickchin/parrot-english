@@ -224,25 +224,13 @@ export function getStoryVocabularyProfile(
 }
 
 const NON_TEACHING_STORY_TOKENS = new Set([
-  // Character names.
-  "ana",
-  "bo",
-  "dot",
-  "flicker",
-  "jo",
-  "leo",
-  "lina",
-  "maya",
-  "mia",
-  "nina",
-  "nori",
-  "pia",
-  "pip",
-  "robo",
-  "tess",
-  "timo",
-  "tomo",
-  "wally",
+  // Familiar names used consistently across beginner stories.
+  "ben",
+  "bob",
+  "jack",
+  "mary",
+  "rose",
+  "sam",
   // Participation sounds and exclamations.
   "beep",
   "boom",
@@ -263,9 +251,9 @@ const NON_TEACHING_STORY_TOKENS = new Set([
 ]);
 
 const STORY_WORD_LEMMAS = new Map([
-  ["ana's", "ana"],
   ["apples", "apple"],
   ["asks", "ask"],
+  ["ben's", "ben"],
   ["brushes", "brush"],
   ["crackers", "cracker"],
   ["eats", "eat"],
@@ -289,6 +277,7 @@ const STORY_WORD_LEMMAS = new Map([
   ["pulls", "pull"],
   ["puts", "put"],
   ["rolls", "roll"],
+  ["rose's", "rose"],
   ["runs", "run"],
   ["says", "say"],
   ["sees", "see"],
@@ -300,7 +289,6 @@ const STORY_WORD_LEMMAS = new Map([
   ["socks", "sock"],
   ["stops", "stop"],
   ["takes", "take"],
-  ["timo's", "timo"],
   ["tries", "try"],
   ["walks", "walk"],
   ["wakes", "wake"],

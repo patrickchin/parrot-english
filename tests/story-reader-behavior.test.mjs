@@ -128,10 +128,12 @@ describe("child-first story reader behavior", () => {
         }),
       ),
     );
-    const readButton = container.querySelector('[aria-label="Listen"]');
+    const readButton = container.querySelector(
+      '[aria-label="Listen to this page"]',
+    );
     assert.ok(readButton);
     assert.equal(readButton.disabled, false);
-    assert.match(container.textContent, /Tap Listen/);
+    assert.match(container.textContent, /Choose how to listen/);
 
     await click(readButton);
     await waitFor(() =>
@@ -165,7 +167,9 @@ describe("child-first story reader behavior", () => {
 
     await act(async () => finishSpeech());
     await waitFor(() =>
-      assert.ok(container.querySelector('[aria-label="Listen again"]')),
+      assert.ok(
+        container.querySelector('[aria-label="Listen to this page again"]'),
+      ),
     );
     assert.match(container.textContent, /Your turn/);
   });
@@ -238,7 +242,9 @@ describe("child-first story reader behavior", () => {
       top: 80 - pane.scrollTop,
     });
 
-    const readButton = container.querySelector('[aria-label="Listen"]');
+    const readButton = container.querySelector(
+      '[aria-label="Listen to this page"]',
+    );
     assert.ok(readButton);
     await click(readButton);
     await waitFor(() => assert.equal(finishAudio.length, 1));
@@ -259,7 +265,9 @@ describe("child-first story reader behavior", () => {
 
     await act(async () => finishAudio.shift()());
     await waitFor(() =>
-      assert.ok(container.querySelector('[aria-label="Listen again"]')),
+      assert.ok(
+        container.querySelector('[aria-label="Listen to this page again"]'),
+      ),
     );
     assert.equal(pane.scrollTop, 40);
     assert.match(container.textContent, /Your turn/);
@@ -317,7 +325,9 @@ describe("child-first story reader behavior", () => {
       ),
     );
 
-    await click(container.querySelector('[aria-label="Listen"]'));
+    await click(
+      container.querySelector('[aria-label="Listen to this page"]'),
+    );
     await waitFor(() => assert.equal(finishAudio.length, 1));
     assert.deepEqual(playedUrls, [
       "/assets/audio/narrator-copy-dolly.mp3",
@@ -325,7 +335,9 @@ describe("child-first story reader behavior", () => {
 
     await act(async () => finishAudio.shift()());
     await waitFor(() =>
-      assert.ok(container.querySelector('[aria-label="Listen again"]')),
+      assert.ok(
+        container.querySelector('[aria-label="Listen to this page again"]'),
+      ),
     );
   });
 
@@ -382,7 +394,7 @@ describe("child-first story reader behavior", () => {
     );
 
     const wholeStoryButton = container.querySelector(
-      '[aria-label="Play whole story"]',
+      '[aria-label="Keep playing to the end"]',
     );
     assert.ok(wholeStoryButton);
     await click(wholeStoryButton);
