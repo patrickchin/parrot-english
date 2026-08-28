@@ -510,6 +510,38 @@ function beforeStatementWhen(d1, predicate, before) {
   };
 }
 
+function failStatementWhen(d1, predicate, shouldFail) {
+  let failed = false;
+  function wrap(statement, sql) {
+    return new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) => wrap(target.bind(...parameters), sql);
+        }
+        if (
+          !failed &&
+          ["all", "first", "raw", "run"].includes(property) &&
+          predicate(sql) &&
+          shouldFail()
+        ) {
+          return async () => {
+            failed = true;
+            throw new Error("temporary D1 authority failure");
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  }
+  return {
+    ...d1,
+    prepare(sql) {
+      return wrap(d1.prepare(sql), sql);
+    },
+  };
+}
+
 describe("learner deletion endpoint", () => {
   it("requires authentication and session-specific Guardian access", async () => {
     const state = seedDatabase();
@@ -817,6 +849,47 @@ describe("learner deletion lifecycle", () => {
           .some((key) => key.startsWith(SIBLING_PREFIX)),
         false,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("rejects a DB-owned art key in a sibling namespace before any R2 work", async () => {
+    const state = seedDatabase();
+    const siblingKey = `${SIBLING_PREFIX}the-red-ball/versions/corrupt.webp`;
+    state.sqlite.prepare(
+      `INSERT INTO personalized_story_art
+        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
+         content_type, guardian_consent_version, guardian_consent_at, provider,
+         prompt_version, created_at, updated_at)
+       VALUES ('corrupt-sibling-art', ?, ?, 'the-red-ball', 'ready', ?,
+         'image/webp', ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+    ).run(
+      USER_ID,
+      TARGET_ID,
+      siblingKey,
+      STORY_CONSENT_VERSION,
+      NOW,
+      NOW,
+      NOW,
+    );
+    const bucket = createBucket([
+      { key: siblingKey, bytes: new Uint8Array([1]) },
+    ]);
+    try {
+      await assert.rejects(
+        prepare(state, bucket),
+        /Learner deletion storage closure is invalid/,
+      );
+      assert.deepEqual(bucket.calls, {
+        delete: [],
+        head: [],
+        list: [],
+        put: [],
+      });
+      assert.equal(profileCount(state), 1);
+      assert.equal(profileCount(state, SIBLING_ID), 1);
+      assert.equal(bucket.stored.has(siblingKey), true);
     } finally {
       state.close();
     }
@@ -1480,6 +1553,213 @@ describe("tombstone write fences", () => {
         message: "Learner deletion is in progress.",
       });
       assert.equal(metadataState(bucket, candidateKey), "learner-deleting");
+      const deletion = tombstone(state);
+      assert.equal(
+        bucket.stored.get(candidateKey)?.object.customMetadata.generation,
+        `learner-deletion-v1:${TARGET_ID}:${deletion.generation}:${deletion.requested_at}`,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("restores a learner barrier when an applied cleanup delete throws", async () => {
+    const state = seedDatabase();
+    const candidateKey = `${TARGET_PREFIX}the-red-ball/versions/delete-uncertain.png`;
+    state.sqlite.prepare(
+      `INSERT INTO learner_story_art_generation_lease
+        (learner_profile_id, auth_user_id, story_id, generation_token,
+         candidate_r2_object_key, previous_r2_object_key, lease_expires_at,
+         created_at, updated_at)
+       VALUES (?, ?, 'the-red-ball', 'expired-delete', ?, NULL, ?, ?, ?)`,
+    ).run(TARGET_ID, USER_ID, candidateKey, NOW - 1, NOW - 10, NOW - 10);
+    const bucket = createBucket([
+      { key: candidateKey, bytes: new Uint8Array([1]) },
+    ]);
+    const remove = bucket.delete.bind(bucket);
+    bucket.beforeDelete = async (keys) => {
+      if (keys.includes(candidateKey) && !tombstone(state)) {
+        await prepare(state, bucket);
+      }
+    };
+    bucket.delete = async (keys) => {
+      await remove(keys);
+      throw new Error("uncertain R2 delete after apply");
+    };
+    try {
+      const response = await handlePersonalizedStoryArtRequest(
+        {
+          database: state.database,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity(),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art",
+            { body: storyArtForm(), method: "POST" },
+          ),
+        },
+        {
+          async generateImage() {
+            throw new Error("generation must not start");
+          },
+          now: () => new Date(NOW),
+        },
+      );
+      assert.equal(response.status, 409);
+      assert.equal(metadataState(bucket, candidateKey), "learner-deleting");
+      assert.equal(
+        await bucket.put(candidateKey, new Uint8Array([2]), {
+          onlyIf: { etagDoesNotMatch: "*" },
+        }),
+        null,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("leaves an unservable barrier when the post-delete authority lookup fails", async () => {
+    const state = seedDatabase();
+    const artKey = `${TARGET_PREFIX}the-red-ball/versions/lookup-uncertain.webp`;
+    state.sqlite.prepare(
+      `INSERT INTO personalized_story_art
+        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
+         content_type, guardian_consent_version, guardian_consent_at, provider,
+         prompt_version, created_at, updated_at)
+       VALUES ('lookup-uncertain-art', ?, ?, 'the-red-ball', 'ready', ?,
+         'image/webp', ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+    ).run(
+      USER_ID,
+      TARGET_ID,
+      artKey,
+      STORY_CONSENT_VERSION,
+      NOW,
+      NOW,
+      NOW,
+    );
+    const bucket = createBucket([
+      { key: artKey, bytes: new Uint8Array([1]) },
+    ]);
+    let deleteApplied = false;
+    const remove = bucket.delete.bind(bucket);
+    bucket.delete = async (keys) => {
+      await remove(keys);
+      deleteApplied = true;
+    };
+    const failedDatabase = createDatabase(failStatementWhen(
+      state.d1,
+      (sql) => sql.includes("account_deletion_tombstone"),
+      () => deleteApplied,
+    ));
+    try {
+      const response = await handlePersonalizedStoryArtRequest(
+        {
+          database: failedDatabase,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity(),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art",
+            { method: "DELETE" },
+          ),
+        },
+        { now: () => new Date(NOW) },
+      );
+      assert.equal(response.status, 500);
+      assert.equal(
+        metadataState(bucket, artKey),
+        "art-cleanup-uncertain",
+      );
+      assert.equal(
+        await bucket.put(artKey, new Uint8Array([2]), {
+          onlyIf: { etagDoesNotMatch: "*" },
+        }),
+        null,
+      );
+
+      const asset = await handlePersonalizedStoryArtRequest(
+        {
+          database: state.database,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity(),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art/asset",
+          ),
+        },
+        { now: () => new Date(NOW) },
+      );
+      assert.equal(asset.status, 404);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("never serves an art cleanup barrier through a stale ready row", async () => {
+    const state = seedDatabase();
+    const artKey = `${TARGET_PREFIX}the-red-ball/versions/barrier.webp`;
+    state.sqlite.prepare(
+      `INSERT INTO personalized_story_art
+        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
+         content_type, guardian_consent_version, guardian_consent_at, provider,
+         prompt_version, created_at, updated_at)
+       VALUES ('barrier-art', ?, ?, 'the-red-ball', 'ready', ?, 'image/webp',
+         ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
+    ).run(
+      USER_ID,
+      TARGET_ID,
+      artKey,
+      STORY_CONSENT_VERSION,
+      NOW,
+      NOW,
+      NOW,
+    );
+    const bucket = createBucket([{
+      bytes: new Uint8Array([1]),
+      customMetadata: {
+        generation: `art-cleanup-uncertain-v1:${TARGET_ID}`,
+        state: "art-cleanup-uncertain",
+      },
+      key: artKey,
+    }]);
+    try {
+      const response = await handlePersonalizedStoryArtRequest(
+        {
+          database: state.database,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity(),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art/asset",
+          ),
+        },
+        { now: () => new Date(NOW) },
+      );
+      assert.equal(response.status, 404);
     } finally {
       state.close();
     }
@@ -1543,6 +1823,72 @@ describe("tombstone write fences", () => {
       );
       assert.equal(latePut, null);
       assert.equal(metadataState(bucket, candidateKey), "learner-deleting");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps an external canonical art fence authorized for learner and account retries", async () => {
+    const state = seedDatabase();
+    const externalKey = "legacy-exact/retry-after-late-cleanup.webp";
+    state.sqlite.prepare(
+      `INSERT INTO learner_story_art_generation_lease
+        (learner_profile_id, auth_user_id, story_id, generation_token,
+         candidate_r2_object_key, previous_r2_object_key, lease_expires_at,
+         created_at, updated_at)
+       VALUES (?, ?, 'the-red-ball', 'external-expired', ?, NULL, ?, ?, ?)`,
+    ).run(TARGET_ID, USER_ID, externalKey, NOW - 1, NOW - 10, NOW - 10);
+    const bucket = createBucket([
+      { key: externalKey, bytes: new Uint8Array([1]) },
+    ]);
+    bucket.beforeDelete = async (keys) => {
+      if (keys.includes(externalKey) && !tombstone(state)) {
+        await prepare(state, bucket);
+      }
+    };
+    try {
+      const recovery = await handlePersonalizedStoryArtRequest(
+        {
+          database: state.database,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: state.d1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity(),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art",
+            { body: storyArtForm(), method: "POST" },
+          ),
+        },
+        {
+          async generateImage() {
+            throw new Error("generation must not start");
+          },
+          now: () => new Date(NOW),
+        },
+      );
+      assert.equal(recovery.status, 409);
+      assert.equal(profileCount(state), 0);
+      assert.equal(
+        state.sqlite.prepare(
+          "SELECT count(*) AS count FROM learner_story_art_generation_lease WHERE learner_profile_id = ?",
+        ).get(TARGET_ID).count,
+        0,
+      );
+
+      await prepare(state, bucket);
+      await prepareAccountDeletion({
+        bucket,
+        database: state.database,
+        now: () => new Date(NOW),
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      assert.equal(metadataState(bucket, externalKey), "account-deleting");
     } finally {
       state.close();
     }

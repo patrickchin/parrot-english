@@ -16,6 +16,7 @@ import {
 } from "./dub-storage.ts";
 import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
 import {
+  learnerDeletionGeneration,
   parseLearnerDeletionStorageClosure,
   validateLearnerDeletionStorageClosure,
 } from "./learner-deletion.ts";
@@ -77,6 +78,8 @@ async function listUnfinishedLearnerDeletions(
     .select({
       learnerProfileId: learnerProfileDeletionTombstone.learnerProfileId,
       legacyStorageOwner: learnerProfileDeletionTombstone.legacyStorageOwner,
+      generation: learnerProfileDeletionTombstone.generation,
+      requestedAt: learnerProfileDeletionTombstone.requestedAt,
       storageKeysJson: learnerProfileDeletionTombstone.storageKeysJson,
     })
     .from(learnerProfileDeletionTombstone)
@@ -95,6 +98,7 @@ async function listUnfinishedLearnerDeletions(
       database,
       identity,
       closure,
+      learnerDeletionGeneration(tombstone),
     );
     return {
       identity,

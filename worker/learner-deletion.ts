@@ -131,6 +131,23 @@ async function findTombstone(database: Database, profileId: string) {
   return row ?? null;
 }
 
+export function learnerDeletionGeneration(
+  tombstone: Pick<
+    DeletionTombstone,
+    "generation" | "learnerProfileId" | "requestedAt"
+  >,
+) {
+  return `learner-deletion-v1:${tombstone.learnerProfileId}:${tombstone.generation}:${tombstone.requestedAt.getTime()}`;
+}
+
+export async function findLearnerDeletionGeneration(
+  database: Database,
+  profileId: string,
+) {
+  const tombstone = await findTombstone(database, profileId);
+  return tombstone ? learnerDeletionGeneration(tombstone) : null;
+}
+
 async function markDeletionPending(
   database: Database,
   identity: AccountIdentity,
@@ -324,6 +341,7 @@ export async function validateLearnerDeletionStorageClosure(
   database: Database,
   owner: LearnerDeletionStorageOwner,
   closure: LearnerDeletionStorageClosure,
+  deletionGeneration: string,
 ) {
   const accountPrefix =
     `personalized-story-art/${encodeURIComponent(owner.userId)}/`;
@@ -354,6 +372,12 @@ export async function validateLearnerDeletionStorageClosure(
   const siblingNamespace = `${accountPrefix}learners/`;
   for (const key of closure.slotKeys) {
     if (
+      key.startsWith(siblingNamespace) &&
+      !key.startsWith(learnerPrefix)
+    ) {
+      throw new Error("Learner deletion storage closure is invalid.");
+    }
+    if (
       allowedSlots.has(key) ||
       key.startsWith(recordingPrefix) ||
       key.startsWith(learnerPrefix) ||
@@ -361,18 +385,13 @@ export async function validateLearnerDeletionStorageClosure(
     ) {
       continue;
     }
-    if (key.startsWith(siblingNamespace)) {
-      throw new Error("Learner deletion storage closure is invalid.");
-    }
     const object = await bucket.head(key);
     const state = object?.customMetadata?.state;
     const generation = object?.customMetadata?.generation;
     if (
       state === "account-deleting" ||
       (state === "learner-deleting" &&
-        generation?.startsWith(
-          `learner-deletion-v1:${owner.learnerProfileId}:`,
-        ))
+        generation === deletionGeneration)
     ) {
       continue;
     }
@@ -390,6 +409,15 @@ async function snapshotClosure(
   const accountPrefix = `personalized-story-art/${encodeURIComponent(identity.userId)}/`;
   const learnerPrefix =
     `${accountPrefix}learners/${encodeURIComponent(tombstone.learnerProfileId)}/`;
+  const ownedArtKeys = await artKeys(database, owner);
+  const siblingNamespace = `${accountPrefix}learners/`;
+  if (
+    ownedArtKeys.some((key) =>
+      key.startsWith(siblingNamespace) && !key.startsWith(learnerPrefix)
+    )
+  ) {
+    throw new Error("Learner deletion storage closure is invalid.");
+  }
   const prefixes = [learnerPrefix];
   if (tombstone.legacyStorageOwner) {
     prefixes.push(`${accountPrefix}learner-dubs/`);
@@ -412,7 +440,7 @@ async function snapshotClosure(
     slotKeys: unique([
       ...dubClosure.flatMap(({ slotKeys }) => slotKeys),
       ...recordingKeys,
-      ...await artKeys(database, owner),
+      ...ownedArtKeys,
     ]),
     version: 1,
   } satisfies LearnerDeletionStorageClosure;
@@ -438,6 +466,7 @@ async function persistClosure(
       database,
       deletionOwner(identity, current),
       persisted,
+      learnerDeletionGeneration(current),
     );
     const merged = mergeClosure(persisted, snapshot);
     const serialized = JSON.stringify(merged);
@@ -463,10 +492,6 @@ async function persistClosure(
     if (updated.length === 1) return merged;
   }
   throw new Error("Learner deletion storage closure contention exceeded.");
-}
-
-function learnerDeletionGeneration(tombstone: DeletionTombstone) {
-  return `learner-deletion-v1:${tombstone.learnerProfileId}:${tombstone.generation}:${tombstone.requestedAt.getTime()}`;
 }
 
 async function cleanStorage(

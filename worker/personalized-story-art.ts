@@ -21,9 +21,9 @@ import {
   RequestBodyTooLargeError,
 } from "./request-body.ts";
 import {
-  isLearnerDeletionPending,
   type LearnerIdentity,
 } from "./request-identity.ts";
+import { findLearnerDeletionGeneration } from "./learner-deletion.ts";
 import { persistFence } from "./storage-deletion.ts";
 
 const CURRENT_GUARDIAN_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
@@ -319,12 +319,14 @@ async function deletionPending(
   database: Database,
   identity: LearnerIdentity,
 ) {
+  const learnerGeneration = await findLearnerDeletionGeneration(
+    database,
+    identity.learnerProfileId,
+  );
   return {
     account: await isAccountDeletionPending(database, identity.userId),
-    learner: await isLearnerDeletionPending(
-      database,
-      identity.learnerProfileId,
-    ),
+    learner: learnerGeneration !== null,
+    learnerGeneration,
   };
 }
 
@@ -451,19 +453,35 @@ export async function handlePersonalizedStoryArtRequest(
 
   async function fenceArtObject(
     key: string,
-    pending: { account: boolean; learner: boolean },
+    pending: Awaited<ReturnType<typeof deletionPending>>,
   ) {
     const account = pending.account;
+    const generation = account
+      ? `late-art-cleanup-v1:${await accountDeletionTombstoneKey(input.identity.userId)}`
+      : pending.learnerGeneration;
+    if (!generation) {
+      throw new Error("Learner deletion fence generation is unavailable.");
+    }
     await persistFence(
       input.env.PERSONALIZED_STORY_ART_BUCKET,
       key,
       "slot",
-      account
-        ? `late-art-cleanup-v1:${await accountDeletionTombstoneKey(input.identity.userId)}`
-        : `late-art-cleanup-v1:${input.identity.learnerProfileId}`,
+      generation,
       account ? "account-deleting" : "learner-deleting",
       async () => {},
-      account ? [] : ["account-deleting"],
+      ["account-deleting"],
+    );
+  }
+
+  async function fenceUncertainArtObject(key: string) {
+    await persistFence(
+      input.env.PERSONALIZED_STORY_ART_BUCKET,
+      key,
+      "slot",
+      `art-cleanup-uncertain-v1:${input.identity.learnerProfileId}`,
+      "art-cleanup-uncertain",
+      async () => {},
+      ["account-deleting", "learner-deleting"],
     );
   }
 
@@ -490,13 +508,34 @@ export async function handlePersonalizedStoryArtRequest(
       return {
         account: permanentState === "account-deleting",
         learner: permanentState === "learner-deleting",
+        learnerGeneration: permanentState === "learner-deleting"
+          ? current?.customMetadata?.generation ?? null
+          : null,
       };
     }
-    await deleteObjectOrThrow(bucket, key);
-    const pendingAfter = await deletionPending(input.database, input.identity);
-    if (pendingAfter.account || pendingAfter.learner) {
+    let deleteFailure: unknown;
+    try {
+      await deleteObjectOrThrow(bucket, key);
+    } catch (error) {
+      deleteFailure = error;
+    }
+    let pendingAfter: Awaited<ReturnType<typeof deletionPending>> | undefined;
+    let authorityFailure: unknown;
+    try {
+      pendingAfter = await deletionPending(input.database, input.identity);
+    } catch (error) {
+      authorityFailure = error;
+    }
+    if (pendingAfter?.account || pendingAfter?.learner) {
       await fenceArtObject(key, pendingAfter);
       return pendingAfter;
+    }
+    if (deleteFailure || authorityFailure) {
+      if (typeof head === "function") {
+        await fenceUncertainArtObject(key);
+      }
+      if (authorityFailure) throw authorityFailure;
+      throw deleteFailure;
     }
     return null;
   }
@@ -683,6 +722,12 @@ export async function handlePersonalizedStoryArtRequest(
       if (!row) throw new PersonalizedStoryArtApiError(404, "not_found");
       const object = await input.env.PERSONALIZED_STORY_ART_BUCKET.get(row.r2ObjectKey);
       if (!object) throw new PersonalizedStoryArtApiError(404, "not_found");
+      if (
+        !(object instanceof Response) &&
+        object.customMetadata?.state
+      ) {
+        throw new PersonalizedStoryArtApiError(404, "not_found");
+      }
       return binaryBodyFromR2Object(object, row.contentType);
     }
 
