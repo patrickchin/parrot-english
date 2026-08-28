@@ -194,8 +194,11 @@ test("opening the chooser only loads the roster, with no learner preselected", a
   const container = await mountStrict(harness({ operations }));
 
   await click(namedButton(container, "Open chooser"));
-  await waitFor(() =>
-    assert.ok(container.querySelector('[role="dialog"]')),
+  const dialog = container.querySelector('[role="dialog"]');
+  assert.ok(dialog, "Expected the learner-mode chooser dialog.");
+  assert.ok(
+    document.activeElement === dialog,
+    "Expected focus to enter the loading dialog.",
   );
   await waitFor(() => assert.equal(selectedRadio(container, "learner-bob").disabled, false));
 

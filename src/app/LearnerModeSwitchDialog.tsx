@@ -60,7 +60,7 @@ export function LearnerModeSwitchDialog({
   useDialogFocus({
     canClose: () => !isSwitchingRef.current,
     dialogRef,
-    initialFocusRef: cancelRef,
+    initialFocusRef: dialogRef,
     onClose,
     returnFocusRef,
   });
