@@ -970,10 +970,10 @@ test("a short-wide story reveals the join-in task at its speaking phase and rese
     name: "Story controls",
   });
   const artwork = reader.getByRole("img", {
-    name: "Ana giving the kite string one small pull",
+    name: "Rose giving the kite string one small pull",
   });
   const text = reader.getByText(
-    "Ana gives the string one small pull. It will not move.",
+    "Rose gives the string one small pull. It will not move.",
     { exact: true },
   );
   const prompt = reader.getByLabel("Say it: Stop and ask!");
@@ -1351,11 +1351,11 @@ test("the Lantern Trail now uses the plain-language rewrite", async ({ page }) =
     reader.getByRole("heading", { exact: true, name: "The Lantern Trail" }),
   ).toBeVisible();
   await expect(
-    reader.getByText("Pip sees a little light. “Hello! I am Flicker.”", {
+    reader.getByText("Ben sees a little light. “Hello! I am Sam.”", {
       exact: true,
     }),
   ).toBeVisible();
-  await expect(reader.getByText(/Glow, Flicker, glow!/)).toBeVisible();
+  await expect(reader.getByText(/Glow, Sam, glow!/)).toBeVisible();
   await expect(reader.getByText(/At sunset|moonlight|lantern tree/i)).toHaveCount(0);
   await expect(
     reader.getByRole("button", { name: "Listen to this page" }),
