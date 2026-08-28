@@ -51,18 +51,21 @@ const DUB_UNSAFE_OPERATIONS = new Set<DubOperation>([
 ]);
 
 export const createInitialDubState = (
-  _definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
-): DubState => ({
-  error: "",
-  needsRetake: {},
-  operation: "idle",
-  playbackScope: null,
-  saveRecovery: null,
-  saved: {},
-  selectedLineIndex: 0,
-  selectedSceneIndex: 0,
-  view: "loading",
-});
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): DubState => {
+  void definition;
+  return {
+    error: "",
+    needsRetake: {},
+    operation: "idle",
+    playbackScope: null,
+    saveRecovery: null,
+    saved: {},
+    selectedLineIndex: 0,
+    selectedSceneIndex: 0,
+    view: "loading",
+  };
+};
 
 function getSceneIndexForLine(
   lineIndex: number,

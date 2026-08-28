@@ -1,5 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import { DUB_DEFINITIONS, type DubDefinition } from "../src/dubbing/rhyme-catalog.ts";
+import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 import {
   accountDeletionTombstone,
   learnerProfile,

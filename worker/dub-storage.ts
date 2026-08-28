@@ -28,7 +28,7 @@ export type DubStorageKeys = {
   retiredLegacyObjectKey(lineId: string): string | null;
 };
 
-export function objectPrefix(userId: string, dubId = DUB_ID) {
+export function objectPrefix(userId: string, dubId: string = DUB_ID) {
   // ponytail: shared private bucket; split when voice and art retention policies differ.
   return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${dubId}/`;
 }
@@ -45,11 +45,11 @@ export function legacyMarkerKey(userId: string) {
   return `${legacyObjectPrefix(userId)}${GENERATION_MARKER}`;
 }
 
-export function objectKey(userId: string, lineId: string, dubId = DUB_ID) {
+export function objectKey(userId: string, lineId: string, dubId: string = DUB_ID) {
   return `${objectPrefix(userId, dubId)}${lineId}.audio`;
 }
 
-export function markerKey(userId: string, dubId = DUB_ID) {
+export function markerKey(userId: string, dubId: string = DUB_ID) {
   return `${objectPrefix(userId, dubId)}${GENERATION_MARKER}`;
 }
 
@@ -58,7 +58,7 @@ export function createDubStorageKeys(
     LearnerIdentity,
     "userId" | "learnerProfileId" | "legacyStorageOwner"
   >,
-  dubId = DUB_ID,
+  dubId: string = DUB_ID,
 ): DubStorageKeys {
   const prefix = identity.legacyStorageOwner
     ? objectPrefix(identity.userId, dubId)
