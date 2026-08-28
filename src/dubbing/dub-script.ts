@@ -79,6 +79,19 @@ export const DUB_SCENE_TITLES = Object.freeze([
   "Sad mother duck",
 ] as const);
 
+export const FIVE_LITTLE_DUCKS_DUB = Object.freeze({
+  id: DUB_ID,
+  route: DUB_ROUTE,
+  title: "Five Little Ducks",
+  durationMs: DUB_DURATION_MS,
+  recordingMs: DUB_RECORDING_MS,
+  linesPerScene: DUB_LINES_PER_VERSE,
+  sceneTitles: DUB_SCENE_TITLES,
+  lines: DUB_LINES,
+  guideAudioPrefix: "five-little-ducks-v2-guide-",
+  sceneKind: "ducks",
+});
+
 export function getDubVerseLineAtElapsed(verseIndex: number, elapsedMs: number): DubLine {
   const verse = DUB_VERSES[verseIndex];
   if (!verse) throw new RangeError("Unknown dub verse.");
