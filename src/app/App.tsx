@@ -57,6 +57,7 @@ import {
 } from "../media/audio-playback";
 import {
   getGateRouteKind,
+  getDuckDubPath,
   getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
@@ -69,6 +70,7 @@ import {
   getRequestedProtectedTarget,
   getSafeGuardianReturnTo,
   getSafeReturnTo,
+  getOldMacDonaldDubPath,
   getStoryPagePath,
   getStoryShelfPath,
   isGuardianLearnerChildRoute,
@@ -100,6 +102,9 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
+import type { DubSceneComponent } from "../dubbing/DubSceneTypes";
+import { DubStudio } from "../dubbing/DubStudio";
+import { FarmScene } from "../dubbing/FarmScene";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
@@ -134,6 +139,7 @@ import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
+import { OLD_MACDONALD_DUB } from "../dubbing/rhyme-catalog";
 import {
   GuardianModeBoundary,
   LearnerModeBoundary,
@@ -168,7 +174,8 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/lessons/my/:lessonId/scenes/:sceneNumber",
   "/progress",
   "/stories",
-  "/dubs/five-little-ducks",
+  getDuckDubPath(),
+  getOldMacDonaldDubPath(),
   "/stories/:storyId",
   "/stories/:storyId/pages/:pageNumber",
   "/login",
@@ -1351,7 +1358,16 @@ export function ApplicationRoutes({
         />
         <Route element={<Navigate replace to="/" />} path="/progress" />
         <Route element={<StoryList />} path="/stories" />
-        <Route element={<DuckDub />} path="/dubs/five-little-ducks" />
+        <Route element={<DuckDub />} path={getDuckDubPath()} />
+        <Route
+          element={
+            <DubStudio
+              Scene={FarmScene as unknown as DubSceneComponent}
+              definition={OLD_MACDONALD_DUB}
+            />
+          }
+          path={getOldMacDonaldDubPath()}
+        />
         <Route element={<StoryRedirect />} path="/stories/:storyId" />
         <Route
           element={<StoryPageRoute />}

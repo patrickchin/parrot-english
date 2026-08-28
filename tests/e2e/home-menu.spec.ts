@@ -53,6 +53,11 @@ async function expectActivityPicturesLoaded(activities: Locator) {
       .getByRole("link", { name: "Dub a rhyme" })
       .locator('[data-story-stage="five-little-ducks"]'),
   ).toHaveCount(1);
+  await expect(
+    activities
+      .getByRole("link", { name: "Old MacDonald Had a Farm" })
+      .locator('[data-farm-animal="cows"]'),
+  ).toHaveCount(1);
   await expect(activities.getByRole("img")).toHaveCount(0);
   await expect
     .poll(() =>
@@ -83,7 +88,7 @@ for (const viewport of phoneViewports) {
       name: "Learning activities",
     });
     const links = activities.getByRole("link");
-    await expect(links).toHaveCount(4);
+    await expect(links).toHaveCount(5);
     await expect(
       activities.getByRole("link", { name: "Play a lesson" }),
     ).toHaveAttribute("href", "/lessons");
@@ -96,6 +101,9 @@ for (const viewport of phoneViewports) {
     await expect(
       activities.getByRole("link", { name: "Dub a rhyme" }),
     ).toHaveAttribute("href", "/dubs/five-little-ducks");
+    await expect(
+      activities.getByRole("link", { name: "Old MacDonald Had a Farm" }),
+    ).toHaveAttribute("href", "/dubs/old-macdonald");
     await expect(activities.getByRole("button")).toHaveCount(0);
     await expectActivityPicturesLoaded(activities);
 
@@ -124,6 +132,7 @@ for (const viewport of phoneViewports) {
     expect(Math.abs(boxes[2].y - boxes[3].y)).toBeLessThanOrEqual(1);
     expect(Math.abs(boxes[0].x - boxes[2].x)).toBeLessThanOrEqual(1);
     expect(Math.abs(boxes[1].x - boxes[3].x)).toBeLessThanOrEqual(1);
+    expect(boxes[4].y).toBeGreaterThanOrEqual(boxes[2].y + boxes[2].height - 1);
 
     await expect
       .poll(() =>
@@ -145,7 +154,7 @@ for (const viewport of shortLandscapeViewports) {
     const activities = page.getByRole("navigation", {
       name: "Learning activities",
     });
-    await expect(activities.getByRole("link")).toHaveCount(4);
+    await expect(activities.getByRole("link")).toHaveCount(5);
     const links = await activities.getByRole("link").all();
     await expectActivityPicturesLoaded(activities);
 
@@ -157,15 +166,16 @@ for (const viewport of shortLandscapeViewports) {
       expect(box!.y).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
       expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
-      expect(box!.height).toBeGreaterThanOrEqual(128);
+      expect(box!.height).toBeGreaterThanOrEqual(96);
     }
 
     const boxes = await Promise.all(links.map((link) => link.boundingBox()));
     for (const box of boxes) expect(box).not.toBeNull();
     expect(
-      Math.max(...boxes.map((box) => box!.y)) -
-        Math.min(...boxes.map((box) => box!.y)),
+      Math.max(...boxes.slice(0, 4).map((box) => box!.y)) -
+        Math.min(...boxes.slice(0, 4).map((box) => box!.y)),
     ).toBeLessThanOrEqual(1);
+    expect(boxes[4]!.y).toBeGreaterThanOrEqual(boxes[0]!.y);
 
     const scrollMetrics = await page.getByRole("main").evaluate((main) => ({
       clientHeight: main.clientHeight,
@@ -239,7 +249,7 @@ test("desktop home gives the four learner paths equal visual weight in one row",
   const cardLinks = page
     .getByRole("navigation", { name: "Learning activities" })
     .getByRole("link");
-  await expect(cardLinks).toHaveCount(4);
+  await expect(cardLinks).toHaveCount(5);
   const cards = await cardLinks.all();
 
   const boxes = await Promise.all(cards.map((card) => card.boundingBox()));

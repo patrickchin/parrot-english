@@ -545,6 +545,33 @@ test("scene recording follows one linear Choicer-style action flow", async ({ pa
   await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
 });
 
+test("Old MacDonald route loads its public studio and opens the first scene", async ({
+  page,
+}) => {
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+
+  const status = await page.evaluate(async () => {
+    const response = await fetch("/api/dubs/old-macdonald-v1");
+    return response.json();
+  });
+
+  expect(status.dubId).toBe("old-macdonald-v1");
+  expect(status.lines).toHaveLength(35);
+  await expect(
+    page.getByRole("heading", { name: "Old MacDonald Had a Farm" }),
+  ).toBeVisible();
+  await confirmDub(page, "Start dubbing");
+  await expect(
+    page.getByRole("region", { name: "Full video player" }),
+  ).toBeVisible();
+  await openScene(page, 1);
+  await expect(
+    page.getByRole("heading", {
+      name: "Old MacDonald had a farm, E-I-E-I-O!",
+    }),
+  ).toBeVisible();
+});
+
 test("recording shows elapsed time, saves, and leaves Next in its fixed action slot", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await confirmDub(page, "Start dubbing");

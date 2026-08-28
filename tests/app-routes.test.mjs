@@ -414,6 +414,7 @@ describe("app route helpers", () => {
       ["/progress", "/Progress///", null],
       ["/stories", "/Stories///", null],
       ["/dubs/five-little-ducks", "/Dubs/Five-Little-Ducks///", null],
+      ["/dubs/old-macdonald", "/Dubs/Old-MacDonald///", null],
       ["/stories/:storyId", "/Stories/the-lantern-trail//", null],
       [
         "/stories/:storyId/pages/:pageNumber",
@@ -535,6 +536,23 @@ describe("app route helpers", () => {
     }
     assert.equal(
       routes.getSafeReturnTo(returnToSearch("/dubs/five-little-ducks/extra")),
+      null,
+    );
+  });
+
+  it("builds and safely returns to the Old MacDonald dubbing route", () => {
+    assert.equal(
+      routes.getOldMacDonaldDubPath(),
+      "/dubs/old-macdonald",
+    );
+    for (const pathname of [
+      "/dubs/old-macdonald",
+      "/Dubs/Old-MacDonald//",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(pathname)), pathname);
+    }
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/dubs/old-macdonald/extra")),
       null,
     );
   });
