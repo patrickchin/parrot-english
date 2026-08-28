@@ -388,8 +388,16 @@ export function StoryReader({
       : narrationState === "paused"
         ? "Resume story"
         : narrationState === "complete"
-          ? "Listen again"
-          : "Listen";
+          ? "Listen to this page again"
+          : "Listen to this page";
+  const narrationText =
+    narrationState === "playing" || narrationState === "join-in"
+      ? "Pause"
+      : narrationState === "paused"
+        ? "Resume"
+        : narrationState === "complete"
+          ? "Again"
+          : "This page";
 
   return (
     <main className="relative grid h-dvh min-h-0 w-screen place-items-center overflow-hidden bg-story-reader px-2.5 pb-4 pt-20 short:pt-16 sm:px-4 md:px-7 md:pb-7 md:pt-24">
@@ -527,7 +535,7 @@ export function StoryReader({
                           ? "Listen"
                           : narrationState === "paused"
                             ? "Story paused"
-                            : "Tap Listen"}
+                            : "Choose how to listen"}
                   </span>
                   <span className="text-lg font-black leading-snug sm:text-xl">
                     {page.joinIn}
@@ -564,7 +572,7 @@ export function StoryReader({
           <nav
             aria-label="Story controls"
             className={cx(
-              "z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,1fr)_minmax(0,0.8fr)] gap-1.5 border-t-3 border-sky-100 bg-[#fffaf0] min-[360px]:gap-2 sm:gap-3 lg:bg-transparent",
+              "z-30 grid grid-cols-[minmax(0,0.8fr)_minmax(0,2.15fr)_minmax(0,0.8fr)] gap-1.5 border-t-3 border-sky-100 bg-[#fffaf0] min-[360px]:gap-2 sm:gap-3 lg:bg-transparent",
               isLongStory ? "pt-1.5 lg:pt-3" : "pt-3 lg:pt-4",
             )}
           >
@@ -586,60 +594,72 @@ export function StoryReader({
               <span>Back</span>
             </ActionButton>
 
-            <ActionButton
-              aria-label={narrationLabel}
-              className={cx(
-                "min-h-12 min-w-0 gap-1.5 rounded-xl px-1 text-xs min-[360px]:px-2 min-[360px]:text-sm",
-                narrationState === "paused" && "bg-brand-navy shadow-control-navy",
-              )}
-              frame="none"
-              onClick={toggleNarration}
-              shape="rounded"
-              size="inline"
-              type="button"
-              variant={narrationState === "paused" ? "navy" : "brand"}
+            <div
+              aria-label="Listen"
+              className="relative grid min-w-0 grid-cols-2 gap-1 rounded-xl bg-sky-100 px-1"
+              role="group"
             >
-              {narrationState === "playing" || narrationState === "join-in" ? (
-                <Pause
-                  aria-hidden="true"
-                  className="hidden size-5 shrink-0 fill-current min-[360px]:block"
-                />
-              ) : narrationState === "complete" ? (
-                <RotateCcw
-                  aria-hidden="true"
-                  className="hidden size-5 shrink-0 min-[360px]:block"
-                />
-              ) : narrationState === "paused" ? (
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-100 px-1.5 text-[0.625rem] font-black uppercase leading-none tracking-wider text-brand-blue"
+              >
+                Listen
+              </span>
+              <ActionButton
+                aria-label={narrationLabel}
+                className={cx(
+                  "min-h-12 min-w-0 gap-1 rounded-lg px-1 text-xs min-[360px]:text-sm",
+                  narrationState === "paused" && "bg-brand-navy shadow-control-navy",
+                )}
+                frame="none"
+                onClick={toggleNarration}
+                shape="rounded"
+                size="inline"
+                type="button"
+                variant={narrationState === "paused" ? "navy" : "brand"}
+              >
+                {narrationState === "playing" || narrationState === "join-in" ? (
+                  <Pause
+                    aria-hidden="true"
+                    className="hidden size-5 shrink-0 fill-current min-[360px]:block"
+                  />
+                ) : narrationState === "complete" ? (
+                  <RotateCcw
+                    aria-hidden="true"
+                    className="hidden size-5 shrink-0 min-[360px]:block"
+                  />
+                ) : narrationState === "paused" ? (
+                  <Play
+                    aria-hidden="true"
+                    className="hidden size-5 shrink-0 fill-current min-[360px]:block"
+                  />
+                ) : (
+                  <Volume2
+                    aria-hidden="true"
+                    className="hidden size-5 shrink-0 min-[360px]:block"
+                  />
+                )}
+                <span className="leading-tight">{narrationText}</span>
+              </ActionButton>
+
+              <ActionButton
+                aria-label="Keep playing to the end"
+                aria-pressed={playWholeStory}
+                className="min-h-12 min-w-0 gap-1 rounded-lg px-1 text-xs min-[360px]:text-sm"
+                frame="none"
+                onClick={toggleWholeStory}
+                shape="rounded"
+                size="inline"
+                type="button"
+                variant={playWholeStory ? "navy" : "surface"}
+              >
                 <Play
                   aria-hidden="true"
-                  className="hidden size-5 shrink-0 fill-current min-[360px]:block"
+                  className="hidden size-4 shrink-0 fill-current min-[360px]:block"
                 />
-              ) : (
-                <Volume2
-                  aria-hidden="true"
-                  className="hidden size-5 shrink-0 min-[360px]:block"
-                />
-              )}
-              <span className="leading-tight">{narrationLabel}</span>
-            </ActionButton>
-
-            <ActionButton
-              aria-label="Play whole story"
-              aria-pressed={playWholeStory}
-              className="min-h-12 min-w-0 gap-1 rounded-xl px-1 text-xs min-[360px]:text-sm"
-              frame="none"
-              onClick={toggleWholeStory}
-              shape="rounded"
-              size="inline"
-              type="button"
-              variant={playWholeStory ? "navy" : "surface"}
-            >
-              <Play
-                aria-hidden="true"
-                className="hidden size-4 shrink-0 fill-current min-[360px]:block"
-              />
-              <span className="leading-tight">Whole</span>
-            </ActionButton>
+                <span className="leading-tight">Keep going</span>
+              </ActionButton>
+            </div>
 
             <ActionButton
               aria-label={isLastPage ? "Finish story" : "Next page"}
