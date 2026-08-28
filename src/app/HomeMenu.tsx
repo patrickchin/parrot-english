@@ -117,8 +117,8 @@ export function HomeMenu() {
                   className={cx(
                     "relative h-20 w-full overflow-hidden rounded-2xl bg-sky-100 short:h-12 short-wide:!h-12 md:aspect-[3/2] md:h-auto",
                     tone === "navy" && "bg-pink-100",
+                    (originalDuckScene || originalFarmScene) && "[container-type:size]",
                   )}
-                  style={originalDuckScene ? { containerType: "size" } : undefined}
                 >
                   {originalDuckScene ? (
                     <span

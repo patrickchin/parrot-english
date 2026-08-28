@@ -205,8 +205,8 @@ function matchActiveE2eDubGuidePath(pathname: string) {
   const definition = getActiveE2eDubDefinition();
   const prefix = `/assets/audio/${definition.guideAudioPrefix}`;
   if (!pathname.startsWith(prefix) || !pathname.endsWith(".mp3")) return null;
-  const lineId = pathname.slice(prefix.length, -4);
-  return definition.lines.some((line) => line.id === lineId) ? lineId : null;
+  const suffix = pathname.slice(prefix.length, -4);
+  return definition.lines.find(({ id }) => id === suffix || id.endsWith(`-${suffix}`))?.id ?? null;
 }
 
 const E2E_INCOMPLETE_PROFILE = {
@@ -1864,6 +1864,12 @@ function createE2eDubStore(scenario: string | null) {
     sessionStorage.setItem(savedKey, JSON.stringify([...clips.keys()]));
   }
 
+  function clearAllSavedClips() {
+    for (const { id } of DUB_DEFINITIONS) {
+      sessionStorage.removeItem(`parrot-e2e-dub:${scenario}:${id}:saved`);
+    }
+  }
+
   function persistConsent(state: typeof consentState) {
     consentState = state;
     sessionStorage.setItem(consentKey, state);
@@ -1988,6 +1994,7 @@ function createE2eDubStore(scenario: string | null) {
             legacyResetPending = false;
             resetCleanupPending = false;
             sessionStorage.setItem(resetKey, "yes");
+            clearAllSavedClips();
             clips.clear();
             persist();
             persistConsent("not_granted");
@@ -1998,6 +2005,7 @@ function createE2eDubStore(scenario: string | null) {
               return new Response(null, { status: 503 });
             }
           }
+          clearAllSavedClips();
           clips.clear();
           persist();
           persistConsent("not_granted");

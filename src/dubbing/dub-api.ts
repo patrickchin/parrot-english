@@ -111,13 +111,13 @@ async function parseJson(response: Response, failure: string) {
   }
 }
 
-function isDubStatus(value: unknown): value is DubStatus {
+function isDubStatus(value: unknown, expectedDubId: string): value is DubStatus {
   if (typeof value !== "object" || value === null) return false;
   const status = value as Partial<DubStatus>;
-  if (typeof status.dubId !== "string") return false;
+  if (status.dubId !== expectedDubId) return false;
   let definition;
   try {
-    definition = getDubDefinition(status.dubId);
+    definition = getDubDefinition(expectedDubId);
   } catch {
     return false;
   }
@@ -173,6 +173,7 @@ export const getDubLineAudioUrl = (
 
 export async function loadDubStatus(options: DubRequestOptions = {}) {
   const dubId = options.dubId ?? DUB_ID;
+  getDubDefinition(dubId);
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
@@ -199,7 +200,7 @@ export async function loadDubStatus(options: DubRequestOptions = {}) {
   }
   requireOk(response, LOAD_FAILURE);
   const status = await parseJson(response, LOAD_FAILURE);
-  if (!isDubStatus(status)) throw new Error(LOAD_FAILURE);
+  if (!isDubStatus(status, dubId)) throw new Error(LOAD_FAILURE);
   return status;
 }
 

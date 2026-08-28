@@ -21,14 +21,15 @@ export type DubDefinition = {
   readonly lines: readonly DubLine[];
   readonly guideAudioPrefix: string;
   readonly sceneKind: string;
+  readonly showSceneStatusText: boolean;
 };
 
 const OLD_ANIMALS = [
-  ["cows", "some cows", "moo-moo", "Cows on the farm"],
-  ["ducks", "some ducks", "quack-quack", "Ducks on the farm"],
-  ["pigs", "some pigs", "oink-oink", "Pigs on the farm"],
-  ["dog", "a dog", "woof-woof", "A dog on the farm"],
-  ["sheep", "some sheep", "baa-baa", "Sheep on the farm"],
+  { animal: "some cows", beat: "cows", sounds: ["moo-moo", "moo-moo", "moo", "moo-moo"], title: "Cows on the farm" },
+  { animal: "some ducks", beat: "ducks", sounds: ["quack-quack", "quack-quack", "quack", "quack-quack"], title: "Ducks on the farm" },
+  { animal: "some pigs", beat: "pigs", sounds: ["snort", "snort", "snort", "snort-snort"], title: "Pigs on the farm" },
+  { animal: "a dog", beat: "dog", sounds: ["woof-woof", "woof-woof", "woof", "woof-woof"], title: "A dog on the farm" },
+  { animal: "some sheep", beat: "sheep", sounds: ["baa-baa", "baa-baa", "baa", "baa-baa"], title: "Sheep on the farm" },
 ] as const;
 
 const createOldLine = (
@@ -43,15 +44,15 @@ const createOldLine = (
 });
 
 const oldMacDonaldLines = Object.freeze(
-  OLD_ANIMALS.flatMap(([beat, animal, sound], sceneIndex) => {
+  OLD_ANIMALS.flatMap(({ animal, beat, sounds }, sceneIndex) => {
     const start = sceneIndex * 7;
     return [
       createOldLine(start, "Old MacDonald had a farm, E-I-E-I-O!", "intro"),
       createOldLine(start + 1, `And on his farm he had ${animal}, E-I-E-I-O!`, beat),
-      createOldLine(start + 2, `With a ${sound} here`, beat),
-      createOldLine(start + 3, `And a ${sound} there`, beat),
-      createOldLine(start + 4, `Here a ${sound.split("-")[0]}, there a ${sound.split("-")[0]}`, beat),
-      createOldLine(start + 5, `Everywhere a ${sound}`, beat),
+      createOldLine(start + 2, `With a ${sounds[0]} here`, beat),
+      createOldLine(start + 3, `And a ${sounds[1]} there`, beat),
+      createOldLine(start + 4, `Here a ${sounds[2]}, there a ${sounds[2]}`, beat),
+      createOldLine(start + 5, `Everywhere a ${sounds[3]}`, beat),
       createOldLine(start + 6, "Old MacDonald had a farm, E-I-E-I-O!", "intro"),
     ];
   }),
@@ -64,10 +65,11 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   durationMs: 150_000,
   recordingMs: 6_000,
   linesPerScene: 7,
-  sceneTitles: Object.freeze(OLD_ANIMALS.map(([, , , title]) => title)),
+  sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),
   lines: oldMacDonaldLines,
   guideAudioPrefix: "old-macdonald-v1-guide-",
   sceneKind: "farm",
+  showSceneStatusText: true,
 });
 
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";

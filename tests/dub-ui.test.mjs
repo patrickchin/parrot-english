@@ -448,6 +448,7 @@ describe("duck dubbing storyboard presentation", () => {
       assert.match(html, new RegExp(`aria-label="Scene ${scene} thumbnail"[^>]*role="img"`));
     }
     assert.doesNotMatch(html, />Draft<|>Your dub<|>Not started<|voice clips recorded/);
+    assert.doesNotMatch(html, />0 \/ 4<|>Done<|>Retake</);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
     assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
   });

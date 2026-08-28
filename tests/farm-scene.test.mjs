@@ -29,4 +29,13 @@ describe("farm scene renderer", () => {
     assert.match(html, /aria-label="Farm scene"/);
     assert.doesNotMatch(html, /https?:\/\//);
   });
+
+  it("uses the source-faithful pig sound in the farm bubble", () => {
+    const html = renderToStaticMarkup(createElement(FarmScene, {
+      line: OLD_MACDONALD_DUB.lines[16],
+      playing: true,
+    }));
+
+    assert.match(html, />snort-snort<\/div>/);
+  });
 });

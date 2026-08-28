@@ -161,9 +161,11 @@ export function DubProjectHome({
                     <Scene line={lines[0]} thumbnail />
                   </span>
                   <span aria-hidden="true" className="leading-none">{sceneIndex + 1}</span>
-                  <span aria-hidden="true" className="text-[0.72rem] font-black leading-none short-wide:text-[0.65rem]">
-                    {sceneStatusText(status, definition.linesPerScene)}
-                  </span>
+                  {definition.showSceneStatusText ? (
+                    <span aria-hidden="true" className="text-[0.72rem] font-black leading-none short-wide:text-[0.65rem]">
+                      {sceneStatusText(status, definition.linesPerScene)}
+                    </span>
+                  ) : null}
                   <span
                     aria-hidden="true"
                     className={`absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-[0.72rem] font-black leading-none ring-2 ring-white ${

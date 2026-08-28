@@ -90,6 +90,7 @@ export const FIVE_LITTLE_DUCKS_DUB = Object.freeze({
   lines: DUB_LINES,
   guideAudioPrefix: "five-little-ducks-v2-guide-",
   sceneKind: "ducks",
+  showSceneStatusText: false,
 });
 
 export function getDubVerseLineAtElapsed(verseIndex: number, elapsedMs: number): DubLine {

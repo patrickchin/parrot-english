@@ -16,7 +16,7 @@ const FARM_DESCRIPTIONS: Record<FarmAnimal, string> = {
 const FARM_SOUNDS: Record<FarmAnimal, string> = {
   cows: "moo-moo",
   ducks: "quack-quack",
-  pigs: "oink-oink",
+  pigs: "snort-snort",
   dog: "woof-woof",
   sheep: "baa-baa",
 };

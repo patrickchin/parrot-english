@@ -242,6 +242,43 @@ describe("duck dub browser API", () => {
     }
   });
 
+  it("rejects a complete status payload for the other supported rhyme", async () => {
+    const duckStatus = {
+      complete: false,
+      consentState: "granted",
+      dubId: "five-little-ducks-v2",
+      guardianConsentVersion: "guardian-voice-r2-v2",
+      lines: duckStatusLines(),
+      recordingEnabled: true,
+    };
+    const oldMacDonaldStatus = {
+      ...duckStatus,
+      dubId: "old-macdonald-v1",
+      lines: Array.from(
+        { length: 35 },
+        (_, index) => ({
+          id: `old-macdonald-v1-line-${index + 1}`,
+          recordedAt: null,
+          saved: false,
+        }),
+      ),
+    };
+
+    await assert.rejects(
+      () => loadDubStatus({
+        dubId: "old-macdonald-v1",
+        fetch: async () => Response.json(duckStatus),
+      }),
+      /Your saved dub could not be loaded\./,
+    );
+    await assert.rejects(
+      () => loadDubStatus({
+        fetch: async () => Response.json(oldMacDonaldStatus),
+      }),
+      /Your saved dub could not be loaded\./,
+    );
+  });
+
   it("notifies guardian access only for guardian-required failures before rejection", async () => {
     const previousDocument = globalThis.document;
     const eventTarget = new globalThis.EventTarget();

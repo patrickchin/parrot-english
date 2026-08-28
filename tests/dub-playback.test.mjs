@@ -463,6 +463,51 @@ describe("duck dub playback", () => {
     assert.equal(ended, 1);
   });
 
+  it("keeps the final Old MacDonald scene on its authored 28-second clock", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      fetch: audio.fetch,
+      lines: OLD_MACDONALD_DUB.lines.slice(-7),
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    audio.contexts[0].currentTime = 38.13;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [28_000]);
+    assert.equal(ended, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("reserves Old MacDonald's 150-second duration for full-rhyme playback", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const ticks = [];
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      fetch: audio.fetch,
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    audio.contexts[0].currentTime = 160.12;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [150_000]);
+  });
+
   it("loads guides for unsaved lines and private audio for saved lines", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();

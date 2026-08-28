@@ -172,10 +172,9 @@ for (const viewport of shortLandscapeViewports) {
     const boxes = await Promise.all(links.map((link) => link.boundingBox()));
     for (const box of boxes) expect(box).not.toBeNull();
     expect(
-      Math.max(...boxes.slice(0, 4).map((box) => box!.y)) -
-        Math.min(...boxes.slice(0, 4).map((box) => box!.y)),
+      Math.max(...boxes.map((box) => box!.y)) -
+        Math.min(...boxes.map((box) => box!.y)),
     ).toBeLessThanOrEqual(1);
-    expect(boxes[4]!.y).toBeGreaterThanOrEqual(boxes[0]!.y);
 
     const scrollMetrics = await page.getByRole("main").evaluate((main) => ({
       clientHeight: main.clientHeight,
@@ -207,7 +206,7 @@ for (const viewport of [
   { height: 360, width: 640 },
   { height: 720, width: 1280 },
 ]) {
-  test(`home preserves the duck illustration at 16:9 on ${viewport.width}x${viewport.height}`, async ({
+  test(`home constrains local rhyme previews to their cards at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -219,6 +218,24 @@ for (const viewport of [
     const box = await stage.boundingBox();
     expect(box).not.toBeNull();
     expect(Math.abs(box!.width / box!.height - 16 / 9)).toBeLessThan(0.01);
+
+    const farmCard = page.getByRole("link", { name: "Old MacDonald Had a Farm" });
+    const farmScene = farmCard.getByLabel("Farm scene");
+    const [farmCardBox, farmSceneBox] = await Promise.all([
+      farmCard.boundingBox(),
+      farmScene.boundingBox(),
+    ]);
+    expect(farmCardBox).not.toBeNull();
+    expect(farmSceneBox).not.toBeNull();
+    expect(Math.abs(farmSceneBox!.width / farmSceneBox!.height - 16 / 9)).toBeLessThan(0.01);
+    expect(farmSceneBox!.x).toBeGreaterThanOrEqual(farmCardBox!.x);
+    expect(farmSceneBox!.y).toBeGreaterThanOrEqual(farmCardBox!.y);
+    expect(farmSceneBox!.x + farmSceneBox!.width).toBeLessThanOrEqual(
+      farmCardBox!.x + farmCardBox!.width,
+    );
+    expect(farmSceneBox!.y + farmSceneBox!.height).toBeLessThanOrEqual(
+      farmCardBox!.y + farmCardBox!.height,
+    );
   });
 }
 
@@ -240,7 +257,7 @@ test("home uses responsive art for its lesson preview", async ({ page }) => {
     .toMatch(/01-peppas-high-ball-384\.webp$/);
 });
 
-test("desktop home gives the four learner paths equal visual weight in one row", async ({
+test("desktop home gives the five learner paths equal visual weight in one row", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 900, width: 1280 });

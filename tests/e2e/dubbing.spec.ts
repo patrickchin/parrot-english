@@ -239,6 +239,42 @@ test("guardian mode deletes a complete private dub and revokes consent", async (
   ).toBeVisible();
 });
 
+test("shared-consent deletion clears saved clips for both rhyme routes", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+  await expect(page.getByText("Saved ✓", { exact: true })).toBeVisible();
+
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await openScene(page, 1);
+  await stopAndSave(page);
+  await expect(page.getByText("Saved ✓", { exact: true })).toBeVisible();
+
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=empty&parrotE2eGuardian=guardian",
+  );
+  await page.getByRole("button", {
+    name: "Turn off Mia's voice dubbing and delete saved clips",
+  }).click();
+  await page.getByRole("checkbox", { name: /I am Mia's guardian/ }).check();
+  await page.getByRole("button", { name: "Allow voice dubbing" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Voice dubbing is on" }),
+  ).toBeVisible();
+
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await confirmDub(page, "Start dubbing");
+  await expect(page.getByText("0 / 24", { exact: true })).toBeVisible();
+
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await expect(page.getByRole("button", { name: "Start dubbing" })).toBeVisible();
+  await confirmDub(page, "Start dubbing");
+  await expect(page.getByText("0 / 35", { exact: true })).toBeVisible();
+});
+
 const guardianResponsiveStates = [
   {
     action: "Turn off Mia's voice dubbing and delete saved clips",
@@ -580,6 +616,16 @@ test("Old MacDonald route loads its public studio and opens the first scene", as
       name: "Old MacDonald had a farm, E-I-E-I-O!",
     }),
   ).toBeVisible();
+});
+
+test("Old MacDonald full playback is observed by the browser guide mock", async ({ page }) => {
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await confirmDub(page, "Start dubbing");
+  await page.getByRole("button", { name: "Play full video" }).click();
+
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toContain(
+    "/assets/audio/old-macdonald-v1-guide-line-1.mp3",
+  );
 });
 
 test("the Old MacDonald desktop project keeps the video and compact scene strip in one view", async ({
