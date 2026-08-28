@@ -487,7 +487,49 @@ describe("duck dub playback", () => {
     assert.equal(ended, 1);
   });
 
-  it("keeps the final Old MacDonald scene on its authored 28-second clock", async () => {
+  it("keeps all five complete Old MacDonald scenes on exact 28-second boundaries", async () => {
+    for (const [sceneIndex, sceneStart] of [0, 7, 14, 21, 28].entries()) {
+      const lines = OLD_MACDONALD_DUB.lines.slice(sceneStart, sceneStart + 7);
+      const audio = createAudioHarness({
+        decodeDurations: Object.fromEntries(lines.map(({ id }) => [id, 0.25])),
+      });
+      const raf = createRaf();
+      const ticks = [];
+      let ended = 0;
+
+      await startDubPlayback({
+        AudioContext: audio.AudioContext,
+        cancelAnimationFrame: raf.cancelAnimationFrame,
+        definition: OLD_MACDONALD_DUB,
+        fetch: audio.fetch,
+        lines,
+        onEnded: () => { ended += 1; },
+        onTick: (elapsedMs) => ticks.push(elapsedMs),
+        requestAnimationFrame: raf.requestAnimationFrame,
+      });
+
+      const context = audio.contexts[0];
+      context.currentTime = 38.119;
+      raf.runNext();
+
+      assert.equal(Math.round(ticks[0]), 27_999, `scene ${sceneIndex + 1}`);
+      assert.equal(ended, 0, `scene ${sceneIndex + 1}`);
+      assert.equal(context.closeCalls, 0, `scene ${sceneIndex + 1}`);
+      assert.equal(raf.callbacks.size, 1, `scene ${sceneIndex + 1}`);
+
+      context.currentTime = 38.121;
+      raf.runNext();
+
+      assert.equal(ticks.at(-1), 28_000, `scene ${sceneIndex + 1}`);
+      assert.equal(ended, 1, `scene ${sceneIndex + 1}`);
+      assert.equal(context.closeCalls, 1, `scene ${sceneIndex + 1}`);
+      assert.equal(raf.callbacks.size, 0, `scene ${sceneIndex + 1}`);
+      assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
+      assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
+    }
+  });
+
+  it("ends full Old MacDonald at the exact 150-second boundary", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const ticks = [];
@@ -498,38 +540,29 @@ describe("duck dub playback", () => {
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: OLD_MACDONALD_DUB,
       fetch: audio.fetch,
-      lines: OLD_MACDONALD_DUB.lines.slice(-7),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,
     });
 
-    audio.contexts[0].currentTime = 38.13;
+    const context = audio.contexts[0];
+    context.currentTime = 160.119;
     raf.runNext();
 
-    assert.deepEqual(ticks, [28_000]);
+    assert.deepEqual(ticks, [149_999]);
+    assert.equal(ended, 0);
+    assert.equal(context.closeCalls, 0);
+    assert.equal(raf.callbacks.size, 1);
+
+    context.currentTime = 160.121;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [149_999, 150_000]);
     assert.equal(ended, 1);
-    assert.equal(audio.contexts[0].closeCalls, 1);
-  });
-
-  it("reserves Old MacDonald's 150-second duration for full-rhyme playback", async () => {
-    const audio = createAudioHarness();
-    const raf = createRaf();
-    const ticks = [];
-
-    await startDubPlayback({
-      AudioContext: audio.AudioContext,
-      cancelAnimationFrame: raf.cancelAnimationFrame,
-      definition: OLD_MACDONALD_DUB,
-      fetch: audio.fetch,
-      onTick: (elapsedMs) => ticks.push(elapsedMs),
-      requestAnimationFrame: raf.requestAnimationFrame,
-    });
-
-    audio.contexts[0].currentTime = 160.12;
-    raf.runNext();
-
-    assert.deepEqual(ticks, [150_000]);
+    assert.equal(context.closeCalls, 1);
+    assert.equal(raf.callbacks.size, 0);
+    assert.ok(context.sources.every(({ stopCalls }) => stopCalls === 1));
+    assert.ok(context.oscillators.every(({ stopCalls }) => stopCalls === 2));
   });
 
   it("loads guides for unsaved lines and private audio for saved lines", async () => {

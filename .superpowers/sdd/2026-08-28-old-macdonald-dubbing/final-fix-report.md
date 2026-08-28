@@ -148,3 +148,58 @@ unused-disable warnings in generated `worker-configuration.d.ts` remain
 non-blocking and are unrelated to this timing-only round. Playwright also emits
 its existing `NO_COLOR`/`FORCE_COLOR` environment warning; all browser tests
 pass. No audio was regenerated or modified.
+
+## Round 3: exact playback-boundary coverage
+
+### Scope and evidence
+
+This is a tests-only coverage round. Runtime timing was independently verified
+correct, so no production RED/fix cycle was appropriate and no runtime file was
+changed.
+
+- Full Old MacDonald playback is sampled at 149,999 ms and 150,001 ms. The
+  strengthened test proves it remains active before the boundary, then reports
+  and clamps exactly 150,000 ms while ending and cleaning up after it. Its
+  before/after state plus exact final tick rejects both lower and higher
+  duration mutations.
+- A loop covers literal scene starts 0, 7, 14, 21, and 28 with 250 ms decoded
+  buffers. Every one of the five complete scenes remains active at 27,999 ms,
+  then reports exactly 28,000 ms and ends after the 28,001 ms sample.
+- Scene and full-rhyme cleanup assertions cover the animation frame, audio
+  context, voice sources, and music oscillators.
+- The exact Five Little Ducks 17,200 ms final-scene and 98,000 ms full-rhyme
+  contracts remain. The Old MacDonald full-rhyme contract remains 150,000 ms.
+
+### Round 3 changed files
+
+- `tests/dub-playback.test.mjs`
+- `.superpowers/sdd/2026-08-28-old-macdonald-dubbing/final-fix-report.md`
+
+No production code, audio, metadata, IDs, routes, UI, API, Worker, or storage
+file changed.
+
+### Fresh round 3 verification
+
+- Focused playback: 30 tests passed, 0 failed.
+- Complete `npm test`: 1,381 tests in 122 suites passed, 0 failed.
+- `npm run build && npm run lint`: exit 0; lint reported 0 errors and the two
+  existing generated-file warnings.
+- Complete `npm run test:browser`: 507 tests passed, 0 failed in 1.9 minutes.
+- Static-audio suite: 13 tests passed, 0 failed.
+- Media audit: 26 inventory files, 26 tracked, 26 non-empty, 26 ffprobe
+  decodable, and 0 changed MP3s.
+- Pre-report test diff: one file, 56 insertions, 23 deletions.
+- `git diff --check`: exit 0.
+
+### Round 3 commit
+
+Focused commit message: `test: pin Old MacDonald timing boundaries`. The parent
+is `f6c1910518c4467bab06c3026327592b15a60a00`; the immutable round 3 HEAD is
+reported with delivery because this report is included in that commit.
+
+### Round 3 concerns
+
+No product concerns remain. The existing Vite large-chunk advisory, two
+unused-disable warnings in generated `worker-configuration.d.ts`, and
+Playwright's `NO_COLOR`/`FORCE_COLOR` warning remain non-blocking and unrelated
+to this tests-only round. No media was generated or modified.
