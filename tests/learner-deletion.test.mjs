@@ -510,6 +510,103 @@ function beforeStatementWhen(d1, predicate, before) {
   };
 }
 
+function aroundStatementWhen(d1, predicate, { before, after }) {
+  let triggered = false;
+  function wrap(statement, sql) {
+    return new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) => wrap(target.bind(...parameters), sql);
+        }
+        if (
+          !triggered &&
+          ["all", "first", "raw", "run"].includes(property) &&
+          predicate(sql)
+        ) {
+          return async (...parameters) => {
+            triggered = true;
+            await before();
+            const result = await target[property](...parameters);
+            await after(result);
+            return result;
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  }
+  return {
+    ...d1,
+    prepare(sql) {
+      return wrap(d1.prepare(sql), sql);
+    },
+  };
+}
+
+function delayStatementWhen(d1, predicate, gate) {
+  let triggered = false;
+  function wrap(statement, sql) {
+    return new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) => wrap(target.bind(...parameters), sql);
+        }
+        if (
+          !triggered &&
+          ["all", "first", "raw", "run"].includes(property) &&
+          predicate(sql)
+        ) {
+          return async (...parameters) => {
+            triggered = true;
+            gate.started.resolve();
+            await gate.release.promise;
+            return target[property](...parameters);
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+  }
+  return {
+    ...d1,
+    prepare(sql) {
+      return wrap(d1.prepare(sql), sql);
+    },
+  };
+}
+
+function delayBatchWhen(d1, predicate, gate) {
+  const statementSql = new WeakMap();
+  function wrap(statement, sql) {
+    const wrapped = new Proxy(statement, {
+      get(target, property) {
+        if (property === "bind") {
+          return (...parameters) => wrap(target.bind(...parameters), sql);
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    statementSql.set(wrapped, sql);
+    return wrapped;
+  }
+  return {
+    ...d1,
+    async batch(statements) {
+      if (statements.some((statement) => predicate(statementSql.get(statement) ?? ""))) {
+        gate.started.resolve();
+        await gate.release.promise;
+      }
+      return d1.batch(statements);
+    },
+    prepare(sql) {
+      return wrap(d1.prepare(sql), sql);
+    },
+  };
+}
+
 function failStatementWhen(d1, predicate, shouldFail) {
   let failed = false;
   function wrap(statement, sql) {
@@ -540,6 +637,96 @@ function failStatementWhen(d1, predicate, shouldFail) {
       return wrap(d1.prepare(sql), sql);
     },
   };
+}
+
+async function neutralExternalCleanupRace() {
+  const state = seedDatabase();
+  const externalKey = "external-art/neutral-cleanup-race.webp";
+  state.sqlite.prepare(
+    `INSERT INTO learner_story_art_generation_lease
+      (learner_profile_id, auth_user_id, story_id, generation_token,
+       candidate_r2_object_key, previous_r2_object_key, lease_expires_at,
+       created_at, updated_at)
+     VALUES (?, ?, 'the-red-ball', 'expired-neutral', ?, NULL, ?, ?, ?)`,
+  ).run(TARGET_ID, USER_ID, externalKey, NOW - 1, NOW - 10, NOW - 10);
+  const bucket = createBucket([
+    { key: externalKey, bytes: new Uint8Array([1]) },
+  ]);
+  const cleanupDelete = { started: deferred(), release: deferred() };
+  const databaseCascade = { started: deferred(), release: deferred() };
+  let cleanupDeleteApplied = false;
+  let heldCleanup = false;
+  bucket.beforeDelete = async (keys) => {
+    if (!heldCleanup && keys.includes(externalKey)) {
+      heldCleanup = true;
+      cleanupDelete.started.resolve();
+      await cleanupDelete.release.promise;
+    }
+  };
+  const remove = bucket.delete.bind(bucket);
+  bucket.delete = async (keys) => {
+    await remove(keys);
+    if ((Array.isArray(keys) ? keys : [keys]).includes(externalKey)) {
+      cleanupDeleteApplied = true;
+    }
+  };
+  const failedDatabase = createDatabase(failStatementWhen(
+    state.d1,
+    (sql) => sql.includes("account_deletion_tombstone"),
+    () => cleanupDeleteApplied,
+  ));
+  const deletionDatabase = createDatabase(delayBatchWhen(
+    state.d1,
+    (sql) => /DELETE\s+FROM\s+learner_profile/i.test(sql),
+    databaseCascade,
+  ));
+  const recovery = handlePersonalizedStoryArtRequest(
+    {
+      database: failedDatabase,
+      env: {
+        AI: {},
+        ASSETS: {},
+        DB: state.d1,
+        PERSONALIZED_STORY_ART_BUCKET: bucket,
+        PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+        PERSONALIZED_STORY_ART_ENABLED: "1",
+      },
+      identity: learnerIdentity(),
+      request: new Request(
+        "https://example.test/api/stories/the-red-ball/personalized-art",
+        { body: storyArtForm(), method: "POST" },
+      ),
+    },
+    {
+      async generateImage() {
+        throw new Error("generation must not start");
+      },
+      now: () => new Date(NOW),
+    },
+  );
+  await cleanupDelete.started.promise;
+  const deletion = prepareLearnerDeletion({
+    bucket,
+    database: deletionDatabase,
+    identity: accountIdentity,
+    profileId: TARGET_ID,
+    wait: async () => {},
+  });
+  await databaseCascade.started.promise;
+  cleanupDelete.release.resolve();
+  const response = await recovery;
+  assert.equal(response.status, 500);
+  assert.equal(metadataState(bucket, externalKey), "art-cleanup-uncertain");
+  databaseCascade.release.resolve();
+  await deletion;
+  assert.equal(profileCount(state), 0);
+  assert.equal(
+    state.sqlite.prepare(
+      "SELECT count(*) AS count FROM learner_story_art_generation_lease WHERE learner_profile_id = ?",
+    ).get(TARGET_ID).count,
+    0,
+  );
+  return { bucket, externalKey, state };
 }
 
 describe("learner deletion endpoint", () => {
@@ -849,6 +1036,122 @@ describe("learner deletion lifecycle", () => {
           .some((key) => key.startsWith(SIBLING_PREFIX)),
         false,
       );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("preflights every persisted slot before authorizing an earlier external key", async () => {
+    const state = seedDatabase();
+    const externalKey = "000-external/preflight.webp";
+    const siblingKey = `${SIBLING_PREFIX}corrupt.webp`;
+    const bucket = createBucket([
+      {
+        bytes: new Uint8Array([1]),
+        customMetadata: {
+          generation: "account-deletion-v1:existing",
+          state: "account-deleting",
+        },
+        key: externalKey,
+      },
+      { bytes: new Uint8Array([2]), key: siblingKey },
+    ]);
+    state.sqlite.prepare(
+      `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
+         requested_at, storage_keys_json)
+       VALUES (?, ?, 0, 1, ?, ?)`,
+    ).run(
+      TARGET_ID,
+      createHash("sha256").update(USER_ID).digest("hex"),
+      NOW,
+      JSON.stringify({
+        markerKeys: [],
+        prefixes: [TARGET_PREFIX],
+        slotKeys: [externalKey, siblingKey],
+        version: 1,
+      }),
+    );
+
+    try {
+      await assert.rejects(
+        prepare(state, bucket),
+        /Learner deletion storage closure is invalid/,
+      );
+      assert.deepEqual(bucket.calls, {
+        delete: [],
+        head: [],
+        list: [],
+        put: [],
+      });
+      assert.equal(profileCount(state), 1);
+      assert.equal(profileCount(state, SIBLING_ID), 1);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("preflights all unfinished learner closures before account deletion touches R2", async () => {
+    const state = seedDatabase();
+    const externalKey = "000-external/account-preflight.webp";
+    const corruptKey = `${TARGET_PREFIX}owned-by-the-other-tombstone.webp`;
+    const userIdHash = createHash("sha256").update(USER_ID).digest("hex");
+    const bucket = createBucket([{
+      bytes: new Uint8Array([1]),
+      customMetadata: {
+        generation: "account-deletion-v1:existing",
+        state: "account-deleting",
+      },
+      key: externalKey,
+    }]);
+    const insert = state.sqlite.prepare(
+      `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
+         requested_at, storage_keys_json)
+       VALUES (?, ?, 0, 1, ?, ?)`,
+    );
+    insert.run(
+      TARGET_ID,
+      userIdHash,
+      NOW,
+      JSON.stringify({
+        markerKeys: [],
+        prefixes: [TARGET_PREFIX],
+        slotKeys: [externalKey],
+        version: 1,
+      }),
+    );
+    insert.run(
+      SIBLING_ID,
+      userIdHash,
+      NOW,
+      JSON.stringify({
+        markerKeys: [],
+        prefixes: [SIBLING_PREFIX],
+        slotKeys: [corruptKey],
+        version: 1,
+      }),
+    );
+
+    try {
+      await assert.rejects(
+        prepareAccountDeletion({
+          bucket,
+          database: state.database,
+          now: () => new Date(NOW),
+          userId: USER_ID,
+          wait: async () => {},
+        }),
+        /Learner deletion storage closure is invalid/,
+      );
+      assert.deepEqual(bucket.calls, {
+        delete: [],
+        head: [],
+        list: [],
+        put: [],
+      });
+      assert.equal(profileCount(state), 1);
+      assert.equal(profileCount(state, SIBLING_ID), 1);
     } finally {
       state.close();
     }
@@ -1828,6 +2131,209 @@ describe("tombstone write fences", () => {
     }
   });
 
+  it("keeps a learner candidate authoritative when deletion tombstones before recovery releases its lease", async () => {
+    const state = seedDatabase();
+    const candidateKey = "external-art/learner-release-race.png";
+    const siblingObject = `${SIBLING_PREFIX}keep.bin`;
+    state.sqlite.prepare(
+      `INSERT INTO learner_story_art_generation_lease
+        (learner_profile_id, auth_user_id, story_id, generation_token,
+         candidate_r2_object_key, previous_r2_object_key, lease_expires_at,
+         created_at, updated_at)
+       VALUES (?, ?, 'the-red-ball', 'expired-release', ?, NULL, ?, ?, ?)`,
+    ).run(TARGET_ID, USER_ID, candidateKey, NOW - 1, NOW - 10, NOW - 10);
+    const bucket = createBucket([
+      { key: candidateKey, bytes: new Uint8Array([1]) },
+      { key: siblingObject, bytes: new Uint8Array([2]) },
+    ]);
+    const cleanupDeleted = deferred();
+    const releaseHeldPut = deferred();
+    const snapshotRead = { started: deferred(), release: deferred() };
+    let deletion;
+    bucket.beforeDelete = async (keys) => {
+      if (keys.includes(candidateKey)) cleanupDeleted.resolve();
+    };
+    const deletionDatabase = createDatabase(delayStatementWhen(
+      state.d1,
+      (sql) =>
+        /SELECT\s+candidate_r2_object_key/i.test(sql) &&
+        /FROM\s+learner_story_art_generation_lease/i.test(sql),
+      snapshotRead,
+    ));
+    const releaseAwareD1 = aroundStatementWhen(
+      state.d1,
+      (sql) => /DELETE\s+FROM\s+learner_story_art_generation_lease/i.test(sql),
+      {
+        async before() {
+          deletion = prepareLearnerDeletion({
+            bucket,
+            database: deletionDatabase,
+            identity: accountIdentity,
+            profileId: TARGET_ID,
+            wait: async () => {},
+          });
+          await snapshotRead.started.promise;
+        },
+        async after() {
+          snapshotRead.release.resolve();
+          await deletion;
+        },
+      },
+    );
+    const heldPut = (async () => {
+      await cleanupDeleted.promise;
+      await releaseHeldPut.promise;
+      return bucket.put(candidateKey, new Uint8Array([3]), {
+        customMetadata: { guardianConsentVersion: STORY_CONSENT_VERSION },
+        onlyIf: { etagDoesNotMatch: "*" },
+      });
+    })();
+
+    try {
+      const response = await handlePersonalizedStoryArtRequest(
+        {
+          database: state.database,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: releaseAwareD1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity(),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art",
+            { body: storyArtForm(), method: "POST" },
+          ),
+        },
+        {
+          async generateImage() {
+            throw new Error("generation must not start");
+          },
+          now: () => new Date(NOW),
+        },
+      );
+      assert.equal(response.status, 409);
+      releaseHeldPut.resolve();
+      assert.equal(await heldPut, null);
+      assert.equal(metadataState(bucket, candidateKey), "learner-deleting");
+      assert.equal(profileCount(state), 0);
+      assert.equal(profileCount(state, SIBLING_ID), 1);
+      assert.equal(bucket.stored.has(siblingObject), true);
+      await prepare(state, bucket);
+      assert.equal(metadataState(bucket, candidateKey), "learner-deleting");
+    } finally {
+      snapshotRead.release.resolve();
+      releaseHeldPut.resolve();
+      await Promise.allSettled([deletion, heldPut].filter(Boolean));
+      state.close();
+    }
+  });
+
+  it("keeps a legacy candidate authoritative when account deletion tombstones before recovery releases its lease", async () => {
+    const state = seedDatabase({ legacyStorageOwner: true });
+    const candidateKey = "external-art/legacy-release-race.png";
+    const foreignObject = "personalized-story-art/user-2/keep.bin";
+    state.sqlite.prepare(
+      `INSERT INTO personalized_story_art_generation_lease
+        (auth_user_id, story_id, generation_token, candidate_r2_object_key,
+         previous_r2_object_key, lease_expires_at, created_at, updated_at)
+       VALUES (?, 'the-red-ball', 'expired-legacy-release', ?, NULL, ?, ?, ?)`,
+    ).run(USER_ID, candidateKey, NOW - 1, NOW - 10, NOW - 10);
+    const bucket = createBucket([
+      { key: candidateKey, bytes: new Uint8Array([1]) },
+      { key: foreignObject, bytes: new Uint8Array([2]) },
+    ]);
+    const cleanupDeleted = deferred();
+    const releaseHeldPut = deferred();
+    const candidateRead = { started: deferred(), release: deferred() };
+    let deletion;
+    bucket.beforeDelete = async (keys) => {
+      if (keys.includes(candidateKey)) cleanupDeleted.resolve();
+    };
+    const deletionDatabase = createDatabase(delayStatementWhen(
+      state.d1,
+      (sql) =>
+        /candidate_r2_object_key/i.test(sql) &&
+        /personalized_story_art_generation_lease/i.test(sql),
+      candidateRead,
+    ));
+    const releaseAwareD1 = aroundStatementWhen(
+      state.d1,
+      (sql) => /DELETE\s+FROM\s+personalized_story_art_generation_lease/i.test(sql),
+      {
+        async before() {
+          deletion = prepareAccountDeletion({
+            bucket,
+            database: deletionDatabase,
+            now: () => new Date(NOW),
+            userId: USER_ID,
+            wait: async () => {},
+          });
+          await candidateRead.started.promise;
+        },
+        async after() {
+          candidateRead.release.resolve();
+          await deletion;
+        },
+      },
+    );
+    const heldPut = (async () => {
+      await cleanupDeleted.promise;
+      await releaseHeldPut.promise;
+      return bucket.put(candidateKey, new Uint8Array([3]), {
+        customMetadata: { guardianConsentVersion: STORY_CONSENT_VERSION },
+        onlyIf: { etagDoesNotMatch: "*" },
+      });
+    })();
+
+    try {
+      const response = await handlePersonalizedStoryArtRequest(
+        {
+          database: state.database,
+          env: {
+            AI: {},
+            ASSETS: {},
+            DB: releaseAwareD1,
+            PERSONALIZED_STORY_ART_BUCKET: bucket,
+            PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
+            PERSONALIZED_STORY_ART_ENABLED: "1",
+          },
+          identity: learnerIdentity({ legacyStorageOwner: true }),
+          request: new Request(
+            "https://example.test/api/stories/the-red-ball/personalized-art",
+            { body: storyArtForm(), method: "POST" },
+          ),
+        },
+        {
+          async generateImage() {
+            throw new Error("generation must not start");
+          },
+          now: () => new Date(NOW),
+        },
+      );
+      assert.equal(response.status, 409);
+      releaseHeldPut.resolve();
+      assert.equal(await heldPut, null);
+      assert.equal(metadataState(bucket, candidateKey), "account-deleting");
+      assert.equal(bucket.stored.has(foreignObject), true);
+      await prepareAccountDeletion({
+        bucket,
+        database: state.database,
+        now: () => new Date(NOW),
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      assert.equal(metadataState(bucket, candidateKey), "account-deleting");
+    } finally {
+      candidateRead.release.resolve();
+      releaseHeldPut.resolve();
+      await Promise.allSettled([deletion, heldPut].filter(Boolean));
+      state.close();
+    }
+  });
+
   it("keeps an external canonical art fence authorized for learner and account retries", async () => {
     const state = seedDatabase();
     const externalKey = "legacy-exact/retry-after-late-cleanup.webp";
@@ -1881,6 +2387,37 @@ describe("tombstone write fences", () => {
       );
 
       await prepare(state, bucket);
+      await prepareAccountDeletion({
+        bucket,
+        database: state.database,
+        now: () => new Date(NOW),
+        userId: USER_ID,
+        wait: async () => {},
+      });
+      assert.equal(metadataState(bucket, externalKey), "account-deleting");
+    } finally {
+      state.close();
+    }
+  });
+
+  it("lets a learner retry canonically take over its exact external neutral cleanup barrier", async () => {
+    const { bucket, externalKey, state } = await neutralExternalCleanupRace();
+    try {
+      await prepare(state, bucket);
+      assert.equal(metadataState(bucket, externalKey), "learner-deleting");
+      const deletion = tombstone(state);
+      assert.equal(
+        bucket.stored.get(externalKey)?.object.customMetadata.generation,
+        `learner-deletion-v1:${TARGET_ID}:${deletion.generation}:${deletion.requested_at}`,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("lets account unfinished-closure union take over an exact external neutral cleanup barrier", async () => {
+    const { bucket, externalKey, state } = await neutralExternalCleanupRace();
+    try {
       await prepareAccountDeletion({
         bucket,
         database: state.database,

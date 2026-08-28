@@ -18,6 +18,7 @@ import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
 import {
   learnerDeletionGeneration,
   parseLearnerDeletionStorageClosure,
+  preflightLearnerDeletionStorageClosure,
   validateLearnerDeletionStorageClosure,
 } from "./learner-deletion.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
@@ -84,7 +85,7 @@ async function listUnfinishedLearnerDeletions(
     })
     .from(learnerProfileDeletionTombstone)
     .where(eq(learnerProfileDeletionTombstone.userIdHash, userIdHash));
-  return Promise.all(tombstones.map(async (tombstone) => {
+  const unfinished = tombstones.map((tombstone) => {
     const closure = parseLearnerDeletionStorageClosure(
       tombstone.storageKeysJson,
     );
@@ -93,6 +94,10 @@ async function listUnfinishedLearnerDeletions(
       legacyStorageOwner: tombstone.legacyStorageOwner,
       userId,
     };
+    preflightLearnerDeletionStorageClosure(identity, closure);
+    return { closure, identity, tombstone };
+  });
+  return Promise.all(unfinished.map(async ({ closure, identity, tombstone }) => {
     await validateLearnerDeletionStorageClosure(
       bucket,
       database,

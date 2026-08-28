@@ -37,7 +37,7 @@ type LearnerDeletionInput = {
 };
 
 type DeletionTombstone = typeof learnerProfileDeletionTombstone.$inferSelect;
-type LearnerDeletionStorageOwner = Pick<
+export type LearnerDeletionStorageOwner = Pick<
   AccountIdentity,
   "userId"
 > & {
@@ -120,6 +120,18 @@ export async function learnerDeletionUserIdHash(userId: string) {
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0")
   ).join("");
+}
+
+export async function artCleanupUncertainGeneration(key: string) {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(key),
+  );
+  return `art-cleanup-uncertain-v1:${
+    Array.from(new Uint8Array(digest), (byte) =>
+      byte.toString(16).padStart(2, "0")
+    ).join("")
+  }`;
 }
 
 async function findTombstone(database: Database, profileId: string) {
@@ -336,13 +348,7 @@ function deletionOwner(identity: AccountIdentity, tombstone: DeletionTombstone) 
   };
 }
 
-export async function validateLearnerDeletionStorageClosure(
-  bucket: Pick<R2Bucket, "head">,
-  database: Database,
-  owner: LearnerDeletionStorageOwner,
-  closure: LearnerDeletionStorageClosure,
-  deletionGeneration: string,
-) {
+function closureAuthority(owner: LearnerDeletionStorageOwner) {
   const accountPrefix =
     `personalized-story-art/${encodeURIComponent(owner.userId)}/`;
   const learnerPrefix =
@@ -353,30 +359,56 @@ export async function validateLearnerDeletionStorageClosure(
     allowedPrefixes.add(`${accountPrefix}learner-dubs/`);
     allowedPrefixes.add(recordingPrefix);
   }
-  if (closure.prefixes.some((prefix) => !allowedPrefixes.has(prefix))) {
-    throw new Error("Learner deletion storage closure is invalid.");
-  }
-
   const dubClosure = DUB_DEFINITIONS.map(({ id }) =>
     dubStorageClosureKeys(createDubStorageKeys(owner, id))
   );
-  const allowedMarkers = new Set(
-    dubClosure.flatMap(({ markerKeys }) => markerKeys),
-  );
-  if (closure.markerKeys.some((key) => !allowedMarkers.has(key))) {
+  return {
+    accountPrefix,
+    allowedMarkers: new Set(dubClosure.flatMap(({ markerKeys }) => markerKeys)),
+    allowedPrefixes,
+    allowedSlots: new Set(dubClosure.flatMap(({ slotKeys }) => slotKeys)),
+    learnerPrefix,
+    recordingPrefix,
+  };
+}
+
+export function preflightLearnerDeletionStorageClosure(
+  owner: LearnerDeletionStorageOwner,
+  closure: LearnerDeletionStorageClosure,
+) {
+  const authority = closureAuthority(owner);
+  if (
+    closure.prefixes.some((prefix) => !authority.allowedPrefixes.has(prefix)) ||
+    closure.markerKeys.some((key) => !authority.allowedMarkers.has(key))
+  ) {
     throw new Error("Learner deletion storage closure is invalid.");
   }
-
-  const allowedSlots = new Set(dubClosure.flatMap(({ slotKeys }) => slotKeys));
-  const ownedArtKeys = new Set(await artKeys(database, owner));
-  const siblingNamespace = `${accountPrefix}learners/`;
-  for (const key of closure.slotKeys) {
-    if (
+  const siblingNamespace = `${authority.accountPrefix}learners/`;
+  if (
+    closure.slotKeys.some((key) =>
       key.startsWith(siblingNamespace) &&
-      !key.startsWith(learnerPrefix)
-    ) {
-      throw new Error("Learner deletion storage closure is invalid.");
-    }
+      !key.startsWith(authority.learnerPrefix)
+    )
+  ) {
+    throw new Error("Learner deletion storage closure is invalid.");
+  }
+}
+
+export async function validateLearnerDeletionStorageClosure(
+  bucket: Pick<R2Bucket, "head">,
+  database: Database,
+  owner: LearnerDeletionStorageOwner,
+  closure: LearnerDeletionStorageClosure,
+  deletionGeneration: string,
+) {
+  preflightLearnerDeletionStorageClosure(owner, closure);
+  const {
+    allowedSlots,
+    learnerPrefix,
+    recordingPrefix,
+  } = closureAuthority(owner);
+  const ownedArtKeys = new Set(await artKeys(database, owner));
+  for (const key of closure.slotKeys) {
     if (
       allowedSlots.has(key) ||
       key.startsWith(recordingPrefix) ||
@@ -391,7 +423,9 @@ export async function validateLearnerDeletionStorageClosure(
     if (
       state === "account-deleting" ||
       (state === "learner-deleting" &&
-        generation === deletionGeneration)
+        generation === deletionGeneration) ||
+      (state === "art-cleanup-uncertain" &&
+        generation === await artCleanupUncertainGeneration(key))
     ) {
       continue;
     }
@@ -609,6 +643,10 @@ export async function prepareLearnerDeletion({
   wait = (delay: number) => scheduler.wait(delay),
 }: LearnerDeletionInput) {
   const tombstone = await markDeletionPending(database, identity, profileId);
+  preflightLearnerDeletionStorageClosure(
+    deletionOwner(identity, tombstone),
+    parseLearnerDeletionStorageClosure(tombstone.storageKeysJson),
+  );
   const closure = await persistClosure(
     bucket,
     database,

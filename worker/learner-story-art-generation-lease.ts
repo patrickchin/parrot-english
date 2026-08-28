@@ -276,18 +276,28 @@ export function createLearnerStoryArtGenerationLeaseRepository(
     identity: LearnerIdentity,
     storyId: string,
     token: string,
+    accountDeletionTombstoneKey: string,
   ) {
     const result = await database
       .prepare(
         `DELETE FROM learner_story_art_generation_lease
         WHERE learner_profile_id = ? AND auth_user_id = ? AND story_id = ?
-          AND generation_token = ?`,
+          AND generation_token = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM learner_profile_deletion_tombstone
+            WHERE learner_profile_id = ?
+          )`,
       )
       .bind(
         identity.learnerProfileId,
         identity.userId,
         storyId,
         token,
+        accountDeletionTombstoneKey,
+        identity.learnerProfileId,
       )
       .run();
     return changed(result);
