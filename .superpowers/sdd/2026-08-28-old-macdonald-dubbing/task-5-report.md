@@ -26,3 +26,14 @@ Verification:
 Concerns:
 - `src/dubbing/GuardianDubbingSettings.tsx` did not need changes for Task 5 because the current surface still intentionally manages the shared consent flow through the existing Five Little Ducks copy and API contract.
 - Playwright emits the existing `NO_COLOR`/`FORCE_COLOR` warnings during the browser run; they did not affect test results.
+
+Fix round (2026-08-28 review findings):
+- Replaced the Old MacDonald home-card `data-farm-animal` selector assertion with the learner-facing `Farm scene` accessible label, leaving unrelated legacy image assertions unchanged.
+- Added an exact rendered `0 / 35` assertion after entering the Old MacDonald project. The API payload assertions remain because they verify the route-specific mock contract (`old-macdonald-v1` and 35 lines).
+- Moved the API payload check after the visible route title to avoid racing the asynchronous E2E mock bootstrap.
+
+Fix-round verification:
+- `node --test tests/app-routes.test.mjs tests/app-shell-ui.test.mjs && npm run test:browser -- tests/e2e/home-menu.spec.ts tests/e2e/dubbing.spec.ts`
+  - Green: 56 unit tests passed and 80 Playwright tests passed.
+- `npm run test:browser -- tests/e2e/dubbing.spec.ts --grep "Old MacDonald route" --repeat-each=3`
+  - Green: 3 repeated Old MacDonald route tests passed.

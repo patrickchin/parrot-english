@@ -550,6 +550,10 @@ test("Old MacDonald route loads its public studio and opens the first scene", as
 }) => {
   await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
 
+  await expect(
+    page.getByRole("heading", { name: "Old MacDonald Had a Farm" }),
+  ).toBeVisible();
+
   const status = await page.evaluate(async () => {
     const response = await fetch("/api/dubs/old-macdonald-v1");
     return response.json();
@@ -557,13 +561,11 @@ test("Old MacDonald route loads its public studio and opens the first scene", as
 
   expect(status.dubId).toBe("old-macdonald-v1");
   expect(status.lines).toHaveLength(35);
-  await expect(
-    page.getByRole("heading", { name: "Old MacDonald Had a Farm" }),
-  ).toBeVisible();
   await confirmDub(page, "Start dubbing");
   await expect(
     page.getByRole("region", { name: "Full video player" }),
   ).toBeVisible();
+  await expect(page.getByText("0 / 35", { exact: true })).toBeVisible();
   await openScene(page, 1);
   await expect(
     page.getByRole("heading", {

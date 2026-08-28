@@ -56,8 +56,8 @@ async function expectActivityPicturesLoaded(activities: Locator) {
   await expect(
     activities
       .getByRole("link", { name: "Old MacDonald Had a Farm" })
-      .locator('[data-farm-animal="cows"]'),
-  ).toHaveCount(1);
+      .getByLabel("Farm scene"),
+  ).toBeVisible();
   await expect(activities.getByRole("img")).toHaveCount(0);
   await expect
     .poll(() =>
