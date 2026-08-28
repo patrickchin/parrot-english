@@ -183,10 +183,6 @@ function getActiveE2eDubApiPath() {
   return `/api/dubs/${getActiveE2eDubDefinition().id}`;
 }
 
-function getActiveE2eDubLineIds() {
-  return getActiveE2eDubDefinition().lines.map(({ id }) => id);
-}
-
 function matchActiveE2eDubLinePath(pathname: string) {
   const definition = getActiveE2eDubDefinition();
   const apiPath = `/api/dubs/${definition.id}/lines/`;
