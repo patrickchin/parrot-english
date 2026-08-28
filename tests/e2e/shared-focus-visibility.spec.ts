@@ -206,18 +206,12 @@ function renderedScreenshotDelta({
   borderRadius,
   box,
   focused,
-  markerHeight,
-  markerOffset = -8,
-  markerTopOffset = 0,
   unfocused,
   viewport,
 }: {
   borderRadius: number;
   box: NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>;
   focused: Awaited<ReturnType<typeof decodedScreenshot>>;
-  markerHeight?: number;
-  markerOffset?: number;
-  markerTopOffset?: number;
   unfocused: Awaited<ReturnType<typeof decodedScreenshot>>;
   viewport: NonNullable<ReturnType<Page["viewportSize"]>>;
 }) {
@@ -227,50 +221,28 @@ function renderedScreenshotDelta({
 
   const scaleX = focused.info.width / viewport.width;
   const scaleY = focused.info.height / viewport.height;
-  const padding = 12;
-  const leftPadding = Math.max(padding, Math.max(0, -markerOffset));
+  const horizontalPadding = 20;
+  const verticalPadding = 12;
   const left = Math.max(
     0,
-    Math.floor((box.x - leftPadding) * scaleX),
+    Math.floor((box.x - horizontalPadding) * scaleX),
   );
   const right = Math.min(
     focused.info.width,
-    Math.ceil((box.x + box.width + padding) * scaleX),
+    Math.ceil((box.x + box.width + horizontalPadding) * scaleX),
   );
-  const top = Math.max(0, Math.floor((box.y - padding) * scaleY));
+  const top = Math.max(0, Math.floor((box.y - verticalPadding) * scaleY));
   const bottom = Math.min(
     focused.info.height,
-    Math.ceil((box.y + box.height + padding) * scaleY),
-  );
-  const markerLeft = Math.max(
-    0,
-    Math.floor((box.x + markerOffset) * scaleX),
-  );
-  const markerRight = Math.min(
-    focused.info.width,
-    Math.ceil((box.x + markerOffset + 4) * scaleX),
+    Math.ceil((box.y + box.height + verticalPadding) * scaleY),
   );
   const outlineLeftLeft = Math.max(0, Math.floor((box.x - 4) * scaleX));
   const outlineLeftRight = Math.min(
     focused.info.width,
     Math.ceil(box.x * scaleX),
   );
-  const renderedMarkerHeight = Math.min(
-    markerHeight ?? box.height,
-    Math.max(0, box.height - markerTopOffset),
-  );
-  const headingTop = Math.max(0, Math.floor(box.y * scaleY));
-  const markerTop = Math.max(
-    0,
-    Math.floor((box.y + markerTopOffset) * scaleY),
-  );
-  const markerBottom = Math.min(
-    focused.info.height,
-    Math.ceil(
-      (box.y + markerTopOffset + renderedMarkerHeight) * scaleY,
-    ),
-  );
-  const headingBottom = Math.min(
+  const targetTop = Math.max(0, Math.floor(box.y * scaleY));
+  const targetBottom = Math.min(
     focused.info.height,
     Math.ceil((box.y + box.height) * scaleY),
   );
@@ -284,16 +256,9 @@ function renderedScreenshotDelta({
   );
   let changedPixels = 0;
   let contrastingPixels = 0;
-  let leftMarkerContrastingPixels = 0;
-  let aboveMarkerChangedPixels = 0;
-  let markerGapChangedPixels = 0;
-  let belowMarkerChangedPixels = 0;
   let leftOutlineContrastingPixels = 0;
   let rightOutlineContrastingPixels = 0;
   let strongestContrast = 1;
-  const markerRowContrastingPixels = new Uint32Array(
-    Math.max(0, markerBottom - markerTop),
-  );
 
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
@@ -319,51 +284,23 @@ function renderedScreenshotDelta({
       if (channelChange < 12) continue;
 
       changedPixels += 1;
-      if (x >= markerRight && x < outlineLeftRight) {
-        markerGapChangedPixels += 1;
-      }
-      if (
-        x >= markerLeft &&
-        x < markerRight &&
-        y >= headingTop &&
-        y < markerTop
-      ) {
-        aboveMarkerChangedPixels += 1;
-      }
-      if (
-        x >= markerLeft &&
-        x < markerRight &&
-        y >= markerBottom &&
-        y < headingBottom
-      ) {
-        belowMarkerChangedPixels += 1;
-      }
       const ratio = contrast(after, before);
       strongestContrast = Math.max(strongestContrast, ratio);
       if (ratio >= 3) {
         contrastingPixels += 1;
         if (
-          x >= markerLeft &&
-          x < markerRight &&
-          y >= markerTop &&
-          y < markerBottom
-        ) {
-          leftMarkerContrastingPixels += 1;
-          markerRowContrastingPixels[y - markerTop] += 1;
-        }
-        if (
           x >= outlineLeftLeft &&
           x < outlineLeftRight &&
-          y >= markerTop &&
-          y < markerBottom
+          y >= targetTop &&
+          y < targetBottom
         ) {
           leftOutlineContrastingPixels += 1;
         }
         if (
           x >= outlineRightLeft &&
           x < outlineRightRight &&
-          y >= markerTop &&
-          y < markerBottom
+          y >= targetTop &&
+          y < targetBottom
         ) {
           rightOutlineContrastingPixels += 1;
         }
@@ -372,11 +309,6 @@ function renderedScreenshotDelta({
   }
 
   const renderedPixelsPerCssPixel = scaleX * scaleY;
-  const markerRowsAtThreePixels = markerRowContrastingPixels.reduce(
-    (count, rowPixels) =>
-      count + (rowPixels >= Math.floor(3 * scaleX) ? 1 : 0),
-    0,
-  );
   const radius = Math.min(
     Number.isFinite(borderRadius) ? borderRadius : 0,
     box.width / 2,
@@ -385,22 +317,11 @@ function renderedScreenshotDelta({
   return {
     changedArea: changedPixels / renderedPixelsPerCssPixel,
     contrastingArea: contrastingPixels / renderedPixelsPerCssPixel,
-    leftMarkerContrastingArea:
-      leftMarkerContrastingPixels / renderedPixelsPerCssPixel,
-    aboveMarkerChangedArea:
-      aboveMarkerChangedPixels / renderedPixelsPerCssPixel,
-    markerGapChangedArea:
-      markerGapChangedPixels / renderedPixelsPerCssPixel,
-    belowMarkerChangedArea:
-      belowMarkerChangedPixels / renderedPixelsPerCssPixel,
     leftOutlineContrastingArea:
       leftOutlineContrastingPixels / renderedPixelsPerCssPixel,
     rightOutlineContrastingArea:
       rightOutlineContrastingPixels / renderedPixelsPerCssPixel,
     forcedOutlineEdgeArea: 1.5 * box.height,
-    markerContrastingHeight: markerRowsAtThreePixels / scaleY,
-    readingCueArea: 3 * renderedMarkerHeight,
-    readingCueHeight: renderedMarkerHeight,
     requiredArea:
       4 * (box.width + box.height) - (16 - 4 * Math.PI) * radius,
     strongestContrast,
@@ -444,9 +365,6 @@ async function renderedFocusDelta(
 async function renderedInitialFocusDelta(
   page: Page,
   target: Locator,
-  markerOffset = -8,
-  markerHeight?: number,
-  markerTopOffset = 0,
 ) {
   await expect(target).toBeVisible();
   await expect(target).toBeFocused();
@@ -459,9 +377,6 @@ async function renderedInitialFocusDelta(
   return renderedScreenshotDelta({
     ...geometry,
     focused,
-    markerHeight,
-    markerOffset,
-    markerTopOffset,
     unfocused,
   });
 }
@@ -480,65 +395,29 @@ function expectRenderedFocusTarget(
   ).toBeGreaterThanOrEqual(focus.requiredArea);
 }
 
-function expectRenderedReadingCue(
+function expectNoRenderedFocusDecoration(
   focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
   name: string,
 ) {
-  expect.soft(
+  expect(
     focus.changedArea,
-    `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered change; ${focus.readingCueArea.toFixed(0)} CSS px² required for the reading marker`,
-  ).toBeGreaterThanOrEqual(focus.readingCueArea);
-  expect(
-    focus.contrastingArea,
-    `${name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${focus.readingCueArea.toFixed(0)} CSS px² required for the reading marker`,
-  ).toBeGreaterThanOrEqual(focus.readingCueArea);
-}
-
-function expectRenderedReadingMarker(
-  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
-  name: string,
-  { markerEndTolerance = 1 }: { markerEndTolerance?: number } = {},
-) {
-  expectRenderedReadingCue(focus, name);
-  expect(
-    focus.leftMarkerContrastingArea,
-    `${name} has ${focus.leftMarkerContrastingArea.toFixed(0)} CSS px² at 3:1 or better in its four-pixel marker strip; ${focus.readingCueArea.toFixed(0)} CSS px² required`,
-  ).toBeGreaterThanOrEqual(focus.readingCueArea);
-  expect(
-    focus.markerContrastingHeight,
-    `${name} has ${focus.markerContrastingHeight.toFixed(1)} CSS pixels of continuous marker rows; ${focus.readingCueHeight.toFixed(1)} expected within ${markerEndTolerance.toFixed(1)} CSS pixels`,
-  ).toBeGreaterThanOrEqual(focus.readingCueHeight - markerEndTolerance);
-}
-
-function expectRenderedOpenReadingMarker(
-  focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
-  name: string,
-  { markerEndTolerance = 1 }: { markerEndTolerance?: number } = {},
-) {
-  expectRenderedReadingMarker(focus, name, { markerEndTolerance });
-  expect(
-    focus.markerGapChangedArea,
-    `${name} changes ${focus.markerGapChangedArea.toFixed(0)} CSS px² in the clear marker-to-heading gap`,
+    `${name} changes ${focus.changedArea.toFixed(0)} CSS px² when focus moves away`,
   ).toBeLessThan(1);
-  expect(
-    focus.aboveMarkerChangedArea,
-    `${name} changes ${focus.aboveMarkerChangedArea.toFixed(0)} CSS px² above the reading marker`,
-  ).toBeLessThan(1);
-  expect(
-    focus.belowMarkerChangedArea,
-    `${name} changes ${focus.belowMarkerChangedArea.toFixed(0)} CSS px² below the reading-marker cap`,
-  ).toBeLessThan(1);
-  expect(
-    focus.rightOutlineContrastingArea,
-    `${name} retains ${focus.rightOutlineContrastingArea.toFixed(0)} CSS px² of a closed right perimeter`,
-  ).toBeLessThan(Math.max(1, focus.forcedOutlineEdgeArea / 15));
 }
 
 function expectRenderedForcedReadingOutline(
   focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
   name: string,
 ) {
-  expectRenderedReadingCue(focus, name);
+  const requiredArea = focus.forcedOutlineEdgeArea * 2;
+  expect.soft(
+    focus.changedArea,
+    `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${requiredArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(requiredArea);
+  expect(
+    focus.contrastingArea,
+    `${name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${requiredArea.toFixed(0)} CSS px² required`,
+  ).toBeGreaterThanOrEqual(requiredArea);
   expect(
     focus.leftOutlineContrastingArea,
     `${name} has ${focus.leftOutlineContrastingArea.toFixed(0)} CSS px² at 3:1 or better along its left outline edge; ${focus.forcedOutlineEdgeArea.toFixed(0)} CSS px² required`,
@@ -564,7 +443,7 @@ for (const scenario of focusScenarios) {
   });
 }
 
-test("programmatic story focus stays visible on a narrow phone", async ({
+test("programmatic story focus adds no decoration on a narrow phone", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -585,7 +464,7 @@ test("programmatic story focus stays visible on a narrow phone", async ({
       );
     }),
   ).toBe(1);
-  expectRenderedReadingMarker(
+  expectNoRenderedFocusDecoration(
     await renderedInitialFocusDelta(page, text),
     "narrow Story Reader page text",
   );
@@ -596,7 +475,7 @@ test("programmatic story focus stays visible on a narrow phone", async ({
   ).toBe(true);
 });
 
-test("programmatic story completion focus uses the open reading marker", async ({
+test("programmatic story completion focus adds no decoration", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -608,13 +487,13 @@ test("programmatic story completion focus uses the open reading marker", async (
     name: "Great job!",
   });
 
-  expectRenderedReadingMarker(
-    await renderedInitialFocusDelta(page, heading, -12),
+  expectNoRenderedFocusDecoration(
+    await renderedInitialFocusDelta(page, heading),
     "Story Reader completion heading",
   );
 });
 
-test("story page changes retain the visible reading marker after pointer input", async ({
+test("story page changes add no focus decoration after pointer input", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -629,7 +508,7 @@ test("story page changes retain the visible reading marker after pointer input",
     "aria-label",
     "Page 2 of 5. Roll, red ball, roll.",
   );
-  expectRenderedReadingMarker(
+  expectNoRenderedFocusDecoration(
     await renderedInitialFocusDelta(page, text),
     "pointer-advanced Story Reader page text",
   );
@@ -668,7 +547,7 @@ test("long story focus stays visible inside the short-wide reading pane", async 
   expect(controlsBox).not.toBeNull();
   expect(textBox!.y).toBeGreaterThanOrEqual(0);
   expect(textBox!.y + textBox!.height).toBeLessThanOrEqual(controlsBox!.y);
-  expectRenderedReadingMarker(
+  expectNoRenderedFocusDecoration(
     await renderedInitialFocusDelta(page, text),
     "short-wide Story Reader page text",
   );
@@ -860,19 +739,7 @@ async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
     };
   });
   const presentation = await heading.evaluate((element) => {
-    const cue = getComputedStyle(element, "::before");
     return {
-      cueMotion: {
-        animationName: cue.animationName,
-        transitionProperty: cue.transitionProperty,
-      },
-      cueShape: {
-        borderRadius: Number.parseFloat(cue.borderTopLeftRadius),
-        height: Number.parseFloat(cue.height),
-        left: Number.parseFloat(cue.left),
-        top: Number.parseFloat(cue.top),
-        width: Number.parseFloat(cue.width),
-      },
       documentScroll: {
         left: document.documentElement.scrollLeft,
         top: document.documentElement.scrollTop,
@@ -897,7 +764,7 @@ async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
   };
 }
 
-async function expectLessonShelfOpenReadingCue(
+async function expectLessonShelfFocusIsUndecorated(
   page: Page,
   heading: Locator,
   name: string,
@@ -906,29 +773,12 @@ async function expectLessonShelfOpenReadingCue(
   await expect(heading).toHaveAttribute("tabindex", "-1");
   const focused = await lessonShelfHeadingGeometry(page, heading);
   expect(focused.heading.width - focused.text.width).toBeLessThanOrEqual(1);
-  expect(focused.heading.x - 16).toBeGreaterThanOrEqual(4);
   expect(focused.mainScroll).toEqual({ left: 0, top: 0 });
   expect(focused.documentScroll).toEqual({ left: 0, top: 0 });
-  expect(focused.cueMotion).toEqual({
-    animationName: "none",
-    transitionProperty: "none",
-  });
-  expect(focused.cueShape.left).toBe(-16);
-  expect(focused.cueShape.width).toBe(4);
-  expect(focused.cueShape.height / focused.heading.height).toBeCloseTo(0.6, 2);
-  expect(focused.cueShape.top / focused.heading.height).toBeCloseTo(0.2, 2);
-  expect(focused.cueShape.borderRadius).toBeGreaterThanOrEqual(2);
 
-  expectRenderedOpenReadingMarker(
-    await renderedInitialFocusDelta(
-      page,
-      heading,
-      -16,
-      focused.heading.height * 0.6,
-      focused.heading.height * 0.2,
-    ),
+  expectNoRenderedFocusDecoration(
+    await renderedInitialFocusDelta(page, heading),
     name,
-    { markerEndTolerance: 2 },
   );
 
   const blurred = await lessonShelfHeadingGeometry(page, heading);
@@ -950,14 +800,14 @@ for (const viewport of [
   { height: 568, width: 280 },
   { height: 360, width: 640 },
 ]) {
-  test(`lesson shelf direct arrival uses one localized reading cue at ${viewport.width}x${viewport.height}`, async ({
+  test(`lesson shelf direct arrival adds no heading decoration at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize(viewport);
     await openSettledLessonShelf(page);
 
-    await expectLessonShelfOpenReadingCue(
+    await expectLessonShelfFocusIsUndecorated(
       page,
       lessonShelfHeading(page),
       `lesson shelf heading at ${viewport.width}x${viewport.height}`,
@@ -966,7 +816,7 @@ for (const viewport of [
 }
 
 for (const activation of ["pointer", "keyboard"] as const) {
-  test(`lesson shelf ${activation} navigation retains the same reading cue`, async ({
+  test(`lesson shelf ${activation} navigation adds no heading decoration`, async ({
     page,
   }) => {
     await page.route("**/api/lessons/my", async (route) => {
@@ -990,7 +840,7 @@ for (const activation of ["pointer", "keyboard"] as const) {
     await expect(page).toHaveURL("/lessons");
     await expect(firstLessonLink(page)).toBeVisible();
     await settleLessonShelf(page);
-    await expectLessonShelfOpenReadingCue(
+    await expectLessonShelfFocusIsUndecorated(
       page,
       lessonShelfHeading(page),
       `${activation}-arrived lesson shelf heading`,
@@ -1010,7 +860,7 @@ test("lesson shelf heading remains outside the ordinary Tab sequence", async ({
   await expect(heading).not.toBeFocused();
 });
 
-test("lesson shelf arrival cue survives My Lessons settlement", async ({
+test("lesson shelf heading focus survives My Lessons settlement", async ({
   page,
 }) => {
   let releaseLessons = () => {};
@@ -1039,32 +889,10 @@ test("lesson shelf arrival cue survives My Lessons settlement", async ({
     .getByRole("status");
   await expect(status).toHaveText("Loading My Lessons…");
   await expect(heading).toBeFocused();
-  const loadingCue = await heading.evaluate((element) => {
-    const cue = getComputedStyle(element, "::before");
-    return {
-      backgroundColor: cue.backgroundColor,
-      height: cue.height,
-      left: cue.left,
-      top: cue.top,
-      width: cue.width,
-    };
-  });
 
   releaseLessons();
   await expect(status).toHaveText("No made-for-you lessons yet.");
   await expect(heading).toBeFocused();
-  expect(
-    await heading.evaluate((element) => {
-      const cue = getComputedStyle(element, "::before");
-      return {
-        backgroundColor: cue.backgroundColor,
-        height: cue.height,
-        left: cue.left,
-        top: cue.top,
-        width: cue.width,
-      };
-    }),
-  ).toEqual(loadingCue);
 });
 
 test("lesson shelf arrival keeps a real localized indicator in forced colors", async ({
@@ -1077,21 +905,15 @@ test("lesson shelf arrival keeps a real localized indicator in forced colors", a
   const indicator = await heading.evaluate((element) => {
     const style = getComputedStyle(element);
     return {
-      cueDisplay: getComputedStyle(element, "::before").display,
       outlineStyle: style.outlineStyle,
       outlineWidth: Number.parseFloat(style.outlineWidth),
     };
   });
 
-  expect(indicator.cueDisplay).toBe("none");
   expect(indicator.outlineStyle).not.toBe("none");
   expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
-  const focus = await renderedInitialFocusDelta(page, heading, -16);
+  const focus = await renderedInitialFocusDelta(page, heading);
   expectRenderedForcedReadingOutline(focus, "forced-colors lesson shelf heading");
-  expect(
-    focus.leftMarkerContrastingArea,
-    "forced-colors lesson shelf heading retains the decorative rail",
-  ).toBeLessThan(1);
 });
 
 async function profileHeadingGeometry(target: Locator) {
@@ -1115,7 +937,6 @@ async function profileHeadingGeometry(target: Locator) {
     }
     const cardStyle = getComputedStyle(cardElement);
     const style = getComputedStyle(element);
-    const cueStyle = getComputedStyle(element, "::before");
     const textRange = document.createRange();
     textRange.selectNodeContents(element);
     const text = textRange.getBoundingClientRect();
@@ -1126,10 +947,6 @@ async function profileHeadingGeometry(target: Locator) {
       cardInnerLeft: card.left + Number.parseFloat(cardStyle.borderLeftWidth),
       cardLeft: card.left,
       cardRight: card.right,
-      cueMotion: {
-        animationName: cueStyle.animationName,
-        transitionProperty: cueStyle.transitionProperty,
-      },
       heading: {
         height: heading.height,
         width: heading.width,
@@ -1164,14 +981,10 @@ async function expectProfileHeadingContract(
   if (id) await expect(target).toHaveAttribute("id", id);
 }
 
-async function expectProfileOpenReadingCue(
+async function expectProfileFocusIsUndecorated(
   page: Page,
   target: Locator,
   name: string,
-  {
-    markerHeight,
-    markerOffset = -8,
-  }: { markerHeight?: number; markerOffset?: number } = {},
 ) {
   await expect(target).toBeFocused();
   await expect(target).toHaveAttribute("tabindex", "-1");
@@ -1179,26 +992,15 @@ async function expectProfileOpenReadingCue(
     for (const animation of document.getAnimations()) animation.cancel();
   });
   const focused = await profileHeadingGeometry(target);
-  expect(
-    focused.heading.x + markerOffset - focused.cardInnerLeft,
-  ).toBeGreaterThanOrEqual(4);
+  expect(focused.heading.x).toBeGreaterThanOrEqual(focused.cardInnerLeft);
   expect(focused.heading.x + focused.heading.width).toBeLessThanOrEqual(
     focused.cardRight + 1,
   );
   expect(focused.mainScrollLeft).toBe(0);
   expect(focused.mainScrollTop).toBe(0);
-  expect(focused.cueMotion).toEqual({
-    animationName: "none",
-    transitionProperty: "none",
-  });
 
-  expectRenderedOpenReadingMarker(
-    await renderedInitialFocusDelta(
-      page,
-      target,
-      markerOffset,
-      markerHeight,
-    ),
+  expectNoRenderedFocusDecoration(
+    await renderedInitialFocusDelta(page, target),
     name,
   );
 
@@ -1220,7 +1022,6 @@ async function expectProfileForcedReadingCue(
   page: Page,
   target: Locator,
   name: string,
-  markerOffset = -8,
 ) {
   await expect(target).toBeFocused();
   await expect(target).toHaveAttribute("tabindex", "-1");
@@ -1234,15 +1035,11 @@ async function expectProfileForcedReadingCue(
   expect(indicator.outlineStyle).not.toBe("none");
   expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
 
-  const focus = await renderedInitialFocusDelta(page, target, markerOffset);
+  const focus = await renderedInitialFocusDelta(page, target);
   expectRenderedForcedReadingOutline(focus, name);
-  expect(
-    focus.leftMarkerContrastingArea,
-    `${name} retains the decorative normal-color marker in forced colors`,
-  ).toBeLessThan(1);
 }
 
-test("profile steps keep one open reading cue through pointer transitions", async ({
+test("profile steps add no heading decoration through pointer transitions", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -1254,9 +1051,11 @@ test("profile steps keep one open reading cue through pointer transitions", asyn
     setupHeading,
     "Answer 6 questions",
   );
-  await expectProfileOpenReadingCue(page, setupHeading, "profile setup heading", {
-    markerOffset: -12,
-  });
+  await expectProfileFocusIsUndecorated(
+    page,
+    setupHeading,
+    "profile setup heading",
+  );
 
   await page.getByRole("button", { name: "Start questions" }).click();
   const questionHeading = profileStepHeading(
@@ -1269,11 +1068,10 @@ test("profile steps keep one open reading cue through pointer transitions", asyn
     "learner-profile-question-title",
   );
   await expect(questionHeading).toBeFocused();
-  await expectProfileOpenReadingCue(
+  await expectProfileFocusIsUndecorated(
     page,
     questionHeading,
     "pointer-arrived profile question heading",
-    { markerHeight: 96 },
   );
 
   await page
@@ -1283,15 +1081,14 @@ test("profile steps keep one open reading cue through pointer transitions", asyn
   const acknowledgmentHeading = profileStepHeading(page, "Thank you!");
   await expectProfileHeadingContract(acknowledgmentHeading, "Thank you!");
   await expect(acknowledgmentHeading).toBeFocused();
-  await expectProfileOpenReadingCue(
+  await expectProfileFocusIsUndecorated(
     page,
     acknowledgmentHeading,
     "pointer-arrived profile acknowledgment heading",
-    { markerOffset: -12 },
   );
 });
 
-test("keyboard profile transitions retain the same open reading cue", async ({
+test("keyboard profile transitions add no heading decoration", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -1306,11 +1103,10 @@ test("keyboard profile transitions retain the same open reading cue", async ({
     "Hi! I'm Peppa. What's your name?",
   );
   await expect(questionHeading).toBeFocused();
-  await expectProfileOpenReadingCue(
+  await expectProfileFocusIsUndecorated(
     page,
     questionHeading,
     "keyboard-arrived profile question heading",
-    { markerOffset: -12 },
   );
 
   const answer = page.getByRole("textbox", {
@@ -1323,11 +1119,10 @@ test("keyboard profile transitions retain the same open reading cue", async ({
   await page.keyboard.press("Enter");
   const acknowledgmentHeading = profileStepHeading(page, "Thank you!");
   await expect(acknowledgmentHeading).toBeFocused();
-  await expectProfileOpenReadingCue(
+  await expectProfileFocusIsUndecorated(
     page,
     acknowledgmentHeading,
     "keyboard-arrived profile acknowledgment heading",
-    { markerOffset: -12 },
   );
 });
 
@@ -1343,7 +1138,6 @@ test("profile headings keep a real indicator through forced-color pointer transi
     page,
     setupHeading,
     "forced-colors profile setup heading",
-    -12,
   );
 
   await page.getByRole("button", { name: "Start questions" }).click();
@@ -1355,7 +1149,6 @@ test("profile headings keep a real indicator through forced-color pointer transi
     page,
     questionHeading,
     "forced-colors pointer-arrived profile question heading",
-    -12,
   );
 
   await page
@@ -1366,11 +1159,10 @@ test("profile headings keep a real indicator through forced-color pointer transi
     page,
     profileStepHeading(page, "Thank you!"),
     "forced-colors pointer-arrived profile acknowledgment heading",
-    -12,
   );
 });
 
-test("the long profile acknowledgment keeps its open marker contained", async ({
+test("the long profile acknowledgment focus stays contained and undecorated", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -1386,11 +1178,10 @@ test("the long profile acknowledgment keeps its open marker contained", async ({
     "Mia, that is a lovely answer! Peppa is happy to know you, and she cannot wait to hear about your favourite games, animals, stories, songs, and silly dances too!";
   const acknowledgmentHeading = profileStepHeading(page, acknowledgmentText);
   await expectProfileHeadingContract(acknowledgmentHeading, acknowledgmentText);
-  await expectProfileOpenReadingCue(
+  await expectProfileFocusIsUndecorated(
     page,
     acknowledgmentHeading,
     "long profile acknowledgment heading",
-    { markerHeight: 96, markerOffset: -12 },
   );
 });
 

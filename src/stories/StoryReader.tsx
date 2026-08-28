@@ -349,7 +349,7 @@ export function StoryReader({
                 The end!
               </p>
               <h1
-                className="relative mx-auto mb-0 mt-1 w-fit text-3xl leading-none text-brand-ink outline-none before:absolute before:inset-y-0 before:-left-3 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-4xl"
+                className="mx-auto mb-0 mt-1 w-fit text-3xl leading-none text-brand-ink outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-4xl"
                 ref={completionHeadingRef}
                 tabIndex={-1}
               >
@@ -500,7 +500,7 @@ export function StoryReader({
             <p
               aria-label={`Page ${pageIndex + 1} of ${story.pages.length}. ${page.text}`}
               className={cx(
-                "relative m-0 whitespace-pre-line font-black text-slate-800 outline-none before:absolute before:inset-y-0 before:-left-2 before:w-1 before:content-[''] focus:before:bg-brand-blue forced-colors:before:hidden forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2",
+                "m-0 whitespace-pre-line font-black text-slate-800 outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2",
                 isLongStory
                   ? "grid gap-1 text-[1.0625rem] leading-[1.125] min-[360px]:text-xl min-[360px]:leading-tight short:landscape:!text-base short:landscape:!leading-[1.1] lg:text-2xl lg:leading-tight"
                   : "text-[1.35rem] leading-snug short:landscape:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug",
