@@ -37,7 +37,7 @@ export function GuardianLessonManagerView({
     target.learnerName !== null;
 
   return (
-    <main className="min-h-dvh w-full overflow-x-hidden bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
+    <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
       <RouteHeader>
         <HeaderLink
           aria-label="Back to guardian dashboard"
