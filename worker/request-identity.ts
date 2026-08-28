@@ -1,6 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import {
   learnerProfile,
+  learnerProfileDeletionTombstone,
+  learnerSelectionRequired,
   session,
   sessionLearnerSelection,
 } from "../src/db/schema.ts";
@@ -41,6 +43,20 @@ export function parseLearnerProfileTarget(
   return value;
 }
 
+export async function isLearnerDeletionPending(
+  database: Database,
+  learnerProfileId: string,
+) {
+  const [tombstone] = await database
+    .select({ learnerProfileId: learnerProfileDeletionTombstone.learnerProfileId })
+    .from(learnerProfileDeletionTombstone)
+    .where(
+      eq(learnerProfileDeletionTombstone.learnerProfileId, learnerProfileId),
+    )
+    .limit(1);
+  return tombstone !== undefined;
+}
+
 export async function resolveOwnedLearnerIdentity(
   database: Database,
   account: AccountIdentity,
@@ -53,10 +69,18 @@ export async function resolveOwnedLearnerIdentity(
       legacyStorageOwner: learnerProfile.legacyStorageOwner,
     })
     .from(learnerProfile)
+    .leftJoin(
+      learnerProfileDeletionTombstone,
+      eq(
+        learnerProfileDeletionTombstone.learnerProfileId,
+        learnerProfile.id,
+      ),
+    )
     .where(
       and(
         eq(learnerProfile.id, learnerProfileId),
         eq(learnerProfile.authUserId, account.userId),
+        isNull(learnerProfileDeletionTombstone.learnerProfileId),
       ),
     )
     .limit(1);
@@ -97,11 +121,19 @@ export async function resolveLearnerIdentity(
           eq(sessionLearnerSelection.authUserId, learnerProfile.authUserId),
         ),
       )
+      .leftJoin(
+        learnerProfileDeletionTombstone,
+        eq(
+          learnerProfileDeletionTombstone.learnerProfileId,
+          learnerProfile.id,
+        ),
+      )
       .where(
         and(
           eq(sessionLearnerSelection.sessionId, account.sessionId),
           eq(session.userId, account.userId),
           eq(learnerProfile.authUserId, account.userId),
+          isNull(learnerProfileDeletionTombstone.learnerProfileId),
         ),
       )
       .limit(1);
@@ -126,10 +158,29 @@ export async function resolveLearnerIdentity(
     .limit(1);
   if (existingSelection) return { status: "selection_required" };
 
+  const [selectionRequired] = await database
+    .select({ sessionId: learnerSelectionRequired.sessionId })
+    .from(learnerSelectionRequired)
+    .where(eq(learnerSelectionRequired.sessionId, account.sessionId))
+    .limit(1);
+  if (selectionRequired) return { status: "selection_required" };
+
   let profiles = await database
     .select({ id: learnerProfile.id })
     .from(learnerProfile)
-    .where(eq(learnerProfile.authUserId, account.userId))
+    .leftJoin(
+      learnerProfileDeletionTombstone,
+      eq(
+        learnerProfileDeletionTombstone.learnerProfileId,
+        learnerProfile.id,
+      ),
+    )
+    .where(
+      and(
+        eq(learnerProfile.authUserId, account.userId),
+        isNull(learnerProfileDeletionTombstone.learnerProfileId),
+      ),
+    )
     .limit(2);
 
   if (profiles.length === 0) {
@@ -146,7 +197,19 @@ export async function resolveLearnerIdentity(
     profiles = await database
       .select({ id: learnerProfile.id })
       .from(learnerProfile)
-      .where(eq(learnerProfile.authUserId, account.userId))
+      .leftJoin(
+        learnerProfileDeletionTombstone,
+        eq(
+          learnerProfileDeletionTombstone.learnerProfileId,
+          learnerProfile.id,
+        ),
+      )
+      .where(
+        and(
+          eq(learnerProfile.authUserId, account.userId),
+          isNull(learnerProfileDeletionTombstone.learnerProfileId),
+        ),
+      )
       .limit(2);
   }
 

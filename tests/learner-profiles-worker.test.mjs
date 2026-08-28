@@ -76,6 +76,26 @@ function insertLearner(
     .run(id, legacyStorageOwner ? 1 : 0, name, age, timestamp, timestamp);
 }
 
+function insertDeletionTombstone(state, learnerProfileId) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, legacy_storage_owner,
+         generation, requested_at, storage_keys_json)
+       VALUES (?, 'opaque-user-hash', 1, 1, ?, '[]')`,
+    )
+    .run(learnerProfileId, timestamp);
+}
+
+function requireLearnerSelection(state, sessionId = "session-a") {
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_selection_required (session_id)
+       VALUES (?)`,
+    )
+    .run(sessionId);
+}
+
 function authStub(value = session) {
   return {
     api: { async getSession() { return value; } },
@@ -192,6 +212,7 @@ describe("learner roster Worker routing", () => {
           age: 8,
           profileStatus: "completed",
           createdAt: "2026-08-26T08:00:00.000Z",
+          deletionPending: false,
         },
       ],
     });
@@ -223,6 +244,7 @@ describe("learner roster Worker routing", () => {
       age: null,
       profileStatus: "not_started",
       createdAt: payload.profiles[0].createdAt,
+      deletionPending: false,
     });
     assert.match(payload.profiles[0].createdAt, /^\d{4}-\d{2}-\d{2}T/);
     assert.deepEqual(
@@ -253,6 +275,45 @@ describe("learner roster Worker routing", () => {
       assert.equal(response.status, 200, flag ?? "absent");
       assert.equal((await response.json()).activeProfileId, "learner-a");
     }
+  });
+
+  it("retains a tombstoned learner in the Guardian roster as deletion pending", async () => {
+    insertLearner(state, "learner-a", { name: "Mary" });
+    insertLearner(state, "learner-b", {
+      legacyStorageOwner: false,
+      name: "Sam",
+    });
+    insertDeletionTombstone(state, "learner-a");
+    requireLearnerSelection(state);
+    await createGuardianAccessRepository(database).unlock("session-a");
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("GET", "/api/learner-profiles"),
+      env,
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      activeProfileId: null,
+      profiles: [
+        {
+          id: "learner-a",
+          name: "Mary",
+          age: 8,
+          profileStatus: "completed",
+          createdAt: "2026-08-26T08:00:00.000Z",
+          deletionPending: true,
+        },
+        {
+          id: "learner-b",
+          name: "Sam",
+          age: 8,
+          profileStatus: "completed",
+          createdAt: "2026-08-26T08:00:00.000Z",
+          deletionPending: false,
+        },
+      ],
+    });
   });
 
   it("requires authentication and a current Guardian unlock for enabled mutations", async () => {
@@ -650,6 +711,117 @@ describe("learner roster Worker routing", () => {
         )
         .get().count,
       0,
+    );
+  });
+
+  it("returns generic 404 instead of selecting a tombstoned learner", async () => {
+    insertLearner(state, "learner-a");
+    insertDeletionTombstone(state, "learner-a");
+    requireLearnerSelection(state);
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("PUT", "/api/learner-profiles/learner-a/active"),
+      env,
+    );
+
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM learner_selection_required
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      1,
+    );
+  });
+
+  it("clears the selection-required marker atomically with explicit selection", async () => {
+    insertLearner(state, "learner-a");
+    requireLearnerSelection(state);
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("PUT", "/api/learner-profiles/learner-a/active"),
+      env,
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).activeProfileId, "learner-a");
+    assert.deepEqual(
+      state.sqlite
+        .prepare(
+          `SELECT session_id, learner_profile_id
+           FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .all()
+        .map((row) => ({ ...row })),
+      [{ session_id: "session-a", learner_profile_id: "learner-a" }],
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM learner_selection_required
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
+    );
+  });
+
+  it("rolls back explicit selection when clearing its marker fails", async () => {
+    insertLearner(state, "learner-a");
+    requireLearnerSelection(state);
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+    const realD1 = state.d1;
+    const failingD1 = Object.create(realD1);
+    failingD1.batch = async (statements) =>
+      realD1.batch([
+        statements[0],
+        realD1.prepare("DELETE FROM missing_learner_selection_required"),
+      ]);
+    env.DB = failingD1;
+
+    await assert.rejects(
+      createWorker({ createAuth: () => authStub() }).fetch(
+        request("PUT", "/api/learner-profiles/learner-a/active"),
+        env,
+      ),
+      /no such table/i,
+    );
+
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
+    );
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM learner_selection_required
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      1,
     );
   });
 
