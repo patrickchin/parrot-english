@@ -425,6 +425,30 @@ describe("duck dub playback", () => {
     assert.equal(ended, 1);
   });
 
+  it("keeps the final Duck scene on its legacy 17.2-second clock", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      fetch: audio.fetch,
+      lines: DUB_VERSES[5],
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    audio.contexts[0].currentTime = 27.33;
+    raf.runNext();
+
+    assert.deepEqual(ticks, [17_200]);
+    assert.equal(ended, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
   it("plays an Old MacDonald scene from scene-relative zero without treating it as the full rhyme", async () => {
     const audio = createAudioHarness({
       decodeDurations: {

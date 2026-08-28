@@ -15,6 +15,7 @@ export type DubDefinition = {
   readonly route: string;
   readonly title: string;
   readonly durationMs: number;
+  readonly finalCueTailMs: number;
   readonly recordingMs: number;
   readonly linesPerScene: number;
   readonly sceneTitles: readonly string[];
@@ -63,6 +64,7 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   route: "/dubs/old-macdonald",
   title: "Old MacDonald Had a Farm",
   durationMs: 150_000,
+  finalCueTailMs: 4_000,
   recordingMs: 6_000,
   linesPerScene: 7,
   sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),

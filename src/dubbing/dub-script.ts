@@ -84,6 +84,7 @@ export const FIVE_LITTLE_DUCKS_DUB = Object.freeze({
   route: DUB_ROUTE,
   title: "Five Little Ducks",
   durationMs: DUB_DURATION_MS,
+  finalCueTailMs: 5_200,
   recordingMs: DUB_RECORDING_MS,
   linesPerScene: DUB_LINES_PER_VERSE,
   sceneTitles: DUB_SCENE_TITLES,

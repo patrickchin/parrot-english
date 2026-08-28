@@ -162,10 +162,10 @@ function getPlaybackScope(
   const endLineIndex = firstLineIndex + lines.length;
   const fullDub = firstLineIndex === 0 && endLineIndex === definition.lines.length;
   const cueOffsetMs = fullDub ? 0 : lines[0].cueMs;
-  const cueCadenceMs = definition.lines[1].cueMs - definition.lines[0].cueMs;
   const authoredEndMs = fullDub
     ? definition.durationMs
-    : definition.lines[endLineIndex]?.cueMs ?? lines.at(-1)!.cueMs + cueCadenceMs;
+    : definition.lines[endLineIndex]?.cueMs
+      ?? lines.at(-1)!.cueMs + definition.finalCueTailMs;
   return {
     authoredDurationMs: authoredEndMs - cueOffsetMs,
     cueOffsetMs,
