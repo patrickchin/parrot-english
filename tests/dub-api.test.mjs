@@ -22,6 +22,13 @@ function requestRecorder(response) {
   };
 }
 
+function duckStatusLines() {
+  return Array.from(
+    { length: 24 },
+    (_, index) => ({ id: `line-${index + 1}`, recordedAt: null, saved: false }),
+  );
+}
+
 describe("duck dub browser API", () => {
   it("uses private same-origin requests and encoded line IDs", async () => {
     const controller = new AbortController();
@@ -30,9 +37,7 @@ describe("duck dub browser API", () => {
       consentState: "granted",
       dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v2",
-      lines: [
-        { id: "line-1", recordedAt: null, saved: false },
-      ],
+      lines: duckStatusLines(),
       recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
@@ -110,7 +115,7 @@ describe("duck dub browser API", () => {
       consentState: "granted",
       dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v2",
-      lines: [],
+      lines: duckStatusLines(),
       recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
@@ -145,13 +150,17 @@ describe("duck dub browser API", () => {
 
   it("supports an explicit Old MacDonald dubId without changing the duck default", async () => {
     const dubId = "old-macdonald-v1";
-    const lineId = "old-macdonald-v1-line-1";
+    const lineIds = Array.from(
+      { length: 35 },
+      (_, index) => `old-macdonald-v1-line-${index + 1}`,
+    );
+    const lineId = lineIds[0];
     const status = {
       complete: false,
       consentState: "granted",
       dubId,
       guardianConsentVersion: "guardian-voice-r2-v2",
-      lines: [{ id: lineId, recordedAt: null, saved: false }],
+      lines: lineIds.map((id) => ({ id, recordedAt: null, saved: false })),
       recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
@@ -190,6 +199,47 @@ describe("duck dub browser API", () => {
       getDubLineAudioUrl("line-1"),
       "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
     );
+  });
+
+  it("rejects Old MacDonald status payloads that are truncated, duplicated, or reordered", async () => {
+    const dubId = "old-macdonald-v1";
+    const ordered = Array.from(
+      { length: 35 },
+      (_, index) => `old-macdonald-v1-line-${index + 1}`,
+    ).map((id) => ({ id, recordedAt: null, saved: false }));
+    const malformedStatuses = [
+      {
+        complete: false,
+        consentState: "granted",
+        dubId,
+        guardianConsentVersion: "guardian-voice-r2-v2",
+        lines: ordered.slice(0, 34),
+        recordingEnabled: true,
+      },
+      {
+        complete: false,
+        consentState: "granted",
+        dubId,
+        guardianConsentVersion: "guardian-voice-r2-v2",
+        lines: [ordered[1], ordered[0], ...ordered.slice(2)],
+        recordingEnabled: true,
+      },
+      {
+        complete: false,
+        consentState: "granted",
+        dubId,
+        guardianConsentVersion: "guardian-voice-r2-v2",
+        lines: [...ordered.slice(0, 34), ordered[0]],
+        recordingEnabled: true,
+      },
+    ];
+
+    for (const status of malformedStatuses) {
+      await assert.rejects(
+        () => loadDubStatus({ dubId, fetch: async () => Response.json(status) }),
+        /Your saved dub could not be loaded\./,
+      );
+    }
   });
 
   it("notifies guardian access only for guardian-required failures before rejection", async () => {

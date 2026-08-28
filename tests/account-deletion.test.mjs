@@ -1766,10 +1766,15 @@ describe("account deletion personalized-art lifecycle", () => {
     const state = seedDatabase();
     const bucket = createBucket();
     const waits = [];
-    let attempts = 0;
+    const attemptedKeys = [];
+    const attempts = new Map([
+      [MARKER_KEY, 0],
+      [OLD_MARKER_KEY, 0],
+    ]);
     bucket.put = async (key) => {
-      if (key.endsWith(".dub-generation")) {
-        attempts += 1;
+      if (attempts.has(key)) {
+        attemptedKeys.push(key);
+        attempts.set(key, attempts.get(key) + 1);
         throw new Error("put marker: TooManyRequests (10058)");
       }
       throw new Error("slot fence must not start before the marker");
@@ -1787,8 +1792,19 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
         /10058/,
       );
-      assert.equal(attempts >= 3, true);
-      assert.equal(waits.length >= 2, true);
+      assert.deepEqual([...attempts.entries()], [
+        [MARKER_KEY, 3],
+        [OLD_MARKER_KEY, 3],
+      ]);
+      assert.equal(waits.length, 4);
+      assert.deepEqual(attemptedKeys, [
+        MARKER_KEY,
+        OLD_MARKER_KEY,
+        MARKER_KEY,
+        OLD_MARKER_KEY,
+        MARKER_KEY,
+        OLD_MARKER_KEY,
+      ]);
       assert.equal(
         state.sqlite
           .prepare("SELECT count(*) AS count FROM user WHERE id = ?")

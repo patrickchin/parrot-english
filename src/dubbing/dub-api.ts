@@ -121,6 +121,7 @@ function isDubStatus(value: unknown): value is DubStatus {
   } catch {
     return false;
   }
+  const expectedLineIds = definition.lines.map(({ id }) => id);
   return (
     typeof status.complete === "boolean" &&
     (status.consentState === "granted" ||
@@ -128,12 +129,13 @@ function isDubStatus(value: unknown): value is DubStatus {
       status.consentState === "revoking") &&
     status.guardianConsentVersion === GUARDIAN_CONSENT_VERSION &&
     Array.isArray(status.lines) &&
+    status.lines.length === expectedLineIds.length &&
     typeof status.recordingEnabled === "boolean" &&
-    status.lines.every((line) =>
+    status.lines.every((line, index) =>
       typeof line === "object" &&
       line !== null &&
       typeof line.id === "string" &&
-      definition.lines.some(({ id }) => id === line.id) &&
+      line.id === expectedLineIds[index] &&
       typeof line.saved === "boolean" &&
       (line.recordedAt === null || typeof line.recordedAt === "string")
     )
