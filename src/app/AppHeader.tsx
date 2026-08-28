@@ -11,6 +11,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type Ref,
   type ButtonHTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
@@ -101,6 +102,7 @@ export function HeaderButton({
 }: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "className"> & {
   children: ReactNode;
   icon: ReactNode;
+  ref?: Ref<HTMLButtonElement>;
   variant?: "navy" | "surface";
 }) {
   return (

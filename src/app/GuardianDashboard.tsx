@@ -6,9 +6,7 @@ import {
   Sparkles,
   UsersRound,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { useGuardianAccess } from "../auth/GuardianAccess";
+import { useRef, useState, type RefObject } from "react";
 import { ActionLink, Card } from "../shared/ui";
 import {
   GuardianLearnerContextLabel,
@@ -22,29 +20,28 @@ import {
   getGuardianLessonsPath,
   getGuardianStoriesPath,
 } from "./app-routes";
+import { LearnerModeSwitchDialog } from "./LearnerModeSwitchDialog";
 
 export function GuardianDashboardView({
-  error,
-  isSwitching,
   learnerName,
   onSwitchToLearner,
+  switchTriggerRef,
 }: {
-  error: string;
-  isSwitching: boolean;
   learnerName: string;
   onSwitchToLearner: () => void;
+  switchTriggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
       <RouteHeader>
         <HeaderButton
           aria-label="Switch to learner"
-          disabled={isSwitching}
           icon={<LogOut strokeWidth={3} />}
           onClick={onSwitchToLearner}
+          ref={switchTriggerRef}
           type="button"
         >
-          {isSwitching ? "Switching to learner…" : "Switch to learner"}
+          Switch to learner
         </HeaderButton>
       </RouteHeader>
 
@@ -55,15 +52,6 @@ export function GuardianDashboardView({
             Guardian dashboard
           </h1>
         </header>
-
-        {error ? (
-          <p
-            className="m-0 rounded-2xl bg-rose-100 px-4 py-3 text-center font-extrabold text-red-900"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
 
         <Card
           aria-labelledby="manage-learners-heading"
@@ -84,8 +72,7 @@ export function GuardianDashboardView({
               Manage learners
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              <bdi dir="auto">{learnerName}</bdi> is using learner mode. Add a
-              learner, select who uses learner mode, or edit learner details.
+              Add learners and edit learner details.
             </p>
           </div>
           <ActionLink
@@ -240,29 +227,24 @@ export function GuardianDashboard({
   learnerName: string;
   onBeforeNavigate?: () => void;
 }) {
-  const { error, lock } = useGuardianAccess();
-  const navigate = useNavigate();
-  const [isSwitching, setIsSwitching] = useState(false);
-
-  async function switchToLearner() {
-    if (isSwitching) return;
-    setIsSwitching(true);
-    try {
-      const lockError = await lock();
-      if (lockError) return;
-      onBeforeNavigate?.();
-      navigate("/");
-    } finally {
-      setIsSwitching(false);
-    }
-  }
+  const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
+  const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <GuardianDashboardView
-      error={error}
-      isSwitching={isSwitching}
-      learnerName={learnerName.trim() || "Learner"}
-      onSwitchToLearner={() => void switchToLearner()}
-    />
+    <>
+      <GuardianDashboardView
+        learnerName={learnerName.trim() || "Learner"}
+        onSwitchToLearner={() => setIsSwitchDialogOpen(true)}
+        switchTriggerRef={switchTriggerRef}
+      />
+      {isSwitchDialogOpen ? (
+        <LearnerModeSwitchDialog
+          destination="/"
+          onBeforeNavigate={onBeforeNavigate}
+          onClose={() => setIsSwitchDialogOpen(false)}
+          returnFocusRef={switchTriggerRef}
+        />
+      ) : null}
+    </>
   );
 }

@@ -72,8 +72,6 @@ test("guardian dashboard presents one learner-management destination", () => {
   );
   const html = renderInRouter(
     createElement(GuardianDashboardView, {
-      error: "",
-      isSwitching: false,
       learnerName: "Mia",
       onSwitchToLearner() {},
     }),
@@ -86,16 +84,14 @@ test("guardian dashboard presents one learner-management destination", () => {
   assert.equal((html.match(/>Manage learners<\/h2>/g) ?? []).length, 1);
   assert.equal((html.match(/>Manage learners<\/a>/g) ?? []).length, 1);
   assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
-  assert.match(html, /<bdi[^>]*>Mia<\/bdi> is using learner mode/);
-  assert.match(html, /Add a learner, select who uses learner mode, or edit learner details/);
+  assert.match(html, /aria-label="Switch to learner"/);
+  assert.doesNotMatch(html, /is using learner mode|select who uses learner mode/);
   assert.doesNotMatch(html, /Learner profiles|Learner details|Manage learner details/);
 });
 
 test("guardian dashboard groups the three learning and content tools", () => {
   const html = renderInRouter(
     createElement(GuardianDashboardView, {
-      error: "",
-      isSwitching: false,
       learnerName: "Mia",
       onSwitchToLearner() {},
     }),
@@ -120,8 +116,6 @@ test("guardian dashboard groups the three learning and content tools", () => {
 test("guardian dashboard links a separate account and privacy destination", () => {
   const html = renderInRouter(
     createElement(GuardianDashboardView, {
-      error: "",
-      isSwitching: false,
       learnerName: "Mia",
       onSwitchToLearner() {},
     }),

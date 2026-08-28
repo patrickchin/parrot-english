@@ -47,6 +47,7 @@ let ConversationSurface;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let LearnerProfileProvider;
+let LearnerSelectionProvider;
 let useLearnerProfile;
 let useLearnerSelection;
 let usePeppaConversation;
@@ -82,7 +83,12 @@ before(async () => {
   ({ LearnerProfileGate } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileGate.tsx",
   ));
-  ({ LearnerProfileProvider, useLearnerProfile, useLearnerSelection } =
+  ({
+    LearnerProfileProvider,
+    LearnerSelectionProvider,
+    useLearnerProfile,
+    useLearnerSelection,
+  } =
     await vite
       .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
       .catch(() => ({})));
@@ -997,27 +1003,48 @@ function modeRoutesInMemory({
     "Expected a mounted guardian dashboard",
   );
   const Provider = createGuardianAccessProvider({ api, now, schedule });
+  const profiles = [
+    {
+      age: 6,
+      createdAt: "2026-08-29T08:00:00.000Z",
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    },
+  ];
 
   return createElement(
     Provider,
     { sessionIdentity: "user-1" },
     createElement(
-      MemoryRouter,
-      { initialEntries: [initialEntry] },
+      LearnerSelectionProvider,
+      {
+        activeProfileId: "learner-mia",
+        async createAndSelectLearner() {
+          throw new Error("Not used by the mode route harness.");
+        },
+        async reloadSelectedLearner() {
+          throw new Error("Not used by the mode route harness.");
+        },
+        async selectLearner(profileId) {
+          return { activeProfileId: profileId, profiles };
+        },
+      },
       createElement(
-        Routes,
-        null,
-        createElement(Route, {
-          element: createElement(
-            "main",
-            null,
-            createElement("h1", null, "Learner home"),
-          ),
-          path: "/",
-        }),
+        MemoryRouter,
+        { initialEntries: [initialEntry] },
         createElement(
-          Route,
-          {
+          Routes,
+          null,
+          createElement(Route, {
+            element: createElement(
+              "main",
+              null,
+              createElement("h1", null, "Learner home"),
+            ),
+            path: "/",
+          }),
+          createElement(Route, {
             element: createElement(GuardianModeBoundary, {
               onBeforeNavigate,
             }),
@@ -1044,27 +1071,62 @@ function modeRoutesInMemory({
             ),
             path: "/guardian",
           }),
-        ),
-        createElement(
-          Route,
-          {
-            element: createElement(LearnerModeBoundary, {
-              onBeforeNavigate,
+          ),
+          createElement(
+            Route,
+            {
+              element: createElement(LearnerModeBoundary, {
+                onBeforeNavigate,
+              }),
+            },
+            createElement(Route, {
+              element: createElement(
+                "main",
+                null,
+                createElement("h1", null, "Pick a lesson"),
+              ),
+              path: "/lessons",
             }),
-          },
-          createElement(Route, {
-            element: createElement(
-              "main",
-              null,
-              createElement("h1", null, "Pick a lesson"),
-            ),
-            path: "/lessons",
-          }),
+          ),
         ),
+        createElement(RouterHistoryControls),
       ),
-      createElement(RouterHistoryControls),
     ),
   );
+}
+
+function installModeSwitchRosterFetch() {
+  globalThis.fetch = async (path, init = {}) => {
+    assert.equal(path, "/api/learner-profiles");
+    assert.equal(init.method, "GET");
+    return json({
+      activeProfileId: "learner-mia",
+      profiles: [
+        {
+          age: 6,
+          createdAt: "2026-08-29T08:00:00.000Z",
+          id: "learner-mia",
+          name: "Mia",
+          profileStatus: "completed",
+        },
+      ],
+    });
+  };
+}
+
+async function confirmModeSwitch() {
+  await waitFor(() => {
+    const choice = document.querySelector('input[value="learner-mia"]');
+    assert.ok(choice, "Expected the learner-mode chooser to load its roster.");
+  });
+  const choice = document.querySelector('input[value="learner-mia"]');
+  await click(choice);
+  const dialog = document.querySelector('[role="dialog"]');
+  const confirm = [...dialog.querySelectorAll("button")].find(
+    (candidate) => candidate.textContent.trim() === "Switch to learner mode",
+  );
+  assert.ok(confirm, "Expected learner-mode chooser confirmation.");
+  await click(confirm);
 }
 
 function authenticatedApplicationInMemory({ api, initialEntry }) {
@@ -2341,6 +2403,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   it("awaits lock and exits lesson work before mode navigation", async () => {
     const lock = deferred();
     const exitRoutes = [];
+    installModeSwitchRosterFetch();
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2365,17 +2428,19 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Switch to learner mode/));
     await click(button("Switch to learner mode"));
+    await confirmModeSwitch();
     assert.equal(currentRoute().path, "/lessons");
     assert.deepEqual(exitRoutes, []);
 
-    lock.resolve({ mode: "learner" });
-    await waitFor(() => assert.equal(currentRoute().path, "/"));
-    assert.deepEqual(exitRoutes, ["/lessons"]);
+    await act(async () => lock.resolve({ mode: "learner" }));
+    await waitFor(() => assert.deepEqual(exitRoutes, ["/lessons"]));
+    assert.equal(currentRoute().path, "/lessons");
   });
 
   it("dashboard awaits lock and exits route work before switching profiles", async () => {
     const lock = deferred();
     const exitRoutes = [];
+    installModeSwitchRosterFetch();
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2400,10 +2465,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Guardian dashboard/));
     await click(button("Switch to learner"));
+    await confirmModeSwitch();
     assert.equal(currentRoute().path, "/guardian");
     assert.deepEqual(exitRoutes, []);
 
-    lock.resolve({ mode: "learner" });
+    await act(async () => lock.resolve({ mode: "learner" }));
     await waitFor(() => assert.equal(currentRoute().path, "/"));
     assert.deepEqual(exitRoutes, ["/guardian"]);
   });
