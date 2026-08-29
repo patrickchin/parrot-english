@@ -23,6 +23,7 @@ import {
   DubNotEnabledError,
   DubTakeRejectedError,
   getDubLineAudioUrl,
+  loadDubLineAudio,
   loadDubStatus,
   saveDubLine,
 } from "./dub-api";
@@ -217,6 +218,7 @@ export function DubStudio({
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
   const takePreviewRef = useRef<TakePreview | null>(null);
+  const fetchedTakeUrlRef = useRef<string | null>(null);
   const fullPlaybackButtonRef = useRef<HTMLButtonElement>(null);
   const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
   const lineHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -262,12 +264,19 @@ export function DubStudio({
     if (reset && mountedRef.current) setRecordingElapsedMs(0);
   }, []);
 
+  const clearFetchedTakeUrl = useCallback(() => {
+    const url = fetchedTakeUrlRef.current;
+    fetchedTakeUrlRef.current = null;
+    if (url) URL.revokeObjectURL(url);
+  }, []);
+
   const cancelMedia = useCallback((discardTake: boolean) => {
     mediaGenerationRef.current += 1;
     guideControllerRef.current?.abort();
     guideControllerRef.current = null;
     takeControllerRef.current?.abort();
     takeControllerRef.current = null;
+    clearFetchedTakeUrl();
     uploadControllerRef.current?.abort();
     uploadControllerRef.current = null;
     playbackControllerRef.current?.abort();
@@ -289,7 +298,7 @@ export function DubStudio({
       clearTakePreview();
     }
     return mediaGenerationRef.current;
-  }, [clearRecordingProgress, clearTakePreview]);
+  }, [clearFetchedTakeUrl, clearRecordingProgress, clearTakePreview]);
 
   const handleConsentLoss = useCallback(() => {
     cancelMedia(true);
@@ -494,24 +503,45 @@ export function DubStudio({
       return;
     }
     if (isUnsafeOperation(state.operation)) return;
-    const preview = takePreviewRef.current;
-    if (!preview) return;
+
+    const line = definition.lines[state.selectedLineIndex];
+    const preview = takePreviewRef.current?.lineId === line.id
+      ? takePreviewRef.current
+      : null;
+    if (!preview && !Object.hasOwn(state.saved, line.id)) return;
+
     const generation = cancelMedia(false);
     const controller = new AbortController();
     takeControllerRef.current = controller;
     dispatch({ type: "OPERATION_STARTED", operation: "take-playing" });
-    const line = definition.lines.find(({ id }) => id === preview.lineId)
-      ?? definition.lines[state.selectedLineIndex];
-    void playAudioLine({ audioSrc: preview.url, signal: controller.signal, text: line.text })
-      .catch((error: unknown) => {
-        if (controller.signal.aborted || isAbortError(error)) return;
+
+    void (async () => {
+      try {
+        let audioSrc = preview?.url;
+        if (!audioSrc) {
+          const blob = await loadDubLineAudio(line.id, {
+            dubId: definition.id,
+            signal: controller.signal,
+          });
+          if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
+          audioSrc = URL.createObjectURL(blob);
+          fetchedTakeUrlRef.current = audioSrc;
+        }
+        await playAudioLine({ audioSrc, signal: controller.signal, text: line.text });
+      } catch (error) {
+        if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
+        if (error instanceof DubNotEnabledError) {
+          handleConsentLoss();
+          return;
+        }
+        dispatch({ type: "MARK_NEEDS_RETAKE", lineId: line.id });
         dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
-      })
-      .finally(() => {
-        if (generation !== mediaGenerationRef.current || takeControllerRef.current !== controller) return;
-        takeControllerRef.current = null;
-        dispatch({ type: "OPERATION_FINISHED" });
-      });
+      } finally {
+        if (takeControllerRef.current === controller) takeControllerRef.current = null;
+        clearFetchedTakeUrl();
+        if (generation === mediaGenerationRef.current) dispatch({ type: "OPERATION_FINISHED" });
+      }
+    })();
   }
 
   function resolveLineAudio(line: Pick<DubLine, "id" | "text">): DubAudioSource {
@@ -734,6 +764,7 @@ export function DubStudio({
         activeLine={selectedLine}
         definition={definition}
         error={state.error}
+        hasSavedTake={Object.hasOwn(state.saved, selectedLine.id)}
         locked={locked}
         onHearGuide={handleHearGuide}
         onHearTake={handleHearTake}

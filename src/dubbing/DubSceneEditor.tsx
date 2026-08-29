@@ -13,6 +13,7 @@ export type DubSceneEditorProps = {
   activeLine: DubLine;
   definition?: DubDefinition;
   error: string;
+  hasSavedTake: boolean;
   locked: boolean;
   onHearGuide(): void;
   onHearTake(): void;
@@ -49,6 +50,7 @@ export function DubSceneEditor({
   activeLine,
   definition = FIVE_LITTLE_DUCKS_DUB,
   error,
+  hasSavedTake,
   locked,
   onHearGuide,
   onHearTake,
@@ -73,7 +75,8 @@ export function DubSceneEditor({
   );
   const lineNumber = activeLineIndex % definition.linesPerScene + 1;
   const recording = operation === "recording";
-  const recordAgain = pendingTake !== null || saveRecovery !== null;
+  const recordAgain = pendingTake !== null || hasSavedTake || saveRecovery !== null;
+  const hasPlayableTake = pendingTake !== null || hasSavedTake;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
   const elapsedMs = Math.min(definition.recordingMs, Math.max(0, recordingElapsedMs));
@@ -90,7 +93,9 @@ export function DubSceneEditor({
         : recordAgain
           ? "Record again"
           : "Record line";
-  const takeLabel = operation === "take-playing" ? "Stop my voice" : "Hear my voice";
+  const takeLabel = operation === "take-playing"
+    ? "Stop my recording"
+    : "Play my recording";
   const guideAudioId = getGuideAudioId(activeLine.text);
   const feedbackError = Boolean(error)
     && operation !== "mic-opening"
@@ -103,8 +108,8 @@ export function DubSceneEditor({
         ? "Not saved"
         : error
           ? error
-          : pendingTake
-            ? "Saved ✓"
+          : hasPlayableTake
+            ? "Recorded ✓"
             : `Up to ${definition.recordingMs / 1_000} seconds`;
 
   return (
@@ -199,9 +204,9 @@ export function DubSceneEditor({
                   {feedbackLabel}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
-                  {pendingTake ? (
+                  {hasPlayableTake ? (
                     <TextButton aria-label={takeLabel} className="relative z-0 min-h-10 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-12 short-wide:min-w-12 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
-                      {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Hear") : takeLabel}
+                      {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Play") : takeLabel}
                     </TextButton>
                   ) : null}
                   {pendingTake && saveRecovery === "save" ? (

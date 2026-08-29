@@ -76,7 +76,7 @@ async function openScene(page: Page, sceneNumber: number) {
 }
 
 async function stopAndSave(page: Page) {
-  await page.getByRole("button", { name: "Record line" }).click();
+  await page.getByRole("button", { name: /^Record (?:line|again)$/ }).click();
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("Recording");
   await page.getByRole("button", { name: "Stop recording" }).click();
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
@@ -246,13 +246,13 @@ test("shared-consent deletion clears saved clips for both rhyme routes", async (
   await expectDubProject(page);
   await openScene(page, 1);
   await stopAndSave(page);
-  await expect(page.getByText("Saved ✓", { exact: true })).toBeVisible();
+  await expect(page.getByText("Recorded ✓", { exact: true })).toBeVisible();
 
   await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
   await expectDubProject(page);
   await openScene(page, 1);
   await stopAndSave(page);
-  await expect(page.getByText("Saved ✓", { exact: true })).toBeVisible();
+  await expect(page.getByText("Recorded ✓", { exact: true })).toBeVisible();
 
   await page.goto(
     "/guardian/dubbing?parrotE2eDub=empty&parrotE2eGuardian=guardian",
@@ -859,7 +859,7 @@ test("recording shows elapsed time, saves, and leaves Next in its fixed action s
   await page.getByRole("button", { name: "Stop recording" }).click();
 
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Hear my voice" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play my recording" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Next line" })).toBeFocused();
   expectSameActionSlot(
     await visibleBoxWithin(page.getByRole("button", { name: "Record again" }), controls),
@@ -899,7 +899,7 @@ test("a replacement overwrites the chosen canonical slot", async ({ page }) => {
     name: "Four little ducks went out one day.",
   })).toBeVisible();
   await stopAndSave(page);
-  await expect(page.getByText("Saved ✓", { exact: true })).toBeVisible();
+  await expect(page.getByText("Recorded ✓", { exact: true })).toBeVisible();
   await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toEqual([
     "/api/dubs/five-little-ducks-v2/lines/line-5",
   ]);
@@ -918,8 +918,85 @@ test("a saved take keeps its local review URL while the line stays active", asyn
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
   expect(revocationCount(await dubStoreSnapshot(page), objectUrl)).toBe(0);
 
-  await page.getByRole("button", { name: "Hear my voice" }).click();
+  await page.getByRole("button", { name: "Play my recording" }).click();
   await expect.poll(async () => (await dubStoreSnapshot(page)).playedAudioSources).toContain(objectUrl);
+});
+
+test("saved recording replay uses a private blob and revokes its fetched URL on Stop", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete&parrotE2eDubPlayback=held");
+  await expectDubProject(page);
+  await openScene(page, 1);
+
+  await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
+  await page.getByRole("button", { name: "Play my recording" }).click();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toContain(
+    "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+  );
+  await expect.poll(async () =>
+    (await dubStoreSnapshot(page)).playedAudioSources.some((source) => source.startsWith("blob:")),
+  ).toBe(true);
+  await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
+  await page.getByRole("button", { name: "Stop my recording" }).click();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).revokedObjectUrls.length).toBeGreaterThan(0);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toEqual([]);
+});
+
+test("saved recording consent loss locks the learner route immediately", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  await page.evaluate(() => {
+    const currentFetch = window.fetch;
+    window.fetch = async (input, init) => {
+      const source = typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+      if (new URL(source, window.location.href).pathname.endsWith("/lines/line-1/audio")) {
+        return Response.json({ error: "dubbing_not_enabled" }, { status: 403 });
+      }
+      return currentFetch(input, init);
+    };
+  });
+
+  await page.getByRole("button", { name: "Play my recording" }).click();
+  await expect(page.getByText(
+    "Ask a grown-up to turn on voice dubbing in Guardian mode.",
+    { exact: true },
+  )).toBeVisible();
+  await expect(page.getByRole("button", { name: "Record again" })).toHaveCount(0);
+});
+
+test("saved recording failure offers record again and marks the scene Needs retake", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=audio-fetch-failed");
+  await expectDubProject(page);
+  await openScene(page, 1);
+
+  await page.getByRole("button", { name: "Play my recording" }).click();
+  await expect(page.getByRole("alert", {
+    name: "Your recording could not be played. Record the line again.",
+  })).toHaveText("Your recording could not be played. Record the line again.");
+  await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Scene video" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to full video" }).click();
+  await expect(page.getByRole("button", {
+    name: "Scene 1, Five little ducks, Needs retake",
+  })).toBeVisible();
+});
+
+test("record again pending preview takes precedence without a private GET", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eDubPlayback=held");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  await stopAndSave(page);
+  const [previewUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
+
+  await page.getByRole("button", { name: "Play my recording" }).click();
+  await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toEqual([]);
+  await page.getByRole("button", { name: "Stop my recording" }).click();
+  expect(revocationCount(await dubStoreSnapshot(page), previewUrl)).toBe(0);
 });
 
 test("replacing a take revokes the previous object URL exactly once", async ({ page }) => {
@@ -981,7 +1058,7 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await page.getByRole("button", { name: "Stop recording" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
   await expect(page.getByText("Not saved", { exact: true })).toBeVisible();
-  await expect(page.getByText("Saved ✓", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Recorded ✓", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
@@ -1000,8 +1077,8 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
     "/assets/audio/five-little-ducks-v2-guide-line-1.mp3",
   );
 
-  await page.getByRole("button", { name: "Hear my voice" }).click();
-  await expect(page.getByRole("button", { name: "Stop my voice" })).toBeVisible();
+  await page.getByRole("button", { name: "Play my recording" }).click();
+  await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
     "Playing your recording for Scene 1, line 1.",
   );
@@ -1018,13 +1095,13 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await expect(page.getByRole("button", { name: "Saving recording" })).toBeDisabled();
   await expect(page.getByText("Saving your voice…", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Hear line" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Hear my voice" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Play my recording" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Save again" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
   await releaseDubOperation(page, "upload");
   await expect(page.getByRole("button", { name: "Save again" })).toHaveCount(0);
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Hear my voice" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Play my recording" })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Next line" })).toBeEnabled();
 });
 
