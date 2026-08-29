@@ -211,6 +211,43 @@ test("lint ignores browser artifacts generated earlier in pull-request verificat
   }
 });
 
+test("compatibility release retains only the safe multi-learner migrations", () => {
+  for (const migration of [
+    "0012_multi_learner_expand.sql",
+    "0014_personalized_art_deletion_closure.sql",
+    "0015_learner_profile_deletion.sql",
+  ]) {
+    assert.equal(
+      existsSync(new URL(`../migrations/${migration}`, import.meta.url)),
+      true,
+      migration,
+    );
+  }
+  assert.equal(
+    existsSync(
+      new URL("../migrations/0013_multi_learner_enable.sql", import.meta.url),
+    ),
+    false,
+    "The compatibility release must omit the enable migration.",
+  );
+});
+
+test("compatibility release keeps roster mutations disabled", () => {
+  const wrangler = JSON.parse(
+    readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+  );
+  const workerConfiguration = readFileSync(
+    new URL("../worker-configuration.d.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(wrangler.vars.MULTI_LEARNER_PROFILES_ENABLED, "0");
+  assert.match(
+    workerConfiguration,
+    /^\s*MULTI_LEARNER_PROFILES_ENABLED: "0";$/m,
+  );
+});
+
 test("compatibility guard allows compatibility deploys before the enable migration exists", (context) => {
   const repository = createCompatibilityHistory(context, {
     includeEnableMigration: false,
