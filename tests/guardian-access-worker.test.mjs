@@ -509,12 +509,35 @@ describe("guardian access request handler", () => {
     assert.equal((await response.json()).mode, "guardian");
   });
 
-  it("rejects an empty password without creating a Guardian unlock", async () => {
+  it("unlocks with an empty password without password verification", async () => {
     let verificationCalls = 0;
     const response = await handle(
       guardianRequest("POST", JSON.stringify({ password: "" })),
       async () => {
         verificationCalls += 1;
+        return false;
+      },
+    );
+
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.equal((await response.json()).mode, "guardian");
+    assert.equal(verificationCalls, 0);
+    assert.equal(
+      state.sqlite
+        .prepare("SELECT COUNT(*) AS count FROM guardian_session_unlock")
+        .get().count,
+      1,
+    );
+  });
+
+  it("verifies whitespace instead of treating it as an empty password", async () => {
+    let verificationCalls = 0;
+    const response = await handle(
+      guardianRequest("POST", JSON.stringify({ password: "   " })),
+      async (password) => {
+        verificationCalls += 1;
+        assert.equal(password, "   ");
         return false;
       },
     );

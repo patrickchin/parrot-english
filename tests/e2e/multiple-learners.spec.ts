@@ -543,8 +543,6 @@ async function chooseLearnerAndStart(
     "Switch to learner",
 ) {
   const dialog = await openLearnerModeChooser(page, triggerName);
-  await expect(dialog.getByRole("radio", { checked: true })).toHaveCount(0);
-  await dialog.getByRole("radio", { exact: true, name }).check();
   await dialog
     .getByRole("button", { exact: true, name: `Start learner mode as ${name}` })
     .click();
@@ -2082,7 +2080,7 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   expect(noah?.pendingUploads).toBe(0);
 });
 
-test("requires the account password before revealing a selection-required roster", async ({
+test("requires Guardian unlock before revealing a selection-required roster", async ({
   page,
 }) => {
   const requestedUrl = learnerScenarioUrl(
@@ -2118,8 +2116,10 @@ test("requires the account password before revealing a selection-required roster
     .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
     .click();
   const chooser = await openLearnerModeChooser(page);
-  await expect(chooser.getByRole("radio", { checked: true })).toHaveCount(0);
-  await expect(chooser.getByRole("radio")).toHaveCount(2);
+  await expect(chooser.getByRole("radio")).toHaveCount(0);
+  await expect(
+    chooser.getByRole("button", { name: /Start learner mode as/ }),
+  ).toHaveCount(2);
 });
 
 test("shows a learner-safe no-selection state and sends an incomplete learner to setup", async ({
@@ -2139,7 +2139,7 @@ test("shows a learner-safe no-selection state and sends an incomplete learner to
     .click();
   await expect(
     page.getByRole("menu", { name: "Account menu" }).getByRole("menuitem"),
-  ).toHaveText(["Grown-up accessAccount password required"]);
+  ).toHaveText(["Grown-up accessPassword optional for now"]);
 
   await page.goto(
     learnerScenarioUrl("/guardian/learners", "selection-required"),
@@ -2243,7 +2243,6 @@ test("suppresses a held selection response after a newer selection wins", async 
     .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
     .click();
   const chooser = await openLearnerModeChooser(page);
-  await chooser.getByRole("radio", { exact: true, name: "Noah" }).check();
   const startNoah = chooser.getByRole("button", {
     exact: true,
     name: "Start learner mode as Noah",
@@ -2304,7 +2303,6 @@ test("keeps the chooser modal and non-dismissible while a learner switch is pend
     .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
     .click();
   const chooser = await openLearnerModeChooser(page);
-  await chooser.getByRole("radio", { exact: true, name: "Noah" }).check();
   await chooser
     .getByRole("button", { exact: true, name: "Start learner mode as Noah" })
     .click({ noWaitAfter: true });
@@ -2388,7 +2386,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     await trigger.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
     await expect(menu.getByRole("menuitem")).toHaveText([
-      "Grown-up accessAccount password required",
+      "Grown-up accessPassword optional for now",
     ]);
     await expect(menu).not.toContainText("Noah");
     await page.keyboard.press("Escape");
@@ -2479,15 +2477,17 @@ for (const viewport of requiredViewports) {
     });
     await expectContainedHorizontally(switchTrigger, page);
     const chooser = await openLearnerModeChooser(page);
-    await expect(chooser.getByRole("radio", { checked: true })).toHaveCount(0);
-    await expect(chooser.getByRole("radio")).toHaveCount(2);
+    await expect(chooser.getByRole("radio")).toHaveCount(0);
+    await expect(
+      chooser.getByRole("button", { name: /Start learner mode as/ }),
+    ).toHaveCount(2);
     await expectContainedHorizontally(chooser, page);
     await expectContainedHorizontally(
       chooser.getByRole("button", { name: "Cancel" }),
       page,
     );
     await expectContainedHorizontally(
-      chooser.getByRole("button", { name: "Choose a learner" }),
+      chooser.getByRole("button", { name: "Start learner mode as Mia" }),
       page,
     );
     await expectNoHorizontalOverflow(page);

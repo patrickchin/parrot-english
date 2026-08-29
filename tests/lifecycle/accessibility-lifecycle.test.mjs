@@ -521,7 +521,7 @@ describe("keyboard accessibility lifecycles", () => {
       [...menu.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
       ),
-      ["Grown-up accessAccount password required"],
+      ["Grown-up accessPassword optional for now"],
     );
     assert.match(document.body.textContent, /Mia/);
     assert.equal(
@@ -938,7 +938,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Grown-up accessAccount password required"));
+    await click(button("Grown-up accessPassword optional for now"));
     await input(
       document.querySelector('input[name="password"]'),
       "correct-password",
@@ -1063,7 +1063,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Grown-up accessAccount password required"));
+    await click(button("Grown-up accessPassword optional for now"));
     const password = document.querySelector('input[name="password"]');
     await input(password, "wrong-password");
     const unlock = button("Unlock guardian mode");
@@ -1170,7 +1170,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(password.value, ""));
   });
 
-  it("requires a Guardian password without issuing an empty request", async () => {
+  it("submits an empty password when Guardian unlock is temporarily optional", async () => {
     const passwords = [];
     await mountStrict(
       createElement(UnlockHarness, {
@@ -1186,16 +1186,16 @@ describe("keyboard accessibility lifecycles", () => {
       }),
     );
     const password = document.querySelector('input[name="password"]');
-    assert.equal(password.required, true);
-    assert.equal(password.validity.valueMissing, true);
+    assert.equal(password.required, false);
+    assert.equal(password.validity.valueMissing, false);
 
     await act(async () => password.form.requestSubmit());
 
-    assert.deepEqual(passwords, []);
+    assert.deepEqual(passwords, [""]);
     assert.equal(
       document.querySelector('output[aria-label="Guardian access mode"]')
         .textContent,
-      "learner",
+      "guardian",
     );
   });
 
@@ -1308,7 +1308,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Grown-up accessAccount password required");
+    const guardian = button("Grown-up accessPassword optional for now");
     await click(guardian);
     const password = document.querySelector('input[name="password"]');
     await input(password, "correct-password");
@@ -1348,7 +1348,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Grown-up accessAccount password required"));
+    await click(button("Grown-up accessPassword optional for now"));
     await input(
       document.querySelector('input[name="password"]'),
       "correct-password",
@@ -1411,13 +1411,13 @@ describe("keyboard accessibility lifecycles", () => {
       let guardian = [...document.querySelectorAll("button")].find(
         (candidate) =>
           candidate.textContent.trim() ===
-          "Grown-up accessAccount password required",
+          "Grown-up accessPassword optional for now",
       );
       if (!guardian) {
         await click(
           await waitFor(() => button("Profile for Mia, learner mode")),
         );
-        guardian = button("Grown-up accessAccount password required");
+        guardian = button("Grown-up accessPassword optional for now");
       }
       await click(guardian);
       const password = document.querySelector('input[name="password"]');
@@ -1459,7 +1459,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Grown-up accessAccount password required");
+    const guardian = button("Grown-up accessPassword optional for now");
     await click(guardian);
     const password = document.querySelector('input[name="password"]');
     await act(async () =>

@@ -45,7 +45,7 @@ export const GuardianUnlockForm = forwardRef<
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (pendingRef.current || password === "") return;
+    if (pendingRef.current) return;
 
     pendingRef.current = true;
     setIsPending(true);
@@ -86,7 +86,7 @@ export const GuardianUnlockForm = forwardRef<
         </h1>
       </header>
       <p className="m-0 font-bold leading-relaxed text-slate-700">
-        Enter the account password to protect grown-up settings.
+        Enter the account password, or continue without one for now.
       </p>
       <fieldset
         className="m-0 grid min-w-0 gap-5 border-0 p-0 disabled:opacity-75"
@@ -96,7 +96,7 @@ export const GuardianUnlockForm = forwardRef<
           className="grid gap-2 font-black text-brand-ink"
           htmlFor={`${titleId}-password`}
         >
-          <span>Password</span>
+          <span>Password (optional for now)</span>
           <input
             aria-describedby={error ? errorId : undefined}
             aria-invalid={error ? true : undefined}
@@ -110,7 +110,6 @@ export const GuardianUnlockForm = forwardRef<
               setError("");
             }}
             ref={passwordRef}
-            required
             type="password"
             value={password}
           />

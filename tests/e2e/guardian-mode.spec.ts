@@ -88,8 +88,6 @@ async function chooseLearnerAndStart(
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Who is learning now?" });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("radio", { checked: true })).toHaveCount(0);
-  await dialog.getByRole("radio", { exact: true, name }).check();
   await dialog
     .getByRole("button", { exact: true, name: `Start learner mode as ${name}` })
     .click();
@@ -131,7 +129,7 @@ for (const viewport of requiredViewports) {
     await expectInsideViewport(trigger, viewport);
     await expectInsideViewport(panel, viewport);
     await expect(menu.getByRole("menuitem")).toHaveText([
-      "Grown-up accessAccount password required",
+      "Grown-up accessPassword optional for now",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),
@@ -168,7 +166,7 @@ test("incorrect password keeps learner mode and the unlock dialog open", async (
   expect(await horizontalOverflow(page)).toBe(false);
 });
 
-test("account-menu unlock requires a password and rejects a wrong password without exposing Guardian content", async ({
+test("account-menu unlock accepts an empty password", async ({
   page,
 }) => {
   await page.goto("/");
@@ -176,29 +174,17 @@ test("account-menu unlock requires a password and rejects a wrong password witho
   const password = dialog.getByLabel("Password");
   const unlock = dialog.getByRole("button", { name: "Unlock guardian mode" });
 
+  await expect(password).toHaveJSProperty("required", false);
+  await expect(password).toHaveJSProperty("validity.valueMissing", false);
   await unlock.click();
-  await expect(password).toBeFocused();
-  await expect(password).toHaveJSProperty("validity.valueMissing", true);
-  await expect(dialog).toBeVisible();
-  await expect(page).toHaveURL("/");
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL("/guardian");
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
-  ).toHaveCount(0);
-
-  await password.fill("wrong-password");
-  await unlock.click();
-  await expect(dialog.getByRole("alert")).toHaveText(
-    "The password did not match this account.",
-  );
-  await expect(password).toBeFocused();
-  await expect(dialog).toBeVisible();
-  await expect(page).toHaveURL("/");
-  await expect(
-    page.getByRole("heading", { name: "Guardian dashboard" }),
-  ).toHaveCount(0);
+  ).toBeVisible();
 });
 
-test("direct Guardian unlock requires a password and rejects a wrong password without exposing the protected route", async ({
+test("direct Guardian unlock accepts an empty password", async ({
   page,
 }) => {
   await page.goto("/guardian/stories");
@@ -206,27 +192,15 @@ test("direct Guardian unlock requires a password and rejects a wrong password wi
   const password = main.getByLabel("Password");
   const unlock = main.getByRole("button", { name: "Unlock guardian mode" });
 
+  await expect(password).toHaveJSProperty("required", false);
   await unlock.click();
-  await expect(password).toBeFocused();
-  await expect(password).toHaveJSProperty("validity.valueMissing", true);
   await expect(page).toHaveURL("/guardian/stories");
   await expect(
     page.getByRole("heading", { name: "Story settings" }),
-  ).toHaveCount(0);
-
-  await password.fill("wrong-password");
-  await unlock.click();
-  await expect(main.getByRole("alert")).toHaveText(
-    "The password did not match this account.",
-  );
-  await expect(password).toBeFocused();
-  await expect(page).toHaveURL("/guardian/stories");
-  await expect(
-    page.getByRole("heading", { name: "Story settings" }),
-  ).toHaveCount(0);
+  ).toBeVisible();
 });
 
-test("the browser Guardian API rejects empty and wrong passwords with the same response", async ({
+test("the browser Guardian API accepts empty but still rejects a wrong password", async ({
   page,
 }) => {
   await page.goto("/");
@@ -235,34 +209,37 @@ test("the browser Guardian API rejects empty and wrong passwords with the same r
   ).toBeVisible();
 
   const attempts = await page.evaluate(async () => {
-    const results = [];
-    for (const password of ["", "wrong-password"]) {
+    async function post(password: string) {
       const response = await fetch("/api/guardian-access", {
         body: JSON.stringify({ password }),
         headers: { "Content-Type": "application/json" },
         method: "POST",
       });
-      results.push({ body: await response.json(), status: response.status });
+      return { body: await response.json(), status: response.status };
     }
-    return results;
+    const empty = await post("");
+    await fetch("/api/guardian-access", { method: "DELETE" });
+    const wrong = await post("wrong-password");
+    const status = await fetch("/api/guardian-access").then((response) =>
+      response.json(),
+    );
+    return { empty, status, wrong };
   });
 
-  expect(attempts).toEqual([
-    {
+  expect(attempts).toEqual({
+    empty: {
+      body: expect.objectContaining({ mode: "guardian" }),
+      status: 200,
+    },
+    status: { mode: "learner" },
+    wrong: {
       body: {
         error: "invalid_password",
         message: "The password did not match this account.",
       },
       status: 401,
     },
-    {
-      body: {
-        error: "invalid_password",
-        message: "The password did not match this account.",
-      },
-      status: 401,
-    },
-  ]);
+  });
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toHaveCount(0);
@@ -604,7 +581,7 @@ for (const { path, protectedName, unlockedPath } of [
       "/lessons/my/create?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
   },
 ]) {
-  test(`locked ${path} shows only the password gate`, async ({ page }) => {
+  test(`locked ${path} shows only the Guardian unlock gate`, async ({ page }) => {
 
     await page.addInitScript((expectedProtectedName) => {
       const inspected = new WeakSet<Node>();
@@ -729,7 +706,7 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
   expect(expiresAtAfterRefresh).toBe(expiresAtBeforeRefresh);
 });
 
-test("an expired guardian session returns the same deep link to the password gate", async ({
+test("an expired guardian session returns the same deep link to the Guardian unlock gate", async ({
   page,
 }) => {
   await page.clock.install({
@@ -931,7 +908,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
     await page.goto(path);
     const menu = await openLearnerAccountMenu(page);
     await expect(menu.getByRole("menuitem")).toHaveText([
-      "Grown-up accessAccount password required",
+      "Grown-up accessPassword optional for now",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),

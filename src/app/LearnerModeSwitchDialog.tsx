@@ -2,7 +2,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
   type RefObject,
 } from "react";
 import { useNavigate } from "react-router";
@@ -49,14 +48,13 @@ export function LearnerModeSwitchDialog({
   const [rosterState, setRosterState] = useState<RosterState>({
     phase: "loading",
   });
-  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
+  const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(
     null,
   );
   const [error, setError] = useState("");
   const [isSwitching, setIsSwitching] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const submitRef = useRef<HTMLButtonElement>(null);
+  const lastLearnerButtonRef = useRef<HTMLButtonElement>(null);
   const isSwitchingRef = useRef(false);
 
   useDialogFocus({
@@ -86,18 +84,22 @@ export function LearnerModeSwitchDialog({
   }, [reloadKey]);
 
   useEffect(() => {
-    if (!isSwitching && error) submitRef.current?.focus();
+    if (!isSwitching && error) lastLearnerButtonRef.current?.focus();
   }, [error, isSwitching]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!selectedProfileId || isSwitchingRef.current) return;
+  async function switchToLearner(
+    profileId: string,
+    trigger: HTMLButtonElement,
+  ) {
+    if (isSwitchingRef.current) return;
 
+    lastLearnerButtonRef.current = trigger;
     isSwitchingRef.current = true;
     setIsSwitching(true);
+    setSwitchingProfileId(profileId);
     setError("");
     try {
-      await selectLearner(selectedProfileId);
+      await selectLearner(profileId);
       const lockError = await lock();
       if (lockError) {
         setError(lockError);
@@ -110,6 +112,7 @@ export function LearnerModeSwitchDialog({
     } finally {
       isSwitchingRef.current = false;
       setIsSwitching(false);
+      setSwitchingProfileId(null);
     }
   }
 
@@ -119,8 +122,8 @@ export function LearnerModeSwitchDialog({
           !deletionPending
         )
       : [];
-  const selectedProfile = selectableProfiles.find(
-    ({ id }) => id === selectedProfileId,
+  const switchingProfile = selectableProfiles.find(
+    ({ id }) => id === switchingProfileId,
   );
 
   return (
@@ -176,7 +179,7 @@ export function LearnerModeSwitchDialog({
         ) : null}
 
         {rosterState.phase === "ready" ? (
-          <form className="grid gap-5" onSubmit={handleSubmit}>
+          <div className="grid gap-5">
             <fieldset
               className="m-0 grid min-w-0 gap-3 border-0 p-0 disabled:opacity-75"
               disabled={isSwitching}
@@ -196,28 +199,31 @@ export function LearnerModeSwitchDialog({
                   </ActionLink>
                 </div>
               ) : (
-                selectableProfiles.map((profile) => (
-                  <label
-                    className="flex min-h-13 cursor-pointer items-center gap-3 rounded-2xl border-3 border-sky-200 bg-white px-4 py-3 font-black text-brand-ink"
-                    htmlFor={`learner-mode-${profile.id}`}
-                    key={profile.id}
-                  >
-                    <input
-                      checked={selectedProfileId === profile.id}
-                      id={`learner-mode-${profile.id}`}
-                      name="learner-profile"
-                      onChange={() => {
-                        setSelectedProfileId(profile.id);
-                        setError("");
+                <div className="grid gap-3">
+                  {selectableProfiles.map((profile) => (
+                    <ActionButton
+                      align="start"
+                      aria-label={`Start learner mode as ${profile.name}`}
+                      fullWidth
+                      key={profile.id}
+                      onClick={(event) => {
+                        void switchToLearner(profile.id, event.currentTarget);
                       }}
-                      type="radio"
-                      value={profile.id}
-                    />
-                    <span className="min-w-0 [overflow-wrap:anywhere]" dir="auto">
-                      {profile.name}
-                    </span>
-                  </label>
-                ))
+                      shape="rounded"
+                      type="button"
+                      variant="surface"
+                    >
+                      <span
+                        className="min-w-0 [overflow-wrap:anywhere]"
+                        dir="auto"
+                      >
+                        {switchingProfileId === profile.id
+                          ? `Starting ${profile.name}…`
+                          : profile.name}
+                      </span>
+                    </ActionButton>
+                  ))}
+                </div>
               )}
 
               {error ? (
@@ -235,36 +241,22 @@ export function LearnerModeSwitchDialog({
                 className="sr-only"
                 role="status"
               >
-                {isSwitching && selectedProfile
-                  ? `Starting learner mode as ${selectedProfile.name}…`
+                {isSwitching && switchingProfile
+                  ? `Starting learner mode as ${switchingProfile.name}…`
                   : ""}
               </p>
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 <ActionButton
                   onClick={onClose}
-                  ref={cancelRef}
                   type="button"
                   variant="surface"
                 >
                   Cancel
                 </ActionButton>
-                <ActionButton
-                  disabled={!selectedProfileId}
-                  ref={submitRef}
-                  type="submit"
-                >
-                  {isSwitching
-                    ? selectedProfile
-                      ? `Starting learner mode as ${selectedProfile.name}…`
-                      : "Starting learner mode…"
-                    : selectedProfile
-                      ? `Start learner mode as ${selectedProfile.name}`
-                      : "Choose a learner"}
-                </ActionButton>
               </div>
             </fieldset>
-          </form>
+          </div>
         ) : null}
       </section>
     </div>

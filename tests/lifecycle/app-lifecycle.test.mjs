@@ -1301,18 +1301,16 @@ function installModeSwitchRosterFetch() {
 }
 
 async function confirmModeSwitch() {
-  await waitFor(() => {
-    const choice = document.querySelector('input[value="learner-mia"]');
-    assert.ok(choice, "Expected the learner-mode chooser to load its roster.");
+  const learnerButton = await waitFor(() => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const candidate = [...dialog.querySelectorAll("button")].find(
+      (button) =>
+        button.getAttribute("aria-label") === "Start learner mode as Mia",
+    );
+    assert.ok(candidate, "Expected a direct learner-mode button for Mia.");
+    return candidate;
   });
-  const choice = document.querySelector('input[value="learner-mia"]');
-  await click(choice);
-  const dialog = document.querySelector('[role="dialog"]');
-  const confirm = [...dialog.querySelectorAll("button")].find(
-    (candidate) => candidate.textContent.trim() === "Start learner mode as Mia",
-  );
-  assert.ok(confirm, "Expected learner-mode chooser confirmation.");
-  await click(confirm);
+  await click(learnerButton);
 }
 
 function authenticatedApplicationInMemory({ api, initialEntry }) {

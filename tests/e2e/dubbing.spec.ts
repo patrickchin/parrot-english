@@ -222,10 +222,6 @@ test("guardian consent unlocks the storyboard without exposing adult controls", 
     name: "Who is learning now?",
   });
   await expect(learnerDialog).toBeVisible();
-  await expect(
-    learnerDialog.getByRole("radio", { checked: true }),
-  ).toHaveCount(0);
-  await learnerDialog.getByRole("radio", { exact: true, name: "Mia" }).check();
   await learnerDialog
     .getByRole("button", { name: "Start learner mode as Mia" })
     .click();
