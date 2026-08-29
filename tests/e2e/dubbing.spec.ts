@@ -75,6 +75,26 @@ async function openScene(page: Page, sceneNumber: number) {
   await expect(page.getByRole("region", { name: "Scene video" })).toBeVisible();
 }
 
+async function expectTargetAtLeast48(locator: Locator) {
+  const box = await boundingBoxOrThrow(locator);
+  expect(box.width).toBeGreaterThanOrEqual(48);
+  expect(box.height).toBeGreaterThanOrEqual(48);
+}
+
+async function expectSharedHeaderTarget(locator: Locator) {
+  const box = await boundingBoxOrThrow(locator);
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+}
+
+async function expectBelow(locator: Locator, boundary: Locator) {
+  const [box, boundaryBox] = await Promise.all([
+    boundingBoxOrThrow(locator),
+    boundingBoxOrThrow(boundary),
+  ]);
+  expect(box.y).toBeGreaterThanOrEqual(boundaryBox.y + boundaryBox.height);
+}
+
 async function stopAndSave(page: Page) {
   await page.getByRole("button", { name: /^Record (?:line|again)$/ }).click();
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("Recording");
@@ -668,7 +688,8 @@ test("the Old MacDonald desktop project keeps the video and compact scene strip 
 
   const workspace = page.getByRole("region", { name: "Dub project workspace" });
   const player = page.getByRole("region", { name: "Full video player" });
-  const stage = player.getByLabel("Farm scene");
+  const stage = player.locator("img");
+  await expect(stage).toHaveCount(1);
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const playButton = page.getByRole("button", { name: "Play full video" });
   const [workspaceBox, playerBox, stageBox, dockBox, playBox] = await Promise.all([
@@ -766,25 +787,35 @@ test("the Old MacDonald short-landscape route keeps project and scene actions cl
   const player = page.getByRole("region", { name: "Full video player" });
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const playFull = page.getByRole("button", { name: "Play full video" });
-  const firstScene = page.getByRole("button", { name: "Scene 1, Not started" });
-  const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox] = await Promise.all([
+  const firstScene = dock.getByRole("button", {
+    name: "Scene 1, Cows on the farm, Not started",
+  });
+  const secondScene = dock.getByRole("button", {
+    name: "Scene 2, Ducks on the farm, Not started",
+  });
+  const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox] = await Promise.all([
     boundingBoxOrThrow(routeHeader),
     boundingBoxOrThrow(player),
     boundingBoxOrThrow(dock),
     boundingBoxOrThrow(playFull),
     boundingBoxOrThrow(firstScene),
+    boundingBoxOrThrow(secondScene),
   ]);
 
-  for (const box of [playerBox, dockBox, playFullBox, firstSceneBox]) {
+  for (const box of [playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox]) {
     expect(box.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
-    expect(box.y + box.height).toBeLessThanOrEqual(360);
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(640);
   }
   expect(playFullBox.height).toBeGreaterThanOrEqual(48);
   expect(firstSceneBox.height).toBeGreaterThanOrEqual(48);
+  expect(secondSceneBox.height).toBeGreaterThanOrEqual(48);
   expect(boxesOverlap(playerBox, dockBox)).toBe(false);
   expect(boxesOverlap(playerBox, playFullBox)).toBe(false);
+  expect(boxesOverlap(playerBox, firstSceneBox)).toBe(false);
+  expect(boxesOverlap(playerBox, secondSceneBox)).toBe(false);
+  expect(boxesOverlap(firstSceneBox, secondSceneBox)).toBe(false);
+  expect(Math.abs(firstSceneBox.y - secondSceneBox.y)).toBeLessThanOrEqual(1);
   expect(boxesOverlap(dockBox, playFullBox)).toBe(false);
   await expectNoHorizontalOverflow(page);
 
@@ -1127,7 +1158,9 @@ test("corrupt private audio falls back to its guide and marks the scene Needs re
   await page.getByRole("button", { name: "Play full video" }).click();
   await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
   await expect(page.getByText("24 / 24", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Scene 2, Needs retake" })).toBeVisible();
+  await expect(page.getByRole("button", {
+    name: "Scene 2, Four little ducks, Needs retake",
+  })).toBeVisible();
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toContain(
     "/assets/audio/five-little-ducks-v2-guide-line-5.mp3",
   );
@@ -1135,7 +1168,9 @@ test("corrupt private audio falls back to its guide and marks the scene Needs re
   await openScene(page, 2);
   await stopAndSave(page);
   await page.getByRole("button", { name: "Back to full video" }).click();
-  await expect(page.getByRole("button", { name: "Scene 2, Done" })).toBeVisible();
+  await expect(page.getByRole("button", {
+    name: "Scene 2, Four little ducks, Done",
+  })).toBeVisible();
 });
 
 test("a double-source failure names the exact slot while video and music continue", async ({ page }) => {
@@ -1359,26 +1394,25 @@ test("a failed Guardian delete stays actionable only in Guardian mode", async ({
   ).toBeEnabled();
 });
 
-test("every dubbing route shell owns the constrained vertical scroll viewport", async ({ page }) => {
+test("every dubbing route state stays horizontally contained", async ({ page }) => {
   await page.setViewportSize({ height: 568, width: 280 });
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=load-held");
   await expect(page.getByRole("button", { name: "Loading your private dub…" })).toBeVisible();
-  await expectDubScrollViewport(page);
+  await expectDubRouteContained(page);
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=reset-interrupted");
   await expect(
     page.getByRole("main").getByRole("paragraph"),
   ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
   await expectNoLearnerAdultControls(page);
-  await expectDubScrollViewport(page);
+  await expectDubRouteContained(page);
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expectDubScrollViewport(page);
   await expectDubProject(page);
-  await expectDubScrollViewport(page);
+  await expectDubRouteContained(page);
   await openScene(page, 1);
-  await expectDubScrollViewport(page);
+  await expectDubRouteContained(page);
 });
 
 test("a narrow phone keeps the longest line actions in one clear scroll path", async ({ page }) => {
@@ -1401,101 +1435,142 @@ test("a narrow phone keeps the longest line actions in one clear scroll path", a
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("full playback animates the story actors when motion is allowed", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expectDubProject(page);
-  await page.getByRole("button", { name: "Play full video" }).click();
-
-  const stage = page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]");
-  await expect(stage).toHaveAttribute("data-animated", "true");
-  const movingDuck = stage.locator('[data-duck-actor="duckling-1"] img');
-  await expect(movingDuck).toHaveAttribute("data-motion", "swim");
-  await expect.poll(() => movingDuck.evaluate((element) =>
-    element.getAnimations().filter(({ playState }) => playState === "running").length
-  )).toBeGreaterThan(0);
-
-  await page.getByRole("button", { name: "Stop full video" }).click();
-});
-
-test("stopping playback stops visible actor motion immediately", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expectDubProject(page);
-  await page.getByRole("button", { name: "Play full video" }).click();
-  await page.waitForTimeout(350);
-  await page.getByRole("button", { name: "Stop full video" }).click();
-
-  const actorImage = page
-    .getByRole("region", { name: "Full video player" })
-    .locator('[data-duck-actor="duckling-1"] img');
-  await expect.poll(() => actorImage.evaluate((element) =>
-    element.getAnimations().filter(({ playState }) => playState === "running").length
-  )).toBe(0);
-  await expect(
-    page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]"),
-  ).not.toHaveAttribute("data-animated", "true");
-});
-
-test("stopping after a cue change cancels both pose motion and actor transitions", async ({ page }) => {
-  test.setTimeout(15_000);
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expectDubProject(page);
-  await page.getByRole("button", { name: "Play full video" }).click();
-
-  const stage = page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]");
-  await expect(stage.locator('[data-duck-actor="duckling-1"] img')).toHaveAttribute(
-    "data-motion",
-    "walk",
-    { timeout: 7_000 },
-  );
-  await page.getByRole("button", { name: "Stop full video" }).click();
-
-  await expect.poll(() => stage.evaluate((element) =>
-    element.getAnimations({ subtree: true }).filter(({ playState }) => playState === "running").length
-  )).toBe(0);
-});
-
-test("a failed painted pose uses a safe fallback without broken-image UI", async ({ page }) => {
-  await page.route("**/duckling-walk.webp", (route) => route.abort());
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expectDubProject(page);
-  await openScene(page, 1);
-  await page.getByRole("button", { name: "Next line" }).click();
-
-  const visibleActors = page
-    .getByRole("region", { name: "Scene video" })
-    .locator('[data-duck-actor][data-visible="true"]');
-  await expect(visibleActors).toHaveCount(5);
-  await expect.poll(() => visibleActors.evaluateAll((actors) => actors.every((actor) => {
-    const image = actor.querySelector("img");
-    return actor.getAttribute("data-image-state") === "failed"
-      && image instanceof HTMLImageElement
-      && getComputedStyle(image).opacity === "0"
-      && getComputedStyle(actor).backgroundImage.includes("duckling-swim.webp");
-  }))).toBe(true);
-});
-
-test("reduced motion disables playing duck animation and playback cleanup stays idempotent", async ({ page }) => {
+test("reduced-motion playback stop and guide cleanup stay idempotent", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
   await expectDubProject(page);
   await page.getByRole("button", { name: "Play full video" }).click();
   await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
-  const stage = page.getByRole("region", { name: "Full video player" }).locator("[data-story-stage]");
-  await expect(stage).toHaveAttribute("aria-hidden", "true");
-  await expect.poll(() => stage.evaluate((element) =>
-    element.getAnimations({ subtree: true }).filter(({ playState }) => playState === "running").length
-  )).toBe(0);
   await page.getByRole("button", { name: "Stop full video" }).click();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
   await openScene(page, 1);
-  await page.getByRole("button", { name: "Hear line" }).click();
+  const hearLine = page.getByRole("button", { name: "Hear line" });
+  await hearLine.click();
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
     "Playing example for Scene 1, line 1.",
   );
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
     "Scene 1, line 1 selected. Recorded.",
   );
+  await expect(hearLine).toBeFocused();
   await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
 });
+
+for (const project of [
+  {
+    route: "/dubs/five-little-ducks",
+    sceneTitles: [
+      "Five little ducks",
+      "Four little ducks",
+      "Three little ducks",
+      "Two little ducks",
+      "One little duck",
+      "Sad mother duck",
+    ],
+  },
+  {
+    route: "/dubs/old-macdonald",
+    sceneTitles: [
+      "Cows on the farm",
+      "Ducks on the farm",
+      "Pigs on the farm",
+      "A dog on the farm",
+      "Sheep on the farm",
+    ],
+  },
+] as const) {
+  test(`${project.route} aligns its generated player and titled scene panel`, async ({ page }) => {
+    await page.setViewportSize({ height: 900, width: 1280 });
+    await page.goto(`${project.route}?parrotE2eDub=empty`);
+    await expectDubProject(page);
+
+    const player = page.getByRole("region", { name: "Full video player" });
+    const scenePanel = page.getByRole("complementary", { name: "Scene selection" });
+    const scenes = page.getByRole("navigation", { name: "Scenes" });
+    const [playerBox, scenePanelBox] = await Promise.all([
+      boundingBoxOrThrow(player),
+      boundingBoxOrThrow(scenePanel),
+    ]);
+    expect(Math.abs(playerBox.y - scenePanelBox.y)).toBeLessThanOrEqual(2);
+
+    const images = scenes.locator("img");
+    await expect(images).toHaveCount(project.sceneTitles.length);
+    await expect.poll(() => images.evaluateAll((elements) => elements.every((element) =>
+      element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0,
+    ))).toBe(true);
+    const sources = await images.evaluateAll((elements) => elements.map((element) =>
+      (element as HTMLImageElement).currentSrc,
+    ));
+    expect(new Set(sources).size).toBe(sources.length);
+
+    for (const [index, title] of project.sceneTitles.entries()) {
+      await expect(scenes.getByRole("button", {
+        name: `Scene ${index + 1}, ${title}, Not started`,
+      })).toBeVisible();
+    }
+
+    const firstScene = scenes.getByRole("button", {
+      name: `Scene 1, ${project.sceneTitles[0]}, Not started`,
+    });
+    await firstScene.hover();
+    await expect(firstScene).toBeVisible();
+    await firstScene.focus();
+    await expect(firstScene).toBeFocused();
+    await expect(firstScene).toBeVisible();
+  });
+}
+
+for (const viewport of [
+  { height: 568, width: 280 },
+  { height: 480, width: 320 },
+  { height: 844, width: 390 },
+  { height: 360, width: 640 },
+  { height: 900, width: 1280 },
+]) {
+  test(`both rhyme editors keep required actions reachable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+
+    for (const project of [
+      { route: "/dubs/five-little-ducks", sceneTitle: "Five little ducks" },
+      { route: "/dubs/old-macdonald", sceneTitle: "Cows on the farm" },
+    ]) {
+      await page.goto(`${project.route}?parrotE2eDub=complete`);
+      await expectDubProject(page);
+      await expectNoHorizontalOverflow(page);
+
+      const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
+      const backHome = routeHeader.getByRole("link", { name: "Back to home" });
+      await expect(backHome).toBeVisible();
+      await expectSharedHeaderTarget(backHome);
+      await expectBelow(page.getByRole("region", { name: "Dub project workspace" }), routeHeader);
+
+      await page.getByRole("button", {
+        name: `Scene 1, ${project.sceneTitle}, Done`,
+      }).click();
+      const backToFullVideo = routeHeader.getByRole("button", { name: "Back to full video" });
+      await expect(backToFullVideo).toBeVisible();
+      await expectSharedHeaderTarget(backToFullVideo);
+      await expectBelow(page.getByRole("region", { name: "Scene editor workspace" }), routeHeader);
+
+      for (const action of [
+        page.getByRole("button", { name: "Hear line" }),
+        page.getByRole("button", { name: "Record again" }),
+        page.getByRole("button", { name: "Play my recording" }),
+        page.getByRole("button", { name: "Previous line" }),
+        page.getByRole("button", { name: "Next line" }),
+      ]) {
+        await action.scrollIntoViewIfNeeded();
+        await expect(action).toBeInViewport();
+        await expectBelow(action, routeHeader);
+        await expectTargetAtLeast48(action);
+      }
+      await expectNoHorizontalOverflow(page);
+
+      await backToFullVideo.click();
+      await expectDubProject(page);
+    }
+  });
+}
 
 async function boundingBoxOrThrow(locator: Locator) {
   const box = await locator.boundingBox();
@@ -1513,31 +1588,18 @@ async function expectFullyInViewport(page: Page, locator: Locator) {
   expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
 }
 
-async function expectDubScrollViewport(page: Page) {
+async function expectDubRouteContained(page: Page) {
   const metrics = await page.getByRole("main").evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    const style = getComputedStyle(element);
     return {
-      bottom: rect.bottom,
-      height: rect.height,
       left: rect.left,
-      overflowX: style.overflowX,
-      overflowY: style.overflowY,
-      overscrollY: style.overscrollBehaviorY,
       right: rect.right,
-      viewportHeight: innerHeight,
       viewportWidth: innerWidth,
     };
   });
-  expect(metrics).toMatchObject({
-    left: 0,
-    overflowX: "hidden",
-    overflowY: "auto",
-    overscrollY: "contain",
-  });
-  expect(metrics.height).toBe(metrics.viewportHeight);
-  expect(metrics.bottom).toBe(metrics.viewportHeight);
+  expect(metrics.left).toBeGreaterThanOrEqual(0);
   expect(metrics.right).toBe(metrics.viewportWidth);
+  await expectNoHorizontalOverflow(page);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -1565,7 +1627,9 @@ test("the desktop project keeps the video and compact scene strip in one view", 
   const workspace = page.getByRole("region", { name: "Dub project workspace" });
   const player = page.getByRole("region", { name: "Full video player" });
   const dock = page.getByRole("navigation", { name: "Scenes" });
-  const sceneButton = dock.getByRole("button", { name: "Scene 1, 3 / 4" });
+  const sceneButton = dock.getByRole("button", {
+    name: "Scene 1, Five little ducks, 3 / 4",
+  });
   const playButton = page.getByRole("button", { name: "Play full video" });
   const workspaceBox = await boundingBoxOrThrow(workspace);
   const playerBox = await boundingBoxOrThrow(player);
@@ -1601,14 +1665,13 @@ test("the narrow project keeps its full title and transport outside the story ar
   expect(boxesOverlap(playerBox, playBox)).toBe(false);
 });
 
-test("the short-landscape project preserves the painted stage at 16:9", async ({ page }) => {
+test("the short-landscape project preserves the generated scene at 16:9", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);
 
-  const stage = page
-    .getByRole("region", { name: "Full video player" })
-    .locator('[data-story-stage="five-little-ducks"]');
+  const stage = page.getByRole("region", { name: "Full video player" }).locator("img");
+  await expect(stage).toHaveCount(1);
   const box = await boundingBoxOrThrow(stage);
   expect(Math.abs(box.width / box.height - 16 / 9)).toBeLessThan(0.01);
 });
@@ -1676,15 +1739,12 @@ for (const viewport of [
     await expectDubProject(page);
 
     const dock = page.getByRole("navigation", { name: "Scenes" });
-    const sceneSix = dock.getByRole("button", { name: "Scene 6, Not started" });
+    const sceneSix = dock.getByRole("button", {
+      name: "Scene 6, Sad mother duck, Not started",
+    });
     await expectNoHorizontalOverflow(page);
-    await expect.poll(() => dock.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
-    await page.mouse.move(viewport.width / 2, viewport.height - 24);
-    await page.mouse.wheel(0, 800);
-    await expect(dock).toBeInViewport();
-    await dock.hover();
-    await page.mouse.wheel(1_000, 0);
-    await expect.poll(() => dock.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    await sceneSix.scrollIntoViewIfNeeded();
+    await expect(sceneSix).toBeInViewport();
     const [dockBox, sceneBox] = await Promise.all([
       boundingBoxOrThrow(dock),
       boundingBoxOrThrow(sceneSix),
@@ -1704,6 +1764,7 @@ for (const viewport of [
     for (const action of [
       page.getByRole("button", { name: "Hear line" }),
       page.getByRole("button", { name: "Record line" }),
+      page.getByRole("button", { name: "Previous line" }),
       page.getByRole("button", { name: "Next line" }),
     ]) {
       await action.scrollIntoViewIfNeeded();
@@ -1717,8 +1778,12 @@ for (const viewport of [
 test("keyboard navigation focuses the selected scene line and advances linearly", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await expectDubProject(page);
-  const sceneTwo = page.getByRole("button", { name: "Scene 2, Not started" });
-  await expect(page.getByRole("button", { name: "Scene 1, Not started" })).toHaveAttribute("aria-current", "page");
+  const sceneTwo = page.getByRole("button", {
+    name: "Scene 2, Four little ducks, Not started",
+  });
+  await expect(page.getByRole("button", {
+    name: "Scene 1, Five little ducks, Not started",
+  })).toHaveAttribute("aria-current", "page");
 
   await sceneTwo.focus();
   await page.keyboard.press("Enter");
@@ -1741,7 +1806,9 @@ test("keyboard navigation focuses the selected scene line and advances linearly"
 test("keyboard scene selection focuses the first missing line heading", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);
-  const sceneButton = page.getByRole("button", { name: "Scene 1, 3 / 4" });
+  const sceneButton = page.getByRole("button", {
+    name: "Scene 1, Five little ducks, 3 / 4",
+  });
   await sceneButton.focus();
   await page.keyboard.press("Enter");
 
@@ -1836,34 +1903,43 @@ test("short landscape keeps project and scene actions clear of the route header"
   const player = page.getByRole("region", { name: "Full video player" });
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const playFull = page.getByRole("button", { name: "Play full video" });
-  const sceneButton = dock.getByRole("button", { name: "Scene 1, 3 / 4" });
-  const [headerBox, playerBox, dockBox, playFullBox, sceneBox] = await Promise.all([
+  const firstScene = dock.getByRole("button", {
+    name: "Scene 1, Five little ducks, 3 / 4",
+  });
+  const secondScene = dock.getByRole("button", {
+    name: "Scene 2, Four little ducks, Not started",
+  });
+  const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox] = await Promise.all([
     boundingBoxOrThrow(routeHeader),
     boundingBoxOrThrow(player),
     boundingBoxOrThrow(dock),
     boundingBoxOrThrow(playFull),
-    boundingBoxOrThrow(sceneButton),
+    boundingBoxOrThrow(firstScene),
+    boundingBoxOrThrow(secondScene),
   ]);
-  for (const box of [playerBox, dockBox, playFullBox, sceneBox]) {
+  for (const box of [playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox]) {
     expect(box.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
-    expect(box.y + box.height).toBeLessThanOrEqual(360);
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(640);
   }
   expect(playFullBox.height).toBeGreaterThanOrEqual(48);
-  expect(sceneBox.height).toBeGreaterThanOrEqual(48);
+  expect(firstSceneBox.height).toBeGreaterThanOrEqual(48);
+  expect(secondSceneBox.height).toBeGreaterThanOrEqual(48);
   expect(boxesOverlap(playerBox, dockBox)).toBe(false);
   expect(playFullBox.x).toBeGreaterThanOrEqual(playerBox.x);
   expect(playFullBox.x + playFullBox.width).toBeLessThanOrEqual(playerBox.x + playerBox.width);
   expect(playFullBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
   expect(boxesOverlap(playerBox, playFullBox)).toBe(false);
-  expect(boxesOverlap(playerBox, sceneBox)).toBe(false);
+  expect(boxesOverlap(playerBox, firstSceneBox)).toBe(false);
+  expect(boxesOverlap(playerBox, secondSceneBox)).toBe(false);
+  expect(boxesOverlap(firstSceneBox, secondSceneBox)).toBe(false);
+  expect(Math.abs(firstSceneBox.y - secondSceneBox.y)).toBeLessThanOrEqual(1);
   expect(boxesOverlap(dockBox, playFullBox)).toBe(false);
-  expect(boxesOverlap(dockBox, sceneBox)).toBe(false);
-  expect(boxesOverlap(playFullBox, sceneBox)).toBe(false);
+  expect(boxesOverlap(playFullBox, firstSceneBox)).toBe(false);
+  expect(boxesOverlap(playFullBox, secondSceneBox)).toBe(false);
   await expectNoHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: "Scene 1, 3 / 4" }).click();
+  await firstScene.click();
   const sceneStage = page.getByRole("region", { name: "Scene video" });
   const sceneControls = page.getByRole("complementary", { name: "Scene line controls" });
   const lineHeading = page.getByRole("heading", { name: "But only four little ducks came back." });

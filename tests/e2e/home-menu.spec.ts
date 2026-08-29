@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const phoneViewports = [
   { height: 568, name: "ultra narrow", width: 280 },
+  { height: 480, name: "compact", width: 320 },
   { height: 844, name: "regular", width: 390 },
 ];
 
@@ -65,12 +66,30 @@ test("home keeps four equal cards in one desktop row", async ({ page }) => {
 
   const activities = page.getByRole("navigation", { name: "Learning activities" });
   await expectActivityPicturesLoaded(activities);
-  const boxes = await Promise.all((await activities.getByRole("link").all()).map((link) => link.boundingBox()));
-  for (const box of boxes) {
-    expect(box).not.toBeNull();
-    expect(box!.width).toBeGreaterThan(240);
+  const links = activities.getByRole("link");
+  const boxes = await links.evaluateAll((elements) => elements.map((element) =>
+    element.getBoundingClientRect().toJSON(),
+  ));
+  expect(boxes).toHaveLength(4);
+  expect(Math.max(...boxes.map(({ y }) => y)) - Math.min(...boxes.map(({ y }) => y))).toBeLessThanOrEqual(1);
+  expect(Math.min(...boxes.map(({ width }) => width))).toBeGreaterThan(240);
+
+  for (const link of await links.all()) {
+    const [card, picture] = await Promise.all([
+      link.boundingBox(),
+      link.locator("img").boundingBox(),
+    ]);
+    expect(card).not.toBeNull();
+    expect(picture).not.toBeNull();
+    expect(picture!.height / card!.height).toBeGreaterThan(0.55);
   }
-  expect(Math.max(...boxes.map((box) => box!.y)) - Math.min(...boxes.map((box) => box!.y))).toBeLessThanOrEqual(1);
+
+  const nurseryRhymes = activities.getByRole("link", { name: "Nursery rhymes" });
+  await nurseryRhymes.hover();
+  await expect(nurseryRhymes).toBeVisible();
+  await nurseryRhymes.focus();
+  await expect(nurseryRhymes).toBeFocused();
+  await expect(nurseryRhymes).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

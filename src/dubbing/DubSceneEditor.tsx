@@ -113,7 +113,7 @@ export function DubSceneEditor({
             : `Up to ${definition.recordingMs / 1_000} seconds`;
 
   return (
-    <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-[3.75rem] short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
+    <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
       <section aria-label="Scene editor workspace" className="mx-auto grid w-full max-w-[1600px] gap-2 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.75fr)_minmax(21rem,0.7fr)] md:gap-4">
         <section className="grid content-start gap-2 short-wide:min-h-0 short-wide:gap-1.5">
           <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl">
@@ -205,7 +205,7 @@ export function DubSceneEditor({
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
                   {hasPlayableTake ? (
-                    <TextButton aria-label={takeLabel} className="relative z-0 min-h-10 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-12 short-wide:min-w-12 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
+                    <TextButton aria-label={takeLabel} className="relative z-0 min-h-12 min-w-12 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
                       {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Play") : takeLabel}
                     </TextButton>
                   ) : null}
