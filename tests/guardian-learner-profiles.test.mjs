@@ -670,7 +670,10 @@ test("adding a managed learner preserves learner mode and opens the new ID route
         activate: false,
         name: "Ava",
       });
-      return Response.json(roster(mia.id, [mia, noah, ava]));
+      return Response.json({
+        ...roster(mia.id, [mia, noah, ava]),
+        createdProfileId: ava.id,
+      });
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
@@ -686,6 +689,70 @@ test("adding a managed learner preserves learner mode and opens the new ID route
       "/guardian/learners/learner-ava",
     );
   });
+});
+
+async function assertConcurrentManagedAdds(names) {
+  const sam = {
+    ...mia,
+    id: "learner-sam",
+    name: "Sam",
+  };
+  const created = names.map((name, index) => ({
+    ...noah,
+    createdAt: `2026-08-27T08:00:0${index}.000Z`,
+    id: `learner-created-${index + 1}`,
+    name,
+  }));
+  const initialRoster = roster(sam.id, [sam]);
+  const finalRoster = roster(sam.id, [sam, ...created]);
+  const posts = [];
+  const bothPostsStarted = deferred();
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    if (path === "/api/learner-profiles" && init.method === "GET") {
+      return Response.json(posts.length ? finalRoster : initialRoster);
+    }
+    if (path === "/api/learner-profiles" && init.method === "POST") {
+      const body = JSON.parse(init.body);
+      const index = posts.length;
+      posts.push(body);
+      if (posts.length === 2) bothPostsStarted.resolve();
+      await bothPostsStarted.promise;
+      return Response.json({
+        ...finalRoster,
+        createdProfileId: created[index].id,
+      });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const first = await mountStrict(managerHarness());
+  const second = await mountStrict(managerHarness());
+  await waitFor(() => {
+    button(first, "Add learner");
+    button(second, "Add learner");
+  });
+  await input(first.querySelector("#preferred-name"), names[0]);
+  await input(second.querySelector("#preferred-name"), names[1]);
+  await click(button(first, "Add learner"));
+  await click(button(second, "Add learner"));
+
+  await waitFor(() => {
+    assert.equal(currentRoute(first), `/guardian/learners/${created[0].id}`);
+    assert.equal(currentRoute(second), `/guardian/learners/${created[1].id}`);
+  });
+  assert.deepEqual(posts, [
+    { activate: false, name: names[0] },
+    { activate: false, name: names[1] },
+  ]);
+}
+
+test("concurrent managers open their own distinct-name learner details", async () => {
+  await assertConcurrentManagedAdds(["Bob", "Mary"]);
+});
+
+test("concurrent managers open their own same-name learner details", async () => {
+  await assertConcurrentManagedAdds(["Bob", "Bob"]);
 });
 
 test("loads and saves inactive learner details by ID without changing learner mode", async () => {

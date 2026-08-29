@@ -66,6 +66,7 @@ describe("learnerProfile browser API", () => {
 
     const request = jsonFetch({
       activeProfileId: "learner/a",
+      createdProfileId: "learner/a",
       profiles: [
         {
           age: 6,
@@ -119,6 +120,7 @@ describe("learnerProfile browser API", () => {
   it("requests managed learner creation without changing the existing default activation contract", async () => {
     const payload = {
       activeProfileId: "learner-mia",
+      createdProfileId: "learner-mia",
       profiles: [
         {
           age: 8,
@@ -142,6 +144,38 @@ describe("learnerProfile browser API", () => {
 
     assert.equal(request.calls[0][1].body, '{"name":"Noah","activate":false}');
     assert.equal(request.calls[1][1].body, '{"name":"Ava"}');
+  });
+
+  it("rejects learner creation responses without an authoritative roster member ID", async () => {
+    const profile = {
+      age: 8,
+      createdAt: "2026-08-26T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-sam",
+      name: "Sam",
+      profileStatus: "completed",
+    };
+    const roster = {
+      activeProfileId: profile.id,
+      profiles: [profile],
+    };
+
+    for (const payload of [
+      roster,
+      { ...roster, createdProfileId: "" },
+      { ...roster, createdProfileId: "learner-mary" },
+    ]) {
+      const request = jsonFetch(payload);
+      await assert.rejects(
+        learnerProfileApi.createLearnerProfile("Mary", {
+          activate: false,
+          fetch: request.fetch,
+        }),
+        (error) =>
+          error instanceof LearnerProfileApiError &&
+          error.code === "invalid_roster",
+      );
+    }
   });
 
   it("rejects malformed Guardian rosters from every roster endpoint", async () => {

@@ -303,9 +303,12 @@ export async function handleLearnerProfilesRequest(input: {
         );
       if (!activate) {
         await createProfile.run();
-        return json(
-          await roster(input.database, input.identity, previousProfileId),
+        const updatedRoster = await roster(
+          input.database,
+          input.identity,
+          previousProfileId,
         );
+        return json({ ...updatedRoster, createdProfileId: profileId });
       }
 
       const now = Date.now();
@@ -336,7 +339,8 @@ export async function handleLearnerProfilesRequest(input: {
           )
           .bind(input.identity.sessionId),
       ]);
-      return json(await roster(input.database, input.identity));
+      const updatedRoster = await roster(input.database, input.identity);
+      return json({ ...updatedRoster, createdProfileId: profileId });
     }
 
     if (input.request.method === "PUT") {

@@ -1390,7 +1390,7 @@ function createE2eLearnerAccount(
         );
         state.learners.set(id, learner);
         persist();
-        return e2eJson(roster());
+        return e2eJson({ ...roster(), createdProfileId: id });
       }
       return e2eJson({ error: "method_not_allowed" }, 405);
     }

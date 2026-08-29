@@ -16,6 +16,7 @@ import {
   createLearnerProfile,
   loadLearnerProfiles,
   type GuardianLearnerProfileSummary,
+  type LearnerProfileCreationResult,
   type LearnerProfileRoster,
 } from "./learner-profile-api";
 
@@ -78,20 +79,20 @@ function isAbortError(error: unknown) {
 }
 
 function requireCreatedRosterProfile(
-  roster: LearnerProfileRoster,
-  existingProfileIds: readonly string[],
+  roster: LearnerProfileCreationResult,
   expectedName: string,
   expectedActiveProfileId: string | null,
 ) {
   if (roster.activeProfileId !== expectedActiveProfileId) {
     throw new Error("The newly added learner changed learner mode.");
   }
-  const existing = new Set(existingProfileIds);
-  const created = roster.profiles.filter(({ id }) => !existing.has(id));
-  if (created.length !== 1 || created[0].name !== expectedName) {
+  const created = roster.profiles.find(
+    ({ id }) => id === roster.createdProfileId,
+  );
+  if (!created || created.name !== expectedName) {
     throw new Error("The newly added learner could not be loaded.");
   }
-  return created[0];
+  return created;
 }
 
 export function GuardianLearnerProfilesView({
@@ -412,7 +413,6 @@ export function GuardianLearnerProfiles() {
 
   async function addProfile(name: string) {
     const operation = beginOperation();
-    const existingProfileIds = profiles.map(({ id }) => id);
     const previousActiveProfileId = activeProfileIdRef.current;
     setError("");
     setStatusMessage("");
@@ -425,7 +425,6 @@ export function GuardianLearnerProfiles() {
       if (!operation.isCurrent()) return;
       const created = requireCreatedRosterProfile(
         result,
-        existingProfileIds,
         name,
         previousActiveProfileId,
       );

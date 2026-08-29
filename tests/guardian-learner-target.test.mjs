@@ -47,6 +47,17 @@ const noah = {
   name: "Noah the Space Explorer",
   profileStatus: "not_started",
 };
+const pendingSam = {
+  ...mia,
+  deletionPending: true,
+  id: "learner-sam",
+  name: "Sam",
+};
+const bob = {
+  ...noah,
+  id: "learner-bob",
+  name: "Bob",
+};
 
 test.afterEach(async () => {
   await cleanupMountedRoots();
@@ -215,6 +226,61 @@ test("normalizes a missing target to the first learner when none is active", asy
   assert.equal(
     routerState(container),
     "REPLACE ?sort=name&learnerProfileId=learner-mia",
+  );
+});
+
+test("defaults to the live learner when the active learner is pending deletion", async () => {
+  installRosterFetch(roster(pendingSam.id, [pendingSam, bob]));
+  const container = await mountStrict(
+    harness("/guardian/stories?sort=name"),
+  );
+
+  await waitFor(() => assert.equal(resolvedTarget(container), bob.id));
+  assert.equal(
+    routerState(container),
+    "REPLACE ?sort=name&learnerProfileId=learner-bob",
+  );
+  assert.equal(
+    namedButton(container, bob.name).getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.equal(
+    [...container.querySelectorAll("button")].some(
+      (candidate) => candidate.getAttribute("aria-label") === pendingSam.name,
+    ),
+    false,
+  );
+});
+
+test("does not resolve an explicit learner target that is pending deletion", async () => {
+  installRosterFetch(roster(pendingSam.id, [pendingSam, bob]));
+  const container = await mountStrict(
+    harness(`/guardian/stories?learnerProfileId=${pendingSam.id}`),
+  );
+
+  await waitFor(() =>
+    assert.match(container.textContent, /learner target.*could not be found/i),
+  );
+  assert.equal(resolvedTarget(container), "unresolved");
+  assert.equal(
+    [...container.querySelectorAll("button")].some(
+      (candidate) => candidate.getAttribute("aria-label") === pendingSam.name,
+    ),
+    false,
+  );
+});
+
+test("uses the existing no-target recovery when every learner is pending deletion", async () => {
+  installRosterFetch(roster(pendingSam.id, [pendingSam]));
+  const container = await mountStrict(harness());
+
+  await waitFor(() => assert.match(container.textContent, /No learners yet/));
+  assert.equal(resolvedTarget(container), "unresolved");
+  assert.equal(
+    [...container.querySelectorAll("a")].find(
+      (candidate) => candidate.textContent.trim() === "Add learner",
+    )?.getAttribute("href"),
+    "/guardian/learners",
   );
 });
 

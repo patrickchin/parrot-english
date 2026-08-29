@@ -9255,6 +9255,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       if (path === "/api/learner-profiles" && init.method === "POST") {
         return json({
           activeProfileId: "learner-mia",
+          createdProfileId: "learner-mia",
           profiles: rosterProfiles,
         });
       }

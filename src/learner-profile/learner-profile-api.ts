@@ -93,6 +93,10 @@ export type LearnerProfileRoster = {
   profiles: GuardianLearnerProfileSummary[];
 };
 
+export type LearnerProfileCreationResult = LearnerProfileRoster & {
+  createdProfileId: string;
+};
+
 export type ProfileState = {
   profile: LearnerProfileSummary & {
     lessonRecordingCleanupPending: boolean;
@@ -312,6 +316,24 @@ function requireValidLearnerProfileRoster(
   return roster;
 }
 
+function requireValidLearnerProfileCreation(
+  result: LearnerProfileCreationResult,
+): LearnerProfileCreationResult {
+  const roster = requireValidLearnerProfileRoster(result);
+  if (
+    typeof result.createdProfileId !== "string" ||
+    !result.createdProfileId.trim() ||
+    !roster.profiles.some(({ id }) => id === result.createdProfileId)
+  ) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_roster",
+      "Learner profiles could not be loaded.",
+    );
+  }
+  return result;
+}
+
 async function learnerProfileRequest(
   path: string,
   init: RequestInit,
@@ -422,7 +444,7 @@ export function createLearnerProfile(
   name: string,
   { activate, ...options }: CreateLearnerProfileOptions = {},
 ) {
-  return learnerProfilesRequest(
+  return requestJson<LearnerProfileCreationResult>(
     "/api/learner-profiles",
     {
       method: "POST",
@@ -432,7 +454,7 @@ export function createLearnerProfile(
       ),
     },
     options,
-  );
+  ).then(requireValidLearnerProfileCreation);
 }
 
 export function selectLearnerProfile(

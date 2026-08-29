@@ -366,6 +366,61 @@ describe("learner roster Worker routing", () => {
     );
   });
 
+  it("identifies each concurrently created managed learner without changing learner mode", async () => {
+    insertLearner(state, "learner-sam", { name: "Sam" });
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+    const worker = createWorker({ createAuth: () => authStub() });
+    await worker.fetch(request("GET", "/api/learner-profiles"), env);
+
+    const responses = await Promise.all(
+      ["Bob", "Mary"].map((name) =>
+        worker.fetch(
+          request("POST", "/api/learner-profiles", {
+            activate: false,
+            name,
+          }),
+          env,
+        ),
+      ),
+    );
+    const payloads = await Promise.all(
+      responses.map((response) => response.json()),
+    );
+
+    assert.deepEqual(
+      responses.map(({ status }) => status),
+      [200, 200],
+    );
+    assert.deepEqual(
+      payloads.map(({ activeProfileId }) => activeProfileId),
+      ["learner-sam", "learner-sam"],
+    );
+    assert.equal(typeof payloads[0].createdProfileId, "string");
+    assert.equal(typeof payloads[1].createdProfileId, "string");
+    assert.notEqual(payloads[0].createdProfileId, payloads[1].createdProfileId);
+    assert.equal(
+      payloads[0].profiles.find(({ id }) => id === payloads[0].createdProfileId)
+        ?.name,
+      "Bob",
+    );
+    assert.equal(
+      payloads[1].profiles.find(({ id }) => id === payloads[1].createdProfileId)
+        ?.name,
+      "Mary",
+    );
+
+    const finalRoster = await (
+      await worker.fetch(request("GET", "/api/learner-profiles"), env)
+    ).json();
+    assert.deepEqual(finalRoster.profiles.map(({ name }) => name).sort(), [
+      "Bob",
+      "Mary",
+      "Sam",
+    ]);
+    assert.equal(finalRoster.activeProfileId, "learner-sam");
+  });
+
   it("clears the selection-required marker when activating a created learner", async () => {
     insertLearner(state, "learner-mary", { name: "Mary" });
     requireLearnerSelection(state);
