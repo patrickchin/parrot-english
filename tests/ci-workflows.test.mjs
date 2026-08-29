@@ -212,9 +212,10 @@ test("lint ignores browser artifacts generated earlier in pull-request verificat
   }
 });
 
-test("compatibility release retains only the safe multi-learner migrations", () => {
+test("enable release retains every multi-learner migration", () => {
   for (const migration of [
     "0012_multi_learner_expand.sql",
+    "0013_multi_learner_enable.sql",
     "0014_personalized_art_deletion_closure.sql",
     "0015_learner_profile_deletion.sql",
   ]) {
@@ -224,16 +225,9 @@ test("compatibility release retains only the safe multi-learner migrations", () 
       migration,
     );
   }
-  assert.equal(
-    existsSync(
-      new URL("../migrations/0013_multi_learner_enable.sql", import.meta.url),
-    ),
-    false,
-    "The compatibility release must omit the enable migration.",
-  );
 });
 
-test("compatibility release keeps roster mutations disabled", () => {
+test("enable release turns on roster mutations", () => {
   const wrangler = JSON.parse(
     readFileSync(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
   );
@@ -242,10 +236,10 @@ test("compatibility release keeps roster mutations disabled", () => {
     "utf8",
   );
 
-  assert.equal(wrangler.vars.MULTI_LEARNER_PROFILES_ENABLED, "0");
+  assert.equal(wrangler.vars.MULTI_LEARNER_PROFILES_ENABLED, "1");
   assert.match(
     workerConfiguration,
-    /^\s*MULTI_LEARNER_PROFILES_ENABLED: "0";$/m,
+    /^\s*MULTI_LEARNER_PROFILES_ENABLED: "1";$/m,
   );
 });
 
