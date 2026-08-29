@@ -264,10 +264,11 @@ export function DubStudio({
     if (reset && mountedRef.current) setRecordingElapsedMs(0);
   }, []);
 
-  const clearFetchedTakeUrl = useCallback(() => {
+  const clearFetchedTakeUrl = useCallback((owner?: string) => {
     const url = fetchedTakeUrlRef.current;
+    if (!url || (owner !== undefined && url !== owner)) return;
     fetchedTakeUrlRef.current = null;
-    if (url) URL.revokeObjectURL(url);
+    URL.revokeObjectURL(url);
   }, []);
 
   const cancelMedia = useCallback((discardTake: boolean) => {
@@ -516,6 +517,7 @@ export function DubStudio({
     dispatch({ type: "OPERATION_STARTED", operation: "take-playing" });
 
     void (async () => {
+      let fetchedUrl: string | null = null;
       try {
         let audioSrc = preview?.url;
         if (!audioSrc) {
@@ -524,8 +526,9 @@ export function DubStudio({
             signal: controller.signal,
           });
           if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
-          audioSrc = URL.createObjectURL(blob);
-          fetchedTakeUrlRef.current = audioSrc;
+          fetchedUrl = URL.createObjectURL(blob);
+          audioSrc = fetchedUrl;
+          fetchedTakeUrlRef.current = fetchedUrl;
         }
         await playAudioLine({ audioSrc, signal: controller.signal, text: line.text });
       } catch (error) {
@@ -538,7 +541,7 @@ export function DubStudio({
         dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
       } finally {
         if (takeControllerRef.current === controller) takeControllerRef.current = null;
-        clearFetchedTakeUrl();
+        if (fetchedUrl) clearFetchedTakeUrl(fetchedUrl);
         if (generation === mediaGenerationRef.current) dispatch({ type: "OPERATION_FINISHED" });
       }
     })();

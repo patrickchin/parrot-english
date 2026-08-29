@@ -734,6 +734,62 @@ describe("duck dubbing storyboard presentation", () => {
     assert.deepEqual(createdBlobs, []);
   });
 
+  it("keeps a successor fetched take URL owned when an older aborted fetch settles", async () => {
+    const playedSources = installAudioHarness();
+    const createdBlobs = [];
+    const revokedUrls = [];
+    let audioFetchCount = 0;
+    let resolveOlderAudioFetch;
+    let olderAudioResponseReturned = false;
+    const olderAudioResponse = new Promise((resolve) => { resolveOlderAudioFetch = resolve; });
+    URL.createObjectURL = (blob) => {
+      createdBlobs.push(blob);
+      return "blob:successor-take";
+    };
+    URL.revokeObjectURL = (url) => revokedUrls.push(url);
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledFirstSceneStatus());
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1/audio" && !init.method) {
+        audioFetchCount += 1;
+        if (audioFetchCount === 1) {
+          const response = await olderAudioResponse;
+          olderAudioResponseReturned = true;
+          return response;
+        }
+        return new Response(new Blob(["successor learner voice"], { type: "audio/webm" }));
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
+
+    await click(container.querySelector('[aria-label="Play my recording"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop my recording"]')));
+    await click(container.querySelector('[aria-label="Stop my recording"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
+    await click(container.querySelector('[aria-label="Play my recording"]'));
+    await waitFor(() => assert.deepEqual(playedSources, ["blob:successor-take"]));
+
+    assert.equal(audioFetchCount, 2);
+    assert.equal(createdBlobs.length, 1);
+    assert.deepEqual(revokedUrls, []);
+
+    resolveOlderAudioFetch(new Response(new Blob(["older learner voice"], { type: "audio/webm" })));
+    await waitFor(() => assert.equal(olderAudioResponseReturned, true));
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+
+    assert.ok(container.querySelector('[aria-label="Stop my recording"]'));
+    assert.deepEqual(revokedUrls, []);
+
+    await click(container.querySelector('[aria-label="Stop my recording"]'));
+    await waitFor(() => assert.deepEqual(revokedUrls, ["blob:successor-take"]));
+  });
+
   it("clears saved storyboard data when full playback reports consent loss", async () => {
     class AudioContext {
       close() { return Promise.resolve(); }
