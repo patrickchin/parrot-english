@@ -493,7 +493,7 @@ export const LessonIntroduction = forwardRef<
       className="absolute inset-0 z-10 grid place-items-center bg-brand-navy/30 px-4 pb-5 pt-20 backdrop-blur-[2px]"
       role="region"
     >
-      <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9">
+      <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9 [@media(min-width:35rem)_and_(max-height:17.5rem)]:py-2">
         <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black text-brand-blue">
           <Sparkles aria-hidden="true" className="size-4" />
           {lessonTitle} · {sceneCount} parts
@@ -501,7 +501,7 @@ export const LessonIntroduction = forwardRef<
         <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
           Watch and join in
         </h1>
-        <p className="mx-auto mb-6 mt-3 max-w-md text-lg font-bold leading-snug text-slate-600 short:mb-4 md:mb-8 md:mt-4 md:text-2xl">
+        <p className="mx-auto mb-6 mt-3 max-w-md text-lg font-bold leading-snug text-slate-600 short:mb-4 md:mb-8 md:mt-4 md:text-2xl [@media(min-width:35rem)_and_(max-height:17.5rem)]:mb-1 [@media(min-width:35rem)_and_(max-height:17.5rem)]:mt-1">
           Watch the story and say the big words with the group whenever you like.
         </p>
         <ActionButton
@@ -623,8 +623,10 @@ export const LessonCompletion = forwardRef<
 });
 export function LessonCharacters({
   characters,
+  showSpeakingHelp = false,
 }: {
   characters: LessonCharacterPresentation[];
+  showSpeakingHelp?: boolean;
 }) {
   return (
     <div
@@ -635,6 +637,12 @@ export function LessonCharacters({
         <div
           className={cx(
             "lesson-character-slot absolute bottom-24 z-10 flex h-[20dvh] w-1/3 min-w-24 max-w-44 -translate-x-1/2 items-end justify-center drop-shadow-xl transition short:bottom-22 min-[340px]:h-[28dvh] min-[340px]:w-2/5 md:bottom-30 md:h-[44dvh] md:w-1/4 md:max-w-80 [@media(min-width:48rem)_and_(min-height:30.0625rem)]:bottom-[var(--lesson-layered-character-bottom)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:h-[var(--lesson-layered-character-height)]",
+            showSpeakingHelp &&
+              "[&.lesson-character-slot]:w-[min(24vw,11rem)] [&.lesson-character-slot]:min-w-0 [&.lesson-character-slot]:max-w-44 min-[340px]:[&.lesson-character-slot]:w-[min(24vw,11rem)] min-[340px]:[&.lesson-character-slot]:min-w-0 min-[340px]:[&.lesson-character-slot]:max-w-44 md:[&.lesson-character-slot]:w-[min(24vw,11rem)] md:[&.lesson-character-slot]:min-w-0 md:[&.lesson-character-slot]:max-w-44",
+            showSpeakingHelp &&
+              (characters.length === 1
+                ? "[--lesson-character-left:22%]"
+                : "[--lesson-character-left:var(--lesson-help-character-left)]"),
             character.isActive &&
               "z-20 -translate-y-1 scale-105 drop-shadow-2xl",
           )}
@@ -644,6 +652,7 @@ export function LessonCharacters({
           style={{
             "--character-count": characters.length,
             "--character-index": index,
+            "--lesson-help-character-left": `${12.5 + index * 75}%`,
           } as CSSProperties}
         >
           <img
@@ -961,12 +970,14 @@ export function LessonPlaybackControls({
 }
 
 export function LessonErrorBanner({
+  characterCount = 0,
   error,
   onRetry,
   onSkip,
   reserved = false,
   tone = "error",
 }: {
+  characterCount?: number;
   error: string;
   onRetry?: () => void;
   onSkip?: () => void;
@@ -983,7 +994,10 @@ export function LessonErrorBanner({
         reserved
           ? "relative w-full min-w-0 max-w-none short-wide:gap-2 short-wide:px-3 short-wide:py-2 short-wide:text-sm"
           : cx(
-              "absolute bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-30 [@media(min-width:48rem)_and_(max-height:30rem)]:bottom-[5.75rem]",
+              "absolute bottom-24 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-30 [@media(min-width:48rem)_and_(max-height:30rem)]:bottom-[5.75rem]",
+              tone === "help" && characterCount === 1
+                ? "left-[70%]"
+                : "left-1/2",
               tone === "help" &&
                 "w-[min(46vw,16rem)] [@media(min-width:48rem)_and_(max-height:30rem)]:top-20 [@media(min-width:48rem)_and_(max-height:30rem)]:bottom-auto",
             ),

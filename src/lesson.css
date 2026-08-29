@@ -1,6 +1,7 @@
 .lesson-character-slot {
-  left: calc(
-    (var(--character-index) + 1) * 100% / (var(--character-count) + 1)
+  left: var(
+    --lesson-character-left,
+    calc((var(--character-index) + 1) * 100% / (var(--character-count) + 1))
   );
 }
 

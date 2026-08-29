@@ -146,7 +146,15 @@ async function openParrotLesson(
 async function openMyLesson(
   page: Page,
   scenario: string,
-  { id = "device-guide", lesson = myLesson }: { id?: string; lesson?: unknown } = {},
+  {
+    id = "device-guide",
+    lesson = myLesson,
+    microphoneScenario,
+  }: {
+    id?: string;
+    lesson?: unknown;
+    microphoneScenario?: "denied";
+  } = {},
 ) {
   await page.route(`**/api/lessons/my/${id}`, async (route) => {
     await route.fulfill({
@@ -161,7 +169,12 @@ async function openMyLesson(
       }),
     });
   });
-  await page.goto(`/lessons/my/${id}/scenes/1?parrotE2eLesson=${scenario}`);
+  await page.goto(
+    `/lessons/my/${id}/scenes/1?parrotE2eLesson=${scenario}` +
+      (microphoneScenario
+        ? `&parrotE2eMicrophone=${microphoneScenario}`
+        : ""),
+  );
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
@@ -1160,6 +1173,110 @@ test("a recording stop failure discards only that clip and continues", async ({
   await startLesson(page);
   await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
   expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
+});
+
+test("lesson intro and start action stay contained at exactly 667x280", async ({
+  page,
+}) => {
+  const viewport = { width: 667, height: 280 };
+  await page.setViewportSize(viewport);
+  await openParrotLesson(page, "held-cue-no-consent");
+
+  const intro = page.getByRole("region", { name: "Lesson introduction" });
+  const heading = intro.getByRole("heading", {
+    exact: true,
+    level: 1,
+    name: "Watch and join in",
+  });
+  const start = intro.getByRole("button", { exact: true, name: "Let's go" });
+  const account = page.getByRole("button", {
+    name: "Profile for Mia, learner mode",
+  });
+  const routeBack = page.getByRole("button", { name: "Back to lesson list" });
+
+  await expectInsideViewport(heading, viewport);
+  await expectInsideViewport(start, viewport);
+  await expectInsideViewport(account, viewport);
+  await expectInsideViewport(routeBack, viewport);
+  await expect(start).toHaveAccessibleName("Let's go");
+  await expectNoOverlap(heading, account);
+  await expectNoOverlap(heading, routeBack);
+  await expectNoOverlap(start, account);
+  await expectNoOverlap(start, routeBack);
+  await expectNoPageOverflow(page);
+});
+
+for (const viewport of [
+  { name: "narrow", width: 280, height: 653 },
+  { name: "mid-width tall", width: 667, height: 500 },
+  { name: "desktop", width: 1280, height: 800 },
+]) {
+  test(`speaking help keeps two characters in separate edge lanes on ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await openMyLesson(page, "held-cue", {
+      id: `two-character-help-${viewport.width}-${viewport.height}`,
+      lesson: longDialogueLesson,
+      microphoneScenario: "denied",
+    });
+    await startLesson(page);
+
+    const help = page.getByRole("status", { name: "Speaking help" });
+    const peppa = page.getByRole("img", {
+      exact: true,
+      name: "Peppa listening",
+    });
+    const dolly = page.getByRole("img", {
+      exact: true,
+      name: "Dolly listening",
+    });
+    const helpBox = await visibleBox(help);
+    const peppaBox = await visibleBox(peppa);
+    const dollyBox = await visibleBox(dolly);
+
+    expect(peppaBox.x + peppaBox.width / 2).toBeLessThanOrEqual(
+      viewport.width * 0.2,
+    );
+    expect(dollyBox.x + dollyBox.width / 2).toBeGreaterThanOrEqual(
+      viewport.width * 0.8,
+    );
+    expect(
+      Math.abs(helpBox.x + helpBox.width / 2 - viewport.width / 2),
+    ).toBeLessThanOrEqual(2);
+    await expectNoOverlap(help, peppa);
+    await expectNoOverlap(help, dolly);
+    await expectNoPageOverflow(page);
+  });
+}
+
+test("speaking help separates one character from its message", async ({
+  page,
+}) => {
+  const viewport = { width: 280, height: 653 };
+  await page.setViewportSize(viewport);
+  await openMyLesson(page, "held-cue", {
+    id: "single-character-help",
+    microphoneScenario: "denied",
+  });
+  await startLesson(page);
+
+  const help = page.getByRole("status", { name: "Speaking help" });
+  const character = page.getByRole("img", {
+    exact: true,
+    name: "Peppa listening",
+  });
+  const helpBox = await visibleBox(help);
+  const characterBox = await visibleBox(character);
+
+  expect(characterBox.x + characterBox.width / 2).toBeLessThanOrEqual(
+    viewport.width * 0.3,
+  );
+  expect(helpBox.x + helpBox.width / 2).toBeGreaterThanOrEqual(
+    viewport.width * 0.65,
+  );
+  await expectNoOverlap(help, character);
+  await expectNoPageOverflow(page);
 });
 
 for (const viewport of [

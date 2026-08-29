@@ -980,9 +980,11 @@ export function LessonPlayer({
         reserved={reserved}
       />
     ) : null;
+  const showSpeakingHelp = Boolean(microphoneNotice && !error);
   const activeNotice =
     error || microphoneNotice ? (
       <LessonErrorBanner
+        characterCount={scene.characters.length}
         error={error || microphoneNotice}
         onRetry={
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleRetryAudio : undefined
@@ -991,7 +993,7 @@ export function LessonPlayer({
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleSkipAudio : undefined
         }
         reserved={reserved}
-        tone={error ? "error" : "help"}
+        tone={showSpeakingHelp ? "help" : "error"}
       />
     ) : null;
   const saveState =
@@ -1064,7 +1066,10 @@ export function LessonPlayer({
         ) : (
           <>
             {activeHud}
-            <LessonCharacters characters={scene.characters} />
+            <LessonCharacters
+              characters={scene.characters}
+              showSpeakingHelp={showSpeakingHelp}
+            />
             {activeDialogue}
             {activeControls}
             {activeNotice}
