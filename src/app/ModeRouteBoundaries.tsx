@@ -1,10 +1,11 @@
-import { useState, type ReactNode } from "react";
-import { Outlet, useNavigate } from "react-router";
+import { useRef, useState, type ReactNode } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { GuardianUnlockScreen } from "../auth/GuardianUnlock";
 import { ActionButton, ActionLink, Card } from "../shared/ui";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { getGuardianPath } from "./app-routes";
+import { LearnerModeSwitchDialog } from "./LearnerModeSwitchDialog";
 
 type ModeBoundaryProps = {
   children?: ReactNode;
@@ -50,25 +51,13 @@ export function LearnerModeBoundary({
   children,
   onBeforeNavigate,
 }: ModeBoundaryProps) {
-  const { error, lock, mode } = useGuardianAccess();
-  const navigate = useNavigate();
-  const [isSwitching, setIsSwitching] = useState(false);
+  const { mode } = useGuardianAccess();
+  const location = useLocation();
+  const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
+  const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
   if (mode === "loading") return <AccessCheck />;
   if (mode === "learner") return <BoundaryContent>{children}</BoundaryContent>;
-
-  async function switchToLearner() {
-    if (isSwitching) return;
-    setIsSwitching(true);
-    try {
-      const lockError = await lock();
-      if (lockError) return;
-      onBeforeNavigate?.();
-      navigate("/");
-    } finally {
-      setIsSwitching(false);
-    }
-  }
 
   return (
     <main className="grid h-dvh w-screen place-items-start overflow-y-auto bg-placeholder px-4 pb-10 pt-28 md:place-items-center md:px-6 md:pb-12 md:pt-32">
@@ -79,20 +68,23 @@ export function LearnerModeBoundary({
         <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
           Learning activities are available in the learner profile.
         </p>
-        {error ? (
-          <p className="m-0 font-extrabold text-red-800" role="alert">
-            {error}
-          </p>
-        ) : null}
         <ActionButton
-          disabled={isSwitching}
-          onClick={() => void switchToLearner()}
+          onClick={() => setIsSwitchDialogOpen(true)}
+          ref={switchTriggerRef}
           type="button"
         >
-          {isSwitching ? "Switching to learner mode…" : "Switch to learner mode"}
+          Switch to learner mode
         </ActionButton>
         <ActionLink to={getGuardianPath()}>Back to Guardian dashboard</ActionLink>
       </Card>
+      {isSwitchDialogOpen ? (
+        <LearnerModeSwitchDialog
+          destination={`${location.pathname}${location.search}${location.hash}`}
+          onBeforeNavigate={onBeforeNavigate}
+          onClose={() => setIsSwitchDialogOpen(false)}
+          returnFocusRef={switchTriggerRef}
+        />
+      ) : null}
     </main>
   );
 }

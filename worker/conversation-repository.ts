@@ -198,20 +198,34 @@ export function createConversationRepository(
           typeof answers.description === "string" ? answers.description : "",
       });
     }
-    await database.insert(conversationSession).values({
+    const stored = await database.$client.prepare(
+      `INSERT INTO conversation_session (
+         id, auth_user_id, learner_profile_id, scenario_key,
+         scenario_version, prompt_style, room_name, status, controller_state,
+         started_at, created_at, updated_at
+       )
+       SELECT ?, ?, ?, ?, ?, ?, ?, 'starting', ?, ?, ?, ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM learner_profile_deletion_tombstone
+         WHERE learner_profile_id = ?
+       )`,
+    ).bind(
       id,
-      authUserId: identity.userId,
-      learnerProfileId: identity.learnerProfileId,
-      scenarioKey: scenario.key,
-      scenarioVersion: scenario.version,
+      identity.userId,
+      identity.learnerProfileId,
+      scenario.key,
+      scenario.version,
       promptStyle,
       roomName,
-      status: "starting",
-      controllerState: JSON.stringify(controllerState),
-      startedAt: timestamp,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    });
+      JSON.stringify(controllerState),
+      timestamp.getTime(),
+      timestamp.getTime(),
+      timestamp.getTime(),
+      identity.learnerProfileId,
+    ).run();
+    if (Number(stored.meta.changes ?? 0) !== 1) {
+      throw new ConversationRepositoryError(409, "learner_deletion_pending");
+    }
     return (await findConversation(id))!;
   }
 

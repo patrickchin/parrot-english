@@ -6,6 +6,7 @@ import {
   resolveLearnerIdentity,
   resolveOwnedLearnerIdentity,
 } from "../worker/request-identity.ts";
+import * as requestIdentity from "../worker/request-identity.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
@@ -76,6 +77,26 @@ function insertSelection(
        VALUES (?, ?, ?, ?, ?)`,
     )
     .run(sessionId, userId, learnerProfileId, timestamp, timestamp);
+}
+
+function insertDeletionTombstone(state, learnerProfileId) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, legacy_storage_owner,
+         generation, requested_at, storage_keys_json)
+       VALUES (?, 'opaque-user-hash', 1, 1, ?, '[]')`,
+    )
+    .run(learnerProfileId, timestamp);
+}
+
+function requireLearnerSelection(state, sessionId) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_selection_required (session_id)
+       VALUES (?)`,
+    )
+    .run(sessionId);
 }
 
 function expectedLearner(
@@ -185,6 +206,38 @@ describe("request learner identity", () => {
     );
   });
 
+  it("does not resolve an owned learner while its deletion is pending", async () => {
+    insertLearner(state, "learner-a", "user-a");
+    insertDeletionTombstone(state, "learner-a");
+
+    assert.equal(
+      await resolveOwnedLearnerIdentity(
+        database,
+        account("session-a"),
+        "learner-a",
+      ),
+      null,
+    );
+    assert.equal(
+      await requestIdentity.isLearnerDeletionPending(database, "learner-a"),
+      true,
+    );
+    assert.equal(
+      await requestIdentity.isLearnerDeletionPending(database, "missing"),
+      false,
+    );
+  });
+
+  it("does not resolve a selected learner while its deletion is pending", async () => {
+    insertLearner(state, "learner-a", "user-a");
+    insertSelection(state, "session-a", "user-a", "learner-a");
+    insertDeletionTombstone(state, "learner-a");
+
+    assert.deepEqual(await resolveLearnerIdentity(database, account("session-a")), {
+      status: "selection_required",
+    });
+  });
+
   it("creates and selects one unnamed legacy learner for a zero-profile account", async () => {
     const resolution = await resolveLearnerIdentity(
       database,
@@ -290,6 +343,29 @@ describe("request learner identity", () => {
         )
         .get("session-a").learner_profile_id,
       "learner-a",
+    );
+  });
+
+  it("honors a selection-required marker before the sole-sibling fallback", async () => {
+    insertLearner(state, "learner-a", "user-a");
+    insertLearner(state, "learner-b", "user-a", {
+      legacyStorageOwner: false,
+      name: "Sam",
+    });
+    insertDeletionTombstone(state, "learner-a");
+    requireLearnerSelection(state, "session-a");
+
+    assert.deepEqual(await resolveLearnerIdentity(database, account("session-a")), {
+      status: "selection_required",
+    });
+    assert.equal(
+      state.sqlite
+        .prepare(
+          `SELECT count(*) AS count FROM session_learner_selection
+           WHERE session_id = 'session-a'`,
+        )
+        .get().count,
+      0,
     );
   });
 

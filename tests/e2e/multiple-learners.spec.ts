@@ -521,6 +521,56 @@ function learnerCard(page: Page, name: string) {
   });
 }
 
+async function openLearnerModeChooser(
+  page: Page,
+  triggerName: "Switch to learner" | "Switch to learner mode" =
+    "Switch to learner",
+) {
+  const trigger = page.getByRole("button", {
+    exact: true,
+    name: triggerName,
+  });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Who is learning now?" });
+  await expect(dialog).toBeVisible();
+  return dialog;
+}
+
+async function chooseLearnerAndStart(
+  page: Page,
+  name: string,
+  triggerName: "Switch to learner" | "Switch to learner mode" =
+    "Switch to learner",
+) {
+  const dialog = await openLearnerModeChooser(page, triggerName);
+  await expect(dialog.getByRole("radio", { checked: true })).toHaveCount(0);
+  await dialog.getByRole("radio", { exact: true, name }).check();
+  await dialog
+    .getByRole("button", { exact: true, name: `Start learner mode as ${name}` })
+    .click();
+  return dialog;
+}
+
+async function chooseLearnerFromManager(page: Page, name: string) {
+  await page
+    .getByRole("link", { exact: true, name: /Back to guardian dashboard/i })
+    .click();
+  return chooseLearnerAndStart(page, name);
+}
+
+async function activeLearnerId(page: Page) {
+  return page.evaluate(
+    () =>
+      (
+        window as Window & {
+          __parrotE2eLearners?: {
+            snapshot(): { activeProfileId: string | null };
+          };
+        }
+      ).__parrotE2eLearners?.snapshot().activeProfileId ?? null,
+  );
+}
+
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
     .poll(() =>
@@ -612,13 +662,50 @@ async function expectNameContentContained(page: Page, name: string) {
   return metrics.map(({ direction }) => direction);
 }
 
+async function expectLearnerDeletionDialogContained(page: Page, name: string) {
+  const card = learnerCard(page, name);
+  const deleteButton = card.getByRole("button", { name: `Delete ${name}` });
+  await expectContainedHorizontally(deleteButton, page);
+  await deleteButton.click();
+
+  const dialog = page.getByRole("dialog", { name: `Delete ${name}?` });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("heading", { name: `Delete ${name}?` })).toBeVisible();
+  await expect(dialog).toContainText(`This removes ${name}'s learner profile`);
+  const confirm = dialog.getByRole("button", { name: `Delete ${name}` });
+  const cancel = dialog.getByRole("button", { name: "Cancel" });
+  await expectContainedHorizontally(dialog, page);
+  await expectContainedHorizontally(confirm, page);
+  await expectContainedHorizontally(cancel, page);
+  await expectNameContentContained(page, name);
+  await expectNoHorizontalOverflow(page);
+  await cancel.click();
+}
+
 async function unlockGuardianScreen(page: Page) {
   const main = page.getByRole("main");
   await main.getByLabel("Password").fill(GUARDIAN_PASSWORD);
   await main.getByRole("button", { name: "Unlock guardian mode" }).click();
 }
 
-test("selects a sibling and keeps that session selection after refresh", async ({
+async function unlockGuardianFromLearnerMenu(page: Page) {
+  await page
+    .getByRole("button", { name: /Profile for .+, learner mode/ })
+    .click();
+  await page
+    .getByRole("menu", { name: "Account menu" })
+    .getByRole("menuitem", { name: /Grown-up access/ })
+    .click();
+  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
+  await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
+  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
+}
+
+test("chooses a sibling only while switching and keeps that session selection after refresh", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
@@ -626,22 +713,21 @@ test("selects a sibling and keeps that session selection after refresh", async (
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
-
-  await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Use Noah in learner mode" })
-    .click();
-
-  await expect(page.getByRole("main").getByRole("status")).toContainText(
-    "Now managing Noah",
-  );
+  await expect(page.getByRole("radio")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Managing Noah" }),
-  ).toBeFocused();
+    page.getByRole("button", { name: /Use .* learner mode/ }),
+  ).toHaveCount(0);
+  await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
+
+  await chooseLearnerFromManager(page, "Noah");
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
+  ).toBeVisible();
+  await expect.poll(() => activeLearnerId(page)).toBe("learner-noah");
   await page.reload();
-  await expect(learnerCard(page, "Noah")).toContainText("Learner mode");
   await expect(
-    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
+    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
   ).toBeVisible();
 });
 
@@ -650,7 +736,8 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
 
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
+  await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
   await learnerCard(page, "Noah")
     .getByRole("button", { name: "Edit Noah's profile" })
     .click();
@@ -677,9 +764,9 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
 
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page).toHaveURL("/guardian/learners");
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
   await page.reload();
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
   await expect(
     page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
   ).toBeVisible();
@@ -726,7 +813,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await page
     .getByRole("link", { name: /Back to guardian dashboard/i })
     .click();
-  await page.getByRole("button", { name: "Switch to learner" }).click();
+  await chooseLearnerAndStart(page, "Mia Updated");
   await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("button", {
@@ -794,12 +881,14 @@ test("adds a learner without changing learner mode and keeps the new roster afte
   await page.getByRole("button", { name: "Back" }).click();
 
   const ava = learnerCard(page, "Ava");
-  await expect(ava).not.toContainText("Learner mode");
   await expect(ava).toContainText("Setup not started");
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect(ava).not.toContainText("Learner mode");
+  await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
+  await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
   await page.reload();
   await expect(learnerCard(page, "Ava")).not.toContainText("Learner mode");
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
+  await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
 });
 
 test("scopes learner selections to authenticated browser sessions", async ({
@@ -892,32 +981,457 @@ test("scopes learner selections to authenticated browser sessions", async ({
       },
     ]);
 
-    await expect(learnerCard(sameSessionTab, "Mia")).toContainText(
-      "Learner mode",
+    await expect.poll(() => activeLearnerId(sameSessionTab)).toBe(
+      "learner-mia",
+    );
+    await expect.poll(() => activeLearnerId(secondSession)).toBe(
+      "learner-mia",
     );
     await firstSession.bringToFront();
-    await learnerCard(firstSession, "Noah")
-      .getByRole("button", { name: "Use Noah in learner mode" })
-      .click();
+    await chooseLearnerFromManager(firstSession, "Noah");
 
-    await expect(learnerCard(firstSession, "Noah")).toContainText(
-      "Learner mode",
+    await expect(firstSession).toHaveURL("/");
+    await expect(
+      firstSession.getByRole("button", {
+        name: /Profile for Noah, learner mode/,
+      }),
+    ).toBeVisible();
+    await expect.poll(() => activeLearnerId(firstSession)).toBe("learner-noah");
+    await expect.poll(() => activeLearnerId(sameSessionTab)).toBe(
+      "learner-noah",
     );
-    await expect(learnerCard(firstSession, "Mia")).not.toContainText(
-      "Learner mode",
+    await expect.poll(() => activeLearnerId(secondSession)).toBe(
+      "learner-mia",
     );
-    await expect(learnerCard(sameSessionTab, "Noah")).toContainText(
-      "Learner mode",
-    );
-    await expect(learnerCard(secondSession, "Mia")).toContainText(
-      "Learner mode",
-    );
-    await expect(learnerCard(secondSession, "Noah")).not.toContainText(
-      "Learner mode",
-    );
+    await expect(
+      secondSession.getByRole("heading", { name: "Manage learners" }),
+    ).toBeVisible();
   } finally {
     await Promise.all([firstContext.close(), secondContext.close()]);
   }
+});
+
+test("lets a newer real-tab deletion recovery settle while the older DELETE is held", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-delete-lock",
+  );
+  await context.addInitScript(() => {
+    Object.defineProperty(window, "BroadcastChannel", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.assign(window, { __parrotBlockLearnerStorageEvents: false });
+    window.addEventListener(
+      "storage",
+      (event) => {
+        if (
+          (
+            window as typeof window & {
+              __parrotBlockLearnerStorageEvents?: boolean;
+            }
+          ).__parrotBlockLearnerStorageEvents &&
+          event.key?.startsWith("parrot-learner-selection-")
+        ) {
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+  });
+  try {
+    const older = await context.newPage();
+    const newer = await context.newPage();
+    const url = learnerScenarioUrl(
+      "/guardian/learners",
+      "multiple",
+      "guardian",
+      "e2e-session-delete-lock",
+    );
+    await Promise.all([older.goto(url), newer.goto(url)]);
+    await Promise.all(
+      [older, newer].map((page) =>
+        expect(
+          page.getByRole("heading", { name: "Manage learners" }),
+        ).toBeVisible(),
+      ),
+    );
+
+    const { pendingKey, scope, stateKey } = await older.evaluate(async () => {
+      const sessionIdentity =
+        "id:e2e-user|session:e2e-session-delete-lock";
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(sessionIdentity),
+      );
+      const scope = `parrot-learner-selection-${Array.from(
+        new Uint8Array(digest),
+        (byte) => byte.toString(16).padStart(2, "0"),
+      ).join("")}`;
+      const token = "real-tab-delete-token";
+      const pendingKey = `${scope}:pending:${token}`;
+      localStorage.setItem(
+        pendingKey,
+        JSON.stringify({
+          attemptId: "crashed-real-tab-attempt",
+          changeMarker: null,
+          operation: "delete-learner",
+          profileId: "learner-noah",
+          status: "uncertain",
+          token,
+          version: 2,
+        }),
+      );
+      return { pendingKey, scope, stateKey: `${scope}:state` };
+    });
+    await Promise.all([older.reload(), newer.reload()]);
+    await Promise.all(
+      [older, newer].map((page) =>
+        expect(page.getByRole("button", { name: "Try again" })).toBeVisible(),
+      ),
+    );
+    await newer.evaluate(() => {
+      (
+        window as typeof window & {
+          __parrotBlockLearnerStorageEvents?: boolean;
+        }
+      ).__parrotBlockLearnerStorageEvents = true;
+    });
+    await older.evaluate(() => {
+      const originalFetch = window.fetch.bind(window);
+      let release: (() => Promise<void>) | null = null;
+      const control = {
+        release: async () => release?.(),
+        started: false,
+      };
+      Object.assign(window, { __parrotHeldLearnerDelete: control });
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : null;
+        const url = new URL(
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url,
+          window.location.href,
+        );
+        const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+        if (
+          url.pathname === "/api/learner-profiles/learner-noah" &&
+          method === "DELETE"
+        ) {
+          control.started = true;
+          return new Promise<Response>((resolve) => {
+            release = async () => resolve(await originalFetch(input, init));
+          });
+        }
+        return originalFetch(input, init);
+      };
+    });
+
+    await older.getByRole("button", { name: "Try again" }).click();
+    await expect
+      .poll(() =>
+        older.evaluate(
+          () =>
+            (
+              window as typeof window & {
+                __parrotHeldLearnerDelete?: { started: boolean };
+              }
+            ).__parrotHeldLearnerDelete?.started,
+        ),
+      )
+      .toBe(true);
+    await newer.getByRole("button", { name: "Try again" }).click();
+    await expect.poll(() => newer.evaluate((key) => localStorage.getItem(key), pendingKey)).toBeNull();
+    await expect(learnerCard(newer, "Noah")).toHaveCount(0);
+    const winnerMarker = await newer.evaluate(
+      (key) => localStorage.getItem(key),
+      stateKey,
+    );
+    expect(winnerMarker).not.toBeNull();
+
+    await older.evaluate(async () => {
+      await (
+        window as typeof window & {
+          __parrotHeldLearnerDelete?: { release(): Promise<void> | undefined };
+        }
+      ).__parrotHeldLearnerDelete?.release();
+    });
+    await expect.poll(() => older.evaluate((key) => localStorage.getItem(key), pendingKey)).toBeNull();
+    await expect
+      .poll(() => older.evaluate((key) => localStorage.getItem(key), stateKey))
+      .toBe(winnerMarker);
+    await expect(learnerCard(older, "Noah")).toHaveCount(0);
+    expect(scope).toMatch(/^parrot-learner-selection-/);
+  } finally {
+    await context.close();
+  }
+});
+
+test("accepts an exact deletion replay through real BroadcastChannel when state delivery is blocked", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-delete-broadcast",
+  );
+  await context.addInitScript(() => {
+    Object.assign(window, { __parrotBlockLearnerStorageEvents: false });
+    window.addEventListener(
+      "storage",
+      (event) => {
+        if (
+          (
+            window as typeof window & {
+              __parrotBlockLearnerStorageEvents?: boolean;
+            }
+          ).__parrotBlockLearnerStorageEvents &&
+          event.key?.endsWith(":state")
+        ) {
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+  });
+  try {
+    const source = await context.newPage();
+    const peer = await context.newPage();
+    const url = learnerScenarioUrl(
+      "/guardian/learners",
+      "multiple",
+      "guardian",
+      "e2e-session-delete-broadcast",
+    );
+    await Promise.all([source.goto(url), peer.goto(url)]);
+    await Promise.all(
+      [source, peer].map((page) =>
+        expect(
+          page.getByRole("heading", { name: "Manage learners" }),
+        ).toBeVisible(),
+      ),
+    );
+    await expect(learnerCard(peer, "Noah")).toBeVisible();
+    await peer.evaluate(async () => {
+      const sessionIdentity =
+        "id:e2e-user|session:e2e-session-delete-broadcast";
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(sessionIdentity),
+      );
+      const name = `parrot-learner-selection-${Array.from(
+        new Uint8Array(digest),
+        (byte) => byte.toString(16).padStart(2, "0"),
+      ).join("")}`;
+      const received: Array<{ data: unknown; name: string }> = [];
+      const observer = new BroadcastChannel(name);
+      observer.onmessage = (event) => received.push({ data: event.data, name });
+      Object.assign(window, {
+        __parrotBroadcastObserver: observer,
+        __parrotReceivedBroadcastMessages: received,
+      });
+      const originalFetch = window.fetch.bind(window);
+      Object.assign(window, { __parrotPeerRosterReads: 0 });
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : null;
+        const url = new URL(
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url,
+          window.location.href,
+        );
+        const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+        if (url.pathname === "/api/learner-profiles" && method === "GET") {
+          const current = window as typeof window & {
+            __parrotPeerRosterReads?: number;
+          };
+          current.__parrotPeerRosterReads =
+            (current.__parrotPeerRosterReads ?? 0) + 1;
+        }
+        return originalFetch(input, init);
+      };
+      (
+        window as typeof window & {
+          __parrotBlockLearnerStorageEvents?: boolean;
+        }
+      ).__parrotBlockLearnerStorageEvents = true;
+    });
+    await source.bringToFront();
+    await learnerCard(source, "Noah")
+      .getByRole("button", { name: "Delete Noah" })
+      .click();
+    await source
+      .getByRole("dialog", { name: "Delete Noah?" })
+      .getByRole("button", { name: "Delete Noah" })
+      .click();
+
+    await expect
+      .poll(() =>
+        peer.evaluate(() =>
+          (
+            window as typeof window & {
+              __parrotReceivedBroadcastMessages?: Array<{
+                data: { type?: string };
+              }>;
+            }
+          ).__parrotReceivedBroadcastMessages?.map(({ data }) => data.type),
+        ),
+      )
+      .toEqual(expect.arrayContaining(["pending", "changed", "settled"]));
+    const durableProof = await peer.evaluate(() => {
+      const messages = (
+        window as typeof window & {
+          __parrotReceivedBroadcastMessages?: Array<{
+            data: { marker?: string; token?: string; type?: string };
+            name: string;
+          }>;
+        }
+      ).__parrotReceivedBroadcastMessages ?? [];
+      const changed = messages.find(
+        ({ data }) => data.type === "changed" && typeof data.token === "string",
+      );
+      return {
+        changed,
+        journal: changed
+          ? localStorage.getItem(`${changed.name}:publication-journal`)
+          : null,
+        publication: changed
+          ? localStorage.getItem(
+              `${changed.name}:publication:${changed.data.token}`,
+            )
+          : null,
+        state: changed
+          ? localStorage.getItem(`${changed.name}:state`)
+          : null,
+      };
+    });
+    if (!durableProof.changed) {
+      throw new Error("The deletion changed message was not broadcast.");
+    }
+    expect(durableProof.state).toBe(durableProof.changed?.data.marker);
+    expect(durableProof.publication).toBeNull();
+    expect(JSON.parse(durableProof.journal ?? "null")).toMatchObject({
+      entries: expect.arrayContaining([
+        {
+          marker: durableProof.changed.data.marker,
+          token: durableProof.changed.data.token,
+        },
+      ]),
+      version: 1,
+    });
+    await source.evaluate(async ({ data, name }) => {
+      const channel = new BroadcastChannel(name);
+      channel.postMessage(data);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      channel.close();
+    }, durableProof.changed);
+    await expect
+      .poll(() =>
+        peer.evaluate(
+          () =>
+            (
+              window as typeof window & { __parrotPeerRosterReads?: number }
+            ).__parrotPeerRosterReads ?? 0,
+        ),
+      )
+      .toBe(1);
+    await expect(learnerCard(peer, "Noah")).toHaveCount(0);
+    await expect(
+      peer.getByRole("heading", { name: "Manage learners" }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test("shares real-browser mock deletion across sessions while clearing only the deleted selection", async ({
+  page,
+}) => {
+  await page.goto(
+    learnerScenarioUrl(
+      "/guardian/learners",
+      "multiple",
+      "guardian",
+      "e2e-session-shared-delete",
+    ),
+  );
+  await expect(
+    page.getByRole("heading", { name: "Manage learners" }),
+  ).toBeVisible();
+
+  const result = await page.evaluate(async () => {
+    type MockSession = {
+      fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+      snapshot(): { activeProfileId: string | null };
+    };
+    const learners = (
+      window as typeof window & {
+        __parrotE2eLearners?: {
+          openSession(sessionId: string): MockSession;
+        };
+      }
+    ).__parrotE2eLearners;
+    if (!learners) throw new Error("Learner controller is missing.");
+    const miaSession = learners.openSession("browser-mia-session");
+    const noahSession = learners.openSession("browser-noah-session");
+    const select = await noahSession.fetch(
+      "/api/learner-profiles/learner-noah/active",
+      { method: "PUT" },
+    );
+    const beforeDelete = {
+      mia: miaSession.snapshot().activeProfileId,
+      noah: noahSession.snapshot().activeProfileId,
+    };
+    const deletion = await miaSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    const [miaRoster, noahRoster] = await Promise.all([
+      miaSession
+        .fetch("/api/learner-profiles", { method: "GET" })
+        .then((response) => response.json()),
+      noahSession
+        .fetch("/api/learner-profiles", { method: "GET" })
+        .then((response) => response.json()),
+    ]);
+    return {
+      afterDelete: {
+        mia: miaSession.snapshot().activeProfileId,
+        noah: noahSession.snapshot().activeProfileId,
+      },
+      beforeDelete,
+      deleteStatus: deletion.status,
+      miaRoster,
+      noahRoster,
+      selectStatus: select.status,
+    };
+  });
+
+  expect(result).toMatchObject({
+    afterDelete: { mia: "learner-mia", noah: null },
+    beforeDelete: { mia: "learner-mia", noah: "learner-noah" },
+    deleteStatus: 200,
+    miaRoster: {
+      activeProfileId: "learner-mia",
+      profiles: [{ id: "learner-mia" }],
+    },
+    noahRoster: {
+      activeProfileId: null,
+      profiles: [{ id: "learner-mia" }],
+    },
+    selectStatus: 200,
+  });
 });
 
 test("synchronizes same-session learner selection through storage without BroadcastChannel", async ({
@@ -957,29 +1471,26 @@ test("synchronizes same-session learner selection through storage without Broadc
         ),
       ),
     ]);
-    await expect(learnerCard(siblingPage, "Mia")).toContainText(
-      "Learner mode",
-    );
+    await expect.poll(() => activeLearnerId(siblingPage)).toBe("learner-mia");
 
-    await learnerCard(sourcePage, "Noah")
-      .getByRole("button", { name: "Use Noah in learner mode" })
-      .click();
+    await sourcePage.bringToFront();
+    await chooseLearnerFromManager(sourcePage, "Noah");
 
-    await expect(learnerCard(sourcePage, "Noah")).toContainText(
-      "Learner mode",
-    );
-    await expect(learnerCard(siblingPage, "Noah")).toContainText(
-      "Learner mode",
-    );
-    await expect(learnerCard(siblingPage, "Mia")).not.toContainText(
-      "Learner mode",
-    );
+    await expect(sourcePage).toHaveURL("/");
+    await expect.poll(() => activeLearnerId(sourcePage)).toBe("learner-noah");
+    await expect.poll(() => activeLearnerId(siblingPage)).toBe("learner-noah");
+    await expect(
+      siblingPage.getByRole("heading", { name: "Unlock guardian mode" }),
+    ).toBeVisible();
+    await expect(
+      siblingPage.getByRole("heading", { name: "Manage learners" }),
+    ).toHaveCount(0);
   } finally {
     await context.close();
   }
 });
 
-test("preserves a URL-targeted learner draft when learner mode changes in another tab", async ({
+test("hides an unsaved Guardian draft during handoff and restores persisted data after unlock", async ({
   baseURL,
   browser,
 }) => {
@@ -1042,26 +1553,25 @@ test("preserves a URL-targeted learner draft when learner mode changes in anothe
     await expect(profileName).toHaveValue("Unsaved Mia name");
 
     await managerPage.bringToFront();
-    await learnerCard(managerPage, "Noah")
-      .getByRole("button", { name: "Use Noah in learner mode" })
-      .click();
-    await expect(learnerCard(managerPage, "Noah")).toContainText(
-      "Learner mode",
-    );
+    await chooseLearnerFromManager(managerPage, "Noah");
 
     await draftPage.bringToFront();
+    await expect(
+      draftPage.getByRole("heading", { name: "Unlock guardian mode" }),
+    ).toBeVisible();
+    await unlockGuardianScreen(draftPage);
     await expect(
       draftPage.getByText("Managing Mia", { exact: true }),
     ).toBeVisible();
     await expect(draftPage.getByLabel("Name", { exact: true })).toHaveValue(
-      "Unsaved Mia name",
+      "Mia",
     );
   } finally {
     await context.close();
   }
 });
 
-test("saves the URL-targeted learner after another tab changes learner mode", async ({
+test("keeps a saved URL-targeted learner update after another tab changes learner mode", async ({
   baseURL,
   browser,
 }) => {
@@ -1096,27 +1606,25 @@ test("saves the URL-targeted learner after another tab changes learner mode", as
     await profilePage
       .getByLabel("Name", { exact: true })
       .fill("Mia Targeted");
-
-    await managerPage.bringToFront();
-    await learnerCard(managerPage, "Noah")
-      .getByRole("button", { name: "Use Noah in learner mode" })
-      .click();
-    await expect(learnerCard(managerPage, "Noah")).toContainText(
-      "Learner mode",
-    );
-    await profilePage.bringToFront();
-    await expect(
-      profilePage.getByText("Managing Mia", { exact: true }),
-    ).toBeVisible();
-    await expect(profilePage.getByLabel("Name", { exact: true })).toHaveValue(
-      "Mia Targeted",
-    );
     await profilePage.getByRole("button", { name: "Save changes" }).click();
     await expect(profilePage).toHaveURL("/guardian/learners");
     await expect(learnerCard(profilePage, "Mia Targeted")).toBeVisible();
-    await expect(learnerCard(profilePage, "Noah")).toContainText(
+
+    await managerPage.bringToFront();
+    await chooseLearnerFromManager(managerPage, "Noah");
+    await profilePage.bringToFront();
+    await expect(
+      profilePage.getByRole("heading", { name: "Unlock guardian mode" }),
+    ).toBeVisible();
+    await unlockGuardianScreen(profilePage);
+    await expect(
+      profilePage.getByRole("heading", { name: "Manage learners" }),
+    ).toBeVisible();
+    await expect(learnerCard(profilePage, "Mia Targeted")).toBeVisible();
+    await expect(learnerCard(profilePage, "Noah")).not.toContainText(
       "Learner mode",
     );
+    await expect.poll(() => activeLearnerId(profilePage)).toBe("learner-noah");
   } finally {
     await context.close();
   }
@@ -1183,9 +1691,8 @@ test("keeps lessons, conversations, art, and dubbing isolated by selected learne
   expect(miaData.consentStatus).toBe(204);
   expect(miaData.generationStatus).toBe(200);
   expect(miaData.generatedChildName).toBe("Mia");
-  await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Use Noah in learner mode" })
-    .click();
+  await chooseLearnerFromManager(page, "Noah");
+  await unlockGuardianFromLearnerMenu(page);
 
   const noahData = await page.evaluate(async ({ conversationId, lessonId }) => {
     const [lessons, siblingLesson, siblingConversation, art, dub, generated] =
@@ -1267,7 +1774,8 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
     "Lesson recording is currently allowed.",
   );
 
-  await page.goto(learnerScenarioUrl(lessonPath, "multiple", "learner"));
+  await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
+  await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
   await expect(
     page
@@ -1286,12 +1794,11 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
     stepIndex: 2,
   });
 
-  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
-  await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Use Noah in learner mode" })
-    .click();
+  await unlockGuardianFromLearnerMenu(page);
+  await chooseLearnerAndStart(page, "Noah");
+  await unlockGuardianFromLearnerMenu(page);
   await page.goto(
-    learnerScenarioUrl("/guardian/learners/learner-noah", "multiple"),
+    "/guardian/learners/learner-noah",
   );
   await expect(
     page
@@ -1299,7 +1806,8 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
       .getByRole("status"),
   ).toHaveText("Lesson recording is currently off.");
 
-  await page.goto(learnerScenarioUrl(lessonPath, "multiple", "learner"));
+  await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
+  await chooseLearnerAndStart(page, "Noah", "Switch to learner mode");
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
   await expect(
     page
@@ -1311,19 +1819,35 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
     .toEqual([]);
   expect((await recordingSnapshot()).getUserMediaCalls).toBe(0);
 
-  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
-  await learnerCard(page, "Mia")
-    .getByRole("button", { name: "Use Mia in learner mode" })
-    .click();
+  await unlockGuardianFromLearnerMenu(page);
   await page.goto(
-    learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
+    "/guardian/learners/learner-mia",
   );
   await expect(
     page
       .getByRole("region", { name: "Lesson voice recordings" })
       .getByRole("status"),
   ).toHaveText("Lesson recording is currently allowed.");
-  expect((await recordingSnapshot()).uploads).toHaveLength(1);
+  const storedRecordings = await page.evaluate(() => {
+    const learners = (
+      window as Window & {
+        __parrotE2eLearners?: {
+          snapshot(profileId?: string): {
+            lessonRecording: { uploads: Array<{ outcome: string }> } | null;
+          };
+        };
+      }
+    ).__parrotE2eLearners;
+    if (!learners) throw new Error("Learner controller is missing.");
+    return {
+      mia: learners.snapshot("learner-mia").lessonRecording?.uploads ?? [],
+      noah: learners.snapshot("learner-noah").lessonRecording?.uploads ?? [],
+    };
+  });
+  expect(storedRecordings.mia).toEqual([
+    expect.objectContaining({ outcome: "saved" }),
+  ]);
+  expect(storedRecordings.noah).toEqual([]);
 });
 
 test("rejects Mia's queued lesson recording after the Guardian switches to Noah", async ({
@@ -1383,18 +1907,8 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
     learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
   );
   await allowRecordings();
-  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
-  await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Use Noah in learner mode" })
-    .click();
-  await page.goto(
-    learnerScenarioUrl("/guardian/learners/learner-noah", "multiple"),
-  );
+  await page.goto("/guardian/learners/learner-noah");
   await allowRecordings();
-  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
-  await learnerCard(page, "Mia")
-    .getByRole("button", { name: "Use Mia in learner mode" })
-    .click();
 
   const lessonId = await page.evaluate(async (lesson) => {
     const response = await fetch("/api/lessons/my", {
@@ -1408,7 +1922,8 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   }, oneLineLesson);
   const lessonPath = `/lessons/my/${encodeURIComponent(lessonId)}/scenes/1?parrotE2eLesson=upload-held`;
 
-  await page.goto(learnerScenarioUrl(lessonPath, "multiple", "learner"));
+  await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
+  await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
   await expect(
     page.getByRole("heading", { name: "Lesson complete!" }),
@@ -1442,26 +1957,8 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   ]);
   expect(queuedForMia?.pendingUploads).toBe(1);
 
-  await page
-    .getByRole("button", { name: /Profile for Mia, learner mode/ })
-    .click();
-  await page
-    .getByRole("menu", { name: "Account menu" })
-    .getByRole("menuitem", { name: /Grown-up access/ })
-    .click();
-  const unlock = page.getByRole("dialog", { name: "Unlock guardian mode" });
-  await unlock.getByLabel("Password").fill(GUARDIAN_PASSWORD);
-  await unlock.getByRole("button", { name: "Unlock guardian mode" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Guardian dashboard" }),
-  ).toBeVisible();
-  await page.getByRole("link", { exact: true, name: "Manage learners" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Manage learners" }),
-  ).toBeVisible();
-  await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Use Noah in learner mode" })
-    .click();
+  await unlockGuardianFromLearnerMenu(page);
+  await chooseLearnerAndStart(page, "Noah");
   const released = await page.evaluate(() =>
     (
       window as Window & {
@@ -1482,9 +1979,10 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   expect(mia?.uploads).toEqual([
     expect.objectContaining({
       expectedLearnerProfileId: "learner-mia",
-      outcome: "saved",
+      outcome: "held",
     }),
   ]);
+  expect(mia?.uploads.some(({ outcome }) => outcome === "saved")).toBe(false);
   expect(noah?.uploads).toEqual([
     expect.objectContaining({
       expectedLearnerProfileId: "learner-mia",
@@ -1527,9 +2025,13 @@ test("requires the account password before revealing a selection-required roster
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Choose a learner" }),
-  ).toBeVisible();
+  await expect(page.getByRole("radio")).toHaveCount(0);
+  await page
+    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
+    .click();
+  const chooser = await openLearnerModeChooser(page);
+  await expect(chooser.getByRole("radio", { checked: true })).toHaveCount(0);
+  await expect(chooser.getByRole("radio")).toHaveCount(2);
 });
 
 test("shows a learner-safe no-selection state and sends an incomplete learner to setup", async ({
@@ -1558,13 +2060,7 @@ test("shows a learner-safe no-selection state and sends an incomplete learner to
   await page.getByRole("button", { name: "Add learner" }).click();
   await expect(page.getByText("Managing Ava", { exact: true })).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Back" }).click();
-  await learnerCard(page, "Ava")
-    .getByRole("button", { name: "Use Ava in learner mode" })
-    .click();
-  await page
-    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
-    .click();
-  await page.getByRole("button", { exact: true, name: "Switch to learner" }).click();
+  await chooseLearnerFromManager(page, "Ava");
   await expect(page).toHaveURL(/\/profile\/setup/);
   await expect(
     page.getByRole("heading", { name: "Answer 6 questions" }),
@@ -1578,11 +2074,7 @@ test("fails closed when learner selection has an ambiguous server failure", asyn
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "select-error"));
-  const selectNoah = learnerCard(page, "Noah").getByRole("button", {
-    name: "Use Noah in learner mode",
-  });
-
-  await selectNoah.click();
+  await chooseLearnerFromManager(page, "Noah");
 
   await expect(
     page.getByRole("heading", {
@@ -1592,7 +2084,7 @@ test("fails closed when learner selection has an ambiguous server failure", asyn
   await expect(
     page.getByRole("button", {
       includeHidden: true,
-      name: "Use Noah in learner mode",
+      name: "Start learner mode as Noah",
     }),
   ).toBeHidden();
   const pending = await page.evaluate(() => {
@@ -1650,7 +2142,7 @@ test("keeps the roster and learner mode stable when learner creation fails", asy
     activeProfileId: "learner-mia",
     profiles: [{ name: "Mia" }, { name: "Noah" }],
   });
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
   await expect(page.getByLabel("Preferred name")).toHaveValue("Ava");
   await expect(page.getByRole("button", { name: "Add learner" })).toBeEnabled();
 });
@@ -1659,10 +2151,16 @@ test("suppresses a held selection response after a newer selection wins", async 
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
-  const selectNoah = learnerCard(page, "Noah").getByRole("button", {
-    name: "Use Noah in learner mode",
+  await page
+    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
+    .click();
+  const chooser = await openLearnerModeChooser(page);
+  await chooser.getByRole("radio", { exact: true, name: "Noah" }).check();
+  const startNoah = chooser.getByRole("button", {
+    exact: true,
+    name: "Start learner mode as Noah",
   });
-  await selectNoah.click({ noWaitAfter: true });
+  await startNoah.click({ noWaitAfter: true });
   await expect
     .poll(() =>
       page.evaluate(
@@ -1702,20 +2200,25 @@ test("suppresses a held selection response after a newer selection wins", async 
     ),
   ).toBe(true);
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+  await expect(chooser.getByRole("alert")).toHaveText(
     "The selected learner could not be loaded.",
   );
-  await expect(selectNoah).toBeFocused();
-  await expect(learnerCard(page, "Mia")).toContainText("Learner mode");
+  await expect(startNoah).toBeFocused();
+  await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
   await expect(page.getByText("Now managing Noah")).toHaveCount(0);
 });
 
-test("keeps the fixed Guardian account actions while a learner switch is pending", async ({
+test("keeps the chooser modal and non-dismissible while a learner switch is pending", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
-  await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Use Noah in learner mode" })
+  await page
+    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
+    .click();
+  const chooser = await openLearnerModeChooser(page);
+  await chooser.getByRole("radio", { exact: true, name: "Noah" }).check();
+  await chooser
+    .getByRole("button", { exact: true, name: "Start learner mode as Noah" })
     .click({ noWaitAfter: true });
   await expect
     .poll(() =>
@@ -1732,19 +2235,14 @@ test("keeps the fixed Guardian account actions while a learner switch is pending
     )
     .toBe(true);
 
-  await expect(
-    page.getByRole("heading", { name: "Checking the current learner" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: /guardian mode/ }).click();
-  const menu = page.getByRole("menu", { name: "Account menu" });
-  await expect(menu.getByRole("menuitem")).toHaveText([
-    "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
-    "Sign out",
-  ]);
-  await expect(page).toHaveURL(/\/guardian\/learners/);
+  await expect(chooser).toHaveAttribute("aria-busy", "true");
+  await expect(chooser.getByRole("status")).toHaveText(
+    "Starting learner mode as Noah…",
+  );
+  await expect(chooser.getByRole("button", { name: "Cancel" })).toBeDisabled();
   await page.keyboard.press("Escape");
+  await expect(chooser).toBeVisible();
+  await expect(page.getByRole("menu", { name: "Account menu" })).toHaveCount(0);
 
   expect(
     await page.evaluate(
@@ -1756,16 +2254,10 @@ test("keeps the fixed Guardian account actions while a learner switch is pending
         ).__parrotE2eLearners?.releaseStaleSelection() ?? false,
     ),
   ).toBe(true);
-  await expect(learnerCard(page, "Noah")).toContainText("Learner mode");
-  await page.getByRole("button", { name: /guardian mode/ }).click();
+  await expect(page).toHaveURL("/");
   await expect(
-    page.getByRole("menu", { name: "Account menu" }).getByRole("menuitem"),
-  ).toHaveText([
-    "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
-    "Sign out",
-  ]);
+    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
+  ).toBeVisible();
 });
 
 const learnerRoutes = [
@@ -1778,6 +2270,7 @@ const learnerRoutes = [
   "/progress",
   "/profile/setup",
   "/dubs/five-little-ducks",
+  "/dubs/old-macdonald",
 ] as const;
 
 test("keeps sibling identity and every Guardian action out of learner routes", async ({
@@ -1812,7 +2305,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     await expect(menu).not.toContainText("Noah");
     await page.keyboard.press("Escape");
 
-    if (path === "/dubs/five-little-ducks") {
+    if (path.startsWith("/dubs/")) {
       await expect(
         page.getByRole("main").getByRole("paragraph").filter({
           hasText: "Ask a grown-up to turn on voice dubbing in Guardian mode.",
@@ -1842,7 +2335,7 @@ const requiredViewports = [
 ] as const;
 
 for (const viewport of requiredViewports) {
-  test(`keeps the roster, active context, and Guardian menu contained at ${viewport.width}x${viewport.height}`, async ({
+  test(`keeps the CRUD roster, chooser, and Guardian menu contained at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -1855,15 +2348,16 @@ for (const viewport of requiredViewports) {
     });
     const noah = learnerCard(page, "Noah");
     const add = page.getByRole("button", { name: "Add learner" });
-    await expect(
-      page.getByRole("heading", { name: "Managing Mia" }),
-    ).toBeVisible();
+    await expect(page.getByText("Managing Mia", { exact: true })).toHaveCount(0);
     await expect(noah).toContainText("Setup complete");
     await expect(
-      noah.getByRole("button", { name: "Use Noah in learner mode" }),
-    ).toBeVisible();
+      noah.getByRole("button", { name: /Use .* learner mode/ }),
+    ).toHaveCount(0);
     await expect(
       noah.getByRole("button", { name: "Edit Noah's profile" }),
+    ).toBeVisible();
+    await expect(
+      noah.getByRole("button", { name: "Delete Noah" }),
     ).toBeVisible();
     await expect(add).toBeVisible();
     await expectContainedHorizontally(back, page);
@@ -1875,9 +2369,8 @@ for (const viewport of requiredViewports) {
     await trigger.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
     const panel = menu.locator("..");
-    await expect(
-      panel.getByRole("group", { name: "Active profile" }),
-    ).toContainText("Managing Mia");
+    await expect(panel.getByRole("group", { name: "Active profile" })).toHaveCount(0);
+    await expect(panel).not.toContainText("Managing Mia");
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Guardian dashboard",
       "Manage learners",
@@ -1890,6 +2383,28 @@ for (const viewport of requiredViewports) {
     await page.keyboard.press("Escape");
     await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     await expect(add).toBeVisible();
+
+    await back.click();
+    const switchTrigger = page.getByRole("button", {
+      exact: true,
+      name: "Switch to learner",
+    });
+    await expectContainedHorizontally(switchTrigger, page);
+    const chooser = await openLearnerModeChooser(page);
+    await expect(chooser.getByRole("radio", { checked: true })).toHaveCount(0);
+    await expect(chooser.getByRole("radio")).toHaveCount(2);
+    await expectContainedHorizontally(chooser, page);
+    await expectContainedHorizontally(
+      chooser.getByRole("button", { name: "Cancel" }),
+      page,
+    );
+    await expectContainedHorizontally(
+      chooser.getByRole("button", { name: "Choose a learner" }),
+      page,
+    );
+    await expectNoHorizontalOverflow(page);
+    await chooser.getByRole("button", { name: "Cancel" }).click();
+    await expect(switchTrigger).toBeFocused();
   });
 }
 
@@ -1976,9 +2491,10 @@ async function expectGuardianNameSurfacesContained(page: Page, name: string) {
     await expectContainedHorizontally(trigger, page);
     await trigger.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
+    await expect(menu.locator("..")).not.toContainText(`Managing ${name}`);
     await expect(
       menu.locator("..").getByRole("group", { name: "Active profile" }),
-    ).toContainText(`Managing ${name}`);
+    ).toHaveCount(0);
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Guardian dashboard",
       "Manage learners",
@@ -2001,16 +2517,18 @@ test("wraps an unbroken 120-character active learner name without horizontal ove
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
   await renameActiveLearner(page, longName);
 
-  await expect(learnerCard(page, longName)).toContainText("Learner mode");
+  await expect(learnerCard(page, longName)).toContainText(longName);
   await expectNameContentContained(page, longName);
+  await expectLearnerDeletionDialogContained(page, longName);
   const trigger = page.getByRole("button", {
     name: /Profile for Alex Guardian, guardian mode/,
   });
   await trigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu.locator("..")).not.toContainText(`Managing ${longName}`);
   await expect(
     menu.locator("..").getByRole("group", { name: "Active profile" }),
-  ).toContainText(`Managing ${longName}`);
+  ).toHaveCount(0);
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
     "Manage learners",
@@ -2032,9 +2550,10 @@ test("isolates a right-to-left learner name across every Guardian context at 280
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
   await renameActiveLearner(page, rtlName);
 
-  await expect(learnerCard(page, rtlName)).toContainText("Learner mode");
+  await expect(learnerCard(page, rtlName)).toContainText(rtlName);
   const rosterDirections = await expectNameContentContained(page, rtlName);
   expect(rosterDirections).toContain("rtl");
+  await expectLearnerDeletionDialogContained(page, rtlName);
   await expectNoHorizontalOverflow(page);
 
   const surfaceDirections = await expectGuardianNameSurfacesContained(
@@ -2161,7 +2680,7 @@ test("targets Noah through lesson list, creation, deletion, refresh, and history
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Manage learners" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 
   await page.getByRole("link", { name: "Create custom lesson" }).click();
   await expect(page).toHaveURL(
@@ -2416,7 +2935,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
   ).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Manage learners" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 
   const granted = await page.evaluate(async () => {
     const [mia, noah] = await Promise.all([
@@ -2435,7 +2954,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
 
   await page
     .getByRole("button", {
-      name: "Turn off Noah's voice dubbing and delete saved clips",
+      name: "Turn off Noah's voice dubbing and delete clips from Five Little Ducks and Old MacDonald",
     })
     .click();
   await expect(

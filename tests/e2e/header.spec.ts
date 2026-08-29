@@ -67,6 +67,11 @@ const routes: HeaderRoute[] = [
     path: "/dubs/five-little-ducks?parrotE2eDub=partial",
     control: { name: "Back to home", role: "link" },
   },
+  {
+    name: "Old MacDonald dubbing studio",
+    path: "/dubs/old-macdonald?parrotE2eDub=partial",
+    control: { name: "Back to home", role: "link" },
+  },
 ];
 
 const mobileViewports: Viewport[] = [
@@ -269,6 +274,66 @@ async function expectPointerCenterOwnedBy(locator: Locator) {
   ).toBe(true);
 }
 
+const authViewports: Viewport[] = [
+  { height: 520, name: "ultra-narrow auth", width: 280 },
+  { height: 568, name: "small auth", width: 320 },
+  { height: 844, name: "regular auth", width: 390 },
+  { height: 360, name: "short auth landscape", width: 640 },
+  { height: 900, name: "desktop auth", width: 1440 },
+];
+
+for (const mode of ["sign-in", "sign-up"] as const) {
+  for (const viewport of authViewports) {
+    test(`${mode} stays horizontally contained and vertically usable on ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.route("**/api/auth/get-session", async (route) => {
+        await route.fulfill({
+          body: "null",
+          contentType: "application/json",
+          status: 200,
+        });
+      });
+      await page.setViewportSize(viewport);
+      await page.goto("/login");
+      await page
+        .getByRole("button", {
+          name: mode === "sign-up" ? "Sign up" : "Sign in",
+          exact: true,
+        })
+        .click();
+
+      const main = page.getByRole("main");
+      const submit = page.getByRole("button", {
+        name: mode === "sign-up" ? "Create account" : "Sign in and start",
+      });
+      await expect(submit).toBeVisible();
+      const sizing = await main.evaluate((element) => ({
+        clientHeight: element.clientHeight,
+        clientWidth: element.clientWidth,
+        scrollHeight: element.scrollHeight,
+        scrollWidth: element.scrollWidth,
+      }));
+      expect(sizing.scrollWidth).toBeLessThanOrEqual(sizing.clientWidth);
+      expect(
+        await main.evaluate((element) => {
+          element.scrollLeft = 100;
+          return element.scrollLeft;
+        }),
+      ).toBe(0);
+
+      await submit.scrollIntoViewIfNeeded();
+      await submit.focus();
+      await expect(submit).toBeFocused();
+      await expectInsideViewport(submit, viewport);
+      if (sizing.scrollHeight > sizing.clientHeight) {
+        await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+        expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+      }
+    });
+  }
+}
+
 for (const route of routes) {
   for (const viewport of mobileViewports) {
     test(`${route.name} header stays in one unobstructed row on a ${viewport.name}`, async ({
@@ -391,7 +456,7 @@ test("arbitrary guardian identity cannot cover the compact Back action", async (
   }
 });
 
-test("guardian profile keeps full identity reachable at every header width", async ({
+test("guardian profile keeps its identity in the account trigger at every header width", async ({
   page,
 }) => {
   let identity = {
@@ -407,29 +472,23 @@ test("guardian profile keeps full identity reachable at every header width", asy
   });
   const closedBox = await visibleBox(account);
   expect(closedBox.width).toBe(closedBox.height);
+  await expect(account).toHaveAccessibleName(
+    `Profile for ${longAccountName}, guardian mode`,
+  );
+  const compactName = account.getByText(longAccountName, { exact: true });
+  await expect(compactName).toHaveAttribute("dir", "auto");
 
   await account.click();
-  const accountPanel = page
-    .getByRole("menu", { name: "Account menu" })
-    .locator("..");
-  const name = accountPanel.getByText(longAccountName, { exact: true });
-  const email = accountPanel.getByText(longAccountEmail, { exact: true });
-  await expect(name).toBeVisible();
-  await expect(email).toBeVisible();
-  await expect(name).toHaveAttribute("dir", "auto");
-  await expect(email).toHaveAttribute("dir", "auto");
-  for (const value of [name, email]) {
-    await expectInsideViewport(value, {
-      height: 568,
-      name: "ultra narrow",
-      width: 280,
-    });
-    expect(
-      await value.evaluate(
-        (element) => element.scrollWidth <= element.clientWidth,
-      ),
-    ).toBe(true);
-  }
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Guardian dashboard",
+    "Manage learners",
+    "Account & privacy",
+    "Sign out",
+  ]);
+  await expect(
+    page.getByRole("group", { name: "Active profile" }),
+  ).toHaveCount(0);
 
   await page.keyboard.press("Escape");
   await expect(account).toBeFocused();
@@ -441,20 +500,17 @@ test("guardian profile keeps full identity reachable at every header width", asy
   });
   await expect(wideAccount).toContainText(longAccountName);
   await expect(wideAccount).toContainText("Guardian");
+  await expect(
+    wideAccount.getByText(longAccountName, { exact: true }),
+  ).toHaveAttribute("dir", "auto");
 
   identity = { email: longAccountEmail, name: "   " };
   await page.setViewportSize({ height: 568, width: 280 });
   await page.goto(guardianPath("/guardian"));
-  await page
-    .getByRole("button", {
-      name: `Profile for ${longAccountEmail}, guardian mode`,
-    })
-    .click();
   await expect(
-    page
-      .getByRole("menu", { name: "Account menu" })
-      .locator("..")
-      .getByText(longAccountEmail, { exact: true }),
+    page.getByRole("button", {
+      name: `Profile for ${longAccountEmail}, guardian mode`,
+    }),
   ).toBeVisible();
 });
 
@@ -506,6 +562,14 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     const account = page.getByRole("button", {
       name: /^Profile for .+, guardian mode$/,
     });
+    await expect(account).toHaveAccessibleName(
+      `Profile for ${currentCase.identity.name}, guardian mode`,
+    );
+    const name = account.getByText(currentCase.identity.name, { exact: true });
+    await expect(name).toHaveAttribute("dir", "auto");
+    expect(
+      await name.evaluate((element) => getComputedStyle(element).direction),
+    ).toBe(currentCase.direction);
     await account.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
     const panel = menu.locator("..");
@@ -514,11 +578,9 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
       (element) => element.scrollHeight > element.clientHeight,
     );
 
-    const name = panel.getByText(currentCase.identity.name, { exact: true });
-    await expect(name).toHaveAttribute("dir", "auto");
-    expect(
-      await name.evaluate((element) => getComputedStyle(element).direction),
-    ).toBe(currentCase.direction);
+    await expect(
+      page.getByRole("group", { name: "Active profile" }),
+    ).toHaveCount(0);
 
     const firstAction = page.getByRole("menuitem", {
       name: "Guardian dashboard",
@@ -1077,13 +1139,18 @@ test("Account & privacy explains caregiver facts before optional technical detai
     ),
   ).toBeVisible();
   await expect(
+    accountPage.getByText(
+      /^With Guardian permission, all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
+    ),
+  ).toBeVisible();
+  await expect(
     accountPage.getByText("Raw audio is not added to the Parrot account.", {
       exact: false,
     }),
   ).toHaveCount(0);
   await expect(
     accountPage.getByText(
-      "Talk to Peppa and Guardian profile editing do not change which learner uses learner mode. Only the explicit Use in learner mode action changes which learner uses learner mode.",
+      "Choosing a learner in Guardian settings changes only which learner's data you manage. Learner mode changes only through Switch to learner, where you choose who will use the session.",
       { exact: true },
     ),
   ).toBeVisible();

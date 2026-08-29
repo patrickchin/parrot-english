@@ -71,7 +71,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
     {
       action: "Manage learners",
       description:
-        "Mia is using learner mode. Add a learner, select who uses learner mode, or edit learner details.",
+        "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
       heading: "Manage learners",
     },
     {
@@ -93,7 +93,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
     {
       action: "Open account & privacy",
       description:
-        "Review AI and saved data controls, sign out, or delete your account.",
+        "Review how AI is used, what Parrot saves, and account deletion controls.",
       heading: "Account & privacy",
     },
   ]) {
@@ -102,6 +102,21 @@ test("every Guardian dashboard card associates its copy and traverses through it
     await expect(card).toContainText(description);
     await expect(card.getByRole("link", { exact: true, name: action })).toBeVisible();
   }
+
+  const cardColors = await Promise.all(
+    [
+      "Manage learners",
+      "My Lessons",
+      "Story settings",
+      "Voice dubbing",
+      "Account & privacy",
+    ].map((heading) =>
+      dashboardCard(page, heading).evaluate(
+        (element) => getComputedStyle(element).backgroundColor,
+      ),
+    ),
+  );
+  expect(new Set(cardColors).size).toBe(cardColors.length);
 
   await traverseDashboardAction(
     page,

@@ -33,6 +33,43 @@ const originalFetch = globalThis.fetch;
 const originalAudio = globalThis.Audio;
 const originalMediaRecorder = globalThis.MediaRecorder;
 const originalMediaDevices = navigator.mediaDevices;
+const originalLocksDescriptor = Object.getOwnPropertyDescriptor(
+  navigator,
+  "locks",
+);
+const originalLocalStorage = globalThis.localStorage;
+const originalSessionStorage = globalThis.sessionStorage;
+
+function serialTestLockManager() {
+  const tails = new Map();
+  return {
+    request(name, options, callback) {
+      const run = typeof options === "function" ? options : callback;
+      const previous = tails.get(name) ?? Promise.resolve();
+      const result = previous
+        .catch(() => undefined)
+        .then(() => run({ mode: "exclusive", name }));
+      const tail = result.then(
+        () => undefined,
+        () => undefined,
+      );
+      tails.set(name, tail);
+      void tail.finally(() => {
+        if (tails.get(name) === tail) tails.delete(name);
+      });
+      return result;
+    },
+  };
+}
+
+function resetTestLocks() {
+  Object.defineProperty(navigator, "locks", {
+    configurable: true,
+    value: serialTestLockManager(),
+  });
+}
+
+resetTestLocks();
 const vite = await createServer({
   appType: "custom",
   logLevel: "silent",
@@ -47,6 +84,7 @@ let ConversationSurface;
 let LearnerProfileAcknowledgment;
 let LearnerProfileGate;
 let LearnerProfileProvider;
+let LearnerSelectionProvider;
 let useLearnerProfile;
 let useLearnerSelection;
 let usePeppaConversation;
@@ -54,6 +92,7 @@ let createAuthGate;
 let createGuardianAccessProvider;
 let useGuardianAccess;
 let GuardianDashboard;
+let GuardianLearnerProfiles;
 let GuardianModeBoundary;
 let LearnerModeBoundary;
 let RouteFocusManager;
@@ -82,7 +121,12 @@ before(async () => {
   ({ LearnerProfileGate } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileGate.tsx",
   ));
-  ({ LearnerProfileProvider, useLearnerProfile, useLearnerSelection } =
+  ({
+    LearnerProfileProvider,
+    LearnerSelectionProvider,
+    useLearnerProfile,
+    useLearnerSelection,
+  } =
     await vite
       .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
       .catch(() => ({})));
@@ -100,6 +144,9 @@ before(async () => {
   ({ GuardianDashboard } = await vite
     .ssrLoadModule("/src/app/GuardianDashboard.tsx")
     .catch(() => ({})));
+  ({ GuardianLearnerProfiles } = await vite.ssrLoadModule(
+    "/src/learner-profile/GuardianLearnerProfiles.tsx",
+  ));
   const catalog = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
   firstLessonId = catalog.LESSONS[0].id;
@@ -112,16 +159,32 @@ afterEach(async () => {
   globalThis.fetch = originalFetch;
   globalThis.Audio = originalAudio;
   globalThis.MediaRecorder = originalMediaRecorder;
+  if (originalLocalStorage === undefined) {
+    Reflect.deleteProperty(globalThis, "localStorage");
+  } else {
+    globalThis.localStorage = originalLocalStorage;
+  }
+  if (originalSessionStorage === undefined) {
+    Reflect.deleteProperty(globalThis, "sessionStorage");
+  } else {
+    globalThis.sessionStorage = originalSessionStorage;
+  }
   window.Audio = originalAudio;
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,
     value: originalMediaDevices,
   });
+  resetTestLocks();
   window.history.replaceState(null, "", "/");
 });
 
 after(async () => {
   await vite.close();
+  if (originalLocksDescriptor) {
+    Object.defineProperty(navigator, "locks", originalLocksDescriptor);
+  } else {
+    Reflect.deleteProperty(navigator, "locks");
+  }
   restoreDom();
 });
 
@@ -188,6 +251,17 @@ function completedLearnerProfileState() {
 
 function json(payload, status = 200) {
   return Response.json(payload, { status });
+}
+
+async function learnerSelectionScopeForTest(sessionIdentity) {
+  const digest = await globalThis.crypto.subtle.digest(
+    "SHA-256",
+    new globalThis.TextEncoder().encode(sessionIdentity),
+  );
+  return `parrot-learner-selection-${Array.from(
+    new Uint8Array(digest),
+    (byte) => byte.toString(16).padStart(2, "0"),
+  ).join("")}`;
 }
 
 function guardianAccessBoundary() {
@@ -605,11 +679,22 @@ function SelectionActionHarness({
   showDraft = false,
 }) {
   const [localDraft, setLocalDraft] = useState("");
-  const { activeProfileId, createAndSelectLearner, selectLearner } =
+  const [mutationResult, setMutationResult] = useState("idle");
+  const {
+    activeProfileId,
+    createAndSelectLearner,
+    deleteLearner,
+    selectLearner,
+  } =
     useLearnerSelection();
   const mutateLearner =
     action === "create"
       ? () => createAndSelectLearner(newLearnerName, ["learner-mia"])
+      : action === "delete"
+        ? () =>
+            typeof deleteLearner === "function"
+              ? deleteLearner(profileId)
+              : Promise.reject(new Error("Learner deletion is unavailable."))
       : () => selectLearner(profileId);
   return createElement(
     "section",
@@ -622,10 +707,21 @@ function SelectionActionHarness({
     createElement(
       "button",
       {
-        onClick: () => void mutateLearner().catch(() => {}),
+        onClick: () => {
+          setMutationResult("pending");
+          void mutateLearner().then(
+            () => setMutationResult("resolved"),
+            (error) => setMutationResult(`rejected:${error.message}`),
+          );
+        },
         type: "button",
       },
       label,
+    ),
+    createElement(
+      "output",
+      { "aria-label": `${label} mutation result` },
+      mutationResult,
     ),
     showDraft
       ? createElement("input", {
@@ -637,8 +733,48 @@ function SelectionActionHarness({
   );
 }
 
+function QueuedSelectionDeletionHarness() {
+  const { activeProfileId, deleteLearner, selectLearner } =
+    useLearnerSelection();
+  const [result, setResult] = useState("idle");
+  return createElement(
+    "section",
+    null,
+    createElement(
+      "output",
+      { "aria-label": "Queued learner active learner" },
+      activeProfileId ?? "none",
+    ),
+    createElement(
+      "output",
+      { "aria-label": "Queued learner mutation result" },
+      result,
+    ),
+    createElement(
+      "button",
+      {
+        onClick: () => {
+          setResult("pending");
+          const selected = selectLearner("learner-noah");
+          const deleted =
+            typeof deleteLearner === "function"
+              ? deleteLearner("learner-noah")
+              : Promise.reject(new Error("Learner deletion is unavailable."));
+          void Promise.all([selected, deleted]).then(
+            () => setResult("resolved"),
+            (error) => setResult(`rejected:${error.message}`),
+          );
+        },
+        type: "button",
+      },
+      "Select then delete queued learner",
+    ),
+  );
+}
+
 function LearnerSelectionSessionHarness({
   action = "select",
+  children,
   label,
   newLearnerName = "Ava",
   profileId = "learner-noah",
@@ -670,13 +806,66 @@ function LearnerSelectionSessionHarness({
         onRedoLearnerProfileRoute() {},
         redoLearnerProfile: false,
       },
-      createElement(SelectionActionHarness, {
-        action,
-        label,
-        newLearnerName,
-        profileId,
-        showDraft,
-      }),
+      children ??
+        createElement(SelectionActionHarness, {
+          action,
+          label,
+          newLearnerName,
+          profileId,
+          showDraft,
+        }),
+    ),
+  );
+}
+
+function LearnerManagerSessionHarness({ label, sessionIdentity }) {
+  return createElement(
+    LearnerSelectionSessionHarness,
+    { sessionIdentity },
+    createElement(
+      "section",
+      { "aria-label": label },
+      createElement(GuardianLearnerProfiles),
+    ),
+  );
+}
+
+function LearnerRosterRevisionHarness({ label, sessionIdentity }) {
+  function Revision() {
+    const { rosterRevision } = useLearnerSelection();
+    return createElement(
+      "output",
+      { "aria-label": label },
+      String(rosterRevision),
+    );
+  }
+  return createElement(
+    LearnerSelectionSessionHarness,
+    { sessionIdentity },
+    createElement(Revision),
+  );
+}
+
+function ReloadableDeletionRecoveryHarness() {
+  const [generation, setGeneration] = useState(0);
+  const label =
+    generation === 0
+      ? "Delete before Gate reload"
+      : "Recovered deletion Gate";
+  return createElement(
+    Fragment,
+    null,
+    createElement(LearnerSelectionSessionHarness, {
+      action: "delete",
+      key: generation,
+      label,
+      profileId: "learner-noah",
+      sessionIdentity: "user-1|reload-delete",
+    }),
+    createElement(
+      "button",
+      { onClick: () => setGeneration((current) => current + 1), type: "button" },
+      "Reload uncertain deletion Gate",
     ),
   );
 }
@@ -722,7 +911,7 @@ function UnmountingLearnerSelectionSessionsHarness({
   );
 }
 
-function installSharedBroadcastChannels() {
+function installSharedBroadcastChannels({ beforeDelivery, deliver = true } = {}) {
   const channels = new Map();
   let messagesPosted = 0;
   class SharedBroadcastChannel {
@@ -764,6 +953,8 @@ function installSharedBroadcastChannels() {
 
     postMessage(data) {
       messagesPosted += 1;
+      beforeDelivery?.(data);
+      if (!deliver) return;
       for (const peer of channels.get(this.name) ?? []) {
         if (peer === this) continue;
         void Promise.resolve().then(() => peer.onmessage?.({ data }));
@@ -997,27 +1188,48 @@ function modeRoutesInMemory({
     "Expected a mounted guardian dashboard",
   );
   const Provider = createGuardianAccessProvider({ api, now, schedule });
+  const profiles = [
+    {
+      age: 6,
+      createdAt: "2026-08-29T08:00:00.000Z",
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    },
+  ];
 
   return createElement(
     Provider,
     { sessionIdentity: "user-1" },
     createElement(
-      MemoryRouter,
-      { initialEntries: [initialEntry] },
+      LearnerSelectionProvider,
+      {
+        activeProfileId: "learner-mia",
+        async createAndSelectLearner() {
+          throw new Error("Not used by the mode route harness.");
+        },
+        async reloadSelectedLearner() {
+          throw new Error("Not used by the mode route harness.");
+        },
+        async selectLearner(profileId) {
+          return { activeProfileId: profileId, profiles };
+        },
+      },
       createElement(
-        Routes,
-        null,
-        createElement(Route, {
-          element: createElement(
-            "main",
-            null,
-            createElement("h1", null, "Learner home"),
-          ),
-          path: "/",
-        }),
+        MemoryRouter,
+        { initialEntries: [initialEntry] },
         createElement(
-          Route,
-          {
+          Routes,
+          null,
+          createElement(Route, {
+            element: createElement(
+              "main",
+              null,
+              createElement("h1", null, "Learner home"),
+            ),
+            path: "/",
+          }),
+          createElement(Route, {
             element: createElement(GuardianModeBoundary, {
               onBeforeNavigate,
             }),
@@ -1044,27 +1256,63 @@ function modeRoutesInMemory({
             ),
             path: "/guardian",
           }),
-        ),
-        createElement(
-          Route,
-          {
-            element: createElement(LearnerModeBoundary, {
-              onBeforeNavigate,
+          ),
+          createElement(
+            Route,
+            {
+              element: createElement(LearnerModeBoundary, {
+                onBeforeNavigate,
+              }),
+            },
+            createElement(Route, {
+              element: createElement(
+                "main",
+                null,
+                createElement("h1", null, "Pick a lesson"),
+              ),
+              path: "/lessons",
             }),
-          },
-          createElement(Route, {
-            element: createElement(
-              "main",
-              null,
-              createElement("h1", null, "Pick a lesson"),
-            ),
-            path: "/lessons",
-          }),
+          ),
         ),
+        createElement(RouterHistoryControls),
       ),
-      createElement(RouterHistoryControls),
     ),
   );
+}
+
+function installModeSwitchRosterFetch() {
+  globalThis.fetch = async (path, init = {}) => {
+    assert.equal(path, "/api/learner-profiles");
+    assert.equal(init.method, "GET");
+    return json({
+      activeProfileId: "learner-mia",
+      profiles: [
+        {
+          age: 6,
+          createdAt: "2026-08-29T08:00:00.000Z",
+          deletionPending: false,
+          id: "learner-mia",
+          name: "Mia",
+          profileStatus: "completed",
+        },
+      ],
+    });
+  };
+}
+
+async function confirmModeSwitch() {
+  await waitFor(() => {
+    const choice = document.querySelector('input[value="learner-mia"]');
+    assert.ok(choice, "Expected the learner-mode chooser to load its roster.");
+  });
+  const choice = document.querySelector('input[value="learner-mia"]');
+  await click(choice);
+  const dialog = document.querySelector('[role="dialog"]');
+  const confirm = [...dialog.querySelectorAll("button")].find(
+    (candidate) => candidate.textContent.trim() === "Start learner mode as Mia",
+  );
+  assert.ok(confirm, "Expected learner-mode chooser confirmation.");
+  await click(confirm);
 }
 
 function authenticatedApplicationInMemory({ api, initialEntry }) {
@@ -2341,6 +2589,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   it("awaits lock and exits lesson work before mode navigation", async () => {
     const lock = deferred();
     const exitRoutes = [];
+    installModeSwitchRosterFetch();
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2365,17 +2614,19 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Switch to learner mode/));
     await click(button("Switch to learner mode"));
+    await confirmModeSwitch();
     assert.equal(currentRoute().path, "/lessons");
     assert.deepEqual(exitRoutes, []);
 
-    lock.resolve({ mode: "learner" });
-    await waitFor(() => assert.equal(currentRoute().path, "/"));
-    assert.deepEqual(exitRoutes, ["/lessons"]);
+    await act(async () => lock.resolve({ mode: "learner" }));
+    await waitFor(() => assert.deepEqual(exitRoutes, ["/lessons"]));
+    assert.equal(currentRoute().path, "/lessons");
   });
 
   it("dashboard awaits lock and exits route work before switching profiles", async () => {
     const lock = deferred();
     const exitRoutes = [];
+    installModeSwitchRosterFetch();
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2400,10 +2651,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Guardian dashboard/));
     await click(button("Switch to learner"));
+    await confirmModeSwitch();
     assert.equal(currentRoute().path, "/guardian");
     assert.deepEqual(exitRoutes, []);
 
-    lock.resolve({ mode: "learner" });
+    await act(async () => lock.resolve({ mode: "learner" }));
     await waitFor(() => assert.equal(currentRoute().path, "/"));
     assert.deepEqual(exitRoutes, ["/guardian"]);
   });
@@ -2890,7 +3142,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       "A programmatic stale submit must be fenced before it reaches the server.",
     );
 
-    await click(button("Try again"));
+    act(() => button("Try again").click());
     await waitFor(() => text(/Managing Noah/));
     assert.equal(document.querySelector("#profile-name")?.value, "Noah");
     assert.equal(profileWrites, 0);
@@ -3058,6 +3310,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 8,
               createdAt: "2026-08-01T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-mia",
               name: "Mia",
               profileStatus: "completed",
@@ -3065,6 +3318,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 10,
               createdAt: "2026-08-02T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-noah",
               name: "Noah",
               profileStatus: "completed",
@@ -3167,6 +3421,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 8,
               createdAt: "2026-08-01T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-mia",
               name: "Mia",
               profileStatus: "completed",
@@ -3174,6 +3429,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 10,
               createdAt: "2026-08-02T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-noah",
               name: "Noah",
               profileStatus: "completed",
@@ -3340,6 +3596,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
               {
                 age: 8,
                 createdAt: "2026-08-01T08:00:00.000Z",
+                deletionPending: false,
                 id: "learner-mia",
                 name: "Mia",
                 profileStatus: "completed",
@@ -3347,6 +3604,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
               {
                 age: mutation.action === "select" ? 10 : null,
                 createdAt: "2026-08-02T08:00:00.000Z",
+                deletionPending: false,
                 id: mutation.targetProfileId,
                 name: mutation.targetName,
                 profileStatus: "completed",
@@ -3393,6 +3651,3662 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
     });
   }
+
+  it("fails closed before learner deletion when Web Locks are unavailable", async () => {
+    let deleteRequests = 0;
+    Object.defineProperty(navigator, "locks", {
+      configurable: true,
+      value: undefined,
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return json({
+          activeProfileId: "learner-1",
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-01T08:00:00.000Z",
+              deletionPending: false,
+              id: "learner-1",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Delete without Web Locks",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|delete-without-web-locks",
+      }),
+    );
+    await waitFor(() => button("Delete without Web Locks"));
+    await click(button("Delete without Web Locks"));
+    await waitFor(() =>
+      assert.match(
+        output("Delete without Web Locks mutation result").textContent,
+        /^rejected:/,
+      ),
+    );
+    assert.equal(deleteRequests, 0);
+  });
+
+  it("fails closed before learner deletion when the Web Lock request rejects", async () => {
+    let deleteRequests = 0;
+    let lockRequests = 0;
+    Object.defineProperty(navigator, "locks", {
+      configurable: true,
+      value: {
+        request() {
+          lockRequests += 1;
+          return Promise.reject(new Error("Web Locks are unavailable."));
+        },
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return json({ activeProfileId: "learner-1", profiles: [] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Delete after rejected Web Lock",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|delete-rejected-web-lock",
+      }),
+    );
+    await waitFor(() => button("Delete after rejected Web Lock"));
+    await click(button("Delete after rejected Web Lock"));
+    await waitFor(() =>
+      assert.match(
+        output("Delete after rejected Web Lock mutation result").textContent,
+        /^rejected:/,
+      ),
+    );
+    assert.equal(lockRequests, 1);
+    assert.equal(deleteRequests, 0);
+  });
+
+  it("deletes an inactive learner without reloading or remounting the active learner", async () => {
+    let profileRequests = 0;
+    let deleteRequests = 0;
+    const activeState = {
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: "learner-mia",
+        name: "Mia",
+      },
+    };
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json(activeState);
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        assert.equal(init.signal, undefined);
+        return json({ activeProfileId: miaSummary.id, profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Delete inactive Noah",
+        profileId: "learner-noah",
+        sessionIdentity: null,
+        showDraft: true,
+      }),
+    );
+    await waitFor(() => button("Delete inactive Noah"));
+    const initialProfileRequests = profileRequests;
+    const draft = document.querySelector(
+      'input[aria-label="Delete inactive Noah draft"]',
+    );
+    await input(draft, "Keep this manager draft");
+    await click(button("Delete inactive Noah"));
+
+    await waitFor(() =>
+      assert.equal(
+        output("Delete inactive Noah mutation result").textContent,
+        "resolved",
+      ),
+    );
+    assert.equal(deleteRequests, 1);
+    assert.equal(profileRequests, initialProfileRequests);
+    assert.equal(
+      output("Delete inactive Noah active learner").textContent,
+      "learner-mia",
+    );
+    assert.equal(draft.value, "Keep this manager draft");
+  });
+
+  it("keeps a held local deletion mounted and resolves it after focus revalidation", async () => {
+    const heldDelete = deferred();
+    const activeState = {
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: "learner-mia",
+        name: "Mia",
+      },
+    };
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    let deleteRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(activeState);
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return heldDelete.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Delete Noah through focus",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|focus-delete",
+        showDraft: true,
+      }),
+    );
+    await waitFor(() => button("Delete Noah through focus"));
+    const draft = document.querySelector(
+      'input[aria-label="Delete Noah through focus draft"]',
+    );
+    await input(draft, "Keep this local draft");
+    await click(button("Delete Noah through focus"));
+    await waitFor(() => assert.equal(deleteRequests, 1));
+
+    await act(async () => window.dispatchEvent(new window.Event("focus")));
+    await flush();
+    assert.equal(
+      output("Delete Noah through focus active learner").closest("[hidden]"),
+      null,
+    );
+    assert.equal(draft.value, "Keep this local draft");
+
+    heldDelete.resolve(
+      json({ activeProfileId: miaSummary.id, profiles: [miaSummary] }),
+    );
+    await waitFor(() =>
+      assert.equal(
+        output("Delete Noah through focus mutation result").textContent,
+        "resolved",
+      ),
+    );
+    assert.equal(draft.value, "Keep this local draft");
+  });
+
+  it("clears and reloads selection-required state after deleting the queued active learner", async () => {
+    let selectedProfileId = "learner-mia";
+    const operations = [];
+    const profileState = () => {
+      if (selectedProfileId === null) {
+        return json({ error: "learner_selection_required" }, 409);
+      }
+      return json({
+        ...completedLearnerProfileState(),
+        profile: {
+          ...completedLearnerProfileState().profile,
+          id: selectedProfileId,
+          name: selectedProfileId === "learner-noah" ? "Noah" : "Mia",
+        },
+      });
+    };
+    const summaries = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return profileState();
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        operations.push("select");
+        selectedProfileId = "learner-noah";
+        return json({ activeProfileId: selectedProfileId, profiles: summaries });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        operations.push("delete");
+        assert.equal(init.signal, undefined);
+        selectedProfileId = null;
+        return json({ activeProfileId: null, profiles: [summaries[0]] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerSelectionSessionHarness,
+        { sessionIdentity: null },
+        createElement(QueuedSelectionDeletionHarness),
+      ),
+    );
+    await waitFor(() => button("Select then delete queued learner"));
+    await click(button("Select then delete queued learner"));
+
+    await waitFor(() => {
+      assert.equal(
+        output("Queued learner mutation result").textContent,
+        "resolved",
+      );
+      assert.equal(
+        output("Queued learner active learner").textContent,
+        "none",
+      );
+    });
+    assert.deepEqual(operations, ["select", "delete"]);
+  });
+
+  it("reconciles a malformed learner deletion success with one roster read", async () => {
+    let rosterReads = 0;
+    const profiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return json({ activeProfileId: "learner-mia", profiles });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ activeProfileId: "learner-mia", profiles: [profiles[0]] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Delete after malformed success",
+        profileId: "learner-noah",
+        sessionIdentity: null,
+      }),
+    );
+    await waitFor(() => button("Delete after malformed success"));
+    await click(button("Delete after malformed success"));
+    await waitFor(() =>
+      assert.equal(
+        output("Delete after malformed success mutation result").textContent,
+        "resolved",
+      ),
+    );
+    assert.equal(rosterReads, 1);
+    assert.equal(
+      output("Delete after malformed success active learner").textContent,
+      "learner-mia",
+    );
+  });
+
+  for (const { activeProfileId, label } of [
+    {
+      activeProfileId: "learner-mia",
+      label: "Delete stale inactive Noah",
+    },
+    {
+      activeProfileId: "learner-noah",
+      label: "Delete stale active Noah",
+    },
+  ]) {
+    it(`reconciles a not_found response for ${label.toLowerCase()} with one roster read`, async () => {
+      let currentActiveProfileId = activeProfileId;
+      let profileReads = 0;
+      let rosterReads = 0;
+      const miaSummary = {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      };
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/learner-profile" && init.method === "GET") {
+          profileReads += 1;
+          if (currentActiveProfileId === null) {
+            return json({ error: "learner_selection_required" }, 409);
+          }
+          return json({
+            ...completedLearnerProfileState(),
+            profile: {
+              ...completedLearnerProfileState().profile,
+              id: currentActiveProfileId,
+              name:
+                currentActiveProfileId === "learner-noah" ? "Noah" : "Mia",
+            },
+          });
+        }
+        if (
+          path === "/api/learner-profiles/learner-noah" &&
+          init.method === "DELETE"
+        ) {
+          if (activeProfileId === "learner-noah") currentActiveProfileId = null;
+          return json({ error: "not_found" }, 404);
+        }
+        if (path === "/api/learner-profiles" && init.method === "GET") {
+          rosterReads += 1;
+          return json({
+            activeProfileId: currentActiveProfileId,
+            profiles: [miaSummary],
+          });
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          action: "delete",
+          label,
+          profileId: "learner-noah",
+          sessionIdentity: null,
+        }),
+      );
+      await waitFor(() => button(label));
+      const initialProfileReads = profileReads;
+      await click(button(label));
+
+      await waitFor(() =>
+        assert.equal(
+          output(`${label} mutation result`).textContent,
+          "resolved",
+        ),
+      );
+      assert.equal(rosterReads, 1);
+      assert.equal(
+        output(`${label} active learner`).textContent,
+        activeProfileId === "learner-noah" ? "none" : "learner-mia",
+      );
+      assert.equal(
+        profileReads,
+        initialProfileReads + (activeProfileId === "learner-noah" ? 1 : 0),
+      );
+    });
+  }
+
+  it("settles a not_found deletion unchanged when the roster still contains the learner", async () => {
+    let rosterReads = 0;
+    const profiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return json({ error: "not_found" }, 404);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ activeProfileId: "learner-mia", profiles });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Reject stale Noah deletion",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|not-found-normal",
+      }),
+    );
+    await waitFor(() => button("Reject stale Noah deletion"));
+    await click(button("Reject stale Noah deletion"));
+
+    await waitFor(() =>
+      assert.match(
+        output("Reject stale Noah deletion mutation result").textContent,
+        /^rejected:/,
+      ),
+    );
+    assert.equal(rosterReads, 1);
+    assert.equal(
+      [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .some((key) => key?.endsWith(":state")),
+      false,
+    );
+  });
+
+  it("settles and publishes a roster-confirmed pending deletion without blocking the manager", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const profiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mia",
+        name: "Mia",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: true,
+        id: "learner-noah",
+        name: "Noah",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        throw new TypeError("The destructive response was lost.");
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId: "learner-mia", profiles });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            action: "delete",
+            label: "Finish pending Noah deletion",
+            profileId: "learner-noah",
+            sessionIdentity: "user-1|shared-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Pending deletion sibling",
+            sessionIdentity: "user-1|shared-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Finish pending Noah deletion");
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+      await click(button("Finish pending Noah deletion"));
+
+      await waitFor(() =>
+        assert.match(
+          output("Finish pending Noah deletion mutation result").textContent,
+          /rejected:.*cleanup is still in progress/i,
+        ),
+      );
+      assert.equal(
+        output("Finish pending Noah deletion active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+      await waitFor(() =>
+        assert.equal(
+          output("Pending deletion sibling active learner").closest(
+            "[hidden]",
+          ),
+          null,
+        ),
+      );
+      assert.equal(SharedBroadcastChannel.messagesPosted(), 3);
+      assert.equal(
+        [...Array(window.localStorage.length).keys()]
+          .map((index) => window.localStorage.key(index))
+          .some((key) => key?.includes(":pending:")),
+        false,
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("keeps a destructive delete alive after its source Gate unmounts and settles the exact session", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const heldDelete = deferred();
+    let deleteInit = null;
+    const miaState = {
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        id: "learner-mia",
+        name: "Mia",
+      },
+    };
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    let replacementRemainedBlocked = null;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(miaState);
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteInit = init;
+        return heldDelete.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(UnmountingLearnerSelectionSessionsHarness, {
+          action: "delete",
+          sourceLabel: "Delete before source unmount",
+          targetName: "Noah",
+          targetProfileId: "learner-noah",
+        }),
+      );
+      await waitFor(() => button("Delete before source unmount"));
+      await click(button("Delete before source unmount"));
+      await waitFor(() => {
+        assert.ok(deleteInit);
+        assert.equal(deleteInit.signal, undefined);
+      });
+      const pendingKey = [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .find((key) => key?.includes(":pending:"));
+      assert.ok(pendingKey);
+      assert.equal(
+        output("Delete before source unmount active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+      const sourceStayedVisible =
+        output("Delete before source unmount active learner").closest(
+          "[hidden]",
+        ) === null;
+      await waitFor(() =>
+        assert.ok(
+          output("Delete before source unmount sibling active learner").closest(
+            "[hidden]",
+          ),
+        ),
+      );
+      await click(button("Unmount Delete before source unmount"));
+
+      heldDelete.resolve(
+        json({ activeProfileId: "learner-mia", profiles: [miaSummary] }),
+      );
+      await waitFor(() =>
+        assert.equal(window.localStorage.getItem(pendingKey), null),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      replacementRemainedBlocked =
+        output("Delete before source unmount sibling active learner").closest(
+          "[hidden]",
+        ) !== null;
+      assert.equal(
+        output("Delete before source unmount different session active learner")
+          .textContent,
+        "learner-mia",
+      );
+      assert.equal(
+        sourceStayedVisible,
+        true,
+        "the source manager must remain available when its own held delete revalidates",
+      );
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+    assert.equal(
+      replacementRemainedBlocked,
+      false,
+      "the same-document replacement Gate must receive the source's settlement",
+    );
+  });
+
+  it("reloads a mounted same-session learner manager after a peer deletion settles", async () => {
+    const heldDelete = deferred();
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+    let rosterProfiles = [miaSummary, noahSummary];
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+            name: "Mia",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ activeProfileId: "learner-mia", profiles: rosterProfiles });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return heldDelete.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerManagerSessionHarness, {
+            label: "Source learner manager",
+            sessionIdentity: "user-1|shared-manager",
+          }),
+          createElement(LearnerManagerSessionHarness, {
+            label: "Peer learner manager",
+            sessionIdentity: "user-1|shared-manager",
+          }),
+        ),
+      ),
+    );
+    const source = document.querySelector(
+      'section[aria-label="Source learner manager"]',
+    );
+    const peer = document.querySelector(
+      'section[aria-label="Peer learner manager"]',
+    );
+    assert.ok(source);
+    assert.ok(peer);
+    await waitFor(() => {
+      assert.ok(source.querySelector('button[aria-label="Delete Noah"]'));
+      assert.ok(peer.querySelector('button[aria-label="Delete Noah"]'));
+    });
+    const initialRosterReads = rosterReads;
+
+    await click(source.querySelector('button[aria-label="Delete Noah"]'));
+    const dialog = source.querySelector('[role="dialog"]');
+    assert.ok(dialog);
+    const confirm = [...dialog.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Delete Noah",
+    );
+    assert.ok(confirm);
+    act(() => confirm.click());
+    await waitFor(() => assert.ok(peer.closest("[hidden]")));
+
+    rosterProfiles = [miaSummary];
+    await act(async () => {
+      heldDelete.resolve(
+        json({ activeProfileId: "learner-mia", profiles: rosterProfiles }),
+      );
+    });
+    await waitFor(() => assert.equal(peer.closest("[hidden]"), null));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const peerRefreshed =
+      peer.querySelector('button[aria-label="Delete Noah"]') === null;
+    const peerRosterReads = rosterReads - initialRosterReads;
+    await cleanupMountedRoots();
+    assert.equal(peerRefreshed, true);
+    assert.equal(peerRosterReads, 2);
+  });
+
+  it("reloads a mounted peer manager with roster-confirmed pending cleanup", async () => {
+    const heldDelete = deferred();
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+    let rosterProfiles = [miaSummary, noahSummary];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+            name: "Mia",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId: "learner-mia", profiles: rosterProfiles });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return heldDelete.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerManagerSessionHarness, {
+            label: "Pending cleanup source manager",
+            sessionIdentity: "user-1|shared-pending-manager",
+          }),
+          createElement(LearnerManagerSessionHarness, {
+            label: "Pending cleanup peer manager",
+            sessionIdentity: "user-1|shared-pending-manager",
+          }),
+        ),
+      ),
+    );
+    const source = document.querySelector(
+      'section[aria-label="Pending cleanup source manager"]',
+    );
+    const peer = document.querySelector(
+      'section[aria-label="Pending cleanup peer manager"]',
+    );
+    assert.ok(source);
+    assert.ok(peer);
+    await waitFor(() =>
+      assert.ok(source.querySelector('button[aria-label="Delete Noah"]')),
+    );
+    await click(source.querySelector('button[aria-label="Delete Noah"]'));
+    const dialog = source.querySelector('[role="dialog"]');
+    assert.ok(dialog);
+    const confirm = [...dialog.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Delete Noah",
+    );
+    assert.ok(confirm);
+    act(() => confirm.click());
+    await waitFor(() => assert.ok(peer.closest("[hidden]")));
+
+    rosterProfiles = [miaSummary, { ...noahSummary, deletionPending: true }];
+    await act(async () => {
+      heldDelete.reject(new TypeError("The destructive response was lost."));
+    });
+    await waitFor(() => {
+      assert.equal(peer.closest("[hidden]"), null);
+      assert.ok(
+        peer.querySelector('button[aria-label="Finish deleting Noah"]'),
+      );
+      assert.equal(source.querySelector('[role="dialog"]'), dialog);
+    });
+  });
+
+  it("fails closed when both the delete response and roster reconciliation are unknown", async () => {
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        throw new TypeError("The destructive response was lost.");
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ error: "roster_unavailable" }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Delete with no authoritative response",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|shared-session",
+      }),
+    );
+    await waitFor(() => button("Delete with no authoritative response"));
+    await click(button("Delete with no authoritative response"));
+
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const pendingKey = [...Array(window.localStorage.length).keys()]
+      .map((index) => window.localStorage.key(index))
+      .find((key) => key?.includes(":pending:"));
+    assert.ok(pendingKey);
+    assert.deepEqual(
+      {
+        operation: JSON.parse(window.localStorage.getItem(pendingKey))
+          .operation,
+        profileId: JSON.parse(window.localStorage.getItem(pendingKey))
+          .profileId,
+        status: JSON.parse(window.localStorage.getItem(pendingKey)).status,
+      },
+      {
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+      },
+    );
+  });
+
+  it("blocks the source Gate when durable uncertainty cannot be stored", async () => {
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let rejectedUncertainWrite = false;
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "setItem") {
+          return (key, value) => {
+            if (String(key).includes(":pending:")) {
+              try {
+                const candidate = JSON.parse(String(value));
+                if (
+                  !rejectedUncertainWrite &&
+                  candidate?.status === "uncertain"
+                ) {
+                  rejectedUncertainWrite = true;
+                  throw new Error("Durable uncertainty storage is unavailable.");
+                }
+              } catch (error) {
+                if (rejectedUncertainWrite) throw error;
+              }
+            }
+            return target.setItem(key, value);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        throw new TypeError("The destructive response was lost.");
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ error: "roster_unavailable" }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          action: "delete",
+          label: "Delete with unavailable uncertainty storage",
+          profileId: "learner-noah",
+          sessionIdentity: "user-1|uncertainty-storage-failure",
+        }),
+      );
+      await waitFor(() =>
+        button("Delete with unavailable uncertainty storage"),
+      );
+      await click(button("Delete with unavailable uncertainty storage"));
+      await waitFor(() =>
+        assert.match(
+          output(
+            "Delete with unavailable uncertainty storage mutation result",
+          ).textContent,
+          /^rejected:/,
+        ),
+      );
+      assert.equal(rejectedUncertainWrite, true);
+      assert.notEqual(
+        output(
+          "Delete with unavailable uncertainty storage active learner",
+        ).closest("[hidden]"),
+        null,
+        "An unresolved destructive mutation must block its locally nonblocking source Gate.",
+      );
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+    }
+  });
+
+  it("does not let an obsolete source settle a deletion claimed by its replacement", async () => {
+    const sourceDelete = deferred();
+    const replacementDelete = deferred();
+    let deleteRequests = 0;
+    let rosterReads = 0;
+    const sessionIdentity = "user-1|obsolete-delete-owner";
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+
+    function ObsoleteDeleteOwnerHarness() {
+      const [replaced, setReplaced] = useState(false);
+      return createElement(
+        Fragment,
+        null,
+        replaced
+          ? createElement(LearnerSelectionSessionHarness, {
+              key: "replacement",
+              label: "Replacement deletion owner",
+              sessionIdentity,
+            })
+          : createElement(LearnerSelectionSessionHarness, {
+              action: "delete",
+              key: "source",
+              label: "Obsolete deletion source",
+              profileId: "learner-noah",
+              sessionIdentity,
+            }),
+        createElement(LearnerSelectionSessionHarness, {
+          key: "observer",
+          label: "Obsolete deletion observer",
+          sessionIdentity,
+        }),
+        createElement(
+          "button",
+          { onClick: () => setReplaced(true), type: "button" },
+          "Replace deletion source",
+        ),
+      );
+    }
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+            name: "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return deleteRequests === 1
+          ? sourceDelete.promise
+          : replacementDelete.promise;
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: [miaSummary, noahSummary],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(createElement(ObsoleteDeleteOwnerHarness));
+      await waitFor(() => button("Obsolete deletion source"));
+      await click(button("Obsolete deletion source"));
+      await waitFor(() => assert.equal(deleteRequests, 1));
+      const pendingKey = [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .find((key) => key?.includes(":pending:"));
+      assert.ok(pendingKey);
+
+      await click(button("Replace deletion source"));
+      await waitFor(() => button("Try again"));
+      await click(button("Try again"));
+      await waitFor(() => assert.equal(deleteRequests, 2));
+      const claimed = window.localStorage.getItem(pendingKey);
+      assert.equal(typeof JSON.parse(claimed).attemptId, "string");
+
+      await act(async () => {
+        sourceDelete.reject(new TypeError("The source response was lost."));
+      });
+      await waitFor(() => assert.equal(rosterReads, 1));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      assert.equal(window.localStorage.getItem(pendingKey), claimed);
+      assert.ok(
+        output("Replacement deletion owner active learner").closest(
+          "[hidden]",
+        ),
+      );
+      assert.ok(
+        output("Obsolete deletion observer active learner").closest(
+          "[hidden]",
+        ),
+      );
+    } finally {
+      replacementDelete.resolve(
+        json({ activeProfileId: "learner-mia", profiles: [miaSummary] }),
+      );
+      sourceDelete.reject(new TypeError("Released during cleanup."));
+      await flush();
+    }
+  });
+
+  it("blocks an obsolete source when replacement ownership signals are unavailable", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    class ThrowingBroadcastChannel {
+      constructor() {
+        throw new Error("BroadcastChannel is unavailable.");
+      }
+    }
+    globalThis.BroadcastChannel = ThrowingBroadcastChannel;
+    window.BroadcastChannel = ThrowingBroadcastChannel;
+    const suppressWindowSignals = (event) => event.stopImmediatePropagation();
+    window.addEventListener(
+      "parrot-learner-selection-signal",
+      suppressWindowSignals,
+      true,
+    );
+    const sourceDelete = deferred();
+    const replacementDelete = deferred();
+    let deleteRequests = 0;
+    const sessionIdentity = "user-1|silent-replacement-owner";
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return deleteRequests === 1
+          ? sourceDelete.promise
+          : replacementDelete.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            action: "delete",
+            label: "Silent obsolete deletion source",
+            profileId: "learner-noah",
+            sessionIdentity,
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Silent replacement deletion owner",
+            sessionIdentity,
+          }),
+        ),
+      );
+      await waitFor(() => button("Silent obsolete deletion source"));
+      await click(button("Silent obsolete deletion source"));
+      await waitFor(() => assert.equal(deleteRequests, 1));
+      const pendingKey = Array.from(
+        { length: window.localStorage.length },
+        (_, index) => window.localStorage.key(index),
+      ).find((key) => key?.includes(":pending:"));
+      assert.ok(pendingKey);
+      const uncertainValue = JSON.stringify({
+        ...JSON.parse(window.localStorage.getItem(pendingKey)),
+        status: "uncertain",
+      });
+      window.localStorage.setItem(pendingKey, uncertainValue);
+      act(() => {
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: pendingKey,
+            newValue: uncertainValue,
+          }),
+        );
+      });
+      await waitFor(() => button("Try again"));
+      await click(button("Try again"));
+      await waitFor(() => assert.equal(deleteRequests, 2));
+      const claimed = window.localStorage.getItem(pendingKey);
+      assert.notEqual(
+        JSON.parse(claimed).attemptId,
+        JSON.parse(uncertainValue).attemptId,
+      );
+
+      await act(async () => {
+        sourceDelete.resolve(
+          json({ activeProfileId: "learner-mia", profiles: [miaSummary] }),
+        );
+      });
+      await waitFor(() =>
+        assert.match(
+          output("Silent obsolete deletion source mutation result").textContent,
+          /^rejected:/,
+        ),
+      );
+      assert.equal(window.localStorage.getItem(pendingKey), claimed);
+      assert.notEqual(
+        output("Silent obsolete deletion source active learner").closest(
+          "[hidden]",
+        ),
+        null,
+        "A stale locally nonblocking source must block when its replacement owns the destructive mutation.",
+      );
+    } finally {
+      replacementDelete.resolve(
+        json({ activeProfileId: "learner-mia", profiles: [miaSummary] }),
+      );
+      sourceDelete.resolve(
+        json({ activeProfileId: "learner-mia", profiles: [miaSummary] }),
+      );
+      await flush();
+      window.removeEventListener(
+        "parrot-learner-selection-signal",
+        suppressWindowSignals,
+        true,
+      );
+      if (originalGlobalBroadcastChannel === undefined) {
+        Reflect.deleteProperty(globalThis, "BroadcastChannel");
+      } else {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      }
+      if (originalWindowBroadcastChannel === undefined) {
+        Reflect.deleteProperty(window, "BroadcastChannel");
+      } else {
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    }
+  });
+
+  it("allows only the latest replacement attempt to settle a raced deletion", async () => {
+    const sessionIdentity = "user-1|raced-delete-owner";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "raced-delete-token";
+    const pendingKey = `${scope}:pending:${token}`;
+    window.localStorage.setItem(
+      pendingKey,
+      JSON.stringify({
+        attemptId: "crashed-attempt",
+        changeMarker: null,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      }),
+    );
+    const heldDeletes = [];
+    const observedAttempts = [];
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        observedAttempts.push(
+          JSON.parse(window.localStorage.getItem(pendingKey)).attemptId,
+        );
+        const held = deferred();
+        heldDeletes.push(held);
+        return held.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        Fragment,
+        null,
+        createElement(LearnerSelectionSessionHarness, {
+          label: "First raced deletion replacement",
+          sessionIdentity,
+        }),
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Second raced deletion replacement",
+          sessionIdentity,
+        }),
+      ),
+    );
+    await waitFor(() => {
+      assert.equal(
+        [...document.querySelectorAll("button")].filter(
+          (candidate) => candidate.textContent.trim() === "Try again",
+        ).length,
+        2,
+      );
+    });
+    const retries = [...document.querySelectorAll("button")].filter(
+      (candidate) => candidate.textContent.trim() === "Try again",
+    );
+    act(() => {
+      retries[0].click();
+      retries[1].click();
+    });
+    await waitFor(() => assert.equal(heldDeletes.length, 2));
+    const durableWinner = JSON.parse(
+      window.localStorage.getItem(pendingKey),
+    ).attemptId;
+    assert.notEqual(observedAttempts[0], observedAttempts[1]);
+    assert.equal(observedAttempts[1], durableWinner);
+
+    heldDeletes[1].resolve(
+      json({ activeProfileId: "learner-mia", profiles: [miaSummary] }),
+    );
+    await waitFor(() => assert.equal(window.localStorage.getItem(pendingKey), null));
+
+    const winnerMarker = window.localStorage.getItem(`${scope}:state`);
+    heldDeletes[0].resolve(json({ error: "learner_busy" }, 409));
+    await flush();
+    assert.equal(
+      window.localStorage.getItem(pendingKey),
+      null,
+      "The stale cached claim stays inert after the winner removes the token.",
+    );
+    assert.equal(window.localStorage.getItem(`${scope}:state`), winnerMarker);
+  });
+
+  it("recovers two durable deletion tokens one profile at a time", async () => {
+    const sessionIdentity = "user-1|two-delete-tokens";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const recoveries = [
+      ["a-delete-token", "learner-noah"],
+      ["b-delete-token", "learner-sam"],
+    ];
+    for (const [token, profileId] of recoveries) {
+      window.localStorage.setItem(
+        `${scope}:pending:${token}`,
+        JSON.stringify({
+          attemptId: `crashed-${token}`,
+          changeMarker: null,
+          operation: "delete-learner",
+          profileId,
+          status: "uncertain",
+          token,
+          version: 2,
+        }),
+      );
+    }
+    const profiles = new Map(
+      [
+        ["learner-mia", "Mia"],
+        ["learner-noah", "Noah"],
+        ["learner-sam", "Sam"],
+      ].map(([id, name], index) => [
+        id,
+        {
+          age: 8 + index,
+          createdAt: `2026-08-0${index + 1}T08:00:00.000Z`,
+          deletionPending: false,
+          id,
+          name,
+          profileStatus: "completed",
+        },
+      ]),
+    );
+    const deletePaths = [];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (init.method === "DELETE" && path.startsWith("/api/learner-profiles/")) {
+        deletePaths.push(path);
+        const profileId = decodeURIComponent(path.slice(path.lastIndexOf("/") + 1));
+        profiles.delete(profileId);
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: [...profiles.values()],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Recover two deletion tokens",
+        sessionIdentity,
+      }),
+    );
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    await click(button("Try again"));
+    await waitFor(() => {
+      assert.deepEqual(deletePaths, [
+        "/api/learner-profiles/learner-noah",
+      ]);
+      assert.equal(
+        [...Array(window.localStorage.length).keys()]
+          .map((index) => window.localStorage.key(index))
+          .filter((key) => key?.includes(":pending:")).length,
+        1,
+      );
+      button("Try again");
+    });
+    assert.ok(
+      output("Recover two deletion tokens active learner").closest(
+        "[hidden]",
+      ),
+    );
+
+    await click(button("Try again"));
+    await waitFor(() =>
+      assert.equal(
+        output("Recover two deletion tokens active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      ),
+    );
+    assert.deepEqual(deletePaths, [
+      "/api/learner-profiles/learner-noah",
+      "/api/learner-profiles/learner-sam",
+    ]);
+    assert.equal(
+      [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .some((key) => key?.includes(":pending:")),
+      false,
+    );
+  });
+
+  it("replays a crash-written deletion publication to a mounted peer manager once", async () => {
+    const sessionIdentity = "user-1|crash-written-publication";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "crash-written-token";
+    const marker = "crash-written-marker";
+    const pendingKey = `${scope}:pending:${token}`;
+    const publicationKey = `${scope}:publication:${token}`;
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+    let deleted = false;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: deleted ? [miaSummary] : [miaSummary, noahSummary],
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleted = true;
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+        createElement(
+          MemoryRouter,
+          null,
+          createElement(
+            Fragment,
+            null,
+            createElement(LearnerSelectionSessionHarness, {
+              label: "Recover crash-written publication",
+              sessionIdentity,
+            }),
+            createElement(LearnerManagerSessionHarness, {
+              label: "Crash-written publication peer",
+              sessionIdentity,
+            }),
+          ),
+        ),
+      );
+    const peer = document.querySelector(
+        'section[aria-label="Crash-written publication peer"]',
+      );
+    assert.ok(peer);
+    await waitFor(() =>
+        assert.ok(peer.querySelector('button[aria-label="Delete Noah"]')),
+      );
+    const readsBeforeRecovery = rosterReads;
+      window.localStorage.setItem(`${scope}:state`, marker);
+      window.localStorage.setItem(
+        publicationKey,
+        JSON.stringify({
+          marker,
+          previousMarker: "marker-before-crash",
+          status: "published",
+          token,
+          version: 1,
+        }),
+      );
+      const pendingValue = JSON.stringify({
+        attemptId: "crashed-before-notification",
+        changeMarker: marker,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      });
+      window.localStorage.setItem(pendingKey, pendingValue);
+      act(() => {
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: pendingKey,
+            newValue: pendingValue,
+          }),
+        );
+      });
+      await waitFor(() => button("Try again"));
+    await act(async () => {
+      button("Try again").click();
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    const peerRefreshed =
+      peer.closest("[hidden]") === null &&
+      peer.querySelector('button[aria-label="Delete Noah"]') === null;
+    await cleanupMountedRoots();
+    assert.equal(peerRefreshed, true);
+    assert.equal(rosterReads, readsBeforeRecovery + 1);
+    assert.equal(window.localStorage.getItem(pendingKey), null);
+    assert.equal(window.localStorage.getItem(publicationKey), null);
+    assert.equal(window.localStorage.getItem(`${scope}:state`), marker);
+  });
+
+  it("replays an already-notified deletion without rewinding a newer marker", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const sessionIdentity = "user-1|notified-publication-retry";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "notified-a-token";
+    const markerA = "published-marker-a";
+    const markerB = "newer-marker-b";
+    const pendingKey = `${scope}:pending:${token}`;
+    const publicationKey = `${scope}:publication:${token}`;
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    const stateWrites = [];
+    const trackingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "setItem") {
+          return (key, value) => {
+            if (String(key).endsWith(":state")) stateWrites.push(String(value));
+            return target.setItem(key, value);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: trackingStorage,
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Retry already-notified deletion",
+          sessionIdentity,
+        }),
+      );
+      await waitFor(() => button("Retry already-notified deletion"));
+      storage.setItem(`${scope}:state`, markerA);
+      await act(async () => {
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: `${scope}:state`,
+            newValue: markerA,
+          }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      storage.setItem(`${scope}:state`, markerB);
+      await act(async () => {
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: `${scope}:state`,
+            newValue: markerB,
+          }),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+      storage.setItem(
+        publicationKey,
+        JSON.stringify({
+          marker: markerA,
+          previousMarker: "marker-before-a",
+          status: "notified",
+          token,
+          version: 1,
+        }),
+      );
+      const pendingValue = JSON.stringify({
+        attemptId: "published-a-cleanup-failed",
+        changeMarker: markerA,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      });
+      storage.setItem(pendingKey, pendingValue);
+      stateWrites.length = 0;
+      act(() => {
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: pendingKey,
+            newValue: pendingValue,
+          }),
+        );
+      });
+      await waitFor(() => text(/couldn't verify the current learner/i));
+      const messagesBeforeRetry = SharedBroadcastChannel.messagesPosted();
+      await click(button("Try again"));
+      await waitFor(() =>
+        assert.equal(
+          output("Retry already-notified deletion active learner").closest(
+            "[hidden]",
+          ),
+          null,
+        ),
+      );
+      assert.deepEqual(stateWrites, []);
+      assert.equal(storage.getItem(`${scope}:state`), markerB);
+      assert.equal(storage.getItem(pendingKey), null);
+      assert.equal(storage.getItem(publicationKey), null);
+      assert.equal(
+        SharedBroadcastChannel.messagesPosted() - messagesBeforeRetry,
+        3,
+      );
+      const journal = JSON.parse(
+        storage.getItem(`${scope}:publication-journal`),
+      );
+      assert.ok(
+        journal.entries.some(
+          (entry) => entry.marker === markerA && entry.token === token,
+        ),
+      );
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("keeps an exact deletion publication provable until async Broadcast delivery", async () => {
+    const sessionIdentity = "user-1|async-publication-proof";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const stateKey = `${scope}:state`;
+    const markerB = "async-intervening-marker-b";
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const dispatchDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "dispatchEvent",
+    );
+    const dispatchEvent = window.dispatchEvent.bind(window);
+    const SharedBroadcastChannel = installSharedBroadcastChannels({
+      beforeDelivery(message) {
+        if (message?.type === "changed") {
+          window.localStorage.setItem(stateKey, markerB);
+        }
+      },
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    Object.defineProperty(window, "dispatchEvent", {
+      configurable: true,
+      value(event) {
+        return event.type === "parrot-learner-selection-signal"
+          ? true
+          : dispatchEvent(event);
+      },
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(LearnerSelectionSessionHarness, {
+            action: "delete",
+            label: "Publish before async Broadcast",
+            profileId: "learner-noah",
+            sessionIdentity,
+          }),
+          createElement(LearnerRosterRevisionHarness, {
+            label: "Async Broadcast peer revision",
+            sessionIdentity,
+          }),
+        ),
+      );
+      await waitFor(() => {
+        button("Publish before async Broadcast");
+        assert.equal(SharedBroadcastChannel.peerCount(), 2);
+      });
+      await click(button("Publish before async Broadcast"));
+      await waitFor(() =>
+        assert.equal(
+          output("Publish before async Broadcast mutation result").textContent,
+          "resolved",
+        ),
+      );
+      await waitFor(() =>
+        assert.equal(output("Async Broadcast peer revision").textContent, "1"),
+      );
+      assert.equal(window.localStorage.getItem(stateKey), markerB);
+    } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+      if (dispatchDescriptor) {
+        Object.defineProperty(window, "dispatchEvent", dispatchDescriptor);
+      } else {
+        Reflect.deleteProperty(window, "dispatchEvent");
+      }
+    }
+  });
+
+  it("finishes a prepared publication from the unchanged prior state", async () => {
+    const sessionIdentity = "user-1|prepared-before-state";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "prepared-before-state-token";
+    const marker = "prepared-before-state-marker";
+    const previousMarker = "state-before-prepared-marker";
+    const pendingKey = `${scope}:pending:${token}`;
+    const publicationKey = `${scope}:publication:${token}`;
+    const storage = window.localStorage;
+    const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+    const stateWrites = [];
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: new Proxy(storage, {
+        get(target, property) {
+          if (property === "setItem") {
+            return (key, value) => {
+              if (String(key).endsWith(":state")) {
+                stateWrites.push(String(value));
+              }
+              return target.setItem(key, value);
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      }),
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          label: "Finish prepared publication",
+          sessionIdentity,
+        }),
+      );
+      await waitFor(() => button("Finish prepared publication"));
+      storage.setItem(`${scope}:state`, previousMarker);
+      storage.setItem(
+        publicationKey,
+        JSON.stringify({
+          marker,
+          previousMarker,
+          status: "prepared",
+          token,
+          version: 1,
+        }),
+      );
+      const pendingValue = JSON.stringify({
+        attemptId: "prepared-before-state-attempt",
+        changeMarker: marker,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      });
+      storage.setItem(pendingKey, pendingValue);
+      stateWrites.length = 0;
+      act(() =>
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: pendingKey,
+            newValue: pendingValue,
+          }),
+        ),
+      );
+      await waitFor(() => button("Try again"));
+      await click(button("Try again"));
+      await waitFor(() => assert.equal(storage.getItem(pendingKey), null));
+      assert.deepEqual(stateWrites, [marker]);
+      assert.equal(storage.getItem(`${scope}:state`), marker);
+      assert.equal(storage.getItem(publicationKey), null);
+    } finally {
+      if (descriptor) Object.defineProperty(window, "localStorage", descriptor);
+    }
+  });
+
+  it("does not rewind a newer state while finishing a prepared publication", async () => {
+    const sessionIdentity = "user-1|prepared-after-newer-state";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "prepared-after-newer-token";
+    const markerA = "prepared-marker-a";
+    const markerB = "intervening-marker-b";
+    const previousMarker = "marker-before-prepared-a";
+    const pendingKey = `${scope}:pending:${token}`;
+    const publicationKey = `${scope}:publication:${token}`;
+    const storage = window.localStorage;
+    const descriptor = Object.getOwnPropertyDescriptor(window, "localStorage");
+    const stateWrites = [];
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: new Proxy(storage, {
+        get(target, property) {
+          if (property === "setItem") {
+            return (key, value) => {
+              if (String(key).endsWith(":state")) {
+                stateWrites.push(String(value));
+              }
+              return target.setItem(key, value);
+            };
+          }
+          const value = Reflect.get(target, property, target);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      }),
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+    let deleted = false;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: deleted ? [miaSummary] : [miaSummary, noahSummary],
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleted = true;
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          MemoryRouter,
+          null,
+          createElement(
+            Fragment,
+            null,
+            createElement(LearnerSelectionSessionHarness, {
+              label: "Finish prepared A after B",
+              sessionIdentity,
+            }),
+            createElement(LearnerManagerSessionHarness, {
+              label: "Prepared A peer manager",
+              sessionIdentity,
+            }),
+          ),
+        ),
+      );
+      const peer = document.querySelector(
+        'section[aria-label="Prepared A peer manager"]',
+      );
+      assert.ok(peer);
+      await waitFor(() =>
+        assert.ok(peer.querySelector('button[aria-label="Delete Noah"]')),
+      );
+      storage.setItem(`${scope}:state`, markerB);
+      storage.setItem(
+        publicationKey,
+        JSON.stringify({
+          marker: markerA,
+          previousMarker,
+          status: "prepared",
+          token,
+          version: 1,
+        }),
+      );
+      const pendingValue = JSON.stringify({
+        attemptId: "prepared-after-newer-attempt",
+        changeMarker: markerA,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      });
+      storage.setItem(pendingKey, pendingValue);
+      stateWrites.length = 0;
+      act(() =>
+        window.dispatchEvent(
+          new window.StorageEvent("storage", {
+            key: pendingKey,
+            newValue: pendingValue,
+          }),
+        ),
+      );
+      await waitFor(() => button("Try again"));
+      const readsBeforeRecovery = rosterReads;
+      await act(async () => {
+        button("Try again").click();
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      });
+      const peerRefreshed =
+        peer.closest("[hidden]") === null &&
+        peer.querySelector('button[aria-label="Delete Noah"]') === null;
+      await cleanupMountedRoots();
+      assert.equal(peerRefreshed, true);
+      assert.equal(rosterReads, readsBeforeRecovery + 1);
+      assert.deepEqual(stateWrites, []);
+      assert.equal(storage.getItem(`${scope}:state`), markerB);
+      assert.equal(storage.getItem(pendingKey), null);
+      assert.equal(storage.getItem(publicationKey), null);
+    } finally {
+      if (descriptor) Object.defineProperty(window, "localStorage", descriptor);
+    }
+  });
+
+  it("does not accumulate publication receipts after repeated successful deletions", async () => {
+    const sessionIdentity = "user-1|bounded-delete-receipts";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const journalKey = `${scope}:publication-journal`;
+    window.localStorage.setItem(
+      journalKey,
+      JSON.stringify({
+        entries: Array.from({ length: 32 }, (_, index) => ({
+          marker: `old-marker-${index}`,
+          token: `old-token-${index}`,
+        })),
+        version: 1,
+      }),
+    );
+    const profiles = new Map(
+      [
+        ["learner-mia", "Mia"],
+        ["learner-noah", "Noah"],
+        ["learner-sam", "Sam"],
+      ].map(([id, name], index) => [
+        id,
+        {
+          age: index + 8,
+          createdAt: `2026-08-0${index + 1}T08:00:00.000Z`,
+          deletionPending: false,
+          id,
+          name,
+          profileStatus: "completed",
+        },
+      ]),
+    );
+
+    function SequentialSuccessfulDeletions() {
+      const { deleteLearner } = useLearnerSelection();
+      const [result, setResult] = useState("idle");
+      const remove = (profileId) => {
+        setResult(`deleting:${profileId}`);
+        void deleteLearner(profileId).then(
+          () => setResult(`deleted:${profileId}`),
+          (error) => setResult(`failed:${error.message}`),
+        );
+      };
+      return createElement(
+        "section",
+        null,
+        createElement("output", { "aria-label": "Sequential delete result" }, result),
+        createElement(
+          "button",
+          { onClick: () => remove("learner-noah"), type: "button" },
+          "Delete Noah sequentially",
+        ),
+        createElement(
+          "button",
+          { onClick: () => remove("learner-sam"), type: "button" },
+          "Delete Sam sequentially",
+        ),
+      );
+    }
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (init.method === "DELETE" && path.startsWith("/api/learner-profiles/")) {
+        const profileId = decodeURIComponent(path.slice(path.lastIndexOf("/") + 1));
+        profiles.delete(profileId);
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: [...profiles.values()],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        LearnerSelectionSessionHarness,
+        { sessionIdentity },
+        createElement(SequentialSuccessfulDeletions),
+      ),
+    );
+    await waitFor(() => button("Delete Noah sequentially"));
+    await click(button("Delete Noah sequentially"));
+    await waitFor(() =>
+      assert.equal(
+        output("Sequential delete result").textContent,
+        "deleted:learner-noah",
+      ),
+    );
+    assert.equal(
+      [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .filter((key) => key?.startsWith(`${scope}:publication:`)).length,
+      0,
+    );
+    let journal = JSON.parse(window.localStorage.getItem(journalKey));
+    assert.equal(journal.entries.length, 32);
+    assert.equal(
+      journal.entries.some(({ token }) => token === "old-token-0"),
+      false,
+    );
+
+    await click(button("Delete Sam sequentially"));
+    await waitFor(() =>
+      assert.equal(
+        output("Sequential delete result").textContent,
+        "deleted:learner-sam",
+      ),
+    );
+    assert.equal(
+      [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .filter((key) => key?.startsWith(`${scope}:publication:`)).length,
+      0,
+    );
+    journal = JSON.parse(window.localStorage.getItem(journalKey));
+    assert.equal(journal.entries.length, 32);
+    assert.equal(
+      journal.entries.some(({ token }) => token === "old-token-1"),
+      false,
+    );
+  });
+
+  it("retains an unresolved token receipt outside the bounded publication journal", async () => {
+    const sessionIdentity = "user-1|pending-delete-receipt";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "unresolved-delete-token";
+    const marker = "unresolved-delete-marker";
+    const pendingKey = `${scope}:pending:${token}`;
+    const publicationKey = `${scope}:publication:${token}`;
+    window.localStorage.setItem(
+      `${scope}:publication-journal`,
+      JSON.stringify({
+        entries: Array.from({ length: 32 }, (_, index) => ({
+          marker: `completed-marker-${index}`,
+          token: `completed-token-${index}`,
+        })),
+        version: 1,
+      }),
+    );
+    window.localStorage.setItem(
+      publicationKey,
+      JSON.stringify({
+        marker,
+        previousMarker: "marker-before-unresolved-delete",
+        status: "notified",
+        token,
+        version: 1,
+      }),
+    );
+    window.localStorage.setItem(
+      pendingKey,
+      JSON.stringify({
+        attemptId: "unresolved-delete-attempt",
+        changeMarker: marker,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      }),
+    );
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Retain unresolved deletion receipt",
+        sessionIdentity,
+      }),
+    );
+    await waitFor(() => button("Try again"));
+    assert.notEqual(window.localStorage.getItem(pendingKey), null);
+    assert.notEqual(
+      window.localStorage.getItem(publicationKey),
+      null,
+      "A bounded success journal must not evict proof for a live pending token.",
+    );
+  });
+
+  it("removes an orphan receipt after its proof leaves the bounded journal", async () => {
+    const sessionIdentity = "user-1|evicted-delete-receipt";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    const token = "evicted-delete-token";
+    const publicationKey = `${scope}:publication:${token}`;
+    window.localStorage.setItem(
+      `${scope}:publication-journal`,
+      JSON.stringify({
+        entries: Array.from({ length: 32 }, (_, index) => ({
+          marker: `newer-marker-${index}`,
+          token: `newer-token-${index}`,
+        })),
+        version: 1,
+      }),
+    );
+    window.localStorage.setItem(
+      publicationKey,
+      JSON.stringify({
+        marker: "evicted-delete-marker",
+        previousMarker: "marker-before-evicted-delete",
+        status: "notified",
+        token,
+        version: 1,
+      }),
+    );
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(completedLearnerProfileState());
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Clean evicted deletion receipt",
+        sessionIdentity,
+      }),
+    );
+    await waitFor(() => button("Clean evicted deletion receipt"));
+    assert.equal(
+      window.localStorage.getItem(publicationKey),
+      null,
+      "A no-pending receipt outside the retained journal window must not leak forever.",
+    );
+  });
+
+  it("ignores forged same-document changed, pending, and settled signals", async () => {
+    const sessionIdentity = "user-1|forged-window-signals";
+    const scope = await learnerSelectionScopeForTest(sessionIdentity);
+    let profileReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileReads += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Forged window signal observer",
+        sessionIdentity,
+      }),
+    );
+    await waitFor(() => button("Forged window signal observer"));
+    const readsBeforeForgery = profileReads;
+    window.localStorage.setItem(`${scope}:state`, "forged-window-marker");
+    await act(async () => {
+      window.dispatchEvent(
+        new window.CustomEvent("parrot-learner-selection-signal", {
+          detail: {
+            message: {
+              marker: "forged-window-marker",
+              type: "changed",
+            },
+            scope,
+            sender: "attacker",
+          },
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    const readsAfterForgedChange = profileReads;
+
+    const forgedPendingKey = `${scope}:pending:forged-window-pending`;
+    window.localStorage.setItem(forgedPendingKey, "uncertain");
+    await act(async () => {
+      window.dispatchEvent(
+        new window.CustomEvent("parrot-learner-selection-signal", {
+          detail: {
+            message: {
+              status: "uncertain",
+              token: "forged-window-pending",
+              type: "pending",
+            },
+            scope,
+            sender: "attacker",
+          },
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    const forgedPendingBlocked =
+      output("Forged window signal observer active learner").closest(
+        "[hidden]",
+      ) !== null;
+    window.localStorage.removeItem(forgedPendingKey);
+    await act(async () => {
+      window.dispatchEvent(
+        new window.StorageEvent("storage", {
+          key: forgedPendingKey,
+          newValue: null,
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
+    const legitimatePendingKey = `${scope}:pending:legitimate-window-pending`;
+    window.localStorage.setItem(legitimatePendingKey, "uncertain");
+    await act(async () => {
+      window.dispatchEvent(
+        new window.StorageEvent("storage", {
+          key: legitimatePendingKey,
+          newValue: "uncertain",
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    window.localStorage.removeItem(legitimatePendingKey);
+    await act(async () => {
+      window.dispatchEvent(
+        new window.CustomEvent("parrot-learner-selection-signal", {
+          detail: {
+            message: {
+              token: "legitimate-window-pending",
+              type: "settled",
+            },
+            scope,
+            sender: "attacker",
+          },
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    const forgedSettledUnblocked =
+      output("Forged window signal observer active learner").closest(
+        "[hidden]",
+      ) === null;
+    await act(async () => {
+      window.dispatchEvent(
+        new window.StorageEvent("storage", {
+          key: legitimatePendingKey,
+          newValue: null,
+        }),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    await cleanupMountedRoots();
+
+    assert.equal(readsAfterForgedChange, readsBeforeForgery);
+    assert.equal(forgedPendingBlocked, false);
+    assert.equal(forgedSettledUnblocked, false);
+  });
+
+  it("retries the exact durable uncertain deletion and settles when the roster confirms it absent", async () => {
+    let deleteRequests = 0;
+    let rosterReads = 0;
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+            name: "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        assert.equal(init.signal, undefined);
+        if (deleteRequests === 1) {
+          throw new TypeError("The destructive response was lost.");
+        }
+        return json({ error: "not_found" }, 404);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return rosterReads === 1
+          ? json({ error: "roster_unavailable" }, 503)
+          : json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Recover uncertain Noah deletion",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|durable-delete",
+      }),
+    );
+    await waitFor(() => button("Recover uncertain Noah deletion"));
+    await click(button("Recover uncertain Noah deletion"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const pendingKey = [...Array(window.localStorage.length).keys()]
+      .map((index) => window.localStorage.key(index))
+      .find((key) => key?.includes(":pending:"));
+    assert.ok(pendingKey);
+    const token = pendingKey.slice(pendingKey.lastIndexOf(":pending:") + 9);
+    const persistedRecovery = JSON.parse(
+      window.localStorage.getItem(pendingKey),
+    );
+    assert.equal(typeof persistedRecovery.attemptId, "string");
+    assert.deepEqual(
+      { ...persistedRecovery, attemptId: "validated-attempt" },
+      {
+        attemptId: "validated-attempt",
+        changeMarker: null,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 2,
+      },
+    );
+
+    await click(button("Try again"));
+    await waitFor(() =>
+      assert.equal(
+        output("Recover uncertain Noah deletion active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      ),
+    );
+    assert.equal(deleteRequests, 2);
+    assert.equal(rosterReads, 2);
+    assert.equal(window.localStorage.getItem(pendingKey), null);
+  });
+
+  it("recovers the exact uncertain deletion after the Gate reloads", async () => {
+    let deleteRequests = 0;
+    let rosterReads = 0;
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+            name: "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        if (deleteRequests === 1) {
+          throw new TypeError("The destructive response was lost.");
+        }
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ error: "roster_unavailable" }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(createElement(ReloadableDeletionRecoveryHarness));
+    await waitFor(() => button("Delete before Gate reload"));
+    await click(button("Delete before Gate reload"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const pendingKey = [...Array(window.localStorage.length).keys()]
+      .map((index) => window.localStorage.key(index))
+      .find((key) => key?.includes(":pending:"));
+    assert.ok(pendingKey);
+
+    await click(button("Reload uncertain deletion Gate"));
+    await waitFor(() => {
+      output("Recovered deletion Gate active learner");
+      text(/couldn't verify the current learner/i);
+    });
+    await click(button("Try again"));
+    await waitFor(() =>
+      assert.equal(
+        output("Recovered deletion Gate active learner").closest("[hidden]"),
+        null,
+      ),
+    );
+    assert.equal(deleteRequests, 2);
+    assert.equal(rosterReads, 1);
+    assert.equal(window.localStorage.getItem(pendingKey), null);
+  });
+
+  it("keeps the exact durable deletion blocked after a second double-unknown outcome", async () => {
+    let deleteRequests = 0;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        throw new TypeError("The destructive response was lost.");
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ error: "roster_unavailable" }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Keep uncertain Noah deletion",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|double-unknown-delete",
+      }),
+    );
+    await waitFor(() => button("Keep uncertain Noah deletion"));
+    await click(button("Keep uncertain Noah deletion"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const pendingKey = [...Array(window.localStorage.length).keys()]
+      .map((index) => window.localStorage.key(index))
+      .find((key) => key?.includes(":pending:"));
+    assert.ok(pendingKey);
+    const originalToken = JSON.parse(
+      window.localStorage.getItem(pendingKey),
+    ).token;
+
+    await click(button("Try again"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const persisted = JSON.parse(window.localStorage.getItem(pendingKey));
+    assert.equal(persisted.status, "uncertain");
+    assert.equal(persisted.token, originalToken);
+    assert.equal(deleteRequests, 2);
+    assert.equal(rosterReads, 2);
+  });
+
+  it("settles an uncertain deletion unchanged when the retry is a known rejection", async () => {
+    let deleteRequests = 0;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return deleteRequests === 1
+          ? Promise.reject(new TypeError("The destructive response was lost."))
+          : json({ error: "learner_busy" }, 409);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ error: "roster_unavailable" }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Reject recovered Noah deletion",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|rejected-delete",
+      }),
+    );
+    await waitFor(() => button("Reject recovered Noah deletion"));
+    await click(button("Reject recovered Noah deletion"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const pendingKey = [...Array(window.localStorage.length).keys()]
+      .map((index) => window.localStorage.key(index))
+      .find((key) => key?.includes(":pending:"));
+    assert.ok(pendingKey);
+
+    await click(button("Try again"));
+    await waitFor(() =>
+      assert.equal(
+        output("Reject recovered Noah deletion active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      ),
+    );
+    assert.equal(deleteRequests, 2);
+    assert.equal(rosterReads, 1);
+    assert.equal(window.localStorage.getItem(pendingKey), null);
+    assert.equal(
+      [...Array(window.localStorage.length).keys()]
+        .map((index) => window.localStorage.key(index))
+        .some((key) => key?.endsWith(":state")),
+      false,
+    );
+  });
+
+  it("unblocks the same manager dialog when recovery confirms pending cleanup and retries the same learner", async () => {
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+    const deletePaths = [];
+    let deleteRequests = 0;
+    let firstReconciliationUnknown = true;
+    let pendingCleanup = false;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+            name: "Mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deletePaths.push(path);
+        deleteRequests += 1;
+        if (deleteRequests === 1) {
+          throw new TypeError("The destructive response was lost.");
+        }
+        if (deleteRequests === 2) {
+          pendingCleanup = true;
+          return json({ error: "delete_failed" }, 503);
+        }
+        pendingCleanup = false;
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        if (deleteRequests > 0 && firstReconciliationUnknown) {
+          firstReconciliationUnknown = false;
+          return json({ error: "roster_unavailable" }, 503);
+        }
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: pendingCleanup
+            ? [miaSummary, { ...noahSummary, deletionPending: true }]
+            : [miaSummary, noahSummary],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(LearnerManagerSessionHarness, {
+          label: "Recovering learner manager",
+          sessionIdentity: "user-1|pending-cleanup-recovery",
+        }),
+      ),
+    );
+    const manager = document.querySelector(
+      'section[aria-label="Recovering learner manager"]',
+    );
+    assert.ok(manager);
+    await waitFor(() =>
+      assert.ok(manager.querySelector('button[aria-label="Delete Noah"]')),
+    );
+    await click(manager.querySelector('button[aria-label="Delete Noah"]'));
+    const dialog = manager.querySelector('[role="dialog"]');
+    assert.ok(dialog);
+    const confirm = [...dialog.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Delete Noah",
+    );
+    assert.ok(confirm);
+    act(() => confirm.click());
+    await waitFor(() => text(/couldn't verify the current learner/i));
+
+    await click(button("Try again"));
+    await waitFor(() => assert.equal(manager.closest("[hidden]"), null));
+    let recoveryVisible = false;
+    try {
+      await waitFor(
+        () => {
+          assert.equal(manager.querySelector('[role="dialog"]'), dialog);
+          assert.ok(
+            manager.querySelector(
+              'button[aria-label="Finish deleting Noah"]',
+            ),
+          );
+        },
+        { attempts: 20 },
+      );
+      recoveryVisible = true;
+    } catch {
+      // Assert after cleanup so a deliberately blocked Gate cannot stall React act.
+    }
+    if (!recoveryVisible) {
+      await cleanupMountedRoots();
+      assert.equal(
+        recoveryVisible,
+        true,
+        "recovery must preserve the dialog and publish the pending learner roster",
+      );
+    }
+    assert.equal(deleteRequests, 2);
+
+    await click(confirm);
+    await waitFor(() => {
+      assert.equal(manager.querySelector('[role="dialog"]'), null);
+      assert.equal(
+        manager.querySelector('button[aria-label="Finish deleting Noah"]'),
+        null,
+      );
+    });
+    assert.deepEqual(deletePaths, [
+      "/api/learner-profiles/learner-noah",
+      "/api/learner-profiles/learner-noah",
+      "/api/learner-profiles/learner-noah",
+    ]);
+  });
+
+  it("does not retry a deletion from forged token metadata", async () => {
+    const sessionIdentity = "user-1|forged-delete";
+    const digest = await globalThis.crypto.subtle.digest(
+      "SHA-256",
+      new globalThis.TextEncoder().encode(sessionIdentity),
+    );
+    const scope = `parrot-learner-selection-${Array.from(
+      new Uint8Array(digest),
+      (byte) => byte.toString(16).padStart(2, "0"),
+    ).join("")}`;
+    const pendingKey = `${scope}:pending:real-token`;
+    const forged = JSON.stringify({
+      changeMarker: null,
+      operation: "delete-learner",
+      profileId: "learner-noah",
+      status: "uncertain",
+      token: "different-token",
+      version: 1,
+    });
+    window.localStorage.setItem(pendingKey, forged);
+    let deleteRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (init.method === "DELETE") {
+        deleteRequests += 1;
+        return json({ error: "not_found" }, 404);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Forged deletion recovery",
+        sessionIdentity,
+      }),
+    );
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    await click(button("Try again"));
+    await flush();
+    assert.equal(deleteRequests, 0);
+    assert.equal(window.localStorage.getItem(pendingKey), forged);
+    assert.ok(
+      output("Forged deletion recovery active learner").closest("[hidden]"),
+    );
+  });
+
+  it("deduplicates rapid Try again clicks for the same durable deletion token", async () => {
+    const heldRetry = deferred();
+    let deleteRequests = 0;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        if (deleteRequests === 1) {
+          throw new TypeError("The destructive response was lost.");
+        }
+        return heldRetry.promise;
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({ error: "roster_unavailable" }, 503);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        action: "delete",
+        label: "Deduplicate recovered Noah deletion",
+        profileId: "learner-noah",
+        sessionIdentity: "user-1|duplicate-recovery",
+      }),
+    );
+    await waitFor(() => button("Deduplicate recovered Noah deletion"));
+    await click(button("Deduplicate recovered Noah deletion"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    const retry = button("Try again");
+    act(() => {
+      retry.click();
+      retry.click();
+    });
+    await waitFor(() => assert.equal(deleteRequests, 2));
+    await act(async () => {
+      heldRetry.resolve(
+        json({
+          activeProfileId: "learner-mia",
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-01T08:00:00.000Z",
+              deletionPending: false,
+              id: "learner-mia",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+          ],
+        }),
+      );
+    });
+    await waitFor(() =>
+      assert.equal(
+        output("Deduplicate recovered Noah deletion active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      ),
+    );
+    assert.equal(deleteRequests, 2);
+    assert.equal(rosterReads, 1);
+  });
+
+  it("keeps recovery metadata uncertain and replays one accepted change after cleanup failure", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let deleteRequests = 0;
+    let failPendingCleanup = true;
+    let pendingKey = null;
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "removeItem") {
+          return (key) => {
+            if (failPendingCleanup && String(key).includes(":pending:")) {
+              throw new Error("Durable cleanup is unavailable.");
+            }
+            return target.removeItem(key);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        pendingKey = [...Array(storage.length).keys()]
+          .map((index) => storage.key(index))
+          .find((key) => key?.includes(":pending:"));
+        return deleteRequests === 1
+          ? json({ activeProfileId: "learner-mia", profiles: [miaSummary] })
+          : json({ error: "not_found" }, 404);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          action: "delete",
+          label: "Delete with failed marker cleanup",
+          profileId: "learner-noah",
+          sessionIdentity: "user-1|cleanup-failure",
+        }),
+      );
+      await waitFor(() => button("Delete with failed marker cleanup"));
+      await click(button("Delete with failed marker cleanup"));
+      await waitFor(() => text(/couldn't verify the current learner/i));
+      assert.ok(pendingKey);
+      const uncertain = JSON.parse(storage.getItem(pendingKey));
+      assert.equal(typeof uncertain.changeMarker, "string");
+      assert.equal(uncertain.status, "uncertain");
+      const stateKey = [...Array(storage.length).keys()]
+        .map((index) => storage.key(index))
+        .find((key) => key?.endsWith(":state"));
+      assert.ok(stateKey);
+      const firstChangedMarker = storage.getItem(stateKey);
+      assert.equal(firstChangedMarker, uncertain.changeMarker);
+      assert.equal(SharedBroadcastChannel.messagesPosted(), 3);
+
+      failPendingCleanup = false;
+      await click(button("Try again"));
+      await waitFor(() =>
+        assert.equal(
+          output("Delete with failed marker cleanup active learner").closest(
+            "[hidden]",
+          ),
+          null,
+        ),
+      );
+      assert.equal(storage.getItem(pendingKey), null);
+      assert.equal(storage.getItem(stateKey), firstChangedMarker);
+      assert.equal(
+        SharedBroadcastChannel.messagesPosted(),
+        6,
+        "Retry replays the exact changed signal for at-least-once peer delivery.",
+      );
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("publishes one durable change when recovery metadata persistence fails once", async () => {
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let deleteRequests = 0;
+    let failRecoveryMetadata = true;
+    const stateWrites = [];
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "setItem") {
+          return (key, value) => {
+            if (String(key).includes(":pending:")) {
+              let candidate = null;
+              try {
+                candidate = JSON.parse(String(value));
+              } catch {
+                // Literal legacy pending markers are unrelated to recovery.
+              }
+              if (
+                failRecoveryMetadata &&
+                (candidate?.changed === true ||
+                  typeof candidate?.changeMarker === "string")
+              ) {
+                failRecoveryMetadata = false;
+                throw new Error("Recovery metadata storage is unavailable.");
+              }
+            }
+            if (String(key).endsWith(":state")) {
+              stateWrites.push(String(value));
+            }
+            return target.setItem(key, value);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return deleteRequests === 1
+          ? json({ activeProfileId: "learner-mia", profiles: [miaSummary] })
+          : json({ error: "not_found" }, 404);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          action: "delete",
+          label: "Delete with failed recovery metadata",
+          profileId: "learner-noah",
+          sessionIdentity: "user-1|recovery-metadata-failure",
+        }),
+      );
+      await waitFor(() => button("Delete with failed recovery metadata"));
+      await click(button("Delete with failed recovery metadata"));
+      await waitFor(() => text(/couldn't verify the current learner/i));
+      await click(button("Try again"));
+      await waitFor(() =>
+        assert.equal(
+          output("Delete with failed recovery metadata active learner").closest(
+            "[hidden]",
+          ),
+          null,
+        ),
+      );
+      assert.equal(deleteRequests, 2);
+      assert.equal(stateWrites.length, 1);
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+    }
+  });
+
+  it("keeps a persisted change marker recoverable when its ownership read fails once", async () => {
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let deleteRequests = 0;
+    let failOwnershipRead = false;
+    let ownershipReadFailed = false;
+    let persistedMarker = null;
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "getItem") {
+          return (key) => {
+            if (
+              failOwnershipRead &&
+              String(key).includes(":pending:")
+            ) {
+              failOwnershipRead = false;
+              ownershipReadFailed = true;
+              throw new Error("Recovery ownership read is unavailable.");
+            }
+            return target.getItem(key);
+          };
+        }
+        if (property === "setItem") {
+          return (key, value) => {
+            target.setItem(key, value);
+            if (String(key).includes(":pending:")) {
+              try {
+                const candidate = JSON.parse(String(value));
+                if (
+                  !ownershipReadFailed &&
+                  typeof candidate?.changeMarker === "string"
+                ) {
+                  persistedMarker = candidate.changeMarker;
+                  failOwnershipRead = true;
+                }
+              } catch {
+                // Literal pending markers are unrelated to deletion recovery.
+              }
+            }
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return deleteRequests === 1
+          ? json({ activeProfileId: "learner-mia", profiles: [miaSummary] })
+          : json({ error: "not_found" }, 404);
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId: "learner-mia", profiles: [miaSummary] });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(LearnerSelectionSessionHarness, {
+          action: "delete",
+          label: "Delete before failed ownership read",
+          profileId: "learner-noah",
+          sessionIdentity: "user-1|recovery-ownership-read-failure",
+        }),
+      );
+      await waitFor(() => button("Delete before failed ownership read"));
+      await click(button("Delete before failed ownership read"));
+      await waitFor(() => text(/couldn't verify the current learner/i));
+      const pendingKey = Array.from(
+        { length: window.localStorage.length },
+        (_, index) => window.localStorage.key(index),
+      ).find((key) => key?.includes(":pending:"));
+      assert.ok(pendingKey);
+      const pending = JSON.parse(window.localStorage.getItem(pendingKey));
+      assert.equal(pending.status, "uncertain");
+      assert.equal(pending.changeMarker, persistedMarker);
+      await click(button("Try again"));
+      await waitFor(() =>
+        assert.equal(
+          output("Delete before failed ownership read active learner").closest(
+            "[hidden]",
+          ),
+          null,
+        ),
+      );
+      assert.equal(deleteRequests, 2);
+      assert.equal(window.localStorage.getItem(pendingKey), null);
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+    }
+  });
+
+  it("refreshes a same-document manager after state verification fails post-write", async () => {
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let failStateVerification = false;
+    let deleteRequests = 0;
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "getItem") {
+          return (key) => {
+            if (
+              failStateVerification &&
+              String(key).endsWith(":state")
+            ) {
+              failStateVerification = false;
+              throw new Error("State verification is unavailable.");
+            }
+            return target.getItem(key);
+          };
+        }
+        if (property === "setItem") {
+          return (key, value) => {
+            target.setItem(key, value);
+            if (String(key).endsWith(":state")) {
+              failStateVerification = true;
+            }
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    const miaSummary = {
+      age: 8,
+      createdAt: "2026-08-01T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-mia",
+      name: "Mia",
+      profileStatus: "completed",
+    };
+    const noahSummary = {
+      age: 10,
+      createdAt: "2026-08-02T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-noah",
+      name: "Noah",
+      profileStatus: "completed",
+    };
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: deleteRequests === 0 ? [miaSummary, noahSummary] : [miaSummary],
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return deleteRequests === 1
+          ? json({ activeProfileId: "learner-mia", profiles: [miaSummary] })
+          : json({ error: "not_found" }, 404);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          MemoryRouter,
+          null,
+          createElement(
+            Fragment,
+            null,
+            createElement(LearnerSelectionSessionHarness, {
+              action: "delete",
+              label: "Delete before failed state verification",
+              profileId: "learner-noah",
+              sessionIdentity: "user-1|post-write-verification",
+            }),
+            createElement(LearnerManagerSessionHarness, {
+              label: "Post-write verification peer manager",
+              sessionIdentity: "user-1|post-write-verification",
+            }),
+          ),
+        ),
+      );
+      const peer = document.querySelector(
+        'section[aria-label="Post-write verification peer manager"]',
+      );
+      assert.ok(peer);
+      await waitFor(() =>
+        assert.ok(peer.querySelector('button[aria-label="Delete Noah"]')),
+      );
+      await click(button("Delete before failed state verification"));
+      await waitFor(() => text(/couldn't verify the current learner/i));
+      const retry = [...document.querySelectorAll("button")].find(
+        (candidate) => candidate.textContent.trim() === "Try again",
+      );
+      assert.ok(retry);
+      await click(retry);
+      await waitFor(() => assert.equal(peer.closest("[hidden]"), null));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const peerRefreshed =
+        peer.querySelector('button[aria-label="Delete Noah"]') === null;
+      await cleanupMountedRoots();
+      assert.equal(deleteRequests, 2);
+      assert.equal(peerRefreshed, true);
+    } finally {
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+    }
+  });
+
+  it("fails closed for a matching-token changed claim without a durable marker", async () => {
+    const sessionIdentity = "user-1|forged-changed-delete";
+    const digest = await globalThis.crypto.subtle.digest(
+      "SHA-256",
+      new globalThis.TextEncoder().encode(sessionIdentity),
+    );
+    const scope = `parrot-learner-selection-${Array.from(
+      new Uint8Array(digest),
+      (byte) => byte.toString(16).padStart(2, "0"),
+    ).join("")}`;
+    const token = "claimed-changed-token";
+    const pendingKey = `${scope}:pending:${token}`;
+    window.localStorage.setItem(
+      pendingKey,
+      JSON.stringify({
+        changed: true,
+        operation: "delete-learner",
+        profileId: "learner-noah",
+        status: "uncertain",
+        token,
+        version: 1,
+      }),
+    );
+    let deleteRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-mia",
+          },
+        });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah" &&
+        init.method === "DELETE"
+      ) {
+        deleteRequests += 1;
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: [
+            {
+              age: 8,
+              createdAt: "2026-08-01T08:00:00.000Z",
+              deletionPending: false,
+              id: "learner-mia",
+              name: "Mia",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Forged changed deletion recovery",
+        sessionIdentity,
+      }),
+    );
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    await click(button("Try again"));
+    await waitFor(() => text(/couldn't verify the current learner/i));
+    assert.equal(deleteRequests, 0);
+    assert.equal(window.localStorage.getItem(pendingKey) !== null, true);
+    assert.notEqual(
+      output("Forged changed deletion recovery active learner").closest(
+        "[hidden]",
+      ),
+      null,
+    );
+  });
 
   it("keeps an initial sibling fail-closed until a persisted pending switch settles", async () => {
     const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
@@ -3482,6 +7396,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 8,
               createdAt: "2026-08-01T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-mia",
               name: "Mia",
               profileStatus: "completed",
@@ -3489,6 +7404,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 10,
               createdAt: "2026-08-02T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-noah",
               name: "Noah",
               profileStatus: "completed",
@@ -3704,6 +7620,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -3711,6 +7628,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -3787,6 +7705,274 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         "The source and same-session sibling reload; the other session does not.",
       );
     } finally {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
+  it("blocks a peer when valid Broadcast proof cannot be read before reloading the authoritative learner", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const originalWindowDispatchEvent = window.dispatchEvent;
+    const messages = [];
+    const SharedBroadcastChannel = installSharedBroadcastChannels({
+      beforeDelivery: (message) => messages.push(message),
+      deliver: false,
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let suppressSameDocumentSelectionSignals = false;
+    window.dispatchEvent = function dispatchEvent(event) {
+      if (
+        suppressSameDocumentSelectionSignals &&
+        event.type === "parrot-learner-selection-signal"
+      ) {
+        return true;
+      }
+      return originalWindowDispatchEvent.call(this, event);
+    };
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let proofReadsUnavailable = false;
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "getItem") {
+          return (key) => {
+            if (proofReadsUnavailable) {
+              throw new Error("Learner selection proof is unavailable.");
+            }
+            return target.getItem(key);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    let selectedProfileId = "learner-mary";
+    let profileWrites = 0;
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: selectedProfileId === "learner-bob" ? 10 : 8,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-bob" ? "Bob" : "Mary",
+      },
+    });
+    const profileState = () => ({
+      profile: {
+        ...learnerState().profile,
+        description:
+          selectedProfileId === "learner-bob"
+            ? "Bob likes space."
+            : "Mary likes dinosaurs.",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+      },
+      questions: [question()],
+    });
+    const rosterProfiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mary",
+        name: "Mary",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-bob",
+        name: "Bob",
+        profileStatus: "completed",
+      },
+    ];
+
+    function GuardianProfileBroadcastPeer() {
+      return createElement(
+        AccountActionProvider,
+        {
+          profileAction: null,
+          sessionIdentity: "user-1|proof-unavailable-session",
+          setProfileAction() {},
+        },
+        createElement(
+          LearnerProfileGate,
+          {
+            completedLearnerProfileFallback: createElement("p", null, "HOME"),
+            guardianRoute: true,
+            isConversationRoute: false,
+            isLearnerProfileRoute: false,
+            isProfileRoute: true,
+            learnerProfileFallback: createElement("p", null, "SETUP"),
+            onCloseProfileRoute() {},
+            onConversationCompleted() {},
+            onOpenLessons() {},
+            onOpenProfileRoute() {},
+            onRedoCompleted() {},
+            onRedoLearnerProfileRoute() {},
+            redoLearnerProfile: false,
+          },
+          createElement("p", null, "PROFILE HOME"),
+        ),
+      );
+    }
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(learnerState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(profileState());
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        profileWrites += 1;
+        return json(profileState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-bob/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-bob";
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: rosterProfiles,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(GuardianProfileBroadcastPeer),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Pending proof Broadcast observer",
+            sessionIdentity: "user-1|proof-unavailable-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Select Bob from Broadcast source",
+            profileId: "learner-bob",
+            sessionIdentity: "user-1|proof-unavailable-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        text(/Managing Mary/);
+        assert.equal(
+          output("Pending proof Broadcast observer active learner").textContent,
+          "learner-mary",
+        );
+        button("Select Bob from Broadcast source");
+        assert.equal(SharedBroadcastChannel.peerCount(), 3);
+      });
+      await input(document.querySelector("#profile-name"), "Stale Mary");
+      suppressSameDocumentSelectionSignals = true;
+      await click(button("Select Bob from Broadcast source"));
+      await waitFor(() =>
+        assert.equal(
+          output("Select Bob from Broadcast source active learner").textContent,
+          "learner-bob",
+        ),
+      );
+      suppressSameDocumentSelectionSignals = false;
+      assert.equal(
+        document.querySelector("#profile-name")?.value,
+        "Stale Mary",
+        "The Broadcast observer must remain stale until the captured peer signal arrives.",
+      );
+      assert.equal(
+        document.querySelector("#profile-name")?.closest("[hidden]"),
+        null,
+      );
+      assert.equal(
+        output("Pending proof Broadcast observer active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+      const pendingSignal = messages.find(
+        (message) => message?.type === "pending" && message.status === "pending",
+      );
+      const changedSignal = messages.find(
+        (message) => message?.type === "changed",
+      );
+      assert.ok(pendingSignal);
+      assert.ok(changedSignal);
+
+      proofReadsUnavailable = true;
+      act(() => {
+        SharedBroadcastChannel.deliverToPeer(1, {
+          status: "pending",
+          token: "",
+          type: "pending",
+        });
+        SharedBroadcastChannel.deliverToPeer(0, {
+          marker: "",
+          type: "changed",
+        });
+      });
+      assert.equal(
+        document.querySelector("#profile-name")?.closest("[hidden]"),
+        null,
+        "Malformed peer messages must not block the loaded learner.",
+      );
+      assert.equal(
+        output("Pending proof Broadcast observer active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+
+      act(() => {
+        SharedBroadcastChannel.deliverToPeer(0, changedSignal);
+        SharedBroadcastChannel.deliverToPeer(1, pendingSignal);
+      });
+      assert.notEqual(
+        document.querySelector("#profile-name")?.closest("[hidden]"),
+        null,
+        "A valid peer mutation must fail closed when its durable proof cannot be read.",
+      );
+      assert.notEqual(
+        output("Pending proof Broadcast observer active learner").closest(
+          "[hidden]",
+        ),
+        null,
+        "A valid pending signal must fail closed when its durable proof cannot be read.",
+      );
+      await click(button("Save changes"));
+      assert.equal(
+        profileWrites,
+        0,
+        "A blocked stale Mary form must not write against authoritative Bob.",
+      );
+
+      proofReadsUnavailable = false;
+      await act(async () => window.dispatchEvent(new window.Event("focus")));
+      await waitFor(() => text(/Managing Bob/));
+      assert.equal(
+        output("Pending proof Broadcast observer active learner").textContent,
+        "learner-bob",
+      );
+      assert.equal(profileWrites, 0);
+    } finally {
+      suppressSameDocumentSelectionSignals = false;
+      window.dispatchEvent = originalWindowDispatchEvent;
+      proofReadsUnavailable = false;
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
       globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
       window.BroadcastChannel = originalWindowBroadcastChannel;
     }
@@ -3951,6 +8137,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -3958,6 +8145,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -4266,6 +8454,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -4273,6 +8462,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -4338,6 +8528,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -4345,6 +8536,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -4403,8 +8595,17 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
       const initialProfileRequests = profileRequests;
       holdLoads = true;
+      const [scope] = SharedBroadcastChannel.names();
+      const marker = "durable-reload-marker";
+      window.localStorage.setItem(`${scope}:state`, marker);
       await act(async () => {
-        assert.equal(SharedBroadcastChannel.deliverToPeer(1, "changed"), true);
+        assert.equal(
+          SharedBroadcastChannel.deliverToPeer(1, {
+            marker,
+            type: "changed",
+          }),
+          true,
+        );
       });
       await waitFor(() => assert.equal(heldLoads.length, 1));
 
@@ -4688,91 +8889,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
-  it("keeps the Guardian learner manager mounted through an authoritative selection reload", async () => {
-    let selectedId = "learner-mia";
-    const rosterProfiles = [
-      {
-        age: 6,
-        createdAt: "2026-08-25T08:00:00.000Z",
-        id: "learner-mia",
-        name: "Mia",
-        profileStatus: "completed",
-      },
-      {
-        age: null,
-        createdAt: "2026-08-26T08:00:00.000Z",
-        id: "learner-noah",
-        name: "Noah",
-        profileStatus: "not_started",
-      },
-    ];
-    const stateForSelection = () => ({
-      ...completedLearnerProfileState(),
-      profile: {
-        ...completedLearnerProfileState().profile,
-        id: selectedId,
-        name: selectedId === "learner-noah" ? "Noah" : "Mia",
-      },
-    });
-    const api = {
-      async loadGuardianAccess() {
-        return {
-          expiresAt: "2099-01-01T00:00:00.000Z",
-          mode: "guardian",
-        };
-      },
-      async lockGuardianAccess() {
-        return { mode: "learner" };
-      },
-      async unlockGuardianAccess() {
-        return { mode: "guardian" };
-      },
-    };
-    globalThis.fetch = async (path, init = {}) => {
-      if (path === "/api/learner-profile" && init.method === "GET") {
-        return json(stateForSelection());
-      }
-      if (path === "/api/learner-profiles" && init.method === "GET") {
-        return json({ activeProfileId: selectedId, profiles: rosterProfiles });
-      }
-      if (
-        path === "/api/learner-profiles/learner-noah/active" &&
-        init.method === "PUT"
-      ) {
-        selectedId = "learner-noah";
-        return json({ activeProfileId: selectedId, profiles: rosterProfiles });
-      }
-      throw new Error(`Unexpected request: ${init.method} ${path}`);
-    };
-
-    await mountStrict(
-      authenticatedApplicationInMemory({
-        api,
-        initialEntry: "/guardian/learners",
-      }),
-    );
-
-    const preferredName = await waitFor(() => {
-      const match = document.querySelector("#preferred-name");
-      assert.ok(match);
-      button("Use Noah in learner mode");
-      return match;
-    });
-    await input(preferredName, "Ava");
-    await click(button("Use Noah in learner mode"));
-
-    await waitFor(() => {
-      text(/Now managing Noah/);
-      assert.equal(preferredName.value, "Ava");
-      const context = [...document.querySelectorAll("h2")].find(
-        (heading) => heading.textContent === "Managing Noah",
-      );
-      assert.ok(context);
-      assert.equal(document.activeElement, context);
-    });
-    assert.equal(currentRoute().path, "/guardian/learners");
-  });
-
   it("opens an explicit Guardian learner details route without an active learner selection", async () => {
     const requests = [];
     globalThis.fetch = async (path, init = {}) => {
@@ -4845,6 +8961,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 6,
               createdAt: "2026-08-25T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-1",
               name: "Mia",
               profileStatus: "completed",
@@ -4852,6 +8969,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 10,
               createdAt: "2026-08-26T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-noah",
               name: "Noah",
               profileStatus: "completed",
@@ -4986,6 +9104,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             {
               age: 8,
               createdAt: "2026-08-26T08:00:00.000Z",
+              deletionPending: false,
               id: "learner-1",
               name: "Mia",
               profileStatus: "completed",
@@ -5028,184 +9147,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(profileEditorLoads, 0);
   });
 
-  it("finishes the authoritative learner reload after leaving the Guardian manager", async () => {
-    let selectedId = "learner-mia";
-    let selectionRequested = false;
-    const heldSelection = deferred();
-    const loadedProfileIds = [];
-    const rosterProfiles = [
-      {
-        age: 6,
-        createdAt: "2026-08-25T08:00:00.000Z",
-        id: "learner-mia",
-        name: "Mia",
-        profileStatus: "completed",
-      },
-      {
-        age: 7,
-        createdAt: "2026-08-26T08:00:00.000Z",
-        id: "learner-noah",
-        name: "Noah",
-        profileStatus: "completed",
-      },
-    ];
-    const profileState = () => ({
-      ...completedLearnerProfileState(),
-      profile: {
-        ...completedLearnerProfileState().profile,
-        id: selectedId,
-        name: selectedId === "learner-noah" ? "Noah" : "Mia",
-      },
-    });
-    globalThis.fetch = async (path, init = {}) => {
-      if (path === "/api/learner-profile" && init.method === "GET") {
-        loadedProfileIds.push(selectedId);
-        return json(profileState());
-      }
-      if (path === "/api/learner-profiles" && init.method === "GET") {
-        return json({ activeProfileId: selectedId, profiles: rosterProfiles });
-      }
-      if (
-        path === "/api/learner-profiles/learner-noah/active" &&
-        init.method === "PUT"
-      ) {
-        selectionRequested = true;
-        return heldSelection.promise;
-      }
-      throw new Error(`Unexpected request: ${init.method} ${path}`);
-    };
-
-    await mountStrict(
-      authenticatedApplicationInMemory({
-        api: {
-          async loadGuardianAccess() {
-            return {
-              expiresAt: "2099-01-01T00:00:00.000Z",
-              mode: "guardian",
-            };
-          },
-          async lockGuardianAccess() {
-            return { mode: "learner" };
-          },
-          async unlockGuardianAccess() {
-            return { mode: "guardian" };
-          },
-        },
-        initialEntry: "/guardian/learners",
-      }),
-    );
-
-    await waitFor(() => button("Use Noah in learner mode"));
-    await click(button("Use Noah in learner mode"));
-    await waitFor(() => assert.equal(selectionRequested, true));
-    await click(link("Back to guardian dashboard"));
-    await waitFor(() => {
-      assert.equal(currentRoute().path, "/guardian");
-      text(/Managing Mia/);
-    });
-    await click(link("Manage learners"));
-    await waitFor(() => {
-      assert.equal(currentRoute().path, "/guardian/learners");
-      text(/Managing Mia/);
-      button("Use Noah in learner mode");
-    });
-
-    selectedId = "learner-noah";
-    heldSelection.resolve(
-      json({ activeProfileId: "learner-noah", profiles: rosterProfiles }),
-    );
-    await waitFor(() => assert.equal(loadedProfileIds.at(-1), "learner-noah"));
-    await waitFor(() => text(/Managing Noah/));
-    assert.equal(
-      [...document.querySelectorAll("button")].some(
-        (candidate) =>
-          candidate.getAttribute("aria-label") ===
-          "Use Noah in learner mode",
-      ),
-      false,
-    );
-  });
-
-  it("reconciles a learner switch whose committed response is malformed", async () => {
-    let selectedId = "learner-mia";
-    const loadedProfileIds = [];
-    const rosterProfiles = [
-      {
-        age: 6,
-        createdAt: "2026-08-25T08:00:00.000Z",
-        id: "learner-mia",
-        name: "Mia",
-        profileStatus: "completed",
-      },
-      {
-        age: 7,
-        createdAt: "2026-08-26T08:00:00.000Z",
-        id: "learner-noah",
-        name: "Noah",
-        profileStatus: "completed",
-      },
-    ];
-    globalThis.fetch = async (path, init = {}) => {
-      if (path === "/api/learner-profile" && init.method === "GET") {
-        loadedProfileIds.push(selectedId);
-        return json({
-          ...completedLearnerProfileState(),
-          profile: {
-            ...completedLearnerProfileState().profile,
-            id: selectedId,
-            name: selectedId === "learner-noah" ? "Noah" : "Mia",
-          },
-        });
-      }
-      if (path === "/api/learner-profiles" && init.method === "GET") {
-        return json({ activeProfileId: selectedId, profiles: rosterProfiles });
-      }
-      if (
-        path === "/api/learner-profiles/learner-noah/active" &&
-        init.method === "PUT"
-      ) {
-        selectedId = "learner-noah";
-        return json({ activeProfileId: selectedId, profiles: null });
-      }
-      throw new Error(`Unexpected request: ${init.method} ${path}`);
-    };
-
-    await mountStrict(
-      authenticatedApplicationInMemory({
-        api: {
-          async loadGuardianAccess() {
-            return {
-              expiresAt: "2099-01-01T00:00:00.000Z",
-              mode: "guardian",
-            };
-          },
-          async lockGuardianAccess() {
-            return { mode: "learner" };
-          },
-          async unlockGuardianAccess() {
-            return { mode: "guardian" };
-          },
-        },
-        initialEntry: "/guardian/learners",
-      }),
-    );
-
-    await waitFor(() => button("Use Noah in learner mode"));
-    await click(button("Use Noah in learner mode"));
-    await waitFor(() => text(/Learner profiles could not be loaded/i));
-    await waitFor(() => {
-      assert.equal(loadedProfileIds.at(-1), "learner-noah");
-      text(/Managing Noah/);
-    });
-    assert.equal(currentRoute().path, "/guardian/learners");
-  });
-
   it("reconciles a lost managed-creation response without changing learner mode", async () => {
     let selectedId = "learner-mia";
     let rosterProfiles = [
       {
         age: 6,
         createdAt: "2026-08-25T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -5237,6 +9185,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           {
             age: null,
             createdAt: "2026-08-27T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-ava",
             name: "Ava",
             profileStatus: "not_started",
@@ -5275,7 +9224,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/Ava/));
     assert.equal(loadedProfileIds.length, initialProfileLoads);
     assert.equal(selectedId, "learner-mia");
-    text(/Managing Mia/);
+    button("Edit Mia's profile");
+    button("Edit Ava's profile");
     assert.equal(currentRoute().path, "/guardian/learners");
   });
 
@@ -5285,6 +9235,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       {
         age: 6,
         createdAt: "2026-08-25T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -5304,6 +9255,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       if (path === "/api/learner-profiles" && init.method === "POST") {
         return json({
           activeProfileId: "learner-mia",
+          createdProfileId: "learner-mia",
           profiles: rosterProfiles,
         });
       }
@@ -5337,8 +9289,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/The newly added learner could not be loaded/i));
     assert.equal(profileLoads, initialProfileLoads);
     assert.equal(currentRoute().path, "/guardian/learners");
-    text(/Managing Mia/);
-    noText(/Managing Ava/);
+    button("Edit Mia's profile");
+    assert.equal(
+      document.querySelector('button[aria-label="Edit Ava\'s profile"]'),
+      null,
+    );
   });
 
   it("replaces fresh same-learner data without remounting learner-mode consumers", async () => {
@@ -9654,5 +13609,583 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       /Tap to talk|Checking your words|Great job!|Speech check failed|Audio unavailable/,
     );
     assert.equal(document.activeElement, button("Let's go"));
+  });
+
+  it("mirrors Guardian-protected learner deletion and pending retry in the browser mock", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-delete",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-delete-contract",
+    );
+    const learners = window.__parrotE2eLearners;
+    assert.equal(typeof learners?.failNextLearnerDelete, "function");
+
+    let response = await window.fetch("/api/learner-profiles");
+    let currentRoster = await response.json();
+    assert.deepEqual(
+      currentRoster.profiles.map(({ deletionPending, id }) => ({
+        deletionPending,
+        id,
+      })),
+      [
+        { deletionPending: false, id: "learner-mia" },
+        { deletionPending: false, id: "learner-noah" },
+      ],
+    );
+
+    await window.fetch("/api/guardian-access", { method: "DELETE" });
+    response = await window.fetch("/api/learner-profiles/learner-noah", {
+      method: "DELETE",
+    });
+    assert.equal(response.status, 403);
+    await window.fetch("/api/guardian-access", {
+      body: JSON.stringify({ password: "e2e-guardian-password" }),
+      method: "POST",
+    });
+
+    learners.failNextLearnerDelete();
+    response = await window.fetch("/api/learner-profiles/learner-noah", {
+      method: "DELETE",
+    });
+    assert.equal(response.status, 503);
+    currentRoster = await (
+      await window.fetch("/api/learner-profiles")
+    ).json();
+    assert.equal(
+      currentRoster.profiles.find(({ id }) => id === "learner-noah")
+        ?.deletionPending,
+      true,
+    );
+    response = await window.fetch(
+      "/api/learner-profiles/learner-noah/active",
+      { method: "PUT" },
+    );
+    assert.equal(response.status, 404);
+
+    response = await window.fetch("/api/learner-profiles/learner-noah", {
+      method: "DELETE",
+    });
+    assert.equal(response.status, 200);
+    currentRoster = await response.json();
+    assert.equal(currentRoster.activeProfileId, "learner-mia");
+    assert.deepEqual(
+      currentRoster.profiles.map(({ id }) => id),
+      ["learner-mia"],
+    );
+
+    response = await window.fetch("/api/learner-profiles", {
+      body: JSON.stringify({ activate: false, name: "Bob" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    assert.equal(response.status, 200);
+    const addedRoster = await response.json();
+    const bob = addedRoster.profiles.find(({ name }) => name === "Bob");
+    assert.ok(bob);
+
+    response = await window.fetch("/api/learner-profiles/learner-mia", {
+      method: "DELETE",
+    });
+    currentRoster = await response.json();
+    assert.equal(currentRoster.activeProfileId, null);
+    assert.deepEqual(
+      currentRoster.profiles.map(({ id }) => id),
+      [bob.id],
+    );
+
+    response = await window.fetch(
+      `/api/learner-profiles/${encodeURIComponent(bob.id)}`,
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), { error: "last_learner" });
+    assert.equal(learners.snapshot().activeProfileId, null);
+  });
+
+  it("shares the browser mock learner roster while keeping two session selections independent", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-account-session-split",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-account-session-split-contract",
+    );
+    const learners = window.__parrotE2eLearners;
+    assert.equal(typeof learners?.openSession, "function");
+    const miaSession = learners.openSession("task5-mia-session");
+    const noahSession = learners.openSession("task5-noah-session");
+
+    let response = await noahSession.fetch(
+      "/api/learner-profiles/learner-noah/active",
+      { method: "PUT" },
+    );
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).activeProfileId, "learner-noah");
+    assert.equal(
+      (await (await miaSession.fetch("/api/learner-profiles")).json())
+        .activeProfileId,
+      "learner-mia",
+    );
+
+    miaSession.failNextLearnerDelete();
+    response = await miaSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 503);
+    const pendingForMia = await (
+      await miaSession.fetch("/api/learner-profiles")
+    ).json();
+    const pendingForNoah = await (
+      await noahSession.fetch("/api/learner-profiles")
+    ).json();
+    assert.equal(pendingForMia.activeProfileId, "learner-mia");
+    assert.equal(pendingForNoah.activeProfileId, null);
+    assert.equal(
+      pendingForNoah.profiles.find(({ id }) => id === "learner-noah")
+        ?.deletionPending,
+      true,
+    );
+    response = await noahSession.fetch(
+      "/api/learner-profiles/learner-noah/active",
+      { method: "PUT" },
+    );
+    assert.equal(response.status, 404);
+
+    response = await miaSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      (await response.json()).profiles.map(({ id }) => id),
+      ["learner-mia"],
+    );
+    assert.equal(noahSession.snapshot().activeProfileId, null);
+    assert.equal(miaSession.snapshot().activeProfileId, "learner-mia");
+
+    response = await noahSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 404);
+    response = await miaSession.fetch(
+      "/api/learner-profiles/learner-mia",
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), { error: "last_learner" });
+  });
+
+  it("keeps Guardian access isolated between browser-mock sessions", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=learner&parrotE2eSession=task5-guardian-page&parrotE2eAccount=task5-guardian-session-account",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-guardian-session-contract",
+    );
+    const learners = window.__parrotE2eLearners;
+    const sessionA = learners.openSession("task5-guardian-a");
+    const sessionB = learners.openSession("task5-guardian-b");
+
+    assert.equal(
+      (
+        await window.fetch("/api/guardian-access", {
+          method: "DELETE",
+        })
+      ).status,
+      200,
+    );
+    const unlockA = await sessionA.fetch("/api/guardian-access", {
+      body: JSON.stringify({ password: "e2e-guardian-password" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    const afterUnlock = {
+      a: (await sessionA.fetch("/api/learner-profiles")).status,
+      b: (await sessionB.fetch("/api/learner-profiles")).status,
+      page: (await window.fetch("/api/learner-profiles")).status,
+    };
+    const lockB = await sessionB.fetch("/api/guardian-access", {
+      method: "DELETE",
+    });
+    const afterBLock = {
+      a: (await sessionA.fetch("/api/learner-profiles")).status,
+      b: (await sessionB.fetch("/api/learner-profiles")).status,
+      page: (await window.fetch("/api/learner-profiles")).status,
+    };
+
+    assert.deepEqual(
+      {
+        afterBLock,
+        afterUnlock,
+        lockB: lockB.status,
+        unlockA: unlockA.status,
+      },
+      {
+        afterBLock: { a: 200, b: 403, page: 403 },
+        afterUnlock: { a: 200, b: 403, page: 403 },
+        lockB: 200,
+        unlockA: 200,
+      },
+    );
+  });
+
+  it("does not let a delayed targeted mock write resurrect a deleted learner", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-stale-target&parrotE2eAccount=task5-stale-target-account",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-stale-target-contract",
+    );
+    const learners = window.__parrotE2eLearners;
+    const staleSession = learners.openSession("task5-stale-writer");
+    const deletingSession = learners.openSession("task5-concurrent-deleter");
+    const bodyStarted = deferred();
+    const releaseBody = deferred();
+    const request = new Request(
+      new URL(
+        "/api/profile?learnerProfileId=learner-noah",
+        window.location.href,
+      ),
+      {
+        body: JSON.stringify({ answers: { name: "Noah changed" } }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      },
+    );
+    Object.defineProperty(request, "clone", {
+      configurable: true,
+      value: () => ({
+        json: async () => {
+          bodyStarted.resolve();
+          return releaseBody.promise;
+        },
+      }),
+    });
+
+    const staleWrite = staleSession.fetch(request);
+    await bodyStarted.promise;
+    let response = await deletingSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      (await response.json()).profiles.map(({ id }) => id),
+      ["learner-mia"],
+    );
+
+    releaseBody.resolve({ answers: { name: "Noah changed" } });
+    response = await staleWrite;
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
+    const finalRoster = await (
+      await deletingSession.fetch("/api/learner-profiles")
+    ).json();
+    assert.deepEqual(
+      finalRoster.profiles.map(({ id, name }) => ({ id, name })),
+      [{ id: "learner-mia", name: "Mia" }],
+    );
+    assert.equal(staleSession.snapshot("learner-noah").profiles.length, 1);
+  });
+
+  function deleteStoredMockLearnerDuringHandleRefresh(profileId) {
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    const accountKey = Array.from(
+      { length: storage.length },
+      (_, index) => storage.key(index),
+    ).find((key) => {
+      if (!key?.startsWith("parrot-e2e-learners:account:")) return false;
+      try {
+        return Array.isArray(JSON.parse(storage.getItem(key))?.learners);
+      } catch {
+        return false;
+      }
+    });
+    assert.ok(accountKey);
+    let accountReadsBeforeDeletion = 2;
+    const interceptingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "getItem") {
+          return (key) => {
+            const value = target.getItem(key);
+            if (key === accountKey && value !== null) {
+              accountReadsBeforeDeletion -= 1;
+            }
+            if (accountReadsBeforeDeletion === 0 && value !== null) {
+              accountReadsBeforeDeletion = -1;
+              const account = JSON.parse(value);
+              account.learners = account.learners.filter(
+                ([id]) => id !== profileId,
+              );
+              target.setItem(key, JSON.stringify(account));
+            }
+            return value;
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: interceptingStorage,
+    });
+    globalThis.localStorage = interceptingStorage;
+    return () => {
+      globalThis.localStorage = storage;
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+    };
+  }
+
+  it("does not let a delayed mock art mutation resurrect a deleted learner", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-stale-art&parrotE2eAccount=task5-stale-art-account",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-stale-art-contract",
+    );
+    const session = window.__parrotE2eLearners.openSession(
+      "task5-stale-art-writer",
+    );
+    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
+      "learner-noah",
+    );
+
+    try {
+      const response = await session.fetch(
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-noah",
+        { method: "POST" },
+      );
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      const roster = await (
+        await session.fetch("/api/learner-profiles")
+      ).json();
+      assert.deepEqual(
+        roster.profiles.map(({ id }) => id),
+        ["learner-mia"],
+      );
+    } finally {
+      restoreStorage();
+    }
+  });
+
+  it("does not let a delayed mock consent read resurrect a deleted learner", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-stale-consent&parrotE2eAccount=task5-stale-consent-account",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-stale-consent-contract",
+    );
+    const session = window.__parrotE2eLearners.openSession(
+      "task5-stale-consent-reader",
+    );
+    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
+      "learner-noah",
+    );
+
+    try {
+      const response = await session.fetch(
+        "/api/lesson-recordings/consent?learnerProfileId=learner-noah",
+      );
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      const roster = await (
+        await session.fetch("/api/learner-profiles")
+      ).json();
+      assert.deepEqual(
+        roster.profiles.map(({ id }) => id),
+        ["learner-mia"],
+      );
+    } finally {
+      restoreStorage();
+    }
+  });
+
+  it("does not let a stale lesson-upload mismatch resurrect a deleted learner", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-stale-upload-mismatch&parrotE2eAccount=task5-stale-upload-mismatch-account",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-stale-upload-mismatch-contract",
+    );
+    const session = window.__parrotE2eLearners.openSession(
+      "task5-stale-upload-mismatch-writer",
+    );
+    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
+      "learner-noah",
+    );
+
+    try {
+      const response = await session.fetch(
+        "/api/lesson-recordings/parrot/lesson-one/scenes/0/steps/0?learnerProfileId=learner-noah",
+        {
+          body: new Blob(["stale mismatch audio"], { type: "audio/webm" }),
+          headers: {
+            "Content-Type": "audio/webm",
+            "X-Parrot-Expected-Learner-Profile": "learner-mia",
+          },
+          method: "PUT",
+        },
+      );
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      const roster = await (
+        await session.fetch("/api/learner-profiles")
+      ).json();
+      assert.deepEqual(
+        roster.profiles.map(({ id }) => id),
+        ["learner-mia"],
+      );
+    } finally {
+      restoreStorage();
+    }
+  });
+
+  it("does not let held mock upload settlement resurrect a deleted learner", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-held-upload&parrotE2eAccount=task5-held-upload-account&parrotE2eLesson=upload-held",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-held-upload-contract",
+    );
+    const learners = window.__parrotE2eLearners;
+    let response = await window.fetch(
+      "/api/profile/lesson-recording-consent?learnerProfileId=learner-noah",
+      {
+        body: JSON.stringify({ enabled: true }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      },
+    );
+    assert.equal(response.status, 200);
+    const heldUpload = window.fetch(
+      "/api/lesson-recordings/parrot/lesson-one/scenes/0/steps/0?learnerProfileId=learner-noah",
+      {
+        body: new Blob(["held audio"], { type: "audio/webm" }),
+        headers: {
+          "Content-Type": "audio/webm",
+          "X-Parrot-Expected-Learner-Profile": "learner-noah",
+        },
+        method: "PUT",
+      },
+    );
+    await waitFor(() =>
+      assert.equal(
+        learners.snapshot("learner-noah").lessonRecording.pendingUploads,
+        1,
+      ),
+    );
+    const deletingSession = learners.openSession(
+      "task5-held-upload-deleter",
+    );
+    response = await deletingSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 200);
+    assert.equal(window.__parrotE2eLessonMedia.resolveNextUpload(), true);
+    response = await heldUpload;
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
+    const roster = await (
+      await deletingSession.fetch("/api/learner-profiles")
+    ).json();
+    assert.deepEqual(
+      roster.profiles.map(({ id }) => id),
+      ["learner-mia"],
+    );
+
+    response = await window.fetch("/api/learner-profiles", {
+      body: JSON.stringify({ activate: false, name: "Bob" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    const bob = (await response.json()).profiles.find(
+      ({ name }) => name === "Bob",
+    );
+    assert.ok(bob);
+    response = await window.fetch(
+      `/api/profile/lesson-recording-consent?learnerProfileId=${encodeURIComponent(bob.id)}`,
+      {
+        body: JSON.stringify({ enabled: true }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      },
+    );
+    assert.equal(response.status, 200);
+    const rejectedUpload = window.fetch(
+      `/api/lesson-recordings/parrot/lesson-two/scenes/0/steps/0?learnerProfileId=${encodeURIComponent(bob.id)}`,
+      {
+        body: new Blob(["held audio"], { type: "audio/webm" }),
+        headers: {
+          "Content-Type": "audio/webm",
+          "X-Parrot-Expected-Learner-Profile": bob.id,
+        },
+        method: "PUT",
+      },
+    );
+    await waitFor(() =>
+      assert.equal(
+        learners.snapshot(bob.id).lessonRecording.pendingUploads,
+        1,
+      ),
+    );
+    response = await deletingSession.fetch(
+      `/api/learner-profiles/${encodeURIComponent(bob.id)}`,
+      { method: "DELETE" },
+    );
+    assert.equal(response.status, 200);
+    assert.equal(window.__parrotE2eLessonMedia.rejectNextUpload(), true);
+    response = await rejectedUpload;
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
+    const finalRoster = await (
+      await deletingSession.fetch("/api/learner-profiles")
+    ).json();
+    assert.deepEqual(
+      finalRoster.profiles.map(({ id }) => id),
+      ["learner-mia"],
+    );
   });
 });

@@ -58,9 +58,15 @@ describe("learnerProfile browser API", () => {
       "function",
       "Expected the Guardian roster selector",
     );
+    assert.equal(
+      typeof learnerProfileApi.deleteLearnerProfile,
+      "function",
+      "Expected the Guardian learner deletion API",
+    );
 
     const request = jsonFetch({
       activeProfileId: "learner/a",
+      createdProfileId: "learner/a",
       profiles: [
         {
           age: 6,
@@ -68,6 +74,7 @@ describe("learnerProfile browser API", () => {
           id: "learner/a",
           name: "Mia",
           profileStatus: "completed",
+          deletionPending: false,
         },
       ],
     });
@@ -77,6 +84,9 @@ describe("learnerProfile browser API", () => {
       fetch: request.fetch,
     });
     await learnerProfileApi.selectLearnerProfile("learner/a", {
+      fetch: request.fetch,
+    });
+    await learnerProfileApi.deleteLearnerProfile("learner/a", {
       fetch: request.fetch,
     });
 
@@ -100,15 +110,22 @@ describe("learnerProfile browser API", () => {
       method: "PUT",
       signal: undefined,
     });
+    assert.equal(request.calls[3][0], "/api/learner-profiles/learner%2Fa");
+    assert.deepEqual(request.calls[3][1], {
+      method: "DELETE",
+      signal: undefined,
+    });
   });
 
   it("requests managed learner creation without changing the existing default activation contract", async () => {
     const payload = {
       activeProfileId: "learner-mia",
+      createdProfileId: "learner-mia",
       profiles: [
         {
           age: 8,
           createdAt: "2026-08-26T08:00:00.000Z",
+          deletionPending: false,
           id: "learner-mia",
           name: "Mia",
           profileStatus: "completed",
@@ -129,10 +146,43 @@ describe("learnerProfile browser API", () => {
     assert.equal(request.calls[1][1].body, '{"name":"Ava"}');
   });
 
+  it("rejects learner creation responses without an authoritative roster member ID", async () => {
+    const profile = {
+      age: 8,
+      createdAt: "2026-08-26T08:00:00.000Z",
+      deletionPending: false,
+      id: "learner-sam",
+      name: "Sam",
+      profileStatus: "completed",
+    };
+    const roster = {
+      activeProfileId: profile.id,
+      profiles: [profile],
+    };
+
+    for (const payload of [
+      roster,
+      { ...roster, createdProfileId: "" },
+      { ...roster, createdProfileId: "learner-mary" },
+    ]) {
+      const request = jsonFetch(payload);
+      await assert.rejects(
+        learnerProfileApi.createLearnerProfile("Mary", {
+          activate: false,
+          fetch: request.fetch,
+        }),
+        (error) =>
+          error instanceof LearnerProfileApiError &&
+          error.code === "invalid_roster",
+      );
+    }
+  });
+
   it("rejects malformed Guardian rosters from every roster endpoint", async () => {
     const validProfile = {
       age: 6,
       createdAt: "2026-08-26T08:00:00.000Z",
+      deletionPending: false,
       id: "learner-mia",
       name: "Mia",
       profileStatus: "completed",
@@ -151,6 +201,14 @@ describe("learnerProfile browser API", () => {
         activeProfileId: "learner-mia",
         profiles: [{ ...validProfile, name: " \n " }],
       },
+      {
+        activeProfileId: "learner-mia",
+        profiles: [{ ...validProfile, deletionPending: undefined }],
+      },
+      {
+        activeProfileId: "learner-mia",
+        profiles: [{ ...validProfile, deletionPending: "false" }],
+      },
       { activeProfileId: "learner-noah", profiles: [validProfile] },
     ];
     const invocations = [
@@ -158,6 +216,8 @@ describe("learnerProfile browser API", () => {
       (fetch) => learnerProfileApi.createLearnerProfile("Ava", { fetch }),
       (fetch) =>
         learnerProfileApi.selectLearnerProfile("learner-mia", { fetch }),
+      (fetch) =>
+        learnerProfileApi.deleteLearnerProfile("learner-mia", { fetch }),
     ];
 
     for (const invoke of invocations) {

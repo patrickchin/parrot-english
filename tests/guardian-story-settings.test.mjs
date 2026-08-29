@@ -77,6 +77,7 @@ function learnerRoster() {
       {
         age: 6,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -84,6 +85,7 @@ function learnerRoster() {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -541,6 +543,7 @@ test("loads and saves Noah's story settings and art through explicit target requ
           {
             age: 6,
             createdAt: "2026-08-01T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-mia",
             name: "Mia",
             profileStatus: "completed",
@@ -548,6 +551,7 @@ test("loads and saves Noah's story settings and art through explicit target requ
           {
             age: 10,
             createdAt: "2026-08-02T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-noah",
             name: "Noah",
             profileStatus: "completed",

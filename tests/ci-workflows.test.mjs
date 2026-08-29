@@ -83,6 +83,12 @@ function createCompatibilityHistory(context, { includeEnableMigration = true } =
     "migrations/0014_personalized_art_deletion_closure.sql",
     "-- durable candidate closure migration\n",
   );
+  const deletionClosureSha = commitAll(root, "deletion closure");
+  writeRepoFile(
+    root,
+    "migrations/0015_learner_profile_deletion.sql",
+    "-- durable learner-deletion state migration\n",
+  );
   const compatibilitySha = commitAll(root, "compatibility");
 
   let headSha = compatibilitySha;
@@ -111,6 +117,7 @@ function createCompatibilityHistory(context, { includeEnableMigration = true } =
   return {
     root,
     compatibilitySha,
+    deletionClosureSha,
     expansionSha,
     foreignSha,
     headSha,
@@ -255,6 +262,13 @@ test("compatibility guard enforces the rollback-floor invariants once the enable
       env: { [variableName]: repository.headSha },
       expectedStatus: 1,
       expectedStderr: /must not already include migrations\/0013_multi_learner_enable\.sql/,
+    },
+    {
+      name: "ancestor without learner-deletion state",
+      env: { [variableName]: repository.deletionClosureSha },
+      expectedStatus: 1,
+      expectedStderr:
+        /must include migrations\/0015_learner_profile_deletion\.sql/,
     },
     {
       name: "recorded compatibility ancestor",

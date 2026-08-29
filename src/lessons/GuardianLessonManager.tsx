@@ -1,7 +1,6 @@
 import { ArrowLeft, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
-  getGuardianLearnersPath,
   getMyLessonCreatePath,
 } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
@@ -64,25 +63,13 @@ export function GuardianLessonManagerView({
           </h1>
           <GuardianLearnerTarget state={target} />
           {targetReady ? (
-            <>
-              <ActionLink
-                aria-label="Create custom lesson"
-                className="gap-2"
-                to={getMyLessonCreatePath(learnerProfileId)}
-              >
-                <Plus aria-hidden="true" /> Create custom lesson
-              </ActionLink>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-slate-600">
-                <span>Change who uses learner mode in Manage learners.</span>
-                <ActionLink
-                  size="compact"
-                  to={getGuardianLearnersPath()}
-                  variant="surface"
-                >
-                  Manage learners
-                </ActionLink>
-              </div>
-            </>
+            <ActionLink
+              aria-label="Create custom lesson"
+              className="gap-2"
+              to={getMyLessonCreatePath(learnerProfileId)}
+            >
+              <Plus aria-hidden="true" /> Create custom lesson
+            </ActionLink>
           ) : null}
         </header>
 

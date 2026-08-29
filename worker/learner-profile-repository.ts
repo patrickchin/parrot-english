@@ -133,21 +133,105 @@ export function createLearnerProfileRepository(
     const skippedAt = now();
     if (isResolvedLearnerIdentity(identity)) {
       const profile = await loadProfile(identity);
-      await database
-        .insert(learnerSessionBypass)
-        .values({
-          learnerProfileId: identity.learnerProfileId,
-          sessionId: identity.sessionId,
-          skippedAt,
-        })
-        .onConflictDoUpdate({
-          target: [
-            learnerSessionBypass.sessionId,
-            learnerSessionBypass.learnerProfileId,
-          ],
-          set: { skippedAt },
-        });
-      if (!profile.legacyStorageOwner) return;
+      const skippedAtMs = skippedAt.getTime();
+      const statements = [
+        database.$client.prepare(
+          `INSERT INTO onboarding_learner_session_bypass
+            (session_id, learner_profile_id, skipped_at)
+           SELECT ?, ?, ?
+           WHERE NOT EXISTS (
+             SELECT 1 FROM learner_profile_deletion_tombstone
+             WHERE learner_profile_id = ?
+           )
+           ON CONFLICT(session_id, learner_profile_id) DO UPDATE SET
+             skipped_at = excluded.skipped_at
+           WHERE NOT EXISTS (
+             SELECT 1 FROM learner_profile_deletion_tombstone
+             WHERE learner_profile_id = ?
+           )`,
+        ).bind(
+          identity.sessionId,
+          identity.learnerProfileId,
+          skippedAtMs,
+          identity.learnerProfileId,
+          identity.learnerProfileId,
+        ),
+      ];
+      if (profile.legacyStorageOwner) {
+        statements.push(
+          database.$client.prepare(
+            `INSERT INTO onboarding_session_bypass
+              (session_id, auth_user_id, skipped_at)
+             SELECT ?, ?, ?
+             WHERE EXISTS (
+               SELECT 1 FROM learner_profile
+               WHERE id = ? AND auth_user_id = ? AND legacy_storage_owner = 1
+             )
+               AND NOT EXISTS (
+                 SELECT 1 FROM learner_profile_deletion_tombstone
+                 WHERE learner_profile_id = ?
+               )
+             ON CONFLICT(session_id) DO UPDATE SET
+               auth_user_id = excluded.auth_user_id,
+               skipped_at = excluded.skipped_at
+             WHERE EXISTS (
+               SELECT 1 FROM learner_profile
+               WHERE id = ? AND auth_user_id = ? AND legacy_storage_owner = 1
+             )
+               AND NOT EXISTS (
+                 SELECT 1 FROM learner_profile_deletion_tombstone
+                 WHERE learner_profile_id = ?
+               )`,
+          ).bind(
+            identity.sessionId,
+            identity.userId,
+            skippedAtMs,
+            identity.learnerProfileId,
+            identity.userId,
+            identity.learnerProfileId,
+            identity.learnerProfileId,
+            identity.userId,
+            identity.learnerProfileId,
+          ),
+        );
+      }
+      await database.$client.batch(statements);
+      const result = await database.$client
+        .prepare(
+          `SELECT
+             EXISTS (
+               SELECT 1 FROM learner_profile_deletion_tombstone
+               WHERE learner_profile_id = ?
+             ) AS deletion_pending,
+             EXISTS (
+               SELECT 1 FROM onboarding_learner_session_bypass
+               WHERE session_id = ? AND learner_profile_id = ?
+             ) AS learner_bypass_stored,
+             CASE WHEN ? = 0 THEN 1 ELSE EXISTS (
+               SELECT 1 FROM onboarding_session_bypass
+               WHERE session_id = ? AND auth_user_id = ?
+             ) END AS legacy_bypass_stored`,
+        )
+        .bind(
+          identity.learnerProfileId,
+          identity.sessionId,
+          identity.learnerProfileId,
+          profile.legacyStorageOwner ? 1 : 0,
+          identity.sessionId,
+          identity.userId,
+        )
+        .first<{
+          deletion_pending: number;
+          learner_bypass_stored: number;
+          legacy_bypass_stored: number;
+        }>();
+      if (result?.deletion_pending) {
+        throw new Error("learner_deletion_pending");
+      }
+      if (!result?.learner_bypass_stored || !result.legacy_bypass_stored) {
+        throw new Error("Learner onboarding bypass could not be persisted.");
+      }
+      return;
     }
 
     await database

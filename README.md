@@ -67,8 +67,10 @@ changed; a clean no-drift result does not require a new migration.
 ## Learner and Guardian Modes
 
 Every authenticated Guardian account can own one or more learner profiles and
-starts in learner mode with one active learner selected for that browser
-session. Learner mode contains Talk to Peppa, lesson playback, stories at the
+starts in learner mode. A single owned learner may be selected automatically;
+a multi-learner session with no valid selection fails closed until a Guardian
+chooses one while switching to learner mode. Learner mode contains Talk to
+Peppa, lesson playback, stories at the
 selected learner's stored level, and consented recording activities. Its
 profile dropdown contains only the password-gated grown-up gateway; it does not
 expose profile selection or editing, consent, AI/data, sign-out, deletion,
@@ -76,14 +78,18 @@ lesson authoring, or story-art controls.
 
 Selecting Guardian asks for the current account password. The Worker unlocks
 only that Better Auth session for a fixed 15 minutes; refreshes may resume it,
-but activity does not extend it. `/guardian` is the management dashboard,
-`/guardian/learners` owns learner selection and creation,
-`/guardian/profile` owns the selected learner's details and lesson-recording
-consent, `/guardian/lessons` owns custom lesson creation and deletion,
+but activity does not extend it. `/guardian` is the management dashboard. Its
+`Switch to learner` chooser is the only UI that changes the session's learner
+selection. `/guardian/learners` owns learner creation and deletion, while
+`/guardian/learners/:learnerId` owns page-local details and lesson-recording
+consent. `/guardian/lessons` owns custom lesson creation and deletion,
 `/guardian/stories` owns story level and optional personalized art, and
 `/guardian/dubbing` owns dubbing consent and cleanup. The legacy profile and
-lesson-authoring URLs use the same Guardian boundary. Switching to learner
-removes the unlock before returning to `/`.
+lesson-authoring URLs use the same Guardian boundary. Manage learners never
+changes learner mode. Switching selects the named learner, removes the unlock,
+then opens the requested learner route. Individual deletion requires
+confirmation, rejects the final learner, keeps failed cleanup retryable, and
+never auto-selects a sibling after deleting the active learner.
 
 The same-origin `GET|POST|DELETE /api/guardian-access` endpoint reports,
 creates, or removes the current session unlock. D1 table

@@ -8,13 +8,13 @@ import {
   type Ref,
 } from "react";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
-import { getGuardianLearnersPath, getGuardianPath } from "../app/app-routes";
+import { getGuardianPath } from "../app/app-routes";
 import {
   GuardianLearnerTarget,
   useGuardianLearnerTarget,
   type GuardianLearnerTargetState,
 } from "../learner-profile/GuardianLearnerTarget";
-import { ActionButton, ActionLink, Card } from "../shared/ui";
+import { ActionButton, Card } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
@@ -22,9 +22,18 @@ import {
   loadDubStatus,
   type DubStatus,
 } from "./dub-api";
-import { DUB_LINES } from "./dub-script";
+import { DUB_DEFINITIONS } from "./rhyme-catalog";
 
 type Mutation = "delete" | "grant";
+type GuardianDubbingStatus = {
+  consentState: DubStatus["consentState"];
+  savedCount: number;
+};
+
+const DUB_LINE_COUNT = DUB_DEFINITIONS.reduce(
+  (total, definition) => total + definition.lines.length,
+  0,
+);
 
 export function GuardianDubbingSettingsView({
   cleanupRequired,
@@ -84,25 +93,14 @@ export function GuardianDubbingSettingsView({
           </h1>
           <GuardianLearnerTarget state={target} />
           {target.phase === "ready" && target.learnerName !== null ? (
-            <>
-              <p
-                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-                dir="ltr"
-              >
-                Manage <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s private voice clips for Five Little Ducks.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-slate-600">
-                <span>Change who uses learner mode in Manage learners.</span>
-                <ActionLink
-                  size="compact"
-                  to={getGuardianLearnersPath()}
-                  variant="surface"
-                >
-                  Manage learners
-                </ActionLink>
-              </div>
-            </>
+            <p
+              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              Manage <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s private voice clips for all voice-dubbing rhymes: Five
+              Little Ducks and Old MacDonald.
+            </p>
           ) : null}
         </header>
 
@@ -148,10 +146,11 @@ export function GuardianDubbingSettingsView({
                 className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
                 dir="ltr"
               >
-                Five Little Ducks saves{" "}
+                All voice-dubbing rhymes save{" "}
                 <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s private voice clips in this account. They are used only
-                for <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s private voice clips in this account: Five Little Ducks and
+                Old MacDonald. They are used only for{" "}
+                <BidiLearnerName learnerName={managedLearnerName} />
                 &apos;s private playback and are deleted with the account.
               </p>
             </div>
@@ -169,8 +168,8 @@ export function GuardianDubbingSettingsView({
                 />
                 <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
                   I am <BidiLearnerName learnerName={managedLearnerName} />
-                  &apos;s guardian and I consent to saving these private voice
-                  clips.
+                  &apos;s guardian and I consent to saving private voice clips for
+                  all voice-dubbing rhymes.
                 </span>
               </label>
               <ActionButton
@@ -197,14 +196,15 @@ export function GuardianDubbingSettingsView({
                 Voice dubbing is on
               </h2>
               <p className="m-0 font-extrabold text-brand-blue">
-                {savedCount} of {DUB_LINES.length} lines saved
+                {savedCount} of {DUB_LINE_COUNT} clips saved across Five Little
+                Ducks and Old MacDonald
               </p>
               <p
                 className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
                 dir="ltr"
               >
                 <BidiLearnerName learnerName={managedLearnerName} /> can record
-                and replace lines in Five Little Ducks.
+                and replace lines in both Five Little Ducks and Old MacDonald.
               </p>
             </div>
             <div className="grid gap-3">
@@ -225,7 +225,8 @@ export function GuardianDubbingSettingsView({
                     <>
                       Turn off{" "}
                       <BidiLearnerName learnerName={managedLearnerName} />
-                      &apos;s voice dubbing and delete saved clips
+                      &apos;s voice dubbing and delete clips from Five Little Ducks
+                      and Old MacDonald
                     </>
                   )}
                 </span>
@@ -249,8 +250,9 @@ export function GuardianDubbingSettingsView({
                 dir="ltr"
               >
                 <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s voice dubbing stays unavailable until every saved clip
-                has been removed.
+                &apos;s voice dubbing stays unavailable in Five Little Ducks and
+                Old MacDonald until every saved clip from both rhymes has been
+                removed.
               </p>
             </div>
             <ActionButton
@@ -262,7 +264,7 @@ export function GuardianDubbingSettingsView({
             >
               {mutation === "delete"
                 ? "Removing voice clips…"
-                : "Finish removing voice clips"}
+                : "Finish removing clips from Five Little Ducks and Old MacDonald"}
             </ActionButton>
           </Card>
         ) : null}
@@ -284,7 +286,7 @@ function TargetedGuardianDubbingSettings({
 }) {
   const [cleanupRequired, setCleanupRequired] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
-  const [status, setStatus] = useState<DubStatus | null>(null);
+  const [status, setStatus] = useState<GuardianDubbingStatus | null>(null);
   const [hasAccepted, setHasAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mutation, setMutation] = useState<Mutation | null>(null);
@@ -316,10 +318,15 @@ function TargetedGuardianDubbingSettings({
       if (!preserveOperationError) setOperationError("");
 
       try {
-        const nextStatus = await loadDubStatus({
-          learnerProfileId,
-          signal: controller.signal,
-        });
+        const statuses = await Promise.all(
+          DUB_DEFINITIONS.map(({ id: dubId }) =>
+            loadDubStatus({
+              dubId,
+              learnerProfileId,
+              signal: controller.signal,
+            }),
+          ),
+        );
         if (
           !mountedRef.current ||
           controller.signal.aborted ||
@@ -327,9 +334,25 @@ function TargetedGuardianDubbingSettings({
         ) {
           return false;
         }
-        setStatus(nextStatus);
+        const consentState = statuses.some(
+          (candidate) => candidate.consentState === "revoking",
+        )
+          ? "revoking"
+          : statuses.every(
+                (candidate) => candidate.consentState === "granted",
+              )
+            ? "granted"
+            : "not_granted";
+        setStatus({
+          consentState,
+          savedCount: statuses.reduce(
+            (total, candidate) =>
+              total + candidate.lines.filter(({ saved }) => saved).length,
+            0,
+          ),
+        });
         setCleanupRequired(false);
-        if (nextStatus.consentState !== "not_granted") setHasAccepted(false);
+        if (consentState !== "not_granted") setHasAccepted(false);
         return true;
       } catch (error) {
         if (
@@ -458,7 +481,7 @@ function TargetedGuardianDubbingSettings({
       onDelete={remove}
       onGrant={grant}
       onRetry={() => void refresh({ preserveOperationError: true })}
-      savedCount={status?.lines.filter(({ saved }) => saved).length ?? 0}
+      savedCount={status?.savedCount ?? 0}
       stateHeadingRef={stateHeadingRef}
       target={target}
     />

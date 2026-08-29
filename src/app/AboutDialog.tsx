@@ -224,9 +224,9 @@ export function AccountPrivacySections() {
               ends early may still have saved text.
             </li>
             <li>
-              Talk to Peppa and Guardian profile editing do not change which
-              learner uses learner mode. Only the explicit Use in learner mode
-              action changes which learner uses learner mode.
+              Choosing a learner in Guardian settings changes only which
+              learner&apos;s data you manage. Learner mode changes only through
+              Switch to learner, where you choose who will use the session.
             </li>
             <li>
               Voice services process audio during Talk to Peppa, learner setup,
@@ -234,10 +234,10 @@ export function AccountPrivacySections() {
               to the account.
             </li>
             <li>
-              With Guardian permission, Five Little Ducks saves that
-              learner&apos;s private voice clips to the account. A new take
-              replaces the saved clip for that line, and the Guardian can
-              delete every saved clip.
+              With Guardian permission, all voice-dubbing rhymes save that
+              learner&apos;s private voice clips to the account: Five Little
+              Ducks and Old MacDonald. A new take replaces the saved clip for
+              that line, and the Guardian can delete every saved clip.
             </li>
             <li>
               With guardian permission, lessons save one private voice clip for
@@ -269,14 +269,15 @@ export function AccountPrivacySections() {
           <p className="m-0">
             A learner can finish a conversation at any time. In Guardian mode,
             choose a learner to manage their saved details, lesson voice
-            recordings, Five Little Ducks clips, and optional story art.
+            recordings, voice-dubbing clips from Five Little Ducks and Old
+            MacDonald, and optional story art.
           </p>
           <p className="m-0">
             Delete account removes the account, all learner profiles and their
             saved data, including custom lessons, saved conversation text,
-            private voice clips from Five Little Ducks, lesson voice recordings,
-            and private story art. A small deletion marker stays so old private
-            art cannot return.
+            private voice clips from all voice-dubbing rhymes (Five Little
+            Ducks and Old MacDonald), lesson voice recordings, and private story
+            art. A small deletion marker stays so old private art cannot return.
           </p>
         </AboutSection>
       </section>

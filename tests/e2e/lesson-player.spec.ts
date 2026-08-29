@@ -451,6 +451,39 @@ test("the decoded artwork gates the focused start action", async ({ page }) => {
   );
 });
 
+test("decoded artwork does not steal focus from an open account menu", async ({
+  page,
+}) => {
+  let releaseArtwork!: () => void;
+  const artworkReady = new Promise<void>((resolve) => {
+    releaseArtwork = resolve;
+  });
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    await artworkReady;
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
+  });
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`, {
+    waitUntil: "domcontentloaded",
+  });
+
+  await expect(
+    page.getByRole("button", { name: "Loading picture…" }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: /^Profile for .+, learner mode$/ })
+    .click();
+  const grownUpAccess = page.getByRole("menuitem", {
+    name: /Grown-up access/,
+  });
+  await expect(grownUpAccess).toBeFocused();
+
+  releaseArtwork();
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+  await expect(grownUpAccess).toBeFocused();
+});
+
 // Catches watching unrelated preloaded artwork when focusing the current start action.
 test("finishing a next-scene preload does not steal focus from lesson navigation", async ({
   page,
