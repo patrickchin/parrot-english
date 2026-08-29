@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import { loadMyLessons, type MyLessonDescriptor } from "./my-lessons-api";
+import {
+  deleteMyLesson,
+  loadMyLessons,
+  type MyLessonDescriptor,
+} from "./my-lessons-api";
 
 export type MyLessonsLoadPhase =
   | "error"
@@ -62,7 +66,23 @@ export function useMyLessons(
     setReloadKey((key) => key + 1);
   }, [learnerProfileId, visibleState.phase]);
 
+  const deleteLesson = useCallback(
+    async (lessonId: string) => {
+      await deleteMyLesson(lessonId, { learnerProfileId });
+      setState((current) =>
+        current.learnerProfileId === learnerProfileId
+          ? {
+              ...current,
+              lessons: current.lessons.filter(({ id }) => id !== lessonId),
+            }
+          : current,
+      );
+    },
+    [learnerProfileId],
+  );
+
   return {
+    deleteLesson,
     lessons: visibleState.lessons,
     phase: visibleState.phase,
     retry,

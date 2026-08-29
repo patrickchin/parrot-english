@@ -1,5 +1,6 @@
 import questionnaire from "../../content/learner-profile/questionnaire-v2.json";
 import generatedLessonTemplate from "../../content/lessons/01-peppas-high-ball.json";
+import { isSafeRouteId } from "../../lib/route-id.ts";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
@@ -478,7 +479,7 @@ function singletonUnsupportedTargetMethodResponse(
     allowedMethods = ["POST"];
     notFoundForUnsupportedMethod = true;
   } else if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
-    allowedMethods = ["GET", "PUT"];
+    allowedMethods = ["GET", "DELETE"];
     notFoundForUnsupportedMethod = true;
   } else if (/^\/api\/stories\/[^/]+\/personalized-art\/asset$/.test(pathname)) {
     allowedMethods = ["GET"];
@@ -1428,17 +1429,22 @@ function createE2eLearnerAccount(
     }
     const lessonMatch = url.pathname.match(/^\/api\/lessons\/my\/([^/]+)$/);
     if (lessonMatch) {
-      const id = decodeURIComponent(lessonMatch[1]!);
+      let id: string;
+      try {
+        id = decodeURIComponent(lessonMatch[1]!);
+      } catch {
+        return e2eJson({ error: "not_found" }, 404);
+      }
+      if (!isSafeRouteId(id)) return e2eJson({ error: "not_found" }, 404);
+      if (method !== "GET" && method !== "DELETE") {
+        return e2eJson({ error: "not_found" }, 404);
+      }
       const descriptor = learner.lessons.get(id);
       if (!descriptor) return e2eJson({ error: "not_found" }, 404);
       if (method === "GET") return e2eJson({ lesson: descriptor });
-      if (method === "PUT") {
-        const body = await jsonBody(request);
-        descriptor.lesson = body.lesson;
-        descriptor.updatedAt = E2E_DUB_RECORDED_AT;
-        persist();
-        return e2eJson({ lesson: descriptor, warnings: [] });
-      }
+      learner.lessons.delete(id);
+      persist();
+      return new Response(null, { status: 204 });
     }
 
     if (url.pathname === "/api/conversations" && method === "POST") {
@@ -2245,7 +2251,7 @@ function requiresGuardianAccess(
   if (url.pathname === "/api/lessons/my") return method === "POST";
   if (url.pathname === "/api/lessons/my/generate") return method === "POST";
   if (/^\/api\/lessons\/my\/[^/]+$/.test(url.pathname)) {
-    return method === "PUT";
+    return method === "DELETE";
   }
   return (
     /^\/api\/stories\/[^/]+\/personalized-art$/.test(url.pathname) &&

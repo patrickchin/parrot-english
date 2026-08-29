@@ -119,23 +119,6 @@ async function jsonPost<Result>(
   return response.payload;
 }
 
-async function jsonPut<Result>(
-  path: string,
-  body: unknown,
-  options?: MyLessonsRequestOptions,
-) {
-  const response = await requestJson<Result>(
-    path,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    },
-    options,
-  );
-  return response.payload;
-}
-
 function requireMyLessonDescriptor(
   value: unknown,
   index: number,
@@ -279,14 +262,13 @@ export async function loadMyLesson(
   }
 }
 
-export async function updateMyLesson(
+export async function deleteMyLesson(
   lessonId: string,
-  lesson: Lesson,
   options?: MyLessonsRequestOptions,
 ) {
-  return jsonPut<{ lesson: MyLessonDescriptor; warnings: string[] }>(
+  await requestJson<unknown>(
     `/api/lessons/my/${encodeURIComponent(lessonId)}`,
-    { lesson },
+    { method: "DELETE" },
     options,
   );
 }

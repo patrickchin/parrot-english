@@ -69,6 +69,7 @@ describe("My Lessons Worker routing", () => {
       ["POST", "/api/lessons/my"],
       ["POST", "/api/lessons/my/generate"],
       ["GET", "/api/lessons/my/lesson-1"],
+      ["DELETE", "/api/lessons/my/lesson-1"],
     ]) {
       const response = await worker.fetch(
         new Request(`https://example.test${path}`, { method }),

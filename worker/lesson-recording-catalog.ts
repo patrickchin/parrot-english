@@ -9,6 +9,7 @@ import type { Database } from "./database.ts";
 import type { LessonRecordingSlot } from "./lesson-recording-storage.ts";
 import {
   createMyLessonRepository,
+  DELETING_MY_LESSON_RECORDING_GENERATION,
   lessonJsonRevision,
 } from "./my-lessons-repository.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
@@ -60,6 +61,11 @@ export async function resolveLessonRecordingTarget(
     identity,
   );
   if (!row) return null;
+  if (
+    row.recordingGeneration === DELETING_MY_LESSON_RECORDING_GENERATION
+  ) {
+    return null;
+  }
   const targetText = userTarget(JSON.parse(row.lessonJson), slot);
   return targetText
     ? {
