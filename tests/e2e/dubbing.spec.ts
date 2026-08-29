@@ -186,7 +186,8 @@ test("guardian consent unlocks the storyboard without exposing adult controls", 
   ).toBeVisible();
   await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   await page.getByRole("button", { name: "Switch to learner" }).click();
-  await page.getByRole("link", { name: "Dub a rhyme" }).click();
+  await page.getByRole("link", { name: "Nursery rhymes" }).click();
+  await page.getByRole("link", { name: "Five Little Ducks" }).click();
 
   await expect(page).toHaveURL("/dubs/five-little-ducks");
   await page.reload();
