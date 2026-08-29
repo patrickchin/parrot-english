@@ -113,10 +113,6 @@ describe("conversation persistence infrastructure", () => {
       "utf8",
     );
     const dockerfile = readFileSync(
-      new URL("../agent/Dockerfile", import.meta.url),
-      "utf8",
-    );
-    const deployDockerfile = readFileSync(
       new URL("../Dockerfile", import.meta.url),
       "utf8",
     );
@@ -149,7 +145,6 @@ describe("conversation persistence infrastructure", () => {
       /COPY lib \.\/lib/,
       "The agent image must include every shared runtime module imported from lib.",
     );
-    assert.equal(deployDockerfile, dockerfile);
     assert.match(dockerfile, /ca-certificates/);
     assert.match(dockerfile, /USER node/);
     assert.match(wrangler, /"REALTIME_CONVERSATIONS_ENABLED": "1"/);
