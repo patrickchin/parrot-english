@@ -10,6 +10,7 @@ const REMOVED_STATUS = "Personalized story art removed.";
 
 export function PersonalizedStoryArtPanel({
   consentChecked,
+  disabled = false,
   error,
   featureEnabled = true,
   fileName = "",
@@ -27,6 +28,7 @@ export function PersonalizedStoryArtPanel({
   storyTitle,
 }: {
   consentChecked: boolean;
+  disabled?: boolean;
   error?: string;
   featureEnabled?: boolean;
   fileName?: string;
@@ -61,7 +63,7 @@ export function PersonalizedStoryArtPanel({
   }, [removalComplete]);
 
   function remove() {
-    if (isGenerating) return;
+    if (disabled || isGenerating) return;
     removeFocusHandoffRef.current =
       document.activeElement === removeActionRef.current;
     onRemove();
@@ -106,10 +108,11 @@ export function PersonalizedStoryArtPanel({
               </p>
               <div>
                 <ActionButton
-                  aria-disabled={isGenerating ? true : undefined}
+                  aria-disabled={disabled || isGenerating ? true : undefined}
                   className="gap-2 rounded-full border-4 border-white"
+                  disabled={disabled}
                   onBlur={preserveIntentOnBlur}
-                  onClick={isGenerating ? undefined : remove}
+                  onClick={disabled || isGenerating ? undefined : remove}
                   ref={removeActionRef}
                   type="button"
                   variant="surface"
@@ -195,6 +198,7 @@ export function PersonalizedStoryArtPanel({
                 tone: "tinted",
               })}
               id="personalized-story-photo"
+              disabled={disabled}
               onChange={(event) =>
                 onFileChange?.(event.currentTarget.files?.[0] ?? null)
               }
@@ -213,6 +217,7 @@ export function PersonalizedStoryArtPanel({
             <input
               checked={consentChecked}
               className="mt-1 size-4 shrink-0 accent-brand-blue"
+              disabled={disabled}
               onChange={(event) => onConsentChange(event.currentTarget.checked)}
               type="checkbox"
             />
@@ -228,7 +233,10 @@ export function PersonalizedStoryArtPanel({
           <div className="flex flex-wrap gap-3">
             <ActionButton
               className="gap-2 rounded-full border-4 border-white"
-              disabled={generateDisabled ?? (!consentChecked || isGenerating)}
+              disabled={
+                disabled ||
+                (generateDisabled ?? (!consentChecked || isGenerating))
+              }
               onClick={onGenerate}
               type="button"
             >
@@ -237,10 +245,11 @@ export function PersonalizedStoryArtPanel({
             </ActionButton>
             {personalizedArtwork ? (
               <ActionButton
-                aria-disabled={isGenerating ? true : undefined}
+                aria-disabled={disabled || isGenerating ? true : undefined}
                 className="gap-2 rounded-full border-4 border-white"
+                disabled={disabled}
                 onBlur={preserveIntentOnBlur}
-                onClick={isGenerating ? undefined : remove}
+                onClick={disabled || isGenerating ? undefined : remove}
                 ref={removeActionRef}
                 type="button"
                 variant="surface"

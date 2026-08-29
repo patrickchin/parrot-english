@@ -339,6 +339,71 @@ test("preserves Noah's target through tabs, generation, save, and return navigat
   );
 });
 
+test("switching learner keeps the creator shell focused while clearing the previous draft", async () => {
+  const lesson = createLessonScript({ title: "Private garden draft" });
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/learner-profiles") return Response.json(learnerRoster());
+    if (
+      path === "/api/lessons/my/generate?learnerProfileId=learner-mia" &&
+      init.method === "POST"
+    ) {
+      return Response.json({ lesson, warnings: [] });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/lessons/my/create?learnerProfileId=learner-mia"] },
+      createElement(LessonCreator, { learnerName: "Mia" }),
+    ),
+  );
+
+  await waitFor(() => assert.match(container.textContent, /Editing settings for Mia/));
+  const shell = container.querySelector("main");
+  const noahTarget = container.querySelector('button[aria-label="Noah"]');
+  assert.ok(shell instanceof HTMLElement);
+  assert.ok(noahTarget instanceof HTMLElement);
+
+  await input(container.querySelector("#lesson-topic"), "A private garden draft");
+  await click(
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "Make lesson",
+    ),
+  );
+  await waitFor(() =>
+    assert.ok(
+      [...container.querySelectorAll("button")].some(
+        (candidate) => candidate.textContent.trim() === "Save lesson",
+      ),
+    ),
+  );
+
+  noahTarget.focus();
+  await click(noahTarget);
+  await waitFor(() => assert.match(container.textContent, /Editing settings for Noah/));
+
+  assert.ok(
+    container.querySelector("main") === shell,
+    "The creator main shell must remain mounted.",
+  );
+  assert.equal(shell.isConnected, true);
+  assert.ok(
+    container.querySelector('button[aria-label="Noah"]') === noahTarget,
+    "The selected learner button must remain mounted.",
+  );
+  assert.equal(noahTarget.isConnected, true);
+  assert.equal(document.activeElement, noahTarget);
+  assert.equal(container.querySelector("#lesson-topic")?.value, "");
+  assert.equal(
+    [...container.querySelectorAll("button")].some(
+      (candidate) => candidate.textContent.trim() === "Save lesson",
+    ),
+    false,
+  );
+});
+
 test("normalizes a missing create target before enabling lesson generation", async () => {
   const lesson = createLessonScript();
   const requests = [];

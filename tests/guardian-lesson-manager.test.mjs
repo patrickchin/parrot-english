@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { createElement } from "react";
+import { act, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test from "node:test";
@@ -9,6 +9,7 @@ import { createLessonScript } from "./fixtures/lesson-script.mjs";
 import {
   cleanupMountedRoots,
   click,
+  deferred,
   installDom,
   mountStrict,
   waitFor,
@@ -520,4 +521,84 @@ test("an invalid lesson target never loads active-scoped lesson data", async () 
     requests.filter(({ path }) => path.startsWith("/api/lessons/my")),
     [],
   );
+});
+
+test("keeps the My Lessons shell and learner selector mounted while a new target loads", async () => {
+  const noahLessons = deferred();
+  globalThis.fetch = async (path) => {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (path === "/api/lessons/my?learnerProfileId=learner-mia") {
+      return Response.json({ lessons: [savedLesson] });
+    }
+    if (path === "/api/lessons/my?learnerProfileId=learner-noah") {
+      return noahLessons.promise;
+    }
+    throw new Error(`Unexpected request: ${path}`);
+  };
+  const Provider = createGuardianAccessProvider({
+    api: {
+      async loadGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+    },
+    schedule: () => () => {},
+  });
+
+  const container = await mountStrict(
+    createElement(
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/lessons?learnerProfileId=learner-mia"] },
+        createElement(GuardianLessonManager),
+      ),
+    ),
+  );
+
+  await waitFor(() => assert.match(container.textContent, /Made for Mia/));
+  const main = container.querySelector("main");
+  const noahButton = [...container.querySelectorAll("button")].find(
+    (candidate) => candidate.textContent === "Noah",
+  );
+  assert.ok(main);
+  assert.ok(noahButton);
+  noahButton.focus();
+  act(() => noahButton.click());
+
+  try {
+    assert.ok(
+      container.querySelector("main") === main,
+      "Expected the route main landmark to remain mounted.",
+    );
+    assert.equal(noahButton.isConnected, true);
+    assert.ok(
+      document.activeElement === noahButton,
+      "Expected focus to remain on the selected learner.",
+    );
+    assert.match(
+      [...container.querySelectorAll('[role="status"]')].find((status) =>
+        /Loading My Lessons…/.test(status.textContent ?? ""),
+      )?.textContent ?? "",
+      /Loading My Lessons…/,
+    );
+    assert.equal(
+      [...container.querySelectorAll('[role="status"]')]
+        .find((status) => /Loading My Lessons…/.test(status.textContent ?? ""))
+        ?.closest('[aria-busy="true"]') !== null,
+      true,
+    );
+    assert.match(container.textContent, /Editing settings for Noah/);
+    assert.doesNotMatch(container.textContent, /Made for Mia/);
+  } finally {
+    noahLessons.resolve(Response.json({ lessons: [] }));
+  }
 });

@@ -2955,7 +2955,12 @@ export function LearnerProfileGate({
           "AbortError",
         );
       }
-      beginLearnerIdentityCheck();
+      if (
+        dataRef.current?.mode !== "full" ||
+        dataRef.current.profile.id !== expectedProfileId
+      ) {
+        beginLearnerIdentityCheck();
+      }
       const operation = nextOperation();
       learnerLoadControllerRef.current?.abort();
       const controller = new AbortController();

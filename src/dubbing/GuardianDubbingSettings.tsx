@@ -6,6 +6,7 @@ import {
   useState,
   type FormEvent,
   type Ref,
+  type ReactNode,
 } from "react";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getGuardianPath } from "../app/app-routes";
@@ -35,22 +36,7 @@ const DUB_LINE_COUNT = DUB_DEFINITIONS.reduce(
   0,
 );
 
-export function GuardianDubbingSettingsView({
-  cleanupRequired,
-  consentState,
-  canRetryStatus,
-  error,
-  hasAccepted,
-  isLoading,
-  mutation,
-  onAcceptedChange,
-  onDelete,
-  onGrant,
-  onRetry,
-  savedCount,
-  stateHeadingRef,
-  target,
-}: {
+type GuardianDubbingSettingsViewProps = {
   cleanupRequired: boolean;
   consentState: DubStatus["consentState"] | null;
   canRetryStatus: boolean;
@@ -65,14 +51,16 @@ export function GuardianDubbingSettingsView({
   savedCount: number;
   stateHeadingRef?: Ref<HTMLHeadingElement>;
   target: GuardianLearnerTargetState;
+};
+
+function GuardianDubbingSettingsShell({
+  children,
+  target,
+}: {
+  children: ReactNode;
+  target: GuardianLearnerTargetState;
 }) {
   const managedLearnerName = target.learnerName?.trim() || "Learner";
-  const busy = isLoading || mutation !== null;
-
-  function submitGrant(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onGrant();
-  }
 
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
@@ -104,157 +92,145 @@ export function GuardianDubbingSettingsView({
           ) : null}
         </header>
 
-        {isLoading ? (
-          <p
-            aria-live="polite"
-            className="m-0 text-center font-extrabold text-brand-blue"
-            role="status"
-          >
-            Loading voice dubbing settings…
+        {children}
+      </section>
+    </main>
+  );
+}
+
+function GuardianDubbingSettingsContent({
+  cleanupRequired,
+  consentState,
+  canRetryStatus,
+  error,
+  hasAccepted,
+  isLoading,
+  mutation,
+  onAcceptedChange,
+  onDelete,
+  onGrant,
+  onRetry,
+  savedCount,
+  stateHeadingRef,
+  target,
+}: GuardianDubbingSettingsViewProps) {
+  const managedLearnerName = target.learnerName?.trim() || "Learner";
+  const busy = isLoading || mutation !== null;
+
+  function submitGrant(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onGrant();
+  }
+
+  return (
+    <div
+      aria-busy={isLoading || undefined}
+      className="grid min-h-64 content-start gap-6"
+    >
+      {isLoading ? (
+        <p
+          aria-live="polite"
+          className="m-0 text-center font-extrabold text-brand-blue"
+          role="status"
+        >
+          Loading voice dubbing settings…
+        </p>
+      ) : null}
+
+      {error ? (
+        <div className="grid justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
+          <p className="m-0 font-extrabold text-red-900" role="alert">
+            {error}
           </p>
-        ) : null}
+          {canRetryStatus && !busy ? (
+            <ActionButton
+              onClick={onRetry}
+              size="compact"
+              type="button"
+              variant="surface"
+            >
+              Try again
+            </ActionButton>
+          ) : null}
+        </div>
+      ) : null}
 
-        {error ? (
-          <div className="grid justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
-            <p className="m-0 font-extrabold text-red-900" role="alert">
-              {error}
+      {consentState === "not_granted" ? (
+        <Card className="grid gap-5 p-5 sm:p-7">
+          <div className="grid gap-3">
+            <h2
+              className="m-0 text-2xl leading-tight text-brand-navy"
+              ref={stateHeadingRef}
+              tabIndex={-1}
+            >
+              Turn on private voice dubbing
+            </h2>
+            <p
+              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              All voice-dubbing rhymes save{" "}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s private voice clips in this account: Five Little Ducks and
+              Old MacDonald. They are used only for{" "}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s private playback and are deleted with the account.
             </p>
-            {canRetryStatus && !busy ? (
-              <ActionButton
-                onClick={onRetry}
-                size="compact"
-                type="button"
-                variant="surface"
-              >
-                Try again
-              </ActionButton>
-            ) : null}
           </div>
-        ) : null}
 
-        {consentState === "not_granted" ? (
-          <Card className="grid gap-5 p-5 sm:p-7">
-            <div className="grid gap-3">
-              <h2
-                className="m-0 text-2xl leading-tight text-brand-navy"
-                ref={stateHeadingRef}
-                tabIndex={-1}
-              >
-                Turn on private voice dubbing
-              </h2>
-              <p
-                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-                dir="ltr"
-              >
-                All voice-dubbing rhymes save{" "}
-                <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s private voice clips in this account: Five Little Ducks and
-                Old MacDonald. They are used only for{" "}
-                <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s private playback and are deleted with the account.
-              </p>
-            </div>
-
-            <form className="grid gap-5" onSubmit={submitGrant}>
-              <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-2xl bg-sky-50 p-4 font-extrabold leading-relaxed text-brand-navy">
-                <input
-                  checked={hasAccepted}
-                  className="mt-1 size-5 shrink-0 accent-brand-blue"
-                  disabled={busy}
-                  onChange={(event) =>
-                    onAcceptedChange(event.currentTarget.checked)
-                  }
-                  type="checkbox"
-                />
-                <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
-                  I am <BidiLearnerName learnerName={managedLearnerName} />
-                  &apos;s guardian and I consent to saving private voice clips for
-                  all voice-dubbing rhymes.
-                </span>
-              </label>
-              <ActionButton
-                disabled={busy || !hasAccepted}
-                fullWidth
-                type="submit"
-              >
-                {mutation === "grant"
-                  ? "Turning on voice dubbing…"
-                  : "Allow voice dubbing"}
-              </ActionButton>
-            </form>
-          </Card>
-        ) : null}
-
-        {consentState === "granted" ? (
-          <Card className="grid gap-5 p-5 sm:p-7">
-            <div className="grid gap-2 text-center">
-              <h2
-                className="m-0 text-2xl leading-tight text-brand-navy"
-                ref={stateHeadingRef}
-                tabIndex={-1}
-              >
-                Voice dubbing is on
-              </h2>
-              <p className="m-0 font-extrabold text-brand-blue">
-                {savedCount} of {DUB_LINE_COUNT} clips saved across Five Little
-                Ducks and Old MacDonald
-              </p>
-              <p
-                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-                dir="ltr"
-              >
-                <BidiLearnerName learnerName={managedLearnerName} /> can record
-                and replace lines in both Five Little Ducks and Old MacDonald.
-              </p>
-            </div>
-            <div className="grid gap-3">
-              <ActionButton
+          <form className="grid gap-5" onSubmit={submitGrant}>
+            <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-2xl bg-sky-50 p-4 font-extrabold leading-relaxed text-brand-navy">
+              <input
+                checked={hasAccepted}
+                className="mt-1 size-5 shrink-0 accent-brand-blue"
                 disabled={busy}
-                fullWidth
-                onClick={onDelete}
-                type="button"
-                variant="dangerSurface"
-              >
-                <span
-                  className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
-                  dir="ltr"
-                >
-                  {mutation === "delete" ? (
-                    "Removing voice clips…"
-                  ) : (
-                    <>
-                      Turn off{" "}
-                      <BidiLearnerName learnerName={managedLearnerName} />
-                      &apos;s voice dubbing and delete clips from Five Little Ducks
-                      and Old MacDonald
-                    </>
-                  )}
-                </span>
-              </ActionButton>
-            </div>
-          </Card>
-        ) : null}
+                onChange={(event) =>
+                  onAcceptedChange(event.currentTarget.checked)
+                }
+                type="checkbox"
+              />
+              <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
+                I am <BidiLearnerName learnerName={managedLearnerName} />
+                &apos;s guardian and I consent to saving private voice clips for
+                all voice-dubbing rhymes.
+              </span>
+            </label>
+            <ActionButton
+              disabled={busy || !hasAccepted}
+              fullWidth
+              type="submit"
+            >
+              {mutation === "grant"
+                ? "Turning on voice dubbing…"
+                : "Allow voice dubbing"}
+            </ActionButton>
+          </form>
+        </Card>
+      ) : null}
 
-        {consentState === "revoking" || cleanupRequired ? (
-          <Card className="grid gap-5 p-5 text-center sm:p-7">
-            <div className="grid gap-2">
-              <h2
-                className="m-0 text-2xl leading-tight text-brand-navy"
-                ref={stateHeadingRef}
-                tabIndex={-1}
-              >
-                Voice clip removal needs to finish
-              </h2>
-              <p
-                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-                dir="ltr"
-              >
-                <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s voice dubbing stays unavailable in Five Little Ducks and
-                Old MacDonald until every saved clip from both rhymes has been
-                removed.
-              </p>
-            </div>
+      {consentState === "granted" ? (
+        <Card className="grid gap-5 p-5 sm:p-7">
+          <div className="grid gap-2 text-center">
+            <h2
+              className="m-0 text-2xl leading-tight text-brand-navy"
+              ref={stateHeadingRef}
+              tabIndex={-1}
+            >
+              Voice dubbing is on
+            </h2>
+            <p className="m-0 font-extrabold text-brand-blue">
+              {savedCount} of {DUB_LINE_COUNT} clips saved across Five Little
+              Ducks and Old MacDonald
+            </p>
+            <p
+              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              <BidiLearnerName learnerName={managedLearnerName} /> can record
+              and replace lines in both Five Little Ducks and Old MacDonald.
+            </p>
+          </div>
+          <div className="grid gap-3">
             <ActionButton
               disabled={busy}
               fullWidth
@@ -262,14 +238,70 @@ export function GuardianDubbingSettingsView({
               type="button"
               variant="dangerSurface"
             >
-              {mutation === "delete"
-                ? "Removing voice clips…"
-                : "Finish removing clips from Five Little Ducks and Old MacDonald"}
+              <span
+                className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
+                dir="ltr"
+              >
+                {mutation === "delete" ? (
+                  "Removing voice clips…"
+                ) : (
+                  <>
+                    Turn off{" "}
+                    <BidiLearnerName learnerName={managedLearnerName} />
+                    &apos;s voice dubbing and delete clips from Five Little Ducks
+                    and Old MacDonald
+                  </>
+                )}
+              </span>
             </ActionButton>
-          </Card>
-        ) : null}
-      </section>
-    </main>
+          </div>
+        </Card>
+      ) : null}
+
+      {consentState === "revoking" || cleanupRequired ? (
+        <Card className="grid gap-5 p-5 text-center sm:p-7">
+          <div className="grid gap-2">
+            <h2
+              className="m-0 text-2xl leading-tight text-brand-navy"
+              ref={stateHeadingRef}
+              tabIndex={-1}
+            >
+              Voice clip removal needs to finish
+            </h2>
+            <p
+              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s voice dubbing stays unavailable in Five Little Ducks and
+              Old MacDonald until every saved clip from both rhymes has been
+              removed.
+            </p>
+          </div>
+          <ActionButton
+            disabled={busy}
+            fullWidth
+            onClick={onDelete}
+            type="button"
+            variant="dangerSurface"
+          >
+            {mutation === "delete"
+              ? "Removing voice clips…"
+              : "Finish removing clips from Five Little Ducks and Old MacDonald"}
+          </ActionButton>
+        </Card>
+      ) : null}
+    </div>
+  );
+}
+
+export function GuardianDubbingSettingsView(
+  props: GuardianDubbingSettingsViewProps,
+) {
+  return (
+    <GuardianDubbingSettingsShell target={props.target}>
+      <GuardianDubbingSettingsContent {...props} />
+    </GuardianDubbingSettingsShell>
   );
 }
 
@@ -469,7 +501,7 @@ function TargetedGuardianDubbingSettings({
   }
 
   return (
-    <GuardianDubbingSettingsView
+    <GuardianDubbingSettingsContent
       canRetryStatus={Boolean(statusError)}
       cleanupRequired={cleanupRequired}
       consentState={status?.consentState ?? null}
@@ -490,29 +522,22 @@ function TargetedGuardianDubbingSettings({
 
 export function GuardianDubbingSettings() {
   const target = useGuardianLearnerTarget();
-  return target.phase === "ready" &&
+  const learnerProfileId =
+    target.phase === "ready" &&
     target.learnerProfileId !== null &&
-    target.learnerName !== null ? (
-    <TargetedGuardianDubbingSettings
-      key={target.learnerProfileId}
-      learnerProfileId={target.learnerProfileId}
-      target={target}
-    />
-  ) : (
-    <GuardianDubbingSettingsView
-      canRetryStatus={false}
-      cleanupRequired={false}
-      consentState={null}
-      error=""
-      hasAccepted={false}
-      isLoading={false}
-      mutation={null}
-      onAcceptedChange={() => {}}
-      onDelete={() => {}}
-      onGrant={() => {}}
-      onRetry={() => {}}
-      savedCount={0}
-      target={target}
-    />
+    target.learnerName !== null
+      ? target.learnerProfileId
+      : null;
+
+  return (
+    <GuardianDubbingSettingsShell target={target}>
+      {learnerProfileId !== null ? (
+        <TargetedGuardianDubbingSettings
+          key={learnerProfileId}
+          learnerProfileId={learnerProfileId}
+          target={target}
+        />
+      ) : null}
+    </GuardianDubbingSettingsShell>
   );
 }
