@@ -3,6 +3,7 @@ import type { StoryLevelId } from "../../lib/story-level.ts";
 export type { StoryLevelId } from "../../lib/story-level.ts";
 
 export type StoryVocabularyProfileId =
+  | "first-english-words-v1"
   | "first-words-v1"
   | "repeating-patterns-v1"
   | "tiny-stories-v1"

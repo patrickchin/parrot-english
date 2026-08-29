@@ -151,6 +151,7 @@ test("pull requests run one complete verification job including lifecycle tests"
   assert.match(workflow, /node-version: ["']22["']/);
   assert.match(workflow, /cache: npm/);
   assert.match(workflow, /run: npm ci/);
+  assert.match(workflow, /timeout-minutes: 20/);
   assert.match(workflow, /name: Run tests including mounted lifecycle/);
   assert.match(workflow, /run: npm test/);
   assert.match(workflow, /run: npm run lint/);

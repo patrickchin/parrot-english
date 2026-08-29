@@ -30,6 +30,8 @@ export type {
 const CAMBRIDGE_YLE_WORDLIST_URL =
   "https://www.cambridgeenglish.org/Images/739104-starters-movers-flyers-word-list-2025.pdf";
 
+const FIRST_ENGLISH_WORDS_CORE = ["a", "on"] as const;
+
 const FIRST_WORDS_CORE = [
   "a",
   "am",
@@ -101,6 +103,13 @@ const EARLY_A1_CORE = [
 
 export const STORY_VOCABULARY_PROFILES: readonly StoryVocabularyProfile[] = [
   {
+    id: "first-english-words-v1",
+    basis:
+      "Only directly pictured scaffolding used by the zero-assumption stories; every content word must be a target.",
+    coreWords: FIRST_ENGLISH_WORDS_CORE,
+    sourceUrl: CAMBRIDGE_YLE_WORDLIST_URL,
+  },
+  {
     id: "first-words-v1",
     basis:
       "Small prototype grammar inventory; content words must be targets or explicitly assumed familiar. Cambridge YLE 2025 is a candidate source, not an age norm.",
@@ -131,6 +140,17 @@ export const STORY_VOCABULARY_PROFILES: readonly StoryVocabularyProfile[] = [
 ];
 
 export const STORY_LEVELS: readonly StoryLevel[] = [
+  {
+    id: "first-english-words",
+    label: "First English words",
+    cefrReference: "Before Pre-A1",
+    description: "Look. Listen. Say it.",
+    maxAssumedKnownWords: 0,
+    maxNarrativeWordsPerPage: 6,
+    maxNarrativeWordsTotal: 30,
+    targetWordRange: [4, 6],
+    vocabularyProfileId: "first-english-words-v1",
+  },
   {
     id: "first-words",
     label: "Start here",
