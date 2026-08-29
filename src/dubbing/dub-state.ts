@@ -2,7 +2,7 @@ import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";
 import type { DubDefinition } from "./rhyme-catalog.ts";
 
 export type DubSaveRecovery = "record" | "save";
-export type DubView = "loading" | "intro" | "project" | "scene";
+export type DubView = "loading" | "locked" | "project" | "scene";
 export type DubOperation =
   | "idle"
   | "guide-playing"
@@ -30,10 +30,8 @@ export type DubSceneStatus =
   | { kind: "done"; recorded: number }
   | { kind: "needs-retake"; recorded: number };
 export type DubEvent =
-  | { type: "LOADED"; savedLineIds: string[] }
-  | { type: "STARTED" }
+  | { type: "LOADED"; recordingEnabled: boolean; savedLineIds: string[] }
   | { type: "OPEN_SCENE"; sceneIndex: number }
-  | { type: "CONTINUE" }
   | { type: "SELECT_LINE"; lineId: string }
   | { type: "BACK_TO_PROJECT" }
   | { type: "OPERATION_STARTED"; operation: DubOperation; playbackScope?: DubPlaybackScope }
@@ -187,23 +185,13 @@ export function reduceDubState(
       saved,
       selectedLineIndex,
       selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
-      view: "intro",
+      view: event.recordingEnabled ? "project" : "locked",
     };
-  }
-  if (event.type === "STARTED") {
-    return state.view === "loading" || state.view === "intro"
-      ? { ...state, error: "", view: "project" }
-      : state;
   }
   if (event.type === "OPEN_SCENE") {
     return canChangeSelection(state) && (state.view === "project" || state.view === "scene")
       ? selectScene(state, event.sceneIndex, definition)
       : state;
-  }
-  if (event.type === "CONTINUE") {
-    if (!canChangeSelection(state) || state.view !== "project") return state;
-    const selectedLineIndex = firstMissingDubLineIndex(new Set(Object.keys(state.saved)), definition);
-    return selectScene(state, getSceneIndexForLine(selectedLineIndex, definition), definition);
   }
   if (event.type === "SELECT_LINE") {
     if (!canChangeSelection(state) || state.view !== "scene") return state;

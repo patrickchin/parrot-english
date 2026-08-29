@@ -127,17 +127,11 @@ export function resolveDubLineAudioSource(
 
 export function DubEntry({
   error,
-  onEnter,
   onRetryLoad,
-  recordingEnabled,
-  savedCount,
   title = FIVE_LITTLE_DUCKS_DUB.title,
 }: {
   error: string;
-  onEnter(): void;
   onRetryLoad(): void;
-  recordingEnabled: boolean;
-  savedCount: number;
   title?: string;
 }) {
   return (
@@ -150,15 +144,6 @@ export function DubEntry({
               {error}
             </p>
             <ActionButton onClick={onRetryLoad}>Try loading again</ActionButton>
-          </>
-        ) : recordingEnabled ? (
-          <>
-            <p className="m-0 font-bold leading-snug text-slate-700">
-              Your voice clips stay private in this account.
-            </p>
-            <ActionButton fullWidth onClick={onEnter} size="hero">
-              {savedCount > 0 ? "Continue dubbing" : "Start dubbing"}
-            </ActionButton>
           </>
         ) : (
           <p className="m-0 rounded-2xl bg-sky-50 p-3 font-bold leading-snug text-brand-ink">
@@ -183,10 +168,7 @@ export function DubLoading({
     return (
       <DubEntry
         error={error}
-        onEnter={() => {}}
         onRetryLoad={onRetryLoad}
-        recordingEnabled={false}
-        savedCount={0}
         title={title}
       />
     );
@@ -217,7 +199,6 @@ export function DubStudio({
   const [loadSequence, setLoadSequence] = useState(0);
   const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
   const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
-  const [recordingEnabled, setRecordingEnabled] = useState(false);
   const [takePreview, setTakePreview] = useState<TakePreview | null>(null);
 
   const mountedRef = useRef(false);
@@ -314,8 +295,7 @@ export function DubStudio({
     cancelMedia(true);
     setLoadError("");
     setPlaybackLineIndex(0);
-    setRecordingEnabled(false);
-    dispatch({ type: "LOADED", savedLineIds: [] });
+    dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
   }, [cancelMedia]);
 
   useEffect(() => {
@@ -334,9 +314,9 @@ export function DubStudio({
     void loadDubStatus({ dubId: definition.id, signal: controller.signal })
       .then((status) => {
         if (!mountedRef.current || statusControllerRef.current !== controller) return;
-        setRecordingEnabled(status.recordingEnabled);
         dispatch({
           type: "LOADED",
+          recordingEnabled: status.recordingEnabled,
           savedLineIds: status.recordingEnabled
             ? status.lines.filter(({ saved }) => saved).map(({ id }) => id)
             : [],
@@ -666,9 +646,7 @@ export function DubStudio({
   const playbackSceneNumber = Math.floor(playbackLineIndex / definition.linesPerScene) + 1;
   const playbackSceneLineNumber = playbackLineIndex % definition.linesPerScene + 1;
   const savedCount = Object.keys(state.saved).length;
-  let liveStatus = recordingEnabled
-    ? "Ready to open your dub."
-    : "Voice dubbing is off. Ask a grown-up to turn it on in Guardian mode.";
+  let liveStatus = "Ready to open your dub.";
   const activeError = state.error || loadError;
   if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
@@ -690,6 +668,8 @@ export function DubStudio({
     liveStatus = activeError;
   } else if (state.view === "loading") {
     liveStatus = "Loading your private dub…";
+  } else if (state.view === "locked") {
+    liveStatus = "Voice dubbing is off. Ask a grown-up to turn it on in Guardian mode.";
   } else if (state.view === "project") {
     liveStatus = `${savedCount} of ${definition.lines.length} voice clips recorded.`;
   } else if (state.view === "scene") {
@@ -710,16 +690,11 @@ export function DubStudio({
         title={definition.title}
       />
     );
-  } else if (state.view === "intro") {
+  } else if (state.view === "locked") {
     content = (
       <DubEntry
         error={loadError}
-        onEnter={() => recordingEnabled
-          && !isUnsafeOperation(state.operation)
-          && dispatch({ type: "STARTED" })}
         onRetryLoad={handleRetryLoad}
-        recordingEnabled={recordingEnabled}
-        savedCount={savedCount}
         title={definition.title}
       />
     );

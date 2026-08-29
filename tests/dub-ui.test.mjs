@@ -59,12 +59,6 @@ after(async () => {
   restoreDom();
 });
 
-function buttonWithText(container, label) {
-  return [...container.querySelectorAll("button")].find((candidate) =>
-    candidate.textContent.includes(label)
-  );
-}
-
 function enabledDubStatus(saved = false) {
   return {
     complete: saved,
@@ -400,27 +394,53 @@ describe("duck dubbing storyboard presentation", () => {
   it("keeps consent and destructive choices in Guardian mode", () => {
     const disabled = renderToStaticMarkup(createElement(DubEntry, {
       error: "",
-      onEnter() {},
       onRetryLoad() {},
-      recordingEnabled: false,
-      savedCount: 24,
     }));
     assert.match(disabled, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
     assert.doesNotMatch(
       disabled,
       /checkbox|I’m the grown-up|Grown-up options|Delete|Start dubbing|Continue dubbing/,
     );
+  });
 
-    const enabled = renderToStaticMarkup(createElement(DubEntry, {
-      error: "",
-      onEnter() {},
-      onRetryLoad() {},
-      recordingEnabled: true,
-      savedCount: 0,
-    }));
-    assert.match(enabled, />Start dubbing<\/button>/);
-    assert.match(enabled, /Your voice clips stay private in this account/);
-    assert.doesNotMatch(enabled, /checkbox|I’m the grown-up|Grown-up options|Delete/);
+  it("loads an enabled route directly into the project without an entry action", async () => {
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus(true));
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    assert.equal(
+      [...container.querySelectorAll("button")].filter(({ textContent }) =>
+        /Start dubbing|Continue dubbing|Continue Scene/.test(textContent),
+      ).length,
+      0,
+    );
+  });
+
+  it("shows disabled learner guidance as soon as status loads", async () => {
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.match(
+      container.textContent,
+      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+    ));
+    assert.equal(container.querySelector('[aria-label="Play full video"]'), null);
+    assert.equal(
+      [...container.querySelectorAll("button")].filter(({ textContent }) =>
+        /Start dubbing|Continue dubbing|Continue Scene/.test(textContent),
+      ).length,
+      0,
+    );
   });
 
   it("clears a revoking save into disabled learner guidance", async () => {
@@ -439,8 +459,7 @@ describe("duck dubbing storyboard presentation", () => {
     };
 
     const container = await mountDuckDub();
-    await waitFor(() => assert.ok(buttonWithText(container, "Start dubbing")));
-    await click(buttonWithText(container, "Start dubbing"));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]')));
     await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
@@ -473,8 +492,7 @@ describe("duck dubbing storyboard presentation", () => {
     };
 
     const container = await mountDuckDub();
-    await waitFor(() => assert.ok(buttonWithText(container, "Start dubbing")));
-    await click(buttonWithText(container, "Start dubbing"));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]')));
     await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
@@ -509,8 +527,6 @@ describe("duck dubbing storyboard presentation", () => {
       };
 
       const container = await mountDuckDub();
-      await waitFor(() => assert.ok(buttonWithText(container, "Continue dubbing")));
-      await click(buttonWithText(container, "Continue dubbing"));
       await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
       await click(container.querySelector('[aria-label="Play full video"]'));
       await waitFor(() => assert.match(
@@ -654,17 +670,14 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(loading, /Finish deleting|Delete my dub|Grown-up options/);
   });
 
-  it("keeps the learner entry concise and leaves grown-up controls in Guardian mode", () => {
+  it("keeps the locked learner entry concise and leaves grown-up controls in Guardian mode", () => {
     const html = renderToStaticMarkup(createElement(DubEntry, {
       error: "",
-      onEnter() {},
       onRetryLoad() {},
-      recordingEnabled: true,
-      savedCount: 0,
     }));
 
-    assert.match(html, /Your voice clips stay private in this account\./);
-    assert.match(html, />Start dubbing<\/button>/);
+    assert.match(html, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
+    assert.doesNotMatch(html, /Start dubbing|Continue dubbing|Continue Scene/);
     assert.doesNotMatch(html, /checkbox|I’m the grown-up|More grown-up options|Delete/);
   });
 
