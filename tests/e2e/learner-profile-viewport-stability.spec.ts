@@ -826,7 +826,7 @@ test("profile Replay and grown-up access gateway remain independently operable",
     name: /Grown-up access/,
   });
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Grown-up accessAccount password required",
+    "Grown-up accessPassword optional for now",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),

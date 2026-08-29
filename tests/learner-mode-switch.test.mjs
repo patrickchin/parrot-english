@@ -86,12 +86,6 @@ function namedButton(container, name) {
   return candidate;
 }
 
-function selectedRadio(container, value) {
-  const radio = container.querySelector(`input[type="radio"][value="${value}"]`);
-  assert.ok(radio, `Expected a radio for ${value}.`);
-  return radio;
-}
-
 function namedLink(container, name) {
   const candidate = [...container.querySelectorAll("a")].find(
     (link) =>
@@ -203,7 +197,7 @@ function installRosterFetch({ failRequests = 0 } = {}) {
   return () => requests;
 }
 
-test("opening the chooser only loads the roster, with no learner preselected", async () => {
+test("opening the chooser offers direct learner buttons without switching", async () => {
   assert.equal(
     typeof LearnerModeSwitchDialog,
     "function",
@@ -228,12 +222,18 @@ test("opening the chooser only loads the roster, with no learner preselected", a
     document.activeElement === dialog,
     "Expected focus to enter the loading dialog.",
   );
-  await waitFor(() => assert.equal(selectedRadio(container, "learner-bob").disabled, false));
+  await waitFor(() => namedButton(container, "Start learner mode as Bob"));
 
   assert.ok(requestCount() >= 1);
   assert.deepEqual(operations, []);
-  assert.equal(selectedRadio(container, "learner-bob").checked, false);
-  assert.equal(selectedRadio(container, "learner-noah").checked, false);
+  assert.ok(namedButton(container, "Start learner mode as Mary"));
+  assert.equal(container.querySelector('input[type="radio"]'), null);
+  assert.equal(
+    [...container.querySelectorAll("button")].some(
+      (candidate) => candidate.textContent.trim() === "Choose a learner",
+    ),
+    false,
+  );
   await click(namedButton(container, "Cancel"));
   assert.equal(container.querySelector('[role="dialog"]'), null);
   assert.deepEqual(operations, []);
@@ -248,7 +248,7 @@ test("retries a failed protected roster load", async () => {
   await waitFor(() => assert.match(container.textContent, /Learner profiles could not be loaded/));
   await click(namedButton(container, "Try again"));
 
-  await waitFor(() => assert.equal(selectedRadio(container, "learner-noah").disabled, false));
+  await waitFor(() => namedButton(container, "Start learner mode as Mary"));
   assert.ok(requestCount() >= 2);
   assert.deepEqual(operations, []);
 });
@@ -259,32 +259,30 @@ test("offers normal learners but omits deletion-pending learners", async () => {
   const container = await mountStrict(harness({ operations }));
 
   await click(namedButton(container, "Open chooser"));
-  await waitFor(() =>
-    assert.equal(selectedRadio(container, "learner-bob").disabled, false),
-  );
+  await waitFor(() => namedButton(container, "Start learner mode as Bob"));
 
-  assert.ok(selectedRadio(container, "learner-noah"));
-  const pendingLearnerRadio = container.querySelector(
-    'input[type="radio"][value="learner-rose"]',
+  assert.ok(namedButton(container, "Start learner mode as Mary"));
+  const pendingLearnerButton = [...container.querySelectorAll("button")].find(
+    (candidate) =>
+      candidate.getAttribute("aria-label") === "Start learner mode as Rose",
   );
   const renderedText = container.textContent;
   await click(namedButton(container, "Cancel"));
   assert.ok(
-    !pendingLearnerRadio,
-    "Expected the chooser to omit the deletion-pending learner radio.",
+    !pendingLearnerButton,
+    "Expected the chooser to omit the deletion-pending learner button.",
   );
   assert.doesNotMatch(renderedText, /Rose/);
   assert.deepEqual(operations, []);
 });
 
-test("selects a learner before locking and navigating home", async () => {
+test("a learner button selects, locks, and navigates in one click", async () => {
   const operations = [];
   installRosterFetch();
   const container = await mountStrict(harness({ operations }));
 
   await click(namedButton(container, "Open chooser"));
-  await waitFor(() => assert.equal(selectedRadio(container, "learner-noah").disabled, false));
-  await click(selectedRadio(container, "learner-noah"));
+  await waitFor(() => namedButton(container, "Start learner mode as Mary"));
   await click(namedButton(container, "Start learner mode as Mary"));
 
   await waitFor(() => assert.equal(currentRoute(container), "/"));

@@ -113,6 +113,6 @@ export function checkGuardianUnlockRateLimit(
   return checkRateLimit(
     env.GUARDIAN_UNLOCK_RATE_LIMITER,
     `${userId}:${getClientAddress(request)}`,
-    "Too many password attempts. Wait a minute, then try again.",
+    "Too many Guardian unlock attempts. Wait a minute, then try again.",
   );
 }

@@ -147,7 +147,7 @@ describe("API security", () => {
     assert.equal(limited.headers.get("Retry-After"), "60");
     assert.deepEqual(await limited.json(), {
       error: "rate_limited",
-      message: "Too many password attempts. Wait a minute, then try again.",
+      message: "Too many Guardian unlock attempts. Wait a minute, then try again.",
     });
     assert.deepEqual(limiter.keys, [
       "user-1:203.0.113.42",

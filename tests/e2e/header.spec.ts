@@ -899,7 +899,7 @@ test("the learner profile opens a locked grown-up access gateway", async ({ page
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Grown-up accessAccount password required",
+    "Grown-up accessPassword optional for now",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),

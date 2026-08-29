@@ -431,7 +431,7 @@ export function AccountHeader({
                 <span className="grid gap-1">
                   <span>Grown-up access</span>
                   <span className="text-xs font-bold">
-                    Account password required
+                    Password optional for now
                   </span>
                 </span>
               </MenuButton>
