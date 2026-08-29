@@ -115,8 +115,8 @@ export function GuardianStorySettingsView({
                 className="m-0 min-w-0 text-sm font-bold text-slate-600 [overflow-wrap:anywhere]"
                 dir="ltr"
               >
-                <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s story shelf always opens at this level.
+                All stories stay visible. This level is highlighted for{" "}
+                <BidiLearnerName learnerName={managedLearnerName} />.
               </p>
             </div>
 

@@ -2,6 +2,14 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { STORIES } from "../../src/stories/story-catalog";
 
 const firstStoryPath = "/stories/the-red-ball/pages/1";
+const expectedStoryShelves = [
+  { count: 3, label: "First English words" },
+  { count: 4, label: "Start here" },
+  { count: 6, label: "Say it again" },
+  { count: 5, label: "Little stories" },
+  { count: 5, label: "Big adventures" },
+  { count: 2, label: "Long stories" },
+] as const;
 
 const viewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
@@ -455,7 +463,7 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the learner shelf shows only the saved beginner story level", async ({
+test("the learner shelf shows six ordered shelves and 25 unique playable stories", async ({
   page,
 }) => {
   await page.goto("/stories");
@@ -464,41 +472,69 @@ test("the learner shelf shows only the saved beginner story level", async ({
     page.getByRole("heading", { exact: true, name: "Pick a story" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const panel = shelf.getByRole("region", { name: /Start here stories/ });
+  const panels = shelf.getByRole("region");
 
+  await expect(panels).toHaveCount(6);
+  await expect(shelf.getByRole("heading", { level: 2 })).toHaveText(
+    expectedStoryShelves.map(({ label }) => label),
+  );
+  for (const { count, label } of expectedStoryShelves) {
+    await expect(
+      shelf.getByRole("region", {
+        name: new RegExp(`^${label}(?: stories)?$`),
+      }).getByRole("article"),
+    ).toHaveCount(count);
+  }
+  const storyLinks = shelf.getByRole("link", {
+    name: /^Listen to story:/,
+  });
+  await expect(storyLinks).toHaveCount(25);
+  const storyHrefs = await storyLinks.evaluateAll((links) =>
+    links.map((link) => link.getAttribute("href")),
+  );
+  expect(new Set(storyHrefs).size).toBe(25);
+  expect(
+    storyHrefs.every((href) =>
+      /^\/stories\/[^/]+\/pages\/1$/.test(href ?? ""),
+    ),
+  ).toBe(true);
+});
+
+test("the saved learner level is the only recommended shelf and exposes no grown-up internals", async ({
+  page,
+}) => {
+  await page.goto("/stories");
+
+  const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  const startHere = shelf.getByRole("region", {
+    name: /^Start here(?: stories)?$/,
+  });
   await expect(shelf.getByRole("tablist")).toHaveCount(0);
   await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: /Generate story art/ })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Generate story art/ }),
+  ).toHaveCount(0);
   await expect(page.getByLabel("Upload learner photo")).toHaveCount(0);
-  await expect(panel.getByRole("article")).toHaveCount(5);
-  await expect(panel.getByRole("link", { name: /^Listen to story:/ })).toHaveCount(5);
+  await expect(
+    shelf.getByText(
+      /CEFR|Pre-A1|reading level|Teaching notes|Prompt test|Assumes familiar|vocabulary profile/i,
+    ),
+  ).toHaveCount(0);
 
   await expect(
-    panel.getByRole("link", { name: "Listen to story: The Red Ball" }),
-  ).toHaveAttribute("href", firstStoryPath);
-  const firstCover = panel.getByRole("img", {
-    name: "A bright red ball beside a smiling young child",
-  });
-  await expect(firstCover).toBeVisible();
-  await expect(firstCover).toHaveAttribute("loading", "eager");
-  await expect(firstCover).toHaveAttribute(
-    "srcset",
-    "https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-384.webp 384w, https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-768.webp 768w",
-  );
-  await expect
-    .poll(() =>
-      firstCover.evaluate((element: HTMLImageElement) =>
-        new URL(element.currentSrc).pathname,
-      ),
-    )
-    .toMatch(/\/assets\/v3\/stories\/the-red-ball-cover-(384|768)\.webp$/);
-  await expect(
-    panel.getByRole("img", {
-      name: "Three simple hats in red, blue, and yellow",
-    }),
-  ).toHaveAttribute("loading", "lazy");
+    startHere.getByText("Recommended for Mia", { exact: true }),
+  ).toBeVisible();
+  for (const label of ["First English words", "Long stories"]) {
+    await expect(
+      shelf
+        .getByRole("region", {
+          name: new RegExp(`^${label}(?: stories)?$`),
+        })
+        .getByText(/^Recommended for /),
+    ).toHaveCount(0);
+  }
 
-  const redBallCard = panel.getByRole("article", { name: "The Red Ball" });
+  const redBallCard = startHere.getByRole("article", { name: "The Red Ball" });
   await expect(redBallCard.getByText("Listen", { exact: true })).toBeVisible();
   await expect(
     redBallCard.getByText(/pages|Teaching notes|Prompt test/),
@@ -509,31 +545,89 @@ test("the learner shelf shows only the saved beginner story level", async ({
       { exact: true },
     ),
   ).toHaveCount(0);
-
-  await page.goto("/stories?level=not-a-level");
-  await expect(page).toHaveURL(/\/stories$/);
-  await expect(shelf.getByRole("region", { name: /Start here stories/ })).toBeVisible();
 });
 
-test("a stale shelf level query returns to the learner's saved level", async ({ page }) => {
-  await page.goto("/stories?level=tiny-stories");
+test("only the first library cover loads eagerly", async ({ page }) => {
+  await page.goto("/stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  await expect(page).toHaveURL("/stories");
-  await shelf
-    .getByRole("link", { name: "Listen to story: The Red Ball" })
-    .click();
+  const startHere = shelf.getByRole("region", {
+    name: /^Start here(?: stories)?$/,
+  });
+  const redBallCover = startHere.getByRole("img", {
+    name: "A bright red ball beside a smiling young child",
+  });
+  await expect(redBallCover).toBeVisible();
 
-  const backToStories = page.getByRole("link", { name: "Back to stories" });
-  await expect(backToStories).toHaveAttribute(
-    "href",
-    "/stories",
+  const covers = shelf.getByRole("img");
+  const loadingModes = await covers.evaluateAll((images) =>
+    images.map((image) => image.getAttribute("loading")),
   );
-  await backToStories.click();
-  await expect(page).toHaveURL("/stories");
+  expect.soft(
+    loadingModes.filter((mode) => mode === "eager"),
+    "eager shelf covers",
+  ).toHaveLength(1);
+  expect.soft(
+    loadingModes.filter((mode) => mode === "lazy"),
+    "lazy shelf covers",
+  ).toHaveLength(24);
+  expect(loadingModes[0]).toBe("eager");
+
   await expect(
-    page.getByRole("region", { name: /Start here stories/ }),
-  ).toContainText("The Red Ball");
+    startHere.getByRole("link", { name: "Listen to story: The Red Ball" }),
+  ).toHaveAttribute("href", firstStoryPath);
+  expect.soft(
+    await redBallCover.getAttribute("loading"),
+    "the second shelf's first cover",
+  ).toBe("lazy");
+  await expect(redBallCover).toHaveAttribute(
+    "srcset",
+    "https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-384.webp 384w, https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-768.webp 768w",
+  );
+  await expect
+    .poll(() =>
+      redBallCover.evaluate((element: HTMLImageElement) =>
+        new URL(element.currentSrc).pathname,
+      ),
+    )
+    .toMatch(/\/assets\/v3\/stories\/the-red-ball-cover-(384|768)\.webp$/);
+  await expect(
+    startHere.getByRole("img", {
+      name: "Three simple hats in red, blue, and yellow",
+    }),
+  ).toHaveAttribute("loading", "lazy");
+});
+
+test("legacy shelf queries and reader back links use the sole library URL", async ({ page }) => {
+  await page.goto("/stories?level=not-a-level");
+  await expect(page).toHaveURL("/stories");
+
+  await page.goto("/stories?level=tiny-stories");
+  await expect(page).toHaveURL("/stories");
+
+  for (const story of [
+    {
+      heading: "The Lantern Trail",
+      path: "/stories/the-lantern-trail/pages/1",
+    },
+    { heading: "The Gruffalo", path: "/stories/the-gruffalo/pages/1" },
+  ]) {
+    await page.goto(story.path);
+    await expect(
+      page.getByRole("heading", { exact: true, name: story.heading }),
+    ).toBeVisible();
+    const backToStories = page.getByRole("link", {
+      name: "Back to stories",
+    });
+    await expect(backToStories).toHaveAttribute("href", "/stories");
+    await backToStories.click();
+    await expect(page).toHaveURL("/stories");
+    await expect(
+      page
+        .getByRole("region", { name: "Read-aloud stories" })
+        .getByRole("link", { name: /^Listen to story:/ }),
+    ).toHaveCount(25);
+  }
 });
 
 test("story prose preserves authored line breaks", async ({ page }) => {
@@ -557,6 +651,9 @@ test("a phone keeps learner story cards contained without management controls", 
     name: "Listen to story: The Red Ball",
   });
   await expect(redBall).toBeVisible();
+  await expect(
+    shelf.getByRole("link", { name: /^Listen to story:/ }),
+  ).toHaveCount(25);
   await expect(shelf.getByRole("tablist")).toHaveCount(0);
   await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
   await expectInsideViewportHorizontally(redBall, page);
@@ -1574,24 +1671,48 @@ test("completion cancels active narration and ignores its stale callback", async
   expect((await savedStoryAudioState(page)).active).toEqual([]);
 });
 
+test("a wide desktop gives the full shelf and reader room beyond the old caps", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 900, width: 1600 });
+  await page.goto("/stories");
+
+  const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  await expect(shelf).toBeVisible();
+  const shelfWidth = await shelf.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+  await shelf
+    .getByRole("link", { name: "Listen to story: The Red Ball" })
+    .click();
+
+  const reader = page.getByRole("region", { name: "Story reader" });
+  await expect(reader).toBeVisible();
+  const readerWidth = await reader.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  );
+
+  expect.soft(shelfWidth, "story shelf width at 1600x900").toBeGreaterThan(1152);
+  expect.soft(readerWidth, "story reader width at 1600x900").toBeGreaterThan(1280);
+  await expectNoHorizontalOverflow(page);
+});
+
 for (const viewport of viewports) {
-  test(`the filtered shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({
+  test(`the full shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
     await page.goto("/stories");
 
     const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-    const panel = shelf.getByRole("region", { name: /Start here stories/ });
     const readStory = shelf.getByRole("link", {
       name: "Listen to story: The Red Ball",
     });
-    await expect(panel.getByRole("article")).toHaveCount(5);
+    await expect(shelf.getByRole("region")).toHaveCount(6);
+    await expect(shelf.getByRole("article")).toHaveCount(25);
     await expect(
-      panel.getByText("Assumes familiar: no extra content words", {
-        exact: true,
-      }).first(),
-    ).toBeHidden();
+      shelf.getByText(/Assumes familiar|Teaching notes|Prompt test|CEFR/i),
+    ).toHaveCount(0);
     await expectInsideViewportHorizontally(shelf, page);
     await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
     await expect(shelf.getByRole("tablist")).toHaveCount(0);

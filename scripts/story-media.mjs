@@ -23,6 +23,23 @@ const LONG_STORY_PAGE_IDS = new Map([
     ),
   ],
 ]);
+const FIRST_ENGLISH_WORD_PAGE_IDS = new Map([
+  [
+    "hello-cat",
+    ["cat-hello", "dog-hello", "bird-hello", "friends-hello", "friends-bye"],
+  ],
+  ["marys-face", ["face", "eyes", "ears", "nose", "mouth"]],
+  [
+    "wash-sam-wash",
+    [
+      "dirty-hands",
+      "water-on-hands",
+      "soap-on-hands",
+      "wash-hands",
+      "clean-hands",
+    ],
+  ],
+]);
 const LEARNER_STORY_PAGE_IDS = new Map([
   [
     "boots-in-the-rain",
@@ -195,6 +212,17 @@ const COLLECTIONS = new Map([
       pageIdPattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       pageIdRequirement: "must use a lowercase slug",
       supportsCovers: false,
+    },
+  ],
+  [
+    "first-english-words",
+    {
+      inventoryError:
+        "manifest.assets must contain exactly three covers and fifteen first English word page images",
+      pageIdsByStory: FIRST_ENGLISH_WORD_PAGE_IDS,
+      pageIdPattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      pageIdRequirement: "must use a lowercase slug",
+      supportsCovers: true,
     },
   ],
 ]);

@@ -105,22 +105,18 @@ describe("app route helpers", () => {
     );
   });
 
-  it("builds and resolves level-filtered story shelf paths", () => {
-    assert.equal(routes.getStoryShelfPath(), "/stories");
-    assert.equal(routes.getStoryShelfPath("first-words"), "/stories");
-    assert.equal(
-      routes.getStoryShelfPath("tiny-stories"),
-      "/stories?level=tiny-stories",
-    );
-    assert.equal(routes.resolveStoryShelfLevel(""), "first-words");
-    assert.equal(
-      routes.resolveStoryShelfLevel("?level=early-a1"),
-      "early-a1",
-    );
-    assert.equal(
-      routes.resolveStoryShelfLevel("?level=not-a-level"),
+  it("builds one canonical all-library story shelf path", () => {
+    for (const levelId of [
+      undefined,
+      "first-english-words",
       "first-words",
-    );
+      "repeating-patterns",
+      "tiny-stories",
+      "early-a1",
+      "long-stories",
+    ]) {
+      assert.equal(routes.getStoryShelfPath(levelId), "/stories");
+    }
   });
 
   it("rejects empty, dot-segment, and unencodable story IDs", () => {

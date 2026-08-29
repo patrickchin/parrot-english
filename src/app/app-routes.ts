@@ -2,8 +2,6 @@ import { LESSONS, type LessonCatalogEntry } from "../lessons/lesson-catalog";
 import {
   resolveStory as resolveCatalogStory,
   type Story,
-  STORY_LEVELS,
-  type StoryLevelId,
 } from "../stories/story-catalog";
 import { isSafeRouteId } from "../../lib/route-id";
 
@@ -59,11 +57,6 @@ const SAFE_RETURN_PATHS = [
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
-const STORY_LEVEL_IDS = new Set<StoryLevelId>(
-  STORY_LEVELS.map(({ id }) => id),
-);
-
-export const DEFAULT_STORY_LEVEL_ID: StoryLevelId = "first-words";
 
 export function getGuardianPath() {
   return "/guardian";
@@ -161,19 +154,8 @@ export function getOldMacDonaldDubPath() {
   return "/dubs/old-macdonald" as const;
 }
 
-export function getStoryShelfPath(
-  levelId: StoryLevelId = DEFAULT_STORY_LEVEL_ID,
-) {
-  return levelId === DEFAULT_STORY_LEVEL_ID
-    ? "/stories"
-    : `/stories?level=${encodeURIComponent(levelId)}`;
-}
-
-export function resolveStoryShelfLevel(search: string): StoryLevelId {
-  const levelId = new URLSearchParams(search).get("level");
-  return levelId && STORY_LEVEL_IDS.has(levelId as StoryLevelId)
-    ? (levelId as StoryLevelId)
-    : DEFAULT_STORY_LEVEL_ID;
+export function getStoryShelfPath() {
+  return "/stories" as const;
 }
 
 export function getStoryPagePath(storyId: string, pageIndex: number) {

@@ -5,29 +5,27 @@ import {
   getStoryPagePath,
   getStoryShelfPath,
 } from "../app/app-routes";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import { InteractiveCardLink } from "../shared/ui";
 import { StoryArtwork } from "./StoryArtwork";
 import {
-  getStoryLevel,
+  isLearnerStoryLevelId,
   STORIES,
+  STORY_LEVELS,
   type Story,
   type StoryLevel,
 } from "./story-catalog";
 
 const STORY_SHELF_IMAGE_SIZES =
-  "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 273px";
+  "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 305px";
 
 export function StoryList() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useLearnerProfile();
-  const activeLevelId = profile.storyLevel;
-  const activeLevel = getStoryLevel(activeLevelId);
-  const stories = STORIES.filter((story) => story.level === activeLevelId);
-  const longStories = STORIES.filter((story) => story.level === "long-stories");
-  const canonicalPath = getStoryShelfPath(activeLevelId);
+  const learnerName = profile.name?.trim() || "Learner";
+  const canonicalPath = getStoryShelfPath();
 
   useEffect(() => {
     if (`${location.pathname}${location.search}` !== canonicalPath) {
@@ -57,18 +55,23 @@ export function StoryList() {
 
       <section
         aria-label="Read-aloud stories"
-        className="mx-auto grid w-full max-w-6xl gap-4 sm:gap-5"
+        className="mx-auto grid w-full max-w-7xl gap-4 sm:gap-5"
       >
-        <StoryShelfSection
-          id="story-level"
-          level={activeLevel}
-          stories={stories}
-        />
-        <StoryShelfSection
-          id="long-stories"
-          level={getStoryLevel("long-stories")}
-          stories={longStories}
-        />
+        {STORY_LEVELS.map((level, levelIndex) => (
+          <StoryShelfSection
+            id={`story-level-${level.id}`}
+            key={level.id}
+            level={level}
+            priorityFirstStory={levelIndex === 0}
+            recommendedFor={
+              isLearnerStoryLevelId(level.id) &&
+              level.id === profile.storyLevel
+                ? learnerName
+                : undefined
+            }
+            stories={STORIES.filter((story) => story.level === level.id)}
+          />
+        ))}
       </section>
     </main>
   );
@@ -77,15 +80,19 @@ export function StoryList() {
 function StoryShelfSection({
   id,
   level,
+  priorityFirstStory,
+  recommendedFor,
   stories,
 }: {
   id: string;
   level: StoryLevel;
+  priorityFirstStory: boolean;
+  recommendedFor?: string;
   stories: readonly Story[];
 }) {
   return (
     <section
-      aria-label={level.id === "long-stories" ? level.label : `${level.label} stories`}
+      aria-label={level.label}
       className="grid gap-3 sm:gap-4"
       id={`${id}-panel`}
       role="region"
@@ -100,6 +107,12 @@ function StoryShelfSection({
         <p className="m-0 text-xs font-extrabold leading-snug text-brand-blue sm:text-sm">
           {level.description}
         </p>
+        {recommendedFor ? (
+          <p className="m-0 justify-self-center rounded-full bg-brand-yellow px-3 py-1 text-xs font-black text-brand-navy sm:text-sm">
+            Recommended for{" "}
+            <BidiLearnerName learnerName={recommendedFor} />
+          </p>
+        ) : null}
       </header>
 
       <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -113,7 +126,7 @@ function StoryShelfSection({
               <div className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
                 <StoryArtwork
                   artwork={story.cover}
-                  priority={storyIndex === 0}
+                  priority={priorityFirstStory && storyIndex === 0}
                   sizes={STORY_SHELF_IMAGE_SIZES}
                 />
               </div>

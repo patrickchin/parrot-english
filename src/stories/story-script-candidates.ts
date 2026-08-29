@@ -42,12 +42,23 @@ function pageArtwork({
   };
 }
 
-function coverArtwork(storyId: string, prompt: string): StoryArtwork {
+function coverArtwork(
+  storyId: string,
+  level: Story["level"],
+  prompt: string,
+): StoryArtwork {
+  const imageVersion = level === "first-english-words" ? 7 : 3;
   return {
     alt: prompt,
     prompt,
-    src: `https://media.parrotbook.com/assets/v3/stories/${storyId}-cover.webp`,
+    src: `https://media.parrotbook.com/assets/v${imageVersion}/stories/${storyId}-cover.webp`,
   };
+}
+
+function storyPageImageVersion(story: Pick<Story, "id" | "level">) {
+  if (story.level === "first-english-words") return 7;
+  if (story.level === "first-words" || story.id === "where-is-dot") return 3;
+  return 6;
 }
 
 function joinInAudioId(text: string) {
@@ -66,13 +77,13 @@ function makePrototypeStory({
 }: PrototypeStory): Story {
   return {
     ...story,
-    cover: coverArtwork(story.id, coverPrompt),
+    cover: coverArtwork(story.id, story.level, coverPrompt),
     pages: pages.map(({ artworkPrompt, ...page }, pageIndex) => ({
       ...page,
       artwork: pageArtwork({
         alt: `${artworkPrompt} in ${story.title}, page ${pageIndex + 1}`,
         prompt: artworkPrompt,
-        src: `https://media.parrotbook.com/assets/v${story.level === "first-words" ? 3 : 6}/story-pages/${story.id}-${page.id}.webp`,
+        src: `https://media.parrotbook.com/assets/v${storyPageImageVersion(story)}/story-pages/${story.id}-${page.id}.webp`,
       }),
       joinInAudioId: joinInAudioId(page.joinIn),
       narrationAudioId: `story-${story.id}-${page.id}-narration`,
@@ -81,6 +92,160 @@ function makePrototypeStory({
 }
 
 export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
+  makePrototypeStory({
+    id: "hello-cat",
+    title: "Hello, Cat!",
+    category: "Greetings",
+    durationMinutes: 1,
+    level: "first-english-words",
+    summary: "Say hello and goodbye to a cat, a dog, and a bird.",
+    targetWords: ["hello", "bye", "cat", "dog", "bird"],
+    assumedKnownWords: [],
+    coverPrompt: "Bob waves hello to a friendly cat, dog, and bird",
+    completionText: "Bye, cat. Bye, dog. Bye, bird.",
+    promptExperiment: {
+      exactRefrain: "Hello!",
+      focus: "Zero-assumption greeting loop",
+      instruction:
+        "Introduce one animal at a time with the same greeting, then close with one repeated goodbye pattern.",
+      hypothesis:
+        "A visible animal and one repeated greeting let a learner join in without assumed English vocabulary.",
+    },
+    pages: [
+      {
+        id: "cat-hello",
+        artworkPrompt: "Bob and a friendly cat wave hello to each other",
+        text: "A cat. Hello, cat!",
+        joinIn: "Hello!",
+      },
+      {
+        id: "dog-hello",
+        artworkPrompt: "Bob and a friendly dog wave hello to each other",
+        text: "A dog. Hello, dog!",
+        joinIn: "Hello!",
+      },
+      {
+        id: "bird-hello",
+        artworkPrompt: "Bob and a friendly bird wave hello to each other",
+        text: "A bird. Hello, bird!",
+        joinIn: "Hello!",
+      },
+      {
+        id: "friends-hello",
+        artworkPrompt: "Bob, the cat, dog, and bird wave hello together",
+        text: "Cat, dog, bird. Hello!",
+        joinIn: "Hello!",
+      },
+      {
+        id: "friends-bye",
+        artworkPrompt: "Bob waves goodbye as the cat, dog, and bird leave",
+        text: "Bye, cat. Bye, dog. Bye, bird.",
+        joinIn: "Bye!",
+      },
+    ],
+  }),
+  makePrototypeStory({
+    id: "marys-face",
+    title: "Mary’s Face",
+    category: "Body parts",
+    durationMinutes: 1,
+    level: "first-english-words",
+    summary: "Point to Mary's face, eyes, ears, nose, and mouth.",
+    targetWords: ["face", "eyes", "ears", "nose", "mouth", "point"],
+    assumedKnownWords: [],
+    coverPrompt: "Mary pointing to her smiling face",
+    completionText: "Face, eyes, ears, nose, mouth.",
+    promptExperiment: {
+      focus: "Point-and-say body words",
+      instruction:
+        "Show one clearly framed body part per page and invite the same pointing action each time.",
+      hypothesis:
+        "A repeated gesture can anchor each new body word without assumed English vocabulary.",
+    },
+    pages: [
+      {
+        id: "face",
+        artworkPrompt: "Mary pointing to her whole face",
+        text: "Point. Face.",
+        joinIn: "Face!",
+      },
+      {
+        id: "eyes",
+        artworkPrompt: "Mary pointing to her eyes",
+        text: "Point. Eyes.",
+        joinIn: "Eyes!",
+      },
+      {
+        id: "ears",
+        artworkPrompt: "Mary pointing to her ears",
+        text: "Point. Ears.",
+        joinIn: "Ears!",
+      },
+      {
+        id: "nose",
+        artworkPrompt: "Mary pointing to her nose",
+        text: "Point. Nose.",
+        joinIn: "Nose!",
+      },
+      {
+        id: "mouth",
+        artworkPrompt: "Mary pointing to her mouth",
+        text: "Point. Mouth.",
+        joinIn: "Mouth!",
+      },
+    ],
+  }),
+  makePrototypeStory({
+    id: "wash-sam-wash",
+    title: "Wash, Sam, Wash!",
+    category: "Handwashing",
+    durationMinutes: 1,
+    level: "first-english-words",
+    summary: "Help Sam wash dirty hands with water and soap.",
+    targetWords: ["hands", "dirty", "water", "soap", "wash", "clean"],
+    assumedKnownWords: [],
+    coverPrompt: "Sam washing his hands with soap and water",
+    completionText: "Clean hands!",
+    promptExperiment: {
+      focus: "Visible handwashing sequence",
+      instruction:
+        "Show one concrete handwashing step per page and repeat the key hand word across the sequence.",
+      hypothesis:
+        "A familiar visible sequence can carry six action and object words without assumed English vocabulary.",
+    },
+    pages: [
+      {
+        id: "dirty-hands",
+        artworkPrompt: "Sam showing his dirty hands",
+        text: "Dirty hands.",
+        joinIn: "Dirty hands!",
+      },
+      {
+        id: "water-on-hands",
+        artworkPrompt: "Sam putting water on his hands",
+        text: "Water on hands.",
+        joinIn: "Water!",
+      },
+      {
+        id: "soap-on-hands",
+        artworkPrompt: "Sam putting soap on his hands",
+        text: "Soap on hands.",
+        joinIn: "Soap!",
+      },
+      {
+        id: "wash-hands",
+        artworkPrompt: "Sam washing his hands with soap and water",
+        text: "Wash hands. Wash, wash!",
+        joinIn: "Wash, wash!",
+      },
+      {
+        id: "clean-hands",
+        artworkPrompt: "Sam showing his clean hands",
+        text: "Clean hands.",
+        joinIn: "Clean hands!",
+      },
+    ],
+  }),
   makePrototypeStory({
     id: "the-red-ball",
     title: "The Red Ball",
@@ -1014,7 +1179,7 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
     title: "Where Is Rose?",
     category: "Position words",
     durationMinutes: 1,
-    level: "first-words",
+    level: "repeating-patterns",
     summary: "Look in, on, and under a box to find Rose.",
     targetWords: ["box", "where", "in", "on", "under", "find"],
     assumedKnownWords: ["hello", "look"],

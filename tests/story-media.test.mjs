@@ -60,7 +60,10 @@ function createManifest() {
 function createLearnerPageManifest() {
   const assets = [];
   for (const { id: storyId, pages } of STORY_SCRIPT_CANDIDATES.filter(
-    ({ level }) => level !== "first-words",
+    ({ id, level }) =>
+      level !== "first-words" &&
+      level !== "first-english-words" &&
+      id !== "where-is-dot",
   )) {
     const directory = `tmp/imagegen/story-media/v6/${storyId}`;
     for (const { id: pageId } of pages) {
@@ -78,6 +81,50 @@ function createLearnerPageManifest() {
     collection: "learner-story-pages",
     schemaVersion: 1,
     version: 6,
+  };
+}
+
+function createFirstEnglishWordsManifest() {
+  const assets = [];
+  for (const [storyId, pageIds] of [
+    [
+      "hello-cat",
+      ["cat-hello", "dog-hello", "bird-hello", "friends-hello", "friends-bye"],
+    ],
+    ["marys-face", ["face", "eyes", "ears", "nose", "mouth"]],
+    [
+      "wash-sam-wash",
+      [
+        "dirty-hands",
+        "water-on-hands",
+        "soap-on-hands",
+        "wash-hands",
+        "clean-hands",
+      ],
+    ],
+  ]) {
+    const directory = `tmp/imagegen/story-media/v7/${storyId}`;
+    assets.push({
+      kind: "cover",
+      promptFile: `${directory}/cover.prompt.json`,
+      sourceFile: `${directory}/cover.png`,
+      storyId,
+    });
+    for (const pageId of pageIds) {
+      assets.push({
+        kind: "page",
+        pageId,
+        promptFile: `${directory}/${pageId}.prompt.json`,
+        sourceFile: `${directory}/${pageId}.png`,
+        storyId,
+      });
+    }
+  }
+  return {
+    assets,
+    collection: "first-english-words",
+    schemaVersion: 1,
+    version: 7,
   };
 }
 
@@ -118,10 +165,9 @@ async function createPublishFiles(manifest = createManifest()) {
   return cwd;
 }
 
-async function createPublisherFixture() {
-  const manifest = createManifest();
+async function createPublisherFixture(manifest = createManifest()) {
   const cwd = await createPublishFiles(manifest);
-  const manifestFile = "tmp/imagegen/story-media/v5/publish.json";
+  const manifestFile = `tmp/imagegen/story-media/v${manifest.version}/publish.json`;
   await writeFile(path.join(cwd, manifestFile), JSON.stringify(manifest));
   return { cwd, manifest, manifestFile };
 }
@@ -246,6 +292,106 @@ describe("story media planning", () => {
     assert.throws(
       () => storyMedia.createStoryMediaPublishPlan(wrongPage),
       /exactly ninety-five learner story page images/,
+    );
+  });
+
+  it("plans the dedicated v7 first-English-words masters and immutable outputs", () => {
+    const plan = storyMedia.createStoryMediaPublishPlan(
+      createFirstEnglishWordsManifest(),
+    );
+
+    assert.deepEqual(
+      {
+        assetCount: plan.assets.length,
+        collection: plan.collection,
+        privateCount: plan.privateObjects.length,
+        publicCount: plan.publicOutputs.length,
+        version: plan.version,
+      },
+      {
+        assetCount: 18,
+        collection: "first-english-words",
+        privateCount: 36,
+        publicCount: 24,
+        version: 7,
+      },
+    );
+    assert.deepEqual(
+      plan.publicOutputs
+        .filter(({ assetId }) => assetId === "hello-cat/cover")
+        .map(({ height, key, width }) => ({ height, key, width })),
+      [
+        {
+          height: 1024,
+          key: "assets/v7/stories/hello-cat-cover.webp",
+          width: 1536,
+        },
+        {
+          height: 512,
+          key: "assets/v7/stories/hello-cat-cover-768.webp",
+          width: 768,
+        },
+        {
+          height: 256,
+          key: "assets/v7/stories/hello-cat-cover-384.webp",
+          width: 384,
+        },
+      ],
+    );
+    assert.deepEqual(
+      plan.publicOutputs.find(
+        ({ assetId }) => assetId === "wash-sam-wash/clean-hands",
+      ),
+      {
+        assetId: "wash-sam-wash/clean-hands",
+        contentType: "image/webp",
+        height: 512,
+        key: "assets/v7/story-pages/wash-sam-wash-clean-hands.webp",
+        width: 768,
+      },
+    );
+    assert.deepEqual(
+      plan.privateObjects.filter(
+        ({ assetId }) => assetId === "marys-face/nose",
+      ),
+      [
+        {
+          assetId: "marys-face/nose",
+          contentType: "image/png",
+          file: "tmp/imagegen/story-media/v7/marys-face/nose.png",
+          key: "story-media/marys-face/v7/nose/original.png",
+        },
+        {
+          assetId: "marys-face/nose",
+          contentType: "application/json",
+          file: "tmp/imagegen/story-media/v7/marys-face/nose.prompt.json",
+          key: "story-media/marys-face/v7/nose/prompt.json",
+        },
+      ],
+    );
+  });
+
+  it("rejects incomplete or misplaced v7 first-English-words provenance", () => {
+    const incomplete = createFirstEnglishWordsManifest();
+    incomplete.assets.pop();
+    assert.throws(
+      () => storyMedia.createStoryMediaPublishPlan(incomplete),
+      /exactly three covers and fifteen first English word page images/,
+    );
+
+    const misplacedSource = createFirstEnglishWordsManifest();
+    misplacedSource.assets[0].sourceFile =
+      "tmp/imagegen/story-media/v6/hello-cat/cover.png";
+    assert.throws(
+      () => storyMedia.createStoryMediaPublishPlan(misplacedSource),
+      /must be inside tmp\/imagegen\/story-media\/v7/,
+    );
+
+    const duplicatePrompt = createFirstEnglishWordsManifest();
+    duplicatePrompt.assets[1].promptFile = duplicatePrompt.assets[0].promptFile;
+    assert.throws(
+      () => storyMedia.createStoryMediaPublishPlan(duplicatePrompt),
+      /prompt files must be unique/,
     );
   });
 });
@@ -377,6 +523,36 @@ describe("story media preparation", () => {
       /must resolve inside tmp\/imagegen\/story-media\/v5/,
     );
   });
+
+  it("validates every v7 first-English-words source and saved prompt", async () => {
+    const manifest = createFirstEnglishWordsManifest();
+    const cwd = await createPublishFiles(manifest);
+    const plan = storyMedia.createStoryMediaPublishPlan(manifest);
+    const source = path.join(cwd, manifest.assets[0].sourceFile);
+    const prompt = path.join(cwd, manifest.assets[1].promptFile);
+
+    await writeFile(source, "not an image");
+    await assert.rejects(
+      storyMedia.prepareStoryMediaUploads(plan, { cwd }),
+      /could not be decoded by Sharp/,
+    );
+
+    await sharp({
+      create: {
+        background: "#ffffff",
+        channels: 3,
+        height: 1024,
+        width: 1536,
+      },
+    })
+      .png()
+      .toFile(source);
+    await writeFile(prompt, "{}");
+    await assert.rejects(
+      storyMedia.prepareStoryMediaUploads(plan, { cwd }),
+      /prompt must be a non-empty string/,
+    );
+  });
 });
 
 function createCdnResponse(output, overrides = {}) {
@@ -500,6 +676,76 @@ describe("story media CDN verification", () => {
       storyId: "boots-in-the-rain",
       },
     );
+  });
+
+  it("returns only the three v7 first-English-words URL mappings", async () => {
+    const manifest = createFirstEnglishWordsManifest();
+    const cwd = await createPublishFiles(manifest);
+    const prepared = await storyMedia.prepareStoryMediaUploads(
+      storyMedia.createStoryMediaPublishPlan(manifest),
+      { cwd },
+    );
+    const outputs = new Map(
+      prepared.publicOutputs.map((output) => [`/${output.key}`, output]),
+    );
+
+    const result = await storyMedia.verifyStoryMediaDelivery(prepared, {
+      cacheBust: "fixture",
+      fetch: async (url) =>
+        createCdnResponse(outputs.get(new URL(url).pathname)),
+      mediaOrigin: "https://media.example.com",
+    });
+
+    assert.equal(result.verified.length, 24);
+    assert.deepEqual(result.mappings, [
+      {
+        coverSrc:
+          "https://media.example.com/assets/v7/stories/hello-cat-cover.webp",
+        pageSrcById: {
+          "cat-hello":
+            "https://media.example.com/assets/v7/story-pages/hello-cat-cat-hello.webp",
+          "dog-hello":
+            "https://media.example.com/assets/v7/story-pages/hello-cat-dog-hello.webp",
+          "bird-hello":
+            "https://media.example.com/assets/v7/story-pages/hello-cat-bird-hello.webp",
+          "friends-hello":
+            "https://media.example.com/assets/v7/story-pages/hello-cat-friends-hello.webp",
+          "friends-bye":
+            "https://media.example.com/assets/v7/story-pages/hello-cat-friends-bye.webp",
+        },
+        storyId: "hello-cat",
+      },
+      {
+        coverSrc:
+          "https://media.example.com/assets/v7/stories/marys-face-cover.webp",
+        pageSrcById: {
+          face: "https://media.example.com/assets/v7/story-pages/marys-face-face.webp",
+          eyes: "https://media.example.com/assets/v7/story-pages/marys-face-eyes.webp",
+          ears: "https://media.example.com/assets/v7/story-pages/marys-face-ears.webp",
+          nose: "https://media.example.com/assets/v7/story-pages/marys-face-nose.webp",
+          mouth:
+            "https://media.example.com/assets/v7/story-pages/marys-face-mouth.webp",
+        },
+        storyId: "marys-face",
+      },
+      {
+        coverSrc:
+          "https://media.example.com/assets/v7/stories/wash-sam-wash-cover.webp",
+        pageSrcById: {
+          "dirty-hands":
+            "https://media.example.com/assets/v7/story-pages/wash-sam-wash-dirty-hands.webp",
+          "water-on-hands":
+            "https://media.example.com/assets/v7/story-pages/wash-sam-wash-water-on-hands.webp",
+          "soap-on-hands":
+            "https://media.example.com/assets/v7/story-pages/wash-sam-wash-soap-on-hands.webp",
+          "wash-hands":
+            "https://media.example.com/assets/v7/story-pages/wash-sam-wash-wash-hands.webp",
+          "clean-hands":
+            "https://media.example.com/assets/v7/story-pages/wash-sam-wash-clean-hands.webp",
+        },
+        storyId: "wash-sam-wash",
+      },
+    ]);
   });
 
   it("rejects shared-cache freshness overrides and withholds mappings", async () => {
@@ -626,6 +872,36 @@ describe("story media publisher CLI", () => {
       }),
       /PARROT_MEDIA_ORIGIN must be set/,
     );
+  });
+
+  it("dry-runs all v7 first-English-words provenance and public objects", async () => {
+    const { cwd, manifestFile } = await createPublisherFixture(
+      createFirstEnglishWordsManifest(),
+    );
+    let output = "";
+
+    const result = await storyPublisher.runStoryMediaPublisher({
+      args: ["--manifest", manifestFile],
+      cwd,
+      env: {},
+      fetch() {
+        throw new Error("Dry run must not use the CDN");
+      },
+      runCommand() {
+        throw new Error("Dry run must not invoke Wrangler");
+      },
+      writeOutput(value) {
+        output += value;
+      },
+    });
+
+    assert.deepEqual(result, {
+      applied: false,
+      assetCount: 18,
+      publicCount: 24,
+      uploadCount: 60,
+    });
+    assert.match(output, /18 source images validated; 60 objects planned/);
   });
 
   it("preflights every R2 key, uploads private data first, and verifies mappings", async () => {

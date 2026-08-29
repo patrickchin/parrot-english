@@ -414,7 +414,7 @@ export function StoryReader({
       <section
         aria-label="Story reader"
         className={cx(
-          "mx-auto grid h-full min-h-0 w-full max-w-7xl grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:aspect-[2.72/1] lg:h-auto lg:max-h-full lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:grid-rows-[minmax(0,1fr)]",
+          "mx-auto grid h-full min-h-0 w-full max-w-[90rem] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:aspect-[2.72/1] lg:h-auto lg:max-h-full lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:grid-rows-[minmax(0,1fr)]",
           isLongStory
             ? "short:landscape:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)]"
             : "short:landscape:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.9fr)]",
