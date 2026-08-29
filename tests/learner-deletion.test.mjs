@@ -275,9 +275,7 @@ function workerEnvironment(state, bucket) {
 }
 
 async function unlock(state) {
-  await createGuardianAccessRepository(state.database, {
-    now: () => new Date(NOW),
-  }).unlock(SESSION_ID);
+  await createGuardianAccessRepository(state.database).unlock(SESSION_ID);
 }
 
 function prepare(state, bucket, profileId = TARGET_ID, wait = async () => {}) {
