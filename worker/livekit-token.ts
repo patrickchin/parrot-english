@@ -24,7 +24,6 @@ type TokenInput = {
   conversation: { id: string; roomName: string; scenarioKey: string };
   identity: LearnerIdentity;
   initialState?: Record<string, unknown>;
-  now?: Date;
   promptStyle?: TalkToPeppaPromptStyle;
 };
 

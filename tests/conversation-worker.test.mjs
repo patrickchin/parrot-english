@@ -2088,7 +2088,6 @@ describe("LiveKit participant tokens", () => {
         profileName: "Mia",
         profileSummary: "Mia is thirty and loves fast red cars.",
       }),
-      now: new Date("2026-07-08T08:00:00.000Z"),
     });
     const [, encodedPayload] = token.split(".");
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { LESSON_BACKGROUNDS } from "../lib/lesson-visual-catalog.ts";
 import { generateLessonScript } from "../worker/lesson-generator.ts";
 import { LESSON_GENERATOR_MODEL } from "../worker/model-config.ts";
 import { LESSON_GENERATOR_SYSTEM_PROMPT } from "../worker/prompts/lesson-generator.ts";
@@ -52,6 +53,20 @@ describe("lesson script generation", () => {
     assert.match(calls[0].body.messages[1].content, /ordering ice cream/);
     assert.match(calls[0].body.messages[1].content, /Mia/);
     assert.match(calls[0].body.messages[1].content, /episode-garden/);
+    assert.ok(
+      LESSON_BACKGROUNDS.some(
+        ({ id, alt }) =>
+          id === "episode-garden" &&
+          alt === "A sunny garden with flowers and a tall tree",
+      ),
+    );
+    assert.ok(
+      JSON.parse(calls[0].body.messages[1].content).availableBackgrounds.some(
+        ({ id, alt }) =>
+          id === "episode-garden" &&
+          alt === "A sunny garden with flowers and a tall tree",
+      ),
+    );
   });
 
   it("normalizes an incomplete OpenAI draft and returns its warnings", async () => {

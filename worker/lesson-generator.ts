@@ -1,10 +1,10 @@
 import { prepareLesson } from "../lib/lesson-data.js";
-import type { LessonDraft } from "../src/lessons/lesson-catalog.ts";
-import { fetchWithTimeout } from "./groq.ts";
 import {
   LESSON_BACKGROUNDS,
   LESSON_VISUAL_CATALOG,
-} from "./lesson-catalog.ts";
+} from "../lib/lesson-visual-catalog.ts";
+import type { LessonDraft } from "../src/lessons/lesson-catalog.ts";
+import { fetchWithTimeout } from "./groq.ts";
 import { LESSON_GENERATOR_MODEL_ID } from "./model-config.ts";
 import { LESSON_GENERATOR_SYSTEM_PROMPT } from "./prompts/lesson-generator.ts";
 

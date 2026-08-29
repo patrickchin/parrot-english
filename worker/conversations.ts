@@ -236,7 +236,6 @@ export async function handleConversationRequest(
         conversation,
         identity: input.identity,
         initialState,
-        now: dependencies.now(),
         promptStyle,
       });
       return json(
