@@ -323,7 +323,7 @@ export function GuardianLearnerProfilesView({
 
 export function GuardianLearnerProfiles() {
   const navigate = useNavigate();
-  const { deleteLearner } = useLearnerSelection();
+  const { deleteLearner, rosterRevision } = useLearnerSelection();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
@@ -333,6 +333,7 @@ export function GuardianLearnerProfiles() {
   const controllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(false);
   const operationRef = useRef(0);
+  const rosterRevisionRef = useRef(rosterRevision);
 
   const beginOperation = useCallback(() => {
     controllerRef.current?.abort();
@@ -389,6 +390,12 @@ export function GuardianLearnerProfiles() {
       controllerRef.current = null;
     };
   }, [loadRoster]);
+
+  useEffect(() => {
+    if (rosterRevisionRef.current === rosterRevision) return;
+    rosterRevisionRef.current = rosterRevision;
+    void loadRoster();
+  }, [loadRoster, rosterRevision]);
 
   async function reconcileRosterAfterMutation(
     operation: ReturnType<typeof beginOperation>,

@@ -23,6 +23,7 @@ export type LearnerSelectionContextValue = {
   reloadSelectedLearner: (
     expectedProfileId: string,
   ) => Promise<LearnerProfileSummary>;
+  rosterRevision: number;
   selectLearner: (profileId: string) => Promise<LearnerProfileRoster>;
 };
 
@@ -53,14 +54,19 @@ export function LearnerSelectionProvider({
   createAndSelectLearner,
   deleteLearner,
   reloadSelectedLearner,
+  rosterRevision = 0,
   selectLearner,
-}: LearnerSelectionContextValue & { children: ReactNode }) {
+}: Omit<LearnerSelectionContextValue, "rosterRevision"> & {
+  children: ReactNode;
+  rosterRevision?: number;
+}) {
   const value = useMemo(
     () => ({
       activeProfileId,
       createAndSelectLearner,
       deleteLearner,
       reloadSelectedLearner,
+      rosterRevision,
       selectLearner,
     }),
     [
@@ -68,6 +74,7 @@ export function LearnerSelectionProvider({
       createAndSelectLearner,
       deleteLearner,
       reloadSelectedLearner,
+      rosterRevision,
       selectLearner,
     ],
   );

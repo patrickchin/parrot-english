@@ -585,7 +585,6 @@ type StoredMockLearnerState = Omit<
 };
 
 type StoredMockAccountState = {
-  activeProfileId: string | null;
   learners: Array<[string, StoredMockLearnerState]>;
 };
 
@@ -726,7 +725,6 @@ function storeMockAccountState(
   state: MockAccountState,
 ): StoredMockAccountState {
   return {
-    activeProfileId: state.activeProfileId,
     learners: [...state.learners].map(([id, learner]) => [
       id,
       {
@@ -741,9 +739,10 @@ function storeMockAccountState(
 
 function restoreMockAccountState(
   state: StoredMockAccountState,
+  activeProfileId: string | null,
 ): MockAccountState {
   return {
-    activeProfileId: state.activeProfileId,
+    activeProfileId,
     learners: new Map(
       state.learners.map(([id, learner]) => [
         id,
@@ -777,32 +776,53 @@ function isStoredMockAccountState(
 ): value is StoredMockAccountState {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<StoredMockAccountState>;
-  return (
-    (candidate.activeProfileId === null ||
-      typeof candidate.activeProfileId === "string") &&
-    Array.isArray(candidate.learners)
-  );
+  return Array.isArray(candidate.learners);
 }
 
 function createE2eLearnerAccount(
   scenario: MockLearnerScenario,
   sessionId: string,
+  accountId = sessionId,
 ) {
-  const storageKey = `${E2E_LEARNER_ACCOUNT_KEY_PREFIX}:${scenario}:${sessionId}`;
+  const storageKey = `${E2E_LEARNER_ACCOUNT_KEY_PREFIX}:${scenario}:${accountId}`;
+  const selectionStorageKeyPrefix = `${storageKey}:selection:`;
+  const selectionStorageKey = `${selectionStorageKeyPrefix}${sessionId}`;
   let state = initialMockAccountState(scenario);
   function restoreStoredState(saved: string | null) {
     if (!saved) return;
     try {
       const parsed: unknown = JSON.parse(saved);
       if (isStoredMockAccountState(parsed))
-        state = restoreMockAccountState(parsed);
+        state = restoreMockAccountState(parsed, state.activeProfileId);
     } catch {
       // Use the deterministic initial account when stored test state is corrupt.
     }
   }
-  restoreStoredState(localStorage.getItem(storageKey));
+  function restoreStoredSelection(saved: string | null) {
+    if (saved === null) return;
+    try {
+      const selected: unknown = JSON.parse(saved);
+      state.activeProfileId =
+        typeof selected === "string" || selected === null ? selected : null;
+    } catch {
+      state.activeProfileId = null;
+    }
+  }
+  function refreshStoredState() {
+    restoreStoredState(localStorage.getItem(storageKey));
+    restoreStoredSelection(localStorage.getItem(selectionStorageKey));
+    const selected = state.activeProfileId
+      ? state.learners.get(state.activeProfileId)
+      : null;
+    if (state.activeProfileId && (!selected || selected.deletionPending)) {
+      state.activeProfileId = null;
+    }
+  }
+  refreshStoredState();
   window.addEventListener("storage", (event) => {
-    if (event.key === storageKey) restoreStoredState(event.newValue);
+    if (event.key === storageKey || event.key === selectionStorageKey) {
+      refreshStoredState();
+    }
   });
 
   let heldSelection: {
@@ -823,6 +843,25 @@ function createE2eLearnerAccount(
       storageKey,
       JSON.stringify(storeMockAccountState(state)),
     );
+    localStorage.setItem(
+      selectionStorageKey,
+      JSON.stringify(state.activeProfileId),
+    );
+  }
+
+  function clearDeletedLearnerSelections(profileId: string) {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith(selectionStorageKeyPrefix)) continue;
+      try {
+        if (JSON.parse(localStorage.getItem(key) ?? "null") === profileId) {
+          localStorage.setItem(key, "null");
+        }
+      } catch {
+        localStorage.setItem(key, "null");
+      }
+    }
+    if (state.activeProfileId === profileId) state.activeProfileId = null;
   }
 
   function roster() {
@@ -1172,6 +1211,14 @@ function createE2eLearnerAccount(
     init: RequestInit | undefined,
     explicitLearner: MockLearnerState | null,
   ) {
+    const explicitProfileId = explicitLearner?.profile.id ?? null;
+    refreshStoredState();
+    const currentExplicitLearner = explicitProfileId
+      ? (state.learners.get(explicitProfileId) ?? null)
+      : null;
+    if (explicitProfileId && currentExplicitLearner === null) {
+      return targetedLearnerNotFound();
+    }
     const request =
       input instanceof Request
         ? input
@@ -1185,9 +1232,9 @@ function createE2eLearnerAccount(
     if (url.origin !== window.location.origin) return null;
     const method = (init?.method ?? request.method ?? "GET").toUpperCase();
 
-    const dub = await handleDub(url, method, request, explicitLearner);
+    const dub = await handleDub(url, method, request, currentExplicitLearner);
     if (dub) return dub;
-    const art = await handleArt(url, method, explicitLearner);
+    const art = await handleArt(url, method, currentExplicitLearner);
     if (art) return art;
     const lessonRecording = await handleLessonRecording(
       input,
@@ -1195,7 +1242,7 @@ function createE2eLearnerAccount(
       url,
       method,
       request,
-      explicitLearner,
+      currentExplicitLearner,
     );
     if (lessonRecording) return lessonRecording;
 
@@ -1292,17 +1339,17 @@ function createE2eLearnerAccount(
       if (failNextLearnerDelete) {
         failNextLearnerDelete = false;
         learner.deletionPending = true;
-        if (state.activeProfileId === profileId) state.activeProfileId = null;
+        clearDeletedLearnerSelections(profileId);
         persist();
         return e2eJson({ error: "delete_failed" }, 503);
       }
       state.learners.delete(profileId);
-      if (state.activeProfileId === profileId) state.activeProfileId = null;
+      clearDeletedLearnerSelections(profileId);
       persist();
       return e2eJson(roster());
     }
 
-    const resolvedLearner = requestLearner(explicitLearner);
+    const resolvedLearner = requestLearner(currentExplicitLearner);
     const learner =
       resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
@@ -1567,10 +1614,12 @@ function createE2eLearnerAccount(
       return true;
     },
     resolveExplicitLearner(profileId: string) {
+      refreshStoredState();
       const learner = state.learners.get(profileId) ?? null;
       return learner?.deletionPending ? null : learner;
     },
     snapshot(profileId?: string) {
+      refreshStoredState();
       const learner = profileId
         ? (state.learners.get(profileId) ?? null)
         : selectedLearner();
@@ -2658,9 +2707,21 @@ function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
   const dubStore = createE2eDubStore(getE2eDubScenario());
   const learnerScenario = getE2eLearnerScenario();
+  const learnerSessionId = getE2eLearnerSessionId();
+  const learnerAccountId =
+    new URL(window.location.href).searchParams.get("parrotE2eAccount") ??
+    learnerSessionId;
   const learnerAccount = learnerScenario
-    ? createE2eLearnerAccount(learnerScenario, getE2eLearnerSessionId())
+    ? createE2eLearnerAccount(
+        learnerScenario,
+        learnerSessionId,
+        learnerAccountId,
+      )
     : null;
+  const learnerSessions = new Map<
+    string,
+    ReturnType<typeof createE2eLearnerAccount>
+  >();
   let fallbackStoryLevel = E2E_VIEWPORT_EDITOR_STATE.profile.storyLevel;
 
   function fallbackProfileState() {
@@ -2700,12 +2761,67 @@ function installE2eProfileFetchMock() {
     });
   }
   if (learnerAccount) {
+    const openLearnerSession = (sessionId: string) => {
+      let account = learnerSessions.get(sessionId);
+      if (!account) {
+        account = createE2eLearnerAccount(
+          learnerScenario!,
+          sessionId,
+          learnerAccountId,
+        );
+        learnerSessions.set(sessionId, account);
+      }
+      return {
+        failNextLearnerDelete: () => account.failNextLearnerDelete(),
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          const request = input instanceof Request ? input : null;
+          const source =
+            typeof input === "string"
+              ? input
+              : input instanceof URL
+                ? input.href
+                : input.url;
+          const url = new URL(source, window.location.href);
+          const method = (
+            init?.method ??
+            request?.method ??
+            "GET"
+          ).toUpperCase();
+          const hasLearnerTarget = hasExplicitLearnerTarget(url);
+          const guarded = await guardianResponse(
+            input,
+            init,
+            url,
+            method,
+            hasLearnerTarget,
+          );
+          if (guarded) return guarded;
+          const target = hasLearnerTarget
+            ? parseExplicitLearnerTarget(url)
+            : null;
+          if (hasLearnerTarget && target === null) {
+            return targetedLearnerNotFound();
+          }
+          const explicitLearner =
+            target === null ? null : account.resolveExplicitLearner(target);
+          if (target !== null && explicitLearner === null) {
+            return targetedLearnerNotFound();
+          }
+          return (
+            (await account.handle(input, init, explicitLearner)) ??
+            nativeFetch(input, init)
+          );
+        },
+        snapshot: (profileId?: string) => account.snapshot(profileId),
+      };
+    };
     Object.defineProperty(window, "__parrotE2eLearners", {
       configurable: true,
       value: {
         failNextLearnerDelete: () => learnerAccount.failNextLearnerDelete(),
         failNextLearnerProfileLoad: () =>
           learnerAccount.failNextLearnerProfileLoad(),
+        openSession: openLearnerSession,
         releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
         snapshot: (profileId?: string) => learnerAccount.snapshot(profileId),
       },
