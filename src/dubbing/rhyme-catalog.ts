@@ -1,3 +1,5 @@
+import { OLD_MACDONALD_SCENE_ARTWORK, type DubArtwork } from "./dub-artwork.ts";
+
 export type DubVisualBeat =
   | "depart" | "hill" | "mother-calls" | "return" | "none-return"
   | "sad-mother-depart" | "sad-mother-hill" | "sad-mother-calls" | "five-return"
@@ -18,6 +20,7 @@ export type DubDefinition = {
   readonly finalCueTailMs: number;
   readonly recordingMs: number;
   readonly linesPerScene: number;
+  readonly sceneArtwork: readonly DubArtwork[];
   readonly sceneTitles: readonly string[];
   readonly lines: readonly DubLine[];
   readonly guideAudioPrefix: string;
@@ -67,6 +70,7 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   finalCueTailMs: 4_000,
   recordingMs: 6_000,
   linesPerScene: 7,
+  sceneArtwork: OLD_MACDONALD_SCENE_ARTWORK,
   sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),
   lines: oldMacDonaldLines,
   guideAudioPrefix: "old-macdonald-v1-guide-",

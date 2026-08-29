@@ -1,3 +1,5 @@
+import { FIVE_LITTLE_DUCKS_SCENE_ARTWORK } from "./dub-artwork.ts";
+
 export const DUB_ID = "five-little-ducks-v2" as const;
 export const DUB_ROUTE = "/dubs/five-little-ducks" as const;
 export const DUB_DURATION_MS = 98_000;
@@ -87,6 +89,7 @@ export const FIVE_LITTLE_DUCKS_DUB = Object.freeze({
   finalCueTailMs: 5_200,
   recordingMs: DUB_RECORDING_MS,
   linesPerScene: DUB_LINES_PER_VERSE,
+  sceneArtwork: FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
   sceneTitles: DUB_SCENE_TITLES,
   lines: DUB_LINES,
   guideAudioPrefix: "five-little-ducks-v2-guide-",
