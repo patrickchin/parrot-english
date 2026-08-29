@@ -53,9 +53,6 @@ export class DubLinePlaybackError extends Error {
   }
 }
 
-const MUSIC_BPM = 92;
-const MUSIC_NOTES = [60, 64, 67, 69, 67, 64, 62, 67] as const;
-
 function stopNode(node: Pick<AudioScheduledSourceNode, "stop">) {
   try {
     node.stop();
@@ -100,36 +97,107 @@ function midiFrequency(note: number) {
   return 440 * 2 ** ((note - 69) / 12);
 }
 
+function scheduleTone(
+  context: AudioContext,
+  output: AudioNode,
+  oscillators: OscillatorNode[],
+  {
+    durationMs,
+    gain,
+    midi,
+    startsAt,
+    type,
+  }: {
+    durationMs: number;
+    gain: number;
+    midi: number;
+    startsAt: number;
+    type: OscillatorType;
+  },
+) {
+  const oscillator = context.createOscillator();
+  oscillators.push(oscillator);
+  const envelope = context.createGain();
+  const endsAt = startsAt + durationMs / 1_000;
+  oscillator.type = type;
+  oscillator.frequency.value = midiFrequency(midi);
+  envelope.gain.setValueAtTime(0, startsAt);
+  envelope.gain.linearRampToValueAtTime(gain, startsAt + 0.02);
+  envelope.gain.linearRampToValueAtTime(0, endsAt);
+  oscillator.connect(envelope);
+  envelope.connect(output);
+  oscillator.start(startsAt);
+  oscillator.stop(endsAt);
+}
+
 function scheduleDubMusic(
   context: AudioContext,
+  definition: DubDefinition,
+  lines: readonly DubLine[],
+  cueOffsetMs: number,
   durationMs: number,
   output: AudioNode,
   startAt: number,
 ) {
-  const beatSeconds = 60 / MUSIC_BPM;
-  const noteCount = Math.ceil(durationMs / 1_000 / beatSeconds);
   const oscillators: OscillatorNode[] = [];
 
   try {
-    for (let index = 0; index < noteCount; index += 1) {
-      const startsAt = startAt + index * beatSeconds;
-      const melodyBeat = index % 2 === 0;
-      const note = MUSIC_NOTES[index % MUSIC_NOTES.length];
-      const oscillator = context.createOscillator();
-      oscillators.push(oscillator);
-      const envelope = context.createGain();
-      oscillator.type = melodyBeat ? "sine" : "triangle";
-      oscillator.frequency.value = midiFrequency(note);
-      envelope.gain.setValueAtTime(0, startsAt);
-      envelope.gain.linearRampToValueAtTime(1, startsAt + 0.02);
-      envelope.gain.linearRampToValueAtTime(
-        0,
-        startsAt + beatSeconds * 0.82,
-      );
-      oscillator.connect(envelope);
-      envelope.connect(output);
-      oscillator.start(startsAt);
-      oscillator.stop(startsAt + beatSeconds * 0.82);
+    const fullDub = cueOffsetMs === 0
+      && lines.length === definition.lines.length
+      && lines[0] === definition.lines[0];
+    if (fullDub) {
+      for (const note of definition.music.countIn) {
+        scheduleTone(context, output, oscillators, {
+          durationMs: note.durationMs,
+          gain: 0.35,
+          midi: note.midi,
+          startsAt: startAt + note.atMs / 1_000,
+          type: "sine",
+        });
+      }
+    }
+
+    for (const line of lines) {
+      const lineIndex = definition.lines.indexOf(line);
+      const phrase = definition.music.linePhrases[
+        lineIndex % definition.linesPerScene
+      ];
+      const phraseStartsMs = line.cueMs - cueOffsetMs;
+      scheduleTone(context, output, oscillators, {
+        durationMs: Math.min(1_600, phrase.durationMs),
+        gain: 0.24,
+        midi: phrase.bassMidi,
+        startsAt: startAt + phraseStartsMs / 1_000,
+        type: "sine",
+      });
+      for (const note of phrase.notes) {
+        scheduleTone(context, output, oscillators, {
+          durationMs: note.durationMs,
+          gain: 0.78,
+          midi: note.midi,
+          startsAt: startAt + (phraseStartsMs + note.atMs) / 1_000,
+          type: "triangle",
+        });
+      }
+    }
+
+    const lastLine = lines.at(-1)!;
+    const lastLineIndex = definition.lines.indexOf(lastLine);
+    const lastPhrase = definition.music.linePhrases[
+      lastLineIndex % definition.linesPerScene
+    ];
+    const phraseEndMs = lastLine.cueMs - cueOffsetMs + lastPhrase.durationMs;
+    const outroDurationMs = durationMs - phraseEndMs;
+    if (outroDurationMs > 0) {
+      definition.music.outroMidi.forEach((midi, index) => {
+        scheduleTone(context, output, oscillators, {
+          durationMs: outroDurationMs,
+          gain: index === 0 ? 0.28 : 0.18,
+          midi,
+          startsAt: startAt + phraseEndMs / 1_000,
+          type: "sine",
+        });
+      });
     }
   } catch (error) {
     oscillators.forEach(stopNode);
@@ -332,7 +400,7 @@ export async function startDubPlayback({
     master.gain.value = 0.95;
     master.connect(context.destination);
     const music = context.createGain();
-    music.gain.value = 0.08;
+    music.gain.value = definition.music.volume;
     music.connect(master);
 
     const lineSources = new Map<string, AudioBufferSourceNode>();
@@ -352,7 +420,15 @@ export async function startDubPlayback({
       output: master,
       startAt,
     });
-    oscillators = scheduleDubMusic(context, durationMs, music, startAt);
+    oscillators = scheduleDubMusic(
+      context,
+      definition,
+      lines,
+      cueOffsetMs,
+      durationMs,
+      music,
+      startAt,
+    );
 
     const tick = () => {
       frameId = null;
