@@ -1,4 +1,5 @@
 import { OLD_MACDONALD_SCENE_ARTWORK, type DubArtwork } from "./dub-artwork.ts";
+import { OLD_MACDONALD_MUSIC, type DubMusicScore } from "./dub-melodies.ts";
 
 export type DubVisualBeat =
   | "depart" | "hill" | "mother-calls" | "return" | "none-return"
@@ -20,6 +21,7 @@ export type DubDefinition = {
   readonly finalCueTailMs: number;
   readonly recordingMs: number;
   readonly linesPerScene: number;
+  readonly music: DubMusicScore;
   readonly sceneArtwork: readonly DubArtwork[];
   readonly sceneTitles: readonly string[];
   readonly lines: readonly DubLine[];
@@ -35,13 +37,18 @@ const OLD_ANIMALS = [
   { animal: "a dog", beat: "dog", sounds: ["woof-woof", "woof-woof", "woof", "woof-woof"], title: "A dog on the farm" },
   { animal: "some sheep", beat: "sheep", sounds: ["baa-baa", "baa-baa", "baa", "baa-baa"], title: "Sheep on the farm" },
 ] as const;
+const OLD_MACDONALD_CUE_OFFSETS = Object.freeze([
+  0, 8_000, 16_000, 18_000, 20_000, 22_000, 24_000,
+] as const);
 
 const createOldLine = (
   index: number,
   text: string,
   visualBeat: DubVisualBeat,
 ): DubLine => Object.freeze({
-  cueMs: 800 + index * 4_000,
+  cueMs: 800
+    + Math.floor(index / OLD_MACDONALD_CUE_OFFSETS.length) * 32_000
+    + OLD_MACDONALD_CUE_OFFSETS[index % OLD_MACDONALD_CUE_OFFSETS.length],
   id: `old-macdonald-v1-line-${index + 1}`,
   text,
   visualBeat,
@@ -66,10 +73,11 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   id: "old-macdonald-v1",
   route: "/dubs/old-macdonald",
   title: "Old MacDonald Had a Farm",
-  durationMs: 150_000,
-  finalCueTailMs: 4_000,
+  durationMs: 162_000,
+  finalCueTailMs: 9_200,
   recordingMs: 6_000,
   linesPerScene: 7,
+  music: OLD_MACDONALD_MUSIC,
   sceneArtwork: OLD_MACDONALD_SCENE_ARTWORK,
   sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),
   lines: oldMacDonaldLines,
