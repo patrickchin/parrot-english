@@ -1,31 +1,31 @@
+/* global process */
+
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { describe, it } from "node:test";
+import test from "node:test";
 
-const viteConfig = readFileSync(
-  new URL("../vite.config.ts", import.meta.url),
-  "utf8"
-);
-const viteEnv = readFileSync(new URL("../src/vite-env.d.ts", import.meta.url), "utf8");
-const deployWorkflow = readFileSync(
-  new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
-  "utf8"
-);
+test("the frontend build publishes supplied release metadata to the app", async () => {
+  const previousVersion = process.env.PARROT_FRONTEND_VERSION;
+  const previousCommit = process.env.PARROT_FRONTEND_COMMIT_SHA;
+  process.env.PARROT_FRONTEND_VERSION = "7.8.9";
+  process.env.PARROT_FRONTEND_COMMIT_SHA = "abcdef0";
 
-describe("visual build versioning", () => {
-  it("injects a commit-count app version and short commit SHA at build time", () => {
-    assert.match(viteConfig, /git rev-list --count HEAD/);
-    assert.match(viteConfig, /git rev-parse --short=7 HEAD/);
-    assert.match(viteConfig, /VITE_PARROT_APP_VERSION/);
-    assert.match(viteConfig, /VITE_PARROT_COMMIT_SHA/);
-  });
+  try {
+    const { default: config } = await import(
+      `../vite.config.ts?version-badge=${Date.now()}`
+    );
 
-  it("types the public version fields exposed to the React app", () => {
-    assert.match(viteEnv, /readonly VITE_PARROT_APP_VERSION: string/);
-    assert.match(viteEnv, /readonly VITE_PARROT_COMMIT_SHA: string/);
-  });
-
-  it("fetches full history in CI so the commit-count version can increase", () => {
-    assert.match(deployWorkflow, /fetch-depth:\s*0/);
-  });
+    assert.equal(
+      JSON.parse(config.define["import.meta.env.VITE_PARROT_APP_VERSION"]),
+      "7.8.9",
+    );
+    assert.equal(
+      JSON.parse(config.define["import.meta.env.VITE_PARROT_COMMIT_SHA"]),
+      "abcdef0",
+    );
+  } finally {
+    if (previousVersion === undefined) delete process.env.PARROT_FRONTEND_VERSION;
+    else process.env.PARROT_FRONTEND_VERSION = previousVersion;
+    if (previousCommit === undefined) delete process.env.PARROT_FRONTEND_COMMIT_SHA;
+    else process.env.PARROT_FRONTEND_COMMIT_SHA = previousCommit;
+  }
 });

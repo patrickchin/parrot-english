@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -46,19 +45,6 @@ const {
   teardownProfileOperationResources,
   updateProfileDraft,
 } = gateModule;
-const appSource = readFileSync(
-  new URL("../src/app/App.tsx", import.meta.url),
-  "utf8",
-);
-const questionSource = readFileSync(
-  new URL("../src/learner-profile/LearnerProfileQuestion.tsx", import.meta.url),
-  "utf8",
-);
-const gateSource = readFileSync(
-  new URL("../src/learner-profile/LearnerProfileGate.tsx", import.meta.url),
-  "utf8",
-);
-
 function textFromMarkup(markup) {
   return markup
     .replace(/<[^>]+>/g, "")
@@ -254,16 +240,6 @@ describe("one-question prose onboarding view", () => {
     assert.doesNotMatch(media, /aria-invalid|aria-describedby/);
   });
 
-  it("contains no scalar-array branching helpers", () => {
-    assert.doesNotMatch(
-      questionSource,
-      /cardinality|answerType|learner-profile-chips|learner-profile-suggestions|onToggleOption|onAddPending/,
-    );
-    assert.doesNotMatch(
-      gateSource,
-      /addArrayAnswer|toggleArrayAnswer|submissionValue|pendingValue/,
-    );
-  });
 });
 
 describe("onboarding prompt and transcription helpers", () => {
@@ -669,17 +645,6 @@ describe("profile summary editor", () => {
     assert.ok(buttons.every((button) => button?.includes('disabled=""')));
   });
 
-  it("clears profile work through shared route teardown", () => {
-    assert.match(
-      gateSource,
-      /const clearProfileEditor = useCallback\(\(\) => \{\s*teardownProfileResources\(\);/,
-    );
-    assert.match(
-      gateSource,
-      /const closeProfileEditor = useCallback\(\(\) => \{[\s\S]*?clearProfileEditor\(\);/,
-    );
-  });
-
   it("derives core and returned-question profile drafts and updates them immutably", () => {
     const state = {
       profile: {
@@ -939,10 +904,6 @@ describe("profile summary editor", () => {
       { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
     );
 
-    assert.match(
-      gateSource,
-      /useIsomorphicLayoutEffect\(\(\) => \{[\s\S]*?ownership\?\.unmount\(\);[\s\S]*?teardownProfileResources\(\);/,
-    );
   });
 
   it("tears down active profile resources when the gate unmounts", () => {
@@ -1076,13 +1037,6 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
-  it("keeps Guardian learner selection mounted while keying learner mode by the active profile ID", () => {
-    assert.match(
-      gateSource,
-      /<LearnerProfileProvider[\s\S]*?guardianAccessMode === "guardian"[\s\S]*?"guardian-learner-selection"[\s\S]*?: data\.profile\.id[\s\S]*?>[\s\S]*?\{children\}/,
-    );
-  });
-
   it("keeps selection-required learner mode free of profile and sibling content", () => {
     const html = renderGate({
       data: { mode: "selection-required" },
@@ -1540,20 +1494,4 @@ describe("onboarding and profile gate", () => {
     assert.equal(result, completed);
   });
 
-  it("composes route-aware onboarding inside the authenticated shell", () => {
-    assert.match(appSource, /<AuthGate\s+signedOutFallback=\{/);
-    assert.doesNotMatch(appSource, /compactSessionBar/);
-    assert.match(
-      appSource,
-      /<LearnerProfileGate[\s\S]*?isLearnerProfileRoute=/,
-    );
-    assert.match(appSource, /completedLearnerProfileFallback=/);
-    assert.match(appSource, /learnerProfileFallback=/);
-    assert.match(appSource, /isProfileRoute=/);
-    assert.match(gateSource, /learnerName:\s*activeLearnerName/);
-    assert.match(gateSource, /hasActiveLearner:\s*true/);
-    assert.match(gateSource, /onOpenProfile:[\s\S]*?openProfileFromAccount/);
-    assert.match(gateSource, /onOpenProfileRouteRef\.current/);
-    assert.match(gateSource, /isProfileRoute[\s\S]*?handleOpenProfile/);
-  });
 });

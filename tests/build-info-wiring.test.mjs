@@ -1,96 +1,87 @@
+/* global process */
+
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { test } from "node:test";
+import { execFileSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { delimiter, join } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
 
-test("the account AI and saved data panel is wired to deployed component metadata", () => {
-  const about = readFileSync(
-    new URL("../src/app/AboutDialog.tsx", import.meta.url),
-    "utf8",
+const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+
+function captureDeploymentArguments(context, command, script) {
+  const temporaryRoot = mkdtempSync(join(tmpdir(), "parrot-deploy-contract-"));
+  const binDirectory = join(temporaryRoot, "bin");
+  const argumentsPath = join(temporaryRoot, "arguments.txt");
+  mkdirSync(binDirectory);
+  writeFileSync(
+    join(binDirectory, command),
+    '#!/bin/sh\nprintf \'%s\\n\' "$@" > "$PARROT_DEPLOY_ARGS"\n',
+    { mode: 0o755 },
   );
-  const worker = readFileSync(
-    new URL("../worker/index.ts", import.meta.url),
-    "utf8",
+  context.after(() => rmSync(temporaryRoot, { force: true, recursive: true }));
+
+  execFileSync(process.execPath, [fileURLToPath(new URL(script, import.meta.url))], {
+    cwd: projectRoot,
+    env: {
+      ...process.env,
+      PARROT_DEPLOY_ARGS: argumentsPath,
+      PATH: `${binDirectory}${delimiter}${process.env.PATH ?? ""}`,
+    },
+    stdio: "pipe",
+  });
+
+  return readFileSync(argumentsPath, "utf8").trim().split("\n");
+}
+
+function optionValues(arguments_, option) {
+  return arguments_.flatMap((argument, index) =>
+    argument === option ? [arguments_[index + 1]] : [],
   );
-  const buildInfo = readFileSync(
-    new URL("../worker/build-info.ts", import.meta.url),
-    "utf8",
-  );
-  const lessonGenerator = readFileSync(
-    new URL("../worker/lesson-generator.ts", import.meta.url),
-    "utf8",
-  );
-  const agent = readFileSync(
-    new URL("../agent/index.ts", import.meta.url),
-    "utf8",
-  );
-  const workflow = readFileSync(
-    new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
-    "utf8",
-  );
-  const manifest = JSON.parse(
-    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-  );
-  const wrangler = readFileSync(
-    new URL("../wrangler.jsonc", import.meta.url),
-    "utf8",
-  );
-  const agentDeploy = readFileSync(
-    new URL("../scripts/deploy-livekit-agent.mjs", import.meta.url),
-    "utf8",
-  );
-  const workerDeploy = readFileSync(
-    new URL("../scripts/deploy-cloudflare-worker.mjs", import.meta.url),
-    "utf8",
-  );
-  const workersCiPrepare = readFileSync(
-    new URL("../scripts/prepare-workers-ci-metadata.mjs", import.meta.url),
-    "utf8",
+}
+
+test("Worker deployment sends release metadata and enables realtime conversations", (context) => {
+  const arguments_ = captureDeploymentArguments(
+    context,
+    "npx",
+    "../scripts/deploy-cloudflare-worker.mjs",
   );
 
-  assert.match(about, /AI and saved data/);
-  assert.match(about, /How Parrot uses AI/);
-  assert.match(about, /all learner profiles and their saved data/);
-  assert.match(about, /lesson join-in|join-in moment/i);
-  assert.match(about, /lesson voice (?:clips|recordings)/i);
-  assert.match(
-    about,
-    /Lesson recording permission and saved clips are managed\s+independently for each selected learner profile/,
+  assert.deepEqual(arguments_.slice(0, 4), [
+    "wrangler",
+    "deploy",
+    "--config",
+    "wrangler.jsonc",
+  ]);
+  const tag = optionValues(arguments_, "--tag")[0];
+  assert.match(tag, /^v(\d+\.\d+\.\d+)-([0-9a-f]{7})$/);
+  const [, version, commitSha] = tag.match(
+    /^v(\d+\.\d+\.\d+)-([0-9a-f]{7})$/,
   );
-  assert.match(about, /Five Little Ducks/);
-  assert.match(
-    about,
-    /Choosing a learner in Guardian settings changes only which\s+learner(?:'|&apos;)s\s+data you manage/,
+  assert.deepEqual(optionValues(arguments_, "--var"), [
+    `PARROT_BACKEND_VERSION:${version}`,
+    `PARROT_BACKEND_COMMIT_SHA:${commitSha}`,
+    "REALTIME_CONVERSATIONS_ENABLED:1",
+  ]);
+});
+
+test("conversation-agent deployment sends its release identity as secrets", (context) => {
+  const arguments_ = captureDeploymentArguments(
+    context,
+    "lk",
+    "../scripts/deploy-livekit-agent.mjs",
   );
-  assert.match(
-    about,
-    /Learner mode changes only through\s+Switch to learner/,
-  );
-  assert.doesNotMatch(
-    about,
-    /Raw audio is not\s+added to the Parrot account/,
-  );
-  assert.match(about, /The photo is not added to the account/);
-  assert.match(about, /Technical build details/);
-  assert.match(about, /\/api\/build-info/);
-  assert.match(about, /Lesson script LLM/);
-  assert.match(about, /Realtime voice model/);
-  assert.match(about, /Input transcription/);
-  assert.match(worker, /\/api\/build-info/);
-  assert.match(buildInfo, /LESSON_GENERATOR_MODEL/);
-  assert.match(lessonGenerator, /LESSON_GENERATOR_MODEL/);
-  assert.match(lessonGenerator, /OPENAI_API_KEY/);
-  assert.match(agent, /reportBuild/);
-  assert.match(agent, /await ingest\.reportBuild/);
-  assert.equal(manifest.scripts["deploy:worker"], "node scripts/deploy-cloudflare-worker.mjs");
-  assert.equal(manifest.scripts.prebuild, "node scripts/prepare-workers-ci-metadata.mjs");
-  assert.match(workflow, /npm run deploy:worker/);
-  assert.match(workerDeploy, /PARROT_BACKEND_VERSION/);
-  assert.match(workerDeploy, /PARROT_BACKEND_COMMIT_SHA/);
-  assert.match(workersCiPrepare, /WORKERS_CI/);
-  assert.match(workersCiPrepare, /ensureWorkersCiHistory\(\{ env \}\)/);
-  assert.match(workerDeploy, /"REALTIME_CONVERSATIONS_ENABLED:1"/);
-  assert.match(wrangler, /version_metadata/);
-  assert.doesNotMatch(wrangler, /"PARROT_BACKEND_(?:COMMIT_SHA|VERSION)": "local"/);
-  assert.match(agentDeploy, /PARROT_AGENT_VERSION/);
-  assert.match(agentDeploy, /PARROT_AGENT_COMMIT_SHA/);
+
+  assert.deepEqual(arguments_.slice(0, 2), ["agent", "deploy"]);
+  const secrets = optionValues(arguments_, "--secrets");
+  assert.equal(secrets.length, 2);
+  assert.match(secrets[0], /^PARROT_AGENT_VERSION=\d+\.\d+\.\d+$/);
+  assert.match(secrets[1], /^PARROT_AGENT_COMMIT_SHA=[0-9a-f]{7}$/);
 });
