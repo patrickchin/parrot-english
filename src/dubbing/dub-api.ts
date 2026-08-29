@@ -5,7 +5,8 @@ import { getDubDefinition } from "./rhyme-catalog.ts";
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
 const SAVE_FAILURE = "Your take was not saved. Try again.";
-const DELETE_FAILURE = "Your saved dub was not deleted.";
+const DELETE_FAILURE =
+  "Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted.";
 
 export type DubStatus = {
   complete: boolean;

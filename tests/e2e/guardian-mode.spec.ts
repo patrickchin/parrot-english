@@ -85,6 +85,7 @@ async function openGuardianUnlock(page: Page) {
 
 async function unlockFromMenu(page: Page) {
   const dialog = await openGuardianUnlock(page);
+  await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
   await expect(dialog).toHaveCount(0);
 }
@@ -139,6 +140,106 @@ test("incorrect password keeps learner mode and the unlock dialog open", async (
   await expectInsideViewport(dialog, viewport);
   await expect(page).toHaveURL("/");
   expect(await horizontalOverflow(page)).toBe(false);
+});
+
+test("account-menu unlock requires a password and rejects a wrong password without exposing Guardian content", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const dialog = await openGuardianUnlock(page);
+  const password = dialog.getByLabel("Password");
+  const unlock = dialog.getByRole("button", { name: "Unlock guardian mode" });
+
+  await unlock.click();
+  await expect(password).toBeFocused();
+  await expect(password).toHaveJSProperty("validity.valueMissing", true);
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toHaveCount(0);
+
+  await password.fill("wrong-password");
+  await unlock.click();
+  await expect(dialog.getByRole("alert")).toHaveText(
+    "The password did not match this account.",
+  );
+  await expect(password).toBeFocused();
+  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toHaveCount(0);
+});
+
+test("direct Guardian unlock requires a password and rejects a wrong password without exposing the protected route", async ({
+  page,
+}) => {
+  await page.goto("/guardian/stories");
+  const main = page.getByRole("main");
+  const password = main.getByLabel("Password");
+  const unlock = main.getByRole("button", { name: "Unlock guardian mode" });
+
+  await unlock.click();
+  await expect(password).toBeFocused();
+  await expect(password).toHaveJSProperty("validity.valueMissing", true);
+  await expect(page).toHaveURL("/guardian/stories");
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toHaveCount(0);
+
+  await password.fill("wrong-password");
+  await unlock.click();
+  await expect(main.getByRole("alert")).toHaveText(
+    "The password did not match this account.",
+  );
+  await expect(password).toBeFocused();
+  await expect(page).toHaveURL("/guardian/stories");
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toHaveCount(0);
+});
+
+test("the browser Guardian API rejects empty and wrong passwords with the same response", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
+  ).toBeVisible();
+
+  const attempts = await page.evaluate(async () => {
+    const results = [];
+    for (const password of ["", "wrong-password"]) {
+      const response = await fetch("/api/guardian-access", {
+        body: JSON.stringify({ password }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      });
+      results.push({ body: await response.json(), status: response.status });
+    }
+    return results;
+  });
+
+  expect(attempts).toEqual([
+    {
+      body: {
+        error: "invalid_password",
+        message: "The password did not match this account.",
+      },
+      status: 401,
+    },
+    {
+      body: {
+        error: "invalid_password",
+        message: "The password did not match this account.",
+      },
+      status: 401,
+    },
+  ]);
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toHaveCount(0);
 });
 
 test("unlock request failure never navigates to guardian content", async ({
@@ -548,6 +649,21 @@ test("a guardian-mode duck dub deep link asks to switch profiles", async ({
   ).toHaveCount(0);
 });
 
+test("a guardian-mode Old MacDonald deep link asks to switch profiles", async ({
+  page,
+}) => {
+  await page.goto(
+    guardianUrl("/dubs/old-macdonald?parrotE2eDub=partial", "guardian"),
+  );
+
+  await expect(
+    page.getByRole("heading", { name: "Switch to learner mode" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Old MacDonald Had a Farm" }),
+  ).toHaveCount(0);
+});
+
 test("a valid guardian unlock resumes after refresh", async ({ page }) => {
   await page.goto("/");
   await unlockFromMenu(page);
@@ -774,6 +890,10 @@ test("learner routes omit adult management actions", async ({ page }) => {
     { path: "/stories", watchDub: false },
     {
       path: "/dubs/five-little-ducks?parrotE2eDub=complete",
+      watchDub: true,
+    },
+    {
+      path: "/dubs/old-macdonald?parrotE2eDub=complete",
       watchDub: true,
     },
   ]) {

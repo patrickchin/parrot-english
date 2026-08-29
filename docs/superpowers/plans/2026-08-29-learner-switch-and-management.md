@@ -309,6 +309,62 @@ git add src/learner-profile src/testing/e2e-browser-mocks.ts tests/learner-profi
 git commit -m "feat: connect learner deletion management"
 ```
 
+### Task 5a: Close the Guardian unlock bypass and disclose dubbing scope
+
+**Files:**
+- Modify: `worker/guardian-access.ts`
+- Modify: `src/auth/GuardianUnlock.tsx`
+- Modify: `src/testing/e2e-browser-mocks.ts`
+- Modify: `src/dubbing/GuardianDubbingSettings.tsx`
+- Modify: `src/app/AboutDialog.tsx`
+- Modify: `src/app/AccountDeleteDialog.tsx`
+- Modify: `tests/guardian-access-worker.test.mjs`
+- Modify: `tests/lifecycle/accessibility-lifecycle.test.mjs`
+- Modify: `tests/guardian-dubbing-settings.test.mjs`
+- Modify: `tests/e2e/guardian-mode.spec.ts`
+- Modify: `tests/e2e/dubbing.spec.ts`
+- Modify: `tests/e2e/header.spec.ts`
+- Modify: `tests/e2e/surrounding-pages.spec.ts`
+
+**Interfaces:**
+- Preserves the account-password Guardian model and the single per-learner dubbing consent.
+- Produces fail-closed empty/wrong-password behavior and accurate all-rhyme consent disclosure.
+
+- [ ] **Step 1: Write failing security and disclosure regressions**
+
+Prove an empty password returns `401 invalid_password`, never creates an
+unlock, and cannot submit from either unlock UI. Prove the one dubbing grant is
+described as covering both Five Little Ducks and Old MacDonald, and that grant
+and revocation affect both learner routes.
+
+- [ ] **Step 2: Run the focused tests and verify RED**
+
+```bash
+node --test tests/guardian-access-worker.test.mjs tests/lifecycle/accessibility-lifecycle.test.mjs tests/guardian-dubbing-settings.test.mjs
+```
+
+Use a freshly verified explicit Playwright port for the relevant Guardian,
+dubbing, header, and surrounding-page cases.
+
+- [ ] **Step 3: Implement the smallest fail-closed fix**
+
+Require every submitted password to pass the Worker verifier; add native form
+validation and matching mock behavior. Update Guardian-facing consent,
+status, clip-count, privacy, and destructive copy to describe all voice-dubbing
+rhymes without changing the consent schema.
+
+- [ ] **Step 4: Run focused and full verification**
+
+Run the focused commands, `npm test`, `npm run test:browser`, lint, both builds,
+and diff checks. Request a fresh scoped security review.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add worker/guardian-access.ts src/auth/GuardianUnlock.tsx src/testing/e2e-browser-mocks.ts src/dubbing/GuardianDubbingSettings.tsx src/app/AboutDialog.tsx src/app/AccountDeleteDialog.tsx tests
+git commit -m "fix: require guardian password verification"
+```
+
 ### Task 6: Migrate end-to-end flows and product copy
 
 **Files:**

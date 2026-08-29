@@ -2199,6 +2199,7 @@ const learnerRoutes = [
   "/progress",
   "/profile/setup",
   "/dubs/five-little-ducks",
+  "/dubs/old-macdonald",
 ] as const;
 
 test("keeps sibling identity and every Guardian action out of learner routes", async ({
@@ -2233,7 +2234,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     await expect(menu).not.toContainText("Noah");
     await page.keyboard.press("Escape");
 
-    if (path === "/dubs/five-little-ducks") {
+    if (path.startsWith("/dubs/")) {
       await expect(
         page.getByRole("main").getByRole("paragraph").filter({
           hasText: "Ask a grown-up to turn on voice dubbing in Guardian mode.",
@@ -2826,7 +2827,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
 
   await page
     .getByRole("button", {
-      name: "Turn off Noah's voice dubbing and delete saved clips",
+      name: "Turn off Noah's voice dubbing and delete clips from Five Little Ducks and Old MacDonald",
     })
     .click();
   await expect(

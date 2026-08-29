@@ -125,22 +125,39 @@ test("guardian settings owns voice consent and deletion", () => {
   assert.match(disabled, /Allow voice dubbing/);
   assert.match(disabledText, /I am Mia's guardian/);
   assert.match(disabledText, /Mia's private voice clips/);
+  assert.match(disabledText, /all voice-dubbing rhymes/i);
+  assert.match(disabledText, /Five Little Ducks/);
+  assert.match(disabledText, /Old MacDonald/);
   assert.match(disabled, /type="checkbox"/);
   assert.match(disabled, /<button[^>]*disabled=""[^>]*>Allow voice dubbing/);
 
   const enabled = renderView({ consentState: "granted", savedCount: 4 });
   const enabledText = textFromMarkup(enabled);
-  assert.match(enabled, /4 of 24 lines saved/);
+  assert.match(
+    enabledText,
+    /4 of 59 clips saved across Five Little Ducks and Old MacDonald/,
+  );
+  assert.match(
+    enabledText,
+    /record and replace lines in both Five Little Ducks and Old MacDonald/,
+  );
   assert.match(enabledText, /Manage learners/);
   assert.doesNotMatch(enabledText, /Switch to Mia and start dubbing/);
   assert.match(
     enabledText,
-    /Turn off Mia's voice dubbing and delete saved clips/,
+    /Turn off Mia's voice dubbing and delete clips from Five Little Ducks and Old MacDonald/,
   );
   assert.doesNotMatch(enabled, /type="checkbox"/);
 
   const revoking = renderView({ consentState: "revoking" });
-  assert.match(revoking, /Finish removing voice clips/);
+  assert.match(
+    textFromMarkup(revoking),
+    /stays unavailable in Five Little Ducks and Old MacDonald.*both rhymes/,
+  );
+  assert.match(
+    revoking,
+    /Finish removing clips from Five Little Ducks and Old MacDonald/,
+  );
   assert.doesNotMatch(revoking, /Allow voice dubbing/);
   assert.doesNotMatch(
     textFromMarkup(revoking),
@@ -168,14 +185,31 @@ test("guardian settings exposes progress and recovery states accessibly", () => 
   assert.match(deleting, /Removing voice clips…/);
 });
 
-function dubStatus(consentState, savedCount = 0) {
+function dubIdFromPath(path) {
+  return path.includes("/old-macdonald-v1")
+    ? "old-macdonald-v1"
+    : "five-little-ducks-v2";
+}
+
+function dubStatus(
+  consentState,
+  savedCount = 0,
+  dubId = "five-little-ducks-v2",
+) {
+  const lineIds = Array.from(
+    { length: dubId === "old-macdonald-v1" ? 35 : 24 },
+    (_, index) =>
+      dubId === "old-macdonald-v1"
+        ? `old-macdonald-v1-line-${index + 1}`
+        : `line-${index + 1}`,
+  );
   return {
-    complete: savedCount === 24,
+    complete: savedCount === lineIds.length,
     consentState,
-    dubId: "five-little-ducks-v2",
+    dubId,
     guardianConsentVersion: "guardian-voice-r2-v2",
-    lines: Array.from({ length: 24 }, (_, index) => ({
-      id: `line-${index + 1}`,
+    lines: lineIds.map((id, index) => ({
+      id,
       recordedAt: index < savedCount ? "2026-08-25T08:00:00.000Z" : null,
       saved: index < savedCount,
     })),
@@ -190,7 +224,7 @@ function installDubbingFetch(handler) {
     }
     if (
       typeof path === "string" &&
-      path.startsWith("/api/dubs/five-little-ducks-v2") &&
+      /^\/api\/dubs\/(?:five-little-ducks-v2|old-macdonald-v1)/.test(path) &&
       path.endsWith("?learnerProfileId=learner-mia")
     ) {
       return handler(path, init);
@@ -223,18 +257,59 @@ function button(container, label) {
   return match;
 }
 
+test("loads and totals saved clips from every voice-dubbing rhyme", async () => {
+  const statusRequests = [];
+  installDubbingFetch(async (input, init = {}) => {
+    if ((init.method ?? "GET") !== "GET") {
+      throw new Error(`Unexpected request: ${init.method} ${input}`);
+    }
+    statusRequests.push(input);
+    const dubId = dubIdFromPath(input);
+    return Response.json(
+      dubStatus("granted", dubId === "old-macdonald-v1" ? 5 : 4, dubId),
+    );
+  });
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/dubbing"] },
+      createElement(
+        GuardianProvider,
+        { lockGuardianAccess: async () => ({ mode: "learner" }) },
+        createElement(GuardianDubbingSettings, { learnerName: "Mia" }),
+      ),
+    ),
+  );
+
+  await waitFor(() =>
+    assert.match(
+      container.textContent,
+      /9 of 59 clips saved across Five Little Ducks and Old MacDonald/,
+    ),
+  );
+  assert.deepEqual(statusRequests.sort(), [
+    "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-mia",
+    "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-mia",
+    "/api/dubs/old-macdonald-v1?learnerProfileId=learner-mia",
+    "/api/dubs/old-macdonald-v1?learnerProfileId=learner-mia",
+  ]);
+});
+
 test("grant requires attestation, coalesces clicks, and reloads granted status", async () => {
   const pendingGrant = deferred();
   let consentState = "not_granted";
   let grantCalls = 0;
-  installDubbingFetch(async (_input, init = {}) => {
+  installDubbingFetch(async (input, init = {}) => {
     if (init.method === "PUT") {
       grantCalls += 1;
       consentState = "granted";
       await pendingGrant.promise;
       return new Response(null, { status: 204 });
     }
-    return Response.json(dubStatus(consentState));
+    return Response.json(
+      dubStatus(consentState, 0, dubIdFromPath(input)),
+    );
   });
 
   const container = await mountStrict(
@@ -280,7 +355,7 @@ test("a committed grant with a lost response reloads authoritative granted statu
   let loadFails = true;
   let consentState = "not_granted";
   let getCalls = 0;
-  installDubbingFetch(async (_input, init = {}) => {
+  installDubbingFetch(async (input, init = {}) => {
     if (init.method === "PUT") {
       consentState = "granted";
       throw new Error("Response lost.");
@@ -288,7 +363,7 @@ test("a committed grant with a lost response reloads authoritative granted statu
     getCalls += 1;
     return loadFails
       ? new Response(null, { status: 500 })
-      : Response.json(dubStatus(consentState));
+      : Response.json(dubStatus(consentState, 0, dubIdFromPath(input)));
   });
 
   const container = await mountStrict(
@@ -319,7 +394,7 @@ test("a committed grant with a lost response reloads authoritative granted statu
   await waitFor(() =>
     assert.match(container.textContent, /Voice dubbing is on/),
   );
-  assert.equal(getCalls, getCallsBeforeGrant + 1);
+  assert.equal(getCalls, getCallsBeforeGrant + 2);
   assert.match(
     container.querySelector('[role="alert"]')?.textContent ?? "",
     /Voice dubbing could not be turned on/,
@@ -330,13 +405,15 @@ test("a committed grant with a lost response reloads authoritative granted statu
 test("failed cleanup reloads revoking status and offers a retry", async () => {
   let consentState = "granted";
   let deleteCalls = 0;
-  installDubbingFetch(async (_input, init = {}) => {
+  installDubbingFetch(async (input, init = {}) => {
     if (init.method === "DELETE") {
       deleteCalls += 1;
       consentState = "revoking";
       return new Response(null, { status: 500 });
     }
-    return Response.json(dubStatus(consentState, 4));
+    return Response.json(
+      dubStatus(consentState, 4, dubIdFromPath(input)),
+    );
   });
 
   const container = await mountStrict(
@@ -354,20 +431,31 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
   );
   await waitFor(() =>
     assert.ok(
-      button(container, "Turn off Mia's voice dubbing and delete saved clips"),
+      button(
+        container,
+        "Turn off Mia's voice dubbing and delete clips from Five Little Ducks and Old MacDonald",
+      ),
     ),
   );
   await click(
-    button(container, "Turn off Mia's voice dubbing and delete saved clips"),
+    button(
+      container,
+      "Turn off Mia's voice dubbing and delete clips from Five Little Ducks and Old MacDonald",
+    ),
   );
 
   await waitFor(() =>
-    assert.ok(button(container, "Finish removing voice clips")),
+    assert.ok(
+      button(
+        container,
+        "Finish removing clips from Five Little Ducks and Old MacDonald",
+      ),
+    ),
   );
   assert.equal(deleteCalls, 1);
   assert.match(
     container.querySelector('[role="alert"]')?.textContent ?? "",
-    /Your saved dub was not deleted/,
+    /Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted/,
   );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
   await waitFor(() =>
@@ -381,7 +469,7 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
 test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
   let cleanupRequired = true;
   let deleteCalls = 0;
-  installDubbingFetch(async (_input, init = {}) => {
+  installDubbingFetch(async (input, init = {}) => {
     if (init.method === "DELETE") {
       deleteCalls += 1;
       if (deleteCalls === 1) return new Response(null, { status: 503 });
@@ -390,7 +478,7 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
     }
     return cleanupRequired
       ? Response.json({ error: "dub_reset_in_progress" }, { status: 409 })
-      : Response.json(dubStatus("not_granted"));
+      : Response.json(dubStatus("not_granted", 0, dubIdFromPath(input)));
   });
 
   const container = await mountStrict(
@@ -408,22 +496,42 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
   );
 
   await waitFor(() =>
-    assert.ok(button(container, "Finish removing voice clips")),
+    assert.ok(
+      button(
+        container,
+        "Finish removing clips from Five Little Ducks and Old MacDonald",
+      ),
+    ),
   );
   assert.match(container.textContent, /Voice clip removal needs to finish/);
   assert.doesNotMatch(container.textContent, /Allow voice dubbing|Try again/);
 
-  await click(button(container, "Finish removing voice clips"));
+  await click(
+    button(
+      container,
+      "Finish removing clips from Five Little Ducks and Old MacDonald",
+    ),
+  );
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Your saved dub was not deleted/,
+      /Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted/,
     ),
   );
-  assert.ok(button(container, "Finish removing voice clips"));
+  assert.ok(
+    button(
+      container,
+      "Finish removing clips from Five Little Ducks and Old MacDonald",
+    ),
+  );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
 
-  await click(button(container, "Finish removing voice clips"));
+  await click(
+    button(
+      container,
+      "Finish removing clips from Five Little Ducks and Old MacDonald",
+    ),
+  );
   await waitFor(() =>
     assert.match(container.textContent, /Allow voice dubbing/),
   );
@@ -434,7 +542,10 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
     ),
   );
   assert.equal(deleteCalls, 2);
-  assert.doesNotMatch(container.textContent, /Finish removing voice clips/);
+  assert.doesNotMatch(
+    container.textContent,
+    /Finish removing clips from Five Little Ducks and Old MacDonald/,
+  );
 });
 
 test("unmount aborts an unfinished authoritative status load", async () => {
@@ -504,12 +615,18 @@ test("loads and grants Noah's dubbing through explicit target requests only", as
       return new Response(null, { status: 204 });
     }
     if (
-      path === "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-noah"
+      /^\/api\/dubs\/(?:five-little-ducks-v2|old-macdonald-v1)\?learnerProfileId=learner-noah$/.test(
+        path,
+      )
     ) {
-      return Response.json(dubStatus(noahConsent));
+      return Response.json(
+        dubStatus(noahConsent, 0, dubIdFromPath(path)),
+      );
     }
-    if (path === "/api/dubs/five-little-ducks-v2") {
-      return Response.json(dubStatus(miaConsent));
+    if (
+      /^\/api\/dubs\/(?:five-little-ducks-v2|old-macdonald-v1)$/.test(path)
+    ) {
+      return Response.json(dubStatus(miaConsent, 0, dubIdFromPath(path)));
     }
     throw new Error(`Unexpected request: ${method} ${path}`);
   };
@@ -540,7 +657,7 @@ test("loads and grants Noah's dubbing through explicit target requests only", as
   assert.doesNotMatch(container.textContent, /Switch to .*start dubbing/);
 
   const dubRequests = requests.filter(({ path }) =>
-    path.startsWith("/api/dubs/five-little-ducks-v2"),
+    path.startsWith("/api/dubs/"),
   );
   assert.ok(dubRequests.length > 0);
   assert.ok(

@@ -322,7 +322,7 @@ describe("duck dub browser API", () => {
       );
       await expectRejection(
         () => deleteDub({ fetch: async () => guardianRequired() }),
-        "Your saved dub was not deleted.",
+        "Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted.",
         ["notification", "rejection"],
       );
 
@@ -338,7 +338,7 @@ describe("duck dub browser API", () => {
         () => deleteDub({
           fetch: async () => new Response("not json", { status: 403 }),
         }),
-        "Your saved dub was not deleted.",
+        "Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted.",
         ["rejection"],
       );
       await expectRejection(
@@ -387,7 +387,7 @@ describe("duck dub browser API", () => {
     );
     await assert.rejects(
       deleteDub({ fetch: failingFetch }),
-      /Your saved dub was not deleted\./,
+      /Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted\./,
     );
   });
 
@@ -401,7 +401,10 @@ describe("duck dub browser API", () => {
     for (const [operation, message] of [
       [() => loadDubStatus({ fetch: rejectedFetch }), "Your saved dub could not be loaded."],
       [() => saveDubLine("line-1", take, { fetch: rejectedFetch }), "Your take was not saved. Try again."],
-      [() => deleteDub({ fetch: rejectedFetch }), "Your saved dub was not deleted."],
+      [
+        () => deleteDub({ fetch: rejectedFetch }),
+        "Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted.",
+      ],
       [
         () => loadDubStatus({ fetch: async () => Response.json({}) }),
         "Your saved dub could not be loaded.",

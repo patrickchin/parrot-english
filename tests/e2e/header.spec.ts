@@ -67,6 +67,11 @@ const routes: HeaderRoute[] = [
     path: "/dubs/five-little-ducks?parrotE2eDub=partial",
     control: { name: "Back to home", role: "link" },
   },
+  {
+    name: "Old MacDonald dubbing studio",
+    path: "/dubs/old-macdonald?parrotE2eDub=partial",
+    control: { name: "Back to home", role: "link" },
+  },
 ];
 
 const mobileViewports: Viewport[] = [
@@ -1074,6 +1079,11 @@ test("Account & privacy explains caregiver facts before optional technical detai
     accountPage.getByText(
       "With guardian permission, lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
       { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    accountPage.getByText(
+      /^With Guardian permission, all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
     ),
   ).toBeVisible();
   await expect(

@@ -181,8 +181,15 @@ function getActiveE2eDubDefinition() {
   );
 }
 
-function getActiveE2eDubApiPath() {
-  return `/api/dubs/${getActiveE2eDubDefinition().id}`;
+function matchE2eDubDefinitionApiPath(pathname: string) {
+  for (const definition of DUB_DEFINITIONS) {
+    const basePath = `/api/dubs/${definition.id}`;
+    if (pathname === basePath) return { definition, kind: "dub" as const };
+    if (pathname === `${basePath}/consent`) {
+      return { definition, kind: "consent" as const };
+    }
+  }
+  return null;
 }
 
 function matchActiveE2eDubLinePath(pathname: string) {
@@ -421,8 +428,7 @@ function isTargetableLearnerPath(pathname: string) {
     lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
     pathname === "/api/lessons/my" ||
     /^\/api\/lessons\/my\/[^/]+$/.test(pathname) ||
-    pathname === getActiveE2eDubApiPath() ||
-    pathname === `${getActiveE2eDubApiPath()}/consent` ||
+    matchE2eDubDefinitionApiPath(pathname) !== null ||
     matchActiveE2eDubLinePath(pathname) !== null ||
     /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
   );
@@ -441,6 +447,7 @@ function singletonUnsupportedTargetMethodResponse(
   method: string,
 ) {
   const pathname = url.pathname;
+  const dubRoute = matchE2eDubDefinitionApiPath(pathname);
   let allowedMethods: readonly string[] | null = null;
   let notFoundForUnsupportedMethod = false;
 
@@ -465,9 +472,9 @@ function singletonUnsupportedTargetMethodResponse(
     allowedMethods = ["GET"];
   } else if (lessonRecordingSlot(url) !== null) {
     allowedMethods = ["PUT"];
-  } else if (pathname === getActiveE2eDubApiPath()) {
+  } else if (dubRoute?.kind === "dub") {
     allowedMethods = ["GET", "DELETE"];
-  } else if (pathname === `${getActiveE2eDubApiPath()}/consent`) {
+  } else if (dubRoute?.kind === "consent") {
     allowedMethods = ["PUT"];
   } else if (matchActiveE2eDubLinePath(pathname)?.audioPath) {
     allowedMethods = ["GET"];
@@ -996,16 +1003,18 @@ function createE2eLearnerAccount(
     }
   }
 
-  function dubStatus(learner: MockLearnerState) {
-    const activeDub = getActiveE2eDubDefinition();
-    const lineIds = activeDub.lines.map(({ id }) => id);
+  function dubStatus(
+    learner: MockLearnerState,
+    definition = getActiveE2eDubDefinition(),
+  ) {
+    const lineIds = definition.lines.map(({ id }) => id);
     const saved = new Set(learner.dub.savedLineIds);
     return {
       complete:
         learner.dub.consentState === "granted" &&
         lineIds.every((id) => saved.has(id)),
       consentState: learner.dub.consentState,
-      dubId: activeDub.id,
+      dubId: definition.id,
       guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
       lines: lineIds.map((id) => ({
         id,
@@ -1024,12 +1033,12 @@ function createE2eLearnerAccount(
     explicitProfileId: string | null,
   ) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
-    const dubApiPath = getActiveE2eDubApiPath();
+    const dubRoute = matchE2eDubDefinitionApiPath(url.pathname);
     const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
 
-    if (url.pathname === `${dubApiPath}/consent`) {
+    if (dubRoute?.kind === "consent") {
       if (method !== "PUT")
         return e2eDubJson({ error: "method_not_allowed" }, 405);
       if (currentGuardianAccess().mode !== "guardian") {
@@ -1052,8 +1061,10 @@ function createE2eLearnerAccount(
       return new Response(null, { status: 204 });
     }
 
-    if (url.pathname === dubApiPath) {
-      if (method === "GET") return e2eDubJson(dubStatus(learner));
+    if (dubRoute?.kind === "dub") {
+      if (method === "GET") {
+        return e2eDubJson(dubStatus(learner, dubRoute.definition));
+      }
       if (method === "DELETE") {
         if (currentGuardianAccess().mode !== "guardian") {
           return e2eDubJson({ error: "guardian_required" }, 403);
@@ -2019,19 +2030,34 @@ function initialE2eDubLineIds(
 function createE2eDubStore(scenario: string | null) {
   if (!scenario) return null;
   const definition = getActiveE2eDubDefinition();
-  const dubApiPath = `/api/dubs/${definition.id}`;
-  const dubLineIds = definition.lines.map(({ id }) => id);
-  const savedKey = `parrot-e2e-dub:${scenario}:${definition.id}:saved`;
+  const savedKeyFor = (dubId: string) =>
+    `parrot-e2e-dub:${scenario}:${dubId}:saved`;
+  const savedKey = savedKeyFor(definition.id);
   const consentKey = `parrot-e2e-dub:${scenario}:consent`;
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
   const resetDeleteFailureKey = `parrot-e2e-dub:${scenario}:reset-delete-failed`;
   const resetKey = `parrot-e2e-dub:${scenario}:reset-finished`;
-  const persisted = sessionStorage.getItem(savedKey);
-  const savedLineIds = persisted
-    ? (JSON.parse(persisted) as string[])
-    : initialE2eDubLineIds(scenario, dubLineIds);
-  if (persisted === null)
-    sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
+  function readSavedLineIds(requestedDefinition: (typeof DUB_DEFINITIONS)[number]) {
+    const key = savedKeyFor(requestedDefinition.id);
+    const persisted = sessionStorage.getItem(key);
+    if (persisted !== null) {
+      try {
+        const parsed: unknown = JSON.parse(persisted);
+        if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
+          return parsed.filter((id) =>
+            requestedDefinition.lines.some((line) => line.id === id),
+          );
+        }
+      } catch {
+        // Replace malformed test state with the deterministic scenario state.
+      }
+    }
+    const lineIds = requestedDefinition.lines.map(({ id }) => id);
+    const initial = initialE2eDubLineIds(scenario!, lineIds);
+    sessionStorage.setItem(key, JSON.stringify(initial));
+    return initial;
+  }
+  const savedLineIds = readSavedLineIds(definition);
   let consentState = (sessionStorage.getItem(consentKey) ??
     (scenario === "not-granted" || scenario === "reset-interrupted"
       ? "not_granted"
@@ -2085,7 +2111,7 @@ function createE2eDubStore(scenario: string | null) {
 
   function clearAllSavedClips() {
     for (const { id } of DUB_DEFINITIONS) {
-      sessionStorage.removeItem(`parrot-e2e-dub:${scenario}:${id}:saved`);
+      sessionStorage.setItem(savedKeyFor(id), "[]");
     }
   }
 
@@ -2105,6 +2131,7 @@ function createE2eDubStore(scenario: string | null) {
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
+      const dubRoute = matchE2eDubDefinitionApiPath(url.pathname);
       const guideLineId = matchActiveE2eDubGuidePath(url.pathname);
       const guideMatch = guideLineId ? [url.pathname, guideLineId] : null;
       if (method === "GET" && guideMatch) {
@@ -2126,7 +2153,7 @@ function createE2eDubStore(scenario: string | null) {
         }
         return null;
       }
-      if (url.pathname === `${dubApiPath}/consent`) {
+      if (dubRoute?.kind === "consent") {
         if (method !== "PUT")
           return e2eDubJson({ error: "method_not_allowed" }, 405);
         if (currentGuardianAccess().mode !== "guardian") {
@@ -2158,7 +2185,7 @@ function createE2eDubStore(scenario: string | null) {
           status: 204,
         });
       }
-      if (url.pathname === dubApiPath) {
+      if (dubRoute?.kind === "dub") {
         if (method === "GET") {
           if (scenario === "load-held") return new Promise<Response>(() => {});
           if (delayNextStatus) {
@@ -2170,20 +2197,26 @@ function createE2eDubStore(scenario: string | null) {
           if (legacyResetPending && consentState === "granted") {
             return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
           }
+          const requestedLineIds = dubRoute.definition.lines.map(({ id }) => id);
+          const requestedSaved = new Set(
+            dubRoute.definition.id === definition.id
+              ? clips.keys()
+              : readSavedLineIds(dubRoute.definition),
+          );
           return e2eDubJson({
             complete:
               consentState === "granted" &&
-              dubLineIds.every((id) => clips.has(id)),
+              requestedLineIds.every((id) => requestedSaved.has(id)),
             consentState,
-            dubId: definition.id,
+            dubId: dubRoute.definition.id,
             guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
-            lines: dubLineIds.map((id) => ({
+            lines: requestedLineIds.map((id) => ({
               id,
               recordedAt:
-                consentState === "granted" && clips.has(id)
+                consentState === "granted" && requestedSaved.has(id)
                   ? E2E_DUB_RECORDED_AT
                   : null,
-              saved: consentState === "granted" && clips.has(id),
+              saved: consentState === "granted" && requestedSaved.has(id),
             })),
             recordingEnabled: consentState === "granted",
           });
@@ -2321,6 +2354,7 @@ function createE2eDubStore(scenario: string | null) {
       if (!pendingDelete) return false;
       const resolve = pendingDelete;
       pendingDelete = null;
+      clearAllSavedClips();
       clips.clear();
       persist();
       persistConsent("not_granted");
@@ -2495,7 +2529,7 @@ async function guardianResponse(
       } catch {
         return e2eJson({ error: "invalid_json" }, 400);
       }
-      if (password !== "" && password !== E2E_GUARDIAN_PASSWORD) {
+      if (password !== E2E_GUARDIAN_PASSWORD) {
         return e2eJson(
           {
             error: "invalid_password",

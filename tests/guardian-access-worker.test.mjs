@@ -508,7 +508,7 @@ describe("guardian access request handler", () => {
     assert.equal((await response.json()).mode, "guardian");
   });
 
-  it("temporarily unlocks with an empty password without verification", async () => {
+  it("rejects an empty password without creating a Guardian unlock", async () => {
     let verificationCalls = 0;
     const response = await handle(
       guardianRequest("POST", JSON.stringify({ password: "" })),
@@ -518,9 +518,19 @@ describe("guardian access request handler", () => {
       },
     );
 
-    assert.equal(response.status, 200);
-    assert.equal(verificationCalls, 0);
-    assert.equal((await response.json()).mode, "guardian");
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.deepEqual(await response.json(), {
+      error: "invalid_password",
+      message: "The password did not match this account.",
+    });
+    assert.equal(verificationCalls, 1);
+    assert.equal(
+      state.sqlite
+        .prepare("SELECT COUNT(*) AS count FROM guardian_session_unlock")
+        .get().count,
+      0,
+    );
   });
 
   it("uses one generic response for an invalid password", async () => {

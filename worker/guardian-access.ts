@@ -141,7 +141,7 @@ export async function handleGuardianAccessRequest(input: {
       }
       if (input.request.method === "POST") {
         const password = await readPassword(input.request);
-        if (password !== "" && !(await input.verifyPassword(password))) {
+        if (!(await input.verifyPassword(password))) {
           return json(
             {
               error: "invalid_password",
