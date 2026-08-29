@@ -7,13 +7,9 @@ import { MemoryRouter, useLocation } from "react-router";
 import { after, afterEach, describe, it } from "node:test";
 import { createServer } from "vite";
 import {
-  auditStoryVocabulary,
-  countStoryWords,
-  getStoryLevel,
   LEARNER_STORY_LEVEL_IDS,
   STORIES,
   STORY_LEVELS,
-  STORY_VOCABULARY_PROFILES,
   resolveStory,
 } from "../src/stories/story-catalog.ts";
 import {
@@ -96,42 +92,16 @@ function storyListAt(storyLevel, initialEntry) {
 }
 
 describe("story script catalog", () => {
-  // Production break caught: adult controls or internal catalog metadata leaks
-  // into the learner-facing all-story shelf.
-  it("keeps adult and internal metadata off the learner shelf", async () => {
+  // Production break caught: adult controls leak into the learner-facing shelf.
+  it("keeps adult controls off the learner shelf", async () => {
     const container = await mountStrict(
       storyListAt("first-words", "/stories"),
-    );
-    const intendedShelfText = [
-      ...STORY_LEVELS.flatMap(({ description, label }) => [label, description]),
-      ...STORIES.map(({ title }) => title),
-    ].join("\n");
-    const internalMetadata = [
-      ...STORY_LEVELS.map(({ cefrReference }) => cefrReference),
-      ...STORIES.flatMap(
-        ({ category, promptExperiment, targetWords }) => [
-          category,
-          promptExperiment.focus,
-          promptExperiment.hypothesis,
-          promptExperiment.instruction,
-          targetWords.join(", "),
-        ],
-      ),
-    ].filter(
-      (value) => value && !intendedShelfText.includes(value),
     );
 
     assert.doesNotMatch(
       container.textContent,
       /Grown-up options|Pick a story level|Guardian consent|Upload .* photo|Generate story art|CEFR|Target words|Assumed known|Prompt experiment|Category|Narrative word/i,
     );
-    for (const value of internalMetadata) {
-      assert.equal(
-        container.textContent.includes(value),
-        false,
-        `internal shelf metadata: ${value}`,
-      );
-    }
   });
 
   it("renders two public long stories beneath every saved learner shelf", async () => {
@@ -231,7 +201,6 @@ describe("story script catalog", () => {
 
     assert.equal(learnerStories.length, 20);
     assert.equal(learnerLevels.length, 4);
-    assert.equal(STORY_VOCABULARY_PROFILES.length, 5);
     assert.deepEqual(
       learnerLevels.map(({ id }) => id),
       [
@@ -266,9 +235,9 @@ describe("story script catalog", () => {
     }
   });
 
-  // Production break caught: the new shelf copies a looser level or introduces
-  // a fifth saved learner preference instead of reusing first-words vocabulary.
-  it("defines the strict First English words level contract", () => {
+  // Production break caught: the First English words shelf label or description
+  // changes while its cards still render.
+  it("defines the First English words shelf", () => {
     assert.deepEqual(
       STORY_LEVELS.find(({ id }) => id === "first-english-words"),
       {
@@ -276,57 +245,24 @@ describe("story script catalog", () => {
         label: "First English words",
         cefrReference: "Before Pre-A1",
         description: "Look. Listen. Say it.",
-        maxAssumedKnownWords: 0,
-        maxNarrativeWordsPerPage: 6,
-        maxNarrativeWordsTotal: 30,
-        targetWordRange: [4, 6],
-        vocabularyProfileId: "first-english-words-v1",
       },
     );
-    assert.equal(STORY_VOCABULARY_PROFILES.length, 5);
-  });
-
-  // Production break caught: the zero-assumption level silently inherits a
-  // broader first-words grammar inventory than its scripts actually picture.
-  it("limits First English words scaffolding to a and on", () => {
-    const profile = STORY_VOCABULARY_PROFILES.find(
-      ({ id }) => id === "first-english-words-v1",
-    );
-    assert.ok(profile);
-    assert.deepEqual(profile.coreWords, ["a", "on"]);
-
-    const story = resolveStory("hello-cat");
-    assert.ok(story);
-    const storyWithBroaderCoreWord = {
-      ...story,
-      pages: story.pages.map((page, pageIndex) =>
-        pageIndex === 0 ? { ...page, text: `${page.text} I.` } : page,
-      ),
-    };
-
-    assert.deepEqual(auditStoryVocabulary(storyWithBroaderCoreWord), {
-      profileId: "first-english-words-v1",
-      unlistedWords: ["i"],
-    });
   });
 
   // Production break caught: a First English words story is missing, renamed,
-  // given the wrong teaching targets, padded with prior vocabulary, or not five pages.
+  // reordered, or no longer has its five stable reader pages.
   it("publishes exactly the three approved five-page First English words stories", () => {
     assert.equal(STORIES.length, 25);
     assert.deepEqual(
       STORIES.filter(({ level }) => level === "first-english-words").map(
-        ({ assumedKnownWords, id, pages, targetWords, title }) => ({
-          assumedKnownWords,
+        ({ id, pages, title }) => ({
           id,
           pageIds: pages.map(({ id: pageId }) => pageId),
-          targetWords,
           title,
         }),
       ),
       [
         {
-          assumedKnownWords: [],
           id: "hello-cat",
           pageIds: [
             "cat-hello",
@@ -335,18 +271,14 @@ describe("story script catalog", () => {
             "friends-hello",
             "friends-bye",
           ],
-          targetWords: ["hello", "bye", "cat", "dog", "bird"],
           title: "Hello, Cat!",
         },
         {
-          assumedKnownWords: [],
           id: "marys-face",
           pageIds: ["face", "eyes", "ears", "nose", "mouth"],
-          targetWords: ["face", "eyes", "ears", "nose", "mouth", "point"],
           title: "Mary’s Face",
         },
         {
-          assumedKnownWords: [],
           id: "wash-sam-wash",
           pageIds: [
             "dirty-hands",
@@ -355,7 +287,6 @@ describe("story script catalog", () => {
             "wash-hands",
             "clean-hands",
           ],
-          targetWords: ["hands", "dirty", "water", "soap", "wash", "clean"],
           title: "Wash, Sam, Wash!",
         },
       ],
@@ -367,7 +298,6 @@ describe("story script catalog", () => {
   it("gives every Mary’s Face body word an immediate point-and-say turn", () => {
     const story = resolveStory("marys-face");
     assert.ok(story);
-    assert.deepEqual(story.assumedKnownWords, []);
     assert.deepEqual(
       story.pages.map(({ joinIn, text }) => ({ joinIn, text })),
       [
@@ -445,10 +375,6 @@ describe("story script catalog", () => {
           `story-${story.id}-${pageId}-narration`,
         );
         assert.equal(page.joinInAudioId, null);
-        assert.ok(
-          countStoryWords(page.text) <= 45,
-          `${story.title}/${page.id} keeps the reading beat short`,
-        );
         assert.match(
           page.artwork.src,
           new RegExp(
@@ -464,48 +390,26 @@ describe("story script catalog", () => {
     }
   });
 
-  it("keeps every story, page, title, and learner prompt experiment distinct", () => {
-    const learnerStories = STORIES.filter(
-      ({ level }) => level !== "long-stories",
-    );
-
+  // Production break caught: authoring-only metadata remains on runtime
+  // stories even though the shelf and reader do not consume it.
+  it("keeps runtime story records minimal and their IDs distinct", () => {
     assert.equal(new Set(STORIES.map(({ id }) => id)).size, STORIES.length);
     assert.equal(
       new Set(STORIES.map(({ title }) => title)).size,
       STORIES.length,
     );
-    assert.equal(
-      new Set(
-        learnerStories.map(({ promptExperiment }) => promptExperiment.focus),
-      ).size,
-      learnerStories.length,
-    );
+    const serializedStory = JSON.parse(JSON.stringify(STORIES[0]));
+    assert.deepEqual(Object.keys(serializedStory).sort(), [
+      "completionText",
+      "cover",
+      "id",
+      "level",
+      "pages",
+      "title",
+    ]);
 
     for (const story of STORIES) {
-      assert.deepEqual(Object.keys(story).sort(), [
-        "assumedKnownWords",
-        "category",
-        "completionText",
-        "cover",
-        "durationMinutes",
-        "id",
-        "level",
-        "pages",
-        "promptExperiment",
-        "summary",
-        "targetWords",
-        "title",
-      ]);
-      assert.ok(story.summary.trim(), `${story.title} summary`);
       assert.ok(story.completionText.trim(), `${story.title} completion`);
-      assert.ok(
-        story.promptExperiment.instruction.trim(),
-        `${story.title} prompt`,
-      );
-      assert.ok(
-        story.promptExperiment.hypothesis.trim(),
-        `${story.title} hypothesis`,
-      );
       assert.ok(
         story.pages.length >= 5 &&
           (story.level === "long-stories" || story.pages.length <= 7),
@@ -517,125 +421,6 @@ describe("story script catalog", () => {
         `${story.title} page IDs`,
       );
     }
-  });
-
-  // Production break caught: any story exceeds its declared total, per-page,
-  // target-word, assumed-vocabulary, or repetition ceiling.
-  it("enforces the internal language ceiling for every level", () => {
-    for (const story of STORIES) {
-      const level = getStoryLevel(story.level);
-      const narrativeWords = countStoryWords(
-        story.pages.map(({ text }) => text).join(" "),
-      );
-      const pageWordCounts = story.pages.map(({ text }) =>
-        countStoryWords(text),
-      );
-
-      assert.ok(
-        narrativeWords <= level.maxNarrativeWordsTotal,
-        `${story.title} has ${narrativeWords}/${level.maxNarrativeWordsTotal} narrative words`,
-      );
-      assert.ok(
-        Math.max(...pageWordCounts) <= level.maxNarrativeWordsPerPage,
-        `${story.title} page ceiling`,
-      );
-      assert.ok(
-        story.targetWords.length >= level.targetWordRange[0] &&
-          story.targetWords.length <= level.targetWordRange[1],
-        `${story.title} target-word range`,
-      );
-      assert.ok(
-        story.assumedKnownWords.length <= level.maxAssumedKnownWords,
-        `${story.title} assumed-known-word ceiling`,
-      );
-      assert.equal(
-        new Set(story.assumedKnownWords).size,
-        story.assumedKnownWords.length,
-        `${story.title} assumed-known words are distinct`,
-      );
-
-      if (story.level === "long-stories") {
-        for (const page of story.pages) {
-          assert.ok(page.text.trim(), `${story.title}/${page.id} text`);
-          assert.ok(page.joinIn.trim(), `${story.title}/${page.id} join-in`);
-          assert.ok(
-            countStoryWords(page.joinIn) <= 7,
-            `${story.title}/${page.id} join-in stays short`,
-          );
-        }
-        continue;
-      }
-
-      const completeScript = story.pages
-        .map(({ joinIn, text }) => `${text} ${joinIn}`)
-        .join(" ")
-        .toLowerCase();
-      for (const targetWord of story.targetWords) {
-        assert.ok(
-          completeScript.includes(targetWord.toLowerCase()),
-          `${story.title} uses displayed target “${targetWord}”`,
-        );
-      }
-      const scriptTokens = completeScript.match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
-      const targetTokens =
-        story.targetWords
-          .join(" ")
-          .toLowerCase()
-          .match(/[a-z]+(?:['’][a-z]+)?/g) ?? [];
-      if (story.promptExperiment.exactRefrain) {
-        assert.ok(
-          story.pages.filter(
-            ({ joinIn }) => joinIn === story.promptExperiment.exactRefrain,
-          ).length >= 3,
-          `${story.title} repeats its exact refrain on at least three pages`,
-        );
-      } else {
-        assert.ok(
-          targetTokens.some(
-            (targetToken) =>
-              scriptTokens.filter((word) => word === targetToken).length >= 3,
-          ),
-          `${story.title} repeats a teaching word or frame at least three times`,
-        );
-      }
-
-      const vocabularyAudit = auditStoryVocabulary(story);
-      assert.equal(vocabularyAudit.profileId, level.vocabularyProfileId);
-      assert.deepEqual(
-        vocabularyAudit.unlistedWords,
-        [],
-        `${story.title} has no undeclared script words`,
-      );
-
-      for (const page of story.pages) {
-        assert.ok(page.text.trim(), `${story.title}/${page.id} text`);
-        assert.ok(page.joinIn.trim(), `${story.title}/${page.id} join-in`);
-        assert.ok(
-          countStoryWords(page.joinIn) <= 7,
-          `${story.title}/${page.id} join-in stays short`,
-        );
-      }
-    }
-  });
-
-  it("exempts only familiar beginner names from teaching vocabulary", () => {
-    const story = resolveStory("the-red-ball");
-    assert.ok(story);
-    const storyWithNames = {
-      ...story,
-      pages: story.pages.map((page, pageIndex) =>
-        pageIndex === 0
-          ? {
-              ...page,
-              text: `${page.text} Bob, Mary, Rose, Jack, Ben, Sam, and Jo.`,
-            }
-          : page,
-      ),
-    };
-
-    assert.deepEqual(auditStoryVocabulary(storyWithNames).unlistedWords, [
-      "jo",
-    ]);
   });
 
   it("keeps the whale word separate from Ben's name", () => {
@@ -716,42 +501,69 @@ describe("story script catalog", () => {
     assert.equal(existsSync("public/assets/stories"), false);
   });
 
-  it("keeps unknown words unknown instead of guessing their lemmas", () => {
-    const story = STORIES[0];
-    const storyWithUnknownWords = {
-      ...story,
-      pages: story.pages.map((page, pageIndex) =>
-        pageIndex === 0
-          ? { ...page, text: `${page.text} Thing bed xylophone.` }
-          : page,
-      ),
-    };
-
+  // Production break caught: a story is renamed, reordered, or moved to a
+  // different reader shelf while aggregate counts still look correct.
+  it("publishes the exact runtime story order, titles, and levels", () => {
     assert.deepEqual(
-      auditStoryVocabulary(storyWithUnknownWords).unlistedWords,
-      ["bed", "thing", "xylophone"],
+      STORIES.map(({ id, level, title }) => [id, title, level]),
+      [
+        ["hello-cat", "Hello, Cat!", "first-english-words"],
+        ["marys-face", "Mary’s Face", "first-english-words"],
+        ["wash-sam-wash", "Wash, Sam, Wash!", "first-english-words"],
+        ["the-red-ball", "The Red Ball", "first-words"],
+        ["which-hat", "Which Hat?", "first-words"],
+        ["wake-up-nori", "Wake Up, Mary!", "first-words"],
+        ["three-apples", "Three Apples", "first-words"],
+        ["where-is-dot", "Where Is Rose?", "repeating-patterns"],
+        ["boots-in-the-rain", "Boots in the Rain", "repeating-patterns"],
+        ["big-box-small-box", "Big Box, Small Box", "repeating-patterns"],
+        ["lina-goes-to-sleep", "Mary Goes to Sleep", "repeating-patterns"],
+        ["seed-wake-up", "Seed, Wake Up!", "repeating-patterns"],
+        ["a-snack-for-two", "A Snack for Two", "repeating-patterns"],
+        ["the-lantern-trail", "The Lantern Trail", "tiny-stories"],
+        ["the-noisy-little-band", "The Noisy Little Band", "tiny-stories"],
+        ["robo-tries", "Bob Tries", "tiny-stories"],
+        ["tess-can-help", "Rose Can Help", "tiny-stories"],
+        ["ready-maya-ready", "Ready, Mary, Ready!", "tiny-stories"],
+        ["kite-come-back", "Kite, Come Back!", "early-a1"],
+        [
+          "the-picnic-blanket-search",
+          "The Picnic Blanket Search",
+          "early-a1",
+        ],
+        ["soup-for-five", "Soup for Five", "early-a1"],
+        ["wally-finds-the-way", "Ben Finds the Way", "early-a1"],
+        ["the-moon-bus", "The Moon Bus", "early-a1"],
+        ["the-gruffalo", "The Gruffalo", "long-stories"],
+        [
+          "we-re-going-on-a-bear-hunt",
+          "We’re Going on a Bear Hunt",
+          "long-stories",
+        ],
+      ],
     );
   });
 
-  it("replaces the dense Lantern Trail wording without changing its stable ID", () => {
-    const story = resolveStory("the-lantern-trail");
-    assert.ok(story);
-    assert.equal(story.title, "The Lantern Trail");
-    assert.equal(story.level, "tiny-stories");
-    assert.equal(story.pages.length, 6);
+  // Production break caught: learner-visible text, prompts, alt text, artwork
+  // URLs, audio IDs, page IDs, completion text, or page order changes.
+  it("preserves the complete checked-in runtime reader catalog", () => {
+    const runtimeCatalog = STORIES.map(
+      ({ completionText, cover, id, level, pages, title }) => ({
+        completionText,
+        cover,
+        id,
+        level,
+        pages,
+        title,
+      }),
+    );
 
-    const narrative = story.pages.map(({ text }) => text).join(" ");
-    assert.equal(countStoryWords(narrative), 46);
-    assert.ok(
-      Math.max(...story.pages.map(({ text }) => countStoryWords(text))) <= 9,
+    assert.equal(
+      createHash("sha256")
+        .update(JSON.stringify(runtimeCatalog))
+        .digest("hex"),
+      "7208b0941f84c3bf480d7188e1d6e47bc77a0f72876327fc0562e0c17ff5fc53",
     );
-    assert.doesNotMatch(
-      narrative,
-      /sunset|moonlight|patter|gust|whooshed|cupped|twinkled|hollow|hovered|beneath/i,
-    );
-    assert.match(narrative, /Ben/);
-    assert.match(narrative, /Sam/);
-    assert.match(narrative, /family/);
   });
 
   it("resolves only exact playable story IDs", () => {

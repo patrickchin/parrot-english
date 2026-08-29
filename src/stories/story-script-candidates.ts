@@ -1,9 +1,4 @@
-import type {
-  Story,
-  StoryArtwork,
-  StoryPage,
-  StoryPromptExperiment,
-} from "./story-types.ts";
+import type { Story, StoryArtwork, StoryPage } from "./story-types.ts";
 
 type PrototypePage = Pick<StoryPage, "id" | "joinIn" | "text"> & {
   artworkPrompt: string;
@@ -11,19 +6,10 @@ type PrototypePage = Pick<StoryPage, "id" | "joinIn" | "text"> & {
 
 type PrototypeStory = Pick<
   Story,
-  | "category"
-  | "completionText"
-  | "durationMinutes"
-  | "id"
-  | "level"
-  | "assumedKnownWords"
-  | "summary"
-  | "targetWords"
-  | "title"
+  "completionText" | "id" | "level" | "title"
 > & {
   coverPrompt: string;
   pages: readonly PrototypePage[];
-  promptExperiment: StoryPromptExperiment;
 };
 
 function pageArtwork({
@@ -95,22 +81,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "hello-cat",
     title: "Hello, Cat!",
-    category: "Greetings",
-    durationMinutes: 1,
     level: "first-english-words",
-    summary: "Say hello and goodbye to a cat, a dog, and a bird.",
-    targetWords: ["hello", "bye", "cat", "dog", "bird"],
-    assumedKnownWords: [],
     coverPrompt: "Bob waves hello to a friendly cat, dog, and bird",
     completionText: "Bye, cat. Bye, dog. Bye, bird.",
-    promptExperiment: {
-      exactRefrain: "Hello!",
-      focus: "Zero-assumption greeting loop",
-      instruction:
-        "Introduce one animal at a time with the same greeting, then close with one repeated goodbye pattern.",
-      hypothesis:
-        "A visible animal and one repeated greeting let a learner join in without assumed English vocabulary.",
-    },
     pages: [
       {
         id: "cat-hello",
@@ -147,21 +120,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "marys-face",
     title: "Mary’s Face",
-    category: "Body parts",
-    durationMinutes: 1,
     level: "first-english-words",
-    summary: "Point to Mary's face, eyes, ears, nose, and mouth.",
-    targetWords: ["face", "eyes", "ears", "nose", "mouth", "point"],
-    assumedKnownWords: [],
     coverPrompt: "Mary pointing to her smiling face",
     completionText: "Face, eyes, ears, nose, mouth.",
-    promptExperiment: {
-      focus: "Point-and-say body words",
-      instruction:
-        "Show one clearly framed body part per page and invite the same pointing action each time.",
-      hypothesis:
-        "A repeated gesture can anchor each new body word without assumed English vocabulary.",
-    },
     pages: [
       {
         id: "face",
@@ -198,21 +159,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "wash-sam-wash",
     title: "Wash, Sam, Wash!",
-    category: "Handwashing",
-    durationMinutes: 1,
     level: "first-english-words",
-    summary: "Help Sam wash dirty hands with water and soap.",
-    targetWords: ["hands", "dirty", "water", "soap", "wash", "clean"],
-    assumedKnownWords: [],
     coverPrompt: "Sam washing his hands with soap and water",
     completionText: "Clean hands!",
-    promptExperiment: {
-      focus: "Visible handwashing sequence",
-      instruction:
-        "Show one concrete handwashing step per page and repeat the key hand word across the sequence.",
-      hypothesis:
-        "A familiar visible sequence can carry six action and object words without assumed English vocabulary.",
-    },
     pages: [
       {
         id: "dirty-hands",
@@ -249,21 +198,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "the-red-ball",
     title: "The Red Ball",
-    category: "One object",
-    durationMinutes: 1,
     level: "first-words",
-    summary: "Follow one red ball as it rolls away and comes home.",
-    targetWords: ["red", "ball", "roll", "stop", "home"],
-    assumedKnownWords: [],
     coverPrompt: "A bright red ball beside a smiling young child",
     completionText: "The red ball is home.",
-    promptExperiment: {
-      focus: "One-object repetition",
-      instruction:
-        "Write a five-page story about one object. Use one colour, two action words, no figurative language, and no sentence longer than six words.",
-      hypothesis:
-        "Keeping one object throughout lets a new learner understand the action through repetition alone.",
-    },
     pages: [
       {
         id: "my-red-ball",
@@ -300,35 +237,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "the-lantern-trail",
     title: "The Lantern Trail",
-    category: "Plain-language rewrite",
-    durationMinutes: 2,
     level: "tiny-stories",
-    summary: "Help Ben guide Sam home in a simpler version of the first story.",
-    targetWords: ["light", "lost", "family", "help", "follow", "glow", "home"],
-    assumedKnownWords: [
-      "fly",
-      "find",
-      "hello",
-      "little",
-      "many",
-      "near",
-      "need",
-      "say",
-      "see",
-      "thank",
-      "walk",
-      "water",
-    ],
     coverPrompt: "Ben the green parrot walking beside Sam the little firefly",
     completionText: "Sam is home. “Thank you, Ben.”",
-    promptExperiment: {
-      exactRefrain: "Glow, Sam, glow!",
-      focus: "Plain-language rewrite",
-      instruction:
-        "Preserve the existing characters and plot, but replace every poetic description with literal, high-frequency language. Use no metaphor and no sentence longer than ten words.",
-      hypothesis:
-        "This tests whether the first story's difficulty came from its language rather than its plot.",
-    },
     pages: [
       {
         id: "pip-sees-light",
@@ -371,21 +282,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "the-noisy-little-band",
     title: "The Noisy Little Band",
-    category: "Sounds",
-    durationMinutes: 2,
     level: "tiny-stories",
-    summary: "Make drum, bell, and shaker sounds, first loud and then quiet.",
-    targetWords: ["drum", "bell", "shaker", "loud", "quiet", "sing"],
-    assumedKnownWords: ["band", "everyone", "little", "smile"],
     coverPrompt: "Three animal friends playing a drum, bell, and shaker",
     completionText: "The little band is quiet.",
-    promptExperiment: {
-      focus: "Sound-supported meaning",
-      instruction:
-        "Let sound effects carry part of the meaning. Contrast loud and quiet using the same instruments.",
-      hypothesis:
-        "Sound-supported vocabulary may stay understandable even when the learner misses some narration.",
-    },
     pages: [
       {
         id: "bo-drum",
@@ -428,21 +327,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "robo-tries",
     title: "Bob Tries",
-    category: "Can and cannot",
-    durationMinutes: 2,
     level: "tiny-stories",
-    summary: "Ask Bob what he can do and cheer when he tries.",
-    targetWords: ["can", "jump", "run", "fly", "swim", "try"],
-    assumedKnownWords: ["go", "smile", "walk", "yet"],
     coverPrompt: "A friendly round robot ready to jump and run",
     completionText: "Bob can try!",
-    promptExperiment: {
-      focus: "Predictable grammar frame",
-      instruction:
-        "Repeat the question Can you and immediately show success or an attempt. End by valuing trying rather than perfection.",
-      hypothesis:
-        "A predictable grammar frame can teach several action verbs without adding plot complexity.",
-    },
     pages: [
       {
         id: "robo-walks",
@@ -485,31 +372,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "tess-can-help",
     title: "Rose Can Help",
-    category: "Helping",
-    durationMinutes: 2,
     level: "tiny-stories",
-    summary: "Rose and Ben work together to fix a little cart.",
-    targetWords: ["cart", "broken", "help", "wheel", "fix", "roll"],
-    assumedKnownWords: [
-      "ask",
-      "find",
-      "hold",
-      "little",
-      "put",
-      "red",
-      "sad",
-      "smile",
-      "together",
-    ],
     coverPrompt: "Two friends kneeling beside a red cart with a loose wheel",
     completionText: "The cart can roll again.",
-    promptExperiment: {
-      focus: "Concrete problem and solution",
-      instruction:
-        "Use one visible break-and-fix problem, two cooperating characters, and one reusable helping question.",
-      hypothesis:
-        "A concrete problem gives social language an obvious purpose while keeping the story arc small.",
-    },
     pages: [
       {
         id: "cart-broken",
@@ -552,30 +417,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "ready-maya-ready",
     title: "Ready, Mary, Ready!",
-    category: "Morning routine",
-    durationMinutes: 2,
     level: "tiny-stories",
-    summary: "Follow Mary's morning from waking up to leaving home.",
-    targetWords: ["wake", "wash", "get dressed", "eat", "brush", "ready"],
-    assumedKnownWords: [
-      "bag",
-      "face",
-      "good",
-      "morning",
-      "shoe",
-      "sock",
-      "teeth",
-      "toast",
-    ],
     coverPrompt: "Mary dressed for school with her bag and shoes on",
     completionText: "Mary is ready!",
-    promptExperiment: {
-      focus: "Familiar chronological sequence",
-      instruction:
-        "Put one daily routine action on each page, in real chronological order, with a gesture or sound cue.",
-      hypothesis:
-        "Familiar sequencing lets the child predict the next page and retell it from personal experience.",
-    },
     pages: [
       {
         id: "maya-wakes",
@@ -618,38 +462,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "kite-come-back",
     title: "Kite, Come Back!",
-    category: "Small adventure",
-    durationMinutes: 2,
     level: "early-a1",
-    summary: "Rose asks an adult to help free a kite from a tree.",
-    targetWords: ["kite", "wind", "stuck", "string", "pull", "help", "free"],
-    assumedKnownWords: [
-      "ask",
-      "come",
-      "dad",
-      "down",
-      "fly",
-      "get",
-      "give",
-      "high",
-      "lift",
-      "move",
-      "please",
-      "red",
-      "small",
-      "stop",
-      "together",
-      "tree",
-    ],
     coverPrompt: "Rose and Dad holding a red kite beneath a tree",
     completionText: "The kite is free!",
-    promptExperiment: {
-      focus: "Problem, attempt, help, solution",
-      instruction:
-        "Create a short problem-attempt-help-solution story around the paired states stuck and free.",
-      hypothesis:
-        "A small amount of suspense may improve attention without requiring a large vocabulary.",
-    },
     pages: [
       {
         id: "kite-flies",
@@ -698,37 +513,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "the-picnic-blanket-search",
     title: "The Picnic Blanket Search",
-    category: "Join-in search",
-    durationMinutes: 2,
     level: "early-a1",
-    summary: "Go up, under, over, and through to find the picnic blanket.",
-    targetWords: ["look", "up and down", "under", "over", "through", "blanket", "find"],
-    assumedKnownWords: [
-      "basket",
-      "branch",
-      "bridge",
-      "go",
-      "hill",
-      "inside",
-      "let's",
-      "little",
-      "low",
-      "picnic",
-      "short",
-      "sit",
-      "time",
-      "tunnel",
-      "walk",
-    ],
     coverPrompt: "Sam on a path with a hill, tunnel, and picnic basket in the distance",
     completionText: "Sam found the blanket. It is picnic time.",
-    promptExperiment: {
-      focus: "Participatory search adventure",
-      instruction:
-        "Use an original search-adventure call-and-response structure. Present one obstacle and one movement phrase per page; avoid poetic descriptions.",
-      hypothesis:
-        "Repeated group language can create an adventure-book feeling while keeping each page predictable.",
-    },
     pages: [
       {
         id: "blanket-missing",
@@ -777,35 +564,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "soup-for-five",
     title: "Soup for Five",
-    category: "Food and preferences",
-    durationMinutes: 2,
     level: "early-a1",
-    summary: "Five friends choose vegetables and make soup together.",
-    targetWords: ["soup", "carrots", "peas", "corn", "like", "mix", "taste"],
-    assumedKnownWords: [
-      "bowl",
-      "cat",
-      "dog",
-      "everyone",
-      "five",
-      "friend",
-      "go",
-      "hen",
-      "make",
-      "round",
-      "say",
-      "want",
-      "warm",
-    ],
     coverPrompt: "Five animal friends around a pot of vegetable soup",
     completionText: "One warm bowl for each friend.",
-    promptExperiment: {
-      focus: "Preference frame and cumulative action",
-      instruction:
-        "Repeat I like with three interchangeable food words, then combine them in one cumulative cooking action.",
-      hypothesis:
-        "A preference frame supports vocabulary practice and personally meaningful responses.",
-    },
     pages: [
       {
         id: "make-soup",
@@ -854,40 +615,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "wally-finds-the-way",
     title: "Ben Finds the Way",
-    category: "Directions",
-    durationMinutes: 2,
     level: "early-a1",
-    summary: "Use straight, left, and right to help Ben find home.",
-    targetWords: ["straight", "left", "right", "far", "near", "way", "home"],
-    assumedKnownWords: [
-      "ask",
-      "crab",
-      "fish",
-      "find",
-      "friend",
-      "green",
-      "past",
-      "plant",
-      "red",
-      "rock",
-      "say",
-      "see",
-      "swim",
-      "tall",
-      "thank",
-      "turn",
-      "turtle",
-      "whale",
-    ],
     coverPrompt: "A friendly little whale beside a simple underwater map",
     completionText: "Ben is home.",
-    promptExperiment: {
-      focus: "Directions with gestures",
-      instruction:
-        "Pair each direction with an immediate movement and visible landmark. Repeat all three directions as a gesture sequence.",
-      hypothesis:
-        "Body gestures and a simple visual map should make abstract direction words easier to remember.",
-    },
     pages: [
       {
         id: "which-way-home",
@@ -936,34 +666,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "the-moon-bus",
     title: "The Moon Bus",
-    category: "Gentle fantasy",
-    durationMinutes: 2,
     level: "early-a1",
-    summary: "Ride a bus past three stars, visit the moon, and come home.",
-    targetWords: ["bus", "moon", "ticket", "seats", "ride", "stars", "Earth", "home"],
-    assumedKnownWords: [
-      "blue",
-      "bounce",
-      "get",
-      "go",
-      "hello",
-      "look",
-      "past",
-      "please",
-      "rabbit",
-      "stop",
-      "take",
-      "three",
-    ],
     coverPrompt: "A cheerful yellow bus flying toward the moon and three stars",
     completionText: "The moon bus is home.",
-    promptExperiment: {
-      focus: "Simple language in a fantasy setting",
-      instruction:
-        "Wrap very simple transport language in a fantasy setting while keeping sentence structure concrete and repetitive.",
-      hypothesis:
-        "Comparing this with familiar settings will show whether fantasy adds engagement or vocabulary load.",
-    },
     pages: [
       {
         id: "bus-to-moon",
@@ -1012,21 +717,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "which-hat",
     title: "Which Hat?",
-    category: "Colours",
-    durationMinutes: 1,
     level: "first-words",
-    summary: "Try red, blue, and yellow hats, then wear the yellow one.",
-    targetWords: ["hat", "red", "blue", "yellow", "head"],
-    assumedKnownWords: ["see", "three"],
     coverPrompt: "Three simple hats in red, blue, and yellow",
     completionText: "My yellow hat is on my head!",
-    promptExperiment: {
-      focus: "One-word substitution",
-      instruction:
-        "Repeat one substitution sentence, changing only the colour. Finish by putting on the yellow hat.",
-      hypothesis:
-        "A one-word substitution frame isolates colour vocabulary and makes the final yellow-hat reveal predictable.",
-    },
     pages: [
       {
         id: "red-hat",
@@ -1063,21 +756,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "wake-up-nori",
     title: "Wake Up, Mary!",
-    category: "Actions",
-    durationMinutes: 1,
     level: "first-words",
-    summary: "Copy Mary as she wakes, jumps, claps, and dances.",
-    targetWords: ["sleep", "wake", "jump", "clap", "dance"],
-    assumedKnownWords: ["again", "good", "night"],
     coverPrompt: "A small sleepy panda named Mary stretching awake",
     completionText: "Good night, Mary.",
-    promptExperiment: {
-      focus: "Total Physical Response",
-      instruction:
-        "Give a physical command, then immediately show the character doing it. Use only actions a child can copy.",
-      hypothesis:
-        "Physical responses can make new action verbs understandable without translation.",
-    },
     pages: [
       {
         id: "nori-sleeps",
@@ -1120,21 +801,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "three-apples",
     title: "Three Apples",
-    category: "Counting",
-    durationMinutes: 1,
     level: "first-words",
-    summary: "Count three apples, watch one fall, and share the rest.",
-    targetWords: ["apple", "one", "two", "three", "falls"],
-    assumedKnownWords: [],
     coverPrompt: "Three red apples on a low tree branch",
     completionText: "One apple for me. One for you.",
-    promptExperiment: {
-      focus: "Counting sequence",
-      instruction:
-        "Build the story around counting up, one visible change, and a simple sharing ending.",
-      hypothesis:
-        "A number sequence gives the child a familiar structure while introducing only one event word.",
-    },
     pages: [
       {
         id: "one-apple",
@@ -1177,21 +846,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "where-is-dot",
     title: "Where Is Rose?",
-    category: "Position words",
-    durationMinutes: 1,
     level: "repeating-patterns",
-    summary: "Look in, on, and under a box to find Rose.",
-    targetWords: ["box", "where", "in", "on", "under", "find"],
-    assumedKnownWords: ["hello", "look"],
     coverPrompt: "A spotted kitten hiding near a large yellow box",
     completionText: "We found Rose under the box.",
-    promptExperiment: {
-      focus: "Repeated location question",
-      instruction:
-        "Repeat exactly the same location question, change one preposition, and delay the yes answer until the end.",
-      hypothesis:
-        "Repeated question-and-answer language makes three position words easier to compare.",
-    },
     pages: [
       {
         id: "dot-and-box",
@@ -1228,21 +885,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "boots-in-the-rain",
     title: "Boots in the Rain",
-    category: "Daily life",
-    durationMinutes: 1,
     level: "repeating-patterns",
-    summary: "Put on boots and a coat for a rainy walk.",
-    targetWords: ["rain", "wet", "boots", "coat", "dry"],
-    assumedKnownWords: ["go", "home", "make", "stay", "warm"],
     coverPrompt: "A child in yellow boots standing in gentle rain",
     completionText: "Warm and dry. Home!",
-    promptExperiment: {
-      focus: "Familiar cause and action",
-      instruction:
-        "Teach clothing through a familiar cause-and-action routine. Introduce the problem before naming the useful objects.",
-      hypothesis:
-        "A real-life sequence may transfer into everyday speech more easily than a fantasy plot.",
-    },
     pages: [
       {
         id: "rain-falls",
@@ -1285,21 +930,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "big-box-small-box",
     title: "Big Box, Small Box",
-    category: "Opposites",
-    durationMinutes: 2,
     level: "repeating-patterns",
-    summary: "Help Bob and Mary find the box that fits.",
-    targetWords: ["big", "small", "box", "too", "fit"],
-    assumedKnownWords: ["get", "sit"],
     coverPrompt: "A large bear and a little mouse beside two boxes",
     completionText: "Big for Bob. Small for Mary.",
-    promptExperiment: {
-      focus: "Mirrored opposites",
-      instruction:
-        "Put opposites into mirrored scenes. Reuse the same nouns and verbs and avoid synonyms such as large or tiny.",
-      hypothesis:
-        "Direct contrast should teach opposites better than describing them separately.",
-    },
     pages: [
       {
         id: "bo-big-box",
@@ -1342,21 +975,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "lina-goes-to-sleep",
     title: "Mary Goes to Sleep",
-    category: "Bedtime",
-    durationMinutes: 1,
     level: "repeating-patterns",
-    summary: "Say good night to the star, moon, light, and Mary.",
-    targetWords: ["night", "star", "moon", "light", "sleep"],
-    assumedKnownWords: ["eye", "good", "shut", "well"],
     coverPrompt: "Mary tucked into bed beneath a moon and one star",
     completionText: "Good night, Mary.",
-    promptExperiment: {
-      focus: "Calm ritual",
-      instruction:
-        "Use a calm world-turning-off sequence with the same good-night phrase on every page.",
-      hypothesis:
-        "A familiar bedtime ritual may support memory and naturally slow the read-aloud pace.",
-    },
     pages: [
       {
         id: "it-is-night",
@@ -1399,21 +1020,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "seed-wake-up",
     title: "Seed, Wake Up!",
-    category: "Nature",
-    durationMinutes: 1,
     level: "repeating-patterns",
-    summary: "Give a seed water and sun, then watch it grow.",
-    targetWords: ["seed", "water", "sun", "grow", "flower"],
-    assumedKnownWords: ["hello", "little", "sleep", "wake", "warm"],
     coverPrompt: "A small seed sprouting into a bright flower",
     completionText: "Hello, little flower!",
-    promptExperiment: {
-      focus: "Visible cause and effect",
-      instruction:
-        "Explain one simple science transformation using two visible inputs and a delayed reveal.",
-      hypothesis:
-        "A clear cause-and-effect sequence can teach content vocabulary without a complex plot.",
-    },
     pages: [
       {
         id: "seed-sleeps",
@@ -1456,22 +1065,9 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "a-snack-for-two",
     title: "A Snack for Two",
-    category: "Kind words",
-    durationMinutes: 2,
     level: "repeating-patterns",
-    summary: "Use please and thank you while sharing two crackers.",
-    targetWords: ["cracker", "hungry", "please", "share", "thank you"],
-    assumedKnownWords: ["welcome"],
     coverPrompt: "Two friends sharing two crackers at a small table",
     completionText: "Thank you. We can share.",
-    promptExperiment: {
-      exactRefrain: "One for you, one for me.",
-      focus: "Useful social exchange",
-      instruction:
-        "Build the whole story around a useful social exchange and repeat the sharing phrase before the resolution.",
-      hypothesis:
-        "Functional phrases may be retained better when they immediately solve a character's need.",
-    },
     pages: [
       {
         id: "two-crackers",

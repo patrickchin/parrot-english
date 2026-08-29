@@ -2,15 +2,12 @@ import type { Story } from "./story-types.ts";
 
 const LONG_STORY_SOURCES = [
   {
-    "assumedKnownWords": [],
-    "category": "Long stories",
     "completionText": "You finished The Gruffalo!",
     "cover": {
       "alt": "",
       "prompt": "",
       "src": null
     },
-    "durationMinutes": 6,
     "id": "the-gruffalo",
     "level": "long-stories",
     "pages": [
@@ -159,25 +156,15 @@ const LONG_STORY_SOURCES = [
         "text": "All was quiet in the deep dark wood.\nThe mouse found a nut and the nut was good."
       }
     ],
-    "promptExperiment": {
-      "focus": "Read aloud",
-      "hypothesis": "Saved narration supports reading along.",
-      "instruction": "Listen and read along."
-    },
-    "summary": "The Gruffalo",
-    "targetWords": [],
     "title": "The Gruffalo"
   },
   {
-    "assumedKnownWords": [],
-    "category": "Long stories",
     "completionText": "You finished We’re Going on a Bear Hunt!",
     "cover": {
       "alt": "",
       "prompt": "",
       "src": null
     },
-    "durationMinutes": 3,
     "id": "we-re-going-on-a-bear-hunt",
     "level": "long-stories",
     "pages": [
@@ -242,13 +229,6 @@ const LONG_STORY_SOURCES = [
         "text": "Run to the house, run up the stairs,\nOh oh forgot to shut the door!\nRun back downstairs, shut the door,\nRun back up, to the bedroom,\nJump into bed, pull up the covers,\nWE ARE NEVER GOING ON A BEAR HUNT AGAIN!!"
       }
     ],
-    "promptExperiment": {
-      "focus": "Read aloud",
-      "hypothesis": "Saved narration supports reading along.",
-      "instruction": "Listen and read along."
-    },
-    "summary": "We’re Going on a Bear Hunt",
-    "targetWords": [],
     "title": "We’re Going on a Bear Hunt"
   }
 ] satisfies readonly Story[];
