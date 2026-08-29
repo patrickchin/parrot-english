@@ -125,8 +125,10 @@ describe("recording MIME negotiation", () => {
 function createTrack() {
   return {
     stopped: false,
+    stopCalls: 0,
     stop() {
       this.stopped = true;
+      this.stopCalls += 1;
     },
   };
 }
@@ -256,6 +258,46 @@ describe("hold-to-talk speech recorder", () => {
     assert.equal(await blob.text(), "child audio");
     assert.equal(track.stopped, true);
     assert.equal(instances[0].stopCalls, 1);
+  });
+
+  it("records through one started session when the injected timeout stops it", async () => {
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    const events = [];
+    let microphoneRequests = 0;
+    let finishRecording;
+
+    const pending = recordSpeechClip({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => {
+        microphoneRequests += 1;
+        return stream;
+      },
+      onRecordingStart() {
+        events.push("callback");
+      },
+      setTimeout(callback) {
+        finishRecording = callback;
+        return 1;
+      },
+      clearTimeout() {},
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+    assert.deepEqual(events, ["callback"]);
+    assert.equal(microphoneRequests, 1);
+    assert.equal(instances.length, 1);
+    assert.equal(instances[0].stopCalls, 0);
+
+    finishRecording();
+    const clip = await pending;
+
+    assert.equal(await clip.text(), "child audio");
+    assert.equal(instances.length, 1);
+    assert.equal(instances[0].stopCalls, 1);
+    assert.equal(track.stopCalls, 1);
+    assert.equal(track.stopped, true);
   });
 
   it("reports recording once only after permission and recorder start succeed", async () => {
