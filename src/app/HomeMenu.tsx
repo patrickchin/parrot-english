@@ -61,7 +61,7 @@ const LEARNING_PATHS: readonly LearningPath[] = [
 
 export function HomeMenu() {
   return (
-    <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-3 short:pt-15 short-wide:!pb-0 short-wide:!pt-12 sm:px-6 md:px-10 md:py-24 lg:px-16">
+    <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-3 short:pt-15 short-wide:!pb-0 short-wide:!pt-12 sm:px-6 md:px-10 md:py-24 lg:px-6">
       <section className="mx-auto grid w-full max-w-7xl gap-5 short:gap-2 short-wide:!gap-2 md:gap-9">
         <header className="mx-auto grid max-w-3xl gap-2 text-center short:gap-0.5 short-wide:!gap-0.5 md:gap-3">
           <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue short:text-[10px] short-wide:!text-[10px] sm:text-sm md:text-base">
@@ -97,7 +97,7 @@ export function HomeMenu() {
                 </span>
               </div>
               <span className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-                <strong className={cx("min-w-0 text-lg leading-tight md:whitespace-nowrap md:text-2xl lg:text-3xl", tone === "navy" && "text-brand-navy", tone === "rose" && "text-brand-rose", tone === "blue" && "text-brand-blue")}>
+                <strong className={cx("min-w-0 text-lg leading-tight md:whitespace-nowrap md:text-2xl", tone === "navy" && "text-brand-navy", tone === "rose" && "text-brand-rose", tone === "blue" && "text-brand-blue")}>
                   {label}
                 </strong>
                 <ArrowRight aria-hidden="true" className={cx("size-9 shrink-0 rounded-full p-2 text-white md:size-11", tone === "navy" && "bg-brand-navy", tone === "rose" && "bg-brand-rose", tone === "blue" && "bg-brand-blue")} />

@@ -74,6 +74,49 @@ test("home keeps four equal cards in one desktop row", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test("desktop home keeps every visible card label on one line inside its label region", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/");
+
+  const activities = page.getByRole("navigation", { name: "Learning activities" });
+  for (const [accessibleName, visibleLabel] of [
+    ["Play a lesson", "Lessons"],
+    ["Talk to Peppa", "Talk to Peppa"],
+    ["Story time", "Story time"],
+    ["Nursery rhymes", "Nursery rhymes"],
+  ] as const) {
+    const label = activities
+      .getByRole("link", { name: accessibleName })
+      .getByText(visibleLabel, { exact: true });
+    await expect(label).toBeVisible();
+
+    const metrics = await label.evaluate((element) => {
+      const labelRect = element.getBoundingClientRect();
+      const arrowRect = element.nextElementSibling?.getBoundingClientRect();
+      const textRange = document.createRange();
+      textRange.selectNodeContents(element);
+      const textRects = [...textRange.getClientRects()].filter(
+        (rect) => rect.width > 0 && rect.height > 0,
+      );
+
+      return {
+        arrowLeft: arrowRect?.left ?? null,
+        labelLeft: labelRect.left,
+        labelRight: labelRect.right,
+        lineCount: textRects.length,
+        textLeft: Math.min(...textRects.map((rect) => rect.left)),
+        textRight: Math.max(...textRects.map((rect) => rect.right)),
+      };
+    });
+
+    expect(metrics.lineCount).toBe(1);
+    expect(metrics.arrowLeft).not.toBeNull();
+    expect(metrics.textLeft).toBeGreaterThanOrEqual(metrics.labelLeft - 1);
+    expect(metrics.textRight).toBeLessThanOrEqual(metrics.labelRight + 1);
+    expect(metrics.labelRight).toBeLessThanOrEqual(metrics.arrowLeft!);
+  }
+});
+
 test("home keeps four compact cards in one short-landscape row", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/");
