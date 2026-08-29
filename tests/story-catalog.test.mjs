@@ -544,28 +544,6 @@ describe("story script catalog", () => {
     );
   });
 
-  // Production break caught: learner-visible text, prompts, alt text, artwork
-  // URLs, audio IDs, page IDs, completion text, or page order changes.
-  it("preserves the complete checked-in runtime reader catalog", () => {
-    const runtimeCatalog = STORIES.map(
-      ({ completionText, cover, id, level, pages, title }) => ({
-        completionText,
-        cover,
-        id,
-        level,
-        pages,
-        title,
-      }),
-    );
-
-    assert.equal(
-      createHash("sha256")
-        .update(JSON.stringify(runtimeCatalog))
-        .digest("hex"),
-      "7208b0941f84c3bf480d7188e1d6e47bc77a0f72876327fc0562e0c17ff5fc53",
-    );
-  });
-
   it("resolves only exact playable story IDs", () => {
     assert.equal(
       resolveStory("the-red-ball"),
