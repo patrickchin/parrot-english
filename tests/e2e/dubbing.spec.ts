@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { DUB_LINES } from "../../src/dubbing/dub-script";
 
 type DubStoreSnapshot = {
   audioContextDoubleCloses: number;
@@ -554,6 +555,37 @@ test("opening a scene selects its first missing line while scenes remain selecta
   await expect(page.getByText("But none of the five little ducks came back.", { exact: true })).toBeVisible();
 });
 
+test("scene navigation has previous and uses the shared header to return", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expectDubProject(page);
+  await openScene(page, 1);
+
+  const previous = page.getByRole("button", { name: "Previous line" });
+  await expect(previous).toBeDisabled();
+  await page.getByRole("button", { name: "Next line" }).click();
+  await expect(page.getByRole("heading", { name: DUB_LINES[1].text })).toBeVisible();
+  await expect(previous).toBeEnabled();
+  await previous.click();
+  await expect(page.getByRole("heading", { name: DUB_LINES[0].text })).toBeVisible();
+
+  await page.getByRole("navigation", { name: "Page navigation" }).getByRole("button", { name: "Back to full video" }).click();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+  await page.getByRole("link", { name: "Back to home" }).click();
+  await expect(page).toHaveURL("/");
+});
+
+test("next, finish scene returns to the project after the final line", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  for (const line of DUB_LINES.slice(1, 4)) {
+    await page.getByRole("button", { name: "Next line" }).click();
+    await expect(page.getByRole("heading", { name: line.text })).toBeVisible();
+  }
+  await page.getByRole("button", { name: "Next, finish scene" }).click();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+});
+
 test("scene recording follows one linear Choicer-style action flow", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await expectDubProject(page);
@@ -934,6 +966,7 @@ test("route unmount revokes the retained review URL exactly once", async ({ page
   await stopAndSave(page);
   const [objectUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
 
+  await page.getByRole("navigation", { name: "Page navigation" }).getByRole("button", { name: "Back to full video" }).click();
   await page.getByRole("link", { name: "Back to home" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect.poll(async () =>
@@ -1144,7 +1177,10 @@ test("stops a delayed microphone stream that resolves after route exit", async (
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("button", { name: "Starting microphone" })).toBeVisible();
   await expect.poll(() => microphoneSnapshot(page)).toMatchObject({ pending: 1, requests: 1 });
-  await page.getByRole("link", { name: "Back to home" }).click();
+  await page.evaluate(() => {
+    window.history.pushState(null, "", "/");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
   await expect(page).toHaveURL(/\/$/);
   await resolveDelayedMicrophone(page);
   await expect.poll(() => microphoneSnapshot(page)).toMatchObject({
@@ -1168,7 +1204,10 @@ test("route exit cancels an active recording without uploading it", async ({ pag
     stoppedTracks: 0,
   });
 
-  await page.getByRole("link", { name: "Back to home" }).click();
+  await page.evaluate(() => {
+    window.history.pushState(null, "", "/");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
 
   await expect(page).toHaveURL(/\/$/);
   await expect.poll(() => microphoneSnapshot(page)).toMatchObject({ stoppedTracks: 1 });

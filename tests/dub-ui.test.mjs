@@ -126,10 +126,10 @@ function renderSceneEditor(viewProps = {}) {
     activeSceneIndex: 0,
     error: "",
     needsRetake: new Set(),
-    onBack() {},
     onHearGuide() {},
     onHearTake() {},
     onNext() {},
+    onPrevious() {},
     onRecord() {},
     onRetrySave() {},
     onSelectLine() {},
@@ -421,6 +421,30 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
+  it("moves the scene back action into page navigation and restores the project link", async () => {
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await waitFor(() => assert.equal(
+      container.querySelectorAll('nav[aria-label="Page navigation"] [aria-label="Back to full video"]')
+        .length,
+      1,
+    ));
+
+    await click(container.querySelector('nav[aria-label="Page navigation"] [aria-label="Back to full video"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    const backHome = container.querySelector('nav[aria-label="Page navigation"] a[aria-label="Back to home"]');
+    assert.ok(backHome);
+    assert.equal(backHome.getAttribute("href"), "/");
+  });
+
   it("shows disabled learner guidance as soon as status loads", async () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
@@ -559,7 +583,6 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("renders one Choicer-style line flow without competing editor controls", () => {
     const html = renderSceneEditor();
-    assert.match(html, /aria-label="Back to full video"/);
     assert.match(html, /aria-current="step"[^>]*>Line 1 of 4/);
     assert.match(html, /<h1[^>]*>Five little ducks went out one day\.<\/h1>/);
     assert.match(html, /aria-label="Original audio waveform"/);
@@ -570,6 +593,34 @@ describe("duck dubbing storyboard presentation", () => {
     assert.ok(html.indexOf('aria-label="Record line"') < html.indexOf('aria-label="Next line"'));
     assert.doesNotMatch(html, /Scene line selectors|Play scene|Scene recording progress|0 \/ 4|Five little ducks<\/h1>/);
     assert.doesNotMatch(html, /<details|<summary|aria-label="Listen"/);
+  });
+
+  it("renders previous and next navigation without a content-level back control", () => {
+    const first = renderSceneEditor({ activeLine: DUB_LINES[0] });
+    assert.match(first, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
+    assert.match(first, /aria-label="Next line"/);
+    assert.doesNotMatch(first, /aria-label="Back to full video"/);
+
+    const middle = renderSceneEditor({ activeLine: DUB_LINES[1] });
+    assert.match(middle, /aria-label="Previous line"/);
+    assert.doesNotMatch(middle, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
+
+    const final = renderSceneEditor({ activeLine: DUB_LINES[3] });
+    assert.match(final, /aria-label="Next, finish scene"/);
+    assert.doesNotMatch(final, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
+  });
+
+  it("locks both directions during unsafe and unsaved operations", () => {
+    for (const props of [
+      { locked: true, operation: "mic-opening" },
+      { locked: false, operation: "recording" },
+      { locked: true, operation: "saving" },
+      { locked: false, operation: "idle", saveRecovery: "save" },
+    ]) {
+      const html = renderSceneEditor({ activeLine: DUB_LINES[1], ...props });
+      assert.match(html, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
+      assert.match(html, /<button(?=[^>]*aria-label="Next line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
+    }
   });
 
   it("keeps the selected line synchronized with its visual and prompt", () => {
@@ -637,7 +688,6 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, />Not saved</);
     assert.doesNotMatch(html, />Saved ✓</);
     assert.match(html, /aria-label="Save again"/);
-    assert.match(html, /<button(?=[^>]*aria-label="Back to full video")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /role="alert"/);
   });

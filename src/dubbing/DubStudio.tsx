@@ -10,7 +10,7 @@ import {
   type RefObject,
 } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
-import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { isAbortError, playAudioLine } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
@@ -614,6 +614,13 @@ export function DubStudio({
     handleBack();
   }
 
+  function handlePrevious() {
+    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
+    const sceneLineIndex = state.selectedLineIndex % definition.linesPerScene;
+    if (sceneLineIndex === 0) return;
+    handleSelectLine(definition.lines[state.selectedLineIndex - 1].id);
+  }
+
   function handleBack() {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
@@ -728,10 +735,10 @@ export function DubStudio({
         definition={definition}
         error={state.error}
         locked={locked}
-        onBack={handleBack}
         onHearGuide={handleHearGuide}
         onHearTake={handleHearTake}
         onNext={handleNext}
+        onPrevious={handlePrevious}
         onRecord={handleRecord}
         onRetrySave={handleRetrySave}
         operation={state.operation}
@@ -751,9 +758,20 @@ export function DubStudio({
   return (
     <>
       <RouteHeader>
-        <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
-          Back home
-        </HeaderLink>
+        {state.view === "scene" ? (
+          <HeaderButton
+            aria-label="Back to full video"
+            disabled={isUnsafeOperation(state.operation) || state.saveRecovery === "save"}
+            icon={<ChevronLeft strokeWidth={3.2} />}
+            onClick={handleBack}
+          >
+            Full video
+          </HeaderButton>
+        ) : (
+          <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
+            Back home
+          </HeaderLink>
+        )}
       </RouteHeader>
       <span
         aria-atomic="true"
