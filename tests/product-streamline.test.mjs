@@ -188,25 +188,55 @@ test("story shelf presents a curated learner library without research controls",
     ),
     "/stories",
   );
+  const storyHrefs = [...html.matchAll(/<a[^>]*href="(\/stories\/[^"#?]+\/pages\/1)"/g)].map(
+    ([, href]) => href,
+  );
+  const shelfHeadings = [...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map(
+    ([, heading]) => heading,
+  );
+  const visibleText = html
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ");
 
-  assert.equal(STORY_LEVELS.length, 5);
-  assert.equal(STORIES.length, 22);
-  assert.equal(
-    STORIES.filter(({ level }) => level !== "long-stories").length,
-    20,
+  assert.deepEqual(
+    STORY_LEVELS.map(({ id }) => id),
+    [
+      "first-english-words",
+      "first-words",
+      "repeating-patterns",
+      "tiny-stories",
+      "early-a1",
+      "long-stories",
+    ],
   );
-  assert.equal(
-    STORIES.filter(({ level }) => level === "long-stories").length,
-    2,
+  assert.deepEqual(
+    STORY_LEVELS.map(({ id }) =>
+      STORIES.filter(({ level }) => level === id).length,
+    ),
+    [3, 4, 6, 5, 5, 2],
   );
+  assert.equal(STORIES.length, 25);
+  assert.equal(new Set(STORIES.map(({ id }) => id)).size, 25);
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
   assert.match(html, /Pick a story/);
   assert.match(html, /Tap a picture\. I can read it to you\./);
-  assert.match(html, /Little stories/);
-  assert.match(html, /Long stories/);
+  assert.deepEqual(shelfHeadings, [
+    "First English words",
+    "Start here",
+    "Say it again",
+    "Little stories",
+    "Big adventures",
+    "Long stories",
+  ]);
+  assert.equal(storyHrefs.length, 25);
+  assert.equal(new Set(storyHrefs).size, 25);
+  assert.match(visibleText, /Recommended for Mia/);
+  assert.equal((html.match(/<img[^>]*loading="eager"/g) ?? []).length, 1);
+  assert.equal((html.match(/<img[^>]*loading="lazy"/g) ?? []).length, 24);
   assert.doesNotMatch(
     html,
-    /Start here|Say it again|Big adventures|Grown-up options|Guardian consent/,
+    /Grown-up options|Guardian consent|Choose story level|Upload learner photo|Generate story art/,
   );
   assert.doesNotMatch(
     html,

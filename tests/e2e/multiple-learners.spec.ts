@@ -799,6 +799,12 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await expect(
     page.getByText("Editing settings for Mia Updated", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByText(
+      "All stories stay visible. This level is highlighted for Mia Updated.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page.getByRole("tab", { name: /Little stories/ }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "Story level saved" }),
@@ -815,10 +821,33 @@ test("active learner detail and story saves reach learner-mode consumers in the 
     }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Story time" }).click();
-  await expect(page).toHaveURL("/stories?level=tiny-stories");
+  await expect(page).toHaveURL("/stories");
+  const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  await expect(shelf.getByRole("heading", { level: 2 })).toHaveText([
+    "First English words",
+    "Start here",
+    "Say it again",
+    "Little stories",
+    "Big adventures",
+    "Long stories",
+  ]);
   await expect(
-    page.getByRole("region", { name: "Little stories stories" }),
+    shelf.getByRole("link", { name: /^Listen to story:/ }),
+  ).toHaveCount(25);
+  await expect(
+    shelf
+      .getByRole("region", { name: /^Little stories(?: stories)?$/ })
+      .getByText("Recommended for Mia Updated", { exact: true }),
   ).toBeVisible();
+  for (const label of ["First English words", "Long stories"]) {
+    await expect(
+      shelf
+        .getByRole("region", {
+          name: new RegExp(`^${label}(?: stories)?$`),
+        })
+        .getByText(/^Recommended for /),
+    ).toHaveCount(0);
+  }
 
   await expect
     .poll(() =>
