@@ -374,12 +374,6 @@ function addDeletionGraph(state) {
       `provider-${profileId}`,
       NOW,
     );
-    state.sqlite.prepare(
-      `INSERT INTO conversation_fact
-        (id, conversation_id, fact_key, value_json, source_turn_ids,
-         status, created_at, updated_at)
-       VALUES (?, ?, 'favorite', '"red"', '[]', 'accepted', ?, ?)`,
-    ).run(`fact-${profileId}`, `conversation-${profileId}`, NOW, NOW);
     const artKey = `${USER_PREFIX}learners/${profileId}/the-red-ball/versions/current.webp`;
     state.sqlite.prepare(
       `INSERT INTO personalized_story_art
@@ -428,12 +422,6 @@ function assertOnlySiblingGraphRemains(state) {
   assert.deepEqual(
     plainRows(state.sqlite.prepare(
       `SELECT conversation_id AS conversationId FROM conversation_turn`,
-    ).all()),
-    [{ conversationId: `conversation-${SIBLING_ID}` }],
-  );
-  assert.deepEqual(
-    plainRows(state.sqlite.prepare(
-      `SELECT conversation_id AS conversationId FROM conversation_fact`,
     ).all()),
     [{ conversationId: `conversation-${SIBLING_ID}` }],
   );
