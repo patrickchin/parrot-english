@@ -911,7 +911,7 @@ function UnmountingLearnerSelectionSessionsHarness({
   );
 }
 
-function installSharedBroadcastChannels({ beforeDelivery } = {}) {
+function installSharedBroadcastChannels({ beforeDelivery, deliver = true } = {}) {
   const channels = new Map();
   let messagesPosted = 0;
   class SharedBroadcastChannel {
@@ -954,6 +954,7 @@ function installSharedBroadcastChannels({ beforeDelivery } = {}) {
     postMessage(data) {
       messagesPosted += 1;
       beforeDelivery?.(data);
+      if (!deliver) return;
       for (const peer of channels.get(this.name) ?? []) {
         if (peer === this) continue;
         void Promise.resolve().then(() => peer.onmessage?.({ data }));
@@ -7709,6 +7710,274 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     }
   });
 
+  it("blocks a peer when valid Broadcast proof cannot be read before reloading the authoritative learner", async () => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const originalWindowDispatchEvent = window.dispatchEvent;
+    const messages = [];
+    const SharedBroadcastChannel = installSharedBroadcastChannels({
+      beforeDelivery: (message) => messages.push(message),
+      deliver: false,
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    let suppressSameDocumentSelectionSignals = false;
+    window.dispatchEvent = function dispatchEvent(event) {
+      if (
+        suppressSameDocumentSelectionSignals &&
+        event.type === "parrot-learner-selection-signal"
+      ) {
+        return true;
+      }
+      return originalWindowDispatchEvent.call(this, event);
+    };
+    const storage = window.localStorage;
+    const localStorageDescriptor = Object.getOwnPropertyDescriptor(
+      window,
+      "localStorage",
+    );
+    let proofReadsUnavailable = false;
+    const failingStorage = new Proxy(storage, {
+      get(target, property) {
+        if (property === "getItem") {
+          return (key) => {
+            if (proofReadsUnavailable) {
+              throw new Error("Learner selection proof is unavailable.");
+            }
+            return target.getItem(key);
+          };
+        }
+        const value = Reflect.get(target, property, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: failingStorage,
+    });
+    let selectedProfileId = "learner-mary";
+    let profileWrites = 0;
+    const learnerState = () => ({
+      ...completedLearnerProfileState(),
+      profile: {
+        ...completedLearnerProfileState().profile,
+        age: selectedProfileId === "learner-bob" ? 10 : 8,
+        id: selectedProfileId,
+        name: selectedProfileId === "learner-bob" ? "Bob" : "Mary",
+      },
+    });
+    const profileState = () => ({
+      profile: {
+        ...learnerState().profile,
+        description:
+          selectedProfileId === "learner-bob"
+            ? "Bob likes space."
+            : "Mary likes dinosaurs.",
+        lessonRecordingCleanupPending: false,
+        lessonRecordingConsent: false,
+      },
+      questions: [question()],
+    });
+    const rosterProfiles = [
+      {
+        age: 8,
+        createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-mary",
+        name: "Mary",
+        profileStatus: "completed",
+      },
+      {
+        age: 10,
+        createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
+        id: "learner-bob",
+        name: "Bob",
+        profileStatus: "completed",
+      },
+    ];
+
+    function GuardianProfileBroadcastPeer() {
+      return createElement(
+        AccountActionProvider,
+        {
+          profileAction: null,
+          sessionIdentity: "user-1|proof-unavailable-session",
+          setProfileAction() {},
+        },
+        createElement(
+          LearnerProfileGate,
+          {
+            completedLearnerProfileFallback: createElement("p", null, "HOME"),
+            guardianRoute: true,
+            isConversationRoute: false,
+            isLearnerProfileRoute: false,
+            isProfileRoute: true,
+            learnerProfileFallback: createElement("p", null, "SETUP"),
+            onCloseProfileRoute() {},
+            onConversationCompleted() {},
+            onOpenLessons() {},
+            onOpenProfileRoute() {},
+            onRedoCompleted() {},
+            onRedoLearnerProfileRoute() {},
+            redoLearnerProfile: false,
+          },
+          createElement("p", null, "PROFILE HOME"),
+        ),
+      );
+    }
+
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(learnerState());
+      }
+      if (path === "/api/profile" && init.method === "GET") {
+        return json(profileState());
+      }
+      if (path === "/api/profile" && init.method === "PUT") {
+        profileWrites += 1;
+        return json(profileState());
+      }
+      if (
+        path === "/api/learner-profiles/learner-bob/active" &&
+        init.method === "PUT"
+      ) {
+        selectedProfileId = "learner-bob";
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: rosterProfiles,
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    try {
+      await mountStrict(
+        createElement(
+          Fragment,
+          null,
+          createElement(GuardianProfileBroadcastPeer),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Pending proof Broadcast observer",
+            sessionIdentity: "user-1|proof-unavailable-session",
+          }),
+          createElement(LearnerSelectionSessionHarness, {
+            label: "Select Bob from Broadcast source",
+            profileId: "learner-bob",
+            sessionIdentity: "user-1|proof-unavailable-session",
+          }),
+        ),
+      );
+      await waitFor(() => {
+        text(/Managing Mary/);
+        assert.equal(
+          output("Pending proof Broadcast observer active learner").textContent,
+          "learner-mary",
+        );
+        button("Select Bob from Broadcast source");
+        assert.equal(SharedBroadcastChannel.peerCount(), 3);
+      });
+      await input(document.querySelector("#profile-name"), "Stale Mary");
+      suppressSameDocumentSelectionSignals = true;
+      await click(button("Select Bob from Broadcast source"));
+      await waitFor(() =>
+        assert.equal(
+          output("Select Bob from Broadcast source active learner").textContent,
+          "learner-bob",
+        ),
+      );
+      suppressSameDocumentSelectionSignals = false;
+      assert.equal(
+        document.querySelector("#profile-name")?.value,
+        "Stale Mary",
+        "The Broadcast observer must remain stale until the captured peer signal arrives.",
+      );
+      assert.equal(
+        document.querySelector("#profile-name")?.closest("[hidden]"),
+        null,
+      );
+      assert.equal(
+        output("Pending proof Broadcast observer active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+      const pendingSignal = messages.find(
+        (message) => message?.type === "pending" && message.status === "pending",
+      );
+      const changedSignal = messages.find(
+        (message) => message?.type === "changed",
+      );
+      assert.ok(pendingSignal);
+      assert.ok(changedSignal);
+
+      proofReadsUnavailable = true;
+      act(() => {
+        SharedBroadcastChannel.deliverToPeer(1, {
+          status: "pending",
+          token: "",
+          type: "pending",
+        });
+        SharedBroadcastChannel.deliverToPeer(0, {
+          marker: "",
+          type: "changed",
+        });
+      });
+      assert.equal(
+        document.querySelector("#profile-name")?.closest("[hidden]"),
+        null,
+        "Malformed peer messages must not block the loaded learner.",
+      );
+      assert.equal(
+        output("Pending proof Broadcast observer active learner").closest(
+          "[hidden]",
+        ),
+        null,
+      );
+
+      act(() => {
+        SharedBroadcastChannel.deliverToPeer(0, changedSignal);
+        SharedBroadcastChannel.deliverToPeer(1, pendingSignal);
+      });
+      assert.notEqual(
+        document.querySelector("#profile-name")?.closest("[hidden]"),
+        null,
+        "A valid peer mutation must fail closed when its durable proof cannot be read.",
+      );
+      assert.notEqual(
+        output("Pending proof Broadcast observer active learner").closest(
+          "[hidden]",
+        ),
+        null,
+        "A valid pending signal must fail closed when its durable proof cannot be read.",
+      );
+      await click(button("Save changes"));
+      assert.equal(
+        profileWrites,
+        0,
+        "A blocked stale Mary form must not write against authoritative Bob.",
+      );
+
+      proofReadsUnavailable = false;
+      await act(async () => window.dispatchEvent(new window.Event("focus")));
+      await waitFor(() => text(/Managing Bob/));
+      assert.equal(
+        output("Pending proof Broadcast observer active learner").textContent,
+        "learner-bob",
+      );
+      assert.equal(profileWrites, 0);
+    } finally {
+      suppressSameDocumentSelectionSignals = false;
+      window.dispatchEvent = originalWindowDispatchEvent;
+      proofReadsUnavailable = false;
+      if (localStorageDescriptor) {
+        Object.defineProperty(window, "localStorage", localStorageDescriptor);
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    }
+  });
+
   it("invalidates same-session tabs when a committed learner switch response is malformed", async () => {
     const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
     const originalWindowBroadcastChannel = window.BroadcastChannel;
@@ -13513,6 +13782,64 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     assert.equal(response.status, 409);
     assert.deepEqual(await response.json(), { error: "last_learner" });
+  });
+
+  it("keeps Guardian access isolated between browser-mock sessions", async () => {
+    window.history.replaceState(
+      null,
+      "",
+      "/?parrotE2eLearners=multiple&parrotE2eGuardian=learner&parrotE2eSession=task5-guardian-page&parrotE2eAccount=task5-guardian-session-account",
+    );
+    globalThis.localStorage = window.localStorage;
+    globalThis.sessionStorage = window.sessionStorage;
+    await vite.ssrLoadModule(
+      "/src/testing/e2e-browser-mocks.ts?task5-guardian-session-contract",
+    );
+    const learners = window.__parrotE2eLearners;
+    const sessionA = learners.openSession("task5-guardian-a");
+    const sessionB = learners.openSession("task5-guardian-b");
+
+    assert.equal(
+      (
+        await window.fetch("/api/guardian-access", {
+          method: "DELETE",
+        })
+      ).status,
+      200,
+    );
+    const unlockA = await sessionA.fetch("/api/guardian-access", {
+      body: JSON.stringify({ password: "e2e-guardian-password" }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST",
+    });
+    const afterUnlock = {
+      a: (await sessionA.fetch("/api/learner-profiles")).status,
+      b: (await sessionB.fetch("/api/learner-profiles")).status,
+      page: (await window.fetch("/api/learner-profiles")).status,
+    };
+    const lockB = await sessionB.fetch("/api/guardian-access", {
+      method: "DELETE",
+    });
+    const afterBLock = {
+      a: (await sessionA.fetch("/api/learner-profiles")).status,
+      b: (await sessionB.fetch("/api/learner-profiles")).status,
+      page: (await window.fetch("/api/learner-profiles")).status,
+    };
+
+    assert.deepEqual(
+      {
+        afterBLock,
+        afterUnlock,
+        lockB: lockB.status,
+        unlockA: unlockA.status,
+      },
+      {
+        afterBLock: { a: 200, b: 403, page: 403 },
+        afterUnlock: { a: 200, b: 403, page: 403 },
+        lockB: 200,
+        unlockA: 200,
+      },
+    );
   });
 
   it("does not let a delayed targeted mock write resurrect a deleted learner", async () => {

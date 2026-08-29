@@ -200,20 +200,6 @@ function storedLearnerDeletionPublicationJournal(scope: string) {
   }
 }
 
-function learnerDeletionPublicationJournalHas(
-  scope: string,
-  token: string,
-  marker: string,
-) {
-  const journal = storedLearnerDeletionPublicationJournal(scope);
-  return (
-    journal.status === "valid" &&
-    journal.value.entries.some(
-      (entry) => entry.token === token && entry.marker === marker,
-    )
-  );
-}
-
 function storeLearnerDeletionPublicationJournal(
   scope: string,
   token: string,
@@ -2773,31 +2759,44 @@ export function LearnerProfileGate({
         };
         if (
           signal.type === LEARNER_SELECTION_CHANGED_MESSAGE &&
-          typeof signal.marker === "string"
+          typeof signal.marker === "string" &&
+          validLearnerDeletionPublicationValue(signal.marker) &&
+          (signal.token === undefined ||
+            (typeof signal.token === "string" &&
+              validLearnerDeletionPublicationValue(signal.token)))
         ) {
           const durableMarker =
             typeof signal.token === "string"
               ? storedLearnerDeletionPublication(name, signal.token)
               : null;
-          if (
-            compareStoredLearnerSelectionMarker(
-              storageKey,
-              signal.marker,
-            ) !== "match" &&
-            !(
-              durableMarker?.status === "valid" &&
+          const journal =
+            typeof signal.token === "string"
+              ? storedLearnerDeletionPublicationJournal(name)
+              : null;
+          const markerProof = compareStoredLearnerSelectionMarker(
+            storageKey,
+            signal.marker,
+          );
+          const hasProof =
+            markerProof === "match" ||
+            (durableMarker?.status === "valid" &&
               durableMarker.value.marker === signal.marker &&
-              durableMarker.value.status !== "prepared"
-            ) &&
-            !(
-              typeof signal.token === "string" &&
-              learnerDeletionPublicationJournalHas(
-                name,
-                signal.token,
-                signal.marker,
-              )
-            )
-          ) {
+              durableMarker.value.status !== "prepared") ||
+            (typeof signal.token === "string" &&
+              journal?.status === "valid" &&
+              journal.value.entries.some(
+                (entry) =>
+                  entry.token === signal.token &&
+                  entry.marker === signal.marker,
+              ));
+          if (!hasProof) {
+            if (
+              markerProof === "unavailable" ||
+              durableMarker?.status === "unavailable" ||
+              journal?.status === "unavailable"
+            ) {
+              blockForPendingLearnerSelection(true);
+            }
             return;
           }
           acceptMarker(signal.marker);
@@ -2806,8 +2805,16 @@ export function LearnerProfileGate({
         if (
           signal.type === "pending" &&
           typeof signal.token === "string" &&
+          validLearnerDeletionPublicationValue(signal.token) &&
           (signal.status === "pending" || signal.status === "uncertain")
         ) {
+          if (
+            signal.attemptId !== undefined &&
+            (typeof signal.attemptId !== "string" ||
+              !validLearnerDeletionPublicationValue(signal.attemptId))
+          ) {
+            return;
+          }
           let stored: StoredLearnerSelectionPending;
           try {
             const storedValue = window.localStorage.getItem(
@@ -2819,6 +2826,7 @@ export function LearnerProfileGate({
               signal.token,
             );
           } catch {
+            blockForPendingLearnerSelection(true);
             return;
           }
           if (

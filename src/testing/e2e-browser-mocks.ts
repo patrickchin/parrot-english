@@ -1042,7 +1042,7 @@ function createE2eLearnerAccount(
     if (dubRoute?.kind === "consent") {
       if (method !== "PUT")
         return e2eDubJson({ error: "method_not_allowed" }, 405);
-      if (currentGuardianAccess().mode !== "guardian") {
+      if (currentGuardianAccess(sessionId).mode !== "guardian") {
         return e2eDubJson({ error: "guardian_required" }, 403);
       }
       const body = await jsonBody(request);
@@ -1067,7 +1067,7 @@ function createE2eLearnerAccount(
         return e2eDubJson(dubStatus(learner, dubRoute.definition));
       }
       if (method === "DELETE") {
-        if (currentGuardianAccess().mode !== "guardian") {
+        if (currentGuardianAccess(sessionId).mode !== "guardian") {
           return e2eDubJson({ error: "guardian_required" }, 403);
         }
         learner.dub = { consentState: "not_granted", savedLineIds: [] };
@@ -2043,7 +2043,7 @@ function initialE2eDubLineIds(
   return [];
 }
 
-function createE2eDubStore(scenario: string | null) {
+function createE2eDubStore(scenario: string | null, sessionId: string) {
   if (!scenario) return null;
   const definition = getActiveE2eDubDefinition();
   const savedKeyFor = (dubId: string) =>
@@ -2172,7 +2172,7 @@ function createE2eDubStore(scenario: string | null) {
       if (dubRoute?.kind === "consent") {
         if (method !== "PUT")
           return e2eDubJson({ error: "method_not_allowed" }, 405);
-        if (currentGuardianAccess().mode !== "guardian") {
+        if (currentGuardianAccess(sessionId).mode !== "guardian") {
           return e2eDubJson({ error: "guardian_required" }, 403);
         }
         if (consentState === "revoking") {
@@ -2238,7 +2238,7 @@ function createE2eDubStore(scenario: string | null) {
           });
         }
         if (method === "DELETE") {
-          if (currentGuardianAccess().mode !== "guardian") {
+          if (currentGuardianAccess(sessionId).mode !== "guardian") {
             return e2eDubJson({ error: "guardian_required" }, 403);
           }
           persistConsent("revoking");
@@ -2425,7 +2425,10 @@ function getE2eGuardianScenario(): MockGuardianScenario {
 }
 
 const guardianScenario = getE2eGuardianScenario();
-const guardianStorageKey = `parrot-e2e-guardian-access:${guardianScenario}`;
+
+function guardianStorageKey(sessionId: string) {
+  return `parrot-e2e-guardian-access:${guardianScenario}:${sessionId}`;
+}
 
 function initialGuardianAccess(): MockGuardianAccess {
   if (guardianScenario === "guardian" || guardianScenario === "lock-error") {
@@ -2447,8 +2450,9 @@ function initialGuardianAccess(): MockGuardianAccess {
   return { mode: "learner" };
 }
 
-function readGuardianAccess(): MockGuardianAccess {
-  const saved = sessionStorage.getItem(guardianStorageKey);
+function readGuardianAccess(sessionId: string): MockGuardianAccess {
+  const storageKey = guardianStorageKey(sessionId);
+  const saved = sessionStorage.getItem(storageKey);
   if (saved) {
     try {
       const parsed = JSON.parse(saved) as MockGuardianAccess;
@@ -2465,23 +2469,26 @@ function readGuardianAccess(): MockGuardianAccess {
     }
   }
   const access = initialGuardianAccess();
-  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+  sessionStorage.setItem(storageKey, JSON.stringify(access));
   return access;
 }
 
-let guardianAccess = readGuardianAccess();
-
-function setGuardianAccess(access: MockGuardianAccess) {
-  guardianAccess = access;
-  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+function setGuardianAccess(sessionId: string, access: MockGuardianAccess) {
+  sessionStorage.setItem(
+    guardianStorageKey(sessionId),
+    JSON.stringify(access),
+  );
 }
 
-function currentGuardianAccess() {
+function currentGuardianAccess(sessionId: string) {
+  const guardianAccess = readGuardianAccess(sessionId);
   if (
     guardianAccess.mode === "guardian" &&
     Date.parse(guardianAccess.expiresAt ?? "") <= Date.now()
   ) {
-    setGuardianAccess({ mode: "learner" });
+    const expiredAccess = { mode: "learner" } as const;
+    setGuardianAccess(sessionId, expiredAccess);
+    return expiredAccess;
   }
   return guardianAccess;
 }
@@ -2531,10 +2538,11 @@ async function guardianResponse(
   url: URL,
   method: string,
   hasLearnerTarget: boolean,
+  sessionId: string,
 ) {
   if (url.origin !== window.location.origin) return null;
   if (url.pathname === "/api/guardian-access") {
-    if (method === "GET") return e2eJson(currentGuardianAccess());
+    if (method === "GET") return e2eJson(currentGuardianAccess(sessionId));
     if (method === "POST") {
       const request = input instanceof Request ? input : null;
       const body = init?.body ?? (request ? await request.clone().text() : "");
@@ -2563,26 +2571,28 @@ async function guardianResponse(
           503,
         );
       }
-      setGuardianAccess({
+      const access: MockGuardianAccess = {
         expiresAt: new Date(
           Date.now() + E2E_GUARDIAN_ACCESS_TTL_MS,
         ).toISOString(),
         mode: "guardian",
-      });
-      return e2eJson(guardianAccess);
+      };
+      setGuardianAccess(sessionId, access);
+      return e2eJson(access);
     }
     if (method === "DELETE") {
       if (guardianScenario === "lock-error") {
         return e2eJson({ error: "lock_failed" }, 503);
       }
-      setGuardianAccess({ mode: "learner" });
-      return e2eJson(guardianAccess);
+      const access: MockGuardianAccess = { mode: "learner" };
+      setGuardianAccess(sessionId, access);
+      return e2eJson(access);
     }
     return e2eJson({ error: "method_not_allowed" }, 405);
   }
   if (
     requiresGuardianAccess(url, method, hasLearnerTarget) &&
-    currentGuardianAccess().mode === "learner"
+    currentGuardianAccess(sessionId).mode === "learner"
   ) {
     return e2eJson({ error: "guardian_required" }, 403);
   }
@@ -2913,9 +2923,12 @@ async function lessonRecordingResponse(
 
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
-  const dubStore = createE2eDubStore(getE2eDubScenario());
   const learnerScenario = getE2eLearnerScenario();
   const learnerSessionId = getE2eLearnerSessionId();
+  const dubStore = createE2eDubStore(
+    getE2eDubScenario(),
+    learnerSessionId,
+  );
   const learnerAccountId =
     new URL(window.location.href).searchParams.get("parrotE2eAccount") ??
     learnerSessionId;
@@ -3004,6 +3017,7 @@ function installE2eProfileFetchMock() {
             url,
             method,
             hasLearnerTarget,
+            sessionId,
           );
           if (guarded) return guarded;
           const target = hasLearnerTarget
@@ -3064,6 +3078,7 @@ function installE2eProfileFetchMock() {
       url,
       method,
       hasLearnerTarget,
+      learnerSessionId,
     );
     if (guardedResponse) return guardedResponse;
 
