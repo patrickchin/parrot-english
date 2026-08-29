@@ -58,6 +58,7 @@ import {
 import {
   getGateRouteKind,
   getDuckDubPath,
+  getNurseryRhymesPath,
   getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
@@ -93,6 +94,7 @@ import { AccountPrivacyPage } from "./AccountPrivacyPage";
 import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
+import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
@@ -174,6 +176,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/lessons/my/:lessonId/scenes/:sceneNumber",
   "/progress",
   "/stories",
+  getNurseryRhymesPath(),
   getDuckDubPath(),
   getOldMacDonaldDubPath(),
   "/stories/:storyId",
@@ -1358,6 +1361,7 @@ export function ApplicationRoutes({
         />
         <Route element={<Navigate replace to="/" />} path="/progress" />
         <Route element={<StoryList />} path="/stories" />
+        <Route element={<NurseryRhymeList />} path={getNurseryRhymesPath()} />
         <Route element={<DuckDub />} path={getDuckDubPath()} />
         <Route
           element={

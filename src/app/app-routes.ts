@@ -45,6 +45,7 @@ const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
 const SAFE_RETURN_PATHS = [
   /^\/$/,
   TALK_TO_PEPPA_ROUTE_PATH,
+  /^\/dubs\/*$/i,
   /^\/dubs\/five-little-ducks\/*$/i,
   /^\/dubs\/old-macdonald\/*$/i,
   ...GUARDIAN_ROUTE_PATHS,
@@ -157,6 +158,10 @@ export function getStoryPath(storyId: string) {
 
 export function getDuckDubPath() {
   return "/dubs/five-little-ducks" as const;
+}
+
+export function getNurseryRhymesPath() {
+  return "/dubs" as const;
 }
 
 export function getOldMacDonaldDubPath() {

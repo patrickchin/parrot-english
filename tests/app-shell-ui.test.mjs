@@ -101,19 +101,16 @@ test("home menu prioritizes the four learner activities", () => {
     "/lessons",
     "/talk-to-peppa",
     "/stories",
-    "/dubs/five-little-ducks",
-    "/dubs/old-macdonald",
+    "/dubs",
   ]);
+  assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
   assert.match(html, /Tap a picture\./);
-  assert.match(html, />Play a lesson</);
+  assert.match(html, />Lessons</);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
-  assert.match(html, />Dub a rhyme</);
-  assert.match(html, />Old MacDonald Had a Farm</);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 10);
-  assert.equal((html.match(/data-story-layer="painted-environment"/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /<svg[^>]*viewBox="0 0 960 540"/);
+  assert.match(html, />Nursery rhymes</);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
   assert.doesNotMatch(
     html,
     /Listen and speak\.|Say hello and chat\.|Listen to a story\.|Tap one\./,
@@ -127,6 +124,11 @@ test("home menu prioritizes the four learner activities", () => {
     html,
     /World Explorer|Pixel Lesson Lab|Progress|Coming soon/,
   );
+
+  const nursery = renderApplicationRoute("/dubs");
+  assert.match(nursery, />Nursery rhymes</);
+  assert.match(nursery, /href="\/dubs\/five-little-ducks"/);
+  assert.match(nursery, /href="\/dubs\/old-macdonald"/);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {

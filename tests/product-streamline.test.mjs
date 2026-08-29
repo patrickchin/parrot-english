@@ -40,7 +40,7 @@ function renderInRouter(element, initialEntry = "/") {
   );
 }
 
-test("home gives children five clear, working learning choices", () => {
+test("home gives children four clear, working learning choices", () => {
   const html = renderInRouter(createElement(HomeMenu));
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
@@ -50,14 +50,12 @@ test("home gives children five clear, working learning choices", () => {
     "/lessons",
     "/talk-to-peppa",
     "/stories",
-    "/dubs/five-little-ducks",
-    "/dubs/old-macdonald",
+    "/dubs",
   ]);
+  assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.match(html, /Tap a picture\./i);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 10);
-  assert.equal((html.match(/data-story-layer="painted-environment"/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /<svg[^>]*viewBox="0 0 960 540"/);
-  assert.match(html, /Dub a rhyme/);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.match(html, /Nursery rhymes/);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
