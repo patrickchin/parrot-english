@@ -12,7 +12,8 @@ import {
   loadLearnerProfiles,
   type LearnerProfileRoster,
 } from "../learner-profile/learner-profile-api";
-import { ActionButton } from "../shared/ui";
+import { ActionButton, ActionLink } from "../shared/ui";
+import { getGuardianLearnersPath } from "./app-routes";
 import { useDialogFocus } from "./useDialogFocus";
 
 type RosterState =
@@ -55,6 +56,7 @@ export function LearnerModeSwitchDialog({
   const [isSwitching, setIsSwitching] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const submitRef = useRef<HTMLButtonElement>(null);
   const isSwitchingRef = useRef(false);
 
   useDialogFocus({
@@ -82,6 +84,10 @@ export function LearnerModeSwitchDialog({
     );
     return () => controller.abort();
   }, [reloadKey]);
+
+  useEffect(() => {
+    if (!isSwitching && error) submitRef.current?.focus();
+  }, [error, isSwitching]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -113,6 +119,9 @@ export function LearnerModeSwitchDialog({
           !deletionPending
         )
       : [];
+  const selectedProfile = selectableProfiles.find(
+    ({ id }) => id === selectedProfileId,
+  );
 
   return (
     <div
@@ -137,7 +146,7 @@ export function LearnerModeSwitchDialog({
             className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
             id="learner-mode-switch-title"
           >
-            Choose learner
+            Who is learning now?
           </h2>
           <p className="m-0 font-bold leading-relaxed text-slate-700">
             Choose who will use learner mode.
@@ -174,9 +183,18 @@ export function LearnerModeSwitchDialog({
             >
               <legend className="sr-only">Learner profiles</legend>
               {selectableProfiles.length === 0 ? (
-                <p className="m-0 font-bold leading-relaxed text-slate-700">
-                  Add a learner before switching to learner mode.
-                </p>
+                <div className="grid justify-items-start gap-3">
+                  <p className="m-0 font-bold leading-relaxed text-slate-700">
+                    Add a learner before switching to learner mode.
+                  </p>
+                  <ActionLink
+                    size="compact"
+                    to={getGuardianLearnersPath()}
+                    variant="surface"
+                  >
+                    Manage learners
+                  </ActionLink>
+                </div>
               ) : (
                 selectableProfiles.map((profile) => (
                   <label
@@ -211,6 +229,17 @@ export function LearnerModeSwitchDialog({
                 </p>
               ) : null}
 
+              <p
+                aria-atomic="true"
+                aria-live="polite"
+                className="sr-only"
+                role="status"
+              >
+                {isSwitching && selectedProfile
+                  ? `Starting learner mode as ${selectedProfile.name}…`
+                  : ""}
+              </p>
+
               <div className="grid gap-3 sm:grid-cols-2">
                 <ActionButton
                   onClick={onClose}
@@ -220,10 +249,18 @@ export function LearnerModeSwitchDialog({
                 >
                   Cancel
                 </ActionButton>
-                <ActionButton disabled={!selectedProfileId} type="submit">
+                <ActionButton
+                  disabled={!selectedProfileId}
+                  ref={submitRef}
+                  type="submit"
+                >
                   {isSwitching
-                    ? "Switching to learner mode…"
-                    : "Switch to learner mode"}
+                    ? selectedProfile
+                      ? `Starting learner mode as ${selectedProfile.name}…`
+                      : "Starting learner mode…"
+                    : selectedProfile
+                      ? `Start learner mode as ${selectedProfile.name}`
+                      : "Choose a learner"}
                 </ActionButton>
               </div>
             </fieldset>

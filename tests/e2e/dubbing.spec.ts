@@ -191,7 +191,7 @@ test("guardian consent unlocks the storyboard without exposing adult controls", 
     page.getByRole("button", { name: /Switch to .*start dubbing/i }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Manage learners" }),
+    page.getByRole("link", { name: "Back to guardian dashboard" }),
   ).toBeVisible();
   await page.evaluate(async () => {
     const response = await fetch("/api/guardian-access", { method: "DELETE" });
@@ -1269,7 +1269,7 @@ test("a held Guardian delete is exclusive until removal succeeds", async ({ page
     page.getByRole("button", { name: /Switch to .*start dubbing/i }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Manage learners" }),
+    page.getByRole("link", { name: "Back to guardian dashboard" }),
   ).toBeVisible();
 
   await releaseDubOperation(page, "delete");

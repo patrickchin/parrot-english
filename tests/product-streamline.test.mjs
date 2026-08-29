@@ -86,6 +86,7 @@ test("guardian dashboard presents one learner-management destination", () => {
   assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
   assert.match(html, /aria-label="Switch to learner"/);
   assert.doesNotMatch(html, /is using learner mode|select who uses learner mode/);
+  assert.doesNotMatch(html, /Managing Mia/);
   assert.doesNotMatch(html, /Learner profiles|Learner details|Manage learner details/);
 });
 
@@ -134,7 +135,10 @@ test("guardian dashboard links a separate account and privacy destination", () =
   ]);
   assert.match(html, /<h2[^>]*>Account &amp; privacy<\/h2>/);
   assert.match(html, />Open account &amp; privacy<\/a>/);
-  assert.match(html, /AI and saved data.*sign out.*delete/i);
+  assert.match(
+    html,
+    /Review how AI is used, what Parrot saves, and account deletion controls/,
+  );
   assert.doesNotMatch(html, /profile dropdown/i);
   assert.match(html, /Switch to learner/);
 });

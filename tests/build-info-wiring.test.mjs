@@ -59,11 +59,11 @@ test("the account AI and saved data panel is wired to deployed component metadat
   assert.match(about, /Five Little Ducks/);
   assert.match(
     about,
-    /Guardian profile editing do not change which\s+learner uses learner mode/,
+    /Choosing a learner in Guardian settings changes only which\s+learner(?:'|&apos;)s\s+data you manage/,
   );
   assert.match(
     about,
-    /Only the explicit Use in learner mode\s+action changes which learner uses learner mode/,
+    /Learner mode changes only through\s+Switch to learner/,
   );
   assert.doesNotMatch(
     about,

@@ -92,6 +92,16 @@ function selectedRadio(container, value) {
   return radio;
 }
 
+function namedLink(container, name) {
+  const candidate = [...container.querySelectorAll("a")].find(
+    (link) =>
+      link.getAttribute("aria-label") === name ||
+      link.textContent.trim() === name,
+  );
+  assert.ok(candidate, `Expected a link named ${name}.`);
+  return candidate;
+}
+
 function RouteProbe() {
   const location = useLocation();
   return createElement(
@@ -206,6 +216,14 @@ test("opening the chooser only loads the roster, with no learner preselected", a
   await click(namedButton(container, "Open chooser"));
   const dialog = container.querySelector('[role="dialog"]');
   assert.ok(dialog, "Expected the learner-mode chooser dialog.");
+  assert.equal(
+    dialog.getAttribute("aria-labelledby"),
+    "learner-mode-switch-title",
+  );
+  assert.equal(
+    dialog.querySelector("#learner-mode-switch-title")?.textContent,
+    "Who is learning now?",
+  );
   assert.ok(
     document.activeElement === dialog,
     "Expected focus to enter the loading dialog.",
@@ -267,7 +285,7 @@ test("selects a learner before locking and navigating home", async () => {
   await click(namedButton(container, "Open chooser"));
   await waitFor(() => assert.equal(selectedRadio(container, "learner-noah").disabled, false));
   await click(selectedRadio(container, "learner-noah"));
-  await click(namedButton(container, "Switch to learner mode"));
+  await click(namedButton(container, "Start learner mode as Mary"));
 
   await waitFor(() => assert.equal(currentRoute(container), "/"));
   assert.deepEqual(operations, [
@@ -275,4 +293,21 @@ test("selects a learner before locking and navigating home", async () => {
     "lock",
     "before-navigate",
   ]);
+});
+
+test("empty chooser routes the Guardian to Manage learners", async () => {
+  const operations = [];
+  globalThis.fetch = async (path, init = {}) => {
+    assert.equal(path, "/api/learner-profiles");
+    assert.equal(init.method, "GET");
+    return Response.json({ activeProfileId: null, profiles: [] });
+  };
+  const container = await mountStrict(harness({ operations }));
+
+  await click(namedButton(container, "Open chooser"));
+  await waitFor(() => namedLink(container, "Manage learners"));
+
+  assert.equal(namedLink(container, "Manage learners").getAttribute("href"), "/guardian/learners");
+  assert.equal(container.querySelector('input[type="radio"]'), null);
+  assert.deepEqual(operations, []);
 });

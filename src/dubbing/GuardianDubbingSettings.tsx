@@ -8,13 +8,13 @@ import {
   type Ref,
 } from "react";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
-import { getGuardianLearnersPath, getGuardianPath } from "../app/app-routes";
+import { getGuardianPath } from "../app/app-routes";
 import {
   GuardianLearnerTarget,
   useGuardianLearnerTarget,
   type GuardianLearnerTargetState,
 } from "../learner-profile/GuardianLearnerTarget";
-import { ActionButton, ActionLink, Card } from "../shared/ui";
+import { ActionButton, Card } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
@@ -93,26 +93,14 @@ export function GuardianDubbingSettingsView({
           </h1>
           <GuardianLearnerTarget state={target} />
           {target.phase === "ready" && target.learnerName !== null ? (
-            <>
-              <p
-                className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-                dir="ltr"
-              >
-                Manage <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s private voice clips for all voice-dubbing rhymes: Five
-                Little Ducks and Old MacDonald.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-slate-600">
-                <span>Change who uses learner mode in Manage learners.</span>
-                <ActionLink
-                  size="compact"
-                  to={getGuardianLearnersPath()}
-                  variant="surface"
-                >
-                  Manage learners
-                </ActionLink>
-              </div>
-            </>
+            <p
+              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
+              dir="ltr"
+            >
+              Manage <BidiLearnerName learnerName={managedLearnerName} />
+              &apos;s private voice clips for all voice-dubbing rhymes: Five
+              Little Ducks and Old MacDonald.
+            </p>
           ) : null}
         </header>
 

@@ -9,7 +9,6 @@ import {
 import { useRef, useState, type RefObject } from "react";
 import { ActionLink, Card } from "../shared/ui";
 import {
-  GuardianLearnerContextLabel,
   HeaderButton,
   RouteHeader,
 } from "./AppHeader";
@@ -23,11 +22,9 @@ import {
 import { LearnerModeSwitchDialog } from "./LearnerModeSwitchDialog";
 
 export function GuardianDashboardView({
-  learnerName,
   onSwitchToLearner,
   switchTriggerRef,
 }: {
-  learnerName: string;
   onSwitchToLearner: () => void;
   switchTriggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
@@ -47,7 +44,6 @@ export function GuardianDashboardView({
 
       <section className="mx-auto grid w-full max-w-5xl gap-8">
         <header className="grid gap-2 text-center">
-          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Guardian dashboard
           </h1>
@@ -72,7 +68,8 @@ export function GuardianDashboardView({
               Manage learners
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Add learners and edit learner details.
+              Add, edit, or delete learner profiles. You’ll choose a learner
+              when switching to learner mode.
             </p>
           </div>
           <ActionLink
@@ -96,7 +93,7 @@ export function GuardianDashboardView({
           <div className="grid gap-4 md:grid-cols-3">
             <Card
               aria-labelledby="my-lessons-heading"
-              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-sky-100 sm:p-6"
+              className="grid content-start gap-4 !bg-sky-50 p-5 ring-2 ring-inset ring-sky-100 sm:p-6"
               tone="muted"
             >
               <span
@@ -125,7 +122,7 @@ export function GuardianDashboardView({
 
             <Card
               aria-labelledby="story-settings-heading"
-              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-violet-100 sm:p-6"
+              className="grid content-start gap-4 !bg-violet-50 p-5 ring-2 ring-inset ring-violet-100 sm:p-6"
               tone="muted"
             >
               <span
@@ -154,7 +151,7 @@ export function GuardianDashboardView({
 
             <Card
               aria-labelledby="voice-dubbing-heading"
-              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-amber-100 sm:p-6"
+              className="grid content-start gap-4 !bg-amber-50 p-5 ring-2 ring-inset ring-amber-100 sm:p-6"
               tone="muted"
             >
               <span
@@ -185,7 +182,7 @@ export function GuardianDashboardView({
 
         <Card
           aria-labelledby="account-privacy-heading"
-          className="grid items-center gap-5 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
+          className="grid items-center gap-5 !bg-emerald-50 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
           elevation="soft"
           tone="muted"
         >
@@ -203,8 +200,8 @@ export function GuardianDashboardView({
               Account &amp; privacy
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review AI and saved data controls, sign out, or delete your
-              account.
+              Review how AI is used, what Parrot saves, and account deletion
+              controls.
             </p>
           </div>
           <ActionLink
@@ -221,10 +218,9 @@ export function GuardianDashboardView({
 }
 
 export function GuardianDashboard({
-  learnerName,
   onBeforeNavigate,
 }: {
-  learnerName: string;
+  learnerName?: string;
   onBeforeNavigate?: () => void;
 }) {
   const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
@@ -233,7 +229,6 @@ export function GuardianDashboard({
   return (
     <>
       <GuardianDashboardView
-        learnerName={learnerName.trim() || "Learner"}
         onSwitchToLearner={() => setIsSwitchDialogOpen(true)}
         switchTriggerRef={switchTriggerRef}
       />

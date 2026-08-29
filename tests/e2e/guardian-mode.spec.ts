@@ -70,6 +70,33 @@ function guardianUrl(path: string, scenario: string) {
   return `${path}${separator}parrotE2eGuardian=${scenario}`;
 }
 
+function guardianLearnerUrl(path: string, scenario: string) {
+  const url = new URL(guardianUrl(path, scenario), "http://parrot-e2e.invalid");
+  url.searchParams.set("parrotE2eLearners", "multiple");
+  return `${url.pathname}${url.search}${url.hash}`;
+}
+
+async function chooseLearnerAndStart(
+  page: Page,
+  name: string,
+  triggerName: "Switch to learner" | "Switch to learner mode" =
+    "Switch to learner",
+) {
+  const trigger = page.getByRole("button", {
+    exact: true,
+    name: triggerName,
+  });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", { name: "Who is learning now?" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("radio", { checked: true })).toHaveCount(0);
+  await dialog.getByRole("radio", { exact: true, name }).check();
+  await dialog
+    .getByRole("button", { exact: true, name: `Start learner mode as ${name}` })
+    .click();
+  return dialog;
+}
+
 async function openLearnerAccountMenu(page: Page) {
   await page
     .getByRole("button", { name: /Profile for .+, learner mode/ })
@@ -549,18 +576,40 @@ for (const { path, protectedName, seedEditLesson, unlockedPath } of [
     path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Flearners%2Fe2e-learner",
     protectedName: "Update my profile",
   },
-  { path: "/guardian/lessons", protectedName: "My Lessons" },
-  { path: "/guardian/stories", protectedName: "Story settings" },
-  { path: "/guardian/dubbing", protectedName: "Voice dubbing" },
+  {
+    path: "/guardian/lessons",
+    protectedName: "My Lessons",
+    unlockedPath:
+      "/guardian/lessons?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
+  },
+  {
+    path: "/guardian/stories",
+    protectedName: "Story settings",
+    unlockedPath:
+      "/guardian/stories?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
+  },
+  {
+    path: "/guardian/dubbing",
+    protectedName: "Voice dubbing",
+    unlockedPath:
+      "/guardian/dubbing?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
+  },
   {
     path: "/profile/setup?redo=1&returnTo=%2Fguardian",
     protectedName: "Update my profile",
   },
-  { path: "/lessons/my/create", protectedName: "Create a custom lesson" },
+  {
+    path: "/lessons/my/create",
+    protectedName: "Create a custom lesson",
+    unlockedPath:
+      "/lessons/my/create?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
+  },
   {
     path: "/lessons/my/boundary-fixture/edit",
     protectedName: "Edit Lesson",
     seedEditLesson: true,
+    unlockedPath:
+      "/lessons/my/boundary-fixture/edit?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
   },
 ]) {
   test(`locked ${path} shows only the password gate`, async ({ page }) => {
@@ -734,16 +783,17 @@ test("an expired guardian session returns the same deep link to the password gat
 test("failed dashboard lock preserves guardian content and navigation", async ({
   page,
 }) => {
-  const url = guardianUrl("/guardian", "lock-error");
+  const url = guardianLearnerUrl("/guardian", "lock-error");
   await page.goto(url);
   const dashboard = page.getByRole("heading", { name: "Guardian dashboard" });
   await expect(dashboard).toBeVisible();
 
-  await page.getByRole("button", { name: "Switch to learner" }).click();
+  const dialog = await chooseLearnerAndStart(page, "Noah");
 
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    LOCK_ERROR,
-  );
+  await expect(dialog.getByRole("alert")).toHaveText(LOCK_ERROR);
+  await expect(
+    dialog.getByRole("button", { name: "Start learner mode as Noah" }),
+  ).toBeFocused();
   await expect(dashboard).toBeVisible();
   await expect(page).toHaveURL(url);
 });
@@ -751,18 +801,23 @@ test("failed dashboard lock preserves guardian content and navigation", async ({
 test("failed learner-boundary lock preserves the requested learner route", async ({
   page,
 }) => {
-  const url = guardianUrl("/lessons", "lock-error");
+  const url = guardianLearnerUrl("/lessons", "lock-error");
   await page.goto(url);
   const boundary = page.getByRole("heading", {
     name: "Switch to learner mode",
   });
   await expect(boundary).toBeVisible();
 
-  await page.getByRole("button", { name: "Switch to learner mode" }).click();
-
-  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
-    LOCK_ERROR,
+  const dialog = await chooseLearnerAndStart(
+    page,
+    "Noah",
+    "Switch to learner mode",
   );
+
+  await expect(dialog.getByRole("alert")).toHaveText(LOCK_ERROR);
+  await expect(
+    dialog.getByRole("button", { name: "Start learner mode as Noah" }),
+  ).toBeFocused();
   await expect(boundary).toBeVisible();
   await expect(page).toHaveURL(url);
 });
@@ -770,22 +825,22 @@ test("failed learner-boundary lock preserves the requested learner route", async
 test("successful lock returns to learner home before exposing activities", async ({
   page,
 }) => {
-  await page.goto(guardianUrl("/guardian", "guardian"));
-  await page.getByRole("button", { name: "Switch to learner" }).click();
+  await page.goto(guardianLearnerUrl("/guardian", "guardian"));
+  await chooseLearnerAndStart(page, "Noah");
 
   await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("navigation", { name: "Learning activities" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
+    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
   ).toBeVisible();
 });
 
 test("locking guardian access in one tab immediately hides guardian UI in a sibling tab", async ({
   page,
 }) => {
-  const url = guardianUrl("/guardian", "guardian");
+  const url = guardianLearnerUrl("/guardian", "guardian");
   const sibling = await page.context().newPage();
   try {
     await Promise.all([page.goto(url), sibling.goto(url)]);
@@ -796,7 +851,7 @@ test("locking guardian access in one tab immediately hides guardian UI in a sibl
       sibling.getByRole("heading", { name: "Guardian dashboard" }),
     ).toBeVisible();
 
-    await page.getByRole("button", { name: "Switch to learner" }).click();
+    await chooseLearnerAndStart(page, "Noah");
 
     await expect(
       sibling.getByRole("heading", { name: "Unlock guardian mode" }),

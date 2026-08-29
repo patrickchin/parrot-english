@@ -7,6 +7,10 @@ applies every pending migration, so production must run the compatibility
 Worker after `0012_multi_learner_expand.sql` and before it encounters
 `0013_multi_learner_enable.sql`.
 
+`0015_learner_profile_deletion.sql` is additive. It may be applied by the
+compatibility release while roster mutations are disabled, but it must be
+present before the enable Worker exposes individual learner deletion.
+
 The exact compatibility commit deployed to production becomes the permanent
 rollback floor. Record it outside Git in the GitHub repository variable
 `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`. Do not write the SHA into its own commit:
@@ -22,8 +26,8 @@ The required order is:
 
 1. Prepare and review, but do not merge, a follow-up main PR that removes exactly
    `migrations/0013_multi_learner_enable.sql` and sets
-   `MULTI_LEARNER_PROFILES_ENABLED=0`, while retaining 0012, 0014, and the
-   guarded personalized-art protocol.
+   `MULTI_LEARNER_PROFILES_ENABLED=0`, while retaining 0012, 0014, 0015, and
+   the guarded personalized-art and learner-deletion protocols.
 2. Activate and verify an externally approved hold on account deletion and
    relevant traffic before merging the compatibility PR.
 3. Merge that PR while the hold remains active. Capture its main merge SHA and
@@ -66,9 +70,9 @@ configuration.
 - Better Auth identifies the Guardian account.
 - Each auth session has at most one selected learner; different sessions may
   select different learners.
-- Only a live session-specific Guardian unlock may list, create, or select
-  profiles. Guardian unlock uses the same account password used to sign in;
-  there is no separate Guardian password or PIN.
+- Only a live session-specific Guardian unlock may list, create, select, or
+  delete profiles. Guardian unlock uses the same account password used to sign
+  in; there is no separate Guardian password or PIN.
 - Learner APIs resolve the selection on the server and never trust a
   browser-supplied profile ID.
 - Profiles, onboarding, lessons, conversations, personalized art, dubbing
@@ -77,8 +81,10 @@ configuration.
   whole-account deletion remain account- or session-scoped.
 - The marked legacy learner retains existing data and exact historical R2
   keys. New learners use profile-prefixed R2 namespaces.
-- Individual learner deletion is not part of this release. Whole-account
-  deletion must cover every learner namespace.
+- Individual learner deletion rejects the final usable learner, never
+  auto-selects a sibling, and keeps an unfinished cleanup tombstoned and
+  retryable. Whole-account deletion must include every completed or unfinished
+  learner closure.
 
 ## Before Either Release
 
@@ -103,7 +109,7 @@ configuration.
    names, profile IDs, R2 keys, photos, recordings, prompts, or response bodies
    containing private content.
 
-## Release 1: Compatibility Worker, `0012`, and `0014`
+## Release 1: Compatibility Worker, `0012`, `0014`, and `0015`
 
 ### 1. Prepare and verify the compatibility PR without merging it
 
@@ -115,6 +121,7 @@ export PARROT_COMPATIBILITY_PR_HEAD="$(git rev-parse HEAD)"
 git show --check "$PARROT_COMPATIBILITY_PR_HEAD"
 test -f migrations/0012_multi_learner_expand.sql
 test -f migrations/0014_personalized_art_deletion_closure.sql
+test -f migrations/0015_learner_profile_deletion.sql
 test ! -f migrations/0013_multi_learner_enable.sql
 rg '"MULTI_LEARNER_PROFILES_ENABLED": "0"' wrangler.jsonc
 ```
@@ -133,7 +140,7 @@ The commit must contain the compatibility Worker as well as `0012`. It must:
 - prevent personalized-art candidate tracking after an account-deletion
   tombstone, create candidate objects conditionally, persist candidate keys in
   the deletion closure, and fence those keys before user deletion can cascade;
-- keep profile creation and selection mutations disabled.
+- keep profile creation, selection, and deletion mutations disabled.
 
 `0014_personalized_art_deletion_closure.sql` is intentionally a new migration;
 do not amend the already-staged `0012`. The compatibility revision includes
@@ -193,8 +200,8 @@ curl -fsS https://parrotbook.com/api/build-info
 `backend.commitSha` must equal `PARROT_COMPATIBILITY_SHA`. A successful workflow
 run is not sufficient if the build-info value differs.
 
-Confirm remote D1 reports `0012` and `0014` as applied and `0013` as pending or
-absent:
+Confirm remote D1 reports `0012`, `0014`, and `0015` as applied and `0013` as
+pending or absent:
 
 ```bash
 npx wrangler d1 migrations list parrot-english --remote
@@ -221,8 +228,8 @@ Use a nonproduction test account that had data before `0012`:
 8. Confirm the Guardian dashboard, profile Back/Cancel/Save, and lesson
    authoring Back/Save routes return to Guardian pages without locking the
    session.
-9. Confirm profile creation and selection mutation endpoints are still disabled
-   while the flag is `"0"`.
+9. Confirm profile creation, selection, and deletion mutation endpoints are
+   still disabled while the flag is `"0"`.
 
 Stop here if any legacy data is missing, a learner route exposes Guardian
 controls, or a Guardian route is stranded. Do not record the compatibility SHA
@@ -263,6 +270,7 @@ export PARROT_ENABLE_PR_HEAD="$(git rev-parse HEAD)"
 test -f migrations/0012_multi_learner_expand.sql
 test -f migrations/0013_multi_learner_enable.sql
 test -f migrations/0014_personalized_art_deletion_closure.sql
+test -f migrations/0015_learner_profile_deletion.sql
 rg '"MULTI_LEARNER_PROFILES_ENABLED": "1"' wrangler.jsonc
 git merge-base --is-ancestor "$PARROT_COMPATIBILITY_SHA" "$PARROT_ENABLE_PR_HEAD"
 MULTI_LEARNER_COMPATIBILITY_DEPLOYED="$PARROT_COMPATIBILITY_SHA" \
@@ -306,32 +314,44 @@ npx wrangler d1 migrations list parrot-english --remote
 ```
 
 `backend.commitSha` must equal `PARROT_ENABLE_SHA`, and remote D1 must report
-`0012`, `0013`, and `0014` as applied.
+`0012`, `0013`, `0014`, and `0015` as applied.
 
 Use controlled test profiles to verify:
 
 1. `/guardian/learners` requires a fresh Guardian unlock.
 2. The roster lists only profiles owned by that account in stable creation
    order.
-3. Adding a preferred name creates an incomplete learner, selects it for only
-   the current session, and opens its details flow.
-4. Selecting another learner persists through reload; a second signed-in
-   session can keep a different active learner.
+3. Adding a preferred name creates an incomplete learner and opens its details
+   flow without changing the session's learner-mode selection.
+4. Manage learners contains only Add, Edit, and Delete. `Switch to learner`
+   opens `Who is learning now?` with no preselected radio; confirming a named
+   learner persists through reload, while a second signed-in session can keep a
+   different active learner.
 5. Missing, stale, and foreign selections fail closed. A multi-learner session
    with no selection shows only `Ask a grown-up to choose a learner` in learner
    mode and exposes the roster only after Guardian unlock.
 6. Profile details, onboarding, saved lessons, conversations, story level,
    personalized art, dubbing consent, and voice clips remain isolated between
    two sibling learners.
-7. A conversation remains bound to the learner that created it after the
+7. Delete one disposable inactive learner with the Guardian-only confirmation,
+   then refresh and confirm it stays removed. Reject deletion of the final
+   usable learner with `409 last_learner`.
+8. Delete the active disposable learner and confirm the selection is cleared,
+   Guardian navigation still works, no sibling is auto-selected, and the next
+   switch opens the chooser. Simulate or use an approved test hook for a cleanup
+   failure; refresh, confirm the pending learner is excluded from chooser and
+   settings targets, then finish deletion with the same-ID retry.
+9. A conversation remains bound to the learner that created it after the
    session selects a sibling.
-8. The migrated legacy learner still reads its existing art key and legacy dub
-   namespace; a new learner cannot probe either.
-9. Learner mode contains no sibling name, Guardian dashboard, roster, editing,
+10. The migrated legacy learner still reads its existing art key and legacy
+   dub namespace; deleting that disposable legacy test learner closes the
+   account-root compatibility paths without sweeping a sibling's prefixed
+   namespace.
+11. Learner mode contains no sibling name, Guardian dashboard, roster, editing,
    authoring, consent, privacy, sign-out, or deletion control. Five Little
    Ducks contains no grown-up checkbox; missing consent shows only the
    learner-safe grown-up gateway.
-10. Every Guardian page exposes a dashboard recovery path, invalid Guardian
+12. Every Guardian page exposes a dashboard recovery path, invalid Guardian
     return targets fall back to `/guardian`, and mode-aware wildcard routing
     returns to the correct home.
 
@@ -362,7 +382,8 @@ Watch these signals without logging learner content:
 - `409 learner_selection_required`, which is expected for a fresh
   multi-learner session but suspicious if it rises for already-selected or
   single-learner sessions;
-- selection/create failures, stale-selection suppression, and profile reload
+- selection/create/delete failures, pending-cleanup retries, final-learner and
+  learner-busy conflicts, stale-selection suppression, and profile reload
   failures observed during the controlled browser smoke tests;
 - account deletion retries or incomplete learner-storage closures.
 
@@ -448,7 +469,7 @@ The rollout is complete only when the release record contains:
 - the exact compatibility SHA reported by production;
 - the unchanged `MULTI_LEARNER_COMPATIBILITY_DEPLOYED` value;
 - the exact enable SHA reported by production;
-- remote D1 evidence for `0012` then `0013`;
+- remote D1 evidence for `0012`, `0014`, and `0015`, then `0013`;
 - passing local gate summaries for both reviewed releases;
 - singleton compatibility and multi-learner isolation smoke results;
 - an observability review with no unresolved ownership, navigation, or private

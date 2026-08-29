@@ -840,6 +840,7 @@ function createE2eLearnerAccount(
   } | null = null;
   let failNextLearnerDelete = false;
   let failNextLearnerProfileLoad = false;
+  let learnerRosterLoadFailuresRemaining = 0;
   let learnerProfileLoadFailures = 0;
   const pendingLessonUploadsByLearner = new Map<
     string,
@@ -1341,7 +1342,19 @@ function createE2eLearnerAccount(
     }
 
     if (url.pathname === "/api/learner-profiles") {
-      if (method === "GET") return e2eJson(roster());
+      if (method === "GET") {
+        if (learnerRosterLoadFailuresRemaining > 0) {
+          learnerRosterLoadFailuresRemaining -= 1;
+          return e2eJson(
+            {
+              error: "roster_unavailable",
+              message: "Learner profiles could not be loaded.",
+            },
+            503,
+          );
+        }
+        return e2eJson(roster());
+      }
       if (method === "POST") {
         if (scenario === "create-error") {
           return e2eJson(
@@ -1743,6 +1756,9 @@ function createE2eLearnerAccount(
     },
     failNextLearnerProfileLoad() {
       failNextLearnerProfileLoad = true;
+    },
+    failNextLearnerRosterLoad() {
+      learnerRosterLoadFailuresRemaining = 2;
     },
     releaseStaleSelection() {
       if (!heldSelection) return false;
@@ -2965,6 +2981,8 @@ function installE2eProfileFetchMock() {
       }
       return {
         failNextLearnerDelete: () => account.failNextLearnerDelete(),
+        failNextLearnerRosterLoad: () =>
+          account.failNextLearnerRosterLoad(),
         fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
           const request = input instanceof Request ? input : null;
           const source =
@@ -3013,6 +3031,8 @@ function installE2eProfileFetchMock() {
         failNextLearnerDelete: () => learnerAccount.failNextLearnerDelete(),
         failNextLearnerProfileLoad: () =>
           learnerAccount.failNextLearnerProfileLoad(),
+        failNextLearnerRosterLoad: () =>
+          learnerAccount.failNextLearnerRosterLoad(),
         openSession: openLearnerSession,
         releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
         snapshot: (profileId?: string) => learnerAccount.snapshot(profileId),

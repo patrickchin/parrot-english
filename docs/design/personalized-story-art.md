@@ -67,12 +67,12 @@ These seams are sufficient for a vertical slice without inventing a new route
 family or broad gallery UI.
 
 The upload, attestation, generation, and deletion panel is Guardian-only and
-appears in the active learner's story settings with the shared
-`Managing {learnerName}` context. Learner mode may render only an already-ready
-derivative for the selected learner. It never renders the photo picker,
+appears in the URL-targeted learner's story settings with its page-local
+`Editing settings for {learnerName}` context. Learner mode may render only an
+already-ready derivative for the selected learner. It never renders the photo picker,
 attestation, generation, deletion, roster, or a sibling name. Changing the
-active learner aborts stale art work and reloads that sibling's independent
-metadata before the page commits it.
+settings target aborts stale art work and reloads that sibling's independent
+metadata without changing who will enter learner mode.
 
 ## Exact Vertical Slice
 

@@ -141,7 +141,8 @@ test("guardian settings owns voice consent and deletion", () => {
     enabledText,
     /record and replace lines in both Five Little Ducks and Old MacDonald/,
   );
-  assert.match(enabledText, /Manage learners/);
+  assert.match(enabledText, /Back to guardian dashboard/);
+  assert.doesNotMatch(enabledText, /Manage learners/);
   assert.doesNotMatch(enabledText, /Switch to Mia and start dubbing/);
   assert.match(
     enabledText,
@@ -653,7 +654,8 @@ test("loads and grants Noah's dubbing through explicit target requests only", as
   await waitFor(() =>
     assert.match(container.textContent, /Voice dubbing is on/),
   );
-  assert.match(container.textContent, /Manage learners/);
+  assert.match(container.textContent, /Back to guardian dashboard/);
+  assert.doesNotMatch(container.textContent, /Manage learners/);
   assert.doesNotMatch(container.textContent, /Switch to .*start dubbing/);
 
   const dubRequests = requests.filter(({ path }) =>

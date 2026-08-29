@@ -139,7 +139,6 @@ export function AccountHeader({
   activeMode,
   error,
   guardianLabel,
-  hasActiveLearner = true,
   isDialogOpen = false,
   isSigningOut,
   learnerLabel,
@@ -150,7 +149,6 @@ export function AccountHeader({
   onSelectGuardian,
   onSignOut,
   signOutError,
-  userEmail,
 }: {
   activeMode: "guardian" | "learner";
   error: string;
@@ -391,28 +389,20 @@ export function AccountHeader({
       </span>
       {isMenuOpen && !isSigningOut ? (
         <div className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] w-72 min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]">
-          <div
-            aria-label="Active profile"
-            className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
-            role="group"
-          >
-            <p className="m-0 min-w-0 [overflow-wrap:anywhere]">
-              <BidiLearnerName learnerName={activeLabel} />
-            </p>
-            <p className="m-0 text-[0.65rem] uppercase tracking-wider">
-              {activeModeLabel}
-            </p>
-            {activeMode === "guardian" && guardianLabel !== userEmail ? (
-              <p className="m-0 min-w-0 [overflow-wrap:anywhere]" dir="auto">
-                {userEmail}
+          {activeMode === "learner" ? (
+            <div
+              aria-label="Active profile"
+              className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
+              role="group"
+            >
+              <p className="m-0 min-w-0 [overflow-wrap:anywhere]">
+                <BidiLearnerName learnerName={activeLabel} />
               </p>
-            ) : null}
-            {activeMode === "guardian" && hasActiveLearner ? (
-              <p className="m-0 min-w-0 [overflow-wrap:anywhere]" dir="ltr">
-                Managing <BidiLearnerName learnerName={managedLearnerLabel} />
+              <p className="m-0 text-[0.65rem] uppercase tracking-wider">
+                {activeModeLabel}
               </p>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
           {error ? <AccountError error={error} onRetry={onRetryError} /> : null}
           <div
             aria-label="Account menu"

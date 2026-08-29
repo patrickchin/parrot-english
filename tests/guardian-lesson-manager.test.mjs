@@ -126,7 +126,9 @@ test("guardian lesson manager owns custom-lesson authoring actions", () => {
     html,
     /href="\/lessons\/my\/lesson%2Fid\/edit\?learnerProfileId=learner-mia"/,
   );
-  assert.match(html, /Manage learners/);
+  assert.match(html, /aria-label="Back to guardian dashboard"/);
+  assert.match(html, /href="\/guardian"/);
+  assert.doesNotMatch(html, /Manage learners/);
   assert.doesNotMatch(html, /Switch and play/);
   assert.doesNotMatch(html, /Peppa&#x27;s High Ball/);
 });

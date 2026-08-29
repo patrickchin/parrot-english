@@ -16,6 +16,7 @@ import {
   useAccountSessionIdentity,
   useProfileAccountAction,
 } from "../auth/account-actions";
+import type { GuardianMode } from "../auth/GuardianAccess";
 import { selectConversationPurpose } from "../../lib/conversation-purpose";
 import {
   createLearnerProfile as createLearnerProfileRequest,
@@ -639,15 +640,24 @@ type AcknowledgmentView = {
   operationId: number;
 };
 
+type GuardianSelectionRosterPhase =
+  | "idle"
+  | "loading"
+  | "available"
+  | "empty"
+  | "error";
+
 type LearnerProfileGateViewProps = {
   acknowledgment: AcknowledgmentView | null;
   children: ReactNode;
   completedLearnerProfileFallback: ReactNode;
   conversationProps: ConversationProps | null;
   data: LearnerProfileState | null;
+  guardianAccessMode?: GuardianMode;
   guardianDashboardRoute?: boolean;
   guardianRoute?: boolean;
   guardianSelectionFallback?: ReactNode;
+  guardianSelectionRosterPhase?: GuardianSelectionRosterPhase;
   isConversationRoute: boolean;
   isLearnerProfileRoute: boolean;
   learnerManagerRoute?: boolean;
@@ -727,9 +737,11 @@ export function LearnerProfileGateView({
   completedLearnerProfileFallback,
   conversationProps,
   data,
+  guardianAccessMode = "learner",
   guardianDashboardRoute = false,
   guardianRoute = false,
   guardianSelectionFallback,
+  guardianSelectionRosterPhase = "idle",
   isConversationRoute,
   isLearnerProfileRoute,
   learnerManagerRoute = false,
@@ -844,6 +856,29 @@ export function LearnerProfileGateView({
 
   if (data?.mode === "selection-required") {
     if (!guardianRoute) {
+      if (guardianAccessMode === "guardian" && !isLearnerProfileRoute) {
+        if (
+          guardianSelectionRosterPhase === "available" ||
+          guardianSelectionRosterPhase === "error"
+        ) {
+          return <>{children}</>;
+        }
+        if (
+          guardianSelectionRosterPhase === "idle" ||
+          guardianSelectionRosterPhase === "loading"
+        ) {
+          return (
+            <LearnerProfileScreen>
+              <LearnerProfileStatusCard aria-busy="true" role="status">
+                <p className="m-0 font-bold leading-relaxed text-slate-600">
+                  Loading learner profiles…
+                </p>
+              </LearnerProfileStatusCard>
+            </LearnerProfileScreen>
+          );
+        }
+        return <>{guardianSelectionFallback ?? learnerProfileFallback}</>;
+      }
       return (
         <LearnerProfileScreen>
           <LearnerProfileStatusCard role="status">
@@ -851,12 +886,34 @@ export function LearnerProfileGateView({
               Ask a grown-up to choose a learner
             </h1>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              A grown-up can use the account menu to choose a learner for this
-              device.
+              A grown-up can open Guardian mode, then choose who is learning
+              when switching back.
             </p>
           </LearnerProfileStatusCard>
         </LearnerProfileScreen>
       );
+    }
+    if (guardianDashboardRoute) {
+      if (
+        guardianSelectionRosterPhase === "available" ||
+        guardianSelectionRosterPhase === "error"
+      ) {
+        return <>{children}</>;
+      }
+      if (
+        guardianSelectionRosterPhase === "idle" ||
+        guardianSelectionRosterPhase === "loading"
+      ) {
+        return (
+          <LearnerProfileScreen>
+            <LearnerProfileStatusCard aria-busy="true" role="status">
+              <p className="m-0 font-bold leading-relaxed text-slate-600">
+                Loading learner profiles…
+              </p>
+            </LearnerProfileStatusCard>
+          </LearnerProfileScreen>
+        );
+      }
     }
     if (learnerManagerRoute) return <>{children}</>;
     return <>{guardianSelectionFallback ?? learnerProfileFallback}</>;
@@ -1222,6 +1279,7 @@ export function createProfileRouteLifecycle(
 type LearnerProfileGateProps = {
   children: ReactNode;
   completedLearnerProfileFallback: ReactNode;
+  guardianAccessMode?: GuardianMode;
   guardianDashboardRoute?: boolean;
   guardianRoute?: boolean;
   guardianSelectionFallback?: ReactNode;
@@ -1244,6 +1302,7 @@ type LearnerProfileGateProps = {
 export function LearnerProfileGate({
   children,
   completedLearnerProfileFallback,
+  guardianAccessMode = "learner",
   guardianDashboardRoute = false,
   guardianRoute = false,
   guardianSelectionFallback,
@@ -1274,6 +1333,8 @@ export function LearnerProfileGate({
     [sessionIdentity],
   );
   const [data, setData] = useState<LearnerProfileState | null>(null);
+  const [guardianSelectionRosterPhase, setGuardianSelectionRosterPhase] =
+    useState<GuardianSelectionRosterPhase>("idle");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [learnerIdentityCheck, setLearnerIdentityCheck] =
@@ -1833,6 +1894,44 @@ export function LearnerProfileGate({
       learnerLoadControllerRef.current = null;
     };
   }, [startActiveLearnerLoad, updateLearnerIdentityCheck]);
+
+  useEffect(() => {
+    if (
+      data?.mode !== "selection-required" ||
+      guardianAccessMode !== "guardian" ||
+      isLearnerProfileRoute ||
+      (guardianRoute && !guardianDashboardRoute)
+    ) {
+      setGuardianSelectionRosterPhase((current) =>
+        current === "idle" ? current : "idle",
+      );
+      return;
+    }
+
+    const controller = new AbortController();
+    setGuardianSelectionRosterPhase("loading");
+    void loadLearnerProfiles({ signal: controller.signal }).then(
+      (roster) => {
+        if (!controller.signal.aborted) {
+          setGuardianSelectionRosterPhase(
+            roster.profiles.length > 0 ? "available" : "empty",
+          );
+        }
+      },
+      () => {
+        if (!controller.signal.aborted) {
+          setGuardianSelectionRosterPhase("error");
+        }
+      },
+    );
+    return () => controller.abort();
+  }, [
+    data?.mode,
+    guardianAccessMode,
+    guardianDashboardRoute,
+    guardianRoute,
+    isLearnerProfileRoute,
+  ]);
 
   const handleConversationBack = useCallback(() => {
     if (isConversationRoute) {
@@ -3011,7 +3110,7 @@ export function LearnerProfileGate({
         let reconcileWithoutScope = false;
         let revalidateAfterSettlement = false;
         try {
-          pending = await beginLearnerSelectionMutation(signal);
+          pending = await beginLearnerSelectionMutation(signal, false);
           throwIfLearnerMutationAborted(signal);
           requestStarted = true;
           const roster = await selectLearnerProfileRequest(profileId);
@@ -4088,7 +4187,11 @@ export function LearnerProfileGate({
   const protectedChildren =
     data?.mode === "full" && !learnerManagerRoute ? (
       <LearnerProfileProvider
-        key={data.profile.id}
+        key={
+          guardianAccessMode === "guardian"
+            ? "guardian-learner-selection"
+            : data.profile.id
+        }
         profile={data.profile}
         replaceProfile={replaceProfile}
       >
@@ -4163,9 +4266,11 @@ export function LearnerProfileGate({
             selectedExperience === "realtime" ? conversationProps : null
           }
           data={data}
+          guardianAccessMode={guardianAccessMode}
           guardianDashboardRoute={guardianDashboardRoute}
           guardianRoute={guardianRoute}
           guardianSelectionFallback={guardianSelectionFallback}
+          guardianSelectionRosterPhase={guardianSelectionRosterPhase}
           isConversationRoute={isConversationRoute}
           isLearnerProfileRoute={isLearnerProfileRoute}
           learnerManagerRoute={learnerManagerRoute}

@@ -1308,7 +1308,7 @@ async function confirmModeSwitch() {
   await click(choice);
   const dialog = document.querySelector('[role="dialog"]');
   const confirm = [...dialog.querySelectorAll("button")].find(
-    (candidate) => candidate.textContent.trim() === "Switch to learner mode",
+    (candidate) => candidate.textContent.trim() === "Start learner mode as Mia",
   );
   assert.ok(confirm, "Expected learner-mode chooser confirmation.");
   await click(confirm);

@@ -565,7 +565,7 @@ describe("keyboard accessibility lifecycles", () => {
       menu.textContent,
       /Manage Mia's details|Switch to Mia|AI and saved data|Delete account/,
     );
-    assert.match(
+    assert.doesNotMatch(
       document.querySelector('[aria-label="Active profile"]')?.textContent ??
         "",
       /Managing Mia/,
@@ -640,11 +640,11 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.match(
       document.body.textContent,
-      /Only the explicit Use in learner mode action changes which learner uses learner mode/,
+      /Learner mode changes only through Switch to learner/,
     );
     assert.doesNotMatch(
       document.body.textContent,
-      /Guardian profile editing can change the selected learner/,
+      /Use in learner mode|Guardian profile editing can change the selected learner/,
     );
     assert.match(document.body.textContent, /Technical build details/);
     const deleteAccount = button("Delete account");
