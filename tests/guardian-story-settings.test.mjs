@@ -77,6 +77,7 @@ function learnerRoster() {
       {
         age: 6,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -84,6 +85,7 @@ function learnerRoster() {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -296,6 +298,14 @@ test("guardian story settings owns level and art management", () => {
   assert.match(renderedText, /Noah/);
   assert.match(html, /<h1[^>]*>Story settings<\/h1>/);
   assert.match(html, /Choose story level/);
+  assert.match(
+    renderedText,
+    /All stories stay visible\. This level is highlighted for Mia\./,
+  );
+  assert.doesNotMatch(
+    renderedText,
+    /story shelf always opens at this level/i,
+  );
   assert.equal(levelTabs.length, 4);
   assert.equal(
     levelTabs.some((tab) => tab.textContent.includes("Long stories")),
@@ -533,6 +543,7 @@ test("loads and saves Noah's story settings and art through explicit target requ
           {
             age: 6,
             createdAt: "2026-08-01T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-mia",
             name: "Mia",
             profileStatus: "completed",
@@ -540,6 +551,7 @@ test("loads and saves Noah's story settings and art through explicit target requ
           {
             age: 10,
             createdAt: "2026-08-02T08:00:00.000Z",
+            deletionPending: false,
             id: "learner-noah",
             name: "Noah",
             profileStatus: "completed",

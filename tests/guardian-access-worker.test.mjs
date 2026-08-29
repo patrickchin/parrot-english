@@ -18,7 +18,7 @@ const GUARDED_REQUESTS = [
   ["PUT", "/api/profile/lesson-recording-consent"],
   ["POST", "/api/lessons/my"],
   ["POST", "/api/lessons/my/generate"],
-  ["PUT", "/api/lessons/my/lesson-1"],
+  ["DELETE", "/api/lessons/my/lesson-1"],
   ["POST", "/api/stories/the-red-ball/personalized-art"],
   ["DELETE", "/api/stories/the-red-ball/personalized-art"],
   ["PUT", "/api/dubs/five-little-ducks-v2/consent"],
@@ -30,6 +30,7 @@ const LEARNER_SAFE_REQUESTS = [
   ["GET", "/api/lesson-recordings/consent"],
   ["GET", "/api/lessons/my"],
   ["GET", "/api/lessons/my/lesson-1"],
+  ["PUT", "/api/lessons/my/lesson-1"],
   ["GET", "/api/stories/the-red-ball/personalized-art"],
   ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
   ["GET", "/api/dubs/five-little-ducks-v2"],
@@ -508,7 +509,7 @@ describe("guardian access request handler", () => {
     assert.equal((await response.json()).mode, "guardian");
   });
 
-  it("temporarily unlocks with an empty password without verification", async () => {
+  it("rejects an empty password without creating a Guardian unlock", async () => {
     let verificationCalls = 0;
     const response = await handle(
       guardianRequest("POST", JSON.stringify({ password: "" })),
@@ -518,9 +519,19 @@ describe("guardian access request handler", () => {
       },
     );
 
-    assert.equal(response.status, 200);
-    assert.equal(verificationCalls, 0);
-    assert.equal((await response.json()).mode, "guardian");
+    assert.equal(response.status, 401);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.deepEqual(await response.json(), {
+      error: "invalid_password",
+      message: "The password did not match this account.",
+    });
+    assert.equal(verificationCalls, 1);
+    assert.equal(
+      state.sqlite
+        .prepare("SELECT COUNT(*) AS count FROM guardian_session_unlock")
+        .get().count,
+      0,
+    );
   });
 
   it("uses one generic response for an invalid password", async () => {

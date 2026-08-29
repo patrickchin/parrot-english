@@ -27,24 +27,29 @@ account in Guardian mode.
 The learner dropdown contains one `Grown-up access` action. It never lists
 sibling names or exposes profile selection, editing, content authoring,
 consent, privacy, sign-out, or account controls. The Guardian dropdown shows the
-account identity, a `Managing {learnerName}` context, and these actions in a
-stable order: Guardian dashboard, Learner profiles, manage the active learner's
-details, switch to that learner, AI and saved data, sign out, and delete
-account. The full roster stays on its dedicated management page.
+four account actions in a stable order: Guardian dashboard, Manage learners,
+Account & privacy, and Sign out. It does not show a current learner or account
+deletion shortcut. Learner administration stays on Manage learners, while
+account deletion stays inside the Account & privacy page's Danger zone.
 
 Selecting `Grown-up access` requires the same password used to sign in to the
 Guardian account. There is no separate Guardian password or PIN. A successful
 check unlocks Guardian mode for that auth session for at most 15 minutes. The
 fixed expiry survives refresh and another tab sharing the session, but ordinary
-activity never extends it. Switching back to learner first removes the server
-unlock, then opens `/`. If locking fails, the Guardian screen and URL remain in
-place with an error. Expiry retains a Guardian deep link behind the password
-gate so a new unlock can resume it without flashing protected content.
+activity never extends it. `Switch to learner` first opens `Who is learning
+now?`, with no learner preselected. The Guardian chooses a learner and confirms
+`Start learner mode as {name}`. The app selects that learner, removes the
+server unlock, then opens the requested learner route. If selection or locking
+fails, the Guardian screen and URL remain in place with an error. Cancel changes
+neither the active learner nor Guardian access. Expiry retains a Guardian deep
+link behind the password gate so a new unlock can resume it without flashing
+protected content.
 
 When a session has more than one learner and no valid selection, learner mode
 fails closed with `Ask a grown-up to choose a learner`. It does not guess a
-learner or render the roster. Unlocking Guardian mode opens the learner manager,
-where the Guardian can make an explicit selection.
+learner or render the roster. Unlocking Guardian mode opens the requested
+Guardian management surface; it never chooses a sibling. Learner choice happens
+only when the Guardian next uses `Switch to learner`.
 
 Learner mode exposes no profile editing, AI/data notice, sign-out, account
 deletion, lesson authoring, story settings, photo, consent, generation, or
@@ -54,7 +59,8 @@ duplicate learner activity catalog.
 | Capability | Learner | Guardian | Enforcement |
 | --- | --- | --- | --- |
 | Complete first-time learner setup | Yes, for the selected learner | Yes | Authenticated session plus selected learner |
-| List, add, select, or manage learner profiles | No | Yes | Live Guardian unlock; ownership checked by the server |
+| List, add, edit, or delete learner profiles | No | Yes | Live Guardian unlock; ownership checked by the server |
+| Choose who enters learner mode | No | Yes, during Switch to learner | Live Guardian unlock plus owned-learner selection |
 | Talk, play lessons, read stories | Yes | Switch to learner | Authenticated session |
 | See whether voice dubbing is available | Yes | Yes | Authenticated, learner-scoped status |
 | Record, retake, and replay saved dub lines | Yes, after guardian consent for that learner | Switch to learner | Current learner's durable consent grant |
@@ -66,7 +72,7 @@ duplicate learner activity catalog.
 | View saved custom lessons for playback | Yes | Switch to learner | Selected-learner read |
 | Edit learner profile or redo setup | No | Yes | Guardian unlock |
 | Choose stored story level | No | Yes | Guardian unlock |
-| Create, generate, import, or update custom lessons | No | Yes | Guardian unlock |
+| Create, generate, import, or delete custom lessons | No | Yes | Guardian unlock |
 | Upload a learner photo or generate/delete story art | No | Yes | Guardian unlock plus consent for the active learner |
 | View already-generated story art | Yes | Yes | Selected-learner read |
 | Open AI/data notice | No | Yes | Guardian UI boundary |
@@ -97,21 +103,28 @@ Durable learner routes are:
 Canonical guardian routes are:
 
 - `/guardian` — dashboard;
-- `/guardian/learners` — learner roster, creation, selection, and details entry;
-- `/guardian/profile` and `/guardian/profile/setup` — active-learner details
-  and setup redo;
+- `/guardian/learners` — learner roster, creation, deletion, and details entry;
+- `/guardian/learners/:learnerId` — page-local learner details and setup redo;
+- `/guardian/profile` — retired compatibility route redirected to Manage
+  learners;
 - `/guardian/lessons` — saved custom lesson management;
 - `/guardian/stories` — stored story level and personalized-art management;
 - `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
-- `/lessons/my/create` and `/lessons/my/:lessonId/edit` — existing authoring
-  URLs protected by the same Guardian boundary.
+- `/lessons/my/create` — the Guardian-only authoring URL.
 
 Initial `/profile/setup` remains available to either mode until onboarding is
 complete; later editing and setup redo are Guardian-only. Adding a learner asks
-only for the preferred name, selects the new profile for the current session,
-and opens its details flow. Individual learner deletion is deliberately not
-available in this release; details remain editable and whole-account deletion
-removes every learner.
+only for the preferred name and opens that learner's details without changing
+who will enter learner mode.
+
+Manage learners is strictly CRUD-only: it has no current badge, selector, or
+mode-selection action. Deleting a learner requires a Guardian-only,
+name-specific confirmation. The final usable learner cannot be deleted; the
+Guardian must add a replacement first. A cleanup failure leaves that learner
+marked for deletion, inaccessible to learner mode and settings selectors, with
+a `Finish deleting` retry that survives refresh. Deleting the active learner
+clears the session selection and never auto-selects a sibling; Guardian mode
+remains navigable and the next `Switch to learner` opens the chooser.
 
 Guardian navigation is recoverable from every state. Missing, malformed,
 external, learner-mode, unknown, or self-referential Guardian `returnTo` values
@@ -140,8 +153,8 @@ changing the session's active learner does not reassign earlier conversations.
 
 The learner lesson catalog shows seven ready-made lessons first, then any saved
 custom lessons for the active learner. Each row has one clear Start action.
-Creation and editing live at `/guardian/lessons` and its protected create/edit
-routes, so authoring does not compete with learner practice. Selecting another
+Creation and deletion live at `/guardian/lessons` and its protected create
+route, so authoring does not compete with learner practice. Selecting another
 learner refreshes the catalog before that learner's pages render. Ready-made
 lessons use one consistent 16:9 scene illustration per step as their default
 presentation; learners do not choose between rendering experiments.

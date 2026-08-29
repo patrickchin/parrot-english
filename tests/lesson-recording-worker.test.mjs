@@ -295,7 +295,7 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
   );
 }
 
-function editMyLesson(state, bucket, lesson) {
+function deleteMyLesson(state, bucket) {
   return handleMyLessonRequest({
     database: state.database,
     env: {
@@ -312,9 +312,7 @@ function editMyLesson(state, bucket, lesson) {
       legacyStorageOwner: true,
     },
     request: new Request("https://example.test/api/lessons/my/lesson-1", {
-      body: JSON.stringify({ lesson }),
-      headers: { "Content-Type": "application/json" },
-      method: "PUT",
+      method: "DELETE",
     }),
   });
 }
@@ -589,7 +587,7 @@ describe("lesson recording Worker handler", () => {
     }
   });
 
-  it("fences an in-flight My Lesson take when an edit purges before its write", async () => {
+  it("fences an in-flight My Lesson take when deletion purges before its write", async () => {
     const state = seedDatabase();
     const bucket = createBucket();
     const uploadReachedStorage = deferred();
@@ -613,10 +611,8 @@ describe("lesson recording Worker handler", () => {
       );
       await uploadReachedStorage.promise;
 
-      const editedLesson = createLessonScript();
-      editedLesson.scenes[0].steps[1].dialogue = "This target changed.";
-      const edited = await editMyLesson(state, bucket, editedLesson);
-      assert.equal(edited.status, 200);
+      const deletion = await deleteMyLesson(state, bucket);
+      assert.equal(deletion.status, 204);
       assert.equal(bucket.calls.list.length, 1);
       assert.equal(bucket.calls.delete.length, 0);
 
@@ -677,46 +673,39 @@ describe("lesson recording Worker handler", () => {
     }
   });
 
-  it("keeps a new-revision take completed before stale edit cleanup lists", async () => {
+  it("blocks a new My Lesson take while deletion cleanup is listing", async () => {
     const state = seedDatabase();
     const bucket = createBucket();
-    const editReachedList = deferred();
-    const releaseEditList = deferred();
+    const deletionReachedList = deferred();
+    const releaseDeletionList = deferred();
     let held = false;
     bucket.onList = async () => {
       if (held) return;
       held = true;
-      editReachedList.resolve();
-      await releaseEditList.promise;
+      deletionReachedList.resolve();
+      await releaseDeletionList.promise;
     };
 
     try {
-      const editedLesson = createLessonScript({ title: "Fresh revision" });
-      const editing = editMyLesson(state, bucket, editedLesson);
-      await editReachedList.promise;
+      const deleting = deleteMyLesson(state, bucket);
+      await deletionReachedList.promise;
 
-      const newer = await call(
+      const blocked = await call(
         state,
         bucket,
         "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
         {
-          createUploadNonce: () => "new-revision-before-list",
           lessonRevision: myLessonRevision(state),
         },
       );
-      assert.equal(newer.status, 201);
+      assert.equal(blocked.status, 404);
+      assert.deepEqual(await blocked.json(), { error: "not_found" });
+      assert.equal(audioWrites(bucket).length, 0);
 
-      releaseEditList.resolve();
-      assert.equal((await editing).status, 200);
-      const current = [...bucket.stored.values()][0];
-      assert.equal(current.options.customMetadata.state, "audio");
-      assert.equal(
-        current.options.customMetadata.uploadNonce,
-        "new-revision-before-list",
-      );
-      assert.equal(current.options.customMetadata.lessonGeneration, "1");
+      releaseDeletionList.resolve();
+      assert.equal((await deleting).status, 204);
     } finally {
-      releaseEditList.resolve();
+      releaseDeletionList.resolve();
       state.close();
     }
   });

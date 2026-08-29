@@ -8,6 +8,7 @@ const profiles = [
   {
     age: 6,
     createdAt: "2026-08-25T08:00:00.000Z",
+    deletionPending: false,
     id: "learner-mia",
     name: "Mia",
     profileStatus: "completed" as const,
@@ -15,6 +16,7 @@ const profiles = [
   {
     age: null,
     createdAt: "2026-08-26T08:00:00.000Z",
+    deletionPending: false,
     id: "learner-noah",
     name: "Noah the Extraordinary Space Explorer",
     profileStatus: "not_started" as const,
@@ -22,6 +24,7 @@ const profiles = [
   {
     age: 8,
     createdAt: "2026-08-27T08:00:00.000Z",
+    deletionPending: false,
     id: "learner-alexandria",
     name: "Alexandria the Magnificent Storyteller",
     profileStatus: "in_progress" as const,

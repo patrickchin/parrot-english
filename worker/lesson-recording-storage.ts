@@ -163,6 +163,7 @@ export async function fenceLessonRecordingUpload(
   state:
     | "account-deleting"
     | "consent-revoked"
+    | "learner-deleting"
     | "lesson-changed"
     | "state-unknown",
   wait: Wait,
@@ -173,7 +174,8 @@ export async function fenceLessonRecordingUpload(
       !current ||
       current.etag !== stored.etag ||
       current.version !== stored.version ||
-      current.customMetadata?.state !== "audio" ||
+      (current.customMetadata?.state !== "audio" &&
+        current.customMetadata?.state !== "uploading") ||
       current.customMetadata.uploadNonce !== uploadNonce
     ) {
       return;
@@ -207,7 +209,12 @@ function isOlderGeneration(
   metadataKey: "consentGeneration" | "lessonGeneration",
   boundary: number,
 ) {
-  if (object.customMetadata?.state === "account-deleting") return false;
+  if (
+    object.customMetadata?.state === "account-deleting" ||
+    object.customMetadata?.state === "learner-deleting"
+  ) {
+    return false;
+  }
   const generation = Number(object.customMetadata?.[metadataKey]);
   return !Number.isSafeInteger(generation) || generation < boundary;
 }

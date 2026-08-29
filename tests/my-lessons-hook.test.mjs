@@ -65,6 +65,11 @@ function Probe({ learnerProfileId, onLessons }) {
       { "aria-label": "Lessons" },
       lessons.lessons.map(({ lesson }) => lesson.title).join(", ") || "none",
     ),
+    createElement(
+      "button",
+      { onClick: () => void lessons.deleteLesson("lesson-a"), type: "button" },
+      "Delete lesson A",
+    ),
   );
 }
 
@@ -151,4 +156,41 @@ test("a My Lessons target change aborts stale work and clears the old learner li
     assert.equal(output(container, "Lessons"), "Learner B lesson"),
   );
   assert.equal(lessons.phase, "ready");
+});
+
+test("deleting a lesson removes only the matching local lesson after the request succeeds", async () => {
+  const requests = [];
+  globalThis.fetch = async (path, init = {}) => {
+    requests.push({ method: init.method ?? "GET", path });
+    if (path === "/api/lessons/my?learnerProfileId=learner-a") {
+      return Response.json({
+        lessons: [descriptor("lesson-a", "Learner A lesson")],
+      });
+    }
+    if (
+      path === "/api/lessons/my/lesson-a?learnerProfileId=learner-a" &&
+      init.method === "DELETE"
+    ) {
+      return new Response(null, { status: 204 });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(createElement(Probe, { learnerProfileId: "learner-a", onLessons() {} }));
+  await waitFor(() => assert.equal(output(container, "Lessons"), "Learner A lesson"));
+  await click(
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent === "Delete lesson A",
+    ),
+  );
+  await waitFor(() => assert.equal(output(container, "Lessons"), "none"));
+  assert.deepEqual(
+    requests.filter(({ method }) => method === "DELETE"),
+    [
+      {
+        method: "DELETE",
+        path: "/api/lessons/my/lesson-a?learnerProfileId=learner-a",
+      },
+    ],
+  );
 });

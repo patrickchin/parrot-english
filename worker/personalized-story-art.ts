@@ -20,7 +20,14 @@ import {
   readBoundedFormData,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
+import {
+  type LearnerIdentity,
+} from "./request-identity.ts";
+import {
+  artCleanupUncertainGeneration,
+  findLearnerDeletionGeneration,
+} from "./learner-deletion.ts";
+import { persistFence } from "./storage-deletion.ts";
 
 const CURRENT_GUARDIAN_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 const MAX_UPLOAD_BYTES = 2 * 1024 * 1024;
@@ -295,6 +302,14 @@ function accountDeletionPendingError() {
   );
 }
 
+function learnerDeletionPendingError() {
+  return new PersonalizedStoryArtApiError(
+    409,
+    "learner_deletion_pending",
+    "Learner deletion is in progress.",
+  );
+}
+
 function generationInProgressError() {
   return new PersonalizedStoryArtApiError(409, "generation_in_progress");
 }
@@ -303,13 +318,30 @@ function storageDeleteFailedError() {
   return new PersonalizedStoryArtApiError(502, "storage_delete_failed");
 }
 
-async function assertAccountDeletionNotPending(
+async function deletionPending(
   database: Database,
-  userId: string,
+  identity: LearnerIdentity,
 ) {
-  if (await isAccountDeletionPending(database, userId)) {
+  const learnerGeneration = await findLearnerDeletionGeneration(
+    database,
+    identity.learnerProfileId,
+  );
+  return {
+    account: await isAccountDeletionPending(database, identity.userId),
+    learner: learnerGeneration !== null,
+    learnerGeneration,
+  };
+}
+
+async function assertDeletionNotPending(
+  database: Database,
+  identity: LearnerIdentity,
+) {
+  const pending = await deletionPending(database, identity);
+  if (pending.account) {
     throw accountDeletionPendingError();
   }
+  if (pending.learner) throw learnerDeletionPendingError();
 }
 
 async function deleteObjectOrThrow(bucket: R2Bucket, key: string) {
@@ -416,13 +448,108 @@ export async function handlePersonalizedStoryArtRequest(
     return Boolean(row);
   }
 
+  function deletionError(pending: { account: boolean; learner: boolean }) {
+    return pending.account
+      ? accountDeletionPendingError()
+      : learnerDeletionPendingError();
+  }
+
+  async function fenceArtObject(
+    key: string,
+    pending: Awaited<ReturnType<typeof deletionPending>>,
+  ) {
+    const account = pending.account;
+    const generation = account
+      ? `late-art-cleanup-v1:${await accountDeletionTombstoneKey(input.identity.userId)}`
+      : pending.learnerGeneration;
+    if (!generation) {
+      throw new Error("Learner deletion fence generation is unavailable.");
+    }
+    await persistFence(
+      input.env.PERSONALIZED_STORY_ART_BUCKET,
+      key,
+      "slot",
+      generation,
+      account ? "account-deleting" : "learner-deleting",
+      async () => {},
+      ["account-deleting"],
+    );
+  }
+
+  async function fenceUncertainArtObject(key: string) {
+    await persistFence(
+      input.env.PERSONALIZED_STORY_ART_BUCKET,
+      key,
+      "slot",
+      await artCleanupUncertainGeneration(key),
+      "art-cleanup-uncertain",
+      async () => {},
+      ["account-deleting", "learner-deleting"],
+    );
+  }
+
+  async function cleanupArtObject(key: string) {
+    const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
+    const head = (bucket as Partial<R2Bucket>).head;
+    const pendingBefore = await deletionPending(input.database, input.identity);
+    if (pendingBefore.account || pendingBefore.learner) {
+      if (typeof head === "function") {
+        await fenceArtObject(key, pendingBefore);
+      } else {
+        await deleteObjectOrThrow(bucket, key);
+      }
+      return pendingBefore;
+    }
+    const current = typeof head === "function"
+      ? await head.call(bucket, key)
+      : null;
+    const permanentState = current?.customMetadata?.state;
+    if (
+      permanentState === "account-deleting" ||
+      permanentState === "learner-deleting"
+    ) {
+      return {
+        account: permanentState === "account-deleting",
+        learner: permanentState === "learner-deleting",
+        learnerGeneration: permanentState === "learner-deleting"
+          ? current?.customMetadata?.generation ?? null
+          : null,
+      };
+    }
+    let deleteFailure: unknown;
+    try {
+      await deleteObjectOrThrow(bucket, key);
+    } catch (error) {
+      deleteFailure = error;
+    }
+    let pendingAfter: Awaited<ReturnType<typeof deletionPending>> | undefined;
+    let authorityFailure: unknown;
+    try {
+      pendingAfter = await deletionPending(input.database, input.identity);
+    } catch (error) {
+      authorityFailure = error;
+    }
+    if (pendingAfter?.account || pendingAfter?.learner) {
+      await fenceArtObject(key, pendingAfter);
+      return pendingAfter;
+    }
+    if (deleteFailure || authorityFailure) {
+      if (typeof head === "function") {
+        await fenceUncertainArtObject(key);
+      }
+      if (authorityFailure) throw authorityFailure;
+      throw deleteFailure;
+    }
+    return null;
+  }
+
   async function cleanupRecoveredLease(
     storyId: string,
     claimed: {
       candidateR2ObjectKey: string | null;
       previousR2ObjectKey: string | null;
     },
-    release: () => Promise<unknown>,
+    release: () => Promise<boolean>,
   ) {
     const row = await repository.findOwnedStory(input.identity, storyId);
     const cleanupKey =
@@ -431,12 +558,21 @@ export async function handlePersonalizedStoryArtRequest(
         ? claimed.previousR2ObjectKey
         : claimed.candidateR2ObjectKey;
     if (cleanupKey && cleanupKey !== row?.r2ObjectKey) {
-      await deleteObjectOrThrow(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
-        cleanupKey,
-      );
+      const pending = await cleanupArtObject(cleanupKey);
+      if (pending) throw deletionError(pending);
     }
-    await release();
+    if (await release()) return;
+    const pending = await deletionPending(input.database, input.identity);
+    if (pending.account || pending.learner) {
+      if (
+        cleanupKey &&
+        typeof (input.env.PERSONALIZED_STORY_ART_BUCKET as Partial<R2Bucket>)
+            .head === "function"
+      ) {
+        await fenceArtObject(cleanupKey, pending);
+      }
+      throw deletionError(pending);
+    }
   }
 
   async function recoverLegacyLease(storyId: string) {
@@ -453,11 +589,16 @@ export async function handlePersonalizedStoryArtRequest(
       return;
     }
 
-    await cleanupRecoveredLease(storyId, claimed, () =>
+    await cleanupRecoveredLease(storyId, claimed, async () =>
       legacyLeaseRepository.release(
         input.identity.userId,
         storyId,
         recoveryToken,
+        {
+          accountDeletionTombstoneKey:
+            await accountDeletionTombstoneKey(input.identity.userId),
+          learnerProfileId: input.identity.learnerProfileId,
+        },
       ),
     );
   }
@@ -469,16 +610,18 @@ export async function handlePersonalizedStoryArtRequest(
       now().getTime(),
     );
     if (!claimed) return;
-    await cleanupRecoveredLease(storyId, claimed, () =>
+    await cleanupRecoveredLease(storyId, claimed, async () =>
       learnerLeaseRepository.release(
         input.identity,
         storyId,
         claimed.generationToken,
+        await accountDeletionTombstoneKey(input.identity.userId),
       ),
     );
   }
 
   async function acquireLease(storyId: string) {
+    await assertDeletionNotPending(input.database, input.identity);
     await repository.attachLegacyStory(input.identity, storyId);
     await recoverLegacyLease(storyId);
     await recoverLearnerLease(storyId);
@@ -489,12 +632,36 @@ export async function handlePersonalizedStoryArtRequest(
       token,
       now().getTime() + LEARNER_STORY_ART_LEASE_DURATION_MS,
     );
-    if (!acquired) throw generationInProgressError();
+    if (!acquired) {
+      await assertDeletionNotPending(input.database, input.identity);
+      throw generationInProgressError();
+    }
     return token;
   }
 
-  async function releaseLease(storyId: string, token: string) {
-    await learnerLeaseRepository.release(input.identity, storyId, token);
+  async function releaseLease(
+    storyId: string,
+    token: string,
+    cleanupKey?: string,
+  ) {
+    const released = await learnerLeaseRepository.release(
+      input.identity,
+      storyId,
+      token,
+      await accountDeletionTombstoneKey(input.identity.userId),
+    );
+    if (released) return;
+    const pending = await deletionPending(input.database, input.identity);
+    if (pending.account || pending.learner) {
+      if (
+        cleanupKey &&
+        typeof (input.env.PERSONALIZED_STORY_ART_BUCKET as Partial<R2Bucket>)
+            .head === "function"
+      ) {
+        await fenceArtObject(cleanupKey, pending);
+      }
+      throw deletionError(pending);
+    }
   }
 
   async function cleanupCandidateAndRelease(
@@ -502,11 +669,9 @@ export async function handlePersonalizedStoryArtRequest(
     token: string,
     candidateKey: string,
   ) {
-    await deleteObjectOrThrow(
-      input.env.PERSONALIZED_STORY_ART_BUCKET,
-      candidateKey,
-    );
-    await releaseLease(storyId, token);
+    const pending = await cleanupArtObject(candidateKey);
+    await releaseLease(storyId, token, candidateKey);
+    if (pending) throw deletionError(pending);
   }
 
   async function deleteOwnedArt(storyId: string) {
@@ -519,10 +684,8 @@ export async function handlePersonalizedStoryArtRequest(
           status: 204,
         });
       }
-      await deleteObjectOrThrow(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
-        row.r2ObjectKey,
-      );
+      const pending = await cleanupArtObject(row.r2ObjectKey);
+      if (pending) throw deletionError(pending);
       await repository.deleteByIdIfDeleting(input.identity, storyId, row.id);
       overrides.onAfterDeleteRow?.();
       return new Response(null, {
@@ -539,12 +702,13 @@ export async function handlePersonalizedStoryArtRequest(
     const config = storyConfig(route.storyId);
     if (!config) throw new PersonalizedStoryArtApiError(404, "not_found");
 
+    const initialDeletion = await deletionPending(
+      input.database,
+      input.identity,
+    );
     if (
       (input.request.method === "GET" || input.request.method === "POST") &&
-      (await isAccountDeletionPending(
-        input.database,
-        input.identity.userId,
-      ))
+      (initialDeletion.account || initialDeletion.learner)
     ) {
       if (input.request.method === "GET" && !route.asset) {
         return json(
@@ -561,7 +725,9 @@ export async function handlePersonalizedStoryArtRequest(
       if (input.request.method === "GET" && route.asset) {
         throw new PersonalizedStoryArtApiError(404, "not_found");
       }
-      throw accountDeletionPendingError();
+      throw initialDeletion.account
+        ? accountDeletionPendingError()
+        : learnerDeletionPendingError();
     }
 
     if (!isFeatureEnabled(input.env)) {
@@ -597,6 +763,12 @@ export async function handlePersonalizedStoryArtRequest(
       if (!row) throw new PersonalizedStoryArtApiError(404, "not_found");
       const object = await input.env.PERSONALIZED_STORY_ART_BUCKET.get(row.r2ObjectKey);
       if (!object) throw new PersonalizedStoryArtApiError(404, "not_found");
+      if (
+        !(object instanceof Response) &&
+        object.customMetadata?.state
+      ) {
+        throw new PersonalizedStoryArtApiError(404, "not_found");
+      }
       return binaryBodyFromR2Object(object, row.contentType);
     }
 
@@ -613,18 +785,12 @@ export async function handlePersonalizedStoryArtRequest(
       if (isTooLargeSource(sourceImage)) {
         throw new PersonalizedStoryArtApiError(413, "payload_too_large");
       }
-      await assertAccountDeletionNotPending(
-        input.database,
-        input.identity.userId,
-      );
+      await assertDeletionNotPending(input.database, input.identity);
       const token = await acquireLease(route.storyId);
       let existingRow;
       let tombstoneKey;
       try {
-        await assertAccountDeletionNotPending(
-          input.database,
-          input.identity.userId,
-        );
+        await assertDeletionNotPending(input.database, input.identity);
         tombstoneKey = await accountDeletionTombstoneKey(
           input.identity.userId,
         );
@@ -657,10 +823,7 @@ export async function handlePersonalizedStoryArtRequest(
           storyId: route.storyId,
         });
         validateGeneratedImage(generated);
-        await assertAccountDeletionNotPending(
-          input.database,
-          input.identity.userId,
-        );
+        await assertDeletionNotPending(input.database, input.identity);
         key = objectKey(
           input.identity,
           route.storyId,
@@ -694,14 +857,7 @@ export async function handlePersonalizedStoryArtRequest(
       }
       if (!tracked) {
         await releaseLease(route.storyId, token);
-        if (
-          await isAccountDeletionPending(
-            input.database,
-            input.identity.userId,
-          )
-        ) {
-          throw accountDeletionPendingError();
-        }
+        await assertDeletionNotPending(input.database, input.identity);
         throw generationInProgressError();
       }
 
@@ -726,14 +882,7 @@ export async function handlePersonalizedStoryArtRequest(
       }
       if (stored === null) {
         await releaseLease(route.storyId, token);
-        if (
-          await isAccountDeletionPending(
-            input.database,
-            input.identity.userId,
-          )
-        ) {
-          throw accountDeletionPendingError();
-        }
+        await assertDeletionNotPending(input.database, input.identity);
         throw new PersonalizedStoryArtApiError(
           500,
           "object_key_collision",
@@ -742,10 +891,7 @@ export async function handlePersonalizedStoryArtRequest(
       }
 
       try {
-        await assertAccountDeletionNotPending(
-          input.database,
-          input.identity.userId,
-        );
+        await assertDeletionNotPending(input.database, input.identity);
       } catch (error) {
         await cleanupCandidateAndRelease(route.storyId, token, key);
         throw error;
@@ -779,19 +925,17 @@ export async function handlePersonalizedStoryArtRequest(
       }
 
       if (!finalized) {
-        let pending = false;
+        let pending = { account: false, learner: false };
         let pendingCheckError: unknown;
         try {
-          pending = await isAccountDeletionPending(
-            input.database,
-            input.identity.userId,
-          );
+          pending = await deletionPending(input.database, input.identity);
         } catch (error) {
           pendingCheckError = error;
         }
         await cleanupCandidateAndRelease(route.storyId, token, key);
         if (pendingCheckError) throw pendingCheckError;
-        if (pending) throw accountDeletionPendingError();
+        if (pending.account) throw accountDeletionPendingError();
+        if (pending.learner) throw learnerDeletionPendingError();
         throw generationInProgressError();
       }
 
@@ -805,9 +949,9 @@ export async function handlePersonalizedStoryArtRequest(
 
       let deletionPendingAfterFinalize;
       try {
-        deletionPendingAfterFinalize = await isAccountDeletionPending(
+        deletionPendingAfterFinalize = await deletionPending(
           input.database,
-          input.identity.userId,
+          input.identity,
         );
       } catch (error) {
         try {
@@ -822,7 +966,12 @@ export async function handlePersonalizedStoryArtRequest(
         throw error;
       }
 
-      if (deletionPendingAfterFinalize) {
+      if (deletionPendingAfterFinalize.learner) {
+        await releaseLease(route.storyId, token);
+        throw learnerDeletionPendingError();
+      }
+
+      if (deletionPendingAfterFinalize.account) {
         let deletingRow;
         try {
           deletingRow = await repository.markDeleting(

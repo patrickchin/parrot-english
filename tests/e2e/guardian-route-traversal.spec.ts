@@ -71,12 +71,12 @@ test("every Guardian dashboard card associates its copy and traverses through it
     {
       action: "Manage learners",
       description:
-        "Mia is using learner mode. Add a learner, select who uses learner mode, or edit learner details.",
+        "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
       heading: "Manage learners",
     },
     {
       action: "Manage lessons",
-      description: "Create and edit custom lessons for the learner.",
+      description: "Create or delete custom lessons for the learner.",
       heading: "My Lessons",
     },
     {
@@ -93,7 +93,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
     {
       action: "Open account & privacy",
       description:
-        "Review AI and saved data controls, sign out, or delete your account.",
+        "Review how AI is used, what Parrot saves, and account deletion controls.",
       heading: "Account & privacy",
     },
   ]) {
@@ -102,6 +102,21 @@ test("every Guardian dashboard card associates its copy and traverses through it
     await expect(card).toContainText(description);
     await expect(card.getByRole("link", { exact: true, name: action })).toBeVisible();
   }
+
+  const cardColors = await Promise.all(
+    [
+      "Manage learners",
+      "My Lessons",
+      "Story settings",
+      "Voice dubbing",
+      "Account & privacy",
+    ].map((heading) =>
+      dashboardCard(page, heading).evaluate(
+        (element) => getComputedStyle(element).backgroundColor,
+      ),
+    ),
+  );
+  expect(new Set(cardColors).size).toBe(cardColors.length);
 
   await traverseDashboardAction(
     page,
@@ -190,6 +205,16 @@ test("the retired Guardian profile route replaces history with Manage learners",
 
   await page.goBack();
   await expect(page).toHaveURL(/\/guardian\?.*parrotE2eLearners=multiple/);
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
+  ).toBeVisible();
+});
+
+test("the removed lesson edit URL falls back to the guardian dashboard", async ({
+  page,
+}) => {
+  await page.goto(scenarioUrl("/lessons/my/old-lesson/edit"));
+  await expect(page).toHaveURL("/guardian");
   await expect(
     page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
   ).toBeVisible();

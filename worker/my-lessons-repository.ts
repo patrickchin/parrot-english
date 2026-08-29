@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, or } from "drizzle-orm";
 import { learnerLesson } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
@@ -7,6 +7,8 @@ type RepositoryOptions = {
   createId?: () => string;
   now?: () => Date;
 };
+
+export const DELETING_MY_LESSON_RECORDING_GENERATION = -1;
 
 export async function lessonJsonRevision(lessonJson: string) {
   const digest = await crypto.subtle.digest(
@@ -69,25 +71,56 @@ export function createMyLessonRepository(
     return row ?? null;
   }
 
-  async function updateOwned(
-    id: string,
-    identity: LearnerIdentity,
-    lesson: unknown,
-  ) {
+  function mutableLessonOwnership(id: string, identity: LearnerIdentity) {
+    return and(
+      eq(learnerLesson.id, id),
+      eq(learnerLesson.authUserId, identity.userId),
+      eq(learnerLesson.learnerProfileId, identity.learnerProfileId),
+    );
+  }
+
+  async function markOwnedForDeletion(id: string, identity: LearnerIdentity) {
     const [row] = await database
       .update(learnerLesson)
       .set({
-        lessonJson: JSON.stringify(lesson),
-        recordingCleanupBeforeGeneration:
-          sql`${learnerLesson.recordingGeneration} + 1`,
-        recordingGeneration: sql`${learnerLesson.recordingGeneration} + 1`,
+        recordingGeneration: DELETING_MY_LESSON_RECORDING_GENERATION,
         updatedAt: now(),
       })
       .where(
         and(
-          eq(learnerLesson.id, id),
-          eq(learnerLesson.authUserId, identity.userId),
-          eq(learnerLesson.learnerProfileId, identity.learnerProfileId),
+          mutableLessonOwnership(id, identity),
+          gte(learnerLesson.recordingGeneration, 0),
+        ),
+      )
+      .returning();
+    if (row) return row;
+
+    const [marked] = await database
+      .select()
+      .from(learnerLesson)
+      .where(
+        and(
+          mutableLessonOwnership(id, identity),
+          eq(
+            learnerLesson.recordingGeneration,
+            DELETING_MY_LESSON_RECORDING_GENERATION,
+          ),
+        ),
+      )
+      .limit(1);
+    return marked ?? null;
+  }
+
+  async function deleteOwned(id: string, identity: LearnerIdentity) {
+    const [row] = await database
+      .delete(learnerLesson)
+      .where(
+        and(
+          mutableLessonOwnership(id, identity),
+          eq(
+            learnerLesson.recordingGeneration,
+            DELETING_MY_LESSON_RECORDING_GENERATION,
+          ),
         ),
       )
       .returning();
@@ -133,8 +166,9 @@ export function createMyLessonRepository(
   return {
     clearRecordingCleanup,
     create,
+    deleteOwned,
     findOwned,
     listOwned,
-    updateOwned,
+    markOwnedForDeletion,
   };
 }

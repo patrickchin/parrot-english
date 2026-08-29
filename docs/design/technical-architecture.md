@@ -42,7 +42,7 @@ prototype build entry in the shipped product.
   and reloads before the new learner's routes render.
 - `src/conversation` owns the learner-controlled LiveKit conversation surface.
 - `src/lessons` owns the learner catalog/player and guardian-only custom lesson
-  manager, creation, and editing.
+  manager, creation, and deletion.
 - `src/stories` owns the stored-level learner shelf/reader, its always-visible
   public Long stories section, and Guardian-only story settings and
   personalized-art controls. Long stories use the main authenticated routes;
@@ -64,9 +64,10 @@ prototype build entry in the shipped product.
 - `src/shared` owns reusable controls and cards.
 
 Top-level learner navigation stays small. Management starts at `/guardian`,
-with learner selection at `/guardian/learners`, custom lesson authoring at
+with learner CRUD at `/guardian/learners`, custom lesson authoring at
 `/guardian/lessons`, story controls at `/guardian/stories`, and dubbing
-consent/deletion at `/guardian/dubbing`. Guardian return targets are validated
+consent/deletion at `/guardian/dubbing`. Learner selection occurs only inside
+the shared Guardian-to-learner chooser. Guardian return targets are validated
 against known Guardian routes; invalid targets fall back to `/guardian`.
 Wildcard routing is mode-aware: Guardian mode returns to `/guardian`, while
 learner mode returns to `/`.
@@ -109,18 +110,27 @@ Guardian-protected roster endpoints are:
 GET  /api/learner-profiles
 POST /api/learner-profiles
 PUT  /api/learner-profiles/:profileId/active
+DELETE /api/learner-profiles/:profileId
 ```
 
 `GET` returns owned profiles in stable creation order plus the current
 session's active profile ID. `POST` accepts only a bounded preferred name,
-creates an incomplete nonlegacy profile, and selects it for this session.
+creates an incomplete nonlegacy profile, and does not change this session's
+active learner.
 `PUT` selects only a profile owned by the authenticated account; missing and
-foreign IDs share a generic `404`. All three require a live session-specific
-Guardian unlock. Individual learner deletion is not implemented.
+foreign IDs share a generic `404`. The browser calls it only from the shared
+`Who is learning now?` chooser, before locking Guardian mode and navigating.
+`DELETE` requires the same live Guardian unlock and a name-specific UI
+confirmation. It returns the authoritative remaining roster, rejects the final
+usable learner with `409 last_learner`, and leaves retryable cleanup visible as
+`deletionPending`. Deleting the active learner clears its selection and records
+selection-required state instead of auto-selecting a sibling. All four routes
+re-prove account ownership; malformed, missing, and foreign IDs share a generic
+`404`.
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
 before roster reads/mutations, Guardian profile reads/updates, profile
-preference changes, custom-lesson creation/generation/updates,
+preference changes, custom-lesson creation/generation/deletion,
 personalized-art mutations, dubbing consent grant, and whole-dub deletion when
 the current session lacks a live unlock.
 Conversation start is purpose-aware: profile edits
@@ -138,6 +148,16 @@ Auth and product data use one D1 database. `guardian_session_unlock` and
 deletion cascades to both. The selection row also carries the account user ID
 and selected profile ID, and the resolver re-proves ownership on every learner
 request.
+
+`learner_profile_deletion_tombstone` stores a durable, account-bound cleanup
+closure for individual deletion, while `learner_selection_required` prevents
+single-profile fallback from silently selecting a sibling in sessions that
+lost their active learner. A tombstoned learner is omitted from chooser and
+settings-target lists but remains in the Guardian roster with
+`deletionPending` until cleanup finishes. Retry uses the same learner ID and
+closure. The legacy storage owner additionally closes the historical
+account-root dubbing, lesson-recording, art, and null-owned compatibility paths;
+sibling-prefixed storage is never swept.
 
 One `learner_profile` row per account is marked `legacy_storage_owner`; it owns
 all migrated account-level media compatibility paths. Added learners are
@@ -159,7 +179,10 @@ shelf URL is canonicalized to the active profile's stored `story_level`.
 Guardian mode is server state for the current auth session, not a client-only
 role or long-lived account permission. The active learner is separate server
 state for that same session, so different sessions can manage different
-learners without changing one another.
+learners without changing one another. Guardian settings use explicit
+learner-target URLs and never mutate that state. The shared switch dialog first
+selects its explicit radio choice, then locks Guardian access, then navigates;
+it begins with no preselected choice and keeps the current page on failure.
 
 Dubbing and lesson-recording consent are deliberately durable learner state so
 the selected learner may record after Guardian mode is locked. Lesson and dub
@@ -185,12 +208,13 @@ header to select a profile or storage namespace.
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/create                       (guardian)
-│   └── /lessons/my/:lessonId/edit               (guardian)
 ├── /stories
 │   └── /stories/:storyId/pages/:pageNumber
 ├── /dubs/five-little-ducks
 ├── /guardian
 │   ├── /guardian/learners
+│   │   └── /guardian/learners/:learnerId
+│   ├── /guardian/account
 │   ├── /guardian/profile
 │   ├── /guardian/profile/setup
 │   ├── /guardian/lessons
@@ -230,6 +254,11 @@ LiveKit agent turns and finalization use the learner stored on the conversation
 row, not a later session selection. Whole-account deletion remains
 account-scoped and enumerates all learner storage identities before the user
 row cascades.
+
+Custom-lesson deletion first marks the owned lesson as non-recordable, then
+purges that learner and lesson's exact recording namespace, and finally removes
+the row. If storage cleanup fails, the marked row remains as a retry anchor
+while new recording uploads stay blocked.
 
 ## Dubbing Capability Boundary
 
@@ -357,9 +386,13 @@ Multi-learner ownership ships through an expand/compatibility/enable sequence:
 3. After that exact Worker commit is verified in production and recorded in
    `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`, `0013_multi_learner_enable.sql`
    repeats backfills, asserts there are no unmapped rows or eligible sessions,
-   removes singleton uniqueness, and enables roster creation/selection with the
-   flag set to `"1"`.
-4. A later contract migration may make ownership columns non-null and retire
+   removes singleton uniqueness, and enables roster mutations with the flag set
+   to `"1"`.
+4. `0015_learner_profile_deletion.sql` adds durable learner-deletion and
+   selection-required state. It is safe to apply with the compatibility Worker
+   while roster mutations are disabled and is required before individual
+   deletion is exposed.
+5. A later contract migration may make ownership columns non-null and retire
    compatibility tables after the rollback and session-expiry window.
 
 The deployment workflow verifies that the recorded compatibility commit is an
@@ -400,7 +433,8 @@ authentication/profile boundaries, learner/guardian switching, unlock errors,
 lock errors, refresh persistence, expiry, and protected deep links from 280 px
 through desktop widths. Guardian/learner responsive gates explicitly cover
 280x568, 320x568, 390x844, 640x360, and 1440x900. Multi-learner coverage also
-proves roster creation/selection, independent session selections, stale-result
-suppression, sibling data isolation, selection-required fail-closed behavior,
-Guardian route recovery, and the absence of sibling or grown-up controls across
-the learner-route matrix.
+proves CRUD-only roster management, explicit chooser selection,
+inactive/active/final/pending deletion behavior, independent session
+selections, stale-result suppression, sibling data isolation,
+selection-required fail-closed behavior, Guardian route recovery, and the
+absence of sibling or grown-up controls across the learner-route matrix.

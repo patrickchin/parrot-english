@@ -85,11 +85,16 @@ export type GuardianLearnerProfileSummary = {
   age: number | null;
   profileStatus: LearnerProfileSummary["profileStatus"];
   createdAt: string;
+  deletionPending: boolean;
 };
 
 export type LearnerProfileRoster = {
   activeProfileId: string | null;
   profiles: GuardianLearnerProfileSummary[];
+};
+
+export type LearnerProfileCreationResult = LearnerProfileRoster & {
+  createdProfileId: string;
 };
 
 export type ProfileState = {
@@ -131,6 +136,24 @@ export class LearnerProfileApiError extends Error {
     this.code = code;
     this.fieldErrors = fieldErrors;
     this.isFieldError = isFieldError;
+  }
+}
+
+export class LearnerProfileDeletionError extends Error {
+  readonly code:
+    | "learner_deletion_pending"
+    | "learner_deletion_uncertain";
+  readonly roster?: LearnerProfileRoster;
+
+  constructor(
+    code: "learner_deletion_pending" | "learner_deletion_uncertain",
+    message: string,
+    roster?: LearnerProfileRoster,
+  ) {
+    super(message);
+    this.name = "LearnerProfileDeletionError";
+    this.code = code;
+    this.roster = roster;
   }
 }
 
@@ -268,6 +291,7 @@ function requireValidLearnerProfileRoster(
         typeof profile.id !== "string" ||
         !profile.id.trim() ||
         ids.has(profile.id) ||
+        typeof profile.deletionPending !== "boolean" ||
         typeof profile.name !== "string" ||
         !profile.name.trim()
       ) {
@@ -290,6 +314,24 @@ function requireValidLearnerProfileRoster(
     );
   }
   return roster;
+}
+
+function requireValidLearnerProfileCreation(
+  result: LearnerProfileCreationResult,
+): LearnerProfileCreationResult {
+  const roster = requireValidLearnerProfileRoster(result);
+  if (
+    typeof result.createdProfileId !== "string" ||
+    !result.createdProfileId.trim() ||
+    !roster.profiles.some(({ id }) => id === result.createdProfileId)
+  ) {
+    throw new LearnerProfileApiError(
+      200,
+      "invalid_roster",
+      "Learner profiles could not be loaded.",
+    );
+  }
+  return result;
 }
 
 async function learnerProfileRequest(
@@ -402,7 +444,7 @@ export function createLearnerProfile(
   name: string,
   { activate, ...options }: CreateLearnerProfileOptions = {},
 ) {
-  return learnerProfilesRequest(
+  return requestJson<LearnerProfileCreationResult>(
     "/api/learner-profiles",
     {
       method: "POST",
@@ -412,7 +454,7 @@ export function createLearnerProfile(
       ),
     },
     options,
-  );
+  ).then(requireValidLearnerProfileCreation);
 }
 
 export function selectLearnerProfile(
@@ -422,6 +464,17 @@ export function selectLearnerProfile(
   return learnerProfilesRequest(
     `/api/learner-profiles/${encodeURIComponent(profileId)}/active`,
     { method: "PUT" },
+    options,
+  );
+}
+
+export function deleteLearnerProfile(
+  profileId: string,
+  options?: LearnerProfileRequestOptions,
+) {
+  return learnerProfilesRequest(
+    `/api/learner-profiles/${encodeURIComponent(profileId)}`,
+    { method: "DELETE" },
     options,
   );
 }

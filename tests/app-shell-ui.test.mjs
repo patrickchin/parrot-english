@@ -237,7 +237,6 @@ test("guardian settings routes resolve their explicit target without active lear
     "GuardianStorySettings",
     "GuardianDubbingSettings",
     "LessonCreator",
-    "LessonEditor",
   ]) {
     assert.doesNotMatch(
       app,
@@ -342,7 +341,6 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     "/talk-to-peppa",
     "/lessons",
     "/lessons/my/create",
-    "/lessons/my/:lessonId/edit",
     "/lessons/parrot/:lessonId",
     "/lessons/parrot/:lessonId/scenes/:sceneNumber",
     "/lessons/my/:lessonId",

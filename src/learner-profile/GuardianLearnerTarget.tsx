@@ -65,7 +65,10 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
 
   const resolution = useMemo(() => {
     if (rosterState.phase !== "ready") return null;
-    const { activeProfileId, profiles } = rosterState.roster;
+    const { activeProfileId } = rosterState.roster;
+    const profiles = rosterState.roster.profiles.filter(
+      ({ deletionPending }) => !deletionPending,
+    );
     if (profiles.length === 0) {
       return { activeProfileId, phase: "empty" as const, profiles };
     }
@@ -109,7 +112,9 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
     (profileId: string) => {
       if (
         rosterState.phase !== "ready" ||
-        !rosterState.roster.profiles.some(({ id }) => id === profileId)
+        !rosterState.roster.profiles.some(
+          ({ deletionPending, id }) => !deletionPending && id === profileId,
+        )
       ) {
         return;
       }

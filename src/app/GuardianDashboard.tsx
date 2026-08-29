@@ -6,12 +6,9 @@ import {
   Sparkles,
   UsersRound,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
-import { useGuardianAccess } from "../auth/GuardianAccess";
+import { useRef, useState, type RefObject } from "react";
 import { ActionLink, Card } from "../shared/ui";
 import {
-  GuardianLearnerContextLabel,
   HeaderButton,
   RouteHeader,
 } from "./AppHeader";
@@ -22,48 +19,35 @@ import {
   getGuardianLessonsPath,
   getGuardianStoriesPath,
 } from "./app-routes";
+import { LearnerModeSwitchDialog } from "./LearnerModeSwitchDialog";
 
 export function GuardianDashboardView({
-  error,
-  isSwitching,
-  learnerName,
   onSwitchToLearner,
+  switchTriggerRef,
 }: {
-  error: string;
-  isSwitching: boolean;
-  learnerName: string;
   onSwitchToLearner: () => void;
+  switchTriggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
       <RouteHeader>
         <HeaderButton
           aria-label="Switch to learner"
-          disabled={isSwitching}
           icon={<LogOut strokeWidth={3} />}
           onClick={onSwitchToLearner}
+          ref={switchTriggerRef}
           type="button"
         >
-          {isSwitching ? "Switching to learner…" : "Switch to learner"}
+          Switch to learner
         </HeaderButton>
       </RouteHeader>
 
       <section className="mx-auto grid w-full max-w-5xl gap-8">
         <header className="grid gap-2 text-center">
-          <GuardianLearnerContextLabel learnerName={learnerName} />
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Guardian dashboard
           </h1>
         </header>
-
-        {error ? (
-          <p
-            className="m-0 rounded-2xl bg-rose-100 px-4 py-3 text-center font-extrabold text-red-900"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
 
         <Card
           aria-labelledby="manage-learners-heading"
@@ -84,8 +68,8 @@ export function GuardianDashboardView({
               Manage learners
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              <bdi dir="auto">{learnerName}</bdi> is using learner mode. Add a
-              learner, select who uses learner mode, or edit learner details.
+              Add, edit, or delete learner profiles. You’ll choose a learner
+              when switching to learner mode.
             </p>
           </div>
           <ActionLink
@@ -109,7 +93,7 @@ export function GuardianDashboardView({
           <div className="grid gap-4 md:grid-cols-3">
             <Card
               aria-labelledby="my-lessons-heading"
-              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-sky-100 sm:p-6"
+              className="grid content-start gap-4 !bg-sky-50 p-5 ring-2 ring-inset ring-sky-100 sm:p-6"
               tone="muted"
             >
               <span
@@ -125,7 +109,7 @@ export function GuardianDashboardView({
                 My Lessons
               </h3>
               <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Create and edit custom lessons for the learner.
+                Create or delete custom lessons for the learner.
               </p>
               <ActionLink
                 className="mt-auto"
@@ -138,7 +122,7 @@ export function GuardianDashboardView({
 
             <Card
               aria-labelledby="story-settings-heading"
-              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-violet-100 sm:p-6"
+              className="grid content-start gap-4 !bg-violet-50 p-5 ring-2 ring-inset ring-violet-100 sm:p-6"
               tone="muted"
             >
               <span
@@ -167,7 +151,7 @@ export function GuardianDashboardView({
 
             <Card
               aria-labelledby="voice-dubbing-heading"
-              className="grid content-start gap-4 p-5 ring-2 ring-inset ring-amber-100 sm:p-6"
+              className="grid content-start gap-4 !bg-amber-50 p-5 ring-2 ring-inset ring-amber-100 sm:p-6"
               tone="muted"
             >
               <span
@@ -198,7 +182,7 @@ export function GuardianDashboardView({
 
         <Card
           aria-labelledby="account-privacy-heading"
-          className="grid items-center gap-5 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
+          className="grid items-center gap-5 !bg-emerald-50 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
           elevation="soft"
           tone="muted"
         >
@@ -216,8 +200,8 @@ export function GuardianDashboardView({
               Account &amp; privacy
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review AI and saved data controls, sign out, or delete your
-              account.
+              Review how AI is used, what Parrot saves, and account deletion
+              controls.
             </p>
           </div>
           <ActionLink
@@ -234,35 +218,28 @@ export function GuardianDashboardView({
 }
 
 export function GuardianDashboard({
-  learnerName,
   onBeforeNavigate,
 }: {
-  learnerName: string;
+  learnerName?: string;
   onBeforeNavigate?: () => void;
 }) {
-  const { error, lock } = useGuardianAccess();
-  const navigate = useNavigate();
-  const [isSwitching, setIsSwitching] = useState(false);
-
-  async function switchToLearner() {
-    if (isSwitching) return;
-    setIsSwitching(true);
-    try {
-      const lockError = await lock();
-      if (lockError) return;
-      onBeforeNavigate?.();
-      navigate("/");
-    } finally {
-      setIsSwitching(false);
-    }
-  }
+  const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
+  const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <GuardianDashboardView
-      error={error}
-      isSwitching={isSwitching}
-      learnerName={learnerName.trim() || "Learner"}
-      onSwitchToLearner={() => void switchToLearner()}
-    />
+    <>
+      <GuardianDashboardView
+        onSwitchToLearner={() => setIsSwitchDialogOpen(true)}
+        switchTriggerRef={switchTriggerRef}
+      />
+      {isSwitchDialogOpen ? (
+        <LearnerModeSwitchDialog
+          destination="/"
+          onBeforeNavigate={onBeforeNavigate}
+          onClose={() => setIsSwitchDialogOpen(false)}
+          returnFocusRef={switchTriggerRef}
+        />
+      ) : null}
+    </>
   );
 }

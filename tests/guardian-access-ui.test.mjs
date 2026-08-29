@@ -1490,6 +1490,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       assert.equal(typeof firstListener, "function");
 
       await renderProvider(Provider, secondIdentity, (state) => states.push(state));
+      await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
       window.localStorage.setItem(firstKey, "old-lock");
       await act(async () => {
         firstListener(

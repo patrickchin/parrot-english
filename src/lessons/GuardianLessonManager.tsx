@@ -1,9 +1,7 @@
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
-import { useEffect, useRef, type RefObject } from "react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import {
-  getGuardianLearnersPath,
   getMyLessonCreatePath,
-  getMyLessonEditPath,
 } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
@@ -19,6 +17,9 @@ type GuardianLessonManagerViewProps = {
   headingRef?: RefObject<HTMLHeadingElement | null>;
   lessons?: MyLessonDescriptor[];
   myLessonsLoadPhase?: MyLessonsLoadPhase | null;
+  deleteError?: string;
+  deletingLessonIds?: ReadonlySet<string>;
+  onDeleteLesson?: (lesson: MyLessonDescriptor) => void;
   onRetryMyLessons?: () => void;
   target: GuardianLearnerTargetState;
 };
@@ -27,6 +28,9 @@ export function GuardianLessonManagerView({
   headingRef,
   lessons = [],
   myLessonsLoadPhase = null,
+  deleteError = "",
+  deletingLessonIds = new Set(),
+  onDeleteLesson = () => {},
   onRetryMyLessons = () => {},
   target,
 }: GuardianLessonManagerViewProps) {
@@ -59,25 +63,13 @@ export function GuardianLessonManagerView({
           </h1>
           <GuardianLearnerTarget state={target} />
           {targetReady ? (
-            <>
-              <ActionLink
-                aria-label="Create custom lesson"
-                className="gap-2"
-                to={getMyLessonCreatePath(learnerProfileId)}
-              >
-                <Plus aria-hidden="true" /> Create custom lesson
-              </ActionLink>
-              <div className="flex flex-wrap items-center justify-center gap-2 text-sm font-bold text-slate-600">
-                <span>Change who uses learner mode in Manage learners.</span>
-                <ActionLink
-                  size="compact"
-                  to={getGuardianLearnersPath()}
-                  variant="surface"
-                >
-                  Manage learners
-                </ActionLink>
-              </div>
-            </>
+            <ActionLink
+              aria-label="Create custom lesson"
+              className="gap-2"
+              to={getMyLessonCreatePath(learnerProfileId)}
+            >
+              <Plus aria-hidden="true" /> Create custom lesson
+            </ActionLink>
           ) : null}
         </header>
 
@@ -122,6 +114,8 @@ export function GuardianLessonManagerView({
               </ActionButton>
             ) : null}
 
+            {deleteError ? <p role="alert">{deleteError}</p> : null}
+
             {lessons.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2">
                 {lessons.map((lesson) => (
@@ -137,14 +131,17 @@ export function GuardianLessonManagerView({
                         {lesson.lesson.scenes.length} parts
                       </p>
                     </div>
-                    <ActionLink
-                      aria-label={`Edit lesson: ${lesson.lesson.title}`}
+                    <ActionButton
+                      aria-label={`Delete lesson: ${lesson.lesson.title}`}
                       className="mt-auto gap-2"
-                      to={getMyLessonEditPath(lesson.id, learnerProfileId)}
-                      variant="surface"
+                      disabled={deletingLessonIds.has(lesson.id)}
+                      onClick={() => onDeleteLesson(lesson)}
+                      type="button"
+                      variant="dangerSurface"
                     >
-                      <Pencil aria-hidden="true" className="size-5" /> Edit
-                    </ActionLink>
+                      <Trash2 aria-hidden="true" className="size-5" />{" "}
+                      {deletingLessonIds.has(lesson.id) ? "Deleting…" : "Delete"}
+                    </ActionButton>
                   </Card>
                 ))}
               </div>
@@ -162,9 +159,15 @@ function TargetedGuardianLessonManager({
   target: GuardianLearnerTargetState;
 }) {
   const learnerProfileId = target.learnerProfileId!;
-  const { lessons, phase, retry } = useMyLessons({ learnerProfileId });
+  const { deleteLesson, lessons, phase, retry } = useMyLessons({
+    learnerProfileId,
+  });
   const focusAfterRetryRef = useRef(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const [deletingLessonIds, setDeletingLessonIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (phase !== "ready" || !focusAfterRetryRef.current) return;
@@ -178,11 +181,38 @@ function TargetedGuardianLessonManager({
     retry();
   }
 
+  async function removeLesson(lesson: MyLessonDescriptor) {
+    if (
+      deletingLessonIds.has(lesson.id) ||
+      !window.confirm(
+        `Delete "${lesson.lesson.title}"? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setDeleteError("");
+    setDeletingLessonIds((current) => new Set(current).add(lesson.id));
+    try {
+      await deleteLesson(lesson.id);
+    } catch {
+      setDeleteError(`We couldn't delete ${lesson.lesson.title}. Please try again.`);
+    } finally {
+      setDeletingLessonIds((current) => {
+        const next = new Set(current);
+        next.delete(lesson.id);
+        return next;
+      });
+    }
+  }
+
   return (
     <GuardianLessonManagerView
+      deleteError={deleteError}
+      deletingLessonIds={deletingLessonIds}
       headingRef={headingRef}
       lessons={lessons}
       myLessonsLoadPhase={phase}
+      onDeleteLesson={removeLesson}
       onRetryMyLessons={retryMyLessons}
       target={target}
     />

@@ -141,7 +141,7 @@ export async function handleGuardianAccessRequest(input: {
       }
       if (input.request.method === "POST") {
         const password = await readPassword(input.request);
-        if (password !== "" && !(await input.verifyPassword(password))) {
+        if (!(await input.verifyPassword(password))) {
           return json(
             {
               error: "invalid_password",
@@ -190,6 +190,9 @@ export function requiresGuardianAccess(
   if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(pathname)) {
     return method === "PUT";
   }
+  if (/^\/api\/learner-profiles\/[^/]+$/.test(pathname)) {
+    return method === "DELETE";
+  }
   const dubRoute = parseDubRoute(pathname);
   if (dubRoute?.consent) {
     return method === "PUT";
@@ -213,7 +216,7 @@ export function requiresGuardianAccess(
     return method === "POST";
   }
   if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
-    return method === "PUT";
+    return method === "DELETE";
   }
   return (
     /^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname) &&

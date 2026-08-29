@@ -346,10 +346,13 @@ async function expectStableGeometry(
 
 async function leaveLearnerRoute(page: Page) {
   await page.evaluate(() => {
-    window.history.pushState(window.history.state, "", "/");
+    window.history.pushState(window.history.state, "", "/guardian");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL("/guardian");
+  await expect(
+    page.getByRole("heading", { name: "Unlock guardian mode" }),
+  ).toBeVisible();
 }
 
 test("microphone feedback owns one focused node through opening, listening, writing, and ready", async ({

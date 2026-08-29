@@ -1076,10 +1076,10 @@ function renderGate(overrides = {}) {
 }
 
 describe("onboarding and profile gate", () => {
-  it("keys the full learner subtree by the active profile ID", () => {
+  it("keeps Guardian learner selection mounted while keying learner mode by the active profile ID", () => {
     assert.match(
       gateSource,
-      /<LearnerProfileProvider\s+key=\{data\.profile\.id\}[\s\S]*?>[\s\S]*?\{children\}/,
+      /<LearnerProfileProvider[\s\S]*?guardianAccessMode === "guardian"[\s\S]*?"guardian-learner-selection"[\s\S]*?: data\.profile\.id[\s\S]*?>[\s\S]*?\{children\}/,
     );
   });
 
@@ -1090,7 +1090,37 @@ describe("onboarding and profile gate", () => {
     });
 
     assert.match(html, /Ask a grown-up to choose a learner/);
+    assert.doesNotMatch(html, /account menu/);
     assert.doesNotMatch(html, /LESSON CONTENT|Mia/);
+  });
+
+  it("lets an unlocked Guardian reach the learner chooser boundary when selection is required", () => {
+    const html = renderGate({
+      data: { mode: "selection-required" },
+      guardianAccessMode: "guardian",
+      guardianSelectionRosterPhase: "available",
+      isLearnerProfileRoute: false,
+    });
+
+    assert.match(html, /LESSON CONTENT/);
+    assert.doesNotMatch(html, /Ask a grown-up to choose a learner/);
+  });
+
+  it("keeps an unlocked zero-profile learner deep link in Manage learners", () => {
+    const html = renderGate({
+      data: { mode: "selection-required" },
+      guardianAccessMode: "guardian",
+      guardianSelectionFallback: createElement(
+        "div",
+        null,
+        "GUARDIAN MANAGER REDIRECT",
+      ),
+      guardianSelectionRosterPhase: "empty",
+      isLearnerProfileRoute: false,
+    });
+
+    assert.match(html, /GUARDIAN MANAGER REDIRECT/);
+    assert.doesNotMatch(html, /LESSON CONTENT/);
   });
 
   it("keeps incomplete profiles available to Guardian routes and redirects other Guardian pages to the manager when selection is required", () => {
@@ -1125,6 +1155,42 @@ describe("onboarding and profile gate", () => {
     });
     assert.match(bypassRedirect, /GUARDIAN MANAGER REDIRECT/);
     assert.doesNotMatch(bypassRedirect, /LESSON CONTENT/);
+  });
+
+  it("keeps a selection-required Guardian dashboard available when learner profiles remain", () => {
+    const dashboard = renderGate({
+      data: { mode: "selection-required" },
+      guardianDashboardRoute: true,
+      guardianRoute: true,
+      guardianSelectionFallback: createElement(
+        "div",
+        null,
+        "GUARDIAN MANAGER REDIRECT",
+      ),
+      guardianSelectionRosterPhase: "available",
+      isLearnerProfileRoute: false,
+    });
+
+    assert.match(dashboard, /LESSON CONTENT/);
+    assert.doesNotMatch(dashboard, /GUARDIAN MANAGER REDIRECT/);
+  });
+
+  it("keeps zero-profile Guardian onboarding in Manage learners", () => {
+    const dashboard = renderGate({
+      data: { mode: "selection-required" },
+      guardianDashboardRoute: true,
+      guardianRoute: true,
+      guardianSelectionFallback: createElement(
+        "div",
+        null,
+        "GUARDIAN MANAGER REDIRECT",
+      ),
+      guardianSelectionRosterPhase: "empty",
+      isLearnerProfileRoute: false,
+    });
+
+    assert.match(dashboard, /GUARDIAN MANAGER REDIRECT/);
+    assert.doesNotMatch(dashboard, /LESSON CONTENT/);
   });
 
   it("does not sync question state before the initial onboarding load finishes", () => {

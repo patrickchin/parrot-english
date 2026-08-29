@@ -280,6 +280,32 @@ export const learnerProfile = sqliteTable(
   ]
 );
 
+export const learnerProfileDeletionTombstone = sqliteTable(
+  "learner_profile_deletion_tombstone",
+  {
+    learnerProfileId: text("learner_profile_id").primaryKey(),
+    userIdHash: text("user_id_hash").notNull(),
+    legacyStorageOwner: integer("legacy_storage_owner", { mode: "boolean" })
+      .notNull(),
+    generation: integer("generation").notNull(),
+    requestedAt: integer("requested_at", { mode: "timestamp_ms" }).notNull(),
+    storageKeysJson: text("storage_keys_json").default("[]").notNull(),
+  },
+  (table) => [
+    index("learner_profile_deletion_tombstone_user_hash_idx").on(
+      table.userIdHash,
+    ),
+    check(
+      "learner_profile_deletion_tombstone_legacy_owner_check",
+      sql`${table.legacyStorageOwner} in (0, 1)`,
+    ),
+    check(
+      "learner_profile_deletion_tombstone_storage_keys_json_check",
+      sql`json_valid(${table.storageKeysJson})`,
+    ),
+  ],
+);
+
 export const sessionLearnerSelection = sqliteTable(
   "session_learner_selection",
   {
@@ -301,6 +327,15 @@ export const sessionLearnerSelection = sqliteTable(
       table.learnerProfileId,
     ),
   ],
+);
+
+export const learnerSelectionRequired = sqliteTable(
+  "learner_selection_required",
+  {
+    sessionId: text("session_id")
+      .primaryKey()
+      .references(() => session.id, { onDelete: "cascade" }),
+  },
 );
 
 export const learnerDubConsent = sqliteTable(
