@@ -1804,6 +1804,7 @@ export function LearnerProfileGate({
         let reconciled = false;
         try {
           roster = await selectLearnerProfileRequest(profileId, { signal });
+          throwIfLearnerMutationAborted(signal);
           requireRosterActiveProfile(roster, profileId);
         } catch (error) {
           if (isAbortError(error)) throw error;
@@ -1847,6 +1848,7 @@ export function LearnerProfileGate({
         let reconciled = false;
         try {
           roster = await deleteLearnerProfileRequest(profileId, { signal });
+          throwIfLearnerMutationAborted(signal);
           const target = roster.profiles.find(({ id }) => id === profileId);
           if (target && !target.deletionPending) {
             throw mutationError;
@@ -1899,9 +1901,24 @@ export function LearnerProfileGate({
         let mutationError: unknown = null;
         let reconciled = false;
         try {
-          roster = await createLearnerProfileRequest(normalizedName, {
+          const result = await createLearnerProfileRequest(normalizedName, {
             signal,
           });
+          throwIfLearnerMutationAborted(signal);
+          roster = result;
+          if (result.createdProfileId !== result.activeProfileId) {
+            throw new Error("The newly added learner could not be loaded.");
+          }
+          const directCreatedProfile = requireRosterActiveProfile(
+            result,
+            result.createdProfileId,
+          );
+          if (
+            existingProfileIds.includes(directCreatedProfile.id) ||
+            directCreatedProfile.name !== normalizedName
+          ) {
+            throw new Error("The newly added learner could not be loaded.");
+          }
         } catch (error) {
           if (isAbortError(error)) throw error;
           mutationError = error;

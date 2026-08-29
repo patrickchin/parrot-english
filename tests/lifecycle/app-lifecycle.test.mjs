@@ -793,14 +793,36 @@ function LearnerManagerSessionHarness({ label, sessionIdentity }) {
   );
 }
 
-function AccountTransitionLearnerSelectionHarness({ onSwitchAccount }) {
+function AccountTransitionLearnerSelectionHarness({
+  action = "select",
+  label = "Select Bob before account transition",
+  newLearnerName = "Rose",
+  onSwitchAccount,
+  profileId = "learner-bob",
+  showManager = false,
+}) {
   const [sessionIdentity, setSessionIdentity] = useState("account-a|session");
   return createElement(
     Fragment,
     null,
     createElement(LearnerSelectionSessionHarness, {
-      label: "Select Bob before account transition",
-      profileId: "learner-bob",
+      action,
+      children: showManager
+        ? createElement(
+            Fragment,
+            null,
+            createElement(SelectionActionHarness, {
+              action,
+              label,
+              newLearnerName,
+              profileId,
+            }),
+            createElement(GuardianLearnerProfiles),
+          )
+        : undefined,
+      label,
+      newLearnerName,
+      profileId,
       sessionIdentity,
     }),
     createElement(
@@ -3059,6 +3081,168 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
+  for (const lateMutation of [
+    {
+      action: "select",
+      label: "Select Bob before switching accounts",
+      method: "PUT",
+      path: "/api/learner-profiles/learner-bob/active",
+      response: {
+        activeProfileId: "learner-bob",
+        profiles: [
+          learnerRosterProfile({ id: "learner-mia", name: "Mary" }),
+          learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
+        ],
+      },
+    },
+    {
+      action: "create",
+      label: "Create Rose before switching accounts",
+      method: "POST",
+      path: "/api/learner-profiles",
+      response: {
+        activeProfileId: "learner-rose",
+        createdProfileId: "learner-rose",
+        profiles: [
+          learnerRosterProfile({ id: "learner-mia", name: "Mary" }),
+          learnerRosterProfile({
+            age: null,
+            id: "learner-rose",
+            name: "Rose",
+            profileStatus: "not_started",
+          }),
+        ],
+      },
+    },
+    {
+      action: "delete",
+      label: "Delete Bob before switching accounts",
+      method: "DELETE",
+      path: "/api/learner-profiles/learner-bob",
+      response: {
+        activeProfileId: "learner-mia",
+        profiles: [
+          learnerRosterProfile({ id: "learner-mia", name: "Mary" }),
+        ],
+      },
+    },
+  ]) {
+    it(`account transition prevents a late ${lateMutation.action} response from publishing or refreshing learner state`, async () => {
+      const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+      const originalWindowBroadcastChannel = window.BroadcastChannel;
+      const SharedBroadcastChannel = installSharedBroadcastChannels();
+      globalThis.BroadcastChannel = SharedBroadcastChannel;
+      window.BroadcastChannel = SharedBroadcastChannel;
+      const heldMutation = deferred();
+      let currentAccount = "account-a";
+      let mutationSignal = null;
+      let rosterReads = 0;
+      const fullProfileIds = [];
+      const rosterForCurrentAccount = () =>
+        currentAccount === "account-a"
+          ? {
+              activeProfileId: "learner-mia",
+              profiles: [
+                learnerRosterProfile({ id: "learner-mia", name: "Mary" }),
+                learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
+              ],
+            }
+          : {
+              activeProfileId: "learner-sam",
+              profiles: [
+                learnerRosterProfile({ id: "learner-sam", name: "Sam" }),
+                learnerRosterProfile({ id: "learner-jack", name: "Jack" }),
+              ],
+            };
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/learner-profile" && init.method === "GET") {
+          const active = rosterForCurrentAccount().profiles[0];
+          fullProfileIds.push(active.id);
+          return json({
+            ...completedLearnerProfileState(),
+            profile: {
+              ...completedLearnerProfileState().profile,
+              id: active.id,
+              name: active.name,
+            },
+          });
+        }
+        if (path === lateMutation.path && init.method === lateMutation.method) {
+          mutationSignal = init.signal;
+          return heldMutation.promise;
+        }
+        if (path === "/api/learner-profiles" && init.method === "GET") {
+          rosterReads += 1;
+          return json(rosterForCurrentAccount());
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      try {
+        await mountStrict(
+          createElement(
+            MemoryRouter,
+            null,
+            createElement(AccountTransitionLearnerSelectionHarness, {
+              action: lateMutation.action,
+              label: lateMutation.label,
+              newLearnerName: "Rose",
+              onSwitchAccount() {
+                currentAccount = "account-b";
+              },
+              profileId: "learner-bob",
+              showManager: true,
+            }),
+          ),
+        );
+        await waitFor(() => {
+          button(lateMutation.label);
+          assert.ok(rosterReads > 0);
+          assert.equal(SharedBroadcastChannel.peerCount(), 1);
+        });
+        await click(button(lateMutation.label));
+        await waitFor(() => assert.ok(mutationSignal));
+        assert.equal(mutationSignal.aborted, false);
+
+        await click(button("Switch learner account"));
+        await waitFor(() => assert.equal(mutationSignal.aborted, true));
+        await waitFor(() =>
+          assert.equal(
+            output(`${lateMutation.label} active learner`).textContent,
+            "learner-sam",
+          ),
+        );
+        await waitFor(() =>
+          assert.equal(SharedBroadcastChannel.peerCount(), 1),
+        );
+        await flush();
+        const rosterReadsAfterSwitch = rosterReads;
+        const fullProfileReadsAfterSwitch = fullProfileIds.length;
+        assert.equal(SharedBroadcastChannel.messagesPosted(), 0);
+
+        heldMutation.resolve(json(lateMutation.response));
+        await waitFor(() =>
+          assert.match(
+            output(`${lateMutation.label} mutation result`).textContent,
+            /^rejected:/,
+          ),
+        );
+        await flush();
+
+        assert.equal(SharedBroadcastChannel.messagesPosted(), 0);
+        assert.equal(rosterReads, rosterReadsAfterSwitch);
+        assert.equal(fullProfileIds.length, fullProfileReadsAfterSwitch);
+        assert.equal(
+          output(`${lateMutation.label} active learner`).textContent,
+          "learner-sam",
+        );
+      } finally {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    });
+  }
+
   it("server-reported deletionPending remains unavailable until an authoritative roster clears it", async () => {
     let deleteRequests = 0;
     let rosterReads = 0;
@@ -3128,6 +3312,176 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       "learner-mary",
     );
   });
+
+  const creationMary = learnerRosterProfile({
+    id: "learner-mia",
+    name: "Mary",
+  });
+  const creationRose = learnerRosterProfile({
+    age: null,
+    id: "learner-rose",
+    name: "Rose",
+    profileStatus: "not_started",
+  });
+  const confirmedCreationRoster = {
+    activeProfileId: creationRose.id,
+    profiles: [creationMary, creationRose],
+  };
+
+  for (const creationCase of [
+    {
+      authoritativeRoster: confirmedCreationRoster,
+      directRoster: {
+        activeProfileId: "learner-jack",
+        createdProfileId: "learner-rose",
+        profiles: [
+          creationMary,
+          creationRose,
+          { ...creationRose, id: "learner-jack" },
+        ],
+      },
+      label: "Create Rose when two new learners are reported",
+      resolves: true,
+      title:
+        "reconciles creation when the worker reports different created and active learners",
+    },
+    {
+      authoritativeRoster: confirmedCreationRoster,
+      directRoster: {
+        activeProfileId: "learner-mia",
+        createdProfileId: "learner-mia",
+        profiles: [creationMary, creationRose],
+      },
+      label: "Create Rose when an existing learner is reported active",
+      resolves: true,
+      title:
+        "reconciles creation instead of accepting a pre-existing active learner",
+    },
+    {
+      authoritativeRoster: confirmedCreationRoster,
+      directRoster: {
+        activeProfileId: "learner-rose",
+        createdProfileId: "learner-rose",
+        profiles: [creationMary, { ...creationRose, name: "Jack" }],
+      },
+      label: "Create Rose when the new learner has the wrong name",
+      resolves: true,
+      title:
+        "reconciles creation instead of accepting a newly active learner with the wrong name",
+    },
+    {
+      authoritativeRoster: {
+        activeProfileId: null,
+        profiles: [creationMary, creationRose],
+      },
+      directRoster: {
+        activeProfileId: null,
+        createdProfileId: "learner-rose",
+        profiles: [creationMary, creationRose],
+      },
+      label: "Create Rose when no learner is reported active",
+      resolves: false,
+      title:
+        "reconciles creation with no active learner and preserves a retryable failure",
+    },
+  ]) {
+    it(creationCase.title, async () => {
+      const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+      const originalWindowBroadcastChannel = window.BroadcastChannel;
+      const SharedBroadcastChannel = installSharedBroadcastChannels();
+      globalThis.BroadcastChannel = SharedBroadcastChannel;
+      window.BroadcastChannel = SharedBroadcastChannel;
+      let workerActiveProfileId = "learner-mia";
+      let rosterReads = 0;
+      const fullProfileIds = [];
+      const learnerNames = {
+        "learner-jack": "Rose",
+        "learner-mia": "Mary",
+        "learner-rose": "Rose",
+      };
+      globalThis.fetch = async (path, init = {}) => {
+        if (path === "/api/learner-profile" && init.method === "GET") {
+          if (workerActiveProfileId === null) {
+            return json({ message: "Select a learner profile." }, 409);
+          }
+          fullProfileIds.push(workerActiveProfileId);
+          return json({
+            ...completedLearnerProfileState(),
+            profile: {
+              ...completedLearnerProfileState().profile,
+              id: workerActiveProfileId,
+              name: learnerNames[workerActiveProfileId],
+            },
+          });
+        }
+        if (path === "/api/learner-profiles" && init.method === "POST") {
+          workerActiveProfileId = creationCase.directRoster.activeProfileId;
+          return json(creationCase.directRoster);
+        }
+        if (path === "/api/learner-profiles" && init.method === "GET") {
+          rosterReads += 1;
+          workerActiveProfileId =
+            creationCase.authoritativeRoster.activeProfileId;
+          return json(creationCase.authoritativeRoster);
+        }
+        throw new Error(`Unexpected request: ${init.method} ${path}`);
+      };
+
+      try {
+        await mountStrict(
+          createElement(LearnerSelectionSessionHarness, {
+            action: "create",
+            label: creationCase.label,
+            newLearnerName: "Rose",
+            sessionIdentity: `account-1|${creationCase.label}`,
+          }),
+        );
+        await waitFor(() => {
+          button(creationCase.label);
+          assert.equal(SharedBroadcastChannel.peerCount(), 1);
+        });
+        const initialFullProfileReads = fullProfileIds.length;
+        await click(button(creationCase.label));
+
+        if (creationCase.resolves) {
+          await waitFor(() =>
+            assert.equal(
+              output(`${creationCase.label} mutation result`).textContent,
+              "resolved",
+            ),
+          );
+          assert.equal(
+            output(`${creationCase.label} active learner`).textContent,
+            "learner-rose",
+          );
+          assert.deepEqual(fullProfileIds.slice(initialFullProfileReads), [
+            "learner-rose",
+          ]);
+        } else {
+          await waitFor(() =>
+            assert.match(
+              output(`${creationCase.label} mutation result`).textContent,
+              /^rejected:/,
+            ),
+          );
+          assert.equal(
+            output(`${creationCase.label} active learner`).textContent,
+            "none",
+          );
+          assert.deepEqual(
+            fullProfileIds.slice(initialFullProfileReads),
+            [],
+          );
+          assert.equal(button(creationCase.label).disabled, false);
+        }
+        assert.equal(rosterReads, 1);
+        assert.deepEqual(SharedBroadcastChannel.messages(), ["changed"]);
+      } finally {
+        globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+        window.BroadcastChannel = originalWindowBroadcastChannel;
+      }
+    });
+  }
 
   it("creation reconciliation installs the new authoritative learner and reloads its full profile", async () => {
     const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
