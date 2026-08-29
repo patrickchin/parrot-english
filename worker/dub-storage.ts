@@ -1,4 +1,5 @@
 import { DUB_ID } from "../src/dubbing/dub-script.ts";
+import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 
 const GENERATION_MARKER = ".dub-generation";
@@ -75,6 +76,25 @@ export function createDubStorageKeys(
       ? (lineId) => legacyObjectKey(identity.userId, lineId)
       : () => null,
   };
+}
+
+export function dubStorageClosureKeys(storage: DubStorageKeys) {
+  const definition = DUB_DEFINITIONS.find(({ id }) =>
+    storage.objectPrefix.endsWith(`/learner-dubs/${id}/`)
+  );
+  if (!definition) {
+    throw new Error("Dub storage prefix did not match a supported definition.");
+  }
+  const markerKeys = [storage.markerKey];
+  const slotKeys = definition.lines.map(({ id }) => storage.objectKey(id));
+  if (storage.retiredLegacyMarkerKey) {
+    markerKeys.push(storage.retiredLegacyMarkerKey);
+    for (const lineId of LEGACY_DUB_LINE_IDS) {
+      const key = storage.retiredLegacyObjectKey(lineId);
+      if (key) slotKeys.push(key);
+    }
+  }
+  return { markerKeys, slotKeys };
 }
 
 export function fenceBody(

@@ -3,7 +3,10 @@ import { describe, it } from "node:test";
 import { APIError } from "better-auth/api";
 import { createAuth } from "../worker/auth.ts";
 import { createDatabase } from "../worker/database.ts";
-import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
+import {
+  createGuardianAccessRepository,
+  requiresGuardianAccess,
+} from "../worker/guardian-access.ts";
 import * as workerModule from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
@@ -68,6 +71,30 @@ function createAuthStub({
 }
 
 describe("Worker authentication", () => {
+  it("recognizes only exact learner-profile DELETE routes as Guardian-protected", () => {
+    assert.equal(
+      requiresGuardianAccess(
+        "/api/learner-profiles/learner-a",
+        "DELETE",
+      ),
+      true,
+    );
+    assert.equal(
+      requiresGuardianAccess(
+        "/api/learner-profiles/learner-a/extra",
+        "DELETE",
+      ),
+      false,
+    );
+    assert.equal(
+      requiresGuardianAccess(
+        "/api/learner-profiles/learner-a",
+        "GET",
+      ),
+      false,
+    );
+  });
+
   it("requires a nonblank Better Auth secret of at least 32 characters", () => {
     assert.throws(() => createAuth({ DB: {} }), /BETTER_AUTH_SECRET/);
     assert.throws(

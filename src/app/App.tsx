@@ -506,7 +506,14 @@ export function LessonPlayer({
       state.sceneIndex === routedSceneIndex &&
       (state.phase === LessonPhase.Idle || state.phase === LessonPhase.Finished)
     ) {
-      startActionRef.current?.focus({ preventScroll: true });
+      const startAction = startActionRef.current;
+      const activeElement = document.activeElement;
+      if (
+        startAction &&
+        (activeElement === document.body || activeElement === startAction)
+      ) {
+        startAction.focus({ preventScroll: true });
+      }
     }
   }, [
     historyPopSequence,
@@ -1457,9 +1464,19 @@ export function AuthenticatedApplication({
 
   if (onLoginRoute) return applicationRoutes;
 
+  const gatedRoutes =
+    !guardianBoundaryRoute && !isLearnerProfileRoute ? (
+      <LearnerModeBoundary onBeforeNavigate={onExitLessonRoute}>
+        {applicationRoutes}
+      </LearnerModeBoundary>
+    ) : (
+      applicationRoutes
+    );
+
   const routeContent = (
     <LearnerProfileGate
       completedLearnerProfileFallback={<Navigate replace to={safeReturnTo} />}
+      guardianAccessMode={guardianAccessMode}
       guardianDashboardRoute={guardianDashboardRoute}
       guardianRoute={guardianBoundaryRoute}
       guardianSelectionFallback={
@@ -1487,7 +1504,7 @@ export function AuthenticatedApplication({
       }
       redoLearnerProfile={redoLearnerProfile}
     >
-      {applicationRoutes}
+      {gatedRoutes}
     </LearnerProfileGate>
   );
 
@@ -1507,11 +1524,7 @@ export function AuthenticatedApplication({
     );
   }
 
-  return (
-    <LearnerModeBoundary onBeforeNavigate={onExitLessonRoute}>
-      {routeContent}
-    </LearnerModeBoundary>
-  );
+  return routeContent;
 }
 
 function RoutedApplication() {

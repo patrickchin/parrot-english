@@ -565,7 +565,7 @@ describe("keyboard accessibility lifecycles", () => {
       menu.textContent,
       /Manage Mia's details|Switch to Mia|AI and saved data|Delete account/,
     );
-    assert.match(
+    assert.doesNotMatch(
       document.querySelector('[aria-label="Active profile"]')?.textContent ??
         "",
       /Managing Mia/,
@@ -636,11 +636,15 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(document.body.textContent, /What this account keeps/);
     assert.match(
       document.body.textContent,
-      /Only the explicit Use in learner mode action changes which learner uses learner mode/,
+      /all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
+    );
+    assert.match(
+      document.body.textContent,
+      /Learner mode changes only through Switch to learner/,
     );
     assert.doesNotMatch(
       document.body.textContent,
-      /Guardian profile editing can change the selected learner/,
+      /Use in learner mode|Guardian profile editing can change the selected learner/,
     );
     assert.match(document.body.textContent, /Technical build details/);
     const deleteAccount = button("Delete account");
@@ -653,6 +657,10 @@ describe("keyboard accessibility lifecycles", () => {
     );
 
     await click(deleteAccount);
+    assert.match(
+      document.querySelector('[role="dialog"]')?.textContent ?? "",
+      /all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
+    );
     await input(
       document.querySelector("#delete-account-password"),
       "parent-password",
@@ -1162,7 +1170,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(password.value, ""));
   });
 
-  it("submits an empty guardian password", async () => {
+  it("requires a Guardian password without issuing an empty request", async () => {
     const passwords = [];
     await mountStrict(
       createElement(UnlockHarness, {
@@ -1178,17 +1186,17 @@ describe("keyboard accessibility lifecycles", () => {
       }),
     );
     const password = document.querySelector('input[name="password"]');
+    assert.equal(password.required, true);
+    assert.equal(password.validity.valueMissing, true);
 
     await act(async () => password.form.requestSubmit());
 
-    await waitFor(() =>
-      assert.equal(
-        document.querySelector('output[aria-label="Guardian access mode"]')
-          .textContent,
-        "guardian",
-      ),
+    assert.deepEqual(passwords, []);
+    assert.equal(
+      document.querySelector('output[aria-label="Guardian access mode"]')
+        .textContent,
+      "learner",
     );
-    assert.deepEqual(passwords, [""]);
   });
 
   it("announces a deep-link unlock from the stable account shell", async () => {

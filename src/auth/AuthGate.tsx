@@ -86,7 +86,7 @@ const DELETE_ACCOUNT_ERROR_MESSAGE =
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
-    <main className="grid h-dvh w-full items-start justify-items-center overflow-y-auto bg-auth p-5 sm:place-items-center sm:p-10 lg:p-14">
+    <main className="grid h-dvh w-full min-w-0 items-start justify-items-center overflow-y-auto bg-auth p-5 sm:place-items-center sm:p-10 lg:p-14">
       {children}
     </main>
   );
@@ -99,7 +99,7 @@ function AuthCard({
 }: ComponentProps<"section">) {
   return (
     <Card
-      className={cx("my-auto w-full max-w-lg p-6 sm:p-10", className)}
+      className={cx("my-auto w-full min-w-0 max-w-lg p-6 sm:p-10", className)}
       tone="solid"
       {...props}
     >
@@ -413,13 +413,13 @@ export function AuthGateView({
         <AuthCard aria-labelledby="auth-title">
           <header
             className={cx(
-              "flex items-start gap-4 sm:items-center",
+              "flex min-w-0 items-start gap-4 sm:items-center",
               isSignUp ? "mb-3" : "mb-6",
             )}
           >
             <AuthParrotMark />
             <h1
-              className="m-0 text-3xl leading-tight text-brand-ink outline-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-focus-dark focus-visible:ring-4 focus-visible:ring-focus-light sm:text-4xl"
+              className="m-0 min-w-0 text-3xl leading-tight text-brand-ink outline-none [overflow-wrap:anywhere] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-focus-dark focus-visible:ring-4 focus-visible:ring-focus-light sm:text-4xl"
               id="auth-title"
               ref={authHeadingRef}
               tabIndex={-1}

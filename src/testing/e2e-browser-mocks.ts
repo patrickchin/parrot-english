@@ -77,6 +77,7 @@ type PendingLessonPlayback = {
   finish: () => void;
 };
 type PendingLessonUpload = {
+  commitOutcome?: (outcome: "failed" | "saved") => Response | null;
   persist: () => void;
   record: E2ELessonUpload;
   reject: (error: unknown) => void;
@@ -88,6 +89,7 @@ type LessonRecordingMockScope = {
   learnerProfileId?: () => string | null;
   pendingUploads: PendingLessonUpload[];
   persist: () => void;
+  refresh?: () => Response | null;
   uploads: E2ELessonUpload[];
 };
 type ScopedLessonRecordingMedia = {
@@ -180,8 +182,15 @@ function getActiveE2eDubDefinition() {
   );
 }
 
-function getActiveE2eDubApiPath() {
-  return `/api/dubs/${getActiveE2eDubDefinition().id}`;
+function matchE2eDubDefinitionApiPath(pathname: string) {
+  for (const definition of DUB_DEFINITIONS) {
+    const basePath = `/api/dubs/${definition.id}`;
+    if (pathname === basePath) return { definition, kind: "dub" as const };
+    if (pathname === `${basePath}/consent`) {
+      return { definition, kind: "consent" as const };
+    }
+  }
+  return null;
 }
 
 function matchActiveE2eDubLinePath(pathname: string) {
@@ -420,8 +429,7 @@ function isTargetableLearnerPath(pathname: string) {
     lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
     pathname === "/api/lessons/my" ||
     /^\/api\/lessons\/my\/[^/]+$/.test(pathname) ||
-    pathname === getActiveE2eDubApiPath() ||
-    pathname === `${getActiveE2eDubApiPath()}/consent` ||
+    matchE2eDubDefinitionApiPath(pathname) !== null ||
     matchActiveE2eDubLinePath(pathname) !== null ||
     /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
   );
@@ -440,6 +448,7 @@ function singletonUnsupportedTargetMethodResponse(
   method: string,
 ) {
   const pathname = url.pathname;
+  const dubRoute = matchE2eDubDefinitionApiPath(pathname);
   let allowedMethods: readonly string[] | null = null;
   let notFoundForUnsupportedMethod = false;
 
@@ -464,9 +473,9 @@ function singletonUnsupportedTargetMethodResponse(
     allowedMethods = ["GET"];
   } else if (lessonRecordingSlot(url) !== null) {
     allowedMethods = ["PUT"];
-  } else if (pathname === getActiveE2eDubApiPath()) {
+  } else if (dubRoute?.kind === "dub") {
     allowedMethods = ["GET", "DELETE"];
-  } else if (pathname === `${getActiveE2eDubApiPath()}/consent`) {
+  } else if (dubRoute?.kind === "consent") {
     allowedMethods = ["PUT"];
   } else if (matchActiveE2eDubLinePath(pathname)?.audioPath) {
     allowedMethods = ["GET"];
@@ -564,6 +573,7 @@ type MockLearnerState = {
   art: Map<string, MockStoryArtState>;
   conversationIds: Set<string>;
   createdAt: string;
+  deletionPending: boolean;
   dub: MockDubState;
   lessonRecording: MockLessonRecordingState;
   lessons: Map<string, MockLessonDescriptor>;
@@ -585,7 +595,6 @@ type StoredMockLearnerState = Omit<
 };
 
 type StoredMockAccountState = {
-  activeProfileId: string | null;
   learners: Array<[string, StoredMockLearnerState]>;
 };
 
@@ -687,6 +696,7 @@ function createMockLearner(
     art: new Map(),
     conversationIds: new Set(),
     createdAt,
+    deletionPending: false,
     dub: { consentState: "not_granted", savedLineIds: [] },
     lessonRecording: {
       cleanupPending: false,
@@ -725,7 +735,6 @@ function storeMockAccountState(
   state: MockAccountState,
 ): StoredMockAccountState {
   return {
-    activeProfileId: state.activeProfileId,
     learners: [...state.learners].map(([id, learner]) => [
       id,
       {
@@ -740,9 +749,10 @@ function storeMockAccountState(
 
 function restoreMockAccountState(
   state: StoredMockAccountState,
+  activeProfileId: string | null,
 ): MockAccountState {
   return {
-    activeProfileId: state.activeProfileId,
+    activeProfileId,
     learners: new Map(
       state.learners.map(([id, learner]) => [
         id,
@@ -750,6 +760,7 @@ function restoreMockAccountState(
           ...learner,
           art: new Map(learner.art),
           conversationIds: new Set(learner.conversationIds),
+          deletionPending: learner.deletionPending === true,
           lessonRecording: {
             cleanupPending:
               learner.lessonRecording?.cleanupPending === true,
@@ -775,39 +786,62 @@ function isStoredMockAccountState(
 ): value is StoredMockAccountState {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<StoredMockAccountState>;
-  return (
-    (candidate.activeProfileId === null ||
-      typeof candidate.activeProfileId === "string") &&
-    Array.isArray(candidate.learners)
-  );
+  return Array.isArray(candidate.learners);
 }
 
 function createE2eLearnerAccount(
   scenario: MockLearnerScenario,
   sessionId: string,
+  accountId = sessionId,
 ) {
-  const storageKey = `${E2E_LEARNER_ACCOUNT_KEY_PREFIX}:${scenario}:${sessionId}`;
+  const storageKey = `${E2E_LEARNER_ACCOUNT_KEY_PREFIX}:${scenario}:${accountId}`;
+  const selectionStorageKeyPrefix = `${storageKey}:selection:`;
+  const selectionStorageKey = `${selectionStorageKeyPrefix}${sessionId}`;
   let state = initialMockAccountState(scenario);
   function restoreStoredState(saved: string | null) {
     if (!saved) return;
     try {
       const parsed: unknown = JSON.parse(saved);
       if (isStoredMockAccountState(parsed))
-        state = restoreMockAccountState(parsed);
+        state = restoreMockAccountState(parsed, state.activeProfileId);
     } catch {
       // Use the deterministic initial account when stored test state is corrupt.
     }
   }
-  restoreStoredState(localStorage.getItem(storageKey));
+  function restoreStoredSelection(saved: string | null) {
+    if (saved === null) return;
+    try {
+      const selected: unknown = JSON.parse(saved);
+      state.activeProfileId =
+        typeof selected === "string" || selected === null ? selected : null;
+    } catch {
+      state.activeProfileId = null;
+    }
+  }
+  function refreshStoredState() {
+    restoreStoredState(localStorage.getItem(storageKey));
+    restoreStoredSelection(localStorage.getItem(selectionStorageKey));
+    const selected = state.activeProfileId
+      ? state.learners.get(state.activeProfileId)
+      : null;
+    if (state.activeProfileId && (!selected || selected.deletionPending)) {
+      state.activeProfileId = null;
+    }
+  }
+  refreshStoredState();
   window.addEventListener("storage", (event) => {
-    if (event.key === storageKey) restoreStoredState(event.newValue);
+    if (event.key === storageKey || event.key === selectionStorageKey) {
+      refreshStoredState();
+    }
   });
 
   let heldSelection: {
     resolve: (response: Response) => void;
     response: Response;
   } | null = null;
+  let failNextLearnerDelete = false;
   let failNextLearnerProfileLoad = false;
+  let learnerRosterLoadFailuresRemaining = 0;
   let learnerProfileLoadFailures = 0;
   const pendingLessonUploadsByLearner = new Map<
     string,
@@ -820,18 +854,40 @@ function createE2eLearnerAccount(
       storageKey,
       JSON.stringify(storeMockAccountState(state)),
     );
+    localStorage.setItem(
+      selectionStorageKey,
+      JSON.stringify(state.activeProfileId),
+    );
+  }
+
+  function clearDeletedLearnerSelections(profileId: string) {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key?.startsWith(selectionStorageKeyPrefix)) continue;
+      try {
+        if (JSON.parse(localStorage.getItem(key) ?? "null") === profileId) {
+          localStorage.setItem(key, "null");
+        }
+      } catch {
+        localStorage.setItem(key, "null");
+      }
+    }
+    if (state.activeProfileId === profileId) state.activeProfileId = null;
   }
 
   function roster() {
     return {
       activeProfileId: state.activeProfileId,
-      profiles: [...state.learners.values()].map(({ createdAt, profile }) => ({
-        age: profile.age,
-        createdAt,
-        id: profile.id,
-        name: profile.name,
-        profileStatus: profile.profileStatus,
-      })),
+      profiles: [...state.learners.values()].map(
+        ({ createdAt, deletionPending, profile }) => ({
+          age: profile.age,
+          createdAt,
+          deletionPending,
+          id: profile.id,
+          name: profile.name,
+          profileStatus: profile.profileStatus,
+        }),
+      ),
     };
   }
 
@@ -853,6 +909,26 @@ function createE2eLearnerAccount(
 
   function requestLearner(explicitLearner: MockLearnerState | null) {
     return explicitLearner ?? selectedLearner() ?? selectionRequired();
+  }
+
+  function rebindLearnerForCommit(
+    requestedLearner: MockLearnerState,
+    explicitProfileId: string | null,
+  ) {
+    refreshStoredState();
+    const learner = state.learners.get(requestedLearner.profile.id) ?? null;
+    if (!learner || learner.deletionPending) {
+      return explicitProfileId === null
+        ? selectionRequired()
+        : targetedLearnerNotFound();
+    }
+    if (
+      explicitProfileId === null &&
+      state.activeProfileId !== requestedLearner.profile.id
+    ) {
+      return selectionRequired();
+    }
+    return learner;
   }
 
   function fullProfileState(learner: MockLearnerState) {
@@ -929,16 +1005,18 @@ function createE2eLearnerAccount(
     }
   }
 
-  function dubStatus(learner: MockLearnerState) {
-    const activeDub = getActiveE2eDubDefinition();
-    const lineIds = activeDub.lines.map(({ id }) => id);
+  function dubStatus(
+    learner: MockLearnerState,
+    definition = getActiveE2eDubDefinition(),
+  ) {
+    const lineIds = definition.lines.map(({ id }) => id);
     const saved = new Set(learner.dub.savedLineIds);
     return {
       complete:
         learner.dub.consentState === "granted" &&
         lineIds.every((id) => saved.has(id)),
       consentState: learner.dub.consentState,
-      dubId: activeDub.id,
+      dubId: definition.id,
       guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
       lines: lineIds.map((id) => ({
         id,
@@ -954,17 +1032,18 @@ function createE2eLearnerAccount(
     method: string,
     request: Request,
     explicitLearner: MockLearnerState | null,
+    explicitProfileId: string | null,
   ) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
-    const dubApiPath = getActiveE2eDubApiPath();
+    const dubRoute = matchE2eDubDefinitionApiPath(url.pathname);
     const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
 
-    if (url.pathname === `${dubApiPath}/consent`) {
+    if (dubRoute?.kind === "consent") {
       if (method !== "PUT")
         return e2eDubJson({ error: "method_not_allowed" }, 405);
-      if (currentGuardianAccess().mode !== "guardian") {
+      if (currentGuardianAccess(sessionId).mode !== "guardian") {
         return e2eDubJson({ error: "guardian_required" }, 403);
       }
       const body = await jsonBody(request);
@@ -974,15 +1053,22 @@ function createE2eLearnerAccount(
       ) {
         return e2eDubJson({ error: "invalid_request" }, 400);
       }
-      learner.dub.consentState = "granted";
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      commitLearner.dub.consentState = "granted";
       persist();
       return new Response(null, { status: 204 });
     }
 
-    if (url.pathname === dubApiPath) {
-      if (method === "GET") return e2eDubJson(dubStatus(learner));
+    if (dubRoute?.kind === "dub") {
+      if (method === "GET") {
+        return e2eDubJson(dubStatus(learner, dubRoute.definition));
+      }
       if (method === "DELETE") {
-        if (currentGuardianAccess().mode !== "guardian") {
+        if (currentGuardianAccess(sessionId).mode !== "guardian") {
           return e2eDubJson({ error: "guardian_required" }, 403);
         }
         learner.dub = { consentState: "not_granted", savedLineIds: [] };
@@ -1018,6 +1104,7 @@ function createE2eLearnerAccount(
     url: URL,
     method: string,
     explicitLearner: MockLearnerState | null,
+    explicitProfileId: string | null,
   ): Promise<Response | null> {
     const match = url.pathname.match(
       /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
@@ -1066,7 +1153,12 @@ function createE2eLearnerAccount(
       });
     }
     if (method === "POST") {
-      learner.art.set(storyId, {
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      commitLearner.art.set(storyId, {
         hasStoredArt: true,
         updatedAt: E2E_DUB_RECORDED_AT,
       });
@@ -1074,12 +1166,18 @@ function createE2eLearnerAccount(
       const created: Response | null = await handleArt(
         url,
         "GET",
-        explicitLearner,
+        commitLearner,
+        explicitProfileId,
       );
       return e2eJson(await created!.json(), 201);
     }
     if (method === "DELETE") {
-      learner.art.delete(storyId);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      commitLearner.art.delete(storyId);
       persist();
       return new Response(null, { status: 204 });
     }
@@ -1087,13 +1185,18 @@ function createE2eLearnerAccount(
   }
 
   function lessonRecordingScope(
-    learner: MockLearnerState,
+    initialLearner: MockLearnerState,
+    explicitProfileId: string | null,
   ): LessonRecordingMockScope {
-    let pendingUploads = pendingLessonUploadsByLearner.get(learner.profile.id);
-    if (!pendingUploads) {
-      pendingUploads = [];
-      pendingLessonUploadsByLearner.set(learner.profile.id, pendingUploads);
-    }
+    let learner = initialLearner;
+    const pendingUploads = () => {
+      let uploads = pendingLessonUploadsByLearner.get(learner.profile.id);
+      if (!uploads) {
+        uploads = [];
+        pendingLessonUploadsByLearner.set(learner.profile.id, uploads);
+      }
+      return uploads;
+    };
     return {
       consentRequested() {
         learner.lessonRecording.consentRequests += 1;
@@ -1103,9 +1206,19 @@ function createE2eLearnerAccount(
         learner.lessonRecording.consent &&
         !learner.lessonRecording.cleanupPending,
       learnerProfileId: () => learner.profile.id,
-      pendingUploads,
+      get pendingUploads() {
+        return pendingUploads();
+      },
       persist,
-      uploads: learner.lessonRecording.uploads,
+      refresh() {
+        const rebound = rebindLearnerForCommit(learner, explicitProfileId);
+        if (rebound instanceof Response) return rebound;
+        learner = rebound;
+        return null;
+      },
+      get uploads() {
+        return learner.lessonRecording.uploads;
+      },
     };
   }
 
@@ -1116,6 +1229,7 @@ function createE2eLearnerAccount(
     method: string,
     request: Request,
     explicitLearner: MockLearnerState | null,
+    explicitProfileId: string | null,
   ) {
     const isLessonRecordingPath =
       url.pathname === "/api/lesson-recordings/consent" ||
@@ -1135,20 +1249,25 @@ function createE2eLearnerAccount(
       if (typeof body.enabled !== "boolean") {
         return e2eJson({ error: "invalid_request" }, 400);
       }
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
       if (body.enabled) {
-        learner.lessonRecording.consent = true;
-        learner.lessonRecording.cleanupPending = false;
-      } else if (learner.lessonRecording.consent) {
-        learner.lessonRecording.consent = false;
-        learner.lessonRecording.cleanupPending = true;
+        commitLearner.lessonRecording.consent = true;
+        commitLearner.lessonRecording.cleanupPending = false;
+      } else if (commitLearner.lessonRecording.consent) {
+        commitLearner.lessonRecording.consent = false;
+        commitLearner.lessonRecording.cleanupPending = true;
       } else {
-        learner.lessonRecording.cleanupPending = false;
-        learner.lessonRecording.uploads = [];
+        commitLearner.lessonRecording.cleanupPending = false;
+        commitLearner.lessonRecording.uploads = [];
       }
       persist();
       return e2eJson({
-        cleanupPending: learner.lessonRecording.cleanupPending,
-        enabled: learner.lessonRecording.consent,
+        cleanupPending: commitLearner.lessonRecording.cleanupPending,
+        enabled: commitLearner.lessonRecording.consent,
       });
     }
 
@@ -1157,7 +1276,7 @@ function createE2eLearnerAccount(
       init,
       url,
       method,
-      lessonRecordingScope(learner),
+      lessonRecordingScope(learner, explicitProfileId),
     );
   }
 
@@ -1166,6 +1285,14 @@ function createE2eLearnerAccount(
     init: RequestInit | undefined,
     explicitLearner: MockLearnerState | null,
   ) {
+    const explicitProfileId = explicitLearner?.profile.id ?? null;
+    refreshStoredState();
+    let currentExplicitLearner = explicitProfileId
+      ? (state.learners.get(explicitProfileId) ?? null)
+      : null;
+    if (explicitProfileId && currentExplicitLearner === null) {
+      return targetedLearnerNotFound();
+    }
     const request =
       input instanceof Request
         ? input
@@ -1179,9 +1306,20 @@ function createE2eLearnerAccount(
     if (url.origin !== window.location.origin) return null;
     const method = (init?.method ?? request.method ?? "GET").toUpperCase();
 
-    const dub = await handleDub(url, method, request, explicitLearner);
+    const dub = await handleDub(
+      url,
+      method,
+      request,
+      currentExplicitLearner,
+      explicitProfileId,
+    );
     if (dub) return dub;
-    const art = await handleArt(url, method, explicitLearner);
+    const art = await handleArt(
+      url,
+      method,
+      currentExplicitLearner,
+      explicitProfileId,
+    );
     if (art) return art;
     const lessonRecording = await handleLessonRecording(
       input,
@@ -1189,12 +1327,35 @@ function createE2eLearnerAccount(
       url,
       method,
       request,
-      explicitLearner,
+      currentExplicitLearner,
+      explicitProfileId,
     );
     if (lessonRecording) return lessonRecording;
+    if (currentExplicitLearner === null) {
+      refreshStoredState();
+    } else {
+      const rebound = rebindLearnerForCommit(
+        currentExplicitLearner,
+        explicitProfileId,
+      );
+      if (rebound instanceof Response) return rebound;
+      currentExplicitLearner = rebound;
+    }
 
     if (url.pathname === "/api/learner-profiles") {
-      if (method === "GET") return e2eJson(roster());
+      if (method === "GET") {
+        if (learnerRosterLoadFailuresRemaining > 0) {
+          learnerRosterLoadFailuresRemaining -= 1;
+          return e2eJson(
+            {
+              error: "roster_unavailable",
+              message: "Learner profiles could not be loaded.",
+            },
+            503,
+          );
+        }
+        return e2eJson(roster());
+      }
       if (method === "POST") {
         if (scenario === "create-error") {
           return e2eJson(
@@ -1206,6 +1367,7 @@ function createE2eLearnerAccount(
           );
         }
         const body = await jsonBody(request);
+        refreshStoredState();
         const name =
           typeof body.name === "string"
             ? body.name.normalize("NFKC").trim()
@@ -1229,7 +1391,7 @@ function createE2eLearnerAccount(
         );
         state.learners.set(id, learner);
         persist();
-        return e2eJson(roster());
+        return e2eJson({ ...roster(), createdProfileId: id });
       }
       return e2eJson({ error: "method_not_allowed" }, 405);
     }
@@ -1244,7 +1406,8 @@ function createE2eLearnerAccount(
       } catch {
         return e2eJson({ error: "not_found" }, 404);
       }
-      if (!state.learners.has(profileId))
+      const learner = state.learners.get(profileId);
+      if (!learner || learner.deletionPending)
         return e2eJson({ error: "not_found" }, 404);
       if (scenario === "select-error" && profileId !== state.activeProfileId) {
         return e2eJson(
@@ -1264,8 +1427,39 @@ function createE2eLearnerAccount(
       return response;
     }
 
-    const resolvedLearner = requestLearner(explicitLearner);
-    const learner =
+    const deletion = url.pathname.match(
+      /^\/api\/learner-profiles\/([^/]+)$/,
+    );
+    if (deletion && method === "DELETE") {
+      let profileId = "";
+      try {
+        profileId = decodeURIComponent(deletion[1]!);
+      } catch {
+        return e2eJson({ error: "not_found" }, 404);
+      }
+      const learner = state.learners.get(profileId);
+      if (!learner) return e2eJson({ error: "not_found" }, 404);
+      const usableLearners = [...state.learners.values()].filter(
+        ({ deletionPending }) => !deletionPending,
+      );
+      if (!learner.deletionPending && usableLearners.length <= 1) {
+        return e2eJson({ error: "last_learner" }, 409);
+      }
+      if (failNextLearnerDelete) {
+        failNextLearnerDelete = false;
+        learner.deletionPending = true;
+        clearDeletedLearnerSelections(profileId);
+        persist();
+        return e2eJson({ error: "delete_failed" }, 503);
+      }
+      state.learners.delete(profileId);
+      clearDeletedLearnerSelections(profileId);
+      persist();
+      return e2eJson(roster());
+    }
+
+    const resolvedLearner = requestLearner(currentExplicitLearner);
+    let learner =
       resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
@@ -1300,6 +1494,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/learner-profile/answer" && method === "PUT") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       if (
         typeof body.questionKey !== "string" ||
         typeof body.rawAnswer !== "string" ||
@@ -1330,6 +1530,12 @@ function createE2eLearnerAccount(
       } catch {
         return e2eJson({ error: "invalid_json" }, 400);
       }
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const index = questionnaire.questions.findIndex(
         (question) => question.answerKey === body.questionKey,
       );
@@ -1372,6 +1578,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/profile" && method === "PUT") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const answers =
         body.answers && typeof body.answers === "object"
           ? (body.answers as Record<string, unknown>)
@@ -1390,6 +1602,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/profile/preferences" && method === "PUT") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       if (typeof body.storyLevel === "string") {
         learner.profile.storyLevel =
           body.storyLevel as MockLearnerProfile["storyLevel"];
@@ -1400,6 +1618,12 @@ function createE2eLearnerAccount(
 
     if (url.pathname === "/api/lessons/my/generate" && method === "POST") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const topic =
         typeof body.topic === "string" && body.topic.trim()
           ? body.topic.normalize("NFKC").trim()
@@ -1414,6 +1638,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/lessons/my" && method === "POST") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const id = `lesson-${learner.profile.id}-${learner.lessons.size + 1}`;
       const descriptor: MockLessonDescriptor = {
         createdAt: E2E_DUB_RECORDED_AT,
@@ -1439,10 +1669,20 @@ function createE2eLearnerAccount(
       if (method !== "GET" && method !== "DELETE") {
         return e2eJson({ error: "not_found" }, 404);
       }
-      const descriptor = learner.lessons.get(id);
-      if (!descriptor) return e2eJson({ error: "not_found" }, 404);
-      if (method === "GET") return e2eJson({ lesson: descriptor });
-      learner.lessons.delete(id);
+      if (method === "GET") {
+        const descriptor = learner.lessons.get(id);
+        return descriptor
+          ? e2eJson({ lesson: descriptor })
+          : e2eJson({ error: "not_found" }, 404);
+      }
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      if (!commitLearner.lessons.delete(id)) {
+        return e2eJson({ error: "not_found" }, 404);
+      }
       persist();
       return new Response(null, { status: 204 });
     }
@@ -1520,8 +1760,14 @@ function createE2eLearnerAccount(
   persist();
   return {
     handle,
+    failNextLearnerDelete() {
+      failNextLearnerDelete = true;
+    },
     failNextLearnerProfileLoad() {
       failNextLearnerProfileLoad = true;
+    },
+    failNextLearnerRosterLoad() {
+      learnerRosterLoadFailuresRemaining = 2;
     },
     releaseStaleSelection() {
       if (!heldSelection) return false;
@@ -1531,9 +1777,12 @@ function createE2eLearnerAccount(
       return true;
     },
     resolveExplicitLearner(profileId: string) {
-      return state.learners.get(profileId) ?? null;
+      refreshStoredState();
+      const learner = state.learners.get(profileId) ?? null;
+      return learner?.deletionPending ? null : learner;
     },
     snapshot(profileId?: string) {
+      refreshStoredState();
       const learner = profileId
         ? (state.learners.get(profileId) ?? null)
         : selectedLearner();
@@ -1803,22 +2052,37 @@ function initialE2eDubLineIds(
   return [];
 }
 
-function createE2eDubStore(scenario: string | null) {
+function createE2eDubStore(scenario: string | null, sessionId: string) {
   if (!scenario) return null;
   const definition = getActiveE2eDubDefinition();
-  const dubApiPath = `/api/dubs/${definition.id}`;
-  const dubLineIds = definition.lines.map(({ id }) => id);
-  const savedKey = `parrot-e2e-dub:${scenario}:${definition.id}:saved`;
+  const savedKeyFor = (dubId: string) =>
+    `parrot-e2e-dub:${scenario}:${dubId}:saved`;
+  const savedKey = savedKeyFor(definition.id);
   const consentKey = `parrot-e2e-dub:${scenario}:consent`;
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
   const resetDeleteFailureKey = `parrot-e2e-dub:${scenario}:reset-delete-failed`;
   const resetKey = `parrot-e2e-dub:${scenario}:reset-finished`;
-  const persisted = sessionStorage.getItem(savedKey);
-  const savedLineIds = persisted
-    ? (JSON.parse(persisted) as string[])
-    : initialE2eDubLineIds(scenario, dubLineIds);
-  if (persisted === null)
-    sessionStorage.setItem(savedKey, JSON.stringify(savedLineIds));
+  function readSavedLineIds(requestedDefinition: (typeof DUB_DEFINITIONS)[number]) {
+    const key = savedKeyFor(requestedDefinition.id);
+    const persisted = sessionStorage.getItem(key);
+    if (persisted !== null) {
+      try {
+        const parsed: unknown = JSON.parse(persisted);
+        if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
+          return parsed.filter((id) =>
+            requestedDefinition.lines.some((line) => line.id === id),
+          );
+        }
+      } catch {
+        // Replace malformed test state with the deterministic scenario state.
+      }
+    }
+    const lineIds = requestedDefinition.lines.map(({ id }) => id);
+    const initial = initialE2eDubLineIds(scenario!, lineIds);
+    sessionStorage.setItem(key, JSON.stringify(initial));
+    return initial;
+  }
+  const savedLineIds = readSavedLineIds(definition);
   let consentState = (sessionStorage.getItem(consentKey) ??
     (scenario === "not-granted" || scenario === "reset-interrupted"
       ? "not_granted"
@@ -1872,7 +2136,7 @@ function createE2eDubStore(scenario: string | null) {
 
   function clearAllSavedClips() {
     for (const { id } of DUB_DEFINITIONS) {
-      sessionStorage.removeItem(`parrot-e2e-dub:${scenario}:${id}:saved`);
+      sessionStorage.setItem(savedKeyFor(id), "[]");
     }
   }
 
@@ -1892,6 +2156,7 @@ function createE2eDubStore(scenario: string | null) {
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
+      const dubRoute = matchE2eDubDefinitionApiPath(url.pathname);
       const guideLineId = matchActiveE2eDubGuidePath(url.pathname);
       const guideMatch = guideLineId ? [url.pathname, guideLineId] : null;
       if (method === "GET" && guideMatch) {
@@ -1913,10 +2178,10 @@ function createE2eDubStore(scenario: string | null) {
         }
         return null;
       }
-      if (url.pathname === `${dubApiPath}/consent`) {
+      if (dubRoute?.kind === "consent") {
         if (method !== "PUT")
           return e2eDubJson({ error: "method_not_allowed" }, 405);
-        if (currentGuardianAccess().mode !== "guardian") {
+        if (currentGuardianAccess(sessionId).mode !== "guardian") {
           return e2eDubJson({ error: "guardian_required" }, 403);
         }
         if (consentState === "revoking") {
@@ -1945,7 +2210,7 @@ function createE2eDubStore(scenario: string | null) {
           status: 204,
         });
       }
-      if (url.pathname === dubApiPath) {
+      if (dubRoute?.kind === "dub") {
         if (method === "GET") {
           if (scenario === "load-held") return new Promise<Response>(() => {});
           if (delayNextStatus) {
@@ -1957,26 +2222,32 @@ function createE2eDubStore(scenario: string | null) {
           if (legacyResetPending && consentState === "granted") {
             return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
           }
+          const requestedLineIds = dubRoute.definition.lines.map(({ id }) => id);
+          const requestedSaved = new Set(
+            dubRoute.definition.id === definition.id
+              ? clips.keys()
+              : readSavedLineIds(dubRoute.definition),
+          );
           return e2eDubJson({
             complete:
               consentState === "granted" &&
-              dubLineIds.every((id) => clips.has(id)),
+              requestedLineIds.every((id) => requestedSaved.has(id)),
             consentState,
-            dubId: definition.id,
+            dubId: dubRoute.definition.id,
             guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
-            lines: dubLineIds.map((id) => ({
+            lines: requestedLineIds.map((id) => ({
               id,
               recordedAt:
-                consentState === "granted" && clips.has(id)
+                consentState === "granted" && requestedSaved.has(id)
                   ? E2E_DUB_RECORDED_AT
                   : null,
-              saved: consentState === "granted" && clips.has(id),
+              saved: consentState === "granted" && requestedSaved.has(id),
             })),
             recordingEnabled: consentState === "granted",
           });
         }
         if (method === "DELETE") {
-          if (currentGuardianAccess().mode !== "guardian") {
+          if (currentGuardianAccess(sessionId).mode !== "guardian") {
             return e2eDubJson({ error: "guardian_required" }, 403);
           }
           persistConsent("revoking");
@@ -2108,6 +2379,7 @@ function createE2eDubStore(scenario: string | null) {
       if (!pendingDelete) return false;
       const resolve = pendingDelete;
       pendingDelete = null;
+      clearAllSavedClips();
       clips.clear();
       persist();
       persistConsent("not_granted");
@@ -2162,7 +2434,10 @@ function getE2eGuardianScenario(): MockGuardianScenario {
 }
 
 const guardianScenario = getE2eGuardianScenario();
-const guardianStorageKey = `parrot-e2e-guardian-access:${guardianScenario}`;
+
+function guardianStorageKey(sessionId: string) {
+  return `parrot-e2e-guardian-access:${guardianScenario}:${sessionId}`;
+}
 
 function initialGuardianAccess(): MockGuardianAccess {
   if (guardianScenario === "guardian" || guardianScenario === "lock-error") {
@@ -2184,8 +2459,9 @@ function initialGuardianAccess(): MockGuardianAccess {
   return { mode: "learner" };
 }
 
-function readGuardianAccess(): MockGuardianAccess {
-  const saved = sessionStorage.getItem(guardianStorageKey);
+function readGuardianAccess(sessionId: string): MockGuardianAccess {
+  const storageKey = guardianStorageKey(sessionId);
+  const saved = sessionStorage.getItem(storageKey);
   if (saved) {
     try {
       const parsed = JSON.parse(saved) as MockGuardianAccess;
@@ -2202,23 +2478,26 @@ function readGuardianAccess(): MockGuardianAccess {
     }
   }
   const access = initialGuardianAccess();
-  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+  sessionStorage.setItem(storageKey, JSON.stringify(access));
   return access;
 }
 
-let guardianAccess = readGuardianAccess();
-
-function setGuardianAccess(access: MockGuardianAccess) {
-  guardianAccess = access;
-  sessionStorage.setItem(guardianStorageKey, JSON.stringify(access));
+function setGuardianAccess(sessionId: string, access: MockGuardianAccess) {
+  sessionStorage.setItem(
+    guardianStorageKey(sessionId),
+    JSON.stringify(access),
+  );
 }
 
-function currentGuardianAccess() {
+function currentGuardianAccess(sessionId: string) {
+  const guardianAccess = readGuardianAccess(sessionId);
   if (
     guardianAccess.mode === "guardian" &&
     Date.parse(guardianAccess.expiresAt ?? "") <= Date.now()
   ) {
-    setGuardianAccess({ mode: "learner" });
+    const expiredAccess = { mode: "learner" } as const;
+    setGuardianAccess(sessionId, expiredAccess);
+    return expiredAccess;
   }
   return guardianAccess;
 }
@@ -2234,6 +2513,9 @@ function requiresGuardianAccess(
   }
   if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(url.pathname)) {
     return method === "PUT";
+  }
+  if (/^\/api\/learner-profiles\/[^/]+$/.test(url.pathname)) {
+    return method === "DELETE";
   }
   if (url.pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
@@ -2265,10 +2547,11 @@ async function guardianResponse(
   url: URL,
   method: string,
   hasLearnerTarget: boolean,
+  sessionId: string,
 ) {
   if (url.origin !== window.location.origin) return null;
   if (url.pathname === "/api/guardian-access") {
-    if (method === "GET") return e2eJson(currentGuardianAccess());
+    if (method === "GET") return e2eJson(currentGuardianAccess(sessionId));
     if (method === "POST") {
       const request = input instanceof Request ? input : null;
       const body = init?.body ?? (request ? await request.clone().text() : "");
@@ -2279,7 +2562,7 @@ async function guardianResponse(
       } catch {
         return e2eJson({ error: "invalid_json" }, 400);
       }
-      if (password !== "" && password !== E2E_GUARDIAN_PASSWORD) {
+      if (password !== E2E_GUARDIAN_PASSWORD) {
         return e2eJson(
           {
             error: "invalid_password",
@@ -2297,26 +2580,28 @@ async function guardianResponse(
           503,
         );
       }
-      setGuardianAccess({
+      const access: MockGuardianAccess = {
         expiresAt: new Date(
           Date.now() + E2E_GUARDIAN_ACCESS_TTL_MS,
         ).toISOString(),
         mode: "guardian",
-      });
-      return e2eJson(guardianAccess);
+      };
+      setGuardianAccess(sessionId, access);
+      return e2eJson(access);
     }
     if (method === "DELETE") {
       if (guardianScenario === "lock-error") {
         return e2eJson({ error: "lock_failed" }, 503);
       }
-      setGuardianAccess({ mode: "learner" });
-      return e2eJson(guardianAccess);
+      const access: MockGuardianAccess = { mode: "learner" };
+      setGuardianAccess(sessionId, access);
+      return e2eJson(access);
     }
     return e2eJson({ error: "method_not_allowed" }, 405);
   }
   if (
     requiresGuardianAccess(url, method, hasLearnerTarget) &&
-    currentGuardianAccess().mode === "learner"
+    currentGuardianAccess(sessionId).mode === "learner"
   ) {
     return e2eJson({ error: "guardian_required" }, 403);
   }
@@ -2518,6 +2803,8 @@ async function lessonRecordingResponse(
     url.pathname === "/api/lesson-recordings/consent" &&
     method === "GET"
   ) {
+    const staleResponse = scope.refresh?.();
+    if (staleResponse) return staleResponse;
     scope.consentRequested();
     if (getE2eLessonScenario() === "malformed-consent") {
       return e2eJson({ enabled: "false" });
@@ -2529,13 +2816,15 @@ async function lessonRecordingResponse(
 
   const slot = lessonRecordingSlot(url);
   if (!slot || method !== "PUT") return null;
+  const commitRefreshResponse = scope.refresh?.();
+  if (commitRefreshResponse) return commitRefreshResponse;
   const request = input instanceof Request ? input : null;
   const requestHeaders = new Headers(init?.headers ?? request?.headers);
   const expectedLearnerProfileId = requestHeaders.get(
     "X-Parrot-Expected-Learner-Profile",
   );
   const resolvedLearnerProfileId = scope.learnerProfileId?.();
-  const attempt =
+  let attempt =
     scope.uploads.filter(
       (candidate) =>
         candidate.source === slot.source &&
@@ -2567,6 +2856,17 @@ async function lessonRecordingResponse(
       : request
         ? await request.clone().blob()
         : new Blob();
+  const staleResponse = scope.refresh?.();
+  if (staleResponse) return staleResponse;
+  attempt =
+    scope.uploads.filter(
+      (candidate) =>
+        candidate.source === slot.source &&
+        candidate.lessonId === slot.lessonId &&
+        candidate.sceneIndex === slot.sceneIndex &&
+        candidate.stepIndex === slot.stepIndex,
+    ).length + 1;
+  record.attempt = attempt;
   record.size = blob.size;
   record.type = blob.type;
   scope.uploads.push(record);
@@ -2603,6 +2903,22 @@ async function lessonRecordingResponse(
     scope.persist();
     return new Promise<Response>((resolve, reject) => {
       scope.pendingUploads.push({
+        commitOutcome(outcome) {
+          const staleResponse = scope.refresh?.();
+          if (staleResponse) return staleResponse;
+          const commitRecord = scope.uploads.find(
+            (candidate) =>
+              candidate.attempt === record.attempt &&
+              candidate.source === record.source &&
+              candidate.lessonId === record.lessonId &&
+              candidate.sceneIndex === record.sceneIndex &&
+              candidate.stepIndex === record.stepIndex,
+          );
+          if (!commitRecord) return e2eJson({ error: "not_found" }, 404);
+          commitRecord.outcome = outcome;
+          scope.persist();
+          return null;
+        },
         persist: scope.persist,
         record,
         reject,
@@ -2616,11 +2932,26 @@ async function lessonRecordingResponse(
 
 function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
-  const dubStore = createE2eDubStore(getE2eDubScenario());
   const learnerScenario = getE2eLearnerScenario();
+  const learnerSessionId = getE2eLearnerSessionId();
+  const dubStore = createE2eDubStore(
+    getE2eDubScenario(),
+    learnerSessionId,
+  );
+  const learnerAccountId =
+    new URL(window.location.href).searchParams.get("parrotE2eAccount") ??
+    learnerSessionId;
   const learnerAccount = learnerScenario
-    ? createE2eLearnerAccount(learnerScenario, getE2eLearnerSessionId())
+    ? createE2eLearnerAccount(
+        learnerScenario,
+        learnerSessionId,
+        learnerAccountId,
+      )
     : null;
+  const learnerSessions = new Map<
+    string,
+    ReturnType<typeof createE2eLearnerAccount>
+  >();
   let fallbackStoryLevel = E2E_VIEWPORT_EDITOR_STATE.profile.storyLevel;
 
   function fallbackProfileState() {
@@ -2660,11 +2991,72 @@ function installE2eProfileFetchMock() {
     });
   }
   if (learnerAccount) {
+    const openLearnerSession = (sessionId: string) => {
+      let account = learnerSessions.get(sessionId);
+      if (!account) {
+        account = createE2eLearnerAccount(
+          learnerScenario!,
+          sessionId,
+          learnerAccountId,
+        );
+        learnerSessions.set(sessionId, account);
+      }
+      return {
+        failNextLearnerDelete: () => account.failNextLearnerDelete(),
+        failNextLearnerRosterLoad: () =>
+          account.failNextLearnerRosterLoad(),
+        fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+          const request = input instanceof Request ? input : null;
+          const source =
+            typeof input === "string"
+              ? input
+              : input instanceof URL
+                ? input.href
+                : input.url;
+          const url = new URL(source, window.location.href);
+          const method = (
+            init?.method ??
+            request?.method ??
+            "GET"
+          ).toUpperCase();
+          const hasLearnerTarget = hasExplicitLearnerTarget(url);
+          const guarded = await guardianResponse(
+            input,
+            init,
+            url,
+            method,
+            hasLearnerTarget,
+            sessionId,
+          );
+          if (guarded) return guarded;
+          const target = hasLearnerTarget
+            ? parseExplicitLearnerTarget(url)
+            : null;
+          if (hasLearnerTarget && target === null) {
+            return targetedLearnerNotFound();
+          }
+          const explicitLearner =
+            target === null ? null : account.resolveExplicitLearner(target);
+          if (target !== null && explicitLearner === null) {
+            return targetedLearnerNotFound();
+          }
+          return (
+            (await account.handle(input, init, explicitLearner)) ??
+            nativeFetch(input, init)
+          );
+        },
+        snapshot: (profileId?: string) => account.snapshot(profileId),
+      };
+    };
     Object.defineProperty(window, "__parrotE2eLearners", {
       configurable: true,
       value: {
+        failNextLearnerDelete: () => learnerAccount.failNextLearnerDelete(),
         failNextLearnerProfileLoad: () =>
           learnerAccount.failNextLearnerProfileLoad(),
+        failNextLearnerRosterLoad: () =>
+          learnerAccount.failNextLearnerRosterLoad(),
+        openSession: openLearnerSession,
         releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
         snapshot: (profileId?: string) => learnerAccount.snapshot(profileId),
       },
@@ -2695,6 +3087,7 @@ function installE2eProfileFetchMock() {
       url,
       method,
       hasLearnerTarget,
+      learnerSessionId,
     );
     if (guardedResponse) return guardedResponse;
 
@@ -2754,6 +3147,7 @@ function installE2eProfileFetchMock() {
           {
             age: E2E_VIEWPORT_EDITOR_STATE.profile.age,
             createdAt: "2026-08-01T08:00:00.000Z",
+            deletionPending: false,
             id: E2E_VIEWPORT_EDITOR_STATE.profile.id,
             name: E2E_VIEWPORT_EDITOR_STATE.profile.name,
             profileStatus: E2E_VIEWPORT_EDITOR_STATE.profile.profileStatus,
@@ -3316,15 +3710,21 @@ function settleNextLessonUpload(
 ) {
   const upload = uploads.shift();
   if (!upload) return false;
-  if (action === "resolve") {
-    upload.record.outcome = "saved";
+  const outcome = action === "resolve" ? "saved" : "failed";
+  const staleResponse = upload.commitOutcome?.(outcome) ?? null;
+  if (staleResponse) {
+    upload.resolve(staleResponse);
+    return true;
+  }
+  if (!upload.commitOutcome) {
+    upload.record.outcome = outcome;
     upload.persist();
+  }
+  if (action === "resolve") {
     upload.resolve(
       e2eJson({ recordedAt: "2026-08-26T08:00:00.000Z" }, 201),
     );
   } else {
-    upload.record.outcome = "failed";
-    upload.persist();
     upload.reject(new Error("Held lesson recording upload failed."));
   }
   return true;

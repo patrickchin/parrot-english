@@ -1,6 +1,7 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, isNull } from "drizzle-orm";
 import {
   learnerProfile,
+  learnerProfileDeletionTombstone,
   sessionLearnerSelection,
 } from "../src/db/schema.ts";
 import {
@@ -10,6 +11,10 @@ import {
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
 import type { Database } from "./database.ts";
+import {
+  LearnerDeletionError,
+  prepareLearnerDeletion,
+} from "./learner-deletion.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
   readBoundedText,
@@ -22,6 +27,7 @@ import {
 
 export type LearnerProfilesEnv = {
   MULTI_LEARNER_PROFILES_ENABLED?: string;
+  PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
 };
 
 const MAX_ROSTER_BODY_BYTES = 8 * 1024;
@@ -69,8 +75,16 @@ async function roster(
       age: learnerProfile.age,
       profileStatus: learnerProfile.profileStatus,
       createdAt: learnerProfile.createdAt,
+      tombstoneProfileId: learnerProfileDeletionTombstone.learnerProfileId,
     })
     .from(learnerProfile)
+    .leftJoin(
+      learnerProfileDeletionTombstone,
+      eq(
+        learnerProfileDeletionTombstone.learnerProfileId,
+        learnerProfile.id,
+      ),
+    )
     .where(eq(learnerProfile.authUserId, identity.userId))
     .orderBy(asc(learnerProfile.createdAt), asc(learnerProfile.id));
 
@@ -81,13 +95,16 @@ async function roster(
         : resolution?.status === "selected"
         ? resolution.identity.learnerProfileId
         : null,
-    profiles: profiles.map(({ id, name, age, profileStatus, createdAt }) => ({
-      id,
-      name: name?.trim() || "Learner",
-      age,
-      profileStatus,
-      createdAt: createdAt.toISOString(),
-    })),
+    profiles: profiles.map(
+      ({ id, name, age, profileStatus, createdAt, tombstoneProfileId }) => ({
+        id,
+        name: name?.trim() || "Learner",
+        age,
+        profileStatus,
+        createdAt: createdAt.toISOString(),
+        deletionPending: tombstoneProfileId !== null,
+      }),
+    ),
   };
 }
 
@@ -105,10 +122,18 @@ async function currentProfileId(
         eq(sessionLearnerSelection.authUserId, learnerProfile.authUserId),
       ),
     )
+    .leftJoin(
+      learnerProfileDeletionTombstone,
+      eq(
+        learnerProfileDeletionTombstone.learnerProfileId,
+        learnerProfile.id,
+      ),
+    )
     .where(
       and(
         eq(sessionLearnerSelection.sessionId, identity.sessionId),
         eq(sessionLearnerSelection.authUserId, identity.userId),
+        isNull(learnerProfileDeletionTombstone.learnerProfileId),
       ),
     )
     .limit(1);
@@ -204,6 +229,24 @@ function selectedProfileId(pathname: string) {
   }
 }
 
+function deletedProfileId(pathname: string) {
+  const match = /^\/api\/learner-profiles\/([^/]+)$/.exec(pathname);
+  if (!match) return null;
+  try {
+    const profileId = decodeURIComponent(match[1]);
+    if (
+      !profileId ||
+      profileId.includes("/") ||
+      new TextEncoder().encode(profileId).byteLength > 128
+    ) {
+      return null;
+    }
+    return profileId;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleLearnerProfilesRequest(input: {
   database: Database;
   env: LearnerProfilesEnv;
@@ -260,9 +303,12 @@ export async function handleLearnerProfilesRequest(input: {
         );
       if (!activate) {
         await createProfile.run();
-        return json(
-          await roster(input.database, input.identity, previousProfileId),
+        const updatedRoster = await roster(
+          input.database,
+          input.identity,
+          previousProfileId,
         );
+        return json({ ...updatedRoster, createdProfileId: profileId });
       }
 
       const now = Date.now();
@@ -286,26 +332,38 @@ export async function handleLearnerProfilesRequest(input: {
             now,
             now,
           ),
+        input.database.$client
+          .prepare(
+            `DELETE FROM learner_selection_required
+             WHERE session_id = ?`,
+          )
+          .bind(input.identity.sessionId),
       ]);
-      return json(await roster(input.database, input.identity));
+      const updatedRoster = await roster(input.database, input.identity);
+      return json({ ...updatedRoster, createdProfileId: profileId });
     }
 
     if (input.request.method === "PUT") {
       const profileId = selectedProfileId(url.pathname);
       if (!profileId) return json({ error: "not_found" }, { status: 404 });
       const now = Date.now();
-      const result = await input.database.$client
-        .prepare(
+      const [result] = await input.database.$client.batch([
+        input.database.$client.prepare(
           `INSERT INTO session_learner_selection (
              session_id, auth_user_id, learner_profile_id, created_at, updated_at
            )
            SELECT ?, auth_user_id, id, ?, ?
            FROM learner_profile
            WHERE id = ? AND auth_user_id = ?
+             AND NOT EXISTS (
+               SELECT 1 FROM learner_profile_deletion_tombstone
+               WHERE learner_profile_id = learner_profile.id
+             )
            ON CONFLICT(session_id) DO UPDATE SET
              auth_user_id = excluded.auth_user_id,
              learner_profile_id = excluded.learner_profile_id,
-             updated_at = excluded.updated_at`,
+             updated_at = excluded.updated_at
+           RETURNING learner_profile_id`,
         )
         .bind(
           input.identity.sessionId,
@@ -313,11 +371,47 @@ export async function handleLearnerProfilesRequest(input: {
           now,
           profileId,
           input.identity.userId,
-        )
-        .run();
-      if (Number(result.meta.changes ?? 0) !== 1) {
+        ),
+        input.database.$client
+          .prepare(
+            `DELETE FROM learner_selection_required
+             WHERE session_id = ?
+               AND EXISTS (
+                 SELECT 1 FROM session_learner_selection
+                 WHERE session_id = ?
+                   AND learner_profile_id = ?
+                   AND auth_user_id = ?
+               )
+               AND NOT EXISTS (
+                 SELECT 1 FROM learner_profile_deletion_tombstone
+                 WHERE learner_profile_id = ?
+               )`,
+          )
+          .bind(
+            input.identity.sessionId,
+            input.identity.sessionId,
+            profileId,
+            input.identity.userId,
+            profileId,
+          ),
+      ]);
+      if (result.results.length !== 1) {
         return json({ error: "not_found" }, { status: 404 });
       }
+      return json(await roster(input.database, input.identity));
+    }
+
+    if (input.request.method === "DELETE") {
+      const profileId = deletedProfileId(url.pathname);
+      if (!profileId || !input.env.PERSONALIZED_STORY_ART_BUCKET) {
+        return json({ error: "not_found" }, { status: 404 });
+      }
+      await prepareLearnerDeletion({
+        bucket: input.env.PERSONALIZED_STORY_ART_BUCKET,
+        database: input.database,
+        identity: input.identity,
+        profileId,
+      });
       return json(await roster(input.database, input.identity));
     }
   } catch (error) {
@@ -326,6 +420,9 @@ export async function handleLearnerProfilesRequest(input: {
         { error: error.code, message: error.responseMessage },
         { status: error.status },
       );
+    }
+    if (error instanceof LearnerDeletionError) {
+      return json({ error: error.code }, { status: error.status });
     }
     throw error;
   }

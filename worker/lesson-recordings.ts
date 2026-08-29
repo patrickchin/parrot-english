@@ -3,6 +3,7 @@ import { isSafeRouteId } from "../lib/route-id.ts";
 import { isAccountDeletionPending } from "./account-deletion.ts";
 import type { Database } from "./database.ts";
 import type { LearnerProfileIdentity } from "./learner-profile.ts";
+import { isLearnerDeletionPending } from "./request-identity.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import { resolveLessonRecordingTarget } from "./lesson-recording-catalog.ts";
 import {
@@ -51,6 +52,7 @@ export interface LessonRecordingRequestInput {
 type HandlerOverrides = {
   createUploadNonce?: () => string;
   isDeletionPending?: typeof isAccountDeletionPending;
+  isLearnerDeletionPending?: typeof isLearnerDeletionPending;
   now?: () => Date;
   wait?: (delay: number) => Promise<void>;
 };
@@ -126,6 +128,8 @@ export async function handleLessonRecordingRequest(
     overrides.createUploadNonce ?? (() => crypto.randomUUID());
   const isDeletionPending =
     overrides.isDeletionPending ?? isAccountDeletionPending;
+  const learnerDeletionPending =
+    overrides.isLearnerDeletionPending ?? isLearnerDeletionPending;
   const now = overrides.now ?? (() => new Date());
   const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
   const route = parseRoute(new URL(input.request.url).pathname);
@@ -167,14 +171,24 @@ export async function handleLessonRecordingRequest(
       consent: await repository.readLessonRecordingConsentState(
         input.identity,
       ),
-      deletion: await isDeletionPending(input.database, input.identity.userId),
+      accountDeletion: await isDeletionPending(
+        input.database,
+        input.identity.userId,
+      ),
+      learnerDeletion: await learnerDeletionPending(
+        input.database,
+        input.identity.learnerProfileId,
+      ),
     });
     const requireAccess = (
       state: Awaited<ReturnType<typeof accessState>>,
       consentGeneration?: number,
     ) => {
-      if (state.deletion) {
+      if (state.accountDeletion) {
         throw new LessonRecordingApiError(409, "account_deletion_pending");
+      }
+      if (state.learnerDeletion) {
+        throw new LessonRecordingApiError(409, "learner_deletion_pending");
       }
       if (
         !state.consent.enabled ||
@@ -267,7 +281,27 @@ export async function handleLessonRecordingRequest(
         { consentGeneration, lessonGeneration },
         wait,
       );
-      requireAccess(await accessState(), consentGeneration);
+      let reservedAccess: Awaited<ReturnType<typeof accessState>> | undefined;
+      try {
+        reservedAccess = await accessState();
+        requireAccess(reservedAccess, consentGeneration);
+      } catch (error) {
+        await fenceLessonRecordingUpload(
+          bucket,
+          key,
+          observed,
+          uploadNonce,
+          reservedAccess?.accountDeletion
+            ? "account-deleting"
+            : reservedAccess?.learnerDeletion
+              ? "learner-deleting"
+              : reservedAccess
+                ? "consent-revoked"
+                : "state-unknown",
+          wait,
+        );
+        throw error;
+      }
       if (route.source === "my") {
         const currentTarget = await resolveLessonRecordingTarget(
           input.database,
@@ -324,7 +358,8 @@ export async function handleLessonRecordingRequest(
       throw error;
     }
     if (
-      after.deletion ||
+      after.accountDeletion ||
+      after.learnerDeletion ||
       !after.consent.enabled ||
       after.consent.generation !== consentGeneration
     ) {
@@ -333,7 +368,11 @@ export async function handleLessonRecordingRequest(
         key,
         stored,
         uploadNonce,
-        after.deletion ? "account-deleting" : "consent-revoked",
+        after.accountDeletion
+          ? "account-deleting"
+          : after.learnerDeletion
+            ? "learner-deleting"
+            : "consent-revoked",
         wait,
       );
       requireAccess(after, consentGeneration);

@@ -71,6 +71,7 @@ function learnerRoster() {
       {
         age: 8,
         createdAt: "2026-08-01T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-mia",
         name: "Mia",
         profileStatus: "completed",
@@ -78,6 +79,7 @@ function learnerRoster() {
       {
         age: 10,
         createdAt: "2026-08-02T08:00:00.000Z",
+        deletionPending: false,
         id: "learner-noah",
         name: "Noah",
         profileStatus: "completed",
@@ -125,7 +127,9 @@ test("guardian lesson manager owns custom-lesson authoring actions", () => {
   assert.match(html, /aria-label="Delete lesson: Made for Mia"/);
   assert.match(html, /Delete/);
   assert.doesNotMatch(html, /Edit lesson|\/edit/);
-  assert.match(html, /Manage learners/);
+  assert.match(html, /aria-label="Back to guardian dashboard"/);
+  assert.match(html, /href="\/guardian"/);
+  assert.doesNotMatch(html, /Manage learners/);
   assert.doesNotMatch(html, /Switch and play/);
   assert.doesNotMatch(html, /Peppa&#x27;s High Ball/);
 });
@@ -397,6 +401,69 @@ test("lists only the URL-targeted learner's lessons without an active-scoped fea
         method === "GET" &&
         path === "/api/lessons/my?learnerProfileId=learner-noah",
     ),
+  );
+});
+
+test("defaults settings requests to a live learner instead of the active pending learner", async () => {
+  const requests = [];
+  globalThis.fetch = async (path, init = {}) => {
+    requests.push({ method: init.method ?? "GET", path });
+    if (path === "/api/learner-profiles") {
+      return Response.json({
+        activeProfileId: "learner-sam",
+        profiles: [
+          {
+            age: 8,
+            createdAt: "2026-08-01T08:00:00.000Z",
+            deletionPending: true,
+            id: "learner-sam",
+            name: "Sam",
+            profileStatus: "completed",
+          },
+          {
+            age: 10,
+            createdAt: "2026-08-02T08:00:00.000Z",
+            deletionPending: false,
+            id: "learner-bob",
+            name: "Bob",
+            profileStatus: "completed",
+          },
+        ],
+      });
+    }
+    if (path === "/api/lessons/my?learnerProfileId=learner-bob") {
+      return Response.json({ lessons: [] });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/lessons"] },
+      createElement(GuardianLessonManager),
+    ),
+  );
+
+  await waitFor(() =>
+    assert.match(container.textContent, /Editing settings for Bob/),
+  );
+  const lessonRequests = requests.filter(({ path }) =>
+    path.startsWith("/api/lessons/my"),
+  );
+  assert.ok(lessonRequests.length > 0);
+  assert.ok(
+    lessonRequests.every(
+      ({ method, path }) =>
+        method === "GET" &&
+        path === "/api/lessons/my?learnerProfileId=learner-bob",
+    ),
+  );
+  assert.equal(
+    [...container.querySelectorAll("button")].some(
+      (candidate) => candidate.getAttribute("aria-label") === "Sam",
+    ),
+    false,
   );
 });
 

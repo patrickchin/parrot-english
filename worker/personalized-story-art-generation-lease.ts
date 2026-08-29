@@ -166,13 +166,34 @@ export function createPersonalizedStoryArtGenerationLeaseRepository(
     return changed(result);
   }
 
-  async function release(userId: string, storyId: string, token: string) {
+  async function release(
+    userId: string,
+    storyId: string,
+    token: string,
+    authority: {
+      accountDeletionTombstoneKey: string;
+      learnerProfileId: string;
+    },
+  ) {
     const result = await database
       .prepare(
         `DELETE FROM personalized_story_art_generation_lease
-        WHERE auth_user_id = ? AND story_id = ? AND generation_token = ?`,
+        WHERE auth_user_id = ? AND story_id = ? AND generation_token = ?
+          AND NOT EXISTS (
+            SELECT 1 FROM account_deletion_tombstone WHERE user_id_hash = ?
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM learner_profile_deletion_tombstone
+            WHERE learner_profile_id = ?
+          )`,
       )
-      .bind(userId, storyId, token)
+      .bind(
+        userId,
+        storyId,
+        token,
+        authority.accountDeletionTombstoneKey,
+        authority.learnerProfileId,
+      )
       .run();
     return changed(result);
   }

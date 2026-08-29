@@ -1717,7 +1717,13 @@ describe("personalized story art Worker handler", () => {
             "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
-        0,
+        1,
+      );
+      assert.equal(
+        state.sqlite.prepare(
+          "SELECT candidate_r2_object_key AS key FROM learner_story_art_generation_lease",
+        ).get().key,
+        candidateKey,
       );
     } finally {
       state.close();
@@ -1783,7 +1789,13 @@ describe("personalized story art Worker handler", () => {
             "SELECT count(*) AS count FROM learner_story_art_generation_lease",
           )
           .get().count,
-        0,
+        1,
+      );
+      assert.equal(
+        state.sqlite.prepare(
+          "SELECT candidate_r2_object_key AS key FROM learner_story_art_generation_lease",
+        ).get().key,
+        null,
       );
     } finally {
       state.close();

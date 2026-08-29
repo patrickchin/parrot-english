@@ -855,7 +855,7 @@ test("App composes AuthGate, route-aware onboarding, and authenticated routes", 
   );
   assert.match(
     app,
-    /const applicationRoutes = \([\s\S]*?<ApplicationRoutes[\s\S]*?\);[\s\S]*?const routeContent = \([\s\S]*?<LearnerProfileGate[\s\S]*?\{applicationRoutes\}[\s\S]*?<\/LearnerProfileGate>[\s\S]*?\);/,
+    /const applicationRoutes = \([\s\S]*?<ApplicationRoutes[\s\S]*?\);[\s\S]*?const gatedRoutes =[\s\S]*?<LearnerModeBoundary[\s\S]*?\{applicationRoutes\}[\s\S]*?<\/LearnerModeBoundary>[\s\S]*?const routeContent = \([\s\S]*?<LearnerProfileGate[\s\S]*?\{gatedRoutes\}[\s\S]*?<\/LearnerProfileGate>[\s\S]*?\);/,
   );
   assert.match(
     app,
