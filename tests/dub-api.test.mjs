@@ -7,6 +7,7 @@ import {
   DubTakeRejectedError,
   grantDubConsent,
   getDubLineAudioUrl,
+  loadDubLineAudio,
   loadDubStatus,
   saveDubLine,
 } from "../src/dubbing/dub-api.ts";
@@ -30,6 +31,41 @@ function duckStatusLines() {
 }
 
 describe("duck dub browser API", () => {
+  it("loads one saved line as a private same-origin blob", async () => {
+    const calls = [];
+    const clip = new Blob(["learner voice"], { type: "audio/webm" });
+    const result = await loadDubLineAudio("line/1", {
+      dubId: "five-little-ducks-v2",
+      fetch: async (...args) => {
+        calls.push(args);
+        return new Response(clip, { status: 200 });
+      },
+    });
+    assert.equal(await result.text(), "learner voice");
+    assert.equal(calls[0][0], "/api/dubs/five-little-ducks-v2/lines/line%2F1/audio");
+    assert.equal(calls[0][1].credentials, "same-origin");
+  });
+
+  it("maps consent loss and other saved-take failures", async () => {
+    await assert.rejects(
+      loadDubLineAudio("line-1", {
+        fetch: async () => new Response(JSON.stringify({ error: "dubbing_not_enabled" }), {
+          headers: { "Content-Type": "application/json" },
+          status: 403,
+        }),
+      }),
+      DubNotEnabledError,
+    );
+    await assert.rejects(
+      loadDubLineAudio("line-1", { fetch: async () => new Response("", { status: 500 }) }),
+      /Your recording could not be played\. Record the line again\./,
+    );
+    await assert.rejects(
+      loadDubLineAudio("line-1", { fetch: async () => new Response(new Blob([]), { status: 200 }) }),
+      /Your recording could not be played\. Record the line again\./,
+    );
+  });
+
   it("uses private same-origin requests and encoded line IDs", async () => {
     const controller = new AbortController();
     const status = {

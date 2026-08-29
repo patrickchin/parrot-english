@@ -519,6 +519,12 @@ describe("app route helpers", () => {
     );
   });
 
+  it("builds and safely returns to the nursery rhymes hub", () => {
+    assert.equal(routes.getNurseryRhymesPath(), "/dubs");
+    assert.equal(routes.getSafeReturnTo(returnToSearch("/dubs")), "/dubs");
+    assert.equal(routes.getSafeReturnTo(returnToSearch("/dubs/extra")), null);
+  });
+
   it("builds and safely returns to the Old MacDonald dubbing route", () => {
     assert.equal(
       routes.getOldMacDonaldDubPath(),

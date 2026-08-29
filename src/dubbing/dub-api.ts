@@ -4,6 +4,7 @@ import { getDubDefinition } from "./rhyme-catalog.ts";
 
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
+const PLAYBACK_FAILURE = "Your recording could not be played. Record the line again.";
 const SAVE_FAILURE = "Your take was not saved. Try again.";
 const DELETE_FAILURE =
   "Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted.";
@@ -171,6 +172,40 @@ export const getDubLineAudioUrl = (
     `/api/dubs/${dubId}/lines/${encodeURIComponent(lineId)}/audio`,
     learnerProfileId,
   );
+
+export async function loadDubLineAudio(
+  lineId: string,
+  options: DubRequestOptions = {},
+): Promise<Blob> {
+  const dubId = options.dubId ?? DUB_ID;
+  getDubDefinition(dubId);
+  const response = await requestResponse(
+    options.fetch ?? globalThis.fetch,
+    getDubLineAudioUrl(lineId, {
+      dubId,
+      learnerProfileId: options.learnerProfileId,
+    }),
+    {
+      credentials: "same-origin",
+      signal: options.signal,
+    },
+    PLAYBACK_FAILURE,
+  );
+  await notifyGuardianAccessRequiredForResponse(response);
+  if (!response.ok) {
+    const consentLoss = await dubConsentLossError(response);
+    if (consentLoss) throw consentLoss;
+    throw new Error(PLAYBACK_FAILURE);
+  }
+  let blob: Blob;
+  try {
+    blob = await response.blob();
+  } catch (error) {
+    friendlyFailure(error, PLAYBACK_FAILURE);
+  }
+  if (blob.size === 0) throw new Error(PLAYBACK_FAILURE);
+  return blob;
+}
 
 export async function loadDubStatus(options: DubRequestOptions = {}) {
   const dubId = options.dubId ?? DUB_ID;

@@ -5,6 +5,12 @@ import {
   OLD_MACDONALD_DUB,
   getDubDefinition,
 } from "../src/dubbing/rhyme-catalog.ts";
+import { FIVE_LITTLE_DUCKS_DUB } from "../src/dubbing/dub-script.ts";
+import {
+  FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
+  NURSERY_RHYMES_COVER_ARTWORK,
+  OLD_MACDONALD_SCENE_ARTWORK,
+} from "../src/dubbing/dub-artwork.ts";
 
 describe("rhyme catalog", () => {
   it("contains the traditional five-scene Old MacDonald definition", () => {
@@ -80,5 +86,28 @@ describe("rhyme catalog", () => {
     assert.equal(Object.isFrozen(OLD_MACDONALD_DUB.lines[0]), true);
     assert.throws(() => getDubDefinition("missing"), /Unknown dub/);
     assert.equal(DUB_DEFINITIONS.length, 2);
+  });
+
+  it("defines complete immutable generated artwork for both rhymes", () => {
+    assert.equal(FIVE_LITTLE_DUCKS_DUB.sceneArtwork, FIVE_LITTLE_DUCKS_SCENE_ARTWORK);
+    assert.equal(OLD_MACDONALD_DUB.sceneArtwork, OLD_MACDONALD_SCENE_ARTWORK);
+    assert.equal(FIVE_LITTLE_DUCKS_SCENE_ARTWORK.length, 6);
+    assert.equal(OLD_MACDONALD_SCENE_ARTWORK.length, 5);
+
+    const artwork = [
+      NURSERY_RHYMES_COVER_ARTWORK,
+      ...FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
+      ...OLD_MACDONALD_SCENE_ARTWORK,
+    ];
+    assert.equal(new Set(artwork.map(({ src }) => src)).size, 12);
+    for (const image of artwork) {
+      assert.match(image.src, /^https:\/\/media\.parrotbook\.com\/assets\/v5\/dubbing\/.+\.webp$/);
+      assert.equal(image.width, 1536);
+      assert.equal(image.height, 864);
+      assert.ok(image.alt.length >= 20);
+      assert.equal(Object.isFrozen(image), true);
+    }
+    assert.equal(Object.isFrozen(FIVE_LITTLE_DUCKS_SCENE_ARTWORK), true);
+    assert.equal(Object.isFrozen(OLD_MACDONALD_SCENE_ARTWORK), true);
   });
 });

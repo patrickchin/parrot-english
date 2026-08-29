@@ -1,4 +1,4 @@
-import { ArrowRight, LoaderCircle, Mic, Square, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, LoaderCircle, Mic, Square, Volume2 } from "lucide-react";
 import type { RefObject } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { ActionButton, TextButton } from "../shared/ui";
@@ -13,11 +13,12 @@ export type DubSceneEditorProps = {
   activeLine: DubLine;
   definition?: DubDefinition;
   error: string;
+  hasSavedTake: boolean;
   locked: boolean;
-  onBack(): void;
   onHearGuide(): void;
   onHearTake(): void;
   onNext(): void;
+  onPrevious(): void;
   onRecord(): void;
   onRetrySave(): void;
   operation: DubOperation;
@@ -49,11 +50,12 @@ export function DubSceneEditor({
   activeLine,
   definition = FIVE_LITTLE_DUCKS_DUB,
   error,
+  hasSavedTake,
   locked,
-  onBack,
   onHearGuide,
   onHearTake,
   onNext,
+  onPrevious,
   onRecord,
   onRetrySave,
   operation,
@@ -73,12 +75,14 @@ export function DubSceneEditor({
   );
   const lineNumber = activeLineIndex % definition.linesPerScene + 1;
   const recording = operation === "recording";
-  const recordAgain = pendingTake !== null || saveRecovery !== null;
+  const recordAgain = pendingTake !== null || hasSavedTake || saveRecovery !== null;
+  const hasPlayableTake = pendingTake !== null || hasSavedTake;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
   const elapsedMs = Math.min(definition.recordingMs, Math.max(0, recordingElapsedMs));
   const elapsedLabel = formatDuration(elapsedMs);
   const recordingLimitLabel = formatDuration(definition.recordingMs);
+  const firstLineInScene = lineNumber === 1;
   const lastLineInScene = lineNumber === definition.linesPerScene;
   const recordLabel = operation === "mic-opening"
     ? "Starting microphone"
@@ -89,7 +93,9 @@ export function DubSceneEditor({
         : recordAgain
           ? "Record again"
           : "Record line";
-  const takeLabel = operation === "take-playing" ? "Stop my voice" : "Hear my voice";
+  const takeLabel = operation === "take-playing"
+    ? "Stop my recording"
+    : "Play my recording";
   const guideAudioId = getGuideAudioId(activeLine.text);
   const feedbackError = Boolean(error)
     && operation !== "mic-opening"
@@ -102,15 +108,14 @@ export function DubSceneEditor({
         ? "Not saved"
         : error
           ? error
-          : pendingTake
-            ? "Saved ✓"
+          : hasPlayableTake
+            ? "Recorded ✓"
             : `Up to ${definition.recordingMs / 1_000} seconds`;
 
   return (
-    <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-[3.75rem] short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
+    <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
       <section aria-label="Scene editor workspace" className="mx-auto grid w-full max-w-[1600px] gap-2 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.75fr)_minmax(21rem,0.7fr)] md:gap-4">
-        <section className="grid content-start gap-2 short-wide:min-h-0 short-wide:grid-rows-[auto_minmax(0,1fr)_auto] short-wide:gap-1.5">
-          <TextButton aria-label="Back to full video" className="min-h-12 justify-self-start gap-1" disabled={navigationLocked} onClick={onBack}>← Full video</TextButton>
+        <section className="grid content-start gap-2 short-wide:min-h-0 short-wide:gap-1.5">
           <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl">
             <Scene compact line={activeLine} />
           </section>
@@ -199,9 +204,9 @@ export function DubSceneEditor({
                   {feedbackLabel}
                 </p>
                 <div className="flex shrink-0 items-center gap-1">
-                  {pendingTake ? (
-                    <TextButton aria-label={takeLabel} className="relative z-0 min-h-10 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-12 short-wide:min-w-12 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
-                      {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Hear") : takeLabel}
+                  {hasPlayableTake ? (
+                    <TextButton aria-label={takeLabel} className="relative z-0 min-h-12 min-w-12 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
+                      {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Play") : takeLabel}
                     </TextButton>
                   ) : null}
                   {pendingTake && saveRecovery === "save" ? (
@@ -212,17 +217,29 @@ export function DubSceneEditor({
             )}
           </section>
 
-          <ActionButton
-            aria-label={lastLineInScene ? "Next, finish scene" : "Next line"}
-            disabled={navigationLocked}
-            fullWidth
-            onClick={onNext}
-            ref={nextButtonRef}
-            size="large"
-            variant="navy"
-          >
-            Next <ArrowRight aria-hidden="true" />
-          </ActionButton>
+          <div className="grid grid-cols-2 gap-2">
+            <ActionButton
+              aria-label="Previous line"
+              disabled={navigationLocked || firstLineInScene}
+              fullWidth
+              onClick={onPrevious}
+              size="large"
+              variant="surface"
+            >
+              <ArrowLeft aria-hidden="true" /> Previous
+            </ActionButton>
+            <ActionButton
+              aria-label={lastLineInScene ? "Next, finish scene" : "Next line"}
+              disabled={navigationLocked}
+              fullWidth
+              onClick={onNext}
+              ref={nextButtonRef}
+              size="large"
+              variant="navy"
+            >
+              Next <ArrowRight aria-hidden="true" />
+            </ActionButton>
+          </div>
         </aside>
       </section>
     </main>
