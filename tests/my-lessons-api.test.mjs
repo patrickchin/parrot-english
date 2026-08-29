@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   MyLessonsApiError,
+  deleteMyLesson,
   generateMyLesson,
   loadMyLesson,
   loadMyLessons,
   saveMyLesson,
-  updateMyLesson,
 } from "../src/lessons/my-lessons-api.ts";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
@@ -19,6 +19,17 @@ function jsonFetch(payload, status = 200) {
     async fetch(...args) {
       calls.push(args);
       return Response.json(payload, { status });
+    },
+  };
+}
+
+function emptyFetch(status = 204) {
+  const calls = [];
+  return {
+    calls,
+    async fetch(...args) {
+      calls.push(args);
+      return new Response(null, { status });
     },
   };
 }
@@ -192,25 +203,14 @@ describe("My Lessons browser API", () => {
     ]);
   });
 
-  it("updates an encoded learner lesson ID with a same-origin PUT request", async () => {
-    const lesson = createLessonScript({ title: "Edited Garden Help" });
-    const descriptor = {
-      id: "lesson/id",
-      lesson,
-      revision: REVISION,
-      source: "uploaded",
-    };
-    const update = jsonFetch({ lesson: descriptor, warnings: ["Draft warning"] });
+  it("deletes an encoded learner lesson ID with a same-origin DELETE request", async () => {
+    const deletion = emptyFetch();
 
-    assert.deepEqual(
-      await updateMyLesson("lesson/id", lesson, { fetch: update.fetch }),
-      { lesson: descriptor, warnings: ["Draft warning"] },
-    );
-    assert.equal(update.calls[0][0], "/api/lessons/my/lesson%2Fid");
-    assert.deepEqual(update.calls[0][1], {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lesson }),
+    await deleteMyLesson("lesson/id", { fetch: deletion.fetch });
+
+    assert.equal(deletion.calls[0][0], "/api/lessons/my/lesson%2Fid");
+    assert.deepEqual(deletion.calls[0][1], {
+      method: "DELETE",
       signal: undefined,
     });
   });
@@ -228,7 +228,7 @@ describe("My Lessons browser API", () => {
     const save = jsonFetch({ lesson: descriptor }, 201);
     const list = jsonFetch({ lessons: [descriptor] });
     const detail = jsonFetch({ lesson: descriptor });
-    const update = jsonFetch({ lesson: descriptor, warnings: [] });
+    const deletion = emptyFetch();
 
     await generateMyLesson("ordering ice cream", {
       fetch: generation.fetch,
@@ -243,13 +243,13 @@ describe("My Lessons browser API", () => {
       fetch: detail.fetch,
       learnerProfileId,
     });
-    await updateMyLesson("lesson/id", lesson, {
-      fetch: update.fetch,
+    await deleteMyLesson("lesson/id", {
+      fetch: deletion.fetch,
       learnerProfileId,
     });
 
     assert.deepEqual(
-      [generation, save, list, detail, update].map(
+      [generation, save, list, detail, deletion].map(
         ({ calls }) => calls[0][0],
       ),
       [

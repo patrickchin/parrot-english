@@ -137,15 +137,8 @@ const targetedSecurityCases: TargetedRequestCase[] = [
     path: `/api/lessons/my/${TARGETED_MIA_LESSON_ID}`,
   },
   {
-    body: JSON.stringify({
-      lesson: createLessonScript({
-        childName: "Mia",
-        title: "Edited targeted lesson",
-      }),
-    }),
-    headers: { "Content-Type": "application/json" },
-    method: "PUT",
-    name: "My Lessons edit",
+    method: "DELETE",
+    name: "My Lessons delete",
     path: `/api/lessons/my/${TARGETED_MIA_LESSON_ID}`,
   },
   {
@@ -2075,7 +2068,7 @@ test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian nav
   await expect(page).toHaveURL("/guardian");
 });
 
-test("targets Noah through lesson list, create, edit, Back, Save, refresh, and history without changing learner mode", async ({
+test("targets Noah through lesson list, creation, deletion, refresh, and history without changing learner mode", async ({
   page,
 }) => {
   const miaLesson = createLessonScript({ title: "Mia's garden lesson" });
@@ -2164,29 +2157,20 @@ test("targets Noah through lesson list, create, edit, Back, Save, refresh, and h
     page.getByText("Noah's new lesson", { exact: true }),
   ).toBeVisible();
 
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("Noah's space lesson");
+    expect(dialog.message()).toMatch(/cannot be undone/i);
+    await dialog.accept();
+  });
   await page
-    .getByRole("link", { name: "Edit lesson: Noah's space lesson" })
+    .getByRole("button", { name: "Delete lesson: Noah's space lesson" })
     .click();
-  await expect(page).toHaveURL(
-    new RegExp(
-      `/lessons/my/${encodeURIComponent(seeded.noahLessonId)}/edit.*learnerProfileId=learner-noah`,
-    ),
-  );
   await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("link", { name: "Back to lessons" }).click();
-  await expect(page).toHaveURL(
-    /\/guardian\/lessons.*learnerProfileId=learner-noah/,
-  );
-
-  await page
-    .getByRole("link", { name: "Edit lesson: Noah's space lesson" })
-    .click();
-  await page.getByRole("button", { exact: true, name: "Save changes" }).click();
-  await expect(page).toHaveURL(
-    /\/guardian\/lessons.*learnerProfileId=learner-noah/,
-  );
+    page.getByText("Noah's space lesson", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "1 saved lesson." }),
+  ).toHaveText("1 saved lesson.");
 
   await target.getByRole("button", { exact: true, name: "Mia" }).click();
   await expect(
@@ -2228,9 +2212,50 @@ test("targets Noah through lesson list, create, edit, Back, Save, refresh, and h
     activeProfileId: "learner-mia",
     miaHasMiaLesson: true,
     miaHasNoahLesson: false,
-    noahHasNoahLesson: true,
-    noahLessonCount: 2,
+    noahHasNoahLesson: false,
+    noahLessonCount: 1,
   });
+});
+
+test("mocked My Lessons details reject retired methods and malformed IDs without mutation", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian", "multiple"));
+  await expect(
+    page.getByRole("heading", { name: "Guardian dashboard" }),
+  ).toBeVisible();
+  await seedTargetedAuthorizationState(page);
+
+  const result = await page.evaluate(async (lessonId) => {
+    const target = "learnerProfileId=learner-noah";
+    const readLessons = async () =>
+      fetch(`/api/lessons/my?${target}`).then(async (response) => ({
+        body: await response.json(),
+        status: response.status,
+      }));
+    const request = async (path: string, init?: RequestInit) => {
+      const response = await fetch(`${path}?${target}`, init);
+      return {
+        body: await response.json(),
+        mockApi: response.headers.get("X-Parrot-Mock-Api"),
+        status: response.status,
+      };
+    };
+    const before = await readLessons();
+    const responses = await Promise.all([
+      request(`/api/lessons/my/${lessonId}`, { method: "PUT" }),
+      request("/api/lessons/my/%E0%A4%A"),
+      request("/api/lessons/my/%20", { method: "DELETE" }),
+    ]);
+    return { after: await readLessons(), before, responses };
+  }, TARGETED_NOAH_LESSON_ID);
+
+  expect(result.before).toEqual(result.after);
+  expect(result.responses).toEqual([
+    { body: { error: "not_found" }, mockApi: "browser", status: 404 },
+    { body: { error: "not_found" }, mockApi: "browser", status: 404 },
+    { body: { error: "not_found" }, mockApi: "browser", status: 404 },
+  ]);
 });
 
 test("targets Noah's story level and personalized art without changing Mia's learner mode", async ({
@@ -2777,17 +2802,6 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
       headers,
       method: "POST",
     });
-    const lessonId = (
-      createdLesson.body as { lesson: { id: string } }
-    ).lesson.id;
-    const editedLesson = await json(
-      `/api/lessons/my/${encodeURIComponent(lessonId)}?${target}`,
-      {
-        body: JSON.stringify({ lesson: lessonScript }),
-        headers,
-        method: "PUT",
-      },
-    );
     const dubConsent = await fetch(
       `/api/dubs/five-little-ducks-v2/consent?${target}`,
       {
@@ -2843,7 +2857,6 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
       createdLesson,
       dubConsentStatus: dubConsent.status,
       dubDeleteStatus: dubDelete.status,
-      editedLesson,
       learnerProfile,
       miaProfile,
       preferences,
@@ -2866,7 +2879,6 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
     },
     dubConsentStatus: 204,
     dubDeleteStatus: 204,
-    editedLesson: { status: 200 },
     learnerProfile: {
       body: { profile: { id: "learner-noah", name: "Noah" } },
       status: 200,

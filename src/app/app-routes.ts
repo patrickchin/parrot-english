@@ -40,7 +40,6 @@ const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
   ...GUARDIAN_ROUTE_PATHS,
   /^\/profile\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
-  /^\/lessons\/my\/[^/]+\/edit\/*$/i,
 ];
 const SAFE_RETURN_PATHS = [
   /^\/$/,
@@ -51,7 +50,6 @@ const SAFE_RETURN_PATHS = [
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
-  /^\/lessons\/my\/[^/]+\/edit\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
   /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
   /^\/progress\/*$/i,
@@ -192,16 +190,6 @@ export function getLessonScenePath(
 
 export function getMyLessonCreatePath(learnerProfileId?: string) {
   return withLearnerProfileTarget("/lessons/my/create", learnerProfileId);
-}
-
-export function getMyLessonEditPath(
-  lessonId: string,
-  learnerProfileId?: string,
-) {
-  return withLearnerProfileTarget(
-    `${getLessonPath("my", lessonId)}/edit`,
-    learnerProfileId,
-  );
 }
 
 export function getLoginPath(returnTo: string) {

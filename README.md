@@ -79,7 +79,7 @@ only that Better Auth session for a fixed 15 minutes; refreshes may resume it,
 but activity does not extend it. `/guardian` is the management dashboard,
 `/guardian/learners` owns learner selection and creation,
 `/guardian/profile` owns the selected learner's details and lesson-recording
-consent, `/guardian/lessons` owns custom lesson management,
+consent, `/guardian/lessons` owns custom lesson creation and deletion,
 `/guardian/stories` owns story level and optional personalized art, and
 `/guardian/dubbing` owns dubbing consent and cleanup. The legacy profile and
 lesson-authoring URLs use the same Guardian boundary. Switching to learner

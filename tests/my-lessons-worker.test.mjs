@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
 import { handleMyLessonRequest } from "../worker/my-lessons.ts";
 import { createMyLessonRepository } from "../worker/my-lessons-repository.ts";
+import { resolveLessonRecordingTarget } from "../worker/lesson-recording-catalog.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
@@ -223,6 +224,49 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
+  it("rejects malformed or unsafe detail IDs without mutating lessons or recordings", async () => {
+    const state = seedDatabase();
+    const lists = [];
+    try {
+      await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: createLessonScript(),
+      });
+
+      for (const [method, path] of [
+        ["GET", "/api/lessons/my/%E0%A4%A"],
+        ["DELETE", "/api/lessons/my/%E0%A4%A"],
+        ["GET", "/api/lessons/my/%20"],
+        ["DELETE", "/api/lessons/my/%20"],
+      ]) {
+        const response = await call(state, path, method, undefined, {
+          bucket: {
+            async list(options) {
+              lists.push(options);
+              return { objects: [], truncated: false };
+            },
+          },
+        });
+        assert.equal(response.status, 404, `${method} ${path}`);
+        assert.deepEqual(
+          await response.json(),
+          { error: "not_found" },
+          `${method} ${path}`,
+        );
+      }
+
+      assert.deepEqual(lists, []);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT COUNT(*) AS count FROM learner_lesson WHERE id = ?")
+          .get("lesson-1").count,
+        1,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("shows null-profile legacy lessons only to the marked legacy learner", async () => {
     const state = seedDatabase();
     try {
@@ -272,7 +316,7 @@ describe("My Lessons persistence and API", () => {
     }
   });
 
-  it("does not update a null-profile compatibility lesson", async () => {
+  it("does not delete a null-profile compatibility lesson", async () => {
     const state = seedDatabase();
     try {
       state.sqlite
@@ -288,27 +332,26 @@ describe("My Lessons persistence and API", () => {
           1_000,
           1_000,
         );
-      const storedLesson = state.sqlite.prepare(
-        "SELECT lesson_json, updated_at FROM learner_lesson WHERE id = ?",
-      );
-      const before = storedLesson.get("legacy-lesson");
-
       const response = await call(
         state,
         "/api/lessons/my/legacy-lesson",
-        "PUT",
-        { lesson: createLessonScript({ title: "Rewritten legacy lesson" }) },
+        "DELETE",
       );
 
       assert.equal(response.status, 404);
       assert.deepEqual(await response.json(), { error: "not_found" });
-      assert.deepEqual(storedLesson.get("legacy-lesson"), before);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT COUNT(*) AS count FROM learner_lesson WHERE id = ?")
+          .get("legacy-lesson").count,
+        1,
+      );
     } finally {
       state.close();
     }
   });
 
-  it("updates an owned lesson with lenient repairs while preserving its source", async () => {
+  it("deletes an owned lesson and returns no content", async () => {
     const state = seedDatabase();
     try {
       await call(state, "/api/lessons/my", "POST", {
@@ -316,56 +359,24 @@ describe("My Lessons persistence and API", () => {
         lesson: createLessonScript(),
       });
 
-      const response = await call(state, "/api/lessons/my/lesson-1", "PUT", {
-        lesson: {
-          title: "Edited Garden Help",
-          scenes: [
-            {
-              background: "unknown-background",
-              steps: [{ speaker: "mystery", dialogue: "Edited dialogue" }],
-            },
-          ],
-        },
-      });
+      const response = await call(state, "/api/lessons/my/lesson-1", "DELETE");
 
-      assert.equal(response.status, 200);
-      const payload = await response.json();
-      assert.equal(payload.lesson.id, "lesson-1");
-      assert.equal(payload.lesson.source, "uploaded");
-      assert.equal(payload.lesson.lesson.title, "Edited Garden Help");
-      assert.equal(payload.lesson.lesson.scenes[0].background, "episode-garden");
-      assert.equal(payload.lesson.lesson.scenes[0].steps[0].speaker, "narrator");
-      const storedJson = state.sqlite
-        .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
-        .get("lesson-1").lesson_json;
       assert.equal(
-        payload.lesson.revision,
-        createHash("sha256").update(storedJson).digest("hex"),
+        response.status,
+        204,
       );
-      const generations = state.sqlite
-        .prepare(
-          `SELECT recording_generation AS generation,
-                  recording_cleanup_before_generation AS pending
-           FROM learner_lesson WHERE id = ?`,
-        )
-        .get("lesson-1");
-      assert.equal(generations.generation, 1);
-      assert.equal(generations.pending, null);
-      assert.ok(payload.warnings.some((warning) => /background/i.test(warning)));
       assert.equal(
-        JSON.parse(
-          state.sqlite
-            .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
-            .get("lesson-1").lesson_json,
-        ).title,
-        "Edited Garden Help",
+        state.sqlite
+          .prepare("SELECT COUNT(*) AS count FROM learner_lesson WHERE id = ?")
+          .get("lesson-1").count,
+        0,
       );
     } finally {
       state.close();
     }
   });
 
-  it("does not update a lesson owned by a same-account sibling", async () => {
+  it("does not delete a lesson owned by a same-account sibling", async () => {
     const state = seedDatabase();
     try {
       await call(state, "/api/lessons/my", "POST", {
@@ -376,8 +387,8 @@ describe("My Lessons persistence and API", () => {
       const response = await call(
         state,
         "/api/lessons/my/lesson-1",
-        "PUT",
-        { lesson: createLessonScript({ title: "Stolen edit" }) },
+        "DELETE",
+        undefined,
         {
           learnerProfileId: "learner-b",
           learnerName: "Leo",
@@ -388,19 +399,17 @@ describe("My Lessons persistence and API", () => {
       assert.equal(response.status, 404);
       assert.deepEqual(await response.json(), { error: "not_found" });
       assert.equal(
-        JSON.parse(
-          state.sqlite
-            .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
-            .get("lesson-1").lesson_json,
-        ).title,
-        "Garden Help",
+        state.sqlite
+          .prepare("SELECT COUNT(*) AS count FROM learner_lesson WHERE id = ?")
+          .get("lesson-1").count,
+        1,
       );
     } finally {
       state.close();
     }
   });
 
-  it("purges every page below the exact edited My Lesson recording prefix", async () => {
+  it("purges every page below the exact deleted My Lesson recording prefix", async () => {
     const state = seedDatabase();
     try {
       await call(
@@ -413,7 +422,6 @@ describe("My Lessons persistence and API", () => {
       const prefix =
         "personalized-story-art/user-1/lesson-recordings/my/lesson%2Fone/";
       const lists = [];
-      const deletions = [];
       const writes = [];
       const pages = new Map([
         [
@@ -432,6 +440,7 @@ describe("My Lessons persistence and API", () => {
           "page-2",
           {
             objects: [{
+              customMetadata: { lessonGeneration: String(Number.MAX_SAFE_INTEGER) },
               etag: "etag-2",
               key: `${prefix}scene-4/step-1.audio`,
               version: "version-2",
@@ -441,7 +450,6 @@ describe("My Lessons persistence and API", () => {
         ],
       ]);
       const bucket = {
-        async delete(keys) { deletions.push(keys); },
         async list(options) {
           lists.push(options);
           return pages.get(options.cursor ?? "");
@@ -455,17 +463,16 @@ describe("My Lessons persistence and API", () => {
       const response = await call(
         state,
         "/api/lessons/my/lesson%2Fone",
-        "PUT",
-        { lesson: createLessonScript({ title: "Edited lesson" }) },
+        "DELETE",
+        undefined,
         { bucket },
       );
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 204);
       assert.deepEqual(lists, [
         { include: ["customMetadata"], prefix },
         { cursor: "page-2", include: ["customMetadata"], prefix },
       ]);
-      assert.deepEqual(deletions, []);
       assert.deepEqual(writes.map(({ key, options }) => ({
         key,
         onlyIf: options.onlyIf,
@@ -479,12 +486,88 @@ describe("My Lessons persistence and API", () => {
           onlyIf: { etagMatches: "etag-2" },
         },
       ]);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT COUNT(*) AS count FROM learner_lesson WHERE id = ?")
+          .get("lesson/one").count,
+        0,
+      );
     } finally {
       state.close();
     }
   });
 
-  it("purges an edited sibling lesson only below that learner's recording subtree", async () => {
+  it("retains the lesson when recording cleanup fails", async () => {
+    const state = seedDatabase();
+    try {
+      await call(state, "/api/lessons/my", "POST", {
+        source: "uploaded",
+        lesson: createLessonScript(),
+      });
+
+      const response = await call(
+        state,
+        "/api/lessons/my/lesson-1",
+        "DELETE",
+        undefined,
+        {
+          bucket: {
+            async list() { throw new Error("R2 purge failed"); },
+          },
+        },
+      );
+
+      assert.equal(response.status, 500);
+      assert.equal((await response.json()).error, "internal_error");
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT recording_generation AS generation FROM learner_lesson WHERE id = ?",
+          )
+          .get("lesson-1").generation,
+        -1,
+      );
+      assert.equal(
+        await resolveLessonRecordingTarget(
+          state.database,
+          {
+            sessionId: "session-1",
+            userId: "user-1",
+            userName: "Parent",
+            learnerProfileId: "learner-a",
+            learnerName: "Mia",
+            legacyStorageOwner: true,
+          },
+          {
+            source: "my",
+            lessonId: "lesson-1",
+            sceneIndex: 0,
+            stepIndex: 1,
+          },
+        ),
+        null,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT COUNT(*) AS count FROM learner_lesson WHERE id = ?")
+          .get("lesson-1").count,
+        1,
+      );
+
+      const retried = await call(
+        state,
+        "/api/lessons/my/lesson-1",
+        "DELETE",
+        undefined,
+        { bucket: emptyRecordingBucket() },
+      );
+      assert.equal(retried.status, 204);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("purges a deleted sibling lesson only below that learner's recording subtree", async () => {
     const state = seedDatabase();
     const sibling = {
       learnerProfileId: "learner-b",
@@ -505,8 +588,8 @@ describe("My Lessons persistence and API", () => {
       const response = await call(
         state,
         "/api/lessons/my/sibling%2Flesson",
-        "PUT",
-        { lesson: createLessonScript({ childName: "Leo", title: "Edited" }) },
+        "DELETE",
+        undefined,
         {
           ...sibling,
           bucket: {
@@ -527,42 +610,32 @@ describe("My Lessons persistence and API", () => {
         },
       );
 
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 204);
       assert.deepEqual(lists, [{ include: ["customMetadata"], prefix }]);
     } finally {
       state.close();
     }
   });
 
-  it("keeps failed edit cleanup durable and reconciles it on a later detail load", async () => {
+  it("reconciles a seeded pending recording cleanup on a later detail load", async () => {
     const state = seedDatabase();
     try {
       await call(state, "/api/lessons/my", "POST", {
         source: "uploaded",
         lesson: createLessonScript(),
       });
-      const response = await call(
-        state,
-        "/api/lessons/my/lesson-1",
-        "PUT",
-        { lesson: createLessonScript({ title: "Edited before purge" }) },
-        {
-          bucket: {
-            async delete() {},
-            async list() { throw new Error("R2 purge failed"); },
-          },
-        },
-      );
-
-      assert.equal(response.status, 200);
-      assert.equal(
-        JSON.parse(
-          state.sqlite
-            .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
-            .get("lesson-1").lesson_json,
-        ).title,
-        "Edited before purge",
-      );
+      state.sqlite
+        .prepare(
+          `UPDATE learner_lesson
+           SET recording_generation = 1,
+               recording_cleanup_before_generation = 1,
+               lesson_json = ?
+           WHERE id = ?`,
+        )
+        .run(
+          JSON.stringify(createLessonScript({ title: "Edited before purge" })),
+          "lesson-1",
+        );
       assert.deepEqual(
         { ...state.sqlite
           .prepare(
@@ -634,20 +707,14 @@ describe("My Lessons persistence and API", () => {
         learnerName: "Mia",
         legacyStorageOwner: true,
       };
-      const first = await repository.updateOwned(
-        "lesson-1",
-        identity,
-        createLessonScript({ title: "First edit" }),
-      );
-      assert.equal(first.recordingGeneration, 1);
-      assert.equal(first.recordingCleanupBeforeGeneration, 1);
-      const later = await repository.updateOwned(
-        "lesson-1",
-        identity,
-        createLessonScript({ title: "Later edit" }),
-      );
-      assert.equal(later.recordingGeneration, 2);
-      assert.equal(later.recordingCleanupBeforeGeneration, 2);
+      state.sqlite
+        .prepare(
+          `UPDATE learner_lesson
+           SET recording_generation = 2,
+               recording_cleanup_before_generation = 2
+           WHERE id = ?`,
+        )
+        .run("lesson-1");
 
       assert.equal(
         await repository.clearRecordingCleanup("lesson-1", identity, 1),

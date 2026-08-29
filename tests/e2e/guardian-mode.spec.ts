@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const GUARDIAN_PASSWORD = "e2e-guardian-password";
 const LOCK_ERROR =
@@ -432,7 +431,7 @@ test("a locked guardian deep link never flashes protected content", async ({
   ).toBe(false);
 });
 
-for (const { path, protectedName, seedEditLesson, unlockedPath } of [
+for (const { path, protectedName, unlockedPath } of [
   { path: "/guardian", protectedName: "Guardian dashboard" },
   { path: "/guardian/account", protectedName: "Account & privacy" },
   {
@@ -456,29 +455,8 @@ for (const { path, protectedName, seedEditLesson, unlockedPath } of [
     protectedName: "Update my profile",
   },
   { path: "/lessons/my/create", protectedName: "Create a custom lesson" },
-  {
-    path: "/lessons/my/boundary-fixture/edit",
-    protectedName: "Edit Lesson",
-    seedEditLesson: true,
-  },
 ]) {
   test(`locked ${path} shows only the password gate`, async ({ page }) => {
-    if (seedEditLesson) {
-      await page.route("**/api/lessons/my/boundary-fixture", async (route) => {
-        await route.fulfill({
-          body: JSON.stringify({
-            lesson: {
-              id: "boundary-fixture",
-              lesson: createLessonScript(),
-              revision: "a".repeat(64),
-              source: "generated",
-            },
-          }),
-          contentType: "application/json",
-          status: 200,
-        });
-      });
-    }
 
     await page.addInitScript((expectedProtectedName) => {
       const inspected = new WeakSet<Node>();
@@ -786,7 +764,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
       page.getByRole("group", { name: "Choose profile mode" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: /Create custom lesson|Edit lesson/ }),
+      page.getByRole("link", { name: "Create custom lesson" }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", {

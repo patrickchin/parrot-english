@@ -42,7 +42,7 @@ prototype build entry in the shipped product.
   and reloads before the new learner's routes render.
 - `src/conversation` owns the learner-controlled LiveKit conversation surface.
 - `src/lessons` owns the learner catalog/player and guardian-only custom lesson
-  manager, creation, and editing.
+  manager, creation, and deletion.
 - `src/stories` owns the stored-level learner shelf/reader, its always-visible
   public Long stories section, and Guardian-only story settings and
   personalized-art controls. Long stories use the main authenticated routes;
@@ -120,7 +120,7 @@ Guardian unlock. Individual learner deletion is not implemented.
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
 before roster reads/mutations, Guardian profile reads/updates, profile
-preference changes, custom-lesson creation/generation/updates,
+preference changes, custom-lesson creation/generation/deletion,
 personalized-art mutations, dubbing consent grant, and whole-dub deletion when
 the current session lacks a live unlock.
 Conversation start is purpose-aware: profile edits
@@ -185,7 +185,6 @@ header to select a profile or storage namespace.
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/:lessonId/scenes/:sceneNumber
 │   ├── /lessons/my/create                       (guardian)
-│   └── /lessons/my/:lessonId/edit               (guardian)
 ├── /stories
 │   └── /stories/:storyId/pages/:pageNumber
 ├── /dubs/five-little-ducks
@@ -230,6 +229,11 @@ LiveKit agent turns and finalization use the learner stored on the conversation
 row, not a later session selection. Whole-account deletion remains
 account-scoped and enumerates all learner storage identities before the user
 row cascades.
+
+Custom-lesson deletion first marks the owned lesson as non-recordable, then
+purges that learner and lesson's exact recording namespace, and finally removes
+the row. If storage cleanup fails, the marked row remains as a retry anchor
+while new recording uploads stay blocked.
 
 ## Dubbing Capability Boundary
 
