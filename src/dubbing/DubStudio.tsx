@@ -610,13 +610,6 @@ export function DubStudio({
     }
   }
 
-  function handleContinue() {
-    if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    const generation = cancelMedia(true);
-    dispatch({ type: "CONTINUE" });
-    focusAfterRender(lineHeadingRef, generation);
-  }
-
   function handleOpenScene(sceneIndex: number) {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
@@ -738,7 +731,6 @@ export function DubStudio({
         error={state.error}
         locked={locked}
         needsRetake={new Set(Object.keys(state.needsRetake))}
-        onContinue={handleContinue}
         onOpenScene={handleOpenScene}
         onTogglePlayback={() => void startPlayback("full")}
         playback={state.playbackScope === "full"

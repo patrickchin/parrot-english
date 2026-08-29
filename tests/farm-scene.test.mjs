@@ -19,23 +19,21 @@ after(async () => {
 });
 
 describe("farm scene renderer", () => {
-  it("renders the active farm animal and keeps thumbnails accessible", () => {
-    const html = renderToStaticMarkup(createElement(FarmScene, {
+  it("renders the generated illustration for the active farm scene", () => {
+    const pigs = renderToStaticMarkup(createElement(FarmScene, {
       line: OLD_MACDONALD_DUB.lines[14],
       thumbnail: true,
     }));
-
-    assert.match(html, /data-farm-animal="pigs"/);
-    assert.match(html, /aria-label="Farm scene"/);
-    assert.doesNotMatch(html, /https?:\/\//);
-  });
-
-  it("uses the source-faithful pig sound in the farm bubble", () => {
-    const html = renderToStaticMarkup(createElement(FarmScene, {
-      line: OLD_MACDONALD_DUB.lines[16],
-      playing: true,
+    const cows = renderToStaticMarkup(createElement(FarmScene, {
+      line: OLD_MACDONALD_DUB.lines[0],
+      thumbnail: true,
     }));
 
-    assert.match(html, />snort-snort<\/div>/);
+    assert.match(pigs, /old-macdonald\/scene-3-pigs\.webp/);
+    assert.match(pigs, /alt="Old MacDonald laughs with three pink pigs/);
+    assert.match(cows, /old-macdonald\/scene-1-cows\.webp/);
+    assert.notEqual(pigs, cows);
+    assert.equal((pigs.match(/<img/g) ?? []).length, 1);
+    assert.doesNotMatch(pigs, /data-farm-animal|snort-snort/);
   });
 });

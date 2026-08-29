@@ -13,7 +13,6 @@ export type DubProjectHomeProps = {
   error?: string;
   locked: boolean;
   needsRetake: ReadonlySet<string>;
-  onContinue(): void;
   onOpenScene(sceneIndex: number): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
@@ -52,7 +51,6 @@ export function DubProjectHome({
   error = "",
   locked,
   needsRetake,
-  onContinue,
   onOpenScene,
   onTogglePlayback,
   playback,
@@ -62,13 +60,8 @@ export function DubProjectHome({
   visualLine = activeLine,
 }: DubProjectHomeProps) {
   const recorded = definition.lines.filter(({ id }) => Object.hasOwn(saved, id)).length;
-  const allSaved = recorded === definition.lines.length;
   const retakeState: Record<string, true> = Object.fromEntries(
     [...needsRetake].map((lineId) => [lineId, true]),
-  );
-  const firstMissingLineIndex = definition.lines.findIndex(({ id }) => !Object.hasOwn(saved, id));
-  const continueSceneIndex = Math.floor(
-    (firstMissingLineIndex < 0 ? 0 : firstMissingLineIndex) / definition.linesPerScene,
   );
   const sceneLines = getSceneLines(definition);
   const activeLineIndex = Math.max(
@@ -87,8 +80,8 @@ export function DubProjectHome({
 
   return (
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
-      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,3fr)_minmax(17rem,1fr)] short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:gap-2 tall-wide:h-full tall-wide:min-h-0 tall-wide:grid-cols-[minmax(0,3fr)_minmax(18rem,1fr)] tall-wide:grid-rows-[auto_minmax(0,1fr)]">
-        <header className="flex min-w-0 items-center justify-between gap-3 short-wide:col-span-2 tall-wide:col-span-2">
+      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3">
+        <header className="flex min-w-0 items-center justify-between gap-3">
           <h1 className="m-0 truncate text-xl text-brand-ink short-wide:text-lg md:text-4xl">{definition.title}</h1>
           <p
             aria-label="Project recording progress"
@@ -103,40 +96,35 @@ export function DubProjectHome({
           </p>
         </header>
 
-        <div className="grid min-h-0 gap-2 short-wide:col-start-1 short-wide:row-start-2 short-wide:h-full short-wide:max-h-full short-wide:grid-rows-[minmax(0,1fr)_3rem] short-wide:self-center tall-wide:col-start-1 tall-wide:row-start-2 tall-wide:h-full tall-wide:max-h-full tall-wide:grid-rows-[minmax(0,1fr)_3rem] tall-wide:self-center">
-          <section
-            aria-label="Full video player"
-            className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:h-full short-wide:w-auto short-wide:max-w-full short-wide:justify-self-center short-wide:rounded-2xl tall-wide:h-full tall-wide:w-auto tall-wide:max-w-full tall-wide:justify-self-center"
-          >
-            <Scene compact line={visualLine} playing={playback === "playing"} />
-          </section>
-          <ActionButton
-            aria-label={playbackLabel}
-            className="h-12 min-h-12 min-w-28 justify-self-start gap-2 border-2 bg-brand-navy/95 px-4 text-base short-wide:px-3 short-wide:text-sm"
-            disabled={playback === "loading" || locked}
-            onClick={onTogglePlayback}
-            ref={playbackButtonRef}
-            size="none"
-            variant="navy"
-          >
-            {playback === "playing" ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
-            {playback === "playing" ? "Stop" : playback === "loading" ? "Loading…" : "Play"}
-          </ActionButton>
-        </div>
-
-        <div className="grid min-w-0 gap-3 short-wide:col-start-2 short-wide:row-start-2 short-wide:min-h-0 short-wide:grid-rows-[auto_minmax(0,1fr)] short-wide:gap-2 tall-wide:col-start-2 tall-wide:row-start-2 tall-wide:min-h-0 tall-wide:grid-rows-[auto_minmax(0,1fr)]">
-          <div className="flex justify-end">
-            {!allSaved ? (
-              <ActionButton aria-label={`Continue Scene ${continueSceneIndex + 1}`} className="w-full short-wide:h-12 short-wide:min-h-12 short-wide:px-3 short-wide:text-base" disabled={locked} onClick={onContinue} size="large">
-                Continue
-              </ActionButton>
-            ) : null}
+        <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)]">
+          <div className="grid min-w-0 gap-3">
+            <section
+              aria-label="Full video player"
+              className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
+            >
+              <Scene compact line={visualLine} playing={playback === "playing"} />
+            </section>
+            <ActionButton
+              aria-label={playbackLabel}
+              className="h-12 min-h-12 min-w-28 justify-self-start gap-2 border-2 bg-brand-navy/95 px-4 text-base short-wide:px-3 short-wide:text-sm"
+              disabled={playback === "loading" || locked}
+              onClick={onTogglePlayback}
+              ref={playbackButtonRef}
+              size="none"
+              variant="navy"
+            >
+              {playback === "playing" ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
+              {playback === "playing" ? "Stop" : playback === "loading" ? "Loading…" : "Play"}
+            </ActionButton>
           </div>
 
-          <nav aria-label="Scenes" className="relative grid min-w-0 max-w-full grid-flow-col auto-cols-[minmax(6.5rem,1fr)] gap-2 overflow-x-auto pb-2 short-wide:min-h-0 short-wide:grid-flow-row short-wide:grid-cols-3 short-wide:content-start short-wide:gap-1 short-wide:overflow-visible short-wide:pb-0 md:grid-flow-row md:grid-cols-6 md:overflow-visible short-wide:md:grid-cols-3 tall-wide:min-h-0 tall-wide:grid-flow-row tall-wide:grid-cols-2 tall-wide:content-start tall-wide:overflow-visible tall-wide:pb-0">
-            {sceneLines.map((lines, sceneIndex) => {
+          <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card md:p-4">
+            <h2 className="m-0 text-xl text-brand-ink">Choose a scene</h2>
+            <nav aria-label="Scenes" className="grid min-w-0 grid-cols-2 gap-3">
+            {sceneLines.map((_, sceneIndex) => {
               const status = getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex, definition);
               const statusLabel = sceneStatusLabel(status, definition.linesPerScene);
+              const statusText = sceneStatusText(status, definition.linesPerScene);
               const statusIcon = status.kind === "done"
                 ? "✓"
                 : status.kind === "needs-retake"
@@ -145,11 +133,13 @@ export function DubProjectHome({
                     ? "◐"
                     : "○";
               const selected = sceneIndex === activeSceneIndex;
+              const artwork = definition.sceneArtwork[sceneIndex];
+              const title = definition.sceneTitles[sceneIndex];
               return (
                 <ActionButton
                   aria-current={selected ? "page" : undefined}
-                  aria-label={`Scene ${sceneIndex + 1}, ${statusLabel}`}
-                  className="relative min-h-20 min-w-0 flex-col gap-1 overflow-hidden rounded-2xl px-1.5 py-1.5 text-sm short-wide:h-[4.55rem] short-wide:min-h-0 short-wide:gap-0 short-wide:p-1"
+                  aria-label={`Scene ${sceneIndex + 1}, ${title}, ${statusLabel}`}
+                  className="relative min-h-36 min-w-0 flex-col items-stretch gap-2 overflow-hidden rounded-2xl p-2 text-left short-wide:min-h-28"
                   disabled={locked}
                   key={sceneIndex}
                   onClick={() => onOpenScene(sceneIndex)}
@@ -157,35 +147,25 @@ export function DubProjectHome({
                   size="none"
                   variant={selected ? "navy" : "surface"}
                 >
-                  <span aria-label={`Scene ${sceneIndex + 1} thumbnail`} className="block aspect-video w-full overflow-hidden rounded-xl" role="img">
-                    <Scene line={lines[0]} thumbnail />
-                  </span>
-                  <span aria-hidden="true" className="leading-none">{sceneIndex + 1}</span>
-                  {definition.showSceneStatusText ? (
-                    <span aria-hidden="true" className="text-[0.72rem] font-black leading-none short-wide:text-[0.65rem]">
-                      {sceneStatusText(status, definition.linesPerScene)}
-                    </span>
-                  ) : null}
-                  <span
-                    aria-hidden="true"
-                    className={`absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full text-[0.72rem] font-black leading-none ring-2 ring-white ${
-                      status.kind === "done"
-                        ? "bg-emerald-600 text-white"
-                        : status.kind === "needs-retake"
-                          ? "bg-rose-600 text-white"
-                          : status.kind === "in-progress"
-                            ? "bg-amber-300 text-slate-950"
-                            : "bg-slate-100 text-slate-700"
-                    }`}
-                    data-status-icon={status.kind}
-                  >
-                    {statusIcon}
+                  <img
+                    alt=""
+                    className="aspect-video w-full rounded-xl object-cover"
+                    decoding="async"
+                    height={artwork.height}
+                    loading="lazy"
+                    src={artwork.src}
+                    width={artwork.width}
+                  />
+                  <span className="grid min-w-0 gap-0.5 px-1">
+                    <span className="text-xs font-black uppercase tracking-wide opacity-75">Scene {sceneIndex + 1}</span>
+                    <strong className="truncate text-base leading-tight">{title}</strong>
+                    <span className="text-sm font-black" data-status-icon={status.kind}>{statusIcon} {statusText}</span>
                   </span>
                 </ActionButton>
               );
             })}
-          </nav>
-
+            </nav>
+          </aside>
         </div>
 
         {error ? (
