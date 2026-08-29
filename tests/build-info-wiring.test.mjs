@@ -26,25 +26,33 @@ function captureDeploymentArguments(context, command, script) {
     '#!/bin/sh\nprintf \'%s\\n\' "$@" > "$PARROT_DEPLOY_ARGS"\n',
     { mode: 0o755 },
   );
+  writeFileSync(
+    join(binDirectory, "git"),
+    `#!/bin/sh
+case "$*" in
+  "rev-list --count HEAD") printf '42\\n' ;;
+  "rev-parse HEAD") printf 'abcdef0123456789abcdef0123456789abcdef01\\n' ;;
+  *) exit 64 ;;
+esac
+`,
+    { mode: 0o755 },
+  );
   context.after(() => rmSync(temporaryRoot, { force: true, recursive: true }));
 
+  const env = {
+    ...process.env,
+    PARROT_DEPLOY_ARGS: argumentsPath,
+    PATH: `${binDirectory}${delimiter}${process.env.PATH ?? ""}`,
+  };
+  delete env.GITHUB_SHA;
+  delete env.WORKERS_CI_COMMIT_SHA;
   execFileSync(process.execPath, [fileURLToPath(new URL(script, import.meta.url))], {
     cwd: projectRoot,
-    env: {
-      ...process.env,
-      PARROT_DEPLOY_ARGS: argumentsPath,
-      PATH: `${binDirectory}${delimiter}${process.env.PATH ?? ""}`,
-    },
+    env,
     stdio: "pipe",
   });
 
   return readFileSync(argumentsPath, "utf8").trim().split("\n");
-}
-
-function optionValues(arguments_, option) {
-  return arguments_.flatMap((argument, index) =>
-    argument === option ? [arguments_[index + 1]] : [],
-  );
 }
 
 test("Worker deployment sends release metadata and enables realtime conversations", (context) => {
@@ -54,20 +62,18 @@ test("Worker deployment sends release metadata and enables realtime conversation
     "../scripts/deploy-cloudflare-worker.mjs",
   );
 
-  assert.deepEqual(arguments_.slice(0, 4), [
+  assert.deepEqual(arguments_, [
     "wrangler",
     "deploy",
     "--config",
     "wrangler.jsonc",
-  ]);
-  const tag = optionValues(arguments_, "--tag")[0];
-  assert.match(tag, /^v(\d+\.\d+\.\d+)-([0-9a-f]{7})$/);
-  const [, version, commitSha] = tag.match(
-    /^v(\d+\.\d+\.\d+)-([0-9a-f]{7})$/,
-  );
-  assert.deepEqual(optionValues(arguments_, "--var"), [
-    `PARROT_BACKEND_VERSION:${version}`,
-    `PARROT_BACKEND_COMMIT_SHA:${commitSha}`,
+    "--tag",
+    "v0.1.42-abcdef0",
+    "--var",
+    "PARROT_BACKEND_VERSION:0.1.42",
+    "--var",
+    "PARROT_BACKEND_COMMIT_SHA:abcdef0",
+    "--var",
     "REALTIME_CONVERSATIONS_ENABLED:1",
   ]);
 });
@@ -79,9 +85,12 @@ test("conversation-agent deployment sends its release identity as secrets", (con
     "../scripts/deploy-livekit-agent.mjs",
   );
 
-  assert.deepEqual(arguments_.slice(0, 2), ["agent", "deploy"]);
-  const secrets = optionValues(arguments_, "--secrets");
-  assert.equal(secrets.length, 2);
-  assert.match(secrets[0], /^PARROT_AGENT_VERSION=\d+\.\d+\.\d+$/);
-  assert.match(secrets[1], /^PARROT_AGENT_COMMIT_SHA=[0-9a-f]{7}$/);
+  assert.deepEqual(arguments_, [
+    "agent",
+    "deploy",
+    "--secrets",
+    "PARROT_AGENT_VERSION=0.1.42",
+    "--secrets",
+    "PARROT_AGENT_COMMIT_SHA=abcdef0",
+  ]);
 });
