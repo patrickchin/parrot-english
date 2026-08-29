@@ -805,7 +805,95 @@ test("active learner detail and story saves reach learner-mode consumers in the 
       { exact: true },
     ),
   ).toBeVisible();
+
+  await page.getByRole("main").evaluate((main) => {
+    (
+      window as Window & {
+        __storySettingsMain?: Element;
+      }
+    ).__storySettingsMain = main;
+  });
+  await page.evaluate(() => {
+    const originalFetch = window.fetch;
+    let releaseRefresh = () => {};
+    const refreshHeld = new Promise<void>((resolve) => {
+      releaseRefresh = resolve;
+    });
+    const gate = {
+      release() {
+        releaseRefresh();
+        window.fetch = originalFetch;
+      },
+      requestCount: 0,
+    };
+    (
+      window as Window & {
+        __storySettingsRefreshGate?: typeof gate;
+      }
+    ).__storySettingsRefreshGate = gate;
+    window.fetch = async (input, init) => {
+      const method =
+        init?.method ?? (input instanceof Request ? input.method : "GET");
+      const source =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      const url = new URL(source, window.location.href);
+      if (
+        method === "GET" &&
+        url.pathname === "/api/learner-profile" &&
+        url.search === ""
+      ) {
+        gate.requestCount += 1;
+        await refreshHeld;
+      }
+      return originalFetch(input, init);
+    };
+  });
   await page.getByRole("tab", { name: /Little stories/ }).click();
+  try {
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            (
+              window as Window & {
+                __storySettingsRefreshGate?: { requestCount: number };
+              }
+            ).__storySettingsRefreshGate?.requestCount ?? 0,
+        ),
+      )
+      .toBe(1);
+    await expect(
+      page.getByRole("heading", { exact: true, name: "Story settings" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Checking the current learner" }),
+    ).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            document.querySelector("main") ===
+            (
+              window as Window & {
+                __storySettingsMain?: Element;
+              }
+            ).__storySettingsMain,
+        ),
+      )
+      .toBe(true);
+  } finally {
+    await page.evaluate(() => {
+      (
+        window as Window & {
+          __storySettingsRefreshGate?: { release(): void };
+        }
+      ).__storySettingsRefreshGate?.release();
+    });
+  }
   await expect(
     page.getByRole("status").filter({ hasText: "Story level saved" }),
   ).toContainText("Little stories");
@@ -2850,14 +2938,27 @@ test("targets Noah's story level and personalized art without changing Mia's lea
     "/api/stories/the-red-ball/personalized-art/asset?v=1786276800000&learnerProfileId=learner-noah",
   );
 
-  await target.getByRole("button", { exact: true, name: "Mia" }).click();
+  const storySettingsMain = await page.getByRole("main").elementHandle();
+  const miaTarget = target.getByRole("button", { exact: true, name: "Mia" });
+  await miaTarget.click();
   await expect(
     page.getByText("Editing settings for Mia", { exact: true }),
   ).toBeVisible();
+  expect(
+    await storySettingsMain?.evaluate(
+      (main) => main === document.querySelector("main"),
+    ),
+  ).toBe(true);
+  await expect(miaTarget).toBeFocused();
   await page.goBack();
   await expect(
     page.getByText("Editing settings for Noah", { exact: true }),
   ).toBeVisible();
+  expect(
+    await storySettingsMain?.evaluate(
+      (main) => main === document.querySelector("main"),
+    ),
+  ).toBe(true);
   await page.reload();
   await expect(
     page.getByText("Editing settings for Noah", { exact: true }),

@@ -532,6 +532,149 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
   );
 });
 
+test("keeps the story settings shell connected while a new learner profile loads", async () => {
+  const noahProfile = deferred();
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-mia" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json({ profile: learnerProfile(), questions: [] });
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return noahProfile.promise;
+    }
+    if (
+      path ===
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-mia" ||
+      path ===
+        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-noah"
+    ) {
+      return Response.json({ enabled: true, stories: {} });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      SelectionProvider,
+      null,
+      createElement(
+        MemoryRouter,
+        {
+          initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
+        },
+        createElement(GuardianStorySettings),
+      ),
+    ),
+  );
+  await waitFor(() => assert.ok(levelButton(container, "Little stories")));
+  const main = container.querySelector("main");
+  const noahTarget = [...container.querySelectorAll("button")].find(
+    (candidate) => candidate.getAttribute("aria-label") === "Noah",
+  );
+  assert.ok(main, "Expected the route main landmark");
+  assert.ok(noahTarget, "Expected the Noah learner target");
+
+  noahTarget.focus();
+  act(() => noahTarget.click());
+
+  try {
+    assert.match(container.textContent, /Editing settings for Noah/);
+    assert.equal(container.querySelector("main") === main, true);
+    assert.equal(document.activeElement === noahTarget, true);
+    assert.equal(container.contains(noahTarget), true);
+    assert.equal(noahTarget.getAttribute("aria-pressed"), "true");
+    assert.match(
+      statusMatching(container, /Loading story settings/i)?.textContent ?? "",
+      /Loading story settings/i,
+    );
+    assert.equal(container.querySelectorAll('[role="tab"]').length, 4);
+    assert.ok(container.querySelector('[role="tablist"]'));
+    assert.ok(
+      container.querySelector("h2")?.textContent?.includes("Choose story level"),
+    );
+    assert.match(container.textContent, /Personalized story art/);
+    assert.equal(
+      [...container.querySelectorAll('[role="tab"]')].some(
+        (tab) => tab.getAttribute("aria-selected") === "true",
+      ),
+      false,
+    );
+    assert.ok(
+      [...container.querySelectorAll('[role="tab"]')].every(
+        (tab) => tab.getAttribute("aria-disabled") === "true",
+      ),
+    );
+    assert.equal(container.querySelector('input[type="file"]')?.disabled, true);
+    assert.equal(
+      container.querySelector('input[type="checkbox"]')?.disabled,
+      true,
+    );
+  } finally {
+    noahProfile.resolve(
+      Response.json({
+        profile: learnerProfile("early-a1", {
+          id: "learner-noah",
+          name: "Noah",
+        }),
+        questions: [],
+      }),
+    );
+  }
+});
+
+test("keeps story controls unavailable when the targeted profile fails to load", async () => {
+  const preferenceRequests = [];
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (
+      path === "/api/profile?learnerProfileId=learner-mia" &&
+      (init.method ?? "GET") === "GET"
+    ) {
+      return Response.json(
+        { error: "load_failed", message: "Profile unavailable." },
+        { status: 500 },
+      );
+    }
+    if (
+      path ===
+      "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-mia"
+    ) {
+      return Response.json({ enabled: true, stories: {} });
+    }
+    if (path.startsWith("/api/profile/preferences")) {
+      preferenceRequests.push(path);
+      return Response.json({ profile: learnerProfile(), questions: [] });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(settingsHarness());
+  await waitFor(() =>
+    assert.match(
+      container.querySelector('[role="alert"]')?.textContent ?? "",
+      /Profile unavailable/i,
+    ),
+  );
+
+  const tabs = [...container.querySelectorAll('[role="tab"]')];
+  assert.equal(tabs.length, 4);
+  assert.ok(
+    tabs.every((tab) => tab.getAttribute("aria-disabled") === "true"),
+  );
+  await click(levelButton(container, "Little stories"));
+  assert.deepEqual(preferenceRequests, []);
+});
+
 test("loads and saves Noah's story settings and art through explicit target requests", async () => {
   const requests = [];
   globalThis.fetch = async (path, init = {}) => {

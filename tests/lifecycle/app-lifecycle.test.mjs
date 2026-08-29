@@ -9297,6 +9297,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
   });
 
   it("replaces fresh same-learner data without remounting learner-mode consumers", async () => {
+    const refreshedProfile = deferred();
+    let holdRefresh = false;
+    let refreshRequests = 0;
     let currentProfile = {
       ...completedLearnerProfileState().profile,
       id: "learner-mia",
@@ -9306,6 +9309,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     globalThis.fetch = async (path, init = {}) => {
       assert.equal(path, "/api/learner-profile");
       assert.equal(init.method, "GET");
+      if (holdRefresh) {
+        refreshRequests += 1;
+        return refreshedProfile.promise;
+      }
       return json({
         ...completedLearnerProfileState(),
         profile: currentProfile,
@@ -9343,7 +9350,33 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       name: "Mia Updated",
       storyLevel: "tiny-stories",
     };
-    await click(button("Refresh the same learner"));
+    const refreshButton = button("Refresh the same learner");
+    holdRefresh = true;
+    await click(refreshButton);
+    await waitFor(() => assert.equal(refreshRequests, 1));
+
+    try {
+      const heldProfile = output("Same learner refreshed profile");
+      assert.strictEqual(heldProfile.dataset.instance, initial);
+      assert.equal(
+        heldProfile.closest("[hidden]") === null,
+        true,
+        "The loaded learner consumer stays visible during its refresh.",
+      );
+      assert.equal(
+        refreshButton.closest("[inert]") === null,
+        true,
+        "The loaded learner consumer stays interactive during its refresh.",
+      );
+      noText(/Checking the current learner/i);
+    } finally {
+      refreshedProfile.resolve(
+        json({
+          ...completedLearnerProfileState(),
+          profile: currentProfile,
+        }),
+      );
+    }
 
     await waitFor(() => {
       const profile = output("Same learner refreshed profile");

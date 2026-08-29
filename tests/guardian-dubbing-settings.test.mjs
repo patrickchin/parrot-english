@@ -670,3 +670,80 @@ test("loads and grants Noah's dubbing through explicit target requests only", as
   assert.equal(miaConsent, "not_granted");
   assert.equal(noahConsent, "granted");
 });
+
+test("keeps the dubbing shell and learner selector mounted while a new target loads", async () => {
+  const noahStatus = deferred();
+  globalThis.fetch = async (path) => {
+    if (path === "/api/learner-profiles") {
+      return Response.json(learnerRoster());
+    }
+    if (
+      /^\/api\/dubs\/(?:five-little-ducks-v2|old-macdonald-v1)\?learnerProfileId=learner-mia$/.test(
+        path,
+      )
+    ) {
+      return Response.json(dubStatus("granted", 4, dubIdFromPath(path)));
+    }
+    if (path === "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-noah") {
+      return noahStatus.promise;
+    }
+    if (path === "/api/dubs/old-macdonald-v1?learnerProfileId=learner-noah") {
+      return Response.json(dubStatus("not_granted", 0, dubIdFromPath(path)));
+    }
+    throw new Error(`Unexpected request: ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/dubbing?learnerProfileId=learner-mia"] },
+      createElement(
+        GuardianProvider,
+        { lockGuardianAccess: async () => ({ mode: "learner" }) },
+        createElement(GuardianDubbingSettings),
+      ),
+    ),
+  );
+
+  await waitFor(() =>
+    assert.match(container.textContent, /Turn off Mia's voice dubbing/),
+  );
+  const main = container.querySelector("main");
+  const noahButton = button(container, "Noah");
+  assert.ok(main);
+  noahButton.focus();
+  act(() => noahButton.click());
+
+  try {
+    assert.ok(
+      container.querySelector("main") === main,
+      "Expected the route main landmark to remain mounted.",
+    );
+    assert.equal(noahButton.isConnected, true);
+    assert.ok(
+      document.activeElement === noahButton,
+      "Expected focus to remain on the selected learner.",
+    );
+    assert.match(
+      [...container.querySelectorAll('[role="status"]')].find((status) =>
+        /Loading voice dubbing settings…/.test(status.textContent ?? ""),
+      )?.textContent ?? "",
+      /Loading voice dubbing settings…/,
+    );
+    assert.equal(
+      [...container.querySelectorAll('[role="status"]')]
+        .find((status) =>
+          /Loading voice dubbing settings…/.test(status.textContent ?? ""),
+        )
+        ?.closest('[aria-busy="true"]') !== null,
+      true,
+    );
+    assert.match(container.textContent, /Editing settings for Noah/);
+    assert.doesNotMatch(container.textContent, /Turn off Mia's voice dubbing/);
+  } finally {
+    await act(async () => {
+      noahStatus.resolve(Response.json(dubStatus("not_granted")));
+      await Promise.resolve();
+    });
+  }
+});

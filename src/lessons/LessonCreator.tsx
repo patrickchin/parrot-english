@@ -269,12 +269,10 @@ function LessonCreatorLayout({
   );
 }
 
-export function TargetedLessonCreator({
+function TargetedLessonCreatorContent({
   learnerProfileId,
-  target,
 }: {
   learnerProfileId: string;
-  target: GuardianLearnerTargetState;
 }) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -468,7 +466,7 @@ export function TargetedLessonCreator({
   }
 
   return (
-    <LessonCreatorLayout target={target}>
+    <>
       {!lesson ? (
         <>
           <SegmentedControl
@@ -622,21 +620,38 @@ export function TargetedLessonCreator({
           </ActionButton>
         </form>
       ) : null}
+    </>
+  );
+}
+
+export function TargetedLessonCreator({
+  learnerProfileId,
+  target,
+}: {
+  learnerProfileId: string;
+  target: GuardianLearnerTargetState;
+}) {
+  return (
+    <LessonCreatorLayout target={target}>
+      <TargetedLessonCreatorContent learnerProfileId={learnerProfileId} />
     </LessonCreatorLayout>
   );
 }
 
 export function LessonCreator() {
   const target = useGuardianLearnerTarget();
-  return target.phase === "ready" &&
-    target.learnerProfileId !== null &&
-    target.learnerName !== null ? (
-    <TargetedLessonCreator
-      key={target.learnerProfileId}
-      learnerProfileId={target.learnerProfileId}
-      target={target}
-    />
-  ) : (
-    <LessonCreatorLayout target={target} />
+  const learnerProfileId =
+    target.phase === "ready" && target.learnerName !== null
+      ? target.learnerProfileId
+      : null;
+  return (
+    <LessonCreatorLayout target={target}>
+      {learnerProfileId !== null ? (
+        <TargetedLessonCreatorContent
+          key={learnerProfileId}
+          learnerProfileId={learnerProfileId}
+        />
+      ) : null}
+    </LessonCreatorLayout>
   );
 }
