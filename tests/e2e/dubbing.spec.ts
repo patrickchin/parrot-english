@@ -83,8 +83,8 @@ async function expectTargetAtLeast48(locator: Locator) {
 
 async function expectSharedHeaderTarget(locator: Locator) {
   const box = await boundingBoxOrThrow(locator);
-  expect(box.width).toBeGreaterThanOrEqual(44);
-  expect(box.height).toBeGreaterThanOrEqual(44);
+  expect(box.width).toBeGreaterThanOrEqual(48);
+  expect(box.height).toBeGreaterThanOrEqual(48);
 }
 
 async function expectBelow(locator: Locator, boundary: Locator) {

@@ -14,8 +14,8 @@ async function expectContained(page: Page, locator: Locator) {
 async function expectSharedHeaderTarget(locator: Locator) {
   const box = await locator.boundingBox();
   expect(box).not.toBeNull();
-  expect(box!.width).toBeGreaterThanOrEqual(44);
-  expect(box!.height).toBeGreaterThanOrEqual(44);
+  expect(box!.width).toBeGreaterThanOrEqual(48);
+  expect(box!.height).toBeGreaterThanOrEqual(48);
 }
 
 test("nursery rhyme picker links to both illustrated projects", async ({ page }) => {
