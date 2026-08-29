@@ -224,7 +224,8 @@ Use a nonproduction test account that had data before `0012`:
 6. Load existing personalized story art and confirm its exact stored object is
    still served through the authenticated asset route.
 7. Check Five Little Ducks status and replay an existing saved line after
-   consent. Do not re-record production learner audio for a smoke test.
+   consent. Open Old MacDonald and confirm the same existing consent authorizes
+   its status route. Do not re-record production learner audio for a smoke test.
 8. Confirm the Guardian dashboard, profile Back/Cancel/Save, and lesson
    authoring Back/Save routes return to Guardian pages without locking the
    session.
@@ -278,8 +279,9 @@ MULTI_LEARNER_COMPATIBILITY_DEPLOYED="$PARROT_COMPATIBILITY_SHA" \
 ```
 
 The verification script fails if the repository variable is empty, does not
-resolve to an ancestor, lacks `0012`, or already contains `0013`. Repeat the
-full local gates on the reviewed enable PR head before merging it.
+resolve to an ancestor, lacks any of `0012`, `0014`, or `0015`, or already
+contains `0013`. Repeat the full local gates on the reviewed enable PR head
+before merging it.
 
 ### 2. Merge the enable PR and follow its automatic deployment
 
@@ -331,8 +333,8 @@ Use controlled test profiles to verify:
    with no selection shows only `Ask a grown-up to choose a learner` in learner
    mode and exposes the roster only after Guardian unlock.
 6. Profile details, onboarding, saved lessons, conversations, story level,
-   personalized art, dubbing consent, and voice clips remain isolated between
-   two sibling learners.
+   personalized art, each learner's cross-rhyme dubbing consent, and voice
+   clips for both rhyme routes remain isolated between two sibling learners.
 7. Delete one disposable inactive learner with the Guardian-only confirmation,
    then refresh and confirm it stays removed. Reject deletion of the final
    usable learner with `409 last_learner`.
@@ -348,9 +350,13 @@ Use controlled test profiles to verify:
    account-root compatibility paths without sweeping a sibling's prefixed
    namespace.
 11. Learner mode contains no sibling name, Guardian dashboard, roster, editing,
-   authoring, consent, privacy, sign-out, or deletion control. Five Little
-   Ducks contains no grown-up checkbox; missing consent shows only the
-   learner-safe grown-up gateway.
+   authoring, consent, privacy, sign-out, or deletion control. Neither Five
+   Little Ducks nor Old MacDonald contains a grown-up checkbox; missing shared
+   consent shows only the learner-safe grown-up gateway. Grant once in Guardian
+   dubbing settings, confirm both routes authorize status and audio, and save
+   one disposable clip in each. Revoke once and confirm both routes fail closed
+   during shared cleanup; if cleanup is interrupted, finish it through the one
+   retry action, then regrant and confirm both statuses contain no saved clips.
 12. Every Guardian page exposes a dashboard recovery path, invalid Guardian
     return targets fall back to `/guardian`, and mode-aware wildcard routing
     returns to the correct home.
@@ -375,7 +381,9 @@ Watch these signals without logging learner content:
 - D1 migration state and migration-step failures;
 - latency and status distribution for `/api/learner-profiles`,
   `/api/learner-profile`, `/api/lessons/my`, `/api/conversations`, personalized
-  story-art routes, and Five Little Ducks routes;
+  story-art routes, status, audio, and upload paths under both
+  `/api/dubs/five-little-ducks-v2` and `/api/dubs/old-macdonald-v1`, plus their
+  shared consent and reset operations;
 - unexpected increases in `5xx`, database constraint failures, invalid stored
   roster responses, R2 generation/deletion failures, and client retry loops;
 - `403 guardian_required` outside an expected locked-session attempt;

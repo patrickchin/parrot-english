@@ -10,6 +10,8 @@ const COMPATIBILITY_ENV = "MULTI_LEARNER_COMPATIBILITY_DEPLOYED";
 const COMPATIBILITY_MIGRATION = "migrations/0012_multi_learner_expand.sql";
 const DELETION_CLOSURE_MIGRATION =
   "migrations/0014_personalized_art_deletion_closure.sql";
+const LEARNER_DELETION_MIGRATION =
+  "migrations/0015_learner_profile_deletion.sql";
 const ENABLE_MIGRATION = "migrations/0013_multi_learner_enable.sql";
 
 function runGit(args, { cwd = process.cwd() } = {}) {
@@ -60,6 +62,11 @@ export function verifyMultiLearnerCompatibilityRelease({
   requireGitSuccess(
     ["cat-file", "-e", `${revision}:${DELETION_CLOSURE_MIGRATION}`],
     `${COMPATIBILITY_ENV} must include ${DELETION_CLOSURE_MIGRATION} before applying 0013.`,
+    { cwd },
+  );
+  requireGitSuccess(
+    ["cat-file", "-e", `${revision}:${LEARNER_DELETION_MIGRATION}`],
+    `${COMPATIBILITY_ENV} must include ${LEARNER_DELETION_MIGRATION} before applying 0013.`,
     { cwd },
   );
 
