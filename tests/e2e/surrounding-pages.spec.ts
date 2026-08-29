@@ -713,7 +713,7 @@ const guardianContentPages = [
   {
     heading: "My Lessons",
     lastControl: (page: Page) =>
-      page.getByRole("link", { name: "Edit lesson: Saved lesson 5" }),
+      page.getByRole("button", { name: "Delete lesson: Saved lesson 5" }),
     name: "lesson manager",
     path: "/guardian/lessons",
   },

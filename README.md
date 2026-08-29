@@ -82,7 +82,7 @@ but activity does not extend it. `/guardian` is the management dashboard. Its
 `Switch to learner` chooser is the only UI that changes the session's learner
 selection. `/guardian/learners` owns learner creation and deletion, while
 `/guardian/learners/:learnerId` owns page-local details and lesson-recording
-consent. `/guardian/lessons` owns custom lesson management,
+consent. `/guardian/lessons` owns custom lesson creation and deletion,
 `/guardian/stories` owns story level and optional personalized art, and
 `/guardian/dubbing` owns dubbing consent and cleanup. The legacy profile and
 lesson-authoring URLs use the same Guardian boundary. Manage learners never

@@ -1,4 +1,5 @@
 import { prepareLesson } from "../lib/lesson-data.js";
+import { isSafeRouteId } from "../lib/route-id.ts";
 import type { Lesson } from "../src/lessons/lesson-catalog.ts";
 import type { Database } from "./database.ts";
 import {
@@ -20,6 +21,7 @@ import type { LearnerIdentity } from "./request-identity.ts";
 import type { ApiEnv } from "./groq.ts";
 
 const MAX_BODY_BYTES = 256 * 1024;
+const ALL_RECORDING_GENERATIONS = Number.POSITIVE_INFINITY;
 
 export type MyLessonsEnv = ApiEnv &
   LessonGenerationEnv & {
@@ -113,6 +115,15 @@ function preparedLesson(
   }
 }
 
+function detailLessonId(segment: string) {
+  try {
+    const lessonId = decodeURIComponent(segment);
+    return isSafeRouteId(lessonId) ? lessonId : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function handleMyLessonRequest(
   input: MyLessonRequestInput,
   overrides: Partial<HandlerDependencies> = {},
@@ -126,6 +137,7 @@ export async function handleMyLessonRequest(
   const repository = createMyLessonRepository(input.database, dependencies);
   const url = new URL(input.request.url);
   const detailMatch = url.pathname.match(/^\/api\/lessons\/my\/([^/]+)$/);
+  const routeLessonId = detailMatch ? detailLessonId(detailMatch[1]) : null;
 
   async function reconcileRecordingCleanup(row: {
     id: string;
@@ -213,22 +225,35 @@ export async function handleMyLessonRequest(
       });
     }
 
-    if (detailMatch && input.request.method === "PUT") {
-      const body = await readJson(input.request);
-      const draft = preparedLesson(body.lesson, "edited lesson");
-      const row = await repository.updateOwned(
-        decodeURIComponent(detailMatch[1]),
-        input.identity,
-        draft.lesson,
-      );
-      if (!row) throw new MyLessonApiError(404, "not_found");
-      await reconcileRecordingCleanup(row);
-      return json({ lesson: await clientLesson(row), warnings: draft.warnings });
+    if (detailMatch && routeLessonId === null) {
+      throw new MyLessonApiError(404, "not_found");
     }
 
-    if (detailMatch && input.request.method === "GET") {
+    if (routeLessonId !== null && input.request.method === "DELETE") {
+      const row = await repository.markOwnedForDeletion(
+        routeLessonId,
+        input.identity,
+      );
+      if (!row) throw new MyLessonApiError(404, "not_found");
+      await deleteLessonRecordingsForLesson(
+        input.env.PERSONALIZED_STORY_ART_BUCKET,
+        input.identity,
+        routeLessonId,
+        ALL_RECORDING_GENERATIONS,
+        dependencies.wait,
+      );
+      if (!(await repository.deleteOwned(routeLessonId, input.identity))) {
+        throw new MyLessonApiError(404, "not_found");
+      }
+      return new Response(null, {
+        status: 204,
+        headers: { "Cache-Control": "no-store" },
+      });
+    }
+
+    if (routeLessonId !== null && input.request.method === "GET") {
       const row = await repository.findOwned(
-        decodeURIComponent(detailMatch[1]),
+        routeLessonId,
         input.identity,
       );
       if (!row) throw new MyLessonApiError(404, "not_found");

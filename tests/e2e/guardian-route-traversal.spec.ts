@@ -76,7 +76,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
     },
     {
       action: "Manage lessons",
-      description: "Create and edit custom lessons for the learner.",
+      description: "Create or delete custom lessons for the learner.",
       heading: "My Lessons",
     },
     {
@@ -205,6 +205,16 @@ test("the retired Guardian profile route replaces history with Manage learners",
 
   await page.goBack();
   await expect(page).toHaveURL(/\/guardian\?.*parrotE2eLearners=multiple/);
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
+  ).toBeVisible();
+});
+
+test("the removed lesson edit URL falls back to the guardian dashboard", async ({
+  page,
+}) => {
+  await page.goto(scenarioUrl("/lessons/my/old-lesson/edit"));
+  await expect(page).toHaveURL("/guardian");
   await expect(
     page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
   ).toBeVisible();

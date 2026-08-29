@@ -68,16 +68,8 @@ describe("app route helpers", () => {
       "/lessons/my/same-id/scenes/3",
     );
     assert.equal(
-      routes.getMyLessonEditPath("lesson/id"),
-      "/lessons/my/lesson%2Fid/edit",
-    );
-    assert.equal(
       routes.getMyLessonCreatePath("learner /Noah"),
       "/lessons/my/create?learnerProfileId=learner+%2FNoah",
-    );
-    assert.equal(
-      routes.getMyLessonEditPath("lesson/id", "learner /Noah"),
-      "/lessons/my/lesson%2Fid/edit?learnerProfileId=learner+%2FNoah",
     );
   });
 
@@ -222,7 +214,6 @@ describe("app route helpers", () => {
       ["/profile"],
       ["/profile/setup", "?redo=1"],
       ["/lessons/my/create"],
-      ["/lessons/my/lesson-1/edit"],
     ]) {
       assert.equal(routes.isGuardianRoute(pathname, search), true);
     }
@@ -237,6 +228,7 @@ describe("app route helpers", () => {
       ["/guardian/dubbing/extra"],
       ["/guardian/learners/%E0%A4%A"],
       ["/guardian/learners/learner-noah/extra"],
+      ["/lessons/my/lesson-1/edit"],
       ["/lessons/my/lesson-1/edit/extra"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
@@ -348,14 +340,6 @@ describe("app route helpers", () => {
     );
     assert.equal(
       routes.getSafeGuardianUnlockDestination(
-        "/lessons/my/lesson-1/edit",
-        "?tab=script",
-        "#scene-2",
-      ),
-      "/lessons/my/lesson-1/edit?tab=script#scene-2",
-    );
-    assert.equal(
-      routes.getSafeGuardianUnlockDestination(
         "/profile/setup",
         "?redo=1&returnTo=%2Fguardian",
         "#questions",
@@ -423,7 +407,6 @@ describe("app route helpers", () => {
       ],
       ["/lessons", "/Lessons//", null],
       ["/lessons/my/create", "/Lessons/My/Create///", null],
-      ["/lessons/my/:lessonId/edit", "/Lessons/My/demo/Edit///", null],
       ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],
       [
         "/lessons/parrot/:lessonId/scenes/:sceneNumber",

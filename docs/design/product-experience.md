@@ -72,7 +72,7 @@ duplicate learner activity catalog.
 | View saved custom lessons for playback | Yes | Switch to learner | Selected-learner read |
 | Edit learner profile or redo setup | No | Yes | Guardian unlock |
 | Choose stored story level | No | Yes | Guardian unlock |
-| Create, generate, import, or update custom lessons | No | Yes | Guardian unlock |
+| Create, generate, import, or delete custom lessons | No | Yes | Guardian unlock |
 | Upload a learner photo or generate/delete story art | No | Yes | Guardian unlock plus consent for the active learner |
 | View already-generated story art | Yes | Yes | Selected-learner read |
 | Open AI/data notice | No | Yes | Guardian UI boundary |
@@ -110,8 +110,7 @@ Canonical guardian routes are:
 - `/guardian/lessons` — saved custom lesson management;
 - `/guardian/stories` — stored story level and personalized-art management;
 - `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
-- `/lessons/my/create` and `/lessons/my/:lessonId/edit` — existing authoring
-  URLs protected by the same Guardian boundary.
+- `/lessons/my/create` — the Guardian-only authoring URL.
 
 Initial `/profile/setup` remains available to either mode until onboarding is
 complete; later editing and setup redo are Guardian-only. Adding a learner asks
@@ -154,8 +153,8 @@ changing the session's active learner does not reassign earlier conversations.
 
 The learner lesson catalog shows seven ready-made lessons first, then any saved
 custom lessons for the active learner. Each row has one clear Start action.
-Creation and editing live at `/guardian/lessons` and its protected create/edit
-routes, so authoring does not compete with learner practice. Selecting another
+Creation and deletion live at `/guardian/lessons` and its protected create
+route, so authoring does not compete with learner practice. Selecting another
 learner refreshes the catalog before that learner's pages render. Ready-made
 lessons use one consistent 16:9 scene illustration per step as their default
 presentation; learners do not choose between rendering experiments.

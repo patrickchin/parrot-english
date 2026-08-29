@@ -1,12 +1,5 @@
 import { Buffer } from "node:buffer";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createLessonScript } from "../fixtures/lesson-script.mjs";
-
-const lessonRevision = "a".repeat(64);
-
-function guardianPath(path: string) {
-  return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
-}
 
 async function expectStationaryPointerStates(
   page: Page,
@@ -120,37 +113,6 @@ test("shared action, icon, and interactive card controls do not move on hover or
   );
 });
 
-test("lesson editor choices and storyboard cards do not lift on hover or press", async ({
-  page,
-}) => {
-  await page.route(
-    /\/api\/lessons\/my\/control-stability(?:\?.*)?$/,
-    async (route) => {
-      await route.fulfill({
-        body: JSON.stringify({
-          lesson: {
-            id: "control-stability",
-            lesson: createLessonScript(),
-            revision: lessonRevision,
-            source: "generated",
-          },
-        }),
-        contentType: "application/json",
-        status: 200,
-      });
-    },
-  );
-  await page.goto(guardianPath("/lessons/my/control-stability/edit"));
-
-  const choice = page
-    .getByRole("radio", { name: "Use background: A sunny meadow during the day" })
-    .locator("xpath=..");
-  await expectStationaryPointerStates(page, choice);
-  await expectStationaryPointerStates(
-    page,
-    page.getByRole("button", { name: "Edit Scene 1: Scene 1" }),
-  );
-});
 
 test("pause and resume use a white glyph with at least 3:1 rendered contrast", async ({
   page,

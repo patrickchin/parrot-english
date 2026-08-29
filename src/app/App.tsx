@@ -167,7 +167,6 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/talk-to-peppa",
   "/lessons",
   "/lessons/my/create",
-  "/lessons/my/:lessonId/edit",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
   "/lessons/my/:lessonId",
@@ -189,13 +188,6 @@ function isDeclaredApplicationRoute(pathname: string) {
   );
 }
 
-const LessonEditor = import.meta.env.SSR
-  ? (await import("../lessons/LessonEditor")).LessonEditor
-  : lazy(() =>
-      import("../lessons/LessonEditor").then(({ LessonEditor }) => ({
-        default: LessonEditor,
-      })),
-    );
 const StoryList = import.meta.env.SSR
   ? (await import("../stories/StoryList")).StoryList
   : lazy(() =>
@@ -1349,7 +1341,6 @@ export function ApplicationRoutes({
         />
         <Route element={<LessonList />} path="/lessons" />
         <Route element={<LessonCreator />} path="/lessons/my/create" />
-        <Route element={<LessonEditor />} path="/lessons/my/:lessonId/edit" />
         <Route
           element={<ParrotLessonRedirect />}
           path="/lessons/parrot/:lessonId"

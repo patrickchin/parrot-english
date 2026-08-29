@@ -109,7 +109,7 @@ export function GuardianDashboardView({
                 My Lessons
               </h3>
               <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Create and edit custom lessons for the learner.
+                Create or delete custom lessons for the learner.
               </p>
               <ActionLink
                 className="mt-auto"

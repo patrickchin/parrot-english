@@ -8,6 +8,7 @@ import { createServer } from "vite";
 import { createLessonScript } from "./fixtures/lesson-script.mjs";
 import {
   cleanupMountedRoots,
+  click,
   installDom,
   mountStrict,
   waitFor,
@@ -16,6 +17,7 @@ import {
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const restoreDom = installDom();
 const originalFetch = globalThis.fetch;
+const originalConfirm = window.confirm;
 const vite = await createServer({
   appType: "custom",
   logLevel: "silent",
@@ -43,6 +45,7 @@ test.afterEach(async () => {
   await cleanupMountedRoots();
   document.body.replaceChildren();
   globalThis.fetch = originalFetch;
+  window.confirm = originalConfirm;
   window.history.replaceState(null, "", "/");
 });
 
@@ -121,16 +124,219 @@ test("guardian lesson manager owns custom-lesson authoring actions", () => {
     html,
     /href="\/lessons\/my\/create\?learnerProfileId=learner-mia"/,
   );
-  assert.match(html, /aria-label="Edit lesson: Made for Mia"/);
-  assert.match(
-    html,
-    /href="\/lessons\/my\/lesson%2Fid\/edit\?learnerProfileId=learner-mia"/,
-  );
+  assert.match(html, /aria-label="Delete lesson: Made for Mia"/);
+  assert.match(html, /Delete/);
+  assert.doesNotMatch(html, /Edit lesson|\/edit/);
   assert.match(html, /aria-label="Back to guardian dashboard"/);
   assert.match(html, /href="\/guardian"/);
   assert.doesNotMatch(html, /Manage learners/);
   assert.doesNotMatch(html, /Switch and play/);
   assert.doesNotMatch(html, /Peppa&#x27;s High Ball/);
+});
+
+test("deletes a confirmed lesson for the URL-targeted learner immediately", async () => {
+  const requests = [];
+  let resolveDelete;
+  const deleteResponse = new Promise((resolve) => {
+    resolveDelete = resolve;
+  });
+  let confirmed = false;
+  window.confirm = (message) => {
+    assert.match(message, /Made for Mia/);
+    assert.match(message, /cannot be undone/i);
+    return confirmed;
+  };
+  globalThis.fetch = async (path, init = {}) => {
+    requests.push({ method: init.method ?? "GET", path });
+    if (path === "/api/learner-profiles") return Response.json(learnerRoster());
+    if (path === "/api/lessons/my?learnerProfileId=learner-noah") {
+      return Response.json({ lessons: [savedLesson] });
+    }
+    if (
+      path === "/api/lessons/my/lesson%2Fid?learnerProfileId=learner-noah" &&
+      init.method === "DELETE"
+    ) {
+      return deleteResponse;
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+  const Provider = createGuardianAccessProvider({
+    api: {
+      async loadGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+    },
+    schedule: () => () => {},
+  });
+
+  const container = await mountStrict(
+    createElement(
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/lessons?learnerProfileId=learner-noah"] },
+        createElement(GuardianLessonManager),
+      ),
+    ),
+  );
+
+  await waitFor(() => assert.match(container.textContent, /Made for Mia/));
+  const remove = [...container.querySelectorAll("button")].find(
+    (button) => button.getAttribute("aria-label") === "Delete lesson: Made for Mia",
+  );
+  await click(remove);
+  assert.equal(requests.some(({ method }) => method === "DELETE"), false);
+  assert.match(container.textContent, /Made for Mia/);
+  confirmed = true;
+  await click(remove);
+  await waitFor(() => {
+    assert.equal(remove.disabled, true);
+    assert.match(remove.textContent, /Deleting…/);
+  });
+  resolveDelete(new Response(null, { status: 204 }));
+  await waitFor(() => assert.doesNotMatch(container.textContent, /Made for Mia/));
+  assert.match(container.textContent, /No custom lessons yet/);
+  assert.deepEqual(
+    requests.filter(({ method }) => method === "DELETE"),
+    [
+      {
+        method: "DELETE",
+        path: "/api/lessons/my/lesson%2Fid?learnerProfileId=learner-noah",
+      },
+    ],
+  );
+});
+
+test("keeps a lesson and allows another delete attempt after a failed request", async () => {
+  let deleteAttempts = 0;
+  window.confirm = () => true;
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/learner-profiles") return Response.json(learnerRoster());
+    if (path === "/api/lessons/my?learnerProfileId=learner-noah") {
+      return Response.json({ lessons: [savedLesson] });
+    }
+    if (
+      path === "/api/lessons/my/lesson%2Fid?learnerProfileId=learner-noah" &&
+      init.method === "DELETE"
+    ) {
+      deleteAttempts += 1;
+      return Response.json({ error: "request_failed" }, { status: 500 });
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+  const Provider = createGuardianAccessProvider({
+    api: {
+      async loadGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+    },
+    schedule: () => () => {},
+  });
+  const container = await mountStrict(
+    createElement(
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/lessons?learnerProfileId=learner-noah"] },
+        createElement(GuardianLessonManager),
+      ),
+    ),
+  );
+
+  await waitFor(() => assert.match(container.textContent, /Made for Mia/));
+  const remove = () =>
+    [...container.querySelectorAll("button")].find(
+      (button) => button.getAttribute("aria-label") === "Delete lesson: Made for Mia",
+    );
+  await click(remove());
+  await waitFor(() => assert.equal(container.querySelector('[role="alert"]')?.textContent, "We couldn't delete Made for Mia. Please try again."));
+  assert.match(container.textContent, /Made for Mia/);
+  assert.equal(remove().disabled, false);
+  await click(remove());
+  await waitFor(() => assert.equal(deleteAttempts, 2));
+});
+
+test("allows a second lesson deletion while the first request is pending", async () => {
+  const secondLesson = {
+    ...savedLesson,
+    id: "lesson-two",
+    lesson: createLessonScript({ title: "Made for Noah" }),
+  };
+  const pendingDeletes = new Map();
+  window.confirm = () => true;
+  globalThis.fetch = async (path, init = {}) => {
+    if (path === "/api/learner-profiles") return Response.json(learnerRoster());
+    if (path === "/api/lessons/my?learnerProfileId=learner-noah") {
+      return Response.json({ lessons: [savedLesson, secondLesson] });
+    }
+    if (init.method === "DELETE") {
+      return new Promise((resolve) => pendingDeletes.set(path, resolve));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+  const Provider = createGuardianAccessProvider({
+    api: {
+      async loadGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+      async lockGuardianAccess() {
+        return { mode: "learner" };
+      },
+      async unlockGuardianAccess() {
+        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
+      },
+    },
+    schedule: () => () => {},
+  });
+  const container = await mountStrict(
+    createElement(
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/lessons?learnerProfileId=learner-noah"] },
+        createElement(GuardianLessonManager),
+      ),
+    ),
+  );
+
+  await waitFor(() => assert.match(container.textContent, /Made for Noah/));
+  const button = (title) =>
+    [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.getAttribute("aria-label") === `Delete lesson: ${title}`,
+    );
+  const miaDelete = button("Made for Mia");
+  const noahDelete = button("Made for Noah");
+  await click(miaDelete);
+  await waitFor(() => {
+    assert.equal(miaDelete.disabled, true);
+    assert.match(miaDelete.textContent, /Deleting…/);
+    assert.equal(noahDelete.disabled, false);
+  });
+  await click(noahDelete);
+  await waitFor(() => {
+    assert.equal(noahDelete.disabled, true);
+    assert.match(noahDelete.textContent, /Deleting…/);
+    assert.equal(pendingDeletes.size, 2);
+  });
+  for (const resolve of pendingDeletes.values()) {
+    resolve(new Response(null, { status: 204 }));
+  }
+  await waitFor(() => assert.match(container.textContent, /No custom lessons yet/));
 });
 
 test("lists only the URL-targeted learner's lessons without an active-scoped feature request", async () => {

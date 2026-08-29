@@ -216,7 +216,7 @@ export function requiresGuardianAccess(
     return method === "POST";
   }
   if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
-    return method === "PUT";
+    return method === "DELETE";
   }
   return (
     /^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname) &&
