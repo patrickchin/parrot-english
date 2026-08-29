@@ -42,19 +42,6 @@ const MODELS = {
       "createdAt",
     ],
   },
-  conversationFact: {
-    table: "conversation_fact",
-    properties: [
-      "id",
-      "conversationId",
-      "factKey",
-      "valueJson",
-      "sourceTurnIds",
-      "status",
-      "createdAt",
-      "updatedAt",
-    ],
-  },
 };
 
 function readMigrations() {
@@ -104,7 +91,8 @@ describe("conversation persistence infrastructure", () => {
 
     assert.ok(schema.conversationSessionRelations);
     assert.ok(schema.conversationTurnRelations);
-    assert.ok(schema.conversationFactRelations);
+    assert.equal(schema.conversationFact, undefined);
+    assert.equal(schema.conversationFactRelations, undefined);
   });
 
   it("keeps realtime deployment production-shaped and enabled", () => {
@@ -181,7 +169,7 @@ describe("conversation persistence infrastructure", () => {
     assert.match(deployment, /form fallback/i);
   });
 
-  it("migrates constrained conversation storage with cascading ownership", () => {
+  it("migrates constrained conversation storage without the retired fact table", () => {
     const migrations = readMigrations();
     assert.ok(migrations.length >= 5);
     assert.ok(migrations.some(({ name }) => /^0004_/.test(name)));
@@ -203,10 +191,7 @@ describe("conversation persistence infrastructure", () => {
       assert.match(turnSql, /REFERENCES [`"]?conversation_session/i);
       assert.match(turnSql, /CHECK\s*\([^\n]*role[^\n]*user[^\n]*assistant/i);
       assert.match(turnSql, /CHECK\s*\([^\n]*input_mode[^\n]*voice[^\n]*text/i);
-      assert.match(factSql, /REFERENCES [`"]?conversation_session/i);
-      assert.match(factSql, /json_valid\([^)]*value_json/i);
-      assert.match(factSql, /json_valid\([^)]*source_turn_ids/i);
-      assert.match(factSql, /candidate.*accepted.*edited.*rejected/i);
+      assert.equal(factSql, undefined);
 
       const turnIndexes = indexColumns(database, "conversation_turn");
       assert.ok(
@@ -232,9 +217,6 @@ describe("conversation persistence infrastructure", () => {
         INSERT INTO conversation_turn
           (id, conversation_id, provider_item_id, sequence, role, text, input_mode)
           VALUES ('turn-1', 'conversation-1', 'provider-1', 1, 'user', 'Hello', 'voice');
-        INSERT INTO conversation_fact
-          (id, conversation_id, fact_key, value_json, source_turn_ids, status)
-          VALUES ('fact-1', 'conversation-1', 'name', '"Mia"', '["turn-1"]', 'candidate');
       `);
       database.exec("DELETE FROM user WHERE id = 'user-1'");
       assert.equal(
@@ -243,10 +225,6 @@ describe("conversation persistence infrastructure", () => {
       );
       assert.equal(
         database.prepare("SELECT count(*) count FROM conversation_turn").get().count,
-        0,
-      );
-      assert.equal(
-        database.prepare("SELECT count(*) count FROM conversation_fact").get().count,
         0,
       );
     } finally {

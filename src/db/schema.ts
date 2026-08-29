@@ -520,40 +520,6 @@ export const conversationTurn = sqliteTable(
   ]
 );
 
-export const conversationFact = sqliteTable(
-  "conversation_fact",
-  {
-    id: text("id").primaryKey(),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversationSession.id, { onDelete: "cascade" }),
-    factKey: text("fact_key").notNull(),
-    valueJson: text("value_json").notNull(),
-    sourceTurnIds: text("source_turn_ids").default("[]").notNull(),
-    status: text("status").default("candidate").notNull(),
-    createdAt: createdAt(),
-    updatedAt: updatedAt(),
-  },
-  (table) => [
-    index("conversation_fact_session_status_idx").on(
-      table.conversationId,
-      table.status
-    ),
-    check(
-      "conversation_fact_value_json_check",
-      sql`json_valid(${table.valueJson})`
-    ),
-    check(
-      "conversation_fact_source_turn_ids_json_check",
-      sql`json_valid(${table.sourceTurnIds})`
-    ),
-    check(
-      "conversation_fact_status_check",
-      sql`${table.status} in ('candidate', 'accepted', 'edited', 'rejected')`
-    ),
-  ]
-);
-
 export const personalizedStoryArt = sqliteTable(
   "personalized_story_art",
   {
@@ -740,7 +706,6 @@ export const profileSessionBypassRelations = relations(
 export const conversationSessionRelations = relations(
   conversationSession,
   ({ many, one }) => ({
-    facts: many(conversationFact),
     turns: many(conversationTurn),
     user: one(user, {
       fields: [conversationSession.authUserId],
@@ -754,16 +719,6 @@ export const conversationTurnRelations = relations(
   ({ one }) => ({
     conversation: one(conversationSession, {
       fields: [conversationTurn.conversationId],
-      references: [conversationSession.id],
-    }),
-  })
-);
-
-export const conversationFactRelations = relations(
-  conversationFact,
-  ({ one }) => ({
-    conversation: one(conversationSession, {
-      fields: [conversationFact.conversationId],
       references: [conversationSession.id],
     }),
   })

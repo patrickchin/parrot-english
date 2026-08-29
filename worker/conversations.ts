@@ -284,9 +284,6 @@ export async function handleConversationRequest(
 
     if (action === "facts" && input.request.method === "POST") {
       const body = await readJson(input.request);
-      if (!Array.isArray(body.candidates) || body.candidates.length !== 0) {
-        throw new ConversationApiError(400, "invalid_facts");
-      }
       await repository.updateControllerState(conversationId, body.controllerState);
       return json({ conversationId });
     }
