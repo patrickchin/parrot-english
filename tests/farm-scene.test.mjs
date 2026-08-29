@@ -11,7 +11,7 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const { FarmScene } = await vite.ssrLoadModule("/src/dubbing/FarmScene.tsx");
+const { IllustratedDubScene } = await vite.ssrLoadModule("/src/dubbing/IllustratedDubScene.tsx");
 const { OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
 
 after(async () => {
@@ -20,11 +20,13 @@ after(async () => {
 
 describe("farm scene renderer", () => {
   it("renders the generated illustration for the active farm scene", () => {
-    const pigs = renderToStaticMarkup(createElement(FarmScene, {
+    const pigs = renderToStaticMarkup(createElement(IllustratedDubScene, {
+      definition: OLD_MACDONALD_DUB,
       line: OLD_MACDONALD_DUB.lines[14],
       thumbnail: true,
     }));
-    const cows = renderToStaticMarkup(createElement(FarmScene, {
+    const cows = renderToStaticMarkup(createElement(IllustratedDubScene, {
+      definition: OLD_MACDONALD_DUB,
       line: OLD_MACDONALD_DUB.lines[0],
       thumbnail: true,
     }));

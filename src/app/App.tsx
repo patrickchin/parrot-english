@@ -104,9 +104,7 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
-import type { DubSceneComponent } from "../dubbing/DubSceneTypes";
 import { DubStudio } from "../dubbing/DubStudio";
-import { FarmScene } from "../dubbing/FarmScene";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
@@ -1363,10 +1361,7 @@ export function ApplicationRoutes({
         <Route element={<DuckDub />} path={getDuckDubPath()} />
         <Route
           element={
-            <DubStudio
-              Scene={FarmScene as unknown as DubSceneComponent}
-              definition={OLD_MACDONALD_DUB}
-            />
+            <DubStudio definition={OLD_MACDONALD_DUB} />
           }
           path={getOldMacDonaldDubPath()}
         />

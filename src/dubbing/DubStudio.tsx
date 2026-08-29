@@ -29,9 +29,7 @@ import {
 } from "./dub-api";
 import { startDubPlayback, type DubAudioSource } from "./dub-playback";
 import { DubProjectHome } from "./DubProjectHome";
-import type { DubSceneComponent } from "./DubSceneTypes";
 import { DubSceneEditor } from "./DubSceneEditor";
-import { DuckScene } from "./DuckScene";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import {
   createInitialDubState,
@@ -186,10 +184,8 @@ export function DubLoading({
 
 export function DubStudio({
   definition = FIVE_LITTLE_DUCKS_DUB,
-  Scene = DuckScene as unknown as DubSceneComponent,
 }: {
   definition?: DubDefinition;
-  Scene?: DubSceneComponent;
 }) {
   const [state, dispatch] = useReducer(
     (current, event) => reduceDubState(current, event, definition),
@@ -756,7 +752,6 @@ export function DubStudio({
               : "idle"
           : "idle"}
         playbackButtonRef={fullPlaybackButtonRef}
-        Scene={Scene}
         saved={state.saved}
         visualLine={visualLine}
       />
@@ -783,7 +778,6 @@ export function DubStudio({
         recordButtonRef={recordButtonRef}
         saveButtonRef={saveButtonRef}
         saveRecovery={state.saveRecovery}
-        Scene={Scene}
         lineHeadingRef={lineHeadingRef}
       />
     );
