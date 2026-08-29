@@ -918,6 +918,429 @@ test("scopes learner selections to authenticated browser sessions", async ({
   }
 });
 
+test("lets a newer real-tab deletion recovery settle while the older DELETE is held", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-delete-lock",
+  );
+  await context.addInitScript(() => {
+    Object.defineProperty(window, "BroadcastChannel", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.assign(window, { __parrotBlockLearnerStorageEvents: false });
+    window.addEventListener(
+      "storage",
+      (event) => {
+        if (
+          (
+            window as typeof window & {
+              __parrotBlockLearnerStorageEvents?: boolean;
+            }
+          ).__parrotBlockLearnerStorageEvents &&
+          event.key?.startsWith("parrot-learner-selection-")
+        ) {
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+  });
+  try {
+    const older = await context.newPage();
+    const newer = await context.newPage();
+    const url = learnerScenarioUrl(
+      "/guardian/learners",
+      "multiple",
+      "guardian",
+      "e2e-session-delete-lock",
+    );
+    await Promise.all([older.goto(url), newer.goto(url)]);
+    await Promise.all(
+      [older, newer].map((page) =>
+        expect(
+          page.getByRole("heading", { name: "Manage learners" }),
+        ).toBeVisible(),
+      ),
+    );
+
+    const { pendingKey, scope, stateKey } = await older.evaluate(async () => {
+      const sessionIdentity =
+        "id:e2e-user|session:e2e-session-delete-lock";
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(sessionIdentity),
+      );
+      const scope = `parrot-learner-selection-${Array.from(
+        new Uint8Array(digest),
+        (byte) => byte.toString(16).padStart(2, "0"),
+      ).join("")}`;
+      const token = "real-tab-delete-token";
+      const pendingKey = `${scope}:pending:${token}`;
+      localStorage.setItem(
+        pendingKey,
+        JSON.stringify({
+          attemptId: "crashed-real-tab-attempt",
+          changeMarker: null,
+          operation: "delete-learner",
+          profileId: "learner-noah",
+          status: "uncertain",
+          token,
+          version: 2,
+        }),
+      );
+      return { pendingKey, scope, stateKey: `${scope}:state` };
+    });
+    await Promise.all([older.reload(), newer.reload()]);
+    await Promise.all(
+      [older, newer].map((page) =>
+        expect(page.getByRole("button", { name: "Try again" })).toBeVisible(),
+      ),
+    );
+    await newer.evaluate(() => {
+      (
+        window as typeof window & {
+          __parrotBlockLearnerStorageEvents?: boolean;
+        }
+      ).__parrotBlockLearnerStorageEvents = true;
+    });
+    await older.evaluate(() => {
+      const originalFetch = window.fetch.bind(window);
+      let release: (() => Promise<void>) | null = null;
+      const control = {
+        release: async () => release?.(),
+        started: false,
+      };
+      Object.assign(window, { __parrotHeldLearnerDelete: control });
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : null;
+        const url = new URL(
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url,
+          window.location.href,
+        );
+        const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+        if (
+          url.pathname === "/api/learner-profiles/learner-noah" &&
+          method === "DELETE"
+        ) {
+          control.started = true;
+          return new Promise<Response>((resolve) => {
+            release = async () => resolve(await originalFetch(input, init));
+          });
+        }
+        return originalFetch(input, init);
+      };
+    });
+
+    await older.getByRole("button", { name: "Try again" }).click();
+    await expect
+      .poll(() =>
+        older.evaluate(
+          () =>
+            (
+              window as typeof window & {
+                __parrotHeldLearnerDelete?: { started: boolean };
+              }
+            ).__parrotHeldLearnerDelete?.started,
+        ),
+      )
+      .toBe(true);
+    await newer.getByRole("button", { name: "Try again" }).click();
+    await expect.poll(() => newer.evaluate((key) => localStorage.getItem(key), pendingKey)).toBeNull();
+    await expect(learnerCard(newer, "Noah")).toHaveCount(0);
+    const winnerMarker = await newer.evaluate(
+      (key) => localStorage.getItem(key),
+      stateKey,
+    );
+    expect(winnerMarker).not.toBeNull();
+
+    await older.evaluate(async () => {
+      await (
+        window as typeof window & {
+          __parrotHeldLearnerDelete?: { release(): Promise<void> | undefined };
+        }
+      ).__parrotHeldLearnerDelete?.release();
+    });
+    await expect.poll(() => older.evaluate((key) => localStorage.getItem(key), pendingKey)).toBeNull();
+    await expect
+      .poll(() => older.evaluate((key) => localStorage.getItem(key), stateKey))
+      .toBe(winnerMarker);
+    await expect(learnerCard(older, "Noah")).toHaveCount(0);
+    expect(scope).toMatch(/^parrot-learner-selection-/);
+  } finally {
+    await context.close();
+  }
+});
+
+test("accepts an exact deletion replay through real BroadcastChannel when state delivery is blocked", async ({
+  baseURL,
+  browser,
+}) => {
+  if (!baseURL) throw new Error("Playwright baseURL is required.");
+  const context = await createAuthenticatedBrowserContext(
+    browser,
+    baseURL,
+    "e2e-session-delete-broadcast",
+  );
+  await context.addInitScript(() => {
+    Object.assign(window, { __parrotBlockLearnerStorageEvents: false });
+    window.addEventListener(
+      "storage",
+      (event) => {
+        if (
+          (
+            window as typeof window & {
+              __parrotBlockLearnerStorageEvents?: boolean;
+            }
+          ).__parrotBlockLearnerStorageEvents &&
+          event.key?.endsWith(":state")
+        ) {
+          event.stopImmediatePropagation();
+        }
+      },
+      true,
+    );
+  });
+  try {
+    const source = await context.newPage();
+    const peer = await context.newPage();
+    const url = learnerScenarioUrl(
+      "/guardian/learners",
+      "multiple",
+      "guardian",
+      "e2e-session-delete-broadcast",
+    );
+    await Promise.all([source.goto(url), peer.goto(url)]);
+    await Promise.all(
+      [source, peer].map((page) =>
+        expect(
+          page.getByRole("heading", { name: "Manage learners" }),
+        ).toBeVisible(),
+      ),
+    );
+    await expect(learnerCard(peer, "Noah")).toBeVisible();
+    await peer.evaluate(async () => {
+      const sessionIdentity =
+        "id:e2e-user|session:e2e-session-delete-broadcast";
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(sessionIdentity),
+      );
+      const name = `parrot-learner-selection-${Array.from(
+        new Uint8Array(digest),
+        (byte) => byte.toString(16).padStart(2, "0"),
+      ).join("")}`;
+      const received: Array<{ data: unknown; name: string }> = [];
+      const observer = new BroadcastChannel(name);
+      observer.onmessage = (event) => received.push({ data: event.data, name });
+      Object.assign(window, {
+        __parrotBroadcastObserver: observer,
+        __parrotReceivedBroadcastMessages: received,
+      });
+      const originalFetch = window.fetch.bind(window);
+      Object.assign(window, { __parrotPeerRosterReads: 0 });
+      window.fetch = (input, init) => {
+        const request = input instanceof Request ? input : null;
+        const url = new URL(
+          typeof input === "string"
+            ? input
+            : input instanceof URL
+              ? input.href
+              : input.url,
+          window.location.href,
+        );
+        const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+        if (url.pathname === "/api/learner-profiles" && method === "GET") {
+          const current = window as typeof window & {
+            __parrotPeerRosterReads?: number;
+          };
+          current.__parrotPeerRosterReads =
+            (current.__parrotPeerRosterReads ?? 0) + 1;
+        }
+        return originalFetch(input, init);
+      };
+      (
+        window as typeof window & {
+          __parrotBlockLearnerStorageEvents?: boolean;
+        }
+      ).__parrotBlockLearnerStorageEvents = true;
+    });
+    await source.bringToFront();
+    await learnerCard(source, "Noah")
+      .getByRole("button", { name: "Delete Noah" })
+      .click();
+    await source
+      .getByRole("dialog", { name: "Delete Noah?" })
+      .getByRole("button", { name: "Delete Noah" })
+      .click();
+
+    await expect
+      .poll(() =>
+        peer.evaluate(() =>
+          (
+            window as typeof window & {
+              __parrotReceivedBroadcastMessages?: Array<{
+                data: { type?: string };
+              }>;
+            }
+          ).__parrotReceivedBroadcastMessages?.map(({ data }) => data.type),
+        ),
+      )
+      .toEqual(expect.arrayContaining(["pending", "changed", "settled"]));
+    const durableProof = await peer.evaluate(() => {
+      const messages = (
+        window as typeof window & {
+          __parrotReceivedBroadcastMessages?: Array<{
+            data: { marker?: string; token?: string; type?: string };
+            name: string;
+          }>;
+        }
+      ).__parrotReceivedBroadcastMessages ?? [];
+      const changed = messages.find(
+        ({ data }) => data.type === "changed" && typeof data.token === "string",
+      );
+      return {
+        changed,
+        journal: changed
+          ? localStorage.getItem(`${changed.name}:publication-journal`)
+          : null,
+        publication: changed
+          ? localStorage.getItem(
+              `${changed.name}:publication:${changed.data.token}`,
+            )
+          : null,
+        state: changed
+          ? localStorage.getItem(`${changed.name}:state`)
+          : null,
+      };
+    });
+    if (!durableProof.changed) {
+      throw new Error("The deletion changed message was not broadcast.");
+    }
+    expect(durableProof.state).toBe(durableProof.changed?.data.marker);
+    expect(durableProof.publication).toBeNull();
+    expect(JSON.parse(durableProof.journal ?? "null")).toMatchObject({
+      entries: expect.arrayContaining([
+        {
+          marker: durableProof.changed.data.marker,
+          token: durableProof.changed.data.token,
+        },
+      ]),
+      version: 1,
+    });
+    await source.evaluate(async ({ data, name }) => {
+      const channel = new BroadcastChannel(name);
+      channel.postMessage(data);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      channel.close();
+    }, durableProof.changed);
+    await expect
+      .poll(() =>
+        peer.evaluate(
+          () =>
+            (
+              window as typeof window & { __parrotPeerRosterReads?: number }
+            ).__parrotPeerRosterReads ?? 0,
+        ),
+      )
+      .toBe(1);
+    await expect(learnerCard(peer, "Noah")).toHaveCount(0);
+    await expect(
+      peer.getByRole("heading", { name: "Manage learners" }),
+    ).toBeVisible();
+  } finally {
+    await context.close();
+  }
+});
+
+test("shares real-browser mock deletion across sessions while clearing only the deleted selection", async ({
+  page,
+}) => {
+  await page.goto(
+    learnerScenarioUrl(
+      "/guardian/learners",
+      "multiple",
+      "guardian",
+      "e2e-session-shared-delete",
+    ),
+  );
+  await expect(
+    page.getByRole("heading", { name: "Manage learners" }),
+  ).toBeVisible();
+
+  const result = await page.evaluate(async () => {
+    type MockSession = {
+      fetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response>;
+      snapshot(): { activeProfileId: string | null };
+    };
+    const learners = (
+      window as typeof window & {
+        __parrotE2eLearners?: {
+          openSession(sessionId: string): MockSession;
+        };
+      }
+    ).__parrotE2eLearners;
+    if (!learners) throw new Error("Learner controller is missing.");
+    const miaSession = learners.openSession("browser-mia-session");
+    const noahSession = learners.openSession("browser-noah-session");
+    const select = await noahSession.fetch(
+      "/api/learner-profiles/learner-noah/active",
+      { method: "PUT" },
+    );
+    const beforeDelete = {
+      mia: miaSession.snapshot().activeProfileId,
+      noah: noahSession.snapshot().activeProfileId,
+    };
+    const deletion = await miaSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
+    const [miaRoster, noahRoster] = await Promise.all([
+      miaSession
+        .fetch("/api/learner-profiles", { method: "GET" })
+        .then((response) => response.json()),
+      noahSession
+        .fetch("/api/learner-profiles", { method: "GET" })
+        .then((response) => response.json()),
+    ]);
+    return {
+      afterDelete: {
+        mia: miaSession.snapshot().activeProfileId,
+        noah: noahSession.snapshot().activeProfileId,
+      },
+      beforeDelete,
+      deleteStatus: deletion.status,
+      miaRoster,
+      noahRoster,
+      selectStatus: select.status,
+    };
+  });
+
+  expect(result).toMatchObject({
+    afterDelete: { mia: "learner-mia", noah: null },
+    beforeDelete: { mia: "learner-mia", noah: "learner-noah" },
+    deleteStatus: 200,
+    miaRoster: {
+      activeProfileId: "learner-mia",
+      profiles: [{ id: "learner-mia" }],
+    },
+    noahRoster: {
+      activeProfileId: null,
+      profiles: [{ id: "learner-mia" }],
+    },
+    selectStatus: 200,
+  });
+});
+
 test("synchronizes same-session learner selection through storage without BroadcastChannel", async ({
   baseURL,
   browser,

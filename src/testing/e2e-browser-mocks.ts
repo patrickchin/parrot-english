@@ -76,6 +76,7 @@ type PendingLessonPlayback = {
   finish: () => void;
 };
 type PendingLessonUpload = {
+  commitOutcome?: (outcome: "failed" | "saved") => Response | null;
   persist: () => void;
   record: E2ELessonUpload;
   reject: (error: unknown) => void;
@@ -87,6 +88,7 @@ type LessonRecordingMockScope = {
   learnerProfileId?: () => string | null;
   pendingUploads: PendingLessonUpload[];
   persist: () => void;
+  refresh?: () => Response | null;
   uploads: E2ELessonUpload[];
 };
 type ScopedLessonRecordingMedia = {
@@ -900,6 +902,26 @@ function createE2eLearnerAccount(
     return explicitLearner ?? selectedLearner() ?? selectionRequired();
   }
 
+  function rebindLearnerForCommit(
+    requestedLearner: MockLearnerState,
+    explicitProfileId: string | null,
+  ) {
+    refreshStoredState();
+    const learner = state.learners.get(requestedLearner.profile.id) ?? null;
+    if (!learner || learner.deletionPending) {
+      return explicitProfileId === null
+        ? selectionRequired()
+        : targetedLearnerNotFound();
+    }
+    if (
+      explicitProfileId === null &&
+      state.activeProfileId !== requestedLearner.profile.id
+    ) {
+      return selectionRequired();
+    }
+    return learner;
+  }
+
   function fullProfileState(learner: MockLearnerState) {
     const answered = Object.keys(learner.profile.answers.responses).length;
     const question = learner.profile.currentQuestionKey
@@ -999,6 +1021,7 @@ function createE2eLearnerAccount(
     method: string,
     request: Request,
     explicitLearner: MockLearnerState | null,
+    explicitProfileId: string | null,
   ) {
     if (!url.pathname.startsWith("/api/dubs/")) return null;
     const dubApiPath = getActiveE2eDubApiPath();
@@ -1019,7 +1042,12 @@ function createE2eLearnerAccount(
       ) {
         return e2eDubJson({ error: "invalid_request" }, 400);
       }
-      learner.dub.consentState = "granted";
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      commitLearner.dub.consentState = "granted";
       persist();
       return new Response(null, { status: 204 });
     }
@@ -1063,6 +1091,7 @@ function createE2eLearnerAccount(
     url: URL,
     method: string,
     explicitLearner: MockLearnerState | null,
+    explicitProfileId: string | null,
   ): Promise<Response | null> {
     const match = url.pathname.match(
       /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
@@ -1111,7 +1140,12 @@ function createE2eLearnerAccount(
       });
     }
     if (method === "POST") {
-      learner.art.set(storyId, {
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      commitLearner.art.set(storyId, {
         hasStoredArt: true,
         updatedAt: E2E_DUB_RECORDED_AT,
       });
@@ -1119,12 +1153,18 @@ function createE2eLearnerAccount(
       const created: Response | null = await handleArt(
         url,
         "GET",
-        explicitLearner,
+        commitLearner,
+        explicitProfileId,
       );
       return e2eJson(await created!.json(), 201);
     }
     if (method === "DELETE") {
-      learner.art.delete(storyId);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      commitLearner.art.delete(storyId);
       persist();
       return new Response(null, { status: 204 });
     }
@@ -1132,13 +1172,18 @@ function createE2eLearnerAccount(
   }
 
   function lessonRecordingScope(
-    learner: MockLearnerState,
+    initialLearner: MockLearnerState,
+    explicitProfileId: string | null,
   ): LessonRecordingMockScope {
-    let pendingUploads = pendingLessonUploadsByLearner.get(learner.profile.id);
-    if (!pendingUploads) {
-      pendingUploads = [];
-      pendingLessonUploadsByLearner.set(learner.profile.id, pendingUploads);
-    }
+    let learner = initialLearner;
+    const pendingUploads = () => {
+      let uploads = pendingLessonUploadsByLearner.get(learner.profile.id);
+      if (!uploads) {
+        uploads = [];
+        pendingLessonUploadsByLearner.set(learner.profile.id, uploads);
+      }
+      return uploads;
+    };
     return {
       consentRequested() {
         learner.lessonRecording.consentRequests += 1;
@@ -1148,9 +1193,19 @@ function createE2eLearnerAccount(
         learner.lessonRecording.consent &&
         !learner.lessonRecording.cleanupPending,
       learnerProfileId: () => learner.profile.id,
-      pendingUploads,
+      get pendingUploads() {
+        return pendingUploads();
+      },
       persist,
-      uploads: learner.lessonRecording.uploads,
+      refresh() {
+        const rebound = rebindLearnerForCommit(learner, explicitProfileId);
+        if (rebound instanceof Response) return rebound;
+        learner = rebound;
+        return null;
+      },
+      get uploads() {
+        return learner.lessonRecording.uploads;
+      },
     };
   }
 
@@ -1161,6 +1216,7 @@ function createE2eLearnerAccount(
     method: string,
     request: Request,
     explicitLearner: MockLearnerState | null,
+    explicitProfileId: string | null,
   ) {
     const isLessonRecordingPath =
       url.pathname === "/api/lesson-recordings/consent" ||
@@ -1180,20 +1236,25 @@ function createE2eLearnerAccount(
       if (typeof body.enabled !== "boolean") {
         return e2eJson({ error: "invalid_request" }, 400);
       }
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
       if (body.enabled) {
-        learner.lessonRecording.consent = true;
-        learner.lessonRecording.cleanupPending = false;
-      } else if (learner.lessonRecording.consent) {
-        learner.lessonRecording.consent = false;
-        learner.lessonRecording.cleanupPending = true;
+        commitLearner.lessonRecording.consent = true;
+        commitLearner.lessonRecording.cleanupPending = false;
+      } else if (commitLearner.lessonRecording.consent) {
+        commitLearner.lessonRecording.consent = false;
+        commitLearner.lessonRecording.cleanupPending = true;
       } else {
-        learner.lessonRecording.cleanupPending = false;
-        learner.lessonRecording.uploads = [];
+        commitLearner.lessonRecording.cleanupPending = false;
+        commitLearner.lessonRecording.uploads = [];
       }
       persist();
       return e2eJson({
-        cleanupPending: learner.lessonRecording.cleanupPending,
-        enabled: learner.lessonRecording.consent,
+        cleanupPending: commitLearner.lessonRecording.cleanupPending,
+        enabled: commitLearner.lessonRecording.consent,
       });
     }
 
@@ -1202,7 +1263,7 @@ function createE2eLearnerAccount(
       init,
       url,
       method,
-      lessonRecordingScope(learner),
+      lessonRecordingScope(learner, explicitProfileId),
     );
   }
 
@@ -1213,7 +1274,7 @@ function createE2eLearnerAccount(
   ) {
     const explicitProfileId = explicitLearner?.profile.id ?? null;
     refreshStoredState();
-    const currentExplicitLearner = explicitProfileId
+    let currentExplicitLearner = explicitProfileId
       ? (state.learners.get(explicitProfileId) ?? null)
       : null;
     if (explicitProfileId && currentExplicitLearner === null) {
@@ -1232,9 +1293,20 @@ function createE2eLearnerAccount(
     if (url.origin !== window.location.origin) return null;
     const method = (init?.method ?? request.method ?? "GET").toUpperCase();
 
-    const dub = await handleDub(url, method, request, currentExplicitLearner);
+    const dub = await handleDub(
+      url,
+      method,
+      request,
+      currentExplicitLearner,
+      explicitProfileId,
+    );
     if (dub) return dub;
-    const art = await handleArt(url, method, currentExplicitLearner);
+    const art = await handleArt(
+      url,
+      method,
+      currentExplicitLearner,
+      explicitProfileId,
+    );
     if (art) return art;
     const lessonRecording = await handleLessonRecording(
       input,
@@ -1243,8 +1315,19 @@ function createE2eLearnerAccount(
       method,
       request,
       currentExplicitLearner,
+      explicitProfileId,
     );
     if (lessonRecording) return lessonRecording;
+    if (currentExplicitLearner === null) {
+      refreshStoredState();
+    } else {
+      const rebound = rebindLearnerForCommit(
+        currentExplicitLearner,
+        explicitProfileId,
+      );
+      if (rebound instanceof Response) return rebound;
+      currentExplicitLearner = rebound;
+    }
 
     if (url.pathname === "/api/learner-profiles") {
       if (method === "GET") return e2eJson(roster());
@@ -1259,6 +1342,7 @@ function createE2eLearnerAccount(
           );
         }
         const body = await jsonBody(request);
+        refreshStoredState();
         const name =
           typeof body.name === "string"
             ? body.name.normalize("NFKC").trim()
@@ -1350,7 +1434,7 @@ function createE2eLearnerAccount(
     }
 
     const resolvedLearner = requestLearner(currentExplicitLearner);
-    const learner =
+    let learner =
       resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
@@ -1385,6 +1469,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/learner-profile/answer" && method === "PUT") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       if (
         typeof body.questionKey !== "string" ||
         typeof body.rawAnswer !== "string" ||
@@ -1415,6 +1505,12 @@ function createE2eLearnerAccount(
       } catch {
         return e2eJson({ error: "invalid_json" }, 400);
       }
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const index = questionnaire.questions.findIndex(
         (question) => question.answerKey === body.questionKey,
       );
@@ -1457,6 +1553,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/profile" && method === "PUT") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const answers =
         body.answers && typeof body.answers === "object"
           ? (body.answers as Record<string, unknown>)
@@ -1475,6 +1577,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/profile/preferences" && method === "PUT") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       if (typeof body.storyLevel === "string") {
         learner.profile.storyLevel =
           body.storyLevel as MockLearnerProfile["storyLevel"];
@@ -1485,6 +1593,12 @@ function createE2eLearnerAccount(
 
     if (url.pathname === "/api/lessons/my/generate" && method === "POST") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const topic =
         typeof body.topic === "string" && body.topic.trim()
           ? body.topic.normalize("NFKC").trim()
@@ -1499,6 +1613,12 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/lessons/my" && method === "POST") {
       const body = await jsonBody(request);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        explicitProfileId,
+      );
+      if (commitLearner instanceof Response) return commitLearner;
+      learner = commitLearner;
       const id = `lesson-${learner.profile.id}-${learner.lessons.size + 1}`;
       const descriptor: MockLessonDescriptor = {
         createdAt: E2E_DUB_RECORDED_AT,
@@ -1520,10 +1640,17 @@ function createE2eLearnerAccount(
       if (method === "GET") return e2eJson({ lesson: descriptor });
       if (method === "PUT") {
         const body = await jsonBody(request);
-        descriptor.lesson = body.lesson;
-        descriptor.updatedAt = E2E_DUB_RECORDED_AT;
+        const commitLearner = rebindLearnerForCommit(
+          learner,
+          explicitProfileId,
+        );
+        if (commitLearner instanceof Response) return commitLearner;
+        const commitDescriptor = commitLearner.lessons.get(id);
+        if (!commitDescriptor) return e2eJson({ error: "not_found" }, 404);
+        commitDescriptor.lesson = body.lesson;
+        commitDescriptor.updatedAt = E2E_DUB_RECORDED_AT;
         persist();
-        return e2eJson({ lesson: descriptor, warnings: [] });
+        return e2eJson({ lesson: commitDescriptor, warnings: [] });
       }
     }
 
@@ -2607,6 +2734,8 @@ async function lessonRecordingResponse(
     url.pathname === "/api/lesson-recordings/consent" &&
     method === "GET"
   ) {
+    const staleResponse = scope.refresh?.();
+    if (staleResponse) return staleResponse;
     scope.consentRequested();
     if (getE2eLessonScenario() === "malformed-consent") {
       return e2eJson({ enabled: "false" });
@@ -2618,13 +2747,15 @@ async function lessonRecordingResponse(
 
   const slot = lessonRecordingSlot(url);
   if (!slot || method !== "PUT") return null;
+  const commitRefreshResponse = scope.refresh?.();
+  if (commitRefreshResponse) return commitRefreshResponse;
   const request = input instanceof Request ? input : null;
   const requestHeaders = new Headers(init?.headers ?? request?.headers);
   const expectedLearnerProfileId = requestHeaders.get(
     "X-Parrot-Expected-Learner-Profile",
   );
   const resolvedLearnerProfileId = scope.learnerProfileId?.();
-  const attempt =
+  let attempt =
     scope.uploads.filter(
       (candidate) =>
         candidate.source === slot.source &&
@@ -2656,6 +2787,17 @@ async function lessonRecordingResponse(
       : request
         ? await request.clone().blob()
         : new Blob();
+  const staleResponse = scope.refresh?.();
+  if (staleResponse) return staleResponse;
+  attempt =
+    scope.uploads.filter(
+      (candidate) =>
+        candidate.source === slot.source &&
+        candidate.lessonId === slot.lessonId &&
+        candidate.sceneIndex === slot.sceneIndex &&
+        candidate.stepIndex === slot.stepIndex,
+    ).length + 1;
+  record.attempt = attempt;
   record.size = blob.size;
   record.type = blob.type;
   scope.uploads.push(record);
@@ -2692,6 +2834,22 @@ async function lessonRecordingResponse(
     scope.persist();
     return new Promise<Response>((resolve, reject) => {
       scope.pendingUploads.push({
+        commitOutcome(outcome) {
+          const staleResponse = scope.refresh?.();
+          if (staleResponse) return staleResponse;
+          const commitRecord = scope.uploads.find(
+            (candidate) =>
+              candidate.attempt === record.attempt &&
+              candidate.source === record.source &&
+              candidate.lessonId === record.lessonId &&
+              candidate.sceneIndex === record.sceneIndex &&
+              candidate.stepIndex === record.stepIndex,
+          );
+          if (!commitRecord) return e2eJson({ error: "not_found" }, 404);
+          commitRecord.outcome = outcome;
+          scope.persist();
+          return null;
+        },
         persist: scope.persist,
         record,
         reject,
@@ -3474,15 +3632,21 @@ function settleNextLessonUpload(
 ) {
   const upload = uploads.shift();
   if (!upload) return false;
-  if (action === "resolve") {
-    upload.record.outcome = "saved";
+  const outcome = action === "resolve" ? "saved" : "failed";
+  const staleResponse = upload.commitOutcome?.(outcome) ?? null;
+  if (staleResponse) {
+    upload.resolve(staleResponse);
+    return true;
+  }
+  if (!upload.commitOutcome) {
+    upload.record.outcome = outcome;
     upload.persist();
+  }
+  if (action === "resolve") {
     upload.resolve(
       e2eJson({ recordedAt: "2026-08-26T08:00:00.000Z" }, 201),
     );
   } else {
-    upload.record.outcome = "failed";
-    upload.persist();
     upload.reject(new Error("Held lesson recording upload failed."));
   }
   return true;

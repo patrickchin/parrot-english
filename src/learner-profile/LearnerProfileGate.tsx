@@ -77,7 +77,12 @@ const LEARNER_SELECTION_CHANNEL_PREFIX = "parrot-learner-selection";
 const LEARNER_SELECTION_CHANGED_MESSAGE = "changed";
 const LEARNER_SELECTION_STORAGE_SUFFIX = ":state";
 const LEARNER_SELECTION_PENDING_SEPARATOR = ":pending:";
+const LEARNER_SELECTION_PUBLICATION_SEPARATOR = ":publication:";
+const LEARNER_SELECTION_PUBLICATION_JOURNAL_SUFFIX = ":publication-journal";
+const LEARNER_SELECTION_PUBLICATION_JOURNAL_LIMIT = 32;
+const LEARNER_DELETION_LOCK_SUFFIX = ":learner-deletion";
 const LEARNER_SELECTION_WINDOW_EVENT = "parrot-learner-selection-signal";
+const AUTHENTIC_LEARNER_SELECTION_WINDOW_EVENTS = new WeakSet<Event>();
 
 async function sha256Hex(value: string) {
   if (!globalThis.crypto?.subtle || typeof TextEncoder === "undefined") {
@@ -119,6 +124,215 @@ function learnerSelectionPendingStorageKey(scope: string, token: string) {
 function learnerSelectionPendingToken(scope: string, storageKey: string) {
   const prefix = `${scope}${LEARNER_SELECTION_PENDING_SEPARATOR}`;
   return storageKey.startsWith(prefix) ? storageKey.slice(prefix.length) : null;
+}
+
+function learnerSelectionPublicationStorageKey(scope: string, token: string) {
+  return `${scope}${LEARNER_SELECTION_PUBLICATION_SEPARATOR}${token}`;
+}
+
+function learnerSelectionPublicationJournalStorageKey(scope: string) {
+  return `${scope}${LEARNER_SELECTION_PUBLICATION_JOURNAL_SUFFIX}`;
+}
+
+function learnerDeletionLockName(scope: string) {
+  return `${scope}${LEARNER_DELETION_LOCK_SUFFIX}`;
+}
+
+function learnerDeletionLockManager() {
+  try {
+    return typeof globalThis.navigator?.locks?.request === "function"
+      ? globalThis.navigator.locks
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+type LearnerDeletionPublication = {
+  marker: string;
+  previousMarker: string | null;
+  status: "notified" | "prepared" | "published";
+  token: string;
+  version: 1;
+};
+
+type LearnerDeletionPublicationJournal = {
+  entries: Array<{ marker: string; token: string }>;
+  version: 1;
+};
+
+function validLearnerDeletionPublicationValue(value: unknown) {
+  return typeof value === "string" && value.length > 0 && value.length <= 128;
+}
+
+function storedLearnerDeletionPublicationJournal(scope: string) {
+  try {
+    const value = window.localStorage.getItem(
+      learnerSelectionPublicationJournalStorageKey(scope),
+    );
+    if (value === null) return { status: "absent" as const, value: null };
+    const candidate: unknown = JSON.parse(value);
+    if (candidate === null || typeof candidate !== "object") {
+      return { status: "invalid" as const, value: null };
+    }
+    const journal = candidate as Partial<LearnerDeletionPublicationJournal>;
+    if (
+      journal.version !== 1 ||
+      !Array.isArray(journal.entries) ||
+      journal.entries.length > LEARNER_SELECTION_PUBLICATION_JOURNAL_LIMIT ||
+      journal.entries.some(
+        (entry) =>
+          entry === null ||
+          typeof entry !== "object" ||
+          !validLearnerDeletionPublicationValue(entry.marker) ||
+          !validLearnerDeletionPublicationValue(entry.token),
+      )
+    ) {
+      return { status: "invalid" as const, value: null };
+    }
+    return {
+      status: "valid" as const,
+      value: journal as LearnerDeletionPublicationJournal,
+    };
+  } catch {
+    return { status: "unavailable" as const, value: null };
+  }
+}
+
+function learnerDeletionPublicationJournalHas(
+  scope: string,
+  token: string,
+  marker: string,
+) {
+  const journal = storedLearnerDeletionPublicationJournal(scope);
+  return (
+    journal.status === "valid" &&
+    journal.value.entries.some(
+      (entry) => entry.token === token && entry.marker === marker,
+    )
+  );
+}
+
+function storeLearnerDeletionPublicationJournal(
+  scope: string,
+  token: string,
+  marker: string,
+) {
+  const stored = storedLearnerDeletionPublicationJournal(scope);
+  if (stored.status === "invalid" || stored.status === "unavailable") {
+    return false;
+  }
+  const entries = stored.status === "valid" ? stored.value.entries : [];
+  const sameToken = entries.find((entry) => entry.token === token);
+  if (sameToken && sameToken.marker !== marker) return false;
+  const nextEntries = sameToken
+    ? entries
+    : [...entries, { marker, token }].slice(
+        -LEARNER_SELECTION_PUBLICATION_JOURNAL_LIMIT,
+      );
+  try {
+    window.localStorage.setItem(
+      learnerSelectionPublicationJournalStorageKey(scope),
+      JSON.stringify({ entries: nextEntries, version: 1 }),
+    );
+  } catch {
+    return false;
+  }
+  const verified = storedLearnerDeletionPublicationJournal(scope);
+  return (
+    verified.status === "valid" &&
+    verified.value.entries.length === nextEntries.length &&
+    verified.value.entries.every(
+      (entry, index) =>
+        entry.marker === nextEntries[index]?.marker &&
+        entry.token === nextEntries[index]?.token,
+    )
+  );
+}
+
+function learnerDeletionPublicationMarker(
+  marker: string,
+  previousMarker: string | null,
+  status: LearnerDeletionPublication["status"],
+  token: string,
+) {
+  return JSON.stringify({ marker, previousMarker, status, token, version: 1 });
+}
+
+function storedLearnerDeletionPublication(scope: string, token: string) {
+  try {
+    const value = window.localStorage.getItem(
+      learnerSelectionPublicationStorageKey(scope, token),
+    );
+    if (value === null) return { status: "absent" as const, value: null };
+    const candidate: unknown = JSON.parse(value);
+    if (candidate === null || typeof candidate !== "object") {
+      return { status: "invalid" as const, value: null };
+    }
+    const publication = candidate as Partial<LearnerDeletionPublication>;
+    if (
+      publication.version !== 1 ||
+      publication.token !== token ||
+      typeof publication.marker !== "string" ||
+      publication.marker.length === 0 ||
+      publication.marker.length > 128 ||
+      !(
+        publication.previousMarker === null ||
+        (typeof publication.previousMarker === "string" &&
+          publication.previousMarker.length > 0 &&
+          publication.previousMarker.length <= 128)
+      ) ||
+      (publication.status !== "prepared" &&
+        publication.status !== "published" &&
+        publication.status !== "notified")
+    ) {
+      return { status: "invalid" as const, value: null };
+    }
+    return {
+      status: "valid" as const,
+      value: publication as LearnerDeletionPublication,
+    };
+  } catch {
+    return { status: "unavailable" as const, value: null };
+  }
+}
+
+function removeOrphanedLearnerDeletionPublications(scope: string) {
+  const prefix = `${scope}${LEARNER_SELECTION_PUBLICATION_SEPARATOR}`;
+  try {
+    const journal = storedLearnerDeletionPublicationJournal(scope);
+    if (journal.status !== "valid") return;
+    const journalIsFull =
+      journal.value.entries.length ===
+      LEARNER_SELECTION_PUBLICATION_JOURNAL_LIMIT;
+    const orphaned: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const storageKey = window.localStorage.key(index);
+      if (!storageKey?.startsWith(prefix)) continue;
+      const token = storageKey.slice(prefix.length);
+      const publication = token
+        ? storedLearnerDeletionPublication(scope, token)
+        : null;
+      if (
+        token &&
+        publication?.status === "valid" &&
+        (journalIsFull ||
+          journal.value.entries.some(
+            (entry) =>
+              entry.token === token &&
+              entry.marker === publication.value.marker,
+          )) &&
+        window.localStorage.getItem(
+          learnerSelectionPendingStorageKey(scope, token),
+        ) === null
+      ) {
+        orphaned.push(storageKey);
+      }
+    }
+    for (const storageKey of orphaned) window.localStorage.removeItem(storageKey);
+  } catch {
+    // A later scope initialization can retry best-effort orphan cleanup.
+  }
 }
 
 function storedLearnerSelectionMarker(storageKey: string) {
@@ -163,11 +377,12 @@ function removeLearnerSelectionMarker(storageKey: string) {
 }
 
 type LearnerDeletionRecovery = {
+  attemptId: string;
   changeMarker: string | null;
   operation: "delete-learner";
   profileId: string;
   token: string;
-  version: 1;
+  version: 2;
 };
 
 type StoredLearnerSelectionPending = {
@@ -191,11 +406,12 @@ function learnerDeletionRecovery(
   token: string,
 ): LearnerDeletionRecovery {
   return {
+    attemptId: learnerSelectionMarker(),
     changeMarker: null,
     operation: "delete-learner",
     profileId,
     token,
-    version: 1,
+    version: 2,
   };
 }
 
@@ -224,9 +440,12 @@ function parseLearnerSelectionPending(
       status?: unknown;
     };
     if (
-      marker.version !== 1 ||
+      marker.version !== 2 ||
       marker.operation !== "delete-learner" ||
       marker.token !== token ||
+      typeof marker.attemptId !== "string" ||
+      marker.attemptId.length === 0 ||
+      marker.attemptId.length > 128 ||
       !validLearnerDeletionRecoveryProfileId(marker.profileId) ||
       !(
         marker.changeMarker === null ||
@@ -240,16 +459,47 @@ function parseLearnerSelectionPending(
     }
     return {
       recovery: {
+        attemptId: marker.attemptId,
         changeMarker: marker.changeMarker,
         operation: "delete-learner",
         profileId: marker.profileId,
         token,
-        version: 1,
+        version: 2,
       },
       status: marker.status,
     };
   } catch {
     return { recovery: null, status: "uncertain" };
+  }
+}
+
+function sameLearnerDeletionAttempt(
+  left: LearnerDeletionRecovery,
+  right: LearnerDeletionRecovery,
+) {
+  return (
+    left.attemptId === right.attemptId &&
+    left.changeMarker === right.changeMarker &&
+    left.profileId === right.profileId &&
+    left.token === right.token
+  );
+}
+
+function compareStoredLearnerDeletionAttempt(
+  pending: LearnerSelectionPendingMutation,
+) {
+  if (pending.recovery === null) return "match";
+  try {
+    const stored = parseLearnerSelectionPending(
+      window.localStorage.getItem(pending.storageKey),
+      pending.token,
+    ).recovery;
+    return stored !== null &&
+      sameLearnerDeletionAttempt(stored, pending.recovery)
+      ? "match"
+      : "different";
+  } catch {
+    return "unavailable";
   }
 }
 
@@ -1073,11 +1323,14 @@ export function LearnerProfileGate({
   const learnerSelectionScopeReadyRef = useRef(sessionIdentity === null);
   const initialLearnerLoadSettledRef = useRef(false);
   const learnerSelectionMarkerRef = useRef<string | null>(null);
+  const learnerSelectionAcceptedMarkersRef = useRef<Set<string>>(new Set());
   const learnerSelectionWindowSenderRef = useRef(learnerSelectionMarker());
   const learnerSelectionPendingRef = useRef<
     Map<string, "pending" | "uncertain">
   >(new Map());
-  const learnerSelectionLocallyNonblockingRef = useRef<Set<string>>(new Set());
+  const learnerSelectionLocallyNonblockingRef = useRef<
+    Map<string, string | null>
+  >(new Map());
   const learnerMutationControllerRef = useRef<AbortController | null>(null);
   const learnerMutationTailRef = useRef<Promise<void>>(Promise.resolve());
   const learnerDeletionRecoveryRef = useRef<Promise<void> | null>(null);
@@ -1098,10 +1351,47 @@ export function LearnerProfileGate({
   dataRef.current = data;
   learnerIdentityCheckRef.current = learnerIdentityCheck;
 
+  const acceptLearnerSelectionMarker = useCallback(
+    (scope: string, marker: string) => {
+      if (learnerSelectionAcceptedMarkersRef.current.has(marker)) return false;
+      learnerSelectionAcceptedMarkersRef.current.add(marker);
+      learnerSelectionMarkerRef.current = marker;
+      if (
+        gateMountedRef.current &&
+        learnerSelectionScopeRef.current === scope
+      ) {
+        setRosterRevision((current) => current + 1);
+      }
+      return true;
+    },
+    [],
+  );
+
   const excludeLocallyNonblockingLearnerMutations = useCallback(
     (pending: Map<string, "pending" | "uncertain">) => {
-      for (const token of learnerSelectionLocallyNonblockingRef.current) {
-        pending.delete(token);
+      for (const [token, attemptId] of
+        learnerSelectionLocallyNonblockingRef.current) {
+        try {
+          const stored = parseLearnerSelectionPending(
+            window.localStorage.getItem(
+              learnerSelectionPendingStorageKey(
+                learnerSelectionScopeRef.current ?? "",
+                token,
+              ),
+            ),
+            token,
+          ).recovery;
+          if (
+            (attemptId === null && stored === null) ||
+            stored?.attemptId === attemptId
+          ) {
+            pending.delete(token);
+          } else {
+            learnerSelectionLocallyNonblockingRef.current.delete(token);
+          }
+        } catch {
+          learnerSelectionLocallyNonblockingRef.current.delete(token);
+        }
       }
       return pending;
     },
@@ -1665,7 +1955,12 @@ export function LearnerProfileGate({
             sender: learnerSelectionWindowSenderRef.current,
           },
         });
-        void Promise.resolve().then(() => window.dispatchEvent(event));
+        AUTHENTIC_LEARNER_SELECTION_WINDOW_EVENTS.add(event);
+        try {
+          window.dispatchEvent(event);
+        } finally {
+          AUTHENTIC_LEARNER_SELECTION_WINDOW_EVENTS.delete(event);
+        }
       } catch {
         // Durable storage and the peer channel remain available.
       }
@@ -1738,6 +2033,22 @@ export function LearnerProfileGate({
         }
         return null;
       }
+      if (deletionProfileId !== undefined) {
+        const locks = learnerDeletionLockManager();
+        if (locks === null) {
+          throw new Error("The learner change could not be started safely.");
+        }
+        try {
+          await locks.request(
+            learnerDeletionLockName(scope),
+            { mode: "exclusive" },
+            () => undefined,
+          );
+        } catch {
+          throw new Error("The learner change could not be started safely.");
+        }
+        throwIfLearnerMutationAborted(signal);
+      }
       const token = learnerSelectionMarker();
       const storageKey = learnerSelectionPendingStorageKey(scope, token);
       const recovery =
@@ -1753,13 +2064,17 @@ export function LearnerProfileGate({
         throw new Error("The learner change could not be started safely.");
       }
       if (!blockLocal) {
-        learnerSelectionLocallyNonblockingRef.current.add(token);
+        learnerSelectionLocallyNonblockingRef.current.set(
+          token,
+          recovery?.attemptId ?? null,
+        );
       }
       if (learnerSelectionScopeRef.current === scope && blockLocal) {
         learnerSelectionPendingRef.current.set(token, "pending");
         beginLearnerIdentityCheck();
       }
       postLearnerSelectionSignal(scope, {
+        ...(recovery === null ? {} : { attemptId: recovery.attemptId }),
         status: "pending",
         token,
         type: "pending",
@@ -1774,19 +2089,42 @@ export function LearnerProfileGate({
     ],
   );
 
-  const markLearnerSelectionMutationUncertain = useCallback(
+  const markLearnerSelectionMutationUncertainUnlocked = useCallback(
     (pending: LearnerSelectionPendingMutation | null) => {
       if (pending === null) return;
+      const failClosedLocally = () => {
+        learnerSelectionLocallyNonblockingRef.current.delete(pending.token);
+        if (learnerSelectionScopeRef.current !== pending.scope) return;
+        learnerSelectionPendingRef.current.set(pending.token, "uncertain");
+        blockForPendingLearnerSelection(false);
+      };
+      if (
+        pending.recovery !== null &&
+        compareStoredLearnerDeletionAttempt(pending) !== "match"
+      ) {
+        failClosedLocally();
+        return;
+      }
+      if (
+        !storeLearnerSelectionMarker(
+          pending.storageKey,
+          learnerSelectionPendingMarker("uncertain", pending.recovery),
+        ) ||
+        (pending.recovery !== null &&
+          compareStoredLearnerDeletionAttempt(pending) !== "match")
+      ) {
+        failClosedLocally();
+        return;
+      }
       learnerSelectionLocallyNonblockingRef.current.delete(pending.token);
-      storeLearnerSelectionMarker(
-        pending.storageKey,
-        learnerSelectionPendingMarker("uncertain", pending.recovery),
-      );
       if (learnerSelectionScopeRef.current === pending.scope) {
         learnerSelectionPendingRef.current.set(pending.token, "uncertain");
         blockForPendingLearnerSelection(false);
       }
       postLearnerSelectionSignal(pending.scope, {
+        ...(pending.recovery === null
+          ? {}
+          : { attemptId: pending.recovery.attemptId }),
         status: "uncertain",
         token: pending.token,
         type: "pending",
@@ -1795,65 +2133,227 @@ export function LearnerProfileGate({
     [blockForPendingLearnerSelection, postLearnerSelectionSignal],
   );
 
-  const settleLearnerSelectionMutation = useCallback(
+  const settleLearnerSelectionMutationUnlocked = useCallback(
     (pending: LearnerSelectionPendingMutation | null, changed: boolean) => {
       if (pending === null) return true;
+      let publicationStorageKey: string | null = null;
+      let publicationPreviousMarker: string | null = null;
+      if (
+        pending.recovery !== null &&
+        compareStoredLearnerDeletionAttempt(pending) !== "match"
+      ) {
+        return false;
+      }
       if (changed) {
         const stateStorageKey = `${pending.scope}${LEARNER_SELECTION_STORAGE_SUFFIX}`;
         let marker = learnerSelectionMarker();
-        let publishChanged = true;
+        let notifyChanged = true;
+        let markPublicationNotified = false;
         if (pending.recovery !== null) {
           if (pending.recovery.changeMarker === null) {
             const recovery = { ...pending.recovery, changeMarker: marker };
-            if (
-              !storeLearnerSelectionMarker(
-                pending.storageKey,
-                learnerSelectionPendingMarker("pending", recovery),
-              )
-            ) {
-              markLearnerSelectionMutationUncertain(pending);
+            if (!storeLearnerSelectionMarker(
+              pending.storageKey,
+              learnerSelectionPendingMarker("pending", recovery),
+            )) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
               return false;
             }
             pending.recovery = recovery;
+            if (compareStoredLearnerDeletionAttempt(pending) !== "match") {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
           } else {
             marker = pending.recovery.changeMarker;
           }
-          const storedMarker = compareStoredLearnerSelectionMarker(
-            stateStorageKey,
-            marker,
+          publicationStorageKey = learnerSelectionPublicationStorageKey(
+            pending.scope,
+            pending.token,
           );
-          if (storedMarker === "unavailable") {
-            markLearnerSelectionMutationUncertain(pending);
+          let publication = storedLearnerDeletionPublication(
+            pending.scope,
+            pending.token,
+          );
+          if (
+            publication.status === "unavailable" ||
+            publication.status === "invalid" ||
+            (publication.status === "valid" &&
+              publication.value.marker !== marker)
+          ) {
+            markLearnerSelectionMutationUncertainUnlocked(pending);
             return false;
           }
-          publishChanged = storedMarker === "different";
-        }
-        if (publishChanged) {
-          if (!storeLearnerSelectionMarker(stateStorageKey, marker)) {
-            markLearnerSelectionMutationUncertain(pending);
-            return false;
+          if (publication.status === "absent") {
+            let previousMarker: string | null;
+            try {
+              previousMarker = window.localStorage.getItem(stateStorageKey);
+            } catch {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
+            if (
+              compareStoredLearnerDeletionAttempt(pending) !== "match" ||
+              !storeLearnerSelectionMarker(
+                publicationStorageKey,
+                learnerDeletionPublicationMarker(
+                  marker,
+                  previousMarker,
+                  "prepared",
+                  pending.token,
+                ),
+              )
+            ) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
+            publication = storedLearnerDeletionPublication(
+              pending.scope,
+              pending.token,
+            );
+            if (
+              publication.status !== "valid" ||
+              publication.value.marker !== marker ||
+              publication.value.previousMarker !== previousMarker ||
+              publication.value.status !== "prepared"
+            ) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
           }
           if (
-            gateMountedRef.current &&
-            learnerSelectionScopeRef.current === pending.scope
+            publication.status === "valid" &&
+            publication.value.status === "prepared"
           ) {
-            setRosterRevision((current) => current + 1);
+            let currentMarker: string | null;
+            try {
+              currentMarker = window.localStorage.getItem(stateStorageKey);
+            } catch {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
+            if (
+              currentMarker !== marker &&
+              currentMarker === publication.value.previousMarker &&
+              (!storeLearnerSelectionMarker(stateStorageKey, marker) ||
+                compareStoredLearnerSelectionMarker(
+                  stateStorageKey,
+                  marker,
+                ) !== "match")
+            ) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
+            if (
+              compareStoredLearnerDeletionAttempt(pending) !== "match" ||
+              !storeLearnerSelectionMarker(
+                publicationStorageKey,
+                learnerDeletionPublicationMarker(
+                  marker,
+                  publication.value.previousMarker,
+                  "published",
+                  pending.token,
+                ),
+              )
+            ) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
+            publication = storedLearnerDeletionPublication(
+              pending.scope,
+              pending.token,
+            );
+            if (
+              publication.status !== "valid" ||
+              publication.value.marker !== marker ||
+              publication.value.status !== "published"
+            ) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
           }
+          if (publication.status === "valid") {
+            publicationPreviousMarker = publication.value.previousMarker;
+          }
+          notifyChanged =
+            publication.value?.status === "published" ||
+            publication.value?.status === "notified";
+          markPublicationNotified =
+            publication.value?.status === "published";
+        } else if (
+          !storeLearnerSelectionMarker(stateStorageKey, marker) ||
+          compareStoredLearnerSelectionMarker(stateStorageKey, marker) !==
+            "match"
+        ) {
+          markLearnerSelectionMutationUncertainUnlocked(pending);
+          return false;
+        }
+        if (notifyChanged) {
+          if (
+            pending.recovery !== null &&
+            compareStoredLearnerDeletionAttempt(pending) !== "match"
+          ) {
+            return false;
+          }
+          acceptLearnerSelectionMarker(pending.scope, marker);
           postLearnerSelectionSignal(pending.scope, {
             marker,
+            ...(pending.recovery === null ? {} : { token: pending.token }),
             type: LEARNER_SELECTION_CHANGED_MESSAGE,
           });
           if (
-            compareStoredLearnerSelectionMarker(stateStorageKey, marker) !==
-            "match"
+            publicationStorageKey !== null &&
+            markPublicationNotified &&
+            (compareStoredLearnerDeletionAttempt(pending) !== "match" ||
+              !storeLearnerSelectionMarker(
+                publicationStorageKey,
+                learnerDeletionPublicationMarker(
+                  marker,
+                  publicationPreviousMarker,
+                  "notified",
+                  pending.token,
+                ),
+              ))
           ) {
-            markLearnerSelectionMutationUncertain(pending);
+            markLearnerSelectionMutationUncertainUnlocked(pending);
             return false;
           }
+          if (publicationStorageKey !== null && markPublicationNotified) {
+            const notified = storedLearnerDeletionPublication(
+              pending.scope,
+              pending.token,
+            );
+            if (
+              notified.status !== "valid" ||
+              notified.value.marker !== marker ||
+              notified.value.previousMarker !== publicationPreviousMarker ||
+              notified.value.status !== "notified"
+            ) {
+              markLearnerSelectionMutationUncertainUnlocked(pending);
+              return false;
+            }
+          }
+        }
+        if (
+          publicationStorageKey !== null &&
+          !storeLearnerDeletionPublicationJournal(
+            pending.scope,
+            pending.token,
+            marker,
+          )
+        ) {
+          markLearnerSelectionMutationUncertainUnlocked(pending);
+          return false;
         }
       }
+      if (
+        pending.recovery !== null &&
+        compareStoredLearnerDeletionAttempt(pending) !== "match"
+      ) {
+        return false;
+      }
       if (!removeLearnerSelectionMarker(pending.storageKey)) {
-        markLearnerSelectionMutationUncertain(pending);
+        markLearnerSelectionMutationUncertainUnlocked(pending);
         return false;
       }
       learnerSelectionLocallyNonblockingRef.current.delete(pending.token);
@@ -1872,14 +2372,77 @@ export function LearnerProfileGate({
         token: pending.token,
         type: "settled",
       });
+      if (publicationStorageKey !== null) {
+        removeLearnerSelectionMarker(publicationStorageKey);
+      }
       return true;
     },
     [
+      acceptLearnerSelectionMarker,
       blockForPendingLearnerSelection,
-      markLearnerSelectionMutationUncertain,
+      markLearnerSelectionMutationUncertainUnlocked,
       postLearnerSelectionSignal,
       refreshStoredLearnerSelectionPending,
     ],
+  );
+
+  const failLearnerDeletionClosedLocally = useCallback(
+    (pending: LearnerSelectionPendingMutation | null) => {
+      if (pending === null) return;
+      learnerSelectionLocallyNonblockingRef.current.delete(pending.token);
+      if (learnerSelectionScopeRef.current !== pending.scope) return;
+      learnerSelectionPendingRef.current.set(pending.token, "uncertain");
+      blockForPendingLearnerSelection(false);
+    },
+    [blockForPendingLearnerSelection],
+  );
+
+  const runWithLearnerDeletionLock = useCallback(
+    async (
+      pending: LearnerSelectionPendingMutation | null,
+      operation: () => boolean,
+    ) => {
+      if (pending?.recovery === null || pending === null) return operation();
+      const locks = learnerDeletionLockManager();
+      if (locks === null) {
+        failLearnerDeletionClosedLocally(pending);
+        return false;
+      }
+      try {
+        return await locks.request(
+          learnerDeletionLockName(pending.scope),
+          { mode: "exclusive" },
+          operation,
+        );
+      } catch {
+        failLearnerDeletionClosedLocally(pending);
+        return false;
+      }
+    },
+    [failLearnerDeletionClosedLocally],
+  );
+
+  const markLearnerSelectionMutationUncertain = useCallback(
+    async (pending: LearnerSelectionPendingMutation | null) =>
+      runWithLearnerDeletionLock(pending, () => {
+        markLearnerSelectionMutationUncertainUnlocked(pending);
+        return true;
+      }),
+    [
+      markLearnerSelectionMutationUncertainUnlocked,
+      runWithLearnerDeletionLock,
+    ],
+  );
+
+  const settleLearnerSelectionMutation = useCallback(
+    async (
+      pending: LearnerSelectionPendingMutation | null,
+      changed: boolean,
+    ) =>
+      runWithLearnerDeletionLock(pending, () =>
+        settleLearnerSelectionMutationUnlocked(pending, changed),
+      ),
+    [runWithLearnerDeletionLock, settleLearnerSelectionMutationUnlocked],
   );
 
   const revalidateActiveLearner = useCallback(
@@ -2008,6 +2571,7 @@ export function LearnerProfileGate({
     learnerSelectionPendingRef.current.clear();
     learnerSelectionLocallyNonblockingRef.current.clear();
     learnerSelectionMarkerRef.current = null;
+    learnerSelectionAcceptedMarkersRef.current.clear();
     if (sessionIdentity === null) {
       if (initialLearnerLoadSettledRef.current) {
         updateLearnerIdentityCheck("confirmed");
@@ -2031,19 +2595,19 @@ export function LearnerProfileGate({
       }
       activeScope = name;
       learnerSelectionScopeRef.current = name;
+      removeOrphanedLearnerDeletionPublications(name);
       const storageKey = `${name}${LEARNER_SELECTION_STORAGE_SUFFIX}`;
       const acceptMarker = (marker: string | null) => {
         if (
           disposed ||
           marker === null ||
-          learnerSelectionMarkerRef.current === marker
-        ) {
+          !acceptLearnerSelectionMarker(name, marker)
+        )
           return;
-        }
-        learnerSelectionMarkerRef.current = marker;
-        setRosterRevision((current) => current + 1);
         if (refreshStoredLearnerSelectionPending().size === 0) {
-          revalidateActiveLearner(true);
+          void Promise.resolve().then(() => {
+            if (!disposed) revalidateActiveLearner(true);
+          });
         } else {
           blockForPendingLearnerSelection(true);
         }
@@ -2070,7 +2634,9 @@ export function LearnerProfileGate({
         if (learnerSelectionPendingRef.current.size > 0) {
           blockForPendingLearnerSelection(true);
         } else if (previouslyPending) {
-          revalidateActiveLearner(true);
+          void Promise.resolve().then(() => {
+            if (!disposed) revalidateActiveLearner(true);
+          });
         }
       };
       receiveStorage = (event) => {
@@ -2095,16 +2661,13 @@ export function LearnerProfileGate({
       };
       const acceptSignal = (message: unknown) => {
         if (message === LEARNER_SELECTION_CHANGED_MESSAGE) {
-          if (refreshStoredLearnerSelectionPending().size === 0) {
-            revalidateActiveLearner(true);
-          } else {
-            blockForPendingLearnerSelection(true);
-          }
+          acceptMarker(storedLearnerSelectionMarker(storageKey));
           return;
         }
         if (message === null || typeof message !== "object") return;
         const signal = message as {
           marker?: unknown;
+          attemptId?: unknown;
           status?: unknown;
           token?: unknown;
           type?: unknown;
@@ -2113,6 +2676,31 @@ export function LearnerProfileGate({
           signal.type === LEARNER_SELECTION_CHANGED_MESSAGE &&
           typeof signal.marker === "string"
         ) {
+          const durableMarker =
+            typeof signal.token === "string"
+              ? storedLearnerDeletionPublication(name, signal.token)
+              : null;
+          if (
+            compareStoredLearnerSelectionMarker(
+              storageKey,
+              signal.marker,
+            ) !== "match" &&
+            !(
+              durableMarker?.status === "valid" &&
+              durableMarker.value.marker === signal.marker &&
+              durableMarker.value.status !== "prepared"
+            ) &&
+            !(
+              typeof signal.token === "string" &&
+              learnerDeletionPublicationJournalHas(
+                name,
+                signal.token,
+                signal.marker,
+              )
+            )
+          ) {
+            return;
+          }
           acceptMarker(signal.marker);
           return;
         }
@@ -2121,10 +2709,42 @@ export function LearnerProfileGate({
           typeof signal.token === "string" &&
           (signal.status === "pending" || signal.status === "uncertain")
         ) {
+          let stored: StoredLearnerSelectionPending;
+          try {
+            const storedValue = window.localStorage.getItem(
+              learnerSelectionPendingStorageKey(name, signal.token),
+            );
+            if (storedValue === null) return;
+            stored = parseLearnerSelectionPending(
+              storedValue,
+              signal.token,
+            );
+          } catch {
+            return;
+          }
+          if (
+            stored.status !== signal.status ||
+            (signal.attemptId !== undefined &&
+              (typeof signal.attemptId !== "string" ||
+                stored.recovery?.attemptId !== signal.attemptId))
+          ) {
+            return;
+          }
           acceptPendingChange(signal.token, signal.status);
           return;
         }
         if (signal.type === "settled" && typeof signal.token === "string") {
+          try {
+            if (
+              window.localStorage.getItem(
+                learnerSelectionPendingStorageKey(name, signal.token),
+              ) !== null
+            ) {
+              return;
+            }
+          } catch {
+            return;
+          }
           acceptPendingChange(signal.token, null);
         }
       };
@@ -2137,6 +2757,7 @@ export function LearnerProfileGate({
           sender?: unknown;
         };
         if (
+          AUTHENTIC_LEARNER_SELECTION_WINDOW_EVENTS.has(event) &&
           signal.scope === name &&
           typeof signal.sender === "string" &&
           signal.sender !== learnerSelectionWindowSenderRef.current
@@ -2178,6 +2799,7 @@ export function LearnerProfileGate({
     return () => {
       disposed = true;
       learnerSelectionMarkerRef.current = null;
+      learnerSelectionAcceptedMarkersRef.current.clear();
       learnerSelectionScopeReadyRef.current = false;
       if (learnerSelectionScopeRef.current === activeScope) {
         learnerSelectionScopeRef.current = null;
@@ -2199,6 +2821,7 @@ export function LearnerProfileGate({
       channel?.close();
     };
   }, [
+    acceptLearnerSelectionMarker,
     beginLearnerIdentityCheck,
     blockForPendingLearnerSelection,
     excludeLocallyNonblockingLearnerMutations,
@@ -2394,7 +3017,10 @@ export function LearnerProfileGate({
           const roster = await selectLearnerProfileRequest(profileId);
           responseReceived = true;
           const selectedProfile = requireRosterActiveProfile(roster, profileId);
-          pendingSettled = settleLearnerSelectionMutation(pending, true);
+          pendingSettled = settleLearnerSelectionMutationUnlocked(
+            pending,
+            true,
+          );
           throwIfLearnerMutationAborted(signal);
           if (!pendingSettled) {
             throw new Error("The learner change could not be verified safely.");
@@ -2409,16 +3035,22 @@ export function LearnerProfileGate({
               responseReceived,
             );
             if (outcome === "committed") {
-              pendingSettled = settleLearnerSelectionMutation(pending, true);
+              pendingSettled = settleLearnerSelectionMutationUnlocked(
+                pending,
+                true,
+              );
               revalidateAfterSettlement = true;
             } else if (outcome === "rejected") {
-              pendingSettled = settleLearnerSelectionMutation(pending, false);
+              pendingSettled = settleLearnerSelectionMutationUnlocked(
+                pending,
+                false,
+              );
               revalidateAfterSettlement = true;
             } else if (outcome === "uncertain") {
-              markLearnerSelectionMutationUncertain(pending);
+              markLearnerSelectionMutationUncertainUnlocked(pending);
               reconcileWithoutScope = pending === null;
             } else if (pending !== null) {
-              settleLearnerSelectionMutation(pending, false);
+              settleLearnerSelectionMutationUnlocked(pending, false);
             }
           }
           if (
@@ -2436,12 +3068,12 @@ export function LearnerProfileGate({
       }),
     [
       beginLearnerSelectionMutation,
-      markLearnerSelectionMutationUncertain,
+      markLearnerSelectionMutationUncertainUnlocked,
       reconcileLearnerAfterMutation,
       refreshStoredLearnerSelectionPending,
       reloadSelectedLearner,
       runLearnerMutation,
-      settleLearnerSelectionMutation,
+      settleLearnerSelectionMutationUnlocked,
     ],
   );
 
@@ -2457,8 +3089,9 @@ export function LearnerProfileGate({
           "learner_deletion_uncertain",
           "We couldn't confirm whether this learner was deleted. Refresh learner profiles before trying again.",
         );
-      const settle = (changed: boolean) => {
-        if (!settleLearnerSelectionMutation(pending, changed)) {
+      const settle = async (changed: boolean) => {
+        if (!(await settleLearnerSelectionMutation(pending, changed))) {
+          failLearnerDeletionClosedLocally(pending);
           throw uncertainError();
         }
       };
@@ -2489,7 +3122,7 @@ export function LearnerProfileGate({
           error.status < 500 &&
           !(error.status === 404 && error.code === "not_found")
         ) {
-          settle(false);
+          await settle(false);
           throw error;
         }
         deleteError = error;
@@ -2499,7 +3132,7 @@ export function LearnerProfileGate({
         deleteRoster !== null &&
         !deleteRoster.profiles.some(({ id }) => id === profileId)
       ) {
-        settle(true);
+        await settle(true);
         await reconcileActiveDeletion();
         return deleteRoster;
       }
@@ -2515,18 +3148,18 @@ export function LearnerProfileGate({
       try {
         roster = await loadLearnerProfiles();
       } catch {
-        markLearnerSelectionMutationUncertain(pending);
+        await markLearnerSelectionMutationUncertain(pending);
         throw uncertainError();
       }
 
       const target = roster.profiles.find(({ id }) => id === profileId);
       if (!target) {
-        settle(true);
+        await settle(true);
         await reconcileActiveDeletion();
         return roster;
       }
       if (target.deletionPending) {
-        settle(true);
+        await settle(true);
         await reconcileActiveDeletion();
         throw new LearnerProfileDeletionError(
           "learner_deletion_pending",
@@ -2535,10 +3168,11 @@ export function LearnerProfileGate({
         );
       }
 
-      settle(false);
+      await settle(false);
       throw deleteError;
     },
     [
+      failLearnerDeletionClosedLocally,
       markLearnerSelectionMutationUncertain,
       resetLearnerSelection,
       settleLearnerSelectionMutation,
@@ -2580,28 +3214,78 @@ export function LearnerProfileGate({
     if (learnerDeletionRecoveryRef.current !== null) return true;
     const scope = learnerSelectionScopeRef.current;
     if (scope === null) return false;
-    const entries = storedLearnerSelectionPendingEntries(scope);
-    if (entries === null || entries.size !== 1) return false;
-    const [[token, entry]] = [...entries];
-    if (entry.recovery === null) return false;
-    const pending: LearnerSelectionPendingMutation = {
-      recovery: entry.recovery,
-      scope,
-      storageKey: learnerSelectionPendingStorageKey(scope, token),
-      token,
-    };
-    const activeProfileIdAtStart =
-      dataRef.current?.mode === "full" ? dataRef.current.profile.id : null;
-    beginLearnerIdentityCheck();
-    const request = performLearnerDeletion(
-      entry.recovery.profileId,
-      pending,
-      activeProfileIdAtStart,
-      null,
-    ).then(
-      () => undefined,
-      () => undefined,
-    );
+    const locks = learnerDeletionLockManager();
+    if (locks === null) {
+      blockForPendingLearnerSelection(false);
+      return true;
+    }
+    const request = (async () => {
+      let pending: LearnerSelectionPendingMutation | null = null;
+      try {
+        pending = await locks.request(
+          learnerDeletionLockName(scope),
+          { mode: "exclusive" },
+          () => {
+            const entries = storedLearnerSelectionPendingEntries(scope);
+            if (entries === null) {
+              throw new Error("Learner deletion recovery is unavailable.");
+            }
+            const selected = [...entries]
+              .filter((entry) => entry[1].recovery !== null)
+              .sort(([left], [right]) => left.localeCompare(right))[0];
+            if (selected === undefined) return null;
+            const [token, entry] = selected;
+            if (entry.recovery === null) return null;
+            const claimedRecovery = {
+              ...entry.recovery,
+              attemptId: learnerSelectionMarker(),
+            };
+            const storageKey = learnerSelectionPendingStorageKey(scope, token);
+            if (
+              !storeLearnerSelectionMarker(
+                storageKey,
+                learnerSelectionPendingMarker("pending", claimedRecovery),
+              )
+            ) {
+              throw new Error("Learner deletion recovery is unavailable.");
+            }
+            const claimed: LearnerSelectionPendingMutation = {
+              recovery: claimedRecovery,
+              scope,
+              storageKey,
+              token,
+            };
+            if (compareStoredLearnerDeletionAttempt(claimed) !== "match") {
+              throw new Error("Learner deletion recovery is unavailable.");
+            }
+            return claimed;
+          },
+        );
+      } catch {
+        blockForPendingLearnerSelection(false);
+        return;
+      }
+      if (pending === null) return;
+      learnerSelectionPendingRef.current.set(pending.token, "pending");
+      postLearnerSelectionSignal(scope, {
+        attemptId: pending.recovery?.attemptId,
+        status: "pending",
+        token: pending.token,
+        type: "pending",
+      });
+      const activeProfileIdAtStart =
+        dataRef.current?.mode === "full" ? dataRef.current.profile.id : null;
+      beginLearnerIdentityCheck();
+      await performLearnerDeletion(
+        pending.recovery!.profileId,
+        pending,
+        activeProfileIdAtStart,
+        null,
+      ).then(
+        () => undefined,
+        () => undefined,
+      );
+    })();
     const recovery = request.finally(() => {
       if (learnerDeletionRecoveryRef.current === recovery) {
         learnerDeletionRecoveryRef.current = null;
@@ -2619,6 +3303,7 @@ export function LearnerProfileGate({
     beginLearnerIdentityCheck,
     blockForPendingLearnerSelection,
     performLearnerDeletion,
+    postLearnerSelectionSignal,
     refreshStoredLearnerSelectionPending,
     revalidateActiveLearner,
   ]);
@@ -2650,7 +3335,10 @@ export function LearnerProfileGate({
           ) {
             throw new Error("The newly added learner could not be loaded.");
           }
-          pendingSettled = settleLearnerSelectionMutation(pending, true);
+          pendingSettled = settleLearnerSelectionMutationUnlocked(
+            pending,
+            true,
+          );
           throwIfLearnerMutationAborted(signal);
           if (!pendingSettled) {
             throw new Error("The learner change could not be verified safely.");
@@ -2665,16 +3353,22 @@ export function LearnerProfileGate({
               responseReceived,
             );
             if (outcome === "committed") {
-              pendingSettled = settleLearnerSelectionMutation(pending, true);
+              pendingSettled = settleLearnerSelectionMutationUnlocked(
+                pending,
+                true,
+              );
               revalidateAfterSettlement = true;
             } else if (outcome === "rejected") {
-              pendingSettled = settleLearnerSelectionMutation(pending, false);
+              pendingSettled = settleLearnerSelectionMutationUnlocked(
+                pending,
+                false,
+              );
               revalidateAfterSettlement = true;
             } else if (outcome === "uncertain") {
-              markLearnerSelectionMutationUncertain(pending);
+              markLearnerSelectionMutationUncertainUnlocked(pending);
               reconcileWithoutScope = pending === null;
             } else if (pending !== null) {
-              settleLearnerSelectionMutation(pending, false);
+              settleLearnerSelectionMutationUnlocked(pending, false);
             }
           }
           if (
@@ -2692,12 +3386,12 @@ export function LearnerProfileGate({
       }),
     [
       beginLearnerSelectionMutation,
-      markLearnerSelectionMutationUncertain,
+      markLearnerSelectionMutationUncertainUnlocked,
       reconcileLearnerAfterMutation,
       refreshStoredLearnerSelectionPending,
       reloadSelectedLearner,
       runLearnerMutation,
-      settleLearnerSelectionMutation,
+      settleLearnerSelectionMutationUnlocked,
     ],
   );
   const activeQuestion = fullData?.question ?? null;
