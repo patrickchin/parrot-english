@@ -119,7 +119,9 @@ export function LessonStage({
         aria-label="Parrot English speaking lesson"
         className={cx(
           "relative isolate h-full w-full overflow-hidden bg-sky-300",
-          presentation === "boxed" && "bg-conversation",
+          presentation === "boxed"
+            ? "bg-conversation"
+            : "[@media(min-width:48rem)_and_(min-height:30.0625rem)]:[--lesson-layered-character-bottom:clamp(100px,calc(12.5dvh+20px),120px)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:[--lesson-layered-character-height:clamp(calc(28dvh-2px),calc(108dvh-32.25rem),44dvh)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:[--lesson-layered-dialogue-height:calc(100dvh-7rem-var(--lesson-layered-character-bottom)-var(--lesson-layered-character-height)-1rem)]",
         )}
         data-presentation={presentation}
       >
@@ -420,7 +422,7 @@ export function LessonHud({
         "lesson-hud z-30",
         reserved
           ? "relative w-full min-w-0 max-w-none"
-          : "absolute left-1/2 top-20 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 short:top-16 md:top-5 md:max-w-xl",
+          : "absolute left-1/2 top-20 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 short:top-16 md:top-5 md:max-w-xl [@media(min-width:48rem)_and_(max-height:38.75rem)]:top-5 [@media(min-width:48rem)_and_(max-height:30rem)]:top-20",
       )}
       role="region"
     >
@@ -632,7 +634,7 @@ export function LessonCharacters({
       {characters.map((character, index) => (
         <div
           className={cx(
-            "lesson-character-slot absolute bottom-24 z-10 flex h-[20dvh] w-1/3 min-w-24 max-w-44 -translate-x-1/2 items-end justify-center drop-shadow-xl transition short:bottom-22 min-[340px]:h-[28dvh] min-[340px]:w-2/5 md:bottom-30 md:h-[44dvh] md:w-1/4 md:max-w-80",
+            "lesson-character-slot absolute bottom-24 z-10 flex h-[20dvh] w-1/3 min-w-24 max-w-44 -translate-x-1/2 items-end justify-center drop-shadow-xl transition short:bottom-22 min-[340px]:h-[28dvh] min-[340px]:w-2/5 md:bottom-30 md:h-[44dvh] md:w-1/4 md:max-w-80 [@media(min-width:48rem)_and_(min-height:30.0625rem)]:bottom-[var(--lesson-layered-character-bottom)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:h-[var(--lesson-layered-character-height)]",
             character.isActive &&
               "z-20 -translate-y-1 scale-105 drop-shadow-2xl",
           )}
@@ -684,10 +686,10 @@ export function LessonSpeech({
       aria-label={isNarration ? "Lesson narration" : `${speakerName} is speaking`}
       aria-live="polite"
       className={cx(
-        "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface md:px-7 md:py-4",
+        "lesson-dialogue-overlay z-30 rounded-3xl border-4 border-white px-4 py-3 text-center shadow-control-surface md:px-7 md:py-4 [@media(min-width:35rem)_and_(max-height:26.25rem)]:rounded-2xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:px-3 [@media(min-width:35rem)_and_(max-height:26.25rem)]:py-1.5",
         reserved
           ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
-          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
+          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:rounded-2xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:px-3 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:py-1.5 [@media(min-width:48rem)_and_(max-height:38.75rem)]:top-[6.75rem] [@media(min-width:48rem)_and_(max-height:30rem)]:top-[9.875rem] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-15.25rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[var(--lesson-layered-dialogue-height)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overflow-hidden",
         isNarration
           ? "bg-brand-navy/95 text-white shadow-control-navy"
           : cx(
@@ -722,9 +724,11 @@ export function LessonSpeech({
       </span>
       <p
         className={cx(
-          "m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 md:max-h-40",
+          "m-0 max-h-32 overflow-y-auto text-[clamp(1.25rem,5.4vw,2.25rem)] font-black leading-tight focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 md:max-h-40 [@media(min-width:35rem)_and_(max-height:26.25rem)]:text-xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:leading-[1.2]",
           reserved &&
             "min-h-0 overscroll-contain short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
+          !reserved &&
+            "[@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:text-xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:leading-[1.2] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-18rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[calc(var(--lesson-layered-dialogue-height)-4rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overscroll-contain",
           isNarration
             ? "focus-visible:outline-brand-yellow"
             : "focus-visible:outline-brand-ink",
@@ -755,10 +759,10 @@ export function LessonJoinInPrompt({
     <section
       aria-labelledby={headingId}
       className={cx(
-        "lesson-dialogue-overlay lesson-user-prompt z-30 grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl border-4 border-white bg-white/95 px-3 py-3 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 md:px-7 md:py-4",
+        "lesson-dialogue-overlay lesson-user-prompt z-30 grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-3xl border-4 border-white bg-white/95 px-3 py-3 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 md:px-7 md:py-4 [@media(min-width:35rem)_and_(max-height:26.25rem)]:rounded-2xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:px-3 [@media(min-width:35rem)_and_(max-height:26.25rem)]:py-1.5",
         reserved
           ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
-          : "absolute left-1/2 top-36 max-h-[calc(72dvh-15rem)] w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
+          : "absolute left-1/2 top-36 max-h-[calc(72dvh-15rem)] w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:rounded-2xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:px-3 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:py-1.5 [@media(min-width:48rem)_and_(max-height:38.75rem)]:top-[6.75rem] [@media(min-width:48rem)_and_(max-height:30rem)]:top-[9.875rem] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-15.25rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[var(--lesson-layered-dialogue-height)]",
       )}
       role="region"
     >
@@ -771,9 +775,11 @@ export function LessonJoinInPrompt({
       </h2>
       <p
         className={cx(
-          "m-0 min-h-0 overflow-y-auto overscroll-contain py-1 text-[clamp(1.65rem,8vw,3.5rem)] font-black leading-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink",
+          "m-0 min-h-0 overflow-y-auto overscroll-contain py-1 text-[clamp(1.65rem,8vw,3.5rem)] font-black leading-none focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink [@media(min-width:35rem)_and_(max-height:26.25rem)]:text-xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:leading-[1.2]",
           reserved &&
             "max-h-32 short-wide:text-[clamp(1.4rem,4.5vw,2.25rem)] tall-wide:max-h-20 tall-wide:text-[clamp(1.25rem,2.2vw,2rem)]",
+          !reserved &&
+            "[@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:text-xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:leading-[1.2] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-18rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[calc(var(--lesson-layered-dialogue-height)-4rem)]",
         )}
         onKeyDown={scrollOverflowText}
         ref={overflowText.ref}
@@ -822,11 +828,13 @@ export function LessonUserPrompt({
     <section
       aria-label="Your turn"
       className={cx(
-        "lesson-dialogue-overlay lesson-user-prompt z-30 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 min-[340px]:py-3 md:px-7 md:py-4",
+        "lesson-dialogue-overlay lesson-user-prompt z-30 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 min-[340px]:py-3 md:px-7 md:py-4 [@media(min-width:35rem)_and_(max-height:26.25rem)]:rounded-2xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:px-3 [@media(min-width:35rem)_and_(max-height:26.25rem)]:py-1.5",
         reserved
           ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
-          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28",
+          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:rounded-2xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:px-3 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:py-1.5 [@media(min-width:48rem)_and_(max-height:38.75rem)]:top-[6.75rem] [@media(min-width:48rem)_and_(max-height:30rem)]:top-[9.875rem] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-15.25rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[var(--lesson-layered-dialogue-height)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overflow-hidden",
         portrait && "lesson-user-prompt-with-portrait",
+        portrait &&
+          "[@media(min-width:35rem)_and_(max-height:26.25rem)]:flex [@media(min-width:35rem)_and_(max-height:26.25rem)]:items-center [@media(min-width:35rem)_and_(max-height:26.25rem)]:gap-2 [@media(min-width:35rem)_and_(max-height:26.25rem)]:text-left",
         portrait && reserved && "tall-wide:flex tall-wide:items-center tall-wide:gap-2",
       )}
       role="region"
@@ -834,7 +842,7 @@ export function LessonUserPrompt({
       {portrait ? (
         <img
           alt="You in storybook style"
-          className="lesson-user-portrait mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24 tall-wide:mb-0 tall-wide:size-12 tall-wide:shrink-0 tall-wide:rounded-xl tall-wide:border-2"
+          className="lesson-user-portrait mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24 tall-wide:mb-0 tall-wide:size-12 tall-wide:shrink-0 tall-wide:rounded-xl tall-wide:border-2 [@media(min-width:35rem)_and_(max-height:26.25rem)]:m-0 [@media(min-width:35rem)_and_(max-height:26.25rem)]:size-14 [@media(min-width:35rem)_and_(max-height:26.25rem)]:shrink-0 [@media(min-width:35rem)_and_(max-height:26.25rem)]:rounded-2xl"
           src={portrait.src}
         />
       ) : null}
@@ -842,6 +850,8 @@ export function LessonUserPrompt({
         className={cx(
           "lesson-user-prompt-copy min-w-0",
           reserved && "grid min-h-0 grid-rows-[auto_minmax(0,1fr)]",
+          portrait &&
+            "[@media(min-width:35rem)_and_(max-height:26.25rem)]:flex-[1_1_auto]",
           portrait && reserved && "tall-wide:flex-1",
         )}
       >
@@ -858,9 +868,11 @@ export function LessonUserPrompt({
         </span>
         <p
           className={cx(
-            "m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)]",
+            "m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)] [@media(min-width:35rem)_and_(max-height:26.25rem)]:text-xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:leading-[1.2]",
             reserved &&
               "min-h-0 overflow-y-auto overscroll-contain short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
+            !reserved &&
+              "[@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:text-xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:leading-[1.2] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-18rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[calc(var(--lesson-layered-dialogue-height)-4rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overflow-y-auto [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overscroll-contain",
           )}
           onKeyDown={scrollOverflowText}
           ref={overflowText.ref}
@@ -970,7 +982,11 @@ export function LessonErrorBanner({
         "lesson-error-banner z-50 grid gap-3 rounded-2xl border-4 border-white px-4 py-3 text-center text-sm font-extrabold leading-tight text-white shadow-md md:text-base",
         reserved
           ? "relative w-full min-w-0 max-w-none short-wide:gap-2 short-wide:px-3 short-wide:py-2 short-wide:text-sm"
-          : "absolute bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-30",
+          : cx(
+              "absolute bottom-24 left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:bottom-30 [@media(min-width:48rem)_and_(max-height:30rem)]:bottom-[5.75rem]",
+              tone === "help" &&
+                "w-[min(46vw,16rem)] [@media(min-width:48rem)_and_(max-height:30rem)]:top-20 [@media(min-width:48rem)_and_(max-height:30rem)]:bottom-auto",
+            ),
         tone === "help" ? "bg-brand-navy" : "bg-red-800",
       )}
       data-tone={tone}

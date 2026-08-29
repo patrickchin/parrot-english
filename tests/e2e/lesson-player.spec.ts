@@ -1166,13 +1166,13 @@ for (const viewport of [
   { name: "280x653 boundary", width: 280, height: 653 },
   { name: "390x844 phone", width: 390, height: 844 },
   { name: "667x375 short-wide", width: 667, height: 375 },
-  { name: "desktop", width: 1440, height: 900 },
+  { name: "desktop", width: 1280, height: 800 },
 ]) {
   test(`lesson intro, join-in, and completion stay contained on ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await openParrotLesson(page, "held-cue-no-consent");
+    await openParrotLesson(page, "held-cue", "denied");
     const intro = page.getByRole("region", { name: "Lesson introduction" });
     const introHeading = intro.getByRole("heading", {
       exact: true,
@@ -1211,6 +1211,9 @@ for (const viewport of [
     });
     const artwork = page.getByRole("region", { name: "Lesson artwork" });
     const hud = page.getByRole("region", { name: "Lesson progress" });
+    const help = page.getByRole("status", { name: "Speaking help" });
+    const peppa = page.getByRole("img", { name: "Peppa" });
+    const dolly = page.getByRole("img", { name: "Dolly" });
     await expect(joinInHeading).toBeVisible();
     await expect(phrase).toBeVisible();
     await expect(status).toHaveText("Voices are joining in");
@@ -1218,6 +1221,7 @@ for (const viewport of [
     await expectInsideViewport(hud, viewport);
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(controls, viewport);
+    await expectInsideViewport(help, viewport);
     await expectNoOverlap(prompt, controls);
     await expectNoOverlap(prompt, hud);
     await expectNoOverlap(prompt, routeBack);
@@ -1228,6 +1232,10 @@ for (const viewport of [
     await expectNoOverlap(hud, account);
     await expectNoOverlap(controls, routeBack);
     await expectNoOverlap(controls, account);
+    await expectNoOverlap(help, prompt);
+    await expectNoOverlap(help, controls);
+    await expectNoOverlap(help, peppa);
+    await expectNoOverlap(help, dolly);
     await expectNoPageOverflow(page);
 
     await openMyLesson(page, "device-no-consent", {
@@ -1267,6 +1275,7 @@ for (const viewport of [
 
 for (const viewport of [
   { name: "ultra-narrow", width: 280, height: 568 },
+  { name: "ultra-short landscape", width: 667, height: 280 },
   { name: "short landscape", width: 640, height: 360 },
   { name: "compact landscape", width: 768, height: 481 },
   { name: "compact", width: 768, height: 600 },
