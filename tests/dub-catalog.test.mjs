@@ -7,6 +7,7 @@ import {
   OLD_MACDONALD_DUB,
   ROW_ROW_ROW_YOUR_BOAT_DUB,
   TWINKLE_TWINKLE_DUB,
+  getDubLineMusicPhrase,
   getDubDefinition,
 } from "../src/dubbing/rhyme-catalog.ts";
 import { FIVE_LITTLE_DUCKS_DUB } from "../src/dubbing/dub-script.ts";
@@ -201,6 +202,42 @@ describe("rhyme catalog", () => {
       Array.from({ length: 5 }, (_, sceneIndex) =>
         OLD_MACDONALD_DUB.lines[sceneIndex * 7].cueMs),
       [800, 32_800, 64_800, 96_800, 128_800],
+    );
+  });
+
+  it("resolves every canonical line to its one authored recording phrase", () => {
+    assert.deepEqual(
+      OLD_MACDONALD_DUB.lines.map((line) =>
+        getDubLineMusicPhrase(OLD_MACDONALD_DUB, line).durationMs),
+      [
+        8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000,
+        8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000,
+        8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000,
+        8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000,
+        8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000,
+      ],
+    );
+
+    for (const definition of DUB_DEFINITIONS) {
+      for (const line of definition.lines) {
+        const phrase = getDubLineMusicPhrase(definition, line);
+        assert.ok(definition.music.linePhrases.includes(phrase));
+      }
+    }
+
+    assert.throws(
+      () => getDubLineMusicPhrase(TWINKLE_TWINKLE_DUB, { ...TWINKLE_TWINKLE_DUB.lines[0] }),
+      /canonical dub line/,
+    );
+    assert.throws(
+      () => getDubLineMusicPhrase({
+        ...TWINKLE_TWINKLE_DUB,
+        music: {
+          ...TWINKLE_TWINKLE_DUB.music,
+          linePhrases: TWINKLE_TWINKLE_DUB.music.linePhrases.slice(0, 1),
+        },
+      }, TWINKLE_TWINKLE_DUB.lines[0]),
+      /one phrase per line or scene line/,
     );
   });
 

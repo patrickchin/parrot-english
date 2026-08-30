@@ -12,6 +12,7 @@ import {
   OLD_MACDONALD_MUSIC,
   ROW_ROW_ROW_YOUR_BOAT_MUSIC,
   TWINKLE_TWINKLE_MUSIC,
+  type DubMelodyPhrase,
   type DubMusicScore,
 } from "./dub-melodies.ts";
 
@@ -44,6 +45,30 @@ export type DubDefinition = {
   readonly sceneTitles: readonly string[];
   readonly lines: readonly DubLine[];
 };
+
+export function getDubLineMusicPhrase(
+  definition: DubDefinition,
+  line: DubLine,
+): DubMelodyPhrase {
+  const lineIndex = definition.lines.indexOf(line);
+  if (lineIndex < 0) throw new TypeError("Dub music requires one canonical dub line.");
+
+  const phraseCount = definition.music.linePhrases.length;
+  const phraseIndex = phraseCount === definition.lines.length
+    ? lineIndex
+    : phraseCount === definition.linesPerScene
+      ? lineIndex % definition.linesPerScene
+      : -1;
+  if (phraseIndex < 0) {
+    throw new TypeError("Dub music must define one phrase per line or scene line.");
+  }
+
+  const phrase = definition.music.linePhrases[phraseIndex];
+  if (!phrase) {
+    throw new TypeError("Dub music must define one phrase per line or scene line.");
+  }
+  return phrase;
+}
 
 const OLD_ANIMALS = [
   { animal: "some cows", beat: "cows", sounds: ["moo-moo", "moo-moo", "moo", "moo-moo"], title: "Cows on the farm" },
