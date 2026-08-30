@@ -741,7 +741,7 @@ export function DubStudio({
         definition={definition}
         error={state.error}
         locked={locked}
-        needsRetake={new Set(Object.keys(state.needsRetake))}
+        needsRetake={state.needsRetake}
         onOpenScene={handleOpenScene}
         onTogglePlayback={() => void startPlayback("full")}
         playback={state.playbackScope === "full"

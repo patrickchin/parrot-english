@@ -100,12 +100,6 @@ export function createConversationIngestClient({
   }
 
   return {
-    reportBuild(conversationId: string, controllerState: unknown) {
-      return post(conversationId, "facts", {
-        controllerState: withBuildInfo(controllerState),
-      });
-    },
-
     appendTurn(conversationId: string, turn: AgentConversationTurn) {
       return post(conversationId, "turns", turn);
     },

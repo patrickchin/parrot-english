@@ -49,60 +49,6 @@ function selectedTab(value: string | null): CreatorTab {
   return value === "upload" ? "upload" : "generate";
 }
 
-export function LessonPreview({
-  isSaving,
-  lesson,
-  onSave,
-  saveLabel = "Save lesson",
-  savingLabel = "Saving lesson...",
-  warnings,
-}: {
-  isSaving: boolean;
-  lesson: Lesson;
-  onSave: () => void;
-  saveLabel?: string;
-  savingLabel?: string;
-  warnings: string[];
-}) {
-  return (
-    <section
-      aria-live="polite"
-      className="grid gap-4 rounded-3xl border-4 border-brand-green/40 bg-green-50 p-5 md:p-7"
-    >
-      <span className="w-fit rounded-full bg-brand-green px-3 py-1 text-sm font-black text-white">
-        Script ready
-      </span>
-      <h2 className="m-0 text-3xl text-brand-navy">{lesson.title}</h2>
-      <p className="m-0 font-bold leading-relaxed text-slate-700">
-        {lesson.summary}
-      </p>
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl bg-white p-4">
-          <dt className="font-black text-brand-blue">Goal phrases</dt>
-          <dd className="m-0 mt-1 font-bold">
-            {lesson.goalPhrases.join(" · ") || "None"}
-          </dd>
-        </div>
-        <div className="rounded-2xl bg-white p-4">
-          <dt className="font-black text-brand-blue">Scenes</dt>
-          <dd className="m-0 mt-1 font-bold">{lesson.scenes.length}</dd>
-        </div>
-      </dl>
-      <LessonWarnings lesson={lesson} warnings={warnings} />
-      <ActionButton
-        disabled={isSaving}
-        fullWidth
-        onClick={onSave}
-        className="sm:w-fit"
-        type="button"
-        variant="success"
-      >
-        {isSaving ? savingLabel : saveLabel}
-      </ActionButton>
-    </section>
-  );
-}
-
 export function LessonWarnings({
   lesson,
   warnings,

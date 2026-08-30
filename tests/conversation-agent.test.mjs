@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { initializeLogger, llm } from "@livekit/agents";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
@@ -270,44 +268,6 @@ describe("LiveKit agent configuration", () => {
 });
 
 describe("purpose-specific Peppa conversation prompts", () => {
-  it("stores each complete static system prompt in its own source file", () => {
-    const promptDirectory = resolve(import.meta.dirname, "../agent/prompts");
-    const promptFiles = readdirSync(promptDirectory)
-      .filter((file) => file.endsWith(".ts"))
-      .sort();
-
-    assert.deepEqual(promptFiles, [
-      "introduction.ts",
-      "profile-edit.ts",
-      "small-chat.ts",
-    ]);
-
-    const sources = Object.fromEntries(
-      promptFiles.map((file) => [
-        file,
-        readFileSync(resolve(promptDirectory, file), "utf8"),
-      ]),
-    );
-    for (const source of [sources["introduction.ts"], sources["profile-edit.ts"]]) {
-      assert.match(source, /warm, playful pig friend/i);
-      assert.match(source, /speak first/i);
-      assert.match(source, /edit only the large block of text below/i);
-    }
-    assert.match(sources["introduction.ts"], /first introduction/i);
-    assert.match(sources["introduction.ts"], /first welcome chat/i);
-    assert.match(sources["profile-edit.ts"], /update the existing learner profile/i);
-    assert.match(sources["profile-edit.ts"], /Edit profile.*Chat with Peppa again/is);
-    assert.match(sources["small-chat.ts"], /ordinary small chat/i);
-    assert.match(sources["small-chat.ts"], /selected teaching/i);
-    assert.match(sources["small-chat.ts"], /SMALL_CHAT_STYLE_PROMPTS/);
-
-    const runtimeSource = readFileSync(
-      resolve(import.meta.dirname, "../agent/peppa-conversation.ts"),
-      "utf8",
-    );
-    assert.doesNotMatch(runtimeSource, /warm, playful pig friend/i);
-  });
-
   it("keeps onboarding, profile editing, and small chat as distinct contracts", () => {
     const prompts = conversationScenario.CONVERSATION_SYSTEM_PROMPTS;
 
@@ -573,7 +533,7 @@ describe("conversation ingest client", () => {
       secret: "agent-secret",
     });
 
-    await client.reportBuild("conversation-1", { phase: "optional" });
+    await client.updateState("conversation-1", { phase: "optional" });
 
     assert.equal(
       calls[0][0],

@@ -213,9 +213,10 @@ Groq call over the saved transcript and persists the resulting profile.
 Raw audio is not stored: LiveKit session recording is explicitly disabled with
 `record: false`. Onboarding completes only when the finished transcript provides
 both name and age; otherwise it grants the existing session-scoped bypass. The
-active agent creates no structured fact rows. The legacy fact table remains
-dormant for rollback safety, while conversation rows cascade from the Better
-Auth user and remain until account deletion under the current retention policy.
+active agent creates no structured fact rows. Migration 0016 drops the legacy
+`conversation_fact` table, so it is absent from current and fresh deployments;
+conversation rows cascade from the Better Auth user and remain until account
+deletion under the current retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.
 LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit

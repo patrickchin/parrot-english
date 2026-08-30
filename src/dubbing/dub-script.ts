@@ -63,16 +63,6 @@ export const DUB_LINES: readonly DubLine[] = Object.freeze(texts.map((text, inde
   visualBeat: beats[index],
 })));
 
-export const DUB_VERSES: readonly (readonly DubLine[])[] = Object.freeze(
-  Array.from(
-    { length: DUB_LINES.length / DUB_LINES_PER_VERSE },
-    (_, index) => Object.freeze(DUB_LINES.slice(
-      index * DUB_LINES_PER_VERSE,
-      (index + 1) * DUB_LINES_PER_VERSE,
-    )),
-  ),
-);
-
 export const DUB_SCENE_TITLES = Object.freeze([
   "Five little ducks",
   "Four little ducks",
@@ -94,18 +84,4 @@ export const FIVE_LITTLE_DUCKS_DUB = Object.freeze({
   music: FIVE_LITTLE_DUCKS_MUSIC,
   sceneTitles: DUB_SCENE_TITLES,
   lines: DUB_LINES,
-  guideAudioPrefix: "five-little-ducks-v2-guide-",
 });
-
-export function getDubVerseLineAtElapsed(verseIndex: number, elapsedMs: number): DubLine {
-  const verse = DUB_VERSES[verseIndex];
-  if (!verse) throw new RangeError("Unknown dub verse.");
-  const cueOffsetMs = verse[0].cueMs;
-  return [...verse].reverse().find(
-    ({ cueMs }) => elapsedMs >= cueMs - cueOffsetMs,
-  ) ?? verse[0];
-}
-
-export function getDubLineAtElapsed(elapsedMs: number): DubLine {
-  return [...DUB_LINES].reverse().find(({ cueMs }) => elapsedMs >= cueMs) ?? DUB_LINES[0];
-}

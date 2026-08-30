@@ -32,12 +32,12 @@ const { IllustratedDubScene } = await vite.ssrLoadModule("/src/dubbing/Illustrat
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
+const { DuckDub } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const {
-  DuckDub,
   DubEntry,
   DubLoading,
   resolveDubLineAudioSource,
-} = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
+} = await vite.ssrLoadModule("/src/dubbing/DubStudio.tsx");
 const { DUB_LINES, FIVE_LITTLE_DUCKS_DUB } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
 const { OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
 
@@ -144,7 +144,7 @@ function renderProjectHome(viewProps = {}) {
   return renderToStaticMarkup(createElement(DubProjectHome, {
     activeLine: DUB_LINES[0],
     locked: false,
-    needsRetake: new Set(),
+    needsRetake: {},
     onOpenScene() {},
     onTogglePlayback() {},
     playback: "idle",
@@ -407,7 +407,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("keeps retake status when every clip has a saved object", () => {
     const html = renderProjectHome({
       activeLine: DUB_LINES[4],
-      needsRetake: new Set(["line-5"]),
+      needsRetake: { "line-5": true },
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.doesNotMatch(html, />Draft<|>Your dub<|All scenes recorded/);
@@ -418,7 +418,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("shows non-blocking project playback errors and retake status", () => {
     const html = renderProjectHome({
       error: "Scene 2, line 1 could not play. The video will continue without it.",
-      needsRetake: new Set(["line-5"]),
+      needsRetake: { "line-5": true },
       playback: "playing",
       saved: { "line-5": "saved" },
     });
@@ -827,7 +827,7 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("uses visible shapes as well as color for scene status", () => {
     const project = renderProjectHome({
-      needsRetake: new Set(["line-5"]),
+      needsRetake: { "line-5": true },
       saved: {
         "line-1": "saved",
         "line-5": "saved",

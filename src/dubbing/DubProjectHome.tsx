@@ -2,7 +2,11 @@ import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
 import { ActionButton } from "../shared/ui";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
-import { getDubSceneStatus, type DubSceneStatus } from "./dub-state";
+import {
+  getDubSceneStatus,
+  type DubSceneStatus,
+  type DubState,
+} from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
@@ -11,7 +15,7 @@ export type DubProjectHomeProps = {
   definition?: DubDefinition;
   error?: string;
   locked: boolean;
-  needsRetake: ReadonlySet<string>;
+  needsRetake: DubState["needsRetake"];
   onOpenScene(sceneIndex: number): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
@@ -57,9 +61,6 @@ export function DubProjectHome({
   visualLine = activeLine,
 }: DubProjectHomeProps) {
   const recorded = definition.lines.filter(({ id }) => Object.hasOwn(saved, id)).length;
-  const retakeState: Record<string, true> = Object.fromEntries(
-    [...needsRetake].map((lineId) => [lineId, true]),
-  );
   const sceneLines = getSceneLines(definition);
   const activeLineIndex = Math.max(
     0,
@@ -124,7 +125,7 @@ export function DubProjectHome({
             <h2 className="m-0 text-xl text-brand-ink">Choose a scene</h2>
             <nav aria-label="Scenes" className="grid min-w-0 grid-cols-2 gap-3">
             {sceneLines.map((_, sceneIndex) => {
-              const status = getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex, definition);
+              const status = getDubSceneStatus({ needsRetake, saved }, sceneIndex, definition);
               const statusLabel = sceneStatusLabel(status, definition.linesPerScene);
               const statusText = sceneStatusText(status, definition.linesPerScene);
               const statusIcon = status.kind === "done"
