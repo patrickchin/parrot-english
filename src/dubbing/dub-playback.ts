@@ -4,7 +4,11 @@ import {
 import {
   dubConsentLossError,
 } from "./dub-api.ts";
-import type { DubDefinition, DubLine } from "./rhyme-catalog.ts";
+import {
+  getDubLineMusicPhrase,
+  type DubDefinition,
+  type DubLine,
+} from "./rhyme-catalog.ts";
 
 type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
@@ -31,6 +35,23 @@ type StartDubPlaybackOptions = {
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
   resolveAudioSource?: (line: DubLine) => DubAudioSource;
   setTimeout?: typeof globalThis.setTimeout;
+  signal?: AbortSignal;
+};
+
+export type PreparedDubLineBacking = {
+  durationMs: number;
+  start(): void;
+  stop(): void;
+};
+
+type PrepareDubLineBackingOptions = {
+  AudioContext?: typeof globalThis.AudioContext;
+  cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
+  definition?: DubDefinition;
+  line: DubLine;
+  onEnded?: () => void;
+  onTick?: (elapsedMs: number) => void;
+  requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
   signal?: AbortSignal;
 };
 
@@ -140,16 +161,7 @@ function scheduleDubMusic(
   startAt: number,
 ) {
   const oscillators: OscillatorNode[] = [];
-  const throughSong = definition.music.linePhrases.length === definition.lines.length;
-  if (!throughSong && definition.music.linePhrases.length !== definition.linesPerScene) {
-    throw new TypeError("Dub music must define repeating scene phrases or one phrase per line.");
-  }
-  const getPhrase = (lineIndex: number) => {
-    const phraseIndex = throughSong ? lineIndex : lineIndex % definition.linesPerScene;
-    const phrase = definition.music.linePhrases[phraseIndex];
-    if (!phrase) throw new TypeError("Dub music must define repeating scene phrases or one phrase per line.");
-    return phrase;
-  };
+  const getPhrase = (line: DubLine) => getDubLineMusicPhrase(definition, line);
 
   try {
     const fullDub = cueOffsetMs === 0
@@ -168,8 +180,7 @@ function scheduleDubMusic(
     }
 
     for (const line of lines) {
-      const lineIndex = definition.lines.indexOf(line);
-      const phrase = getPhrase(lineIndex);
+      const phrase = getPhrase(line);
       const phraseStartsMs = line.cueMs - cueOffsetMs;
       scheduleTone(context, output, oscillators, {
         durationMs: Math.min(1_600, phrase.durationMs),
@@ -190,8 +201,7 @@ function scheduleDubMusic(
     }
 
     const lastLine = lines.at(-1)!;
-    const lastLineIndex = definition.lines.indexOf(lastLine);
-    const lastPhrase = getPhrase(lastLineIndex);
+    const lastPhrase = getPhrase(lastLine);
     const phraseEndMs = lastLine.cueMs - cueOffsetMs + lastPhrase.durationMs;
     const outroDurationMs = durationMs - phraseEndMs;
     if (outroDurationMs > 0) {
@@ -244,6 +254,95 @@ function getPlaybackScope(
     authoredDurationMs: authoredEndMs - cueOffsetMs,
     cueOffsetMs,
     fullDub,
+  };
+}
+
+export async function prepareDubLineBacking({
+  AudioContext: AudioContextClass = globalThis.AudioContext,
+  cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
+  definition = FIVE_LITTLE_DUCKS_DUB,
+  line,
+  onEnded,
+  onTick = () => {},
+  requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
+  signal,
+}: PrepareDubLineBackingOptions): Promise<PreparedDubLineBacking> {
+  const phrase = getDubLineMusicPhrase(definition, line);
+  const context = new AudioContextClass();
+  let frameId: number | null = null;
+  let oscillators: OscillatorNode[] = [];
+  let started = false;
+  let stopped = false;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    if (frameId !== null) {
+      cancelFrame(frameId);
+      frameId = null;
+    }
+    oscillators.forEach(stopNode);
+    signal?.removeEventListener("abort", stop);
+    try {
+      void context.close().catch(() => undefined);
+    } catch {
+      return;
+    }
+  };
+
+  signal?.addEventListener("abort", stop, { once: true });
+  try {
+    if (signal?.aborted) throw createAbortError();
+    await context.resume();
+    if (signal?.aborted) throw createAbortError();
+  } catch (error) {
+    stop();
+    throw error;
+  }
+
+  return {
+    durationMs: phrase.durationMs,
+    start() {
+      if (started || stopped) throw new Error("Dub line backing is not startable.");
+      started = true;
+      const master = context.createGain();
+      master.gain.value = 0.95;
+      master.connect(context.destination);
+      const music = context.createGain();
+      music.gain.value = definition.music.volume;
+      music.connect(master);
+      const startAt = context.currentTime;
+      try {
+        oscillators = scheduleDubMusic(
+          context,
+          definition,
+          [line],
+          line.cueMs,
+          phrase.durationMs,
+          music,
+          startAt,
+        );
+      } catch (error) {
+        stop();
+        throw error;
+      }
+      const tick = () => {
+        frameId = null;
+        const elapsedMs = Math.min(
+          phrase.durationMs,
+          Math.max(0, (context.currentTime - startAt) * 1_000),
+        );
+        onTick(elapsedMs);
+        if (elapsedMs >= phrase.durationMs) {
+          stop();
+          onEnded?.();
+          return;
+        }
+        if (!stopped) frameId = requestFrame(tick);
+      };
+      onTick(0);
+      if (!stopped) frameId = requestFrame(tick);
+    },
+    stop,
   };
 }
 
