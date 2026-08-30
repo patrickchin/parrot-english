@@ -127,8 +127,17 @@ test("home menu prioritizes the four learner activities", () => {
 
   const nursery = renderApplicationRoute("/dubs");
   assert.match(nursery, />Nursery rhymes</);
-  assert.match(nursery, /href="\/dubs\/five-little-ducks"/);
-  assert.match(nursery, /href="\/dubs\/old-macdonald"/);
+  for (const route of [
+    "/dubs/five-little-ducks",
+    "/dubs/old-macdonald",
+    "/dubs/twinkle-twinkle",
+    "/dubs/row-row-row-your-boat",
+    "/dubs/mary-had-a-little-lamb",
+    "/dubs/humpty-dumpty",
+  ]) {
+    assert.match(nursery, new RegExp(`href="${route}"`));
+  }
+  assert.equal((nursery.match(/>Sing &amp; record</g) ?? []).length, 6);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -206,6 +215,16 @@ test("authenticated application routes include the core learner activities", () 
   const farmDub = renderApplicationRoute("/dubs/old-macdonald");
   assert.match(farmDub, /Old MacDonald Had a Farm/);
   assert.match(farmDub, /Loading your private dub…/);
+  for (const [route, title] of [
+    ["/dubs/twinkle-twinkle", "Twinkle Twinkle Little Star"],
+    ["/dubs/row-row-row-your-boat", "Row Row Row Your Boat"],
+    ["/dubs/mary-had-a-little-lamb", "Mary Had a Little Lamb"],
+    ["/dubs/humpty-dumpty", "Humpty Dumpty"],
+  ]) {
+    const rhyme = renderApplicationRoute(route);
+    assert.match(rhyme, new RegExp(title));
+    assert.match(rhyme, /Loading your private dub…/);
+  }
   assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
@@ -357,10 +376,8 @@ test("the authenticated shell declares login, learner-profile, profile, and wild
     assert.match(app, new RegExp(`path=["']${path.replace("*", "\\*")}["']`));
   }
   assert.match(app, /path=(?:\{getDuckDubPath\(\)\}|["']\/dubs\/five-little-ducks["'])/);
-  assert.match(
-    app,
-    /path=(?:\{getOldMacDonaldDubPath\(\)\}|["']\/dubs\/old-macdonald["'])/,
-  );
+  assert.match(app, /DUB_DEFINITIONS\.map\(\(\{\s*route\s*\}\)\s*=>\s*route\)/);
+  assert.match(app, /CATALOG_DUB_ROUTES\.map/);
   assert.match(
     app,
     /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,

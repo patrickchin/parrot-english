@@ -51,12 +51,12 @@ test("the account AI and saved data panel is wired to deployed component metadat
   assert.match(about, /How Parrot uses AI/);
   assert.match(about, /all learner profiles and their saved data/);
   assert.match(about, /lesson join-in|join-in moment/i);
-  assert.match(about, /lesson voice (?:clips|recordings)/i);
+  assert.match(about, /lesson voice\s+(?:clips|recordings)/i);
   assert.match(
     about,
     /Lesson recording permission and saved clips are managed\s+independently for each selected learner profile/,
   );
-  assert.match(about, /Five Little Ducks/);
+  assert.match(about, /all voice-dubbing rhymes/i);
   assert.match(
     about,
     /Choosing a learner in Guardian settings changes only which\s+learner(?:'|&apos;)s\s+data you manage/,

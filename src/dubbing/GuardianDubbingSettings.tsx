@@ -86,8 +86,7 @@ function GuardianDubbingSettingsShell({
               dir="ltr"
             >
               Manage <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s private voice clips for all voice-dubbing rhymes: Five
-              Little Ducks and Old MacDonald.
+              &apos;s private voice clips for all six nursery rhymes.
             </p>
           ) : null}
         </header>
@@ -171,8 +170,7 @@ function GuardianDubbingSettingsContent({
             >
               All voice-dubbing rhymes save{" "}
               <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s private voice clips in this account: Five Little Ducks and
-              Old MacDonald. They are used only for{" "}
+              &apos;s private voice clips in this account. They are used only for{" "}
               <BidiLearnerName learnerName={managedLearnerName} />
               &apos;s private playback and are deleted with the account.
             </p>
@@ -219,15 +217,15 @@ function GuardianDubbingSettingsContent({
               Voice dubbing is on
             </h2>
             <p className="m-0 font-extrabold text-brand-blue">
-              {savedCount} of {DUB_LINE_COUNT} clips saved across Five Little
-              Ducks and Old MacDonald
+              {savedCount} of {DUB_LINE_COUNT} clips saved across all six
+              nursery rhymes
             </p>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
               dir="ltr"
             >
               <BidiLearnerName learnerName={managedLearnerName} /> can record
-              and replace lines in both Five Little Ducks and Old MacDonald.
+              and replace lines in all six nursery rhymes.
             </p>
           </div>
           <div className="grid gap-3">
@@ -248,8 +246,7 @@ function GuardianDubbingSettingsContent({
                   <>
                     Turn off{" "}
                     <BidiLearnerName learnerName={managedLearnerName} />
-                    &apos;s voice dubbing and delete clips from Five Little Ducks
-                    and Old MacDonald
+                    &apos;s voice dubbing and delete all nursery-rhyme clips
                   </>
                 )}
               </span>
@@ -273,9 +270,8 @@ function GuardianDubbingSettingsContent({
               dir="ltr"
             >
               <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s voice dubbing stays unavailable in Five Little Ducks and
-              Old MacDonald until every saved clip from both rhymes has been
-              removed.
+              &apos;s voice dubbing stays unavailable in every nursery rhyme until
+              every saved clip has been removed.
             </p>
           </div>
           <ActionButton
@@ -287,7 +283,7 @@ function GuardianDubbingSettingsContent({
           >
             {mutation === "delete"
               ? "Removing voice clips…"
-              : "Finish removing clips from Five Little Ducks and Old MacDonald"}
+              : "Finish removing nursery-rhyme clips"}
           </ActionButton>
         </Card>
       ) : null}

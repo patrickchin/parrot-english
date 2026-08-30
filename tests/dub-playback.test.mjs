@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
 import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
-import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  OLD_MACDONALD_DUB,
+  TWINKLE_TWINKLE_DUB,
+} from "../src/dubbing/rhyme-catalog.ts";
 import {
   scheduleDubAudio,
   startDubPlayback,
@@ -338,6 +341,38 @@ describe("duck dub playback", () => {
     assert.deepEqual(
       context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
       [10.12, 18.12, 26.12, 28.12, 30.12, 32.12, 34.12],
+    );
+    for (const source of context.sources) {
+      assert.ok(melody.some(
+        ({ startTimes }) => startTimes[0] === source.startTimes[0],
+      ));
+    }
+  });
+
+  it("advances Twinkle's melody through later visual scenes", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const lines = TWINKLE_TWINKLE_DUB.lines.slice(2, 4);
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: TWINKLE_TWINKLE_DUB,
+      fetch: audio.fetch,
+      lines,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    const melody = context.oscillators.filter(({ type }) => type === "triangle");
+    assert.deepEqual(
+      melody.slice(0, 4).map(roundedFrequency),
+      [783.991, 783.991, 698.456, 698.456],
+    );
+    assert.deepEqual(
+      context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
+      [10.12, 14.12],
     );
     for (const source of context.sources) {
       assert.ok(melody.some(

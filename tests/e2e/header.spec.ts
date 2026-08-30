@@ -1140,7 +1140,7 @@ test("Account & privacy explains caregiver facts before optional technical detai
   ).toBeVisible();
   await expect(
     accountPage.getByText(
-      /^With Guardian permission, all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
+      /^With Guardian permission, all voice-dubbing rhymes save that learner's private voice clips/i,
     ),
   ).toBeVisible();
   await expect(

@@ -140,6 +140,14 @@ function scheduleDubMusic(
   startAt: number,
 ) {
   const oscillators: OscillatorNode[] = [];
+  const getPhrase = (lineIndex: number) => {
+    const phraseIndex = definition.music.linePhrases.length === definition.lines.length
+      ? lineIndex
+      : lineIndex % definition.linesPerScene;
+    const phrase = definition.music.linePhrases[phraseIndex];
+    if (!phrase) throw new TypeError("Dub music must define repeating scene phrases or one phrase per line.");
+    return phrase;
+  };
 
   try {
     const fullDub = cueOffsetMs === 0
@@ -159,9 +167,7 @@ function scheduleDubMusic(
 
     for (const line of lines) {
       const lineIndex = definition.lines.indexOf(line);
-      const phrase = definition.music.linePhrases[
-        lineIndex % definition.linesPerScene
-      ];
+      const phrase = getPhrase(lineIndex);
       const phraseStartsMs = line.cueMs - cueOffsetMs;
       scheduleTone(context, output, oscillators, {
         durationMs: Math.min(1_600, phrase.durationMs),
@@ -183,9 +189,7 @@ function scheduleDubMusic(
 
     const lastLine = lines.at(-1)!;
     const lastLineIndex = definition.lines.indexOf(lastLine);
-    const lastPhrase = definition.music.linePhrases[
-      lastLineIndex % definition.linesPerScene
-    ];
+    const lastPhrase = getPhrase(lastLineIndex);
     const phraseEndMs = lastLine.cueMs - cueOffsetMs + lastPhrase.durationMs;
     const outroDurationMs = durationMs - phraseEndMs;
     if (outroDurationMs > 0) {

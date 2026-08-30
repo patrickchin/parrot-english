@@ -3,6 +3,7 @@ import { fileURLToPath, URLSearchParams } from "node:url";
 import { after, describe, it } from "node:test";
 import { matchPath } from "react-router";
 import { createServer } from "vite";
+import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 
 const vite = await createServer({
   appType: "custom",
@@ -540,6 +541,16 @@ describe("app route helpers", () => {
       routes.getSafeReturnTo(returnToSearch("/dubs/old-macdonald/extra")),
       null,
     );
+  });
+
+  it("safely returns to every catalog nursery-rhyme route and no nested path", () => {
+    for (const { route } of DUB_DEFINITIONS) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(route)), route);
+      assert.equal(
+        routes.getSafeReturnTo(returnToSearch(`${route}/extra`)),
+        null,
+      );
+    }
   });
 
   it("builds and safely returns to guardian voice-dubbing settings", () => {

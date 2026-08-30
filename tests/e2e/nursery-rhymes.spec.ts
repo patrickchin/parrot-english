@@ -1,5 +1,14 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+const RHYMES = [
+  ["Five Little Ducks", "/dubs/five-little-ducks"],
+  ["Old MacDonald Had a Farm", "/dubs/old-macdonald"],
+  ["Twinkle Twinkle Little Star", "/dubs/twinkle-twinkle"],
+  ["Row Row Row Your Boat", "/dubs/row-row-row-your-boat"],
+  ["Mary Had a Little Lamb", "/dubs/mary-had-a-little-lamb"],
+  ["Humpty Dumpty", "/dubs/humpty-dumpty"],
+] as const;
+
 async function expectContained(page: Page, locator: Locator) {
   const [box, viewport] = await Promise.all([
     locator.boundingBox(),
@@ -18,16 +27,19 @@ async function expectSharedHeaderTarget(locator: Locator) {
   expect(box!.height).toBeGreaterThanOrEqual(48);
 }
 
-test("nursery rhyme picker links to both illustrated projects", async ({ page }) => {
+test("nursery rhyme picker presents six large illustrated projects", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/dubs");
   await expect(page.getByRole("heading", { name: "Nursery rhymes" })).toBeVisible();
   const picker = page.getByRole("navigation", { name: "Nursery rhymes" });
   const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
   const back = routeHeader.getByRole("link", { name: "Back to home" });
-  await expect(picker.getByRole("link")).toHaveCount(2);
-  await expect(picker.getByRole("link", { name: "Five Little Ducks" })).toHaveAttribute("href", "/dubs/five-little-ducks");
-  await expect(picker.getByRole("link", { name: "Old MacDonald Had a Farm" })).toHaveAttribute("href", "/dubs/old-macdonald");
+  await expect(picker.getByRole("link")).toHaveCount(6);
+  for (const [name, route] of RHYMES) {
+    const card = picker.getByRole("link", { name });
+    await expect(card).toHaveAttribute("href", route);
+    await expect(card.getByText("Sing & record", { exact: true })).toBeVisible();
+  }
   await expect.poll(() => picker.locator("img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
   await expect(back).toBeVisible();
   await expectSharedHeaderTarget(back);
@@ -36,8 +48,15 @@ test("nursery rhyme picker links to both illustrated projects", async ({ page })
     const [cardBox, imageBox] = await Promise.all([card.boundingBox(), card.locator("img").boundingBox()]);
     expect(cardBox).not.toBeNull();
     expect(imageBox).not.toBeNull();
-    expect(imageBox!.height / cardBox!.height).toBeGreaterThan(0.65);
+    expect(imageBox!.height).toBeGreaterThan(180);
+    expect(imageBox!.height / cardBox!.height).toBeGreaterThan(0.45);
   }
+
+  const boxes = await Promise.all(
+    (await picker.getByRole("link").all()).map((card) => card.boundingBox()),
+  );
+  expect(new Set(boxes.slice(0, 3).map((box) => Math.round(box!.y))).size).toBe(1);
+  expect(boxes[3]!.y).toBeGreaterThan(boxes[0]!.y + boxes[0]!.height);
 });
 
 for (const viewport of [
@@ -55,10 +74,20 @@ for (const viewport of [
     const back = routeHeader.getByRole("link", { name: "Back to home" });
     await expect(back).toBeVisible();
     await expectSharedHeaderTarget(back);
-    for (const name of ["Five Little Ducks", "Old MacDonald Had a Farm"]) {
+    for (const [name] of RHYMES) {
       const card = page.getByRole("link", { name });
       await expect(card).toBeVisible();
       await expectContained(page, card);
     }
   });
 }
+
+test("every new rhyme opens its own recording workspace", async ({ page }) => {
+  for (const [title, route] of RHYMES.slice(2)) {
+    await page.goto(`${route}?parrotE2eDub=empty`);
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Play full video" }),
+    ).toBeVisible();
+  }
+});

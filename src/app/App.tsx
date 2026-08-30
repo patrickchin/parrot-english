@@ -71,7 +71,6 @@ import {
   getRequestedProtectedTarget,
   getSafeGuardianReturnTo,
   getSafeReturnTo,
-  getOldMacDonaldDubPath,
   getStoryPagePath,
   getStoryShelfPath,
   isGuardianLearnerChildRoute,
@@ -104,9 +103,9 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
-import type { DubSceneComponent } from "../dubbing/DubSceneTypes";
+import type { DubSceneComponent, DubSceneProps } from "../dubbing/DubSceneTypes";
 import { DubStudio } from "../dubbing/DubStudio";
-import { FarmScene } from "../dubbing/FarmScene";
+import { IllustratedDubScene } from "../dubbing/IllustratedDubScene";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
@@ -141,11 +140,20 @@ import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
-import { OLD_MACDONALD_DUB } from "../dubbing/rhyme-catalog";
+import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 import {
   GuardianModeBoundary,
   LearnerModeBoundary,
 } from "./ModeRouteBoundaries";
+
+const CATALOG_DUB_ROUTES = DUB_DEFINITIONS
+  .filter(({ route }) => route !== getDuckDubPath())
+  .map((definition) => {
+    const Scene = (props: DubSceneProps) => (
+      <IllustratedDubScene definition={definition} {...props} />
+    );
+    return { definition, Scene };
+  });
 
 const LessonCreator = import.meta.env.SSR
   ? (await import("../lessons/LessonCreator")).LessonCreator
@@ -176,8 +184,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/progress",
   "/stories",
   getNurseryRhymesPath(),
-  getDuckDubPath(),
-  getOldMacDonaldDubPath(),
+  ...DUB_DEFINITIONS.map(({ route }) => route),
   "/stories/:storyId",
   "/stories/:storyId/pages/:pageNumber",
   "/login",
@@ -1361,15 +1368,18 @@ export function ApplicationRoutes({
         <Route element={<StoryList />} path="/stories" />
         <Route element={<NurseryRhymeList />} path={getNurseryRhymesPath()} />
         <Route element={<DuckDub />} path={getDuckDubPath()} />
-        <Route
-          element={
-            <DubStudio
-              Scene={FarmScene as unknown as DubSceneComponent}
-              definition={OLD_MACDONALD_DUB}
-            />
-          }
-          path={getOldMacDonaldDubPath()}
-        />
+        {CATALOG_DUB_ROUTES.map(({ definition, Scene }) => (
+          <Route
+            element={
+              <DubStudio
+                Scene={Scene as DubSceneComponent}
+                definition={definition}
+              />
+            }
+            key={definition.id}
+            path={definition.route}
+          />
+        ))}
         <Route element={<StoryRedirect />} path="/stories/:storyId" />
         <Route
           element={<StoryPageRoute />}

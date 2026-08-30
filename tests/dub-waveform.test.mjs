@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 
 const waveform = await import("../src/dubbing/dub-waveform.ts").catch(() => ({}));
 const { DUB_LINES = [] } = await import("../src/dubbing/dub-script.ts").catch(() => ({}));
+const { DUB_DEFINITIONS = [] } = await import("../src/dubbing/rhyme-catalog.ts").catch(() => ({}));
 const { getStaticAudioLineForSpeech = () => ({ id: "" }) } = await import("../lib/static-audio.js").catch(() => ({}));
 const getNormalizedPeakBars = waveform.getNormalizedPeakBars ?? (() => null);
 const getDubGuidePeakBars = waveform.getDubGuidePeakBars ?? (() => []);
@@ -43,6 +44,19 @@ describe("dub take waveform peaks", () => {
       const bars = getDubGuidePeakBars(id);
       assert.equal(bars.length, 32, `${line.id} should resolve ${id}`);
       assert.ok(bars.some((bar) => bar > 0), `${line.id} should not be silent`);
+    }
+  });
+
+  it("maps every catalog lyric to a visible saved guide waveform", () => {
+    assert.equal(DUB_DEFINITIONS.length, 6);
+    for (const definition of DUB_DEFINITIONS) {
+      for (const line of definition.lines) {
+        const { id } = getStaticAudioLineForSpeech("narrator", line.text);
+        const bars = getDubGuidePeakBars(id);
+        assert.equal(bars.length, 32, `${line.id} should resolve ${id}`);
+        assert.ok(bars.some((bar) => bar > 0), `${line.id} should not be silent`);
+        assert.ok(bars.every((bar) => bar >= 0 && bar <= 1));
+      }
     }
   });
 });

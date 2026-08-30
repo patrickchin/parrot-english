@@ -636,7 +636,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(document.body.textContent, /What this account keeps/);
     assert.match(
       document.body.textContent,
-      /all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
+      /all voice-dubbing rhymes.*private voice clips/i,
     );
     assert.match(
       document.body.textContent,
@@ -659,7 +659,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(deleteAccount);
     assert.match(
       document.querySelector('[role="dialog"]')?.textContent ?? "",
-      /all voice-dubbing rhymes.*Five Little Ducks.*Old MacDonald/i,
+      /private voice clips from all nursery rhymes/i,
     );
     await input(
       document.querySelector("#delete-account-password"),

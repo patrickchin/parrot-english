@@ -1,4 +1,4 @@
-const MEDIA_BASE = "https://media.parrotbook.com/assets/v5/dubbing";
+const MEDIA_BASE = "https://media.parrotbook.com/assets/v6/dubbing";
 
 export type DubArtwork = Readonly<{
   alt: string;
@@ -18,7 +18,7 @@ function artwork(path: string, alt: string): DubArtwork {
 
 export const NURSERY_RHYMES_COVER_ARTWORK = artwork(
   "nursery-rhymes-cover.webp",
-  "Mother duck and five ducklings visit a cheerful farm full of friendly animals.",
+  "Friendly nursery-rhyme characters gather for music beneath a glowing star.",
 );
 
 export const FIVE_LITTLE_DUCKS_SCENE_ARTWORK = Object.freeze([
@@ -36,4 +36,25 @@ export const OLD_MACDONALD_SCENE_ARTWORK = Object.freeze([
   artwork("old-macdonald/scene-3-pigs.webp", "Old MacDonald laughs with three pink pigs playing in a sunny mud patch."),
   artwork("old-macdonald/scene-4-dog.webp", "Old MacDonald's brown farm dog waits proudly by the barnyard fence."),
   artwork("old-macdonald/scene-5-sheep.webp", "Old MacDonald walks with five fluffy sheep in the meadow beyond the red barn."),
+]);
+
+export const TWINKLE_TWINKLE_SCENE_ARTWORK = Object.freeze([
+  artwork("twinkle-twinkle/scene-1-little-star.webp", "A bright little star twinkles above a sleepy child at a moonlit window."),
+  artwork("twinkle-twinkle/scene-2-world-below.webp", "The friendly star shines high above a tiny moonlit village and rolling hills."),
+  artwork("twinkle-twinkle/scene-3-diamond-sky.webp", "The child smiles as the diamond-bright star sparkles across the deep blue sky."),
+]);
+
+export const ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK = Object.freeze([
+  artwork("row-row-row-your-boat/scene-1-gentle-stream.webp", "Two cheerful children row a small wooden boat along a gentle sunny stream."),
+  artwork("row-row-row-your-boat/scene-2-merry-dream.webp", "The children laugh as their little boat glides through a dreamy flower-filled river bend."),
+]);
+
+export const MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK = Object.freeze([
+  artwork("mary-had-a-little-lamb/scene-1-white-lamb.webp", "Mary hugs her small white lamb in a soft green meadow dotted with flowers."),
+  artwork("mary-had-a-little-lamb/scene-2-lamb-follows.webp", "Mary walks along a bright country lane while her devoted little lamb follows."),
+]);
+
+export const HUMPTY_DUMPTY_SCENE_ARTWORK = Object.freeze([
+  artwork("humpty-dumpty/scene-1-on-the-wall.webp", "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall."),
+  artwork("humpty-dumpty/scene-2-helping-humpty.webp", "Kind royal helpers carefully comfort Humpty Dumpty beside the garden wall."),
 ]);

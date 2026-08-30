@@ -1,10 +1,7 @@
 import { ChevronLeft, Mic2 } from "lucide-react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { InteractiveCardLink } from "../shared/ui";
-import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
-import { OLD_MACDONALD_DUB } from "./rhyme-catalog";
-
-const RHYMES = [FIVE_LITTLE_DUCKS_DUB, OLD_MACDONALD_DUB] as const;
+import { DUB_DEFINITIONS } from "./rhyme-catalog";
 
 export function NurseryRhymeList() {
   return (
@@ -14,21 +11,26 @@ export function NurseryRhymeList() {
           Back home
         </HeaderLink>
       </RouteHeader>
-      <main className="min-h-dvh w-screen overflow-x-hidden bg-story-shelf px-4 pb-8 pt-20 md:px-8 md:pt-24">
-        <section aria-labelledby="nursery-rhymes-title" className="mx-auto grid w-full max-w-6xl gap-5 md:gap-8">
+      <main className="min-h-dvh w-screen overflow-x-hidden bg-story-shelf px-3 pb-10 pt-20 sm:px-4 md:px-8 md:pb-14 md:pt-24 lg:px-16">
+        <section aria-labelledby="nursery-rhymes-title" className="mx-auto grid w-full max-w-7xl gap-5 md:gap-7">
           <header className="grid gap-2 text-center">
-            <p className="m-0 text-sm font-black uppercase tracking-[0.18em] text-brand-blue">Sing and record</p>
-            <h1 className="m-0 text-4xl text-brand-ink md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>
+            <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue sm:text-sm">Sing and record</p>
+            <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>
           </header>
-          <nav aria-label="Nursery rhymes" className="grid gap-4 md:grid-cols-2 md:gap-6">
-            {RHYMES.map((definition) => {
+          <nav aria-label="Nursery rhymes" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 sm:gap-5">
+            {DUB_DEFINITIONS.map((definition) => {
               const image = definition.sceneArtwork[0];
               return (
-                <InteractiveCardLink aria-label={definition.title} className="grid min-w-0 gap-3 overflow-hidden p-3 text-left md:p-5" key={definition.id} to={definition.route}>
-                  <img alt="" className="aspect-video w-full rounded-2xl object-cover" decoding="async" height={image.height} src={image.src} width={image.width} />
-                  <span className="flex min-w-0 items-center justify-between gap-3">
-                    <strong className="min-w-0 text-xl leading-tight text-brand-navy md:text-3xl">{definition.title}</strong>
-                    <span aria-hidden="true" className="grid size-12 shrink-0 place-items-center rounded-full bg-brand-rose text-white"><Mic2 /></span>
+                <InteractiveCardLink aria-label={definition.title} className="grid min-h-full min-w-0 grid-rows-[auto_1fr] overflow-hidden text-left" key={definition.id} to={definition.route}>
+                  <span className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
+                    <img alt="" className="size-full object-cover" decoding="async" height={image.height} src={image.src} width={image.width} />
+                  </span>
+                  <span className="grid content-between gap-3 p-3.5 sm:p-4">
+                    <strong className="min-w-0 text-xl leading-tight text-brand-navy sm:text-2xl">{definition.title}</strong>
+                    <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-brand-action-ink shadow-control-pink">
+                      <Mic2 aria-hidden="true" className="size-5" />
+                      Sing &amp; record
+                    </span>
                   </span>
                 </InteractiveCardLink>
               );

@@ -909,7 +909,7 @@ test("account deletion requires the password and returns to sign in only after p
     .click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips from all voice-dubbing rhymes (Five Little Ducks and Old MacDonald), lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
+    "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
   );
   const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();
