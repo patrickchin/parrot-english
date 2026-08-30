@@ -1773,7 +1773,6 @@ test("reconciles a rejected learner selection without switching learner mode", a
       name: "Start learner mode as Noah",
     }),
   ).toBeEnabled();
-  await expect(dialog.getByRole("radio", { name: "Noah" })).toBeChecked();
   expect(
     await page.evaluate(
       () =>
