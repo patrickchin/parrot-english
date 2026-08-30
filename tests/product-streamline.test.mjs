@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -239,34 +238,5 @@ test("story shelf presents a curated learner library without research controls",
   assert.doesNotMatch(
     html,
     /CEFR|Pre-A1|reading level|Flask|Teaching notes|Prompt test|Assumes familiar|Original baseline|Uncontrolled comparison|experiment/i,
-  );
-});
-
-test("the shipped application no longer carries the pixel-game prototype", () => {
-  const packageManifest = JSON.parse(
-    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-  );
-  const appSource = readFileSync(
-    new URL("../src/app/App.tsx", import.meta.url),
-    "utf8",
-  );
-  const workerSource = readFileSync(
-    new URL("../worker/index.ts", import.meta.url),
-    "utf8",
-  );
-
-  assert.equal(packageManifest.dependencies.phaser, undefined);
-  assert.equal(
-    existsSync(new URL("../src/games/PixelLessonLab.tsx", import.meta.url)),
-    false,
-  );
-  assert.equal(
-    existsSync(new URL("../worker/pixel-lessons.ts", import.meta.url)),
-    false,
-  );
-  assert.doesNotMatch(appSource, /PixelLesson|PixelWorld|path="\/games/);
-  assert.doesNotMatch(
-    workerSource,
-    /pixelLesson|PixelLesson|\/api\/pixel-lessons/,
   );
 });

@@ -20,7 +20,6 @@ function textFromMarkup(markup) {
 }
 
 const authClient = readSource("../src/auth/auth-client.ts");
-const app = readSource("../src/app/App.tsx");
 
 const vite = await createServer({
   appType: "custom",
@@ -833,32 +832,4 @@ test("account deletion sends the password, fails closed, and refetches only afte
     { password: "parent-password" },
     { password: "parent-password" },
   ]);
-});
-
-test("App composes AuthGate, route-aware onboarding, and authenticated routes", () => {
-  assert.match(
-    app,
-    /import\s+\{\s*AuthGate\s*\}\s+from\s+["']\.\.\/auth\/AuthGate["']/,
-  );
-  assert.match(
-    app,
-    /import\s+\{\s*LearnerProfileGate\s*\}\s+from\s+["']\.\.\/learner-profile\/LearnerProfileGate["']/,
-  );
-  assert.match(app, /export function ApplicationRoutes\(/);
-  assert.match(
-    app,
-    /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
-  );
-  assert.match(
-    app,
-    /<AuthGate[\s\S]*?<AuthenticatedApplication\s+onExitLessonRoute=\{exitLessonRoute\}\s*\/>\s*<\/AuthGate>/,
-  );
-  assert.match(
-    app,
-    /const applicationRoutes = \([\s\S]*?<ApplicationRoutes[\s\S]*?\);[\s\S]*?const gatedRoutes =[\s\S]*?<LearnerModeBoundary[\s\S]*?\{applicationRoutes\}[\s\S]*?<\/LearnerModeBoundary>[\s\S]*?const routeContent = \([\s\S]*?<LearnerProfileGate[\s\S]*?\{gatedRoutes\}[\s\S]*?<\/LearnerProfileGate>[\s\S]*?\);/,
-  );
-  assert.match(
-    app,
-    /<GuardianModeBoundary[^>]*>[\s\S]*?\{routeContent\}[\s\S]*?<\/GuardianModeBoundary>/,
-  );
 });

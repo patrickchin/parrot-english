@@ -28,7 +28,7 @@ const vite = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
   server: { middlewareMode: true },
 });
-const { DuckScene } = await vite.ssrLoadModule("/src/dubbing/DuckScene.tsx");
+const { IllustratedDubScene } = await vite.ssrLoadModule("/src/dubbing/IllustratedDubScene.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
@@ -38,7 +38,7 @@ const {
   DubLoading,
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
-const { DUB_LINES } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
+const { DUB_LINES, FIVE_LITTLE_DUCKS_DUB } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
 const { OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
 
 afterEach(async () => {
@@ -321,11 +321,13 @@ describe("duck dubbing storyboard presentation", () => {
   });
 
   it("maps every line in a verse to that verse's generated scene", () => {
-    const first = renderToStaticMarkup(createElement(DuckScene, {
+    const first = renderToStaticMarkup(createElement(IllustratedDubScene, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
       line: DUB_LINES[0],
       thumbnail: true,
     }));
-    const second = renderToStaticMarkup(createElement(DuckScene, {
+    const second = renderToStaticMarkup(createElement(IllustratedDubScene, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
       line: DUB_LINES[4],
       thumbnail: true,
     }));

@@ -26,8 +26,6 @@ export type DubDefinition = {
   readonly sceneTitles: readonly string[];
   readonly lines: readonly DubLine[];
   readonly guideAudioPrefix: string;
-  readonly sceneKind: string;
-  readonly showSceneStatusText: boolean;
 };
 
 const OLD_ANIMALS = [
@@ -82,8 +80,6 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),
   lines: oldMacDonaldLines,
   guideAudioPrefix: "old-macdonald-v1-guide-",
-  sceneKind: "farm",
-  showSceneStatusText: true,
 });
 
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";

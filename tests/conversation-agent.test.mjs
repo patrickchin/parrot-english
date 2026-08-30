@@ -581,7 +581,7 @@ describe("conversation ingest client", () => {
     );
     assert.equal(calls[0][1].headers.Authorization, "Bearer agent-secret");
     const body = JSON.parse(calls[0][1].body);
-    assert.deepEqual(body.candidates, []);
+    assert.deepEqual(Object.keys(body), ["controllerState"]);
     assert.equal(body.controllerState.phase, "optional");
     assert.deepEqual(body.controllerState._buildInfo.agent, {
       commitSha: "abc1234",

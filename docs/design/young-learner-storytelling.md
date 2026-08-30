@@ -17,11 +17,12 @@ age to define a reliable vocabulary count. Until Parrot English has an
 individual known-word profile, the safe starting point is familiar,
 picture-supported Pre-A1 language with a very small explicit teaching set.
 
-The current prompt lab therefore starts below a normal full picture-book word
-count on purpose. Its 20 controlled scripts range from 17 to 52 narrative words
-so we can find the lowest language level that still feels like a satisfying
-story. The 199-word original Lantern Trail remains available as a 21st,
-uncontrolled baseline rather than being overwritten by its simpler rewrite.
+The prompt-lab review that produced the current learner stories started below a
+normal full picture-book word count on purpose. Its 20 controlled scripts range
+from 17 to 52 narrative words so reviewers can find the lowest language level
+that still feels like a satisfying story. The 199-word original Lantern Trail
+remains documented as an uncontrolled research baseline rather than being
+checked into the runtime catalog beside its simpler rewrite.
 
 ## What the External Frameworks Say
 
@@ -136,11 +137,11 @@ Until learner-specific vocabulary exists, authors should treat common
 Cambridge Pre-A1 words as candidates for familiar language, not guaranteed
 known language.
 
-For every story:
+For every draft before check-in:
 
-1. Declare the deliberate target words in metadata. The displayed item may be
-   a useful phrase or inflected form, such as *get dressed* or *falls*, and
-   must occur exactly in the script or join-in text.
+1. Identify the deliberate target words in the review notes. A target may be a
+   useful phrase or inflected form, such as *get dressed* or *falls*, and must
+   occur exactly in the script or join-in text.
 2. Put each target in the future artwork and in a gesture, sound, contrast, or
    clear action whenever possible.
 3. Repeat the most important targets across pages and future readings.
@@ -153,40 +154,42 @@ For every story:
    before asking the child to retell anything.
 
 The target list is the teaching promise, not a claim that every other token is
-automatically known. Each prototype therefore also declares its
-`assumedKnownWords`. Those assumptions are visible on the story shelf and must
-be confirmed with the child; they are not silently relabelled as "easy." A
-catalogue test fails if narration or join-in text contains a word that is not a
-target, an explicit assumption, a level grammar word, a character name, or a
-participation sound. A later learner profile should replace assumptions with
-observed known, learning, and unknown states.
+automatically known. Reviewers should separately record the words a draft
+assumes, challenge each assumption with the child, and revise the script before
+check-in when the language is not supported. These target and assumption notes
+are authoring inputs, not shelf labels or runtime story fields. A later learner
+profile may replace this pre-check-in judgment with observed known, learning,
+and unknown states.
 
-### Prototype Controlled-Vocabulary Profiles
+### Pre-Check-In Controlled-Vocabulary Profiles
 
-These versioned profiles are deliberately small grammar inventories, not
-claims about what every child knows. They are based on the kinds of formulaic
-language in Cambridge YLE 2025, then tightened for this prompt lab. Content
-words are controlled story by story through targets and visible assumptions.
+These review profiles are deliberately small grammar inventories, not claims
+about what every child knows. They are based on the kinds of formulaic language
+in Cambridge YLE 2025, then tightened for the prompt lab. Authors use them to
+review content words story by story before committing the finished runtime
+script; the profiles are not shipped as a catalog API.
 
 | Profile | Cumulative core grammar words | Maximum extra assumed content words in one story |
 | --- | --- | --- |
-| `first-words-v1` | a, am, and, are, can, for, has, here, I, in, is, it, me, my, no, not, now, on, one, the, there, to, two, up, we, where, which, yes, you | 3 |
-| `repeating-patterns-v1` | First words, plus again, does, her, off, she, too, you're | 5 |
-| `tiny-stories-v1` | Repeating patterns, plus by, he, them, they | 12 |
-| `early-a1-v1` | Tiny stories, plus an, as, at, away, back, be, cannot, each, from, his, our, this, will, with | 18 |
+| First words | a, am, and, are, can, for, has, here, I, in, is, it, me, my, no, not, now, on, one, the, there, to, two, up, we, where, which, yes, you | 3 |
+| Repeating patterns | First words, plus again, does, her, off, she, too, you're | 5 |
+| Tiny stories | Repeating patterns, plus by, he, them, they | 12 |
+| Early A1 | Tiny stories, plus an, as, at, away, back, be, cannot, each, from, his, our, this, will, with | 18 |
 
-This makes the language bet inspectable. For example, *The Red Ball* assumes
-no extra content words beyond its five targets, while *The Lantern Trail*
-assumes 12 familiar content lemmas—*fly, find, hello, little, many, near, need,
-say, see, thank, walk,* and *water*—in addition to its seven targets. If that
-assumption is too large for a learner, the shelf makes the mismatch visible
-before reading.
+This makes the language bet inspectable during review. For example, *The Red
+Ball* was reviewed with no extra content words beyond its five targets, while
+*The Lantern Trail* was reviewed against 12 familiar content lemmas—*fly, find,
+hello, little, many, near, need, say, see, thank, walk,* and *water*—in addition
+to its seven targets. If that assumption is too large for observed learners,
+authors should revise the checked-in script rather than expose review metadata
+on the shelf.
 
 ## Internal Story Levels
 
-These are Parrot English product heuristics to test, not official CEFR cut
+These are pre-check-in Parrot English review heuristics, not official CEFR cut
 scores. Counts exclude the repeated join-in line so narrator complexity and
-child speaking load can be inspected separately.
+child speaking load can be inspected separately. At runtime, a story level
+keeps only its ID and the reference, label, and description used by the shelf.
 
 | Level | External reference | Prototype limits | Language shape |
 | --- | --- | --- | --- |
@@ -284,10 +287,10 @@ more useful than generating 20 stories from one vague "make it fun" prompt.
 | Wally Finds the Way | Early A1 | Pair every direction with an immediate movement and landmark, then repeat the sequence with gestures. | Movement may make abstract directions easier to retain. |
 | The Moon Bus | Early A1 | Put concrete transport phrases inside a gentle fantasy setting. | Comparing it with realistic stories tests whether fantasy adds engagement or overload. |
 
-The exact scripts, target lists, prompt instructions, hypotheses, word limits,
-cover assets, and remaining page/audio placeholders live in
-`src/stories/story-script-candidates.ts`, `src/stories/story-catalog.ts`, and
-`public/assets/stories`.
+The exact checked-in scripts, completion lines, artwork, and audio IDs live in
+`src/stories/story-script-candidates.ts` and `src/stories/story-catalog.ts`.
+Target lists, prompt instructions, hypotheses, and word limits in this guide
+are pre-check-in review material rather than runtime fields.
 
 ## Initial Validation Set
 
@@ -316,15 +319,14 @@ repeat the story with the least adult repair.
 
 ## Media Gate
 
-All 20 prompt experiments have generated landscape WebP covers under
-`public/assets/stories`. They share a warm
-gouache-and-watercolour picture-book style, simple readable silhouettes, and
-story-specific exact object or character counts. The catalog stores each
-cover's concise scene prompt and descriptive alt text.
+The 20 reviewed learner stories have published landscape WebP covers and page
+artwork. They share a warm gouache-and-watercolour picture-book style, simple
+readable silhouettes, and story-specific exact object or character counts. The
+runtime catalog stores the artwork URL, concise generation prompt, and
+descriptive alt text needed by reader and personalized-art behavior.
 
-Page artwork sources and narration audio IDs remain `null`. The reader renders
-an accessible page placeholder and disables narration instead of requesting a
-missing file. The superseded Lantern page art and narration remain absent, and
-the harder script is retained only in the research history. Generate page
-illustrations and ElevenLabs narration only after a small validation set has
-been selected and its wording has stopped changing.
+Checked-in pages also carry their saved narration and join-in audio IDs. New or
+revised stories should not reach this runtime shape until a validation set has
+been selected, its wording has stopped changing, artwork is published, and
+ElevenLabs audio is saved. The harder Lantern script remains research history,
+not a runtime catalog entry.

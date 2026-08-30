@@ -307,7 +307,6 @@ async function stageConversationProfile(database, conversationId, values = {}) {
         finishReason: "conversation_complete",
         ...values,
       },
-      candidates: [],
     },
     {
       identity: null,
@@ -1121,7 +1120,7 @@ describe("conversation persistence and API", () => {
         worker,
         state,
         `/api/conversations/${conversation.id}/facts`,
-        { controllerState: { checkpoint: "stored-owner" }, candidates: [] },
+        { controllerState: { checkpoint: "stored-owner" } },
       );
       const ended = await agentConversation(
         worker,
@@ -1178,7 +1177,6 @@ describe("conversation persistence and API", () => {
                 learnedName: true,
                 learnedAge: true,
               },
-              candidates: [],
             },
           )
         ).status,
@@ -1527,7 +1525,7 @@ describe("conversation persistence and API", () => {
         state.database,
         `/api/conversations/${conversation.id}/facts`,
         "POST",
-        { controllerState, candidates: [] },
+        { controllerState },
         agentOptions,
       );
       assert.equal(staged.status, 200);
@@ -1600,7 +1598,6 @@ describe("conversation persistence and API", () => {
             learnedName: true,
             learnedAge: true,
           },
-          candidates: [],
         },
         agentOptions,
       );
@@ -1654,7 +1651,6 @@ describe("conversation persistence and API", () => {
             learnedName: true,
             learnedAge: true,
           },
-          candidates: [],
         },
         agentOptions,
       );
@@ -1683,7 +1679,6 @@ describe("conversation persistence and API", () => {
             learnedName: true,
             learnedAge: true,
           },
-          candidates: [],
         },
         agentOptions,
       );
@@ -1791,7 +1786,6 @@ describe("conversation persistence and API", () => {
             learnedAge: true,
             finishReason: "task_complete",
           },
-          candidates: [],
         },
         agentOptions,
       );
@@ -1830,7 +1824,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("rejects legacy structured fact candidates without storing them", async () => {
+  it("ignores unrelated controller-state request properties", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
@@ -1844,24 +1838,24 @@ describe("conversation persistence and API", () => {
         `/api/conversations/${conversation.id}/facts`,
         "POST",
         {
-          controllerState: { profileSummary: "Mia likes pandas." },
-          candidates: [
-            { id: "fact-name", key: "name", value: "Mia", sourceTurnIds: [] },
-          ],
+          controllerState: { checkpoint: "stored-owner" },
+          unrelated: "ignored",
         },
         {
           identity: null,
           headers: { Authorization: "Bearer agent-secret" },
         },
       );
-      assert.equal(factsResponse.status, 400);
-      assert.deepEqual(await factsResponse.json(), { error: "invalid_facts" });
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT count(*) AS count FROM conversation_fact")
-          .get().count,
-        0,
-      );
+      assert.equal(factsResponse.status, 200);
+      assert.deepEqual(await factsResponse.json(), {
+        conversationId: conversation.id,
+      });
+      const stored = state.sqlite
+        .prepare("SELECT controller_state FROM conversation_session WHERE id = ?")
+        .get(conversation.id);
+      assert.deepEqual(JSON.parse(stored.controller_state), {
+        checkpoint: "stored-owner",
+      });
     } finally {
       state.close();
     }
@@ -1892,7 +1886,7 @@ describe("conversation persistence and API", () => {
         state.database,
         `/api/conversations/${conversation.id}/facts`,
         "POST",
-        { controllerState, candidates: [] },
+        { controllerState },
         {
           identity: null,
           headers: { Authorization: "Bearer agent-secret" },
@@ -1923,12 +1917,6 @@ describe("conversation persistence and API", () => {
       assert.equal(
         answers.description,
         "Mia is thirty years old and likes pandas.",
-      );
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT count(*) AS count FROM conversation_fact")
-          .get().count,
-        0,
       );
       const stored = state.sqlite
         .prepare("SELECT controller_state FROM conversation_session WHERE id = ?")
@@ -1967,7 +1955,6 @@ describe("conversation persistence and API", () => {
             learnedAge: false,
             finishReason: "child_stopped",
           },
-          candidates: [],
         },
         {
           identity: null,
@@ -2088,7 +2075,6 @@ describe("LiveKit participant tokens", () => {
         profileName: "Mia",
         profileSummary: "Mia is thirty and loves fast red cars.",
       }),
-      now: new Date("2026-07-08T08:00:00.000Z"),
     });
     const [, encodedPayload] = token.split(".");
     const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());

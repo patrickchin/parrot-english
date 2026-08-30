@@ -104,9 +104,7 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
-import type { DubSceneComponent } from "../dubbing/DubSceneTypes";
 import { DubStudio } from "../dubbing/DubStudio";
-import { FarmScene } from "../dubbing/FarmScene";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
@@ -982,9 +980,11 @@ export function LessonPlayer({
         reserved={reserved}
       />
     ) : null;
+  const showSpeakingHelp = Boolean(microphoneNotice && !error);
   const activeNotice =
     error || microphoneNotice ? (
       <LessonErrorBanner
+        characterCount={scene.characters.length}
         error={error || microphoneNotice}
         onRetry={
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleRetryAudio : undefined
@@ -993,7 +993,7 @@ export function LessonPlayer({
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleSkipAudio : undefined
         }
         reserved={reserved}
-        tone={error ? "error" : "help"}
+        tone={showSpeakingHelp ? "help" : "error"}
       />
     ) : null;
   const saveState =
@@ -1066,7 +1066,10 @@ export function LessonPlayer({
         ) : (
           <>
             {activeHud}
-            <LessonCharacters characters={scene.characters} />
+            <LessonCharacters
+              characters={scene.characters}
+              showSpeakingHelp={showSpeakingHelp}
+            />
             {activeDialogue}
             {activeControls}
             {activeNotice}
@@ -1363,10 +1366,7 @@ export function ApplicationRoutes({
         <Route element={<DuckDub />} path={getDuckDubPath()} />
         <Route
           element={
-            <DubStudio
-              Scene={FarmScene as unknown as DubSceneComponent}
-              definition={OLD_MACDONALD_DUB}
-            />
+            <DubStudio definition={OLD_MACDONALD_DUB} />
           }
           path={getOldMacDonaldDubPath()}
         />
