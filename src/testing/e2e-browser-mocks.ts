@@ -213,7 +213,7 @@ function matchActiveE2eDubLinePath(pathname: string) {
 
 function matchActiveE2eDubGuidePath(pathname: string) {
   const definition = getActiveE2eDubDefinition();
-  const prefix = `/assets/audio/${definition.guideAudioPrefix}`;
+  const prefix = `/assets/audio/${definition.id}-guide-`;
   if (!pathname.startsWith(prefix) || !pathname.endsWith(".mp3")) return null;
   const suffix = pathname.slice(prefix.length, -4);
   return definition.lines.find(({ id }) => id === suffix || id.endsWith(`-${suffix}`))?.id ?? null;

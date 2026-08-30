@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
 import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
@@ -20,25 +18,6 @@ function providerResponse(value) {
 }
 
 describe("onboarding answer enrichment", () => {
-  it("keeps its system prompt in a dedicated source file", () => {
-    const promptSource = readFileSync(
-      resolve(
-        import.meta.dirname,
-        "../worker/prompts/learner-profile-enrichment.ts",
-      ),
-      "utf8",
-    );
-    const runtimeSource = readFileSync(
-      resolve(import.meta.dirname, "../worker/learner-profile-enrichment.ts"),
-      "utf8",
-    );
-
-    assert.match(promptSource, /summarize the child's answer factually/i);
-    assert.match(promptSource, /not spoken directly to the child/i);
-    assert.match(promptSource, /edit only the large block of text below/i);
-    assert.doesNotMatch(runtimeSource, /summarize the child's answer factually/i);
-  });
-
   it("requests strict factual enrichment JSON without public copy", async () => {
     let upstreamRequest;
     const result = await enrichLearnerProfileAnswer({

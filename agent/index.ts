@@ -302,7 +302,7 @@ export const agentDefinition = defineAgent({
     const participant = await ctx.waitForParticipant();
     const { conversationId, initialState, promptStyle, purpose } =
       parseConversationParticipantMetadata(participant.metadata);
-    await ingest.reportBuild(conversationId, initialState).catch((error: unknown) => {
+    await ingest.updateState(conversationId, initialState).catch((error: unknown) => {
       console.error("Could not report conversation agent build", error);
     });
     const persistence = createTranscriptPersistence({ conversationId, ingest });

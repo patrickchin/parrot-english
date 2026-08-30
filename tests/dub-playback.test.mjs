@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
-import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
+import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   OLD_MACDONALD_DUB,
   TWINKLE_TWINKLE_DUB,
@@ -295,7 +295,7 @@ describe("duck dub playback", () => {
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_VERSES[0],
+      lines: DUB_LINES.slice(0, 4),
       onTick() {},
       requestAnimationFrame: raf.requestAnimationFrame,
     });
@@ -516,7 +516,7 @@ describe("duck dub playback", () => {
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_VERSES[1],
+      lines: DUB_LINES.slice(4, 8),
       onEnded() {
         ended += 1;
       },
@@ -558,7 +558,7 @@ describe("duck dub playback", () => {
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_VERSES[5],
+      lines: DUB_LINES.slice(20, 24),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,
@@ -585,7 +585,7 @@ describe("duck dub playback", () => {
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_VERSES[5],
+      lines: DUB_LINES.slice(20, 24),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,
@@ -957,7 +957,7 @@ describe("duck dub playback", () => {
       async fetch() {
         return new Response(null, { status: 503 });
       },
-      lines: DUB_VERSES[1],
+      lines: DUB_LINES.slice(4, 8),
       onEnded() {
         ended += 1;
       },
@@ -1021,7 +1021,7 @@ describe("duck dub playback", () => {
         }
         return audio.fetch(url, init);
       },
-      lines: DUB_VERSES[1],
+      lines: DUB_LINES.slice(4, 8),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,

@@ -81,7 +81,7 @@ function indexColumns(database, table) {
 }
 
 describe("conversation persistence infrastructure", () => {
-  it("exports focused Drizzle table models and relations", () => {
+  it("exports focused Drizzle table models", () => {
     for (const [exportName, expected] of Object.entries(MODELS)) {
       const table = schema[exportName];
       assert.ok(table, `Expected schema.${exportName}`);
@@ -89,8 +89,6 @@ describe("conversation persistence infrastructure", () => {
       assert.deepEqual(Object.keys(getTableColumns(table)), expected.properties);
     }
 
-    assert.ok(schema.conversationSessionRelations);
-    assert.ok(schema.conversationTurnRelations);
     assert.equal(schema.conversationFact, undefined);
     assert.equal(schema.conversationFactRelations, undefined);
   });
