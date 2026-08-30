@@ -103,9 +103,7 @@ import {
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
 import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
-import type { DubSceneComponent, DubSceneProps } from "../dubbing/DubSceneTypes";
 import { DubStudio } from "../dubbing/DubStudio";
-import { IllustratedDubScene } from "../dubbing/IllustratedDubScene";
 import {
   FULL_SCENE_LESSONS,
   type FullSceneImage,
@@ -146,14 +144,9 @@ import {
   LearnerModeBoundary,
 } from "./ModeRouteBoundaries";
 
-const CATALOG_DUB_ROUTES = DUB_DEFINITIONS
-  .filter(({ route }) => route !== getDuckDubPath())
-  .map((definition) => {
-    const Scene = (props: DubSceneProps) => (
-      <IllustratedDubScene definition={definition} {...props} />
-    );
-    return { definition, Scene };
-  });
+const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
+  ({ route }) => route !== getDuckDubPath(),
+);
 
 const LessonCreator = import.meta.env.SSR
   ? (await import("../lessons/LessonCreator")).LessonCreator
@@ -989,9 +982,11 @@ export function LessonPlayer({
         reserved={reserved}
       />
     ) : null;
+  const showSpeakingHelp = Boolean(microphoneNotice && !error);
   const activeNotice =
     error || microphoneNotice ? (
       <LessonErrorBanner
+        characterCount={scene.characters.length}
         error={error || microphoneNotice}
         onRetry={
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleRetryAudio : undefined
@@ -1000,7 +995,7 @@ export function LessonPlayer({
           error === LESSON_AUDIO_ERROR_MESSAGE ? handleSkipAudio : undefined
         }
         reserved={reserved}
-        tone={error ? "error" : "help"}
+        tone={showSpeakingHelp ? "help" : "error"}
       />
     ) : null;
   const saveState =
@@ -1073,7 +1068,10 @@ export function LessonPlayer({
         ) : (
           <>
             {activeHud}
-            <LessonCharacters characters={scene.characters} />
+            <LessonCharacters
+              characters={scene.characters}
+              showSpeakingHelp={showSpeakingHelp}
+            />
             {activeDialogue}
             {activeControls}
             {activeNotice}
@@ -1368,14 +1366,9 @@ export function ApplicationRoutes({
         <Route element={<StoryList />} path="/stories" />
         <Route element={<NurseryRhymeList />} path={getNurseryRhymesPath()} />
         <Route element={<DuckDub />} path={getDuckDubPath()} />
-        {CATALOG_DUB_ROUTES.map(({ definition, Scene }) => (
+        {CATALOG_DUB_ROUTES.map((definition) => (
           <Route
-            element={
-              <DubStudio
-                Scene={Scene as DubSceneComponent}
-                definition={definition}
-              />
-            }
+            element={<DubStudio definition={definition} />}
             key={definition.id}
             path={definition.route}
           />

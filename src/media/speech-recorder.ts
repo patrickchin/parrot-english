@@ -251,110 +251,46 @@ export async function recordSpeechClip({
   signal,
   stopSignal,
 }: SpeechRecorderOptions = {}) {
-  if (!MediaRecorderClass) {
-    throw new RecordingUnsupportedError();
-  }
+  const session = await startSpeechRecording({
+    MediaRecorder: MediaRecorderClass,
+    getUserMedia,
+    mimeType,
+    signal,
+  });
 
-  const resolvedMimeType = mimeType ?? selectRecordingMimeType(MediaRecorderClass);
-
-  if (signal?.aborted) {
-    throw createAbortError();
-  }
-
-  let stream: MediaStream;
   try {
-    stream = await getUserMedia(MICROPHONE_CONSTRAINTS);
+    onRecordingStart?.();
   } catch (error) {
-    throw new MicrophoneAccessError(error);
+    session.cancel();
+    await session.stop().catch(() => undefined);
+    throw error;
   }
 
-  if (signal?.aborted) {
-    stopMediaStream(stream);
-    throw createAbortError();
-  }
-
-  return new Promise<Blob>((resolve, reject) => {
-    const chunks: Blob[] = [];
-    let recorder: MediaRecorder;
-    let timeoutId: TimerId | null = null;
-    let settled = false;
-
-    function cleanup() {
-      if (timeoutId !== null) {
-        clearRecordingTimeout(timeoutId);
-        timeoutId = null;
-      }
-      signal?.removeEventListener("abort", abortRecording);
-      stopSignal?.removeEventListener("abort", stopRecording);
-      stopMediaStream(stream);
-    }
-
-    function finish() {
-      if (settled) return;
-      settled = true;
-      cleanup();
-
-      if (signal?.aborted) {
-        reject(createAbortError());
-        return;
-      }
-
-      resolve(new Blob(chunks, { type: recorder.mimeType || resolvedMimeType }));
-    }
-
-    function fail(error: unknown) {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      reject(error);
-    }
-
-    function abortRecording() {
-      if (recorder.state === "recording") {
-        recorder.stop();
-        return;
-      }
-
-      fail(createAbortError());
-    }
-
-    function stopRecording() {
-      if (recorder.state === "recording") {
-        recorder.stop();
-      }
-    }
-
-    try {
-      recorder = new MediaRecorderClass(
-        stream,
-        resolvedMimeType ? { mimeType: resolvedMimeType } : undefined
-      );
-    } catch (error) {
-      fail(error);
+  return await new Promise<Blob>((resolve, reject) => {
+    let timeout: TimerId | null = null;
+    let stopPromise: Promise<Blob> | null = null;
+    const cleanup = () => {
+      if (timeout !== null) clearRecordingTimeout(timeout);
+      signal?.removeEventListener("abort", stop);
+      stopSignal?.removeEventListener("abort", stop);
+    };
+    const stop = () => {
+      stopPromise ??= session.stop().finally(cleanup);
+      void stopPromise.then(resolve, reject);
+    };
+    signal?.addEventListener("abort", stop, { once: true });
+    stopSignal?.addEventListener("abort", stop, { once: true });
+    if (signal?.aborted || stopSignal?.aborted) {
+      stop();
       return;
     }
-
-    recorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunks.push(event.data);
-    };
-    recorder.onerror = () => fail(new Error("Audio recording failed."));
-    recorder.onstop = finish;
-    signal?.addEventListener("abort", abortRecording, { once: true });
-    stopSignal?.addEventListener("abort", stopRecording, { once: true });
-
     try {
-      recorder.start();
-      onRecordingStart?.();
-      if (stopSignal?.aborted) {
-        stopRecording();
-        return;
-      }
-
-      timeoutId = setRecordingTimeout(() => {
-        if (recorder.state === "recording") recorder.stop();
-      }, recordingMs);
+      timeout = setRecordingTimeout(stop, recordingMs);
     } catch (error) {
-      fail(error);
+      cleanup();
+      session.cancel();
+      void session.stop().catch(() => undefined);
+      reject(error);
     }
   });
 }

@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import sharp from "sharp";
-import { STORY_SCRIPT_CANDIDATES } from "../src/stories/story-script-candidates.ts";
+import { STORIES } from "../src/stories/story-catalog.ts";
 
 const storyMedia = await import("../scripts/story-media.mjs").catch(() => ({}));
 const storyPublisher = await import("../scripts/publish-story-media.mjs").catch(
@@ -59,8 +59,9 @@ function createManifest() {
 
 function createLearnerPageManifest() {
   const assets = [];
-  for (const { id: storyId, pages } of STORY_SCRIPT_CANDIDATES.filter(
+  for (const { id: storyId, pages } of STORIES.filter(
     ({ id, level }) =>
+      level !== "long-stories" &&
       level !== "first-words" &&
       level !== "first-english-words" &&
       id !== "where-is-dot",

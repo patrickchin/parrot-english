@@ -2,11 +2,10 @@ import { ArrowLeft, ArrowRight, LoaderCircle, Mic, Square, Volume2 } from "lucid
 import type { RefObject } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { ActionButton, TextButton } from "../shared/ui";
-import type { DubSceneComponent } from "./DubSceneTypes";
-import { DuckScene } from "./DuckScene";
 import { DubTakeWaveform } from "./DubTakeWaveform";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import type { DubOperation } from "./dub-state";
+import { IllustratedDubScene } from "./IllustratedDubScene";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 export type DubSceneEditorProps = {
@@ -28,7 +27,6 @@ export type DubSceneEditorProps = {
   nextButtonRef?: RefObject<HTMLButtonElement | null>;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
   saveButtonRef?: RefObject<HTMLButtonElement | null>;
-  Scene?: DubSceneComponent;
   saveRecovery: "record" | "save" | null;
   lineHeadingRef?: RefObject<HTMLHeadingElement | null>;
 };
@@ -65,7 +63,6 @@ export function DubSceneEditor({
   nextButtonRef,
   recordButtonRef,
   saveButtonRef,
-  Scene = DuckScene as unknown as DubSceneComponent,
   saveRecovery,
   lineHeadingRef,
 }: DubSceneEditorProps) {
@@ -117,7 +114,7 @@ export function DubSceneEditor({
       <section aria-label="Scene editor workspace" className="mx-auto grid w-full max-w-[1600px] gap-2 short-wide:h-full short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.75fr)_minmax(21rem,0.7fr)] md:gap-4">
         <section className="grid content-start gap-2 short-wide:min-h-0 short-wide:gap-1.5">
           <section aria-label="Scene video" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl">
-            <Scene compact line={activeLine} />
+            <IllustratedDubScene compact definition={definition} line={activeLine} />
           </section>
           <h1 className="m-0 rounded-2xl border-4 border-white bg-white/90 px-3 py-2 text-center text-xl font-black leading-snug text-brand-ink shadow-card short-wide:py-1.5 short-wide:text-base md:text-2xl" ref={lineHeadingRef} tabIndex={-1}>
             {activeLine.text}

@@ -1,5 +1,4 @@
-import type { DubSceneProps } from "./DubSceneTypes";
-import type { DubDefinition } from "./rhyme-catalog";
+import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 export function IllustratedDubScene({
   compact = false,
@@ -7,7 +6,13 @@ export function IllustratedDubScene({
   line = definition.lines[0],
   playing = false,
   thumbnail = false,
-}: DubSceneProps & { definition: DubDefinition }) {
+}: {
+  compact?: boolean;
+  definition: DubDefinition;
+  line?: DubLine;
+  playing?: boolean;
+  thumbnail?: boolean;
+}) {
   const lineIndex = Math.max(0, definition.lines.findIndex(({ id }) => id === line.id));
   const sceneIndex = Math.floor(lineIndex / definition.linesPerScene);
   const image = definition.sceneArtwork[sceneIndex] ?? definition.sceneArtwork[0];

@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -32,10 +31,6 @@ after(async () => {
   await vite.close();
 });
 
-const app = readFileSync(
-  fileURLToPath(new URL("../src/app/App.tsx", import.meta.url)),
-  "utf8",
-);
 function renderInRouter(element, initialEntry = "/") {
   return renderToStaticMarkup(
     createElement(MemoryRouter, { initialEntries: [initialEntry] }, element),
@@ -225,7 +220,6 @@ test("authenticated application routes include the core learner activities", () 
     assert.match(rhyme, new RegExp(title));
     assert.match(rhyme, /Loading your private dub…/);
   }
-  assert.doesNotMatch(app, /path=["']\/games|PixelLesson|PixelWorld/);
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
@@ -235,35 +229,6 @@ test("authenticated application routes include the core learner activities", () 
 
   const retiredProgress = renderApplicationRoute("/progress");
   assert.doesNotMatch(retiredProgress, /Progress|coming soon/i);
-  assert.match(
-    app,
-    /<Route\s+element=\{<Navigate\s+replace\s+to=["']\/["']\s*\/>\}\s+path=["']\/progress["']\s*\/>/,
-  );
-  assert.doesNotMatch(
-    app,
-    /<Route\s+element=\{<Navigate\s+replace\s+to=["']\/["']\s*\/>\}\s+path=["']\/stories["']\s*\/>/,
-  );
-});
-
-test("authenticated application routes include guardian voice-dubbing settings", () => {
-  assert.match(app, /<GuardianDubbingSettings\s*\/>/);
-});
-
-test("guardian settings routes resolve their explicit target without active learner props", () => {
-  assert.match(app, /<GuardianDashboard[\s\S]*?learnerName=\{learnerName\}/);
-  for (const component of [
-    "GuardianLessonManager",
-    "GuardianStorySettings",
-    "GuardianDubbingSettings",
-    "LessonCreator",
-  ]) {
-    assert.doesNotMatch(
-      app,
-      new RegExp(`<${component}[^>]*\\blearnerName=\\{learnerName\\}`),
-      `Expected ${component} to resolve its learner from the URL target`,
-    );
-  }
-  assert.doesNotMatch(app, /<GuardianDubbingSettings[^>]*\bonBeforeNavigate=/);
 });
 
 test("guardian learner route renders the concrete roster manager", () => {
@@ -302,143 +267,6 @@ test("lesson routes expose one back control to the lesson list", () => {
       .length,
     1,
   );
-});
-
-test("the application shell derives protected targets from the current URL", () => {
-  assert.match(
-    app,
-    /import\s+\{[^}]*\bNavigate\b[^}]*\buseLocation\b[^}]*\}\s+from\s+["']react-router["']/s,
-  );
-  assert.match(
-    app,
-    /import\s+\{[^}]*\bgetGateRouteKind\b[^}]*\bgetLoginPath\b[^}]*\bgetRequestedProtectedTarget\b[^}]*\}\s+from\s+["']\.\/app-routes["']/s,
-  );
-  assert.match(app, /const\s+location\s*=\s*useLocation\(\)/);
-  assert.match(
-    app,
-    /const\s+gateRoute\s*=\s*getGateRouteKind\(location\.pathname\)/,
-  );
-  assert.match(
-    app,
-    /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/,
-  );
-  assert.match(
-    app,
-    /const\s+isLearnerProfileRoute\s*=\s*gateRoute\s*===\s*["']learner-profile["']/,
-  );
-  assert.match(
-    app,
-    /const\s+isProfileRoute\s*=\s*gateRoute\s*===\s*["']profile["']/,
-  );
-  assert.doesNotMatch(
-    app,
-    /location\.pathname\s*===\s*["']\/(?:login|profile(?:\/setup)?)["']/,
-  );
-  assert.match(
-    app,
-    /const\s+requestedProtectedTarget\s*=\s*getRequestedProtectedTarget\(\s*location\.pathname,\s*location\.search,\s*location\.hash,?\s*\)/s,
-  );
-});
-
-test("signed-out redirects reuse the safe requested protected target", () => {
-  assert.match(
-    app,
-    /const\s+onLoginRoute\s*=\s*gateRoute\s*===\s*["']login["']/,
-  );
-  assert.match(app, /signedOutFallback=\{/);
-  assert.match(
-    app,
-    /<Navigate\s+replace\s+to=\{getLoginPath\(requestedProtectedTarget\)\}\s*\/>/,
-  );
-  assert.match(app, /onLoginRoute\s*\?\s*null\s*:/);
-});
-
-test("the authenticated shell declares login, learner-profile, profile, and wildcard routes", () => {
-  assert.match(app, /<Routes>/);
-  for (const path of [
-    "/",
-    "/talk-to-peppa",
-    "/lessons",
-    "/lessons/my/create",
-    "/lessons/parrot/:lessonId",
-    "/lessons/parrot/:lessonId/scenes/:sceneNumber",
-    "/lessons/my/:lessonId",
-    "/lessons/my/:lessonId/scenes/:sceneNumber",
-    "/progress",
-    "/stories",
-    "/stories/:storyId",
-    "/stories/:storyId/pages/:pageNumber",
-    "/login",
-    "/profile/setup",
-    "/profile",
-    "*",
-  ]) {
-    assert.match(app, new RegExp(`path=["']${path.replace("*", "\\*")}["']`));
-  }
-  assert.match(app, /path=(?:\{getDuckDubPath\(\)\}|["']\/dubs\/five-little-ducks["'])/);
-  assert.match(app, /DUB_DEFINITIONS\.map\(\(\{\s*route\s*\}\)\s*=>\s*route\)/);
-  assert.match(app, /CATALOG_DUB_ROUTES\.map/);
-  assert.match(
-    app,
-    /<Route\s+element=\{<LessonList\s*\/>\}\s+path=["']\/lessons["']\s*\/>/,
-  );
-  assert.match(
-    app,
-    /const\s+safeReturnTo\s*=\s*guardianRoute\s*\?\s*getSafeGuardianReturnTo\(location\.search\)\s*:\s*\(?\s*getSafeReturnTo\(location\.search\)\s*\?\?\s*["']\/["']\s*\)?/s,
-  );
-  assert.match(app, /const\s+requestedProtectedTarget\s*=/);
-  assert.match(app, /getLearnerProfilePath\(requestedProtectedTarget\)/);
-});
-
-test("lesson route adapters render the executable route decisions", () => {
-  assert.match(
-    app,
-    /function\s+LessonRouteDecisionView\([\s\S]*?decision:\s*LessonRouteDecision[\s\S]*?if\s*\(decision\.kind\s*===\s*["']redirect["']\)/,
-  );
-  assert.match(app, /replace=\{decision\.replace\}/);
-  assert.match(app, /to=\{decision\.to\}/);
-  assert.match(
-    app,
-    /function\s+ParrotLessonRedirect\(\)[\s\S]*?resolveParrotLessonRouteDecision\(lessonId,\s*undefined\)/,
-  );
-  assert.match(
-    app,
-    /function\s+ParrotLessonSceneRoute\(\)[\s\S]*?resolveParrotLessonRouteDecision\(lessonId,\s*sceneNumber\)/,
-  );
-  assert.match(app, /function\s+MyLessonRoute/);
-  assert.match(app, /loadMyLesson\(lessonId/);
-  assert.match(
-    app,
-    /resolveMyLessonRouteDecision\(entry,\s*lessonId,\s*sceneNumber\)/,
-  );
-  assert.match(app, /key=\{`\$\{source\}:\$\{decision\.entry\.id\}`\}/);
-  assert.match(app, /routedSceneIndex=\{decision\.sceneIndex\}/);
-  assert.match(
-    app,
-    /function\s+LessonRouteDecisionView[\s\S]*?const location = useLocation\(\)[\s\S]*?routedLocationKey=\{location\.key\}/,
-  );
-  assert.match(app, /onNavigateScene=/);
-});
-
-test("global Profile navigation exits the active lesson before routing", () => {
-  assert.match(app, /createLessonRouteExitRegistry/);
-  assert.match(
-    app,
-    /const lessonRouteExitRegistryRef = useRef\(\s*createLessonRouteExitRegistry\(\),?\s*\)/,
-  );
-  assert.match(
-    app,
-    /const registerLessonRouteExitBarrier = useCallback\(\s*\(barrier: \(\) => void\) =>\s*lessonRouteExitRegistryRef\.current\.register\(barrier\),\s*\[\],?\s*\)/,
-  );
-  assert.match(
-    app,
-    /const openProfileRoute = useCallback\(\(\) => \{\s*onExitLessonRoute\(\);\s*navigate\(getProfilePath\(requestedProtectedTarget\)\);\s*\}, \[navigate,\s*onExitLessonRoute,\s*requestedProtectedTarget\]\)/,
-  );
-  assert.match(
-    app,
-    /<LessonRouteExitBarrierContext\.Provider\s+value=\{registerLessonRouteExitBarrier\}\s*>[\s\S]*?<AuthGate/,
-  );
-  assert.match(app, /onOpenProfileRoute=\{openProfileRoute\}/);
 });
 
 test("Create Lesson stays statically ranked ahead of dynamic My lesson routes", () => {

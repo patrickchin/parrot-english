@@ -103,10 +103,9 @@ Set it to `0` and redeploy when rolling back the realtime experience.
 
 ## LiveKit Cloud agent
 
-The repository-root `Dockerfile` is the LiveKit build file; `agent/Dockerfile`
-is kept identical so the runtime remains discoverable beside its source. Both
-use the npm lockfile, install the required CA bundle, and run as the unprivileged
-`node` user.
+The repository-root `Dockerfile` is the LiveKit build file. It uses the npm
+lockfile, installs the required CA bundle, and runs as the unprivileged `node`
+user.
 
 Authenticate the current LiveKit CLI, create the deployment once, and deploy
 later versions from the repository root:

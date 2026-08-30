@@ -299,9 +299,10 @@ Worker.
 - `content/learner-profile/questionnaire-v2.json` owns form-fallback prompts.
 
 Built-in lesson JSON never stores asset filenames. My Lessons are validated
-against the same contract and stored in D1. Story scripts retain internal
-vocabulary and prompt metadata for validation, but the learner UI consumes only
-level, cover, title, summary, pages, and join-in content.
+against the same contract and stored in D1. Story language, vocabulary, and
+participation choices are reviewed before check-in. Runtime story records keep
+only the identity, shelf level, title, cover, reader pages, and completion text
+consumed by the product.
 
 Five Little Ducks voice clips use a generation marker and 24 format-agnostic
 fixed slots beneath the private account-purge prefix. The marked legacy learner

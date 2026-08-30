@@ -1,4 +1,5 @@
 import { prepareLesson } from "../lib/lesson-data.js";
+import { LESSON_VISUAL_CATALOG } from "../lib/lesson-visual-catalog.ts";
 import { isSafeRouteId } from "../lib/route-id.ts";
 import type { Lesson } from "../src/lessons/lesson-catalog.ts";
 import type { Database } from "./database.ts";
@@ -7,7 +8,6 @@ import {
   LessonGenerationError,
   type LessonGenerationEnv,
 } from "./lesson-generator.ts";
-import { LESSON_VISUAL_CATALOG } from "./lesson-catalog.ts";
 import { deleteLessonRecordingsForLesson } from "./lesson-recording-storage.ts";
 import {
   createMyLessonRepository,

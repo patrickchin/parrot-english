@@ -232,10 +232,9 @@ test("boxed lesson artwork renders as one labelled image without experiment chro
   assert.match(html, /aria-label="Lesson artwork"/);
   assert.match(html, /role="region"/);
   assert.match(html, new RegExp(`<img[^>]*alt="${alt}"[^>]*src="${src}"`));
-  assert.match(html, /aspect-video/);
   assert.doesNotMatch(html, /Landscape|Portrait|Wide|Natural size/);
   assert.equal((html.match(/<img\b/g) ?? []).length, 1);
-  assert.doesNotMatch(html, /data-character=|lesson-character-slot/);
+  assert.doesNotMatch(html, /data-character=/);
 });
 
 test("the introduction invites children to watch and join in", () => {

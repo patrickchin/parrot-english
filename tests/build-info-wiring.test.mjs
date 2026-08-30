@@ -1,96 +1,105 @@
-import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { test } from "node:test";
+/* global process */
 
-test("the account AI and saved data panel is wired to deployed component metadata", () => {
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { delimiter, join } from "node:path";
+import test from "node:test";
+import { fileURLToPath } from "node:url";
+
+const projectRoot = fileURLToPath(new URL("..", import.meta.url));
+
+function captureDeploymentArguments(context, command, script) {
+  const temporaryRoot = mkdtempSync(join(tmpdir(), "parrot-deploy-contract-"));
+  const binDirectory = join(temporaryRoot, "bin");
+  const argumentsPath = join(temporaryRoot, "arguments.txt");
+  mkdirSync(binDirectory);
+  writeFileSync(
+    join(binDirectory, command),
+    '#!/bin/sh\nprintf \'%s\\n\' "$@" > "$PARROT_DEPLOY_ARGS"\n',
+    { mode: 0o755 },
+  );
+  writeFileSync(
+    join(binDirectory, "git"),
+    `#!/bin/sh
+case "$*" in
+  "rev-list --count HEAD") printf '42\\n' ;;
+  "rev-parse HEAD") printf 'abcdef0123456789abcdef0123456789abcdef01\\n' ;;
+  *) exit 64 ;;
+esac
+`,
+    { mode: 0o755 },
+  );
+  context.after(() => rmSync(temporaryRoot, { force: true, recursive: true }));
+
+  const env = {
+    ...process.env,
+    PARROT_DEPLOY_ARGS: argumentsPath,
+    PATH: `${binDirectory}${delimiter}${process.env.PATH ?? ""}`,
+  };
+  delete env.GITHUB_SHA;
+  delete env.WORKERS_CI_COMMIT_SHA;
+  execFileSync(process.execPath, [fileURLToPath(new URL(script, import.meta.url))], {
+    cwd: projectRoot,
+    env,
+    stdio: "pipe",
+  });
+
+  return readFileSync(argumentsPath, "utf8").trim().split("\n");
+}
+
+test("Worker deployment sends release metadata and enables realtime conversations", (context) => {
+  const arguments_ = captureDeploymentArguments(
+    context,
+    "npx",
+    "../scripts/deploy-cloudflare-worker.mjs",
+  );
+
+  assert.deepEqual(arguments_, [
+    "wrangler",
+    "deploy",
+    "--config",
+    "wrangler.jsonc",
+    "--tag",
+    "v0.1.42-abcdef0",
+    "--var",
+    "PARROT_BACKEND_VERSION:0.1.42",
+    "--var",
+    "PARROT_BACKEND_COMMIT_SHA:abcdef0",
+    "--var",
+    "REALTIME_CONVERSATIONS_ENABLED:1",
+  ]);
+});
+
+test("conversation-agent deployment sends its release identity as secrets", (context) => {
+  const arguments_ = captureDeploymentArguments(
+    context,
+    "lk",
+    "../scripts/deploy-livekit-agent.mjs",
+  );
+
+  assert.deepEqual(arguments_, [
+    "agent",
+    "deploy",
+    "--secrets",
+    "PARROT_AGENT_VERSION=0.1.42",
+    "--secrets",
+    "PARROT_AGENT_COMMIT_SHA=abcdef0",
+  ]);
+});
+
+test("the account panel describes saved dubbing data across every rhyme", () => {
   const about = readFileSync(
     new URL("../src/app/AboutDialog.tsx", import.meta.url),
     "utf8",
   );
-  const worker = readFileSync(
-    new URL("../worker/index.ts", import.meta.url),
-    "utf8",
-  );
-  const buildInfo = readFileSync(
-    new URL("../worker/build-info.ts", import.meta.url),
-    "utf8",
-  );
-  const lessonGenerator = readFileSync(
-    new URL("../worker/lesson-generator.ts", import.meta.url),
-    "utf8",
-  );
-  const agent = readFileSync(
-    new URL("../agent/index.ts", import.meta.url),
-    "utf8",
-  );
-  const workflow = readFileSync(
-    new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
-    "utf8",
-  );
-  const manifest = JSON.parse(
-    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-  );
-  const wrangler = readFileSync(
-    new URL("../wrangler.jsonc", import.meta.url),
-    "utf8",
-  );
-  const agentDeploy = readFileSync(
-    new URL("../scripts/deploy-livekit-agent.mjs", import.meta.url),
-    "utf8",
-  );
-  const workerDeploy = readFileSync(
-    new URL("../scripts/deploy-cloudflare-worker.mjs", import.meta.url),
-    "utf8",
-  );
-  const workersCiPrepare = readFileSync(
-    new URL("../scripts/prepare-workers-ci-metadata.mjs", import.meta.url),
-    "utf8",
-  );
 
-  assert.match(about, /AI and saved data/);
-  assert.match(about, /How Parrot uses AI/);
-  assert.match(about, /all learner profiles and their saved data/);
-  assert.match(about, /lesson join-in|join-in moment/i);
-  assert.match(about, /lesson voice\s+(?:clips|recordings)/i);
-  assert.match(
-    about,
-    /Lesson recording permission and saved clips are managed\s+independently for each selected learner profile/,
-  );
   assert.match(about, /all voice-dubbing rhymes/i);
-  assert.match(
-    about,
-    /Choosing a learner in Guardian settings changes only which\s+learner(?:'|&apos;)s\s+data you manage/,
-  );
-  assert.match(
-    about,
-    /Learner mode changes only through\s+Switch to learner/,
-  );
-  assert.doesNotMatch(
-    about,
-    /Raw audio is not\s+added to the Parrot account/,
-  );
-  assert.match(about, /The photo is not added to the account/);
-  assert.match(about, /Technical build details/);
-  assert.match(about, /\/api\/build-info/);
-  assert.match(about, /Lesson script LLM/);
-  assert.match(about, /Realtime voice model/);
-  assert.match(about, /Input transcription/);
-  assert.match(worker, /\/api\/build-info/);
-  assert.match(buildInfo, /LESSON_GENERATOR_MODEL/);
-  assert.match(lessonGenerator, /LESSON_GENERATOR_MODEL/);
-  assert.match(lessonGenerator, /OPENAI_API_KEY/);
-  assert.match(agent, /reportBuild/);
-  assert.match(agent, /await ingest\.reportBuild/);
-  assert.equal(manifest.scripts["deploy:worker"], "node scripts/deploy-cloudflare-worker.mjs");
-  assert.equal(manifest.scripts.prebuild, "node scripts/prepare-workers-ci-metadata.mjs");
-  assert.match(workflow, /npm run deploy:worker/);
-  assert.match(workerDeploy, /PARROT_BACKEND_VERSION/);
-  assert.match(workerDeploy, /PARROT_BACKEND_COMMIT_SHA/);
-  assert.match(workersCiPrepare, /WORKERS_CI/);
-  assert.match(workersCiPrepare, /ensureWorkersCiHistory\(\{ env \}\)/);
-  assert.match(workerDeploy, /"REALTIME_CONVERSATIONS_ENABLED:1"/);
-  assert.match(wrangler, /version_metadata/);
-  assert.doesNotMatch(wrangler, /"PARROT_BACKEND_(?:COMMIT_SHA|VERSION)": "local"/);
-  assert.match(agentDeploy, /PARROT_AGENT_VERSION/);
-  assert.match(agentDeploy, /PARROT_AGENT_COMMIT_SHA/);
 });

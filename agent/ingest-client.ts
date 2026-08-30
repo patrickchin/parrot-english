@@ -102,7 +102,6 @@ export function createConversationIngestClient({
   return {
     reportBuild(conversationId: string, controllerState: unknown) {
       return post(conversationId, "facts", {
-        candidates: [],
         controllerState: withBuildInfo(controllerState),
       });
     },
@@ -121,7 +120,6 @@ export function createConversationIngestClient({
 
     updateState(conversationId: string, controllerState: unknown) {
       return post(conversationId, "facts", {
-        candidates: [],
         controllerState: withBuildInfo(controllerState),
       });
     },

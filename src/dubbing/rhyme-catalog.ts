@@ -44,8 +44,6 @@ export type DubDefinition = {
   readonly sceneTitles: readonly string[];
   readonly lines: readonly DubLine[];
   readonly guideAudioPrefix: string;
-  readonly sceneKind: string;
-  readonly showSceneStatusText: boolean;
 };
 
 const OLD_ANIMALS = [
@@ -100,8 +98,6 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),
   lines: oldMacDonaldLines,
   guideAudioPrefix: "old-macdonald-v1-guide-",
-  sceneKind: "farm",
-  showSceneStatusText: true,
 });
 
 function createTimedLines(
@@ -145,8 +141,6 @@ export const TWINKLE_TWINKLE_DUB: DubDefinition = Object.freeze({
   sceneTitles: Object.freeze(["A little star", "High above the world", "A diamond in the sky"]),
   lines: twinkleLines,
   guideAudioPrefix: "twinkle-twinkle-v1-guide-",
-  sceneKind: "stars",
-  showSceneStatusText: false,
 });
 
 const rowLines = createTimedLines(
@@ -174,8 +168,6 @@ export const ROW_ROW_ROW_YOUR_BOAT_DUB: DubDefinition = Object.freeze({
   sceneTitles: Object.freeze(["Down the stream", "A merry dream"]),
   lines: rowLines,
   guideAudioPrefix: "row-row-row-your-boat-v1-guide-",
-  sceneKind: "boat",
-  showSceneStatusText: false,
 });
 
 const maryLines = createTimedLines(
@@ -210,8 +202,6 @@ export const MARY_HAD_A_LITTLE_LAMB_DUB: DubDefinition = Object.freeze({
   sceneTitles: Object.freeze(["Mary and her lamb", "The lamb follows Mary"]),
   lines: maryLines,
   guideAudioPrefix: "mary-had-a-little-lamb-v1-guide-",
-  sceneKind: "lamb",
-  showSceneStatusText: false,
 });
 
 const humptyLines = createTimedLines(
@@ -239,8 +229,6 @@ export const HUMPTY_DUMPTY_DUB: DubDefinition = Object.freeze({
   sceneTitles: Object.freeze(["Humpty on the wall", "Helping Humpty"]),
   lines: humptyLines,
   guideAudioPrefix: "humpty-dumpty-v1-guide-",
-  sceneKind: "humpty",
-  showSceneStatusText: false,
 });
 
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";

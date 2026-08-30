@@ -1,10 +1,9 @@
 import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
 import { ActionButton } from "../shared/ui";
-import type { DubSceneComponent } from "./DubSceneTypes";
-import { DuckScene } from "./DuckScene";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import { getDubSceneStatus, type DubSceneStatus } from "./dub-state";
+import { IllustratedDubScene } from "./IllustratedDubScene";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 export type DubProjectHomeProps = {
@@ -17,7 +16,6 @@ export type DubProjectHomeProps = {
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
   playbackButtonRef?: RefObject<HTMLButtonElement | null>;
-  Scene?: DubSceneComponent;
   saved: Readonly<Record<string, string>>;
   visualLine?: DubLine;
 };
@@ -55,7 +53,6 @@ export function DubProjectHome({
   onTogglePlayback,
   playback,
   playbackButtonRef,
-  Scene = DuckScene as unknown as DubSceneComponent,
   saved,
   visualLine = activeLine,
 }: DubProjectHomeProps) {
@@ -102,7 +99,12 @@ export function DubProjectHome({
               aria-label="Full video player"
               className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
             >
-              <Scene compact line={visualLine} playing={playback === "playing"} />
+              <IllustratedDubScene
+                compact
+                definition={definition}
+                line={visualLine}
+                playing={playback === "playing"}
+              />
             </section>
             <ActionButton
               aria-label={playbackLabel}

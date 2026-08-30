@@ -10,13 +10,13 @@ Built-in Parrot Lesson playback uses saved audio in `public/assets/audio`.
 Authenticated My Lessons use browser on-device English speech synthesis.
 Neither playback mode adds audio fields to the lesson-authoring format.
 
-Storytelling candidates use a separate text-first contract. Every catalog story
-has a generated cover WebP; individual pages carry a nullable narration audio
-ID and nullable artwork source. A null page value is an intentional placeholder:
-the reader disables narration and renders a visual placeholder without
-requesting a missing file. Do not add static-audio entries or page illustrations
-while script wording is still being compared. Artwork production prompts remain
-catalogue metadata and are not rendered as extra child-facing reading text.
+Storytelling uses a separate checked-in runtime contract containing each
+story's shelf identity, cover, reader pages, and completion line. Each page
+carries its artwork and saved narration/join-in audio IDs. Language targets,
+word-count review, and prompt experiments happen before a story is checked in;
+they are not runtime catalog fields. Artwork production prompts stay with their
+artwork because personalized-art generation consumes them, but they are never
+rendered as extra child-facing reading text.
 
 The Five Little Ducks dubbing activity is a separate media path built around
 the authentic traditional six-stanza rhyme. Its scene is an original inline
@@ -46,8 +46,8 @@ ends. The path does not use a third-party player or a mixed downloadable video.
 - Saved-audio metadata: `lib/static-audio.js`
 - Source audio files: `public/assets/audio`
 - Build output: `dist/assets/audio`
-- Story script candidates: `src/stories/story-script-candidates.ts`
-- Generated story covers: `public/assets/stories/*-cover.webp`
+- Checked-in learner stories: `src/stories/story-script-candidates.ts`
+- Published story covers and pages: immutable URLs in the checked-in story data
 - Story language and prompt research:
   `docs/design/young-learner-storytelling.md`
 - Five Little Ducks authored script and timing: `src/dubbing/dub-script.ts`
@@ -97,10 +97,8 @@ A missing built-in metadata entry or file should fail tests during development
 instead of silently falling back to device speech. Device speech is selected
 only by the `my` lesson source and is cancelled on scene or route changes.
 
-For Storytelling, saved playback is attempted only when a page declares a
-non-null narration audio ID. The resolved exact-text cache entry must match that
-ID. Prototype pages with null IDs show Audio later and never call the saved
-audio resolver.
+For Storytelling, saved playback resolves the narration audio ID checked into
+the current page. The resolved exact-text cache entry must match that ID.
 
 Dubbing creates a local object URL as soon as MediaRecorder returns its `Blob`,
 decodes those same bytes into normalized PCM peaks for the visible waveform,
@@ -198,8 +196,8 @@ URL rather than overwriting an existing object.
 - Confirm each audio metadata path exists under `public`.
 - Run `npm run verify:backgrounds` after any background catalog change.
 - Run focused lesson/audio tests.
-- Confirm every story cover path resolves to a checked-in WebP while page media
-  remains explicitly nullable.
+- Confirm every checked-in story cover and page artwork URL resolves and every
+  declared narration or join-in audio ID has a saved MP3.
 - Confirm dubbing clips stay private, replaceable, resettable, and covered by
   account deletion; verify 24-slot native Web Audio replay against the original
   SVG and procedural music timeline, plus scoped four-line verse replay.
