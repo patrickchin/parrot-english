@@ -22,6 +22,7 @@ export type StoryRouteDecision =
 const GATE_ROUTE_PATH =
   /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
+const WORD_GAME_ROUTE_PATH = /^\/word-game\/*$/i;
 const GUARDIAN_LEARNERS_ROUTE_PATH = /^\/guardian\/learners\/*$/i;
 const GUARDIAN_LEARNER_ROUTE_PATH =
   /^\/guardian\/learners\/([^/]+)\/*$/i;
@@ -58,6 +59,7 @@ const SAFE_RETURN_PATHS = [
   /^\/stories\/*$/i,
   /^\/stories\/[^/]+\/*$/i,
   /^\/stories\/[^/]+\/pages\/[^/]+\/*$/i,
+  WORD_GAME_ROUTE_PATH,
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));

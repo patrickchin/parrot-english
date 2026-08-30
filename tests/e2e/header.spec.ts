@@ -41,6 +41,11 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to home", role: "link" },
   },
   {
+    name: "word game",
+    path: "/word-game",
+    control: { name: "Back to home", role: "link" },
+  },
+  {
     name: "story reader",
     path: "/stories/the-lantern-trail/pages/1",
     control: { name: "Back to stories", role: "link" },

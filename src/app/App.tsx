@@ -94,6 +94,7 @@ import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
+import { FirstWordsGame } from "../games/FirstWordsGame";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
@@ -168,6 +169,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian/profile/setup",
   "/guardian/stories",
   "/talk-to-peppa",
+  "/word-game",
   "/lessons",
   "/lessons/my/create",
   "/lessons/parrot/:lessonId",
@@ -1334,6 +1336,7 @@ export function ApplicationRoutes({
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
+        <Route element={<FirstWordsGame />} path="/word-game" />
         <Route
           element={
             <FeaturePlaceholder
