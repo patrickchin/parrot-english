@@ -3949,4 +3949,21 @@ Object.defineProperty(navigator, "mediaDevices", {
 
 installE2eProfileFetchMock();
 
+Object.defineProperty(window, "turnstile", {
+  configurable: true,
+  value: {
+    remove() {},
+    render(
+      container: HTMLElement,
+      options: { callback: (token: string) => void },
+    ) {
+      const marker = document.createElement("span");
+      marker.textContent = "Security check ready";
+      container.replaceChildren(marker);
+      queueMicrotask(() => options.callback("parrot-e2e-turnstile-token"));
+      return "parrot-e2e-turnstile";
+    },
+  },
+});
+
 export {};

@@ -11,6 +11,17 @@ import * as workerModule from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const VALID_AUTH_SECRET = "R2F7cFlwMTVNSVZ1LzNZb1ZYVUs5ZDBnKzVYV25VSEk=";
+const VALID_TURNSTILE_SECRET = "turnstile-test-secret";
+
+function createAuthEnvironment(overrides = {}) {
+  return {
+    DB: {},
+    BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+    BETTER_AUTH_URL: "https://example.test",
+    TURNSTILE_SECRET_KEY: VALID_TURNSTILE_SECRET,
+    ...overrides,
+  };
+}
 
 function createTestWorker(overrides = {}) {
   assert.equal(
@@ -136,11 +147,110 @@ describe("Worker authentication", () => {
     );
   });
 
+  it("requires a nonblank Turnstile secret", () => {
+    assert.throws(
+      () =>
+        createAuth({
+          DB: {},
+          BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+          BETTER_AUTH_URL: "https://example.test",
+        }),
+      /TURNSTILE_SECRET_KEY/,
+    );
+    assert.throws(
+      () => createAuth(createAuthEnvironment({ TURNSTILE_SECRET_KEY: "   " })),
+      /TURNSTILE_SECRET_KEY/,
+    );
+  });
+
+  it("enables anonymous sessions and protects guest login plus sign-up with Turnstile", () => {
+    const auth = createAuth(createAuthEnvironment());
+    const anonymousPlugin = auth.options.plugins?.find(
+      (plugin) => plugin.id === "anonymous",
+    );
+    const captchaPlugin = auth.options.plugins?.find(
+      (plugin) => plugin.id === "captcha",
+    );
+
+    assert.ok(anonymousPlugin);
+    assert.equal(anonymousPlugin.options?.generateName?.(), "Guest");
+    assert.ok(captchaPlugin);
+    assert.deepEqual(captchaPlugin.options, {
+      endpoints: ["/sign-in/anonymous", "/sign-up/email"],
+      expectedAction: "account_access",
+      provider: "cloudflare-turnstile",
+      secretKey: VALID_TURNSTILE_SECRET,
+    });
+  });
+
+  it("purges guest data before Better Auth links and removes an anonymous account", async () => {
+    const calls = [];
+    const bucket = {};
+    const auth = createAuth(
+      createAuthEnvironment({ PERSONALIZED_STORY_ART_BUCKET: bucket }),
+      {
+        async prepareAccountDeletion(input) {
+          calls.push(input);
+        },
+      },
+    );
+    const anonymousPlugin = auth.options.plugins?.find(
+      (plugin) => plugin.id === "anonymous",
+    );
+
+    assert.equal(typeof anonymousPlugin?.options?.onLinkAccount, "function");
+    await anonymousPlugin.options.onLinkAccount({
+      anonymousUser: {
+        session: { id: "guest-session" },
+        user: { id: "guest-user", isAnonymous: true },
+      },
+      ctx: {},
+      newUser: {
+        session: { id: "regular-session" },
+        user: { id: "regular-user", isAnonymous: false },
+      },
+    });
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].bucket, bucket);
+    assert.equal(calls[0].userId, "guest-user");
+  });
+
+  it("rejects guest login and sign-up without Turnstile proof before database access", async () => {
+    const auth = createAuth(createAuthEnvironment());
+    const requests = [
+      ["/api/auth/sign-in/anonymous", {}],
+      [
+        "/api/auth/sign-up/email",
+        { name: "Mary", email: "mary@example.com", password: "password" },
+      ],
+    ];
+
+    for (const [pathname, body] of requests) {
+      const response = await auth.handler(
+        new Request(`https://example.test${pathname}`, {
+          body: JSON.stringify(body),
+          headers: {
+            "cf-connecting-ip": "192.0.2.1",
+            "content-type": "application/json",
+            origin: "https://example.test",
+          },
+          method: "POST",
+        }),
+      );
+
+      assert.equal(response.status, 400, pathname);
+      assert.deepEqual(await response.json(), {
+        code: "MISSING_RESPONSE",
+        message: "Missing CAPTCHA response",
+      });
+    }
+  });
+
   it("trusts the public site and Parrot Worker origins", async () => {
     const productionOrigin = "https://parrot-english.p-ch.workers.dev";
     const auth = createAuth({
-      DB: {},
-      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+      ...createAuthEnvironment(),
       BETTER_AUTH_URL: productionOrigin,
     });
     const context = await auth.$context;
@@ -164,8 +274,7 @@ describe("Worker authentication", () => {
 
   it("rejects origins outside Parrot Worker HTTPS previews", async () => {
     const auth = createAuth({
-      DB: {},
-      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
+      ...createAuthEnvironment(),
       BETTER_AUTH_URL: "https://parrot-english.p-ch.workers.dev",
     });
     const context = await auth.$context;
@@ -187,11 +296,7 @@ describe("Worker authentication", () => {
   });
 
   it("enables Better Auth rate limiting with the Cloudflare client IP header", () => {
-    const auth = createAuth({
-      DB: {},
-      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
-      BETTER_AUTH_URL: "https://example.test",
-    });
+    const auth = createAuth(createAuthEnvironment());
 
     assert.deepEqual(auth.options.rateLimit, { enabled: true });
     assert.deepEqual(auth.options.advanced?.ipAddress, {
@@ -201,9 +306,7 @@ describe("Worker authentication", () => {
 
   it("enables password-confirmed account deletion with a fail-closed pre-delete purge", () => {
     const auth = createAuth({
-      DB: {},
-      BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
-      BETTER_AUTH_URL: "https://example.test",
+      ...createAuthEnvironment(),
       PERSONALIZED_STORY_ART_BUCKET: {},
     });
 
@@ -305,6 +408,195 @@ describe("Worker authentication", () => {
     assert.deepEqual(await signInResponse.json(), { route: "better-auth" });
     assert.deepEqual(await baseResponse.json(), { route: "better-auth" });
     assert.equal(authStub.getHandlerCalls(), 2);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("does not expose Better Auth anonymous deletion without Parrot cleanup", async () => {
+    const authStub = createAuthStub();
+    const { env, getAssetCalls } = createEnvironment();
+    const worker = createTestWorker({ createAuth: () => authStub.auth });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/auth/delete-anonymous-user", {
+        headers: { origin: "https://example.test" },
+        method: "POST",
+      }),
+      env,
+    );
+
+    assert.equal(response.status, 404);
+    assert.equal(authStub.getHandlerCalls(), 0);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("purges guest data before internally deleting the anonymous auth user", async () => {
+    const events = [];
+    const bucket = {};
+    const databaseBinding = {};
+    const auth = {
+      api: {
+        async getSession() {
+          events.push("session");
+          return {
+            session: { id: "guest-session" },
+            user: {
+              id: "guest-user",
+              isAnonymous: true,
+              name: "Guest",
+            },
+          };
+        },
+      },
+      async handler(request) {
+        events.push("delete");
+        assert.equal(
+          new URL(request.url).pathname,
+          "/api/auth/delete-anonymous-user",
+        );
+        assert.equal(request.method, "POST");
+        assert.deepEqual(events, ["session", "purge", "delete"]);
+        return Response.json(
+          { success: true },
+          { headers: { "set-cookie": "guest-session=; Max-Age=0" } },
+        );
+      },
+    };
+    const { env, getAssetCalls } = createEnvironment();
+    env.DB = databaseBinding;
+    env.PERSONALIZED_STORY_ART_BUCKET = bucket;
+    const worker = createTestWorker({
+      createAuth: () => auth,
+      async prepareAccountDeletion(input) {
+        events.push("purge");
+        assert.equal(input.bucket, bucket);
+        assert.equal(input.userId, "guest-user");
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/guest-account", {
+        headers: { origin: "https://example.test" },
+        method: "POST",
+      }),
+      env,
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { success: true });
+    assert.match(response.headers.get("set-cookie") ?? "", /Max-Age=0/);
+    assert.deepEqual(events, ["session", "purge", "delete"]);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("keeps regular accounts out of the guest deletion path", async () => {
+    let purgeCalls = 0;
+    let deleteCalls = 0;
+    const auth = {
+      api: {
+        async getSession() {
+          return {
+            session: { id: "regular-session" },
+            user: { id: "regular-user", isAnonymous: false, name: "Mary" },
+          };
+        },
+      },
+      async handler() {
+        deleteCalls += 1;
+        return Response.json({ success: true });
+      },
+    };
+    const { env, getAssetCalls } = createEnvironment();
+    env.DB = {};
+    env.PERSONALIZED_STORY_ART_BUCKET = {};
+    const worker = createTestWorker({
+      createAuth: () => auth,
+      async prepareAccountDeletion() {
+        purgeCalls += 1;
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/guest-account", {
+        headers: { origin: "https://example.test" },
+        method: "POST",
+      }),
+      env,
+    );
+
+    assert.equal(response.status, 403);
+    assert.equal(purgeCalls, 0);
+    assert.equal(deleteCalls, 0);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("rejects cross-origin guest deletion before cleanup", async () => {
+    let purgeCalls = 0;
+    let deleteCalls = 0;
+    const auth = {
+      api: {
+        async getSession() {
+          return {
+            session: { id: "guest-session" },
+            user: { id: "guest-user", isAnonymous: true, name: "Guest" },
+          };
+        },
+      },
+      async handler() {
+        deleteCalls += 1;
+        return Response.json({ success: true });
+      },
+    };
+    const { env, getAssetCalls } = createEnvironment();
+    env.DB = {};
+    env.PERSONALIZED_STORY_ART_BUCKET = {};
+    const worker = createTestWorker({
+      createAuth: () => auth,
+      async prepareAccountDeletion() {
+        purgeCalls += 1;
+      },
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/guest-account", {
+        headers: { origin: "https://attacker.example" },
+        method: "POST",
+      }),
+      env,
+    );
+
+    assert.equal(response.status, 403);
+    assert.equal(purgeCalls, 0);
+    assert.equal(deleteCalls, 0);
+    assert.equal(getAssetCalls(), 0);
+  });
+
+  it("rejects non-POST guest deletion before cleanup", async () => {
+    let sessionCalls = 0;
+    const auth = {
+      api: {
+        async getSession() {
+          sessionCalls += 1;
+          return null;
+        },
+      },
+      async handler() {
+        assert.fail("Guest deletion handler must not receive GET requests.");
+      },
+    };
+    const { env, getAssetCalls } = createEnvironment();
+    const worker = createTestWorker({ createAuth: () => auth });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/guest-account", {
+        headers: { origin: "https://example.test" },
+        method: "GET",
+      }),
+      env,
+    );
+
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get("allow"), "POST");
+    assert.equal(sessionCalls, 0);
     assert.equal(getAssetCalls(), 0);
   });
 

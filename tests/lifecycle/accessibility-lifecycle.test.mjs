@@ -111,7 +111,7 @@ async function press(target, key, options = {}) {
   return event;
 }
 
-function DialogHarness({ kind }) {
+function DialogHarness({ kind, onDelete = async () => null, requiresPassword }) {
   const [isOpen, setIsOpen] = useState(false);
   return createElement(
     "main",
@@ -124,7 +124,8 @@ function DialogHarness({ kind }) {
     isOpen && kind === "delete"
       ? createElement(AccountDeleteDialog, {
           onClose: () => setIsOpen(false),
-          onDelete: async () => null,
+          onDelete,
+          requiresPassword,
         })
       : null,
   );
@@ -677,6 +678,86 @@ describe("keyboard accessibility lifecycles", () => {
     assert.ok(back, "Expected a Back to Guardian dashboard link");
     await click(back);
     assert.match(document.body.textContent, /DASHBOARD DESTINATION/);
+  });
+
+  it("lets a guest confirm cleanup-first deletion without an impossible password", async () => {
+    const passwords = [];
+    await mountStrict(
+      createElement(
+        DialogHarness,
+        {
+          kind: "delete",
+          onDelete: async (password) => {
+            passwords.push(password);
+            return null;
+          },
+          requiresPassword: false,
+        },
+      ),
+    );
+
+    await click(button("Open delete"));
+    assert.ok(!document.querySelector("#delete-account-password"));
+    const confirm = button("Delete account now");
+    assert.equal(confirm.disabled, false);
+    await waitFor(() => assert.equal(document.activeElement, confirm));
+
+    await click(confirm);
+    await waitFor(() => assert.deepEqual(passwords, [""]));
+  });
+
+  it("wires a guest account page to passwordless cleanup-first deletion", async () => {
+    const deletionCalls = [];
+    const client = authClientForHeader();
+    client.useSession = () => ({
+      data: {
+        session: { id: "guest-session" },
+        user: {
+          email: "guest@example.test",
+          id: "guest-user",
+          isAnonymous: true,
+          name: "Guest",
+        },
+      },
+      error: null,
+      isPending: false,
+      refetch: async () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client,
+      deleteAccountAction: async (options) => {
+        deletionCalls.push(options);
+        return null;
+      },
+      GuardianAccessBoundary: ({ children }) => children,
+      View: ({ children }) => children,
+    });
+    globalThis.fetch = async () =>
+      Response.json({
+        backend: {
+          commitSha: "api-commit",
+          deployedAt: null,
+          deploymentId: "deployment-1",
+          details: { models: { lessonScript: "lesson-model" } },
+          version: "1.2.3",
+        },
+        components: [],
+      });
+
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/account"] },
+        createElement(TestAuthGate, null, createElement(AccountPrivacyPage)),
+      ),
+    );
+
+    await click(button("Delete account"));
+    assert.ok(!document.querySelector("#delete-account-password"));
+    await click(button("Delete account now"));
+    await waitFor(() => assert.equal(deletionCalls.length, 1));
+    assert.equal(deletionCalls[0].isAnonymous, true);
+    assert.equal(deletionCalls[0].password, "");
   });
 
   it("tears down an open Guardian menu for every learner transition", async () => {

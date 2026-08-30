@@ -32,6 +32,9 @@ export const user = sqliteTable(
     image: text("image"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    isAnonymous: integer("is_anonymous", { mode: "boolean" })
+      .default(false)
+      .notNull(),
   },
   (table) => [uniqueIndex("user_email_unique").on(table.email)]
 );

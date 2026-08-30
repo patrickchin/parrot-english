@@ -1,5 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { anonymous, captcha } from "better-auth/plugins";
+import { AUTH_TURNSTILE_ACTION } from "../lib/auth-captcha.ts";
 import * as schema from "../src/db/schema.ts";
 import { prepareAccountDeletion } from "./account-deletion.ts";
 import { createDatabase } from "./database.ts";
@@ -12,12 +14,17 @@ export interface AuthEnv {
   DB: D1Database;
   BETTER_AUTH_SECRET?: string;
   BETTER_AUTH_URL?: string;
+  TURNSTILE_SECRET_KEY?: string;
   PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
+}
+
+interface AuthDependencies {
+  prepareAccountDeletion: typeof prepareAccountDeletion;
 }
 
 function requireEnvironmentValue(
   env: AuthEnv,
-  key: "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL"
+  key: "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "TURNSTILE_SECRET_KEY"
 ) {
   const value = env[key]?.trim();
   if (!value) {
@@ -36,10 +43,28 @@ function requireAuthSecret(env: AuthEnv) {
   return secret;
 }
 
-export function createAuth(env: AuthEnv) {
+export function createAuth(
+  env: AuthEnv,
+  dependencies: Partial<AuthDependencies> = {},
+) {
   const secret = requireAuthSecret(env);
   const baseURL = requireEnvironmentValue(env, "BETTER_AUTH_URL");
+  const turnstileSecret = requireEnvironmentValue(
+    env,
+    "TURNSTILE_SECRET_KEY",
+  );
   const database = createDatabase(env.DB);
+  const accountDeletion =
+    dependencies.prepareAccountDeletion ?? prepareAccountDeletion;
+  const prepareUserDataForDeletion = async (userId: string) => {
+    const bucket = env.PERSONALIZED_STORY_ART_BUCKET;
+    if (!bucket) {
+      throw new Error(
+        "PERSONALIZED_STORY_ART_BUCKET is required to delete an account.",
+      );
+    }
+    await accountDeletion({ bucket, database, userId });
+  };
 
   return betterAuth({
     appName: "Parrot English",
@@ -54,25 +79,26 @@ export function createAuth(env: AuthEnv) {
       enabled: true,
       requireEmailVerification: false,
     },
+    plugins: [
+      anonymous({
+        generateName: () => "Guest",
+        onLinkAccount: ({ anonymousUser }) =>
+          prepareUserDataForDeletion(anonymousUser.user.id),
+      }),
+      captcha({
+        endpoints: ["/sign-in/anonymous", "/sign-up/email"],
+        expectedAction: AUTH_TURNSTILE_ACTION,
+        provider: "cloudflare-turnstile",
+        secretKey: turnstileSecret,
+      }),
+    ],
     rateLimit: {
       enabled: true,
     },
     user: {
       deleteUser: {
         enabled: true,
-        beforeDelete: async (user) => {
-          const bucket = env.PERSONALIZED_STORY_ART_BUCKET;
-          if (!bucket) {
-            throw new Error(
-              "PERSONALIZED_STORY_ART_BUCKET is required to delete an account.",
-            );
-          }
-          await prepareAccountDeletion({
-            bucket,
-            database,
-            userId: user.id,
-          });
-        },
+        beforeDelete: (user) => prepareUserDataForDeletion(user.id),
       },
     },
     advanced: {

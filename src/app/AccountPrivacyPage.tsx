@@ -1,6 +1,9 @@
 import { ChevronLeft, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
-import { useDeleteAccountAction } from "../auth/account-actions";
+import {
+  useDeleteAccountAction,
+  useIsAnonymousAccount,
+} from "../auth/account-actions";
 import { ActionButton, Card } from "../shared/ui";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 import { AccountPrivacySections } from "./AboutDialog";
@@ -9,6 +12,7 @@ import { getGuardianPath } from "./app-routes";
 
 export function AccountPrivacyPage() {
   const deleteAccount = useDeleteAccountAction();
+  const isAnonymous = useIsAnonymousAccount();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -70,6 +74,7 @@ export function AccountPrivacyPage() {
         <AccountDeleteDialog
           onClose={() => setIsDeleteOpen(false)}
           onDelete={deleteAccount}
+          requiresPassword={!isAnonymous}
           returnFocusRef={deleteButtonRef}
         />
       ) : null}

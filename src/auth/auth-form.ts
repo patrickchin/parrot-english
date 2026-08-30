@@ -34,6 +34,12 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "The email or password is incorrect.",
   INVALID_EMAIL: "Enter a valid email address.",
   PASSWORD_TOO_SHORT: "Password must be at least 8 characters.",
+  MISSING_RESPONSE:
+    "The security check expired or was rejected. Please try again.",
+  VERIFICATION_FAILED:
+    "The security check expired or was rejected. Please try again.",
+  UNKNOWN_ERROR:
+    "The security check expired or was rejected. Please try again.",
 };
 
 export function getAuthErrorMessage(error: unknown): string {

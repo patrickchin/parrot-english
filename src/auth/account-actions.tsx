@@ -28,6 +28,7 @@ type AccountExperienceSetter = Dispatch<
 type AccountActionContextValue = {
   action: AccountExperience | null;
   deleteAccount: DeleteAccountAction;
+  isAnonymous: boolean;
   sessionIdentity: string | null;
   setAction: AccountExperienceSetter;
 };
@@ -39,12 +40,14 @@ const AccountActionContext = createContext<AccountActionContextValue | null>(
 export function AccountActionProvider({
   children,
   deleteAccount,
+  isAnonymous = false,
   profileAction = null,
   sessionIdentity = null,
   setProfileAction,
 }: {
   children: ReactNode;
   deleteAccount: DeleteAccountAction;
+  isAnonymous?: boolean;
   profileAction?: AccountExperience | null;
   sessionIdentity?: string | null;
   setProfileAction: AccountExperienceSetter;
@@ -53,10 +56,17 @@ export function AccountActionProvider({
     () => ({
       action: profileAction,
       deleteAccount,
+      isAnonymous,
       sessionIdentity,
       setAction: setProfileAction,
     }),
-    [deleteAccount, profileAction, sessionIdentity, setProfileAction],
+    [
+      deleteAccount,
+      isAnonymous,
+      profileAction,
+      sessionIdentity,
+      setProfileAction,
+    ],
   );
   return (
     <AccountActionContext.Provider value={value}>
@@ -95,4 +105,8 @@ export function useDeleteAccountAction() {
     throw new Error("Account actions are unavailable.");
   }
   return deleteAccount;
+}
+
+export function useIsAnonymousAccount() {
+  return useContext(AccountActionContext)?.isAnonymous ?? false;
 }
