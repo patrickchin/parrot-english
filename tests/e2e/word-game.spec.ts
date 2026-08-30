@@ -1,6 +1,62 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const correctAnswers = ["Cat", "Dog", "Bird", "Eyes", "Soap", "Clean"];
+const quizRounds = [
+  {
+    answer: "Cat",
+    artworkName: /Bob.+friendly cat/i,
+    artworkPath: "hello-cat-cat-hello.webp",
+  },
+  {
+    answer: "Dog",
+    artworkName: /Bob.+friendly dog/i,
+    artworkPath: "hello-cat-dog-hello.webp",
+  },
+  {
+    answer: "Bird",
+    artworkName: /Bob.+friendly bird/i,
+    artworkPath: "hello-cat-bird-hello.webp",
+  },
+  {
+    answer: "Eyes",
+    artworkName: /Mary.+eyes/i,
+    artworkPath: "marys-face-eyes.webp",
+  },
+  {
+    answer: "Soap",
+    artworkName: /Sam.+soap.+hands/i,
+    artworkPath: "wash-sam-wash-soap-on-hands.webp",
+  },
+  {
+    answer: "Clean",
+    artworkName: /Sam.+clean hands/i,
+    artworkPath: "wash-sam-wash-clean-hands.webp",
+  },
+] as const;
+
+async function expectArtworkLoaded(
+  main: Locator,
+  round: (typeof quizRounds)[number],
+) {
+  const picture = main.getByRole("img", { name: round.artworkName });
+  await expect(picture).toBeVisible();
+  await expect
+    .poll(() =>
+      picture.evaluate((image) =>
+        image instanceof HTMLImageElement ? image.currentSrc : "",
+      ),
+    )
+    .toContain(round.artworkPath);
+  await expect
+    .poll(() =>
+      picture.evaluate((image) =>
+        image instanceof HTMLImageElement && image.complete
+          ? image.naturalWidth
+          : 0,
+      ),
+    )
+    .toBeGreaterThan(0);
+  return picture;
+}
 
 async function expectInsideViewportHorizontally(locator: Locator, page: Page) {
   await locator.scrollIntoViewIfNeeded();
@@ -42,16 +98,18 @@ test("answers six first-word questions, retries mistakes, and plays again", asyn
   await expect(progress).toHaveAttribute("aria-valuenow", "1");
   await expect(main.getByRole("button", { name: "Next" })).toHaveCount(0);
 
-  for (const [index, answer] of correctAnswers.entries()) {
+  for (const [index, round] of quizRounds.entries()) {
+    await expectArtworkLoaded(main, round);
+    const { answer } = round;
     await answers.getByRole("button", { name: answer, exact: true }).click();
     await expect(main.getByRole("status", { name: "Answer feedback" })).toContainText(
       `Yes! ${answer}.`,
     );
 
-    const nextLabel = index === correctAnswers.length - 1 ? "Finish" : "Next";
+    const nextLabel = index === quizRounds.length - 1 ? "Finish" : "Next";
     await main.getByRole("button", { name: nextLabel }).click();
 
-    if (index < correctAnswers.length - 1) {
+    if (index < quizRounds.length - 1) {
       await expect(progress).toHaveAttribute(
         "aria-valuenow",
         String(index + 2),
@@ -94,18 +152,8 @@ for (const viewport of [
     const answers = main.getByRole("group", {
       name: "Choose the right answer",
     });
-    const picture = main.getByRole("img", { name: /Bob.+cat/i });
+    const picture = await expectArtworkLoaded(main, quizRounds[0]);
     await expectInsideViewportHorizontally(picture, page);
-    await expect
-      .poll(() =>
-        picture.evaluate(
-          (image) =>
-            image instanceof HTMLImageElement &&
-            image.complete &&
-            image.naturalWidth > 0,
-        ),
-      )
-      .toBe(true);
     for (const button of await answers.getByRole("button").all()) {
       await expectInsideViewportHorizontally(button, page);
     }
