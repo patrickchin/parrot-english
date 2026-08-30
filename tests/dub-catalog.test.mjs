@@ -257,6 +257,39 @@ describe("rhyme catalog", () => {
     );
   });
 
+  it("pins every new rhyme to its complete traditional melody", () => {
+    const pitches = (definition) => definition.music.linePhrases.map(
+      ({ notes }) => notes.map(({ midi }) => midi),
+    );
+
+    assert.deepEqual(pitches(TWINKLE_TWINKLE_DUB), [
+      [72, 72, 79, 79, 81, 81, 79],
+      [77, 77, 76, 76, 74, 74, 72],
+      [79, 79, 77, 77, 76, 76, 74],
+      [79, 79, 77, 77, 76, 76, 74],
+      [72, 72, 79, 79, 81, 81, 79],
+      [77, 77, 76, 76, 74, 74, 72],
+    ]);
+    assert.deepEqual(pitches(ROW_ROW_ROW_YOUR_BOAT_DUB), [
+      [60, 60, 60, 62, 64],
+      [64, 62, 64, 65, 67],
+      [72, 72, 72, 67, 67, 67, 64, 64, 64, 60, 60, 60],
+      [67, 65, 64, 62, 60],
+    ]);
+    assert.deepEqual(pitches(MARY_HAD_A_LITTLE_LAMB_DUB), [
+      [71, 69, 67, 69, 71, 71, 71],
+      [69, 69, 69, 71, 74, 74],
+      [71, 69, 67, 69, 71, 71, 71],
+      [69, 69, 71, 69, 67],
+    ]);
+    assert.deepEqual(pitches(HUMPTY_DUMPTY_DUB), [
+      [74, 77, 75, 79, 77, 79, 81, 82],
+      [74, 77, 75, 79, 77, 74, 70, 72],
+      [74, 74, 77, 75, 75, 79, 77, 79, 81, 82],
+      [74, 74, 70, 75, 75, 74, 72, 70, 69, 70],
+    ]);
+  });
+
   it("defines complete immutable generated artwork for all six rhymes", () => {
     assert.equal(FIVE_LITTLE_DUCKS_DUB.sceneArtwork, FIVE_LITTLE_DUCKS_SCENE_ARTWORK);
     assert.equal(OLD_MACDONALD_DUB.sceneArtwork, OLD_MACDONALD_SCENE_ARTWORK);

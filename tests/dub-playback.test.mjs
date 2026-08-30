@@ -381,6 +381,66 @@ describe("duck dub playback", () => {
     }
   });
 
+  it("plays a complete rhyme through a six-second final recording", async () => {
+    const lastLine = TWINKLE_TWINKLE_DUB.lines.at(-1);
+    const audio = createAudioHarness({
+      decodeDurations: { [lastLine.id]: 6 },
+    });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: TWINKLE_TWINKLE_DUB,
+      fetch: audio.fetch,
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    context.currentTime = 36.121;
+    raf.runNext();
+    assert.deepEqual(ticks.map(Math.round), [26_001]);
+    assert.equal(ended, 0);
+    assert.equal(context.closeCalls, 0);
+
+    context.currentTime = 36.921;
+    raf.runNext();
+    assert.deepEqual(ticks.map(Math.round), [26_001, 26_800]);
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+  });
+
+  it("rejects undersized and oversized repeating music scores", async () => {
+    for (const phraseCount of [1, 3]) {
+      const definition = {
+        ...TWINKLE_TWINKLE_DUB,
+        music: {
+          ...TWINKLE_TWINKLE_DUB.music,
+          linePhrases: TWINKLE_TWINKLE_DUB.music.linePhrases.slice(0, phraseCount),
+        },
+      };
+      const audio = createAudioHarness();
+      const raf = createRaf();
+
+      await assert.rejects(
+        startDubPlayback({
+          AudioContext: audio.AudioContext,
+          cancelAnimationFrame: raf.cancelAnimationFrame,
+          definition,
+          fetch: audio.fetch,
+          lines: definition.lines.slice(0, definition.linesPerScene),
+          onTick() {},
+          requestAnimationFrame: raf.requestAnimationFrame,
+        }),
+        /repeating scene phrases or one phrase per line/,
+      );
+    }
+  });
+
   it("decodes every private clip before sharing one voice, music, and visual clock", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();

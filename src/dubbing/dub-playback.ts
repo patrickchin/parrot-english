@@ -140,10 +140,12 @@ function scheduleDubMusic(
   startAt: number,
 ) {
   const oscillators: OscillatorNode[] = [];
+  const throughSong = definition.music.linePhrases.length === definition.lines.length;
+  if (!throughSong && definition.music.linePhrases.length !== definition.linesPerScene) {
+    throw new TypeError("Dub music must define repeating scene phrases or one phrase per line.");
+  }
   const getPhrase = (lineIndex: number) => {
-    const phraseIndex = definition.music.linePhrases.length === definition.lines.length
-      ? lineIndex
-      : lineIndex % definition.linesPerScene;
+    const phraseIndex = throughSong ? lineIndex : lineIndex % definition.linesPerScene;
     const phrase = definition.music.linePhrases[phraseIndex];
     if (!phrase) throw new TypeError("Dub music must define repeating scene phrases or one phrase per line.");
     return phrase;
@@ -262,7 +264,7 @@ export async function startDubPlayback({
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
-  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines, definition);
+  const { authoredDurationMs, cueOffsetMs } = getPlaybackScope(lines, definition);
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -393,10 +395,11 @@ export async function startDubPlayback({
     ] => line !== null);
 
     if (signal?.aborted) throw createAbortError();
-    const durationMs = fullDub
-      ? definition.durationMs
-      : Math.max(authoredDurationMs, ...decodedLines.map(([line, buffer]) =>
-          line.cueMs - cueOffsetMs + buffer.duration * 1_000));
+    const durationMs = Math.max(
+      authoredDurationMs,
+      ...decodedLines.map(([line, buffer]) =>
+        line.cueMs - cueOffsetMs + buffer.duration * 1_000),
+    );
     await Promise.race([context.resume(), startupAbort]);
     if (signal?.aborted) throw createAbortError();
 
