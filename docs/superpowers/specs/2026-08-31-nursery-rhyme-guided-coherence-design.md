@@ -7,15 +7,13 @@ cycle under the continuing Nursery Learning Dummies UI/UX improvement goal.
 In the product, that learner-facing area is named **Nursery rhymes** and lives
 at `/dubs`.
 
-This design narrowly supersedes four presentation decisions in the historical
+This design narrowly supersedes three presentation decisions in the historical
 `2026-08-29-nursery-rhyme-ux-redesign-design.md` at commit `ab4742d`:
 
 - project and listen-only views return to `/dubs`, not directly to `/`;
-- the interface says **whole rhyme** and **scene**, not **full video** or
-  **scene video**;
 - the project provides one guided Start/Continue action in addition to free
   scene choice; and
-- recording-disabled learners may play the public whole-rhyme guide instead of
+- recording-disabled learners may play the public video guide instead of
   seeing an empty locked card.
 
 The six-rhyme catalog, stable definition and line IDs, artwork, lyrics, music
@@ -38,7 +36,6 @@ coherent:
 - raw counts such as `0 / 24`, **Done**, and **Retake** feel operational rather
   than encouraging;
 - project navigation skips the rhyme shelf, breaking the learner's mental map;
-- still illustrations are repeatedly described as video;
 - long titles and scene choices lose hierarchy on narrow and short screens;
   and
 - several accessible names, contrast choices, current-item semantics, and live
@@ -55,8 +52,9 @@ useful while keeping private voice data rigorously unavailable.
 2. **Listening is public; recording is private.** Guardian consent gates the
    microphone, saved takes, uploads, and private playback—not checked-in guide
    audio.
-3. **Use the learner's vocabulary.** Describe the thing on screen as a rhyme,
-   scene, picture, line, or recording. Do not imply encoded video.
+3. **Use familiar learner vocabulary.** Continue to call the synchronized
+   artwork-and-audio experience a **video**. That familiar mental model matters
+   more to a young child than exposing its technical representation.
 4. **Make progress feel achievable.** Use short, human-readable phrases and
    warm completion feedback rather than a dashboard of terse counters.
 5. **Do not hide important information to make it fit.** Titles and errors may
@@ -73,11 +71,11 @@ useful while keeping private voice data rigorously unavailable.
 - Restore clear shelf → rhyme → scene wayfinding.
 - Give enabled learners a deterministic Start/Continue path to the first work
   that needs attention.
-- Let recording-disabled learners listen to a whole rhyme using public guide
+- Let recording-disabled learners play the video using public guide
   audio, with no route to private media or recording controls.
-- Replace ambiguous video language throughout visible copy, accessible names,
-  errors, and status announcements.
-- Make progress, retake, scene completion, and whole-rhyme completion clearer
+- Keep familiar **video** language consistent throughout visible copy,
+  accessible names, errors, and status announcements.
+- Make progress, retake, scene completion, and video completion clearer
   and more encouraging.
 - Improve label-in-name behavior, contrast, current-step semantics, live-region
   behavior, focus recovery, target sizing, and error visibility.
@@ -107,39 +105,31 @@ The learner journey is:
 ```text
 /
 └── /dubs                         Nursery Rhymes shelf
-    └── /dubs/:rhyme              Whole-rhyme project or listen-only view
+    └── /dubs/:rhyme              Video project or listen-only view
         └── in-memory scene view  Recording editor when consent is enabled
 ```
 
 The picker header continues to return home. A rhyme's project and listen-only
 views use a `HeaderLink` with visible text **Nursery rhymes**, accessible name
 **Back to Nursery rhymes**, and destination `/dubs`. The scene editor uses the
-existing in-memory `HeaderButton`, renamed **Back to whole rhyme**. It returns
-to the project without discarding loaded progress. Browser history remains
+existing in-memory `HeaderButton` named **Back to full video**. It returns to
+the project without discarding loaded progress. Browser history remains
 ordinary and direct rhyme URLs remain valid. Code uses the existing
 `getNurseryRhymesPath()` helper rather than duplicating the route string.
 
-Use the following vocabulary consistently:
-
-| Current wording | New wording |
-| --- | --- |
-| Full video | Whole rhyme |
-| Full video player | Whole rhyme player |
-| Play/Stop/Loading full video | Play/Stop/Loading whole rhyme |
-| Back to full video | Back to whole rhyme |
-| Scene video | Scene picture |
-| The video could not start | The rhyme could not start |
-
-This replacement applies to visible labels, `aria-label` values, live status
-messages, tests, and errors. Internal playback scope values may remain stable
-when changing them would add migration risk without learner benefit.
+Retain the current child-facing vocabulary consistently: **Full video**,
+**Play full video**, **Stop full video**, **Loading full video**, **Back to full
+video**, and **Scene video**. Playback errors continue to say **The video could
+not start**. New completion copy says **Your video is ready**. Do not introduce
+**whole rhyme** into any learner-facing UI copy or accessible content,
+including headings, help text, labels, names, errors, and live status messages.
 
 ## Nursery Rhymes Shelf
 
 Keep the current six catalog-driven cards and responsive 1/2/3-column grid.
 Add one short expectation sentence below the heading:
 
-> Choose a rhyme to listen. With a grown-up's permission, you can sing and
+> Choose a rhyme to watch. With a grown-up's permission, you can sing and
 > save your recording.
 
 The sentence explains both routes before a learner commits to a card. The
@@ -170,14 +160,14 @@ matches the human-readable visible phrase.
 
 ### Recommended next action
 
-Add one primary action between the whole-rhyme player and the scene choices.
+Add one primary action between the full-video player and the scene choices.
 It never replaces the scene grid:
 
 - with no saved lines or retakes: **Start with Scene 1**;
 - when the first actionable scene needs a retake: **Fix Scene N**;
 - otherwise: **Continue with Scene N**; and
-- when every scene is complete: omit the action and emphasize whole-rhyme
-  playback plus the completion message. **Play whole rhyme** is then the main
+- when every scene is complete: omit the action and emphasize full-video
+  playback plus the completion message. **Play full video** is then the main
   available action; no replacement CTA is added.
 
 The target is derived only from current saved and needs-retake state. Iterate
@@ -207,13 +197,13 @@ communicate state without relying on color.
 
 When the selected scene is complete and the project is shown, display
 **Scene N is ready — great singing!** When every scene is complete, display
-**Your whole rhyme is ready — great singing!** This is derived presentation,
-not a transient reward state, animation, or gamification system. Whole-rhyme
-completion takes precedence so the two messages never appear together.
+**Your video is ready — great singing!** This is derived presentation, not a
+transient reward state, animation, or gamification system. Video completion
+takes precedence so the two messages never appear together.
 
-Whole-rhyme playback retains the existing illustrated timeline, saved-take
+Full-video playback retains the existing illustrated timeline, saved-take
 preference, guide fallback, Stop state, cancellation, and focus recovery. Only
-its language and surrounding hierarchy change.
+its surrounding hierarchy changes.
 
 ## Recording-Disabled Listen-Only Experience
 
@@ -223,14 +213,14 @@ Replace the consent-only `locked` presentation state with a semantically clear
 The listen-only view contains:
 
 - the full rhyme title;
-- the whole-rhyme illustration player;
-- **Play whole rhyme** / **Stop whole rhyme**;
-- a short message: **You can listen now. Ask a grown-up to turn on voice
-  recording if you want to sing and save your own version.**
+- the full-video illustration player;
+- **Play full video** / **Stop full video**;
+- a short message: **You can watch the video now. Ask a grown-up to turn on
+  voice recording if you want to sing and save your own version.**
 
 It does not render scene-opening controls, the line editor, Record, Record
 again, Play my recording, Save, microphone affordances, guardian controls, or
-private progress. Whole-rhyme playback advances the existing scene artwork so
+private progress. Full-video playback advances the existing scene artwork so
 the state still feels like the same activity rather than a denial page.
 
 Guide-only playback must have an explicit audio resolver that returns only the
@@ -266,8 +256,6 @@ save recovery, and focus behavior.
 
 Make these focused changes:
 
-- rename the illustration region **Scene picture** and the header action
-  **Back to whole rhyme**;
 - use the existing shared `ActionButton` `variant="brand"` for Record instead
   of the white-on-rose `variant="rose"`; do not change either global token;
 - keep recording state visible through icon, text, timer, and progress—not
@@ -287,7 +275,7 @@ Every interactive control remains at least 48×48 CSS pixels.
 
 The shelf keeps its current one-column layout below 520 px. Project title and
 progress may stack so long titles remain visible. The project keeps one
-vertical reading order: title/progress, whole-rhyme player, playback and
+vertical reading order: title/progress, full-video player, playback and
 recommended action, then rich illustrated scene cards. Vertical scrolling is
 allowed; horizontal overflow, overlapping headers, nested horizontal
 carousels, and clipped actions are not.
@@ -348,11 +336,11 @@ editor behavior.
 
 - `NurseryRhymeList` owns shelf expectation copy and correctly named catalog
   cards.
-- `DubProjectHome` owns whole-rhyme hierarchy, human progress copy, the
+- `DubProjectHome` owns full-video hierarchy, human progress copy, the
   recommended action, completion feedback, rich/compact scene presentation,
   and the selected-step semantics.
 - A focused `DubListenOnly` presentation owns the recording-disabled message,
-  illustration player, and whole-rhyme playback action. It has no recording or
+  illustration player, and full-video playback action. It has no recording or
   private-media props.
 - `DubSceneEditor` remains presentation-only and receives the same recording
   operations with refined labels and shared button styling.
@@ -412,10 +400,10 @@ encode the superseded behavior must be updated rather than worked around.
 
 - `tests/e2e/nursery-rhymes.spec.ts` verifies all six cards and that each
   accessible name contains the visible title and **Sing & record**.
-- `tests/e2e/dubbing.spec.ts` verifies shelf → project → scene → whole rhyme →
+- `tests/e2e/dubbing.spec.ts` verifies shelf → project → scene → full video →
   shelf navigation; empty, partial, retake, scene-complete, and rhyme-complete
-  guidance; and consistent whole-rhyme terminology.
-- Recording-disabled coverage presses **Play whole rhyme** and asserts public
+  guidance; and consistent video terminology with no **whole rhyme** UI copy.
+- Recording-disabled coverage presses **Play full video** and asserts public
   guide requests only: zero microphone calls, zero private audio URLs, zero
   uploads, zero private recording controls, and zero guardian controls.
 - Consent-loss coverage confirms private media is cancelled and cleared before
@@ -457,19 +445,19 @@ one.
 
 ## Acceptance Criteria
 
-1. A learner can explain from the shelf that every rhyme is listenable and
+1. A learner can explain from the shelf that every rhyme can be watched and
    recording needs grown-up permission.
 2. A new or returning enabled learner has one obvious next action and can still
    choose any scene directly.
 3. Recommended navigation opens the earliest retake or unsaved line in catalog
    order and behaves correctly for all six rhyme shapes.
-4. A recording-disabled learner can play the public whole rhyme but cannot see
+4. A recording-disabled learner can play the public video but cannot see
    or trigger microphone, upload, saved-take, private-audio, guardian, or scene-
    editor behavior.
 5. Project and listen-only back navigation returns to `/dubs`; scene back
-   returns to the whole rhyme in memory.
-6. No learner-facing or accessible UI describes the illustrated rhyme as a
-   video.
+   returns to the full video in memory.
+6. Learner-facing and accessible UI consistently uses familiar **video** terms
+   and never introduces **whole rhyme** as an action or destination.
 7. Progress and completion use the approved child-readable phrases, with
    semantic values and non-color state cues.
 8. Picker labels, Record contrast, current-step semantics, focus, target size,
