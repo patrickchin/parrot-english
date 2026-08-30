@@ -8,8 +8,8 @@ const phoneViewports = [
 
 async function expectActivityPicturesLoaded(activities: Locator) {
   const pictures = activities.locator("img");
-  await expect(pictures).toHaveCount(4);
-  await expect(activities.getByRole("link")).toHaveCount(4);
+  await expect(pictures).toHaveCount(5);
+  await expect(activities.getByRole("link")).toHaveCount(5);
   await expect
     .poll(() =>
       pictures.evaluateAll((images) =>
@@ -34,7 +34,7 @@ async function expectContained(locator: Locator, page: Page) {
 }
 
 for (const viewport of phoneViewports) {
-  test(`home presents four learning paths in two rows on a ${viewport.name} phone`, async ({ page }) => {
+  test(`home presents five learning paths in three rows on a ${viewport.name} phone`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/");
 
@@ -47,6 +47,7 @@ for (const viewport of phoneViewports) {
     await expect(activities.getByRole("link", { name: "Talk to Peppa" })).toHaveAttribute("href", "/talk-to-peppa");
     await expect(activities.getByRole("link", { name: "Story time" })).toHaveAttribute("href", "/stories");
     await expect(activities.getByRole("link", { name: "Nursery rhymes" })).toHaveAttribute("href", "/dubs");
+    await expect(activities.getByRole("link", { name: "Play word game" })).toHaveAttribute("href", "/word-game");
 
     const boxes = await Promise.all((await links.all()).map((link) => link.boundingBox()));
     for (const [index, box] of boxes.entries()) {
@@ -56,11 +57,12 @@ for (const viewport of phoneViewports) {
     expect(Math.abs(boxes[0]!.y - boxes[1]!.y)).toBeLessThanOrEqual(1);
     expect(Math.abs(boxes[2]!.y - boxes[3]!.y)).toBeLessThanOrEqual(1);
     expect(boxes[2]!.y).toBeGreaterThan(boxes[0]!.y);
+    expect(boxes[4]!.y).toBeGreaterThan(boxes[2]!.y);
     await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
 
-test("home keeps four equal cards in one desktop row", async ({ page }) => {
+test("home keeps five equal cards in one desktop row", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/");
 
@@ -70,9 +72,9 @@ test("home keeps four equal cards in one desktop row", async ({ page }) => {
   const boxes = await links.evaluateAll((elements) => elements.map((element) =>
     element.getBoundingClientRect().toJSON(),
   ));
-  expect(boxes).toHaveLength(4);
+  expect(boxes).toHaveLength(5);
   expect(Math.max(...boxes.map(({ y }) => y)) - Math.min(...boxes.map(({ y }) => y))).toBeLessThanOrEqual(1);
-  expect(Math.min(...boxes.map(({ width }) => width))).toBeGreaterThan(240);
+  expect(Math.min(...boxes.map(({ width }) => width))).toBeGreaterThan(200);
 
   for (const link of await links.all()) {
     const [card, picture] = await Promise.all([
@@ -103,6 +105,7 @@ test("desktop home keeps every visible card label on one line inside its label r
     ["Talk to Peppa", "Talk to Peppa"],
     ["Story time", "Story time"],
     ["Nursery rhymes", "Nursery rhymes"],
+    ["Play word game", "Word game"],
   ] as const) {
     const label = activities
       .getByRole("link", { name: accessibleName })
@@ -136,12 +139,12 @@ test("desktop home keeps every visible card label on one line inside its label r
   }
 });
 
-test("home keeps four compact cards in one short-landscape row", async ({ page }) => {
+test("home keeps five compact cards in one short-landscape row", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/");
 
   const links = page.getByRole("navigation", { name: "Learning activities" }).getByRole("link");
-  await expect(links).toHaveCount(4);
+  await expect(links).toHaveCount(5);
   const boxes = await Promise.all((await links.all()).map((link) => link.boundingBox()));
   for (const [index, box] of boxes.entries()) {
     expect(box).not.toBeNull();

@@ -843,6 +843,10 @@ describe("app route helpers", () => {
       ),
       "/stories/the-lantern-trail/pages/2",
     );
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/word-game")),
+      "/word-game",
+    );
     for (const guardianPath of [
       "/guardian",
       "/guardian/lessons",
@@ -881,6 +885,7 @@ describe("app route helpers", () => {
       "/stories//the-lantern-trail",
       "/stories/the-lantern-trail//pages/1",
       "/stories/the-lantern-trail/pages/1/extra",
+      "/word-game/extra",
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",
