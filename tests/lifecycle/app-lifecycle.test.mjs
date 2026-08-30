@@ -9635,7 +9635,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       document.querySelector('[aria-label="Guardian access mode"]').textContent,
       "loading",
     );
-    assert.ok(loadCalls > initialLoadCalls);
+    await waitFor(() => assert.ok(loadCalls > initialLoadCalls));
 
     secondLoad.resolve({ mode: "learner" });
     await waitFor(() =>
