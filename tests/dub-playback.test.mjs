@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
 import { DUB_LINES, DUB_VERSES } from "../src/dubbing/dub-script.ts";
-import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  OLD_MACDONALD_DUB,
+  TWINKLE_TWINKLE_DUB,
+} from "../src/dubbing/rhyme-catalog.ts";
 import {
   scheduleDubAudio,
   startDubPlayback,
@@ -343,6 +346,98 @@ describe("duck dub playback", () => {
       assert.ok(melody.some(
         ({ startTimes }) => startTimes[0] === source.startTimes[0],
       ));
+    }
+  });
+
+  it("advances Twinkle's melody through later visual scenes", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const lines = TWINKLE_TWINKLE_DUB.lines.slice(2, 4);
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: TWINKLE_TWINKLE_DUB,
+      fetch: audio.fetch,
+      lines,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    const melody = context.oscillators.filter(({ type }) => type === "triangle");
+    assert.deepEqual(
+      melody.slice(0, 4).map(roundedFrequency),
+      [783.991, 783.991, 698.456, 698.456],
+    );
+    assert.deepEqual(
+      context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
+      [10.12, 14.12],
+    );
+    for (const source of context.sources) {
+      assert.ok(melody.some(
+        ({ startTimes }) => startTimes[0] === source.startTimes[0],
+      ));
+    }
+  });
+
+  it("plays a complete rhyme through a six-second final recording", async () => {
+    const lastLine = TWINKLE_TWINKLE_DUB.lines.at(-1);
+    const audio = createAudioHarness({
+      decodeDurations: { [lastLine.id]: 6 },
+    });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: TWINKLE_TWINKLE_DUB,
+      fetch: audio.fetch,
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    context.currentTime = 36.121;
+    raf.runNext();
+    assert.deepEqual(ticks.map(Math.round), [26_001]);
+    assert.equal(ended, 0);
+    assert.equal(context.closeCalls, 0);
+
+    context.currentTime = 36.921;
+    raf.runNext();
+    assert.deepEqual(ticks.map(Math.round), [26_001, 26_800]);
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+  });
+
+  it("rejects undersized and oversized repeating music scores", async () => {
+    for (const phraseCount of [1, 3]) {
+      const definition = {
+        ...TWINKLE_TWINKLE_DUB,
+        music: {
+          ...TWINKLE_TWINKLE_DUB.music,
+          linePhrases: TWINKLE_TWINKLE_DUB.music.linePhrases.slice(0, phraseCount),
+        },
+      };
+      const audio = createAudioHarness();
+      const raf = createRaf();
+
+      await assert.rejects(
+        startDubPlayback({
+          AudioContext: audio.AudioContext,
+          cancelAnimationFrame: raf.cancelAnimationFrame,
+          definition,
+          fetch: audio.fetch,
+          lines: definition.lines.slice(0, definition.linesPerScene),
+          onTick() {},
+          requestAnimationFrame: raf.requestAnimationFrame,
+        }),
+        /repeating scene phrases or one phrase per line/,
+      );
     }
   });
 

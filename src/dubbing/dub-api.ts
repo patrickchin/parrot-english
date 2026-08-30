@@ -7,7 +7,7 @@ const LOAD_FAILURE = "Your saved dub could not be loaded.";
 const PLAYBACK_FAILURE = "Your recording could not be played. Record the line again.";
 const SAVE_FAILURE = "Your take was not saved. Try again.";
 const DELETE_FAILURE =
-  "Your saved voice-dubbing clips from Five Little Ducks and Old MacDonald were not deleted.";
+  "Your saved nursery-rhyme voice clips were not deleted.";
 
 export type DubStatus = {
   complete: boolean;

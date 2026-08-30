@@ -6,6 +6,7 @@ import { TextEncoder } from "node:util";
 import { createDatabase } from "../worker/database.ts";
 import { createDubConsentRepository } from "../worker/dub-consent.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
+import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 const OLD_DUB_PATH = "/api/dubs/old-macdonald-v1";
@@ -28,6 +29,8 @@ const LEGACY_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-du
 const LEGACY_LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
 const LEGACY_MARKER_KEY = `${LEGACY_PREFIX}.dub-generation`;
 const legacySlotKey = (lineId) => `${LEGACY_PREFIX}${lineId}.audio`;
+const catalogMarkerKey = (dubId) =>
+  `personalized-story-art/user-1/learner-dubs/${dubId}/.dub-generation`;
 const SIBLING_PREFIX =
   "personalized-story-art/user-1/learners/learner-b/learner-dubs/five-little-ducks-v2/";
 const siblingSlotKey = (lineId) => `${SIBLING_PREFIX}${lineId}.audio`;
@@ -2672,13 +2675,22 @@ describe("private learner dub API", () => {
     });
     assert.equal(
       accountObjects.objects.length,
-      LINE_IDS.length + OLD_LINE_IDS.length + LEGACY_LINE_IDS.length + 3,
+      DUB_DEFINITIONS.reduce(
+        (total, definition) => total + definition.lines.length + 1,
+        LEGACY_LINE_IDS.length + 1,
+      ),
     );
     assert.equal(accountObjects.objects.some(({ key }) => key === MARKER_KEY), true);
     assert.equal(
       accountObjects.objects.some(({ key }) => key === OLD_MARKER_KEY),
       true,
     );
+    for (const { id } of DUB_DEFINITIONS) {
+      assert.equal(
+        accountObjects.objects.some(({ key }) => key === catalogMarkerKey(id)),
+        true,
+      );
+    }
     assertLegacyRetirementFences(bucket, "reset-1");
     assert.equal(accountObjects.objects.every(({ key }) =>
       key.startsWith("personalized-story-art/user-1/")), true);
@@ -2708,7 +2720,13 @@ describe("private learner dub API", () => {
       generation: "reset-1",
       state: "deleting",
     });
-    assert.equal(bucket.stored.size, 2);
+    for (const { id } of DUB_DEFINITIONS) {
+      assert.deepEqual(
+        bucket.stored.get(catalogMarkerKey(id)).options.customMetadata,
+        { generation: "reset-1", state: "deleting" },
+      );
+    }
+    assert.equal(bucket.stored.size, DUB_DEFINITIONS.length);
   });
 
   it("does not let a pending retired reset delete its successor marker", async () => {

@@ -6,7 +6,10 @@ import { basename } from "node:path";
 import { describe, it } from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
-import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  DUB_DEFINITIONS,
+  OLD_MACDONALD_DUB,
+} from "../src/dubbing/rhyme-catalog.ts";
 import { STORIES } from "../src/stories/story-catalog.ts";
 
 const getStaticAudioLineForSpeech =
@@ -98,6 +101,34 @@ describe("static audio cache metadata", () => {
     assert.equal(guideLines.size, 15);
   });
 
+  it("registers one stable ElevenLabs narrator guide for every catalog lyric", () => {
+    const expectedUniqueCounts = new Map([
+      ["five-little-ducks-v2", 15],
+      ["old-macdonald-v1", 26],
+      ["twinkle-twinkle-v1", 4],
+      ["row-row-row-your-boat-v1", 4],
+      ["mary-had-a-little-lamb-v1", 6],
+      ["humpty-dumpty-v1", 4],
+    ]);
+
+    for (const definition of DUB_DEFINITIONS) {
+      const guides = new Map();
+      definition.lines.forEach(({ text }, index) => {
+        const line = getStaticAudioLineForSpeech("narrator", text);
+        assert.ok(line.id.startsWith(definition.guideAudioPrefix));
+        assert.equal(line.text, text);
+        assert.match(line.ttsText, /^\[warm, rhythmic nursery-rhyme delivery\]/);
+        if (!guides.has(text)) {
+          assert.equal(line.id, `${definition.guideAudioPrefix}line-${index + 1}`);
+          guides.set(text, line.id);
+        } else {
+          assert.equal(line.id, guides.get(text));
+        }
+      });
+      assert.equal(guides.size, expectedUniqueCounts.get(definition.id));
+    }
+  });
+
   it("pins the complete non-empty decodable Old MacDonald guide inventory", () => {
     const audioDirectory = new URL("../public/assets/audio/", import.meta.url);
     const guideLines = new Map();
@@ -132,6 +163,29 @@ describe("static audio cache metadata", () => {
         "",
         `${basename(file.pathname)} is not decodable`,
       );
+    }
+  });
+
+  it("keeps every new saved guide inside its authored musical window", () => {
+    for (const definition of DUB_DEFINITIONS.slice(2)) {
+      const seen = new Set();
+      definition.lines.forEach(({ cueMs, text }, index) => {
+        if (seen.has(text)) return;
+        seen.add(text);
+        const line = getStaticAudioLineForSpeech("narrator", text);
+        const durationMs = Number(execFileSync("ffprobe", [
+          "-v", "error",
+          "-show_entries", "format=duration",
+          "-of", "default=noprint_wrappers=1:nokey=1",
+          new URL(`../public${line.src}`, import.meta.url).pathname,
+        ], { encoding: "utf8" }).trim()) * 1_000;
+        const windowMs = definition.lines[index + 1]?.cueMs - cueMs
+          || definition.finalCueTailMs;
+        assert.ok(
+          durationMs <= windowMs,
+          `${line.id} is ${durationMs}ms for a ${windowMs}ms window`,
+        );
+      });
     }
   });
 

@@ -4,6 +4,7 @@ import {
   type Story,
 } from "../stories/story-catalog";
 import { isSafeRouteId } from "../../lib/route-id";
+import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 
 export type LessonSource = "parrot" | "my";
 export type GateRouteKind = "login" | "learner-profile" | "profile";
@@ -39,12 +40,14 @@ const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
   /^\/profile\/*$/i,
   /^\/lessons\/my\/create\/*$/i,
 ];
+const DUB_ROUTE_PATHS = DUB_DEFINITIONS.map(
+  ({ route }) => new RegExp(`^${route}\\/*$`, "i"),
+);
 const SAFE_RETURN_PATHS = [
   /^\/$/,
   TALK_TO_PEPPA_ROUTE_PATH,
   /^\/dubs\/*$/i,
-  /^\/dubs\/five-little-ducks\/*$/i,
-  /^\/dubs\/old-macdonald\/*$/i,
+  ...DUB_ROUTE_PATHS,
   ...GUARDIAN_ROUTE_PATHS,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,

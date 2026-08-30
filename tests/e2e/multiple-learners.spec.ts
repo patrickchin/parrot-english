@@ -2639,7 +2639,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
 
   await page
     .getByRole("button", {
-      name: "Turn off Noah's voice dubbing and delete clips from Five Little Ducks and Old MacDonald",
+      name: "Turn off Noah's voice dubbing and delete all nursery-rhyme clips",
     })
     .click();
   await expect(

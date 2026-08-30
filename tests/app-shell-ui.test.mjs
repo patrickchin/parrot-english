@@ -122,8 +122,17 @@ test("home menu prioritizes the four learner activities", () => {
 
   const nursery = renderApplicationRoute("/dubs");
   assert.match(nursery, />Nursery rhymes</);
-  assert.match(nursery, /href="\/dubs\/five-little-ducks"/);
-  assert.match(nursery, /href="\/dubs\/old-macdonald"/);
+  for (const route of [
+    "/dubs/five-little-ducks",
+    "/dubs/old-macdonald",
+    "/dubs/twinkle-twinkle",
+    "/dubs/row-row-row-your-boat",
+    "/dubs/mary-had-a-little-lamb",
+    "/dubs/humpty-dumpty",
+  ]) {
+    assert.match(nursery, new RegExp(`href="${route}"`));
+  }
+  assert.equal((nursery.match(/>Sing &amp; record</g) ?? []).length, 6);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -201,6 +210,16 @@ test("authenticated application routes include the core learner activities", () 
   const farmDub = renderApplicationRoute("/dubs/old-macdonald");
   assert.match(farmDub, /Old MacDonald Had a Farm/);
   assert.match(farmDub, /Loading your private dub…/);
+  for (const [route, title] of [
+    ["/dubs/twinkle-twinkle", "Twinkle Twinkle Little Star"],
+    ["/dubs/row-row-row-your-boat", "Row Row Row Your Boat"],
+    ["/dubs/mary-had-a-little-lamb", "Mary Had a Little Lamb"],
+    ["/dubs/humpty-dumpty", "Humpty Dumpty"],
+  ]) {
+    const rhyme = renderApplicationRoute(route);
+    assert.match(rhyme, new RegExp(title));
+    assert.match(rhyme, /Loading your private dub…/);
+  }
 
   const createLesson = renderApplicationRoute("/lessons/my/create");
   assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);

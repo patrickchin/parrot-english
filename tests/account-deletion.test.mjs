@@ -9,6 +9,7 @@ import {
 } from "../worker/account-deletion.ts";
 import { handleDubRequest } from "../worker/dubs.ts";
 import { handlePersonalizedStoryArtRequest } from "../worker/personalized-story-art.ts";
+import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const USER_ID = "user-1";
@@ -44,6 +45,14 @@ const LEGACY_LINE_IDS = Array.from(
   (_, index) => `line-${index + 1}`,
 );
 const legacySlotKey = (lineId) => `${LEGACY_DUB_PREFIX}${lineId}.audio`;
+const catalogDubPrefix = (dubId) => `${USER_PREFIX}learner-dubs/${dubId}/`;
+const catalogMarkerKey = (dubId) => `${catalogDubPrefix(dubId)}.dub-generation`;
+const catalogSlotKey = (dubId, lineId) => `${catalogDubPrefix(dubId)}${lineId}.audio`;
+const CATALOG_MARKER_KEYS = DUB_DEFINITIONS.map(({ id }) => catalogMarkerKey(id));
+const CATALOG_CLOSURE_KEYS = DUB_DEFINITIONS.flatMap((definition) => [
+  catalogMarkerKey(definition.id),
+  ...definition.lines.map(({ id }) => catalogSlotKey(definition.id, id)),
+]);
 const learnerDubPrefix = (learnerProfileId) =>
   `${USER_PREFIX}learners/${learnerProfileId}/learner-dubs/five-little-ducks-v2/`;
 const learnerOldDubPrefix = (learnerProfileId) =>
@@ -57,10 +66,7 @@ const learnerSlotKey = (learnerProfileId, lineId) =>
 const learnerOldSlotKey = (learnerProfileId, lineId) =>
   `${learnerOldDubPrefix(learnerProfileId)}${lineId}.audio`;
 const CLOSURE_KEYS = [
-  MARKER_KEY,
-  ...LINE_IDS.map(slotKey),
-  OLD_MARKER_KEY,
-  ...OLD_LINE_IDS.map(oldSlotKey),
+  ...CATALOG_CLOSURE_KEYS,
   LEGACY_MARKER_KEY,
   ...LEGACY_LINE_IDS.map(legacySlotKey),
 ];
@@ -248,6 +254,32 @@ function assertDeletionFences(bucket, generation) {
       { generation, state: "account-deleting" },
       `old ${lineId}`,
     );
+  }
+  for (const definition of DUB_DEFINITIONS.slice(2)) {
+    const marker = bucket.stored.get(catalogMarkerKey(definition.id));
+    assert.deepEqual(
+      marker?.bytes,
+      fenceBytes("marker", generation, "account-deleting"),
+      definition.id,
+    );
+    assert.deepEqual(
+      marker?.options.customMetadata,
+      { generation, state: "account-deleting" },
+      definition.id,
+    );
+    for (const { id } of definition.lines) {
+      const item = bucket.stored.get(catalogSlotKey(definition.id, id));
+      assert.deepEqual(
+        item?.bytes,
+        fenceBytes("slot", generation, "account-deleting"),
+        id,
+      );
+      assert.deepEqual(
+        item?.options.customMetadata,
+        { generation, state: "account-deleting" },
+        id,
+      );
+    }
   }
   assert.deepEqual(
     bucket.stored.get(LEGACY_MARKER_KEY)?.bytes,
@@ -1808,10 +1840,8 @@ describe("account deletion personalized-art lifecycle", () => {
     const bucket = createBucket();
     const waits = [];
     const attemptedKeys = [];
-    const attempts = new Map([
-      [MARKER_KEY, 0],
-      [OLD_MARKER_KEY, 0],
-    ]);
+    const attemptedMarkerKeys = CATALOG_MARKER_KEYS.slice(0, 4);
+    const attempts = new Map(attemptedMarkerKeys.map((key) => [key, 0]));
     bucket.put = async (key) => {
       if (attempts.has(key)) {
         attemptedKeys.push(key);
@@ -1833,19 +1863,15 @@ describe("account deletion personalized-art lifecycle", () => {
         }),
         /10058/,
       );
-      assert.deepEqual([...attempts.entries()], [
-        [MARKER_KEY, 3],
-        [OLD_MARKER_KEY, 3],
-      ]);
-      assert.equal(waits.length, 4);
-      assert.deepEqual(attemptedKeys, [
-        MARKER_KEY,
-        OLD_MARKER_KEY,
-        MARKER_KEY,
-        OLD_MARKER_KEY,
-        MARKER_KEY,
-        OLD_MARKER_KEY,
-      ]);
+      assert.deepEqual(
+        [...attempts.entries()],
+        attemptedMarkerKeys.map((key) => [key, 3]),
+      );
+      assert.equal(waits.length, attemptedMarkerKeys.length * 2);
+      assert.deepEqual(
+        attemptedKeys.toSorted(),
+        attemptedMarkerKeys.flatMap((key) => [key, key, key]).toSorted(),
+      );
       assert.equal(
         state.sqlite
           .prepare("SELECT count(*) AS count FROM user WHERE id = ?")

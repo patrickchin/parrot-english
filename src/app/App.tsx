@@ -71,7 +71,6 @@ import {
   getRequestedProtectedTarget,
   getSafeGuardianReturnTo,
   getSafeReturnTo,
-  getOldMacDonaldDubPath,
   getStoryPagePath,
   getStoryShelfPath,
   isGuardianLearnerChildRoute,
@@ -139,11 +138,15 @@ import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
-import { OLD_MACDONALD_DUB } from "../dubbing/rhyme-catalog";
+import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 import {
   GuardianModeBoundary,
   LearnerModeBoundary,
 } from "./ModeRouteBoundaries";
+
+const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
+  ({ route }) => route !== getDuckDubPath(),
+);
 
 const LessonCreator = import.meta.env.SSR
   ? (await import("../lessons/LessonCreator")).LessonCreator
@@ -174,8 +177,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/progress",
   "/stories",
   getNurseryRhymesPath(),
-  getDuckDubPath(),
-  getOldMacDonaldDubPath(),
+  ...DUB_DEFINITIONS.map(({ route }) => route),
   "/stories/:storyId",
   "/stories/:storyId/pages/:pageNumber",
   "/login",
@@ -1364,12 +1366,13 @@ export function ApplicationRoutes({
         <Route element={<StoryList />} path="/stories" />
         <Route element={<NurseryRhymeList />} path={getNurseryRhymesPath()} />
         <Route element={<DuckDub />} path={getDuckDubPath()} />
-        <Route
-          element={
-            <DubStudio definition={OLD_MACDONALD_DUB} />
-          }
-          path={getOldMacDonaldDubPath()}
-        />
+        {CATALOG_DUB_ROUTES.map((definition) => (
+          <Route
+            element={<DubStudio definition={definition} />}
+            key={definition.id}
+            path={definition.route}
+          />
+        ))}
         <Route element={<StoryRedirect />} path="/stories/:storyId" />
         <Route
           element={<StoryPageRoute />}

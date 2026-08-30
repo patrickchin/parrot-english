@@ -94,3 +94,12 @@ test("conversation-agent deployment sends its release identity as secrets", (con
     "PARROT_AGENT_COMMIT_SHA=abcdef0",
   ]);
 });
+
+test("the account panel describes saved dubbing data across every rhyme", () => {
+  const about = readFileSync(
+    new URL("../src/app/AboutDialog.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(about, /all voice-dubbing rhymes/i);
+});
