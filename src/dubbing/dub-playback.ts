@@ -304,14 +304,14 @@ export async function prepareDubLineBacking({
     start() {
       if (started || stopped) throw new Error("Dub line backing is not startable.");
       started = true;
-      const master = context.createGain();
-      master.gain.value = 0.95;
-      master.connect(context.destination);
-      const music = context.createGain();
-      music.gain.value = definition.music.volume;
-      music.connect(master);
-      const startAt = context.currentTime;
       try {
+        const master = context.createGain();
+        master.gain.value = 0.95;
+        master.connect(context.destination);
+        const music = context.createGain();
+        music.gain.value = definition.music.volume;
+        music.connect(master);
+        const startAt = context.currentTime;
         oscillators = scheduleDubMusic(
           context,
           definition,
@@ -321,26 +321,27 @@ export async function prepareDubLineBacking({
           music,
           startAt,
         );
+        const tick = () => {
+          frameId = null;
+          const elapsedMs = Math.min(
+            phrase.durationMs,
+            Math.max(0, (context.currentTime - startAt) * 1_000),
+          );
+          onTick(elapsedMs);
+          if (stopped) return;
+          if (elapsedMs >= phrase.durationMs) {
+            stop();
+            onEnded?.();
+            return;
+          }
+          frameId = requestFrame(tick);
+        };
+        onTick(0);
+        if (!stopped) frameId = requestFrame(tick);
       } catch (error) {
         stop();
         throw error;
       }
-      const tick = () => {
-        frameId = null;
-        const elapsedMs = Math.min(
-          phrase.durationMs,
-          Math.max(0, (context.currentTime - startAt) * 1_000),
-        );
-        onTick(elapsedMs);
-        if (elapsedMs >= phrase.durationMs) {
-          stop();
-          onEnded?.();
-          return;
-        }
-        if (!stopped) frameId = requestFrame(tick);
-      };
-      onTick(0);
-      if (!stopped) frameId = requestFrame(tick);
     },
     stop,
   };

@@ -361,6 +361,49 @@ describe("duck dub playback", () => {
     assert.equal(audio.contexts[0].closeCalls, 1);
   });
 
+  it("does not end a prepared backing when its terminal tick aborts", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const controller = new AbortController();
+    let ended = 0;
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      line: DUB_LINES[0],
+      onEnded: () => { ended += 1; },
+      onTick(elapsedMs) {
+        if (elapsedMs === 4_000) controller.abort();
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal: controller.signal,
+    });
+
+    backing.start();
+    audio.contexts[0].currentTime = 14;
+    raf.runNext();
+
+    assert.equal(ended, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("cleans up scheduled backing when its initial tick throws", async () => {
+    const failure = new Error("initial tick failed");
+    const audio = createAudioHarness();
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      line: DUB_LINES[0],
+      onTick() {
+        throw failure;
+      },
+    });
+
+    assert.throws(() => backing.start(), (error) => error === failure);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.ok(audio.contexts[0].oscillators.every(({ stopCalls }) => stopCalls === 2));
+    backing.stop();
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
   it("starts the Five Little Ducks melody and voices on the same phrase beats", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
