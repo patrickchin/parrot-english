@@ -97,7 +97,16 @@ async function expectBelow(locator: Locator, boundary: Locator) {
   expect(box.y).toBeGreaterThanOrEqual(boundaryBox.y + boundaryBox.height);
 }
 
+async function holdDubRecordingEnd(page: Page) {
+  await page.evaluate(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("parrotE2eDubRecording", "held");
+    window.history.replaceState(window.history.state, "", url);
+  });
+}
+
 async function stopAndSave(page: Page) {
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: /^Record (?:line|again)$/ }).click();
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("Recording");
   await page.getByRole("button", { name: "Stop recording" }).click();
@@ -1146,6 +1155,7 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held&parrotE2eDubPlayback=held");
   await expectDubProject(page);
   await openScene(page, 1);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await page.getByRole("button", { name: "Stop recording" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
@@ -1195,6 +1205,7 @@ test("a rejected upload discards the take and offers Record again", async ({ pag
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
   await expectDubProject(page);
   await openScene(page, 1);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await page.getByRole("button", { name: "Stop recording" }).click();
   await expect(page.getByRole("alert").filter({ hasText: "too long" })).toBeVisible();
@@ -1274,12 +1285,15 @@ test("recording silences guide playback", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eDubPlayback=held");
   await expectDubProject(page);
   await openScene(page, 1);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Hear line" }).click();
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
     "Playing example for Scene 1, line 1.",
   );
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("Recording");
+  await page.waitForTimeout(300);
+  await expect(page.getByRole("button", { name: "Stop recording" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Hear line" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
   await expect.poll(async () => (await dubStoreSnapshot(page)).audioContextDoubleCloses).toBe(0);
@@ -1345,6 +1359,7 @@ test("held microphone readiness keeps every scene action locked behind one live 
   const controls = page.getByRole("complementary", { name: "Scene line controls" });
   const idleRecordBox = await visibleBoxWithin(page.getByRole("button", { name: "Record line" }), controls);
   const idleNextBox = await visibleBoxWithin(page.getByRole("button", { name: "Next line" }), controls);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
 
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Opening microphone…");
@@ -1401,6 +1416,7 @@ test("route exit cancels an active recording without uploading it", async ({ pag
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=delayed");
   await expectDubProject(page);
   await openScene(page, 1);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await expect.poll(() => microphoneSnapshot(page)).toMatchObject({ pending: 1, requests: 1 });
   await resolveDelayedMicrophone(page);
@@ -1950,6 +1966,7 @@ test("save recovery restores focus to the fixed Next action", async ({ page }) =
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
   await expectDubProject(page);
   await openScene(page, 1);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await page.evaluate(() => {
     (window as typeof window & { __runNextAnimationFrameEarly(): void })
@@ -2105,6 +2122,7 @@ for (const recovery of [
     await page.goto(`/dubs/five-little-ducks?parrotE2eDub=${recovery.scenario}${recovery.microphone}`);
     await expectDubProject(page);
     await openScene(page, 1);
+    await holdDubRecordingEnd(page);
     await page.getByRole("button", { name: "Record line" }).click();
     if (recovery.microphone === "") {
       await page.getByRole("button", { name: "Stop recording" }).click();

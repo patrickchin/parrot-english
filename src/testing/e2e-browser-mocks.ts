@@ -1870,6 +1870,12 @@ function getE2eDubScenario() {
   return persisted && E2E_DUB_SCENARIOS.has(persisted) ? persisted : null;
 }
 
+function holdsE2eDubRecordingEnd() {
+  return new URL(window.location.href).searchParams.get(
+    "parrotE2eDubRecording",
+  ) === "held";
+}
+
 if (getE2eDubScenario()) {
   const createObjectURL = URL.createObjectURL.bind(URL);
   const revokeObjectURL = URL.revokeObjectURL.bind(URL);
@@ -3526,6 +3532,11 @@ class MockScheduledAudioNode extends MockAudioNode {
   stop(when = 0) {
     if (this.endTimer !== null) clearTimeout(this.endTimer);
     if (!this.onended) return;
+    if (
+      this.kind === "oscillator" &&
+      this.frequency.value === 0 &&
+      holdsE2eDubRecordingEnd()
+    ) return;
     this.endTimer = setTimeout(() => {
       this.endTimer = null;
       this.onended?.();
