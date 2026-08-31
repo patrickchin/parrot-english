@@ -874,7 +874,10 @@ export function LearnerProfileGate({
   const [guardianSelectionRosterPhase, setGuardianSelectionRosterPhase] =
     useState<GuardianSelectionRosterPhase>("idle");
   const [isLoading, setIsLoading] = useState(true);
-  const [isLearnerSwitcherOpen, setIsLearnerSwitcherOpen] = useState(false);
+  const [learnerSwitcherOwner, setLearnerSwitcherOwner] = useState<{
+    profileId: string;
+    sessionIdentity: string | null;
+  } | null>(null);
   const [loadError, setLoadError] = useState("");
   const [learnerIdentityCheck, setLearnerIdentityCheck] =
     useState<LearnerIdentityCheck>(
@@ -1399,6 +1402,7 @@ export function LearnerProfileGate({
     updateLearnerIdentityCheck("confirmed");
     nextOperation();
     clearProfileAccountAction();
+    setLearnerSwitcherOwner(null);
     conversationProps.resetConversation();
     learnerLoadControllerRef.current?.abort();
     learnerLoadControllerRef.current = null;
@@ -2563,6 +2567,18 @@ export function LearnerProfileGate({
   const canEditProfile = Boolean(fullData && guardianRoute);
   const hasActiveLearner = fullData !== null;
   const activeLearnerName = fullData?.profile.name ?? null;
+  const learnerSwitcherProfileId =
+    guardianAccessMode === "learner" &&
+    learnerIdentityCheck === "confirmed" &&
+    data?.mode === "full"
+      ? data.profile.id
+      : null;
+  const isLearnerSwitcherOpen = Boolean(
+    learnerSwitcherProfileId !== null &&
+      learnerSwitcherOwner !== null &&
+      learnerSwitcherOwner.profileId === learnerSwitcherProfileId &&
+      learnerSwitcherOwner.sessionIdentity === sessionIdentity,
+  );
   const onOpenProfileRouteRef = useRef(onOpenProfileRoute);
   onOpenProfileRouteRef.current = onOpenProfileRoute;
   const openProfileFromAccount = useCallback(
@@ -2589,13 +2605,27 @@ export function LearnerProfileGate({
   ]);
 
   const openLearnerSwitcher = useCallback(
-    () => setIsLearnerSwitcherOpen(true),
-    [],
+    () => {
+      if (learnerSwitcherProfileId === null) return;
+      setLearnerSwitcherOwner({
+        profileId: learnerSwitcherProfileId,
+        sessionIdentity,
+      });
+    },
+    [learnerSwitcherProfileId, sessionIdentity],
   );
   const closeLearnerSwitcher = useCallback(
-    () => setIsLearnerSwitcherOpen(false),
+    () => setLearnerSwitcherOwner(null),
     [],
   );
+  useIsomorphicLayoutEffect(() => {
+    setLearnerSwitcherOwner(null);
+  }, [
+    guardianAccessMode,
+    learnerIdentityCheck,
+    learnerSwitcherProfileId,
+    sessionIdentity,
+  ]);
   const handleLearnerSwitcherNavigate = useCallback(() => {
     closeLearnerSwitcher();
     onBeforeLearnerSelectionNavigate?.();

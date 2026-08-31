@@ -1310,6 +1310,8 @@ function RegisteredLearnerNameHarness() {
 }
 
 function LearnerGateAccountExperienceHarness({
+  guardianDashboardRoute = true,
+  guardianRoute = true,
   onBeforeLearnerSelectionNavigate = () => {},
 } = {}) {
   const [experience, setExperience] = useState(null);
@@ -1373,8 +1375,8 @@ function LearnerGateAccountExperienceHarness({
           LearnerProfileGate,
           {
             completedLearnerProfileFallback: createElement("p", null, "HOME"),
-            guardianDashboardRoute: true,
-            guardianRoute: true,
+            guardianDashboardRoute,
+            guardianRoute,
             isConversationRoute: false,
             isLearnerProfileRoute: false,
             isProfileRoute: false,
@@ -2396,6 +2398,62 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         "before-navigate",
       ]);
     });
+  });
+
+  it("closes an old learner switcher when revalidation requires learner selection", async () => {
+    let selectionRequired = false;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        if (selectionRequired) return json({ mode: "selection-required" });
+        return json(
+          fullLearnerProfileState({
+            profile: {
+              ...fullLearnerProfileState().profile,
+              id: "learner-bob",
+              name: "Bob",
+            },
+          }),
+        );
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        if (selectionRequired) {
+          return json({ activeProfileId: null, profiles: [] });
+        }
+        return json({
+          activeProfileId: "learner-bob",
+          profiles: [
+            {
+              createdAt: "2026-09-01T08:00:00.000Z",
+              deletionPending: false,
+              id: "learner-bob",
+              name: "Bob",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerGateAccountExperienceHarness, {
+        guardianDashboardRoute: false,
+        guardianRoute: false,
+      }),
+    );
+    await waitFor(() =>
+      assert.equal(output("Gate account experience").textContent, "Bob"),
+    );
+    await click(button("Open learner switcher"));
+    await waitFor(() => button("Start learner mode as Bob"));
+
+    selectionRequired = true;
+    await act(async () => window.dispatchEvent(new window.Event("focus")));
+
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    noText(/Start learner mode as Bob/);
+    await waitFor(() => text(/Who is learning now\?/));
+    text(/Add a learner before switching to learner mode/);
   });
 
   it("redirects bypass-only Guardian pages to learner selection without rendering profile consumers", async () => {
