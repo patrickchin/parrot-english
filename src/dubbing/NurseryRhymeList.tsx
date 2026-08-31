@@ -11,7 +11,7 @@ export function NurseryRhymeList() {
           Back home
         </HeaderLink>
       </RouteHeader>
-      <main className="min-h-dvh w-screen overflow-x-hidden bg-story-shelf px-3 pb-10 pt-20 sm:px-4 md:px-8 md:pb-14 md:pt-24 lg:px-16">
+      <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-10 pt-20 sm:px-4 md:px-8 md:pb-14 md:pt-24 lg:px-16">
         <section aria-labelledby="nursery-rhymes-title" className="mx-auto grid w-full max-w-7xl gap-5 md:gap-7">
           <header className="grid gap-2 text-center">
             <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>

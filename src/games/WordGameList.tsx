@@ -6,7 +6,7 @@ import { WordGameVisual } from "./WordGameVisual";
 
 export function WordGameList() {
   return (
-    <main className="min-h-dvh w-full bg-home px-4 pb-10 pt-22 sm:px-6 md:px-10 md:pt-28">
+    <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-home px-4 pb-10 pt-22 sm:px-6 md:px-10 md:pt-28">
       <RouteHeader>
         <HeaderLink aria-label="Back to home" icon={<ChevronLeft />} to="/">
           Back to home

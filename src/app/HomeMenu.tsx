@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   CircleHelp,
   Headphones,
   MessageCircle,
@@ -115,11 +114,10 @@ export function HomeMenu() {
                   <Icon className="size-4 md:size-5" />
                 </span>
               </div>
-              <span className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              <span className="grid w-full min-w-0 items-center">
                 <strong className={cx("min-w-0 text-lg leading-tight md:whitespace-nowrap md:text-2xl xl:text-lg 2xl:text-2xl", tone === "navy" && "text-brand-navy", tone === "rose" && "text-brand-rose", tone === "blue" && "text-brand-blue")}>
                   {label}
                 </strong>
-                <ArrowRight aria-hidden="true" className={cx("size-9 shrink-0 rounded-full p-2 text-white md:size-11 xl:size-9 2xl:size-11", tone === "navy" && "bg-brand-navy", tone === "rose" && "bg-brand-rose", tone === "blue" && "bg-brand-blue")} />
               </span>
             </InteractiveCardLink>
           ))}
