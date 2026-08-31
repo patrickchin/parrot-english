@@ -667,7 +667,7 @@ test("failed learner-boundary lock preserves the requested learner route", async
   await expect(page).toHaveURL(url);
 });
 
-test("successful lock returns to learner home before exposing activities", async ({
+test("successful lock redirects the stale route once and permits a later direct Guardian route", async ({
   page,
 }) => {
   await page.goto(guardianLearnerUrl("/guardian", "guardian"));
@@ -682,34 +682,24 @@ test("successful lock returns to learner home before exposing activities", async
   ).toBeVisible();
 
   await page.goto("/guardian/stories");
-  await expect(page).toHaveURL("/");
-  await expect(
-    page.getByRole("navigation", { name: "Learning activities" }),
-  ).toBeVisible();
+  await expect(page).toHaveURL("/guardian/stories");
   await expect(
     page.getByRole("heading", { name: "Story settings" }),
-  ).toHaveCount(0);
+  ).toBeVisible();
 
-  await page.evaluate(() => {
-    window.history.replaceState(null, "", "/guardian/stories");
-  });
   await page.reload();
-  await expect(page).toHaveURL("/");
+  await expect(page).toHaveURL(
+    "/guardian/stories?learnerProfileId=learner-noah",
+  );
   await expect(
-    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
+    page.getByRole("heading", { name: "Story settings" }),
   ).toBeVisible();
 
   const accessMode = await page.evaluate(async () => {
     const response = await fetch("/api/guardian-access");
     return ((await response.json()) as { mode: string }).mode;
   });
-  expect(accessMode).toBe("learner");
-
-  await switchFromMenu(page);
-  await expect(page).toHaveURL("/guardian");
-  await expect(
-    page.getByRole("heading", { name: "Guardian dashboard" }),
-  ).toBeVisible();
+  expect(accessMode).toBe("guardian");
 });
 
 test("locking guardian access in one tab returns a sibling tab to learner mode", async ({
@@ -733,6 +723,23 @@ test("locking guardian access in one tab returns a sibling tab to learner mode",
     await expect(sibling.getByRole("dialog")).toHaveCount(0);
     await expect(
       sibling.getByRole("navigation", { name: "Learning activities" }),
+    ).toBeVisible();
+
+    await sibling.evaluate(() => {
+      window.history.pushState(null, "", "/guardian/stories");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await expect(sibling).toHaveURL("/guardian/stories");
+    await expect(
+      sibling.getByRole("heading", { name: "Story settings" }),
+    ).toBeVisible();
+
+    await sibling.reload();
+    await expect(sibling).toHaveURL(
+      "/guardian/stories?learnerProfileId=learner-noah",
+    );
+    await expect(
+      sibling.getByRole("heading", { name: "Story settings" }),
     ).toBeVisible();
   } finally {
     await sibling.close();

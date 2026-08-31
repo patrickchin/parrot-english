@@ -970,6 +970,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     });
 
     await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+    await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
     const storageKey = await waitForGuardianLockStorageKey("id:user-1");
     await act(async () => emitGuardianLock(storageKey));
 
@@ -1000,6 +1001,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     });
 
     await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+    await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
     const storageKey = await waitForGuardianLockStorageKey("id:user-1");
     await act(async () => emitGuardianLock(storageKey));
     assert.equal(states.at(-1).mode, "learner");
@@ -1022,6 +1024,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       await new Promise((resolve) => window.setTimeout(resolve, 0));
     });
     assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
     assert.ok(window.localStorage.getItem(storageKey));
 
     let result;
@@ -1311,7 +1314,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     assert.equal(typeof result, "string");
   });
 
-  it("holds a pre-existing lock marker closed until scope initialization and explicit unlock", async () => {
+  it("keeps a pre-existing marker fail-closed without blocking access after scope initialization", async () => {
     originalCrypto = globalThis.crypto;
     const digests = [];
     Object.defineProperty(globalThis, "crypto", {
@@ -1350,12 +1353,12 @@ describe("guardian access provider", { concurrency: false }, () => {
     assert.equal(states.at(-1).mode, "loading");
     assert.equal(api.loadCalls, 0);
 
-    digests[0].resolve(new Uint8Array(32).buffer);
     await act(async () => {
+      digests[0].resolve(new Uint8Array(32).buffer);
       await new Promise((resolve) => window.setTimeout(resolve, 0));
     });
     assert.equal(states.at(-1).mode, "learner");
-    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
+    assert.equal(states.at(-1).blockedByLearnerSwitch, false);
     assert.equal(window.localStorage.getItem(storageKey), "old-lock");
 
     let result;

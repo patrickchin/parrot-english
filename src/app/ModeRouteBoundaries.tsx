@@ -112,10 +112,17 @@ export function LearnerModeBoundary({
   children,
   onBeforeNavigate,
 }: ModeBoundaryProps) {
-  const { mode } = useGuardianAccess();
+  const { acknowledgeLearnerSwitch, blockedByLearnerSwitch, mode } =
+    useGuardianAccess();
   const location = useLocation();
   const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (mode === "learner" && blockedByLearnerSwitch) {
+      acknowledgeLearnerSwitch();
+    }
+  }, [acknowledgeLearnerSwitch, blockedByLearnerSwitch, mode]);
 
   if (mode === "loading") return <AccessCheck />;
   if (mode === "learner") return <BoundaryContent>{children}</BoundaryContent>;

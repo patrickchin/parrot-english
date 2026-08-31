@@ -1171,9 +1171,13 @@ function modeRoutesInMemory({
           null,
           createElement(Route, {
             element: createElement(
-              "main",
-              null,
-              createElement("h1", null, "Learner home"),
+              LearnerModeBoundary,
+              { onBeforeNavigate },
+              createElement(
+                "main",
+                null,
+                createElement("h1", null, "Learner home"),
+              ),
             ),
             path: "/",
           }),
@@ -2821,7 +2825,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(currentRoute().path, "/lessons");
   });
 
-  it("dashboard awaits lock and keeps fresh Guardian routes in learner mode", async () => {
+  it("dashboard awaits lock and allows a later deliberate Guardian route", async () => {
     const lock = deferred();
     const exitRoutes = [];
     let unlockCalls = 0;
@@ -2866,9 +2870,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     text(/Learner home/);
 
     await click(button("Open learner profile"));
-    await waitFor(() => assert.equal(currentRoute().path, "/"));
-    assert.equal(unlockCalls, 0);
-    text(/Learner home/);
+    await waitFor(() => assert.equal(currentRoute().path, "/profile"));
+    await waitFor(() => text(/Save changes/));
+    assert.equal(unlockCalls, 1);
   });
 
   it("keeps loading visible until the StrictMode onboarding request resolves", async () => {
