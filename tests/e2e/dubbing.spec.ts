@@ -1257,6 +1257,7 @@ test("upload consent loss focuses listen-only playback", async ({ page }) => {
     };
   });
 
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("Recording");
   await page.getByRole("button", { name: "Stop recording" }).click();
