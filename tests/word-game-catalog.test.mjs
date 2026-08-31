@@ -8,6 +8,7 @@ import {
   getWordGameRoute,
   resolveWordGameTopic,
 } from "../src/games/word-game-catalog.ts";
+import { getStaticAudioLineById } from "../lib/static-audio.js";
 
 const BITMAP_BASE = "https://media.parrotbook.com/assets/v8/word-games";
 const COLOR_SWATCHES = {
@@ -138,6 +139,19 @@ describe("word-game catalog", () => {
     });
     assert.equal(Object.isFrozen(WORD_GAME_RETRY_AUDIO), true);
     assert.equal(Object.isFrozen(WORD_GAME_COMPLETE_AUDIO), true);
+  });
+
+  it("resolves every player cue by its stable saved-audio ID", () => {
+    const cues = [...WORD_GAME_TOPICS.flatMap(({ items }) => items.flatMap(({ audio }) => Object.values(audio))), WORD_GAME_RETRY_AUDIO, WORD_GAME_COMPLETE_AUDIO];
+    assert.equal(cues.length, 110);
+    assert.equal(new Set(cues.map(({ id }) => id)).size, 110);
+    for (const cue of cues) {
+      const line = getStaticAudioLineById(cue.id);
+      assert.equal(line.id, cue.id);
+      assert.equal(line.src, cue.source);
+      assert.equal(line.text, cue.text);
+      assert.equal(line.speaker, "narrator");
+    }
   });
 
   it("pins isolated bitmap art and native color swatches", () => {
