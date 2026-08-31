@@ -23,7 +23,7 @@ export function WordGameVisual({
     return (
       <div
         aria-label={item.alt}
-        className={cx("grid aspect-[3/2] place-items-center rounded-2xl", className)}
+        className={cx("grid aspect-square place-items-center rounded-2xl", className)}
         role="img"
         style={{ backgroundColor: item.visual.color }}
       >
@@ -39,12 +39,12 @@ export function WordGameVisual({
   return (
     <img
       alt={item.alt}
-      className={cx("aspect-[3/2] w-full rounded-2xl object-contain", className)}
+      className={cx("aspect-square w-full rounded-2xl object-contain", className)}
       decoding="async"
       height={512}
       loading="lazy"
       src={item.visual.src}
-      width={768}
+      width={512}
     />
   );
 }

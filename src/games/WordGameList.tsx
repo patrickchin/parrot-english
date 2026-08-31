@@ -26,7 +26,7 @@ export function WordGameList() {
           </p>
         </header>
 
-        <nav aria-label="Word games" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <nav aria-label="Word games" className="grid gap-4 min-[360px]:grid-cols-2 md:grid-cols-3">
           {WORD_GAME_TOPICS.map((topic) => (
             <InteractiveCardLink
               className="grid gap-4 p-4"

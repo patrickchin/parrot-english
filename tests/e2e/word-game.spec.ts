@@ -9,6 +9,14 @@ const animals = [
   ["frog", "Which is the frog?", "A friendly frog."],
 ] as const;
 
+const responsiveViewports = [
+  { choiceRows: 3, columns: 1, height: 568, name: "280px", width: 280 },
+  { choiceRows: 2, columns: 2, height: 844, name: "390px", width: 390 },
+  { choiceRows: 2, columns: 2, height: 360, name: "640px", width: 640 },
+  { choiceRows: 1, columns: 3, height: 360, name: "768px", width: 768 },
+  { choiceRows: 1, columns: 3, height: 800, name: "1280px", width: 1280 },
+] as const;
+
 type MediaSnapshot = {
   cueCancellations: number;
   cues: Array<{
@@ -65,6 +73,74 @@ function game(page: Page) {
     main,
     progress: main.getByRole("progressbar", { name: "Game progress" }),
   };
+}
+
+async function visibleBox(locator: Locator) {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  return box!;
+}
+
+async function expectHorizontallyContained(
+  page: Page,
+  locator: Locator,
+  viewport: (typeof responsiveViewports)[number],
+) {
+  await locator.scrollIntoViewIfNeeded();
+  await expect(locator).toBeInViewport();
+  const box = await visibleBox(locator);
+  expect(box.x).toBeGreaterThanOrEqual(-0.5);
+  expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 0.5);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true);
+}
+
+async function expectKeyboardReachable(page: Page, locator: Locator) {
+  await locator.scrollIntoViewIfNeeded();
+  if (await locator.evaluate((element) => element === document.activeElement)) {
+    return;
+  }
+
+  for (let index = 0; index < 40; index += 1) {
+    await page.keyboard.press("Tab");
+    if (await locator.evaluate((element) => element === document.activeElement)) {
+      return;
+    }
+  }
+
+  expect(
+    await locator.evaluate((element) => element === document.activeElement),
+  ).toBe(true);
+}
+
+async function expectSquare(locator: Locator) {
+  const box = await visibleBox(locator);
+  expect(Math.abs(box.width - box.height)).toBeLessThanOrEqual(2);
+}
+
+async function renderedRows(locator: Locator) {
+  const positions = (await Promise.all(
+    (await locator.all()).map(async (item) => (await visibleBox(item)).y),
+  )).sort((first, second) => first - second);
+  const rows: number[] = [];
+  for (const position of positions) {
+    if (rows.every((row) => Math.abs(row - position) > 2)) rows.push(position);
+  }
+  return rows.length;
+}
+
+async function renderedColumns(locator: Locator) {
+  const positions = await Promise.all(
+    (await locator.all()).map(async (item) => await visibleBox(item)),
+  );
+  const firstRow = Math.min(...positions.map(({ y }) => y));
+  return positions.filter(({ y }) => Math.abs(y - firstRow) <= 2).length;
 }
 
 async function expectChoicePictures(choices: Locator, roundIndex: number) {
@@ -291,15 +367,84 @@ test("keeps visual play usable with one persistent saved-sound failure", async (
 test("uses a large scrollable game surface", async ({ page }) => {
   await page.setViewportSize({ height: 800, width: 1280 });
   await page.goto("/word-games/animals");
-  const { main } = game(page);
+  const { main, progress } = game(page);
   const gameSurface = main.getByRole("region", { name: "Listening picture game" });
+  await main.getByRole("button", { name: "Start listening" }).click();
   await expect(gameSurface).toBeVisible();
   expect((await gameSurface.boundingBox())?.width).toBeGreaterThanOrEqual(1100);
+  expect((await gameSurface.boundingBox())?.height).toBeGreaterThanOrEqual(600);
+  await expect(progress).toBeInViewport();
 
   await page.setViewportSize({ height: 360, width: 640 });
-  await main.getByRole("button", { name: "Start listening" }).click();
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await expect(main.getByRole("button", { name: "Listen: bird" })).toBeInViewport();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+for (const viewport of responsiveViewports) {
+  test(`word-game library keeps square picture cards, ${viewport.columns} columns, and focusable controls at ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/word-games");
+    const main = page.getByRole("main");
+    const header = main.getByRole("link", { name: "Back to home" });
+    const library = main.getByRole("navigation", { name: "Word games" });
+    const topicLinks = library.getByRole("link");
+    const pictures = library.getByRole("img");
+
+    await expect(topicLinks).toHaveCount(6);
+    expect(await renderedColumns(topicLinks)).toBe(viewport.columns);
+    for (const picture of await pictures.all()) {
+      await expectSquare(picture);
+      await expectHorizontallyContained(page, picture, viewport);
+    }
+    await expectHorizontallyContained(page, header, viewport);
+    await expectKeyboardReachable(page, header);
+    for (const topicLink of await topicLinks.all()) {
+      await expectHorizontallyContained(page, topicLink, viewport);
+      await expectKeyboardReachable(page, topicLink);
+    }
+  });
+}
+
+for (const viewport of responsiveViewports) {
+  test(`word-game player keeps ${viewport.choiceRows} choice rows, contained picture controls, and keyboard navigation at ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
+    const { choices, main, progress } = game(page);
+    const header = main.getByRole("link", { name: "Back to games" }).first();
+
+    await expectHorizontallyContained(page, header, viewport);
+    await expectKeyboardReachable(page, header);
+    await main.getByRole("button", { name: "Start listening" }).click();
+
+    const chooseButtons = choices.getByRole("button", { name: /^Choose / });
+    const listenButtons = choices.getByRole("button", { name: /^Listen: / });
+    const pictures = choices.getByRole("img");
+    await expect(chooseButtons).toHaveCount(3);
+    await expect(listenButtons).toHaveCount(3);
+    expect(await renderedRows(chooseButtons)).toBe(viewport.choiceRows);
+    await expectHorizontallyContained(page, progress, viewport);
+    for (const picture of await pictures.all()) {
+      await expectHorizontallyContained(page, picture, viewport);
+    }
+    for (const chooseButton of await chooseButtons.all()) {
+      await expectSquare(chooseButton);
+      await expectHorizontallyContained(page, chooseButton, viewport);
+      await expectKeyboardReachable(page, chooseButton);
+    }
+    for (const listenButton of await listenButtons.all()) {
+      await expectHorizontallyContained(page, listenButton, viewport);
+      await expectKeyboardReachable(page, listenButton);
+    }
+
+    await choices.getByRole("button", { name: "Choose cat" }).click();
+    const next = main.getByRole("button", { name: "Next" });
+    await expectHorizontallyContained(page, next, viewport);
+    await expectKeyboardReachable(page, next);
+  });
+}

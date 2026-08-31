@@ -229,7 +229,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
 
             {started ? (
               <>
-                <div aria-label="Picture choices" className="grid gap-3 sm:grid-cols-3" role="group">
+                <div aria-label="Picture choices" className="grid gap-3 min-[360px]:grid-cols-2 md:grid-cols-3" role="group">
                   {round.choices.map((choice, index) => {
                     const selected = choice.id === selectedId;
                     const correct = selected && answeredCorrectly;
@@ -238,7 +238,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
                         <ActionButton
                           aria-label={`Choose ${choice.label}`}
                           aria-pressed={selected}
-                          className="aspect-[3/2] min-h-0 min-w-0 overflow-hidden p-1"
+                          className="aspect-square min-h-0 min-w-0 overflow-hidden p-1"
                           disabled={answeredCorrectly}
                           elevation="flat"
                           frame={correct ? "white" : "soft"}
