@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { describe, it } from "node:test";
+import snapshot from "./fixtures/nursery-rhyme-runtime-snapshot.json" with { type: "json" };
 import * as staticAudio from "../lib/static-audio.js";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
@@ -107,6 +108,19 @@ const OLD_MACDONALD_GUIDE_FILES = [
 ].sort();
 
 describe("static audio cache metadata", () => {
+  it("preserves every deployed nursery-rhyme guide recording", () => {
+    const guides = Object.entries(staticAudio.STATIC_AUDIO_LINES)
+      .filter(([id]) => /-guide-line-\d+$/.test(id))
+      .map(([id, { src, text }]) => ({
+        id,
+        text,
+        sha256: createHash("sha256")
+          .update(readFileSync(new URL(`../public${src}`, import.meta.url)))
+          .digest("hex"),
+      }));
+    assert.deepEqual(guides, snapshot.guides);
+  });
+
   it("registers one exact-text group cue for every supported built-in target", () => {
     assert.equal(typeof staticAudio.LESSON_JOIN_IN_AUDIO_LINES, "object");
     assert.equal(Object.keys(staticAudio.LESSON_JOIN_IN_AUDIO_LINES).length, 17);

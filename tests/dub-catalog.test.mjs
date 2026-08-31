@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import snapshot from "./fixtures/nursery-rhyme-runtime-snapshot.json" with { type: "json" };
 import {
   DUB_DEFINITIONS,
   HUMPTY_DUMPTY_DUB,
@@ -22,6 +23,64 @@ import {
   ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
   TWINKLE_TWINKLE_SCENE_ARTWORK,
 } from "../src/dubbing/dub-artwork.ts";
+
+function normalizeLegacyScore(definition) {
+  const firstCueMs = definition.lines[0].cueMs;
+  const events = definition.lines.flatMap((line) => {
+    const phrase = getDubLineMusicPhrase(definition, line);
+    const phraseAtMs = line.cueMs - firstCueMs;
+    return [
+      {
+        role: "accompaniment",
+        midi: phrase.bassMidi,
+        atMs: phraseAtMs,
+        durationMs: Math.min(1_600, phrase.durationMs),
+      },
+      ...phrase.notes.map(({ midi, atMs, durationMs }) => ({
+        role: "melody",
+        midi,
+        atMs: phraseAtMs + atMs,
+        durationMs,
+      })),
+    ];
+  });
+  const finalLine = definition.lines.at(-1);
+  const finalPhrase = getDubLineMusicPhrase(definition, finalLine);
+  const outroAtMs = finalLine.cueMs - firstCueMs + finalPhrase.durationMs;
+  const outroDurationMs = definition.durationMs - firstCueMs - outroAtMs;
+  if (outroDurationMs > 0) {
+    events.push(...definition.music.outroMidi.map((midi) => ({
+      role: "accompaniment",
+      midi,
+      atMs: outroAtMs,
+      durationMs: outroDurationMs,
+    })));
+  }
+  return events.sort((left, right) =>
+    left.atMs - right.atMs
+    || left.role.localeCompare(right.role)
+    || left.midi - right.midi
+    || left.durationMs - right.durationMs);
+}
+
+function catalogContract(definitions) {
+  return definitions.map((definition) => ({
+    id: definition.id,
+    route: definition.route,
+    title: definition.title,
+    countInMidi: definition.countInMidi ?? definition.music.countIn[0].midi,
+    musicVolume: definition.music.volume,
+    phraseDurationsMs: definition.music.linePhrases.map(({ durationMs }) => durationMs),
+    linesPerScene: definition.linesPerScene,
+    sceneTitles: definition.sceneTitles,
+    sceneArtwork: definition.sceneArtwork,
+    lineArtwork: definition.lineArtwork ?? null,
+    lines: definition.lines.map(({ id, text }) => ({ id, text })),
+    relativeCuesMs: definition.lines.map(({ cueMs }) => cueMs - definition.lines[0].cueMs),
+    durationAfterLeadInMs: definition.durationMs - definition.lines[0].cueMs,
+    normalizedScore: normalizeLegacyScore(definition),
+  }));
+}
 
 const NEW_RHYMES = [
   {
@@ -93,6 +152,10 @@ const NEW_RHYMES = [
 ];
 
 describe("rhyme catalog", () => {
+  it("preserves the deployed nursery-rhyme runtime contract", () => {
+    assert.deepEqual(catalogContract(DUB_DEFINITIONS), snapshot.catalog);
+  });
+
   it("contains the traditional five-scene Old MacDonald definition", () => {
     assert.equal(getDubDefinition("old-macdonald-v1"), OLD_MACDONALD_DUB);
     assert.equal(OLD_MACDONALD_DUB.route, "/dubs/old-macdonald");
