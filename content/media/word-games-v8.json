@@ -851,18 +851,18 @@
   ],
   "reviewArtifacts": [
     {
-      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/source-sheets-contact.png",
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/source-sheets-contact-r2.png",
       "width": 1536,
       "height": 5120,
-      "bytes": 7716021,
-      "sha256": "b580a6c9135bf555a7fd154826d964c835edd2c7008e40e789151f7b22d95d4e"
+      "bytes": 7810367,
+      "sha256": "bcdab61edcccc9b661fd02f35194193d4b62a5b8995edf3064c9beda7d5b1a59"
     },
     {
-      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/all-cards-contact.png",
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/all-cards-contact-r3.png",
       "width": 3072,
       "height": 2560,
-      "bytes": 4037618,
-      "sha256": "41918b78b1f3fee575d159ee195a80b4c48bf79de4680dfca66f896928123c7f"
+      "bytes": 4061549,
+      "sha256": "0996a2242abc4e9838a4867a9b223a2b69af7528e88431df5a3bc1ec7e73d0e3"
     },
     {
       "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/animals-cards.png",
@@ -886,11 +886,11 @@
       "sha256": "3c8cc0ca40244605164ae17b5289c85cc9f2ea02ff7e51a17d37723add7dc78f"
     },
     {
-      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/toys-cards.png",
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/toys-r2-cards.png",
       "width": 1536,
       "height": 1024,
-      "bytes": 861572,
-      "sha256": "619ade3bbb50aa80db740f83a1d79fdc3fd801074ef3dde92c4c3f107551b69e"
+      "bytes": 893751,
+      "sha256": "7e8cc40f27705e173990ed052b76ecc4e7732deec7d8aa37edefd994c8fd375d"
     },
     {
       "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/feelings-cards.png",
