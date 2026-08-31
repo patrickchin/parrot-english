@@ -3,6 +3,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
 BETTER_AUTH_SECRET=replace_with_at_least_32_random_characters
 BETTER_AUTH_URL=http://localhost:3000
+TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here
 LIVEKIT_URL=wss://your-project.livekit.cloud
 LIVEKIT_API_KEY=your_livekit_api_key
 LIVEKIT_API_SECRET=your_livekit_api_secret

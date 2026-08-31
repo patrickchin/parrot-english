@@ -32,6 +32,8 @@ const {
   AuthGateView,
   createAuthGate,
   deleteAccountSession,
+  deleteGuestAccount,
+  signInGuestSession,
   signOutSession,
   submitAuthForm,
 } = authGateModule;
@@ -60,7 +62,10 @@ test.after(async () => {
 function createAuthClientStub(overrides = {}) {
   return {
     deleteUser: async () => ({ error: null }),
-    signIn: { email: async () => ({ error: null }) },
+    signIn: {
+      anonymous: async () => ({ error: null }),
+      email: async () => ({ error: null }),
+    },
     signOut: async () => ({ error: null }),
     signUp: { email: async () => ({ error: null }) },
     ...overrides,
@@ -81,9 +86,11 @@ function renderAuthGate(overrides = {}) {
     isRetrying: false,
     isSigningOut: false,
     isSubmitting: false,
+    isGuestSubmitting: false,
     learnerName: "Mia",
     mode: "sign-in",
     onFieldChange() {},
+    onGuestSignIn() {},
     onModeChange() {},
     onNavigate() {},
     onOpenProfile: null,
@@ -95,6 +102,10 @@ function renderAuthGate(overrides = {}) {
     sessionError: null,
     signOutError: "",
     signedOutFallback: null,
+    turnstileResetKey: 0,
+    turnstileSiteKey: "turnstile-site-key",
+    turnstileToken: "turnstile-token",
+    onTurnstileTokenChange() {},
     ...overrides,
   };
 
@@ -177,7 +188,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   const session = {
     session: { id: "session-1" },
-    user: { email: "learner@example.com", name: "小明" },
+    user: { email: "learner@example.com", isAnonymous: true, name: "小明" },
   };
   const sessionError = new Error("stale session");
   let useSessionCalls = 0;
@@ -303,7 +314,11 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   await capturedProps.onSignOut();
   assert.equal(signOutCalls.length, 1);
-  assert.deepEqual(signOutCalls[0], { client });
+  assert.deepEqual(signOutCalls[0], {
+    client,
+    isAnonymous: true,
+    refetch,
+  });
 });
 
 test("auth gate container forwards an optional signed-out fallback", () => {
@@ -377,9 +392,10 @@ test("auth gate mounts one guardian boundary with the current session identity",
 
 test("auth client uses Better Auth's same-origin defaults", () => {
   assert.match(authClient, /from ["']better-auth\/react["']/);
+  assert.match(authClient, /anonymousClient/);
   assert.match(
     authClient,
-    /export const authClient\s*=\s*createAuthClient\(\s*\)/,
+    /export const authClient\s*=\s*createAuthClient\(\s*\{[\s\S]*plugins:\s*\[anonymousClient\(\)\][\s\S]*\}\s*\)/,
   );
   assert.doesNotMatch(authClient, /baseURL|http:\/\/|https:\/\//);
 });
@@ -501,12 +517,16 @@ test("signed-out views switch between sign-in and sign-up fields", () => {
   assert.match(signIn, /<h1[^>]*>Welcome back<\/h1>/);
   assert.match(signIn, /name="email"/);
   assert.match(signIn, /name="password"/);
+  assert.match(signIn, /aria-label="Security check"/);
+  assert.match(signIn, />Continue as guest</);
   assert.doesNotMatch(signIn, /name="name"/);
   assert.doesNotMatch(signIn, /LESSON CONTENT/);
   assert.doesNotMatch(signIn, /PARROT ENGLISH|登录后继续你的英语口语练习/);
   assert.match(signUp, /name="name"/);
   assert.match(signUp, /name="email"/);
   assert.match(signUp, /name="password"/);
+  assert.match(signUp, /aria-label="Security check"/);
+  assert.match(signUp, />Continue as guest</);
   assert.match(signUp, /<h1[^>]*>Create your account<\/h1>/);
   assert.match(signUp, /grown-up’s name for this Guardian account/i);
   assert.match(signUp, /add learner profiles next/i);
@@ -675,7 +695,7 @@ test("auth submission validates before calling the client", async () => {
   assert.equal(refetchCalls, 0);
 });
 
-test("sign-up submits trimmed fields and refetches a successful session", async () => {
+test("sign-up submits trimmed fields with Turnstile proof and refetches a successful session", async () => {
   assert.equal(
     typeof submitAuthForm,
     "function",
@@ -700,6 +720,7 @@ test("sign-up submits trimmed fields and refetches a successful session", async 
       password: "password",
     },
     mode: "sign-up",
+    turnstileToken: "opaque-turnstile-proof",
     refetch: async () => {
       refetchCalls += 1;
     },
@@ -707,9 +728,108 @@ test("sign-up submits trimmed fields and refetches a successful session", async 
 
   assert.equal(error, null);
   assert.deepEqual(payloads, [
-    { name: "小明", email: "learner@example.com", password: "password" },
+    {
+      name: "小明",
+      email: "learner@example.com",
+      password: "password",
+      fetchOptions: {
+        headers: { "x-captcha-response": "opaque-turnstile-proof" },
+      },
+    },
   ]);
   assert.equal(refetchCalls, 1);
+});
+
+test("sign-up waits for the security check before calling Better Auth", async () => {
+  let clientCalls = 0;
+  const error = await submitAuthForm({
+    client: createAuthClientStub({
+      signUp: {
+        email: async () => {
+          clientCalls += 1;
+          return { error: null };
+        },
+      },
+    }),
+    fields: {
+      name: "Mary",
+      email: "mary@example.com",
+      password: "password",
+    },
+    mode: "sign-up",
+    refetch: async () => {},
+    turnstileToken: null,
+  });
+
+  assert.equal(error, "Complete the security check, then try again.");
+  assert.equal(clientCalls, 0);
+});
+
+test("guest login sends one Turnstile proof and refetches the new session", async () => {
+  assert.equal(
+    typeof signInGuestSession,
+    "function",
+    "Expected an executable guest sign-in action",
+  );
+  const payloads = [];
+  let refetchCalls = 0;
+  const error = await signInGuestSession({
+    client: createAuthClientStub({
+      signIn: {
+        anonymous: async (payload) => {
+          payloads.push(payload);
+          return { error: null };
+        },
+        email: async () => ({ error: null }),
+      },
+    }),
+    refetch: async () => {
+      refetchCalls += 1;
+    },
+    turnstileToken: "opaque-guest-proof",
+  });
+
+  assert.equal(error, null);
+  assert.deepEqual(payloads, [
+    {
+      fetchOptions: {
+        headers: { "x-captcha-response": "opaque-guest-proof" },
+      },
+    },
+  ]);
+  assert.equal(refetchCalls, 1);
+});
+
+test("guest login waits for the security check and maps rejected proof", async () => {
+  let clientCalls = 0;
+  const client = createAuthClientStub({
+    signIn: {
+      anonymous: async () => {
+        clientCalls += 1;
+        return { error: { code: "VERIFICATION_FAILED" } };
+      },
+      email: async () => ({ error: null }),
+    },
+  });
+
+  assert.equal(
+    await signInGuestSession({
+      client,
+      refetch: async () => {},
+      turnstileToken: null,
+    }),
+    "Complete the security check, then try again.",
+  );
+  assert.equal(clientCalls, 0);
+  assert.equal(
+    await signInGuestSession({
+      client,
+      refetch: async () => {},
+      turnstileToken: "rejected-proof",
+    }),
+    "The security check expired or was rejected. Please try again.",
+  );
+  assert.equal(clientCalls, 1);
 });
 
 test("sign-in maps result errors, omits the name, and does not refetch", async () => {
@@ -788,6 +908,52 @@ test("sign-out maps failures and lets the reactive session own successful refres
   assert.equal(refetchCalls, 0);
 });
 
+test("guest deletion posts only to Parrot's cleanup-first account route", async () => {
+  assert.equal(
+    typeof deleteGuestAccount,
+    "function",
+    "Expected an executable guest-deletion action",
+  );
+  const requests = [];
+
+  const success = await deleteGuestAccount(async (url, init) => {
+    requests.push({ init, url });
+    return Response.json({ success: true });
+  });
+
+  assert.deepEqual(success, { error: null });
+  assert.deepEqual(requests, [
+    { init: { method: "POST" }, url: "/api/guest-account" },
+  ]);
+});
+
+test("guest sign-out deletes guest data and refreshes instead of orphaning the account", async () => {
+  let guestDeletionCalls = 0;
+  let refetchCalls = 0;
+  let signOutCalls = 0;
+  const result = await signOutSession({
+    client: createAuthClientStub({
+      signOut: async () => {
+        signOutCalls += 1;
+        return { error: null };
+      },
+    }),
+    deleteGuestAccountAction: async () => {
+      guestDeletionCalls += 1;
+      return { error: null };
+    },
+    isAnonymous: true,
+    refetch: async () => {
+      refetchCalls += 1;
+    },
+  });
+
+  assert.equal(result, null);
+  assert.equal(guestDeletionCalls, 1);
+  assert.equal(signOutCalls, 0);
+  assert.equal(refetchCalls, 1);
+});
+
 test("account deletion sends the password, fails closed, and refetches only after success", async () => {
   assert.equal(
     typeof deleteAccountSession,
@@ -832,4 +998,33 @@ test("account deletion sends the password, fails closed, and refetches only afte
     { password: "parent-password" },
     { password: "parent-password" },
   ]);
+});
+
+test("guest account deletion uses cleanup-first deletion without a password", async () => {
+  let deleteUserCalls = 0;
+  let guestDeletionCalls = 0;
+  let refetchCalls = 0;
+
+  const result = await deleteAccountSession({
+    client: createAuthClientStub({
+      deleteUser: async () => {
+        deleteUserCalls += 1;
+        return { error: null };
+      },
+    }),
+    deleteGuestAccountAction: async () => {
+      guestDeletionCalls += 1;
+      return { error: null };
+    },
+    isAnonymous: true,
+    password: "",
+    refetch: async () => {
+      refetchCalls += 1;
+    },
+  });
+
+  assert.equal(result, null);
+  assert.equal(guestDeletionCalls, 1);
+  assert.equal(deleteUserCalls, 0);
+  assert.equal(refetchCalls, 1);
 });

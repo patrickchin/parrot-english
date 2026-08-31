@@ -30,6 +30,7 @@ import {
   type AccountExperience,
 } from "./account-actions";
 import { authClient } from "./auth-client";
+import { TurnstileWidget } from "./Turnstile";
 import { GuardianAccessProvider, useGuardianAccess } from "./GuardianAccess";
 import { GuardianUnlockDialog } from "./GuardianUnlock";
 import {
@@ -45,9 +46,16 @@ interface AuthActionResult {
   error?: unknown | null;
 }
 
+type CaptchaFetchOptions = {
+  fetchOptions: {
+    headers: { "x-captcha-response": string };
+  };
+};
+
 export interface AuthActionClient {
   deleteUser(fields: { password: string }): Promise<AuthActionResult>;
   signIn: {
+    anonymous(fields: CaptchaFetchOptions): Promise<AuthActionResult>;
     email(fields: {
       email: string;
       password: string;
@@ -59,7 +67,7 @@ export interface AuthActionClient {
       name: string;
       email: string;
       password: string;
-    }): Promise<AuthActionResult>;
+    } & CaptchaFetchOptions): Promise<AuthActionResult>;
   };
 }
 
@@ -68,14 +76,26 @@ interface SubmitAuthFormOptions {
   fields: AuthFields;
   mode: AuthMode;
   refetch: () => Promise<unknown>;
+  turnstileToken?: string | null;
+}
+
+interface SignInGuestSessionOptions {
+  client: AuthActionClient;
+  refetch: () => Promise<unknown>;
+  turnstileToken: string | null;
 }
 
 interface SignOutSessionOptions {
   client: AuthActionClient;
+  deleteGuestAccountAction?: typeof deleteGuestAccount;
+  isAnonymous?: boolean;
+  refetch?: () => Promise<unknown>;
 }
 
 interface DeleteAccountSessionOptions {
   client: AuthActionClient;
+  deleteGuestAccountAction?: typeof deleteGuestAccount;
+  isAnonymous?: boolean;
   password: string;
   refetch: () => Promise<unknown>;
 }
@@ -83,6 +103,20 @@ interface DeleteAccountSessionOptions {
 const SIGN_OUT_ERROR_MESSAGE = "Sign out did not finish.";
 const DELETE_ACCOUNT_ERROR_MESSAGE =
   "Unable to delete the account. The account and private story art were kept. Please try again.";
+const TURNSTILE_REQUIRED_MESSAGE =
+  "Complete the security check, then try again.";
+
+type AuthFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export async function deleteGuestAccount(
+  request: AuthFetch = fetch,
+): Promise<AuthActionResult> {
+  const response = await request("/api/guest-account", { method: "POST" });
+  return { error: response.ok ? null : { status: response.status } };
+}
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
@@ -124,11 +158,15 @@ export async function submitAuthForm({
   fields,
   mode,
   refetch,
+  turnstileToken = null,
 }: SubmitAuthFormOptions): Promise<string | null> {
   const validationError = validateAuthForm(mode, fields);
   if (validationError) return validationError;
 
   const normalizedEmail = fields.email.trim();
+  if (mode === "sign-up" && !turnstileToken) {
+    return TURNSTILE_REQUIRED_MESSAGE;
+  }
 
   try {
     const result =
@@ -137,6 +175,9 @@ export async function submitAuthForm({
             name: fields.name.trim(),
             email: normalizedEmail,
             password: fields.password,
+            fetchOptions: {
+              headers: { "x-captcha-response": turnstileToken! },
+            },
           })
         : await client.signIn.email({
             email: normalizedEmail,
@@ -152,12 +193,39 @@ export async function submitAuthForm({
   }
 }
 
+export async function signInGuestSession({
+  client,
+  refetch,
+  turnstileToken,
+}: SignInGuestSessionOptions): Promise<string | null> {
+  if (!turnstileToken) return TURNSTILE_REQUIRED_MESSAGE;
+
+  try {
+    const result = await client.signIn.anonymous({
+      fetchOptions: {
+        headers: { "x-captcha-response": turnstileToken },
+      },
+    });
+    if (result.error) return getAuthErrorMessage(result.error);
+    await refetch();
+    return null;
+  } catch (caughtError) {
+    return getAuthErrorMessage(caughtError);
+  }
+}
+
 export async function signOutSession({
   client,
+  deleteGuestAccountAction = deleteGuestAccount,
+  isAnonymous = false,
+  refetch,
 }: SignOutSessionOptions): Promise<string | null> {
   try {
-    const result = await client.signOut();
+    const result = isAnonymous
+      ? await deleteGuestAccountAction()
+      : await client.signOut();
     if (result.error) return SIGN_OUT_ERROR_MESSAGE;
+    if (isAnonymous) await refetch?.();
 
     return null;
   } catch {
@@ -167,11 +235,15 @@ export async function signOutSession({
 
 export async function deleteAccountSession({
   client,
+  deleteGuestAccountAction = deleteGuestAccount,
+  isAnonymous = false,
   password,
   refetch,
 }: DeleteAccountSessionOptions): Promise<string | null> {
   try {
-    const result = await client.deleteUser({ password });
+    const result = isAnonymous
+      ? await deleteGuestAccountAction()
+      : await client.deleteUser({ password });
     if (result.error) return DELETE_ACCOUNT_ERROR_MESSAGE;
 
     await refetch();
@@ -188,6 +260,7 @@ interface AuthSession {
   user: {
     email: string;
     id?: string | null;
+    isAnonymous?: boolean | null;
     name?: string | null;
   };
 }
@@ -201,20 +274,26 @@ interface AuthGateViewProps {
   isRetrying: boolean;
   isSigningOut: boolean;
   isSubmitting: boolean;
+  isGuestSubmitting: boolean;
   hasActiveLearner: boolean;
   learnerName: string | null;
   mode: AuthMode;
   onFieldChange: (field: keyof AuthFields, value: string) => void;
+  onGuestSignIn: () => void;
   onModeChange: (mode: AuthMode) => void;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
   onRetry: () => void;
   onSignOut: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
+  onTurnstileTokenChange: (token: string | null) => void;
   profileError: string;
   session: AuthSession | null;
   sessionError: unknown;
   signOutError: string;
   signedOutFallback: ReactNode | null;
+  turnstileResetKey: number;
+  turnstileSiteKey: string;
+  turnstileToken: string | null;
 }
 
 function navigateInBrowser(path: string, options?: { replace?: boolean }) {
@@ -325,19 +404,25 @@ export function AuthGateView({
   isRetrying,
   isSigningOut,
   isSubmitting,
+  isGuestSubmitting,
   learnerName,
   mode,
   onFieldChange,
+  onGuestSignIn,
   onModeChange,
   onNavigate,
   onRetry,
   onSignOut,
   onSubmit,
+  onTurnstileTokenChange,
   profileError,
   session,
   sessionError,
   signOutError,
   signedOutFallback,
+  turnstileResetKey,
+  turnstileSiteKey,
+  turnstileToken,
 }: AuthGateViewProps) {
   const authHeadingRef = useRef<HTMLHeadingElement>(null);
   const authHeadingKey =
@@ -407,6 +492,8 @@ export function AuthGateView({
 
   if (!session) {
     const isSignUp = mode === "sign-up";
+    const securityCheckComplete = Boolean(turnstileSiteKey && turnstileToken);
+    const authActionPending = isSubmitting || isGuestSubmitting;
 
     return (
       <AuthScreen>
@@ -437,7 +524,7 @@ export function AuthGateView({
           <form onSubmit={onSubmit}>
             <fieldset
               className="m-0 grid min-w-0 gap-4 border-0 p-0 disabled:opacity-75"
-              disabled={isSubmitting}
+              disabled={authActionPending}
             >
               <SegmentedControl
                 aria-label="Choose sign in or sign up"
@@ -532,7 +619,21 @@ export function AuthGateView({
                 </p>
               ) : null}
 
-              <ActionButton fullWidth type="submit">
+              <TurnstileWidget
+                key={turnstileResetKey}
+                onTokenChange={onTurnstileTokenChange}
+                siteKey={turnstileSiteKey}
+              />
+              <p className="m-0 text-center text-xs font-bold leading-snug text-slate-500">
+                The security check is needed only for guest access and new
+                accounts.
+              </p>
+
+              <ActionButton
+                disabled={isSignUp && !securityCheckComplete}
+                fullWidth
+                type="submit"
+              >
                 {isSubmitting
                   ? isSignUp
                     ? "Creating account…"
@@ -540,6 +641,21 @@ export function AuthGateView({
                   : isSignUp
                     ? "Create account"
                     : "Sign in and start"}
+              </ActionButton>
+              <div
+                aria-hidden="true"
+                className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-400 before:h-px before:bg-sky-200 after:h-px after:bg-sky-200"
+              >
+                or
+              </div>
+              <ActionButton
+                disabled={!securityCheckComplete || authActionPending}
+                fullWidth
+                onClick={onGuestSignIn}
+                type="button"
+                variant="surface"
+              >
+                {isGuestSubmitting ? "Continuing as guest…" : "Continue as guest"}
               </ActionButton>
             </fieldset>
           </form>
@@ -634,8 +750,10 @@ interface CreateAuthGateOptions {
     sessionIdentity: string | null;
   }>;
   signOutAction?: typeof signOutSession;
+  guestSignInAction?: typeof signInGuestSession;
   stateHook?: StateHook;
   submitAction?: typeof submitAuthForm;
+  turnstileSiteKey?: string;
   View?: ComponentType<AuthGateViewProps>;
 }
 
@@ -644,8 +762,10 @@ export function createAuthGate({
   deleteAccountAction = deleteAccountSession,
   GuardianAccessBoundary = GuardianAccessProvider,
   signOutAction = signOutSession,
+  guestSignInAction = signInGuestSession,
   stateHook = useState,
   submitAction = submitAuthForm,
+  turnstileSiteKey = "",
   View = AuthGateView,
 }: CreateAuthGateOptions) {
   return function AuthGateContainer({
@@ -659,12 +779,16 @@ export function createAuthGate({
     const [fields, setFields] = stateHook<AuthFields>(EMPTY_FIELDS);
     const [formError, setFormError] = stateHook("");
     const [isSubmitting, setIsSubmitting] = stateHook(false);
+    const [isGuestSubmitting, setIsGuestSubmitting] = stateHook(false);
+    const [turnstileToken, setTurnstileToken] = stateHook<string | null>(null);
+    const [turnstileResetKey, setTurnstileResetKey] = stateHook(0);
     const [signOutState, setSignOutState] =
       stateHook<SignOutState>(EMPTY_SIGN_OUT_STATE);
     const [isRetrying, setIsRetrying] = stateHook(false);
     const [profileActionState, setProfileActionState] =
       stateHook<ProfileActionState>(EMPTY_PROFILE_ACTION_STATE);
     const signOutAttemptRef = useRef<{ owner: string } | null>(null);
+    const guestSignInAttemptRef = useRef(false);
     const sessionIdentity = getSessionIdentity(session);
     const currentSessionIdentityRef = useRef(sessionIdentity);
     currentSessionIdentityRef.current = sessionIdentity;
@@ -734,10 +858,36 @@ export function createAuthGate({
           fields,
           mode,
           refetch,
+          turnstileToken,
         });
         setFormError(nextError ?? "");
       } finally {
+        if (mode === "sign-up") {
+          setTurnstileToken(null);
+          setTurnstileResetKey((current) => current + 1);
+        }
         setIsSubmitting(false);
+      }
+    }
+
+    async function handleGuestSignIn() {
+      if (guestSignInAttemptRef.current || isSubmitting) return;
+      guestSignInAttemptRef.current = true;
+      setIsGuestSubmitting(true);
+      setFormError("");
+
+      try {
+        const nextError = await guestSignInAction({
+          client,
+          refetch,
+          turnstileToken,
+        });
+        setFormError(nextError ?? "");
+      } finally {
+        guestSignInAttemptRef.current = false;
+        setIsGuestSubmitting(false);
+        setTurnstileToken(null);
+        setTurnstileResetKey((current) => current + 1);
       }
     }
 
@@ -755,7 +905,11 @@ export function createAuthGate({
 
       let nextError: string | null;
       try {
-        nextError = await signOutAction({ client });
+        nextError = await signOutAction({
+          client,
+          isAnonymous: session?.user.isAnonymous === true,
+          refetch,
+        });
       } catch {
         nextError = SIGN_OUT_ERROR_MESSAGE;
       }
@@ -770,12 +924,18 @@ export function createAuthGate({
     }
 
     async function handleDeleteAccount(password: string) {
-      return deleteAccountAction({ client, password, refetch });
+      return deleteAccountAction({
+        client,
+        isAnonymous: session?.user.isAnonymous === true,
+        password,
+        refetch,
+      });
     }
 
     return (
       <AccountActionProvider
         deleteAccount={handleDeleteAccount}
+        isAnonymous={session?.user.isAnonymous === true}
         profileAction={profileAction}
         sessionIdentity={sessionIdentity}
         setProfileAction={setProfileAction}
@@ -791,6 +951,7 @@ export function createAuthGate({
             isRetrying={isRetrying}
             isSigningOut={ownsSignOutState && signOutState.isPending}
             isSubmitting={isSubmitting}
+            isGuestSubmitting={isGuestSubmitting}
             hasActiveLearner={profileAction?.hasActiveLearner ?? false}
             learnerName={profileAction?.learnerName ?? null}
             guardianUnlockDestination={
@@ -800,16 +961,21 @@ export function createAuthGate({
             }
             mode={mode}
             onFieldChange={updateField}
+            onGuestSignIn={() => void handleGuestSignIn()}
             onModeChange={selectMode}
             onNavigate={navigate}
             onRetry={() => void handleRetry()}
             onSignOut={handleSignOut}
             onSubmit={handleSubmit}
+            onTurnstileTokenChange={setTurnstileToken}
             profileError={profileAction?.error ?? ""}
             session={session}
             sessionError={error}
             signOutError={ownsSignOutState ? signOutState.error : ""}
             signedOutFallback={signedOutFallback ?? null}
+            turnstileResetKey={turnstileResetKey}
+            turnstileSiteKey={turnstileSiteKey}
+            turnstileToken={turnstileToken}
           >
             {children}
           </View>
@@ -819,7 +985,10 @@ export function createAuthGate({
   };
 }
 
-const ProductionAuthGate = createAuthGate({ client: authClient });
+const ProductionAuthGate = createAuthGate({
+  client: authClient,
+  turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "",
+});
 
 export function AuthGate(props: Omit<AuthGateProps, "navigate">) {
   const location = useLocation();

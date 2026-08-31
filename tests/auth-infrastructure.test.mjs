@@ -27,6 +27,12 @@ const EXPECTED_COLUMNS = {
     { name: "image", type: "TEXT", notNull: 0 },
     { name: "created_at", type: "INTEGER", notNull: 1 },
     { name: "updated_at", type: "INTEGER", notNull: 1 },
+    {
+      name: "is_anonymous",
+      type: "INTEGER",
+      notNull: 1,
+      defaultValue: "false",
+    },
   ],
   session: [
     { name: "id", type: "TEXT", notNull: 1, primaryKey: 1 },
@@ -87,6 +93,7 @@ const EXPECTED_TABLE_MODELS = {
       "image",
       "createdAt",
       "updatedAt",
+      "isAnonymous",
     ],
     columns: EXPECTED_COLUMNS.user.map(({ name }) => name),
   },
@@ -399,6 +406,10 @@ describe("authentication infrastructure", () => {
     const drizzleConfig = readProjectFile("drizzle.config.ts");
     const tsconfig = readProjectFile("tsconfig.json");
     const devVars = readProjectFile(".dev.vars.example");
+    const frontendEnv = readProjectFile(".env.example");
+    const deployWorkflow = readProjectFile(
+      ".github/workflows/deploy-cloudflare.yml"
+    );
     const workerTypes = readProjectFile("worker-configuration.d.ts");
 
     assert.match(packageJson.dependencies["better-auth"], /^\^1\.6\./);
@@ -428,12 +439,25 @@ describe("authentication infrastructure", () => {
         "ELEVENLABS_API_KEY=your_elevenlabs_api_key_here\n" +
         "BETTER_AUTH_SECRET=replace_with_at_least_32_random_characters\n" +
         "BETTER_AUTH_URL=http://localhost:3000\n" +
+        "TURNSTILE_SECRET_KEY=your_turnstile_secret_key_here\n" +
         "LIVEKIT_URL=wss://your-project.livekit.cloud\n" +
         "LIVEKIT_API_KEY=your_livekit_api_key\n" +
         "LIVEKIT_API_SECRET=your_livekit_api_secret\n" +
         "LIVEKIT_AGENT_NAME=parrot-conversation\n" +
         "CONVERSATION_AGENT_SECRET=replace_with_a_separate_random_secret\n" +
         "REALTIME_CONVERSATIONS_ENABLED=0\n"
+    );
+    assert.match(
+      frontendEnv,
+      /^VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key_here$/m
+    );
+    assert.match(
+      deployWorkflow,
+      /VITE_TURNSTILE_SITE_KEY:\s*\$\{\{ vars\.TURNSTILE_SITE_KEY \}\}/
+    );
+    assert.match(
+      deployWorkflow,
+      /test -n "\$VITE_TURNSTILE_SITE_KEY"/
     );
     assert.match(workerTypes, /\bDB:\s*D1Database;/);
     assert.match(workerTypes, /\bdeclare abstract class D1Database\b/);
