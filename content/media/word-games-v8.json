@@ -31,6 +31,8 @@
     {
       "id": "animals",
       "promptFile": "content/media/prompts/word-games-v8/animals.json",
+      "promptBytes": 1792,
+      "promptSha256": "fa01719a569edb98821dddb8059c02b2071f9abc821600f50fe5d73713dcc04d",
       "sourceSheet": {
         "ignoredPath": "tmp/imagegen/word-games/v8/sheets/animals.png",
         "format": "png",
@@ -195,6 +197,8 @@
     {
       "id": "body-parts",
       "promptFile": "content/media/prompts/word-games-v8/body-parts.json",
+      "promptBytes": 2438,
+      "promptSha256": "61b725728a6107d6fc958d31387d868b611c37886005c9f4035c7c102e3a4c26",
       "sourceSheet": {
         "ignoredPath": "tmp/imagegen/word-games/v8/sheets/body-parts.png",
         "format": "png",
@@ -359,6 +363,8 @@
     {
       "id": "food",
       "promptFile": "content/media/prompts/word-games-v8/food.json",
+      "promptBytes": 2138,
+      "promptSha256": "bda93d5f5e51f91414c224a238dd127f12bd9cf3c8da8cc8a0725ebc9d814982",
       "sourceSheet": {
         "ignoredPath": "tmp/imagegen/word-games/v8/sheets/food.png",
         "format": "png",
@@ -523,6 +529,8 @@
     {
       "id": "toys",
       "promptFile": "content/media/prompts/word-games-v8/toys.json",
+      "promptBytes": 2376,
+      "promptSha256": "5c7cc7bc606c3fe7f95057c9d43d7c75af598d2cc3658ea37d91b8103f341dc3",
       "sourceSheet": {
         "ignoredPath": "tmp/imagegen/word-games/v8/sheets/toys-r2.png",
         "format": "png",
@@ -687,6 +695,8 @@
     {
       "id": "feelings",
       "promptFile": "content/media/prompts/word-games-v8/feelings.json",
+      "promptBytes": 2527,
+      "promptSha256": "82c466712ba7f4edd6cc26ece8680e3340709be9e20c1ec13d5d7728de60a0d5",
       "sourceSheet": {
         "ignoredPath": "tmp/imagegen/word-games/v8/sheets/feelings.png",
         "format": "png",

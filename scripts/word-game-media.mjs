@@ -213,6 +213,14 @@ export function createWordGameMediaPublishPlan(manifestValue) {
     if (promptFile !== `content/media/prompts/word-games-v8/${topicId}.json`) {
       throw new Error(`topics[${topicIndex}].promptFile must match its topic`);
     }
+    const promptBytes = requirePositiveInteger(
+      topic.promptBytes,
+      `topics[${topicIndex}].promptBytes`,
+    );
+    const promptSha256 = requireSha256(
+      topic.promptSha256,
+      `topics[${topicIndex}].promptSha256`,
+    );
     const sourceSheet = parseSourceSheet(
       topic.sourceSheet,
       `topics[${topicIndex}].sourceSheet`,
@@ -258,7 +266,14 @@ export function createWordGameMediaPublishPlan(manifestValue) {
         }
       }
     }
-    return { id: topicId, items, promptFile, sourceSheet };
+    return {
+      id: topicId,
+      items,
+      promptBytes,
+      promptFile,
+      promptSha256,
+      sourceSheet,
+    };
   });
 
   const publicKeys = topics.flatMap(({ items }) =>
@@ -360,10 +375,19 @@ export async function prepareWordGameMediaUploads(planValue, options = {}) {
   const cwd = path.resolve(options.cwd ?? process.cwd());
   const stagingRoot = "tmp/imagegen/word-games/v8";
   const promptRoot = "content/media/prompts/word-games-v8";
-  const [realStagingRoot, realPromptRoot] = await Promise.all([
+  const [realRepositoryRoot, realStagingRoot, realPromptRoot] = await Promise.all([
+    realpath(cwd),
     realpath(path.resolve(cwd, stagingRoot)),
     realpath(path.resolve(cwd, promptRoot)),
   ]);
+  for (const [label, root] of [
+    [stagingRoot, realStagingRoot],
+    [promptRoot, realPromptRoot],
+  ]) {
+    if (!root.startsWith(`${realRepositoryRoot}${path.sep}`)) {
+      throw new Error(`${label} root must resolve inside the repository root`);
+    }
+  }
   const topicBytes = new Map();
 
   await Promise.all(
@@ -382,6 +406,12 @@ export async function prepareWordGameMediaUploads(planValue, options = {}) {
         topic.sourceSheet.bytes,
         topic.sourceSheet.sha256,
         topic.sourceSheet.ignoredPath,
+      );
+      checkBytes(
+        promptBytes,
+        topic.promptBytes,
+        topic.promptSha256,
+        topic.promptFile,
       );
       const sourceMetadata = await imageMetadata(
         sourceBytes,
@@ -544,6 +574,7 @@ export async function verifyWordGameMediaDelivery(preparedValue, options = {}) {
       let metadata;
       try {
         metadata = await sharp(bytes, { failOn: "error" }).metadata();
+        await sharp(bytes, { failOn: "error" }).raw().toBuffer();
       } catch {
         errors.push(`${output.key} must decode as WebP`);
         return;

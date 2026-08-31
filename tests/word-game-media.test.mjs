@@ -126,6 +126,15 @@ describe("word-game media publishing", () => {
     );
     assert.equal(plan.privateObjects.length, 10);
     assert.equal(
+      plan.topics.every(
+        ({ promptBytes, promptSha256 }) =>
+          Number.isSafeInteger(promptBytes) &&
+          promptBytes > 0 &&
+          /^[a-f0-9]{64}$/.test(promptSha256),
+      ),
+      true,
+    );
+    assert.equal(
       plan.publicOutputs.every(
         ({ cacheControl, contentType, height, width }) =>
           cacheControl === "public, max-age=31536000, immutable" &&
@@ -239,6 +248,8 @@ describe("word-game media publishing", () => {
 
   it("rejects invalid source/output declarations and incomplete audits", () => {
     const mutations = [
+      [(value) => (value.topics[0].promptBytes = 0), /prompt.*bytes/i],
+      [(value) => (value.topics[0].promptSha256 = "bad"), /prompt.*sha-?256/i],
       [(value) => (value.topics[0].sourceSheet.sha256 = "bad"), /sha-?256/i],
       [(value) => (value.topics[0].sourceSheet.bytes = 0), /bytes/i],
       [(value) => (value.topics[0].sourceSheet.width = 100), /1536|geometry|width/i],
@@ -283,10 +294,16 @@ describe("word-game media publishing", () => {
     );
   });
 
-  it("rejects source and accepted card byte/hash drift", async () => {
+  it("rejects source, prompt, and accepted card byte/hash drift", async () => {
     for (const mutate of [
       (value) => {
         value.topics[0].sourceSheet.sha256 = "0".repeat(64);
+      },
+      (value) => {
+        value.topics[0].promptBytes += 1;
+      },
+      (value) => {
+        value.topics[0].promptSha256 = "0".repeat(64);
       },
       (value) => {
         value.topics[0].items[0].output.bytes += 1;
@@ -389,18 +406,44 @@ describe("word-game media publishing", () => {
     }
   });
 
+  it("rejects staging and prompt roots that are symlinks outside the repository", async () => {
+    for (const [relativeRoot, outsideRoot] of [
+      ["tmp/imagegen/word-games/v8", path.join(repoRoot, "tmp/imagegen/word-games/v8")],
+      ["content/media/prompts/word-games-v8", path.join(repoRoot, "content/media/prompts/word-games-v8")],
+    ]) {
+      const cwd = await createPublishFixture();
+      const root = path.join(cwd, relativeRoot);
+      await rm(root, { recursive: true });
+      await symlink(outsideRoot, root, "dir");
+      await assert.rejects(
+        wordGameMedia.prepareWordGameMediaUploads(
+          wordGameMedia.createWordGameMediaPublishPlan(manifest),
+          { cwd },
+        ),
+        /root.*repository|repository.*root|resolve inside/i,
+        relativeRoot,
+      );
+    }
+  });
+
   it("rejects prompts whose JSON provenance does not match the topic", async () => {
     const cwd = await createPublishFixture();
     await mkdir(path.join(cwd, "content/media/prompts/word-games-v8"), {
       recursive: true,
     });
-    await writeFile(
-      path.join(cwd, "content/media/prompts/word-games-v8/animals.json"),
+    const promptBytes = Buffer.from(
       JSON.stringify({ generationMode: "built-in-imagegen", prompt: "valid", schemaVersion: 1, topic: "food" }),
     );
+    await writeFile(
+      path.join(cwd, "content/media/prompts/word-games-v8/animals.json"),
+      promptBytes,
+    );
+    const changed = cloneManifest();
+    changed.topics[0].promptBytes = promptBytes.length;
+    changed.topics[0].promptSha256 = sha256(promptBytes);
     await assert.rejects(
       wordGameMedia.prepareWordGameMediaUploads(
-        wordGameMedia.createWordGameMediaPublishPlan(manifest),
+        wordGameMedia.createWordGameMediaPublishPlan(changed),
         { cwd },
       ),
       /prompt.*topic|animals.*topic/i,
@@ -457,6 +500,15 @@ describe("word-game media publishing", () => {
         width: 256,
       },
     }).webp().toBuffer();
+    const truncatedWebp = Buffer.from(output.bytes.subarray(0, output.bytes.length - 4));
+    truncatedWebp.writeUInt32LE(truncatedWebp.length - 8, 4);
+    truncatedWebp.writeUInt32LE(truncatedWebp.length - 20, 16);
+    const truncatedMetadata = await sharp(truncatedWebp, {
+      failOn: "error",
+    }).metadata();
+    assert.equal(truncatedMetadata.format, "webp");
+    assert.equal(truncatedMetadata.width, 512);
+    assert.equal(truncatedMetadata.height, 512);
     const cases = [
       [async () => { throw new Error("offline"); }, /could not be requested.*offline/i],
       [async () => deliveryResponse(output.bytes, { status: 503 }), /HTTP 503/i],
@@ -465,6 +517,7 @@ describe("word-game media publishing", () => {
       [async () => deliveryResponse(output.bytes, { headers: { "content-length": "0" } }), /positive content-length/i],
       [async () => deliveryResponse(prepared.publicOutputs[1].bytes), /SHA-256 mismatch/i],
       [async () => deliveryResponse(Buffer.from("not-webp")), /decode as WebP/i],
+      [async () => deliveryResponse(truncatedWebp), /decode as WebP/i],
       [async () => deliveryResponse(smallWebp), /512x512/i],
     ];
 
@@ -527,6 +580,7 @@ describe("word-game media publishing", () => {
     for (const firstResult of [
       successfulCommand(),
       { status: 1, stderr: "permission denied", stdout: "" },
+      { status: 1, stderr: "Authentication endpoint returned HTTP 404", stdout: "" },
       new Error("wrangler crashed"),
     ]) {
       const calls = [];
@@ -546,7 +600,7 @@ describe("word-game media publishing", () => {
           },
           writeOutput: () => {},
         }),
-        /already exists|could not preflight|permission denied|wrangler crashed/i,
+        /already exists|could not preflight|permission denied|authentication endpoint|wrangler crashed/i,
       );
       assert.equal(calls.length, 40);
       assert.equal(calls.every((args) => args.includes("get")), true);
@@ -615,15 +669,17 @@ describe("word-game media publishing", () => {
         );
         return deliveryResponse(output.bytes);
       },
-      runCommand: (_command, args, options) => {
-        if (args.includes("get")) {
-          events.push("r2-get");
-          return missingObject();
-        }
-        events.push("r2-put");
-        puts.push({ args, input: options.input });
-        return successfulCommand();
+      runCommand: () => {
+        events.push("r2-get");
+        return missingObject();
       },
+      createUploader: async () => ({
+        close: async () => {},
+        put: async (upload) => {
+          events.push("r2-put");
+          puts.push(upload);
+        },
+      }),
       writeOutput: () => {},
     });
 
@@ -636,31 +692,27 @@ describe("word-game media publishing", () => {
     assert.equal(events.slice(0, firstPut).filter((value) => value === "preflight-fixture").length, 30);
     assert.equal(events.slice(firstPut, firstPut + 40).every((value) => value === "r2-put"), true);
 
-    const privatePuts = puts.filter(({ args }) =>
-      args.some((arg) => arg.startsWith("private-source/")),
-    );
-    const publicPuts = puts.filter(({ args }) =>
-      args.some((arg) => arg.startsWith("public-media/")),
-    );
+    const privatePuts = puts.filter(({ bucket }) => bucket === "private-source");
+    const publicPuts = puts.filter(({ bucket }) => bucket === "public-media");
     assert.equal(privatePuts.length, 10);
     assert.equal(publicPuts.length, 30);
     assert.equal(
-      privatePuts.every(({ args }) => !args.includes("--cache-control")),
+      privatePuts.every(({ cacheControl }) => cacheControl === undefined),
       true,
     );
     assert.equal(
-      privatePuts.filter(({ args }) => args.includes("application/json")).length,
+      privatePuts.filter(({ contentType }) => contentType === "application/json").length,
       5,
     );
     assert.equal(
-      privatePuts.filter(({ args }) => args.includes("image/png")).length,
+      privatePuts.filter(({ contentType }) => contentType === "image/png").length,
       5,
     );
     assert.equal(
       publicPuts.every(
-        ({ args }) =>
-          args.includes("image/webp") &&
-          args.includes("public, max-age=31536000, immutable"),
+        ({ cacheControl, contentType }) =>
+          contentType === "image/webp" &&
+          cacheControl === "public, max-age=31536000, immutable",
       ),
       true,
     );
@@ -679,18 +731,138 @@ describe("word-game media publishing", () => {
           originRequests += 1;
           return new Response(null, { status: 404 });
         },
-        runCommand: (_command, args) => {
-          if (args.includes("get")) return missingObject();
-          puts += 1;
-          return puts === 3
-            ? { status: 1, stderr: "upload failed", stdout: "" }
-            : successfulCommand();
-        },
+        runCommand: () => missingObject(),
+        createUploader: async () => ({
+          close: async () => {},
+          put: async () => {
+            puts += 1;
+            if (puts === 3) throw new Error("upload failed");
+          },
+        }),
         writeOutput: () => {},
       }),
       /upload failed.*do not retry|do not retry.*upload failed/i,
     );
     assert.equal(puts, 3);
     assert.equal(originRequests, 30);
+  });
+
+  it("uses an atomic R2 create-only condition and refuses a concurrent creation", async () => {
+    const calls = [];
+    const stored = new Map();
+    const bucket = {
+      put: async (key, body, options) => {
+        calls.push({ body: Buffer.from(await new Response(body).arrayBuffer()), key, options });
+        if (stored.has(key)) return null;
+        const object = { key };
+        stored.set(key, object);
+        return object;
+      },
+    };
+    const environment = { PUBLIC_BUCKET: bucket, SOURCE_BUCKET: bucket };
+    const request = (body) => new Request(
+      "http://127.0.0.1/upload?scope=public&key=assets%2Fv8%2Fword-games%2Fanimals%2Fcat.webp",
+      {
+        body,
+        headers: {
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-type": "image/webp",
+          "x-parrot-upload-secret": "secret",
+        },
+        method: "PUT",
+      },
+    );
+
+    const created = await wordGamePublisher.atomicR2WorkerFetch(
+      request("first"),
+      environment,
+      "secret",
+    );
+    const concurrent = await wordGamePublisher.atomicR2WorkerFetch(
+      request("second"),
+      environment,
+      "secret",
+    );
+
+    assert.equal(created.status, 201);
+    assert.equal(concurrent.status, 412);
+    assert.deepEqual(calls.map(({ options }) => options.onlyIf), [
+      { etagDoesNotMatch: "*" },
+      { etagDoesNotMatch: "*" },
+    ]);
+    assert.deepEqual(calls[0].options.httpMetadata, {
+      cacheControl: "public, max-age=31536000, immutable",
+      contentType: "image/webp",
+    });
+    assert.equal(stored.size, 1);
+    assert.equal(calls[0].body.toString(), "first");
+    assert.equal(calls[1].body.toString(), "second");
+  });
+
+  it("rejects unauthorized or malformed atomic worker requests before R2", async () => {
+    let puts = 0;
+    const environment = {
+      PUBLIC_BUCKET: { put: async () => { puts += 1; } },
+      SOURCE_BUCKET: { put: async () => { puts += 1; } },
+    };
+    for (const request of [
+      new Request("http://127.0.0.1/upload?scope=public&key=key", {
+        body: "bytes",
+        method: "PUT",
+      }),
+      new Request("http://127.0.0.1/upload?scope=wrong&key=key", {
+        body: "bytes",
+        headers: { "x-parrot-upload-secret": "secret" },
+        method: "PUT",
+      }),
+      new Request("http://127.0.0.1/upload?scope=public", {
+        body: "bytes",
+        headers: { "x-parrot-upload-secret": "secret" },
+        method: "PUT",
+      }),
+      new Request("http://127.0.0.1/upload?scope=public&key=key", {
+        headers: { "x-parrot-upload-secret": "secret" },
+        method: "GET",
+      }),
+    ]) {
+      const response = await wordGamePublisher.atomicR2WorkerFetch(
+        request,
+        environment,
+        "secret",
+      );
+      assert.equal(response.status >= 400, true);
+    }
+    assert.equal(puts, 0);
+  });
+
+  it("stops when a key is created concurrently after preflight", async () => {
+    let puts = 0;
+    let requests = 0;
+    await assert.rejects(
+      wordGamePublisher.runWordGameMediaPublisher({
+        args: ["--apply"],
+        cacheBust: "fixture",
+        createUploader: async () => ({
+          close: async () => {},
+          put: async () => {
+            puts += 1;
+            if (puts === 3) {
+              throw new Error("was created concurrently; do not retry this media version");
+            }
+          },
+        }),
+        cwd: repoRoot,
+        env: applyEnvironment(),
+        fetch: async () => {
+          requests += 1;
+          return new Response(null, { status: 404 });
+        },
+        runCommand: () => missingObject(),
+        writeOutput: () => {},
+      }),
+      /created concurrently.*do not retry/i,
+    );
+    assert.equal(puts, 3);
+    assert.equal(requests, 30);
   });
 });
