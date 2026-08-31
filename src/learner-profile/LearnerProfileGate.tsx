@@ -3,6 +3,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -147,6 +148,7 @@ type QuestionPresentation = {
 };
 
 type LearnerIdentityCheck = "checking" | "confirmed" | "failed";
+type LearnerSelectionSyncStatus = "pending" | "ready" | "unavailable";
 
 const IDLE_QUESTION_PRESENTATION: QuestionPresentation = {
   pendingAction: null,
@@ -875,6 +877,10 @@ export function LearnerProfileGate({
     useState<LearnerIdentityCheck>(
       sessionIdentity === null ? "confirmed" : "checking",
     );
+  const [learnerSelectionSyncStatus, setLearnerSelectionSyncStatus] =
+    useState<LearnerSelectionSyncStatus>(
+      sessionIdentity === null ? "unavailable" : "pending",
+    );
   const [rosterRevision, setRosterRevision] = useState(0);
   const [started, setStarted] = useState(false);
   const [useFormFallback, setUseFormFallback] = useState(false);
@@ -931,6 +937,12 @@ export function LearnerProfileGate({
   > | null>(null);
   dataRef.current = data;
   learnerIdentityCheckRef.current = learnerIdentityCheck;
+  const currentLearnerSelectionSyncStatus =
+    learnerAccountIdentityRef.current === sessionIdentity
+      ? learnerSelectionSyncStatus
+      : sessionIdentity === null
+        ? "unavailable"
+        : "pending";
 
   const updateLearnerIdentityCheck = useCallback(
     (next: LearnerIdentityCheck) => {
@@ -1253,6 +1265,13 @@ export function LearnerProfileGate({
   }, [startActiveLearnerLoad]);
 
   useEffect(() => {
+    if (
+      currentLearnerSelectionSyncStatus === "pending" ||
+      learnerRevalidationRef.current !== null
+    ) {
+      return;
+    }
+    const accountEpoch = learnerAccountEpochRef.current;
     const request = startActiveLearnerLoad();
     void request.promise
       .catch(() => {
@@ -1261,6 +1280,8 @@ export function LearnerProfileGate({
       .finally(() => {
         if (
           gateMountedRef.current &&
+          learnerAccountEpochRef.current === accountEpoch &&
+          !request.controller.signal.aborted &&
           learnerRevalidationRef.current === null
         ) {
           updateLearnerIdentityCheck("confirmed");
@@ -1270,7 +1291,12 @@ export function LearnerProfileGate({
       learnerLoadControllerRef.current?.abort();
       learnerLoadControllerRef.current = null;
     };
-  }, [sessionIdentity, startActiveLearnerLoad, updateLearnerIdentityCheck]);
+  }, [
+    currentLearnerSelectionSyncStatus,
+    sessionIdentity,
+    startActiveLearnerLoad,
+    updateLearnerIdentityCheck,
+  ]);
 
   useEffect(() => {
     if (
@@ -1405,10 +1431,14 @@ export function LearnerProfileGate({
     if (learnerAccountIdentityRef.current === sessionIdentity) return;
     learnerAccountIdentityRef.current = sessionIdentity;
     learnerAccountEpochRef.current += 1;
+    setLearnerSelectionSyncStatus(
+      sessionIdentity === null ? "unavailable" : "pending",
+    );
     learnerMutationControllerRef.current?.abort();
     learnerMutationControllerRef.current = null;
     resetLearnerSelection();
-  }, [resetLearnerSelection, sessionIdentity]);
+    if (sessionIdentity !== null) updateLearnerIdentityCheck("checking");
+  }, [resetLearnerSelection, sessionIdentity, updateLearnerIdentityCheck]);
 
   const beginLearnerIdentityCheck = useCallback(() => {
     updateLearnerIdentityCheck("checking");
@@ -1453,6 +1483,8 @@ export function LearnerProfileGate({
         learnerRevalidationControllerRef.current?.abort();
       }
       learnerRevalidationQueuedRef.current = false;
+      learnerLoadControllerRef.current?.abort();
+      learnerLoadControllerRef.current = null;
       beginLearnerIdentityCheck();
       const controller = new AbortController();
       const accountEpoch = learnerAccountEpochRef.current;
@@ -1539,43 +1571,71 @@ export function LearnerProfileGate({
     ],
   );
 
+  const revalidateAnnouncedLearnerChange = useEffectEvent(() => {
+    revalidateActiveLearner(true);
+  });
+
   useEffect(() => {
+    const needsLifecycleRecovery = () =>
+      currentLearnerSelectionSyncStatus === "unavailable" ||
+      learnerIdentityCheckRef.current === "failed";
     const revalidateWhenVisible = () => {
-      if (document.visibilityState === "visible")
+      if (
+        document.visibilityState === "visible" &&
+        needsLifecycleRecovery()
+      ) {
         revalidateActiveLearner(false);
+      }
     };
-    const revalidateOnFocus = () => revalidateActiveLearner(false);
+    const revalidateOnFocus = () => {
+      if (needsLifecycleRecovery()) {
+        revalidateActiveLearner(false);
+      }
+    };
+    const revalidateRestoredPage = (event: PageTransitionEvent) => {
+      if (event.persisted) revalidateActiveLearner(true);
+    };
     window.addEventListener("focus", revalidateOnFocus);
+    window.addEventListener("pageshow", revalidateRestoredPage);
     document.addEventListener("visibilitychange", revalidateWhenVisible);
     return () => {
       window.removeEventListener("focus", revalidateOnFocus);
+      window.removeEventListener("pageshow", revalidateRestoredPage);
       document.removeEventListener("visibilitychange", revalidateWhenVisible);
     };
-  }, [revalidateActiveLearner]);
+  }, [currentLearnerSelectionSyncStatus, revalidateActiveLearner]);
 
   useEffect(() => {
-    if (sessionIdentity === null) return;
+    if (sessionIdentity === null) {
+      setLearnerSelectionSyncStatus("unavailable");
+      return;
+    }
+    setLearnerSelectionSyncStatus("pending");
     let channel: BroadcastChannel | null = null;
     let disposed = false;
     void learnerSelectionChannel.then((name) => {
+      if (disposed) return;
       if (
-        disposed ||
         name === null ||
         typeof globalThis.BroadcastChannel === "undefined"
       ) {
+        setLearnerSelectionSyncStatus("unavailable");
         return;
       }
       try {
         channel = new globalThis.BroadcastChannel(name);
         channel.onmessage = (event) => {
           if (event.data === LEARNER_SELECTION_CHANGED_MESSAGE) {
-            revalidateActiveLearner(true);
+            revalidateAnnouncedLearnerChange();
           }
         };
         learnerSelectionChannelRef.current = channel;
+        setLearnerSelectionSyncStatus("ready");
       } catch {
-        // Focus and visibility revalidation cover unavailable channels.
+        setLearnerSelectionSyncStatus("unavailable");
       }
+    }, () => {
+      if (!disposed) setLearnerSelectionSyncStatus("unavailable");
     });
     return () => {
       disposed = true;
@@ -1585,11 +1645,7 @@ export function LearnerProfileGate({
       if (channel) channel.onmessage = null;
       channel?.close();
     };
-  }, [
-    learnerSelectionChannel,
-    revalidateActiveLearner,
-    sessionIdentity,
-  ]);
+  }, [learnerSelectionChannel, sessionIdentity]);
 
   const reloadSelectedLearner = useCallback(
     async (expectedProfileId: string, allowMutationOwner = false) => {
@@ -2661,7 +2717,9 @@ export function LearnerProfileGate({
       children
     );
 
-  const learnerIdentityBlocked = learnerIdentityCheck !== "confirmed";
+  const learnerIdentityBlocked =
+    learnerIdentityCheck !== "confirmed" ||
+    currentLearnerSelectionSyncStatus === "pending";
   const blockLearnerInteraction = (event: SyntheticEvent) => {
     if (learnerIdentityCheckRef.current === "confirmed") return;
     event.preventDefault();
