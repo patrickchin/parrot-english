@@ -1024,7 +1024,7 @@ export function LessonPlayer({
       <RouteHeader>
         <HeaderButton
           aria-label="Back to lesson list"
-          icon={<ChevronLeft strokeWidth={3.2} />}
+          icon={<ChevronLeft />}
           onClick={handleBack}
           type="button"
         >

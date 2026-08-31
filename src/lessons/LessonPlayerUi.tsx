@@ -484,7 +484,7 @@ export const LessonIntroduction = forwardRef<
     sceneCount: number;
   }
 >(function LessonIntroduction(
-  { lessonTitle, onStart, ready = true, sceneCount },
+  { lessonTitle, onStart, ready = true },
   ref,
 ) {
   return (
@@ -494,15 +494,11 @@ export const LessonIntroduction = forwardRef<
       role="region"
     >
       <Card className="w-full max-w-xl px-5 py-6 text-center short:py-5 md:px-10 md:py-9 [@media(min-width:35rem)_and_(max-height:17.5rem)]:py-2">
-        <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-3 py-1 text-sm font-black text-brand-blue">
-          <Sparkles aria-hidden="true" className="size-4" />
-          {lessonTitle} · {sceneCount} parts
-        </span>
         <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
-          Watch and join in
+          {lessonTitle}
         </h1>
         <p className="mx-auto mb-6 mt-3 max-w-md text-lg font-bold leading-snug text-slate-600 short:mb-4 md:mb-8 md:mt-4 md:text-2xl [@media(min-width:35rem)_and_(max-height:17.5rem)]:mb-1 [@media(min-width:35rem)_and_(max-height:17.5rem)]:mt-1">
-          Watch the story and say the big words with the group whenever you like.
+          Watch and say the big words with the group.
         </p>
         <ActionButton
           className="max-w-sm"
@@ -561,12 +557,9 @@ export const LessonCompletion = forwardRef<
         <span className="mx-auto mb-3 grid size-14 place-items-center rounded-full bg-amber-100 text-brand-rose md:size-20">
           <Sparkles aria-hidden="true" className="size-8 md:size-11" />
         </span>
-        <h1 className="m-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
-          Lesson complete!
-        </h1>
-        <p className="mb-4 mt-3 text-lg font-bold leading-snug text-slate-600 md:text-2xl">
+        <h1 className="mb-4 mt-0 text-3xl font-black leading-tight text-brand-ink short:text-2xl md:text-5xl">
           You finished {lessonTitle}!
-        </p>
+        </h1>
         {saveState === "pending" ? (
           <p
             aria-live="polite"
@@ -796,20 +789,16 @@ export function LessonJoinInPrompt({
       >
         {dialogue}
       </p>
-      <div
-        aria-live="polite"
-        className="m-0 inline-flex min-h-5 items-center justify-center gap-1.5 text-sm font-extrabold text-slate-600"
-        role="status"
-      >
-        {recording ? (
+      {recording ? (
+        <div
+          aria-live="polite"
+          className="m-0 inline-flex min-h-5 items-center justify-center gap-1.5 text-sm font-extrabold text-slate-600"
+          role="status"
+        >
           <Mic aria-hidden="true" className="size-4 text-brand-green" />
-        ) : (
-          <Ear aria-hidden="true" className="size-4 text-brand-blue" />
-        )}
-        {recording
-          ? "Your microphone is joining in too"
-          : "Voices are joining in"}
-      </div>
+          Your microphone is joining in too
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -58,15 +58,21 @@ function render(overrides = {}) {
 describe("accessible realtime conversation surface", () => {
   it("starts with one child action without grown-up chat controls", () => {
     const html = render();
+    const document = new Window().document;
+    document.body.innerHTML = html;
 
     assert.match(html, /Ready to talk/);
     assert.match(html, /Chat with Peppa/);
     assert.match(html, /peppa\/peppa-happy-768\.webp/);
     assert.match(html, /peppa-happy-384\.webp 384w/);
     assert.match(html, /peppa-happy-1024\.webp 1024w/);
-    assert.match(html, /Tap Talk to Peppa\./);
     assert.match(html, /aria-label="Start chat"/);
     assert.match(html, /Talk to Peppa/);
+    assert.equal(
+      document.querySelector('[aria-label="Conversation captions"]'),
+      null,
+    );
+    assert.doesNotMatch(html, /Tap Talk to Peppa\./);
     assert.doesNotMatch(html, /Grown-up chat style|Grown-up:/);
     assert.doesNotMatch(html, /Use the form instead/);
     assert.doesNotMatch(html, /About this chat/);
@@ -276,9 +282,14 @@ describe("accessible realtime conversation surface", () => {
       microphoneEnabled: true,
       status: "listening",
     });
+    const document = new Window().document;
+    document.body.innerHTML = activeTurn;
+    const endTurn = document.querySelector('button[aria-label="I’m done"]');
     assert.doesNotMatch(activeTurn, /aria-pressed/);
     assert.match(activeTurn, /I’m done/);
-    assert.match(activeTurn, /Tap or press Space/);
+    assert.ok(endTurn);
+    assert.equal(endTurn.getAttribute("aria-keyshortcuts"), "Space");
+    assert.doesNotMatch(activeTurn, /Tap or press Space/);
 
     const openingSpeech = render({
       microphoneEnabled: false,

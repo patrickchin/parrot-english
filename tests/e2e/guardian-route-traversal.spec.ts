@@ -72,7 +72,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
       action: "Manage learners",
       description:
         "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
-      heading: "Manage learners",
+      heading: "Learner profiles",
     },
     {
       action: "Manage lessons",
@@ -105,7 +105,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
 
   const cardColors = await Promise.all(
     [
-      "Manage learners",
+      "Learner profiles",
       "My Lessons",
       "Story settings",
       "Voice dubbing",
@@ -117,6 +117,18 @@ test("every Guardian dashboard card associates its copy and traverses through it
     ),
   );
   expect(new Set(cardColors).size).toBe(cardColors.length);
+
+  const [sectionHeadingSize, cardHeadingSize] = await Promise.all(
+    [
+      page.getByRole("heading", { name: "Learning & content" }),
+      page.getByRole("heading", { name: "My Lessons" }),
+    ].map((heading) =>
+      heading.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      ),
+    ),
+  );
+  expect(sectionHeadingSize).toBeGreaterThan(cardHeadingSize);
 
   await traverseDashboardAction(
     page,

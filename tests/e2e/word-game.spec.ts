@@ -110,6 +110,14 @@ test("answers six first-word questions, retries mistakes, and plays again", asyn
   await expect(
     main.getByRole("heading", { level: 1, name: "Word game" }),
   ).toBeVisible();
+  await expect(
+    main.getByText("First English words", { exact: true }),
+  ).toHaveCount(0);
+  await expect(main.getByText("Question 1 of 6", { exact: true })).toBeVisible();
+  await expect(main.getByText("Ready to listen?", { exact: true })).toHaveCount(0);
+  await expect(
+    main.getByText("Hear the question and choices.", { exact: true }),
+  ).toHaveCount(0);
   await expect(progress).toHaveAttribute("aria-valuemin", "1");
   await expect(progress).toHaveAttribute("aria-valuemax", "6");
   await expect(progress).toHaveAttribute("aria-valuenow", "1");
@@ -287,11 +295,6 @@ test("keeps controls reachable at the short tablet boundary", async ({ page }) =
 
   const main = page.getByRole("main");
   const start = main.getByRole("button", { name: "Start listening" });
-  await main.hover();
-  await page.mouse.wheel(0, 2_000);
-  await expect
-    .poll(() => main.evaluate((element) => element.scrollTop))
-    .toBeGreaterThan(0);
   await expect(start).toBeInViewport();
   await start.click();
 

@@ -150,9 +150,6 @@ export function GuardianLearnerProfilesView({
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Manage learners
           </h1>
-          <p className="m-0 font-bold leading-relaxed text-slate-600">
-            Add, update, or remove learner profiles.
-          </p>
         </header>
 
         <p
@@ -192,9 +189,9 @@ export function GuardianLearnerProfilesView({
                 <li className="min-w-0" key={profile.id}>
                   <Card className="grid h-full min-w-0 content-start gap-4 p-5 sm:p-6">
                     <div className="grid gap-1">
-                      <h3 className="m-0 min-w-0 text-2xl leading-tight text-brand-navy [overflow-wrap:anywhere]">
+                      <h2 className="m-0 min-w-0 text-2xl leading-tight text-brand-navy [overflow-wrap:anywhere]">
                         <BidiLearnerName learnerName={profile.name} />
-                      </h3>
+                      </h2>
                       <p className="m-0 text-sm font-bold text-slate-600">
                         {profile.age === null ? null : `Age ${profile.age} · `}
                         {setupStatusLabel(profile.profileStatus)}

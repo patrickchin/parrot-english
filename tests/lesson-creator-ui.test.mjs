@@ -122,7 +122,7 @@ test("custom lesson creation defaults to a simple AI path", () => {
   assert.match(html, /<h1[^>]*>Create a custom lesson<\/h1>/);
   assert.match(html, /Editing settings for Mia/);
   assert.match(html, /Noah/);
-  assert.match(html, /grown-up/i);
+  assert.doesNotMatch(html, /Grown-up tools/i);
   assert.ok(tabList);
   assert.match(tabList, /role="tablist"/);
   assert.match(tabList, /aria-label="Choose how to create a custom lesson"/);

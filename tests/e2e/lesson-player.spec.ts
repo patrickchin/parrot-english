@@ -690,15 +690,27 @@ test("ordinary sound failure keeps its existing retry and skip recovery", async 
 test("consent preflight leads to a fresh capture for every automatic beat", async ({
   page,
 }) => {
-  await openParrotLesson(page, "recording");
+  await openParrotLesson(page, "held-cue");
   await expect.poll(async () => (await mediaSnapshot(page)).consentRequests).toBe(1);
 
   await startLesson(page);
-  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  const firstPrompt = joinInPrompt(page, "It is up high!");
+  await expect(firstPrompt).toBeVisible();
+  await expect(firstPrompt.getByRole("status")).toHaveText(
+    "Your microphone is joining in too",
+  );
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await controlLessonMedia(page, "releaseNextCue");
   await expect
     .poll(async () => (await mediaSnapshot(page)).uploads.length)
     .toBeGreaterThanOrEqual(1);
-  await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
+  const secondPrompt = joinInPrompt(page, "Oh! I can't reach it.");
+  await expect(secondPrompt).toBeVisible();
+  await expect(secondPrompt.getByRole("status")).toHaveText(
+    "Your microphone is joining in too",
+  );
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await controlLessonMedia(page, "releaseNextCue");
   await expect
     .poll(async () => (await mediaSnapshot(page)).uploads.length)
     .toBeGreaterThanOrEqual(2);
@@ -753,7 +765,7 @@ test("missing consent makes no microphone request and keeps the same cue", async
 
   const prompt = joinInPrompt(page, "It is up high!");
   await expect(prompt).toBeVisible();
-  await expect(prompt.getByText("Voices are joining in", { exact: true })).toBeVisible();
+  await expect(prompt.getByRole("status")).toHaveCount(0);
   const snapshot = await mediaSnapshot(page);
   expect(snapshot.getUserMediaCalls).toBe(0);
   expect(snapshot.recorderStarts).toHaveLength(0);
@@ -775,7 +787,7 @@ test("a malformed successful consent response still fails closed", async ({ page
 
   const prompt = joinInPrompt(page, "It is up high!");
   await expect(prompt).toBeVisible();
-  await expect(prompt.getByText("Voices are joining in", { exact: true })).toBeVisible();
+  await expect(prompt.getByRole("status")).toHaveCount(0);
   const snapshot = await mediaSnapshot(page);
   expect(snapshot.getUserMediaCalls).toBe(0);
   expect(snapshot.recorderStarts).toHaveLength(0);
@@ -868,7 +880,9 @@ test("My Lessons use the exact on-device guide at quiet volume", async ({ page }
   await openMyLesson(page, "device-no-consent");
   await startLesson(page);
   await expect(joinInPrompt(page, "Red kite!")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
 
   const snapshot = await mediaSnapshot(page);
   expect(snapshot.getUserMediaCalls).toBe(0);
@@ -997,7 +1011,9 @@ test("a held upload never blocks completion and reports neutral saving", async (
 }) => {
   await openMyLesson(page, "upload-held");
   await startLesson(page);
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
   await expect(page.getByText("Saving your voices…", { exact: true })).toBeVisible();
   expect((await mediaSnapshot(page)).pendingUploads).toBe(1);
 
@@ -1024,7 +1040,9 @@ test("failed background saving can be retried without repeating the line", async
 }) => {
   await openMyLesson(page, "upload-retry-held");
   await startLesson(page);
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
   const retry = page.getByRole("button", { name: "Try saving again" });
   await expect(retry).toBeVisible();
   expect((await mediaSnapshot(page)).uploads[0].outcome).toBe("failed");
@@ -1048,7 +1066,9 @@ test("a completed blob keeps uploading after the lesson route exits", async ({
 }) => {
   await openMyLesson(page, "upload-held");
   await startLesson(page);
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
   await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(1);
 
   await page.getByRole("button", { name: "Back to lesson list" }).click();
@@ -1100,7 +1120,9 @@ test("pending account deletion settles saving and disables later captures", asyn
     "recording_disabled",
   );
   await controlLessonMedia(page, "releaseNextCue");
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
 
   const snapshot = await mediaSnapshot(page);
   expect(snapshot.uploads).toMatchObject([
@@ -1158,7 +1180,9 @@ test("a stale open My Lesson sends its loaded revision once and stops future cap
   ]);
 
   await controlLessonMedia(page, "releaseNextCue");
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
   const completed = await mediaSnapshot(page);
   expect(completed.recorderStarts).toHaveLength(1);
   expect(completed.getUserMediaCalls).toBe(2);
@@ -1171,7 +1195,9 @@ test("a recording stop failure discards only that clip and continues", async ({
 }) => {
   await openMyLesson(page, "stop-failure");
   await startLesson(page);
-  await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "You finished The Red Kite!" }),
+  ).toBeVisible();
   expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 });
 
@@ -1186,7 +1212,7 @@ test("lesson intro and start action stay contained at exactly 667x280", async ({
   const heading = intro.getByRole("heading", {
     exact: true,
     level: 1,
-    name: "Watch and join in",
+    name: "Peppa's High Ball",
   });
   const start = intro.getByRole("button", { exact: true, name: "Let's go" });
   const account = page.getByRole("button", {
@@ -1294,7 +1320,7 @@ for (const viewport of [
     const introHeading = intro.getByRole("heading", {
       exact: true,
       level: 1,
-      name: "Watch and join in",
+      name: "Peppa's High Ball",
     });
     const start = intro.getByRole("button", { exact: true, name: "Let's go" });
     const account = page.getByRole("button", {
@@ -1322,7 +1348,7 @@ for (const viewport of [
       name: "Join in",
     });
     const phrase = prompt.getByText("It is up high!", { exact: true });
-    const status = prompt.getByRole("status");
+    const idleStatus = prompt.getByRole("status");
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });
@@ -1333,7 +1359,7 @@ for (const viewport of [
     const dolly = page.getByRole("img", { name: "Dolly" });
     await expect(joinInHeading).toBeVisible();
     await expect(phrase).toBeVisible();
-    await expect(status).toHaveText("Voices are joining in");
+    await expect(idleStatus).toHaveCount(0);
     await expectInsideViewport(artwork, viewport);
     await expectInsideViewport(hud, viewport);
     await expectInsideViewport(prompt, viewport);
@@ -1364,7 +1390,7 @@ for (const viewport of [
     const completionHeading = completion.getByRole("heading", {
       exact: true,
       level: 1,
-      name: "Lesson complete!",
+      name: "You finished The Red Kite!",
     });
     const replay = completion.getByRole("button", { name: "Replay lesson" });
     const completionBack = completion.getByRole("button", {
@@ -1411,7 +1437,7 @@ for (const viewport of [
     const prompt = joinInPrompt(page, longDialogue);
     const heading = prompt.getByRole("heading", { exact: true, name: "Join in" });
     const phrase = prompt.getByText(longDialogue, { exact: true });
-    const status = prompt.getByRole("status");
+    const idleStatus = prompt.getByRole("status");
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });
@@ -1422,14 +1448,13 @@ for (const viewport of [
 
     await expect(heading).toBeVisible();
     await expect(phrase).toBeVisible();
-    await expect(status).toHaveText("Voices are joining in");
+    await expect(idleStatus).toHaveCount(0);
     await expectInsideViewport(prompt, viewport);
     await expectInsideViewport(controls, viewport);
     await expectInsideViewport(hud, viewport);
     await expectInsideViewport(back, viewport);
     await expectContainedBy(heading, prompt);
     await expectContainedBy(phrase, prompt);
-    await expectContainedBy(status, prompt);
     await expectLongTextReachable(phrase);
 
     if (viewport.name === "compact") {
@@ -1458,14 +1483,14 @@ for (const viewport of [
     expect(promptMetrics.scrollHeight).toBeLessThanOrEqual(
       promptMetrics.clientHeight + 1,
     );
-    for (const fixedPart of [heading, status]) {
-      const metrics = await fixedPart.evaluate((element) => ({
-        clientHeight: element.clientHeight,
-        scrollHeight: element.scrollHeight,
-      }));
-      expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight + 1);
-      await expect(fixedPart).not.toHaveAttribute("tabindex", "0");
-    }
+    const headingMetrics = await heading.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(headingMetrics.scrollHeight).toBeLessThanOrEqual(
+      headingMetrics.clientHeight + 1,
+    );
+    await expect(heading).not.toHaveAttribute("tabindex", "0");
 
     await expectNoOverlap(prompt, controls);
     await expectNoOverlap(prompt, hud);

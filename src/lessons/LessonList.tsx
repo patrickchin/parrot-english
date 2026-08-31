@@ -1,8 +1,4 @@
-import {
-  ArrowLeft,
-  BookOpen,
-  Play,
-} from "lucide-react";
+import { ArrowLeft, Play } from "lucide-react";
 import { useEffect, useRef, type RefObject } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
 import { getLessonScenePath } from "../app/app-routes";
@@ -103,6 +99,7 @@ function LessonCardView({
   source: "my" | "parrot";
 }) {
   const lessonPath = getLessonScenePath(source, lesson.id, 0);
+  const CardHeading = source === "parrot" ? "h2" : "h3";
 
   return (
     <article className="grid min-w-0">
@@ -126,17 +123,13 @@ function LessonCardView({
         </div>
 
         <div className="grid min-w-0 grid-rows-[auto_1fr_auto] gap-1.5 p-3 min-[360px]:gap-2 min-[360px]:p-3.5 sm:p-4">
-          <h3 className="m-0 line-clamp-2 text-lg leading-tight text-brand-navy sm:text-xl">
+          <CardHeading className="m-0 line-clamp-2 text-lg leading-tight text-brand-navy sm:text-xl">
             {lesson.title}
-          </h3>
+          </CardHeading>
           <p className="m-0 text-sm font-extrabold leading-snug text-slate-700 sm:text-base">
             {lesson.practiceText}
           </p>
-          <div className="flex min-w-0 items-center justify-between gap-2">
-            <span className="inline-flex min-w-0 items-center gap-1 text-xs font-black text-sky-900 sm:text-sm">
-              <BookOpen aria-hidden="true" className="size-4 shrink-0" />
-              {lesson.sceneCount} parts
-            </span>
+          <div className="flex min-w-0 items-center justify-end">
             <span
               aria-hidden="true"
               className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-full bg-brand-pink px-3 text-sm font-black text-brand-action-ink shadow-control-pink"
@@ -185,9 +178,6 @@ export function LessonListView({
         >
           Pick a lesson
         </h1>
-        <p className="mx-auto mb-0 mt-2 max-w-xl text-base font-extrabold leading-snug text-brand-blue sm:mt-3 sm:text-lg">
-          Listen. Then speak.
-        </p>
       </header>
 
       <section

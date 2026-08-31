@@ -9,7 +9,6 @@ import {
   Image as ImageIcon,
   MessageSquarePlus,
   Plus,
-  Sparkles,
   Trash2,
   UsersRound,
 } from "lucide-react";
@@ -735,11 +734,7 @@ export function LessonGuiEditor({
           aria-hidden="true"
           className="absolute -bottom-24 left-1/3 -z-10 size-52 rounded-full bg-brand-blue/45"
         />
-        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-sm font-black uppercase tracking-widest text-brand-yellow">
-          <Sparkles aria-hidden="true" className="size-4" />
-          Visual lesson studio
-        </span>
-        <h2 className="mb-0 mt-3 text-3xl font-black leading-tight text-white md:text-5xl">
+        <h2 className="m-0 text-3xl font-black leading-tight text-white md:text-5xl">
           {lesson.title || "Untitled lesson"}
         </h2>
         <p className="mb-0 mt-2 max-w-3xl text-base font-bold leading-relaxed text-white/85 md:text-lg">
@@ -965,9 +960,6 @@ export function LessonGuiEditor({
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <header>
-            <span className="text-sm font-black uppercase tracking-widest text-brand-rose">
-              Storyboard
-            </span>
             <h2
               className="m-0 text-3xl text-brand-navy"
               id="lesson-scenes-title"

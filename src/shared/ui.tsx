@@ -24,7 +24,7 @@ export type ControlSize =
   | "inline"
   | "menu";
 export type ControlShape = "pill" | "rounded";
-export type ControlFrame = "none" | "soft" | "white";
+export type ControlFrame = "none" | "outline" | "soft" | "white";
 export type ControlElevation = "flat" | "raised";
 
 type ControlVisualProps = {
@@ -62,7 +62,7 @@ export function controlClassName({
   align = "center",
   className,
   elevation = "raised",
-  frame = "white",
+  frame,
   fullWidth = false,
   interaction = "button",
   shape = "pill",
@@ -73,6 +73,12 @@ export function controlClassName({
   interaction?: "button" | "link" | "static";
   size?: ControlSize | "none";
 } = {}) {
+  const resolvedFrame =
+    frame ??
+    (variant === "surface" || variant === "dangerSurface"
+      ? "outline"
+      : "white");
+
   return cx(
     "inline-flex touch-manipulation select-none items-center font-ui font-black leading-none no-underline transition-[filter] duration-150 ease-out motion-reduce:transition-none",
     focusClassName,
@@ -95,9 +101,15 @@ export function controlClassName({
     align === "start" && "justify-start text-left",
     shape === "pill" && "rounded-full",
     shape === "rounded" && "rounded-2xl",
-    frame === "none" && "border-0",
-    frame === "soft" && "border-3 border-sky-200",
-    frame === "white" && "border-4 border-white",
+    resolvedFrame === "none" && "border-0",
+    resolvedFrame === "soft" && "border-3 border-sky-200",
+    resolvedFrame === "white" && "border-4 border-white",
+    resolvedFrame === "outline" &&
+      variant === "surface" &&
+      "border-3 border-brand-blue",
+    resolvedFrame === "outline" &&
+      variant === "dangerSurface" &&
+      "border-3 border-red-800",
     fullWidth && "w-full",
     size === "compact" && "min-h-12 min-w-20 gap-1.5 px-3 py-1 text-sm",
     size === "default" && "min-h-13 min-w-36 gap-2 px-6 py-2 text-base",

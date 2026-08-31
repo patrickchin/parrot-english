@@ -186,17 +186,12 @@ export function AccountPrivacySections() {
     <div className="grid gap-6">
       <section aria-labelledby="ai-data-title" className="grid gap-4">
         <header>
-          <div>
-            <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-blue">
-              For grown-ups
-            </p>
-            <h2
-              className="m-0 mt-1 text-xl font-black leading-tight text-brand-navy md:text-2xl"
-              id="ai-data-title"
-            >
-              AI and saved data
-            </h2>
-          </div>
+          <h2
+            className="m-0 text-xl font-black leading-tight text-brand-navy md:text-2xl"
+            id="ai-data-title"
+          >
+            AI and saved data
+          </h2>
         </header>
 
         <AboutSection

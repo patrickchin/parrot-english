@@ -53,7 +53,8 @@ test("home gives children five clear, working learning choices", () => {
     "/word-game",
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
-  assert.match(html, /Tap a picture\./i);
+  assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
+  assert.doesNotMatch(html, /Tap a picture\.|>Parrot English<\/p>/i);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
   assert.match(html, /Nursery rhymes/);
   assert.match(html, /Word game/);
@@ -80,13 +81,13 @@ test("guardian dashboard presents one learner-management destination", () => {
     ([, href]) => href,
   );
 
-  assert.equal((html.match(/>Manage learners<\/h2>/g) ?? []).length, 1);
+  assert.equal((html.match(/>Learner profiles<\/h2>/g) ?? []).length, 1);
   assert.equal((html.match(/>Manage learners<\/a>/g) ?? []).length, 1);
   assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
   assert.match(html, /aria-label="Switch to learner"/);
   assert.doesNotMatch(html, /is using learner mode|select who uses learner mode/);
   assert.doesNotMatch(html, /Managing Mia/);
-  assert.doesNotMatch(html, /Learner profiles|Learner details|Manage learner details/);
+  assert.doesNotMatch(html, />Manage learners<\/h2>|Learner details|Manage learner details/);
 });
 
 test("guardian dashboard groups the three learning and content tools", () => {
@@ -220,11 +221,16 @@ test("story shelf presents one curated shelf at a time without research controls
   assert.equal(new Set(STORIES.map(({ id }) => id)).size, 25);
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
   assert.match(html, /Pick a story/);
-  assert.match(html, /Tap a picture\. I can read it to you\./);
-  assert.deepEqual(shelfHeadings, [
-    "Choose a story level",
-    "Level 3 · Short stories",
-  ]);
+  assert.doesNotMatch(
+    visibleText,
+    /Story time|Tap a picture\. I can read it to you\.|Look\. Listen\. Say it\.|Very short\. One idea on each page\.|The same words come back\.|A little story with short lines\.|A longer story with more words\.|Longer stories with saved narration\./,
+  );
+  assert.deepEqual(
+    shelfHeadings,
+    STORIES.filter(({ level }) => level === "tiny-stories").map(
+      ({ title }) => title,
+    ),
+  );
   assert.equal((html.match(/role="tab"/g) ?? []).length, 5);
   assert.equal((html.match(/aria-selected="true"/g) ?? []).length, 1);
   for (const label of [

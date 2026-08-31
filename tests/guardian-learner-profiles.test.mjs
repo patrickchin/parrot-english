@@ -302,8 +302,8 @@ test("learner manager exposes administrative profile controls only", () => {
   assert.match(html, /<h1[^>]*>Manage learners<\/h1>/);
   assert.match(html, /<ul/);
   assert.equal((html.match(/<li/g) ?? []).length, 2);
-  assert.match(html, /<h3[^>]*><bdi[^>]*>Mia<\/bdi><\/h3>/);
-  assert.match(html, /<h3[^>]*><bdi[^>]*>Noah<\/bdi><\/h3>/);
+  assert.match(html, /<h2[^>]*><bdi[^>]*>Mia<\/bdi><\/h2>/);
+  assert.match(html, /<h2[^>]*><bdi[^>]*>Noah<\/bdi><\/h2>/);
   assert.doesNotMatch(html, /Learner mode|Use .* in learner mode|Managing /);
   assert.match(html, /Age 6/);
   assert.match(html, /Setup complete/);
@@ -414,7 +414,7 @@ test("deletes through learner context and applies the authoritative roster", asy
     assert.deepEqual(deletedIds, [noah.id]);
     assert.equal(container.querySelector('[role="dialog"]'), null);
     assert.equal(
-      [...container.querySelectorAll("h3")].some(
+      [...container.querySelectorAll("h2")].some(
         (heading) => heading.textContent === noah.name,
       ),
       false,
@@ -505,7 +505,7 @@ test("maps deletion conflicts and preserves the roster when deletion is uncertai
         expected,
       );
       assert.equal(
-        [...container.querySelectorAll("h3")].some(
+        [...container.querySelectorAll("h2")].some(
           (heading) => heading.textContent === noah.name,
         ),
         true,

@@ -7,14 +7,13 @@ export function NurseryRhymeList() {
   return (
     <>
       <RouteHeader>
-        <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
+        <HeaderLink aria-label="Back to home" icon={<ChevronLeft />} to="/">
           Back home
         </HeaderLink>
       </RouteHeader>
       <main className="min-h-dvh w-screen overflow-x-hidden bg-story-shelf px-3 pb-10 pt-20 sm:px-4 md:px-8 md:pb-14 md:pt-24 lg:px-16">
         <section aria-labelledby="nursery-rhymes-title" className="mx-auto grid w-full max-w-7xl gap-5 md:gap-7">
           <header className="grid gap-2 text-center">
-            <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue sm:text-sm">Sing and record</p>
             <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>
             <p className="m-0 text-base font-bold leading-snug text-brand-navy sm:text-lg">
               Choose a rhyme to watch. With a grown-up&apos;s permission, you can sing and save your recording.

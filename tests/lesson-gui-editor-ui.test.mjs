@@ -57,6 +57,16 @@ test("GUI authors character dialogue and preserves imported learner checks witho
     }),
   );
 
+  assert.doesNotMatch(container.textContent, /Visual lesson studio|Storyboard/);
+  assert.equal(
+    container.querySelector('[aria-label="Lesson studio overview"] h2')
+      ?.textContent,
+    lesson.title,
+  );
+  assert.equal(
+    container.querySelector('#lesson-scenes-title')?.textContent,
+    "Scenes",
+  );
   assert.doesNotMatch(
     container.textContent,
     /Check the learner's pronunciation|Speaking feedback/,

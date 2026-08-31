@@ -39,6 +39,12 @@ test("lesson creator scrolls to its review controls on a short phone", async ({
   await expect(
     page.getByRole("heading", { name: "Create a custom lesson" }),
   ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Grown-up tools: start with AI or import a lesson, then shape every detail in the visual editor.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
 
   const makeLessonButton = page.getByRole("button", {
     exact: true,

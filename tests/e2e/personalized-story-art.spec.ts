@@ -269,6 +269,18 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
   const generate = panel.getByRole("button", { name: "Generate story art" });
 
   await expectInsideViewportHorizontally(panel, page);
+  await expect.soft(
+    page.getByText(
+      "Choose stories and manage optional personalized art for Mia.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
+  await expect.soft(
+    page.getByRole("heading", { name: "Personalized story art" }),
+  ).toHaveCount(0);
+  await expect.soft(
+    panel.getByText("Guardian consent", { exact: true }),
+  ).toHaveCount(0);
   await expect(generate).toBeDisabled();
   await upload.setInputFiles({
     buffer: tinyPng,
@@ -477,7 +489,7 @@ test("a generated learner lesson uses group join-in without portrait requests on
   const dolly = page.getByRole("img", { name: "Dolly" });
 
   await expect(prompt.getByText("Red ball!", { exact: true })).toBeVisible();
-  await expect(prompt.getByRole("status")).toHaveText("Voices are joining in");
+  await expect(prompt.getByRole("status")).toHaveCount(0);
   for (const element of [prompt, controls, artwork, peppa, dolly]) {
     await expectInsideViewportHorizontally(element, page);
   }

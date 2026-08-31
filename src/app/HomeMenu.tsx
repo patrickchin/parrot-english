@@ -82,12 +82,9 @@ export function HomeMenu() {
   return (
     <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-3 short:pt-15 short-wide:!pb-0 short-wide:!pt-12 sm:px-6 md:px-10 md:py-24 lg:px-6">
       <section className="mx-auto grid w-full max-w-7xl gap-5 short:gap-2 short-wide:!gap-2 md:gap-9">
-        <header className="mx-auto grid max-w-3xl gap-2 text-center short:gap-0.5 short-wide:!gap-0.5 md:gap-3">
-          <p className="m-0 text-xs font-black uppercase tracking-[0.18em] text-brand-blue short:text-[10px] short-wide:!text-[10px] sm:text-sm md:text-base">
-            Parrot English
-          </p>
+        <header className="mx-auto max-w-3xl text-center">
           <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink short:!text-[2rem] short-wide:!text-[2rem] min-[360px]:text-4xl sm:text-5xl lg:text-7xl">
-            Tap a picture.
+            Parrot English
           </h1>
         </header>
 

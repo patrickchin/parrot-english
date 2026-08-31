@@ -764,18 +764,20 @@ export function ConversationSurface({
           )}
         </figure>
 
-        <ConversationCaptions
-          caption={caption}
-          className={cx(
-            "short-wide:col-start-2 short-wide:row-start-3",
-            expandLandscapeCaption
-              ? "short-wide:h-full short-wide:self-stretch"
-              : "short-wide:h-28 short-wide:self-end",
-          )}
-          onRepeatAudio={onRepeatAudio}
-          regionRef={captionRegionRef}
-          showRepeat={showRepeat}
-        />
+        {!showStartAction ? (
+          <ConversationCaptions
+            caption={caption}
+            className={cx(
+              "short-wide:col-start-2 short-wide:row-start-3",
+              expandLandscapeCaption
+                ? "short-wide:h-full short-wide:self-stretch"
+                : "short-wide:h-28 short-wide:self-end",
+            )}
+            onRepeatAudio={onRepeatAudio}
+            regionRef={captionRegionRef}
+            showRepeat={showRepeat}
+          />
+        ) : null}
 
         <div
           aria-label={
@@ -907,11 +909,6 @@ export function ConversationSurface({
               )}
               <span className="grid justify-items-start leading-tight">
                 <strong>{turnControlLabel}</strong>
-                {!microphoneBusy ? (
-                  <small className="hidden text-xs font-bold leading-none opacity-85 md:mt-0.5 md:block">
-                    Tap or press Space
-                  </small>
-                ) : null}
               </span>
             </ActionButton>
           ) : (

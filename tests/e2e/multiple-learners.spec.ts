@@ -1576,7 +1576,7 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
   await expect(
-    page.getByRole("heading", { name: "Lesson complete!" }),
+    page.getByRole("heading", { name: "You finished Garden Help!" }),
   ).toBeVisible();
   await expect
     .poll(async () => (await recordingFor("learner-mia"))?.pendingUploads)
@@ -1590,7 +1590,7 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
     .poll(async () => (await mediaSnapshot()).recorderStops.length)
     .toBe(2);
   await expect(
-    page.getByRole("heading", { name: "Lesson complete!" }),
+    page.getByRole("heading", { name: "You finished Garden Help!" }),
   ).toBeVisible();
   await expect(
     page.getByText("Saving your voices…", { exact: true }),
@@ -2652,7 +2652,7 @@ test("locked 26-row targeted security matrix handles all 52 requests before pars
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
   await expect(
-    page.getByRole("heading", { name: "Tap a picture." }),
+    page.getByRole("heading", { name: "Parrot English" }),
   ).toBeVisible();
 
   await setGuardianAccess(page, "guardian");

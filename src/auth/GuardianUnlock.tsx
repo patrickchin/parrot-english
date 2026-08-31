@@ -75,9 +75,6 @@ export const GuardianUnlockForm = forwardRef<
       ref={formRef}
     >
       <header className="grid gap-2">
-        <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-blue">
-          For grown-ups
-        </p>
         <h1
           className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
           id={titleId}

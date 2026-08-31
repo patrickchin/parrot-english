@@ -127,30 +127,25 @@ function GuardianStorySettingsContent({
       ) : null}
 
       {targetReady && showArt && art ? (
-        <div className="grid gap-2">
-          <h2 className="m-0 text-center text-2xl leading-tight text-brand-navy">
-            Personalized story art
-          </h2>
-          <PersonalizedStoryArtPanel
-            consentChecked={art.consentChecked}
-            disabled={isLoading}
-            error={art.error}
-            featureEnabled={art.featureEnabled}
-            fileName={art.selectedFileName}
-            generateDisabled={isLoading || art.generateDisabled}
-            hasSelectedPhoto={art.hasSelectedPhoto}
-            hasStoredArt={Boolean(art.metadata.hasStoredArt)}
-            isGenerating={art.isGenerating}
-            learnerName={managedLearnerName}
-            onConsentChange={art.setConsentChecked}
-            onFileChange={art.setSelectedFile}
-            onGenerate={() => void art.generate()}
-            onRemove={() => void art.remove()}
-            personalizedArtwork={art.personalizedArtwork}
-            statusMessage={art.statusMessage}
-            storyTitle={art.storyTitle}
-          />
-        </div>
+        <PersonalizedStoryArtPanel
+          consentChecked={art.consentChecked}
+          disabled={isLoading}
+          error={art.error}
+          featureEnabled={art.featureEnabled}
+          fileName={art.selectedFileName}
+          generateDisabled={isLoading || art.generateDisabled}
+          hasSelectedPhoto={art.hasSelectedPhoto}
+          hasStoredArt={Boolean(art.metadata.hasStoredArt)}
+          isGenerating={art.isGenerating}
+          learnerName={managedLearnerName}
+          onConsentChange={art.setConsentChecked}
+          onFileChange={art.setSelectedFile}
+          onGenerate={() => void art.generate()}
+          onRemove={() => void art.remove()}
+          personalizedArtwork={art.personalizedArtwork}
+          statusMessage={art.statusMessage}
+          storyTitle={art.storyTitle}
+        />
       ) : null}
     </>
   );
@@ -163,8 +158,6 @@ function GuardianStorySettingsShell({
   children: ReactNode;
   target: GuardianLearnerTargetState;
 }) {
-  const managedLearnerName = target.learnerName?.trim() || "Learner";
-
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
       <RouteHeader>
@@ -183,15 +176,6 @@ function GuardianStorySettingsShell({
             Story settings
           </h1>
           <GuardianLearnerTarget state={target} />
-          {target.phase === "ready" && target.learnerName !== null ? (
-            <p
-              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-              dir="ltr"
-            >
-              Choose stories and manage optional personalized art for{" "}
-              <BidiLearnerName learnerName={managedLearnerName} />.
-            </p>
-          ) : null}
         </header>
         {children}
       </section>

@@ -240,6 +240,23 @@ async function renderedAppearance(locator: Locator) {
   });
 }
 
+async function expectVisibleSurfaceFrame(locator: Locator) {
+  await expect(locator).toBeVisible();
+  const frame = await locator.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      borderColor: style.borderTopColor,
+      borderStyle: style.borderTopStyle,
+      borderWidth: Number.parseFloat(style.borderTopWidth),
+      textColor: style.color,
+    };
+  });
+
+  expect(frame.borderStyle).toBe("solid");
+  expect(frame.borderWidth).toBeGreaterThanOrEqual(3);
+  expect(frame.borderColor).toBe(frame.textColor);
+}
+
 async function focusWithKeyboard(page: Page, locator: Locator) {
   for (let index = 0; index < 12; index += 1) {
     if (await locator.evaluate((element) => element === document.activeElement)) {
@@ -333,6 +350,54 @@ test("shared menu items do not move when hovered", async ({ page }) => {
   );
 
   expect(await manageLearners.boundingBox()).toEqual(before);
+});
+
+test("secondary actions keep a visible frame on light cards", async ({ page }) => {
+  await page.goto(guardianPath("/guardian/learners"));
+  await expectVisibleSurfaceFrame(
+    page.getByRole("button", { name: "Edit Mia's profile" }),
+  );
+
+  await page.route("**/api/auth/get-session", async (route) => {
+    await route.fulfill({
+      body: "null",
+      contentType: "application/json",
+      status: 200,
+    });
+  });
+  await page.goto("/login");
+  await expectVisibleSurfaceFrame(
+    page.getByRole("button", { name: "Continue as guest" }),
+  );
+});
+
+test("guardian dashboard cards share one rendered frame and elevation", async ({
+  page,
+}) => {
+  await page.goto(guardianPath("/guardian"));
+  const cards = [
+    "Learner profiles",
+    "My Lessons",
+    "Story settings",
+    "Voice dubbing",
+    "Account & privacy",
+  ].map((name) => page.getByRole("region", { name }));
+  const chrome = await Promise.all(
+    cards.map(async (card) => {
+      await expect(card).toBeVisible();
+      return card.evaluate((element) => {
+        const style = getComputedStyle(element);
+        return {
+          borderColor: style.borderTopColor,
+          borderStyle: style.borderTopStyle,
+          borderWidth: style.borderTopWidth,
+          boxShadow: style.boxShadow,
+        };
+      });
+    }),
+  );
+
+  expect(new Set(chrome.map((value) => JSON.stringify(value))).size).toBe(1);
 });
 
 for (const viewport of viewports) {

@@ -33,7 +33,7 @@ export function GuardianDashboardView({
       <RouteHeader>
         <HeaderButton
           aria-label="Switch to learner"
-          icon={<LogOut strokeWidth={3} />}
+          icon={<LogOut />}
           onClick={onSwitchToLearner}
           ref={switchTriggerRef}
           type="button"
@@ -51,7 +51,7 @@ export function GuardianDashboardView({
 
         <Card
           aria-labelledby="manage-learners-heading"
-          className="grid items-center gap-5 overflow-hidden p-6 ring-4 ring-brand-pink/15 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
+          className="grid items-center gap-5 overflow-hidden p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
           tone="solid"
         >
           <span
@@ -65,7 +65,7 @@ export function GuardianDashboardView({
               className="m-0 text-3xl leading-tight text-brand-navy"
               id="manage-learners-heading"
             >
-              Manage learners
+              Learner profiles
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
               Add, edit, or delete learner profiles. You’ll choose a learner
@@ -85,7 +85,7 @@ export function GuardianDashboardView({
           className="grid gap-4"
         >
           <h2
-            className="m-0 text-2xl leading-tight text-brand-navy"
+            className="m-0 text-3xl leading-tight text-brand-navy"
             id="learning-content-heading"
           >
             Learning &amp; content
@@ -93,7 +93,7 @@ export function GuardianDashboardView({
           <div className="grid gap-4 md:grid-cols-3">
             <Card
               aria-labelledby="my-lessons-heading"
-              className="grid content-start gap-4 !bg-sky-50 p-5 ring-2 ring-inset ring-sky-100 sm:p-6"
+              className="grid content-start gap-4 !bg-sky-50 p-5 sm:p-6"
               tone="muted"
             >
               <span
@@ -122,7 +122,7 @@ export function GuardianDashboardView({
 
             <Card
               aria-labelledby="story-settings-heading"
-              className="grid content-start gap-4 !bg-violet-50 p-5 ring-2 ring-inset ring-violet-100 sm:p-6"
+              className="grid content-start gap-4 !bg-violet-50 p-5 sm:p-6"
               tone="muted"
             >
               <span
@@ -151,7 +151,7 @@ export function GuardianDashboardView({
 
             <Card
               aria-labelledby="voice-dubbing-heading"
-              className="grid content-start gap-4 !bg-amber-50 p-5 ring-2 ring-inset ring-amber-100 sm:p-6"
+              className="grid content-start gap-4 !bg-amber-50 p-5 sm:p-6"
               tone="muted"
             >
               <span
@@ -183,7 +183,6 @@ export function GuardianDashboardView({
         <Card
           aria-labelledby="account-privacy-heading"
           className="grid items-center gap-5 !bg-emerald-50 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
-          elevation="soft"
           tone="muted"
         >
           <span

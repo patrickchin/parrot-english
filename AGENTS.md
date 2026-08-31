@@ -1,5 +1,7 @@
 # Parrot English Agent Notes
 
+- Merge changes into `main` only through a pull request; never merge feature branches directly.
+
 ## Learner Names
 
 - When authored learner content needs a personal name, reuse only Bob, Mary,
@@ -21,6 +23,8 @@
 - `AuthGate` owns the account header through `AccountHeader`. Routes compose
   `RouteHeader` with `HeaderButton` or `HeaderLink`; they must not redefine
   header sizing, typography, colors, or shadows.
+- Give every route one `h1`; add lower headings or helper copy only for real, descending structure—not repeated brands, modes, labels, or actions.
+- Preserve learner targets, progress, safety, consent, privacy, warnings, errors, and live statuses when simplifying UI.
 - Build lesson-player presentation from `src/lessons/LessonPlayerUi.tsx`; its HUD,
   characters, speech, start action, controls, and errors are domain components
   that use Tailwind and the shared control primitives.

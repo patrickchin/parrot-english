@@ -237,17 +237,22 @@ test("boxed lesson artwork renders as one labelled image without experiment chro
   assert.doesNotMatch(html, /data-character=/);
 });
 
-test("the introduction invites children to watch and join in", () => {
+test("the introduction uses the lesson title as its single heading", () => {
   const html = renderPlayerUi(LessonIntroduction, {
     lessonTitle: "Peppa's High Ball",
     onStart() {},
     sceneCount: 5,
   });
 
-  assert.match(html, /<h1[^>]*>Watch and join in<\/h1>/);
-  assert.match(html, /Watch the story/);
+  assert.match(html, /<h1[^>]*>Peppa&#x27;s High Ball<\/h1>/);
+  assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+  assert.match(html, /Watch and say the big words with the group\./);
+  assert.doesNotMatch(html, /whenever you like/);
   assert.match(html, /<button[^>]*>[^<]*Let&#x27;s go[^<]*<\/button>/);
-  assert.doesNotMatch(html, /Start lesson|1\. Listen|2\. Talk/);
+  assert.doesNotMatch(
+    html,
+    /Watch and join in|5 parts|Start lesson|1\. Listen|2\. Talk/,
+  );
 });
 
 test("the automatic join-in prompt announces cue-only and microphone modes", () => {
@@ -266,7 +271,9 @@ test("the automatic join-in prompt announces cue-only and microphone modes", () 
     assert.match(html, />It is up high!</);
     assert.doesNotMatch(html, /Checking|Try again|Great job|Tap to talk|Skip/);
   }
-  assert.match(cueOnly, /Voices are joining in/);
+  assert.doesNotMatch(cueOnly, /role="status"|Voices are joining in/);
+  assert.match(recording, /aria-live="polite"/);
+  assert.match(recording, /role="status"/);
   assert.match(recording, /Your microphone is joining in too/);
 });
 
@@ -288,5 +295,10 @@ test("completion reports background saving without scoring the child", () => {
 
   assert.match(pending, /Saving your voices…/);
   assert.match(failed, /Try saving again/);
+  for (const html of [pending, failed]) {
+    assert.match(html, /<h1[^>]*>You finished Peppa&#x27;s High Ball!<\/h1>/);
+    assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /Lesson complete!/);
+  }
   assert.doesNotMatch(`${pending}${failed}`, /score|checking|great job/i);
 });

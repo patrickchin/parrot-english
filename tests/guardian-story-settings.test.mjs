@@ -310,7 +310,8 @@ test("guardian story settings owns level and art management", () => {
     false,
   );
   assert.match(html, /Personalized story art/);
-  assert.match(html, /Guardian consent/);
+  assert.doesNotMatch(renderedText, /Guardian consent/);
+  assert.match(renderedText, /I am 18 or older/);
   assert.match(renderedText, /Upload Mia's photo/);
   assert.match(renderedText, /look like Mia/);
   assert.match(renderedText, /I am Mia's guardian/);
@@ -606,7 +607,9 @@ test("keeps the story settings shell connected while a new learner profile loads
     assert.ok(
       container.querySelector("h2")?.textContent?.includes("Choose story level"),
     );
-    assert.match(container.textContent, /Personalized story art/);
+    assert.ok(
+      container.querySelector('[aria-label="Personalized story art"]'),
+    );
     assert.equal(
       [...container.querySelectorAll('[role="tab"]')].some(
         (tab) => tab.getAttribute("aria-selected") === "true",

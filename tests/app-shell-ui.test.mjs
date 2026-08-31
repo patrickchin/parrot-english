@@ -101,7 +101,7 @@ test("home menu prioritizes the five learner activities", () => {
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
-  assert.match(html, /Tap a picture\./);
+  assert.match(html, /<h1[^>]*>Parrot English<\/h1>/);
   assert.match(html, />Lessons</);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
@@ -248,10 +248,9 @@ test("canonical Parrot scene routes start without premature scene content", () =
     "/lessons/parrot/01-peppas-high-ball/scenes/2",
   );
 
-  assert.match(html, /Peppa&#x27;s High Ball/);
-  assert.match(html, /5 parts/);
-  assert.match(html, /Watch and join in/);
+  assert.match(html, /<h1[^>]*>Peppa&#x27;s High Ball<\/h1>/);
   assert.match(html, /say the big words with the group/);
+  assert.doesNotMatch(html, /5 parts|Watch and join in/);
   assert.match(html, /Loading picture…/);
   assert.doesNotMatch(html, /1\. Listen|2\. Talk|aria-label="Start lesson"/);
   assert.doesNotMatch(html, /Peppa Cannot Reach/);

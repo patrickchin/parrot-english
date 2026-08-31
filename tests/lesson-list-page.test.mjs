@@ -114,7 +114,8 @@ test("lesson list gives children one simple picture-led lesson path", () => {
   );
 
   assert.match(html, /<h1[^>]*>Pick a lesson<\/h1>/);
-  assert.match(html, /Listen\. Then speak\./i);
+  assert.doesNotMatch(html, /Listen\. Then speak\./i);
+  assert.doesNotMatch(html, /\b\d+ parts\b/);
   assert.match(
     html,
     /<section[^>]*aria-label="Lessons"/,
@@ -124,7 +125,8 @@ test("lesson list gives children one simple picture-led lesson path", () => {
     /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson/,
   );
   assert.doesNotMatch(html, /id="my-lessons-title"/);
-  assert.equal((html.match(/<h3/g) ?? []).length, 7);
+  assert.equal((html.match(/<h2/g) ?? []).length, 7);
+  assert.equal((html.match(/<h3/g) ?? []).length, 0);
   assert.match(html, /Peppa&#x27;s High Ball/);
   assert.equal((html.match(/<article/g) ?? []).length, 7);
   assert.deepEqual(getParrotLessonHrefs(html), expectedHrefs);
@@ -132,6 +134,7 @@ test("lesson list gives children one simple picture-led lesson path", () => {
     (html.match(/aria-label="Start lesson: [^"]+"/g) ?? []).length,
     7,
   );
+  assert.equal((html.match(/>Play<\/span>/g) ?? []).length, 7);
   for (const practiceLine of [
     "Say: Can you help me?",
     "Say: It is red.",
@@ -254,6 +257,7 @@ test("saved lessons stay playable without custom-lesson management actions", () 
   assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
   assert.match(html, /Made for you/);
   assert.match(html, /A lesson made for you\./);
+  assert.match(html, /<h3[^>]*>Editable Garden<\/h3>/);
   assert.doesNotMatch(
     html,
     /Edit lesson: Editable Garden|Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/lesson%2Fid\/edit|\/lessons\/my\/create/,
@@ -267,9 +271,10 @@ test("a canonical Parrot catalog href renders its directly matched lesson route"
   const html = renderApplicationRoutes(firstHref);
 
   assert.match(html, /Parrot English speaking lesson/);
-  assert.match(html, /Peppa&#x27;s High Ball/);
+  assert.match(html, /<h1[^>]*>Peppa&#x27;s High Ball<\/h1>/);
   assert.doesNotMatch(html, new RegExp(LESSONS[0].lesson.scenes[0].title));
-  assert.match(html, /Watch and join in/);
+  assert.match(html, /say the big words with the group/);
+  assert.doesNotMatch(html, /5 parts|Watch and join in/);
   assert.match(html, /Loading picture…/);
   assert.doesNotMatch(html, /aria-label="Start lesson"/);
   assert.match(html, />Back to lessons</);

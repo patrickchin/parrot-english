@@ -131,8 +131,18 @@ describe("child-first story reader behavior", () => {
     const readButton = container.querySelector(
       '[aria-label="Listen to this page"]',
     );
+    const listenControls = container.querySelector(
+      '[role="group"][aria-label="Listen"]',
+    );
     assert.ok(readButton);
+    assert.ok(listenControls);
     assert.equal(readButton.disabled, false);
+    assert.equal(
+      [...listenControls.querySelectorAll('[aria-hidden="true"]')].some(
+        (candidate) => candidate.textContent.trim() === "Listen",
+      ),
+      false,
+    );
     assert.match(container.textContent, /Choose how to listen/);
 
     await click(readButton);
@@ -414,5 +424,41 @@ describe("child-first story reader behavior", () => {
       `/assets/audio/${firstStory.pages[0].joinInAudioId}.mp3`,
       `/assets/audio/${firstStory.pages[1].narrationAudioId}.mp3`,
     ]);
+  });
+
+  it("finishes with one focused heading and the story recap", async () => {
+    const container = await mountStrict(
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/stories/the-red-ball/pages/5"] },
+        createElement(StoryReader, {
+          backToStories: "/stories",
+          onNavigatePage() {},
+          pageIndex: firstStory.pages.length - 1,
+          story: firstStory,
+        }),
+      ),
+    );
+
+    const finishButton = container.querySelector(
+      '[aria-label="Finish story"]',
+    );
+    assert.ok(finishButton);
+    await click(finishButton);
+
+    await waitFor(() => {
+      const completion = container.querySelector(
+        '[aria-label="Story finished"]',
+      );
+      assert.ok(completion);
+      const headings = completion.querySelectorAll("h1");
+      assert.equal(headings.length, 1);
+      assert.equal(headings[0].textContent.trim(), "Great job!");
+      assert.equal(document.activeElement, headings[0]);
+      assert.match(completion.textContent, /The red ball is home\./);
+      assert.doesNotMatch(completion.textContent, /The end!/);
+      assert.match(completion.textContent, /Start again/);
+      assert.match(completion.textContent, /Pick another story/);
+    });
   });
 });

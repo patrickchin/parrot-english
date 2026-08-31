@@ -9,20 +9,19 @@ import {
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
+  Card,
   InteractiveCardLink,
   SegmentedButton,
   SegmentedControl,
 } from "../shared/ui";
 import { StoryArtwork } from "./StoryArtwork";
 import {
-  getStoryLevel,
   getStoryShelfLevelId,
   isLearnerStoryLevelId,
   isStoryLevelId,
   STORIES,
   STORY_LEVELS,
   type Story,
-  type StoryLevel,
   type StoryLevelId,
 } from "./story-catalog";
 
@@ -42,7 +41,6 @@ export function StoryList() {
     profile.storyLevel,
   );
   const requestedLevelId = new URLSearchParams(location.search).get("level");
-  const activeLevel = getStoryLevel(activeLevelId);
   const stories = STORIES.filter(
     (story) => getStoryShelfLevelId(story.level) === activeLevelId,
   );
@@ -69,30 +67,18 @@ export function StoryList() {
       </RouteHeader>
 
       <header className="mx-auto mb-4 grid w-full max-w-3xl gap-1.5 text-center md:mb-6">
-        <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue sm:text-sm">
-          Story time
-        </p>
-        <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink sm:text-5xl md:text-6xl">
+        <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-5xl md:text-6xl">
           Pick a story
         </h1>
-        <p className="mx-auto m-0 max-w-2xl text-sm font-extrabold leading-snug text-brand-blue sm:text-lg">
-          Tap a picture. I can read it to you.
-        </p>
       </header>
 
       <section
         aria-label="Read-aloud stories"
         className="mx-auto grid w-full max-w-7xl gap-4 sm:gap-5"
       >
-        <div className="rounded-3xl border-4 border-white bg-white/90 p-2 shadow-card sm:p-3">
-          <h2
-            className="m-0 px-2 pb-2 text-center text-lg leading-none text-brand-navy sm:text-xl"
-            id="story-shelf-picker-heading"
-          >
-            Choose a story level
-          </h2>
+        <Card className="p-2 sm:p-3">
           <SegmentedControl
-            aria-labelledby="story-shelf-picker-heading"
+            aria-label="Choose a story level"
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
             role="tablist"
           >
@@ -111,15 +97,13 @@ export function StoryList() {
               </SegmentedButton>
             ))}
           </SegmentedControl>
-        </div>
+        </Card>
 
         <StoryShelfSection
-          id="story-shelf"
           labelledBy={`story-shelf-tab-${activeLevelId}`}
-          level={activeLevel}
           recommendedFor={
-            isLearnerStoryLevelId(activeLevel.id) &&
-            activeLevel.id === profile.storyLevel
+            isLearnerStoryLevelId(profile.storyLevel) &&
+            activeLevelId === getStoryShelfLevelId(profile.storyLevel)
               ? learnerName
               : undefined
           }
@@ -131,15 +115,11 @@ export function StoryList() {
 }
 
 function StoryShelfSection({
-  id,
   labelledBy,
-  level,
   recommendedFor,
   stories,
 }: {
-  id: string;
   labelledBy: string;
-  level: StoryLevel;
   recommendedFor?: string;
   stories: readonly Story[];
 }) {
@@ -150,23 +130,11 @@ function StoryShelfSection({
       id="story-shelf-panel"
       role="tabpanel"
     >
-      <header className="grid gap-1 text-center">
-        <h2
-          className="m-0 text-xl leading-none text-brand-navy sm:text-2xl"
-          id={`${id}-heading`}
-        >
-          {level.label}
-        </h2>
-        <p className="m-0 text-xs font-extrabold leading-snug text-brand-blue sm:text-sm">
-          {level.description}
+      {recommendedFor ? (
+        <p className="m-0 justify-self-center rounded-full bg-brand-yellow px-3 py-1 text-xs font-black text-brand-navy sm:text-sm">
+          Recommended for <BidiLearnerName learnerName={recommendedFor} />
         </p>
-        {recommendedFor ? (
-          <p className="m-0 justify-self-center rounded-full bg-brand-yellow px-3 py-1 text-xs font-black text-brand-navy sm:text-sm">
-            Recommended for{" "}
-            <BidiLearnerName learnerName={recommendedFor} />
-          </p>
-        ) : null}
-      </header>
+      ) : null}
 
       <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {stories.map((story, storyIndex) => (
@@ -185,12 +153,12 @@ function StoryShelfSection({
               </div>
 
               <div className="grid content-between gap-3 p-3.5 sm:p-4">
-                <h3
-                  className="m-0 text-2xl leading-tight text-brand-ink"
+                <h2
+                  className="m-0 text-lg leading-tight text-brand-ink sm:text-xl"
                   id={`story-card-${story.id}`}
                 >
                   {story.title}
-                </h3>
+                </h2>
 
                 <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-brand-action-ink shadow-control-pink">
                   <Headphones aria-hidden="true" className="size-5" />

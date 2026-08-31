@@ -31,6 +31,7 @@ test("nursery rhyme picker presents six large illustrated projects", async ({ pa
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/dubs");
   await expect(page.getByRole("heading", { name: "Nursery rhymes" })).toBeVisible();
+  await expect(page.getByText("Sing and record", { exact: true })).toHaveCount(0);
   const picker = page.getByRole("navigation", { name: "Nursery rhymes" });
   const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
   const back = routeHeader.getByRole("link", { name: "Back to home" });

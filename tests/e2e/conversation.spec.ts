@@ -27,8 +27,18 @@ test("Back returns home and Talk to Peppa can be opened again", async ({
   page,
 }) => {
   await page.goto("/talk-to-peppa");
+  const start = page.getByRole("button", { name: "Start chat" });
+  await expect(start).toHaveText("Talk to Peppa");
+  await expect(
+    page.getByRole("region", { name: "Conversation captions" }),
+  ).toHaveCount(0);
   await startSmallChat(page);
-  await expect(page.getByRole("button", { name: "Tap, then talk" })).toBeVisible();
+  const firstTurn = page.getByRole("button", { name: "Tap, then talk" });
+  await expect(firstTurn).toBeVisible();
+  await expect(firstTurn).toHaveAttribute("aria-keyshortcuts", "Space");
+  await expect(page.getByText("Tap or press Space", { exact: true })).toHaveCount(
+    0,
+  );
 
   await page.getByRole("button", { exact: true, name: "Back" }).click();
 
