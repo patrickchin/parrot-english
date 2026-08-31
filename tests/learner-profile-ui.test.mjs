@@ -1158,14 +1158,26 @@ describe("onboarding and profile gate", () => {
     );
   });
 
-  it("routes incomplete learners to onboarding and completed learners away from it", () => {
+  it("keeps onboarding optional for incomplete learners", () => {
     const protectedPage = renderGate({
       data: fullState(),
       isLearnerProfileRoute: false,
     });
-    assert.match(protectedPage, /LEARNER_PROFILE REDIRECT/);
-    assert.doesNotMatch(protectedPage, /LESSON CONTENT|Meet Peppa/);
+    assert.match(protectedPage, /LESSON CONTENT/);
+    assert.doesNotMatch(
+      protectedPage,
+      /LEARNER_PROFILE REDIRECT|Answer 6 questions|Meet Peppa/,
+    );
 
+    const explicitOnboarding = renderGate({
+      data: fullState(),
+      isLearnerProfileRoute: true,
+    });
+    assert.match(explicitOnboarding, /Answer 6 questions/);
+    assert.doesNotMatch(explicitOnboarding, /LESSON CONTENT/);
+  });
+
+  it("routes completed learners away from onboarding", () => {
     const completedLearnerProfile = renderGate({
       data: fullState({
         canBypass: false,

@@ -659,39 +659,111 @@ async function routeIncompleteLearnerProfile(page: Page) {
   });
 }
 
-test("an incomplete learner sees a skippable profile setup before the requested activity", async ({
+test("a new account lands on the activity menu without profile setup", async ({
+  page,
+}) => {
+  const timestamp = "2026-08-31T00:00:00.000Z";
+  const authenticatedSession = {
+    session: {
+      id: "e2e-new-account-session",
+      userId: "e2e-new-account-user",
+      token: "e2e-new-account-token",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      ipAddress: null,
+      userAgent: "Playwright",
+    },
+    user: {
+      id: "e2e-new-account-user",
+      name: "Mary",
+      email: "mary@example.test",
+      emailVerified: false,
+      isAnonymous: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  };
+  let session: typeof authenticatedSession | null = null;
+
+  await page.route("**/api/auth/get-session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: session,
+      status: 200,
+    });
+  });
+  await page.route("**/api/auth/sign-up/email", async (route) => {
+    session = authenticatedSession;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        token: authenticatedSession.session.token,
+        user: authenticatedSession.user,
+      },
+      status: 200,
+    });
+  });
+  await routeIncompleteLearnerProfile(page);
+
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Sign up", exact: true }).click();
+  await page.getByLabel("Account name").fill("Mary");
+  await page.getByLabel("Email").fill("mary@example.test");
+  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Talk to Peppa" }),
+  ).toHaveAttribute("href", "/talk-to-peppa");
+  await expect(
+    page.getByRole("heading", { name: "Answer 6 questions" }),
+  ).toHaveCount(0);
+
+  await page.reload();
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+
+  await page.goto("/lessons");
+  await expect(page.getByRole("heading", { name: "Pick a lesson" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Answer 6 questions" }),
+  ).toHaveCount(0);
+});
+
+test("an incomplete learner can open a lesson without profile setup", async ({
   page,
 }) => {
   await routeIncompleteLearnerProfile(page);
   await page.goto("/lessons");
 
-  await expect(page).toHaveURL("/profile/setup?returnTo=%2Flessons");
+  await expect(page).toHaveURL("/lessons");
+  await expect(
+    page.getByRole("heading", { name: "Pick a lesson" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Answer 6 questions" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Start questions" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Skip for now" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });
 
-test("an incomplete learner returns to the requested duck dub after profile setup", async ({
+test("an incomplete learner can open a duck dub without profile setup", async ({
   page,
 }) => {
   await routeIncompleteLearnerProfile(page);
   const requested = "/dubs/five-little-ducks?parrotE2eDub=partial";
   await page.goto(requested);
 
-  await expect(page).toHaveURL(
-    `/profile/setup?returnTo=${encodeURIComponent(requested)}`,
-  );
-  await expect(
-    page.getByRole("heading", { name: "Answer 6 questions" }),
-  ).toBeVisible();
+  await expect(page).toHaveURL(requested);
   await expect(
     page.getByRole("heading", { name: "Five Little Ducks" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Answer 6 questions" }),
   ).toHaveCount(0);
 });
 

@@ -1,5 +1,27 @@
 import { expect, test } from "@playwright/test";
-import { startSmallChat } from "./conversation-helpers";
+import { startSmallChat, useIncompleteProfile } from "./conversation-helpers";
+
+test("an incomplete profile starts Peppa chat only after choosing it", async ({
+  page,
+}) => {
+  await useIncompleteProfile(page);
+  await page.goto("/");
+
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Chat with Peppa" }),
+  ).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Talk to Peppa" }).click();
+
+  await expect(page).toHaveURL("/talk-to-peppa");
+  await startSmallChat(page);
+  await expect(
+    page.getByRole("button", { name: "Tap, then talk" }),
+  ).toBeVisible();
+});
 
 test("Back returns home and Talk to Peppa can be opened again", async ({
   page,
