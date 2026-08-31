@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { DUB_RECORDING_MS } from "./dub-script";
 import { getDubGuidePeakBars, getNormalizedPeakBars } from "./dub-waveform";
 
 const BAR_COUNT = 32;
@@ -62,7 +61,7 @@ function Waveform({
   );
 }
 
-function useRecordedPeakBars(blob: Blob | null) {
+function useRecordedPeakBars(blob: Blob | null, durationMs: number) {
   const [peaks, setPeaks] = useState<number[] | null>(null);
 
   useEffect(() => {
@@ -90,7 +89,7 @@ function useRecordedPeakBars(blob: Blob | null) {
       .then((audio) => {
         if (cancelled) return;
         const samples = audio.getChannelData(0);
-        const timelineSampleCount = Math.round(audio.sampleRate * DUB_RECORDING_MS / 1_000);
+        const timelineSampleCount = Math.round(audio.sampleRate * durationMs / 1_000);
         setPeaks(getNormalizedPeakBars(samples, BAR_COUNT, timelineSampleCount));
       })
       .catch(() => {
@@ -102,12 +101,12 @@ function useRecordedPeakBars(blob: Blob | null) {
       cancelled = true;
       closeContext();
     };
-  }, [blob]);
+  }, [blob, durationMs]);
 
   return peaks ?? BASELINE_BARS;
 }
 
-function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
+function useLivePeakBars(stream: MediaStream | null, elapsedMs: number, durationMs: number) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const samplesRef = useRef<Float32Array<ArrayBuffer> | null>(null);
   const [rawPeaks, setRawPeaks] = useState(BASELINE_BARS);
@@ -188,7 +187,7 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
     for (const sample of samples) peak = Math.max(peak, Math.abs(sample));
     const barIndex = Math.min(
       BAR_COUNT - 1,
-      Math.floor(Math.max(0, elapsedMs) / DUB_RECORDING_MS * BAR_COUNT),
+      Math.floor(Math.max(0, elapsedMs) / durationMs * BAR_COUNT),
     );
     setRawPeaks((current) => {
       if (current[barIndex] >= peak) return current;
@@ -197,7 +196,7 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
       return next;
     });
     setAvailable(true);
-  }, [elapsedMs, graphReady, stream]);
+  }, [durationMs, elapsedMs, graphReady, stream]);
 
   return {
     available,
@@ -207,18 +206,20 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number) {
 
 export function DubTakeWaveform({
   blob,
+  durationMs,
   guideAudioId,
   recordingElapsedMs,
   recordingStream,
 }: {
   blob: Blob | null;
+  durationMs: number;
   guideAudioId: string;
   recordingElapsedMs: number;
   recordingStream: MediaStream | null;
 }) {
   const guidePeaks = getDubGuidePeakBars(guideAudioId);
-  const recordedPeaks = useRecordedPeakBars(blob);
-  const live = useLivePeakBars(recordingStream, recordingElapsedMs);
+  const recordedPeaks = useRecordedPeakBars(blob, durationMs);
+  const live = useLivePeakBars(recordingStream, recordingElapsedMs, durationMs);
 
   return (
     <div aria-label="Waveform comparison" className="grid w-full" role="group">

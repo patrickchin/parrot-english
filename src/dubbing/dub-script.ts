@@ -5,7 +5,6 @@ export const DUB_ID = "five-little-ducks-v2" as const;
 export const DUB_ROUTE = "/dubs/five-little-ducks" as const;
 export const DUB_DURATION_MS = 98_000;
 export const DUB_LINES_PER_VERSE = 4;
-export const DUB_RECORDING_MS = 6_000;
 
 export type DubVisualBeat =
   | "depart" | "hill" | "mother-calls" | "return" | "none-return"
@@ -78,7 +77,6 @@ export const FIVE_LITTLE_DUCKS_DUB = Object.freeze({
   title: "Five Little Ducks",
   durationMs: DUB_DURATION_MS,
   finalCueTailMs: 5_200,
-  recordingMs: DUB_RECORDING_MS,
   linesPerScene: DUB_LINES_PER_VERSE,
   sceneArtwork: FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
   music: FIVE_LITTLE_DUCKS_MUSIC,

@@ -7,6 +7,7 @@ import {
   TWINKLE_TWINKLE_DUB,
 } from "../src/dubbing/rhyme-catalog.ts";
 import {
+  prepareDubLineBacking,
   scheduleDubAudio,
   startDubPlayback,
 } from "../src/dubbing/dub-playback.ts";
@@ -197,6 +198,7 @@ function createAudioHarness({
       const oscillator = {
         connections: [],
         frequency: new FakeParam(),
+        onended: null,
         startTimes: [],
         stopCalls: 0,
         stopTimes: [],
@@ -213,6 +215,9 @@ function createAudioHarness({
           if (oscillatorStopFailure && this.stopCalls === 1) {
             throw oscillatorStopFailure;
           }
+        },
+        finish() {
+          this.onended?.();
         },
       };
       this.oscillators.push(oscillator);
@@ -285,6 +290,192 @@ describe("duck dub playback", () => {
       [...sources.values()].map(({ stopCalls }) => stopCalls),
       Array.from({ length: 23 }, () => 1),
     );
+  });
+
+  it("prepares an exact two-second line backing without fetching audio", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const line = OLD_MACDONALD_DUB.lines[2];
+    let ended = 0;
+    const ticks = [];
+
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      line,
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    assert.equal(backing.durationMs, 2_000);
+    assert.equal(audio.fetchCalls.length, 0);
+    assert.equal(audio.contexts[0].oscillators.length, 0);
+    backing.start();
+
+    const context = audio.contexts[0];
+    const melody = context.oscillators.filter(({ type }) => type === "triangle");
+    assert.equal(context.resumeCalls, 1);
+    assert.equal(melody[0].startTimes[0], 10);
+    const terminal = context.oscillators.at(-1);
+    assert.equal(typeof terminal.onended, "function");
+    context.currentTime = 12;
+    terminal.finish();
+    assert.equal(ended, 1);
+    assert.deepEqual(ticks, [0]);
+    assert.equal(raf.callbacks.size, 0);
+    assert.equal(context.closeCalls, 1);
+  });
+
+  it("closes a prepared line backing once across stop and abort", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const controller = new AbortController();
+    let ended = 0;
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      line: DUB_LINES[0],
+      onEnded: () => { ended += 1; },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal: controller.signal,
+    });
+
+    backing.start();
+    const terminal = audio.contexts[0].oscillators.at(-1);
+    backing.stop();
+    const scheduledStopCounts = audio.contexts[0].oscillators.map(({ stopCalls }) => stopCalls);
+    backing.stop();
+    controller.abort();
+    terminal.finish();
+
+    assert.equal(ended, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.deepEqual(
+      audio.contexts[0].oscillators.map(({ stopCalls }) => stopCalls),
+      scheduledStopCounts,
+    );
+    assert.equal(raf.callbacks.size, 0);
+  });
+
+  it("closes the prepared context when melody scheduling fails", async () => {
+    const failure = new Error("music setup failed");
+    const audio = createAudioHarness({ oscillatorStopFailure: failure });
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      line: DUB_LINES[0],
+    });
+
+    assert.throws(() => backing.start(), /music setup failed/);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    backing.stop();
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("does not end a prepared backing after aborting its audio-clock terminal", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const controller = new AbortController();
+    let ended = 0;
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      line: DUB_LINES[0],
+      onEnded: () => { ended += 1; },
+      onTick(elapsedMs) {
+        if (elapsedMs === 4_000) controller.abort();
+      },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal: controller.signal,
+    });
+
+    backing.start();
+    const terminal = audio.contexts[0].oscillators.at(-1);
+    controller.abort();
+    terminal.finish();
+
+    assert.equal(ended, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("continues backing cleanup when frame cancellation throws", async () => {
+    const failure = new Error("frame cancellation failed");
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const controller = new AbortController();
+    const listeners = trackAbortListeners(controller.signal);
+    let ended = 0;
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame() {
+        throw failure;
+      },
+      line: DUB_LINES[0],
+      onEnded: () => { ended += 1; },
+      requestAnimationFrame: raf.requestAnimationFrame,
+      signal: controller.signal,
+    });
+
+    backing.start();
+    const terminal = audio.contexts[0].oscillators.at(-1);
+    assert.doesNotThrow(() => backing.stop());
+    terminal.finish();
+
+    assert.equal(ended, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.ok(audio.contexts[0].oscillators.every(({ stopCalls }) => stopCalls >= 2));
+    assert.deepEqual(listeners, { adds: 1, removes: 1 });
+  });
+
+  it("reports an asynchronous progress-loop failure and never ends the backing", async () => {
+    const failure = new Error("progress requeue failed");
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    let ended = 0;
+    const failures = [];
+    let throwOnRequeue = false;
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      line: DUB_LINES[0],
+      onEnded: () => { ended += 1; },
+      onFailure: (error) => failures.push(error),
+      requestAnimationFrame(callback) {
+        if (throwOnRequeue) throw failure;
+        return raf.requestAnimationFrame(callback);
+      },
+    });
+
+    backing.start();
+    const terminal = audio.contexts[0].oscillators.at(-1);
+    throwOnRequeue = true;
+    raf.runNext();
+    terminal.finish();
+
+    assert.deepEqual(failures, [failure]);
+    assert.equal(ended, 0);
+    assert.equal(raf.callbacks.size, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.ok(audio.contexts[0].oscillators.every(({ stopCalls }) => stopCalls >= 2));
+  });
+
+  it("cleans up scheduled backing when its initial tick throws", async () => {
+    const failure = new Error("initial tick failed");
+    const audio = createAudioHarness();
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      line: DUB_LINES[0],
+      onTick() {
+        throw failure;
+      },
+    });
+
+    assert.throws(() => backing.start(), (error) => error === failure);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.ok(audio.contexts[0].oscillators.every(({ stopCalls }) => stopCalls === 2));
+    backing.stop();
+    assert.equal(audio.contexts[0].closeCalls, 1);
   });
 
   it("starts the Five Little Ducks melody and voices on the same phrase beats", async () => {
@@ -436,7 +627,7 @@ describe("duck dub playback", () => {
           onTick() {},
           requestAnimationFrame: raf.requestAnimationFrame,
         }),
-        /repeating scene phrases or one phrase per line/,
+        /one phrase per line or scene line/,
       );
     }
   });
