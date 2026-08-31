@@ -926,8 +926,16 @@ describe("word-game media publishing", () => {
     });
 
     assert.deepEqual(definition.config.r2_buckets, [
-      { binding: "PUBLIC_BUCKET", bucket_name: "public-media", remote: true },
-      { binding: "SOURCE_BUCKET", bucket_name: "private-source", remote: true },
+      {
+        binding: "PUBLIC_BUCKET",
+        bucket_name: "public-media",
+        preview_bucket_name: "public-media",
+      },
+      {
+        binding: "SOURCE_BUCKET",
+        bucket_name: "private-source",
+        preview_bucket_name: "private-source",
+      },
     ]);
     assert.equal(definition.config.compatibility_date, "2026-05-22");
     assert.equal(definition.config.vars, undefined);
@@ -992,7 +1000,10 @@ describe("word-game media publishing", () => {
     );
 
     assert.equal(launches.length, 1);
-    assert.equal(launches[0].includes("--remote"), false);
+    assert.equal(
+      launches[0].filter((argument) => argument === "--remote").length,
+      1,
+    );
     assert.equal(launches[0].includes("--var"), true);
     assert.equal(
       launches[0].some((argument) => argument.startsWith("UPLOAD_SECRET:")),
@@ -1004,8 +1015,18 @@ describe("word-game media publishing", () => {
     );
     const config = JSON.parse(writes.get("/private/helper/wrangler.json"));
     assert.equal(JSON.stringify(config).includes("UPLOAD_SECRET"), false);
-    assert.equal(config.r2_buckets.length, 2);
-    assert.equal(config.r2_buckets.every(({ remote }) => remote === true), true);
+    assert.deepEqual(config.r2_buckets, [
+      {
+        binding: "PUBLIC_BUCKET",
+        bucket_name: "public-media",
+        preview_bucket_name: "public-media",
+      },
+      {
+        binding: "SOURCE_BUCKET",
+        bucket_name: "private-source",
+        preview_bucket_name: "private-source",
+      },
+    ]);
     await assert.rejects(uploader.close(), /stop failed.*remove failed/i);
     assert.deepEqual(cleanup, ["stop", "remove"]);
   });

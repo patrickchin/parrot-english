@@ -148,8 +148,16 @@ export function createAtomicR2HelperDefinition({
       main: workerFile,
       name: workerName,
       r2_buckets: [
-        { binding: "PUBLIC_BUCKET", bucket_name: publicBucket, remote: true },
-        { binding: "SOURCE_BUCKET", bucket_name: sourceBucket, remote: true },
+        {
+          binding: "PUBLIC_BUCKET",
+          bucket_name: publicBucket,
+          preview_bucket_name: publicBucket,
+        },
+        {
+          binding: "SOURCE_BUCKET",
+          bucket_name: sourceBucket,
+          preview_bucket_name: sourceBucket,
+        },
       ],
     },
     source: `const atomicR2WorkerFetch = ${atomicR2WorkerFetch.toString()};\nexport default { fetch(request, environment) { return atomicR2WorkerFetch(request, environment, environment.UPLOAD_SECRET); } };\n`,
@@ -272,6 +280,7 @@ export async function startAtomicR2Uploader(
       path.join(cwd, "node_modules/.bin/wrangler"),
       [
         "dev",
+        "--remote",
         "--config",
         configFile,
         "--ip",
