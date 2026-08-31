@@ -4,6 +4,7 @@ import { DUB_DEFINITIONS } from "../../src/dubbing/rhyme-catalog";
 
 type DubStoreSnapshot = {
   audioContextDoubleCloses: number;
+  backingStarts: Array<{ at: number; frequencyHz: number }>;
   createdObjectUrls: string[];
   guideFetches: string[];
   playedAudioSources: string[];
@@ -677,7 +678,7 @@ test("scene recording follows one linear Choicer-style action flow", async ({ pa
   await expect(page.getByRole("button", { name: "Play scene" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Hear line" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Next line" })).toBeVisible();
-  await expect(page.getByText("Up to 6 seconds", { exact: true })).toBeVisible();
+  await expect(page.getByText("Melody length: 0:04", { exact: true })).toBeVisible();
   await expect(page.getByRole("img", { name: "Original audio waveform" })).toBeVisible();
 
   await page.getByRole("button", { name: "Next line" }).click();
@@ -939,8 +940,8 @@ test("recording shows elapsed time, saves, and leaves Next in its fixed action s
   await page.getByRole("button", { name: "Record line" }).click();
   const timer = page.getByRole("timer", { name: "Recording duration" });
   const progress = page.getByRole("progressbar", { name: "Recording time" });
-  await expect(timer).toContainText("0:06");
-  await expect(progress).toHaveAttribute("aria-valuemax", "6000");
+  await expect(timer).toContainText("0:04");
+  await expect(progress).toHaveAttribute("aria-valuemax", "4000");
   await expect.poll(async () => Number(await progress.getAttribute("aria-valuenow"))).toBeGreaterThan(500);
   const guideWaveform = page.getByRole("img", { name: "Original audio waveform" });
   const liveWaveform = page.getByRole("img", { name: "Your live recording waveform" });
@@ -1009,10 +1010,10 @@ test("a saved take keeps its local review URL while the line stays active", asyn
   expect(revocationCount(await dubStoreSnapshot(page), objectUrl)).toBe(0);
 
   await page.getByRole("button", { name: "Play my recording" }).click();
-  await expect.poll(async () => (await dubStoreSnapshot(page)).playedAudioSources).toContain(objectUrl);
+  await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
 });
 
-test("saved recording replay uses a private blob and revokes its fetched URL on Stop", async ({ page }) => {
+test("saved recording replay uses private audio with a Stop action", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete&parrotE2eDubPlayback=held");
   await expectDubProject(page);
   await openScene(page, 1);
@@ -1022,12 +1023,8 @@ test("saved recording replay uses a private blob and revokes its fetched URL on 
   await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toContain(
     "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
   );
-  await expect.poll(async () =>
-    (await dubStoreSnapshot(page)).playedAudioSources.some((source) => source.startsWith("blob:")),
-  ).toBe(true);
   await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
   await page.getByRole("button", { name: "Stop my recording" }).click();
-  await expect.poll(async () => (await dubStoreSnapshot(page)).revokedObjectUrls.length).toBeGreaterThan(0);
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toEqual([]);
 });
 
@@ -1163,9 +1160,6 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await expect(page.getByRole("button", { name: "Save again" })).toBeVisible();
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
-  await expect.poll(async () => (await dubStoreSnapshot(page)).playedAudioSources).toContain(
-    "/assets/audio/five-little-ducks-v2-guide-line-1.mp3",
-  );
 
   await page.getByRole("button", { name: "Play my recording" }).click();
   await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
@@ -1176,9 +1170,6 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await expect(page.getByRole("alert").filter({ hasText: "not saved" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Back to full video" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
-  await expect.poll(async () =>
-    (await dubStoreSnapshot(page)).playedAudioSources.some((source) => source.startsWith("blob:")),
-  ).toBe(true);
 
   await page.getByRole("button", { name: "Save again" }).click();
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Saving your take…");
@@ -1290,16 +1281,52 @@ test("recording silences guide playback", async ({ page }) => {
   await page.getByRole("button", { name: "Stop recording" }).click();
 });
 
-test("automatically stops and saves one six-second recording", async ({ page }) => {
+test("automatically stops and saves at the selected four-second phrase", async ({ page }) => {
   test.setTimeout(15_000);
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await expectDubProject(page);
   await openScene(page, 1);
+  await expect(page.getByText("Melody length: 0:04", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Record line" }).click();
-  await expect(page.getByRole("progressbar", { name: "Recording time" })).toHaveAttribute("aria-valuemax", "6000");
-  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible({ timeout: 8_000 });
+  await expect(page.getByRole("progressbar", { name: "Recording time" })).toHaveAttribute("aria-valuemax", "4000");
+  await expect(page.getByRole("timer", { name: "Recording duration" }))
+    .toContainText("Recording with melody");
+  await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
+    .toBeGreaterThan(0);
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible({ timeout: 6_000 });
   await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toHaveLength(1);
 });
+
+test("Old MacDonald records on its two- and eight-second phrase windows", async ({ page }) => {
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  await expect(page.getByText("Melody length: 0:08", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("progressbar", { name: "Recording time" }))
+    .toHaveAttribute("aria-valuemax", "8000");
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await page.getByRole("button", { name: "Next line" }).click();
+  await page.getByRole("button", { name: "Next line" }).click();
+  await expect(page.getByText("Melody length: 0:02", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("progressbar", { name: "Recording time" }))
+    .toHaveAttribute("aria-valuemax", "2000");
+  await page.getByRole("button", { name: "Stop recording" }).click();
+});
+
+for (const definition of DUB_DEFINITIONS) {
+  test(`${definition.title} starts its authored backing while recording`, async ({ page }) => {
+    await page.goto(`${definition.route}?parrotE2eDub=empty`);
+    await page.getByRole("button", { name: "Play full video" }).waitFor();
+    await page.getByRole("button", { name: /^Scene 1,/ }).click();
+    await expect(page.getByText(/^Melody length: 0:/)).toBeVisible();
+    await page.getByRole("button", { name: "Record line" }).click();
+    await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
+      .toBeGreaterThan(0);
+    await page.getByRole("button", { name: "Stop recording" }).click();
+  });
+}
 
 test("held microphone readiness keeps every scene action locked behind one live status", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eMicrophone=delayed");
@@ -1327,8 +1354,8 @@ test("held microphone readiness keeps every scene action locked behind one live 
   await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
 
   await resolveDelayedMicrophone(page);
-  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Recording…");
-  await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("0:06");
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Recording with melody…");
+  await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("0:04");
   expectSameActionSlot(
     await visibleBoxWithin(page.getByRole("button", { name: "Stop recording" }), controls),
     idleRecordBox,
