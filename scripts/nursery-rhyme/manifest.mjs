@@ -117,6 +117,7 @@ export function resolvePackageAsset(packageDir, relativePath, fieldPath) {
     relativePath.includes("\\") ||
     relativePath.includes("?") ||
     relativePath.includes("#") ||
+    relativePath.endsWith("/") ||
     path.isAbsolute(relativePath) ||
     path.posix.isAbsolute(relativePath) ||
     path.win32.isAbsolute(relativePath) ||

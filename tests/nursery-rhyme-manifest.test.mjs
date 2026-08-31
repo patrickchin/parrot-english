@@ -194,7 +194,7 @@ describe("package asset resolution", () => {
     );
   });
 
-  it("rejects empty, absolute, backslash, query, fragment, and wrong-extension paths", () => {
+  it("rejects empty, absolute, backslash, trailing-separator, query, fragment, and wrong-extension paths", () => {
     for (const relativePath of [
       "",
       "/score.musicxml",
@@ -213,5 +213,19 @@ describe("package asset resolution", () => {
         /scenes\[0\]\.lines\[0\]\.guide/i,
       );
     }
+
+    assert.throws(
+      () => resolvePackageAsset(packageDir, "score.musicxml/", "score.src"),
+      /score\.src.*relative path/i,
+    );
+    assert.throws(
+      () =>
+        resolvePackageAsset(
+          packageDir,
+          "guides/guide.mp3/",
+          "scenes[0].lines[0].guide",
+        ),
+      /scenes\[0\]\.lines\[0\]\.guide.*relative path/i,
+    );
   });
 });
