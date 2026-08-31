@@ -10,6 +10,9 @@ import { NURSERY_RHYMES_COVER_ARTWORK } from "../dubbing/dub-artwork";
 import { cx, InteractiveCardLink } from "../shared/ui";
 import { getNurseryRhymesPath } from "./app-routes";
 import { LESSON_LEARNING_PATH } from "./learning-paths";
+import { resolveWordGameTopic } from "../games/word-game-catalog";
+
+const WORD_GAME_HOME_ARTWORK = resolveWordGameTopic("animals")?.items[0].visual;
 
 type LearningPath = {
   accessibleLabel: string;
@@ -70,11 +73,11 @@ const LEARNING_PATHS: readonly LearningPath[] = [
     imageClassName: "object-cover",
     imageHeight: 1024,
     imageSrc:
-      "https://media.parrotbook.com/assets/v7/story-pages/hello-cat-cat-hello.webp",
+      WORD_GAME_HOME_ARTWORK?.kind === "image" ? WORD_GAME_HOME_ARTWORK.src : "",
     imageWidth: 1536,
     label: "Word game",
     tone: "navy",
-    to: "/word-game",
+    to: "/word-games",
   },
 ];
 

@@ -8,6 +8,10 @@ import {
 } from "../stories/story-catalog";
 import { isSafeRouteId } from "../../lib/route-id";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
+import {
+  resolveWordGameTopic,
+  type WordGameTopic,
+} from "../games/word-game-catalog";
 
 export type GateRouteKind = "login" | "learner-profile" | "profile";
 type ResolvedLessonScene = {
@@ -20,11 +24,16 @@ export type LessonRouteDecision =
 export type StoryRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
   | { kind: "story"; pageIndex: number; story: Story };
+export type WordGameRouteDecision =
+  | { kind: "redirect"; replace: true; to: string }
+  | { kind: "game"; topic: WordGameTopic };
 
 const GATE_ROUTE_PATH =
   /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const WORD_GAME_ROUTE_PATH = /^\/word-game\/*$/i;
+const WORD_GAMES_ROUTE_PATH = /^\/word-games\/*$/i;
+const WORD_GAME_TOPIC_ROUTE_PATH = /^\/word-games\/([^/]+)\/*$/i;
 const GUARDIAN_LEARNERS_ROUTE_PATH = /^\/guardian\/learners\/*$/i;
 const GUARDIAN_LEARNER_ROUTE_PATH =
   /^\/guardian\/learners\/([^/]+)\/*$/i;
@@ -59,6 +68,7 @@ const SAFE_RETURN_PATHS = [
   /^\/stories\/[^/]+\/*$/i,
   /^\/stories\/[^/]+\/pages\/[^/]+\/*$/i,
   WORD_GAME_ROUTE_PATH,
+  WORD_GAMES_ROUTE_PATH,
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
@@ -232,6 +242,20 @@ export function isTalkToPeppaRoute(pathname: string) {
   return TALK_TO_PEPPA_ROUTE_PATH.test(pathname);
 }
 
+function resolveWordGameRouteTopic(topicId: string | undefined) {
+  return topicId ? resolveWordGameTopic(topicId.toLowerCase()) : null;
+}
+
+function getWordGameRouteId(pathname: string) {
+  const match = WORD_GAME_TOPIC_ROUTE_PATH.exec(pathname);
+  if (!match) return null;
+  try {
+    return resolveWordGameRouteTopic(decodeURIComponent(match[1]))?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function getSafeReturnTo(search: string) {
   const value = new URLSearchParams(search).get("returnTo");
   if (!value) return null;
@@ -246,12 +270,22 @@ export function getSafeReturnTo(search: string) {
   if (
     destination.origin !== RETURN_TO_ORIGIN ||
     (!SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname)) &&
-      getGuardianLearnerRouteId(destination.pathname) === null)
+      getGuardianLearnerRouteId(destination.pathname) === null &&
+      getWordGameRouteId(destination.pathname) === null)
   ) {
     return null;
   }
 
   return `${destination.pathname}${destination.search}${destination.hash}`;
+}
+
+export function resolveWordGameRouteDecision(
+  topicId: string | undefined,
+): WordGameRouteDecision {
+  const topic = resolveWordGameRouteTopic(topicId);
+  return topic
+    ? { kind: "game", topic }
+    : { kind: "redirect", replace: true, to: "/word-games" };
 }
 
 export function getSafeGuardianReturnTo(search: string) {

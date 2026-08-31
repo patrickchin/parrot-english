@@ -79,8 +79,10 @@ import {
   isTalkToPeppaRoute,
   resolveParrotLessonRouteDecision,
   resolveStoryRouteDecision,
+  resolveWordGameRouteDecision,
   type LessonRouteDecision,
   type StoryRouteDecision,
+  type WordGameRouteDecision,
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
 import { useAccountExperience } from "../auth/account-actions";
@@ -92,6 +94,7 @@ import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
 import { FirstWordsGame } from "../games/FirstWordsGame";
+import { WordGameList } from "../games/WordGameList";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
@@ -154,6 +157,8 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian/stories",
   "/talk-to-peppa",
   "/word-game",
+  "/word-games",
+  "/word-games/:gameId",
   "/lessons",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
@@ -1143,6 +1148,24 @@ function StoryPageRoute() {
   );
 }
 
+function WordGameRouteDecisionView({
+  decision,
+}: {
+  decision: WordGameRouteDecision;
+}) {
+  if (decision.kind === "redirect") {
+    return <Navigate replace={decision.replace} to={decision.to} />;
+  }
+
+  // Task 2 compatibility: Task 3 replaces this legacy player with the catalog game.
+  return <FirstWordsGame />;
+}
+
+function WordGameRoute() {
+  const { gameId } = useParams();
+  return <WordGameRouteDecisionView decision={resolveWordGameRouteDecision(gameId)} />;
+}
+
 export function ApplicationRoutes({
   learnerName = "Learner",
   loginTarget,
@@ -1193,7 +1216,9 @@ export function ApplicationRoutes({
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
-        <Route element={<FirstWordsGame />} path="/word-game" />
+        <Route element={<Navigate replace to="/word-games" />} path="/word-game" />
+        <Route element={<WordGameList />} path="/word-games" />
+        <Route element={<WordGameRoute />} path="/word-games/:gameId" />
         <Route
           element={
             <FeaturePlaceholder

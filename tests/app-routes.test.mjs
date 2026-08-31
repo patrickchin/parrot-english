@@ -37,6 +37,15 @@ function getStoryRouteDecision(storyId, pageNumber) {
   return routes.resolveStoryRouteDecision(storyId, pageNumber);
 }
 
+function getWordGameRouteDecision(gameId) {
+  assert.equal(
+    typeof routes.resolveWordGameRouteDecision,
+    "function",
+    "Expected an executable word-game route decision boundary",
+  );
+  return routes.resolveWordGameRouteDecision(gameId);
+}
+
 describe("app route helpers", () => {
   it("builds built-in lesson paths", () => {
     assert.equal(
@@ -61,6 +70,29 @@ describe("app route helpers", () => {
     assert.equal("getGuardianLessonsPath" in routes, false);
     assert.equal("getMyLessonCreatePath" in routes, false);
     assert.equal("resolveMyLessonRouteDecision" in routes, false);
+  });
+
+  it("resolves each catalog word-game route and sends invalid topics to the library", () => {
+    for (const gameId of [
+      "animals",
+      "colors",
+      "body-parts",
+      "food",
+      "toys",
+      "feelings",
+    ]) {
+      const decision = getWordGameRouteDecision(gameId);
+      assert.equal(decision.kind, "game");
+      assert.equal(decision.topic.id, gameId);
+    }
+
+    for (const gameId of [undefined, "missing", "%2F", ".", "..", "%E0%A4%A"]) {
+      assert.deepEqual(getWordGameRouteDecision(gameId), {
+        kind: "redirect",
+        replace: true,
+        to: "/word-games",
+      });
+    }
   });
 
   it("rejects empty, dot-segment, and unencodable lesson IDs", () => {
@@ -396,6 +428,8 @@ describe("app route helpers", () => {
       ["/profile/setup", "/Profile/Setup//", "learner-profile"],
       ["/profile", "/Profile//", "profile"],
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
+      ["/word-games", "/Word-Games///", null],
+      ["/word-games/:gameId", "/Word-Games/Animals///", null],
       ["/progress", "/Progress///", null],
       ["/stories", "/Stories///", null],
       ["/dubs/five-little-ducks", "/Dubs/Five-Little-Ducks///", null],
@@ -815,6 +849,19 @@ describe("app route helpers", () => {
       routes.getSafeReturnTo(returnToSearch("/word-game")),
       "/word-game",
     );
+    for (const returnTo of [
+      "/word-games",
+      "/Word-Games///",
+      "/word-games/animals",
+      "/Word-Games/Animals///",
+      "/word-games/colors",
+      "/word-games/body-parts",
+      "/word-games/food",
+      "/word-games/toys",
+      "/word-games/feelings",
+    ]) {
+      assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), returnTo);
+    }
     for (const guardianPath of [
       "/guardian",
       "/guardian/stories",
@@ -853,6 +900,9 @@ describe("app route helpers", () => {
       "/stories/the-lantern-trail//pages/1",
       "/stories/the-lantern-trail/pages/1/extra",
       "/word-game/extra",
+      "/word-games/missing",
+      "/word-games/%2F",
+      "/word-games/animals/extra",
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",
