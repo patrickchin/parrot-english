@@ -1,0 +1,903 @@
+{
+  "schema": "parrot-english.word-game-media",
+  "schemaVersion": 1,
+  "mediaVersion": 8,
+  "sourceRevision": "6250b3765510f46b45552b21999ce3f10d87b0a8",
+  "generationMode": "built-in-imagegen",
+  "layout": {
+    "canvas": {
+      "width": 1536,
+      "height": 1024
+    },
+    "columns": 3,
+    "rows": 2,
+    "cell": {
+      "width": 512,
+      "height": 512
+    },
+    "order": "left-to-right, top-to-bottom"
+  },
+  "normalization": {
+    "format": "webp",
+    "width": 512,
+    "height": 512,
+    "sharpOptions": {
+      "quality": 90,
+      "effort": 6,
+      "smartSubsample": true
+    }
+  },
+  "topics": [
+    {
+      "id": "animals",
+      "promptFile": "content/media/prompts/word-games-v8/animals.json",
+      "sourceSheet": {
+        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/animals.png",
+        "format": "png",
+        "width": 1536,
+        "height": 1024,
+        "bytes": 1491905,
+        "sha256": "9a8ce363dc781133dcf2bc9f2ece384d39dd6587d77f86d7dc179baac3c0b7d3"
+      },
+      "items": [
+        {
+          "topicId": "animals",
+          "itemId": "cat",
+          "crop": {
+            "left": 0,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/animals/cat.webp",
+          "publicKey": "assets/v8/word-games/animals/cat.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 26362,
+            "sha256": "1b07f1f4340f182ab1cb350b9695bfb8bc314127f28db7995ff1378ce5e33bde"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "animals",
+          "itemId": "dog",
+          "crop": {
+            "left": 512,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/animals/dog.webp",
+          "publicKey": "assets/v8/word-games/animals/dog.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 27442,
+            "sha256": "3cea778e97b4a2e735bfba045c0efc0b15e900b6bdfca237c337049b6ecfa49e"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "animals",
+          "itemId": "bird",
+          "crop": {
+            "left": 1024,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/animals/bird.webp",
+          "publicKey": "assets/v8/word-games/animals/bird.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 20828,
+            "sha256": "08b1016cf04d2f6e9a280f076ff23c98e7d354b19b09cd26663829a99313465a"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "animals",
+          "itemId": "fish",
+          "crop": {
+            "left": 0,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/animals/fish.webp",
+          "publicKey": "assets/v8/word-games/animals/fish.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 20818,
+            "sha256": "2a507387f7d177ea5445c9b22997adf775462ff7540e6c1be4ef65df290ae6d5"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "animals",
+          "itemId": "duck",
+          "crop": {
+            "left": 512,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/animals/duck.webp",
+          "publicKey": "assets/v8/word-games/animals/duck.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 20398,
+            "sha256": "654dc563d11aabd37f6313676f5ae9f74d99b828cf763e049fc494c624b25169"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "animals",
+          "itemId": "frog",
+          "crop": {
+            "left": 1024,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/animals/frog.webp",
+          "publicKey": "assets/v8/word-games/animals/frog.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 21126,
+            "sha256": "562ddbb75bb5bf893ca3c2e9e0a292db2a491d6dcd35f7730614cfde4aa4ec1d"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "body-parts",
+      "promptFile": "content/media/prompts/word-games-v8/body-parts.json",
+      "sourceSheet": {
+        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/body-parts.png",
+        "format": "png",
+        "width": 1536,
+        "height": 1024,
+        "bytes": 1269428,
+        "sha256": "429f2e36d749f357ea0e4dc209067444617fe264b5a15b9a33309fb325c3d35e"
+      },
+      "items": [
+        {
+          "topicId": "body-parts",
+          "itemId": "eyes",
+          "crop": {
+            "left": 0,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/body-parts/eyes.webp",
+          "publicKey": "assets/v8/word-games/body-parts/eyes.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 15138,
+            "sha256": "6319697095123a05f3fe00fd5d6bca922c426a685c2a48334da8fe6b2db5d857"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "body-parts",
+          "itemId": "ears",
+          "crop": {
+            "left": 512,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/body-parts/ears.webp",
+          "publicKey": "assets/v8/word-games/body-parts/ears.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 17534,
+            "sha256": "7ca9e65c1688ea5249b6ba0946e21f6fe8a41f74f91949688e86281627ddf24f"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "body-parts",
+          "itemId": "nose",
+          "crop": {
+            "left": 1024,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/body-parts/nose.webp",
+          "publicKey": "assets/v8/word-games/body-parts/nose.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 9814,
+            "sha256": "772278798effe83b0e338b3fd871eef7f53ecedf081b81ae9b81ce9db697a662"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "body-parts",
+          "itemId": "mouth",
+          "crop": {
+            "left": 0,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/body-parts/mouth.webp",
+          "publicKey": "assets/v8/word-games/body-parts/mouth.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 8396,
+            "sha256": "aa82df14c023848835dcc435a218768adccafffaa44affb954e290404c85a016"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "body-parts",
+          "itemId": "hand",
+          "crop": {
+            "left": 512,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/body-parts/hand.webp",
+          "publicKey": "assets/v8/word-games/body-parts/hand.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 14676,
+            "sha256": "4d583af3e40faf4ec42efe57a1571ea5408154b542a7f9b7f255abf83e38db9f"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "body-parts",
+          "itemId": "foot",
+          "crop": {
+            "left": 1024,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/body-parts/foot.webp",
+          "publicKey": "assets/v8/word-games/body-parts/foot.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 11790,
+            "sha256": "4fb91fd7d11c9c7389d12057c2ee5aca39aabbbdc9fd5486740d7207217dfdf7"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "promptFile": "content/media/prompts/word-games-v8/food.json",
+      "sourceSheet": {
+        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/food.png",
+        "format": "png",
+        "width": 1536,
+        "height": 1024,
+        "bytes": 1446163,
+        "sha256": "f4389bddd40a9aa23b5bf4ea18fa71e7f44c8d275ae5d18452e77209a49df6ac"
+      },
+      "items": [
+        {
+          "topicId": "food",
+          "itemId": "apple",
+          "crop": {
+            "left": 0,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/food/apple.webp",
+          "publicKey": "assets/v8/word-games/food/apple.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 14792,
+            "sha256": "4170520aded7e13a415e8c24b9242541d7092b18b3269e330fd14738124b0dd5"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "food",
+          "itemId": "banana",
+          "crop": {
+            "left": 512,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/food/banana.webp",
+          "publicKey": "assets/v8/word-games/food/banana.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 14178,
+            "sha256": "2c1f28821ee5d6b48d2d3fa00c5517ba4e0ed73f19a27e07fd20c0e2b98c77fa"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "food",
+          "itemId": "carrot",
+          "crop": {
+            "left": 1024,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/food/carrot.webp",
+          "publicKey": "assets/v8/word-games/food/carrot.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 14640,
+            "sha256": "74566acd343812d7c76c2de9d10e338d58725cb813dbb70a8a3f9f49afe8dc9a"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "food",
+          "itemId": "orange",
+          "crop": {
+            "left": 0,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/food/orange.webp",
+          "publicKey": "assets/v8/word-games/food/orange.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 18042,
+            "sha256": "3de8d30989e89e243526f770844274805ea4fdc213b15fba68436efb3a46e983"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "food",
+          "itemId": "bread",
+          "crop": {
+            "left": 512,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/food/bread.webp",
+          "publicKey": "assets/v8/word-games/food/bread.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 16672,
+            "sha256": "21c30ce7ce9177d73bb560f940a3f6bf88d09168fc73b771b46f5f76fb683328"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "food",
+          "itemId": "cheese",
+          "crop": {
+            "left": 1024,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/food/cheese.webp",
+          "publicKey": "assets/v8/word-games/food/cheese.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 14310,
+            "sha256": "b3964a6e79a37242b68f7b34530feba58647cea8a8ede50bf3d96cb03cfcc6fe"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "toys",
+      "promptFile": "content/media/prompts/word-games-v8/toys.json",
+      "sourceSheet": {
+        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/toys.png",
+        "format": "png",
+        "width": 1536,
+        "height": 1024,
+        "bytes": 1427580,
+        "sha256": "e58716b9c971409eca17d69a8d1a34e1e2b72eb4b23100715935effa8c208961"
+      },
+      "items": [
+        {
+          "topicId": "toys",
+          "itemId": "ball",
+          "crop": {
+            "left": 0,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/ball.webp",
+          "publicKey": "assets/v8/word-games/toys/ball.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 16228,
+            "sha256": "86fd0c4d9e2a2f435c976f7e9fd09878081790ae84400311606a8eed6bfe5610"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "toys",
+          "itemId": "toy-car",
+          "crop": {
+            "left": 512,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/toy-car.webp",
+          "publicKey": "assets/v8/word-games/toys/toy-car.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 20468,
+            "sha256": "6702f5ea7b816a5d970deeec5b138969ac3097995abb80ed33c03b73bef61782"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "toys",
+          "itemId": "doll",
+          "crop": {
+            "left": 1024,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/doll.webp",
+          "publicKey": "assets/v8/word-games/toys/doll.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 26688,
+            "sha256": "6dbcffce0a467bfd34bae84a7203764ea5cf2525245eda8531c71a2322b7c588"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "toys",
+          "itemId": "kite",
+          "crop": {
+            "left": 0,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/kite.webp",
+          "publicKey": "assets/v8/word-games/toys/kite.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 17918,
+            "sha256": "819eace98fafc893b7d16502bd408162355abb98e283a07501fca04133ea2978"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "toys",
+          "itemId": "blocks",
+          "crop": {
+            "left": 512,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/blocks.webp",
+          "publicKey": "assets/v8/word-games/toys/blocks.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 12036,
+            "sha256": "f36896c03fbc7ad86c9ce3b70616b933dc7fa6978f0cc023ea6141242b199146"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "toys",
+          "itemId": "teddy-bear",
+          "crop": {
+            "left": 1024,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/teddy-bear.webp",
+          "publicKey": "assets/v8/word-games/toys/teddy-bear.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 22328,
+            "sha256": "5ff4229e012be41e9551cab038596bab032b06367e90c72267e252f8c25c7778"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "feelings",
+      "promptFile": "content/media/prompts/word-games-v8/feelings.json",
+      "sourceSheet": {
+        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/feelings.png",
+        "format": "png",
+        "width": 1536,
+        "height": 1024,
+        "bytes": 1410383,
+        "sha256": "4cfc3b8fdca2635c95b183845a1c0c0a4f2f3c497a50d7403f62cd2653634496"
+      },
+      "items": [
+        {
+          "topicId": "feelings",
+          "itemId": "happy",
+          "crop": {
+            "left": 0,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/feelings/happy.webp",
+          "publicKey": "assets/v8/word-games/feelings/happy.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 19390,
+            "sha256": "771fc78b7c66922f1271f07af229e81cf492ea276e39bc6817f624880668cf41"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "feelings",
+          "itemId": "sad",
+          "crop": {
+            "left": 512,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/feelings/sad.webp",
+          "publicKey": "assets/v8/word-games/feelings/sad.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 16358,
+            "sha256": "a9aff9463bad5b311828368005b6888689873a45abb63152f43dcbcef268999f"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "feelings",
+          "itemId": "angry",
+          "crop": {
+            "left": 1024,
+            "top": 0,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/feelings/angry.webp",
+          "publicKey": "assets/v8/word-games/feelings/angry.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 17662,
+            "sha256": "e51c48ff647e6d24c33cbf01ca991f70a98dabcb6f94b0c3641d056f930d2210"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "feelings",
+          "itemId": "sleepy",
+          "crop": {
+            "left": 0,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/feelings/sleepy.webp",
+          "publicKey": "assets/v8/word-games/feelings/sleepy.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 14572,
+            "sha256": "6db7c25fc1401e8cbe5947f8413b33069e127668986cf04b9a9ac0a853eb8402"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "feelings",
+          "itemId": "surprised",
+          "crop": {
+            "left": 512,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/feelings/surprised.webp",
+          "publicKey": "assets/v8/word-games/feelings/surprised.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 17676,
+            "sha256": "d5ff78a913a9fc93d2af8e67eb7a4513857b733090dbca32d7f103c626576288"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        },
+        {
+          "topicId": "feelings",
+          "itemId": "silly",
+          "crop": {
+            "left": 1024,
+            "top": 512,
+            "width": 512,
+            "height": 512
+          },
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/feelings/silly.webp",
+          "publicKey": "assets/v8/word-games/feelings/silly.webp",
+          "output": {
+            "format": "webp",
+            "width": 512,
+            "height": 512,
+            "bytes": 20798,
+            "sha256": "0cb25ca4c48ba3f86c18fdad3134bd494e8c82bca0cf1af6a987d26f39f5b0a0"
+          },
+          "audit": {
+            "correctIsolatedSubject": true,
+            "adequateMargin": true,
+            "noAdjacentCellLeakage": true,
+            "noAccidentalText": true
+          }
+        }
+      ]
+    }
+  ],
+  "reviewArtifacts": [
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/source-sheets-contact.png",
+      "width": 1536,
+      "height": 5120,
+      "bytes": 7716021,
+      "sha256": "b580a6c9135bf555a7fd154826d964c835edd2c7008e40e789151f7b22d95d4e"
+    },
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/all-cards-contact.png",
+      "width": 3072,
+      "height": 2560,
+      "bytes": 4037618,
+      "sha256": "41918b78b1f3fee575d159ee195a80b4c48bf79de4680dfca66f896928123c7f"
+    },
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/animals-cards.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 989447,
+      "sha256": "1ad20c9034e34f3ffcee0a382b461db447430eda866c49fe2da4bc09f73440c8"
+    },
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/body-parts-cards.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 583508,
+      "sha256": "ae16c2515510c4d4276f7323846ff50486f96b2a75f870491599b3b8a968d64f"
+    },
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/food-cards.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 742058,
+      "sha256": "3c8cc0ca40244605164ae17b5289c85cc9f2ea02ff7e51a17d37723add7dc78f"
+    },
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/toys-cards.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 861572,
+      "sha256": "619ade3bbb50aa80db740f83a1d79fdc3fd801074ef3dde92c4c3f107551b69e"
+    },
+    {
+      "ignoredPath": "tmp/imagegen/word-games/v8/contact-sheets/feelings-cards.png",
+      "width": 1536,
+      "height": 1024,
+      "bytes": 737632,
+      "sha256": "1b2ddac11df5a9c94b1dd149eece14588e4b9426fc8795663822cffd371415d8"
+    }
+  ]
+}
