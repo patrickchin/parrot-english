@@ -236,6 +236,27 @@ describe("hold-to-talk speech recorder", () => {
     assert.equal(requestedMicrophone, false);
   });
 
+  it("keeps echo cancellation while leaving noise suppression off", async () => {
+    const { stream } = createStream();
+    const { FakeMediaRecorder } = createRecorderClass();
+    let constraints;
+    const session = await startSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia(value) {
+        constraints = value;
+        return Promise.resolve(stream);
+      },
+    });
+
+    assert.deepEqual(constraints, {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: false,
+      },
+    });
+    await session.stop();
+  });
+
   it("starts immediately and returns captured audio when stopped", async () => {
     const { stream, track } = createStream();
     const { FakeMediaRecorder, instances } = createRecorderClass();
