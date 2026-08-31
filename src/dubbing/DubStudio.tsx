@@ -11,6 +11,7 @@ import {
 } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
+import { getNurseryRhymesPath } from "../app/app-routes";
 import { isAbortError, playAudioLine } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
@@ -696,8 +697,7 @@ export function DubStudio({
   const selectedSceneLineNumber = state.selectedLineIndex % definition.linesPerScene + 1;
   const playbackSceneNumber = Math.floor(playbackLineIndex / definition.linesPerScene) + 1;
   const playbackSceneLineNumber = playbackLineIndex % definition.linesPerScene + 1;
-  const savedCount = Object.keys(state.saved).length;
-  let liveStatus = "Ready to open your dub.";
+  let liveStatus = "";
   const activeError = state.error || loadError;
   if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
@@ -716,13 +716,11 @@ export function DubStudio({
       ? `Playing full video: Scene ${playbackSceneNumber}, line ${playbackSceneLineNumber}.`
       : `Playing Scene ${state.selectedSceneIndex + 1}: line ${playbackSceneLineNumber}.`;
   } else if (activeError) {
-    liveStatus = activeError;
+    liveStatus = "";
   } else if (state.view === "loading") {
     liveStatus = "Loading your private dub…";
-  } else if (state.view === "listen-only") {
+  } else if (state.view === "listen-only" || state.view === "project") {
     liveStatus = "";
-  } else if (state.view === "project") {
-    liveStatus = `${savedCount} of ${definition.lines.length} voice clips recorded.`;
   } else if (state.view === "scene") {
     const selectedState = Object.hasOwn(state.needsRetake, selectedLine.id)
       ? "Needs retake"
@@ -820,8 +818,8 @@ export function DubStudio({
             Full video
           </HeaderButton>
         ) : (
-          <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
-            Back home
+          <HeaderLink aria-label="Back to Nursery rhymes" icon={<ChevronLeft strokeWidth={3.2} />} to={getNurseryRhymesPath()}>
+            Nursery rhymes
           </HeaderLink>
         )}
       </RouteHeader>

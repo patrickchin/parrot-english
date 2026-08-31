@@ -344,6 +344,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Full video player"/);
     assert.match(html, /aria-label="Play full video"/);
     assert.match(html, /aria-label="Scene selection"/);
+    assert.match(html, /aria-current="step"/);
     assert.match(html, />Choose a scene<\/h2>/);
     assert.match(html, />Start with Scene 1</);
     for (let scene = 1; scene <= 6; scene += 1) {
@@ -353,6 +354,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(html, />0 \/ 4<|>Done<|>Retake</);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
     assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
+    assert.doesNotMatch(html, /whole rhyme/i);
   });
 
   it("keeps full figure markup out of the six scene buttons", () => {
@@ -468,9 +470,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     await click(container.querySelector('nav[aria-label="Page navigation"] [aria-label="Back to full video"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    const backHome = container.querySelector('nav[aria-label="Page navigation"] a[aria-label="Back to home"]');
-    assert.ok(backHome);
-    assert.equal(backHome.getAttribute("href"), "/");
+    const backToRhymes = container.querySelector('nav[aria-label="Page navigation"] a[aria-label="Back to Nursery rhymes"]');
+    assert.ok(backToRhymes);
+    assert.equal(backToRhymes.getAttribute("href"), "/dubs");
   });
 
   it("shows listen-only playback as soon as recording-disabled status loads", async () => {

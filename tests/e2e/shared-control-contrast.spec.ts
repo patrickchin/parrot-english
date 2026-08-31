@@ -480,6 +480,18 @@ for (const viewport of viewports) {
     });
   });
 
+  test(`nursery Record keeps rendered contrast on a ${viewport.name}`, async ({ page }) => {
+    await preparePage(page, viewport);
+    await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+    await page.getByRole("button", { name: "Start with Scene 1" }).click();
+    await expectPointerStateContrast({
+      interaction: page.getByRole("button", { name: "Record line" }),
+      minimum: 4.5,
+      name: "Nursery Record",
+      page,
+    });
+  });
+
   if (viewport.name === "desktop") {
     test("lesson Play cue keeps rendered contrast on a desktop", async ({
       page,

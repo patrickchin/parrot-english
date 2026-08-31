@@ -144,7 +144,7 @@ export function DubSceneEditor({
             onClick={onRecord}
             ref={recordButtonRef}
             size="large"
-            variant="rose"
+            variant="brand"
           >
             {operation === "mic-opening" || operation === "saving"
               ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
@@ -195,7 +195,7 @@ export function DubSceneEditor({
               <div className="flex min-h-10 items-center justify-between gap-1 short-wide:min-h-12">
                 <p
                   aria-label={feedbackError ? error : undefined}
-                  className={`m-0 min-w-0 flex-1 text-sm font-black short-wide:text-xs ${feedbackError ? "text-red-800 short-wide:line-clamp-2 short-wide:leading-tight" : operation === "mic-opening" || operation === "saving" ? "truncate whitespace-nowrap text-brand-rose" : "truncate whitespace-nowrap text-slate-600"}`}
+                  className={`m-0 min-w-0 flex-1 text-sm font-black short-wide:text-xs ${feedbackError ? "break-words leading-tight text-red-800" : operation === "mic-opening" || operation === "saving" ? "truncate whitespace-nowrap text-brand-rose" : "truncate whitespace-nowrap text-slate-600"}`}
                   role={feedbackError ? "alert" : undefined}
                 >
                   {feedbackLabel}

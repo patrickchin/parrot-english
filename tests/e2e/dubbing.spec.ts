@@ -632,7 +632,7 @@ test("direct entry opens the project home instead of line 1", async ({ page }) =
   await expect(page.getByText("Ready to start", { exact: true })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveAttribute("aria-valuenow", "0");
   await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveAttribute("aria-valuetext", "Ready to start");
-  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("0 of 24 voice clips recorded.");
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("");
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Record line" })).toHaveCount(0);
   await expect(page.getByText("Five little ducks went out one day.", { exact: true })).toHaveCount(0);
@@ -711,8 +711,8 @@ test("scene navigation has previous and uses the shared header to return", async
 
   await page.getByRole("navigation", { name: "Page navigation" }).getByRole("button", { name: "Back to full video" }).click();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
-  await page.getByRole("link", { name: "Back to home" }).click();
-  await expect(page).toHaveURL("/");
+  await page.getByRole("link", { name: "Back to Nursery rhymes" }).click();
+  await expect(page).toHaveURL("/dubs");
 });
 
 test("next, finish scene celebrates a completed partial scene", async ({ page }) => {
@@ -1195,8 +1195,8 @@ test("route unmount revokes the retained review URL exactly once", async ({ page
   const [objectUrl] = (await dubStoreSnapshot(page)).createdObjectUrls;
 
   await page.getByRole("navigation", { name: "Page navigation" }).getByRole("button", { name: "Back to full video" }).click();
-  await page.getByRole("link", { name: "Back to home" }).click();
-  await expect(page).toHaveURL(/\/$/);
+  await page.getByRole("link", { name: "Back to Nursery rhymes" }).click();
+  await expect(page).toHaveURL(/\/dubs$/);
   await expect.poll(async () =>
     revocationCount(await dubStoreSnapshot(page), objectUrl)).toBe(1);
 });
@@ -1458,6 +1458,8 @@ for (const microphone of ["denied", "unsupported"] as const) {
       ? "The microphone is off. Ask a grown-up to allow it, then try again."
       : "This browser cannot record yet. Try another device or browser.";
     await expect(page.getByRole("alert").filter({ hasText: message })).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: message })).toHaveCount(1);
+    await expect(page.getByRole("status", { name: "Dub updates" })).not.toContainText(message);
     await expect(page.getByText("Line 2 of 4", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Over the hill and far away." })).toBeVisible();
     await expect(page.getByRole("button", { name: "Record line" })).toBeFocused();
@@ -1675,9 +1677,9 @@ for (const viewport of [
       await expectNoHorizontalOverflow(page);
 
       const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
-      const backHome = routeHeader.getByRole("link", { name: "Back to home" });
-      await expect(backHome).toBeVisible();
-      await expectSharedHeaderTarget(backHome);
+      const backToRhymes = routeHeader.getByRole("link", { name: "Back to Nursery rhymes" });
+      await expect(backToRhymes).toBeVisible();
+      await expectSharedHeaderTarget(backToRhymes);
       await expectBelow(page.getByRole("region", { name: "Dub project workspace" }), routeHeader);
 
       await page.getByRole("button", {

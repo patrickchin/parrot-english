@@ -34,9 +34,14 @@ test("nursery rhyme picker presents six large illustrated projects", async ({ pa
   const picker = page.getByRole("navigation", { name: "Nursery rhymes" });
   const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
   const back = routeHeader.getByRole("link", { name: "Back to home" });
+  await expect(page.getByText(
+    "Choose a rhyme to watch. With a grown-up's permission, you can sing and save your recording.",
+  )).toBeVisible();
   await expect(picker.getByRole("link")).toHaveCount(6);
   for (const [name, route] of RHYMES) {
-    const card = picker.getByRole("link", { name });
+    const card = picker.getByRole("link", {
+      name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+Sing & record$`),
+    });
     await expect(card).toHaveAttribute("href", route);
     await expect(card.getByText("Sing & record", { exact: true })).toBeVisible();
   }
@@ -75,7 +80,9 @@ for (const viewport of [
     await expect(back).toBeVisible();
     await expectSharedHeaderTarget(back);
     for (const [name] of RHYMES) {
-      const card = page.getByRole("link", { name });
+      const card = page.getByRole("link", {
+        name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+Sing & record$`),
+      });
       await expect(card).toBeVisible();
       await expectContained(page, card);
     }

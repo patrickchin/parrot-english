@@ -16,12 +16,15 @@ export function NurseryRhymeList() {
           <header className="grid gap-2 text-center">
             <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue sm:text-sm">Sing and record</p>
             <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>
+            <p className="m-0 text-base font-bold leading-snug text-brand-navy sm:text-lg">
+              Choose a rhyme to watch. With a grown-up&apos;s permission, you can sing and save your recording.
+            </p>
           </header>
           <nav aria-label="Nursery rhymes" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 sm:gap-5">
             {DUB_DEFINITIONS.map((definition) => {
               const image = definition.sceneArtwork[0];
               return (
-                <InteractiveCardLink aria-label={definition.title} className="grid min-h-full min-w-0 grid-rows-[auto_1fr] overflow-hidden text-left" key={definition.id} to={definition.route}>
+                <InteractiveCardLink className="grid min-h-full min-w-0 grid-rows-[auto_1fr] overflow-hidden text-left" key={definition.id} to={definition.route}>
                   <span className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
                     <img alt="" className="size-full object-cover" decoding="async" height={image.height} src={image.src} width={image.width} />
                   </span>
