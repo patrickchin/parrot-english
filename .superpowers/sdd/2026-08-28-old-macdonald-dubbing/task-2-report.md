@@ -88,3 +88,6 @@ No additional behavioral issues found in the changed scope.
 ## Commit
 
 Commit created after writing this report:
+
+- `refactor: parameterize dubbing playback by rhyme`
+
