@@ -158,6 +158,7 @@ export function DubProjectHome({
 
           <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:gap-1.5 short-wide:rounded-2xl short-wide:p-2 md:p-4 short-wide:md:p-2">
             <h2 className="m-0 text-xl text-brand-ink short-wide:sr-only">Choose a scene</h2>
+            {completionText ? <p className="m-0 text-center font-black text-brand-ink">{completionText}</p> : null}
             {recommendedSceneIndex !== null ? (
               <ActionButton
                 disabled={locked}
@@ -226,8 +227,6 @@ export function DubProjectHome({
             {error}
           </p>
         ) : null}
-
-        {completionText ? <p className="m-0 text-center font-black text-brand-ink">{completionText}</p> : null}
 
       </section>
     </main>

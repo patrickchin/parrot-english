@@ -2090,6 +2090,42 @@ test("short landscape shows video, guidance, and every compact scene action", as
   await expectNoHorizontalOverflow(page);
 });
 
+test("short landscape keeps completion feedback in the scene pane", async ({ page }) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+
+  for (const { completion, scenario, selectCompletedScene } of [
+    { completion: "Scene 1 is ready — great singing!", scenario: "almost-complete", selectCompletedScene: true },
+    { completion: "Your video is ready — great singing!", scenario: "complete", selectCompletedScene: false },
+  ]) {
+    await page.goto(`/dubs/five-little-ducks?parrotE2eDub=${scenario}`);
+    await expectDubProject(page);
+
+    if (selectCompletedScene) {
+      await page.getByRole("navigation", { name: "Scenes" }).getByRole("button", {
+        name: "Scene 1, Five little ducks, Scene ready",
+      }).click();
+      await page.getByRole("navigation", { name: "Page navigation" }).getByRole("button", {
+        name: "Back to full video",
+      }).click();
+      await expectDubProject(page);
+    }
+
+    const sceneSelection = page.getByRole("complementary", { name: "Scene selection" });
+    const completionFeedback = sceneSelection.getByText(completion, { exact: true });
+    await expect(completionFeedback).toBeVisible();
+
+    const [paneBox, feedbackBox] = await Promise.all([
+      boundingBoxOrThrow(sceneSelection),
+      boundingBoxOrThrow(completionFeedback),
+    ]);
+    expect(feedbackBox.x).toBeGreaterThanOrEqual(paneBox.x);
+    expect(feedbackBox.x + feedbackBox.width).toBeLessThanOrEqual(paneBox.x + paneBox.width);
+    expect(feedbackBox.y).toBeGreaterThanOrEqual(paneBox.y);
+    expect(feedbackBox.y + feedbackBox.height).toBeLessThanOrEqual(paneBox.y + paneBox.height);
+    await expectFullyInViewport(page, completionFeedback);
+  }
+});
+
 for (const recovery of [
   { action: "Save again", microphone: "", scenario: "upload-retry-held" },
   { action: "Record again", microphone: "", scenario: "upload-rejected" },
