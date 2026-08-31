@@ -1247,7 +1247,11 @@ async function confirmModeSwitch() {
   await click(learnerButton);
 }
 
-function authenticatedApplicationInMemory({ api, initialEntry }) {
+function authenticatedApplicationInMemory({
+  api,
+  initialEntry,
+  onExitLessonRoute = () => {},
+}) {
   const Provider = createGuardianAccessProvider({
     api,
     schedule: () => () => {},
@@ -1266,7 +1270,7 @@ function authenticatedApplicationInMemory({ api, initialEntry }) {
         MemoryRouter,
         { initialEntries: [initialEntry] },
         createElement(AuthenticatedApplication, {
-          onExitLessonRoute() {},
+          onExitLessonRoute,
         }),
         createElement(RouterHistoryControls),
       ),
@@ -6052,6 +6056,83 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(output("Active learner selection").textContent, "none"),
     );
     noText(/Questions are taking a break|Mia/);
+  });
+
+  it("requires learner selection and resumes the validated learner target without locking learner mode", async () => {
+    const operations = [];
+    let activeProfileId = null;
+    const rosterProfiles = [
+      {
+        age: 7,
+        createdAt: "2026-08-29T08:01:00.000Z",
+        deletionPending: false,
+        id: "learner-noah",
+        name: "Mary",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return activeProfileId === null
+          ? json({ error: "learner_selection_required" }, 409)
+          : json({
+              ...completedLearnerProfileState(),
+              profile: {
+                ...completedLearnerProfileState().profile,
+                id: activeProfileId,
+                name: "Mary",
+              },
+            });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId, profiles: rosterProfiles });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        operations.push("select:learner-noah");
+        activeProfileId = "learner-noah";
+        return json({ activeProfileId, profiles: rosterProfiles });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            operations.push("lock");
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "guardian" };
+          },
+        },
+        initialEntry: "/lessons?from=picker#resume",
+        onExitLessonRoute() {
+          operations.push("before-navigate");
+        },
+      }),
+    );
+
+    await waitFor(() => button("Start learner mode as Mary"));
+    assert.equal(document.querySelectorAll("h1").length, 1);
+    text(/Who is learning now\?/);
+    noText(/Ask a grown-up|Cancel/);
+
+    await click(button("Start learner mode as Mary"));
+
+    await waitFor(() => {
+      assert.equal(currentRoute().path, "/lessons?from=picker#resume");
+      assert.deepEqual(operations, [
+        "select:learner-noah",
+        "before-navigate",
+      ]);
+    });
   });
 
   it("aborts and fences an older roster reload before committing the newer learner", async () => {

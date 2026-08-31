@@ -1380,6 +1380,7 @@ export function AuthenticatedApplication({
       isLearnerProfileRoute={isLearnerProfileRoute}
       isProfileRoute={isProfileRoute}
       learnerManagerRoute={learnerManagerRoute}
+      learnerSelectionDestination={requestedProtectedTarget}
       learnerProfileFallback={
         <Navigate
           replace
@@ -1389,6 +1390,7 @@ export function AuthenticatedApplication({
       onCloseProfileRoute={() => navigate(safeReturnTo, { replace: true })}
       onCloseGuardianRoute={() => navigate(safeReturnTo, { replace: true })}
       onConversationCompleted={() => navigate("/", { replace: true })}
+      onBeforeLearnerSelectionNavigate={onExitLessonRoute}
       onOpenLessons={() => navigate("/lessons", { replace: true })}
       onOpenProfileRoute={openProfileRoute}
       onRedoCompleted={() => navigate(safeReturnTo, { replace: true })}

@@ -69,6 +69,7 @@ import {
   usePeppaConversation,
 } from "../conversation/usePeppaConversation";
 import { ActionButton, TextButton } from "../shared/ui";
+import { LearnerModeSelectionPage } from "../app/LearnerModeSwitchDialog";
 import {
   LearnerProfileProvider,
   LearnerSelectionProvider,
@@ -199,6 +200,7 @@ type LearnerProfileGateViewProps = {
   isConversationRoute: boolean;
   isLearnerProfileRoute: boolean;
   learnerManagerRoute?: boolean;
+  learnerSelectionFallback?: ReactNode;
   isProfileFormRedo: boolean;
   isProfileLoading: boolean;
   isProfileRoute: boolean;
@@ -283,6 +285,7 @@ export function LearnerProfileGateView({
   isConversationRoute,
   isLearnerProfileRoute,
   learnerManagerRoute = false,
+  learnerSelectionFallback,
   isProfileFormRedo,
   isProfileLoading,
   isProfileRoute,
@@ -421,19 +424,7 @@ export function LearnerProfileGateView({
         }
         return <>{guardianSelectionFallback ?? learnerProfileFallback}</>;
       }
-      return (
-        <LearnerProfileScreen>
-          <LearnerProfileStatusCard role="status">
-            <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
-              Ask a grown-up to choose a learner
-            </h1>
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              A grown-up can open Guardian mode, then choose who is learning
-              when switching back.
-            </p>
-          </LearnerProfileStatusCard>
-        </LearnerProfileScreen>
-      );
+      return <>{learnerSelectionFallback ?? learnerProfileFallback}</>;
     }
     if (guardianDashboardRoute) {
       if (
@@ -830,10 +821,12 @@ type LearnerProfileGateProps = {
   isLearnerProfileRoute: boolean;
   isProfileRoute: boolean;
   learnerManagerRoute?: boolean;
+  learnerSelectionDestination: string;
   learnerProfileFallback: ReactNode;
   onCloseGuardianRoute?: () => void;
   onCloseProfileRoute: () => void;
   onConversationCompleted: () => void;
+  onBeforeLearnerSelectionNavigate?: () => void;
   onOpenLessons: () => void;
   onOpenProfileRoute: () => void;
   onRedoCompleted: () => void;
@@ -853,10 +846,12 @@ export function LearnerProfileGate({
   isLearnerProfileRoute,
   isProfileRoute,
   learnerManagerRoute = false,
+  learnerSelectionDestination,
   learnerProfileFallback,
   onCloseGuardianRoute,
   onCloseProfileRoute,
   onConversationCompleted,
+  onBeforeLearnerSelectionNavigate,
   onOpenLessons,
   onOpenProfileRoute,
   onRedoCompleted,
@@ -2796,6 +2791,12 @@ export function LearnerProfileGate({
           isConversationRoute={isConversationRoute}
           isLearnerProfileRoute={isLearnerProfileRoute}
           learnerManagerRoute={learnerManagerRoute}
+          learnerSelectionFallback={
+            <LearnerModeSelectionPage
+              destination={learnerSelectionDestination}
+              onBeforeNavigate={onBeforeLearnerSelectionNavigate}
+            />
+          }
           isProfileFormRedo={isFormRedoRoute}
           isProfileLoading={isProfileLoading}
           isProfileRoute={isProfileRoute}

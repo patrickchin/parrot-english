@@ -22,7 +22,7 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-const { LearnerModeSwitchDialog } = await vite
+const { LearnerModeSelectionPage, LearnerModeSwitchDialog } = await vite
   .ssrLoadModule("/src/app/LearnerModeSwitchDialog.tsx")
   .catch(() => ({}));
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
@@ -105,9 +105,20 @@ function RouteProbe() {
   );
 }
 
-function DialogHarness({ onBeforeNavigate }) {
+function PickerHarness({ destination, onBeforeNavigate, presentation }) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
+  if (presentation === "page") {
+    return createElement(
+      "main",
+      null,
+      createElement(LearnerModeSelectionPage, {
+        destination,
+        onBeforeNavigate,
+      }),
+      createElement(RouteProbe),
+    );
+  }
   return createElement(
     "main",
     null,
@@ -118,7 +129,7 @@ function DialogHarness({ onBeforeNavigate }) {
     ),
     isOpen
       ? createElement(LearnerModeSwitchDialog, {
-          destination: "/",
+          destination,
           onBeforeNavigate,
           onClose: () => setIsOpen(false),
           returnFocusRef: triggerRef,
@@ -128,14 +139,16 @@ function DialogHarness({ onBeforeNavigate }) {
   );
 }
 
-function harness({ operations }) {
+function harness({ destination = "/", mode = "guardian", operations, presentation = "dialog" }) {
   const Provider = createGuardianAccessProvider({
     api: {
       async loadGuardianAccess() {
-        return {
-          expiresAt: "2099-01-01T00:00:00.000Z",
-          mode: "guardian",
-        };
+        return mode === "guardian"
+          ? {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            }
+          : { mode: "learner" };
       },
       async lockGuardianAccess() {
         operations.push("lock");
@@ -172,8 +185,10 @@ function harness({ operations }) {
       createElement(
         MemoryRouter,
         { initialEntries: ["/guardian"] },
-        createElement(DialogHarness, {
+        createElement(PickerHarness, {
+          destination,
           onBeforeNavigate: () => operations.push("before-navigate"),
+          presentation,
         }),
       ),
     ),
@@ -289,6 +304,40 @@ test("a learner button selects, locks, and navigates in one click", async () => 
   assert.deepEqual(operations, [
     "select:learner-noah",
     "lock",
+    "before-navigate",
+  ]);
+});
+
+test("the required page selects and resumes a learner deep link without locking learner mode", async () => {
+  assert.equal(
+    typeof LearnerModeSelectionPage,
+    "function",
+    "Expected the required learner-selection page",
+  );
+  const operations = [];
+  installRosterFetch();
+  const container = await mountStrict(
+    harness({
+      destination: "/lessons?from=picker#resume",
+      mode: "learner",
+      operations,
+      presentation: "page",
+    }),
+  );
+
+  await waitFor(() => namedButton(container, "Start learner mode as Mary"));
+  assert.equal(container.querySelectorAll("h1").length, 1);
+  assert.match(container.textContent, /Who is learning now\?/);
+  assert.equal(container.querySelector('[role="dialog"]'), null);
+  assert.doesNotMatch(container.textContent, /Ask a grown-up|Cancel/);
+
+  await click(namedButton(container, "Start learner mode as Mary"));
+
+  await waitFor(() =>
+    assert.equal(currentRoute(container), "/lessons?from=picker#resume"),
+  );
+  assert.deepEqual(operations, [
+    "select:learner-noah",
     "before-navigate",
   ]);
 });

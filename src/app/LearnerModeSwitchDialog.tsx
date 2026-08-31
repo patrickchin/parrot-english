@@ -30,18 +30,16 @@ function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-export function LearnerModeSwitchDialog({
-  destination,
-  onBeforeNavigate,
-  onClose,
-  returnFocusRef,
-}: {
+type LearnerModePickerProps = {
   destination: string;
   onBeforeNavigate?: () => void;
-  onClose: () => void;
-  returnFocusRef?: RefObject<HTMLElement | null>;
-}) {
-  const { lock } = useGuardianAccess();
+};
+
+function useLearnerModePicker({
+  destination,
+  onBeforeNavigate,
+}: LearnerModePickerProps) {
+  const { lock, mode } = useGuardianAccess();
   const { selectLearner } = useLearnerSelection();
   const navigate = useNavigate();
   const [reloadKey, setReloadKey] = useState(0);
@@ -53,17 +51,8 @@ export function LearnerModeSwitchDialog({
   );
   const [error, setError] = useState("");
   const [isSwitching, setIsSwitching] = useState(false);
-  const dialogRef = useRef<HTMLElement>(null);
   const lastLearnerButtonRef = useRef<HTMLButtonElement>(null);
   const isSwitchingRef = useRef(false);
-
-  useDialogFocus({
-    canClose: () => !isSwitchingRef.current,
-    dialogRef,
-    initialFocusRef: dialogRef,
-    onClose,
-    returnFocusRef,
-  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -100,10 +89,12 @@ export function LearnerModeSwitchDialog({
     setError("");
     try {
       await selectLearner(profileId);
-      const lockError = await lock();
-      if (lockError) {
-        setError(lockError);
-        return;
+      if (mode === "guardian") {
+        const lockError = await lock();
+        if (lockError) {
+          setError(lockError);
+          return;
+        }
       }
       onBeforeNavigate?.();
       navigate(destination);
@@ -126,126 +117,139 @@ export function LearnerModeSwitchDialog({
     ({ id }) => id === switchingProfileId,
   );
 
+  return {
+    error,
+    isSwitching,
+    isSwitchingRef,
+    reload: () => setReloadKey((key) => key + 1),
+    rosterState,
+    selectableProfiles,
+    switchToLearner,
+    switchingProfile,
+    switchingProfileId,
+  };
+}
+
+type LearnerModePicker = ReturnType<typeof useLearnerModePicker>;
+
+function LearnerModePickerContent({
+  heading,
+  onClose,
+  picker,
+}: {
+  heading: "h1" | "h2";
+  onClose?: () => void;
+  picker: LearnerModePicker;
+}) {
+  const Heading = heading;
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-navy/65 p-4 font-ui sm:p-8"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget && !isSwitchingRef.current) {
-          onClose();
-        }
-      }}
-    >
-      <section
-        aria-busy={isSwitching}
-        aria-labelledby="learner-mode-switch-title"
-        aria-modal="true"
-        className="grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
-        ref={dialogRef}
-        role="dialog"
-        tabIndex={-1}
-      >
-        <header className="grid gap-2">
-          <h2
-            className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
-            id="learner-mode-switch-title"
+    <>
+      <header className="grid gap-2">
+        <Heading
+          className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
+          id="learner-mode-switch-title"
+        >
+          Who is learning now?
+        </Heading>
+        <p className="m-0 font-bold leading-relaxed text-slate-700">
+          Choose who will use learner mode.
+        </p>
+      </header>
+
+      {picker.rosterState.phase === "loading" ? (
+        <p className="m-0 font-bold text-slate-700">Loading learners…</p>
+      ) : null}
+
+      {picker.rosterState.phase === "error" ? (
+        <div className="grid gap-3">
+          <p
+            className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
+            role="alert"
           >
-            Who is learning now?
-          </h2>
-          <p className="m-0 font-bold leading-relaxed text-slate-700">
-            Choose who will use learner mode.
+            {picker.rosterState.error}
           </p>
-        </header>
+          <ActionButton
+            onClick={picker.reload}
+            type="button"
+            variant="surface"
+          >
+            Try again
+          </ActionButton>
+        </div>
+      ) : null}
 
-        {rosterState.phase === "loading" ? (
-          <p className="m-0 font-bold text-slate-700">Loading learners…</p>
-        ) : null}
-
-        {rosterState.phase === "error" ? (
-          <div className="grid gap-3">
-            <p
-              className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
-              role="alert"
-            >
-              {rosterState.error}
-            </p>
-            <ActionButton
-              onClick={() => setReloadKey((key) => key + 1)}
-              type="button"
-              variant="surface"
-            >
-              Try again
-            </ActionButton>
-          </div>
-        ) : null}
-
-        {rosterState.phase === "ready" ? (
-          <div className="grid gap-5">
-            <fieldset
-              className="m-0 grid min-w-0 gap-3 border-0 p-0 disabled:opacity-75"
-              disabled={isSwitching}
-            >
-              <legend className="sr-only">Learner profiles</legend>
-              {selectableProfiles.length === 0 ? (
-                <div className="grid justify-items-start gap-3">
-                  <p className="m-0 font-bold leading-relaxed text-slate-700">
-                    Add a learner before switching to learner mode.
-                  </p>
-                  <ActionLink
-                    size="compact"
-                    to={getGuardianLearnersPath()}
+      {picker.rosterState.phase === "ready" ? (
+        <div className="grid gap-5">
+          <fieldset
+            className="m-0 grid min-w-0 gap-3 border-0 p-0 disabled:opacity-75"
+            disabled={picker.isSwitching}
+          >
+            <legend className="sr-only">Learner profiles</legend>
+            {picker.selectableProfiles.length === 0 ? (
+              <div className="grid justify-items-start gap-3">
+                <p className="m-0 font-bold leading-relaxed text-slate-700">
+                  Add a learner before switching to learner mode.
+                </p>
+                <ActionLink
+                  size="compact"
+                  to={getGuardianLearnersPath()}
+                  variant="surface"
+                >
+                  Manage learners
+                </ActionLink>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                {picker.selectableProfiles.map((profile) => (
+                  <ActionButton
+                    align="start"
+                    aria-label={`Start learner mode as ${profile.name}`}
+                    fullWidth
+                    key={profile.id}
+                    onClick={(event) => {
+                      void picker.switchToLearner(
+                        profile.id,
+                        event.currentTarget,
+                      );
+                    }}
+                    shape="rounded"
+                    type="button"
                     variant="surface"
                   >
-                    Manage learners
-                  </ActionLink>
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {selectableProfiles.map((profile) => (
-                    <ActionButton
-                      align="start"
-                      aria-label={`Start learner mode as ${profile.name}`}
-                      fullWidth
-                      key={profile.id}
-                      onClick={(event) => {
-                        void switchToLearner(profile.id, event.currentTarget);
-                      }}
-                      shape="rounded"
-                      type="button"
-                      variant="surface"
+                    <span
+                      className="min-w-0 [overflow-wrap:anywhere]"
+                      dir="auto"
                     >
-                      <span
-                        className="min-w-0 [overflow-wrap:anywhere]"
-                        dir="auto"
-                      >
-                        {switchingProfileId === profile.id
-                          ? `Starting ${profile.name}…`
-                          : profile.name}
-                      </span>
-                    </ActionButton>
-                  ))}
-                </div>
-              )}
+                      {picker.switchingProfileId === profile.id
+                        ? `Starting ${profile.name}…`
+                        : profile.name}
+                    </span>
+                  </ActionButton>
+                ))}
+              </div>
+            )}
 
-              {error ? (
-                <p
-                  className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
-                  role="alert"
-                >
-                  {error}
-                </p>
-              ) : null}
-
+            {picker.error ? (
               <p
-                aria-atomic="true"
-                aria-live="polite"
-                className="sr-only"
-                role="status"
+                className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
+                role="alert"
               >
-                {isSwitching && switchingProfile
-                  ? `Starting learner mode as ${switchingProfile.name}…`
-                  : ""}
+                {picker.error}
               </p>
+            ) : null}
 
+            <p
+              aria-atomic="true"
+              aria-live="polite"
+              className="sr-only"
+              role="status"
+            >
+              {picker.isSwitching && picker.switchingProfile
+                ? `Starting learner mode as ${picker.switchingProfile.name}…`
+                : ""}
+            </p>
+
+            {onClose ? (
               <div className="grid gap-3">
                 <ActionButton
                   onClick={onClose}
@@ -255,9 +259,76 @@ export function LearnerModeSwitchDialog({
                   Cancel
                 </ActionButton>
               </div>
-            </fieldset>
-          </div>
-        ) : null}
+            ) : null}
+          </fieldset>
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+export function LearnerModeSelectionPage(props: LearnerModePickerProps) {
+  const picker = useLearnerModePicker(props);
+
+  return (
+    <main className="grid h-dvh w-full items-start justify-items-center overflow-y-auto bg-learner-profile p-3.5 font-ui sm:place-items-center sm:p-8 lg:p-12">
+      <section
+        aria-busy={picker.isSwitching}
+        aria-labelledby="learner-mode-switch-title"
+        className="my-auto grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+      >
+        <LearnerModePickerContent heading="h1" picker={picker} />
+      </section>
+    </main>
+  );
+}
+
+export function LearnerModeSwitchDialog({
+  destination,
+  onBeforeNavigate,
+  onClose,
+  returnFocusRef,
+}: LearnerModePickerProps & {
+  onClose: () => void;
+  returnFocusRef?: RefObject<HTMLElement | null>;
+}) {
+  const picker = useLearnerModePicker({ destination, onBeforeNavigate });
+  const dialogRef = useRef<HTMLElement>(null);
+
+  useDialogFocus({
+    canClose: () => !picker.isSwitchingRef.current,
+    dialogRef,
+    initialFocusRef: dialogRef,
+    onClose,
+    returnFocusRef,
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-brand-navy/65 p-4 font-ui sm:p-8"
+      onPointerDown={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          !picker.isSwitchingRef.current
+        ) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        aria-busy={picker.isSwitching}
+        aria-labelledby="learner-mode-switch-title"
+        aria-modal="true"
+        className="grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <LearnerModePickerContent
+          heading="h2"
+          onClose={onClose}
+          picker={picker}
+        />
       </section>
     </div>
   );
