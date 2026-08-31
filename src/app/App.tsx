@@ -1162,8 +1162,13 @@ function WordGameRouteDecisionView({
 }
 
 function WordGameRoute() {
+  const location = useLocation();
   const { gameId } = useParams();
-  return <WordGameRouteDecisionView decision={resolveWordGameRouteDecision(gameId)} />;
+  return (
+    <WordGameRouteDecisionView
+      decision={resolveWordGameRouteDecision(gameId, location.pathname)}
+    />
+  );
 }
 
 export function ApplicationRoutes({

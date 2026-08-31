@@ -253,6 +253,9 @@ test("authenticated application routes include the core learner activities", () 
   const wordGame = renderApplicationRoute("/word-games/animals");
   assert.match(wordGame, /<h1[^>]*>Word game<\/h1>/);
   assert.match(wordGame, /Question 1 of 6/);
+  const encodedWordGame = renderApplicationRoute("/word-games/%61nimals");
+  assert.doesNotMatch(encodedWordGame, /<h1[^>]*>Word game<\/h1>/);
+  assert.doesNotMatch(encodedWordGame, /Question 1 of 6/);
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
   assert.match(dub, /Loading your private dub…/);

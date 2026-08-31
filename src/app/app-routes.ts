@@ -248,12 +248,8 @@ function resolveWordGameRouteTopic(topicId: string | undefined) {
 
 function getWordGameRouteId(pathname: string) {
   const match = WORD_GAME_TOPIC_ROUTE_PATH.exec(pathname);
-  if (!match) return null;
-  try {
-    return resolveWordGameRouteTopic(decodeURIComponent(match[1]))?.id ?? null;
-  } catch {
-    return null;
-  }
+  if (!match || match[1].includes("%")) return null;
+  return resolveWordGameRouteTopic(match[1])?.id ?? null;
 }
 
 export function getSafeReturnTo(search: string) {
@@ -281,7 +277,11 @@ export function getSafeReturnTo(search: string) {
 
 export function resolveWordGameRouteDecision(
   topicId: string | undefined,
+  pathname?: string,
 ): WordGameRouteDecision {
+  if (pathname && getWordGameRouteId(pathname) === null) {
+    return { kind: "redirect", replace: true, to: "/word-games" };
+  }
   const topic = resolveWordGameRouteTopic(topicId);
   return topic
     ? { kind: "game", topic }

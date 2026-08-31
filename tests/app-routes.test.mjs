@@ -859,8 +859,13 @@ describe("app route helpers", () => {
       "/word-games/food",
       "/word-games/toys",
       "/word-games/feelings",
+      "/word-games/%61nimals",
+      "/Word-Games/%41nimals///",
     ]) {
-      assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), returnTo);
+      assert.equal(
+        routes.getSafeReturnTo(returnToSearch(returnTo)),
+        returnTo.includes("%") ? null : returnTo,
+      );
     }
     for (const guardianPath of [
       "/guardian",
