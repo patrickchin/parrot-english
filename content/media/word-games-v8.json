@@ -524,12 +524,12 @@
       "id": "toys",
       "promptFile": "content/media/prompts/word-games-v8/toys.json",
       "sourceSheet": {
-        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/toys.png",
+        "ignoredPath": "tmp/imagegen/word-games/v8/sheets/toys-r2.png",
         "format": "png",
         "width": 1536,
         "height": 1024,
-        "bytes": 1427580,
-        "sha256": "e58716b9c971409eca17d69a8d1a34e1e2b72eb4b23100715935effa8c208961"
+        "bytes": 1467077,
+        "sha256": "c9c295dc0a52c29d62daefe8310b7c1cd36a4341236fc50198acd88bcdbcf378"
       },
       "items": [
         {
@@ -541,14 +541,14 @@
             "width": 512,
             "height": 512
           },
-          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/ball.webp",
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys-r2/ball.webp",
           "publicKey": "assets/v8/word-games/toys/ball.webp",
           "output": {
             "format": "webp",
             "width": 512,
             "height": 512,
-            "bytes": 16228,
-            "sha256": "86fd0c4d9e2a2f435c976f7e9fd09878081790ae84400311606a8eed6bfe5610"
+            "bytes": 17474,
+            "sha256": "d18e98b83c1b6f10d3f784df3dc8e143313bd76ae96fe176e1090bb25cc8a7e9"
           },
           "audit": {
             "correctIsolatedSubject": true,
@@ -566,14 +566,14 @@
             "width": 512,
             "height": 512
           },
-          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/toy-car.webp",
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys-r2/toy-car.webp",
           "publicKey": "assets/v8/word-games/toys/toy-car.webp",
           "output": {
             "format": "webp",
             "width": 512,
             "height": 512,
-            "bytes": 20468,
-            "sha256": "6702f5ea7b816a5d970deeec5b138969ac3097995abb80ed33c03b73bef61782"
+            "bytes": 21768,
+            "sha256": "25d539c519dc758888c55ce1fc52676ea21ec9bb0ac71f49341c5ff28e637ef2"
           },
           "audit": {
             "correctIsolatedSubject": true,
@@ -591,14 +591,14 @@
             "width": 512,
             "height": 512
           },
-          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/doll.webp",
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys-r2/doll.webp",
           "publicKey": "assets/v8/word-games/toys/doll.webp",
           "output": {
             "format": "webp",
             "width": 512,
             "height": 512,
-            "bytes": 26688,
-            "sha256": "6dbcffce0a467bfd34bae84a7203764ea5cf2525245eda8531c71a2322b7c588"
+            "bytes": 31706,
+            "sha256": "e43e9f0a2566cb9aa723b5d07a0aa652b76f6292309ae1ac05fd4606f7b4a2c1"
           },
           "audit": {
             "correctIsolatedSubject": true,
@@ -616,14 +616,14 @@
             "width": 512,
             "height": 512
           },
-          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/kite.webp",
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys-r2/kite.webp",
           "publicKey": "assets/v8/word-games/toys/kite.webp",
           "output": {
             "format": "webp",
             "width": 512,
             "height": 512,
-            "bytes": 17918,
-            "sha256": "819eace98fafc893b7d16502bd408162355abb98e283a07501fca04133ea2978"
+            "bytes": 15356,
+            "sha256": "0b3a936b7b90e660470a83bbfc5b22535e912c4a4e1902899a60f44925cc4fd5"
           },
           "audit": {
             "correctIsolatedSubject": true,
@@ -641,14 +641,14 @@
             "width": 512,
             "height": 512
           },
-          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/blocks.webp",
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys-r2/blocks.webp",
           "publicKey": "assets/v8/word-games/toys/blocks.webp",
           "output": {
             "format": "webp",
             "width": 512,
             "height": 512,
-            "bytes": 12036,
-            "sha256": "f36896c03fbc7ad86c9ce3b70616b933dc7fa6978f0cc023ea6141242b199146"
+            "bytes": 12104,
+            "sha256": "a81295bfef2c2dabe09094bdf7d981aeea731a117f176df57d7eb377056868ed"
           },
           "audit": {
             "correctIsolatedSubject": true,
@@ -666,14 +666,14 @@
             "width": 512,
             "height": 512
           },
-          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys/teddy-bear.webp",
+          "ignoredOutputPath": "tmp/imagegen/word-games/v8/cards/toys-r2/teddy-bear.webp",
           "publicKey": "assets/v8/word-games/toys/teddy-bear.webp",
           "output": {
             "format": "webp",
             "width": 512,
             "height": 512,
-            "bytes": 22328,
-            "sha256": "5ff4229e012be41e9551cab038596bab032b06367e90c72267e252f8c25c7778"
+            "bytes": 24708,
+            "sha256": "788c6ba1c66f00fed9f5de80510faa60ca1052993044e3334f5cde49b6edd11f"
           },
           "audit": {
             "correctIsolatedSubject": true,
