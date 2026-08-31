@@ -304,7 +304,9 @@ test("guardian story settings owns level and art management", () => {
   );
   assert.equal(levelTabs.length, 4);
   assert.equal(
-    levelTabs.some((tab) => tab.textContent.includes("Long stories")),
+    levelTabs.some((tab) =>
+      tab.textContent.includes("Storytime · Listen to a full story"),
+    ),
     false,
   );
   assert.match(html, /Personalized story art/);
@@ -335,8 +337,8 @@ test("saves a level before replacing the loaded profile and announces success wi
   const preference = deferred();
   const preferenceBodies = installArtFetch(() => preference.promise);
   const container = await mountStrict(settingsHarness());
-  const firstWords = levelButton(container, "Start here");
-  const tinyStories = levelButton(container, "Little stories");
+  const firstWords = levelButton(container, "Level 1 · Words & pictures");
+  const tinyStories = levelButton(container, "Level 3 · Short stories");
 
   tinyStories.focus();
   await click(tinyStories);
@@ -368,7 +370,7 @@ test("saves a level before replacing the loaded profile and announces success wi
   );
   assert.match(
     statusMatching(container, /Story level saved/i)?.textContent ?? "",
-    /Story level saved.*Little stories/i,
+    /Story level saved.*Level 3 · Short stories/i,
   );
   assert.equal(document.activeElement, tinyStories);
 });
@@ -390,12 +392,14 @@ test("refreshes active learner context after a targeted story-level save", async
     }),
   );
 
-  await waitFor(() => assert.ok(levelButton(container, "Little stories")));
-  await click(levelButton(container, "Little stories"));
+  await waitFor(() =>
+    assert.ok(levelButton(container, "Level 3 · Short stories")),
+  );
+  await click(levelButton(container, "Level 3 · Short stories"));
   await waitFor(() =>
     assert.match(
       statusMatching(container, /Story level saved/i)?.textContent ?? "",
-      /Story level saved.*Little stories/i,
+      /Story level saved.*Level 3 · Short stories/i,
     ),
   );
 
@@ -413,7 +417,7 @@ test("rejects a story-level response for a different learner without announcing 
     }),
   );
   const container = await mountStrict(settingsHarness());
-  await click(levelButton(container, "Little stories"));
+  await click(levelButton(container, "Level 3 · Short stories"));
 
   await waitFor(() =>
     assert.match(
@@ -491,8 +495,10 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
       ),
     ),
   );
-  await waitFor(() => assert.ok(levelButton(container, "Little stories")));
-  await click(levelButton(container, "Little stories"));
+  await waitFor(() =>
+    assert.ok(levelButton(container, "Level 3 · Short stories")),
+  );
+  await click(levelButton(container, "Level 3 · Short stories"));
   await waitFor(() => assert.equal(saveSignals.length, 1));
   await click(
     [...container.querySelectorAll("button")].find(
@@ -517,7 +523,9 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
     assert.match(container.textContent, /Editing settings for Noah/),
   );
   assert.equal(
-    levelButton(container, "Big adventures").getAttribute("aria-selected"),
+    levelButton(container, "Level 4 · Longer stories").getAttribute(
+      "aria-selected",
+    ),
     "true",
   );
   assert.equal(container.querySelector('[role="alert"]'), null);
@@ -570,7 +578,9 @@ test("keeps the story settings shell connected while a new learner profile loads
       ),
     ),
   );
-  await waitFor(() => assert.ok(levelButton(container, "Little stories")));
+  await waitFor(() =>
+    assert.ok(levelButton(container, "Level 3 · Short stories")),
+  );
   const main = container.querySelector("main");
   const noahTarget = [...container.querySelectorAll("button")].find(
     (candidate) => candidate.getAttribute("aria-label") === "Noah",
@@ -667,7 +677,7 @@ test("keeps story controls unavailable when the targeted profile fails to load",
   assert.ok(
     tabs.every((tab) => tab.getAttribute("aria-disabled") === "true"),
   );
-  await click(levelButton(container, "Little stories"));
+  await click(levelButton(container, "Level 3 · Short stories"));
   assert.deepEqual(preferenceRequests, []);
 });
 
@@ -764,14 +774,16 @@ test("loads and saves Noah's story settings and art through explicit target requ
     assert.match(container.textContent, /Editing settings for Noah/),
   );
   assert.equal(
-    levelButton(container, "Big adventures").getAttribute("aria-selected"),
+    levelButton(container, "Level 4 · Longer stories").getAttribute(
+      "aria-selected",
+    ),
     "true",
   );
-  await click(levelButton(container, "Little stories"));
+  await click(levelButton(container, "Level 3 · Short stories"));
   await waitFor(() =>
     assert.match(
       statusMatching(container, /Story level saved/i)?.textContent ?? "",
-      /Story level saved.*Little stories/i,
+      /Story level saved.*Level 3 · Short stories/i,
     ),
   );
 
@@ -796,8 +808,8 @@ for (const [status, message] of [
     const preference = deferred();
     const preferenceBodies = installArtFetch(() => preference.promise);
     const container = await mountStrict(settingsHarness());
-    const firstWords = levelButton(container, "Start here");
-    const earlyA1 = levelButton(container, "Big adventures");
+    const firstWords = levelButton(container, "Level 1 · Words & pictures");
+    const earlyA1 = levelButton(container, "Level 4 · Longer stories");
 
     earlyA1.focus();
     await click(earlyA1);

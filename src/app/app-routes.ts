@@ -1,5 +1,6 @@
 import { LESSONS, type LessonCatalogEntry } from "../lessons/lesson-catalog";
 import {
+  getStoryShelfLevelId,
   isStoryLevelId,
   resolveStory as resolveCatalogStory,
   type Story,
@@ -172,7 +173,7 @@ export function getStoryShelfPath(
 ) {
   return levelId === undefined
     ? "/stories"
-    : `/stories?level=${encodeURIComponent(levelId)}`;
+    : `/stories?level=${encodeURIComponent(getStoryShelfLevelId(levelId))}`;
 }
 
 export function resolveStoryShelfLevel(
@@ -180,7 +181,9 @@ export function resolveStoryShelfLevel(
   fallbackLevelId: StoryLevelId = DEFAULT_STORY_LEVEL_ID,
 ): StoryLevelId {
   const levelId = new URLSearchParams(search).get("level");
-  return isStoryLevelId(levelId) ? levelId : fallbackLevelId;
+  return getStoryShelfLevelId(
+    isStoryLevelId(levelId) ? levelId : fallbackLevelId,
+  );
 }
 
 export function getStoryPagePath(storyId: string, pageIndex: number) {

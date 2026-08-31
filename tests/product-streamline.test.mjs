@@ -196,6 +196,7 @@ test("story shelf presents one curated shelf at a time without research controls
   const visibleText = html
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]+>/g, " ")
+    .replaceAll("&amp;", "&")
     .replace(/\s+/g, " ");
 
   assert.deepEqual(
@@ -220,16 +221,18 @@ test("story shelf presents one curated shelf at a time without research controls
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
   assert.match(html, /Pick a story/);
   assert.match(html, /Tap a picture\. I can read it to you\./);
-  assert.deepEqual(shelfHeadings, ["Pick a story shelf", "Little stories"]);
-  assert.equal((html.match(/role="tab"/g) ?? []).length, 6);
+  assert.deepEqual(shelfHeadings, [
+    "Choose a story level",
+    "Level 3 · Short stories",
+  ]);
+  assert.equal((html.match(/role="tab"/g) ?? []).length, 5);
   assert.equal((html.match(/aria-selected="true"/g) ?? []).length, 1);
   for (const label of [
-    "First English words",
-    "Start here",
-    "Say it again",
-    "Little stories",
-    "Big adventures",
-    "Long stories",
+    "Level 1 · Words & pictures",
+    "Level 2 · Repeating stories",
+    "Level 3 · Short stories",
+    "Level 4 · Longer stories",
+    "Storytime · Listen to a full story",
   ]) {
     assert.match(visibleText, new RegExp(label));
   }
