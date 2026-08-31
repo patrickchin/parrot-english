@@ -1706,6 +1706,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       schedule: clock.schedule,
     });
     await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+    await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
 
     let lockResult;
     let lockPromise;

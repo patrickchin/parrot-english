@@ -70,9 +70,10 @@ configuration.
 - Better Auth identifies the Guardian account.
 - Each auth session has at most one selected learner; different sessions may
   select different learners.
-- Only a live session-specific Guardian unlock may list, create, select, or
-  delete profiles. Guardian unlock uses the same account password used to sign
-  in; there is no separate Guardian password or PIN.
+- Any authenticated session may list its own profiles and select one it owns.
+  Only a live session-specific Guardian unlock may create or delete profiles or
+  edit Guardian settings. Guardian unlock uses the same account password used
+  to sign in; there is no separate Guardian password or PIN.
 - Learner APIs resolve the selection on the server and never trust a
   browser-supplied profile ID.
 - Profiles, onboarding, conversations, personalized art, dubbing consent, and
@@ -325,12 +326,12 @@ Use controlled test profiles to verify:
 3. Adding a preferred name creates an incomplete learner and opens its details
    flow without changing the session's learner-mode selection.
 4. Manage learners contains only Add, Edit, and Delete. `Switch to learner`
-   opens `Who is learning now?` with no preselected radio; confirming a named
-   learner persists through reload, while a second signed-in session can keep a
-   different active learner.
+   and the learner account menu open the shared `Who is learning now?` chooser
+   with no preselected radio; confirming a named learner persists through
+   reload, while a second signed-in session can keep a different active learner.
 5. Missing, stale, and foreign selections fail closed. A multi-learner session
-   with no selection shows only `Ask a grown-up to choose a learner` in learner
-   mode and exposes the roster only after Guardian unlock.
+   with no selection immediately shows the required owned-profile picker in
+   learner mode with no Cancel path or Guardian unlock.
 6. Profile details, onboarding, conversations, story level, personalized art,
    each learner's cross-rhyme dubbing consent, and voice clips for both rhyme
    routes remain isolated between two sibling learners.
@@ -348,17 +349,19 @@ Use controlled test profiles to verify:
     dub namespace; deleting that disposable legacy test learner closes the
     account-root compatibility paths without sweeping a sibling's prefixed
     namespace.
-11. Learner mode contains no sibling name, Guardian dashboard, roster, editing,
-    authoring, consent, privacy, sign-out, or deletion control. Neither Five
+11. Outside the owned-profile chooser, learner mode contains no sibling name,
+    Guardian dashboard, roster, editing, authoring, consent, privacy, sign-out,
+    or deletion control. Neither Five
     Little Ducks nor Old MacDonald contains a grown-up checkbox; missing shared
     consent shows only the learner-safe grown-up gateway. Grant once in Guardian
     dubbing settings, confirm both routes authorize status and audio, and save
     one disposable clip in each. Revoke once and confirm both routes fail closed
     during shared cleanup; if cleanup is interrupted, finish it through the one
     retry action, then regrant and confirm both statuses contain no saved clips.
-12. Every Guardian page exposes a dashboard recovery path, invalid Guardian
-    return targets fall back to `/guardian`, and mode-aware wildcard routing
-    returns to the correct home.
+12. Every Guardian page exposes a dashboard recovery path, invalid internal
+    Guardian return targets fall back to `/guardian`, post-login Guardian
+    targets normalize to learner home, and mode-aware wildcard routing returns
+    to the correct home.
 
 Do not exercise whole-account deletion against a production account as a smoke
 test. Its every-learner R2 sweep and upload fences are covered by the automated

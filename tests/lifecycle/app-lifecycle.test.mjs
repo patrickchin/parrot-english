@@ -1312,6 +1312,7 @@ function RegisteredLearnerNameHarness() {
 function LearnerGateAccountExperienceHarness({
   guardianDashboardRoute = true,
   guardianRoute = true,
+  guardianAccessOperations = [],
   onBeforeLearnerSelectionNavigate = () => {},
 } = {}) {
   const [experience, setExperience] = useState(null);
@@ -1319,13 +1320,11 @@ function LearnerGateAccountExperienceHarness({
     createGuardianAccessProvider({
       api: {
         async loadGuardianAccess() {
-          return {
-            expiresAt: "2099-01-01T00:00:00.000Z",
-            mode: "guardian",
-          };
+          return { mode: "learner" };
         },
         async lockGuardianAccess() {
-          return { mode: "learner" };
+          guardianAccessOperations.push("lock");
+          throw new Error("Learner switching must not lock Guardian access.");
         },
         async unlockGuardianAccess() {
           return { mode: "guardian" };
@@ -1337,6 +1336,7 @@ function LearnerGateAccountExperienceHarness({
 
   function ReadExperience() {
     const accountExperience = useAccountExperience();
+    const guardianAccess = useGuardianAccess();
     return createElement(
       Fragment,
       null,
@@ -1347,6 +1347,7 @@ function LearnerGateAccountExperienceHarness({
           "data-has-active-learner": String(
             accountExperience?.hasActiveLearner ?? false,
           ),
+          "data-mode": guardianAccess.mode,
         },
         accountExperience?.learnerName ?? "Learner",
       ),
@@ -1369,29 +1370,33 @@ function LearnerGateAccountExperienceHarness({
       Provider,
       { sessionIdentity: "user-1" },
       createElement(
-        MemoryRouter,
+        Fragment,
         null,
         createElement(
-          LearnerProfileGate,
-          {
-            completedLearnerProfileFallback: createElement("p", null, "HOME"),
-            guardianDashboardRoute,
-            guardianRoute,
-            isConversationRoute: false,
-            isLearnerProfileRoute: false,
-            isProfileRoute: false,
-            learnerProfileFallback: createElement("p", null, "SETUP"),
-            onBeforeLearnerSelectionNavigate,
-            onCloseProfileRoute() {},
-            onConversationCompleted() {},
-            onOpenLessons() {},
-            onOpenProfileRoute() {},
-          },
-          createElement("p", null, "GUARDIAN DASHBOARD"),
+          MemoryRouter,
+          null,
+          createElement(
+            LearnerProfileGate,
+            {
+              completedLearnerProfileFallback: createElement("p", null, "HOME"),
+              guardianDashboardRoute,
+              guardianRoute,
+              isConversationRoute: false,
+              isLearnerProfileRoute: false,
+              isProfileRoute: false,
+              learnerProfileFallback: createElement("p", null, "SETUP"),
+              onBeforeLearnerSelectionNavigate,
+              onCloseProfileRoute() {},
+              onConversationCompleted() {},
+              onOpenLessons() {},
+              onOpenProfileRoute() {},
+            },
+            createElement("p", null, "GUARDIAN DASHBOARD"),
+          ),
         ),
+        createElement(ReadExperience),
       ),
     ),
-    createElement(ReadExperience),
   );
 }
 
@@ -2369,6 +2374,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await mountStrict(
       createElement(LearnerGateAccountExperienceHarness, {
+        guardianAccessOperations: operations,
+        guardianDashboardRoute: false,
+        guardianRoute: false,
         onBeforeLearnerSelectionNavigate() {
           operations.push("before-navigate");
         },
@@ -2378,7 +2386,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       const experience = output("Gate account experience");
       assert.equal(experience.textContent, "Bob");
       assert.equal(experience.getAttribute("data-has-active-learner"), "true");
-      text(/GUARDIAN DASHBOARD/);
+      assert.equal(experience.getAttribute("data-mode"), "learner");
     });
     const opener = button("Open learner switcher");
     assert.equal(opener.disabled, false);
