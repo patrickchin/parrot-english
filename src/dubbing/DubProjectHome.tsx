@@ -171,7 +171,10 @@ export function DubProjectHome({
                 {recommendedText}
               </ActionButton>
             ) : null}
-            <nav aria-label="Scenes" className="grid min-w-0 grid-cols-2 gap-3 short-wide:gap-1.5">
+            <nav
+              aria-label="Scenes"
+              className={`grid min-w-0 gap-3 short-wide:gap-1.5 ${sceneLines.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+            >
             {sceneLines.map((_, sceneIndex) => {
               const status = sceneStatuses[sceneIndex];
               const { accessible: statusLabel, visible: statusText } = sceneStatusCopy(

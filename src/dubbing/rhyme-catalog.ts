@@ -1,7 +1,9 @@
 import {
+  HUMPTY_DUMPTY_LINE_ARTWORK,
   HUMPTY_DUMPTY_SCENE_ARTWORK,
   MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK,
   OLD_MACDONALD_SCENE_ARTWORK,
+  ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK,
   ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
   TWINKLE_TWINKLE_SCENE_ARTWORK,
   type DubArtwork,
@@ -38,6 +40,7 @@ export type DubDefinition = {
   readonly title: string;
   readonly durationMs: number;
   readonly finalCueTailMs: number;
+  readonly lineArtwork?: readonly DubArtwork[];
   readonly linesPerScene: number;
   readonly music: DubMusicScore;
   readonly sceneArtwork: readonly DubArtwork[];
@@ -180,10 +183,11 @@ export const ROW_ROW_ROW_YOUR_BOAT_DUB: DubDefinition = Object.freeze({
   title: "Row Row Row Your Boat",
   durationMs: 18_000,
   finalCueTailMs: 5_200,
-  linesPerScene: 2,
+  lineArtwork: ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK,
+  linesPerScene: 4,
   music: ROW_ROW_ROW_YOUR_BOAT_MUSIC,
   sceneArtwork: ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
-  sceneTitles: Object.freeze(["Down the stream", "A merry dream"]),
+  sceneTitles: Object.freeze(["Row the boat"]),
   lines: rowLines,
 });
 
@@ -237,10 +241,11 @@ export const HUMPTY_DUMPTY_DUB: DubDefinition = Object.freeze({
   title: "Humpty Dumpty",
   durationMs: 18_000,
   finalCueTailMs: 5_200,
-  linesPerScene: 2,
+  lineArtwork: HUMPTY_DUMPTY_LINE_ARTWORK,
+  linesPerScene: 4,
   music: HUMPTY_DUMPTY_MUSIC,
   sceneArtwork: HUMPTY_DUMPTY_SCENE_ARTWORK,
-  sceneTitles: Object.freeze(["Humpty on the wall", "Helping Humpty"]),
+  sceneTitles: Object.freeze(["Humpty Dumpty"]),
   lines: humptyLines,
 });
 

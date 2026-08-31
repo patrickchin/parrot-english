@@ -1,4 +1,4 @@
-const MEDIA_BASE = "https://media.parrotbook.com/assets/v6/dubbing";
+const MEDIA_BASE = "https://media.parrotbook.com/assets";
 
 export type DubArtwork = Readonly<{
   alt: string;
@@ -7,11 +7,11 @@ export type DubArtwork = Readonly<{
   width: number;
 }>;
 
-function artwork(path: string, alt: string): DubArtwork {
+function artwork(path: string, alt: string, version = 6): DubArtwork {
   return Object.freeze({
     alt,
     height: 864,
-    src: `${MEDIA_BASE}/${path}`,
+    src: `${MEDIA_BASE}/v${version}/dubbing/${path}`,
     width: 1536,
   });
 }
@@ -44,9 +44,32 @@ export const TWINKLE_TWINKLE_SCENE_ARTWORK = Object.freeze([
   artwork("twinkle-twinkle/scene-3-diamond-sky.webp", "The child smiles as the diamond-bright star sparkles across the deep blue sky."),
 ]);
 
+const rowBoatOpeningArtwork = artwork(
+  "row-row-row-your-boat/scene-1-gentle-stream.webp",
+  "Two cheerful children row a small wooden boat along a gentle sunny stream.",
+);
+const rowBoatDreamArtwork = artwork(
+  "row-row-row-your-boat/scene-2-merry-dream.webp",
+  "The children laugh as their little boat glides through a dreamy flower-filled river bend.",
+);
+
 export const ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK = Object.freeze([
-  artwork("row-row-row-your-boat/scene-1-gentle-stream.webp", "Two cheerful children row a small wooden boat along a gentle sunny stream."),
-  artwork("row-row-row-your-boat/scene-2-merry-dream.webp", "The children laugh as their little boat glides through a dreamy flower-filled river bend."),
+  rowBoatOpeningArtwork,
+]);
+
+export const ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK = Object.freeze([
+  rowBoatOpeningArtwork,
+  artwork(
+    "row-row-row-your-boat/line-2-gentle-stream.webp",
+    "The two children paddle their wooden boat gently along a calm willow-lined stream.",
+    7,
+  ),
+  artwork(
+    "row-row-row-your-boat/line-3-merrily.webp",
+    "The two children laugh merrily as their boat splashes past water lilies and dragonflies.",
+    7,
+  ),
+  rowBoatDreamArtwork,
 ]);
 
 export const MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK = Object.freeze([
@@ -54,7 +77,30 @@ export const MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK = Object.freeze([
   artwork("mary-had-a-little-lamb/scene-2-lamb-follows.webp", "Mary walks along a bright country lane while her devoted little lamb follows."),
 ]);
 
+const humptyWallArtwork = artwork(
+  "humpty-dumpty/scene-1-on-the-wall.webp",
+  "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall.",
+);
+const humptyTogetherArtwork = artwork(
+  "humpty-dumpty/scene-2-helping-humpty.webp",
+  "Kind royal helpers carefully comfort Humpty Dumpty beside the garden wall.",
+);
+
 export const HUMPTY_DUMPTY_SCENE_ARTWORK = Object.freeze([
-  artwork("humpty-dumpty/scene-1-on-the-wall.webp", "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall."),
-  artwork("humpty-dumpty/scene-2-helping-humpty.webp", "Kind royal helpers carefully comfort Humpty Dumpty beside the garden wall."),
+  humptyWallArtwork,
+]);
+
+export const HUMPTY_DUMPTY_LINE_ARTWORK = Object.freeze([
+  humptyWallArtwork,
+  artwork(
+    "humpty-dumpty/line-2-great-fall.webp",
+    "A surprised Humpty Dumpty tumbles gently toward soft flowers below the garden wall.",
+    7,
+  ),
+  artwork(
+    "humpty-dumpty/line-3-royal-help.webp",
+    "Kind royal helpers and two gentle horses gather to help Humpty Dumpty in the castle garden.",
+    7,
+  ),
+  humptyTogetherArtwork,
 ]);

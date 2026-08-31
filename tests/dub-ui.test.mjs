@@ -42,7 +42,12 @@ const {
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DubStudio.tsx");
 const { DUB_LINES, FIVE_LITTLE_DUCKS_DUB } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
-const { DUB_DEFINITIONS, OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const {
+  DUB_DEFINITIONS,
+  HUMPTY_DUMPTY_DUB,
+  OLD_MACDONALD_DUB,
+  ROW_ROW_ROW_YOUR_BOAT_DUB,
+} = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
 const { getStaticAudioLineForSpeech } = await vite.ssrLoadModule("/lib/static-audio.js");
 
 afterEach(async () => {
@@ -473,6 +478,35 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(first, /five-little-ducks\/scene-1-five-ducklings\.webp/);
     assert.match(second, /five-little-ducks\/scene-2-four-ducklings\.webp/);
     assert.notEqual(first, second);
+  });
+
+  it("shows one scene while changing artwork for every short-rhyme line", () => {
+    for (const definition of [
+      ROW_ROW_ROW_YOUR_BOAT_DUB,
+      HUMPTY_DUMPTY_DUB,
+    ]) {
+      const renderedLines = definition.lines.map((line) =>
+        renderToStaticMarkup(createElement(IllustratedDubScene, {
+          definition,
+          line,
+          thumbnail: true,
+        })),
+      );
+      const sources = renderedLines.map((html) =>
+        /src="([^"]+)"/.exec(html)?.[1],
+      );
+      assert.equal(new Set(sources).size, 4, definition.id);
+
+      const project = renderProjectHome({
+        activeLine: definition.lines[0],
+        definition,
+      });
+      assert.equal(
+        (project.match(/aria-label="Scene \d, [^"]+, Ready to start"/g) ?? []).length,
+        1,
+        definition.id,
+      );
+    }
   });
 
   it("renders a selectable six-scene project workspace without line controls", () => {

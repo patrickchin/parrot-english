@@ -118,6 +118,53 @@ test("every new rhyme opens its own recording workspace", async ({ page }) => {
   }
 });
 
+for (const project of [
+  {
+    route: "/dubs/row-row-row-your-boat",
+    sceneTitle: "Row the boat",
+  },
+  {
+    route: "/dubs/humpty-dumpty",
+    sceneTitle: "Humpty Dumpty",
+  },
+] as const) {
+  test(`${project.route} uses one scene with a different image for each line`, async ({ page }) => {
+    await page.goto(`${project.route}?parrotE2eDub=empty`);
+    const scenes = page.getByRole("navigation", { name: "Scenes" });
+    await expect(scenes.getByRole("button")).toHaveCount(1);
+    await scenes.getByRole("button", {
+      name: `Scene 1, ${project.sceneTitle}, Ready to start`,
+    }).click();
+
+    const video = page.getByRole("region", { name: "Scene video" });
+    const sources: string[] = [];
+    for (let line = 1; line <= 4; line += 1) {
+      await expect(page.getByText(`Line ${line} of 4`, { exact: true })).toBeVisible();
+      const image = video.getByRole("img");
+      await expect(image).toBeVisible();
+      await expect.poll(() => image.evaluate((element) =>
+        element instanceof HTMLImageElement
+        && element.complete
+        && element.naturalWidth > 0,
+      )).toBe(true);
+      sources.push((await image.getAttribute("src")) ?? "");
+      if (line < 4) {
+        await page.getByRole("button", { name: "Next line" }).click();
+      }
+    }
+    expect(new Set(sources).size).toBe(4);
+
+    await page.getByRole("button", { name: "Back to full video" }).click();
+    const [sceneBox, scenesBox] = await Promise.all([
+      scenes.getByRole("button").boundingBox(),
+      scenes.boundingBox(),
+    ]);
+    expect(sceneBox).not.toBeNull();
+    expect(scenesBox).not.toBeNull();
+    expect(Math.abs(sceneBox!.width - scenesBox!.width)).toBeLessThanOrEqual(2);
+  });
+}
+
 test("the visible Old MacDonald project title wraps without ellipsis", async ({ page }) => {
   await page.setViewportSize({ height: 640, width: 320 });
   await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
