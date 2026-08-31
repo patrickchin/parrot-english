@@ -9,7 +9,6 @@ import {
 import { isSafeRouteId } from "../../lib/route-id";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 
-export type LessonSource = "parrot" | "my";
 export type GateRouteKind = "login" | "learner-profile" | "profile";
 type ResolvedLessonScene = {
   entry: LessonCatalogEntry;
@@ -129,14 +128,14 @@ function parseSceneNumber(value: string | undefined) {
   return Number.isSafeInteger(parsed) ? parsed : null;
 }
 
-export function getLessonPath(source: LessonSource, lessonId: string) {
+export function getLessonPath(lessonId: string) {
   if (!isSafeRouteId(lessonId)) {
     throw new TypeError(
       "Lesson ID must be non-empty, encodable, and cannot be a dot segment.",
     );
   }
 
-  return `/lessons/${source}/${encodeURIComponent(lessonId)}`;
+  return `/lessons/parrot/${encodeURIComponent(lessonId)}`;
 }
 
 export function getStoryPath(storyId: string) {
@@ -183,12 +182,8 @@ export function getStoryPagePath(storyId: string, pageIndex: number) {
   return `${getStoryPath(storyId)}/pages/${pageIndex + 1}`;
 }
 
-export function getLessonScenePath(
-  source: LessonSource,
-  lessonId: string,
-  sceneIndex: number,
-) {
-  return `${getLessonPath(source, lessonId)}/scenes/${sceneIndex + 1}`;
+export function getLessonScenePath(lessonId: string, sceneIndex: number) {
+  return `${getLessonPath(lessonId)}/scenes/${sceneIndex + 1}`;
 }
 
 export function getLoginPath(returnTo: string) {
@@ -361,7 +356,7 @@ export function resolveParrotLessonRouteDecision(
 
   const resolved = resolveParrotLessonScene(lessonId, sceneNumberValue);
   if (!resolved) {
-    return redirectTo(getLessonScenePath("parrot", entry.id, 0));
+    return redirectTo(getLessonScenePath(entry.id, 0));
   }
 
   return { kind: "lesson", ...resolved };

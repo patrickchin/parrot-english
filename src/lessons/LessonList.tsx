@@ -78,14 +78,11 @@ function createAvailableLessonCard(
 function LessonCardView({
   index,
   lesson,
-  source,
 }: {
   index: number;
   lesson: LessonCard;
-  source: "my" | "parrot";
 }) {
-  const lessonPath = getLessonScenePath(source, lesson.id, 0);
-  const CardHeading = source === "parrot" ? "h2" : "h3";
+  const lessonPath = getLessonScenePath(lesson.id, 0);
 
   return (
     <article className="grid min-w-0">
@@ -100,18 +97,18 @@ function LessonCardView({
             alt={lesson.artworkAlt}
             className="h-full w-full object-cover"
             decoding="async"
-            fetchPriority={source === "parrot" && index === 0 ? "high" : undefined}
-            loading={source === "parrot" && index < 2 ? "eager" : "lazy"}
-            sizes={source === "parrot" ? LESSON_SHELF_IMAGE_SIZES : undefined}
+            fetchPriority={index === 0 ? "high" : undefined}
+            loading={index < 2 ? "eager" : "lazy"}
+            sizes={LESSON_SHELF_IMAGE_SIZES}
             src={lesson.artworkSrc}
-            srcSet={source === "parrot" ? responsiveShelfSrcSet(lesson.artworkSrc) : undefined}
+            srcSet={responsiveShelfSrcSet(lesson.artworkSrc)}
           />
         </div>
 
         <div className="grid min-w-0 grid-rows-[auto_1fr_auto] gap-1.5 p-3 min-[360px]:gap-2 min-[360px]:p-3.5 sm:p-4">
-          <CardHeading className="m-0 line-clamp-2 text-lg leading-tight text-brand-navy sm:text-xl">
+          <h2 className="m-0 line-clamp-2 text-lg leading-tight text-brand-navy sm:text-xl">
             {lesson.title}
-          </CardHeading>
+          </h2>
           <p className="m-0 text-sm font-extrabold leading-snug text-slate-700 sm:text-base">
             {lesson.practiceText}
           </p>
@@ -169,7 +166,6 @@ export function LessonListView() {
               index={index}
               key={lesson.id}
               lesson={lesson}
-              source="parrot"
             />
           ))}
         </div>

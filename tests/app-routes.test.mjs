@@ -38,26 +38,22 @@ function getStoryRouteDecision(storyId, pageNumber) {
 }
 
 describe("app route helpers", () => {
-  it("builds source-specific lesson paths", () => {
+  it("builds built-in lesson paths", () => {
     assert.equal(
-      routes.getLessonPath("parrot", "01-peppas-high-ball"),
+      routes.getLessonPath("01-peppas-high-ball"),
       "/lessons/parrot/01-peppas-high-ball",
     );
     assert.equal(
-      routes.getLessonPath("my", "lesson/id"),
-      "/lessons/my/lesson%2Fid",
+      routes.getLessonPath("lesson/id"),
+      "/lessons/parrot/lesson%2Fid",
     );
     assert.equal(
-      routes.getLessonPath("my", "100% ready"),
-      "/lessons/my/100%25%20ready",
+      routes.getLessonPath("100% ready"),
+      "/lessons/parrot/100%25%20ready",
     );
     assert.equal(
-      routes.getLessonScenePath("parrot", "01-peppas-high-ball", 0),
+      routes.getLessonScenePath("01-peppas-high-ball", 0),
       "/lessons/parrot/01-peppas-high-ball/scenes/1",
-    );
-    assert.equal(
-      routes.getLessonScenePath("my", "same-id", 2),
-      "/lessons/my/same-id/scenes/3",
     );
   });
 
@@ -70,7 +66,7 @@ describe("app route helpers", () => {
   it("rejects empty, dot-segment, and unencodable lesson IDs", () => {
     for (const lessonId of ["", "   ", ".", "..", "\ud800"]) {
       assert.throws(
-        () => routes.getLessonPath("parrot", lessonId),
+        () => routes.getLessonPath(lessonId),
         /Lesson ID must be non-empty, encodable, and cannot be a dot segment/,
       );
     }
@@ -592,7 +588,7 @@ describe("app route helpers", () => {
 
     assert.equal(entry.id, "01-peppas-high-ball");
     assert.equal(
-      routes.getLessonScenePath("parrot", entry.id, 0),
+      routes.getLessonScenePath(entry.id, 0),
       "/lessons/parrot/01-peppas-high-ball/scenes/1",
     );
     assert.equal(resolved.entry, entry);

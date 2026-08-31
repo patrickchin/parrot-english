@@ -6,16 +6,12 @@ const tinySceneWebp = Buffer.from(
   "UklGRh4AAABXRUJQVlA4TBEAAAAvDwACAAfQ5sp1vf+BiOh/AAA=",
   "base64",
 );
-const longDialogue =
-  "Can you help me carry the bright yellow picnic basket to the big tree, please? I want to share apples, sandwiches, and juice with all our friends.";
-const myLessonRevision = "a".repeat(64);
-
 type LessonMediaSnapshot = {
   consentRequests: number;
   cueCancellations: number;
   cues: Array<{
     endedAt: number | null;
-    kind: "device" | "static";
+    kind: "static";
     startedAt: number;
     text: string;
     volume: number;
@@ -33,13 +29,11 @@ type LessonMediaSnapshot = {
     outcome:
       | "failed"
       | "held"
-      | "lesson_changed"
       | "recording_disabled"
       | "saved";
-    revision: string | null;
     sceneIndex: number;
     size: number;
-    source: "my" | "parrot";
+    source: "parrot";
     stepIndex: number;
     type: string;
   }>;
@@ -70,56 +64,6 @@ type ArtworkDecodeController = {
   resolvedDetachedDecodes: number;
 };
 
-const myLesson = {
-  childName: "Mia",
-  detailedSummary: "Mia joins Peppa for one bright kite line.",
-  goalPhrases: ["Red kite!"],
-  location: {
-    description: "A sunny garden with one red kite.",
-    name: "The garden",
-  },
-  scenes: [
-    {
-      background: "episode-garden",
-      characters: ["peppa"],
-      settingDescription: "Peppa looks at a red kite in the garden.",
-      steps: [
-        {
-          dialogue: "Red kite!",
-          emotes: { peppa: "listening" },
-          speaker: "user",
-        },
-      ],
-      title: "The Red Kite",
-    },
-  ],
-  summary: "Mia joins in with a kite story.",
-  title: "The Red Kite",
-};
-
-const longDialogueLesson = {
-  ...myLesson,
-  detailedSummary: "Mia helps Peppa and Dolly carry a picnic basket.",
-  goalPhrases: [longDialogue],
-  scenes: [
-    {
-      background: "episode-garden",
-      characters: ["peppa", "dolly"],
-      settingDescription: "Peppa and Dolly wait beside a full picnic basket.",
-      steps: [
-        {
-          dialogue: longDialogue,
-          emotes: { dolly: "listening", peppa: "listening" },
-          speaker: "user",
-        },
-      ],
-      title: "Packing the Picnic",
-    },
-  ],
-  summary: "Mia joins Peppa and Dolly for a picnic.",
-  title: "The Big Picnic",
-};
-
 async function mockSceneArtwork(page: Page) {
   await page.route("https://media.parrotbook.com/**", async (route) => {
     await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
@@ -134,43 +78,6 @@ async function openParrotLesson(
   await mockSceneArtwork(page);
   await page.goto(
     `${parrotLessonPath}?parrotE2eLesson=${scenario}` +
-      (microphoneScenario
-        ? `&parrotE2eMicrophone=${microphoneScenario}`
-        : ""),
-  );
-  await expect(
-    page.getByRole("button", { exact: true, name: "Let's go" }),
-  ).toBeVisible();
-}
-
-async function openMyLesson(
-  page: Page,
-  scenario: string,
-  {
-    id = "device-guide",
-    lesson = myLesson,
-    microphoneScenario,
-  }: {
-    id?: string;
-    lesson?: unknown;
-    microphoneScenario?: "denied";
-  } = {},
-) {
-  await page.route(`**/api/lessons/my/${id}`, async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        lesson: {
-          id,
-          lesson,
-          revision: myLessonRevision,
-          source: "generated",
-        },
-      }),
-    });
-  });
-  await page.goto(
-    `/lessons/my/${id}/scenes/1?parrotE2eLesson=${scenario}` +
       (microphoneScenario
         ? `&parrotE2eMicrophone=${microphoneScenario}`
         : ""),
@@ -394,40 +301,6 @@ async function expectNoOverlap(first: Locator, second: Locator) {
   expect(horizontal > 0 && vertical > 0).toBe(false);
 }
 
-async function expectContainedBy(child: Locator, parent: Locator) {
-  const childBox = await visibleBox(child);
-  const parentBox = await visibleBox(parent);
-  expect(childBox.x).toBeGreaterThanOrEqual(parentBox.x);
-  expect(childBox.y).toBeGreaterThanOrEqual(parentBox.y);
-  expect(childBox.x + childBox.width).toBeLessThanOrEqual(
-    parentBox.x + parentBox.width,
-  );
-  expect(childBox.y + childBox.height).toBeLessThanOrEqual(
-    parentBox.y + parentBox.height,
-  );
-}
-
-async function expectLongTextReachable(locator: Locator) {
-  const metrics = await locator.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-  }));
-  if (metrics.scrollHeight > metrics.clientHeight) {
-    await expect(locator).toHaveAttribute("tabindex", "0");
-    await locator.focus();
-    await locator.press("End");
-    await expect
-      .poll(() => locator.evaluate((element) => element.scrollTop))
-      .toBeGreaterThan(0);
-    await locator.press("Home");
-    await expect
-      .poll(() => locator.evaluate((element) => element.scrollTop))
-      .toBe(0);
-  } else {
-    await expect(locator).not.toHaveAttribute("tabindex", "0");
-  }
-}
-
 async function expectNoPageOverflow(page: Page) {
   const metrics = await page.evaluate(() => ({
     height: window.innerHeight,
@@ -640,36 +513,6 @@ test("stalled artwork becomes retryable without exposing scene controls", async 
   releaseArtwork();
 });
 
-test("narration remains distinct from character speech", async ({ page }) => {
-  const narrationLesson = structuredClone(myLesson);
-  narrationLesson.scenes[0].steps.unshift({
-    dialogue: "The kite dances in the wind.",
-    emotes: { peppa: "listening" },
-    speaker: "narrator",
-  });
-  await page.route("**/api/lessons/my/narration-guide", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        lesson: {
-          id: "narration-guide",
-          lesson: narrationLesson,
-          revision: myLessonRevision,
-          source: "generated",
-        },
-      }),
-    });
-  });
-  await page.goto(
-    "/lessons/my/narration-guide/scenes/1?parrotE2eLesson=device-no-consent",
-  );
-  await startLesson(page);
-
-  await expect(page.getByRole("status", { name: "Lesson narration" })).toBeVisible();
-  await expect(page.getByText("Story", { exact: true })).toBeVisible();
-  await expect(page.getByText(/Listen · Narrator/)).toHaveCount(0);
-});
-
 test("ordinary sound failure keeps its existing retry and skip recovery", async ({
   page,
 }) => {
@@ -876,21 +719,6 @@ for (const outcome of ["rejectNext", "resolveNext"] as const) {
   });
 }
 
-test("My Lessons use the exact on-device guide at quiet volume", async ({ page }) => {
-  await openMyLesson(page, "device-no-consent");
-  await startLesson(page);
-  await expect(joinInPrompt(page, "Red kite!")).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-
-  const snapshot = await mediaSnapshot(page);
-  expect(snapshot.getUserMediaCalls).toBe(0);
-  expect(snapshot.cues).toMatchObject([
-    { kind: "device", text: "Red kite!", volume: 0.28 },
-  ]);
-});
-
 test("cue failure discards partial capture, holds the phrase for 700ms, and advances", async ({
   page,
 }) => {
@@ -1006,78 +834,6 @@ test("ordinary story audio still pauses and resumes in place", async ({ page }) 
   await expect(page.getByRole("status", { name: "Dolly is speaking" })).toBeVisible();
 });
 
-test("a held upload never blocks completion and reports neutral saving", async ({
-  page,
-}) => {
-  await openMyLesson(page, "upload-held");
-  await startLesson(page);
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-  await expect(page.getByText("Saving your voices…", { exact: true })).toBeVisible();
-  expect((await mediaSnapshot(page)).pendingUploads).toBe(1);
-
-  await controlLessonMedia(page, "resolveNextUpload");
-  await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
-});
-
-test("completion focuses Replay and restarts without reloading consent", async ({
-  page,
-}) => {
-  await openMyLesson(page, "device-no-consent");
-  await startLesson(page);
-  const replay = page.getByRole("button", { name: "Replay lesson" });
-  await expect(replay).toBeFocused();
-  await replay.click();
-  await expect(joinInPrompt(page, "Red kite!")).toBeVisible();
-  const snapshot = await mediaSnapshot(page);
-  expect(snapshot.consentRequests).toBe(1);
-  expect(snapshot.getUserMediaCalls).toBe(0);
-});
-
-test("failed background saving can be retried without repeating the line", async ({
-  page,
-}) => {
-  await openMyLesson(page, "upload-retry-held");
-  await startLesson(page);
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-  const retry = page.getByRole("button", { name: "Try saving again" });
-  await expect(retry).toBeVisible();
-  expect((await mediaSnapshot(page)).uploads[0].outcome).toBe("failed");
-
-  await retry.click();
-  await expect(retry).toHaveCount(0);
-  const replay = page.getByRole("button", { name: "Replay lesson" });
-  await expect(page.getByText("Saving your voices…", { exact: true })).toBeVisible();
-  await expect(replay).toBeFocused();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(1);
-  await controlLessonMedia(page, "resolveNextUpload");
-  await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
-  await expect(replay).toBeFocused();
-  await expect.poll(async () => (await mediaSnapshot(page)).uploads.length).toBe(2);
-  expect((await mediaSnapshot(page)).uploads[1].outcome).toBe("saved");
-  await expect(page.getByText(/say it again|try the words again/i)).toHaveCount(0);
-});
-
-test("a completed blob keeps uploading after the lesson route exits", async ({
-  page,
-}) => {
-  await openMyLesson(page, "upload-held");
-  await startLesson(page);
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(1);
-
-  await page.getByRole("button", { name: "Back to lesson list" }).click();
-  await expect(page).toHaveURL(/\/lessons$/);
-  await controlLessonMedia(page, "resolveNextUpload");
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(0);
-  expect((await mediaSnapshot(page)).uploads[0].outcome).toBe("saved");
-});
-
 test("a server recording-disabled result prevents later microphone capture", async ({
   page,
 }) => {
@@ -1091,114 +847,6 @@ test("a server recording-disabled result prevents later microphone capture", asy
   const snapshot = await mediaSnapshot(page);
   expect(snapshot.getUserMediaCalls).toBe(2);
   expect(snapshot.recorderStarts).toHaveLength(1);
-});
-
-test("pending account deletion settles saving and disables later captures", async ({
-  page,
-}) => {
-  const twoBeatLesson = structuredClone(myLesson);
-  twoBeatLesson.scenes[0].steps.push(
-    {
-      dialogue: "The kite turns.",
-      emotes: { peppa: "listening" },
-      speaker: "narrator",
-    },
-    {
-      dialogue: "Green kite!",
-      emotes: { peppa: "listening" },
-      speaker: "user",
-    },
-  );
-  await openMyLesson(page, "account-deletion-pending", {
-    id: "deletion-guide",
-    lesson: twoBeatLesson,
-  });
-  await startLesson(page);
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingUploads).toBe(0);
-  expect((await mediaSnapshot(page)).uploads[0]?.outcome).toBe(
-    "recording_disabled",
-  );
-  await controlLessonMedia(page, "releaseNextCue");
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-
-  const snapshot = await mediaSnapshot(page);
-  expect(snapshot.uploads).toMatchObject([
-    {
-      lessonId: "deletion-guide",
-      outcome: "recording_disabled",
-      sceneIndex: 0,
-      source: "my",
-      stepIndex: 0,
-    },
-  ]);
-  expect(snapshot.getUserMediaCalls).toBe(2);
-  expect(snapshot.recorderStarts).toHaveLength(1);
-  expect(snapshot.cues.map(({ text }) => text)).toEqual([
-    "Red kite!",
-    "The kite turns.",
-    "Green kite!",
-  ]);
-  await expect(page.getByRole("button", { name: "Try saving again" })).toHaveCount(0);
-  await expect(page.getByText("Saving your voices…", { exact: true })).toHaveCount(0);
-});
-
-test("a stale open My Lesson sends its loaded revision once and stops future capture", async ({
-  page,
-}) => {
-  const twoBeatLesson = structuredClone(myLesson);
-  twoBeatLesson.scenes[0].steps.push(
-    {
-      dialogue: "The kite turns.",
-      emotes: { peppa: "listening" },
-      speaker: "narrator",
-    },
-    {
-      dialogue: "Green kite!",
-      emotes: { peppa: "listening" },
-      speaker: "user",
-    },
-  );
-  await openMyLesson(page, "lesson-changed", {
-    id: "stale-guide",
-    lesson: twoBeatLesson,
-  });
-  await startLesson(page);
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
-  const afterConflict = await mediaSnapshot(page);
-  expect(afterConflict.uploads).toMatchObject([
-    {
-      lessonId: "stale-guide",
-      outcome: "lesson_changed",
-      revision: myLessonRevision,
-      sceneIndex: 0,
-      source: "my",
-      stepIndex: 0,
-    },
-  ]);
-
-  await controlLessonMedia(page, "releaseNextCue");
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-  const completed = await mediaSnapshot(page);
-  expect(completed.recorderStarts).toHaveLength(1);
-  expect(completed.getUserMediaCalls).toBe(2);
-  expect(completed.uploads).toHaveLength(1);
-  await expect(page.getByRole("button", { name: "Try saving again" })).toHaveCount(0);
-});
-
-test("a recording stop failure discards only that clip and continues", async ({
-  page,
-}) => {
-  await openMyLesson(page, "stop-failure");
-  await startLesson(page);
-  await expect(
-    page.getByRole("heading", { name: "You finished The Red Kite!" }),
-  ).toBeVisible();
-  expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 });
 
 test("lesson intro and start action stay contained at exactly 667x280", async ({
@@ -1233,85 +881,12 @@ test("lesson intro and start action stay contained at exactly 667x280", async ({
 });
 
 for (const viewport of [
-  { name: "narrow", width: 280, height: 653 },
-  { name: "mid-width tall", width: 667, height: 500 },
-  { name: "desktop", width: 1280, height: 800 },
-]) {
-  test(`speaking help keeps two characters in separate edge lanes on ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await openMyLesson(page, "held-cue", {
-      id: `two-character-help-${viewport.width}-${viewport.height}`,
-      lesson: longDialogueLesson,
-      microphoneScenario: "denied",
-    });
-    await startLesson(page);
-
-    const help = page.getByRole("status", { name: "Speaking help" });
-    const peppa = page.getByRole("img", {
-      exact: true,
-      name: "Peppa listening",
-    });
-    const dolly = page.getByRole("img", {
-      exact: true,
-      name: "Dolly listening",
-    });
-    const helpBox = await visibleBox(help);
-    const peppaBox = await visibleBox(peppa);
-    const dollyBox = await visibleBox(dolly);
-
-    expect(peppaBox.x + peppaBox.width / 2).toBeLessThanOrEqual(
-      viewport.width * 0.2,
-    );
-    expect(dollyBox.x + dollyBox.width / 2).toBeGreaterThanOrEqual(
-      viewport.width * 0.8,
-    );
-    expect(
-      Math.abs(helpBox.x + helpBox.width / 2 - viewport.width / 2),
-    ).toBeLessThanOrEqual(2);
-    await expectNoOverlap(help, peppa);
-    await expectNoOverlap(help, dolly);
-    await expectNoPageOverflow(page);
-  });
-}
-
-test("speaking help separates one character from its message", async ({
-  page,
-}) => {
-  const viewport = { width: 280, height: 653 };
-  await page.setViewportSize(viewport);
-  await openMyLesson(page, "held-cue", {
-    id: "single-character-help",
-    microphoneScenario: "denied",
-  });
-  await startLesson(page);
-
-  const help = page.getByRole("status", { name: "Speaking help" });
-  const character = page.getByRole("img", {
-    exact: true,
-    name: "Peppa listening",
-  });
-  const helpBox = await visibleBox(help);
-  const characterBox = await visibleBox(character);
-
-  expect(characterBox.x + characterBox.width / 2).toBeLessThanOrEqual(
-    viewport.width * 0.3,
-  );
-  expect(helpBox.x + helpBox.width / 2).toBeGreaterThanOrEqual(
-    viewport.width * 0.65,
-  );
-  await expectNoOverlap(help, character);
-  await expectNoPageOverflow(page);
-});
-
-for (const viewport of [
   { name: "280x653 boundary", width: 280, height: 653 },
   { name: "390x844 phone", width: 390, height: 844 },
   { name: "667x375 short-wide", width: 667, height: 375 },
   { name: "desktop", width: 1280, height: 800 },
 ]) {
-  test(`lesson intro, join-in, and completion stay contained on ${viewport.name}`, async ({
+  test(`lesson intro and join-in stay contained on ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -1379,126 +954,6 @@ for (const viewport of [
     await expectNoOverlap(help, controls);
     await expectNoOverlap(help, peppa);
     await expectNoOverlap(help, dolly);
-    await expectNoPageOverflow(page);
-
-    await openMyLesson(page, "device-no-consent", {
-      id: `responsive-completion-${viewport.width}-${viewport.height}`,
-    });
-    await startLesson(page);
-
-    const completion = page.getByRole("region", { name: "Lesson completion" });
-    const completionHeading = completion.getByRole("heading", {
-      exact: true,
-      level: 1,
-      name: "You finished The Red Kite!",
-    });
-    const replay = completion.getByRole("button", { name: "Replay lesson" });
-    const completionBack = completion.getByRole("button", {
-      exact: true,
-      name: "Back to lessons",
-    });
-    const completionStatus = page.getByRole("status", {
-      name: "Lesson updates",
-    });
-    await expectInsideViewport(completionHeading, viewport);
-    await expectInsideViewport(replay, viewport);
-    await expectInsideViewport(completionBack, viewport);
-    await expect(replay).toHaveAccessibleName("Replay lesson");
-    await expect(completionBack).toHaveAccessibleName("Back to lessons");
-    await expect(completionStatus).toHaveText("Lesson complete");
-    await expectNoOverlap(replay, completionBack);
-    await expectNoOverlap(replay, routeBack);
-    await expectNoOverlap(replay, account);
-    await expectNoOverlap(completionBack, routeBack);
-    await expectNoOverlap(completionBack, account);
-    await expectNoOverlap(account, routeBack);
-    await expectNoPageOverflow(page);
-  });
-}
-
-for (const viewport of [
-  { name: "ultra-narrow", width: 280, height: 568 },
-  { name: "ultra-short landscape", width: 667, height: 280 },
-  { name: "short landscape", width: 640, height: 360 },
-  { name: "compact landscape", width: 768, height: 481 },
-  { name: "compact", width: 768, height: 600 },
-  { name: "compact tall", width: 768, height: 807 },
-]) {
-  test(`long generated join-in stays reachable and layered at ${viewport.name}`, async ({
-    page,
-  }) => {
-    await page.setViewportSize(viewport);
-    await openMyLesson(page, "held-cue-no-consent", {
-      id: `long-guide-${viewport.width}-${viewport.height}`,
-      lesson: longDialogueLesson,
-    });
-    await startLesson(page);
-
-    const prompt = joinInPrompt(page, longDialogue);
-    const heading = prompt.getByRole("heading", { exact: true, name: "Join in" });
-    const phrase = prompt.getByText(longDialogue, { exact: true });
-    const idleStatus = prompt.getByRole("status");
-    const controls = page.getByRole("navigation", {
-      name: "Lesson playback controls",
-    });
-    const hud = page.getByRole("region", { name: "Lesson progress" });
-    const back = page.getByRole("button", { name: "Back to lesson list" });
-    const peppa = page.getByRole("img", { name: "Peppa" });
-    const dolly = page.getByRole("img", { name: "Dolly" });
-
-    await expect(heading).toBeVisible();
-    await expect(phrase).toBeVisible();
-    await expect(idleStatus).toHaveCount(0);
-    await expectInsideViewport(prompt, viewport);
-    await expectInsideViewport(controls, viewport);
-    await expectInsideViewport(hud, viewport);
-    await expectInsideViewport(back, viewport);
-    await expectContainedBy(heading, prompt);
-    await expectContainedBy(phrase, prompt);
-    await expectLongTextReachable(phrase);
-
-    if (viewport.name === "compact") {
-      const centers = await heading.evaluate((element) => {
-        const promptRect = element.parentElement!.getBoundingClientRect();
-        const iconRect = element.querySelector("svg")!.getBoundingClientRect();
-        const textNode = [...element.childNodes].find(
-          (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
-        )!;
-        const textRange = document.createRange();
-        textRange.selectNodeContents(textNode);
-        const textRect = textRange.getBoundingClientRect();
-        return {
-          content: (Math.min(iconRect.left, textRect.left) +
-            Math.max(iconRect.right, textRect.right)) / 2,
-          prompt: promptRect.left + promptRect.width / 2,
-        };
-      });
-      expect(Math.abs(centers.content - centers.prompt)).toBeLessThanOrEqual(2);
-    }
-
-    const promptMetrics = await prompt.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      scrollHeight: element.scrollHeight,
-    }));
-    expect(promptMetrics.scrollHeight).toBeLessThanOrEqual(
-      promptMetrics.clientHeight + 1,
-    );
-    const headingMetrics = await heading.evaluate((element) => ({
-      clientHeight: element.clientHeight,
-      scrollHeight: element.scrollHeight,
-    }));
-    expect(headingMetrics.scrollHeight).toBeLessThanOrEqual(
-      headingMetrics.clientHeight + 1,
-    );
-    await expect(heading).not.toHaveAttribute("tabindex", "0");
-
-    await expectNoOverlap(prompt, controls);
-    await expectNoOverlap(prompt, hud);
-    await expectNoOverlap(prompt, back);
-    await expectNoOverlap(prompt, peppa);
-    await expectNoOverlap(prompt, dolly);
-    await expectNoOverlap(controls, peppa);
-    await expectNoOverlap(controls, dolly);
     await expectNoPageOverflow(page);
   });
 }

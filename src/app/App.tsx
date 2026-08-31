@@ -27,7 +27,6 @@ import {
 import {
   getLessonAudioLine,
   getLessonJoinInAudioLine,
-  getLessonSpeechLine,
 } from "../../lib/lesson-audio";
 import { getLessonProgressLabel } from "../../lib/lesson-progress";
 import {
@@ -81,7 +80,6 @@ import {
   resolveParrotLessonRouteDecision,
   resolveStoryRouteDecision,
   type LessonRouteDecision,
-  type LessonSource,
   type StoryRouteDecision,
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
@@ -119,7 +117,6 @@ import {
   LessonSpeech,
   LessonStage,
 } from "../lessons/LessonPlayerUi";
-import { playDeviceSpeech } from "../media/device-speech";
 import {
   requestMicrophoneAccess,
   startSpeechRecording,
@@ -237,12 +234,10 @@ type LessonPlayerProps = {
   fullSceneArtwork?: FullSceneImage[];
   lesson: Lesson;
   lessonId: string;
-  lessonRevision?: string;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
   routedLocationKey: string;
   routedSceneIndex: number;
-  source: LessonSource;
 };
 
 type RegisterLessonRouteExitBarrier = (barrier: () => void) => () => void;
@@ -254,12 +249,10 @@ export function LessonPlayer({
   fullSceneArtwork,
   lesson: currentLesson,
   lessonId,
-  lessonRevision,
   onBack,
   onNavigateScene,
   routedLocationKey,
   routedSceneIndex,
-  source,
 }: LessonPlayerProps) {
   const { profile: learnerProfile } = useLearnerProfile();
   const registerLessonRouteExitBarrier = useContext(
@@ -573,17 +566,10 @@ export function LessonPlayer({
       onPlaybackControl: (control: PlaybackControl | null) => void,
     ) => Promise<void>;
     try {
-      if (source === "my") {
-        const speechLine = getLessonSpeechLine(state, currentLesson);
-        if (!speechLine) return;
-        startPlayback = (signal, onPlaybackControl) =>
-          playDeviceSpeech({ ...speechLine, onPlaybackControl, signal });
-      } else {
-        const audioLine = getLessonAudioLine(state, currentLesson);
-        if (!audioLine) return;
-        startPlayback = (signal, onPlaybackControl) =>
-          playAudioLine({ ...audioLine, onPlaybackControl, signal });
-      }
+      const audioLine = getLessonAudioLine(state, currentLesson);
+      if (!audioLine) return;
+      startPlayback = (signal, onPlaybackControl) =>
+        playAudioLine({ ...audioLine, onPlaybackControl, signal });
     } catch {
       setError(LESSON_AUDIO_ERROR_MESSAGE);
       return;
@@ -640,7 +626,6 @@ export function LessonPlayer({
     currentArtworkDecoded,
     dispatchLessonEvent,
     routedSceneIndex,
-    source,
     state.sceneIndex,
     state.stepIndex,
     storyPlaybackPhase,
@@ -659,9 +644,7 @@ export function LessonPlayer({
     let session: SpeechRecordingSession | null = null;
     const slot = {
       lessonId,
-      ...(lessonRevision ? { lessonRevision } : {}),
       sceneIndex: state.sceneIndex,
-      source,
       stepIndex: state.stepIndex,
     };
     const isCurrent = () =>
@@ -677,18 +660,6 @@ export function LessonPlayer({
     setJoinInRecording(false);
 
     const playCue = async () => {
-      if (source === "my") {
-        await playDeviceSpeech({
-          onPlaybackControl: (control) => {
-            if (isCurrent()) playbackControlRef.current = control;
-          },
-          signal: controller.signal,
-          speaker: "narrator",
-          text: currentStep.dialogue,
-          volume: 0.28,
-        });
-        return;
-      }
       const cue = getLessonJoinInAudioLine(state, currentLesson);
       if (!cue) throw new Error("The join-in cue is missing.");
       await playAudioLine({
@@ -790,10 +761,8 @@ export function LessonPlayer({
     currentArtworkDecoded,
     dispatchLessonEvent,
     lessonId,
-    lessonRevision,
     recordingQueue,
     showMicrophoneNotice,
-    source,
     state.phase,
     state.sceneIndex,
     state.stepIndex,
@@ -1089,12 +1058,8 @@ export function LessonPlayer({
 }
 function LessonRouteDecisionView({
   decision,
-  lessonRevision,
-  source,
 }: {
   decision: LessonRouteDecision;
-  lessonRevision?: string;
-  source: LessonSource;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1103,27 +1068,22 @@ function LessonRouteDecisionView({
     return <Navigate replace={decision.replace} to={decision.to} />;
   }
 
-  const fullSceneArtwork =
-    source === "parrot"
-      ? FULL_SCENE_LESSONS.find(
-          (candidate) => candidate.lessonId === decision.entry.id,
-        )?.scenes
-      : undefined;
+  const fullSceneArtwork = FULL_SCENE_LESSONS.find(
+    (candidate) => candidate.lessonId === decision.entry.id,
+  )?.scenes;
 
   return (
     <LessonPlayer
       fullSceneArtwork={fullSceneArtwork}
-      key={`${source}:${decision.entry.id}`}
+      key={decision.entry.id}
       lesson={decision.entry.lesson}
       lessonId={decision.entry.id}
-      lessonRevision={lessonRevision}
       onBack={() => navigate("/lessons")}
       onNavigateScene={(sceneIndex) =>
-        navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
+        navigate(getLessonScenePath(decision.entry.id, sceneIndex))
       }
       routedLocationKey={location.key}
       routedSceneIndex={decision.sceneIndex}
-      source={source}
     />
   );
 }
@@ -1131,23 +1091,13 @@ function LessonRouteDecisionView({
 function ParrotLessonRedirect() {
   const { lessonId } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, undefined);
-  return (
-    <LessonRouteDecisionView
-      decision={decision}
-      source="parrot"
-    />
-  );
+  return <LessonRouteDecisionView decision={decision} />;
 }
 
 function ParrotLessonSceneRoute() {
   const { lessonId, sceneNumber } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
-  return (
-    <LessonRouteDecisionView
-      decision={decision}
-      source="parrot"
-    />
-  );
+  return <LessonRouteDecisionView decision={decision} />;
 }
 
 function StoryRouteDecisionView({
