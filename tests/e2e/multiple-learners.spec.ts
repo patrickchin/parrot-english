@@ -1686,7 +1686,7 @@ test("requires Guardian unlock before revealing a selection-required roster", as
   ).toHaveCount(2);
 });
 
-test("shows a learner-safe no-selection state and sends an incomplete learner to setup", async ({
+test("shows a learner-safe no-selection state and lets an incomplete learner use activities", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "selection-required", "learner"));
@@ -1713,10 +1713,13 @@ test("shows a learner-safe no-selection state and sends an incomplete learner to
   await expect(page.getByText("Managing Ava", { exact: true })).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Back" }).click();
   await chooseLearnerFromManager(page, "Ava");
-  await expect(page).toHaveURL(/\/profile\/setup/);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Answer 6 questions" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: /Profile for Ava, learner mode/ }),
   ).toBeVisible();

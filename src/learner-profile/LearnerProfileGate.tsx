@@ -312,6 +312,10 @@ export function LearnerProfileGateView({
   const canAccessProtectedRoutes = Boolean(
     guardianRoute || data?.mode === "bypass-only" || learnerProfileComplete,
   );
+  const canAccessCurrentRoute = Boolean(
+    canAccessProtectedRoutes ||
+    (fullData && !isLearnerProfileRoute && !isProfileRoute),
+  );
   const canEditProfile = Boolean(fullData && guardianRoute);
 
   if (guardianRoute && isLearnerProfileRoute && !redoLearnerProfile) {
@@ -469,12 +473,12 @@ export function LearnerProfileGateView({
     );
   }
 
-  if (data && !canAccessProtectedRoutes && !isLearnerProfileRoute) {
+  if (data && !canAccessCurrentRoute && !isLearnerProfileRoute) {
     return <>{learnerProfileFallback}</>;
   }
 
   if (
-    canAccessProtectedRoutes &&
+    canAccessCurrentRoute &&
     isLearnerProfileRoute &&
     !redoLearnerProfile
   ) {
@@ -544,7 +548,7 @@ export function LearnerProfileGateView({
 
   if (
     fullData &&
-    canAccessProtectedRoutes &&
+    canAccessCurrentRoute &&
     isConversationRoute &&
     conversationProps
   ) {
@@ -555,7 +559,7 @@ export function LearnerProfileGateView({
     return <ConversationSurface {...conversationProps} />;
   }
 
-  if (canAccessProtectedRoutes) {
+  if (canAccessCurrentRoute) {
     return <>{children}</>;
   }
 
