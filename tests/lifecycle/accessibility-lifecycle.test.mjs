@@ -963,7 +963,9 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Profile for Patrick, guardian mode"));
+    await click(
+      await waitFor(() => button("Profile for Patrick, guardian mode")),
+    );
     assert.deepEqual(
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
