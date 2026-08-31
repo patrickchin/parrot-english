@@ -10,7 +10,7 @@ const apiToken = "test token";
 const bucket = "lesson bucket";
 
 const accountRecording =
-  "personalized-story-art/account/lesson-recordings/my/a/scene-0/step 0?.audio";
+  "personalized-story-art/account/lesson-recordings/my/a/scene-0/step-0.audio";
 const learnerRecording =
   "personalized-story-art/account/learners/learner/lesson-recordings/my/a/scene-0/step-0.audio";
 const parrotRecording =
@@ -45,10 +45,10 @@ function commandOptions(overrides = {}) {
 }
 
 describe("custom lesson recording purge", () => {
-  it("matches only complete legacy and learner custom-recording key shapes", () => {
+  it("matches only complete account and learner custom-recording key shapes", () => {
     for (const key of [
-      "personalized-story-art/user/lesson-recordings/my/a/scene-0/step-0.audio",
-      "personalized-story-art/user/learners/learner/lesson-recordings/my/a/scene-0/step-0.audio",
+      "personalized-story-art/user%20id/lesson-recordings/my/lesson%20one/scene-0/step-0.audio",
+      "personalized-story-art/user/learners/learner%20id/lesson-recordings/my/lesson-1/scene-12/step-34.audio",
     ]) {
       assert.equal(isCustomLessonRecordingKey(key), true, key);
     }
@@ -58,11 +58,32 @@ describe("custom lesson recording purge", () => {
       "personalized-story-art/user/learners/learner/lesson-recordings/parrot/a/scene-0/step-0.audio",
       "personalized-story-art/user/lesson-recordings/my",
       "personalized-story-art/user/lesson-recordings/my/",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/cover.webp",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene-0/step-0.mp3",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/extra/scene-0/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson one/scene-0/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson%ZZ/scene-0/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson%2fpart/scene-0/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene-01/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene--1/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene-9007199254740992/step-0.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene-0/step-01.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene-0/step-one.audio",
+      "personalized-story-art/user/lesson-recordings/my/lesson-1/scene-0/step-9007199254740992.audio",
       "personalized-story-art/user/lesson-recordings/my/../../story-art.webp",
       "personalized-story-art/../lesson-recordings/my/a/scene-0/step-0.audio",
+      "personalized-story-art/user%ZZ/lesson-recordings/my/lesson-1/scene-0/step-0.audio",
+      "personalized-story-art/user id/lesson-recordings/my/lesson-1/scene-0/step-0.audio",
       "personalized-story-art/user/lesson-recordings/myish/a/scene-0/step-0.audio",
       "personalized-story-art/user/learners//lesson-recordings/my/a/scene-0/step-0.audio",
+      "personalized-story-art/user/learners/learner%ZZ/lesson-recordings/my/lesson-1/scene-0/step-0.audio",
+      "personalized-story-art/user/learners/learner id/lesson-recordings/my/lesson-1/scene-0/step-0.audio",
       "personalized-story-art/user/learners/learner/lesson-recordings/my",
+      "personalized-story-art/user/learners/learner/lesson-recordings/my/lesson-1/extra/scene-0/step-0.audio",
+      "personalized-story-art/user/learners/learner/lesson-recordings/my/lesson-1/scene-0/step-0.wav",
+      "personalized-story-art/user/learners/learner/lesson-recordings/my/lesson-1/scene-0/step--1.audio",
+      "personalized-story-art/user/learners/learner/lesson-recordings/my/lesson-1/scene-one/step-0.audio",
+      "personalized-story-art/user/learners/learner/not-lesson-recordings/my/lesson-1/scene-0/step-0.audio",
       "personalized-story-art/user/stories/my/cover.webp",
       "other-prefix/user/lesson-recordings/my/a/scene-0/step-0.audio",
       null,
@@ -196,7 +217,7 @@ describe("custom lesson recording purge", () => {
         .filter(({ init }) => init.method === "DELETE")
         .map(({ url }) => url.pathname),
       [
-        "/client/v4/accounts/account%20id/r2/buckets/lesson%20bucket/objects/personalized-story-art/account/lesson-recordings/my/a/scene-0/step%200%3F.audio",
+        "/client/v4/accounts/account%20id/r2/buckets/lesson%20bucket/objects/personalized-story-art/account/lesson-recordings/my/a/scene-0/step-0.audio",
       ],
     );
     releaseFirstDelete();
@@ -212,7 +233,7 @@ describe("custom lesson recording purge", () => {
         .filter(({ init }) => init.method === "DELETE")
         .map(({ url }) => url.pathname),
       [
-        "/client/v4/accounts/account%20id/r2/buckets/lesson%20bucket/objects/personalized-story-art/account/lesson-recordings/my/a/scene-0/step%200%3F.audio",
+        "/client/v4/accounts/account%20id/r2/buckets/lesson%20bucket/objects/personalized-story-art/account/lesson-recordings/my/a/scene-0/step-0.audio",
         "/client/v4/accounts/account%20id/r2/buckets/lesson%20bucket/objects/personalized-story-art/account/learners/learner/lesson-recordings/my/a/scene-0/step-0.audio",
       ],
     );

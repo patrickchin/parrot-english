@@ -2,6 +2,8 @@ import { Buffer } from "node:buffer";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const parrotLessonPath = "/lessons/parrot/01-peppas-high-ball/scenes/1";
+const parrotLessonFinalScenePath =
+  "/lessons/parrot/01-peppas-high-ball/scenes/5";
 const tinySceneWebp = Buffer.from(
   "UklGRh4AAABXRUJQVlA4TBEAAAAvDwACAAfQ5sp1vf+BiOh/AAA=",
   "base64",
@@ -70,10 +72,11 @@ async function openParrotLesson(
   page: Page,
   scenario: string,
   microphoneScenario?: "denied",
+  lessonPath = parrotLessonPath,
 ) {
   await mockSceneArtwork(page);
   await page.goto(
-    `${parrotLessonPath}?parrotE2eLesson=${scenario}` +
+    `${lessonPath}?parrotE2eLesson=${scenario}` +
       (microphoneScenario ? `&parrotE2eMicrophone=${microphoneScenario}` : ""),
   );
   await expect(
@@ -953,6 +956,124 @@ test("ordinary story audio still pauses and resumes in place", async ({
   await expect(
     page.getByRole("status", { name: "Dolly is speaking" }),
   ).toBeVisible();
+});
+
+test("held built-in recordings do not block completion", async ({ page }) => {
+  await openParrotLesson(
+    page,
+    "upload-held",
+    undefined,
+    parrotLessonFinalScenePath,
+  );
+  await startLesson(page);
+
+  const completion = page.getByRole("region", { name: "Lesson completion" });
+  await expect(
+    completion.getByRole("heading", {
+      name: "You finished Peppa's High Ball!",
+    }),
+  ).toBeVisible();
+  await expect(completion.getByText("Saving your voices…", { exact: true })).toBeVisible();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingUploads)
+    .toBe(2);
+
+  await controlLessonMedia(page, "resolveNextUpload");
+  await controlLessonMedia(page, "resolveNextUpload");
+  await expect(
+    completion.getByText("Saving your voices…", { exact: true }),
+  ).toHaveCount(0);
+});
+
+test("built-in completion focuses Replay and restarts without another consent request", async ({
+  page,
+}) => {
+  await openParrotLesson(
+    page,
+    "device-no-consent",
+    undefined,
+    parrotLessonFinalScenePath,
+  );
+  await startLesson(page);
+
+  const replay = page.getByRole("button", { name: "Replay lesson" });
+  await expect(replay).toBeFocused();
+  await replay.click();
+  await expect(joinInPrompt(page, "Here you are!")).toBeVisible();
+
+  const snapshot = await mediaSnapshot(page);
+  expect(snapshot.consentRequests).toBe(1);
+  expect(snapshot.getUserMediaCalls).toBe(0);
+});
+
+test("failed built-in recording saves retry without repeating the lesson", async ({
+  page,
+}) => {
+  await openParrotLesson(
+    page,
+    "upload-retry-held",
+    undefined,
+    parrotLessonFinalScenePath,
+  );
+  await startLesson(page);
+
+  const completion = page.getByRole("region", { name: "Lesson completion" });
+  const retry = completion.getByRole("button", { name: "Try saving again" });
+  await expect(retry).toBeVisible();
+  expect((await mediaSnapshot(page)).uploads).toHaveLength(2);
+  expect((await mediaSnapshot(page)).uploads.every(({ outcome }) => outcome === "failed")).toBe(
+    true,
+  );
+
+  await retry.click();
+  await expect(retry).toHaveCount(0);
+  const replay = completion.getByRole("button", { name: "Replay lesson" });
+  await expect(replay).toBeFocused();
+  await expect(
+    completion.getByText("Saving your voices…", { exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingUploads)
+    .toBe(2);
+  await controlLessonMedia(page, "resolveNextUpload");
+  await controlLessonMedia(page, "resolveNextUpload");
+  await expect(
+    completion.getByText("Saving your voices…", { exact: true }),
+  ).toHaveCount(0);
+  await expect(replay).toBeFocused();
+  expect(
+    (await mediaSnapshot(page)).uploads.slice(-2).map(({ outcome }) => outcome),
+  ).toEqual(["saved", "saved"]);
+});
+
+test("completed built-in recordings keep uploading after the lesson route exits", async ({
+  page,
+}) => {
+  await openParrotLesson(
+    page,
+    "upload-held",
+    undefined,
+    parrotLessonFinalScenePath,
+  );
+  await startLesson(page);
+  await expect(
+    page.getByRole("region", { name: "Lesson completion" }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingUploads)
+    .toBe(2);
+
+  await page.getByRole("button", { name: "Back to lesson list" }).click();
+  await expect(page).toHaveURL(/\/lessons$/);
+  await controlLessonMedia(page, "resolveNextUpload");
+  await controlLessonMedia(page, "resolveNextUpload");
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingUploads)
+    .toBe(0);
+  expect((await mediaSnapshot(page)).uploads.map(({ outcome }) => outcome)).toEqual([
+    "saved",
+    "saved",
+  ]);
 });
 
 test("a server recording-disabled result prevents later microphone capture", async ({

@@ -3,6 +3,9 @@
 import { pathToFileURL } from "node:url";
 
 const LIST_PREFIX = "personalized-story-art/";
+const CUSTOM_LESSON_RECORDING_KEY = new RegExp(
+  "^personalized-story-art/([^/]+)/(?:lesson-recordings/my|learners/([^/]+)/lesson-recordings/my)/([^/]+)/scene-(0|[1-9]\\d*)/step-(0|[1-9]\\d*)\\.audio$",
+);
 const HELP = `Usage: npm run purge:custom-lesson-recordings -- --bucket <name> [--execute]
 
 Lists only these exact custom-recording key shapes:
@@ -20,9 +23,19 @@ export function isCustomLessonRecordingKey(key) {
   ) {
     return false;
   }
-  return /^personalized-story-art\/[^/]+\/(?:lesson-recordings\/my|learners\/[^/]+\/lesson-recordings\/my)\/.+$/.test(
-    key,
-  );
+
+  const match = CUSTOM_LESSON_RECORDING_KEY.exec(key);
+  if (!match) return false;
+
+  try {
+    return [match[1], match[2], match[3]]
+      .filter((segment) => segment !== undefined)
+      .every((segment) => encodeURIComponent(decodeURIComponent(segment)) === segment) &&
+      Number.isSafeInteger(Number(match[4])) &&
+      Number.isSafeInteger(Number(match[5]));
+  } catch {
+    return false;
+  }
 }
 
 function parseArguments(argv) {
