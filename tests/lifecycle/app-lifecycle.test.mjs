@@ -2345,16 +2345,24 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           name: "Bob",
           profileStatus: "in_progress",
         },
+        {
+          createdAt: "2026-09-01T08:01:00.000Z",
+          deletionPending: false,
+          id: "learner-mary",
+          name: "Mary",
+          profileStatus: "completed",
+        },
       ],
     };
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/learner-profile" && init.method === "GET") {
+        const isMaryActive = roster.activeProfileId === "learner-mary";
         return json(
           fullLearnerProfileState({
             profile: {
               ...fullLearnerProfileState().profile,
-              id: "learner-bob",
-              name: "Bob",
+              id: isMaryActive ? "learner-mary" : "learner-bob",
+              name: isMaryActive ? "Mary" : "Bob",
             },
           }),
         );
@@ -2363,10 +2371,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         return json(roster);
       }
       if (
-        path === "/api/learner-profiles/learner-bob/active" &&
+        path === "/api/learner-profiles/learner-mary/active" &&
         init.method === "PUT"
       ) {
-        operations.push("select:learner-bob");
+        operations.push("select:learner-mary");
+        roster.activeProfileId = "learner-mary";
         return json(roster);
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -2397,12 +2406,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(document.querySelector('[role="dialog"]'), null);
 
     await click(opener);
-    await waitFor(() => button("Start learner mode as Bob"));
-    await click(button("Start learner mode as Bob"));
+    await waitFor(() => button("Start learner mode as Mary"));
+    await click(button("Start learner mode as Mary"));
     await waitFor(() => {
       assert.equal(document.querySelector('[role="dialog"]'), null);
+      assert.equal(output("Gate account experience").textContent, "Mary");
       assert.deepEqual(operations, [
-        "select:learner-bob",
+        "select:learner-mary",
         "before-navigate",
       ]);
     });
