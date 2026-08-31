@@ -2652,7 +2652,7 @@ test("locked 26-row targeted security matrix handles all 52 requests before pars
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
   await expect(
-    page.getByRole("heading", { name: "Tap a picture." }),
+    page.getByRole("heading", { name: "Parrot English" }),
   ).toBeVisible();
 
   await setGuardianAccess(page, "guardian");

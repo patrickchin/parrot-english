@@ -21,7 +21,7 @@ export function AccountPrivacyPage() {
       <RouteHeader>
         <HeaderLink
           aria-label="Back to Guardian dashboard"
-          icon={<ChevronLeft strokeWidth={3} />}
+          icon={<ChevronLeft />}
           to={getGuardianPath()}
         >
           Back to Guardian dashboard

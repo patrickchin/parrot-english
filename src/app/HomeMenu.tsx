@@ -84,7 +84,7 @@ export function HomeMenu() {
       <section className="mx-auto grid w-full max-w-7xl gap-5 short:gap-2 short-wide:!gap-2 md:gap-9">
         <header className="mx-auto max-w-3xl text-center">
           <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink short:!text-[2rem] short-wide:!text-[2rem] min-[360px]:text-4xl sm:text-5xl lg:text-7xl">
-            Tap a picture.
+            Parrot English
           </h1>
         </header>
 

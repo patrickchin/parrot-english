@@ -485,6 +485,9 @@ test("the learner shelf opens one recommended shelf and switches shelves on dema
 
   await expect(shelfPicker.getByRole("tab")).toHaveCount(5);
   await expect(levelOne).toHaveAttribute("aria-selected", "true");
+  await expect(
+    shelf.getByText("Level 1 · Words & pictures", { exact: true }),
+  ).toHaveCount(1);
   await expect(shelf.getByRole("tabpanel")).toHaveCount(1);
   await expect(
     shelf.getByRole("link", { name: /^Listen to story:/ }),
@@ -569,13 +572,13 @@ for (const viewport of [
     const shelf = page.getByRole("region", { name: "Read-aloud stories" });
     const headings = [
       page.getByRole("heading", { level: 1, name: "Pick a story" }),
-      shelf.getByRole("heading", {
-        level: 2,
-        name: "Level 1 · Words & pictures",
-      }),
-      shelf.getByRole("heading", { level: 3 }).first(),
+      shelf
+        .getByRole("article")
+        .first()
+        .getByRole("heading", { level: 2 }),
     ];
     await Promise.all(headings.map((heading) => expect(heading).toBeVisible()));
+    await expect(shelf.getByRole("heading", { level: 3 })).toHaveCount(0);
     await expect(headings[0]).toBeFocused();
     expect(
       await headings[0].evaluate(
@@ -591,12 +594,10 @@ for (const viewport of [
       ),
     );
     expect(fontSizes[0]).toBeGreaterThan(fontSizes[1]);
-    expect(fontSizes[1]).toBeGreaterThan(fontSizes[2]);
 
     const boxes = await Promise.all(headings.map((heading) => heading.boundingBox()));
     expect(boxes.every(Boolean)).toBe(true);
     expect(boxes[0]!.y + boxes[0]!.height).toBeLessThan(boxes[1]!.y);
-    expect(boxes[1]!.y + boxes[1]!.height).toBeLessThan(boxes[2]!.y);
   });
 }
 

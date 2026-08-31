@@ -101,7 +101,7 @@ test("home menu prioritizes the five learner activities", () => {
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
-  assert.match(html, /Tap a picture\./);
+  assert.match(html, /<h1[^>]*>Parrot English<\/h1>/);
   assert.match(html, />Lessons</);
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);

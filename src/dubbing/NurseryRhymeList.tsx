@@ -7,7 +7,7 @@ export function NurseryRhymeList() {
   return (
     <>
       <RouteHeader>
-        <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
+        <HeaderLink aria-label="Back to home" icon={<ChevronLeft />} to="/">
           Back home
         </HeaderLink>
       </RouteHeader>

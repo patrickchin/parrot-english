@@ -843,13 +843,17 @@ export function DubStudio({
           <HeaderButton
             aria-label="Back to full video"
             disabled={isUnsafeOperation(state.operation) || state.saveRecovery === "save"}
-            icon={<ChevronLeft strokeWidth={3.2} />}
+            icon={<ChevronLeft />}
             onClick={handleBack}
           >
             Full video
           </HeaderButton>
         ) : (
-          <HeaderLink aria-label="Back to Nursery rhymes" icon={<ChevronLeft strokeWidth={3.2} />} to={getNurseryRhymesPath()}>
+          <HeaderLink
+            aria-label="Back to Nursery rhymes"
+            icon={<ChevronLeft />}
+            to={getNurseryRhymesPath()}
+          >
             Nursery rhymes
           </HeaderLink>
         )}

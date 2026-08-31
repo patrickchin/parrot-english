@@ -1380,3 +1380,26 @@ test("desktop header controls share one rendered chrome and focus outline", asyn
 
   expect(outlines[0]).toEqual(outlines[1]);
 });
+
+test("shared route-header icons render at one stroke weight", async ({ page }) => {
+  const routes = [
+    "/stories",
+    "/dubs",
+    guardianPath("/guardian/account"),
+  ];
+  const strokeWidths = [];
+
+  for (const path of routes) {
+    await page.goto(path);
+    const icon = page
+      .getByRole("navigation", { name: "Page navigation" })
+      .locator("svg")
+      .first();
+    await expect(icon).toBeVisible();
+    strokeWidths.push(
+      await icon.evaluate((element) => getComputedStyle(element).strokeWidth),
+    );
+  }
+
+  expect(strokeWidths).toEqual(["3px", "3px", "3px"]);
+});

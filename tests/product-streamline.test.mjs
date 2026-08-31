@@ -53,8 +53,8 @@ test("home gives children five clear, working learning choices", () => {
     "/word-game",
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
-  assert.match(html, /Tap a picture\./i);
-  assert.doesNotMatch(html, />Parrot English<\/p>/);
+  assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
+  assert.doesNotMatch(html, /Tap a picture\.|>Parrot English<\/p>/i);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
   assert.match(html, /Nursery rhymes/);
   assert.match(html, /Word game/);
@@ -225,7 +225,12 @@ test("story shelf presents one curated shelf at a time without research controls
     visibleText,
     /Story time|Tap a picture\. I can read it to you\.|Look\. Listen\. Say it\.|Very short\. One idea on each page\.|The same words come back\.|A little story with short lines\.|A longer story with more words\.|Longer stories with saved narration\./,
   );
-  assert.deepEqual(shelfHeadings, ["Level 3 · Short stories"]);
+  assert.deepEqual(
+    shelfHeadings,
+    STORIES.filter(({ level }) => level === "tiny-stories").map(
+      ({ title }) => title,
+    ),
+  );
   assert.equal((html.match(/role="tab"/g) ?? []).length, 5);
   assert.equal((html.match(/aria-selected="true"/g) ?? []).length, 1);
   for (const label of [

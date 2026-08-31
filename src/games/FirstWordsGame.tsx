@@ -326,19 +326,11 @@ export function FirstWordsGame() {
                   ) : null}
                 </>
               ) : (
-                <div className="grid justify-items-center gap-4 text-center">
+                <div className="grid justify-items-center gap-5 text-center">
                   <Volume2
                     aria-hidden="true"
-                    className="size-20 text-brand-pink lg:size-28"
+                    className="size-16 text-brand-pink lg:size-20"
                   />
-                  <div className="grid gap-2">
-                    <h2 className="m-0 text-3xl text-brand-ink sm:text-4xl lg:text-5xl">
-                      Ready to listen?
-                    </h2>
-                    <p className="m-0 text-lg font-black text-brand-blue lg:text-xl">
-                      Hear the question and choices.
-                    </p>
-                  </div>
                   <ActionButton
                     onClick={startGame}
                     size="hero"

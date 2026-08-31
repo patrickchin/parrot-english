@@ -106,8 +106,11 @@ export function HeaderButton({
   variant?: "navy" | "surface";
 }) {
   return (
-    <ActionButton size="header" variant={variant} {...props}>
-      <span aria-hidden="true" className="size-6 shrink-0">
+    <ActionButton frame="white" size="header" variant={variant} {...props}>
+      <span
+        aria-hidden="true"
+        className="size-6 shrink-0 [&_svg]:stroke-[3]"
+      >
         {icon}
       </span>
       <HeaderLabel>{children}</HeaderLabel>
@@ -126,8 +129,11 @@ export function HeaderLink({
   variant?: "navy" | "surface";
 }) {
   return (
-    <ActionLink size="header" variant={variant} {...props}>
-      <span aria-hidden="true" className="size-6 shrink-0">
+    <ActionLink frame="white" size="header" variant={variant} {...props}>
+      <span
+        aria-hidden="true"
+        className="size-6 shrink-0 [&_svg]:stroke-[3]"
+      >
         {icon}
       </span>
       <HeaderLabel>{children}</HeaderLabel>

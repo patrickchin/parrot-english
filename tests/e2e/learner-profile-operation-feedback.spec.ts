@@ -582,7 +582,7 @@ test("successful skips hand focus to the next question or route", async ({
   await settleOperation(page, "skipForNow");
   await expect(page).toHaveURL(/\/$/);
   await expect(
-    page.getByRole("heading", { name: "Tap a picture." }),
+    page.getByRole("heading", { name: "Parrot English" }),
   ).toBeFocused();
 });
 
