@@ -104,6 +104,11 @@ async function stopAndSave(page: Page) {
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
 }
 
+async function expectSavedTake(page: Page, uploadCount: number) {
+  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toHaveLength(uploadCount);
+}
+
 async function dubStoreSnapshot(page: Page): Promise<DubStoreSnapshot> {
   return page.evaluate(() => {
     const store = (
@@ -947,7 +952,7 @@ test("recording shows elapsed time, saves, and leaves Next in its fixed action s
   const liveWaveform = page.getByRole("img", { name: "Your live recording waveform" });
   expectSameActionSlot(await visibleBox(liveWaveform), await visibleBox(guideWaveform));
   await expect(page.getByText(/get ready|3…|2…|1…/i)).toHaveCount(0);
-  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expectSavedTake(page, 1);
 
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play my recording" })).toBeVisible();
@@ -1291,10 +1296,9 @@ test("automatically stops and saves at the selected four-second phrase", async (
   await expect(page.getByRole("progressbar", { name: "Recording time" })).toHaveAttribute("aria-valuemax", "4000");
   await expect(page.getByRole("timer", { name: "Recording duration" }))
     .toContainText("Recording with melody");
+  await expectSavedTake(page, 1);
   await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
     .toBeGreaterThan(0);
-  await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible({ timeout: 6_000 });
-  await expect.poll(async () => (await dubStoreSnapshot(page)).uploads).toHaveLength(1);
 });
 
 test("Old MacDonald records on its two- and eight-second phrase windows", async ({ page }) => {
@@ -1305,14 +1309,18 @@ test("Old MacDonald records on its two- and eight-second phrase windows", async 
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("progressbar", { name: "Recording time" }))
     .toHaveAttribute("aria-valuemax", "8000");
-  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expectSavedTake(page, 1);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
+    .toBeGreaterThan(0);
   await page.getByRole("button", { name: "Next line" }).click();
   await page.getByRole("button", { name: "Next line" }).click();
   await expect(page.getByText("Melody length: 0:02", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("progressbar", { name: "Recording time" }))
     .toHaveAttribute("aria-valuemax", "2000");
-  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expectSavedTake(page, 2);
+  await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
+    .toBeGreaterThan(0);
 });
 
 for (const definition of DUB_DEFINITIONS) {
@@ -1322,9 +1330,9 @@ for (const definition of DUB_DEFINITIONS) {
     await page.getByRole("button", { name: /^Scene 1,/ }).click();
     await expect(page.getByText(/^Melody length: 0:/)).toBeVisible();
     await page.getByRole("button", { name: "Record line" }).click();
+    await expectSavedTake(page, 1);
     await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
       .toBeGreaterThan(0);
-    await page.getByRole("button", { name: "Stop recording" }).click();
   });
 }
 
