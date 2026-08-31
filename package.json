@@ -32,6 +32,8 @@
     "verify:backgrounds": "node scripts/verify-background-media.mjs",
     "purge:custom-lesson-recordings": "node scripts/purge-custom-lesson-recordings.mjs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
+    "generate:rhyme-catalog": "node scripts/generate-rhyme-catalog.mjs",
+    "check:rhyme-catalog": "node scripts/generate-rhyme-catalog.mjs --check",
     "start": "wrangler dev --local --port 3000",
     "preview": "vite preview --host 0.0.0.0",
     "test:browser": "playwright test",
