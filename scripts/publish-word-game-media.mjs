@@ -163,20 +163,20 @@ export async function runWordGameMediaPublisher({
   const { apply } = parseArguments(args);
   const manifest = await readManifest(cwd);
   const plan = createWordGameMediaPublishPlan(manifest);
-  const prepared = await prepareWordGameMediaUploads(plan, { cwd });
 
   if (!apply) {
     writeOutput(
-      `Dry run: ${prepared.publicOutputs.length} public and ${prepared.privateUploads.length} private word-game objects planned (${prepared.uploads.length} total).\n`,
+      `Dry run: ${plan.publicOutputs.length} public and ${plan.privateObjects.length} private word-game objects planned (${plan.publicOutputs.length + plan.privateObjects.length} total).\n`,
     );
     return {
       applied: false,
-      privateCount: prepared.privateUploads.length,
-      publicCount: prepared.publicOutputs.length,
-      uploadCount: prepared.uploads.length,
+      privateCount: plan.privateObjects.length,
+      publicCount: plan.publicOutputs.length,
+      uploadCount: plan.publicOutputs.length + plan.privateObjects.length,
     };
   }
 
+  const prepared = await prepareWordGameMediaUploads(plan, { cwd });
   const mediaOrigin = requireMediaOrigin(env);
   const publicBucket = requireEnvironmentValue(
     env,

@@ -14,7 +14,6 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { afterEach, describe, it } from "node:test";
 import sharp from "sharp";
 
@@ -27,7 +26,6 @@ const wordGamePublisher = await import(
 const manifest = JSON.parse(
   await readFile(new URL("../content/media/word-games-v8.json", import.meta.url)),
 );
-const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const temporaryDirectories = [];
 const EXPECTED_ITEMS = Object.freeze({
   animals: ["cat", "dog", "bird", "fish", "duck", "frog"],
@@ -37,8 +35,8 @@ const EXPECTED_ITEMS = Object.freeze({
   feelings: ["happy", "sad", "angry", "sleepy", "surprised", "silly"],
 });
 
-function cloneManifest() {
-  return structuredClone(manifest);
+function cloneManifest(value = manifest) {
+  return structuredClone(value);
 }
 
 function sha256(bytes) {
@@ -74,22 +72,82 @@ function applyEnvironment(overrides = {}) {
   };
 }
 
+async function createManifestOnlyFixture() {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), "parrot-word-game-media-"));
+  temporaryDirectories.push(cwd);
+  await mkdir(path.join(cwd, "content/media"), { recursive: true });
+  await writeFile(
+    path.join(cwd, "content/media/word-games-v8.json"),
+    JSON.stringify(manifest),
+  );
+  return cwd;
+}
+
+async function writeSyntheticImage(cwd, filename, format, width, height, index) {
+  await mkdir(path.dirname(path.join(cwd, filename)), { recursive: true });
+  const bytes = await sharp({
+    create: {
+      background: {
+        b: (index * 53) % 256,
+        g: (index * 37) % 256,
+        r: (index * 19) % 256,
+      },
+      channels: 3,
+      height,
+      width,
+    },
+  })[format]().toBuffer();
+  await writeFile(path.join(cwd, filename), bytes);
+  return bytes;
+}
+
 async function createPublishFixture() {
   const cwd = await mkdtemp(path.join(os.tmpdir(), "parrot-word-game-media-"));
   temporaryDirectories.push(cwd);
-  await Promise.all([
-    cp(
-      path.join(repoRoot, "tmp/imagegen/word-games/v8"),
-      path.join(cwd, "tmp/imagegen/word-games/v8"),
-      { recursive: true },
-    ),
-    cp(
-      path.join(repoRoot, "content/media/prompts/word-games-v8"),
-      path.join(cwd, "content/media/prompts/word-games-v8"),
-      { recursive: true },
-    ),
-  ]);
-  return cwd;
+  const fixtureManifest = cloneManifest();
+  await cp(
+    new URL("../content/media/prompts/word-games-v8", import.meta.url),
+    path.join(cwd, "content/media/prompts/word-games-v8"),
+    { recursive: true },
+  );
+  await Promise.all(
+    fixtureManifest.topics.flatMap((topic, topicIndex) => [
+      writeSyntheticImage(
+        cwd,
+        topic.sourceSheet.ignoredPath,
+        "png",
+        1536,
+        1024,
+        topicIndex,
+      ).then((bytes) => {
+        Object.assign(topic.sourceSheet, {
+          bytes: bytes.length,
+          sha256: sha256(bytes),
+        });
+      }),
+      ...topic.items.map((item, itemIndex) =>
+        writeSyntheticImage(
+          cwd,
+          item.ignoredOutputPath,
+          "webp",
+          512,
+          512,
+          topicIndex * topic.items.length + itemIndex,
+        ).then((bytes) => {
+          Object.assign(item.output, {
+            bytes: bytes.length,
+            sha256: sha256(bytes),
+          });
+        }),
+      ),
+    ]),
+  );
+  await mkdir(path.join(cwd, "content/media"), { recursive: true });
+  await writeFile(
+    path.join(cwd, "content/media/word-games-v8.json"),
+    JSON.stringify(fixtureManifest),
+  );
+  return { cwd, manifest: fixtureManifest };
 }
 
 afterEach(async () => {
@@ -268,17 +326,18 @@ describe("word-game media publishing", () => {
     }
   });
 
-  it("prepares the accepted ignored cards verbatim and private provenance bytes", async () => {
-    const plan = wordGameMedia.createWordGameMediaPublishPlan(manifest);
+  it("prepares pinned fixture cards and private provenance bytes", async () => {
+    const fixture = await createPublishFixture();
+    const plan = wordGameMedia.createWordGameMediaPublishPlan(fixture.manifest);
     const prepared = await wordGameMedia.prepareWordGameMediaUploads(plan, {
-      cwd: repoRoot,
+      cwd: fixture.cwd,
     });
 
     assert.equal(prepared.publicOutputs.length, 30);
     assert.equal(prepared.privateUploads.length, 10);
     assert.equal(prepared.uploads.length, 40);
     for (const output of prepared.publicOutputs) {
-      const accepted = await readFile(path.join(repoRoot, output.file));
+      const accepted = await readFile(path.join(fixture.cwd, output.file));
       assert.deepEqual(output.bytes, accepted);
       assert.equal(output.sha256, output.sha256Expected);
       assert.equal(output.bytes.length, output.bytesExpected);
@@ -295,6 +354,7 @@ describe("word-game media publishing", () => {
   });
 
   it("rejects source, prompt, and accepted card byte/hash drift", async () => {
+    const fixture = await createPublishFixture();
     for (const mutate of [
       (value) => {
         value.topics[0].sourceSheet.sha256 = "0".repeat(64);
@@ -312,18 +372,19 @@ describe("word-game media publishing", () => {
         value.topics[0].items[0].output.sha256 = "0".repeat(64);
       },
     ]) {
-      const value = cloneManifest();
+      const value = cloneManifest(fixture.manifest);
       mutate(value);
       const plan = wordGameMedia.createWordGameMediaPublishPlan(value);
       await assert.rejects(
-        wordGameMedia.prepareWordGameMediaUploads(plan, { cwd: repoRoot }),
+        wordGameMedia.prepareWordGameMediaUploads(plan, { cwd: fixture.cwd }),
         /bytes|sha-?256|hash/i,
       );
     }
   });
 
   it("rejects decoded source or WebP dimension mismatches", async () => {
-    const cwd = await createPublishFixture();
+    const fixture = await createPublishFixture();
+    const { cwd } = fixture;
     const sourcePath = path.join(
       cwd,
       "tmp/imagegen/word-games/v8/sheets/animals.png",
@@ -336,8 +397,9 @@ describe("word-game media publishing", () => {
         width: 100,
       },
     }).png().toBuffer();
+    const originalSourceBytes = await readFile(sourcePath);
     await writeFile(sourcePath, sourceBytes);
-    const badSource = cloneManifest();
+    const badSource = cloneManifest(fixture.manifest);
     Object.assign(badSource.topics[0].sourceSheet, {
       bytes: sourceBytes.length,
       sha256: sha256(sourceBytes),
@@ -362,14 +424,9 @@ describe("word-game media publishing", () => {
         width: 256,
       },
     }).webp().toBuffer();
-    await writeFile(
-      sourcePath,
-      await readFile(
-        path.join(repoRoot, manifest.topics[0].sourceSheet.ignoredPath),
-      ),
-    );
+    await writeFile(sourcePath, originalSourceBytes);
     await writeFile(cardPath, cardBytes);
-    const badCard = cloneManifest();
+    const badCard = cloneManifest(fixture.manifest);
     Object.assign(badCard.topics[0].items[0].output, {
       bytes: cardBytes.length,
       sha256: sha256(cardBytes),
@@ -389,7 +446,8 @@ describe("word-game media publishing", () => {
       "tmp/imagegen/word-games/v8/cards/animals/cat.webp",
       "content/media/prompts/word-games-v8/animals.json",
     ]) {
-      const cwd = await createPublishFixture();
+      const fixture = await createPublishFixture();
+      const { cwd } = fixture;
       const filename = path.join(cwd, relativeFile);
       const outside = path.join(cwd, "outside-file");
       await writeFile(outside, await readFile(filename));
@@ -397,7 +455,7 @@ describe("word-game media publishing", () => {
       await symlink(outside, filename);
       await assert.rejects(
         wordGameMedia.prepareWordGameMediaUploads(
-          wordGameMedia.createWordGameMediaPublishPlan(manifest),
+          wordGameMedia.createWordGameMediaPublishPlan(fixture.manifest),
           { cwd },
         ),
         /resolve inside|symlink|beneath/i,
@@ -407,17 +465,18 @@ describe("word-game media publishing", () => {
   });
 
   it("rejects staging and prompt roots that are symlinks outside the repository", async () => {
-    for (const [relativeRoot, outsideRoot] of [
-      ["tmp/imagegen/word-games/v8", path.join(repoRoot, "tmp/imagegen/word-games/v8")],
-      ["content/media/prompts/word-games-v8", path.join(repoRoot, "content/media/prompts/word-games-v8")],
+    for (const relativeRoot of [
+      "tmp/imagegen/word-games/v8",
+      "content/media/prompts/word-games-v8",
     ]) {
-      const cwd = await createPublishFixture();
+      const fixture = await createPublishFixture();
+      const { cwd } = fixture;
       const root = path.join(cwd, relativeRoot);
       await rm(root, { recursive: true });
-      await symlink(outsideRoot, root, "dir");
+      await symlink(path.dirname(cwd), root, "dir");
       await assert.rejects(
         wordGameMedia.prepareWordGameMediaUploads(
-          wordGameMedia.createWordGameMediaPublishPlan(manifest),
+          wordGameMedia.createWordGameMediaPublishPlan(fixture.manifest),
           { cwd },
         ),
         /root.*repository|repository.*root|resolve inside/i,
@@ -427,7 +486,8 @@ describe("word-game media publishing", () => {
   });
 
   it("rejects prompts whose JSON provenance does not match the topic", async () => {
-    const cwd = await createPublishFixture();
+    const fixture = await createPublishFixture();
+    const { cwd } = fixture;
     await mkdir(path.join(cwd, "content/media/prompts/word-games-v8"), {
       recursive: true,
     });
@@ -438,7 +498,7 @@ describe("word-game media publishing", () => {
       path.join(cwd, "content/media/prompts/word-games-v8/animals.json"),
       promptBytes,
     );
-    const changed = cloneManifest();
+    const changed = cloneManifest(fixture.manifest);
     changed.topics[0].promptBytes = promptBytes.length;
     changed.topics[0].promptSha256 = sha256(promptBytes);
     await assert.rejects(
@@ -451,9 +511,10 @@ describe("word-game media publishing", () => {
   });
 
   it("verifies cache-busted delivery bytes, headers, decode, hash, and dimensions", async () => {
+    const fixture = await createPublishFixture();
     const prepared = await wordGameMedia.prepareWordGameMediaUploads(
-      wordGameMedia.createWordGameMediaPublishPlan(manifest),
-      { cwd: repoRoot },
+      wordGameMedia.createWordGameMediaPublishPlan(fixture.manifest),
+      { cwd: fixture.cwd },
     );
     const requests = [];
     const verification = await wordGameMedia.verifyWordGameMediaDelivery(
@@ -486,9 +547,10 @@ describe("word-game media publishing", () => {
   });
 
   it("rejects every delivery failure mode", async () => {
+    const fixture = await createPublishFixture();
     const prepared = await wordGameMedia.prepareWordGameMediaUploads(
-      wordGameMedia.createWordGameMediaPublishPlan(manifest),
-      { cwd: repoRoot },
+      wordGameMedia.createWordGameMediaPublishPlan(fixture.manifest),
+      { cwd: fixture.cwd },
     );
     const output = prepared.publicOutputs[0];
     const one = { publicOutputs: [output] };
@@ -534,11 +596,12 @@ describe("word-game media publishing", () => {
   });
 
   it("keeps default and explicit dry runs offline and prints exact counts", async () => {
+    const cwd = await createManifestOnlyFixture();
     for (const args of [[], ["--dry-run"]]) {
       const output = [];
       const result = await wordGamePublisher.runWordGameMediaPublisher({
         args,
-        cwd: repoRoot,
+        cwd,
         env: new Proxy({}, { get() { throw new Error("env must not be read"); } }),
         fetch: async () => { throw new Error("network must not be used"); },
         runCommand: () => { throw new Error("R2 must not be used"); },
@@ -555,6 +618,7 @@ describe("word-game media publishing", () => {
   });
 
   it("requires exactly the three media environment settings only for apply", async () => {
+    const fixture = await createPublishFixture();
     for (const name of [
       "PARROT_MEDIA_ORIGIN",
       "PARROT_MEDIA_PUBLIC_BUCKET",
@@ -565,7 +629,7 @@ describe("word-game media publishing", () => {
       await assert.rejects(
         wordGamePublisher.runWordGameMediaPublisher({
           args: ["--apply"],
-          cwd: repoRoot,
+          cwd: fixture.cwd,
           env,
           fetch: async () => { throw new Error("must not fetch"); },
           runCommand: () => { throw new Error("must not run R2"); },
@@ -577,6 +641,7 @@ describe("word-game media publishing", () => {
   });
 
   it("preflights every R2 key and refuses existing or unknown objects without puts", async () => {
+    const fixture = await createPublishFixture();
     for (const firstResult of [
       successfulCommand(),
       { status: 1, stderr: "permission denied", stdout: "" },
@@ -588,7 +653,7 @@ describe("word-game media publishing", () => {
         wordGamePublisher.runWordGameMediaPublisher({
           args: ["--apply"],
           cacheBust: "fixture",
-          cwd: repoRoot,
+          cwd: fixture.cwd,
           env: applyEnvironment(),
           fetch: async () => new Response(null, { status: 404 }),
           runCommand: (_command, args) => {
@@ -609,13 +674,14 @@ describe("word-game media publishing", () => {
   });
 
   it("preflights all 30 cache-busted origin URLs and refuses any non-absent response", async () => {
+    const fixture = await createPublishFixture();
     const calls = [];
     const requests = [];
     await assert.rejects(
       wordGamePublisher.runWordGameMediaPublisher({
         args: ["--apply"],
         cacheBust: "fixture",
-        cwd: repoRoot,
+        cwd: fixture.cwd,
         env: applyEnvironment(),
         fetch: async (url, options) => {
           requests.push({ options, url: new URL(url) });
@@ -646,16 +712,17 @@ describe("word-game media publishing", () => {
   });
 
   it("uploads private provenance and public cards with the exact buckets and headers", async () => {
+    const fixture = await createPublishFixture();
     const prepared = await wordGameMedia.prepareWordGameMediaUploads(
-      wordGameMedia.createWordGameMediaPublishPlan(manifest),
-      { cwd: repoRoot },
+      wordGameMedia.createWordGameMediaPublishPlan(fixture.manifest),
+      { cwd: fixture.cwd },
     );
     const events = [];
     const commands = [];
     const result = await wordGamePublisher.runWordGameMediaPublisher({
       args: ["--apply"],
       cacheBust: "fixture",
-      cwd: repoRoot,
+      cwd: fixture.cwd,
       env: applyEnvironment(),
       fetch: async (url) => {
         const parsed = new URL(url);
@@ -721,20 +788,21 @@ describe("word-game media publishing", () => {
         expectedArgs.push("--cache-control", upload.cacheControl);
       }
       assert.equal(call.command, "npm");
-      assert.equal(call.options.cwd, repoRoot);
+      assert.equal(call.options.cwd, fixture.cwd);
       assert.deepEqual(call.args, expectedArgs);
       assert.deepEqual(call.options.input, upload.bytes);
     }
   });
 
   it("stops on a failed immutable upload without retrying or verifying", async () => {
+    const fixture = await createPublishFixture();
     let puts = 0;
     let originRequests = 0;
     await assert.rejects(
       wordGamePublisher.runWordGameMediaPublisher({
         args: ["--apply"],
         cacheBust: "fixture",
-        cwd: repoRoot,
+        cwd: fixture.cwd,
         env: applyEnvironment(),
         fetch: async () => {
           originRequests += 1;
