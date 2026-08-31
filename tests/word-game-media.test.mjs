@@ -2,6 +2,7 @@
 
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { EventEmitter } from "node:events";
 import {
   cp,
   mkdtemp,
@@ -63,6 +64,16 @@ function missingObject() {
 
 function successfulCommand() {
   return { status: 0, stderr: "", stdout: "" };
+}
+
+function fakeHelperChild() {
+  const child = new EventEmitter();
+  child.exitCode = null;
+  child.signalCode = null;
+  child.stderr = new EventEmitter();
+  child.stdout = new EventEmitter();
+  child.kill = () => true;
+  return child;
 }
 
 function applyEnvironment(overrides = {}) {
@@ -747,6 +758,77 @@ describe("word-game media publishing", () => {
     assert.equal(originRequests, 30);
   });
 
+  it("retains a failed immutable upload when helper cleanup also fails", async () => {
+    let closes = 0;
+    let puts = 0;
+    let originRequests = 0;
+    await assert.rejects(
+      wordGamePublisher.runWordGameMediaPublisher({
+        args: ["--apply"],
+        cacheBust: "fixture",
+        createUploader: async () => ({
+          close: async () => {
+            closes += 1;
+            throw new Error("cleanup failed");
+          },
+          put: async () => {
+            puts += 1;
+            if (puts === 3) throw new Error("upload failed");
+          },
+        }),
+        cwd: repoRoot,
+        env: applyEnvironment(),
+        fetch: async () => {
+          originRequests += 1;
+          return new Response(null, { status: 404 });
+        },
+        runCommand: () => missingObject(),
+        writeOutput: () => {},
+      }),
+      /upload failed.*do not retry.*cleanup failed/i,
+    );
+    assert.equal(puts, 3);
+    assert.equal(closes, 1);
+    assert.equal(originRequests, 30);
+  });
+
+  it("verifies delivery after all puts even when helper cleanup fails", async () => {
+    const prepared = await wordGameMedia.prepareWordGameMediaUploads(
+      wordGameMedia.createWordGameMediaPublishPlan(manifest),
+      { cwd: repoRoot },
+    );
+    let originRequests = 0;
+    let puts = 0;
+    await assert.rejects(
+      wordGamePublisher.runWordGameMediaPublisher({
+        args: ["--apply"],
+        cacheBust: "fixture",
+        createUploader: async () => ({
+          close: async () => { throw new Error("cleanup failed"); },
+          put: async () => { puts += 1; },
+        }),
+        cwd: repoRoot,
+        env: applyEnvironment(),
+        fetch: async (url) => {
+          originRequests += 1;
+          const parsed = new URL(url);
+          if (parsed.searchParams.get("parrot-word-game-media-check") === "preflight-fixture") {
+            return new Response(null, { status: 404 });
+          }
+          const output = prepared.publicOutputs.find(
+            ({ key }) => key === parsed.pathname.slice(1),
+          );
+          return deliveryResponse(output.bytes);
+        },
+        runCommand: () => missingObject(),
+        writeOutput: () => {},
+      }),
+      /40 uploads completed.*30 delivery objects verified.*cleanup failed/i,
+    );
+    assert.equal(puts, 40);
+    assert.equal(originRequests, 60);
+  });
+
   it("uses an atomic R2 create-only condition and refuses a concurrent creation", async () => {
     const calls = [];
     const stored = new Map();
@@ -833,6 +915,135 @@ describe("word-game media publishing", () => {
       assert.equal(response.status >= 400, true);
     }
     assert.equal(puts, 0);
+  });
+
+  it("builds an isolated two-binding remote helper configuration", () => {
+    const definition = wordGamePublisher.createAtomicR2HelperDefinition({
+      publicBucket: "public-media",
+      sourceBucket: "private-source",
+      workerFile: "/private/helper/worker.mjs",
+      workerName: "parrot-wg-fixture",
+    });
+
+    assert.deepEqual(definition.config.r2_buckets, [
+      { binding: "PUBLIC_BUCKET", bucket_name: "public-media", remote: true },
+      { binding: "SOURCE_BUCKET", bucket_name: "private-source", remote: true },
+    ]);
+    assert.equal(definition.config.vars, undefined);
+    assert.equal(JSON.stringify(definition.config).includes("capability"), false);
+    assert.equal(definition.config.main, "/private/helper/worker.mjs");
+    assert.match(definition.source, /etagDoesNotMatch:\s*"\*"/);
+  });
+
+  it("removes the temporary helper directory when startup fails", async () => {
+    const events = [];
+    await assert.rejects(
+      wordGamePublisher.startAtomicR2Uploader(
+        {
+          cwd: repoRoot,
+          publicBucket: "public-media",
+          sourceBucket: "private-source",
+        },
+        {
+          makeTemporaryDirectory: async () => "/private/helper",
+          removeDirectory: async (directory) => { events.push(["remove", directory]); },
+          reservePort: async () => 12345,
+          write: async (filename, contents) => {
+            events.push(["write", filename, String(contents).includes("capability")]);
+            if (filename.endsWith("wrangler.json")) throw new Error("config write failed");
+          },
+        },
+      ),
+      /config write failed/i,
+    );
+    assert.deepEqual(events.map(([event]) => event), ["write", "write", "remove"]);
+    assert.deepEqual(events.at(-1), ["remove", "/private/helper"]);
+  });
+
+  it("binds the helper to loopback and attempts stop plus removal on close", async () => {
+    const cleanup = [];
+    const launches = [];
+    const writes = new Map();
+    const uploader = await wordGamePublisher.startAtomicR2Uploader(
+      {
+        cwd: repoRoot,
+        publicBucket: "public-media",
+        sourceBucket: "private-source",
+      },
+      {
+        fetchImplementation: async () => new Response(null, { status: 204 }),
+        makeTemporaryDirectory: async () => "/private/helper",
+        removeDirectory: async () => {
+          cleanup.push("remove");
+          throw new Error("remove failed");
+        },
+        reservePort: async () => 12345,
+        spawnProcess: (_command, args) => {
+          launches.push(args);
+          return fakeHelperChild();
+        },
+        stopChild: async () => {
+          cleanup.push("stop");
+          throw new Error("stop failed");
+        },
+        write: async (filename, contents) => { writes.set(filename, String(contents)); },
+      },
+    );
+
+    assert.equal(launches.length, 1);
+    assert.equal(launches[0].includes("--remote"), false);
+    assert.equal(launches[0].includes("--var"), true);
+    assert.equal(
+      launches[0].some((argument) => argument.startsWith("UPLOAD_SECRET:")),
+      true,
+    );
+    assert.deepEqual(
+      launches[0].slice(launches[0].indexOf("--ip"), launches[0].indexOf("--ip") + 2),
+      ["--ip", "127.0.0.1"],
+    );
+    const config = JSON.parse(writes.get("/private/helper/wrangler.json"));
+    assert.equal(JSON.stringify(config).includes("UPLOAD_SECRET"), false);
+    assert.equal(config.r2_buckets.length, 2);
+    assert.equal(config.r2_buckets.every(({ remote }) => remote === true), true);
+    await assert.rejects(uploader.close(), /stop failed.*remove failed/i);
+    assert.deepEqual(cleanup, ["stop", "remove"]);
+  });
+
+  it("bounds helper puts and reports a timeout as indeterminate and no-retry", async () => {
+    let requests = 0;
+    const uploader = await wordGamePublisher.startAtomicR2Uploader(
+      {
+        cwd: repoRoot,
+        publicBucket: "public-media",
+        sourceBucket: "private-source",
+      },
+      {
+        createTimeoutSignal: () => ({ aborted: true }),
+        fetchImplementation: async (_url, options) => {
+          requests += 1;
+          if (options.method === "PUT") throw new Error("aborted");
+          return new Response(null, { status: 204 });
+        },
+        makeTemporaryDirectory: async () => "/private/helper",
+        removeDirectory: async () => {},
+        reservePort: async () => 12345,
+        spawnProcess: () => fakeHelperChild(),
+        stopChild: async () => {},
+        write: async () => {},
+      },
+    );
+
+    await assert.rejects(
+      uploader.put({
+        bytes: Buffer.from("bytes"),
+        contentType: "image/webp",
+        key: "assets/v8/word-games/animals/cat.webp",
+        scope: "public",
+      }),
+      /timed out.*indeterminate.*do not retry/i,
+    );
+    await uploader.close();
+    assert.equal(requests, 2);
   });
 
   it("stops when a key is created concurrently after preflight", async () => {

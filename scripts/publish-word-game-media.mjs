@@ -134,8 +134,24 @@ export async function atomicR2WorkerFetch(request, environment, secret) {
   }
 }
 
-function atomicWorkerSource() {
-  return `const atomicR2WorkerFetch = ${atomicR2WorkerFetch.toString()};\nexport default { fetch(request, environment) { return atomicR2WorkerFetch(request, environment, environment.UPLOAD_SECRET); } };\n`;
+export function createAtomicR2HelperDefinition({
+  publicBucket,
+  sourceBucket,
+  workerFile,
+  workerName,
+}) {
+  return {
+    config: {
+      compatibility_date: "2026-08-31",
+      main: workerFile,
+      name: workerName,
+      r2_buckets: [
+        { binding: "PUBLIC_BUCKET", bucket_name: publicBucket, remote: true },
+        { binding: "SOURCE_BUCKET", bucket_name: sourceBucket, remote: true },
+      ],
+    },
+    source: `const atomicR2WorkerFetch = ${atomicR2WorkerFetch.toString()};\nexport default { fetch(request, environment) { return atomicR2WorkerFetch(request, environment, environment.UPLOAD_SECRET); } };\n`,
+  };
 }
 
 async function reserveLoopbackPort() {
@@ -166,76 +182,130 @@ async function stopProcess(child, exitPromise) {
   ]);
   if (!stopped && child.exitCode === null && child.signalCode === null) {
     child.kill("SIGKILL");
-    await exitPromise;
+    const killed = await Promise.race([
+      exitPromise.then(() => true),
+      wait(5_000).then(() => false),
+    ]);
+    if (!killed) throw new Error("helper process did not exit after SIGKILL");
   }
 }
 
-async function startAtomicR2Uploader({ cwd, publicBucket, sourceBucket }) {
-  const temporaryDirectory = await mkdtemp(
+function combinedError(primary, secondary, secondaryLabel) {
+  return new AggregateError(
+    [primary, secondary],
+    `${primary.message}; ${secondaryLabel}: ${secondary.message}`,
+  );
+}
+
+async function cleanupAtomicR2Helper(
+  { child, exitPromise, temporaryDirectory },
+  { removeDirectory, stopChild },
+) {
+  const errors = [];
+  if (child) {
+    try {
+      await stopChild(child, exitPromise);
+    } catch (error) {
+      errors.push(new Error(`process stop failed: ${error.message}`, { cause: error }));
+    }
+  }
+  try {
+    await removeDirectory(temporaryDirectory, { force: true, recursive: true });
+  } catch (error) {
+    errors.push(new Error(`temporary-directory removal failed: ${error.message}`, {
+      cause: error,
+    }));
+  }
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) {
+    throw new AggregateError(
+      errors,
+      errors.map(({ message }) => message).join("; "),
+    );
+  }
+}
+
+export async function startAtomicR2Uploader(
+  { cwd, publicBucket, sourceBucket },
+  dependencies = {},
+) {
+  const {
+    createTimeoutSignal = (milliseconds) => AbortSignal.timeout(milliseconds),
+    fetchImplementation = globalThis.fetch,
+    makeTemporaryDirectory = mkdtemp,
+    pause = wait,
+    removeDirectory = rm,
+    reservePort = reserveLoopbackPort,
+    spawnProcess = spawn,
+    stopChild = stopProcess,
+    write = writeFile,
+  } = dependencies;
+  const temporaryDirectory = await makeTemporaryDirectory(
     path.join(os.tmpdir(), "parrot-word-game-r2-"),
   );
-  const workerFile = path.join(temporaryDirectory, "worker.mjs");
-  const configFile = path.join(temporaryDirectory, "wrangler.json");
-  const secret = randomUUID();
-  const port = await reserveLoopbackPort();
-  const config = {
-    compatibility_date: "2026-08-31",
-    main: workerFile,
-    name: `parrot-wg-${randomUUID()}`,
-    r2_buckets: [
-      { binding: "PUBLIC_BUCKET", bucket_name: publicBucket, remote: true },
-      { binding: "SOURCE_BUCKET", bucket_name: sourceBucket, remote: true },
-    ],
-    vars: { UPLOAD_SECRET: secret },
-  };
-  await Promise.all([
-    writeFile(workerFile, atomicWorkerSource(), { mode: 0o600 }),
-    writeFile(configFile, `${JSON.stringify(config)}\n`, { mode: 0o600 }),
-  ]);
-
-  const wrangler = path.join(cwd, "node_modules/.bin/wrangler");
-  const child = spawn(
-    wrangler,
-    [
-      "dev",
-      "--config",
-      configFile,
-      "--ip",
-      "127.0.0.1",
-      "--port",
-      String(port),
-      "--log-level",
-      "error",
-    ],
-    {
-      cwd: temporaryDirectory,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  );
+  let secret;
+  let child = null;
+  let exitPromise = null;
   let diagnostics = "";
-  for (const stream of [child.stdout, child.stderr]) {
-    stream.on("data", (chunk) => {
-      diagnostics = `${diagnostics}${chunk}`.slice(-4_000);
-    });
-  }
   let exited = false;
-  const exitPromise = new Promise((resolve) => {
-    child.once("error", (error) => {
-      diagnostics = `${diagnostics}\n${error.message}`.slice(-4_000);
-    });
-    child.once("close", (code, signal) => {
-      exited = true;
-      resolve({ code, signal });
-    });
-  });
-  const baseUrl = `http://127.0.0.1:${port}`;
-  let ready = false;
+  let baseUrl;
   try {
-    for (let attempt = 0; attempt < 300 && !exited; attempt += 1) {
+    const workerFile = path.join(temporaryDirectory, "worker.mjs");
+    const configFile = path.join(temporaryDirectory, "wrangler.json");
+    secret = randomUUID();
+    const port = await reservePort();
+    baseUrl = `http://127.0.0.1:${port}`;
+    const definition = createAtomicR2HelperDefinition({
+      publicBucket,
+      sourceBucket,
+      workerFile,
+      workerName: `parrot-wg-${randomUUID()}`,
+    });
+    // Keep writes sequential so cleanup cannot race an unsettled config write.
+    await write(workerFile, definition.source, { mode: 0o600 });
+    await write(configFile, `${JSON.stringify(definition.config)}\n`, {
+      mode: 0o600,
+    });
+    child = spawnProcess(
+      path.join(cwd, "node_modules/.bin/wrangler"),
+      [
+        "dev",
+        "--config",
+        configFile,
+        "--ip",
+        "127.0.0.1",
+        "--port",
+        String(port),
+        "--var",
+        `UPLOAD_SECRET:${secret}`,
+        "--log-level",
+        "error",
+      ],
+      {
+        cwd: temporaryDirectory,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    exitPromise = new Promise((resolve) => {
+      child.once("error", (error) => {
+        diagnostics = `${diagnostics}\n${error.message}`.slice(-4_000);
+      });
+      child.once("close", (code, signal) => {
+        exited = true;
+        resolve({ code, signal });
+      });
+    });
+    for (const stream of [child.stdout, child.stderr]) {
+      stream.on("data", (chunk) => {
+        diagnostics = `${diagnostics}${chunk}`.slice(-4_000);
+      });
+    }
+    let ready = false;
+    for (let attempt = 0; attempt < 75 && !exited; attempt += 1) {
       try {
-        const response = await globalThis.fetch(`${baseUrl}/health`, {
+        const response = await fetchImplementation(`${baseUrl}/health`, {
           headers: { "x-parrot-upload-secret": secret },
-          signal: AbortSignal.timeout(500),
+          signal: createTimeoutSignal(500),
         });
         if (response.status === 204) {
           ready = true;
@@ -244,7 +314,7 @@ async function startAtomicR2Uploader({ cwd, publicBucket, sourceBucket }) {
       } catch {
         // The loopback listener is not ready yet.
       }
-      await wait(100);
+      await pause(100);
     }
     if (!ready) {
       throw new Error(
@@ -252,8 +322,14 @@ async function startAtomicR2Uploader({ cwd, publicBucket, sourceBucket }) {
       );
     }
   } catch (error) {
-    await stopProcess(child, exitPromise);
-    await rm(temporaryDirectory, { force: true, recursive: true });
+    try {
+      await cleanupAtomicR2Helper(
+        { child, exitPromise, temporaryDirectory },
+        { removeDirectory, stopChild },
+      );
+    } catch (cleanupError) {
+      throw combinedError(error, cleanupError, "helper cleanup also failed");
+    }
     throw error;
   }
 
@@ -262,8 +338,10 @@ async function startAtomicR2Uploader({ cwd, publicBucket, sourceBucket }) {
     async close() {
       if (closed) return;
       closed = true;
-      await stopProcess(child, exitPromise);
-      await rm(temporaryDirectory, { force: true, recursive: true });
+      await cleanupAtomicR2Helper(
+        { child, exitPromise, temporaryDirectory },
+        { removeDirectory, stopChild },
+      );
     },
     async put(upload) {
       const url = new URL(`${baseUrl}/upload`);
@@ -274,11 +352,24 @@ async function startAtomicR2Uploader({ cwd, publicBucket, sourceBucket }) {
         "x-parrot-upload-secret": secret,
       };
       if (upload.cacheControl) headers["cache-control"] = upload.cacheControl;
-      const response = await globalThis.fetch(url, {
-        body: upload.bytes,
-        headers,
-        method: "PUT",
-      });
+      const signal = createTimeoutSignal(30_000);
+      let response;
+      try {
+        response = await fetchImplementation(url, {
+          body: upload.bytes,
+          headers,
+          method: "PUT",
+          signal,
+        });
+      } catch (error) {
+        if (signal.aborted) {
+          throw new Error(
+            "create-only upload timed out; its result is indeterminate; do not retry this media version",
+            { cause: error },
+          );
+        }
+        throw error;
+      }
       if (response.status === 201) return;
       if (response.status === 412) {
         throw new Error("was created concurrently; do not retry this media version");
@@ -424,6 +515,7 @@ export async function runWordGameMediaPublisher({
   }
 
   const uploader = await createUploader({ cwd, publicBucket, sourceBucket });
+  let uploadError = null;
   try {
     for (const upload of uploads) {
       try {
@@ -435,15 +527,53 @@ export async function runWordGameMediaPublisher({
       }
       writeOutput(`Uploaded ${upload.bucket}/${upload.key}\n`);
     }
-  } finally {
+  } catch (error) {
+    uploadError = error;
+  }
+  let cleanupError = null;
+  try {
     await uploader.close();
+  } catch (error) {
+    cleanupError = error;
+  }
+  if (uploadError) {
+    if (cleanupError) {
+      throw combinedError(
+        uploadError,
+        cleanupError,
+        "helper cleanup also failed",
+      );
+    }
+    throw uploadError;
   }
 
-  const verification = await verifyWordGameMediaDelivery(prepared, {
-    cacheBust,
-    fetch,
-    mediaOrigin,
-  });
+  let verification;
+  let deliveryError = null;
+  try {
+    verification = await verifyWordGameMediaDelivery(prepared, {
+      cacheBust,
+      fetch,
+      mediaOrigin,
+    });
+  } catch (error) {
+    deliveryError = error;
+  }
+  if (deliveryError) {
+    if (cleanupError) {
+      throw combinedError(
+        deliveryError,
+        cleanupError,
+        `all ${uploads.length} uploads completed, but helper cleanup also failed`,
+      );
+    }
+    throw deliveryError;
+  }
+  if (cleanupError) {
+    throw new Error(
+      `${uploads.length} uploads completed and ${verification.verified.length} delivery objects verified, but helper cleanup failed: ${cleanupError.message}`,
+      { cause: cleanupError },
+    );
+  }
   writeOutput(
     `Published ${uploads.length} and verified ${verification.verified.length} word-game media objects.\n`,
   );
