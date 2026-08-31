@@ -5,7 +5,6 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import test from "node:test";
 import { createServer } from "vite";
-import { createLessonScript } from "./fixtures/lesson-script.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 
@@ -125,6 +124,7 @@ test("lesson list gives children one simple picture-led lesson path", () => {
     /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson/,
   );
   assert.doesNotMatch(html, /id="my-lessons-title"/);
+  assert.doesNotMatch(html, /Made for you|My Lessons|custom lesson/i);
   assert.equal((html.match(/<h2/g) ?? []).length, 7);
   assert.equal((html.match(/<h3/g) ?? []).length, 0);
   assert.match(html, /Peppa&#x27;s High Ball/);
@@ -166,21 +166,6 @@ test("ready-made lessons use distinct story-specific artwork", () => {
   assert.equal(new Set(expectedReadyMadeArtwork.map(([src]) => src)).size, 7);
 });
 
-test("learner lesson list has no custom-lesson management actions", () => {
-  const html = renderInRouter(
-    createElement(LessonListView, {
-      myLessons: [],
-      myLessonsLoadPhase: "ready",
-      onRetryMyLessons() {},
-    }),
-  );
-
-  assert.doesNotMatch(
-    html,
-    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/create/,
-  );
-});
-
 test("lesson artwork reserves its card space and defers off-screen images", () => {
   const html = renderLessonList();
 
@@ -198,69 +183,6 @@ test("lesson artwork reserves its card space and defers off-screen images", () =
   assert.match(
     html,
     /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v3\/lesson-covers\/01-peppas-high-ball-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v3\/lesson-covers\/01-peppas-high-ball-768\.webp 768w"/,
-  );
-});
-
-test("a failed custom-lesson list offers retry without hiding ready-made lessons", () => {
-  const html = renderInRouter(
-    createElement(LessonListView, {
-      myLessons: [],
-      myLessonsLoadPhase: "error",
-      onRetryMyLessons() {},
-    }),
-  );
-
-  assert.match(html, /role="status"/);
-  assert.match(html, /aria-live="polite"/);
-  assert.match(html, /aria-atomic="true"/);
-  assert.match(html, /We couldn&#x27;t load My Lessons\./);
-  assert.match(html, /<button[^>]*>Try again<\/button>/);
-  assert.match(html, /Peppa&#x27;s High Ball/);
-  assert.doesNotMatch(
-    html,
-    /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/create/,
-  );
-  assert.doesNotMatch(html, /Cannot read properties|TypeError|request_failed/);
-});
-
-test("retry keeps one focusable unavailable action beside loading feedback", () => {
-  const html = renderInRouter(
-    createElement(LessonListView, {
-      myLessons: [],
-      myLessonsLoadPhase: "retrying",
-      onRetryMyLessons() {},
-    }),
-  );
-
-  assert.match(html, /Loading My Lessons…/);
-  assert.match(html, /<button[^>]*aria-disabled="true"[^>]*>Try again<\/button>/);
-  assert.doesNotMatch(html, /<button[^>]* disabled=""/);
-});
-
-test("saved lessons stay playable without custom-lesson management actions", () => {
-  const html = renderInRouter(
-    createElement(LessonListView, {
-      myLessons: [
-        {
-          id: "lesson/id",
-          lesson: createLessonScript({ title: "Editable Garden" }),
-          revision: "a".repeat(64),
-          source: "uploaded",
-        },
-      ],
-      myLessonsLoadPhase: "ready",
-      onRetryMyLessons() {},
-    }),
-  );
-
-  assert.match(html, /aria-label="Start lesson: Editable Garden"/);
-  assert.match(html, /href="\/lessons\/my\/lesson%2Fid\/scenes\/1"/);
-  assert.match(html, /Made for you/);
-  assert.match(html, /A lesson made for you\./);
-  assert.match(html, /<h3[^>]*>Editable Garden<\/h3>/);
-  assert.doesNotMatch(
-    html,
-    /Edit lesson: Editable Garden|Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson|\/lessons\/my\/lesson%2Fid\/edit|\/lessons\/my\/create/,
   );
 });
 

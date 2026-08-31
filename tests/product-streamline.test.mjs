@@ -90,7 +90,7 @@ test("guardian dashboard presents one learner-management destination", () => {
   assert.doesNotMatch(html, />Manage learners<\/h2>|Learner details|Manage learner details/);
 });
 
-test("guardian dashboard groups the three learning and content tools", () => {
+test("guardian dashboard shows only the remaining learning and content cards", () => {
   const html = renderInRouter(
     createElement(GuardianDashboardView, {
       learnerName: "Mia",
@@ -107,11 +107,18 @@ test("guardian dashboard groups the three learning and content tools", () => {
     /<h2[^>]*id="learning-content-heading"[^>]*>Learning &amp; content<\/h2>/,
   );
   assert.deepEqual(
-    [...html.matchAll(/<h3[^>]*>([^<]+)<\/h3>/g)].map(([, heading]) =>
-      heading,
-    ),
-    ["My Lessons", "Story settings", "Voice dubbing"],
+    [...html.matchAll(/<h[23][^>]*>([^<]+)<\/h[23]>/g)]
+      .map(([, heading]) => heading)
+      .filter((heading) => heading !== "Learning &amp; content"),
+    [
+      "Manage learners",
+      "Story settings",
+      "Voice dubbing",
+      "Account &amp; privacy",
+    ],
   );
+  assert.doesNotMatch(html, /My Lessons/);
+  assert.doesNotMatch(html, /href="\/guardian\/lessons"|>Manage lessons<\/a>/);
 });
 
 test("guardian dashboard links a separate account and privacy destination", () => {
@@ -128,7 +135,6 @@ test("guardian dashboard links a separate account and privacy destination", () =
 
   assert.deepEqual(hrefs, [
     "/guardian/learners",
-    "/guardian/lessons",
     "/guardian/stories",
     "/guardian/dubbing",
     "/guardian/account",
@@ -158,6 +164,7 @@ test("lesson catalog presents one canonical path without artwork experiments", (
     html,
     /Grown-up: edit|Grown-up tools|Make a lesson|Create custom lesson/,
   );
+  assert.doesNotMatch(html, /Made for you|My Lessons|custom lesson/i);
   assert.doesNotMatch(html, /full-scene|same lesson, same audio|comparison/i);
 });
 

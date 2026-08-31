@@ -9,15 +9,8 @@ import {
   type LessonCatalogEntry,
 } from "./lesson-catalog";
 import {
-  ActionButton,
-  cx,
   InteractiveCardLink,
 } from "../shared/ui";
-import type { MyLessonDescriptor } from "./my-lessons-api";
-import {
-  useMyLessons,
-  type MyLessonsLoadPhase,
-} from "./useMyLessons";
 
 type LessonCard = {
   id: string;
@@ -58,8 +51,8 @@ const READY_MADE_PRACTICE_TEXT = new Map([
 
 function createAvailableLessonCard(
   entry: LessonCatalogEntry,
-  preferredArtwork?: LessonArtwork,
-  practiceText = "A lesson made for you.",
+  preferredArtwork: LessonArtwork | undefined,
+  practiceText: string,
 ): LessonCard {
   const firstScene = entry.lesson.scenes[0];
   const artwork =
@@ -81,13 +74,6 @@ function createAvailableLessonCard(
     practiceText,
   };
 }
-
-type LessonListViewProps = {
-  myLessonsStatusRef?: RefObject<HTMLParagraphElement | null>;
-  myLessons: MyLessonDescriptor[];
-  myLessonsLoadPhase: MyLessonsLoadPhase;
-  onRetryMyLessons: () => void;
-};
 
 function LessonCardView({
   index,
@@ -144,12 +130,7 @@ function LessonCardView({
   );
 }
 
-export function LessonListView({
-  myLessonsStatusRef,
-  myLessons,
-  myLessonsLoadPhase,
-  onRetryMyLessons,
-}: LessonListViewProps) {
+export function LessonListView() {
   const cards = LESSONS.map((entry) =>
     createAvailableLessonCard(
       entry,
@@ -157,8 +138,6 @@ export function LessonListView({
       READY_MADE_PRACTICE_TEXT.get(entry.id) ?? "Listen and speak.",
     ),
   );
-  const myCards = myLessons.map((entry) => createAvailableLessonCard(entry));
-
   return (
     <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-lesson-list px-3 pb-10 pt-21 short:pt-18 sm:px-4 md:px-8 md:pb-16 md:pt-28 lg:px-16">
       <RouteHeader>
@@ -196,102 +175,10 @@ export function LessonListView({
         </div>
       </section>
 
-      {myCards.length > 0 ? (
-        <section
-          aria-labelledby="my-lessons-title"
-          className="mx-auto mt-10 w-full max-w-6xl md:mt-14"
-        >
-          <h2
-            className="mb-4 mt-0 text-2xl leading-none text-brand-navy sm:text-3xl md:mb-5 md:text-4xl"
-            id="my-lessons-title"
-          >
-            Made for you
-          </h2>
-          <div className="grid gap-3 min-[360px]:grid-cols-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-            {myCards.map((lesson, index) => (
-              <LessonCardView
-                index={index}
-                key={lesson.id}
-                lesson={lesson}
-                source="my"
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      <section
-        aria-label="Saved lesson status"
-        className="mx-auto mt-8 grid w-full max-w-6xl justify-items-center gap-2 text-center md:mt-10"
-      >
-        <p
-          aria-atomic="true"
-          aria-live="polite"
-          className="m-0 rounded-lg text-sm font-extrabold leading-snug text-brand-blue outline-none focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink"
-          id="my-lessons-status"
-          ref={myLessonsStatusRef}
-          role="status"
-          tabIndex={-1}
-        >
-          {myLessonsLoadPhase === "loading" ||
-          myLessonsLoadPhase === "retrying"
-            ? "Loading My Lessons…"
-            : myLessonsLoadPhase === "error"
-              ? "We couldn't load My Lessons."
-              : myCards.length > 0
-                ? `${myCards.length} made-for-you ${myCards.length === 1 ? "lesson" : "lessons"}.`
-                : "No made-for-you lessons yet."}
-        </p>
-        {myLessonsLoadPhase === "error" ||
-        myLessonsLoadPhase === "retrying" ? (
-          <ActionButton
-            aria-disabled={
-              myLessonsLoadPhase === "retrying" ? true : undefined
-            }
-            aria-describedby="my-lessons-status"
-            className={cx(
-              "w-fit",
-              myLessonsLoadPhase === "retrying" &&
-                "pointer-events-none opacity-60",
-            )}
-            onClick={
-              myLessonsLoadPhase === "error" ? onRetryMyLessons : undefined
-            }
-            size="compact"
-            type="button"
-            variant="navy"
-          >
-            Try again
-          </ActionButton>
-        ) : null}
-      </section>
     </main>
   );
 }
 
 export function LessonList() {
-  const { lessons, phase, retry } = useMyLessons();
-  const focusAfterRetryRef = useRef(false);
-  const myLessonsStatusRef = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    if (phase !== "ready" || !focusAfterRetryRef.current) return;
-    focusAfterRetryRef.current = false;
-    myLessonsStatusRef.current?.focus();
-  }, [phase]);
-
-  function retryMyLessons() {
-    if (phase !== "error") return;
-    focusAfterRetryRef.current = true;
-    retry();
-  }
-
-  return (
-    <LessonListView
-      myLessons={lessons}
-      myLessonsLoadPhase={phase}
-      myLessonsStatusRef={myLessonsStatusRef}
-      onRetryMyLessons={retryMyLessons}
-    />
-  );
+  return <LessonListView />;
 }

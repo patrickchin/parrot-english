@@ -34,7 +34,6 @@ const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/account\/*$/i,
   /^\/guardian\/dubbing\/*$/i,
   GUARDIAN_LEARNERS_ROUTE_PATH,
-  /^\/guardian\/lessons\/*$/i,
   /^\/guardian\/profile\/*$/i,
   /^\/guardian\/profile\/setup\/*$/i,
   /^\/guardian\/stories\/*$/i,
@@ -42,7 +41,6 @@ const GUARDIAN_ROUTE_PATHS = [
 const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
   ...GUARDIAN_ROUTE_PATHS,
   /^\/profile\/*$/i,
-  /^\/lessons\/my\/create\/*$/i,
 ];
 const DUB_ROUTE_PATHS = DUB_DEFINITIONS.map(
   ({ route }) => new RegExp(`^${route}\\/*$`, "i"),
@@ -55,9 +53,8 @@ const SAFE_RETURN_PATHS = [
   ...GUARDIAN_ROUTE_PATHS,
   /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
-  /^\/lessons\/my\/create\/*$/i,
-  /^\/lessons\/(?:parrot|my)\/[^/]+\/*$/i,
-  /^\/lessons\/(?:parrot|my)\/[^/]+\/scenes\/[^/]+\/*$/i,
+  /^\/lessons\/parrot\/[^/]+\/*$/i,
+  /^\/lessons\/parrot\/[^/]+\/scenes\/[^/]+\/*$/i,
   /^\/progress\/*$/i,
   /^\/stories\/*$/i,
   /^\/stories\/[^/]+\/*$/i,
@@ -84,10 +81,6 @@ function withLearnerProfileTarget(path: string, learnerProfileId?: string) {
 
 export function getGuardianDubbingPath(learnerProfileId?: string) {
   return withLearnerProfileTarget("/guardian/dubbing", learnerProfileId);
-}
-
-export function getGuardianLessonsPath(learnerProfileId?: string) {
-  return withLearnerProfileTarget("/guardian/lessons", learnerProfileId);
 }
 
 export function getGuardianLearnersPath() {
@@ -196,10 +189,6 @@ export function getLessonScenePath(
   sceneIndex: number,
 ) {
   return `${getLessonPath(source, lessonId)}/scenes/${sceneIndex + 1}`;
-}
-
-export function getMyLessonCreatePath(learnerProfileId?: string) {
-  return withLearnerProfileTarget("/lessons/my/create", learnerProfileId);
 }
 
 export function getLoginPath(returnTo: string) {
@@ -340,24 +329,6 @@ export function resolveParrotLessonScene(
   return { entry, sceneIndex: sceneNumber - 1 };
 }
 
-export function resolveMyLessonScene(
-  entry: LessonCatalogEntry | null,
-  lessonId: string | undefined,
-  sceneNumberValue: string | undefined,
-): ResolvedLessonScene | null {
-  const sceneNumber = parseSceneNumber(sceneNumberValue);
-  if (
-    !entry ||
-    !lessonId ||
-    entry.id !== lessonId ||
-    sceneNumber === null ||
-    sceneNumber > entry.lesson.scenes.length
-  ) {
-    return null;
-  }
-  return { entry, sceneIndex: sceneNumber - 1 };
-}
-
 function redirectTo(to: string): LessonRouteDecision {
   return { kind: "redirect", replace: true, to };
 }
@@ -394,18 +365,4 @@ export function resolveParrotLessonRouteDecision(
   }
 
   return { kind: "lesson", ...resolved };
-}
-
-export function resolveMyLessonRouteDecision(
-  entry: LessonCatalogEntry | null,
-  lessonId: string | undefined,
-  sceneNumberValue: string | undefined,
-): LessonRouteDecision {
-  if (!entry || !lessonId || entry.id !== lessonId) {
-    return redirectTo("/lessons");
-  }
-  const resolved = resolveMyLessonScene(entry, lessonId, sceneNumberValue);
-  return resolved
-    ? { kind: "lesson", ...resolved }
-    : redirectTo(getLessonScenePath("my", entry.id, 0));
 }
