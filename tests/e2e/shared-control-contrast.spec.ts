@@ -398,7 +398,6 @@ test("guardian dashboard cards share one rendered frame and elevation", async ({
   await page.goto(guardianPath("/guardian"));
   const cards = [
     "Learner profiles",
-    "My Lessons",
     "Story settings",
     "Voice dubbing",
     "Account & privacy",

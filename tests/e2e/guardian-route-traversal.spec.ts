@@ -120,7 +120,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
   const [sectionHeadingSize, cardHeadingSize] = await Promise.all(
     [
       page.getByRole("heading", { name: "Learning & content" }),
-      page.getByRole("heading", { name: "Learner profiles" }),
+      page.getByRole("heading", { name: "Story settings" }),
     ].map((heading) =>
       heading.evaluate((element) =>
         Number.parseFloat(getComputedStyle(element).fontSize),
