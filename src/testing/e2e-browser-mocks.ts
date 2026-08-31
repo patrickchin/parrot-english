@@ -3184,7 +3184,9 @@ class MockAudioElement {
       return;
     }
     const lessonScenario = getE2eLessonScenario();
-    this.lessonCue = this.src.includes("lesson-join-in-");
+    this.lessonCue =
+      this.src.includes("lesson-join-in-") ||
+      this.src.includes("/assets/audio/word-game-");
     const heldLessonAudio =
       (this.lessonCue &&
         (lessonScenario === "held-cue" ||

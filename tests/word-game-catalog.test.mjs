@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  WORD_GAME_COMPLETE_AUDIO,
+  WORD_GAME_RETRY_AUDIO,
   WORD_GAME_TOPICS,
   buildWordGameRounds,
   getWordGameRoute,
@@ -121,6 +123,21 @@ describe("word-game catalog", () => {
         },
       });
     }
+  });
+
+  it("provides the two generic saved player lines", () => {
+    assert.deepEqual(WORD_GAME_RETRY_AUDIO, {
+      id: "word-game-retry",
+      source: "/assets/audio/word-game-retry.mp3",
+      text: "Listen and try again.",
+    });
+    assert.deepEqual(WORD_GAME_COMPLETE_AUDIO, {
+      id: "word-game-complete",
+      source: "/assets/audio/word-game-complete.mp3",
+      text: "Great listening! You finished the game.",
+    });
+    assert.equal(Object.isFrozen(WORD_GAME_RETRY_AUDIO), true);
+    assert.equal(Object.isFrozen(WORD_GAME_COMPLETE_AUDIO), true);
   });
 
   it("pins isolated bitmap art and native color swatches", () => {

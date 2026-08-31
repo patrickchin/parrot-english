@@ -93,8 +93,8 @@ import { RouteFocusManager } from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
-import { FirstWordsGame } from "../games/FirstWordsGame";
 import { WordGameList } from "../games/WordGameList";
+import { WordGamePlayer } from "../games/WordGamePlayer";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
@@ -1157,8 +1157,7 @@ function WordGameRouteDecisionView({
     return <Navigate replace={decision.replace} to={decision.to} />;
   }
 
-  // Task 2 compatibility: Task 3 replaces this legacy player with the catalog game.
-  return <FirstWordsGame />;
+  return <WordGamePlayer topic={decision.topic} />;
 }
 
 function WordGameRoute() {

@@ -50,6 +50,17 @@ function audioLine(id: string, text: string): WordGameAudioLine {
   return { id, source: `/assets/audio/${id}.mp3`, text };
 }
 
+export const WORD_GAME_RETRY_AUDIO = deepFreeze(
+  audioLine("word-game-retry", "Listen and try again."),
+);
+
+export const WORD_GAME_COMPLETE_AUDIO = deepFreeze(
+  audioLine(
+    "word-game-complete",
+    "Great listening! You finished the game.",
+  ),
+);
+
 function topic(
   id: string,
   title: string,
