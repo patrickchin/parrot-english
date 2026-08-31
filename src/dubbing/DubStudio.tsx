@@ -299,10 +299,11 @@ export function DubStudio({
   }, [clearFetchedTakeUrl, clearRecordingProgress, clearTakePreview]);
 
   const handleConsentLoss = useCallback(() => {
-    cancelMedia(true);
+    const generation = cancelMedia(true);
     setLoadError("");
     setPlaybackLineIndex(0);
     dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
+    focusAfterRender(fullPlaybackButtonRef, generation);
   }, [cancelMedia]);
 
   useEffect(() => {

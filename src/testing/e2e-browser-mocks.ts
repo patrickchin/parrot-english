@@ -2300,9 +2300,10 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
           : null;
       }
       const { audioPath, lineId } = lineMatch;
+      if (method === "GET" && audioPath) privateFetches.push(url.pathname);
+      if (method === "PUT" && !audioPath) uploads.push(url.pathname);
       if (consentState !== "granted") return disabledDubResponse();
       if (method === "GET" && audioPath) {
-        privateFetches.push(url.pathname);
         if (
           (scenario === "both-source-failed" && lineId === "line-5") ||
           (scenario === "multiple-source-failed" &&
@@ -2327,7 +2328,6 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
       if (method !== "PUT" || audioPath)
         return new Response(null, { status: 405 });
 
-      uploads.push(url.pathname);
       const clip = await request.blob();
       const bytes = new Uint8Array(await clip.arrayBuffer());
       if (request.headers.get("Content-Type") !== "audio/webm") {

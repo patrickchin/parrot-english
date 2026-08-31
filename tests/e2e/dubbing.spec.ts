@@ -148,6 +148,11 @@ async function microphoneSnapshot(page: Page) {
   });
 }
 
+async function expectListenOnlyPlaybackFocus(page: Page) {
+  await expect(page.getByText("You can watch the video now.", { exact: false })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
+}
+
 async function resolveDelayedMicrophone(page: Page) {
   const resolved = await page.evaluate(() => {
     const microphone = (
@@ -268,9 +273,13 @@ test("recording-disabled learners watch public video without private media", asy
   await expect(page.getByRole("region", { name: "Scene video" })).toHaveCount(0);
   await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveCount(0);
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("");
-  expect((await dubStoreSnapshot(page)).guideFetches).toEqual([]);
+  const storeBefore = await dubStoreSnapshot(page);
+  expect(storeBefore.guideFetches).toEqual([]);
+  expect(storeBefore.privateFetches).toEqual([]);
+  expect(storeBefore.uploads).toEqual([]);
+  expect(storeBefore.createdObjectUrls).toEqual([]);
+  expect((await microphoneSnapshot(page)).requests).toBe(0);
 
-  const microphoneBefore = await microphoneSnapshot(page);
   await page.getByRole("button", { name: "Play full video" }).click();
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches.length).toBeGreaterThan(0);
 
@@ -281,7 +290,8 @@ test("recording-disabled learners watch public video without private media", asy
   expect(store.guideFetches.every((url) => url.startsWith("/assets/audio/"))).toBe(true);
   expect(store.privateFetches).toEqual([]);
   expect(store.uploads).toEqual([]);
-  expect(microphoneAfter.requests).toBe(microphoneBefore.requests);
+  expect(store.createdObjectUrls).toEqual([]);
+  expect(microphoneAfter.requests).toBe(0);
 });
 
 test("listen-only guide failure restores Play with one child-readable alert", async ({ page }) => {
@@ -299,6 +309,31 @@ test("listen-only guide failure restores Play with one child-readable alert", as
   const store = await dubStoreSnapshot(page);
   expect(store.privateFetches).toEqual([]);
   expect(store.uploads).toEqual([]);
+  expect(store.createdObjectUrls).toEqual([]);
+  expect((await microphoneSnapshot(page)).requests).toBe(0);
+});
+
+test("disabled dubbing mock records rejected private media attempts", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
+  await page.evaluate(() => sessionStorage.removeItem("parrot-e2e-learners:active-scenario"));
+  await page.reload();
+  const attempts = await page.evaluate(async () => Promise.all([
+    fetch("/api/dubs/five-little-ducks-v2/lines/line-1/audio"),
+    fetch("/api/dubs/five-little-ducks-v2/lines/line-1", {
+      body: new Blob(["forbidden"], { type: "audio/webm" }),
+      headers: { "Content-Type": "audio/webm" },
+      method: "PUT",
+    }),
+  ]).then((responses) => responses.map(({ status }) => status)));
+
+  expect(attempts).toEqual([409, 409]);
+  const store = await dubStoreSnapshot(page);
+  expect(store.privateFetches).toEqual([
+    "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
+  ]);
+  expect(store.uploads).toEqual([
+    "/api/dubs/five-little-ducks-v2/lines/line-1",
+  ]);
 });
 
 test("full-video startup failure restores its Play action", async ({ page }) => {
@@ -1117,7 +1152,98 @@ test("saved recording consent loss shows listen-only playback immediately", asyn
     { exact: false },
   )).toBeVisible();
   await expect(page.getByRole("button", { name: "Record again" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+  await expectListenOnlyPlaybackFocus(page);
+});
+
+test("full-video consent loss focuses listen-only playback", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await expectDubProject(page);
+  await page.evaluate(() => {
+    const currentFetch = window.fetch;
+    window.fetch = async (input, init) => {
+      const source = typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+      if (new URL(source, window.location.href).pathname.endsWith("/audio")) {
+        return Response.json({ error: "dubbing_not_enabled" }, { status: 403 });
+      }
+      return currentFetch(input, init);
+    };
+  });
+
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expectListenOnlyPlaybackFocus(page);
+});
+
+test("stale focus work cannot overtake consent-loss playback focus", async ({ page }) => {
+  await page.addInitScript(() => {
+    const callbacks: FrameRequestCallback[] = [];
+    Object.defineProperty(window, "requestAnimationFrame", {
+      configurable: true,
+      value: (callback: FrameRequestCallback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      },
+    });
+    Object.defineProperty(window, "__flushAnimationFrames", {
+      configurable: true,
+      value: () => callbacks.splice(0).forEach((callback) => callback(performance.now())),
+    });
+  });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  await page.evaluate(() => {
+    const currentFetch = window.fetch;
+    window.fetch = async (input, init) => {
+      const source = typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+      if (new URL(source, window.location.href).pathname.endsWith("/lines/line-1/audio")) {
+        return Response.json({ error: "dubbing_not_enabled" }, { status: 403 });
+      }
+      return currentFetch(input, init);
+    };
+  });
+
+  await page.getByRole("button", { name: "Play my recording" }).click();
+  await expect(page.getByText("You can watch the video now.", { exact: false })).toBeVisible();
+  await page.evaluate(() => {
+    (window as typeof window & { __flushAnimationFrames(): void }).__flushAnimationFrames();
+  });
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
+});
+
+test("upload consent loss focuses listen-only playback", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  await page.evaluate(() => {
+    const currentFetch = window.fetch;
+    window.fetch = async (input, init) => {
+      const source = typeof input === "string"
+        ? input
+        : input instanceof URL
+          ? input.href
+          : input.url;
+      if (
+        new URL(source, window.location.href).pathname.endsWith("/lines/line-1")
+        && init?.method === "PUT"
+      ) {
+        return Response.json({ error: "dubbing_not_enabled" }, { status: 403 });
+      }
+      return currentFetch(input, init);
+    };
+  });
+
+  await page.getByRole("button", { name: "Record line" }).click();
+  await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("Recording");
+  await page.getByRole("button", { name: "Stop recording" }).click();
+  await expectListenOnlyPlaybackFocus(page);
 });
 
 test("saved recording failure keeps its error readable beside take controls on a narrow phone", async ({ page }) => {
