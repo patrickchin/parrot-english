@@ -3,7 +3,7 @@ const DEFAULT_RECORDING_MS = 4200;
 export const MICROPHONE_CONSTRAINTS = {
   audio: {
     echoCancellation: true,
-    noiseSuppression: true,
+    noiseSuppression: false,
   },
 } satisfies MediaStreamConstraints;
 
