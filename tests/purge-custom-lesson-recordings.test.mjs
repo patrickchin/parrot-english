@@ -121,6 +121,34 @@ describe("custom lesson recording purge", () => {
     assert.doesNotMatch(output, /stories\/my/);
   });
 
+  it("treats a truthy non-boolean execute value as a dry run", async () => {
+    const calls = [];
+    let listRequests = 0;
+    const fetch = async (input, init = {}) => {
+      calls.push({ init, url: new URL(input) });
+      if (init.method === "DELETE") return cloudflareResponse({});
+
+      listRequests += 1;
+      return listPage(listRequests === 1 ? [accountRecording] : [], {
+        truncated: false,
+      });
+    };
+
+    const result = await runPurgeCustomLessonRecordings(
+      commandOptions({ execute: "false", fetch, writeOutput() {} }),
+    );
+
+    assert.deepEqual(result, {
+      deleted: [],
+      keys: [accountRecording],
+      verified: false,
+    });
+    assert.equal(
+      calls.filter(({ init }) => init.method === "DELETE").length,
+      0,
+    );
+  });
+
   it("deletes exact keys sequentially and verifies a fresh empty scan", async () => {
     const calls = [];
     let listRequests = 0;

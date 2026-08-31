@@ -185,7 +185,7 @@ export async function runPurgeCustomLessonRecordings({
   if (typeof fetch !== "function") throw new Error("A fetch implementation is required");
 
   const keys = await listCustomLessonRecordingKeys(configuration);
-  if (!execute) {
+  if (execute !== true) {
     writeOutput(`Dry run: found ${keys.length} exact custom lesson recording keys.\n`);
     for (const key of keys) writeOutput(`${key}\n`);
     return { deleted: [], keys, verified: false };
