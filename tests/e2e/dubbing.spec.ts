@@ -399,11 +399,11 @@ test("shared-consent deletion clears saved clips for both rhyme routes", async (
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await expectDubProject(page);
-  await expect(page.getByText("0 / 24", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ready to start", { exact: true })).toBeVisible();
 
   await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
   await expectDubProject(page);
-  await expect(page.getByText("0 / 35", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ready to start", { exact: true })).toBeVisible();
 });
 
 const guardianResponsiveStates = [
@@ -629,13 +629,23 @@ test("direct entry opens the project home instead of line 1", async ({ page }) =
 
   await expect(page.getByRole("region", { name: "Full video player" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
-  await expect(page.getByText("0 / 24", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ready to start", { exact: true })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveAttribute("aria-valuenow", "0");
-  await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveAttribute("aria-valuetext", "0 of 24 clips recorded");
+  await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveAttribute("aria-valuetext", "Ready to start");
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("0 of 24 voice clips recorded.");
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Record line" })).toHaveCount(0);
   await expect(page.getByText("Five little ducks went out one day.", { exact: true })).toHaveCount(0);
+});
+
+test("Start and Continue open the earliest line that needs work", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await page.getByRole("button", { name: "Start with Scene 1" }).click();
+  await expect(page.getByRole("heading", { name: DUB_LINES[0].text })).toBeFocused();
+
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
+  await page.getByRole("button", { name: "Continue with Scene 1" }).click();
+  await expect(page.getByRole("heading", { name: DUB_LINES[3].text })).toBeFocused();
 });
 
 test("an empty project plays a fully generated draft", async ({ page }) => {
@@ -705,16 +715,14 @@ test("scene navigation has previous and uses the shared header to return", async
   await expect(page).toHaveURL("/");
 });
 
-test("next, finish scene returns to the project after the final line", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+test("next, finish scene celebrates a completed partial scene", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);
   await openScene(page, 1);
-  for (const line of DUB_LINES.slice(1, 4)) {
-    await page.getByRole("button", { name: "Next line" }).click();
-    await expect(page.getByRole("heading", { name: line.text })).toBeVisible();
-  }
+  await stopAndSave(page);
   await page.getByRole("button", { name: "Next, finish scene" }).click();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+  await expect(page.getByText("Scene 1 is ready — great singing!", { exact: true })).toBeVisible();
 });
 
 test("scene recording follows one linear Choicer-style action flow", async ({ page }) => {
@@ -771,7 +779,7 @@ test("Old MacDonald route loads its public studio and opens the first scene", as
   await expect(
     page.getByRole("region", { name: "Full video player" }),
   ).toBeVisible();
-  await expect(page.getByText("0 / 35", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ready to start", { exact: true })).toBeVisible();
   await openScene(page, 1);
   await expect(
     page.getByRole("heading", {
@@ -899,10 +907,10 @@ test("the Old MacDonald short-landscape route keeps project and scene actions cl
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const playFull = page.getByRole("button", { name: "Play full video" });
   const firstScene = dock.getByRole("button", {
-    name: "Scene 1, Cows on the farm, Not started",
+    name: "Scene 1, Cows on the farm, Ready to start",
   });
   const secondScene = dock.getByRole("button", {
-    name: "Scene 2, Ducks on the farm, Not started",
+    name: "Scene 2, Ducks on the farm, Ready to start",
   });
   const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox] = await Promise.all([
     boundingBoxOrThrow(routeHeader),
@@ -1024,12 +1032,12 @@ test("Back keeps progress and reload resumes the saved scene statuses", async ({
   await openScene(page, 1);
   await stopAndSave(page);
   await page.getByRole("button", { name: "Back to full video" }).click();
-  await expect(page.getByRole("button", { name: "Scene 1, Five little ducks, 1 / 4" })).toBeVisible();
-  await expect(page.getByText("1 / 24", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Scene 1, Five little ducks, 1 of 4 lines ready" })).toBeVisible();
+  await expect(page.getByText("1 of 24 lines ready", { exact: true })).toBeVisible();
 
   await page.reload();
   await expectDubProject(page);
-  await expect(page.getByRole("button", { name: "Scene 1, Five little ducks, 1 / 4" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Scene 1, Five little ducks, 1 of 4 lines ready" })).toBeVisible();
 });
 
 test("a replacement overwrites the chosen canonical slot", async ({ page }) => {
@@ -1124,7 +1132,7 @@ test("saved recording failure offers record again and marks the scene Needs reta
   await expect(page.getByRole("region", { name: "Scene video" })).toBeVisible();
   await page.getByRole("button", { name: "Back to full video" }).click();
   await expect(page.getByRole("button", {
-    name: "Scene 1, Five little ducks, Needs retake",
+    name: "Scene 1, Five little ducks, Needs a new take",
   })).toBeVisible();
 });
 
@@ -1269,10 +1277,11 @@ test("corrupt private audio falls back to its guide and marks the scene Needs re
   await expectDubProject(page);
   await page.getByRole("button", { name: "Play full video" }).click();
   await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
-  await expect(page.getByText("24 / 24", { exact: true })).toBeVisible();
+  await expect(page.getByText("23 of 24 lines ready", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", {
-    name: "Scene 2, Four little ducks, Needs retake",
+    name: "Scene 2, Four little ducks, Needs a new take",
   })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Fix Scene 2" })).toBeVisible();
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toContain(
     "/assets/audio/five-little-ducks-v2-guide-line-5.mp3",
   );
@@ -1281,7 +1290,7 @@ test("corrupt private audio falls back to its guide and marks the scene Needs re
   await stopAndSave(page);
   await page.getByRole("button", { name: "Back to full video" }).click();
   await expect(page.getByRole("button", {
-    name: "Scene 2, Four little ducks, Done",
+    name: "Scene 2, Four little ducks, Scene ready",
   })).toBeVisible();
 });
 
@@ -1458,7 +1467,7 @@ for (const microphone of ["denied", "unsupported"] as const) {
 test("a held Guardian delete is exclusive until removal succeeds", async ({ page }) => {
   await page.goto("/dubs/old-macdonald?parrotE2eDub=delete-held");
   await expectDubProject(page);
-  await expect(page.getByText("3 / 35", { exact: true })).toBeVisible();
+  await expect(page.getByText("3 of 35 lines ready", { exact: true })).toBeVisible();
 
   await page.goto(
     "/guardian/dubbing?parrotE2eDub=delete-held&parrotE2eGuardian=guardian",
@@ -1492,7 +1501,7 @@ test("a held Guardian delete is exclusive until removal succeeds", async ({ page
 
   await page.goto("/dubs/old-macdonald?parrotE2eDub=delete-held");
   await expectDubProject(page);
-  await expect(page.getByText("0 / 35", { exact: true })).toBeVisible();
+  await expect(page.getByText("Ready to start", { exact: true })).toBeVisible();
 });
 
 test("a failed Guardian delete stays actionable only in Guardian mode", async ({
@@ -1632,12 +1641,12 @@ for (const project of [
 
     for (const [index, title] of project.sceneTitles.entries()) {
       await expect(scenes.getByRole("button", {
-        name: `Scene ${index + 1}, ${title}, Not started`,
+        name: `Scene ${index + 1}, ${title}, Ready to start`,
       })).toBeVisible();
     }
 
     const firstScene = scenes.getByRole("button", {
-      name: `Scene 1, ${project.sceneTitles[0]}, Not started`,
+      name: `Scene 1, ${project.sceneTitles[0]}, Ready to start`,
     });
     await firstScene.hover();
     await expect(firstScene).toBeVisible();
@@ -1672,7 +1681,7 @@ for (const viewport of [
       await expectBelow(page.getByRole("region", { name: "Dub project workspace" }), routeHeader);
 
       await page.getByRole("button", {
-        name: `Scene 1, ${project.sceneTitle}, Done`,
+        name: `Scene 1, ${project.sceneTitle}, Scene ready`,
       }).click();
       const backToFullVideo = routeHeader.getByRole("button", { name: "Back to full video" });
       await expect(backToFullVideo).toBeVisible();
@@ -1755,7 +1764,7 @@ test("the desktop project keeps the video and compact scene strip in one view", 
   const player = page.getByRole("region", { name: "Full video player" });
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const sceneButton = dock.getByRole("button", {
-    name: "Scene 1, Five little ducks, 3 / 4",
+    name: "Scene 1, Five little ducks, 3 of 4 lines ready",
   });
   const playButton = page.getByRole("button", { name: "Play full video" });
   const workspaceBox = await boundingBoxOrThrow(workspace);
@@ -1867,7 +1876,7 @@ for (const viewport of [
 
     const dock = page.getByRole("navigation", { name: "Scenes" });
     const sceneSix = dock.getByRole("button", {
-      name: "Scene 6, Sad mother duck, Not started",
+      name: "Scene 6, Sad mother duck, Ready to start",
     });
     await expectNoHorizontalOverflow(page);
     await sceneSix.scrollIntoViewIfNeeded();
@@ -1906,11 +1915,11 @@ test("keyboard navigation focuses the selected scene line and advances linearly"
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await expectDubProject(page);
   const sceneTwo = page.getByRole("button", {
-    name: "Scene 2, Four little ducks, Not started",
+    name: "Scene 2, Four little ducks, Ready to start",
   });
   await expect(page.getByRole("button", {
-    name: "Scene 1, Five little ducks, Not started",
-  })).toHaveAttribute("aria-current", "page");
+    name: "Scene 1, Five little ducks, Ready to start",
+  })).toHaveAttribute("aria-current", "step");
 
   await sceneTwo.focus();
   await page.keyboard.press("Enter");
@@ -1934,7 +1943,7 @@ test("keyboard scene selection focuses the first missing line heading", async ({
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);
   const sceneButton = page.getByRole("button", {
-    name: "Scene 1, Five little ducks, 3 / 4",
+    name: "Scene 1, Five little ducks, 3 of 4 lines ready",
   });
   await sceneButton.focus();
   await page.keyboard.press("Enter");
@@ -2031,10 +2040,10 @@ test("short landscape keeps project and scene actions clear of the route header"
   const dock = page.getByRole("navigation", { name: "Scenes" });
   const playFull = page.getByRole("button", { name: "Play full video" });
   const firstScene = dock.getByRole("button", {
-    name: "Scene 1, Five little ducks, 3 / 4",
+    name: "Scene 1, Five little ducks, 3 of 4 lines ready",
   });
   const secondScene = dock.getByRole("button", {
-    name: "Scene 2, Four little ducks, Not started",
+    name: "Scene 2, Four little ducks, Ready to start",
   });
   const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox] = await Promise.all([
     boundingBoxOrThrow(routeHeader),

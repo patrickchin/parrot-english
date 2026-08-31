@@ -345,11 +345,11 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Play full video"/);
     assert.match(html, /aria-label="Scene selection"/);
     assert.match(html, />Choose a scene<\/h2>/);
-    assert.doesNotMatch(html, /Continue Scene|>Continue</);
+    assert.match(html, />Start with Scene 1</);
     for (let scene = 1; scene <= 6; scene += 1) {
-      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Not started"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Ready to start"`));
     }
-    assert.doesNotMatch(html, />Draft<|>Your dub<|>Not started<|voice clips recorded/);
+    assert.doesNotMatch(html, />Draft<|voice clips recorded/);
     assert.doesNotMatch(html, />0 \/ 4<|>Done<|>Retake</);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
     assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
@@ -365,21 +365,23 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(sceneButtons.join(""), /<figure\b/);
   });
 
-  it("shows large direct scene choices with title and status and no continue action", () => {
-    const html = renderProjectHome();
-    assert.doesNotMatch(html, /Continue Scene|>Continue</);
-    for (const [index, title] of [
-      "Five little ducks",
-      "Four little ducks",
-      "Three little ducks",
-      "Two little ducks",
-      "One little duck",
-      "Sad mother duck",
-    ].entries()) {
-      assert.match(html, new RegExp(`aria-label="Scene ${index + 1}, ${title}, Not started"`));
-      assert.match(html, new RegExp(`>${title}<`));
-    }
-    assert.equal((html.match(/<img[^>]*five-little-ducks\/scene-[^"]+\.webp/g) ?? []).length, 7);
+  it("guides empty, partial, retake, and complete projects", () => {
+    assert.match(renderProjectHome(), /Ready to start/);
+    assert.match(renderProjectHome(), />Start with Scene 1</);
+
+    const partial = renderProjectHome({ saved: { "line-1": "saved" } });
+    assert.match(partial, /1 of 24 lines ready/);
+    assert.match(partial, />Continue with Scene 1</);
+
+    const saved = Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"]));
+    const retake = renderProjectHome({ needsRetake: new Set(["line-5"]), saved });
+    assert.match(retake, />Fix Scene 2</);
+    assert.match(retake, /Scene 2, Four little ducks, Needs a new take/);
+
+    const complete = renderProjectHome({ activeLine: DUB_LINES[23], saved });
+    assert.match(complete, /All 24 lines ready/);
+    assert.match(complete, /Your video is ready — great singing!/);
+    assert.doesNotMatch(complete, /Start with Scene|Continue with Scene|Fix Scene/);
   });
 
   it("derives the Old MacDonald project home from the passed dub definition", () => {
@@ -389,9 +391,9 @@ describe("duck dubbing storyboard presentation", () => {
     });
 
     assert.match(html, /Old MacDonald Had a Farm/);
-    assert.match(html, /aria-label="Project recording progress"[\s\S]*?>0 \/ 35</);
-    assert.equal((html.match(/aria-label="Scene \d, [^"]+, Not started"/g) ?? []).length, 5);
-    assert.match(html, /aria-label="Scene 1, Cows on the farm, Not started"[\s\S]*?>○ 0 \/ 7</);
+    assert.match(html, /aria-label="Project recording progress"[\s\S]*?>Ready to start</);
+    assert.equal((html.match(/aria-label="Scene \d, [^"]+, Ready to start"/g) ?? []).length, 5);
+    assert.match(html, /aria-label="Scene 1, Cows on the farm, Ready to start"[\s\S]*?>○ Ready to start</);
   });
 
   it("keeps every scene selectable after all clips are recorded", () => {
@@ -399,10 +401,11 @@ describe("duck dubbing storyboard presentation", () => {
       activeLine: DUB_LINES[23],
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.doesNotMatch(html, />Your dub<|>Draft<|All scenes recorded/);
-    assert.doesNotMatch(html, /aria-label="Continue Scene/);
+    assert.match(html, /All 24 lines ready/);
+    assert.match(html, /Your video is ready — great singing!/);
+    assert.doesNotMatch(html, /Start with Scene|Continue with Scene|Fix Scene/);
     for (let scene = 1; scene <= 6; scene += 1) {
-      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Done"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Scene ready"`));
     }
   });
 
@@ -412,9 +415,8 @@ describe("duck dubbing storyboard presentation", () => {
       needsRetake: new Set(["line-5"]),
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.doesNotMatch(html, />Draft<|>Your dub<|All scenes recorded/);
-    assert.doesNotMatch(html, /aria-label="Continue Scene/);
-    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs retake"/);
+    assert.match(html, />Fix Scene 2</);
+    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs a new take"/);
   });
 
   it("shows non-blocking project playback errors and retake status", () => {
@@ -425,7 +427,7 @@ describe("duck dubbing storyboard presentation", () => {
       saved: { "line-5": "saved" },
     });
     assert.match(html, /aria-label="Stop full video"/);
-    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs retake"/);
+    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs a new take"/);
     assert.match(html, /role="alert"/);
   });
 
@@ -457,7 +459,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.equal(
       container.querySelectorAll('nav[aria-label="Page navigation"] [aria-label="Back to full video"]')
         .length,
@@ -510,8 +512,8 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]')));
-    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]')));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
@@ -544,8 +546,8 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]')));
-    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]')));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
@@ -830,10 +832,10 @@ describe("duck dubbing storyboard presentation", () => {
         "line-12": "saved",
       },
     });
-    assert.match(project, /aria-label="Scene 1, Five little ducks, 1 \/ 4"[\s\S]*?data-status-icon="in-progress"[^>]*>◐ 1 \/ 4<\/span>/);
-    assert.match(project, /aria-label="Scene 2, Four little ducks, Needs retake"[\s\S]*?data-status-icon="needs-retake"[^>]*>! Retake<\/span>/);
-    assert.match(project, /aria-label="Scene 3, Three little ducks, Done"[\s\S]*?data-status-icon="done"[^>]*>✓ Done<\/span>/);
-    assert.match(project, /aria-label="Scene 4, Two little ducks, Not started"[\s\S]*?data-status-icon="not-started"[^>]*>○ 0 \/ 4<\/span>/);
+    assert.match(project, /aria-label="Scene 1, Five little ducks, 1 of 4 lines ready"[\s\S]*?data-status-icon="in-progress"[^>]*>◐ 1 of 4 lines ready<\/span>/);
+    assert.match(project, /aria-label="Scene 2, Four little ducks, Needs a new take"[\s\S]*?data-status-icon="needs-retake"[^>]*>! Needs a new take<\/span>/);
+    assert.match(project, /aria-label="Scene 3, Three little ducks, Scene ready"[\s\S]*?data-status-icon="done"[^>]*>✓ Scene ready<\/span>/);
+    assert.match(project, /aria-label="Scene 4, Two little ducks, Ready to start"[\s\S]*?data-status-icon="not-started"[^>]*>○ Ready to start<\/span>/);
   });
 
   it("renders one Choicer-style line flow without competing editor controls", () => {

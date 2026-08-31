@@ -2,7 +2,11 @@ import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
 import { ActionButton } from "../shared/ui";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
-import { getDubSceneStatus, type DubSceneStatus } from "./dub-state";
+import {
+  getFirstActionableDubSceneIndex,
+  getDubSceneStatus,
+  type DubSceneStatus,
+} from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
@@ -30,17 +34,18 @@ function getSceneLines(definition: DubDefinition) {
   );
 }
 
-function sceneStatusLabel(status: DubSceneStatus, linesPerScene: number) {
-  if (status.kind === "not-started") return "Not started";
-  if (status.kind === "in-progress") return `${status.recorded} / ${linesPerScene}`;
-  if (status.kind === "done") return "Done";
-  return "Needs retake";
-}
-
-function sceneStatusText(status: DubSceneStatus, linesPerScene: number) {
-  if (status.kind === "done") return "Done";
-  if (status.kind === "needs-retake") return "Retake";
-  return `${status.recorded} / ${linesPerScene}`;
+function sceneStatusCopy(status: DubSceneStatus, linesPerScene: number) {
+  if (status.kind === "not-started") {
+    return { accessible: "Ready to start", visible: "Ready to start" };
+  }
+  if (status.kind === "in-progress") {
+    const progress = `${status.recorded} of ${linesPerScene} lines ready`;
+    return { accessible: progress, visible: progress };
+  }
+  if (status.kind === "done") {
+    return { accessible: "Scene ready", visible: "Scene ready" };
+  }
+  return { accessible: "Needs a new take", visible: "Needs a new take" };
 }
 
 export function DubProjectHome({
@@ -56,11 +61,36 @@ export function DubProjectHome({
   saved,
   visualLine = activeLine,
 }: DubProjectHomeProps) {
-  const recorded = definition.lines.filter(({ id }) => Object.hasOwn(saved, id)).length;
   const retakeState: Record<string, true> = Object.fromEntries(
     [...needsRetake].map((lineId) => [lineId, true]),
   );
   const sceneLines = getSceneLines(definition);
+  const ready = definition.lines.filter(
+    ({ id }) => Object.hasOwn(saved, id) && !needsRetake.has(id),
+  ).length;
+  const sceneStatuses = sceneLines.map((_, sceneIndex) =>
+    getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex, definition),
+  );
+  const recommendedSceneIndex = getFirstActionableDubSceneIndex(
+    { needsRetake: retakeState, saved },
+    definition,
+  );
+  const recommendedStatus = recommendedSceneIndex === null
+    ? null
+    : sceneStatuses[recommendedSceneIndex];
+  const progressText = ready === 0 && needsRetake.size === 0
+    ? "Ready to start"
+    : ready === definition.lines.length
+      ? `All ${definition.lines.length} lines ready`
+      : `${ready} of ${definition.lines.length} lines ready`;
+  const recommendedText = recommendedSceneIndex === null
+    ? ""
+    : ready === 0 && needsRetake.size === 0
+      ? "Start with Scene 1"
+      : recommendedStatus?.kind === "needs-retake"
+        ? `Fix Scene ${recommendedSceneIndex + 1}`
+        : `Continue with Scene ${recommendedSceneIndex + 1}`;
+  const allComplete = recommendedSceneIndex === null;
   const activeLineIndex = Math.max(
     0,
     definition.lines.findIndex(({ id }) => id === activeLine.id),
@@ -69,6 +99,12 @@ export function DubProjectHome({
     0,
     Math.floor(activeLineIndex / definition.linesPerScene),
   );
+  const activeSceneComplete = sceneStatuses[activeSceneIndex]?.kind === "done";
+  const completionText = allComplete
+    ? "Your video is ready — great singing!"
+    : activeSceneComplete
+      ? `Scene ${activeSceneIndex + 1} is ready — great singing!`
+      : "";
   const playbackLabel = playback === "playing"
     ? "Stop full video"
     : playback === "loading"
@@ -84,12 +120,12 @@ export function DubProjectHome({
             aria-label="Project recording progress"
             aria-valuemax={definition.lines.length}
             aria-valuemin={0}
-            aria-valuenow={recorded}
-            aria-valuetext={`${recorded} of ${definition.lines.length} clips recorded`}
+            aria-valuenow={ready}
+            aria-valuetext={progressText}
             className="m-0 shrink-0 rounded-full bg-white/85 px-3 py-1.5 text-sm font-black text-brand-navy short-wide:px-2 short-wide:py-1 short-wide:text-xs"
             role="progressbar"
           >
-            {recorded} / {definition.lines.length}
+            {progressText}
           </p>
         </header>
 
@@ -122,11 +158,22 @@ export function DubProjectHome({
 
           <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card md:p-4">
             <h2 className="m-0 text-xl text-brand-ink">Choose a scene</h2>
+            {recommendedSceneIndex !== null ? (
+              <ActionButton
+                disabled={locked}
+                fullWidth
+                onClick={() => onOpenScene(recommendedSceneIndex)}
+                shape="rounded"
+                size="large"
+                variant="brand"
+              >
+                {recommendedText}
+              </ActionButton>
+            ) : null}
             <nav aria-label="Scenes" className="grid min-w-0 grid-cols-2 gap-3">
             {sceneLines.map((_, sceneIndex) => {
-              const status = getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex, definition);
-              const statusLabel = sceneStatusLabel(status, definition.linesPerScene);
-              const statusText = sceneStatusText(status, definition.linesPerScene);
+              const status = sceneStatuses[sceneIndex];
+              const statusCopy = sceneStatusCopy(status, definition.linesPerScene);
               const statusIcon = status.kind === "done"
                 ? "✓"
                 : status.kind === "needs-retake"
@@ -139,8 +186,8 @@ export function DubProjectHome({
               const title = definition.sceneTitles[sceneIndex];
               return (
                 <ActionButton
-                  aria-current={selected ? "page" : undefined}
-                  aria-label={`Scene ${sceneIndex + 1}, ${title}, ${statusLabel}`}
+                  aria-current={selected ? "step" : undefined}
+                  aria-label={`Scene ${sceneIndex + 1}, ${title}, ${statusCopy.accessible}`}
                   className="relative min-h-36 min-w-0 flex-col items-stretch gap-2 overflow-hidden rounded-2xl p-2 text-left short-wide:min-h-28"
                   disabled={locked}
                   key={sceneIndex}
@@ -161,7 +208,7 @@ export function DubProjectHome({
                   <span className="grid min-w-0 gap-0.5 px-1">
                     <span className="text-xs font-black uppercase tracking-wide opacity-75">Scene {sceneIndex + 1}</span>
                     <strong className="truncate text-base leading-tight">{title}</strong>
-                    <span className="text-sm font-black" data-status-icon={status.kind}>{statusIcon} {statusText}</span>
+                    <span className="text-sm font-black" data-status-icon={status.kind}>{statusIcon} {statusCopy.visible}</span>
                   </span>
                 </ActionButton>
               );
@@ -175,6 +222,8 @@ export function DubProjectHome({
             {error}
           </p>
         ) : null}
+
+        {completionText ? <p className="m-0 text-center font-black text-brand-ink">{completionText}</p> : null}
 
       </section>
     </main>
