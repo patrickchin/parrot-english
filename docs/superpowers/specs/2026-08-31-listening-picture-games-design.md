@@ -44,8 +44,9 @@ feeling grammar stay natural.
   control.
 - Use checked-in ElevenLabs `eleven_v3` audio for all authored speech, with no
   browser or operating-system speech fallback.
-- Ask concrete, conversational questions such as “Which is the cat?” and
-  answer in full sentences such as “Yes, this is a cat.”
+- Lead each concrete, conversational question with the target word, such as
+  “Cat. Which is the cat?”, and answer in full sentences such as “Yes, this is
+  a cat.”
 - Turn wrong choices into teaching: identify the selected picture, then invite
   the learner to listen and try again without consuming the round.
 - Keep the game substantially larger than the former quiz while preserving the
@@ -70,19 +71,20 @@ Ship six topics with six concrete targets apiece:
 
 | Topic | Targets | Prompt pattern |
 | --- | --- | --- |
-| Animals | cat, dog, bird, fish, duck, frog | “Which is the cat?” |
-| Colors | red, blue, yellow, green, orange, purple | “Where is blue?” |
+| Animals | cat, dog, bird, fish, duck, frog | “Cat. Which is the cat?” |
+| Colors | red, blue, yellow, green, orange, purple | “Blue. Where is blue?” |
 | Body parts | eyes, ears, nose, mouth, hand, foot | Exact simple singular/plural prompts |
-| Food | apple, banana, carrot, orange, bread, cheese | “Which is the apple?” |
-| Toys | ball, toy car, doll, kite, blocks, teddy bear | “Which is the ball?” |
-| Feelings | happy, sad, angry, sleepy, surprised, silly | “Which face is happy?” |
+| Food | apple, banana, carrot, orange, bread, cheese | “Apple. Which is the apple?” |
+| Toys | ball, toy car, doll, kite, blocks, teddy bear | “Ball. Which is the ball?” |
+| Feelings | happy, sad, angry, sleepy, surprised, silly | “Happy. Which face is happy?” |
 
 Each item also owns a teaching label and success sentence. Examples are “This
 is a dog.” / “Yes, this is a dog.”, “These are the eyes.” / “Yes, these are the
-eyes.”, and “This face is happy.” / “Yes, this face is happy.” The exact body
-prompts are “Where are the eyes?”, “Where are the ears?”, “Which is the nose?”,
-“Which is the mouth?”, “Which is the hand?”, and “Which is the foot?” The
-authored content contains no personal names.
+eyes.”, and “This face is happy.” / “Yes, this face is happy.” Every prompt
+starts with its capitalized target label and a period. The exact body prompts
+are “Eyes. Where are the eyes?”, “Ears. Where are the ears?”, “Nose. Which is
+the nose?”, “Mouth. Which is the mouth?”, “Hand. Which is the hand?”, and “Foot.
+Which is the foot?” The authored content contains no personal names.
 
 ## Catalog and Routes
 
@@ -108,12 +110,12 @@ returns to the game library.
 ## Learner Interaction
 
 The library presents six large cards in a responsive one/two/three-column
-grid. Selecting a topic opens its player. Because browsers require a user
-gesture before media playback, the first view has one prominent “Start
-listening” action. It does not hide the topic identity or introduce rules to
-read.
+grid. Selecting a topic opens its player directly on the first active round,
+with no separate “Start listening” gate. The player attempts the first saved
+prompt immediately; if the browser blocks autoplay, it keeps the choices usable
+and waits for the learner to use “Listen again.”
 
-After start:
+During play:
 
 1. The saved prompt plays automatically and remains available through “Listen
    again.”
@@ -127,8 +129,9 @@ After start:
    selectable, and the wrong picture is not permanently disabled or marked in
    punitive red styling.
 4. The right picture plays its complete success sentence, marks the card, and
-   reveals a large Next action.
-5. Next advances and automatically plays the new prompt. After round six, the
+   disables the round controls while feedback is playing.
+5. When correct feedback finishes, the player advances automatically and plays
+   the new prompt, without a Next or Finish action. After round six, the
    completion view plays “Great listening! You finished the game.” and offers
    Play again or Back to games.
 
@@ -149,9 +152,12 @@ text is not duplicated. Every one of the 36 items has three saved lines:
 
 Two generic lines cover retry and completion, for 110 MP3s total. Generate
 them with the repository's ElevenLabs workflow, the established friendly
-English narrator voice, and the pinned `eleven_v3` model. Performance text asks
-for warm, playful teacher delivery, clear first-word pacing, and natural
-sentence intonation while visible text stays clean.
+English narrator voice, the `energetic-character` voice style, and the pinned
+`eleven_v3` model. Performance text directs an excited, playful young-child
+prompt with the target word first and curious question delivery; bright,
+playful teaching labels; joyful, enthusiastic correct encouragement; gentle,
+upbeat retry encouragement; and a happy, excited but not-loud completion
+celebration. Visible text stays clean.
 
 The player uses `playAudioLine` and `playAudioSequence`; it does not import or
 fall back to `playDeviceSpeech`. Static-audio tests require metadata and a

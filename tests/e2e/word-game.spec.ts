@@ -1,12 +1,12 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const animals = [
-  ["cat", "Which is the cat?", "A friendly cat."],
-  ["dog", "Which is the dog?", "A friendly dog."],
-  ["bird", "Which is the bird?", "A friendly bird."],
-  ["fish", "Which is the fish?", "A friendly fish."],
-  ["duck", "Which is the duck?", "A friendly duck."],
-  ["frog", "Which is the frog?", "A friendly frog."],
+  ["cat", "Cat. Which is the cat?", "A friendly cat."],
+  ["dog", "Dog. Which is the dog?", "A friendly dog."],
+  ["bird", "Bird. Which is the bird?", "A friendly bird."],
+  ["fish", "Fish. Which is the fish?", "A friendly fish."],
+  ["duck", "Duck. Which is the duck?", "A friendly duck."],
+  ["frog", "Frog. Which is the frog?", "A friendly frog."],
 ] as const;
 
 const responsiveViewports = [
@@ -169,22 +169,25 @@ async function expectChoicePictures(choices: Locator, roundIndex: number) {
   }
 }
 
-test("keeps picture exploration separate from choosing and uses saved audio", async ({
+test("starts a selected game immediately and advances after correct feedback finishes", async ({
   page,
 }) => {
-  await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
+  await page.goto("/word-games?parrotE2eLesson=held-cue");
+  await page
+    .getByRole("navigation", { name: "Word games" })
+    .getByRole("link", { name: /Animals/ })
+    .click();
+  await expect(page).toHaveURL("/word-games/animals");
   const { choices, main, progress } = game(page);
 
   await expect(main.getByRole("heading", { level: 1, name: "Animals" })).toBeVisible();
-  await expect(main.getByRole("heading", { level: 2, name: "Which is the cat?" })).toBeVisible();
+  await expect(main.getByRole("heading", { level: 2, name: "Cat. Which is the cat?" })).toBeVisible();
   await expect(main.getByRole("link", { name: "Back to games" }).last()).toHaveAttribute("href", "/word-games");
   await expect(progress).toHaveAttribute("aria-valuemin", "1");
   await expect(progress).toHaveAttribute("aria-valuemax", "6");
   await expect(progress).toHaveAttribute("aria-valuenow", "1");
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
-  await expect(choices).toHaveCount(0);
-
-  await main.getByRole("button", { name: "Start listening" }).click();
+  await expect(main.getByRole("button", { name: "Start listening" })).toHaveCount(0);
   await expect(choices.getByRole("button", { name: /^Choose / })).toHaveCount(3);
   await expect(choices.getByRole("button", { name: /^Listen: / })).toHaveCount(3);
   await expect(choices.getByText("Listen", { exact: true })).toHaveCount(3);
@@ -267,12 +270,28 @@ test("keeps picture exploration separate from choosing and uses saved audio", as
   for (const choose of await choices.getByRole("button", { name: /^Choose / }).all()) {
     await expect(choose).toBeDisabled();
   }
-  await expect(main.getByRole("button", { name: "Next" })).toBeVisible();
+  for (const listen of await choices.getByRole("button", { name: /^Listen: / }).all()) {
+    await expect(listen).toBeDisabled();
+  }
+  await expect(main.getByRole("button", { name: /^(Next|Finish)$/ })).toHaveCount(0);
+  await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
   await expect
     .poll(() =>
       hasStaticRequest(page, {
         audioId: "word-game-animals-cat-correct",
         source: "/assets/audio/word-game-animals-cat-correct.mp3",
+      }),
+    )
+    .toBe(true);
+  await releaseNextCue(page);
+  await expect(progress).toHaveAttribute("aria-valuetext", "2 of 6");
+  await expect(main.getByRole("heading", { level: 2, name: "Dog. Which is the dog?" })).toBeFocused();
+  await expect(main.getByRole("status", { name: "Answer feedback" })).toBeEmpty();
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-animals-dog-prompt",
+        source: "/assets/audio/word-game-animals-dog-prompt.mp3",
       }),
     )
     .toBe(true);
@@ -284,7 +303,6 @@ test("completes all six Animals rounds, focuses transitions, and plays again", a
 }) => {
   await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
   const { choices, main, progress } = game(page);
-  await main.getByRole("button", { name: "Start listening" }).click();
 
   for (const [index, [answer, prompt]] of animals.entries()) {
     await expect(progress).toHaveAttribute("aria-valuetext", `${index + 1} of 6`);
@@ -295,9 +313,8 @@ test("completes all six Animals rounds, focuses transitions, and plays again", a
     await expect(main.getByRole("status", { name: "Answer feedback" })).toHaveText(
       `Yes, this is a ${answer}.`,
     );
-    await main
-      .getByRole("button", { name: index === animals.length - 1 ? "Finish" : "Next" })
-      .click();
+    await expect(main.getByRole("button", { name: /^(Next|Finish)$/ })).toHaveCount(0);
+    await releaseNextCue(page);
     if (index < animals.length - 1) {
       await expect(main.getByRole("heading", { level: 2, name: animals[index + 1][1] })).toBeFocused();
       const nextPromptId = `word-game-animals-${animals[index + 1][0]}-prompt`;
@@ -331,7 +348,7 @@ test("completes all six Animals rounds, focuses transitions, and plays again", a
 
   await main.getByRole("button", { name: "Play again" }).click();
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
-  await expect(main.getByRole("heading", { level: 2, name: "Which is the cat?" })).toBeFocused();
+  await expect(main.getByRole("heading", { level: 2, name: "Cat. Which is the cat?" })).toBeFocused();
   await expect(choices.getByRole("button", { name: "Choose cat" })).toBeVisible();
   await expect
     .poll(() =>
@@ -346,7 +363,6 @@ test("completes all six Animals rounds, focuses transitions, and plays again", a
 test("cancels replaced and unmounted saved playback", async ({ page }) => {
   await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
   const { main } = game(page);
-  await main.getByRole("button", { name: "Start listening" }).click();
   await main.getByRole("button", { name: "Listen again" }).click();
   await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
 
@@ -355,12 +371,67 @@ test("cancels replaced and unmounted saved playback", async ({ page }) => {
   await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(2);
 });
 
+test("resets a changed topic without advancing from aborted correct feedback", async ({
+  page,
+}) => {
+  await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
+  const animalsGame = game(page);
+  await animalsGame.choices.getByRole("button", { name: "Choose cat" }).click();
+  await expect(
+    animalsGame.main.getByRole("status", { name: "Answer feedback" }),
+  ).toHaveText("Yes, this is a cat.");
+
+  await page.evaluate(() => {
+    window.history.pushState(
+      {},
+      "",
+      "/word-games/colors?parrotE2eLesson=held-cue",
+    );
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+
+  const colorsGame = game(page);
+  await expect(page).toHaveURL(/\/word-games\/colors/);
+  await expect(
+    colorsGame.main.getByRole("heading", { level: 1, name: "Colors" }),
+  ).toBeVisible();
+  await expect(
+    colorsGame.main.getByRole("heading", {
+      level: 2,
+      name: "Red. Where is red?",
+    }),
+  ).toBeVisible();
+  await expect(colorsGame.progress).toHaveAttribute("aria-valuetext", "1 of 6");
+  await expect(
+    colorsGame.main.getByRole("status", { name: "Answer feedback" }),
+  ).toBeEmpty();
+  await expect(
+    colorsGame.choices.getByRole("button", { name: "Choose red" }),
+  ).toBeEnabled();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).cueCancellations)
+    .toBe(2);
+  await expect.poll(() => staticRequests(page)).toEqual([
+    {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+    {
+      audioId: "word-game-animals-cat-correct",
+      source: "/assets/audio/word-game-animals-cat-correct.mp3",
+    },
+    {
+      audioId: "word-game-colors-red-prompt",
+      source: "/assets/audio/word-game-colors-red-prompt.mp3",
+    },
+  ]);
+});
+
 test("keeps visual play usable with one persistent saved-sound failure", async ({
   page,
 }) => {
   await page.goto("/word-games/animals?parrotE2eLesson=cue-failure");
   const { choices, main, progress } = game(page);
-  await main.getByRole("button", { name: "Start listening" }).click();
   const alert = main.getByRole("alert");
   await expect(alert).toHaveText("Sound is not available. You can still play.");
 
@@ -370,7 +441,6 @@ test("keeps visual play usable with one persistent saved-sound failure", async (
   );
   await expect(alert).toBeVisible();
   await choices.getByRole("button", { name: "Choose cat" }).click();
-  await main.getByRole("button", { name: "Next" }).click();
   await expect(progress).toHaveAttribute("aria-valuetext", "2 of 6");
   await expect(choices.getByRole("button", { name: /^Choose / })).toHaveCount(3);
   await expect(alert).toBeVisible();
@@ -382,7 +452,6 @@ test("uses a large game surface", async ({ page }) => {
   await page.goto("/word-games/animals");
   const { main, progress } = game(page);
   const gameSurface = main.getByRole("region", { name: "Listening picture game" });
-  await main.getByRole("button", { name: "Start listening" }).click();
   await expect(gameSurface).toBeVisible();
   expect((await gameSurface.boundingBox())?.width).toBeGreaterThanOrEqual(1100);
   expect((await gameSurface.boundingBox())?.height).toBeGreaterThanOrEqual(600);
@@ -432,16 +501,15 @@ test("word-game player scrolls the next focused question into view", async ({ pa
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
   const { choices, main } = game(page);
-  await main.getByRole("button", { name: "Start listening" }).click();
 
   await expectWheelScrollsMain(page, main);
   await expect(main.getByRole("button", { name: "Listen: bird" })).toBeInViewport();
   await choices.getByRole("button", { name: "Choose cat" }).click();
-  await main.getByRole("button", { name: "Next" }).click();
+  await releaseNextCue(page);
 
   const nextQuestion = main.getByRole("heading", {
     level: 2,
-    name: "Which is the dog?",
+    name: "Dog. Which is the dog?",
   });
   await expect(nextQuestion).toBeFocused();
   await expect(nextQuestion).toBeInViewport();
@@ -485,7 +553,6 @@ for (const viewport of responsiveViewports) {
 
     await expectHorizontallyContained(page, header, viewport);
     await expectKeyboardReachable(page, header);
-    await main.getByRole("button", { name: "Start listening" }).click();
 
     const chooseButtons = choices.getByRole("button", { name: /^Choose / });
     const listenButtons = choices.getByRole("button", { name: /^Listen: / });
@@ -508,8 +575,31 @@ for (const viewport of responsiveViewports) {
     }
 
     await choices.getByRole("button", { name: "Choose cat" }).click();
-    const next = main.getByRole("button", { name: "Next" });
-    await expectHorizontallyContained(page, next, viewport);
-    await expectKeyboardReachable(page, next);
+    await expect(main.getByRole("status", { name: "Answer feedback" })).toHaveText(
+      "Yes, this is a cat.",
+    );
+    await expect(main.getByRole("button", { name: /^(Next|Finish)$/ })).toHaveCount(0);
   });
 }
+
+test("keeps the round usable when the browser blocks initial autoplay", async ({
+  page,
+}) => {
+  await page.goto("/word-games/animals?parrotE2eLesson=autoplay-blocked");
+  const { choices, main } = game(page);
+
+  await expect(choices.getByRole("button", { name: /^Choose / })).toHaveCount(3);
+  await expect(main.getByRole("alert")).toHaveCount(0);
+  await expect.poll(() => staticRequests(page)).toEqual([]);
+
+  await main.getByRole("button", { name: "Listen again" }).click();
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-animals-cat-prompt",
+        source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+      }),
+    )
+    .toBe(true);
+  await expect(main.getByRole("alert")).toHaveCount(0);
+});
