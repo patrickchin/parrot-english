@@ -472,41 +472,20 @@ describe("guardian access request handler", () => {
 
   afterEach(() => state.close());
 
-  function handle(request, verifyPassword = async () => true) {
+  function handle(request) {
     return handleGuardianAccessRequest({
       database,
       identity: { sessionId: "session-1", userId: "user-1" },
       request,
-      verifyPassword,
     });
   }
 
-  it("unlocks only after server-side password verification", async () => {
-    const passwords = [];
-    const response = await handle(
-      guardianRequest("POST", JSON.stringify({ password: "guardian-secret" })),
-      async (password) => (passwords.push(password), true),
-    );
-
-    assert.equal(response.status, 200);
-    assert.deepEqual(passwords, ["guardian-secret"]);
-    assert.equal((await response.json()).mode, "guardian");
-  });
-
-  it("unlocks with an empty password without password verification", async () => {
-    let verificationCalls = 0;
-    const response = await handle(
-      guardianRequest("POST", JSON.stringify({ password: "" })),
-      async () => {
-        verificationCalls += 1;
-        return false;
-      },
-    );
+  it("switches to guardian mode without a request body", async () => {
+    const response = await handle(guardianRequest("POST"));
 
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("Cache-Control"), "no-store");
     assert.equal((await response.json()).mode, "guardian");
-    assert.equal(verificationCalls, 0);
     assert.equal(
       state.sqlite
         .prepare("SELECT COUNT(*) AS count FROM guardian_session_unlock")
@@ -515,94 +494,12 @@ describe("guardian access request handler", () => {
     );
   });
 
-  it("verifies whitespace instead of treating it as an empty password", async () => {
-    let verificationCalls = 0;
+  it("does not parse obsolete password-shaped request bodies", async () => {
     const response = await handle(
-      guardianRequest("POST", JSON.stringify({ password: "   " })),
-      async (password) => {
-        verificationCalls += 1;
-        assert.equal(password, "   ");
-        return false;
-      },
+      guardianRequest("POST", "this body is intentionally ignored"),
     );
-
-    assert.equal(response.status, 401);
-    assert.equal(response.headers.get("Cache-Control"), "no-store");
-    assert.deepEqual(await response.json(), {
-      error: "invalid_password",
-      message: "The password did not match this account.",
-    });
-    assert.equal(verificationCalls, 1);
-    assert.equal(
-      state.sqlite
-        .prepare("SELECT COUNT(*) AS count FROM guardian_session_unlock")
-        .get().count,
-      0,
-    );
-  });
-
-  it("uses one generic response for an invalid password", async () => {
-    const response = await handle(
-      guardianRequest("POST", JSON.stringify({ password: "wrong" })),
-      async () => false,
-    );
-
-    assert.equal(response.status, 401);
-    assert.equal(response.headers.get("Cache-Control"), "no-store");
-    assert.deepEqual(await response.json(), {
-      error: "invalid_password",
-      message: "The password did not match this account.",
-    });
-    assert.equal(
-      state.sqlite
-        .prepare("SELECT COUNT(*) AS count FROM guardian_session_unlock")
-        .get().count,
-      0,
-    );
-  });
-
-  it("accepts exactly one string password key", async () => {
-    const rejectedBodies = [
-      "{}",
-      JSON.stringify({ password: 42 }),
-      JSON.stringify({ password: "secret", userId: "user-2" }),
-      "[]",
-      "not-json",
-    ];
-    let verificationCalls = 0;
-
-    for (const body of rejectedBodies) {
-      const response = await handle(guardianRequest("POST", body), async () => {
-        verificationCalls += 1;
-        return true;
-      });
-      assert.equal(response.status, 400, body);
-    }
-    assert.equal(verificationCalls, 0);
-  });
-
-  it("enforces an 8 KiB request-body ceiling", async () => {
-    const prefixBytes = new globalThis.TextEncoder().encode(
-      '{"password":"',
-    ).byteLength;
-    const suffixBytes = new globalThis.TextEncoder().encode('"}').byteLength;
-    const acceptedPassword = "a".repeat(8 * 1024 - prefixBytes - suffixBytes);
-    const accepted = await handle(
-      guardianRequest("POST", JSON.stringify({ password: acceptedPassword })),
-    );
-    assert.equal(accepted.status, 200);
-
-    let verificationCalls = 0;
-    const oversized = await handle(
-      guardianRequest("POST", JSON.stringify({ password: `${acceptedPassword}a` })),
-      async () => {
-        verificationCalls += 1;
-        return true;
-      },
-    );
-    assert.equal(oversized.status, 413);
-    assert.deepEqual(await oversized.json(), { error: "payload_too_large" });
-    assert.equal(verificationCalls, 0);
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).mode, "guardian");
   });
 
   it("returns no-store status and lock responses", async () => {
@@ -610,9 +507,7 @@ describe("guardian access request handler", () => {
     assert.equal(initial.headers.get("Cache-Control"), "no-store");
     assert.deepEqual(await initial.json(), { mode: "learner" });
 
-    await handle(
-      guardianRequest("POST", JSON.stringify({ password: "guardian-secret" })),
-    );
+    await handle(guardianRequest("POST"));
     const locked = await handle(guardianRequest("DELETE"));
     assert.equal(locked.headers.get("Cache-Control"), "no-store");
     assert.deepEqual(await locked.json(), { mode: "learner" });

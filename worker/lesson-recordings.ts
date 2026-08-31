@@ -143,9 +143,15 @@ export async function handleLessonRecordingRequest(
           Allow: "GET",
         });
       }
-      const consent = await repository.readLessonRecordingConsentState(
+      let consent = await repository.readLessonRecordingConsentState(
         input.identity,
       );
+      if (!consent.enabled) {
+        consent = await repository.saveLessonRecordingConsent(
+          input.identity,
+          true,
+        );
+      }
       return json({
         cleanupPending: consent.cleanupBeforeGeneration !== null,
         enabled: consent.enabled,

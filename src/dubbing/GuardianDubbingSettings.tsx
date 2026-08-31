@@ -4,7 +4,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type FormEvent,
   type Ref,
   type ReactNode,
 } from "react";
@@ -19,13 +18,12 @@ import { ActionButton, Card } from "../shared/ui";
 import {
   deleteDub,
   DubResetInProgressError,
-  grantDubConsent,
   loadDubStatus,
   type DubStatus,
 } from "./dub-api";
 import { DUB_DEFINITIONS } from "./rhyme-catalog";
 
-type Mutation = "delete" | "grant";
+type Mutation = "delete";
 type GuardianDubbingStatus = {
   consentState: DubStatus["consentState"];
   savedCount: number;
@@ -41,12 +39,9 @@ type GuardianDubbingSettingsViewProps = {
   consentState: DubStatus["consentState"] | null;
   canRetryStatus: boolean;
   error: string;
-  hasAccepted: boolean;
   isLoading: boolean;
   mutation: Mutation | null;
-  onAcceptedChange: (accepted: boolean) => void;
   onDelete: () => void;
-  onGrant: () => void;
   onRetry: () => void;
   savedCount: number;
   stateHeadingRef?: Ref<HTMLHeadingElement>;
@@ -91,12 +86,9 @@ function GuardianDubbingSettingsContent({
   consentState,
   canRetryStatus,
   error,
-  hasAccepted,
   isLoading,
   mutation,
-  onAcceptedChange,
   onDelete,
-  onGrant,
   onRetry,
   savedCount,
   stateHeadingRef,
@@ -104,11 +96,6 @@ function GuardianDubbingSettingsContent({
 }: GuardianDubbingSettingsViewProps) {
   const managedLearnerName = target.learnerName?.trim() || "Learner";
   const busy = isLoading || mutation !== null;
-
-  function submitGrant(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    onGrant();
-  }
 
   return (
     <div
@@ -143,58 +130,6 @@ function GuardianDubbingSettingsContent({
         </div>
       ) : null}
 
-      {consentState === "not_granted" ? (
-        <Card className="grid gap-5 p-5 sm:p-7">
-          <div className="grid gap-3">
-            <h2
-              className="m-0 text-2xl leading-tight text-brand-navy"
-              ref={stateHeadingRef}
-              tabIndex={-1}
-            >
-              Turn on private voice dubbing
-            </h2>
-            <p
-              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-              dir="ltr"
-            >
-              All voice-dubbing rhymes save{" "}
-              <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s private voice clips in this account. They are used only for{" "}
-              <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s private playback and are deleted with the account.
-            </p>
-          </div>
-
-          <form className="grid gap-5" onSubmit={submitGrant}>
-            <label className="flex min-h-12 cursor-pointer items-start gap-3 rounded-2xl bg-sky-50 p-4 font-extrabold leading-relaxed text-brand-navy">
-              <input
-                checked={hasAccepted}
-                className="mt-1 size-5 shrink-0 accent-brand-blue"
-                disabled={busy}
-                onChange={(event) =>
-                  onAcceptedChange(event.currentTarget.checked)
-                }
-                type="checkbox"
-              />
-              <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
-                I am <BidiLearnerName learnerName={managedLearnerName} />
-                &apos;s guardian and I consent to saving private voice clips for
-                all voice-dubbing rhymes.
-              </span>
-            </label>
-            <ActionButton
-              disabled={busy || !hasAccepted}
-              fullWidth
-              type="submit"
-            >
-              {mutation === "grant"
-                ? "Turning on voice dubbing…"
-                : "Allow voice dubbing"}
-            </ActionButton>
-          </form>
-        </Card>
-      ) : null}
-
       {consentState === "granted" ? (
         <Card className="grid gap-5 p-5 sm:p-7">
           <div className="grid gap-2 text-center">
@@ -203,7 +138,7 @@ function GuardianDubbingSettingsContent({
               ref={stateHeadingRef}
               tabIndex={-1}
             >
-              Voice dubbing is on
+              Voice dubbing is available
             </h2>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
@@ -230,9 +165,8 @@ function GuardianDubbingSettingsContent({
                   "Removing voice clips…"
                 ) : (
                   <>
-                    Turn off{" "}
-                    <BidiLearnerName learnerName={managedLearnerName} />
-                    &apos;s voice dubbing and delete all nursery-rhyme clips
+                    Delete <BidiLearnerName learnerName={managedLearnerName} />
+                    &apos;s saved nursery-rhyme voice clips
                   </>
                 )}
               </span>
@@ -301,7 +235,6 @@ function TargetedGuardianDubbingSettings({
   const [cleanupRequired, setCleanupRequired] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
   const [status, setStatus] = useState<GuardianDubbingStatus | null>(null);
-  const [hasAccepted, setHasAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [mutation, setMutation] = useState<Mutation | null>(null);
   const [operationError, setOperationError] = useState("");
@@ -366,7 +299,6 @@ function TargetedGuardianDubbingSettings({
           ),
         });
         setCleanupRequired(false);
-        if (consentState !== "not_granted") setHasAccepted(false);
         return true;
       } catch (error) {
         if (
@@ -429,11 +361,8 @@ function TargetedGuardianDubbingSettings({
     const controller = new AbortController();
     mutationControllerRef.current = controller;
     let failure = "";
-    let succeeded = false;
-
     try {
       await operation({ signal: controller.signal });
-      succeeded = true;
     } catch (error) {
       if (!controller.signal.aborted) {
         failure = messageFor(
@@ -449,7 +378,6 @@ function TargetedGuardianDubbingSettings({
         invalidateOnFailure: true,
         preserveOperationError: Boolean(failure),
       });
-      if (kind === "grant" && succeeded) setHasAccepted(false);
       setFocusRequest((request) => request + 1);
     }
 
@@ -460,13 +388,6 @@ function TargetedGuardianDubbingSettings({
       mutationRef.current = null;
       if (mountedRef.current) setMutation(null);
     }
-  }
-
-  function grant() {
-    if (!hasAccepted || status?.consentState !== "not_granted") return;
-    void mutate("grant", (options) =>
-      grantDubConsent({ ...options, learnerProfileId }),
-    );
   }
 
   function remove() {
@@ -488,12 +409,9 @@ function TargetedGuardianDubbingSettings({
       cleanupRequired={cleanupRequired}
       consentState={status?.consentState ?? null}
       error={statusError || operationError}
-      hasAccepted={hasAccepted}
       isLoading={isLoading}
       mutation={mutation}
-      onAcceptedChange={setHasAccepted}
       onDelete={remove}
-      onGrant={grant}
       onRetry={() => void refresh({ preserveOperationError: true })}
       savedCount={status?.savedCount ?? 0}
       stateHeadingRef={stateHeadingRef}

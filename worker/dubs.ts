@@ -830,7 +830,21 @@ export async function handleDubRequest(
     if (!route.lineId && !route.audio) {
       if (input.request.method === "GET") {
         await assertDeletionNotPending();
-        const consent = await consentRepository.status(input.identity);
+        let consent = await consentRepository.status(input.identity);
+        if (consent.state === "not_granted") {
+          try {
+            consent = await consentRepository.grant(input.identity);
+          } catch (error) {
+            await assertDeletionNotPending();
+            if (
+              error instanceof Error &&
+              error.message === "dub_consent_revoking"
+            ) {
+              throw new DubApiError(409, "dub_consent_revoking");
+            }
+            throw error;
+          }
+        }
         if (!isCurrentGrant(consent)) {
           await assertDeletionNotPending();
           return json(emptyStatus(

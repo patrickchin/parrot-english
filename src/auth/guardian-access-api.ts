@@ -131,14 +131,10 @@ export function loadGuardianAccess(options?: GuardianAccessRequestOptions) {
 }
 
 export function unlockGuardianAccess(
-  password: string,
+  _password?: string,
   options?: GuardianAccessRequestOptions,
 ) {
-  return requestGuardianAccess(
-    "POST",
-    JSON.stringify({ password }),
-    options,
-  );
+  return requestGuardianAccess("POST", undefined, options);
 }
 
 export function lockGuardianAccess(options?: GuardianAccessRequestOptions) {

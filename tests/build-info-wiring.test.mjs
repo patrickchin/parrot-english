@@ -101,5 +101,5 @@ test("the account panel describes saved dubbing data across every rhyme", () => 
     "utf8",
   );
 
-  assert.match(about, /all voice-dubbing rhymes/i);
+  assert.match(about, /Voice-dubbing rhymes/i);
 });

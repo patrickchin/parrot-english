@@ -6,7 +6,6 @@ import {
   type Page,
 } from "@playwright/test";
 
-const GUARDIAN_PASSWORD = "e2e-guardian-password";
 
 type TargetedRequestCase = {
   body?: string;
@@ -210,19 +209,17 @@ type TargetedQueryCase = {
 
 async function setGuardianAccess(page: Page, mode: "guardian" | "learner") {
   const result = await page.evaluate(
-    async ({ password, requestedMode }) => {
+    async ({ requestedMode }) => {
       const response = await fetch("/api/guardian-access", {
         ...(requestedMode === "guardian"
           ? {
-              body: JSON.stringify({ password }),
-              headers: { "Content-Type": "application/json" },
               method: "POST",
             }
           : { method: "DELETE" }),
       });
       return { body: await response.json(), status: response.status };
     },
-    { password: GUARDIAN_PASSWORD, requestedMode: mode },
+    { requestedMode: mode },
   );
 
   expect(result.status).toBe(200);
@@ -611,8 +608,8 @@ async function expectLearnerDeletionDialogContained(page: Page, name: string) {
 
 async function unlockGuardianScreen(page: Page) {
   const main = page.getByRole("main");
-  await main.getByLabel("Password").fill(GUARDIAN_PASSWORD);
-  await main.getByRole("button", { name: "Unlock guardian mode" }).click();
+  await expect(main.getByLabel("Password")).toHaveCount(0);
+  await main.getByRole("button", { name: "Switch to guardian mode" }).click();
 }
 
 async function unlockGuardianFromLearnerMenu(page: Page) {
@@ -623,10 +620,7 @@ async function unlockGuardianFromLearnerMenu(page: Page) {
     .getByRole("menu", { name: "Account menu" })
     .getByRole("menuitem", { name: /Grown-up access/ })
     .click();
-  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
-  await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
-  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
-  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
@@ -709,14 +703,11 @@ test("active learner detail and story saves reach learner-mode consumers in the 
     .getByRole("button", { name: "Edit Mia's profile" })
     .click();
 
-  await page
-    .getByRole("textbox", { exact: true, name: "Name" })
-    .fill("Mia Updated");
-  await page
-    .getByRole("button", { name: "Allow lesson voice recordings" })
-    .click();
+  await page.getByRole("textbox", { exact: true, name: "Name" }).fill(
+    "Mia Updated",
+  );
   await expect(
-    page.getByRole("status").filter({ hasText: "currently allowed" }),
+    page.getByRole("status").filter({ hasText: "available automatically" }),
   ).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Save changes" }).click();
   await expect(page).toHaveURL("/guardian/learners");
@@ -1110,7 +1101,7 @@ test("hides an unsaved Guardian profile edit during handoff and restores persist
 
     await draftPage.bringToFront();
     await expect(
-      draftPage.getByRole("heading", { name: "Unlock guardian mode" }),
+      draftPage.getByRole("heading", { name: "Switch to guardian mode" }),
     ).toBeVisible();
     await unlockGuardianScreen(draftPage);
     await expect(
@@ -1165,7 +1156,7 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
     await chooseLearnerFromManager(managerPage, "Noah");
     await profilePage.bringToFront();
     await expect(
-      profilePage.getByRole("heading", { name: "Unlock guardian mode" }),
+      profilePage.getByRole("heading", { name: "Switch to guardian mode" }),
     ).toBeVisible();
     await unlockGuardianScreen(profilePage);
     await expect(
@@ -1244,8 +1235,8 @@ test("keeps conversations, art, and dubbing isolated by selected learner", async
   expect(noahData.siblingConversationStatus).toBe(404);
   expect(noahData.art).toMatchObject({ hasStoredArt: false, stories: {} });
   expect(noahData.dub).toMatchObject({
-    consentState: "not_granted",
-    recordingEnabled: false,
+    consentState: "granted",
+    recordingEnabled: true,
   });
 });
 
@@ -1277,15 +1268,9 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   await page.goto(
     learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
   );
-  const consentSection = page.getByRole("region", {
-    name: "Lesson voice recordings",
-  });
-  await consentSection
-    .getByRole("button", { name: "Allow lesson voice recordings" })
-    .click();
-  await expect(consentSection.getByRole("status")).toHaveText(
-    "Lesson recording is currently allowed.",
-  );
+  await expect(
+    page.getByRole("region", { name: "Lesson voice recordings" }).getByRole("status"),
+  ).toHaveText("Lesson recording is available automatically.");
 
   await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
   await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
@@ -1315,7 +1300,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
     page
       .getByRole("region", { name: "Lesson voice recordings" })
       .getByRole("status"),
-  ).toHaveText("Lesson recording is currently off.");
+  ).toHaveText("Lesson recording is available automatically.");
 
   await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
   await chooseLearnerAndStart(page, "Noah", "Switch to learner mode");
@@ -1327,8 +1312,8 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   ).toBeVisible();
   await expect
     .poll(async () => (await recordingSnapshot()).uploads)
-    .toEqual([]);
-  expect((await recordingSnapshot()).getUserMediaCalls).toBe(0);
+    .toHaveLength(1);
+  expect((await recordingSnapshot()).getUserMediaCalls).toBe(2);
 
   await unlockGuardianFromLearnerMenu(page);
   await page.goto("/guardian/learners/learner-mia");
@@ -1336,7 +1321,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
     page
       .getByRole("region", { name: "Lesson voice recordings" })
       .getByRole("status"),
-  ).toHaveText("Lesson recording is currently allowed.");
+  ).toHaveText("Lesson recording is available automatically.");
   const storedRecordings = await page.evaluate(() => {
     const learners = (
       window as Window & {
@@ -1356,7 +1341,9 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   expect(storedRecordings.mia).toEqual([
     expect.objectContaining({ outcome: "saved" }),
   ]);
-  expect(storedRecordings.noah).toEqual([]);
+  expect(storedRecordings.noah).toEqual([
+    expect.objectContaining({ outcome: "saved" }),
+  ]);
 });
 
 test("keeps Mia's queued built-in recording out of Noah after the Guardian switches", async ({
@@ -1398,24 +1385,12 @@ test("keeps Mia's queued built-in recording out of Noah after the Guardian switc
       if (!media) throw new Error("Lesson media controller is missing.");
       return media.snapshot();
     });
-  const allowRecordings = async () => {
-    const consent = page.getByRole("region", {
-      name: "Lesson voice recordings",
-    });
-    await consent
-      .getByRole("button", { name: "Allow lesson voice recordings" })
-      .click();
-    await expect(consent.getByRole("status")).toHaveText(
-      "Lesson recording is currently allowed.",
-    );
-  };
-
   await page.goto(
     learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
   );
-  await allowRecordings();
+  await expect(page.getByRole("status").filter({ hasText: "available automatically" })).toBeVisible();
   await page.goto("/guardian/learners/learner-noah");
-  await allowRecordings();
+  await expect(page.getByRole("status").filter({ hasText: "available automatically" })).toBeVisible();
 
   const lessonPath =
     "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=upload-held";
@@ -1480,7 +1455,7 @@ test("requires Guardian unlock before revealing a selection-required roster", as
   await page.goto(requestedUrl);
 
   await expect(
-    page.getByRole("heading", { name: "Unlock guardian mode" }),
+    page.getByRole("heading", { name: "Switch to guardian mode" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
@@ -1528,7 +1503,7 @@ test("shows a learner-safe no-selection state and lets an incomplete learner use
     .click();
   await expect(
     page.getByRole("menu", { name: "Account menu" }).getByRole("menuitem"),
-  ).toHaveText(["Grown-up accessPassword optional for now"]);
+  ).toHaveText(["Grown-up accessSwitch modes"]);
 
   await page.goto(
     learnerScenarioUrl("/guardian/learners", "selection-required"),
@@ -1762,28 +1737,18 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     await trigger.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
     await expect(menu.getByRole("menuitem")).toHaveText([
-      "Grown-up accessPassword optional for now",
+      "Grown-up accessSwitch modes",
     ]);
     await expect(menu).not.toContainText("Noah");
     await page.keyboard.press("Escape");
 
     if (path.startsWith("/dubs/")) {
       await expect(
-        page.getByRole("main").getByRole("paragraph").filter({
-          hasText: "You can watch the video now. Ask a grown-up to turn on voice recording if you want to sing and save your own version.",
-        }),
+        page.getByRole("button", { name: "Play full video" }),
       ).toBeVisible();
       await expect(
         page.getByRole("checkbox", { name: /grown-up|guardian|consent/i }),
       ).toHaveCount(0);
-      await trigger.click();
-      await page
-        .getByRole("menu", { name: "Account menu" })
-        .getByRole("menuitem", { name: /Grown-up access/ })
-        .click();
-      await expect(
-        page.getByRole("dialog", { name: "Unlock guardian mode" }),
-      ).toBeVisible();
     }
   }
 });
@@ -1937,9 +1902,10 @@ async function expectGuardianNameSurfacesContained(page: Page, name: string) {
         art.getByLabel(`Upload ${name}'s photo`, { exact: false }),
       ).toBeVisible();
     } else {
-      const consent = page.getByRole("checkbox");
-      await expect(consent).toBeVisible();
-      await expect(consent).toHaveAccessibleName(new RegExp(name));
+      const deletion = page.getByRole("button", {
+        name: `Delete ${name}'s saved nursery-rhyme voice clips`,
+      });
+      await expect(deletion).toBeVisible();
     }
 
     directions.push(...(await expectNameContentContained(page, name)));
@@ -2185,7 +2151,7 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   });
 });
 
-test("targets Noah's dubbing grant and deletion without switching learner mode", async ({
+test("targets Noah's dubbing deletion without switching learner mode", async ({
   page,
 }) => {
   await page.goto(
@@ -2207,11 +2173,10 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
   await expect(
     page.getByText("Editing settings for Noah", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("checkbox").check();
-  await page.getByRole("button", { name: "Allow voice dubbing" }).click();
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is on" }),
+    page.getByRole("heading", { name: "Voice dubbing is available" }),
   ).toBeVisible();
+  await expect(page.getByRole("checkbox")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: /Switch to .*start dubbing/i }),
   ).toHaveCount(0);
@@ -2232,15 +2197,15 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     ]);
     return { mia: mia.consentState, noah: noah.consentState };
   });
-  expect(granted).toEqual({ mia: "not_granted", noah: "granted" });
+  expect(granted).toEqual({ mia: "granted", noah: "granted" });
 
   await page
     .getByRole("button", {
-      name: "Turn off Noah's voice dubbing and delete all nursery-rhyme clips",
+      name: "Delete Noah's saved nursery-rhyme voice clips",
     })
     .click();
   await expect(
-    page.getByRole("button", { name: "Allow voice dubbing" }),
+    page.getByRole("heading", { name: "Voice dubbing is available" }),
   ).toBeVisible();
   const removed = await page.evaluate(async () => {
     const response = await fetch(
@@ -2248,7 +2213,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     );
     return (await response.json()) as { consentState: string };
   });
-  expect(removed.consentState).toBe("not_granted");
+  expect(removed.consentState).toBe("granted");
 
   await target.getByRole("button", { exact: true, name: "Mia" }).click();
   await expect(

@@ -611,10 +611,16 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(backToRhymes.getAttribute("href"), "/dubs");
   });
 
-  it("shows listen-only playback as soon as recording-disabled status loads", async () => {
+  it("retries automatic recording from listen-only playback without a guardian gate", async () => {
+    let statusLoads = 0;
+    let recordingAvailable = false;
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
-        return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
+        statusLoads += 1;
+        return Response.json({
+          ...enabledDubStatus(),
+          recordingEnabled: recordingAvailable,
+        });
       }
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
@@ -625,12 +631,28 @@ describe("duck dubbing storyboard presentation", () => {
       /You can watch the video now/,
     ));
     assert.ok(container.querySelector('[aria-label="Play full video"]'));
+    assert.doesNotMatch(
+      container.textContent,
+      /ask a grown-up|guardian|permission/i,
+    );
     assert.equal(
       [...container.querySelectorAll("button")].filter(({ textContent }) =>
         /Start dubbing|Continue dubbing|Continue Scene/.test(textContent),
       ).length,
       0,
     );
+
+    recordingAvailable = true;
+    const loadsBeforeRetry = statusLoads;
+    await click(
+      [...container.querySelectorAll("button")].find(({ textContent }) =>
+        textContent?.includes("Try recording again"),
+      ),
+    );
+    await waitFor(() =>
+      assert.ok(container.querySelector('[aria-label="Scene selection"]'))
+    );
+    assert.equal(statusLoads, loadsBeforeRetry + 1);
   });
 
   it("starts microphone capture before the selected melody and saves once at phrase end", async () => {

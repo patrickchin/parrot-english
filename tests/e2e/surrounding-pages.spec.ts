@@ -482,7 +482,7 @@ const guardianContentPages = [
   {
     heading: "Voice dubbing",
     lastControl: (page: Page) =>
-      page.getByRole("button", { name: "Allow voice dubbing" }),
+      page.getByRole("button", { name: "Delete Mia's saved nursery-rhyme voice clips" }),
     name: "dubbing settings",
     path: "/guardian/dubbing?parrotE2eDub=not-granted",
   },

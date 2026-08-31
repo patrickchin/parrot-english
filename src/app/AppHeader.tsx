@@ -146,6 +146,7 @@ export function AccountHeader({
   error,
   guardianLabel,
   isDialogOpen = false,
+  isModePending = false,
   isSigningOut,
   learnerLabel,
   onOpenAccountPrivacy,
@@ -161,13 +162,14 @@ export function AccountHeader({
   guardianLabel: string;
   hasActiveLearner?: boolean;
   isDialogOpen?: boolean;
+  isModePending?: boolean;
   isSigningOut: boolean;
   learnerLabel: string;
   onOpenAccountPrivacy: () => void;
   onOpenGuardianDashboard: () => void;
   onOpenLearnerProfiles: () => void;
   onRetryError?: () => void;
-  onSelectGuardian: (button: HTMLButtonElement) => void;
+  onSelectGuardian: () => void;
   onSignOut: () => void;
   signOutError: string;
   userEmail: string;
@@ -429,7 +431,8 @@ export function AccountHeader({
           >
             {activeMode === "learner" ? (
               <MenuButton
-                onClick={(event) => onSelectGuardian(event.currentTarget)}
+                disabled={isModePending}
+                onClick={() => selectAction(onSelectGuardian)}
                 role="menuitem"
                 type="button"
               >
@@ -437,7 +440,7 @@ export function AccountHeader({
                 <span className="grid gap-1">
                   <span>Grown-up access</span>
                   <span className="text-xs font-bold">
-                    Password optional for now
+                    {isModePending ? "Switching modes…" : "Switch modes"}
                   </span>
                 </span>
               </MenuButton>

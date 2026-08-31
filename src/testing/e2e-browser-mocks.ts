@@ -81,6 +81,7 @@ type PendingLessonUpload = {
 };
 type LessonRecordingMockScope = {
   consentRequested: () => void;
+  enable?: () => void;
   isEnabled: () => boolean;
   learnerProfileId?: () => string | null;
   pendingUploads: PendingLessonUpload[];
@@ -117,7 +118,6 @@ const E2E_PROFILE_LONG_ACKNOWLEDGMENT_SCENARIO = "long-acknowledgment";
 const E2E_PROFILE_RESUME_SCENARIO = "viewport-resume";
 const E2E_PROFILE_VIEWPORT_SCENARIO = "viewport-stability";
 const E2E_PROFILE_OPERATION_SCENARIO = "held";
-const E2E_GUARDIAN_PASSWORD = "e2e-guardian-password";
 const E2E_GUARDIAN_ACCESS_TTL_MS = 15 * 60 * 1000;
 const E2E_EXPIRED_ACCESS_DELAY_MS = 2_000;
 const E2E_GUARDIAN_SCENARIO_KEY = "parrot-e2e-guardian:active-scenario";
@@ -1036,6 +1036,10 @@ function createE2eLearnerAccount(
 
     if (dubRoute?.kind === "dub") {
       if (method === "GET") {
+        if (learner.dub.consentState === "not_granted") {
+          learner.dub.consentState = "granted";
+          persist();
+        }
         return e2eDubJson(dubStatus(learner, dubRoute.definition));
       }
       if (method === "DELETE") {
@@ -1165,6 +1169,11 @@ function createE2eLearnerAccount(
     return {
       consentRequested() {
         learner.lessonRecording.consentRequests += 1;
+        persist();
+      },
+      enable() {
+        learner.lessonRecording.consent = true;
+        learner.lessonRecording.cleanupPending = false;
         persist();
       },
       isEnabled: () =>
@@ -2103,6 +2112,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
               window.setTimeout(resolve, 400),
             );
           }
+          if (consentState === "not_granted") persistConsent("granted");
           if (legacyResetPending && consentState === "granted") {
             return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
           }
@@ -2434,24 +2444,6 @@ async function guardianResponse(
   if (url.pathname === "/api/guardian-access") {
     if (method === "GET") return e2eJson(currentGuardianAccess(sessionId));
     if (method === "POST") {
-      const request = input instanceof Request ? input : null;
-      const body = init?.body ?? (request ? await request.clone().text() : "");
-      let password = "";
-      try {
-        password = (JSON.parse(String(body)) as { password?: unknown })
-          .password as string;
-      } catch {
-        return e2eJson({ error: "invalid_json" }, 400);
-      }
-      if (password !== "" && password !== E2E_GUARDIAN_PASSWORD) {
-        return e2eJson(
-          {
-            error: "invalid_password",
-            message: "The password did not match this account.",
-          },
-          401,
-        );
-      }
       if (guardianScenario === "unlock-error") {
         return e2eJson(
           {
@@ -2687,9 +2679,11 @@ async function lessonRecordingResponse(
     if (getE2eLessonScenario() === "malformed-consent") {
       return e2eJson({ enabled: "false" });
     }
-    return getE2eLessonScenario() === "consent-error"
-      ? e2eJson({ error: "request_failed" }, 503)
-      : e2eJson({ enabled: scope.isEnabled() });
+    if (getE2eLessonScenario() === "consent-error") {
+      return e2eJson({ error: "request_failed" }, 503);
+    }
+    scope.enable?.();
+    return e2eJson({ enabled: scope.enable ? true : scope.isEnabled() });
   }
 
   const slot = lessonRecordingSlot(url);

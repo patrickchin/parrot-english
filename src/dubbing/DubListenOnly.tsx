@@ -7,6 +7,7 @@ import type { DubDefinition, DubLine } from "./rhyme-catalog";
 export type DubListenOnlyProps = {
   definition: DubDefinition;
   error: string;
+  onRetryLoad(): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
   playbackButtonRef?: RefObject<HTMLButtonElement | null>;
@@ -16,6 +17,7 @@ export type DubListenOnlyProps = {
 export function DubListenOnly({
   definition,
   error,
+  onRetryLoad,
   onTogglePlayback,
   playback,
   playbackButtonRef,
@@ -38,7 +40,8 @@ export function DubListenOnly({
         </section>
         <div className="grid min-w-0 content-start gap-3 short-wide:gap-2">
           <p className="m-0 rounded-2xl bg-white/90 p-3 font-bold leading-snug text-brand-ink shadow-sm">
-            You can watch the video now. Ask a grown-up to turn on voice recording if you want to sing and save your own version.
+            You can watch the video now. Your saved voice clips are being
+            cleared, so try recording again in a moment.
           </p>
           <ActionButton
             aria-label={playbackLabel}
@@ -55,6 +58,14 @@ export function DubListenOnly({
                 ? <Square aria-hidden="true" />
                 : <Play aria-hidden="true" />}
             {playback === "playing" ? "Stop" : playback === "loading" ? "Loading…" : "Play"}
+          </ActionButton>
+          <ActionButton
+            className="min-h-12 min-w-36 justify-self-start"
+            onClick={onRetryLoad}
+            size="compact"
+            variant="surface"
+          >
+            Try recording again
           </ActionButton>
           {error ? <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">{error}</p> : null}
         </div>

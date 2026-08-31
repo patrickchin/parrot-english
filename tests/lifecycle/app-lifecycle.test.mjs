@@ -2343,7 +2343,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Story settings/);
   });
 
-  it("locked guardian routes render only the unlock screen", async () => {
+  it("locked guardian routes render only the mode-switch screen", async () => {
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2364,7 +2364,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => text(/Unlock guardian mode/));
+    await waitFor(() => text(/Switch to guardian mode/));
     noText(/Save changes|Redo setup questions/);
     assert.equal(currentRoute().path, "/profile");
   });
@@ -2421,7 +2421,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     text(/Checking guardian access…/);
-    noText(/Save changes|Redo setup questions|Unlock guardian mode/);
+    noText(/Save changes|Redo setup questions|Switch to guardian mode/);
   });
 
   it("resumes a locked guardian deep link at the same URL and cancels home", async () => {
@@ -2433,7 +2433,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         return { mode: "learner" };
       },
       async unlockGuardianAccess(password) {
-        assert.equal(password, "correct-password");
+        assert.equal(password, "");
         return {
           expiresAt: "2099-01-01T00:00:00.000Z",
           mode: "guardian",
@@ -2441,19 +2441,16 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     };
     await mountStrict(modeRoutesInMemory({ api, initialEntry: "/profile" }));
-    await waitFor(() => text(/Unlock guardian mode/));
-    await input(
-      document.querySelector('input[name="password"]'),
-      "correct-password",
-    );
-    await click(button("Unlock guardian mode"));
+    await waitFor(() => text(/Switch to guardian mode/));
+    assert.equal(document.querySelector('input[name="password"]'), null);
+    await click(button("Switch to guardian mode"));
     await waitFor(() => text(/Save changes/));
     assert.equal(currentRoute().path, "/profile");
 
     await cleanupMountedRoots();
     document.body.replaceChildren();
     await mountStrict(modeRoutesInMemory({ api, initialEntry: "/profile" }));
-    await waitFor(() => text(/Unlock guardian mode/));
+    await waitFor(() => text(/Switch to guardian mode/));
     await click(button("Cancel"));
     await waitFor(() => assert.equal(currentRoute().path, "/"));
   });
@@ -2486,7 +2483,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Save changes/));
     await act(async () => expire());
-    await waitFor(() => text(/Unlock guardian mode/));
+    await waitFor(() => text(/Switch to guardian mode/));
     noText(/Save changes|Redo setup questions/);
     assert.equal(currentRoute().path, "/profile");
   });
@@ -6414,7 +6411,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return { mode: "learner" };
           },
           async unlockGuardianAccess(password) {
-            assert.equal(password, "correct-password");
+            assert.equal(password, "");
             guardianMode = "guardian";
             return {
               expiresAt: "2099-01-01T00:00:00.000Z",
@@ -6426,16 +6423,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => text(/Unlock guardian mode/));
+    await waitFor(() => text(/Switch to guardian mode/));
     assert.equal(currentRoute().path, deepLink);
     noText(/Your saved dub could not be loaded/);
     const loadsBeforeUnlock = targetedLoads;
 
-    await input(
-      document.querySelector('input[name="password"]'),
-      "correct-password",
-    );
-    await click(button("Unlock guardian mode"));
+    assert.equal(document.querySelector('input[name="password"]'), null);
+    await click(button("Switch to guardian mode"));
     await waitFor(() => text(/Editing settings for Noah/));
     assert.equal(currentRoute().path, deepLink);
     assert.ok(targetedLoads > loadsBeforeUnlock);

@@ -38,7 +38,6 @@ export function ProfileEditorView({
   isSaving,
   learnerName,
   lessonRecordingCleanupPending,
-  lessonRecordingConsent,
   onCancel,
   onClose,
   onLessonRecordingConsentChange,
@@ -58,20 +57,16 @@ export function ProfileEditorView({
     onSave();
   }
 
-  function changeLessonRecordingConsent() {
-    if (lessonRecordingCleanupPending && !lessonRecordingConsent) {
-      onLessonRecordingConsentChange(false);
-      return;
-    }
+  function deleteLessonRecordings() {
     if (
-      lessonRecordingConsent &&
+      !lessonRecordingCleanupPending &&
       !window.confirm(
-        "Stop lesson voice recordings and delete all saved lesson voice recordings? This cannot be undone.",
+        "Delete all saved lesson voice recordings? This cannot be undone.",
       )
     ) {
       return;
     }
-    onLessonRecordingConsentChange(!lessonRecordingConsent);
+    onLessonRecordingConsentChange(false);
   }
 
   return (
@@ -250,11 +245,10 @@ export function ProfileEditorView({
                 Lesson voice recordings
               </h2>
               <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Recording starts automatically during each join-in moment.
-                Permission and clips apply only to this learner profile, and one
-                latest clip is saved per join-in moment. A Guardian manages each
-                learner independently and can stop and delete the clips at any
-                time.
+                Recording is available automatically during each join-in
+                moment. Clips apply only to this learner profile, and one latest
+                clip is saved per join-in moment. You can delete every saved clip
+                here at any time.
               </p>
               <p
                 aria-live="polite"
@@ -262,25 +256,21 @@ export function ProfileEditorView({
                 role="status"
               >
                 {lessonRecordingCleanupPending
-                  ? lessonRecordingConsent
-                    ? "Lesson recording is currently allowed. Earlier saved clips are still being deleted."
-                    : "Lesson recording is off. Saved clips are still being deleted."
-                  : `Lesson recording is currently ${lessonRecordingConsent ? "allowed" : "off"}.`}
+                  ? "Saved lesson recordings are still being deleted."
+                  : "Lesson recording is available automatically."}
               </p>
             </div>
             <ActionButton
               disabled={isSaving}
               fullWidth
-              onClick={changeLessonRecordingConsent}
+              onClick={deleteLessonRecordings}
               size="compact"
               type="button"
-              variant={lessonRecordingConsent ? "dangerSurface" : "navy"}
+              variant="dangerSurface"
             >
-              {lessonRecordingConsent
-                ? "Stop and delete lesson recordings"
-                : lessonRecordingCleanupPending
-                  ? "Finish deleting lesson recordings"
-                : "Allow lesson voice recordings"}
+              {lessonRecordingCleanupPending
+                ? "Finish deleting lesson recordings"
+                : "Delete saved lesson recordings"}
             </ActionButton>
           </section>
 

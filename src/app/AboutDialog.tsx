@@ -224,20 +224,20 @@ export function AccountPrivacySections() {
               to the account.
             </li>
             <li>
-              With Guardian permission, all voice-dubbing rhymes save that
-              learner&apos;s private voice clips to the account. A new take
+              Voice-dubbing rhymes save that learner&apos;s private voice clips
+              to the account. A new take
               replaces the saved clip for that line, and the Guardian can
               delete every saved clip.
             </li>
             <li>
-              With guardian permission, lessons save one private voice clip for
+              Lessons save one private voice clip for
               each join-in moment. A new take replaces the previous take for
               that moment. Parrot does not score or transcribe these clips yet.
               Stopping lesson recording or deleting the account deletes them.
             </li>
             <li>
-              Lesson recording permission and saved clips are managed
-              independently for each selected learner profile.
+              Saved lesson recordings are managed independently for each
+              selected learner profile.
             </li>
             <li>
               If a grown-up chooses story art, a cropped photo is sent to

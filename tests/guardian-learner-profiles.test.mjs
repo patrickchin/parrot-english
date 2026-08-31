@@ -828,9 +828,10 @@ test("loads and saves inactive learner details by ID without changing learner mo
   );
 });
 
-test("targets recording consent at an explicit learner without selecting them", async () => {
+test("targets recording deletion at an explicit learner without selecting them", async () => {
   let reloadCalls = 0;
   const consentBodies = [];
+  window.confirm = () => true;
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (
@@ -845,7 +846,7 @@ test("targets recording consent at an explicit learner without selecting them", 
       init.method === "PUT"
     ) {
       consentBodies.push(JSON.parse(init.body));
-      return Response.json({ cleanupPending: false, enabled: true });
+      return Response.json({ cleanupPending: false, enabled: false });
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
@@ -858,22 +859,23 @@ test("targets recording consent at an explicit learner without selecting them", 
       },
     }),
   );
-  await waitFor(() => button(container, "Allow lesson voice recordings"));
-  await click(button(container, "Allow lesson voice recordings"));
+  await waitFor(() => button(container, "Delete saved lesson recordings"));
+  await click(button(container, "Delete saved lesson recordings"));
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="status"]')?.textContent ?? "",
-      /currently allowed/,
+      /available automatically/,
     ),
   );
 
-  assert.deepEqual(consentBodies, [{ enabled: true }]);
+  assert.deepEqual(consentBodies, [{ enabled: false }]);
   assert.equal(reloadCalls, 0);
   assert.equal(currentRoute(container), "/guardian/learners/learner-noah");
 });
 
-test("refreshes active learner context after targeted recording consent changes", async () => {
+test("refreshes active learner context after targeted recording deletion", async () => {
   const reloads = [];
+  window.confirm = () => true;
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (
@@ -887,7 +889,7 @@ test("refreshes active learner context after targeted recording consent changes"
         "/api/profile/lesson-recording-consent?learnerProfileId=learner-mia" &&
       init.method === "PUT"
     ) {
-      return Response.json({ cleanupPending: false, enabled: true });
+      return Response.json({ cleanupPending: false, enabled: false });
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
@@ -902,12 +904,12 @@ test("refreshes active learner context after targeted recording consent changes"
       },
     }),
   );
-  await waitFor(() => button(container, "Allow lesson voice recordings"));
-  await click(button(container, "Allow lesson voice recordings"));
+  await waitFor(() => button(container, "Delete saved lesson recordings"));
+  await click(button(container, "Delete saved lesson recordings"));
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="status"]')?.textContent ?? "",
-      /currently allowed/,
+      /available automatically/,
     ),
   );
 
