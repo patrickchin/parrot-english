@@ -17,21 +17,29 @@ const parrotRecording =
   "personalized-story-art/account/learners/learner/lesson-recordings/parrot/a/scene-0/step-0.audio";
 const storyArt = "personalized-story-art/account/stories/my/cover.webp";
 
-function cloudflareResponse(result, { status = 200, success = true } = {}) {
+function cloudflareResponse(result, { resultInfo, status = 200, success = true } = {}) {
   return Response.json(
-    { errors: [], messages: [], result, success },
+    {
+      errors: [],
+      messages: [],
+      result,
+      result_info: resultInfo,
+      success,
+    },
     { status },
   );
 }
 
 function listPage(keys, { cursor, truncated }, responseOptions) {
   return cloudflareResponse(
+    keys.map((key) => ({ key })),
     {
-      cursor,
-      objects: keys.map((key) => ({ key })),
-      truncated,
+      ...responseOptions,
+      resultInfo: {
+        cursor,
+        is_truncated: truncated,
+      },
     },
-    responseOptions,
   );
 }
 
@@ -275,6 +283,61 @@ describe("custom lesson recording purge", () => {
       ),
       /next cursor/,
     );
+    assert.equal(
+      calls.filter(({ init }) => init.method === "DELETE").length,
+      0,
+    );
+  });
+
+  it("rejects malformed list result_info before any delete", async () => {
+    for (const [resultInfo, expectedError] of [
+      [undefined, /invalid envelope/],
+      [{}, /invalid envelope/],
+      [{ is_truncated: "false" }, /invalid envelope/],
+      [{ cursor: " ", is_truncated: true }, /next cursor/],
+    ]) {
+      const calls = [];
+      await assert.rejects(
+        runPurgeCustomLessonRecordings(
+          commandOptions({
+            execute: true,
+            fetch: async (input, init = {}) => {
+              calls.push({ init, url: new URL(input) });
+              return cloudflareResponse([{ key: accountRecording }], { resultInfo });
+            },
+            writeOutput() {},
+          }),
+        ),
+        expectedError,
+      );
+      assert.equal(
+        calls.filter(({ init }) => init.method === "DELETE").length,
+        0,
+      );
+    }
+  });
+
+  it("rejects malformed paginated result_info before deleting listed keys", async () => {
+    const calls = [];
+    await assert.rejects(
+      runPurgeCustomLessonRecordings(
+        commandOptions({
+          execute: true,
+          fetch: async (input, init = {}) => {
+            calls.push({ init, url: new URL(input) });
+            if (calls.length === 1) {
+              return listPage([accountRecording], { cursor: "next", truncated: true });
+            }
+            return cloudflareResponse([{ key: learnerRecording }], {
+              resultInfo: { is_truncated: "false" },
+            });
+          },
+          writeOutput() {},
+        }),
+      ),
+      /invalid envelope/,
+    );
+    assert.equal(calls.length, 2);
     assert.equal(
       calls.filter(({ init }) => init.method === "DELETE").length,
       0,

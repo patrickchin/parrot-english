@@ -115,7 +115,7 @@ async function cloudflareResult(url, { apiToken, fetch, method }) {
   if (!envelope || envelope.success !== true || !("result" in envelope)) {
     throw new Error("Cloudflare API response has an unsuccessful envelope");
   }
-  return envelope.result;
+  return envelope;
 }
 
 async function listCustomLessonRecordingKeys({ accountId, apiToken, bucket, fetch }) {
@@ -125,30 +125,35 @@ async function listCustomLessonRecordingKeys({ accountId, apiToken, bucket, fetc
   let shouldListMore = true;
 
   while (shouldListMore) {
-    const result = await cloudflareResult(listUrl(accountId, bucket, cursor), {
+    const envelope = await cloudflareResult(listUrl(accountId, bucket, cursor), {
       apiToken,
       fetch,
       method: "GET",
     });
-    if (!result || !Array.isArray(result.objects) || typeof result.truncated !== "boolean") {
+    const resultInfo = envelope.result_info;
+    if (
+      !Array.isArray(envelope.result) ||
+      !resultInfo ||
+      typeof resultInfo.is_truncated !== "boolean"
+    ) {
       throw new Error("Cloudflare list response has an invalid envelope");
     }
-    for (const object of result.objects) {
+    for (const object of envelope.result) {
       if (!object || typeof object.key !== "string") {
         throw new Error("Cloudflare list response has an invalid object key");
       }
       if (isCustomLessonRecordingKey(object.key)) keys.add(object.key);
     }
-    shouldListMore = result.truncated;
+    shouldListMore = resultInfo.is_truncated;
     if (shouldListMore) {
-      if (typeof result.cursor !== "string" || !result.cursor.trim()) {
+      if (typeof resultInfo.cursor !== "string" || !resultInfo.cursor.trim()) {
         throw new Error("Cloudflare list response is truncated but has no next cursor");
       }
-      if (seenCursors.has(result.cursor)) {
+      if (seenCursors.has(resultInfo.cursor)) {
         throw new Error("Cloudflare list cursor did not advance");
       }
-      seenCursors.add(result.cursor);
-      cursor = result.cursor;
+      seenCursors.add(resultInfo.cursor);
+      cursor = resultInfo.cursor;
     }
   }
 
