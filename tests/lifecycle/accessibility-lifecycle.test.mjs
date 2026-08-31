@@ -200,11 +200,13 @@ function accountHeaderProps(overrides = {}) {
     guardianLabel: "Patrick",
     isModePending: false,
     isSigningOut: false,
+    hasActiveLearner: true,
     learnerLabel: "Mia",
     onDeleteAccount: async () => null,
     onOpenAccountPrivacy() {},
     onOpenGuardianDashboard() {},
     onOpenLearnerProfiles() {},
+    onOpenLearnerSwitcher() {},
     onOpenProfile() {},
     onSelectGuardian() {},
     onSelectLearner() {},
@@ -512,18 +514,36 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(document.activeElement, opener);
   });
 
-  it("learner mode exposes only the locked grown-up gateway beneath the active identity", async () => {
-    await mountStrict(createElement(AccountHeader, accountHeaderProps()));
+  it("learner mode activates Switch learner before the locked grown-up gateway", async () => {
+    const activations = [];
+    let trigger;
+    await mountStrict(
+      createElement(
+        AccountHeader,
+        accountHeaderProps({
+          onOpenLearnerSwitcher() {
+            assert.equal(document.activeElement, trigger);
+            activations.push("switch-learner");
+          },
+        }),
+      ),
+    );
 
-    await click(button("Profile for Mia, learner mode"));
+    trigger = button("Profile for Mia, learner mode");
+    await click(trigger);
     const menu = document.querySelector('[role="menu"]');
     assert.ok(menu);
-    assert.deepEqual(
+    const menuItems =
       [...menu.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
-      ),
-      ["Grown-up accessSwitch modes"],
-    );
+      );
+    assert.deepEqual(menuItems, [
+      "Switch learner",
+      "Grown-up accessSwitch modes",
+    ]);
+    await click(button("Switch learner"));
+    assert.deepEqual(activations, ["switch-learner"]);
+    assert.equal(document.querySelector('[role="menu"]'), null);
     assert.match(document.body.textContent, /Mia/);
     assert.equal(
       document.querySelector('[aria-label="Choose profile mode"]'),

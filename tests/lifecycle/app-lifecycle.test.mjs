@@ -1309,20 +1309,54 @@ function RegisteredLearnerNameHarness() {
   );
 }
 
-function LearnerGateAccountExperienceHarness() {
+function LearnerGateAccountExperienceHarness({
+  onBeforeLearnerSelectionNavigate = () => {},
+} = {}) {
   const [experience, setExperience] = useState(null);
+  const [Provider] = useState(() =>
+    createGuardianAccessProvider({
+      api: {
+        async loadGuardianAccess() {
+          return {
+            expiresAt: "2099-01-01T00:00:00.000Z",
+            mode: "guardian",
+          };
+        },
+        async lockGuardianAccess() {
+          return { mode: "learner" };
+        },
+        async unlockGuardianAccess() {
+          return { mode: "guardian" };
+        },
+      },
+      schedule: () => () => {},
+    }),
+  );
 
   function ReadExperience() {
     const accountExperience = useAccountExperience();
     return createElement(
-      "output",
-      {
-        "aria-label": "Gate account experience",
-        "data-has-active-learner": String(
-          accountExperience?.hasActiveLearner ?? false,
-        ),
-      },
-      accountExperience?.learnerName ?? "Learner",
+      Fragment,
+      null,
+      createElement(
+        "output",
+        {
+          "aria-label": "Gate account experience",
+          "data-has-active-learner": String(
+            accountExperience?.hasActiveLearner ?? false,
+          ),
+        },
+        accountExperience?.learnerName ?? "Learner",
+      ),
+      createElement(
+        "button",
+        {
+          disabled: !accountExperience?.onOpenLearnerSwitcher,
+          onClick: accountExperience?.onOpenLearnerSwitcher,
+          type: "button",
+        },
+        "Open learner switcher",
+      ),
     );
   }
 
@@ -1330,21 +1364,30 @@ function LearnerGateAccountExperienceHarness() {
     AccountActionProvider,
     { profileAction: experience, setProfileAction: setExperience },
     createElement(
-      LearnerProfileGate,
-      {
-        completedLearnerProfileFallback: createElement("p", null, "HOME"),
-        guardianDashboardRoute: true,
-        guardianRoute: true,
-        isConversationRoute: false,
-        isLearnerProfileRoute: false,
-        isProfileRoute: false,
-        learnerProfileFallback: createElement("p", null, "SETUP"),
-        onCloseProfileRoute() {},
-        onConversationCompleted() {},
-        onOpenLessons() {},
-        onOpenProfileRoute() {},
-      },
-      createElement("p", null, "GUARDIAN DASHBOARD"),
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(
+          LearnerProfileGate,
+          {
+            completedLearnerProfileFallback: createElement("p", null, "HOME"),
+            guardianDashboardRoute: true,
+            guardianRoute: true,
+            isConversationRoute: false,
+            isLearnerProfileRoute: false,
+            isProfileRoute: false,
+            learnerProfileFallback: createElement("p", null, "SETUP"),
+            onBeforeLearnerSelectionNavigate,
+            onCloseProfileRoute() {},
+            onConversationCompleted() {},
+            onOpenLessons() {},
+            onOpenProfileRoute() {},
+          },
+          createElement("p", null, "GUARDIAN DASHBOARD"),
+        ),
+      ),
     ),
     createElement(ReadExperience),
   );
@@ -2283,27 +2326,75 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
-  it("registers the actual name for an incomplete active learner", async () => {
+  it("registers the actual name and switcher for an incomplete active learner", async () => {
+    const operations = [];
+    const roster = {
+      activeProfileId: "learner-bob",
+      profiles: [
+        {
+          createdAt: "2026-09-01T08:00:00.000Z",
+          deletionPending: false,
+          id: "learner-bob",
+          name: "Bob",
+          profileStatus: "in_progress",
+        },
+      ],
+    };
     globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/learner-profile");
-      assert.equal(init.method, "GET");
-      return json(
-        fullLearnerProfileState({
-          profile: {
-            ...fullLearnerProfileState().profile,
-            id: "learner-ava",
-            name: "Ava",
-          },
-        }),
-      );
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return json(
+          fullLearnerProfileState({
+            profile: {
+              ...fullLearnerProfileState().profile,
+              id: "learner-bob",
+              name: "Bob",
+            },
+          }),
+        );
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json(roster);
+      }
+      if (
+        path === "/api/learner-profiles/learner-bob/active" &&
+        init.method === "PUT"
+      ) {
+        operations.push("select:learner-bob");
+        return json(roster);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
 
-    await mountStrict(createElement(LearnerGateAccountExperienceHarness));
+    await mountStrict(
+      createElement(LearnerGateAccountExperienceHarness, {
+        onBeforeLearnerSelectionNavigate() {
+          operations.push("before-navigate");
+        },
+      }),
+    );
     await waitFor(() => {
       const experience = output("Gate account experience");
-      assert.equal(experience.textContent, "Ava");
+      assert.equal(experience.textContent, "Bob");
       assert.equal(experience.getAttribute("data-has-active-learner"), "true");
       text(/GUARDIAN DASHBOARD/);
+    });
+    const opener = button("Open learner switcher");
+    assert.equal(opener.disabled, false);
+    await click(opener);
+    await waitFor(() => text(/Who is learning now\?/));
+    assert.ok(document.querySelector('[role="dialog"]'));
+    await click(button("Cancel"));
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+
+    await click(opener);
+    await waitFor(() => button("Start learner mode as Bob"));
+    await click(button("Start learner mode as Bob"));
+    await waitFor(() => {
+      assert.equal(document.querySelector('[role="dialog"]'), null);
+      assert.deepEqual(operations, [
+        "select:learner-bob",
+        "before-navigate",
+      ]);
     });
   });
 

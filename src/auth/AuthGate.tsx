@@ -281,6 +281,7 @@ interface AuthGateViewProps {
   onGuestSignIn: () => void;
   onModeChange: (mode: AuthMode) => void;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
+  onOpenLearnerSwitcher: (() => void) | null;
   onRetry: () => void;
   onSignOut: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
@@ -313,6 +314,7 @@ function AccountExperienceHeader({
   isSigningOut,
   learnerName,
   onNavigate,
+  onOpenLearnerSwitcher,
   onSignOut,
   signOutError,
   userEmail,
@@ -324,6 +326,7 @@ function AccountExperienceHeader({
   isSigningOut: boolean;
   learnerName: string | null;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
+  onOpenLearnerSwitcher: (() => void) | null;
   onSignOut: () => void;
   signOutError: string;
   userEmail: string;
@@ -373,6 +376,7 @@ function AccountExperienceHeader({
         onOpenAccountPrivacy={() => onNavigate(getGuardianAccountPath())}
         onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
         onOpenLearnerProfiles={() => onNavigate(getGuardianLearnersPath())}
+        onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onRetryError={
           access.error
             ? access.retry
@@ -414,6 +418,7 @@ export function AuthGateView({
   onGuestSignIn,
   onModeChange,
   onNavigate,
+  onOpenLearnerSwitcher,
   onRetry,
   onSignOut,
   onSubmit,
@@ -681,6 +686,7 @@ export function AuthGateView({
         isSigningOut={isSigningOut}
         learnerName={learnerName}
         onNavigate={onNavigate}
+        onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onSignOut={onSignOut}
         signOutError={signOutError}
         userEmail={session.user.email}
@@ -967,6 +973,9 @@ export function createAuthGate({
             onGuestSignIn={() => void handleGuestSignIn()}
             onModeChange={selectMode}
             onNavigate={navigate}
+            onOpenLearnerSwitcher={
+              profileAction?.onOpenLearnerSwitcher ?? null
+            }
             onRetry={() => void handleRetry()}
             onSignOut={handleSignOut}
             onSubmit={handleSubmit}

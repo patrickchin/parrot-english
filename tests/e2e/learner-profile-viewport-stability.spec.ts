@@ -822,16 +822,17 @@ test("profile Replay and grown-up access gateway remain independently operable",
   const account = page.getByRole("button", { name: /^Profile for / });
   await account.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
-  const grownUpAccess = menu.getByRole("menuitem", {
-    name: /Grown-up access/,
+  const switchLearner = menu.getByRole("menuitem", {
+    name: "Switch learner",
   });
   await expect(menu.getByRole("menuitem")).toHaveText([
+    "Switch learner",
     "Grown-up accessSwitch modes",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
   ).toHaveCount(0);
-  await expect(grownUpAccess).toBeFocused();
+  await expect(switchLearner).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(account).toBeFocused();

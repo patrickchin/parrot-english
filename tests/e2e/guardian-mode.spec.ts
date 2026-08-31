@@ -121,6 +121,7 @@ for (const viewport of requiredViewports) {
     await expectInsideViewport(trigger, viewport);
     await expectInsideViewport(panel, viewport);
     await expect(menu.getByRole("menuitem")).toHaveText([
+      "Switch learner",
       "Grown-up accessSwitch modes",
     ]);
     await expect(
@@ -847,6 +848,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
     await page.goto(path);
     const menu = await openLearnerAccountMenu(page);
     await expect(menu.getByRole("menuitem")).toHaveText([
+      "Switch learner",
       "Grown-up accessSwitch modes",
     ]);
     await expect(

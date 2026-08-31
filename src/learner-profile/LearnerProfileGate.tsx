@@ -69,7 +69,10 @@ import {
   usePeppaConversation,
 } from "../conversation/usePeppaConversation";
 import { ActionButton, TextButton } from "../shared/ui";
-import { LearnerModeSelectionPage } from "../app/LearnerModeSwitchDialog";
+import {
+  LearnerModeSelectionPage,
+  LearnerModeSwitchDialog,
+} from "../app/LearnerModeSwitchDialog";
 import {
   LearnerProfileProvider,
   LearnerSelectionProvider,
@@ -871,6 +874,7 @@ export function LearnerProfileGate({
   const [guardianSelectionRosterPhase, setGuardianSelectionRosterPhase] =
     useState<GuardianSelectionRosterPhase>("idle");
   const [isLoading, setIsLoading] = useState(true);
+  const [isLearnerSwitcherOpen, setIsLearnerSwitcherOpen] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [learnerIdentityCheck, setLearnerIdentityCheck] =
     useState<LearnerIdentityCheck>(
@@ -2584,6 +2588,19 @@ export function LearnerProfileGate({
     profileState,
   ]);
 
+  const openLearnerSwitcher = useCallback(
+    () => setIsLearnerSwitcherOpen(true),
+    [],
+  );
+  const closeLearnerSwitcher = useCallback(
+    () => setIsLearnerSwitcherOpen(false),
+    [],
+  );
+  const handleLearnerSwitcherNavigate = useCallback(() => {
+    closeLearnerSwitcher();
+    onBeforeLearnerSelectionNavigate?.();
+  }, [closeLearnerSwitcher, onBeforeLearnerSelectionNavigate]);
+
   const profileAction = useMemo(() => {
     if (learnerIdentityCheck !== "confirmed") return null;
     if (data?.mode === "selection-required") {
@@ -2592,6 +2609,7 @@ export function LearnerProfileGate({
         guardianUnlockDestination: guardianUnlockDestination ?? null,
         hasActiveLearner: false,
         learnerName: null,
+        onOpenLearnerSwitcher: null,
         onOpenProfile: null,
       };
     }
@@ -2600,6 +2618,7 @@ export function LearnerProfileGate({
           error: "",
           hasActiveLearner: true,
           learnerName: activeLearnerName,
+          onOpenLearnerSwitcher: openLearnerSwitcher,
           onOpenProfile:
             canEditProfile && !isProfileRoute ? openProfileFromAccount : null,
         }
@@ -2612,6 +2631,7 @@ export function LearnerProfileGate({
     hasActiveLearner,
     isProfileRoute,
     learnerIdentityCheck,
+    openLearnerSwitcher,
     openProfileFromAccount,
   ]);
   useProfileAccountAction(profileAction);
@@ -2849,6 +2869,13 @@ export function LearnerProfileGate({
           {protectedChildren}
         </LearnerProfileGateView>
       </div>
+      {isLearnerSwitcherOpen ? (
+        <LearnerModeSwitchDialog
+          destination="/"
+          onBeforeNavigate={handleLearnerSwitcherNavigate}
+          onClose={closeLearnerSwitcher}
+        />
+      ) : null}
     </LearnerSelectionProvider>
   );
 }

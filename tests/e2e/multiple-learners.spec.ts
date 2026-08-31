@@ -1739,6 +1739,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     await trigger.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
     await expect(menu.getByRole("menuitem")).toHaveText([
+      "Switch learner",
       "Grown-up accessSwitch modes",
     ]);
     await expect(menu).not.toContainText("Noah");

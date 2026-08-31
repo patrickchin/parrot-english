@@ -984,6 +984,7 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
+    "Switch learner",
     "Grown-up accessSwitch modes",
   ]);
   await expect(
