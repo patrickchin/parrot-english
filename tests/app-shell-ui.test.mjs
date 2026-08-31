@@ -267,7 +267,7 @@ test("lesson routes expose one back control to the lesson list", () => {
   );
 });
 
-test("retired custom lesson routes do not render custom lesson screens", () => {
+test("retired lesson routes do not render retired feature screens", () => {
   for (const route of ["/guardian/lessons", "/lessons/my/create"]) {
     const html = renderApplicationRoute(route);
 

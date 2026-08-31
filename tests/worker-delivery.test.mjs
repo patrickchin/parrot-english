@@ -71,7 +71,7 @@ describe("Worker app delivery", () => {
     assert.equal(getCalls(), 1);
   });
 
-  it("returns the retired custom lesson API as an unmatched API route", async () => {
+  it("returns the retired lesson API as an unmatched API route", async () => {
     const { env } = createEnvironment(() => new Response("asset"));
     const worker = createWorker({
       createAuth: () => ({
