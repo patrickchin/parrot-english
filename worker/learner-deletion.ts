@@ -633,7 +633,7 @@ async function deleteDatabaseClosure(
         tombstone.learnerProfileId,
         tombstone.userIdHash,
       ),
-      ...["learner_lesson", "conversation_session", "personalized_story_art"].map(
+      ...["conversation_session", "personalized_story_art"].map(
         (table) => database.$client.prepare(
           `DELETE FROM ${table}
            WHERE auth_user_id = ? AND learner_profile_id IS NULL

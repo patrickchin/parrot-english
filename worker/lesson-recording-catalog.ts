@@ -5,9 +5,7 @@ import lesson04 from "../content/lessons/04-playground-words.json" with { type: 
 import lesson05 from "../content/lessons/05-market-day.json" with { type: "json" };
 import lesson06 from "../content/lessons/06-picnic-time.json" with { type: "json" };
 import lesson07 from "../content/lessons/07-bedtime-story.json" with { type: "json" };
-import type { Database } from "./database.ts";
 import type { LessonRecordingSlot } from "./lesson-recording-storage.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
 
 const BUILT_IN_LESSONS = new Map<string, unknown>([
   ["01-peppas-high-ball", lesson01],
@@ -20,8 +18,6 @@ const BUILT_IN_LESSONS = new Map<string, unknown>([
 ]);
 
 type LessonRecordingTarget = {
-  lessonGeneration: number | null;
-  revision: string | null;
   targetText: string;
 };
 
@@ -46,14 +42,9 @@ function userTarget(lesson: unknown, slot: LessonRecordingSlot) {
     : null;
 }
 
-export async function resolveLessonRecordingTarget(
-  _database: Database,
-  _identity: LearnerIdentity,
+export function resolveLessonRecordingTarget(
   slot: LessonRecordingSlot,
-): Promise<LessonRecordingTarget | null> {
-  if (slot.source !== "parrot") return null;
+): LessonRecordingTarget | null {
   const targetText = userTarget(BUILT_IN_LESSONS.get(slot.lessonId), slot);
-  return targetText
-    ? { lessonGeneration: null, revision: null, targetText }
-    : null;
+  return targetText ? { targetText } : null;
 }

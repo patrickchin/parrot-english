@@ -80,6 +80,20 @@ function unmappedCount(database, table) {
     .get().count;
 }
 
+it("drops learner lessons after all production migrations", () => {
+  const database = new DatabaseSync(":memory:");
+  database.exec("PRAGMA foreign_keys = ON");
+  try {
+    for (const migration of readTestMigrations()) database.exec(migration.sql);
+    assert.throws(
+      () => database.prepare("SELECT * FROM learner_lesson").all(),
+      /no such table: learner_lesson/i,
+    );
+  } finally {
+    database.close();
+  }
+});
+
 it("adds a durable personalized-art candidate closure without rewriting the staged learner migrations", () => {
   const migrations = readTestMigrations();
   const closure = migrations.find(

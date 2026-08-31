@@ -397,46 +397,6 @@ export const learnerSessionBypass = sqliteTable(
   ],
 );
 
-export const learnerLesson = sqliteTable(
-  "learner_lesson",
-  {
-    id: text("id").primaryKey(),
-    authUserId: text("auth_user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    learnerProfileId: text("learner_profile_id").references(
-      () => learnerProfile.id,
-      { onDelete: "cascade" },
-    ),
-    source: text("source").notNull(),
-    lessonJson: text("lesson_json").notNull(),
-    recordingGeneration: integer("recording_generation").default(0).notNull(),
-    recordingCleanupBeforeGeneration: integer(
-      "recording_cleanup_before_generation",
-    ),
-    createdAt: createdAt(),
-    updatedAt: updatedAt(),
-  },
-  (table) => [
-    index("learner_lesson_user_updated_idx").on(
-      table.authUserId,
-      table.updatedAt,
-    ),
-    index("learner_lesson_profile_updated_idx").on(
-      table.learnerProfileId,
-      table.updatedAt,
-    ),
-    check(
-      "learner_lesson_source_check",
-      sql`${table.source} in ('generated', 'uploaded')`,
-    ),
-    check(
-      "learner_lesson_json_check",
-      sql`json_valid(${table.lessonJson})`,
-    ),
-  ],
-);
-
 export const conversationSession = sqliteTable(
   "conversation_session",
   {

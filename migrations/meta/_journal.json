@@ -127,6 +127,13 @@
       "when": 1788115134418,
       "tag": "0017_smart_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1788165744688,
+      "tag": "0018_remove-learner-lessons",
+      "breakpoints": true
     }
   ]
 }

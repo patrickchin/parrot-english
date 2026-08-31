@@ -356,12 +356,6 @@ function addDeletionGraph(state) {
       profileId,
       NOW,
     );
-    state.sqlite.prepare(
-      `INSERT INTO learner_lesson
-        (id, auth_user_id, learner_profile_id, source, lesson_json,
-         created_at, updated_at)
-       VALUES (?, ?, ?, 'uploaded', '{}', ?, ?)`,
-    ).run(`lesson-${profileId}`, USER_ID, profileId, NOW, NOW);
     insertConversation(state, profileId);
     state.sqlite.prepare(
       `INSERT INTO conversation_turn
@@ -406,7 +400,6 @@ function assertOnlySiblingGraphRemains(state) {
   for (const [table, profileColumn] of [
     ["learner_dub_consent", "learner_profile_id"],
     ["onboarding_learner_session_bypass", "learner_profile_id"],
-    ["learner_lesson", "learner_profile_id"],
     ["conversation_session", "learner_profile_id"],
     ["personalized_story_art", "learner_profile_id"],
     ["learner_story_art_generation_lease", "learner_profile_id"],
@@ -1269,11 +1262,6 @@ describe("learner deletion lifecycle", () => {
       `INSERT INTO onboarding_session_bypass (session_id, auth_user_id, skipped_at)
        VALUES (?, ?, ?)`,
     ).run(SESSION_ID, USER_ID, NOW);
-    state.sqlite.prepare(
-      `INSERT INTO learner_lesson
-        (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
-       VALUES ('legacy-lesson', ?, NULL, 'uploaded', '{}', ?, ?)`,
-    ).run(USER_ID, NOW, NOW);
     insertConversation(state, null, "completed", "legacy-conversation");
     state.sqlite.prepare(
       `INSERT INTO personalized_story_art
@@ -1310,7 +1298,7 @@ describe("learner deletion lifecycle", () => {
           table,
         );
       }
-      for (const table of ["learner_lesson", "conversation_session", "personalized_story_art"]) {
+      for (const table of ["conversation_session", "personalized_story_art"]) {
         assert.equal(
           state.sqlite.prepare(`SELECT count(*) AS count FROM ${table} WHERE auth_user_id = ? AND learner_profile_id IS NULL`).get(USER_ID).count,
           0,
