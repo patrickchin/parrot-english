@@ -92,11 +92,11 @@ function GuardianStorySettingsContent({
             className="grid grid-cols-2 lg:grid-cols-4"
             role="tablist"
           >
-            {LEARNER_STORY_LEVELS.map((level, levelIndex) => (
+            {LEARNER_STORY_LEVELS.map((level) => (
               <SegmentedButton
                 aria-controls="guardian-story-level-status"
                 aria-disabled={levelUnavailable ? true : undefined}
-                className="min-h-14 justify-start px-2 text-left text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm sm:justify-center"
+                className="min-h-14 justify-center px-2 text-center text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm"
                 key={level.id}
                 onClick={
                   levelUnavailable ? undefined : () => onSelectLevel(level.id)
@@ -105,12 +105,6 @@ function GuardianStorySettingsContent({
                 selected={level.id === selectedLevel}
                 type="button"
               >
-                <span
-                  aria-hidden="true"
-                  className="grid size-6 shrink-0 place-items-center rounded-full bg-white/85 text-xs text-brand-navy"
-                >
-                  {levelIndex + 1}
-                </span>
                 <span>{level.label}</span>
               </SegmentedButton>
             ))}

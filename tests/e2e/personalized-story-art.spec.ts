@@ -370,7 +370,9 @@ test("cleanup completion does not steal focus after the caregiver moves away", a
     deleteDelayMs: 150,
   });
   await page.goto(guardianPath("/guardian/stories"));
-  const otherControl = page.getByRole("tab", { name: "Start here" });
+  const otherControl = page.getByRole("tab", {
+    name: "Level 1 · Words & pictures",
+  });
 
   const remove = page.getByRole("button", {
     name: "Delete stored story art",

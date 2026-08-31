@@ -16,6 +16,7 @@ import {
 import { StoryArtwork } from "./StoryArtwork";
 import {
   getStoryLevel,
+  getStoryShelfLevelId,
   isLearnerStoryLevelId,
   isStoryLevelId,
   STORIES,
@@ -27,6 +28,9 @@ import {
 
 const STORY_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 305px";
+const STORY_SHELF_LEVELS = STORY_LEVELS.filter(
+  ({ id }) => getStoryShelfLevelId(id) === id,
+);
 
 export function StoryList() {
   const location = useLocation();
@@ -39,7 +43,9 @@ export function StoryList() {
   );
   const requestedLevelId = new URLSearchParams(location.search).get("level");
   const activeLevel = getStoryLevel(activeLevelId);
-  const stories = STORIES.filter((story) => story.level === activeLevelId);
+  const stories = STORIES.filter(
+    (story) => getStoryShelfLevelId(story.level) === activeLevelId,
+  );
   const canonicalPath = isStoryLevelId(requestedLevelId)
     ? getStoryShelfPath(requestedLevelId)
     : getStoryShelfPath();
@@ -83,17 +89,17 @@ export function StoryList() {
             className="m-0 px-2 pb-2 text-center text-lg leading-none text-brand-navy sm:text-xl"
             id="story-shelf-picker-heading"
           >
-            Pick a story shelf
+            Choose a story level
           </h2>
           <SegmentedControl
             aria-labelledby="story-shelf-picker-heading"
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
             role="tablist"
           >
-            {STORY_LEVELS.map((level, levelIndex) => (
+            {STORY_SHELF_LEVELS.map((level) => (
               <SegmentedButton
                 aria-controls="story-shelf-panel"
-                className="min-h-14 justify-start px-2 text-left text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm sm:justify-center"
+                className="min-h-14 justify-center px-2 text-center text-xs leading-tight last:col-span-2 min-[360px]:px-3 min-[360px]:text-sm lg:last:col-span-1"
                 id={`story-shelf-tab-${level.id}`}
                 key={level.id}
                 onClick={() => selectLevel(level.id)}
@@ -101,12 +107,6 @@ export function StoryList() {
                 selected={level.id === activeLevelId}
                 type="button"
               >
-                <span
-                  aria-hidden="true"
-                  className="grid size-6 shrink-0 place-items-center rounded-full bg-white/85 text-xs text-brand-navy"
-                >
-                  {levelIndex + 1}
-                </span>
                 <span>{level.label}</span>
               </SegmentedButton>
             ))}

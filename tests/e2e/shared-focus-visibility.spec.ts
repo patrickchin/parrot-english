@@ -99,7 +99,9 @@ const focusScenarios: Array<{
     name: "selected story level tab",
     prepare: async (page) => {
       await page.goto(guardianPath("/guardian/stories"));
-      return page.getByRole("tab", { name: "Start here" });
+      return page.getByRole("tab", {
+        name: "Level 1 · Words & pictures",
+      });
     },
     viewport: { height: 844, width: 390 },
   },

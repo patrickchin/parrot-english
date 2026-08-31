@@ -840,14 +840,16 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await expect
     .poll(() =>
       page
-        .getByRole("tab", { name: /Little stories/ })
+        .getByRole("tab", { name: /Level 3 · Short stories/ })
         .evaluate((tab) => tab.closest("[inert]") === null),
     )
     .toBe(true);
-  await page.getByRole("tab", { name: /Little stories/ }).click();
+  await page
+    .getByRole("tab", { name: /Level 3 · Short stories/ })
+    .click();
   await expect(
     page.getByRole("status").filter({ hasText: "Story level saved" }),
-  ).toContainText("Little stories");
+  ).toContainText("Level 3 · Short stories");
 
   await page
     .getByRole("link", { name: /Back to guardian dashboard/i })
@@ -863,21 +865,24 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await expect(page).toHaveURL("/stories");
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
   const shelfPicker = shelf.getByRole("tablist", {
-    name: "Pick a story shelf",
+    name: "Choose a story level",
   });
-  await expect(shelfPicker.getByRole("tab")).toHaveCount(6);
+  await expect(shelfPicker.getByRole("tab")).toHaveCount(5);
   await expect(
-    shelfPicker.getByRole("tab", { name: "Little stories" }),
+    shelfPicker.getByRole("tab", { name: "Level 3 · Short stories" }),
   ).toHaveAttribute("aria-selected", "true");
   await expect(
     shelf.getByRole("link", { name: /^Listen to story:/ }),
   ).toHaveCount(5);
   await expect(
     shelf
-      .getByRole("tabpanel", { name: "Little stories" })
+      .getByRole("tabpanel", { name: "Level 3 · Short stories" })
       .getByText("Recommended for Mia Updated", { exact: true }),
   ).toBeVisible();
-  for (const label of ["First English words", "Long stories"]) {
+  for (const label of [
+    "Level 1 · Words & pictures",
+    "Storytime · Listen to a full story",
+  ]) {
     await shelfPicker.getByRole("tab", { exact: true, name: label }).click();
     await expect(
       shelf
@@ -886,11 +891,13 @@ test("active learner detail and story saves reach learner-mode consumers in the 
     ).toHaveCount(0);
   }
 
-  await shelfPicker.getByRole("tab", { name: "Start here" }).click();
+  await shelfPicker
+    .getByRole("tab", { name: "Level 1 · Words & pictures" })
+    .click();
   await expect(page).toHaveURL("/stories?level=first-words");
   await expect(
     shelf.getByRole("link", { name: /^Listen to story:/ }),
-  ).toHaveCount(4);
+  ).toHaveCount(7);
 
   await expect
     .poll(() =>
@@ -2457,10 +2464,12 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   await expect(
     page.getByText("Editing settings for Noah", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: /Little stories/ }).click();
+  await page
+    .getByRole("tab", { name: /Level 3 · Short stories/ })
+    .click();
   await expect(
     page.getByRole("status").filter({ hasText: "Story level saved" }),
-  ).toContainText("Little stories");
+  ).toContainText("Level 3 · Short stories");
 
   await page.evaluate(async () => {
     const response = await fetch(

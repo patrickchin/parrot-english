@@ -114,7 +114,7 @@ describe("story script catalog", () => {
     assert.match(
       container.querySelector('[role="tab"][aria-selected="true"]')
         ?.textContent ?? "",
-      /Long stories/,
+      /Storytime · Listen to a full story/,
     );
     assert.equal(
       section.querySelectorAll('a[aria-label^="Listen to story:"]').length,
@@ -124,12 +124,12 @@ describe("story script catalog", () => {
 
   // Production break caught: a saved preference is ignored and the learner
   // gets every large story card at once instead of one focused shelf.
-  it("renders only the saved shelf while keeping all six shelves available", async () => {
+  it("renders only the saved level while keeping all five choices available", async () => {
     const expectedShelves = new Map([
-      ["first-words", ["Start here", 4]],
-      ["repeating-patterns", ["Say it again", 6]],
-      ["tiny-stories", ["Little stories", 5]],
-      ["early-a1", ["Big adventures", 5]],
+      ["first-words", ["Level 1 · Words & pictures", 7]],
+      ["repeating-patterns", ["Level 2 · Repeating stories", 6]],
+      ["tiny-stories", ["Level 3 · Short stories", 5]],
+      ["early-a1", ["Level 4 · Longer stories", 5]],
     ]);
 
     for (const storyLevel of LEARNER_STORY_LEVEL_IDS) {
@@ -144,7 +144,7 @@ describe("story script catalog", () => {
         assert.ok(shelf, `${storyLevel} shelf`);
         assert.equal(
           shelf.querySelectorAll('[role="tab"]').length,
-          6,
+          5,
           `${storyLevel} picker tabs`,
         );
         const selectedTab = shelf.querySelector(
@@ -195,7 +195,7 @@ describe("story script catalog", () => {
   });
 
   // Production break caught: preference stories are added/removed or Rose stays
-  // on Start here instead of moving to the repeating-pattern shelf.
+  // in the first learner level instead of moving to repeating patterns.
   it("publishes 20 stories in the 4/6/5/5 learner preference distribution", () => {
     const learnerStories = STORIES.filter(({ level }) =>
       LEARNER_STORY_LEVEL_IDS.includes(level),
@@ -240,16 +240,25 @@ describe("story script catalog", () => {
     }
   });
 
-  // Production break caught: the First English words shelf label or description
-  // changes while its cards still render.
-  it("defines the First English words shelf", () => {
+  // Production break caught: the earliest stories stop sharing the clear
+  // learner-facing Level 1 label even though their stable internal IDs remain.
+  it("labels both beginner buckets as Level 1 words and pictures", () => {
     assert.deepEqual(
       STORY_LEVELS.find(({ id }) => id === "first-english-words"),
       {
         id: "first-english-words",
-        label: "First English words",
+        label: "Level 1 · Words & pictures",
         cefrReference: "Before Pre-A1",
-        description: "Look. Listen. Say it.",
+        description: "A few familiar words on each page.",
+      },
+    );
+    assert.deepEqual(
+      STORY_LEVELS.find(({ id }) => id === "first-words"),
+      {
+        id: "first-words",
+        label: "Level 1 · Words & pictures",
+        cefrReference: "Entry Pre-A1",
+        description: "A few familiar words on each page.",
       },
     );
   });

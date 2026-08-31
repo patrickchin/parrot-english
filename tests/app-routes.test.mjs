@@ -114,7 +114,7 @@ describe("app route helpers", () => {
     );
     assert.equal(
       routes.getStoryShelfPath("first-english-words"),
-      "/stories?level=first-english-words",
+      "/stories?level=first-words",
     );
     assert.equal(
       routes.getStoryShelfPath("long-stories"),
@@ -124,6 +124,13 @@ describe("app route helpers", () => {
     assert.equal(
       routes.resolveStoryShelfLevel("?level=early-a1", "tiny-stories"),
       "early-a1",
+    );
+    assert.equal(
+      routes.resolveStoryShelfLevel(
+        "?level=first-english-words",
+        "tiny-stories",
+      ),
+      "first-words",
     );
     assert.equal(
       routes.resolveStoryShelfLevel("", "tiny-stories"),
