@@ -151,11 +151,7 @@ test("guardian dashboard links a separate account and privacy destination", () =
 
 test("lesson catalog presents one canonical path without artwork experiments", () => {
   const html = renderInRouter(
-    createElement(LessonListView, {
-      myLessons: [],
-      myLessonsLoadPhase: "ready",
-      onRetryMyLessons() {},
-    }),
+    createElement(LessonListView),
     "/lessons",
   );
 
