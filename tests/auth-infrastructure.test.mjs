@@ -411,6 +411,7 @@ describe("authentication infrastructure", () => {
       ".github/workflows/deploy-cloudflare.yml"
     );
     const workerTypes = readProjectFile("worker-configuration.d.ts");
+    const workerConfig = JSON.parse(wrangler);
 
     assert.match(packageJson.dependencies["better-auth"], /^\^1\.6\./);
     assert.match(packageJson.dependencies["drizzle-orm"], /^\^0\.45\./);
@@ -462,6 +463,13 @@ describe("authentication infrastructure", () => {
     assert.match(workerTypes, /\bDB:\s*D1Database;/);
     assert.match(workerTypes, /\bdeclare abstract class D1Database\b/);
     assert.match(workerTypes, /\btype Fetcher</);
+    assert.equal(
+      workerConfig.ratelimits.some(
+        ({ name }) => name === "LESSON_GENERATION_RATE_LIMITER",
+      ),
+      false,
+    );
+    assert.doesNotMatch(workerTypes, /\bLESSON_GENERATION_RATE_LIMITER\b/);
   });
 
   it("discovers and applies every shared-database migration in order", () => {

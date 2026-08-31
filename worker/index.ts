@@ -5,7 +5,6 @@ import {
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
-  checkLessonGenerationRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
@@ -32,10 +31,6 @@ import {
   handleConversationRequest,
   type ConversationEnv,
 } from "./conversations.ts";
-import {
-  handleMyLessonRequest,
-  type MyLessonsEnv,
-} from "./my-lessons.ts";
 import {
   handleLessonRecordingRequest,
   type LessonRecordingEnv,
@@ -66,7 +61,6 @@ interface Env
     RateLimitEnv,
     ConversationEnv,
     LearnerProfilesEnv,
-    MyLessonsEnv,
     LessonRecordingEnv,
     PersonalizedStoryArtEnv,
     DubEnv {
@@ -81,14 +75,12 @@ interface WorkerDependencies {
   checkGuardianUnlockRateLimit: typeof checkGuardianUnlockRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
-  checkLessonGenerationRateLimit: typeof checkLessonGenerationRateLimit;
   checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleLearnerProfilesRequest: typeof handleLearnerProfilesRequest;
   handleConversationRequest: typeof handleConversationRequest;
-  handleMyLessonRequest: typeof handleMyLessonRequest;
   handleLessonRecordingRequest: typeof handleLessonRecordingRequest;
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
   handleDubRequest: typeof handleDubRequest;
@@ -118,10 +110,6 @@ function isConversationPath(pathname: string) {
 
 function isAgentConversationPath(pathname: string) {
   return /^\/api\/conversations\/[^/]+\/(turns|facts|end)$/.test(pathname);
-}
-
-function isMyLessonPath(pathname: string) {
-  return pathname === "/api/lessons/my" || pathname.startsWith("/api/lessons/my/");
 }
 
 function isLessonRecordingPath(pathname: string) {
@@ -255,8 +243,6 @@ export function createWorker(
   const learnerProfileEnrichmentRateLimit =
     dependencies.checkLearnerProfileEnrichmentRateLimit ??
     checkLearnerProfileEnrichmentRateLimit;
-  const lessonGenerationRateLimit =
-    dependencies.checkLessonGenerationRateLimit ?? checkLessonGenerationRateLimit;
   const personalizedStoryArtRateLimit =
     dependencies.checkPersonalizedStoryArtRateLimit ??
     checkPersonalizedStoryArtRateLimit;
@@ -270,8 +256,6 @@ export function createWorker(
     dependencies.handleLearnerProfilesRequest ?? handleLearnerProfilesRequest;
   const conversationRequest =
     dependencies.handleConversationRequest ?? handleConversationRequest;
-  const myLessonRequest =
-    dependencies.handleMyLessonRequest ?? handleMyLessonRequest;
   const lessonRecordingRequest =
     dependencies.handleLessonRecordingRequest ?? handleLessonRecordingRequest;
   const personalizedStoryArtRequest =
@@ -610,51 +594,6 @@ export function createWorker(
           return learnerSelectionRequired();
         }
         return conversationRequest({
-          database,
-          env,
-          identity: learner.identity,
-          request,
-        });
-      }
-
-      if (isMyLessonPath(url.pathname)) {
-        const session = await authFactory(env).api.getSession({
-          headers: request.headers,
-        });
-        if (!session) {
-          return Response.json({ error: "unauthorized" }, { status: 401 });
-        }
-        const accountIdentity: AccountIdentity = {
-          sessionId: session.session.id,
-          userId: session.user.id,
-          userName: session.user.name?.trim() || null,
-        };
-        const database = createDatabase(env.DB);
-        const explicitLearner = await resolveExplicitLearnerTarget({
-          account: accountIdentity,
-          database,
-          request,
-          url,
-        });
-        if (explicitLearner instanceof Response) return explicitLearner;
-        const learner = explicitLearner
-          ? { status: "selected" as const, identity: explicitLearner }
-          : await resolveLearnerIdentity(database, accountIdentity);
-        if (learner.status === "selection_required") {
-          return learnerSelectionRequired();
-        }
-        if (
-          url.pathname === "/api/lessons/my/generate" &&
-          request.method === "POST"
-        ) {
-          const rateLimited = await lessonGenerationRateLimit(
-            request,
-            env,
-            accountIdentity.userId,
-          );
-          if (rateLimited) return rateLimited;
-        }
-        return myLessonRequest({
           database,
           env,
           identity: learner.identity,

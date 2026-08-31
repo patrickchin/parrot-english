@@ -4,11 +4,6 @@ import { Card, cx } from "../shared/ui";
 
 type BackendBuild = {
   commitSha: string;
-  details: {
-    models: {
-      lessonScript: string;
-    };
-  };
   deployedAt: string | null;
   deploymentId: string;
   version: string;
@@ -199,12 +194,12 @@ export function AccountPrivacySections() {
           title="How Parrot uses AI"
         >
           <p className="m-0">
-            AI helps make custom lessons, turn speech into text, check spoken
-            answers, run voice conversations, and make optional story art.
+            AI helps turn speech into text, check spoken answers, run voice
+            conversations, and make optional story art.
           </p>
           <p className="m-0 rounded-xl bg-amber-50 px-3 py-2 text-amber-950">
             AI can hear words wrongly or say something wrong. Please check
-            AI-made lessons and stay nearby during voice chats.
+            speech feedback and stay nearby during voice chats.
           </p>
         </AboutSection>
 
@@ -215,8 +210,8 @@ export function AccountPrivacySections() {
           <ul className="m-0 grid list-disc gap-2 pl-5">
             <li>
               Parrot keeps all learner profiles and their saved data, including
-              custom lessons and conversation words as text. A conversation that
-              ends early may still have saved text.
+              conversation words as text. A conversation that ends early may
+              still have saved text.
             </li>
             <li>
               Choosing a learner in Guardian settings changes only which
@@ -268,10 +263,9 @@ export function AccountPrivacySections() {
           </p>
           <p className="m-0">
             Delete account removes the account, all learner profiles and their
-            saved data, including custom lessons, saved conversation text,
-            private voice clips from all nursery rhymes, lesson voice
-            recordings, and private story art. A small deletion marker stays so
-            old private art cannot return.
+            saved data, including saved conversation text, private voice clips
+            from all nursery rhymes, lesson voice recordings, and private story
+            art. A small deletion marker stays so old private art cannot return.
           </p>
         </AboutSection>
       </section>
@@ -301,10 +295,9 @@ export function AccountPrivacySections() {
           <div className="grid gap-3 border-t-3 border-sky-100 p-3">
             <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
               Current services include Cloudflare for hosting and story art,
-              LiveKit for live voice transport, OpenAI for lesson generation and
-              live voice, and Groq for speech checks and profile summaries. Some
-              saved lesson and profile audio was made with ElevenLabs before
-              deployment.
+              LiveKit for live voice transport, OpenAI for live voice, and Groq
+              for speech checks and profile summaries. Some saved lesson and
+              profile audio was made with ElevenLabs before deployment.
             </p>
 
             <BuildCard
@@ -317,10 +310,6 @@ export function AccountPrivacySections() {
               <BuildCard
                 commitSha={buildInfo.backend.commitSha}
                 fields={[
-                  {
-                    label: "Lesson script LLM",
-                    value: buildInfo.backend.details.models.lessonScript,
-                  },
                   {
                     label: "Deployment",
                     value: buildInfo.backend.deploymentId,

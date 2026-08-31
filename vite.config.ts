@@ -198,20 +198,10 @@ function parrotE2eMockApi(): Plugin {
           return;
         }
 
-        if (pathname === "/api/lessons/my" && request.method === "GET") {
-          sendMockJson(response, { lessons: [] });
-          return;
-        }
-
         if (pathname === "/api/build-info" && request.method === "GET") {
           sendMockJson(response, {
             backend: {
               commitSha: "e2e-api",
-              details: {
-                models: {
-                  lessonScript: "openai/gpt-5.6-luna",
-                },
-              },
               deployedAt: "2026-07-14T01:02:03.000Z",
               deploymentId: "e2e-deployment",
               version: "0.1.e2e",

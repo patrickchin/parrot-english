@@ -71,6 +71,26 @@ describe("Worker app delivery", () => {
     assert.equal(getCalls(), 1);
   });
 
+  it("returns the retired custom lesson API as an unmatched API route", async () => {
+    const { env } = createEnvironment(() => new Response("asset"));
+    const worker = createWorker({
+      createAuth: () => ({
+        api: {
+          async getSession() {
+            return null;
+          },
+        },
+      }),
+    });
+
+    const response = await worker.fetch(
+      new Request("https://example.test/api/lessons/my"),
+      env,
+    );
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found" });
+  });
+
   it("turns SPA-shell fallbacks for static-looking paths into uncached 404s", async () => {
     const worker = createWorker();
 
@@ -131,7 +151,7 @@ describe("Worker app delivery", () => {
       "/index.html",
       "/.well-known",
       "/stories/story.v2",
-      "/lessons/my/lesson.v2/scenes/1",
+      "/lessons/01-peppas-high-ball/scenes/1",
     ]) {
       const { env, getCalls } = createEnvironment(() =>
         new Response("<main>app shell</main>", {

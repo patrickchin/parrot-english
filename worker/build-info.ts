@@ -1,7 +1,6 @@
 import { desc, sql } from "drizzle-orm";
 import { conversationSession } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
-import { LESSON_GENERATOR_MODEL } from "./model-config.ts";
 
 const MAX_BUILD_VALUE_LENGTH = 120;
 const GIT_SHA_PATTERN = /^[0-9a-f]{7,40}$/i;
@@ -144,11 +143,6 @@ export async function handleBuildInfoRequest({
     return noStoreJson({
       backend: {
         commitSha: backendBuild.commitSha,
-        details: {
-          models: {
-            lessonScript: LESSON_GENERATOR_MODEL,
-          },
-        },
         deploymentId: env.CF_VERSION_METADATA?.id ?? "local",
         deployedAt: env.CF_VERSION_METADATA?.timestamp ?? null,
         version: backendBuild.version,

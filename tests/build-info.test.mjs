@@ -41,14 +41,10 @@ describe("deployment build information", () => {
     );
 
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), {
+    const payload = await response.json();
+    assert.deepEqual(payload, {
       backend: {
         commitSha: "abc1234",
-        details: {
-          models: {
-            lessonScript: "openai/gpt-5.6-luna",
-          },
-        },
         deploymentId: "worker-deployment-123",
         deployedAt: "2026-07-14T01:02:03.000Z",
         version: "0.1.276",
@@ -68,6 +64,7 @@ describe("deployment build information", () => {
         },
       ],
     });
+    assert.doesNotMatch(JSON.stringify(payload), /lessonScript/);
     assert.equal(response.headers.get("Cache-Control"), "no-store");
   });
 

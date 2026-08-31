@@ -6,7 +6,6 @@ export interface RateLimitEnv {
   EVALUATE_RATE_LIMITER: RateLimitBinding;
   LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER: RateLimitBinding;
   LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
-  LESSON_GENERATION_RATE_LIMITER: RateLimitBinding;
   PERSONALIZED_STORY_ART_RATE_LIMITER: RateLimitBinding;
   GUARDIAN_UNLOCK_RATE_LIMITER: RateLimitBinding;
 }
@@ -78,18 +77,6 @@ export function checkLearnerProfileEnrichmentRateLimit(
     env.LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER,
     `${userId}:${getClientAddress(request)}`,
     "Too many learner-profile answers. Please wait and try again.",
-  );
-}
-
-export function checkLessonGenerationRateLimit(
-  request: Request,
-  env: RateLimitEnv,
-  userId: string,
-) {
-  return checkRateLimit(
-    env.LESSON_GENERATION_RATE_LIMITER,
-    `${userId}:${getClientAddress(request)}`,
-    "Too many lesson generation requests. Please wait and try again.",
   );
 }
 

@@ -168,11 +168,6 @@ describe("learner-profile infrastructure", () => {
         simple: { limit: 12, period: 60 },
       },
       {
-        name: "LESSON_GENERATION_RATE_LIMITER",
-        namespace_id: "104204",
-        simple: { limit: 4, period: 60 },
-      },
-      {
         name: "PERSONALIZED_STORY_ART_RATE_LIMITER",
         namespace_id: "104205",
         simple: { limit: 2, period: 60 },

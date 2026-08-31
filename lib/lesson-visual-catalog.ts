@@ -8,5 +8,3 @@ export const LESSON_VISUAL_CATALOG = createLessonCatalog({
   characters,
   emotes,
 });
-
-export const LESSON_BACKGROUNDS = backgrounds.map(({ alt, id }) => ({ alt, id }));
