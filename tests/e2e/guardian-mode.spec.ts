@@ -1,6 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
-const GUARDIAN_PASSWORD = "e2e-guardian-password";
 const LOCK_ERROR =
   "Could not lock guardian mode. Try again before handing over the device.";
 const requiredViewports = [
@@ -101,17 +100,10 @@ async function openLearnerAccountMenu(page: Page) {
   return page.getByRole("menu", { name: "Account menu" });
 }
 
-async function openGuardianUnlock(page: Page) {
+async function switchFromMenu(page: Page) {
   const menu = await openLearnerAccountMenu(page);
   await menu.getByRole("menuitem", { name: /Grown-up access/ }).click();
-  return page.getByRole("dialog", { name: "Unlock guardian mode" });
-}
-
-async function unlockFromMenu(page: Page) {
-  const dialog = await openGuardianUnlock(page);
-  await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
-  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
-  await expect(dialog).toHaveCount(0);
+  await expect(menu).toHaveCount(0);
 }
 
 for (const viewport of requiredViewports) {
@@ -129,7 +121,7 @@ for (const viewport of requiredViewports) {
     await expectInsideViewport(trigger, viewport);
     await expectInsideViewport(panel, viewport);
     await expect(menu.getByRole("menuitem")).toHaveText([
-      "Grown-up accessPassword optional for now",
+      "Grown-up accessSwitch modes",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),
@@ -137,69 +129,47 @@ for (const viewport of requiredViewports) {
     expect(await horizontalOverflow(page)).toBe(false);
 
     await menu.getByRole("menuitem", { name: /Grown-up access/ }).click();
-    const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
-    await expectInsideViewport(dialog, viewport);
-    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(page).toHaveURL("/guardian");
+    await expectInsideViewport(
+      page.getByRole("heading", { name: "Guardian dashboard" }),
+      viewport,
+    );
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 }
 
-test("incorrect password keeps learner mode and the unlock dialog open", async ({
+test("account-menu switching has no password or intermediate dialog", async ({
   page,
 }) => {
   const viewport = { width: 280, height: 568 };
   await page.setViewportSize(viewport);
   await page.goto("/");
-  const dialog = await openGuardianUnlock(page);
-  const password = dialog.getByLabel("Password");
-
-  await expect(
-    dialog.getByText("For grown-ups", { exact: true }),
-  ).toHaveCount(0);
-  await expect(password).toBeFocused();
-  await password.fill("wrong-password");
-  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
-
-  await expect(dialog.getByRole("alert")).toHaveText(
-    "The password did not match this account.",
-  );
-  await expect(password).toBeFocused();
-  await expect(dialog).toBeVisible();
-  await expectInsideViewport(dialog, viewport);
-  await expect(page).toHaveURL("/");
-  expect(await horizontalOverflow(page)).toBe(false);
-});
-
-test("account-menu unlock accepts an empty password", async ({ page }) => {
-  await page.goto("/");
-  const dialog = await openGuardianUnlock(page);
-  const password = dialog.getByLabel("Password");
-  const unlock = dialog.getByRole("button", { name: "Unlock guardian mode" });
-
-  await expect(password).toHaveJSProperty("required", false);
-  await expect(password).toHaveJSProperty("validity.valueMissing", false);
-  await unlock.click();
-  await expect(dialog).toHaveCount(0);
+  await switchFromMenu(page);
   await expect(page).toHaveURL("/guardian");
+  await expect(page.getByLabel("Password")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
+  expect(await horizontalOverflow(page)).toBe(false);
 });
 
-test("direct Guardian unlock accepts an empty password", async ({ page }) => {
+test("direct Guardian switch requires no password", async ({
+  page,
+}) => {
   await page.goto("/guardian/stories");
   const main = page.getByRole("main");
-  const password = main.getByLabel("Password");
-  const unlock = main.getByRole("button", { name: "Unlock guardian mode" });
+  const switchButton = main.getByRole("button", { name: "Switch to guardian mode" });
 
-  await expect(password).toHaveJSProperty("required", false);
-  await unlock.click();
+  await expect(main.getByLabel("Password")).toHaveCount(0);
+  await switchButton.click();
   await expect(page).toHaveURL("/guardian/stories");
   await expect(
     page.getByRole("heading", { name: "Story settings" }),
   ).toBeVisible();
 });
 
-test("the browser Guardian API accepts empty but still rejects a wrong password", async ({
+test("the browser Guardian API ignores request bodies", async ({
   page,
 }) => {
   await page.goto("/");
@@ -208,51 +178,45 @@ test("the browser Guardian API accepts empty but still rejects a wrong password"
   ).toBeVisible();
 
   const attempts = await page.evaluate(async () => {
-    async function post(password: string) {
+    async function post(body?: string) {
       const response = await fetch("/api/guardian-access", {
-        body: JSON.stringify({ password }),
-        headers: { "Content-Type": "application/json" },
+        body,
         method: "POST",
       });
       return { body: await response.json(), status: response.status };
     }
-    const empty = await post("");
+    const bodyless = await post();
     await fetch("/api/guardian-access", { method: "DELETE" });
-    const wrong = await post("wrong-password");
+    const ignored = await post("not-json and not a password");
     const status = await fetch("/api/guardian-access").then((response) =>
       response.json(),
     );
-    return { empty, status, wrong };
+    return { bodyless, ignored, status };
   });
 
   expect(attempts).toEqual({
-    empty: {
+    bodyless: {
       body: expect.objectContaining({ mode: "guardian" }),
       status: 200,
     },
-    status: { mode: "learner" },
-    wrong: {
-      body: {
-        error: "invalid_password",
-        message: "The password did not match this account.",
-      },
-      status: 401,
+    ignored: {
+      body: expect.objectContaining({ mode: "guardian" }),
+      status: 200,
     },
+    status: expect.objectContaining({ mode: "guardian" }),
   });
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toHaveCount(0);
 });
 
-test("unlock request failure never navigates to guardian content", async ({
+test("mode-switch request failure never navigates to guardian content", async ({
   page,
 }) => {
   await page.goto(guardianUrl("/", "unlock-error"));
-  const dialog = await openGuardianUnlock(page);
-  await dialog.getByLabel("Password").fill(GUARDIAN_PASSWORD);
-  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
+  await switchFromMenu(page);
 
-  await expect(dialog.getByRole("alert")).toHaveText(
+  await expect(page.getByRole("alert").filter({ hasText: "Guardian access" })).toHaveText(
     "Guardian access could not be checked. Please try again.",
   );
   await expect(
@@ -261,11 +225,11 @@ test("unlock request failure never navigates to guardian content", async ({
   await expect(page).toHaveURL(guardianUrl("/", "unlock-error"));
 });
 
-test("successful unlock opens guardian management and announces the fifteen-minute window", async ({
+test("successful switch opens guardian management and announces the mode", async ({
   page,
 }) => {
   await page.goto("/");
-  await unlockFromMenu(page);
+  await switchFromMenu(page);
 
   await expect(page).toHaveURL("/guardian");
   await expect(
@@ -273,9 +237,9 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toBeFocused();
   await expect(
     page.getByRole("status").filter({
-      hasText: "Guardian mode unlocked for 15 minutes",
+      hasText: "Guardian mode",
     }),
-  ).toHaveText("Guardian mode unlocked for 15 minutes");
+  ).toHaveText("Guardian mode");
 
   for (const heading of [
     "Learner profiles",
@@ -322,13 +286,13 @@ test("account-menu unlock resumes the current Guardian deep link", async ({
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, requestedUrl);
   await expect(
-    page.getByRole("heading", { name: "Unlock guardian mode" }),
+    page.getByRole("heading", { name: "Switch to guardian mode" }),
   ).toBeVisible();
   const historyLengthBeforeUnlock = await page.evaluate(
     () => window.history.length,
   );
 
-  await unlockFromMenu(page);
+  await switchFromMenu(page);
 
   await expect(page).toHaveURL(requestedUrl);
   expect(await page.evaluate(() => window.history.length)).toBe(
@@ -346,7 +310,7 @@ test("account-menu unlock resumes the current Guardian deep link", async ({
 });
 
 for (const viewport of lessonPrivacyViewports) {
-  test(`guardian grants and confirms revocation of lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
+  test(`guardian manages automatic lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     const profile = {
@@ -419,48 +383,30 @@ for (const viewport of lessonPrivacyViewports) {
     const consentSection = page.getByRole("region", {
       name: "Lesson voice recordings",
     });
-    const grant = consentSection.getByRole("button", {
-      name: "Allow lesson voice recordings",
+    const deleteRecordings = consentSection.getByRole("button", {
+      name: "Delete saved lesson recordings",
     });
     const recordingState = consentSection.getByRole("status");
     await consentSection.scrollIntoViewIfNeeded();
     await expect(consentSection).toContainText(
-      "Recording starts automatically during each join-in moment.",
+      "Recording is available automatically during each join-in moment.",
     );
     await expect(consentSection).toContainText(
-      "Permission and clips apply only to this learner profile",
-    );
-    await expect(consentSection).toContainText(
-      "A Guardian manages each learner independently",
+      "Clips apply only to this learner profile",
     );
     await expect(consentSection).toContainText(
       "one latest clip is saved per join-in moment",
     );
     await expect(recordingState).toHaveText(
-      "Lesson recording is currently off.",
+      "Lesson recording is available automatically.",
     );
     const initialRecordingStateBox = await visibleBox(recordingState);
     await expectInsideViewport(consentSection, viewport);
-    await expectInsideViewport(grant, viewport);
-    await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
-    await expectNoOverlap(grant, account);
-    await expectNoOverlap(grant, back);
+    await expectInsideViewport(deleteRecordings, viewport);
+    await expect(deleteRecordings).toHaveAccessibleName("Delete saved lesson recordings");
+    await expectNoOverlap(deleteRecordings, account);
+    await expectNoOverlap(deleteRecordings, back);
     expect(await horizontalOverflow(page)).toBe(false);
-
-    await grant.click();
-    const revoke = consentSection.getByRole("button", {
-      name: "Stop and delete lesson recordings",
-    });
-    await expect(revoke).toHaveAccessibleName(
-      "Stop and delete lesson recordings",
-    );
-    await expect(recordingState).toHaveText(
-      "Lesson recording is currently allowed.",
-    );
-    await expectInsideViewport(revoke, viewport);
-    await expectNoOverlap(revoke, account);
-    await expectNoOverlap(revoke, back);
-    expect(mutations).toEqual([true]);
 
     page.once("dialog", async (dialog) => {
       expect(dialog.type()).toBe("confirm");
@@ -469,7 +415,7 @@ for (const viewport of lessonPrivacyViewports) {
       );
       await dialog.accept();
     });
-    await revoke.click();
+    await deleteRecordings.click();
 
     const finishDeletion = consentSection.getByRole("button", {
       name: "Finish deleting lesson recordings",
@@ -478,7 +424,7 @@ for (const viewport of lessonPrivacyViewports) {
       "Finish deleting lesson recordings",
     );
     await expect(recordingState).toHaveText(
-      "Lesson recording is off. Saved clips are still being deleted.",
+      "Saved lesson recordings are still being deleted.",
     );
     const pendingRecordingStateBox = await visibleBox(recordingState);
     expect(
@@ -488,15 +434,15 @@ for (const viewport of lessonPrivacyViewports) {
     ).toBeLessThanOrEqual(1);
     await expectInsideViewport(finishDeletion, viewport);
     expect(await horizontalOverflow(page)).toBe(false);
-    expect(mutations).toEqual([true, false]);
+    expect(mutations).toEqual([false]);
 
     await finishDeletion.click();
-    await expect(grant).toHaveAccessibleName("Allow lesson voice recordings");
+    await expect(deleteRecordings).toHaveAccessibleName("Delete saved lesson recordings");
     await expect(recordingState).toHaveText(
-      "Lesson recording is currently off.",
+      "Lesson recording is available automatically.",
     );
-    await expectInsideViewport(grant, viewport);
-    expect(mutations).toEqual([true, false, false]);
+    await expectInsideViewport(deleteRecordings, viewport);
+    expect(mutations).toEqual([false, false]);
   });
 }
 
@@ -528,7 +474,7 @@ test("a locked guardian deep link never flashes protected content", async ({
   await page.goto("/guardian/stories");
 
   await expect(
-    page.getByRole("heading", { name: "Unlock guardian mode" }),
+    page.getByRole("heading", { name: "Switch to guardian mode" }),
   ).toBeVisible();
   await expect(page).toHaveURL("/guardian/stories");
   await expect(
@@ -606,7 +552,7 @@ for (const { path, protectedName, unlockedPath } of [
     await page.goto(requestedUrl);
 
     await expect(
-      page.getByRole("heading", { name: "Unlock guardian mode" }),
+      page.getByRole("heading", { name: "Switch to guardian mode" }),
     ).toBeVisible();
     await expect(page).toHaveURL(requestedUrl);
     await expect(
@@ -620,10 +566,10 @@ for (const { path, protectedName, unlockedPath } of [
       ),
     ).toBe(false);
 
-    await page.getByRole("main").getByLabel("Password").fill(GUARDIAN_PASSWORD);
+    await expect(page.getByRole("main").getByLabel("Password")).toHaveCount(0);
     await page
       .getByRole("main")
-      .getByRole("button", { name: "Unlock guardian mode" })
+      .getByRole("button", { name: "Switch to guardian mode" })
       .click();
     await expect(page).toHaveURL(unlockedPath ?? requestedUrl);
     await expect(
@@ -664,7 +610,7 @@ test("a guardian-mode Old MacDonald deep link asks to switch profiles", async ({
 
 test("a valid guardian unlock resumes after refresh", async ({ page }) => {
   await page.goto("/");
-  await unlockFromMenu(page);
+  await switchFromMenu(page);
   await page.reload();
 
   await expect(
@@ -727,7 +673,7 @@ test("an expired guardian session returns the same deep link to the Guardian unl
   ).toBeVisible();
   await page.clock.fastForward(2_000);
   await expect(
-    page.getByRole("heading", { name: "Unlock guardian mode" }),
+    page.getByRole("heading", { name: "Switch to guardian mode" }),
   ).toBeVisible();
   await expect(page).toHaveURL(
     "/guardian/stories?learnerProfileId=e2e-learner",
@@ -811,7 +757,7 @@ test("locking guardian access in one tab immediately hides guardian UI in a sibl
     await chooseLearnerAndStart(page, "Noah");
 
     await expect(
-      sibling.getByRole("heading", { name: "Unlock guardian mode" }),
+      sibling.getByRole("heading", { name: "Switch to guardian mode" }),
     ).toBeVisible();
     await expect(
       sibling.getByRole("heading", { name: "Guardian dashboard" }),
@@ -821,7 +767,7 @@ test("locking guardian access in one tab immediately hides guardian UI in a sibl
   }
 });
 
-test("cancel and Escape restore focus while account-menu keys follow rendered items", async ({
+test("direct switching closes learner menu while guardian-menu keys follow rendered items", async ({
   page,
 }) => {
   await page.goto("/");
@@ -834,20 +780,9 @@ test("cancel and Escape restore focus while account-menu keys follow rendered it
     name: /Grown-up access/,
   });
   await guardian.click();
-  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
-  await dialog.getByRole("button", { name: "Cancel" }).click();
-  await expect(guardian).toBeFocused();
-  await page.keyboard.press("Escape");
-  await expect(trigger).toBeFocused();
-
-  await trigger.click();
-  const tabMenu = page.getByRole("menu", { name: "Account menu" });
-  await expect(
-    tabMenu.getByRole("menuitem", { name: /Grown-up access/ }),
-  ).toBeFocused();
-  await page.keyboard.press("Tab");
-  await expect(tabMenu).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Play a lesson" })).toBeFocused();
+  await expect(learnerMenu).toHaveCount(0);
+  await expect(page).toHaveURL("/guardian");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 
   await page.goto(guardianUrl("/guardian", "guardian"));
   const guardianTrigger = page.getByRole("button", {
@@ -912,7 +847,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
     await page.goto(path);
     const menu = await openLearnerAccountMenu(page);
     await expect(menu.getByRole("menuitem")).toHaveText([
-      "Grown-up accessPassword optional for now",
+      "Grown-up accessSwitch modes",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),

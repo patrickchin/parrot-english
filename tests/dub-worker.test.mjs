@@ -433,7 +433,7 @@ describe("private learner dub API", () => {
         method: "GET",
         path: DUB_PATH,
       })).json();
-      const siblingBeforeGrant = await (await callDub({
+      const siblingStatus = await (await callDub({
         bucket,
         consentRepository,
         database,
@@ -442,10 +442,9 @@ describe("private learner dub API", () => {
         path: DUB_PATH,
       })).json();
       assert.equal(legacyStatus.lines.filter(({ saved }) => saved).length, 1);
-      assert.equal(siblingBeforeGrant.lines.filter(({ saved }) => saved).length, 0);
-      assert.equal(siblingBeforeGrant.consentState, "not_granted");
+      assert.equal(siblingStatus.lines.filter(({ saved }) => saved).length, 0);
+      assert.equal(siblingStatus.consentState, "granted");
 
-      await consentRepository.grant(siblingIdentity);
       const upload = await callDub({
         body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 2]),
         bucket,
@@ -581,7 +580,7 @@ describe("private learner dub API", () => {
     }
   });
 
-  it("lets a guardian take over a legacy deleting marker after granting fresh consent", async () => {
+  it("lets automatic recording access take over a legacy deleting marker", async () => {
     const state = createTestD1Database();
     try {
       const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
@@ -611,31 +610,13 @@ describe("private learner dub API", () => {
         method: "GET",
         path: DUB_PATH,
       });
-      assert.equal(initial.status, 200);
-      assert.equal((await initial.json()).consentState, "not_granted");
+      assert.equal(initial.status, 409);
+      assert.equal((await initial.json()).error, "dub_reset_in_progress");
       assert.equal(bucket.calls.list.length, 0);
-
-      const grant = await callDub({
-        body: JSON.stringify({
-          accepted: true,
-          consentVersion: CURRENT_CONSENT_VERSION,
-        }),
-        bucket,
-        consentRepository,
-        headers: { "Content-Type": "application/json" },
-        method: "PUT",
-        path: `${DUB_PATH}/consent`,
-      });
-      assert.equal(grant.status, 204);
-
-      const interrupted = await callDub({
-        bucket,
-        consentRepository,
-        method: "GET",
-        path: DUB_PATH,
-      });
-      assert.equal(interrupted.status, 409);
-      assert.equal((await interrupted.json()).error, "dub_reset_in_progress");
+      assert.equal(
+        (await consentRepository.status(DEFAULT_IDENTITY)).state,
+        "granted",
+      );
 
       const cleanup = await callDub({
         bucket,
@@ -657,38 +638,58 @@ describe("private learner dub API", () => {
         path: DUB_PATH,
       });
       assert.equal(final.status, 200);
-      assert.equal((await final.json()).consentState, "not_granted");
+      assert.equal((await final.json()).consentState, "granted");
     } finally {
       state.close();
     }
   });
 
-  it("returns disabled status without listing R2 when consent is absent or revoking", async () => {
-    for (const consentState of ["not_granted", "revoking"]) {
-      const bucket = createBucket();
-      const consentRepository = createConsentRepository(
-        consentState === "revoking"
-          ? { state: "revoking", grantGeneration: "consent-1" }
-          : { state: "not_granted" },
-      );
-      const response = await callDub({
-        bucket,
-        consentRepository,
-        method: "GET",
-        path: DUB_PATH,
-      });
+  it("automatically grants missing recording access when status loads", async () => {
+    const bucket = createBucket();
+    const consentRepository = createConsentRepository({ state: "not_granted" });
+    const response = await callDub({
+      bucket,
+      consentRepository,
+      method: "GET",
+      path: DUB_PATH,
+    });
 
-      assert.equal(response.status, 200, consentState);
-      assert.deepEqual(await response.json(), {
-        complete: false,
-        consentState,
-        dubId: "five-little-ducks-v2",
-        guardianConsentVersion: CURRENT_CONSENT_VERSION,
-        lines: LINE_IDS.map((id) => ({ id, recordedAt: null, saved: false })),
-        recordingEnabled: false,
-      });
-      assert.equal(bucket.calls.list.length, 0, consentState);
-    }
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      complete: false,
+      consentState: "granted",
+      dubId: "five-little-ducks-v2",
+      guardianConsentVersion: CURRENT_CONSENT_VERSION,
+      lines: LINE_IDS.map((id) => ({ id, recordedAt: null, saved: false })),
+      recordingEnabled: true,
+    });
+    assert.equal((await consentRepository.status()).state, "granted");
+    assert.equal(bucket.calls.list.length, 1);
+  });
+
+  it("keeps recording unavailable only while deletion is still running", async () => {
+    const bucket = createBucket();
+    const consentRepository = createConsentRepository({
+      state: "revoking",
+      grantGeneration: "consent-1",
+    });
+    const response = await callDub({
+      bucket,
+      consentRepository,
+      method: "GET",
+      path: DUB_PATH,
+    });
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      complete: false,
+      consentState: "revoking",
+      dubId: "five-little-ducks-v2",
+      guardianConsentVersion: CURRENT_CONSENT_VERSION,
+      lines: LINE_IDS.map((id) => ({ id, recordedAt: null, saved: false })),
+      recordingEnabled: false,
+    });
+    assert.equal(bucket.calls.list.length, 0);
   });
 
   it("rejects upload and audio without a current durable grant", async () => {

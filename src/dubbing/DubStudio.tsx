@@ -775,6 +775,7 @@ export function DubStudio({
       <DubListenOnly
         definition={definition}
         error={state.error}
+        onRetryLoad={handleRetryLoad}
         onTogglePlayback={() => void startPlayback("full")}
         playback={state.playbackScope === "full"
           ? state.operation === "playback"

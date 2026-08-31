@@ -32,7 +32,6 @@ import {
 import { authClient } from "./auth-client";
 import { TurnstileWidget } from "./Turnstile";
 import { GuardianAccessProvider, useGuardianAccess } from "./GuardianAccess";
-import { GuardianUnlockDialog } from "./GuardianUnlock";
 import {
   ActionButton,
   Card,
@@ -330,9 +329,9 @@ function AccountExperienceHeader({
   userEmail: string;
 }) {
   const access = useGuardianAccess();
-  const [isUnlockOpen, setIsUnlockOpen] = useState(false);
   const [announcement, setAnnouncement] = useState("");
-  const unlockButtonRef = useRef<HTMLButtonElement>(null);
+  const [isSwitchingMode, setIsSwitchingMode] = useState(false);
+  const [switchError, setSwitchError] = useState("");
   const activeMode = access.mode === "guardian" ? "guardian" : "learner";
   const previousAccessModeRef = useRef(access.mode);
 
@@ -340,32 +339,48 @@ function AccountExperienceHeader({
     const previousMode = previousAccessModeRef.current;
     previousAccessModeRef.current = access.mode;
     if (previousMode === "learner" && access.mode === "guardian") {
-      setAnnouncement("Guardian mode unlocked for 15 minutes");
+      setAnnouncement("Guardian mode");
     } else if (previousMode === "guardian" && access.mode === "learner") {
       setAnnouncement("Learner mode");
     }
   }, [access.mode]);
 
+  async function switchToGuardian() {
+    if (access.mode === "guardian" || isSwitchingMode) return;
+    setIsSwitchingMode(true);
+    setSwitchError("");
+    const nextError = await access.unlock("");
+    setIsSwitchingMode(false);
+    if (nextError) {
+      setSwitchError(nextError);
+      return;
+    }
+    onNavigate(guardianUnlockDestination ?? getGuardianPath(), {
+      replace: true,
+    });
+  }
+
   return (
     <>
       <AccountHeader
         activeMode={activeMode}
-        error={access.error || error}
+        error={access.error || switchError || error}
         guardianLabel={guardianLabel}
         hasActiveLearner={hasActiveLearner}
-        isDialogOpen={isUnlockOpen}
+        isModePending={isSwitchingMode}
         isSigningOut={activeMode === "guardian" && isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
         onOpenAccountPrivacy={() => onNavigate(getGuardianAccountPath())}
         onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
         onOpenLearnerProfiles={() => onNavigate(getGuardianLearnersPath())}
-        onRetryError={access.error ? access.retry : undefined}
-        onSelectGuardian={(button) => {
-          if (access.mode !== "guardian") {
-            unlockButtonRef.current = button;
-            setIsUnlockOpen(true);
-          }
-        }}
+        onRetryError={
+          access.error
+            ? access.retry
+            : switchError
+              ? () => void switchToGuardian()
+              : undefined
+        }
+        onSelectGuardian={() => void switchToGuardian()}
         onSignOut={onSignOut}
         signOutError={activeMode === "guardian" ? signOutError : ""}
         userEmail={userEmail}
@@ -378,18 +393,6 @@ function AccountExperienceHeader({
       >
         {announcement}
       </span>
-      {isUnlockOpen ? (
-        <GuardianUnlockDialog
-          onClose={() => setIsUnlockOpen(false)}
-          onUnlocked={() => {
-            setIsUnlockOpen(false);
-            onNavigate(guardianUnlockDestination ?? getGuardianPath(), {
-              replace: true,
-            });
-          }}
-          returnFocusRef={unlockButtonRef}
-        />
-      ) : null}
     </>
   );
 }

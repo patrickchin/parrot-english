@@ -1,7 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const GUARDIAN_NAME = "Alex Guardian";
-const GUARDIAN_PASSWORD = "e2e-guardian-password";
 
 type LearnerScenario = "multiple" | "selection-required" | "zero-learners";
 
@@ -85,7 +84,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
     {
       action: "Manage voice dubbing",
       description:
-        "Allow private voice clips or turn dubbing off and remove them.",
+        "Review and delete private nursery-rhyme voice clips.",
       heading: "Voice dubbing",
     },
     {
@@ -261,7 +260,7 @@ test("learner routes recover progress, invalid story and lesson details, and wil
 
   await page.goto(scenarioUrl("/profile", "multiple", "learner"));
   await expect(
-    page.getByRole("heading", { exact: true, name: "Unlock guardian mode" }),
+    page.getByRole("heading", { exact: true, name: "Switch to guardian mode" }),
   ).toBeVisible();
   await page.getByRole("main").getByRole("button", { name: "Cancel" }).click();
   await expect(page).toHaveURL("/");
@@ -311,15 +310,15 @@ test("Guardian wildcard and account gates recover without selecting a learner", 
     scenarioUrl("/guardian/account", "selection-required", "learner"),
   );
   await expect(
-    page.getByRole("heading", { exact: true, name: "Unlock guardian mode" }),
+    page.getByRole("heading", { exact: true, name: "Switch to guardian mode" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { exact: true, name: "Account & privacy" }),
   ).toHaveCount(0);
-  await page.getByRole("main").getByLabel("Password").fill(GUARDIAN_PASSWORD);
+  await expect(page.getByRole("main").getByLabel("Password")).toHaveCount(0);
   await page
     .getByRole("main")
-    .getByRole("button", { exact: true, name: "Unlock guardian mode" })
+    .getByRole("button", { exact: true, name: "Switch to guardian mode" })
     .click();
   await expect(page).toHaveURL(/\/guardian\/account/);
   await expect(

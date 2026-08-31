@@ -19,7 +19,7 @@ function createFetchRecorder(payload, status = 200) {
 }
 
 describe("guardian access browser API", () => {
-  it("uses the exact guardian access routes and JSON body", async () => {
+  it("switches guardian mode without sending a password", async () => {
     const request = createFetchRecorder({
       mode: "guardian",
       expiresAt: "2026-08-25T08:15:00.000Z",
@@ -27,7 +27,7 @@ describe("guardian access browser API", () => {
     const lockRequest = createFetchRecorder({ mode: "learner" });
 
     await loadGuardianAccess({ fetch: request.fetch });
-    await unlockGuardianAccess("secret", { fetch: request.fetch });
+    await unlockGuardianAccess(undefined, { fetch: request.fetch });
     await lockGuardianAccess({ fetch: lockRequest.fetch });
 
     assert.deepEqual(
@@ -41,7 +41,7 @@ describe("guardian access browser API", () => {
         ["DELETE", "/api/guardian-access"],
       ],
     );
-    assert.equal(request.calls[1].body, JSON.stringify({ password: "secret" }));
+    assert.equal(request.calls[1].body, undefined);
     assert.deepEqual([...request.calls, ...lockRequest.calls].map(({ cache }) => cache), [
       "no-store",
       "no-store",
@@ -52,19 +52,19 @@ describe("guardian access browser API", () => {
   it("preserves typed server diagnostics with a safe message", async () => {
     const request = createFetchRecorder(
       {
-        error: "invalid_password",
-        message: "The password did not match this account.",
+        error: "switch_failed",
+        message: "Guardian mode could not be opened.",
       },
       401,
     );
 
     await assert.rejects(
-      unlockGuardianAccess("wrong", { fetch: request.fetch }),
+      unlockGuardianAccess(undefined, { fetch: request.fetch }),
       (error) => {
         assert.ok(error instanceof GuardianAccessApiError);
         assert.equal(error.status, 401);
-        assert.equal(error.code, "invalid_password");
-        assert.equal(error.message, "The password did not match this account.");
+        assert.equal(error.code, "switch_failed");
+        assert.equal(error.message, "Guardian mode could not be opened.");
         return true;
       },
     );

@@ -136,7 +136,7 @@ export function GuardianDashboardView({
                 Voice dubbing
               </h3>
               <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Allow private voice clips or turn dubbing off and remove them.
+                Review and delete private nursery-rhyme voice clips.
               </p>
               <ActionLink
                 className="mt-auto"

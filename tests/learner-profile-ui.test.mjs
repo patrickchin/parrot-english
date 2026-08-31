@@ -501,7 +501,7 @@ describe("profile summary editor", () => {
 
     assert.match(
       html,
-      /Lesson recording is off\. Saved clips are still being deleted\./,
+      /Saved lesson recordings are still being deleted\./,
     );
     assert.match(html, />Finish deleting lesson recordings<\/button>/);
     assert.doesNotMatch(html, />Allow lesson voice recordings<\/button>/);
@@ -1412,9 +1412,9 @@ describe("onboarding and profile gate", () => {
     assert.equal((html.match(/<textarea/g) ?? []).length, 1);
     assert.match(html, /Redo setup questions/);
     assert.match(html, /Lesson voice recordings/);
-    assert.match(html, /apply only to this learner profile/);
-    assert.match(html, /Guardian manages each learner independently/);
-    assert.match(html, />Allow lesson voice recordings</);
+    assert.match(html, /available automatically/i);
+    assert.match(html, />Delete saved lesson recordings</);
+    assert.doesNotMatch(html, /Allow lesson voice recordings|permission/i);
     assert.doesNotMatch(html, /Chat with Peppa again/);
     assert.doesNotMatch(html, /Skip for now/);
     assert.doesNotMatch(html, /LESSON CONTENT/);

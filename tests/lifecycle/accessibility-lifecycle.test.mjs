@@ -522,7 +522,7 @@ describe("keyboard accessibility lifecycles", () => {
       [...menu.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
       ),
-      ["Grown-up accessPassword optional for now"],
+      ["Grown-up accessSwitch modes"],
     );
     assert.match(document.body.textContent, /Mia/);
     assert.equal(
@@ -636,7 +636,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(document.body.textContent, /What this account keeps/);
     assert.match(
       document.body.textContent,
-      /all voice-dubbing rhymes.*private voice clips/i,
+      /Voice-dubbing rhymes.*private voice clips/i,
     );
     assert.match(
       document.body.textContent,
@@ -987,7 +987,7 @@ describe("keyboard accessibility lifecycles", () => {
     ]);
   });
 
-  it("sends the grown-up gateway to the learner manager after unlock", async () => {
+  it("switches directly from the learner menu to guardian management", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi(),
       schedule: () => () => {},
@@ -1017,12 +1017,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Grown-up accessPassword optional for now"));
-    await input(
-      document.querySelector('input[name="password"]'),
-      "correct-password",
-    );
-    await click(button("Unlock guardian mode"));
+    await click(button("Grown-up accessSwitch modes"));
     await waitFor(() => assert.deepEqual(navigations, ["/guardian/learners"]));
     await click(button("Profile for Patrick, guardian mode"));
     assert.deepEqual(
@@ -1086,38 +1081,31 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(registrations.at(-1), second);
   });
 
-  it("clears an incorrect password and stays in the unlock form", async () => {
-    const passwords = [];
+  it("keeps a failed direct switch in learner mode", async () => {
+    let attempts = 0;
     await mountStrict(
       createElement(UnlockHarness, {
         api: guardianApi({
-          async unlockGuardianAccess(password) {
-            passwords.push(password);
-            throw new Error("The password did not match this account.");
+          async unlockGuardianAccess() {
+            attempts += 1;
+            throw new Error("Guardian mode could not be opened.");
           },
         }),
       }),
     );
-    const password = document.querySelector('input[name="password"]');
-    await input(password, "wrong-password");
-    const unlock = button("Unlock guardian mode");
-    unlock.focus();
-    await click(unlock);
+    const switchButton = button("Switch to guardian mode");
+    switchButton.focus();
+    await click(switchButton);
     await waitFor(() =>
       assert.equal(
         document.querySelector('[role="alert"]').textContent.trim(),
-        "The password did not match this account.",
+        "Guardian mode could not be opened.",
       ),
     );
 
-    assert.deepEqual(passwords, ["wrong-password"]);
-    assert.equal(password.value, "");
-    assert.equal(password.getAttribute("aria-invalid"), "true");
-    assert.equal(
-      password.getAttribute("aria-describedby"),
-      document.querySelector('[role="alert"]').id,
-    );
-    assert.equal(document.activeElement, password);
+    assert.equal(attempts, 1);
+    assert.equal(document.querySelector('input[name="password"]'), null);
+    assert.equal(document.activeElement, switchButton);
     assert.equal(
       document.querySelector('output[aria-label="Guardian access mode"]')
         .textContent,
@@ -1125,11 +1113,11 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("renders one field-associated invalid-password alert in the account unlock dialog", async () => {
+  it("shows a direct-switch failure in the account shell", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
         async unlockGuardianAccess() {
-          throw new Error("The password did not match this account.");
+          throw new Error("Guardian mode could not be opened.");
         },
       }),
       schedule: () => () => {},
@@ -1142,12 +1130,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Grown-up accessPassword optional for now"));
-    const password = document.querySelector('input[name="password"]');
-    await input(password, "wrong-password");
-    const unlock = button("Unlock guardian mode");
-    unlock.focus();
-    await click(unlock);
+    await click(button("Grown-up accessSwitch modes"));
     await waitFor(() =>
       assert.equal(
         [...document.querySelectorAll('[role="alert"]')].filter(
@@ -1162,14 +1145,13 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.equal(
       alert.textContent.trim(),
-      "The password did not match this account.",
+      "Guardian mode could not be opened.",
     );
-    assert.equal(password.getAttribute("aria-invalid"), "true");
-    assert.equal(password.getAttribute("aria-describedby"), alert.id);
-    assert.equal(document.activeElement, password);
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.ok(button("Profile for Learner, learner mode"));
   });
 
-  it("keeps learner and expired unlock responses in the password form", async () => {
+  it("keeps learner and expired switch responses in the switch form", async () => {
     for (const { dialog, response } of [
       { dialog: false, response: { mode: "learner" } },
       {
@@ -1195,11 +1177,9 @@ describe("keyboard accessibility lifecycles", () => {
         }),
       );
       if (dialog) await click(button("Open guardian mode"));
-      const password = document.querySelector('input[name="password"]');
-      await input(password, "correct-password");
-      const unlock = button("Unlock guardian mode");
-      unlock.focus();
-      await click(unlock);
+      const switchButton = button("Switch to guardian mode");
+      switchButton.focus();
+      await click(switchButton);
       await waitFor(() =>
         assert.equal(
           document.querySelector('[role="alert"]')?.textContent.trim(),
@@ -1208,7 +1188,7 @@ describe("keyboard accessibility lifecycles", () => {
       );
 
       assert.equal(unlocked, 0);
-      assert.equal(document.activeElement, password);
+      assert.equal(document.activeElement, switchButton);
       assert.equal(
         document.querySelector('output[aria-label="Guardian access mode"]')
           .textContent,
@@ -1221,7 +1201,7 @@ describe("keyboard accessibility lifecycles", () => {
     }
   });
 
-  it("disables unlock controls while pending and submits the password with Enter", async () => {
+  it("disables switch controls while pending and submits without credentials", async () => {
     const attempt = deferred();
     const passwords = [];
     await mountStrict(
@@ -1234,22 +1214,27 @@ describe("keyboard accessibility lifecycles", () => {
         }),
       }),
     );
-    const password = document.querySelector('input[name="password"]');
-    await input(password, "correct-password");
-    password.focus();
-    await act(async () => password.form.requestSubmit());
+    const switchButton = button("Switch to guardian mode");
+    switchButton.focus();
+    await act(async () => switchButton.form.requestSubmit());
 
-    assert.deepEqual(passwords, ["correct-password"]);
-    assert.equal(password.form.querySelector("fieldset").disabled, true);
-    assert.match(password.form.textContent, /Unlocking guardian mode…/);
+    assert.deepEqual(passwords, [""]);
+    assert.equal(switchButton.form.querySelector("fieldset").disabled, true);
+    assert.match(switchButton.form.textContent, /Switching modes…/);
     attempt.resolve({
       expiresAt: "2099-01-01T00:00:00.000Z",
       mode: "guardian",
     });
-    await waitFor(() => assert.equal(password.value, ""));
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector('output[aria-label="Guardian access mode"]')
+          .textContent,
+        "guardian",
+      ),
+    );
   });
 
-  it("submits an empty password when Guardian unlock is temporarily optional", async () => {
+  it("renders no password field for a guardian mode switch", async () => {
     const passwords = [];
     await mountStrict(
       createElement(UnlockHarness, {
@@ -1264,11 +1249,10 @@ describe("keyboard accessibility lifecycles", () => {
         }),
       }),
     );
-    const password = document.querySelector('input[name="password"]');
-    assert.equal(password.required, false);
-    assert.equal(password.validity.valueMissing, false);
+    const switchButton = button("Switch to guardian mode");
+    assert.equal(document.querySelector('input[name="password"]'), null);
 
-    await act(async () => password.form.requestSubmit());
+    await act(async () => switchButton.form.requestSubmit());
 
     assert.deepEqual(passwords, [""]);
     assert.equal(
@@ -1304,22 +1288,20 @@ describe("keyboard accessibility lifecycles", () => {
         ),
       ),
     );
-    const password = document.querySelector('input[name="password"]');
-    await input(password, "correct-password");
-    await click(button("Unlock guardian mode"));
+    await click(button("Switch to guardian mode"));
     await waitFor(() =>
       assert.equal(
         [...document.querySelectorAll('[role="status"]')].filter(
           (status) =>
             status.textContent.trim() ===
-            "Guardian mode unlocked for 15 minutes",
+            "Guardian mode",
         ).length,
         1,
       ),
     );
 
     assert.equal(unlocked, 1);
-    assert.equal(password.value, "");
+    assert.equal(document.querySelector('input[name="password"]'), null);
     assert.ok(
       !document
         .querySelector('main[aria-label="Deep-link guardian unlock"]')
@@ -1328,7 +1310,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.ok(button("Profile for Patrick, guardian mode"));
   });
 
-  it("keeps network failures in learner mode and clears the password", async () => {
+  it("keeps network failures in learner mode", async () => {
     await mountStrict(
       createElement(UnlockHarness, {
         api: guardianApi({
@@ -1340,12 +1322,9 @@ describe("keyboard accessibility lifecycles", () => {
         }),
       }),
     );
-    const password = document.querySelector('input[name="password"]');
-    await input(password, "correct-password");
-    await click(button("Unlock guardian mode"));
+    await click(button("Switch to guardian mode"));
     await waitFor(() => assert.ok(document.querySelector('[role="alert"]')));
 
-    assert.equal(password.value, "");
     assert.equal(
       document.querySelector('output[aria-label="Guardian access mode"]')
         .textContent,
@@ -1353,26 +1332,26 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("focuses the unlock password and restores the mode opener on cancel", async () => {
+  it("focuses the switch action and restores the mode opener on cancel", async () => {
     await mountStrict(
       createElement(UnlockHarness, { api: guardianApi(), dialog: true }),
     );
     const opener = button("Open guardian mode");
     opener.focus();
     await click(opener);
-    const password = document.querySelector('input[name="password"]');
+    const switchButton = button("Switch to guardian mode");
     assert.equal(
       document.querySelector('[role="dialog"]').getAttribute("aria-label"),
-      "Unlock guardian mode",
+      "Switch to guardian mode",
     );
-    await waitFor(() => assert.equal(document.activeElement, password));
+    await waitFor(() => assert.equal(document.activeElement, switchButton));
 
     await click(button("Cancel"));
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.activeElement, opener);
   });
 
-  it("navigates a successful profile-dropdown unlock to guardian home", async () => {
+  it("navigates a successful profile-dropdown switch to guardian home", async () => {
     window.history.replaceState(null, "", "/");
     const Provider = createGuardianAccessProvider({
       api: guardianApi(),
@@ -1387,18 +1366,15 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for Learner, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Grown-up accessPassword optional for now");
+    const guardian = button("Grown-up accessSwitch modes");
     await click(guardian);
-    const password = document.querySelector('input[name="password"]');
-    await input(password, "correct-password");
-    await click(button("Unlock guardian mode"));
     await waitFor(() => assert.equal(window.location.pathname, "/guardian"));
 
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.querySelector('[role="menu"]'), null);
     assert.match(
       document.body.textContent,
-      /Guardian mode unlocked for 15 minutes/,
+      /Guardian mode/,
     );
   });
 
@@ -1427,12 +1403,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for Learner, learner mode")),
     );
-    await click(button("Grown-up accessPassword optional for now"));
-    await input(
-      document.querySelector('input[name="password"]'),
-      "correct-password",
-    );
-    await click(button("Unlock guardian mode"));
+    await click(button("Grown-up accessSwitch modes"));
 
     await waitFor(() =>
       assert.deepEqual(navigations, [
@@ -1490,22 +1461,19 @@ describe("keyboard accessibility lifecycles", () => {
       let guardian = [...document.querySelectorAll("button")].find(
         (candidate) =>
           candidate.textContent.trim() ===
-          "Grown-up accessPassword optional for now",
+          "Grown-up accessSwitch modes",
       );
       if (!guardian) {
         await click(
           await waitFor(() => button("Profile for Mia, learner mode")),
         );
-        guardian = button("Grown-up accessPassword optional for now");
+        guardian = button("Grown-up accessSwitch modes");
       }
       await click(guardian);
-      const password = document.querySelector('input[name="password"]');
-      await input(password, "correct-password");
-      await click(button("Unlock guardian mode"));
       await waitFor(() =>
         assert.equal(
           liveStatus.textContent.trim(),
-          "Guardian mode unlocked for 15 minutes",
+          "Guardian mode",
         ),
       );
     }
@@ -1518,42 +1486,10 @@ describe("keyboard accessibility lifecycles", () => {
     observer.disconnect();
 
     assert.deepEqual(announcements, [
-      "Guardian mode unlocked for 15 minutes",
+      "Guardian mode",
       "Learner mode",
-      "Guardian mode unlocked for 15 minutes",
+      "Guardian mode",
     ]);
-  });
-
-  it("keeps the profile switch mounted while the unlock dialog owns interaction", async () => {
-    const Provider = createGuardianAccessProvider({
-      api: guardianApi(),
-      schedule: () => () => {},
-    });
-    const TestAuthGate = createAuthGate({
-      client: authClientForHeader(),
-      GuardianAccessBoundary: Provider,
-    });
-    await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
-    const trigger = await waitFor(() =>
-      button("Profile for Learner, learner mode"),
-    );
-    await click(trigger);
-    const guardian = button("Grown-up accessPassword optional for now");
-    await click(guardian);
-    const password = document.querySelector('input[name="password"]');
-    await act(async () =>
-      password.dispatchEvent(
-        new window.PointerEvent("pointerdown", {
-          bubbles: true,
-          cancelable: true,
-        }),
-      ),
-    );
-
-    assert.ok(document.querySelector('[role="menu"]'));
-    await press(password, "Escape");
-    assert.equal(document.querySelector('[role="dialog"]'), null);
-    assert.equal(document.activeElement, guardian);
   });
 
   it("supports menu arrow, Home, End, and Escape keyboard navigation", async () => {

@@ -1,6 +1,4 @@
-import { APIError } from "better-auth/api";
 import {
-  checkGuardianUnlockRateLimit,
   checkPersonalizedStoryArtRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
@@ -72,7 +70,6 @@ interface Env
 interface WorkerDependencies {
   createAuth: typeof createAuth;
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
-  checkGuardianUnlockRateLimit: typeof checkGuardianUnlockRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
   checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
@@ -235,8 +232,6 @@ export function createWorker(
 ) {
   const rateLimit =
     dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
-  const guardianUnlockRateLimit =
-    dependencies.checkGuardianUnlockRateLimit ?? checkGuardianUnlockRateLimit;
   const learnerProfileTranscriptionRateLimit =
     dependencies.checkLearnerProfileTranscriptionRateLimit ??
     checkLearnerProfileTranscriptionRateLimit;
@@ -476,35 +471,10 @@ export function createWorker(
           userId: session.user.id,
           userName: session.user.name?.trim() || null,
         };
-        if (request.method === "POST") {
-          const rateLimited = await guardianUnlockRateLimit(
-            request,
-            env,
-            accountIdentity.userId,
-          );
-          if (rateLimited) return rateLimited;
-        }
         return guardianAccessRequest({
           database: createDatabase(env.DB),
           identity: accountIdentity,
           request,
-          verifyPassword: async (password) => {
-            try {
-              const verified = await auth.api.verifyPassword({
-                body: { password },
-                headers: request.headers,
-              });
-              return Boolean(verified);
-            } catch (error) {
-              if (
-                error instanceof APIError &&
-                error.body?.code === "INVALID_PASSWORD"
-              ) {
-                return false;
-              }
-              throw error;
-            }
-          },
         });
       }
 

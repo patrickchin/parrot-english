@@ -979,7 +979,7 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
-    "Grown-up accessPassword optional for now",
+    "Grown-up accessSwitch modes",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
@@ -1110,7 +1110,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
   }
 });
 
-test("unlocking guardian mode reaches learner details through Manage learners", async ({
+test("switching to guardian mode reaches learner details through Manage learners", async ({
   page,
 }) => {
   await page.goto("/");
@@ -1119,9 +1119,7 @@ test("unlocking guardian mode reaches learner details through Manage learners", 
     .click();
   await page.getByRole("menuitem", { name: /Grown-up access/ }).click();
 
-  const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
-  await dialog.getByLabel("Password").fill("e2e-guardian-password");
-  await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
 
   await page
     .getByRole("link", { exact: true, name: "Manage learners" })
@@ -1217,13 +1215,13 @@ test("Account & privacy explains caregiver facts before optional technical detai
   ).toBeVisible();
   await expect(
     accountPage.getByText(
-      "With guardian permission, lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
+      "Lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
       { exact: true },
     ),
   ).toBeVisible();
   await expect(
     accountPage.getByText(
-      /^With Guardian permission, all voice-dubbing rhymes save that learner's private voice clips/i,
+      /^Voice-dubbing rhymes save that learner's private voice clips/i,
     ),
   ).toBeVisible();
   await expect(

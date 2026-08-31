@@ -270,8 +270,8 @@ function saveRecordingConsent(state, bucket, enabled, identity = {}) {
 }
 
 describe("lesson recording Worker handler", () => {
-  it("returns only the persisted consent state and supports only GET", async () => {
-    const state = seedDatabase();
+  it("makes recording available automatically and supports only GET", async () => {
+    const state = seedDatabase({ consent: false });
     const bucket = createBucket();
     try {
       const response = await call(
@@ -286,6 +286,14 @@ describe("lesson recording Worker handler", () => {
         cleanupPending: false,
         enabled: true,
       });
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT lesson_recording_consent_version AS version FROM learner_profile WHERE id = 'profile-1'",
+          )
+          .get().version,
+        CONSENT_VERSION,
+      );
 
       const denied = await call(
         state,

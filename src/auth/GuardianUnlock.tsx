@@ -1,13 +1,12 @@
 import {
   forwardRef,
-  useEffect,
   useId,
   useRef,
   useState,
   type FormEvent,
   type RefObject,
 } from "react";
-import { ActionButton, Card, fieldClassName } from "../shared/ui";
+import { ActionButton, Card } from "../shared/ui";
 import { useDialogFocus } from "../app/useDialogFocus";
 import { useGuardianAccess } from "./GuardianAccess";
 
@@ -21,27 +20,17 @@ export type GuardianUnlockFormProps = {
 };
 
 export const GuardianUnlockForm = forwardRef<
-  HTMLInputElement,
+  HTMLButtonElement,
   GuardianUnlockFormProps
 >(function GuardianUnlockForm(
   { autoFocus = false, onCancel, onUnlocked },
-  passwordRef,
+  switchButtonRef,
 ) {
   const { unlock } = useGuardianAccess();
   const [error, setError] = useState("");
   const [isPending, setIsPending] = useState(false);
-  const [password, setPassword] = useState("");
   const pendingRef = useRef(false);
-  const formRef = useRef<HTMLFormElement>(null);
   const titleId = useId();
-  const errorId = `${titleId}-password-error`;
-
-  useEffect(() => {
-    if (!error || isPending) return;
-    formRef.current
-      ?.querySelector<HTMLInputElement>('input[name="password"]')
-      ?.focus();
-  }, [error, isPending]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -51,7 +40,7 @@ export const GuardianUnlockForm = forwardRef<
     setIsPending(true);
     setError("");
     try {
-      const nextError = await unlock(password);
+      const nextError = await unlock("");
       if (nextError) {
         setError(nextError);
         return;
@@ -60,7 +49,6 @@ export const GuardianUnlockForm = forwardRef<
     } catch {
       setError(UNLOCK_FALLBACK_ERROR);
     } finally {
-      setPassword("");
       pendingRef.current = false;
       setIsPending(false);
     }
@@ -72,49 +60,25 @@ export const GuardianUnlockForm = forwardRef<
       aria-labelledby={titleId}
       className="grid gap-5"
       onSubmit={handleSubmit}
-      ref={formRef}
     >
       <header className="grid gap-2">
         <h1
           className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
           id={titleId}
         >
-          Unlock guardian mode
+          Switch to guardian mode
         </h1>
       </header>
       <p className="m-0 font-bold leading-relaxed text-slate-700">
-        Enter the account password, or continue without one for now.
+        Guardian tools and learner activities stay in separate modes.
       </p>
       <fieldset
         className="m-0 grid min-w-0 gap-5 border-0 p-0 disabled:opacity-75"
         disabled={isPending}
       >
-        <label
-          className="grid gap-2 font-black text-brand-ink"
-          htmlFor={`${titleId}-password`}
-        >
-          <span>Password (optional for now)</span>
-          <input
-            aria-describedby={error ? errorId : undefined}
-            aria-invalid={error ? true : undefined}
-            autoComplete="current-password"
-            autoFocus={autoFocus}
-            className={fieldClassName({ tone: "tinted" })}
-            id={`${titleId}-password`}
-            name="password"
-            onChange={(event) => {
-              setPassword(event.target.value);
-              setError("");
-            }}
-            ref={passwordRef}
-            type="password"
-            value={password}
-          />
-        </label>
         {error ? (
           <p
             className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
-            id={errorId}
             role="alert"
           >
             {error}
@@ -124,8 +88,8 @@ export const GuardianUnlockForm = forwardRef<
           <ActionButton onClick={onCancel} type="button" variant="surface">
             Cancel
           </ActionButton>
-          <ActionButton type="submit">
-            {isPending ? "Unlocking guardian mode…" : "Unlock guardian mode"}
+          <ActionButton autoFocus={autoFocus} ref={switchButtonRef} type="submit">
+            {isPending ? "Switching modes…" : "Switch to guardian mode"}
           </ActionButton>
         </div>
       </fieldset>
@@ -143,7 +107,7 @@ export function GuardianUnlockDialog({
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const dialogRef = useRef<HTMLElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
+  const switchButtonRef = useRef<HTMLButtonElement>(null);
   const canClose = () =>
     dialogRef.current?.querySelector("form")?.getAttribute("aria-busy") !==
     "true";
@@ -151,7 +115,7 @@ export function GuardianUnlockDialog({
   useDialogFocus({
     canClose,
     dialogRef,
-    initialFocusRef: passwordRef,
+    initialFocusRef: switchButtonRef,
     onClose,
     returnFocusRef,
   });
@@ -164,7 +128,7 @@ export function GuardianUnlockDialog({
       }}
     >
       <section
-        aria-label="Unlock guardian mode"
+        aria-label="Switch to guardian mode"
         aria-modal="true"
         className="grid max-h-[calc(100dvh-2rem)] w-full max-w-lg gap-5 overflow-y-auto rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
         ref={dialogRef}
@@ -175,7 +139,7 @@ export function GuardianUnlockDialog({
           autoFocus
           onCancel={onClose}
           onUnlocked={onUnlocked}
-          ref={passwordRef}
+          ref={switchButtonRef}
         />
       </section>
     </div>
