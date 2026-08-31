@@ -491,6 +491,9 @@ export function DubStudio({
             dispatch({ type: "OPERATION_FINISHED" });
           },
           onTick() {},
+          onLineUnavailable() {
+            throw new Error("The guide source is unavailable.");
+          },
           resolveAudioSource: () => ({ preferredUrl: guide.src }),
           signal: controller.signal,
         });
@@ -538,6 +541,9 @@ export function DubStudio({
             dispatch({ type: "OPERATION_FINISHED" });
           },
           onTick() {},
+          onLineUnavailable() {
+            throw new Error("The saved take source is unavailable.");
+          },
           resolveAudioSource: () => ({ preferredUrl: audioUrl }),
           signal: controller.signal,
         });

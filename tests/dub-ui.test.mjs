@@ -114,6 +114,7 @@ function installRecordingHarness() {
 }
 
 function installSynchronizedRecordingHarness({
+  decodeError,
   melodyStartError,
   melodyPreparationError,
   rejectMicrophone = false,
@@ -159,6 +160,7 @@ function installSynchronizedRecordingHarness({
       this.currentTime = 10;
       this.destination = {};
       this.closeCalls = 0;
+      this.decodeCalls = 0;
       this.oscillators = [];
       this.sources = [];
       contexts.push(this);
@@ -214,7 +216,10 @@ function installSynchronizedRecordingHarness({
       return oscillator;
     }
 
-    decodeAudioData() { return Promise.resolve({ duration: 1 }); }
+    decodeAudioData() {
+      this.decodeCalls += 1;
+      return decodeError ? Promise.reject(decodeError) : Promise.resolve({ duration: 1 });
+    }
     resume() {
       return contexts.length === 1 && melodyPreparationError
         ? Promise.reject(melodyPreparationError)
@@ -793,6 +798,43 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
+  it("does not leave melody playing when a guide cannot decode", async () => {
+    const audio = installSynchronizedRecordingHarness({
+      decodeError: new Error("guide bytes cannot decode"),
+    });
+    const guideFetches = [];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      if (String(path).endsWith(".mp3")) {
+        guideFetches.push(String(path));
+        return new Response(new Uint8Array([1, 2, 3]));
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click([...container.querySelectorAll("button")].find(
+      ({ textContent }) => textContent?.includes("Hear line"),
+    ));
+
+    await waitFor(() => assert.equal(
+      container.querySelector('[role="alert"]')?.textContent,
+      "I could not play that example. You can still record the words you see.",
+    ));
+    assert.equal(guideFetches.length, 1);
+    assert.equal(audio.contexts[0].decodeCalls, 1);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.deepEqual(audio.contexts[0].sources, []);
+    assert.deepEqual(audio.contexts[0].oscillators, []);
+    assert.ok([...container.querySelectorAll("button")].some(
+      ({ textContent }) => textContent?.includes("Hear line"),
+    ));
+  });
+
   it("clears a revoking save into disabled learner guidance", async () => {
     const revokedUrls = [];
     URL.createObjectURL = () => "blob:revoking-take";
@@ -920,11 +962,14 @@ describe("duck dubbing storyboard presentation", () => {
   });
 
   it("keeps the editor open and offers Record again when saved recording playback fails", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    let savedTakeRequests = 0;
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledFirstSceneStatus());
       }
       if (path === "/api/dubs/five-little-ducks-v2/lines/line-1/audio" && !init.method) {
+        savedTakeRequests += 1;
         return new Response(null, { status: 500 });
       }
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
@@ -940,8 +985,17 @@ describe("duck dubbing storyboard presentation", () => {
       container.querySelector('[role="alert"]')?.textContent,
       "Your recording could not be played. Record the line again.",
     ));
+    assert.equal(savedTakeRequests, 1);
+    assert.equal(audio.contexts[0].decodeCalls, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.deepEqual(audio.contexts[0].sources, []);
+    assert.deepEqual(audio.contexts[0].oscillators, []);
     assert.ok(container.querySelector('[aria-label="Scene video"]'));
     assert.ok(container.querySelector('[aria-label="Record again"]'));
+    await click(container.querySelector('[aria-label="Back to full video"]'));
+    await waitFor(() => assert.ok(
+      container.querySelector('[aria-label="Scene 1, Five little ducks, Needs retake"]'),
+    ));
   });
 
   it("keeps pending preview playback private-GET free with a separate URL lifetime", async () => {
