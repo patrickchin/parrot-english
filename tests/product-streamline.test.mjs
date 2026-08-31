@@ -111,7 +111,7 @@ test("guardian dashboard shows only the remaining learning and content cards", (
       .map(([, heading]) => heading)
       .filter((heading) => heading !== "Learning &amp; content"),
     [
-      "Manage learners",
+      "Learner profiles",
       "Story settings",
       "Voice dubbing",
       "Account &amp; privacy",

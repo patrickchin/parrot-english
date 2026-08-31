@@ -20,9 +20,7 @@ const { LearnerProfileProvider } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileContext.tsx",
 );
 const { LESSONS } = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
-const { LessonList, LessonListView } = await vite.ssrLoadModule(
-  "/src/lessons/LessonList.tsx",
-);
+const { LessonList } = await vite.ssrLoadModule("/src/lessons/LessonList.tsx");
 
 test.after(async () => {
   await vite.close();

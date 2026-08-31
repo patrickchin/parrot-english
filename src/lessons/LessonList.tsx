@@ -1,5 +1,4 @@
 import { ArrowLeft, Play } from "lucide-react";
-import { useEffect, useRef, type RefObject } from "react";
 import lessonCovers from "../../content/catalogs/lesson-covers.json";
 import { getLessonScenePath } from "../app/app-routes";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
