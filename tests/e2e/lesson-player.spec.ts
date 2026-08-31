@@ -335,6 +335,110 @@ test("the decoded artwork gates the focused start action", async ({ page }) => {
   );
 });
 
+test("phone artwork and its next-scene preload use compact image candidates", async ({
+  page,
+}) => {
+  const requestedArtwork: string[] = [];
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname.includes("/full-scenes/")) requestedArtwork.push(pathname);
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
+  });
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`);
+
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+  await expect.poll(() => requestedArtwork.some((pathname) =>
+    pathname.endsWith("/02-cannot-reach-384.webp"),
+  )).toBe(true);
+  expect(requestedArtwork).toEqual(
+    expect.arrayContaining([
+      expect.stringMatching(/\/01-ball-up-high-384\.webp$/),
+      expect.stringMatching(/\/02-cannot-reach-384\.webp$/),
+    ]),
+  );
+  expect(
+    requestedArtwork.some((pathname) =>
+      /\/(?:01-ball-up-high|02-cannot-reach)\.webp$/.test(pathname),
+    ),
+  ).toBe(false);
+});
+
+test("lesson artwork retries its original when a responsive candidate is unavailable", async ({
+  page,
+}) => {
+  const requestedArtwork: string[] = [];
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (pathname.includes("/full-scenes/")) requestedArtwork.push(pathname);
+    if (/-\d+\.webp$/.test(pathname)) {
+      await route.fulfill({ status: 404 });
+      return;
+    }
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
+  });
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`);
+
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+  expect(requestedArtwork).toEqual(
+    expect.arrayContaining([
+      expect.stringMatching(/\/01-ball-up-high-384\.webp$/),
+      expect.stringMatching(/\/01-ball-up-high\.webp$/),
+    ]),
+  );
+});
+
+test("a phone preload does not unlock a larger candidate after resizing", async ({
+  page,
+}) => {
+  await installArtworkDecodeController(page);
+  await page.setViewportSize({ height: 844, width: 390 });
+  let releaseLargeArtwork!: () => void;
+  const largeArtworkReady = new Promise<void>((resolve) => {
+    releaseLargeArtwork = resolve;
+  });
+  await page.route("https://media.parrotbook.com/**", async (route) => {
+    const pathname = new URL(route.request().url()).pathname;
+    if (/\/02-cannot-reach\.webp$/.test(pathname)) await largeArtworkReady;
+    await route.fulfill({ body: tinySceneWebp, contentType: "image/webp" });
+  });
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=held-cue-no-consent`);
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+  await expect
+    .poll(
+      async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes,
+    )
+    .toBeGreaterThan(0);
+  await releaseDetachedArtworkDecodes(page);
+  await page.setViewportSize({ height: 900, width: 1000 });
+  await page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eArtworkDecode?: ArtworkDecodeController;
+      }
+    ).__parrotE2eArtworkDecode;
+    if (!controller) throw new Error("Artwork decode controller is missing.");
+    controller.holdConnectedDecodes = true;
+  });
+
+  await startLesson(page);
+  await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
+  await controlLessonMedia(page, "releaseNextCue");
+  await expect(page).toHaveURL(/\/scenes\/2/);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Loading picture…" }),
+  ).toBeVisible();
+
+  releaseLargeArtwork();
+});
+
 test("decoded artwork does not steal focus from an open account menu", async ({
   page,
 }) => {
@@ -477,10 +581,14 @@ test("a decoded next-scene preload never shows the loading picture layer during 
 test("failed artwork can be retried before the story begins", async ({
   page,
 }) => {
-  let requests = 0;
+  let initialArtworkFailures = 0;
   await page.route("https://media.parrotbook.com/**", async (route) => {
-    requests += 1;
-    if (requests === 1) {
+    const pathname = new URL(route.request().url()).pathname;
+    if (
+      /\/01-ball-up-high(?:-\d+)?\.webp$/.test(pathname) &&
+      initialArtworkFailures < 2
+    ) {
+      initialArtworkFailures += 1;
       await route.abort("failed");
       return;
     }
@@ -491,6 +599,7 @@ test("failed artwork can be retried before the story begins", async ({
   await expect(
     page.getByText("No picture yet.", { exact: true }),
   ).toBeVisible();
+  expect(initialArtworkFailures).toBe(2);
   await page.getByRole("button", { name: "Try loading picture again" }).click();
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),

@@ -7,6 +7,13 @@ export type DubArtwork = Readonly<{
   width: number;
 }>;
 
+export function dubArtworkSrcSet(src: string) {
+  return [384, 768]
+    .map((width) => `${src.replace(/\.webp$/, `-${width}.webp`)} ${width}w`)
+    .concat(`${src} 1536w`)
+    .join(", ");
+}
+
 function artwork(path: string, alt: string, version = 6): DubArtwork {
   return Object.freeze({
     alt,

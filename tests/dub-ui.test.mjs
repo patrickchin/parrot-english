@@ -6,6 +6,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { createServer } from "vite";
 import {
+  STATIC_MEDIA_ASSETS,
+  createStaticMediaPublishPlan,
+} from "../scripts/static-media.mjs";
+import {
   cleanupMountedRoots,
   click,
   installDom,
@@ -48,7 +52,16 @@ const {
   OLD_MACDONALD_DUB,
   ROW_ROW_ROW_YOUR_BOAT_DUB,
 } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const { NURSERY_RHYMES_COVER_ARTWORK } = await vite.ssrLoadModule(
+  "/src/dubbing/dub-artwork.ts",
+);
 const { getStaticAudioLineForSpeech } = await vite.ssrLoadModule("/lib/static-audio.js");
+const staticMediaPlan = createStaticMediaPublishPlan(STATIC_MEDIA_ASSETS, {
+  bucket: "parrot-english-media",
+  mediaOrigin: "https://media.parrotbook.com",
+  sourceVersion: 2,
+  targetVersion: 3,
+});
 
 afterEach(async () => {
   await cleanupMountedRoots();
@@ -478,6 +491,101 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(first, /five-little-ducks\/scene-1-five-ducklings\.webp/);
     assert.match(second, /five-little-ducks\/scene-2-four-ducklings\.webp/);
     assert.notEqual(first, second);
+  });
+
+  it("offers responsive resolution candidates for illustrated scenes", () => {
+    const html = renderToStaticMarkup(createElement(IllustratedDubScene, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      line: DUB_LINES[0],
+    }));
+    const expectedSrcSet =
+      "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-1-five-ducklings-384.webp 384w, " +
+      "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-1-five-ducklings-768.webp 768w, " +
+      "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-1-five-ducklings.webp 1536w";
+
+    assert.match(html, new RegExp(`srcSet="${expectedSrcSet.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+    assert.match(
+      html,
+      /sizes="\(max-width: 559px\) calc\(100vw - 1.5rem\), \(min-width: 560px\) and \(max-height: 620px\) 58vw, \(max-width: 767px\) calc\(100vw - 1.5rem\), \(max-width: 1023px\) calc\(100vw - 3rem\), min\(70vw, 70rem\)"/,
+    );
+  });
+
+  it("offers responsive resolution candidates for v7 line artwork", () => {
+    const html = renderToStaticMarkup(createElement(IllustratedDubScene, {
+      definition: ROW_ROW_ROW_YOUR_BOAT_DUB,
+      line: ROW_ROW_ROW_YOUR_BOAT_DUB.lines[1],
+    }));
+
+    assert.match(
+      html,
+      /srcSet="https:\/\/media\.parrotbook\.com\/assets\/v7\/dubbing\/row-row-row-your-boat\/line-2-gentle-stream-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v7\/dubbing\/row-row-row-your-boat\/line-2-gentle-stream-768\.webp 768w, https:\/\/media\.parrotbook\.com\/assets\/v7\/dubbing\/row-row-row-your-boat\/line-2-gentle-stream\.webp 1536w"/,
+    );
+  });
+
+  it("falls back to the original artwork when a responsive candidate fails", async () => {
+    const container = await mountStrict(createElement(IllustratedDubScene, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      line: DUB_LINES[0],
+    }));
+    const image = container.querySelector("img");
+    assert.ok(image);
+    assert.match(image.srcset, /-384\.webp 384w/);
+
+    image.dispatchEvent(new globalThis.Event("error"));
+
+    assert.equal(image.getAttribute("srcset"), null);
+    assert.equal(image.getAttribute("sizes"), null);
+    assert.equal(image.src, FIVE_LITTLE_DUCKS_DUB.sceneArtwork[0].src);
+  });
+
+  it("offers responsive resolution candidates for scene navigation thumbnails", () => {
+    const html = renderProjectHome();
+
+    assert.equal(
+      (html.match(/<img[^>]*sizes="[^"]+"[^>]*srcSet="[^"]+"/g) ?? []).length,
+      FIVE_LITTLE_DUCKS_DUB.sceneArtwork.length + 1,
+    );
+    assert.match(
+      html,
+      /sizes="\(min-width: 560px\) and \(max-height: 620px\) 1px, \(max-width: 1023px\) calc\(\(100vw - 3.75rem\) \/ 2\), 12rem"/,
+    );
+  });
+
+  it("publishes both responsive widths for every unique dubbing artwork source", () => {
+    const artworkSources = new Set([
+      NURSERY_RHYMES_COVER_ARTWORK.src,
+      ...DUB_DEFINITIONS.flatMap((definition) => [
+        ...definition.sceneArtwork.map(({ src }) => src),
+        ...(definition.lineArtwork ?? []).map(({ src }) => src),
+      ]),
+    ]);
+    const expectedTargets = new Set();
+    assert.equal(artworkSources.size, 25);
+
+    for (const source of artworkSources) {
+      const match = /^\/assets\/v(\d+)\/(dubbing\/.+\.webp)$/.exec(
+        new URL(source).pathname,
+      );
+      assert.ok(match, `Expected a versioned dubbing source: ${source}`);
+      const [, version, canonicalPath] = match;
+      for (const width of [384, 768]) {
+        const responsivePath = canonicalPath.replace(/\.webp$/, `-${width}.webp`);
+        const targetKey = `assets/v${version}/${responsivePath}`;
+        expectedTargets.add(targetKey);
+        const planned = staticMediaPlan.find((asset) => asset.targetKey === targetKey);
+        assert.equal(planned?.resizeWidth, width);
+        assert.equal(planned?.sourceKey, `assets/v${version}/${canonicalPath}`);
+      }
+    }
+
+    assert.deepEqual(
+      new Set(staticMediaPlan
+        .filter(({ path, resizeWidth }) =>
+          resizeWidth && path.startsWith("dubbing/"),
+        )
+        .map(({ targetKey }) => targetKey)),
+      expectedTargets,
+    );
   });
 
   it("shows one scene while changing artwork for every short-rhyme line", () => {

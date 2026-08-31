@@ -1,4 +1,9 @@
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
+import { dubArtworkSrcSet } from "./dub-artwork";
+import { retryOriginalImage } from "../shared/responsive-image";
+
+const DUB_SCENE_IMAGE_SIZES =
+  "(max-width: 559px) calc(100vw - 1.5rem), (min-width: 560px) and (max-height: 620px) 58vw, (max-width: 767px) calc(100vw - 1.5rem), (max-width: 1023px) calc(100vw - 3rem), min(70vw, 70rem)";
 
 export function IllustratedDubScene({
   compact = false,
@@ -27,7 +32,10 @@ export function IllustratedDubScene({
       draggable="false"
       height={image.height}
       loading={thumbnail ? "lazy" : "eager"}
+      onError={({ currentTarget }) => retryOriginalImage(currentTarget)}
+      sizes={DUB_SCENE_IMAGE_SIZES}
       src={image.src}
+      srcSet={dubArtworkSrcSet(image.src)}
       width={image.width}
     />
   );

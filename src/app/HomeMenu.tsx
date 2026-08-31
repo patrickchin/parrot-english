@@ -5,7 +5,11 @@ import {
   Mic2,
   Play,
 } from "lucide-react";
-import { NURSERY_RHYMES_COVER_ARTWORK } from "../dubbing/dub-artwork";
+import {
+  NURSERY_RHYMES_COVER_ARTWORK,
+  dubArtworkSrcSet,
+} from "../dubbing/dub-artwork";
+import { retryOriginalImage } from "../shared/responsive-image";
 import { cx, InteractiveCardLink } from "../shared/ui";
 import { getNurseryRhymesPath } from "./app-routes";
 import { LESSON_LEARNING_PATH } from "./learning-paths";
@@ -18,7 +22,9 @@ type LearningPath = {
   icon: typeof Play;
   imageClassName: string;
   imageHeight: number;
+  imageSizes?: string;
   imageSrc: string;
+  imageSrcSet?: string;
   imageWidth: number;
   label: string;
   tone: "blue" | "navy" | "rose";
@@ -60,7 +66,10 @@ const LEARNING_PATHS: readonly LearningPath[] = [
     icon: Mic2,
     imageClassName: "object-cover",
     imageHeight: NURSERY_RHYMES_COVER_ARTWORK.height,
+    imageSizes:
+      "(max-width: 767px) calc((100vw - 3.25rem) / 2), (max-width: 1279px) calc((100vw - 7rem) / 3), min(calc((100vw - 8rem) / 5), 15rem)",
     imageSrc: NURSERY_RHYMES_COVER_ARTWORK.src,
+    imageSrcSet: dubArtworkSrcSet(NURSERY_RHYMES_COVER_ARTWORK.src),
     imageWidth: NURSERY_RHYMES_COVER_ARTWORK.width,
     label: "Nursery rhymes",
     tone: "rose",
@@ -96,7 +105,9 @@ export function HomeMenu() {
             icon: Icon,
             imageClassName,
             imageHeight,
+            imageSizes,
             imageSrc,
+            imageSrcSet,
             imageWidth,
             label,
             tone,
@@ -109,7 +120,7 @@ export function HomeMenu() {
               to={to}
             >
               <div className="relative h-28 w-full overflow-hidden rounded-2xl md:aspect-[3/2] md:h-auto">
-                <img alt="" className={cx("size-full", imageClassName)} decoding="async" height={imageHeight} src={imageSrc} width={imageWidth} />
+                <img alt="" className={cx("size-full", imageClassName)} decoding="async" height={imageHeight} onError={({ currentTarget }) => retryOriginalImage(currentTarget)} sizes={imageSizes} src={imageSrc} srcSet={imageSrcSet} width={imageWidth} />
                 <span aria-hidden="true" className={cx("absolute bottom-1 right-1 grid size-8 place-items-center rounded-full border-2 border-white text-white shadow-sm md:size-11", tone === "navy" && "bg-brand-navy", tone === "rose" && "bg-brand-rose", tone === "blue" && "bg-brand-blue")}>
                   <Icon className="size-4 md:size-5" />
                 </span>

@@ -97,6 +97,7 @@ import { WordGameList } from "../games/WordGameList";
 import { WordGamePlayer } from "../games/WordGamePlayer";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
+import { retryOriginalImage } from "../shared/responsive-image";
 import {
   VISUAL_CATALOG,
   type Lesson,
@@ -104,7 +105,9 @@ import {
 import { LessonList } from "../lessons/LessonList";
 import { DubStudio } from "../dubbing/DubStudio";
 import {
+  FULL_SCENE_IMAGE_SIZES,
   FULL_SCENE_LESSONS,
+  fullSceneImageSrcSet,
   type FullSceneImage,
 } from "../lessons/full-scene-lessons";
 import {
@@ -279,6 +282,7 @@ export function LessonPlayer({
     ReadonlySet<string>
   >(() => new Set());
   const [failedArtworkSrc, setFailedArtworkSrc] = useState("");
+  const preloadedArtworkSourcesRef = useRef(new Map<string, string>());
   const stateRef = useRef(state);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const playbackControlRef = useRef<PlaybackControl | null>(null);
@@ -541,15 +545,25 @@ export function LessonPlayer({
 
     const preload = new Image();
     preload.decoding = "async";
+    preload.sizes = FULL_SCENE_IMAGE_SIZES;
+    preload.srcset = fullSceneImageSrcSet(nextArtwork.src);
     let active = true;
     preload.src = nextArtwork.src;
     if (typeof preload.decode === "function") {
-      void preload
-        .decode()
-        .then(() => {
-          if (active) handleArtworkDecoded(nextArtwork.src);
+      const decodePreload = () => {
+        void preload.decode().then(() => {
+          if (active && preload.currentSrc) {
+            preloadedArtworkSourcesRef.current.set(
+              nextArtwork.src,
+              preload.currentSrc,
+            );
+          }
         })
-        .catch(() => undefined);
+          .catch(() => {
+            if (active && retryOriginalImage(preload)) decodePreload();
+          });
+      };
+      decodePreload();
     }
     return () => {
       active = false;
@@ -557,7 +571,6 @@ export function LessonPlayer({
   }, [
     decodedArtworkSources,
     fullSceneArtwork,
-    handleArtworkDecoded,
     state.sceneIndex,
   ]);
 
@@ -977,6 +990,7 @@ export function LessonPlayer({
           onDecoded={handleArtworkDecoded}
           onFailed={handleArtworkFailed}
           onRetry={handleArtworkRetry}
+          preloadedSrc={preloadedArtworkSourcesRef.current.get(fullScene.src)}
         />
       ) : null}
       <RouteHeader>
@@ -1024,6 +1038,9 @@ export function LessonPlayer({
             image={fullScene}
             notice={activeNotice}
             onArtworkDecoded={handleArtworkDecoded}
+            preloadedArtworkSrc={preloadedArtworkSourcesRef.current.get(
+              fullScene.src,
+            )}
           />
         ) : (
           <>
