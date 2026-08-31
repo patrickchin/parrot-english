@@ -207,7 +207,7 @@ export function DubSceneEditor({
                     </TextButton>
                   ) : null}
                   {pendingTake && saveRecovery === "save" ? (
-                    <TextButton aria-label="Save again" className="relative z-0 min-h-10 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-12 short-wide:min-w-12 short-wide:text-sm" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save</TextButton>
+                    <TextButton aria-label="Save again" className="relative z-0 min-h-12 min-w-12 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save</TextButton>
                   ) : null}
                 </div>
               </div>

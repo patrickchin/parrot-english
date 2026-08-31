@@ -1414,6 +1414,26 @@ test("retryable save survives guide and Blob replay while retry remains exclusiv
   await expect(page.getByRole("button", { name: "Next line" })).toBeEnabled();
 });
 
+for (const viewport of [
+  { width: 280, height: 568 },
+  { width: 320, height: 568 },
+  { width: 390, height: 844 },
+]) {
+  test(`retryable save keeps Save again touch-sized at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
+    await expectDubProject(page);
+    await openScene(page, 1);
+    await page.getByRole("button", { name: "Record line" }).click();
+    await page.getByRole("button", { name: "Stop recording" }).click();
+
+    const retry = page.getByRole("button", { name: "Save again" });
+    await expect(retry).toBeVisible();
+    await expectTargetAtLeast48(retry);
+    await expectNoHorizontalOverflow(page);
+  });
+}
+
 test("a rejected upload discards the take and offers Record again", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-rejected");
   await expectDubProject(page);
