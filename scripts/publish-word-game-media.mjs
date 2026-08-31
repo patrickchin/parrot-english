@@ -1,9 +1,8 @@
 /* global AbortSignal, Response, URL, process, setTimeout */
 
 import { randomUUID } from "node:crypto";
-import { spawn, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import { createServer } from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -147,16 +146,15 @@ export function createAtomicR2HelperDefinition({
       compatibility_date: WORKER_COMPATIBILITY_DATE,
       main: workerFile,
       name: workerName,
+      workers_dev: true,
       r2_buckets: [
         {
           binding: "PUBLIC_BUCKET",
           bucket_name: publicBucket,
-          preview_bucket_name: publicBucket,
         },
         {
           binding: "SOURCE_BUCKET",
           bucket_name: sourceBucket,
-          preview_bucket_name: sourceBucket,
         },
       ],
     },
@@ -164,40 +162,8 @@ export function createAtomicR2HelperDefinition({
   };
 }
 
-async function reserveLoopbackPort() {
-  const server = createServer();
-  await new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
-  });
-  const address = server.address();
-  const port = typeof address === "object" && address ? address.port : null;
-  await new Promise((resolve, reject) => {
-    server.close((error) => (error ? reject(error) : resolve()));
-  });
-  if (!port) throw new Error("Could not reserve a loopback port");
-  return port;
-}
-
 function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
-
-async function stopProcess(child, exitPromise) {
-  if (child.exitCode !== null || child.signalCode !== null) return;
-  child.kill("SIGTERM");
-  const stopped = await Promise.race([
-    exitPromise.then(() => true),
-    wait(5_000).then(() => false),
-  ]);
-  if (!stopped && child.exitCode === null && child.signalCode === null) {
-    child.kill("SIGKILL");
-    const killed = await Promise.race([
-      exitPromise.then(() => true),
-      wait(5_000).then(() => false),
-    ]);
-    if (!killed) throw new Error("helper process did not exit after SIGKILL");
-  }
 }
 
 function combinedError(primary, secondary, secondaryLabel) {
@@ -208,15 +174,24 @@ function combinedError(primary, secondary, secondaryLabel) {
 }
 
 async function cleanupAtomicR2Helper(
-  { child, exitPromise, temporaryDirectory },
-  { removeDirectory, stopChild },
+  { deployAttempted, temporaryDirectory, workerName, wrangler },
+  { removeDirectory, runCommand },
 ) {
   const errors = [];
-  if (child) {
+  if (deployAttempted) {
     try {
-      await stopChild(child, exitPromise);
+      const result = runCommand(
+        wrangler,
+        ["delete", workerName, "--force"],
+        { cwd: temporaryDirectory, input: undefined },
+      );
+      if (result.status !== 0) {
+        throw new Error(result.stderr.trim() || `exit ${result.status}`);
+      }
     } catch (error) {
-      errors.push(new Error(`process stop failed: ${error.message}`, { cause: error }));
+      errors.push(new Error(`exact helper deletion failed: ${error.message}`, {
+        cause: error,
+      }));
     }
   }
   try {
@@ -235,58 +210,73 @@ async function cleanupAtomicR2Helper(
   }
 }
 
+export function parseDeployedWorkerUrl(output, workerName) {
+  const candidates = String(output).match(
+    /https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.workers\.dev\/?/gi,
+  ) ?? [];
+  for (const candidate of candidates) {
+    const url = new URL(candidate);
+    if (
+      url.protocol === "https:" &&
+      url.hostname.split(".")[0] === workerName &&
+      url.hostname.endsWith(".workers.dev")
+    ) {
+      return url.origin;
+    }
+  }
+  throw new Error(
+    `Deploy output must contain an https workers.dev endpoint for the exact generated service ${workerName}`,
+  );
+}
+
 export async function startAtomicR2Uploader(
   { cwd, publicBucket, sourceBucket },
   dependencies = {},
 ) {
   const {
     createTimeoutSignal = (milliseconds) => AbortSignal.timeout(milliseconds),
+    createId = randomUUID,
     fetchImplementation = globalThis.fetch,
     makeTemporaryDirectory = mkdtemp,
     pause = wait,
     removeDirectory = rm,
-    reservePort = reserveLoopbackPort,
-    spawnProcess = spawn,
-    stopChild = stopProcess,
+    runCommand = runProcess,
     write = writeFile,
   } = dependencies;
   const temporaryDirectory = await makeTemporaryDirectory(
     path.join(os.tmpdir(), "parrot-word-game-r2-"),
   );
   let secret;
-  let child = null;
-  let exitPromise = null;
-  let diagnostics = "";
-  let exited = false;
+  let workerName;
+  let deployAttempted = false;
   let baseUrl;
+  const wrangler = path.join(cwd, "node_modules/.bin/wrangler");
   try {
     const workerFile = path.join(temporaryDirectory, "worker.mjs");
     const configFile = path.join(temporaryDirectory, "wrangler.json");
-    secret = randomUUID();
-    const port = await reservePort();
-    baseUrl = `http://127.0.0.1:${port}`;
+    secret = createId();
+    workerName = `parrot-wg-${createId()}`;
+    if (!/^parrot-wg-[a-z0-9-]+$/.test(workerName) || workerName.length > 63) {
+      throw new Error("Generated helper service name is invalid");
+    }
     const definition = createAtomicR2HelperDefinition({
       publicBucket,
       sourceBucket,
       workerFile,
-      workerName: `parrot-wg-${randomUUID()}`,
+      workerName,
     });
     // Keep writes sequential so cleanup cannot race an unsettled config write.
     await write(workerFile, definition.source, { mode: 0o600 });
     await write(configFile, `${JSON.stringify(definition.config)}\n`, {
       mode: 0o600,
     });
-    child = spawnProcess(
-      path.join(cwd, "node_modules/.bin/wrangler"),
+    deployAttempted = true;
+    const deployResult = runCommand(
+      wrangler,
       [
-        "dev",
-        "--remote",
+        "deploy",
         "--config",
         configFile,
-        "--ip",
-        "127.0.0.1",
-        "--port",
-        String(port),
         "--var",
         `UPLOAD_SECRET:${secret}`,
         "--log-level",
@@ -294,25 +284,20 @@ export async function startAtomicR2Uploader(
       ],
       {
         cwd: temporaryDirectory,
-        stdio: ["ignore", "pipe", "pipe"],
+        input: undefined,
       },
     );
-    exitPromise = new Promise((resolve) => {
-      child.once("error", (error) => {
-        diagnostics = `${diagnostics}\n${error.message}`.slice(-4_000);
-      });
-      child.once("close", (code, signal) => {
-        exited = true;
-        resolve({ code, signal });
-      });
-    });
-    for (const stream of [child.stdout, child.stderr]) {
-      stream.on("data", (chunk) => {
-        diagnostics = `${diagnostics}${chunk}`.slice(-4_000);
-      });
+    if (deployResult.status !== 0) {
+      throw new Error(
+        `Could not deploy the create-only R2 upload helper: ${deployResult.stderr.trim() || `exit ${deployResult.status}`}`,
+      );
     }
+    baseUrl = parseDeployedWorkerUrl(
+      `${deployResult.stdout}\n${deployResult.stderr}`,
+      workerName,
+    );
     let ready = false;
-    for (let attempt = 0; attempt < 75 && !exited; attempt += 1) {
+    for (let attempt = 0; attempt < 75; attempt += 1) {
       try {
         const response = await fetchImplementation(`${baseUrl}/health`, {
           headers: { "x-parrot-upload-secret": secret },
@@ -329,14 +314,14 @@ export async function startAtomicR2Uploader(
     }
     if (!ready) {
       throw new Error(
-        `Could not start the create-only R2 upload helper${diagnostics.trim() ? `: ${diagnostics.trim()}` : ""}`,
+        `Could not reach the deployed create-only R2 upload helper at ${baseUrl}`,
       );
     }
   } catch (error) {
     try {
       await cleanupAtomicR2Helper(
-        { child, exitPromise, temporaryDirectory },
-        { removeDirectory, stopChild },
+        { deployAttempted, temporaryDirectory, workerName, wrangler },
+        { removeDirectory, runCommand },
       );
     } catch (cleanupError) {
       throw combinedError(error, cleanupError, "helper cleanup also failed");
@@ -350,8 +335,8 @@ export async function startAtomicR2Uploader(
       if (closed) return;
       closed = true;
       await cleanupAtomicR2Helper(
-        { child, exitPromise, temporaryDirectory },
-        { removeDirectory, stopChild },
+        { deployAttempted, temporaryDirectory, workerName, wrangler },
+        { removeDirectory, runCommand },
       );
     },
     async put(upload) {
