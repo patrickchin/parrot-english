@@ -170,7 +170,8 @@ test("guardian consent unlocks the storyboard without exposing adult controls", 
 
   await expect(
     page.getByRole("main").getByRole("paragraph"),
-  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  ).toContainText("You can watch the video now.");
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
   await expectNoLearnerAdultControls(page);
   const lockedGrant = await page.evaluate(async (consentVersion) => {
     const response = await fetch("/api/dubs/five-little-ducks-v2/consent", {
@@ -250,11 +251,62 @@ test("keeps revoking consent unavailable on the learner surface", async ({
 
   await expect(
     page.getByRole("main").getByRole("paragraph"),
-  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  ).toContainText("You can watch the video now.");
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: /Start dubbing|Continue dubbing/ }),
   ).toHaveCount(0);
   await expectNoLearnerAdultControls(page);
+});
+
+test("recording-disabled learners watch public video without private media", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=not-granted");
+  await expect(page.getByText("You can watch the video now.", { exact: false })).toBeVisible();
+  await expectNoLearnerAdultControls(page);
+  await expect(page.getByRole("button", { name: /Record|Play my recording|Save/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^Scene \d/ })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Scene video" })).toHaveCount(0);
+  await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveCount(0);
+  expect((await dubStoreSnapshot(page)).guideFetches).toEqual([]);
+
+  const microphoneBefore = await microphoneSnapshot(page);
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches.length).toBeGreaterThan(0);
+
+  const [store, microphoneAfter] = await Promise.all([
+    dubStoreSnapshot(page),
+    microphoneSnapshot(page),
+  ]);
+  expect(store.guideFetches.every((url) => url.startsWith("/assets/audio/"))).toBe(true);
+  expect(store.privateFetches).toEqual([]);
+  expect(store.uploads).toEqual([]);
+  expect(microphoneAfter.requests).toBe(microphoneBefore.requests);
+});
+
+test("listen-only guide failure restores Play with one child-readable alert", async ({ page }) => {
+  await page.route("**/assets/audio/*", (route) => route.fulfill({ status: 503 }));
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=not-granted");
+
+  await page.getByRole("button", { name: "Play full video" }).click();
+  const error = page.getByRole("alert").filter({
+    hasText: "The video could not start. Try again.",
+  });
+  await expect(error).toHaveText("The video could not start. Try again.");
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
+  await expect(error).toHaveCount(1);
+
+  const store = await dubStoreSnapshot(page);
+  expect(store.privateFetches).toEqual([]);
+  expect(store.uploads).toEqual([]);
+});
+
+test("full-video startup failure restores its Play action", async ({ page }) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=playback-setup-failed");
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("alert").filter({
+    hasText: "The video could not start. Try again.",
+  })).toHaveText("The video could not start. Try again.");
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
 });
 
 test("guardian mode deletes a complete private dub and revokes consent", async ({
@@ -1031,7 +1083,7 @@ test("saved recording replay uses a private blob and revokes its fetched URL on 
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toEqual([]);
 });
 
-test("saved recording consent loss locks the learner route immediately", async ({ page }) => {
+test("saved recording consent loss shows listen-only playback immediately", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
   await expectDubProject(page);
   await openScene(page, 1);
@@ -1052,10 +1104,11 @@ test("saved recording consent loss locks the learner route immediately", async (
 
   await page.getByRole("button", { name: "Play my recording" }).click();
   await expect(page.getByText(
-    "Ask a grown-up to turn on voice dubbing in Guardian mode.",
-    { exact: true },
+    "You can watch the video now.",
+    { exact: false },
   )).toBeVisible();
   await expect(page.getByRole("button", { name: "Record again" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
 });
 
 test("saved recording failure offers record again and marks the scene Needs retake", async ({ page }) => {
@@ -1478,7 +1531,7 @@ test("every dubbing route state stays horizontally contained", async ({ page }) 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=reset-interrupted");
   await expect(
     page.getByRole("main").getByRole("paragraph"),
-  ).toHaveText("Ask a grown-up to turn on voice dubbing in Guardian mode.");
+  ).toContainText("You can watch the video now.");
   await expectNoLearnerAdultControls(page);
   await expectDubRouteContained(page);
 

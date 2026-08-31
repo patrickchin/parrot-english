@@ -2,7 +2,7 @@ import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";
 import type { DubDefinition } from "./rhyme-catalog.ts";
 
 export type DubSaveRecovery = "record" | "save";
-export type DubView = "loading" | "locked" | "project" | "scene";
+export type DubView = "loading" | "listen-only" | "project" | "scene";
 export type DubOperation =
   | "idle"
   | "guide-playing"
@@ -185,7 +185,7 @@ export function reduceDubState(
       saved,
       selectedLineIndex,
       selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
-      view: event.recordingEnabled ? "project" : "locked",
+      view: event.recordingEnabled ? "project" : "listen-only",
     };
   }
   if (event.type === "OPEN_SCENE") {

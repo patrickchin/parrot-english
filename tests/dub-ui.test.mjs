@@ -29,17 +29,19 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const { IllustratedDubScene } = await vite.ssrLoadModule("/src/dubbing/IllustratedDubScene.tsx");
+const { DubListenOnly } = await vite.ssrLoadModule("/src/dubbing/DubListenOnly.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
 const {
   DuckDub,
-  DubEntry,
   DubLoading,
+  resolveGuideOnlyDubLineAudioSource,
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const { DUB_LINES, FIVE_LITTLE_DUCKS_DUB } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
-const { OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const { DUB_DEFINITIONS, OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const { getStaticAudioLineForSpeech } = await vite.ssrLoadModule("/lib/static-audio.js");
 
 afterEach(async () => {
   await cleanupMountedRoots();
@@ -427,18 +429,6 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /role="alert"/);
   });
 
-  it("keeps consent and destructive choices in Guardian mode", () => {
-    const disabled = renderToStaticMarkup(createElement(DubEntry, {
-      error: "",
-      onRetryLoad() {},
-    }));
-    assert.match(disabled, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
-    assert.doesNotMatch(
-      disabled,
-      /checkbox|I’m the grown-up|Grown-up options|Delete|Start dubbing|Continue dubbing/,
-    );
-  });
-
   it("loads an enabled route directly into the project without an entry action", async () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
@@ -481,7 +471,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(backHome.getAttribute("href"), "/");
   });
 
-  it("shows disabled learner guidance as soon as status loads", async () => {
+  it("shows listen-only playback as soon as recording-disabled status loads", async () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
@@ -492,9 +482,9 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountDuckDub();
     await waitFor(() => assert.match(
       container.textContent,
-      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      /You can watch the video now/,
     ));
-    assert.equal(container.querySelector('[aria-label="Play full video"]'), null);
+    assert.ok(container.querySelector('[aria-label="Play full video"]'));
     assert.equal(
       [...container.querySelectorAll("button")].filter(({ textContent }) =>
         /Start dubbing|Continue dubbing|Continue Scene/.test(textContent),
@@ -503,7 +493,7 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
-  it("clears a revoking save into disabled learner guidance", async () => {
+  it("clears a revoking save into listen-only playback", async () => {
     const revokedUrls = [];
     URL.createObjectURL = () => "blob:revoking-take";
     URL.revokeObjectURL = (url) => revokedUrls.push(url);
@@ -529,10 +519,11 @@ describe("duck dubbing storyboard presentation", () => {
 
     await waitFor(() => assert.match(
       container.textContent,
-      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      /You can watch the video now/,
     ));
     assert.equal(track.stopped, true);
     assert.deepEqual(revokedUrls, ["blob:revoking-take"]);
+    assert.ok(container.querySelector('[aria-label="Play full video"]'));
     assert.doesNotMatch(container.textContent, /Save again|Start dubbing|Continue Scene|Record line/);
   });
 
@@ -608,7 +599,7 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.deepEqual(revokedUrls, ["blob:private-saved-take"]));
   });
 
-  it("locks immediately when saved recording playback reports consent loss", async () => {
+  it("shows listen-only playback immediately when saved recording playback reports consent loss", async () => {
     let createdObjectUrls = 0;
     URL.createObjectURL = () => {
       createdObjectUrls += 1;
@@ -632,10 +623,11 @@ describe("duck dubbing storyboard presentation", () => {
 
     await waitFor(() => assert.match(
       container.textContent,
-      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      /You can watch the video now/,
     ));
     assert.equal(createdObjectUrls, 0);
     assert.equal(container.querySelector('[aria-label="Record again"]'), null);
+    assert.ok(container.querySelector('[aria-label="Play full video"]'));
   });
 
   it("keeps the editor open and offers Record again when saved recording playback fails", async () => {
@@ -817,9 +809,10 @@ describe("duck dubbing storyboard presentation", () => {
       await click(container.querySelector('[aria-label="Play full video"]'));
       await waitFor(() => assert.match(
         container.textContent,
-        /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+        /You can watch the video now/,
       ));
-      assert.doesNotMatch(container.textContent, /Play full video|Continue dubbing|Record line/);
+      assert.doesNotMatch(container.textContent, /Continue dubbing|Record line/);
+      assert.ok(container.querySelector('[aria-label="Play full video"]'));
       await cleanupMountedRoots();
       document.body.replaceChildren();
     }
@@ -988,17 +981,6 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(loading, /Finish deleting|Delete my dub|Grown-up options/);
   });
 
-  it("keeps the locked learner entry concise and leaves grown-up controls in Guardian mode", () => {
-    const html = renderToStaticMarkup(createElement(DubEntry, {
-      error: "",
-      onRetryLoad() {},
-    }));
-
-    assert.match(html, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
-    assert.doesNotMatch(html, /Start dubbing|Continue dubbing|Continue Scene/);
-    assert.doesNotMatch(html, /checkbox|I’m the grown-up|More grown-up options|Delete/);
-  });
-
   it("discards rejected-take preview and exposes one Record again action", () => {
     const html = renderSceneEditor({
       error: "That recording is too long.",
@@ -1033,5 +1015,34 @@ describe("duck dubbing storyboard presentation", () => {
       }),
       /guide missing/,
     );
+  });
+
+  it("shows public video playback without private or recording controls", () => {
+    const html = renderToStaticMarkup(createElement(DubListenOnly, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      error: "",
+      onTogglePlayback() {},
+      playback: "idle",
+      visualLine: DUB_LINES[0],
+    }));
+    assert.match(html, /You can watch the video now/);
+    assert.match(html, /aria-label="Play full video"/);
+    assert.doesNotMatch(
+      html,
+      /Record again|Record line|Play my recording|Save again|Guardian|Delete/,
+    );
+  });
+
+  it("resolves every listen-only line to its public guide and never private audio", () => {
+    for (const definition of DUB_DEFINITIONS) {
+      for (const line of definition.lines) {
+        const source = resolveGuideOnlyDubLineAudioSource(line);
+        assert.deepEqual(source, {
+          preferredUrl: getStaticAudioLineForSpeech("narrator", line.text).src,
+        });
+        assert.equal(source.preferredUrl.includes("/api/dubs/"), false);
+        assert.equal(Object.hasOwn(source, "fallbackUrl"), false);
+      }
+    }
   });
 });

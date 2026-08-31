@@ -85,13 +85,13 @@ describe("five little ducks dub domain", () => {
     assert.equal(Object.hasOwn(state.saved, "line-1"), true);
   });
 
-  it("keeps disabled status in the locked view", () => {
+  it("keeps disabled status in the listen-only view", () => {
     const state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
       recordingEnabled: false,
       savedLineIds: [],
     });
-    assert.equal(state.view, "locked");
+    assert.equal(state.view, "listen-only");
   });
 
   it("resumes at the first missing line and opens exact scene selections", () => {
@@ -274,7 +274,7 @@ describe("five little ducks dub domain", () => {
     assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
   });
 
-  it("clears storyboard data when Guardian consent is lost", () => {
+  it("loads recording-disabled status into listen-only and clears private state", () => {
     let state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
       recordingEnabled: true,
@@ -286,6 +286,6 @@ describe("five little ducks dub domain", () => {
       recordingEnabled: false,
       savedLineIds: [],
     });
-    assert.deepEqual(state, { ...createInitialDubState(), view: "locked" });
+    assert.deepEqual(state, { ...createInitialDubState(), view: "listen-only" });
   });
 });
