@@ -148,6 +148,16 @@ describe("static audio cache metadata", () => {
     assert.match(staticAudio.getStaticAudioLineById("word-game-complete").ttsText, /happy.*not-loud.*celebration/i);
   });
 
+  it("rejects duplicate IDs before static and word-game manifests merge", () => {
+    assert.throws(
+      () => staticAudio.mergeStaticAudioLineGroups(
+        { "word-game-animals-cat-prompt": { text: "old" } },
+        { "word-game-animals-cat-prompt": { text: "new" } },
+      ),
+      /Duplicate static audio ID: word-game-animals-cat-prompt/,
+    );
+  });
+
   it("keeps exactly the complete decodable word-game file inventory", () => {
     const audioDirectory = new URL("../public/assets/audio/", import.meta.url);
     const expectedFiles = WORD_GAME_EXPECTED_AUDIO.map(([id]) => `${id}.mp3`).sort();
@@ -156,8 +166,11 @@ describe("static audio cache metadata", () => {
     for (const filename of files) {
       const file = new URL(filename, audioDirectory);
       assert.ok(statSync(file).size > 0, `${filename} is empty`);
+      const codec = execFileSync("ffprobe", ["-v", "error", "-select_streams", "a:0", "-show_entries", "stream=codec_name", "-of", "default=noprint_wrappers=1:nokey=1", file.pathname], { encoding: "utf8" }).trim();
+      assert.equal(codec, "mp3", `${filename} codec`);
       const duration = Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", file.pathname], { encoding: "utf8" }).trim());
       assert.ok(Number.isFinite(duration) && duration >= 0.25 && duration <= 15, `${filename} has an implausible duration: ${duration}`);
+      execFileSync("ffmpeg", ["-v", "error", "-xerror", "-i", file.pathname, "-f", "null", "-"], { encoding: "utf8" });
     }
   });
 
