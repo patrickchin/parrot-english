@@ -1634,6 +1634,9 @@ for (const project of [
 
     const images = scenes.locator("img");
     await expect(images).toHaveCount(project.sceneTitles.length);
+    for (const image of await images.all()) {
+      await expect(image).toBeVisible();
+    }
     await expect.poll(() => images.evaluateAll((elements) => elements.every((element) =>
       element instanceof HTMLImageElement && element.complete && element.naturalWidth > 0,
     ))).toBe(true);
@@ -2033,94 +2036,57 @@ test("a stale microphone-error animation-frame callback cannot steal focus", asy
   await expect(hearLine).toBeFocused();
 });
 
-test("short landscape keeps project and scene actions clear of the route header", async ({ page }) => {
+test("short landscape shows video, guidance, and every compact scene action", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);
 
   const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
   const player = page.getByRole("region", { name: "Full video player" });
-  const dock = page.getByRole("navigation", { name: "Scenes" });
-  const playFull = page.getByRole("button", { name: "Play full video" });
-  const firstScene = dock.getByRole("button", {
-    name: "Scene 1, Five little ducks, 3 of 4 lines ready",
-  });
-  const secondScene = dock.getByRole("button", {
-    name: "Scene 2, Four little ducks, Ready to start",
-  });
-  const [headerBox, playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox] = await Promise.all([
+  const play = page.getByRole("button", { name: "Play full video" });
+  const guidance = page.getByRole("button", { name: "Continue with Scene 1" });
+  const scenes = page.getByRole("navigation", { name: "Scenes" });
+  const sceneSelection = page.getByRole("complementary", { name: "Scene selection" });
+  const first = scenes.getByRole("button", { name: /Scene 1, Five little ducks, 3 of 4 lines ready/ });
+  const second = scenes.getByRole("button", { name: /Scene 2, Four little ducks, Ready to start/ });
+  const fifth = scenes.getByRole("button", { name: /Scene 5, One little duck, Ready to start/ });
+  const last = scenes.getByRole("button", { name: /Scene 6, Sad mother duck, Ready to start/ });
+  const [headerBox, playerBox, playBox, guidanceBox, firstBox, secondBox, fifthBox, lastBox] = await Promise.all([
     boundingBoxOrThrow(routeHeader),
     boundingBoxOrThrow(player),
-    boundingBoxOrThrow(dock),
-    boundingBoxOrThrow(playFull),
-    boundingBoxOrThrow(firstScene),
-    boundingBoxOrThrow(secondScene),
+    boundingBoxOrThrow(play),
+    boundingBoxOrThrow(guidance),
+    boundingBoxOrThrow(first),
+    boundingBoxOrThrow(second),
+    boundingBoxOrThrow(fifth),
+    boundingBoxOrThrow(last),
   ]);
-  for (const box of [playerBox, dockBox, playFullBox, firstSceneBox, secondSceneBox]) {
+  for (const box of [playerBox, playBox, guidanceBox, firstBox, secondBox, fifthBox, lastBox]) {
     expect(box.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
-    expect(box.x).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width).toBeLessThanOrEqual(640);
-  }
-  expect(playFullBox.height).toBeGreaterThanOrEqual(48);
-  expect(firstSceneBox.height).toBeGreaterThanOrEqual(48);
-  expect(secondSceneBox.height).toBeGreaterThanOrEqual(48);
-  expect(boxesOverlap(playerBox, dockBox)).toBe(false);
-  expect(playFullBox.x).toBeGreaterThanOrEqual(playerBox.x);
-  expect(playFullBox.x + playFullBox.width).toBeLessThanOrEqual(playerBox.x + playerBox.width);
-  expect(playFullBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
-  expect(boxesOverlap(playerBox, playFullBox)).toBe(false);
-  expect(boxesOverlap(playerBox, firstSceneBox)).toBe(false);
-  expect(boxesOverlap(playerBox, secondSceneBox)).toBe(false);
-  expect(boxesOverlap(firstSceneBox, secondSceneBox)).toBe(false);
-  expect(Math.abs(firstSceneBox.y - secondSceneBox.y)).toBeLessThanOrEqual(1);
-  expect(boxesOverlap(dockBox, playFullBox)).toBe(false);
-  expect(boxesOverlap(playFullBox, firstSceneBox)).toBe(false);
-  expect(boxesOverlap(playFullBox, secondSceneBox)).toBe(false);
-  await expectNoHorizontalOverflow(page);
-
-  await firstScene.click();
-  const sceneStage = page.getByRole("region", { name: "Scene video" });
-  const sceneControls = page.getByRole("complementary", { name: "Scene line controls" });
-  const lineHeading = page.getByRole("heading", { name: "But only four little ducks came back." });
-  const example = page.getByRole("button", { name: "Hear line" });
-  const record = page.getByRole("button", { name: "Record line" });
-  const next = page.getByRole("button", { name: "Next, finish scene" });
-  const waveform = page.getByRole("img", { name: "Original audio waveform" });
-  const [sceneHeaderBox, stageBox, controlsBox, lineBox] = await Promise.all([
-    boundingBoxOrThrow(routeHeader),
-    boundingBoxOrThrow(sceneStage),
-    boundingBoxOrThrow(sceneControls),
-    boundingBoxOrThrow(lineHeading),
-  ]);
-  expect(stageBox.x + stageBox.width).toBeLessThanOrEqual(controlsBox.x);
-  for (const box of [stageBox, controlsBox, lineBox]) {
-    expect(box.y).toBeGreaterThanOrEqual(sceneHeaderBox.y + sceneHeaderBox.height);
     expect(box.y + box.height).toBeLessThanOrEqual(360);
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(640);
   }
-  expect(boxesOverlap(stageBox, controlsBox)).toBe(false);
-  for (const action of [example, record, waveform, next]) {
-    const actionBox = await boundingBoxOrThrow(action);
-    expect(actionBox.y).toBeGreaterThanOrEqual(controlsBox.y);
-    expect(actionBox.y + actionBox.height).toBeLessThanOrEqual(controlsBox.y + controlsBox.height + 1);
-    await expectFullyInViewport(page, action);
+  expect(playerBox.x + playerBox.width).toBeLessThanOrEqual(firstBox.x);
+  expect(playBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  expect(guidanceBox.y + guidanceBox.height).toBeLessThanOrEqual(firstBox.y);
+  expect(firstBox.x + firstBox.width).toBeLessThanOrEqual(secondBox.x);
+  expect(Math.abs(firstBox.y - secondBox.y)).toBeLessThanOrEqual(2);
+  expect(fifthBox.x + fifthBox.width).toBeLessThanOrEqual(lastBox.x);
+  expect(Math.abs(fifthBox.y - lastBox.y)).toBeLessThanOrEqual(2);
+  expect(fifthBox.y).toBeGreaterThanOrEqual(firstBox.y + firstBox.height);
+  for (const target of [play, guidance, first, second, fifth, last]) {
+    await expectTargetAtLeast48(target);
   }
-  for (const action of [example, record, next]) {
-    expect((await boundingBoxOrThrow(action)).height).toBeGreaterThanOrEqual(48);
+  await expect(first.locator("img")).not.toBeVisible();
+  await expect(last.locator("img")).not.toBeVisible();
+  for (const container of [sceneSelection, scenes]) {
+    const dimensions = await container.evaluate((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    expect(dimensions.scrollHeight).toBeLessThanOrEqual(dimensions.clientHeight);
   }
-  await expect.poll(() => sceneControls.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-    scrollTop: element.scrollTop,
-  }))).toEqual(expect.objectContaining({ scrollTop: 0 }));
-  const controlScroll = await sceneControls.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-  }));
-  expect(controlScroll.scrollHeight).toBeLessThanOrEqual(controlScroll.clientHeight + 1);
-  await expect(page.getByRole("button", { name: "Play scene" })).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Scene line selectors" })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 

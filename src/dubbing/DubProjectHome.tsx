@@ -112,10 +112,10 @@ export function DubProjectHome({
       : "Play full video";
 
   return (
-    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
-      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3">
-        <header className="flex min-w-0 items-center justify-between gap-3">
-          <h1 className="m-0 truncate text-xl text-brand-ink short-wide:text-lg md:text-4xl">{definition.title}</h1>
+    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16">
+      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:max-w-[38rem] short-wide:gap-2">
+        <header className="grid min-w-0 items-start gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-center">
+          <h1 className="m-0 min-w-0 text-xl leading-tight text-brand-ink short-wide:text-lg md:text-4xl short-wide:md:text-lg">{definition.title}</h1>
           <p
             aria-label="Project recording progress"
             aria-valuemax={definition.lines.length}
@@ -129,8 +129,8 @@ export function DubProjectHome({
           </p>
         </header>
 
-        <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)]">
-          <div className="grid min-w-0 gap-3">
+        <div className="grid min-w-0 items-start gap-4 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)]">
+          <div className="grid min-w-0 gap-3 short-wide:gap-1">
             <section
               aria-label="Full video player"
               className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
@@ -156,13 +156,14 @@ export function DubProjectHome({
             </ActionButton>
           </div>
 
-          <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card md:p-4">
-            <h2 className="m-0 text-xl text-brand-ink">Choose a scene</h2>
+          <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:gap-1.5 short-wide:rounded-2xl short-wide:p-2 md:p-4 short-wide:md:p-2">
+            <h2 className="m-0 text-xl text-brand-ink short-wide:sr-only">Choose a scene</h2>
             {recommendedSceneIndex !== null ? (
               <ActionButton
                 disabled={locked}
                 fullWidth
                 onClick={() => onOpenScene(recommendedSceneIndex)}
+                className="short-wide:h-12 short-wide:min-h-12 short-wide:px-2 short-wide:py-1 short-wide:text-sm short-wide:md:h-12 short-wide:md:text-sm"
                 shape="rounded"
                 size="large"
                 variant="brand"
@@ -170,10 +171,13 @@ export function DubProjectHome({
                 {recommendedText}
               </ActionButton>
             ) : null}
-            <nav aria-label="Scenes" className="grid min-w-0 grid-cols-2 gap-3">
+            <nav aria-label="Scenes" className="grid min-w-0 grid-cols-2 gap-3 short-wide:gap-1.5">
             {sceneLines.map((_, sceneIndex) => {
               const status = sceneStatuses[sceneIndex];
-              const statusCopy = sceneStatusCopy(status, definition.linesPerScene);
+              const { accessible: statusLabel, visible: statusText } = sceneStatusCopy(
+                status,
+                definition.linesPerScene,
+              );
               const statusIcon = status.kind === "done"
                 ? "✓"
                 : status.kind === "needs-retake"
@@ -187,8 +191,8 @@ export function DubProjectHome({
               return (
                 <ActionButton
                   aria-current={selected ? "step" : undefined}
-                  aria-label={`Scene ${sceneIndex + 1}, ${title}, ${statusCopy.accessible}`}
-                  className="relative min-h-36 min-w-0 flex-col items-stretch gap-2 overflow-hidden rounded-2xl p-2 text-left short-wide:min-h-28"
+                  aria-label={`Scene ${sceneIndex + 1}, ${title}, ${statusLabel}`}
+                  className="relative min-h-36 min-w-0 flex-col items-stretch gap-2 overflow-hidden rounded-2xl p-2 text-left short-wide:min-h-12 short-wide:gap-0.5 short-wide:rounded-xl short-wide:p-1"
                   disabled={locked}
                   key={sceneIndex}
                   onClick={() => onOpenScene(sceneIndex)}
@@ -198,17 +202,17 @@ export function DubProjectHome({
                 >
                   <img
                     alt=""
-                    className="aspect-video w-full rounded-xl object-cover"
+                    className="aspect-video w-full rounded-xl object-cover short-wide:hidden"
                     decoding="async"
                     height={artwork.height}
                     loading="lazy"
                     src={artwork.src}
                     width={artwork.width}
                   />
-                  <span className="grid min-w-0 gap-0.5 px-1">
-                    <span className="text-xs font-black uppercase tracking-wide opacity-75">Scene {sceneIndex + 1}</span>
-                    <strong className="truncate text-base leading-tight">{title}</strong>
-                    <span className="text-sm font-black" data-status-icon={status.kind}>{statusIcon} {statusCopy.visible}</span>
+                  <span className="grid min-w-0 gap-0.5 px-1 short-wide:grid-cols-[auto_minmax(0,1fr)] short-wide:items-center short-wide:gap-x-1 short-wide:gap-y-px short-wide:px-0">
+                    <span className="text-xs font-black uppercase tracking-wide opacity-75 short-wide:leading-3">Scene {sceneIndex + 1}</span>
+                    <strong className="line-clamp-2 text-base leading-tight short-wide:text-xs short-wide:leading-3">{title}</strong>
+                    <span className="text-sm font-black short-wide:col-span-2 short-wide:text-xs short-wide:leading-3" data-status-icon={status.kind}>{statusIcon} {statusText}</span>
                   </span>
                 </ActionButton>
               );

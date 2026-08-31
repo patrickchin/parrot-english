@@ -98,3 +98,22 @@ test("every new rhyme opens its own recording workspace", async ({ page }) => {
     ).toBeVisible();
   }
 });
+
+test("the visible Old MacDonald project title wraps without ellipsis", async ({ page }) => {
+  await page.setViewportSize({ height: 640, width: 320 });
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  const heading = page.getByRole("heading", { name: "Old MacDonald Had a Farm" });
+  const metrics = await heading.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      clientHeight: element.clientHeight,
+      clientWidth: element.clientWidth,
+      scrollHeight: element.scrollHeight,
+      scrollWidth: element.scrollWidth,
+      textOverflow: style.textOverflow,
+    };
+  });
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
+  expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight);
+  expect(metrics.textOverflow).not.toBe("ellipsis");
+});
