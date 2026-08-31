@@ -275,7 +275,9 @@ Add focused scores for:
   UTF-16 offsets;
 - accompaniment `<chord/>` accepted while melody chords/overlap are rejected;
 - bookmarks missing, duplicated, extra, or out of manifest order;
-- `<end-line/>` ending the phrase before a final rest/outro;
+- `<end-line/>` ending the phrase before a final unmarked rest/outro, plus a
+  marker-only `<lyric><end-line/></lyric>` on a terminal rest extending an
+  intentional silent line tail without adding melody or word events;
 - unsupported repeat, grace, tuplet, transpose, second lyric verse, a second
   or changing voice, and mid-score tempo change;
 - a manifest-referenced melody/playback part absent from the score, invalid
@@ -343,9 +345,12 @@ beats, so a 333/334ms metronome does not accumulate drift.
 
 - [ ] **Step 6: Implement line, tie, and exact-word derivation**
 
-Start a line at `<bookmark id="<line-id>">`, end it at the end of the complete
-tied chain carrying `<end-line/>`, and map score lyrics to the exact manifest
-text. Tokenize the manifest with
+Start a line at `<bookmark id="<line-id>">`, normally end it at the end of the
+complete tied chain carrying `<end-line/>`, and map score lyrics to the exact
+manifest text. For an intentional silent tail, allow only a marker-only
+`<lyric><end-line/></lyric>` on the terminal rest; reject text, `syllabic`, or
+`extend` on that rest marker and reject a marker-only lyric on a pitched note.
+Tokenize the manifest with
 `/[\p{L}\p{N}]+(?:[’‘ʼ'‐‑-][\p{L}\p{N}]+)*/gu`. Join a MusicXML
 `begin`/`middle`/`end` syllable chain without inserting characters; `single`
 stands alone. For comparison only, normalize both sides to NFC, lowercase,
@@ -661,8 +666,10 @@ adjacent rounded boundaries.
 
 Emit the current bass note as `P2` accompaniment for `min(1600,
 phrase.durationMs)` and the two legacy outro pitches as an accompaniment chord
-at their exact final boundary. Put `<end-line/>` on the final lyric fragment,
-before the outro. Copy guide files byte-for-byte; never synthesize audio.
+at their exact final boundary. Put `<end-line/>` on the final lyric fragment
+when the melody fills the phrase; when a legacy phrase has a silent tail, put
+marker-only `<lyric><end-line/></lyric>` on that terminal rest instead. Both
+forms precede the outro. Copy guide files byte-for-byte; never synthesize audio.
 
 - [ ] **Step 4: Run the converter test and verify GREEN**
 

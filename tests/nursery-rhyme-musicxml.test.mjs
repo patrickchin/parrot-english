@@ -606,6 +606,93 @@ describe("ties, line boundaries, and exact lyric offsets", () => {
       { atMs: 1_500, durationMs: 500, midi: 48, role: "accompaniment" },
     ]);
   });
+
+  it("uses a marker-only terminal rest to include an intentional silent line tail", () => {
+    const xml = scoreXml({
+      parts: [
+        part("P1", [
+          measure(
+            1,
+            attributes(2)
+              + tempo()
+              + rest(4)
+              + '<bookmark id="line-1"/>'
+              + note({
+                duration: 1,
+                lyrics: [lyric({ syllabic: "single", text: "Hello" })],
+              })
+              + note({
+                duration: 1,
+                lyrics: [lyric({ endLine: true })],
+                rest: true,
+              }),
+          ),
+        ]),
+      ],
+    });
+
+    const compiled = compile(xml);
+
+    assert.equal(compiled.lines[0].durationMs, 500);
+    assert.deepEqual(compiled.lines[0].notes, [
+      { atMs: 0, durationMs: 250, midi: 60 },
+    ]);
+    assert.deepEqual(compiled.lines[0].playbackNotes, [
+      { atMs: 0, durationMs: 250, midi: 60, role: "melody" },
+    ]);
+    assert.deepEqual(compiled.lines[0].words, [
+      { startOffset: 0, endOffset: 5, atMs: 0, durationMs: 250 },
+    ]);
+  });
+
+  it("rejects malformed rest markers and marker-only pitched lyrics", () => {
+    const invalidLyrics = [
+      lyric({ endLine: true, syllabic: "single", text: "Hello" }),
+      lyric({ endLine: true, extend: true }),
+      lyric({ endLine: true, syllabic: "single" }),
+    ];
+    for (const invalidLyric of invalidLyrics) {
+      const xml = scoreXml({
+        parts: [
+          part("P1", [
+            measure(
+              1,
+              attributes(2)
+                + tempo()
+                + rest(4)
+                + '<bookmark id="line-1"/>'
+                + note({
+                  duration: 1,
+                  lyrics: [lyric({ syllabic: "single", text: "Hello" })],
+                })
+                + note({ duration: 1, lyrics: [invalidLyric], rest: true }),
+            ),
+          ]),
+        ],
+      });
+      assert.throws(() => compile(xml), /rest.*marker-only|marker-only.*rest/i);
+    }
+
+    const pitchedMarker = scoreXml({
+      parts: [
+        part("P1", [
+          measure(
+            1,
+            attributes(2)
+              + tempo()
+              + rest(4)
+              + '<bookmark id="line-1"/>'
+              + note({
+                duration: 1,
+                lyrics: [lyric({ syllabic: "single", text: "Hello" })],
+              })
+              + note({ duration: 1, lyrics: [lyric({ endLine: true })] }),
+          ),
+        ]),
+      ],
+    });
+    assert.throws(() => compile(pitchedMarker), /marker-only.*pitched|pitched.*marker-only/i);
+  });
 });
 
 describe("parts, voices, and supported notes", () => {

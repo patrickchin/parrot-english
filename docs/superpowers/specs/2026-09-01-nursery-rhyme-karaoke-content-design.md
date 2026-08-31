@@ -203,11 +203,15 @@ the existing Web Audio player. This allows a simple bass or outro part without
 showing accompaniment as the melody the learner should follow.
 
 Each line begins with a standard MusicXML `<bookmark>` whose `id` is exactly
-the corresponding stable line ID from `rhyme.json`. The final lyric syllable
-in the line contains `<end-line/>`. The end of that note's complete tied chain
-bounds the recording phrase. The next bookmark independently determines the
-next full-playback cue, and the score may contain a later rest or outro after
-the final recording phrase. An outro must never lengthen the final recording.
+the corresponding stable line ID from `rhyme.json`. Normally the final lyric
+syllable in the line contains `<end-line/>`, and the end of that note's complete
+tied chain bounds the recording phrase. A line with an intentional silent tail
+may instead put a marker-only `<lyric><end-line/></lyric>` on its terminal rest;
+that lyric must contain no text, `syllabic`, or `extend`, is invalid on a pitched
+note, and extends the line without adding a melody or word event. The next
+bookmark independently determines the next full-playback cue, and the score
+may contain a later unmarked rest or outro after the final recording phrase.
+An unmarked rest or outro must never lengthen the final recording.
 
 Lyrics use MusicXML's `single`, `begin`, `middle`, and `end` `syllabic` values.
 An `<extend>` continues a syllable over later notes. The compiler groups these

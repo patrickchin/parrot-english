@@ -1,0 +1,255 @@
+{
+  "countInBeats": 2,
+  "countInMidi": 72,
+  "id": "old-macdonald-v1",
+  "order": 2,
+  "scenes": [
+    {
+      "artwork": {
+        "alt": "Old MacDonald greets three friendly cows in the pasture beside his red barn.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-1-cows.webp",
+        "width": 1536
+      },
+      "id": "scene-1",
+      "lines": [
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-1",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-2.mp3",
+          "id": "old-macdonald-v1-line-2",
+          "text": "And on his farm he had some cows, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-3.mp3",
+          "id": "old-macdonald-v1-line-3",
+          "text": "With a moo-moo here"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-4.mp3",
+          "id": "old-macdonald-v1-line-4",
+          "text": "And a moo-moo there"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-5.mp3",
+          "id": "old-macdonald-v1-line-5",
+          "text": "Here a moo, there a moo"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-6.mp3",
+          "id": "old-macdonald-v1-line-6",
+          "text": "Everywhere a moo-moo"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-7",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        }
+      ],
+      "title": "Cows on the farm"
+    },
+    {
+      "artwork": {
+        "alt": "Old MacDonald watches four white ducks splash in the farm pond.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-2-ducks.webp",
+        "width": 1536
+      },
+      "id": "scene-2",
+      "lines": [
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-8",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-9.mp3",
+          "id": "old-macdonald-v1-line-9",
+          "text": "And on his farm he had some ducks, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-10.mp3",
+          "id": "old-macdonald-v1-line-10",
+          "text": "With a quack-quack here"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-11.mp3",
+          "id": "old-macdonald-v1-line-11",
+          "text": "And a quack-quack there"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-12.mp3",
+          "id": "old-macdonald-v1-line-12",
+          "text": "Here a quack, there a quack"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-13.mp3",
+          "id": "old-macdonald-v1-line-13",
+          "text": "Everywhere a quack-quack"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-14",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        }
+      ],
+      "title": "Ducks on the farm"
+    },
+    {
+      "artwork": {
+        "alt": "Old MacDonald laughs with three pink pigs playing in a sunny mud patch.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-3-pigs.webp",
+        "width": 1536
+      },
+      "id": "scene-3",
+      "lines": [
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-15",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-16.mp3",
+          "id": "old-macdonald-v1-line-16",
+          "text": "And on his farm he had some pigs, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-17.mp3",
+          "id": "old-macdonald-v1-line-17",
+          "text": "With a snort here"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-18.mp3",
+          "id": "old-macdonald-v1-line-18",
+          "text": "And a snort there"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-19.mp3",
+          "id": "old-macdonald-v1-line-19",
+          "text": "Here a snort, there a snort"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-20.mp3",
+          "id": "old-macdonald-v1-line-20",
+          "text": "Everywhere a snort-snort"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-21",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        }
+      ],
+      "title": "Pigs on the farm"
+    },
+    {
+      "artwork": {
+        "alt": "Old MacDonald's brown farm dog waits proudly by the barnyard fence.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-4-dog.webp",
+        "width": 1536
+      },
+      "id": "scene-4",
+      "lines": [
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-22",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-23.mp3",
+          "id": "old-macdonald-v1-line-23",
+          "text": "And on his farm he had a dog, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-24.mp3",
+          "id": "old-macdonald-v1-line-24",
+          "text": "With a woof-woof here"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-25.mp3",
+          "id": "old-macdonald-v1-line-25",
+          "text": "And a woof-woof there"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-26.mp3",
+          "id": "old-macdonald-v1-line-26",
+          "text": "Here a woof, there a woof"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-27.mp3",
+          "id": "old-macdonald-v1-line-27",
+          "text": "Everywhere a woof-woof"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-28",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        }
+      ],
+      "title": "A dog on the farm"
+    },
+    {
+      "artwork": {
+        "alt": "Old MacDonald walks with five fluffy sheep in the meadow beyond the red barn.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-5-sheep.webp",
+        "width": 1536
+      },
+      "id": "scene-5",
+      "lines": [
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-29",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-30.mp3",
+          "id": "old-macdonald-v1-line-30",
+          "text": "And on his farm he had some sheep, E-I-E-I-O!"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-31.mp3",
+          "id": "old-macdonald-v1-line-31",
+          "text": "With a baa-baa here"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-32.mp3",
+          "id": "old-macdonald-v1-line-32",
+          "text": "And a baa-baa there"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-33.mp3",
+          "id": "old-macdonald-v1-line-33",
+          "text": "Here a baa, there a baa"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-34.mp3",
+          "id": "old-macdonald-v1-line-34",
+          "text": "Everywhere a baa-baa"
+        },
+        {
+          "guide": "guides/old-macdonald-v1-guide-line-1.mp3",
+          "id": "old-macdonald-v1-line-35",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        }
+      ],
+      "title": "Sheep on the farm"
+    }
+  ],
+  "schemaVersion": 1,
+  "score": {
+    "melodyPart": "P1",
+    "playbackParts": [
+      "P1",
+      "P2"
+    ],
+    "src": "score.musicxml",
+    "volume": 0.12
+  },
+  "slug": "old-macdonald",
+  "title": "Old MacDonald Had a Farm"
+}

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -16,11 +17,13 @@ import process from "node:process";
 import { describe, it } from "node:test";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import snapshot from "./fixtures/nursery-rhyme-runtime-snapshot.json" with { type: "json" };
 import {
   compileNurseryRhymePackages,
   serializeGeneratedCatalog,
 } from "../scripts/nursery-rhyme/compiler.mjs";
 import { runRhymeCatalogGenerator } from "../scripts/generate-rhyme-catalog.mjs";
+import { GENERATED_DUB_DEFINITIONS } from "../src/dubbing/generated-rhyme-catalog.ts";
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -216,6 +219,57 @@ function timelineAudioRunner(calls = []) {
     const timelineSeconds = args[args.indexOf("-t") + 1];
     return { stdout: pcmWithPeak(timelineSeconds === "1" ? 0 : 1_000) };
   };
+}
+
+function sortScoreEvents(events) {
+  return events.sort((left, right) =>
+    left.atMs - right.atMs
+    || left.role.localeCompare(right.role)
+    || left.midi - right.midi
+    || left.durationMs - right.durationMs);
+}
+
+function normalizedGeneratedScore(definition) {
+  const firstCueMs = definition.lines[0].cueMs;
+  return sortScoreEvents([
+    ...definition.lines.flatMap((line, lineIndex) =>
+      definition.music.linePhrases[lineIndex].playbackNotes.map((note) => ({
+        ...note,
+        atMs: line.cueMs - firstCueMs + note.atMs,
+      }))),
+    ...definition.music.outroNotes.map((note) => ({
+      ...note,
+      atMs: note.atMs - firstCueMs,
+    })),
+  ]);
+}
+
+function expandedLegacyPhraseDurations(definition) {
+  if (definition.phraseDurationsMs.length === definition.lines.length) {
+    return definition.phraseDurationsMs;
+  }
+  return definition.lines.map(
+    (_, index) => definition.phraseDurationsMs[index % definition.linesPerScene],
+  );
+}
+
+function generatedCatalogContract(definitions) {
+  return definitions.map((definition) => ({
+    id: definition.id,
+    route: definition.route,
+    title: definition.title,
+    countInMidi: definition.countInMidi,
+    musicVolume: definition.music.volume,
+    phraseDurationsMs: definition.music.linePhrases.map(({ durationMs }) => durationMs),
+    linesPerScene: definition.linesPerScene,
+    sceneTitles: definition.sceneTitles,
+    sceneArtwork: definition.sceneArtwork,
+    lineArtwork: definition.lineArtwork,
+    lines: definition.lines.map(({ id, text }) => ({ id, text })),
+    relativeCuesMs: definition.lines.map(({ cueMs }) => cueMs - definition.lines[0].cueMs),
+    durationAfterLeadInMs: definition.durationMs - definition.lines[0].cueMs,
+    normalizedScore: normalizedGeneratedScore(definition),
+  }));
 }
 
 describe("nursery rhyme package discovery and compilation", () => {
@@ -806,6 +860,65 @@ describe("generated module serialization and generator modes", () => {
         { cwd: repositoryRoot },
       ),
       /unknown|usage|--check/i,
+    );
+  });
+});
+
+describe("production legacy-compatible nursery-rhyme packages", () => {
+  it("preserves the protected six-rhyme runtime and guide-byte contract", async () => {
+    const expectedCatalog = snapshot.catalog.map((definition) => ({
+      ...definition,
+      phraseDurationsMs: expandedLegacyPhraseDurations(definition),
+    }));
+    assert.deepEqual(generatedCatalogContract(GENERATED_DUB_DEFINITIONS), expectedCatalog);
+
+    const guides = await Promise.all(
+      GENERATED_DUB_DEFINITIONS.flatMap((definition) => definition.guides).map(
+        async ({ id, src, text }) => ({
+          id,
+          text,
+          sha256: createHash("sha256")
+            .update(await readFile(path.join(repositoryRoot, "public", src.slice(1))))
+            .digest("hex"),
+        }),
+      ),
+    );
+    assert.deepEqual(guides, snapshot.guides);
+  });
+
+  it("contains the complete deterministic production inventory", () => {
+    assert.equal(GENERATED_DUB_DEFINITIONS.length, 6);
+    assert.equal(
+      GENERATED_DUB_DEFINITIONS.reduce((count, definition) => count + definition.lines.length, 0),
+      81,
+    );
+    assert.equal(
+      new Set(GENERATED_DUB_DEFINITIONS.flatMap((definition) =>
+        definition.guides.map(({ id }) => id))).size,
+      59,
+    );
+    for (const definition of GENERATED_DUB_DEFINITIONS) {
+      for (const line of definition.lines) {
+        assert.equal(line.guidePeakBars.length, 32, line.id);
+        assert.ok(
+          line.guidePeakBars.every((bar) => Number.isFinite(bar) && bar >= 0 && bar <= 1),
+          line.id,
+        );
+      }
+    }
+
+    const ducks = GENERATED_DUB_DEFINITIONS[0];
+    assert.equal(ducks.sceneTitles.length, 6);
+    assert.equal(ducks.linesPerScene, 4);
+    assert.equal(ducks.lines.length, 6 * 4);
+
+    const oldMacDonald = GENERATED_DUB_DEFINITIONS[1];
+    assert.equal(oldMacDonald.sceneTitles.length, 5);
+    assert.equal(oldMacDonald.linesPerScene, 7);
+    assert.equal(oldMacDonald.lines.length, 5 * 7);
+    assert.deepEqual(
+      oldMacDonald.music.linePhrases.map(({ durationMs }) => durationMs),
+      Array.from({ length: 5 }, () => [8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000]).flat(),
     );
   });
 });

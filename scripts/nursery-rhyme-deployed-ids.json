@@ -1,1 +1,116 @@
-{ "schemaVersion": 1, "rhymes": [] }
+{
+  "schemaVersion": 1,
+  "rhymes": [
+    {
+      "id": "five-little-ducks-v2",
+      "lineIds": [
+        "line-1",
+        "line-2",
+        "line-3",
+        "line-4",
+        "line-5",
+        "line-6",
+        "line-7",
+        "line-8",
+        "line-9",
+        "line-10",
+        "line-11",
+        "line-12",
+        "line-13",
+        "line-14",
+        "line-15",
+        "line-16",
+        "line-17",
+        "line-18",
+        "line-19",
+        "line-20",
+        "line-21",
+        "line-22",
+        "line-23",
+        "line-24"
+      ]
+    },
+    {
+      "id": "old-macdonald-v1",
+      "lineIds": [
+        "old-macdonald-v1-line-1",
+        "old-macdonald-v1-line-2",
+        "old-macdonald-v1-line-3",
+        "old-macdonald-v1-line-4",
+        "old-macdonald-v1-line-5",
+        "old-macdonald-v1-line-6",
+        "old-macdonald-v1-line-7",
+        "old-macdonald-v1-line-8",
+        "old-macdonald-v1-line-9",
+        "old-macdonald-v1-line-10",
+        "old-macdonald-v1-line-11",
+        "old-macdonald-v1-line-12",
+        "old-macdonald-v1-line-13",
+        "old-macdonald-v1-line-14",
+        "old-macdonald-v1-line-15",
+        "old-macdonald-v1-line-16",
+        "old-macdonald-v1-line-17",
+        "old-macdonald-v1-line-18",
+        "old-macdonald-v1-line-19",
+        "old-macdonald-v1-line-20",
+        "old-macdonald-v1-line-21",
+        "old-macdonald-v1-line-22",
+        "old-macdonald-v1-line-23",
+        "old-macdonald-v1-line-24",
+        "old-macdonald-v1-line-25",
+        "old-macdonald-v1-line-26",
+        "old-macdonald-v1-line-27",
+        "old-macdonald-v1-line-28",
+        "old-macdonald-v1-line-29",
+        "old-macdonald-v1-line-30",
+        "old-macdonald-v1-line-31",
+        "old-macdonald-v1-line-32",
+        "old-macdonald-v1-line-33",
+        "old-macdonald-v1-line-34",
+        "old-macdonald-v1-line-35"
+      ]
+    },
+    {
+      "id": "twinkle-twinkle-v1",
+      "lineIds": [
+        "twinkle-twinkle-v1-line-1",
+        "twinkle-twinkle-v1-line-2",
+        "twinkle-twinkle-v1-line-3",
+        "twinkle-twinkle-v1-line-4",
+        "twinkle-twinkle-v1-line-5",
+        "twinkle-twinkle-v1-line-6"
+      ]
+    },
+    {
+      "id": "row-row-row-your-boat-v1",
+      "lineIds": [
+        "row-row-row-your-boat-v1-line-1",
+        "row-row-row-your-boat-v1-line-2",
+        "row-row-row-your-boat-v1-line-3",
+        "row-row-row-your-boat-v1-line-4"
+      ]
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1",
+      "lineIds": [
+        "mary-had-a-little-lamb-v1-line-1",
+        "mary-had-a-little-lamb-v1-line-2",
+        "mary-had-a-little-lamb-v1-line-3",
+        "mary-had-a-little-lamb-v1-line-4",
+        "mary-had-a-little-lamb-v1-line-5",
+        "mary-had-a-little-lamb-v1-line-6",
+        "mary-had-a-little-lamb-v1-line-7",
+        "mary-had-a-little-lamb-v1-line-8"
+      ]
+    },
+    {
+      "id": "humpty-dumpty-v1",
+      "lineIds": [
+        "humpty-dumpty-v1-line-1",
+        "humpty-dumpty-v1-line-2",
+        "humpty-dumpty-v1-line-3",
+        "humpty-dumpty-v1-line-4"
+      ]
+    }
+  ]
+}

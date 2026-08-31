@@ -31,8 +31,23 @@ const staticImageExtensions = new Set([
 ]);
 const runtimeMediaPattern =
   /^https:\/\/media\.parrotbook\.com\/assets\/v[1-9]\d*\/[a-z0-9/_-]+\.webp$/;
+const safeSlug = "[a-z0-9]+(?:-[a-z0-9]+)*";
+const rhymeManifestPattern = new RegExp(
+  `^nursery-rhymes/${safeSlug}/rhyme\\.json$`,
+);
+const rhymeScorePattern = new RegExp(
+  `^nursery-rhymes/${safeSlug}/score\\.musicxml$`,
+);
+const rhymeGuidePattern = new RegExp(
+  `^nursery-rhymes/${safeSlug}/guides/${safeSlug}\\.mp3$`,
+);
 
 function isSupportedAsset(filePath) {
+  if (filePath.startsWith("nursery-rhymes/")) {
+    return rhymeManifestPattern.test(filePath)
+      || rhymeScorePattern.test(filePath)
+      || rhymeGuidePattern.test(filePath);
+  }
   return webAssetExtensions.has(extname(filePath));
 }
 
@@ -54,6 +69,26 @@ async function listAssetFiles(dir) {
 }
 
 describe("web asset formats", () => {
+  it("allows only validated nursery-rhyme package asset locations", () => {
+    for (const filePath of [
+      "nursery-rhymes/twinkle-twinkle/rhyme.json",
+      "nursery-rhymes/twinkle-twinkle/score.musicxml",
+      "nursery-rhymes/twinkle-twinkle/guides/twinkle-twinkle-v1-guide-line-1.mp3",
+    ]) {
+      assert.equal(isSupportedAsset(filePath), true, filePath);
+    }
+    for (const filePath of [
+      "arbitrary.json",
+      "nursery-rhymes/twinkle-twinkle/extra.json",
+      "nursery-rhymes/twinkle-twinkle/guides/score.musicxml",
+      "nursery-rhymes/twinkle-twinkle/nested/rhyme.json",
+      "nursery-rhymes/Unsafe/rhyme.json",
+      "nursery-rhymes/twinkle-twinkle/not-guides/line.mp3",
+    ]) {
+      assert.equal(isSupportedAsset(filePath), false, filePath);
+    }
+  });
+
   it("keeps public lesson assets in browser-friendly formats", async () => {
     const files = await listAssetFiles(publicAssetsDir);
     const unsupportedFiles = files

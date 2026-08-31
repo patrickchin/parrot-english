@@ -491,6 +491,13 @@ function parseLyric(noteElement, sourcePath, partId, isMelody) {
   };
 }
 
+function isMarkerOnlyEndLine(lyric) {
+  return lyric?.endLine === true
+    && lyric.extend === false
+    && lyric.syllabic === null
+    && lyric.text === null;
+}
+
 function parseNote(
   noteElement,
   { anchor, cursor, divisions, isMelody, partId, sourcePath, voice },
@@ -554,8 +561,21 @@ function parseNote(
   }
   const ties = parseTies(noteElement, sourcePath, partId);
   const lyric = parseLyric(noteElement, sourcePath, partId, isMelody);
-  if (midi === null && (ties.size > 0 || lyric || chord)) {
-    throw scoreError(sourcePath, `Part ${partId} rests cannot contain ties, lyrics, or chords.`);
+  const restEndLineMarker = midi === null && isMarkerOnlyEndLine(lyric);
+  if (
+    midi === null
+    && (ties.size > 0 || chord || (lyric && !restEndLineMarker))
+  ) {
+    throw scoreError(
+      sourcePath,
+      `Part ${partId} rests may contain only a marker-only end-line lyric and no ties or chords.`,
+    );
+  }
+  if (midi !== null && isMarkerOnlyEndLine(lyric)) {
+    throw scoreError(
+      sourcePath,
+      `Part ${partId} marker-only end-line lyrics are allowed only on a pitched line's terminal rest.`,
+    );
   }
 
   const voiceElements = directChildren(noteElement, "voice");
@@ -567,12 +587,18 @@ function parseNote(
     throw scoreError(sourcePath, `Part ${partId} contains a changing or second voice.`);
   }
 
+  const parsedNote = midi === null
+    ? null
+    : { end, lyric, midi, partId, start, ties };
   return {
     anchor: chord ? anchor : { end, midi, start },
+    endLineMarker: restEndLineMarker
+      ? { end, isRest: true, lyric, start }
+      : lyric?.endLine
+        ? parsedNote
+        : null,
     nextCursor: chord ? cursor : end,
-    note: midi === null
-      ? null
-      : { end, lyric, midi, partId, start, ties },
+    note: parsedNote,
     voice: voice ?? noteVoice,
   };
 }
@@ -587,6 +613,7 @@ function parsePart(partElement, melodyPart, sourcePath) {
   let divisions = null;
   let voice = null;
   const notes = [];
+  const endLineMarkers = [];
   const bookmarks = [];
   const measureEnds = [];
   const tempos = [];
@@ -637,6 +664,7 @@ function parsePart(partElement, melodyPart, sourcePath) {
           cursor = parsed.nextCursor;
           voice = parsed.voice;
           if (parsed.note) notes.push(parsed.note);
+          if (parsed.endLineMarker) endLineMarkers.push(parsed.endLineMarker);
           break;
         }
         case "backup":
@@ -659,7 +687,15 @@ function parsePart(partElement, melodyPart, sourcePath) {
     }
     measureEnds.push({ index: measureIndex, position: cursor });
   }
-  return { bookmarks, duration: cursor, measureEnds, notes, partId, tempos };
+  return {
+    bookmarks,
+    duration: cursor,
+    endLineMarkers,
+    measureEnds,
+    notes,
+    partId,
+    tempos,
+  };
 }
 
 function validatePartList(root, sourcePath) {
@@ -782,15 +818,14 @@ function validateBookmarks(bookmarks, lines, sourcePath) {
 function deriveLineWindows({
   bookmarks,
   chainByNote,
+  endLineMarkers,
   lines,
-  melodyNotes,
   millisecondsPerQuarter,
   sourcePath,
   totalDuration,
 }) {
   const endMarkers = Array.from({ length: lines.length }, () => []);
-  for (const currentNote of melodyNotes) {
-    if (!currentNote.lyric?.endLine) continue;
+  for (const currentNote of endLineMarkers) {
     const index = bookmarks.findLastIndex(
       ({ position }) => compareRational(position, currentNote.start) <= 0,
     );
@@ -809,7 +844,7 @@ function deriveLineWindows({
     }
     const start = bookmarks[index].position;
     const endMarker = endMarkers[index][0];
-    const end = chainByNote.get(endMarker).end;
+    const end = endMarker.isRest ? endMarker.end : chainByNote.get(endMarker).end;
     const nextStart = bookmarks[index + 1]?.position ?? totalDuration;
     if (compareRational(end, start) <= 0 || compareRational(end, nextStart) > 0) {
       throw scoreError(sourcePath, `Line ${line.id} end-line lies outside its line window.`);
@@ -1082,8 +1117,8 @@ function compileParsedScore(root, manifest, sourcePath) {
   const windows = deriveLineWindows({
     bookmarks: melody.bookmarks,
     chainByNote: coalescedByPart.get(melodyPart).chainByNote,
+    endLineMarkers: melody.endLineMarkers,
     lines,
-    melodyNotes: melody.notes,
     millisecondsPerQuarter: tempo.millisecondsPerQuarter,
     sourcePath,
     totalDuration: melody.duration,

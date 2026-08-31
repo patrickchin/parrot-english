@@ -1,0 +1,76 @@
+{
+  "countInBeats": 2,
+  "countInMidi": 60,
+  "id": "row-row-row-your-boat-v1",
+  "order": 4,
+  "scenes": [
+    {
+      "artwork": {
+        "alt": "Two cheerful children row a small wooden boat along a gentle sunny stream.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/row-row-row-your-boat/scene-1-gentle-stream.webp",
+        "width": 1536
+      },
+      "id": "scene-1",
+      "lines": [
+        {
+          "artwork": {
+            "alt": "Two cheerful children row a small wooden boat along a gentle sunny stream.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v6/dubbing/row-row-row-your-boat/scene-1-gentle-stream.webp",
+            "width": 1536
+          },
+          "guide": "guides/row-row-row-your-boat-v1-guide-line-1.mp3",
+          "id": "row-row-row-your-boat-v1-line-1",
+          "text": "Row, row, row your boat,"
+        },
+        {
+          "artwork": {
+            "alt": "The two children paddle their wooden boat gently along a calm willow-lined stream.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v7/dubbing/row-row-row-your-boat/line-2-gentle-stream.webp",
+            "width": 1536
+          },
+          "guide": "guides/row-row-row-your-boat-v1-guide-line-2.mp3",
+          "id": "row-row-row-your-boat-v1-line-2",
+          "text": "Gently down the stream."
+        },
+        {
+          "artwork": {
+            "alt": "The two children laugh merrily as their boat splashes past water lilies and dragonflies.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v7/dubbing/row-row-row-your-boat/line-3-merrily.webp",
+            "width": 1536
+          },
+          "guide": "guides/row-row-row-your-boat-v1-guide-line-3.mp3",
+          "id": "row-row-row-your-boat-v1-line-3",
+          "text": "Merrily, merrily, merrily, merrily,"
+        },
+        {
+          "artwork": {
+            "alt": "The children laugh as their little boat glides through a dreamy flower-filled river bend.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v6/dubbing/row-row-row-your-boat/scene-2-merry-dream.webp",
+            "width": 1536
+          },
+          "guide": "guides/row-row-row-your-boat-v1-guide-line-4.mp3",
+          "id": "row-row-row-your-boat-v1-line-4",
+          "text": "Life is but a dream."
+        }
+      ],
+      "title": "Row the boat"
+    }
+  ],
+  "schemaVersion": 1,
+  "score": {
+    "melodyPart": "P1",
+    "playbackParts": [
+      "P1",
+      "P2"
+    ],
+    "src": "score.musicxml",
+    "volume": 0.12
+  },
+  "slug": "row-row-row-your-boat",
+  "title": "Row Row Row Your Boat"
+}
