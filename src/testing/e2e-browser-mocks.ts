@@ -1,6 +1,4 @@
 import questionnaire from "../../content/learner-profile/questionnaire-v2.json";
-import generatedLessonTemplate from "../../content/lessons/01-peppas-high-ball.json";
-import { isSafeRouteId } from "../../lib/route-id.ts";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
@@ -40,7 +38,6 @@ const E2E_DUB_SCENARIOS = new Set([
 ]);
 const DEFAULT_E2E_DUB_ID = "five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
-const E2E_LESSON_REVISION = "a".repeat(64);
 const E2E_DUB_CONSENT_VERSION = "guardian-voice-r2-v2";
 const E2E_DUB_SCENARIO_KEY = "parrot-e2e-dub:active-scenario";
 const E2E_MICROPHONE_SCENARIOS = new Set(["delayed", "denied", "unsupported"]);
@@ -61,14 +58,12 @@ type E2ELessonUpload = {
     | "failed"
     | "held"
     | "learner_selection_changed"
-    | "lesson_changed"
     | "recording_disabled"
     | "saved";
   expectedLearnerProfileId: string | null;
-  revision: string | null;
   sceneIndex: number;
   size: number;
-  source: "my" | "parrot";
+  source: "parrot";
   stepIndex: number;
   type: string;
 };
@@ -217,7 +212,11 @@ function matchActiveE2eDubGuidePath(pathname: string) {
   const prefix = `/assets/audio/${definition.id}-guide-`;
   if (!pathname.startsWith(prefix) || !pathname.endsWith(".mp3")) return null;
   const suffix = pathname.slice(prefix.length, -4);
-  return definition.lines.find(({ id }) => id === suffix || id.endsWith(`-${suffix}`))?.id ?? null;
+  return (
+    definition.lines.find(
+      ({ id }) => id === suffix || id.endsWith(`-${suffix}`),
+    )?.id ?? null
+  );
 }
 
 const E2E_INCOMPLETE_PROFILE = {
@@ -428,8 +427,6 @@ function isTargetableLearnerPath(pathname: string) {
     TARGETABLE_LEARNER_PROFILE_PATHS.has(pathname) ||
     pathname === "/api/lesson-recordings/consent" ||
     lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
-    pathname === "/api/lessons/my" ||
-    /^\/api\/lessons\/my\/[^/]+$/.test(pathname) ||
     matchE2eDubDefinitionApiPath(pathname) !== null ||
     matchActiveE2eDubLinePath(pathname) !== null ||
     /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
@@ -444,10 +441,7 @@ function hasExplicitLearnerTarget(url: URL) {
   );
 }
 
-function singletonUnsupportedTargetMethodResponse(
-  url: URL,
-  method: string,
-) {
+function singletonUnsupportedTargetMethodResponse(url: URL, method: string) {
   const pathname = url.pathname;
   const dubRoute = matchE2eDubDefinitionApiPath(pathname);
   let allowedMethods: readonly string[] | null = null;
@@ -482,16 +476,9 @@ function singletonUnsupportedTargetMethodResponse(
     allowedMethods = ["GET"];
   } else if (matchActiveE2eDubLinePath(pathname) !== null) {
     allowedMethods = ["PUT"];
-  } else if (pathname === "/api/lessons/my") {
-    allowedMethods = ["GET", "POST"];
-    notFoundForUnsupportedMethod = true;
-  } else if (pathname === "/api/lessons/my/generate") {
-    allowedMethods = ["POST"];
-    notFoundForUnsupportedMethod = true;
-  } else if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
-    allowedMethods = ["GET", "DELETE"];
-    notFoundForUnsupportedMethod = true;
-  } else if (/^\/api\/stories\/[^/]+\/personalized-art\/asset$/.test(pathname)) {
+  } else if (
+    /^\/api\/stories\/[^/]+\/personalized-art\/asset$/.test(pathname)
+  ) {
     allowedMethods = ["GET"];
     notFoundForUnsupportedMethod = true;
   } else if (/^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname)) {
@@ -501,7 +488,9 @@ function singletonUnsupportedTargetMethodResponse(
 
   if (allowedMethods === null || allowedMethods.includes(method)) return null;
   const status = notFoundForUnsupportedMethod ? 404 : 405;
-  const error = notFoundForUnsupportedMethod ? "not_found" : "method_not_allowed";
+  const error = notFoundForUnsupportedMethod
+    ? "not_found"
+    : "method_not_allowed";
   return pathname.startsWith("/api/dubs/")
     ? e2eDubJson({ error }, status)
     : e2eJson({ error }, status);
@@ -544,15 +533,6 @@ type MockLearnerProfile = {
     "early-a1" | "first-words" | "repeating-patterns" | "tiny-stories";
 };
 
-type MockLessonDescriptor = {
-  createdAt: string;
-  id: string;
-  lesson: unknown;
-  revision: string;
-  source: "generated" | "uploaded";
-  updatedAt: string;
-};
-
 type MockStoryArtState = {
   hasStoredArt: boolean;
   updatedAt: string | null;
@@ -577,7 +557,6 @@ type MockLearnerState = {
   deletionPending: boolean;
   dub: MockDubState;
   lessonRecording: MockLessonRecordingState;
-  lessons: Map<string, MockLessonDescriptor>;
   profile: MockLearnerProfile;
 };
 
@@ -588,11 +567,10 @@ type MockAccountState = {
 
 type StoredMockLearnerState = Omit<
   MockLearnerState,
-  "art" | "conversationIds" | "lessons"
+  "art" | "conversationIds"
 > & {
   art: Array<[string, MockStoryArtState]>;
   conversationIds: string[];
-  lessons: Array<[string, MockLessonDescriptor]>;
 };
 
 type StoredMockAccountState = {
@@ -705,7 +683,6 @@ function createMockLearner(
       consentRequests: 0,
       uploads: [],
     },
-    lessons: new Map(),
     profile: createMockProfile(id, name, age, completed),
   };
 }
@@ -742,7 +719,6 @@ function storeMockAccountState(
         ...learner,
         art: [...learner.art],
         conversationIds: [...learner.conversationIds],
-        lessons: [...learner.lessons],
       },
     ]),
   };
@@ -763,8 +739,7 @@ function restoreMockAccountState(
           conversationIds: new Set(learner.conversationIds),
           deletionPending: learner.deletionPending === true,
           lessonRecording: {
-            cleanupPending:
-              learner.lessonRecording?.cleanupPending === true,
+            cleanupPending: learner.lessonRecording?.cleanupPending === true,
             consent: learner.lessonRecording?.consent === true,
             consentRequests: Number.isSafeInteger(
               learner.lessonRecording?.consentRequests,
@@ -775,7 +750,6 @@ function restoreMockAccountState(
               ? learner.lessonRecording.uploads
               : [],
           },
-          lessons: new Map(learner.lessons),
         },
       ]),
     ),
@@ -960,8 +934,7 @@ function createE2eLearnerAccount(
     return {
       profile: {
         ...learner.profile,
-        lessonRecordingCleanupPending:
-          learner.lessonRecording.cleanupPending,
+        lessonRecordingCleanupPending: learner.lessonRecording.cleanupPending,
         lessonRecordingConsent: learner.lessonRecording.consent,
       },
       questions: mockQuestions(),
@@ -1054,10 +1027,7 @@ function createE2eLearnerAccount(
       ) {
         return e2eDubJson({ error: "invalid_request" }, 400);
       }
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       commitLearner.dub.consentState = "granted";
       persist();
@@ -1154,10 +1124,7 @@ function createE2eLearnerAccount(
       });
     }
     if (method === "POST") {
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       commitLearner.art.set(storyId, {
         hasStoredArt: true,
@@ -1173,10 +1140,7 @@ function createE2eLearnerAccount(
       return e2eJson(await created!.json(), 201);
     }
     if (method === "DELETE") {
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       commitLearner.art.delete(storyId);
       persist();
@@ -1250,10 +1214,7 @@ function createE2eLearnerAccount(
       if (typeof body.enabled !== "boolean") {
         return e2eJson({ error: "invalid_request" }, 400);
       }
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       if (body.enabled) {
         commitLearner.lessonRecording.consent = true;
@@ -1428,9 +1389,7 @@ function createE2eLearnerAccount(
       return response;
     }
 
-    const deletion = url.pathname.match(
-      /^\/api\/learner-profiles\/([^/]+)$/,
-    );
+    const deletion = url.pathname.match(/^\/api\/learner-profiles\/([^/]+)$/);
     if (deletion && method === "DELETE") {
       let profileId = "";
       try {
@@ -1460,13 +1419,11 @@ function createE2eLearnerAccount(
     }
 
     const resolvedLearner = requestLearner(currentExplicitLearner);
-    let learner =
-      resolvedLearner instanceof Response ? null : resolvedLearner;
+    let learner = resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
       url.pathname === "/api/profile" ||
       url.pathname === "/api/profile/preferences" ||
-      url.pathname.startsWith("/api/lessons/my") ||
       url.pathname.startsWith("/api/conversations");
     if (learnerOwnedPath && resolvedLearner instanceof Response) {
       return resolvedLearner;
@@ -1495,10 +1452,7 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/learner-profile/answer" && method === "PUT") {
       const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       learner = commitLearner;
       if (
@@ -1531,10 +1485,7 @@ function createE2eLearnerAccount(
       } catch {
         return e2eJson({ error: "invalid_json" }, 400);
       }
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       learner = commitLearner;
       const index = questionnaire.questions.findIndex(
@@ -1579,10 +1530,7 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/profile" && method === "PUT") {
       const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       learner = commitLearner;
       const answers =
@@ -1603,10 +1551,7 @@ function createE2eLearnerAccount(
     }
     if (url.pathname === "/api/profile/preferences" && method === "PUT") {
       const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
+      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
       if (commitLearner instanceof Response) return commitLearner;
       learner = commitLearner;
       if (typeof body.storyLevel === "string") {
@@ -1615,77 +1560,6 @@ function createE2eLearnerAccount(
       }
       persist();
       return e2eJson(profileEditorState(learner));
-    }
-
-    if (url.pathname === "/api/lessons/my/generate" && method === "POST") {
-      const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
-      if (commitLearner instanceof Response) return commitLearner;
-      learner = commitLearner;
-      const topic =
-        typeof body.topic === "string" && body.topic.trim()
-          ? body.topic.normalize("NFKC").trim()
-          : "English practice";
-      const lesson = structuredClone(generatedLessonTemplate);
-      lesson.childName = learner.profile.name;
-      lesson.title = `${topic} with ${learner.profile.name}`;
-      return e2eJson({ lesson, warnings: [] });
-    }
-    if (url.pathname === "/api/lessons/my" && method === "GET") {
-      return e2eJson({ lessons: [...learner.lessons.values()] });
-    }
-    if (url.pathname === "/api/lessons/my" && method === "POST") {
-      const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
-      if (commitLearner instanceof Response) return commitLearner;
-      learner = commitLearner;
-      const id = `lesson-${learner.profile.id}-${learner.lessons.size + 1}`;
-      const descriptor: MockLessonDescriptor = {
-        createdAt: E2E_DUB_RECORDED_AT,
-        id,
-        lesson: body.lesson,
-        revision: E2E_LESSON_REVISION,
-        source: body.source === "generated" ? "generated" : "uploaded",
-        updatedAt: E2E_DUB_RECORDED_AT,
-      };
-      learner.lessons.set(id, descriptor);
-      persist();
-      return e2eJson({ lesson: descriptor }, 201);
-    }
-    const lessonMatch = url.pathname.match(/^\/api\/lessons\/my\/([^/]+)$/);
-    if (lessonMatch) {
-      let id: string;
-      try {
-        id = decodeURIComponent(lessonMatch[1]!);
-      } catch {
-        return e2eJson({ error: "not_found" }, 404);
-      }
-      if (!isSafeRouteId(id)) return e2eJson({ error: "not_found" }, 404);
-      if (method !== "GET" && method !== "DELETE") {
-        return e2eJson({ error: "not_found" }, 404);
-      }
-      if (method === "GET") {
-        const descriptor = learner.lessons.get(id);
-        return descriptor
-          ? e2eJson({ lesson: descriptor })
-          : e2eJson({ error: "not_found" }, 404);
-      }
-      const commitLearner = rebindLearnerForCommit(
-        learner,
-        explicitProfileId,
-      );
-      if (commitLearner instanceof Response) return commitLearner;
-      if (!commitLearner.lessons.delete(id)) {
-        return e2eJson({ error: "not_found" }, 404);
-      }
-      persist();
-      return new Response(null, { status: 204 });
     }
 
     if (url.pathname === "/api/conversations" && method === "POST") {
@@ -1840,13 +1714,13 @@ function lessonRecordingConsentEnabled() {
   const scenario = getE2eLessonScenario();
   return Boolean(
     scenario &&
-      ![
-        "consent-error",
-        "device-no-consent",
-        "held-cue-no-consent",
-        "held-story",
-        "no-consent",
-      ].includes(scenario),
+    ![
+      "consent-error",
+      "device-no-consent",
+      "held-cue-no-consent",
+      "held-story",
+      "no-consent",
+    ].includes(scenario),
   );
 }
 
@@ -2030,10 +1904,7 @@ function createE2eDubBlob(scenario = "correct") {
   );
 }
 
-function initialE2eDubLineIds(
-  scenario: string,
-  lineIds: readonly string[],
-) {
+function initialE2eDubLineIds(scenario: string, lineIds: readonly string[]) {
   if (
     scenario === "audio-fetch-failed" ||
     scenario === "both-source-failed" ||
@@ -2047,7 +1918,8 @@ function initialE2eDubLineIds(
   ) {
     return [...lineIds];
   }
-  if (scenario === "almost-complete") return lineIds.slice(0, lineIds.length - 1);
+  if (scenario === "almost-complete")
+    return lineIds.slice(0, lineIds.length - 1);
   if (
     scenario === "delete-failed" ||
     scenario === "delete-held" ||
@@ -2069,13 +1941,18 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
   const failureKey = `parrot-e2e-dub:${scenario}:upload-failed`;
   const resetDeleteFailureKey = `parrot-e2e-dub:${scenario}:reset-delete-failed`;
   const resetKey = `parrot-e2e-dub:${scenario}:reset-finished`;
-  function readSavedLineIds(requestedDefinition: (typeof DUB_DEFINITIONS)[number]) {
+  function readSavedLineIds(
+    requestedDefinition: (typeof DUB_DEFINITIONS)[number],
+  ) {
     const key = savedKeyFor(requestedDefinition.id);
     const persisted = sessionStorage.getItem(key);
     if (persisted !== null) {
       try {
         const parsed: unknown = JSON.parse(persisted);
-        if (Array.isArray(parsed) && parsed.every((id) => typeof id === "string")) {
+        if (
+          Array.isArray(parsed) &&
+          parsed.every((id) => typeof id === "string")
+        ) {
           return parsed.filter((id) =>
             requestedDefinition.lines.some((line) => line.id === id),
           );
@@ -2229,7 +2106,9 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
           if (legacyResetPending && consentState === "granted") {
             return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
           }
-          const requestedLineIds = dubRoute.definition.lines.map(({ id }) => id);
+          const requestedLineIds = dubRoute.definition.lines.map(
+            ({ id }) => id,
+          );
           const requestedSaved = new Set(
             dubRoute.definition.id === definition.id
               ? clips.keys()
@@ -2391,10 +2270,12 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
       clips.clear();
       persist();
       persistConsent("not_granted");
-      resolve(new Response(null, {
-        headers: { "Cache-Control": "private, no-store" },
-        status: 204,
-      }));
+      resolve(
+        new Response(null, {
+          headers: { "Cache-Control": "private, no-store" },
+          status: 204,
+        }),
+      );
       return true;
     },
     releaseUpload() {
@@ -2491,10 +2372,7 @@ function readGuardianAccess(sessionId: string): MockGuardianAccess {
 }
 
 function setGuardianAccess(sessionId: string, access: MockGuardianAccess) {
-  sessionStorage.setItem(
-    guardianStorageKey(sessionId),
-    JSON.stringify(access),
-  );
+  sessionStorage.setItem(guardianStorageKey(sessionId), JSON.stringify(access));
 }
 
 function currentGuardianAccess(sessionId: string) {
@@ -2536,11 +2414,6 @@ function requiresGuardianAccess(
     return method === "PUT";
   }
   if (/^\/api\/dubs\/[^/]+$/.test(url.pathname)) {
-    return method === "DELETE";
-  }
-  if (url.pathname === "/api/lessons/my") return method === "POST";
-  if (url.pathname === "/api/lessons/my/generate") return method === "POST";
-  if (/^\/api\/lessons\/my\/[^/]+$/.test(url.pathname)) {
     return method === "DELETE";
   }
   return (
@@ -2772,15 +2645,15 @@ function rejectNextProfileRecording() {
 
 function lessonRecordingSlot(url: URL) {
   const match = url.pathname.match(
-    /^\/api\/lesson-recordings\/(my|parrot)\/([^/]+)\/scenes\/(\d+)\/steps\/(\d+)$/,
+    /^\/api\/lesson-recordings\/parrot\/([^/]+)\/scenes\/(\d+)\/steps\/(\d+)$/,
   );
   if (!match) return null;
   try {
     return {
-      lessonId: decodeURIComponent(match[2]),
-      sceneIndex: Number(match[3]),
-      source: match[1] as "my" | "parrot",
-      stepIndex: Number(match[4]),
+      lessonId: decodeURIComponent(match[1]),
+      sceneIndex: Number(match[2]),
+      source: "parrot" as const,
+      stepIndex: Number(match[3]),
     };
   } catch {
     return null;
@@ -2807,10 +2680,7 @@ async function lessonRecordingResponse(
   scope = globalLessonRecordingScope(),
 ) {
   if (url.origin !== window.location.origin) return null;
-  if (
-    url.pathname === "/api/lesson-recordings/consent" &&
-    method === "GET"
-  ) {
+  if (url.pathname === "/api/lesson-recordings/consent" && method === "GET") {
     const staleResponse = scope.refresh?.();
     if (staleResponse) return staleResponse;
     scope.consentRequested();
@@ -2845,7 +2715,6 @@ async function lessonRecordingResponse(
     attempt,
     expectedLearnerProfileId,
     outcome: "saved",
-    revision: requestHeaders.get("X-Parrot-Lesson-Revision"),
     size: 0,
     type: "",
   };
@@ -2889,11 +2758,6 @@ async function lessonRecordingResponse(
     record.outcome = "recording_disabled";
     scope.persist();
     return e2eJson({ error: "account_deletion_pending" }, 409);
-  }
-  if (scenario === "lesson-changed") {
-    record.outcome = "lesson_changed";
-    scope.persist();
-    return e2eJson({ error: "lesson_changed" }, 409);
   }
   if (
     (scenario === "upload-failed" || scenario === "upload-retry-held") &&
@@ -2942,10 +2806,7 @@ function installE2eProfileFetchMock() {
   const nativeFetch = window.fetch.bind(window);
   const learnerScenario = getE2eLearnerScenario();
   const learnerSessionId = getE2eLearnerSessionId();
-  const dubStore = createE2eDubStore(
-    getE2eDubScenario(),
-    learnerSessionId,
-  );
+  const dubStore = createE2eDubStore(getE2eDubScenario(), learnerSessionId);
   const learnerAccountId =
     new URL(window.location.href).searchParams.get("parrotE2eAccount") ??
     learnerSessionId;
@@ -3011,8 +2872,7 @@ function installE2eProfileFetchMock() {
       }
       return {
         failNextLearnerDelete: () => account.failNextLearnerDelete(),
-        failNextLearnerRosterLoad: () =>
-          account.failNextLearnerRosterLoad(),
+        failNextLearnerRosterLoad: () => account.failNextLearnerRosterLoad(),
         fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
           const request = input instanceof Request ? input : null;
           const source =
@@ -3083,10 +2943,7 @@ function installE2eProfileFetchMock() {
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
     const hasLearnerTarget = hasExplicitLearnerTarget(url);
-    if (
-      getE2eLessonScenario() &&
-      url.pathname === "/api/evaluate-speech"
-    ) {
+    if (getE2eLessonScenario() && url.pathname === "/api/evaluate-speech") {
       lessonMediaMetrics.evaluateRequests += 1;
     }
     const guardedResponse = await guardianResponse(
@@ -3334,7 +3191,8 @@ class MockAudioElement {
           lessonScenario === "held-cue-no-consent" ||
           lessonScenario === "malformed-consent")) ||
       (!this.lessonCue &&
-        (lessonScenario === "held-story" || lessonScenario === "held-preflight"));
+        (lessonScenario === "held-story" ||
+          lessonScenario === "held-preflight"));
     const cue: E2ELessonCue | null = this.lessonCue
       ? {
           endedAt: null,
@@ -3397,10 +3255,7 @@ class MockAudioElement {
     }
     this.lessonResume = () => {
       if (this.timerId === null) {
-        this.timerId = window.setTimeout(
-          finish,
-          getMockAudioDelayMs(this.src),
-        );
+        this.timerId = window.setTimeout(finish, getMockAudioDelayMs(this.src));
       }
     };
     this.lessonResume();
@@ -3753,9 +3608,7 @@ function settleNextLessonUpload(
     upload.persist();
   }
   if (action === "resolve") {
-    upload.resolve(
-      e2eJson({ recordedAt: "2026-08-26T08:00:00.000Z" }, 201),
-    );
+    upload.resolve(e2eJson({ recordedAt: "2026-08-26T08:00:00.000Z" }, 201));
   } else {
     upload.reject(new Error("Held lesson recording upload failed."));
   }
@@ -3871,8 +3724,6 @@ const mockLessonSpeechSynthesis = {
       lessonScenario === "held-cue" ||
       lessonScenario === "held-cue-no-consent" ||
       (lessonScenario === "account-deletion-pending" &&
-        utterance.text === "The kite turns.") ||
-      (lessonScenario === "lesson-changed" &&
         utterance.text === "The kite turns.")
     ) {
       pendingLessonPlayback.push(currentDevicePlayback);

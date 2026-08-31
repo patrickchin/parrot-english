@@ -36,7 +36,9 @@ const focusScenarios: Array<{
     prepare: async (page) => {
       await page.goto(guardianPath("/guardian"));
       await page
-        .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+        .getByRole("button", {
+          name: "Profile for Alex Guardian, guardian mode",
+        })
         .click();
       return page.getByRole("menuitem", { name: "Manage learners" });
     },
@@ -151,7 +153,9 @@ function contrast(first: Rgb, second: Rgb) {
 async function blurActiveElement(page: Page) {
   await page.evaluate(async () => {
     for (let index = 0; index < 3; index += 1) {
-      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) =>
+        requestAnimationFrame(() => resolve()),
+      );
       if (document.activeElement instanceof HTMLElement) {
         document.activeElement.blur();
       }
@@ -170,7 +174,9 @@ async function blurActiveElement(page: Page) {
 
 async function focusWithKeyboard(page: Page, target: Locator) {
   for (let index = 0; index < 80; index += 1) {
-    if (await target.evaluate((element) => element === document.activeElement)) {
+    if (
+      await target.evaluate((element) => element === document.activeElement)
+    ) {
       return;
     }
     await page.keyboard.press("Tab");
@@ -225,10 +231,7 @@ function renderedScreenshotDelta({
   const scaleY = focused.info.height / viewport.height;
   const horizontalPadding = 20;
   const verticalPadding = 12;
-  const left = Math.max(
-    0,
-    Math.floor((box.x - horizontalPadding) * scaleX),
-  );
+  const left = Math.max(0, Math.floor((box.x - horizontalPadding) * scaleX));
   const right = Math.min(
     focused.info.width,
     Math.ceil((box.x + box.width + horizontalPadding) * scaleX),
@@ -324,8 +327,7 @@ function renderedScreenshotDelta({
     rightOutlineContrastingArea:
       rightOutlineContrastingPixels / renderedPixelsPerCssPixel,
     forcedOutlineEdgeArea: 1.5 * box.height,
-    requiredArea:
-      4 * (box.width + box.height) - (16 - 4 * Math.PI) * radius,
+    requiredArea: 4 * (box.width + box.height) - (16 - 4 * Math.PI) * radius,
     strongestContrast,
   };
 }
@@ -356,18 +358,15 @@ async function renderedFocusDelta(
   const unfocused = await decodedScreenshot(page);
   await focusWithKeyboard(page, target);
   await expect(target).toBeFocused();
-  expect(await target.evaluate((element) => element.matches(":focus-visible"))).toBe(
-    true,
-  );
+  expect(
+    await target.evaluate((element) => element.matches(":focus-visible")),
+  ).toBe(true);
   const focused = await decodedScreenshot(page);
 
   return renderedScreenshotDelta({ ...geometry, focused, unfocused });
 }
 
-async function renderedInitialFocusDelta(
-  page: Page,
-  target: Locator,
-) {
+async function renderedInitialFocusDelta(page: Page, target: Locator) {
   await expect(target).toBeVisible();
   await expect(target).toBeFocused();
   const geometry = await focusGeometry(page, target);
@@ -387,10 +386,12 @@ function expectRenderedFocusTarget(
   focus: Awaited<ReturnType<typeof renderedInitialFocusDelta>>,
   name: string,
 ) {
-  expect.soft(
-    focus.changedArea,
-    `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${focus.requiredArea.toFixed(0)} CSS px² required`,
-  ).toBeGreaterThanOrEqual(focus.requiredArea);
+  expect
+    .soft(
+      focus.changedArea,
+      `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${focus.requiredArea.toFixed(0)} CSS px² required`,
+    )
+    .toBeGreaterThanOrEqual(focus.requiredArea);
   expect(
     focus.contrastingArea,
     `${name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${focus.requiredArea.toFixed(0)} CSS px² required`,
@@ -412,10 +413,12 @@ function expectRenderedForcedReadingOutline(
   name: string,
 ) {
   const requiredArea = focus.forcedOutlineEdgeArea * 2;
-  expect.soft(
-    focus.changedArea,
-    `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${requiredArea.toFixed(0)} CSS px² required`,
-  ).toBeGreaterThanOrEqual(requiredArea);
+  expect
+    .soft(
+      focus.changedArea,
+      `${name} has ${focus.changedArea.toFixed(0)} CSS px² of rendered focus change; ${requiredArea.toFixed(0)} CSS px² required`,
+    )
+    .toBeGreaterThanOrEqual(requiredArea);
   expect(
     focus.contrastingArea,
     `${name} has ${focus.contrastingArea.toFixed(0)} CSS px² at 3:1 or better (strongest ${focus.strongestContrast.toFixed(3)}:1); ${requiredArea.toFixed(0)} CSS px² required`,
@@ -431,7 +434,9 @@ function expectRenderedForcedReadingOutline(
 }
 
 for (const scenario of focusScenarios) {
-  test(`keyboard focus stays visible on the ${scenario.name}`, async ({ page }) => {
+  test(`keyboard focus stays visible on the ${scenario.name}`, async ({
+    page,
+  }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize(scenario.viewport);
     const target = await scenario.prepare(page);
@@ -565,7 +570,7 @@ test("a threshold story line keeps its prompt visible in short-wide reading", as
 }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/stories/robo-tries/pages/6");
-  const text = page.getByText('Bob smiles. “I can try!”', { exact: true });
+  const text = page.getByText("Bob smiles. “I can try!”", { exact: true });
   const prompt = page.getByLabel("Say it: I can try!");
   const controls = page.getByRole("navigation", { name: "Story controls" });
 
@@ -625,7 +630,10 @@ for (const scenario of [
   test(`story page focus retains a complete real indicator in forced colors on the ${scenario.name}`, async ({
     page,
   }) => {
-    await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
+    await page.emulateMedia({
+      forcedColors: "active",
+      reducedMotion: "reduce",
+    });
     await page.setViewportSize(scenario.viewport);
     await page.goto(scenario.route);
     const text = page.getByText(scenario.text, { exact: true });
@@ -702,13 +710,6 @@ async function settleLessonShelf(page: Page) {
 }
 
 async function openSettledLessonShelf(page: Page) {
-  await page.route("**/api/lessons/my", async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({ lessons: [] }),
-      contentType: "application/json",
-      status: 200,
-    });
-  });
   await page.goto("/lessons");
   await expect(lessonShelfHeading(page)).toBeFocused();
   await expect(firstLessonLink(page)).toBeVisible();
@@ -757,7 +758,9 @@ async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
     account: await roundedLocatorBox(
       page.getByRole("button", { name: /^Profile for / }),
     ),
-    back: await roundedLocatorBox(page.getByRole("link", { name: "Back to home" })),
+    back: await roundedLocatorBox(
+      page.getByRole("link", { name: "Back to home" }),
+    ),
     firstLesson: await roundedLocatorBox(firstLessonLink(page)),
     heading: await roundedLocatorBox(heading),
     text,
@@ -820,13 +823,6 @@ for (const activation of ["pointer", "keyboard"] as const) {
   test(`lesson shelf ${activation} navigation adds no heading decoration`, async ({
     page,
   }) => {
-    await page.route("**/api/lessons/my", async (route) => {
-      await route.fulfill({
-        body: JSON.stringify({ lessons: [] }),
-        contentType: "application/json",
-        status: 200,
-      });
-    });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.setViewportSize({ height: 844, width: 390 });
     await page.goto("/");
@@ -861,41 +857,6 @@ test("lesson shelf heading remains outside the ordinary Tab sequence", async ({
   await expect(heading).not.toBeFocused();
 });
 
-test("lesson shelf heading focus survives My Lessons settlement", async ({
-  page,
-}) => {
-  let releaseLessons = () => {};
-  let reportRequest = () => {};
-  const lessonsGate = new Promise<void>((resolve) => {
-    releaseLessons = resolve;
-  });
-  const requestStarted = new Promise<void>((resolve) => {
-    reportRequest = resolve;
-  });
-  await page.route("**/api/lessons/my", async (route) => {
-    reportRequest();
-    await lessonsGate;
-    await route.fulfill({
-      body: JSON.stringify({ lessons: [] }),
-      contentType: "application/json",
-      status: 200,
-    });
-  });
-  await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto("/lessons");
-  await requestStarted;
-  const heading = lessonShelfHeading(page);
-  const status = page
-    .getByRole("region", { name: "Saved lesson status" })
-    .getByRole("status");
-  await expect(status).toHaveText("Loading My Lessons…");
-  await expect(heading).toBeFocused();
-
-  releaseLessons();
-  await expect(status).toHaveText("No made-for-you lessons yet.");
-  await expect(heading).toBeFocused();
-});
-
 test("lesson shelf arrival keeps a real localized indicator in forced colors", async ({
   page,
 }) => {
@@ -914,7 +875,10 @@ test("lesson shelf arrival keeps a real localized indicator in forced colors", a
   expect(indicator.outlineStyle).not.toBe("none");
   expect(indicator.outlineWidth).toBeGreaterThanOrEqual(2);
   const focus = await renderedInitialFocusDelta(page, heading);
-  expectRenderedForcedReadingOutline(focus, "forced-colors lesson shelf heading");
+  expectRenderedForcedReadingOutline(
+    focus,
+    "forced-colors lesson shelf heading",
+  );
 });
 
 async function profileHeadingGeometry(target: Locator) {
@@ -942,7 +906,9 @@ async function profileHeadingGeometry(target: Locator) {
     textRange.selectNodeContents(element);
     const text = textRange.getBoundingClientRect();
     return {
-      actions: Array.from(cardElement.querySelectorAll("button")).map(rectangle),
+      actions: Array.from(cardElement.querySelectorAll("button")).map(
+        rectangle,
+      ),
       art: rectangle(cardElement.querySelector("img")),
       card: rectangle(cardElement),
       cardInnerLeft: card.left + Number.parseFloat(cardStyle.borderLeftWidth),
@@ -954,7 +920,9 @@ async function profileHeadingGeometry(target: Locator) {
         x: heading.x,
         y: heading.y,
       },
-      lineCount: Math.round(heading.height / Number.parseFloat(style.lineHeight)),
+      lineCount: Math.round(
+        heading.height / Number.parseFloat(style.lineHeight),
+      ),
       mainScrollLeft: element.closest("main")?.scrollLeft ?? null,
       mainScrollTop: element.closest("main")?.scrollTop ?? null,
       text: {
@@ -1048,10 +1016,7 @@ test("profile steps add no heading decoration through pointer transitions", asyn
   await openProfileSetup(page);
 
   const setupHeading = profileStepHeading(page, "Answer 6 questions");
-  await expectProfileHeadingContract(
-    setupHeading,
-    "Answer 6 questions",
-  );
+  await expectProfileHeadingContract(setupHeading, "Answer 6 questions");
   await expectProfileFocusIsUndecorated(
     page,
     setupHeading,
@@ -1212,9 +1177,7 @@ test("profile reading targets stay out of the ordinary Tab sequence", async ({
   const next = page.getByRole("button", { exact: true, name: "Next" });
   await focusWithKeyboard(page, next);
   await page.keyboard.press("Enter");
-  await expect(
-    profileStepHeading(page, "Thank you!"),
-  ).toBeFocused();
+  await expect(profileStepHeading(page, "Thank you!")).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("button", { exact: true, name: "Next" }),
@@ -1311,50 +1274,6 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   ).toBe(unfocusedShadow);
 });
 
-test("retained pending focus stays visible", async ({ page }) => {
-  let retrying = false;
-  let releaseRetry = () => {};
-  let reportRetryStarted = () => {};
-  const retryGate = new Promise<void>((resolve) => {
-    releaseRetry = resolve;
-  });
-  const retryStarted = new Promise<void>((resolve) => {
-    reportRetryStarted = resolve;
-  });
-  await page.route("**/api/lessons/my", async (route) => {
-    if (!retrying) {
-      await route.abort("failed");
-      return;
-    }
-    reportRetryStarted();
-    await retryGate;
-    await route.fulfill({ json: { lessons: [] }, status: 200 });
-  });
-
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto("/lessons");
-  const retry = page
-    .getByRole("region", { name: "Saved lesson status" })
-    .getByRole("button", { name: "Try again" });
-  await expect(retry).toBeVisible();
-  await blurActiveElement(page);
-  await focusWithKeyboard(page, retry);
-
-  retrying = true;
-  await retry.press("Enter");
-  await retryStarted;
-  await expect(retry).toHaveAttribute("aria-disabled", "true");
-  await expect(retry).toBeFocused();
-  try {
-    const focus = await renderedFocusDelta(page, retry);
-    expect.soft(focus.changedArea).toBeGreaterThanOrEqual(focus.requiredArea);
-    expect(focus.contrastingArea).toBeGreaterThanOrEqual(focus.requiredArea);
-  } finally {
-    releaseRetry();
-  }
-});
-
 test("route reading focus stays visually quiet outside forced colors", async ({
   page,
 }) => {
@@ -1386,7 +1305,9 @@ test("route reading focus stays visually quiet outside forced colors", async ({
   expect(forcedColorsIndicator.outlineWidth).toBeGreaterThanOrEqual(2);
 });
 
-test("forced colors keeps a visible keyboard focus indicator", async ({ page }) => {
+test("forced colors keeps a visible keyboard focus indicator", async ({
+  page,
+}) => {
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize({ height: 568, width: 280 });
   await openProfileSetup(page);

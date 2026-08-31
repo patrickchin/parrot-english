@@ -26,11 +26,7 @@ type LessonMediaSnapshot = {
   uploads: Array<{
     attempt: number;
     lessonId: string;
-    outcome:
-      | "failed"
-      | "held"
-      | "recording_disabled"
-      | "saved";
+    outcome: "failed" | "held" | "recording_disabled" | "saved";
     sceneIndex: number;
     size: number;
     source: "parrot";
@@ -78,9 +74,7 @@ async function openParrotLesson(
   await mockSceneArtwork(page);
   await page.goto(
     `${parrotLessonPath}?parrotE2eLesson=${scenario}` +
-      (microphoneScenario
-        ? `&parrotE2eMicrophone=${microphoneScenario}`
-        : ""),
+      (microphoneScenario ? `&parrotE2eMicrophone=${microphoneScenario}` : ""),
   );
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
@@ -90,9 +84,7 @@ async function openParrotLesson(
 async function openSceneOneWithSceneTwoBehind(page: Page, scenario: string) {
   await mockSceneArtwork(page);
   const query = `?parrotE2eLesson=${scenario}`;
-  await page.goto(
-    `/lessons/parrot/01-peppas-high-ball/scenes/2${query}`,
-  );
+  await page.goto(`/lessons/parrot/01-peppas-high-ball/scenes/2${query}`);
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
@@ -144,10 +136,7 @@ async function mediaSnapshot(page: Page) {
 async function controlLessonMedia(
   page: Page,
   action:
-    | "failNextCue"
-    | "rejectNextUpload"
-    | "releaseNextCue"
-    | "resolveNextUpload",
+    "failNextCue" | "rejectNextUpload" | "releaseNextCue" | "resolveNextUpload",
 ) {
   const acted = await page.evaluate((nextAction) => {
     const controller = (
@@ -168,7 +157,8 @@ async function microphoneSnapshot(page: Page) {
         __parrotE2eLessonMicrophone?: LessonMicrophoneController;
       }
     ).__parrotE2eLessonMicrophone;
-    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    if (!controller)
+      throw new Error("Lesson microphone controller is missing.");
     return {
       pending: controller.pending,
       rejected: controller.rejected,
@@ -189,7 +179,8 @@ async function controlLessonMicrophone(
         __parrotE2eLessonMicrophone?: LessonMicrophoneController;
       }
     ).__parrotE2eLessonMicrophone;
-    if (!controller) throw new Error("Lesson microphone controller is missing.");
+    if (!controller)
+      throw new Error("Lesson microphone controller is missing.");
     return controller[nextAction]();
   }, action);
   expect(acted).toBe(true);
@@ -260,7 +251,9 @@ async function releaseDetachedArtworkDecodes(page: Page) {
   });
   expect(released).toBeGreaterThan(0);
   await expect
-    .poll(async () => (await artworkDecodeSnapshot(page)).resolvedDetachedDecodes)
+    .poll(
+      async () => (await artworkDecodeSnapshot(page)).resolvedDetachedDecodes,
+    )
     .toBeGreaterThanOrEqual(released);
   await page.evaluate(
     () =>
@@ -327,7 +320,9 @@ test("the decoded artwork gates the focused start action", async ({ page }) => {
 
   const loading = page.getByRole("button", { name: "Loading picture…" });
   await expect(loading).toBeDisabled();
-  await expect(page.getByRole("region", { name: "Lesson progress" })).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toHaveCount(0);
   releaseArtwork();
   const start = page.getByRole("button", { exact: true, name: "Let's go" });
   await expect(start).toBeVisible();
@@ -377,7 +372,9 @@ test("finishing a next-scene preload does not steal focus from lesson navigation
   await installArtworkDecodeController(page);
   await openParrotLesson(page, "no-consent");
   await expect
-    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .poll(
+      async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes,
+    )
     .toBeGreaterThan(0);
 
   const back = page.getByRole("button", { name: "Back to lesson list" });
@@ -395,11 +392,17 @@ test("finishing a next-scene preload does not restart active story audio", async
   await installArtworkDecodeController(page);
   await openParrotLesson(page, "held-story");
   await expect
-    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .poll(
+      async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes,
+    )
     .toBeGreaterThan(0);
   await startLesson(page);
-  await expect(page.getByRole("status", { name: "Peppa is speaking" })).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect(
+    page.getByRole("status", { name: "Peppa is speaking" }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
   const before = await mediaSnapshot(page);
 
   await releaseDetachedArtworkDecodes(page);
@@ -417,11 +420,15 @@ test("finishing a next-scene preload does not restart an active join-in cue", as
   await installArtworkDecodeController(page);
   await openParrotLesson(page, "held-cue-no-consent");
   await expect
-    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .poll(
+      async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes,
+    )
     .toBeGreaterThan(0);
   await startLesson(page);
   await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
   const before = await mediaSnapshot(page);
 
   await releaseDetachedArtworkDecodes(page);
@@ -439,7 +446,9 @@ test("a decoded next-scene preload never shows the loading picture layer during 
   await installArtworkDecodeController(page);
   await openParrotLesson(page, "held-cue-no-consent");
   await expect
-    .poll(async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes)
+    .poll(
+      async () => (await artworkDecodeSnapshot(page)).pendingDetachedDecodes,
+    )
     .toBeGreaterThan(0);
   await releaseDetachedArtworkDecodes(page);
   await page.evaluate(() => {
@@ -462,7 +471,9 @@ test("a decoded next-scene preload never shows the loading picture layer during 
   ).toHaveCount(0);
 });
 
-test("failed artwork can be retried before the story begins", async ({ page }) => {
+test("failed artwork can be retried before the story begins", async ({
+  page,
+}) => {
   let requests = 0;
   await page.route("https://media.parrotbook.com/**", async (route) => {
     requests += 1;
@@ -474,12 +485,16 @@ test("failed artwork can be retried before the story begins", async ({ page }) =
   });
   await page.goto(`${parrotLessonPath}?parrotE2eLesson=no-consent`);
 
-  await expect(page.getByText("No picture yet.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("No picture yet.", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Try loading picture again" }).click();
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
-  await expect(page.getByRole("region", { name: "Lesson progress" })).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Lesson progress" }),
+  ).toHaveCount(0);
 });
 
 test("stalled artwork becomes retryable without exposing scene controls", async ({
@@ -498,7 +513,9 @@ test("stalled artwork becomes retryable without exposing scene controls", async 
     waitUntil: "domcontentloaded",
   });
 
-  await expect(page.getByRole("button", { name: "Loading picture…" })).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Loading picture…" }),
+  ).toBeDisabled();
   await page.clock.fastForward(8_001);
   await expect(
     page.getByRole("alert").filter({ hasText: "No picture yet." }),
@@ -527,7 +544,9 @@ test("ordinary sound failure keeps its existing retry and skip recovery", async 
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Try sound" })).toBeVisible();
   await page.getByRole("button", { name: "Skip sound" }).click();
-  await expect(page.getByRole("status", { name: "Dolly is speaking" })).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Dolly is speaking" }),
+  ).toBeVisible();
 });
 
 test("consent preflight leads to a fresh capture for every automatic beat", async ({
@@ -565,16 +584,18 @@ test("consent preflight leads to a fresh capture for every automatic beat", asyn
   expect(new Set(snapshot.recorderStarts.map(({ id }) => id)).size).toBe(
     snapshot.recorderStarts.length,
   );
-  expect(snapshot.cues.slice(0, 2).map(({ kind, volume }) => ({ kind, volume }))).toEqual([
+  expect(
+    snapshot.cues.slice(0, 2).map(({ kind, volume }) => ({ kind, volume })),
+  ).toEqual([
     { kind: "static", volume: 0.28 },
     { kind: "static", volume: 0.28 },
   ]);
   expect(snapshot.recorderStarts[0].startedAt).toBeLessThanOrEqual(
     snapshot.cues[0].startedAt,
   );
-  expect(snapshot.recorderStops[0].stoppedAt - snapshot.cues[0].endedAt!).toBeGreaterThanOrEqual(
-    240,
-  );
+  expect(
+    snapshot.recorderStops[0].stoppedAt - snapshot.cues[0].endedAt!,
+  ).toBeGreaterThanOrEqual(240);
   expect(snapshot.uploads.slice(0, 2)).toMatchObject([
     {
       lessonId: "01-peppas-high-ball",
@@ -598,6 +619,49 @@ test("consent preflight leads to a fresh capture for every automatic beat", asyn
   await expect(
     page.getByText(/checking your words|tap to talk|skip speaking|great job/i),
   ).toHaveCount(0);
+});
+
+test("recording fixture uses the fixed built-in source without a revision", async ({
+  page,
+}) => {
+  await page.goto(`${parrotLessonPath}?parrotE2eLesson=recording`);
+  await expect(
+    page.getByRole("button", { exact: true, name: "Let's go" }),
+  ).toBeVisible();
+
+  const result = await page.evaluate(async () => {
+    const response = await fetch(
+      "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
+      {
+        body: new Blob(["fixture"], { type: "audio/webm" }),
+        headers: {
+          "Content-Type": "audio/webm",
+          "X-Parrot-Expected-Learner-Profile": "e2e-learner",
+        },
+        method: "PUT",
+      },
+    );
+    const media = (
+      window as Window & {
+        __parrotE2eLessonMedia?: LessonMediaController;
+      }
+    ).__parrotE2eLessonMedia;
+    if (!media) throw new Error("Lesson media controller is missing.");
+    const upload = media.snapshot().uploads.at(-1);
+    return {
+      body: await response.json(),
+      hasRevision: upload ? Object.hasOwn(upload, "revision") : null,
+      source: upload?.source ?? null,
+      status: response.status,
+    };
+  });
+
+  expect(result).toEqual({
+    body: { recordedAt: "2026-08-26T08:00:00.000Z" },
+    hasRevision: false,
+    source: "parrot",
+    status: 201,
+  });
 });
 
 test("missing consent makes no microphone request and keeps the same cue", async ({
@@ -624,7 +688,9 @@ test("an unreadable consent state fails closed without touching the microphone",
   expect((await mediaSnapshot(page)).getUserMediaCalls).toBe(0);
 });
 
-test("a malformed successful consent response still fails closed", async ({ page }) => {
+test("a malformed successful consent response still fails closed", async ({
+  page,
+}) => {
   await openParrotLesson(page, "malformed-consent");
   await startLesson(page);
 
@@ -645,12 +711,16 @@ test("denied preflight shows one calm note and continues cue-only", async ({
   await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
   const help = page.getByRole("status", { name: "Speaking help" });
   await expect(
-    help.getByText("The microphone is unavailable, but the story will keep going."),
+    help.getByText(
+      "The microphone is unavailable, but the story will keep going.",
+    ),
   ).toBeVisible();
   await expect(
     page
       .getByRole("alert")
-      .getByText("The microphone is unavailable, but the story will keep going."),
+      .getByText(
+        "The microphone is unavailable, but the story will keep going.",
+      ),
   ).toHaveCount(0);
   await controlLessonMedia(page, "releaseNextCue");
   await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
@@ -669,14 +739,18 @@ test("a later beat microphone failure disables only future captures", async ({
     .poll(async () => (await mediaSnapshot(page)).uploads.length)
     .toBe(1);
   await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
-  await expect.poll(async () => (await microphoneSnapshot(page)).pending).toBe(1);
+  await expect
+    .poll(async () => (await microphoneSnapshot(page)).pending)
+    .toBe(1);
   const back = page.getByRole("button", { name: "Back to lesson list" });
   await back.focus();
   await controlLessonMicrophone(page, "rejectNext");
   await expect(
     page
       .getByRole("status", { name: "Speaking help" })
-      .getByText("The microphone is unavailable, but the story will keep going."),
+      .getByText(
+        "The microphone is unavailable, but the story will keep going.",
+      ),
   ).toBeVisible();
   await expect(back).toBeFocused();
   await expect(joinInPrompt(page, "Can you help me, please?")).toBeVisible();
@@ -693,19 +767,32 @@ for (const outcome of ["rejectNext", "resolveNext"] as const) {
   }) => {
     await openSceneOneWithSceneTwoBehind(page, "held-preflight");
     await startLesson(page);
-    await expect.poll(async () => (await microphoneSnapshot(page)).pending).toBe(1);
+    await expect
+      .poll(async () => (await microphoneSnapshot(page)).pending)
+      .toBe(1);
 
     await page.goBack();
     await expect(page).toHaveURL(/\/scenes\/2/);
-    const nextStart = page.getByRole("button", { exact: true, name: "Let's go" });
+    const nextStart = page.getByRole("button", {
+      exact: true,
+      name: "Let's go",
+    });
     await expect(nextStart).toBeFocused();
     await nextStart.click();
-    await expect.poll(async () => (await mediaSnapshot(page)).getUserMediaCalls).toBe(2);
-    await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+    await expect
+      .poll(async () => (await mediaSnapshot(page)).getUserMediaCalls)
+      .toBe(2);
+    await expect
+      .poll(async () => (await mediaSnapshot(page)).pendingCues)
+      .toBe(1);
     await controlLessonMicrophone(page, outcome);
-    await expect.poll(async () => (await microphoneSnapshot(page)).pending).toBe(0);
+    await expect
+      .poll(async () => (await microphoneSnapshot(page)).pending)
+      .toBe(0);
 
-    await expect(page.getByRole("status", { name: "Speaking help" })).toHaveCount(0);
+    await expect(
+      page.getByRole("status", { name: "Speaking help" }),
+    ).toHaveCount(0);
     await expect(page).toHaveURL(/\/scenes\/2/);
     await controlLessonMedia(page, "releaseNextCue");
     await expect
@@ -729,7 +816,9 @@ test("cue failure discards partial capture, holds the phrase for 700ms, and adva
   await page.clock.runFor(450);
   const prompt = joinInPrompt(page, "It is up high!");
   await expect(prompt).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
 
   await page.clock.pauseAt(clockStartedAt + 10_000);
   await controlLessonMedia(page, "failNextCue");
@@ -751,11 +840,17 @@ test("pausing a join-in cancels it and resume starts the same beat cleanly", asy
   await openParrotLesson(page, "held-cue");
   await startLesson(page);
   await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
 
   await page.getByRole("button", { name: "Pause lesson" }).click();
-  await expect(page.getByRole("button", { name: "Resume lesson" })).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
+  await expect(
+    page.getByRole("button", { name: "Resume lesson" }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).cueCancellations)
+    .toBe(1);
   expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 
   await page.getByRole("button", { name: "Resume lesson" }).click();
@@ -763,7 +858,9 @@ test("pausing a join-in cancels it and resume starts the same beat cleanly", asy
     .poll(async () => (await mediaSnapshot(page)).recorderStarts.length)
     .toBe(2);
   await controlLessonMedia(page, "releaseNextCue");
-  await expect.poll(async () => (await mediaSnapshot(page)).uploads.length).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).uploads.length)
+    .toBe(1);
   expect((await mediaSnapshot(page)).uploads[0]).toMatchObject({
     sceneIndex: 0,
     stepIndex: 2,
@@ -776,17 +873,25 @@ test("next and previous navigation cancel only the unfinished visible capture", 
   await openParrotLesson(page, "held-cue");
   await startLesson(page);
   await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
 
   await page.getByRole("button", { name: "Next scene" }).click();
   await expect(page).toHaveURL(/\/scenes\/2/);
-  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).cueCancellations)
+    .toBe(1);
   await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
 
   await page.getByRole("button", { name: "Previous scene" }).click();
   await expect(page).toHaveURL(/\/scenes\/1/);
-  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(2);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).cueCancellations)
+    .toBe(2);
   expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 });
 
@@ -796,11 +901,15 @@ test("Back cancels an unfinished cue without creating a recording", async ({
   await openParrotLesson(page, "held-cue");
   await startLesson(page);
   await expect(joinInPrompt(page, "It is up high!")).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
 
   await page.getByRole("button", { name: "Back to lesson list" }).click();
   await expect(page).toHaveURL(/\/lessons$/);
-  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).cueCancellations)
+    .toBe(1);
   expect((await mediaSnapshot(page)).uploads).toHaveLength(0);
 });
 
@@ -813,25 +922,37 @@ test("history POP cancels the current beat and restores an idle routed scene", a
   await page.getByRole("button", { name: "Next scene" }).click();
   await expect(page).toHaveURL(/\/scenes\/2/);
   await expect(joinInPrompt(page, "Oh! I can't reach it.")).toBeVisible();
-  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(1);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).pendingCues)
+    .toBe(1);
 
   await page.goBack();
   await expect(page).toHaveURL(/\/scenes\/1/);
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeFocused();
-  await expect.poll(async () => (await mediaSnapshot(page)).cueCancellations).toBe(2);
+  await expect
+    .poll(async () => (await mediaSnapshot(page)).cueCancellations)
+    .toBe(2);
 });
 
-test("ordinary story audio still pauses and resumes in place", async ({ page }) => {
+test("ordinary story audio still pauses and resumes in place", async ({
+  page,
+}) => {
   await openParrotLesson(page, "held-story");
   await startLesson(page);
-  await expect(page.getByRole("status", { name: "Peppa is speaking" })).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Peppa is speaking" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Pause lesson" }).click();
-  await expect(page.getByRole("button", { name: "Resume lesson" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Resume lesson" }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Resume lesson" }).click();
   await controlLessonMedia(page, "releaseNextCue");
-  await expect(page.getByRole("status", { name: "Dolly is speaking" })).toBeVisible();
+  await expect(
+    page.getByRole("status", { name: "Dolly is speaking" }),
+  ).toBeVisible();
 });
 
 test("a server recording-disabled result prevents later microphone capture", async ({

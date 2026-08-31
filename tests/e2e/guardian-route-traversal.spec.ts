@@ -16,7 +16,10 @@ function scenarioUrl(
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-async function expectActiveLearner(page: Page, learnerProfileId = "learner-mia") {
+async function expectActiveLearner(
+  page: Page,
+  learnerProfileId = "learner-mia",
+) {
   await expect
     .poll(() =>
       page.evaluate(
@@ -75,11 +78,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
       heading: "Learner profiles",
     },
     {
-      action: "Manage lessons",
-      description: "Create or delete custom lessons for the learner.",
-      heading: "My Lessons",
-    },
-    {
       action: "Open story settings",
       description: "Choose the story level and personalized story options.",
       heading: "Story settings",
@@ -100,13 +98,14 @@ test("every Guardian dashboard card associates its copy and traverses through it
     const card = dashboardCard(page, heading);
     await expect(card, `${heading} card`).toHaveCount(1);
     await expect(card).toContainText(description);
-    await expect(card.getByRole("link", { exact: true, name: action })).toBeVisible();
+    await expect(
+      card.getByRole("link", { exact: true, name: action }),
+    ).toBeVisible();
   }
 
   const cardColors = await Promise.all(
     [
       "Learner profiles",
-      "My Lessons",
       "Story settings",
       "Voice dubbing",
       "Account & privacy",
@@ -121,7 +120,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
   const [sectionHeadingSize, cardHeadingSize] = await Promise.all(
     [
       page.getByRole("heading", { name: "Learning & content" }),
-      page.getByRole("heading", { name: "My Lessons" }),
+      page.getByRole("heading", { name: "Learner profiles" }),
     ].map((heading) =>
       heading.evaluate((element) =>
         Number.parseFloat(getComputedStyle(element).fontSize),
@@ -135,13 +134,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
     "Manage learners",
     /\/guardian\/learners$/,
     "Manage learners",
-    "Back to guardian dashboard",
-  );
-  await traverseDashboardAction(
-    page,
-    "Manage lessons",
-    /\/guardian\/lessons\?learnerProfileId=learner-mia$/,
-    "My Lessons",
     "Back to guardian dashboard",
   );
   await traverseDashboardAction(
@@ -207,9 +199,7 @@ test("the retired Guardian profile route replaces history with Manage learners",
   page,
 }) => {
   await page.goto(scenarioUrl("/guardian"));
-  await page.goto(
-    scenarioUrl("/guardian/profile?returnTo=%2Fguardian"),
-  );
+  await page.goto(scenarioUrl("/guardian/profile?returnTo=%2Fguardian"));
   await expect(page).toHaveURL("/guardian/learners");
   await expect(
     page.getByRole("heading", { exact: true, name: "Manage learners" }),
@@ -222,22 +212,12 @@ test("the retired Guardian profile route replaces history with Manage learners",
   ).toBeVisible();
 });
 
-test("the removed lesson edit URL falls back to the guardian dashboard", async ({
-  page,
-}) => {
-  await page.goto(scenarioUrl("/lessons/my/old-lesson/edit"));
-  await expect(page).toHaveURL("/guardian");
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
-  ).toBeVisible();
-});
-
 test("setting routes normalize only a missing target and reject blank duplicate or unknown targets", async ({
   page,
 }) => {
-  await page.goto(scenarioUrl("/guardian/lessons"));
+  await page.goto(scenarioUrl("/guardian/stories"));
   await expect(page).toHaveURL(
-    /\/guardian\/lessons\?.*learnerProfileId=learner-mia/,
+    /\/guardian\/stories\?.*learnerProfileId=learner-mia/,
   );
   await expect(
     page.getByText("Editing settings for Mia", { exact: true }),
@@ -248,18 +228,14 @@ test("setting routes normalize only a missing target and reject blank duplicate 
   ).toBeVisible();
 
   for (const path of [
-    "/guardian/lessons?learnerProfileId=",
     "/guardian/stories?learnerProfileId=learner-mia&learnerProfileId=learner-noah",
     "/guardian/dubbing?learnerProfileId=unknown-learner",
   ]) {
     await page.goto(scenarioUrl(path));
     await expect(
-      page
-        .getByRole("main")
-        .getByRole("alert")
-        .filter({
-          hasText: "The learner target in this page link could not be found.",
-        }),
+      page.getByRole("main").getByRole("alert").filter({
+        hasText: "The learner target in this page link could not be found.",
+      }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { exact: true, name: "Manage learners" }),
@@ -310,20 +286,10 @@ test("learner routes recover progress, invalid story and lesson details, and wil
   await expect(
     page.getByRole("region", { exact: true, name: "Story reader" }),
   ).toBeVisible();
-  await page.getByRole("link", { exact: true, name: "Back to stories" }).click();
+  await page
+    .getByRole("link", { exact: true, name: "Back to stories" })
+    .click();
   await expect(page).toHaveURL("/stories?level=first-words");
-
-  await page.goto(
-    scenarioUrl("/lessons/my/not-a-lesson", "multiple", "learner"),
-  );
-  await expect(
-    page.getByRole("heading", {
-      exact: true,
-      name: "We couldn’t open that lesson",
-    }),
-  ).toBeVisible();
-  await page.getByRole("link", { exact: true, name: "Back to lessons" }).click();
-  await expect(page).toHaveURL("/lessons");
 
   await page.goto(scenarioUrl("/not-a-route", "multiple", "learner"));
   await expect(page).toHaveURL("/");

@@ -10,7 +10,7 @@ List-first, scene-based English speaking practice for young learners.
 - Cloudflare Worker TypeScript REST API
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
-- OpenAI lesson generation plus Groq speech evaluation, onboarding transcription, and answer enrichment
+- Groq speech evaluation, onboarding transcription, and answer enrichment
 - ElevenLabs saved prompt audio and runtime onboarding acknowledgments
 - LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
@@ -77,8 +77,8 @@ chooses one while switching to learner mode. Learner mode contains Talk to
 Peppa, lesson playback, stories at the
 selected learner's stored level, and consented recording activities. Its
 profile dropdown contains only the password-gated grown-up gateway; it does not
-expose profile selection or editing, consent, AI/data, sign-out, deletion,
-lesson authoring, or story-art controls.
+expose profile selection or editing, consent, AI/data, sign-out, deletion, or
+story-art controls.
 
 Selecting Guardian asks for the current account password. The Worker unlocks
 only that Better Auth session for a fixed 15 minutes; refreshes may resume it,
@@ -86,11 +86,10 @@ but activity does not extend it. `/guardian` is the management dashboard. Its
 `Switch to learner` chooser is the only UI that changes the session's learner
 selection. `/guardian/learners` owns learner creation and deletion, while
 `/guardian/learners/:learnerId` owns page-local details and lesson-recording
-consent. `/guardian/lessons` owns custom lesson creation and deletion,
-`/guardian/stories` owns story level and optional personalized art, and
+consent. `/guardian/stories` owns story level and optional personalized art, and
 `/guardian/dubbing` owns dubbing consent and cleanup. The legacy profile and
-lesson-authoring URLs use the same Guardian boundary. Manage learners never
-changes learner mode. Switching selects the named learner, removes the unlock,
+Guardian URLs use the same boundary. Manage learners never changes learner
+mode. Switching selects the named learner, removes the unlock,
 then opens the requested learner route. Individual deletion requires
 confirmation, rejects the final learner, keeps failed cleanup retryable, and
 never auto-selects a sibling after deleting the active learner.
@@ -99,10 +98,9 @@ The same-origin `GET|POST|DELETE /api/guardian-access` endpoint reports,
 creates, or removes the current session unlock. D1 table
 `guardian_session_unlock` stores its fixed expiry, while
 `learner_profile.story_level` stores the selected shelf level. The Worker
-returns `guardian_required` for protected profile, lesson-authoring,
-profile-edit conversation, and personalized-art requests made in learner mode.
-Owner-scoped reads still let learners play saved custom lessons and view saved
-story art.
+returns `guardian_required` for protected profile, profile-edit conversation,
+and personalized-art requests made in learner mode. Owner-scoped reads still
+let learners view saved story art.
 
 ## Lesson Content
 
@@ -120,9 +118,6 @@ Lesson JSON deliberately contains no image or audio filenames. Scripted
 character IDs, background IDs, and the six supported emotes are resolved
 through the global catalogs in `content/catalogs`. Built-in lessons resolve
 saved audio by speaker plus exact dialogue text in `lib/static-audio.js`.
-Authenticated My Lessons are stored in D1 and use the browser's on-device
-English speech synthesis, so generated and pasted scripts can play without
-creating audio assets.
 
 Character subjects must be opaque against a transparent sprite background.
 Partial alpha is reserved for antialiased subject edges.
@@ -135,17 +130,13 @@ for bucket setup, staging, dry-run publishing, verification, and rollback.
 ## Environment
 
 Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation and profile
-enrichment. Set `OPENAI_API_KEY` for Create Lesson script generation. Keep real
-keys out of source control. Optional evaluation limits are:
+enrichment. Keep real keys out of source control. Optional evaluation limits
+are:
 
 ```bash
 EVALUATE_RATE_LIMIT_MAX=8
 EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
 ```
-
-Create Lesson uses OpenAI `gpt-5.6-luna` and is protected by the authenticated
-`LESSON_GENERATION_RATE_LIMITER` binding. Pasted lesson scripts are editable,
-validated, and stored directly without an AI request.
 
 Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
 acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic
@@ -213,8 +204,7 @@ Actions repository variable `TURNSTILE_SITE_KEY` before deploying.
 Set `ELEVENLABS_API_KEY` to generate missing saved lesson audio. Use
 `--only=<audio-id>` to avoid spending credits on unrelated lines. Built-in
 saved audio must be generated with ElevenLabs; do not substitute local or macOS
-system speech for missing built-in assets. My Lessons deliberately use browser
-on-device speech and do not require `ELEVENLABS_API_KEY`.
+system speech for missing built-in assets.
 
 The default generator uses ElevenLabs `eleven_v3` and selects a voice from the
 manifest speaker:

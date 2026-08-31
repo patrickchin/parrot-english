@@ -56,12 +56,6 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to lesson list", role: "button" },
   },
   {
-    name: "custom lesson creator",
-    mode: "guardian",
-    path: "/lessons/my/create",
-    control: { name: "Back to lessons", role: "link" },
-  },
-  {
     name: "learner details",
     mode: "guardian",
     path: "/guardian/learners/e2e-learner",
@@ -340,8 +334,12 @@ for (const mode of ["sign-in", "sign-up"] as const) {
       await guest.scrollIntoViewIfNeeded();
       await expectInsideViewport(guest, viewport);
       if (sizing.scrollHeight > sizing.clientHeight) {
-        await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
-        expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+        await main.evaluate((element) =>
+          element.scrollTo(0, element.scrollHeight),
+        );
+        expect(
+          await main.evaluate((element) => element.scrollTop),
+        ).toBeGreaterThan(0);
       }
     });
   }
@@ -418,7 +416,9 @@ for (const route of routes) {
     }) => {
       await page.setViewportSize(viewport);
       const mode = route.mode ?? "learner";
-      await page.goto(mode === "guardian" ? guardianPath(route.path) : route.path);
+      await page.goto(
+        mode === "guardian" ? guardianPath(route.path) : route.path,
+      );
 
       const account = page.getByRole("complementary", {
         name: "Account",
@@ -488,7 +488,7 @@ test("arbitrary guardian identity cannot cover the compact Back action", async (
     identity = nextIdentity;
     for (const viewport of compactViewports) {
       await page.setViewportSize(viewport);
-      await page.goto(guardianPath("/guardian/lessons"));
+      await page.goto(guardianPath("/guardian/stories"));
 
       const account = page.getByRole("button", {
         name: /^Profile for .+, guardian mode$/,
@@ -563,9 +563,9 @@ test("guardian profile keeps its identity in the account trigger at every header
     "Account & privacy",
     "Sign out",
   ]);
-  await expect(
-    page.getByRole("group", { name: "Active profile" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Active profile" })).toHaveCount(
+    0,
+  );
 
   await page.keyboard.press("Escape");
   await expect(account).toBeFocused();
@@ -732,8 +732,8 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   expect(retryBox.height).toBeGreaterThanOrEqual(44);
   expect(retryBox.width).toBeGreaterThanOrEqual(44);
   expect(
-    await account.evaluate(
-      (element) => element.nextElementSibling?.textContent?.trim(),
+    await account.evaluate((element) =>
+      element.nextElementSibling?.textContent?.trim(),
     ),
   ).toBe("Sign out again");
   await page.keyboard.press("Tab");
@@ -758,7 +758,8 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   expect(
     await alert.evaluate(
       (element) =>
-        (window as Window & { signOutAlert?: Element }).signOutAlert === element,
+        (window as Window & { signOutAlert?: Element }).signOutAlert ===
+        element,
     ),
   ).toBe(true);
   await expect(retry).toBeVisible();
@@ -784,7 +785,8 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   expect(
     await alert.evaluate(
       (element) =>
-        (window as Window & { signOutAlert?: Element }).signOutAlert === element,
+        (window as Window & { signOutAlert?: Element }).signOutAlert ===
+        element,
     ),
   ).toBe(true);
 
@@ -797,7 +799,8 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   expect(
     await alert.evaluate(
       (element) =>
-        (window as Window & { signOutAlert?: Element }).signOutAlert === element,
+        (window as Window & { signOutAlert?: Element }).signOutAlert ===
+        element,
     ),
   ).toBe(true);
   await expect(panel.getByRole("alert")).toHaveCount(0);
@@ -822,9 +825,7 @@ for (const viewport of [
   test(`sign-out recovery stays clear with text spacing on a ${viewport.name}`, async ({
     page,
   }) => {
-    await page.route("**/api/auth/sign-out", (route) =>
-      route.abort("failed"),
-    );
+    await page.route("**/api/auth/sign-out", (route) => route.abort("failed"));
     await page.setViewportSize(viewport);
     await page.goto(guardianPath("/guardian"));
     await page.addStyleTag({
@@ -963,7 +964,9 @@ test("wide pending sign out keeps its established 180px frame", async ({
   ).toBeVisible();
 });
 
-test("the learner profile opens a locked grown-up access gateway", async ({ page }) => {
+test("the learner profile opens a locked grown-up access gateway", async ({
+  page,
+}) => {
   await page.goto("/lessons");
 
   const accountMenu = page.getByRole("button", {
@@ -1114,15 +1117,15 @@ test("unlocking guardian mode reaches learner details through Manage learners", 
   await page
     .getByRole("button", { name: "Profile for Mia, learner mode" })
     .click();
-  await page
-    .getByRole("menuitem", { name: /Grown-up access/ })
-    .click();
+  await page.getByRole("menuitem", { name: /Grown-up access/ }).click();
 
   const dialog = page.getByRole("dialog", { name: "Unlock guardian mode" });
   await dialog.getByLabel("Password").fill("e2e-guardian-password");
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
 
-  await page.getByRole("link", { exact: true, name: "Manage learners" }).click();
+  await page
+    .getByRole("link", { exact: true, name: "Manage learners" })
+    .click();
   await page
     .getByRole("button", { exact: true, name: "Edit Mia's profile" })
     .click();
@@ -1250,26 +1253,22 @@ test("Account & privacy explains caregiver facts before optional technical detai
   await expect(
     accountPage.getByRole("heading", { name: "Conversation agent" }),
   ).toBeVisible();
-  await expect(
-    accountPage.getByText("e2e-web", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    accountPage.getByText("e2e-api", { exact: true }),
-  ).toBeVisible();
+  await expect(accountPage.getByText("e2e-web", { exact: true })).toBeVisible();
+  await expect(accountPage.getByText("e2e-api", { exact: true })).toBeVisible();
   await expect(
     accountPage.getByText("e2e-agent", { exact: true }),
   ).toBeVisible();
   await expect(
     accountPage.getByText("Worker deployment e2e-deployment"),
   ).toBeVisible();
-  await expect(accountPage.getByText("Lesson script LLM")).toBeVisible();
-  await expect(accountPage.getByText("openai/gpt-5.6-luna")).toBeVisible();
+  await expect(accountPage.getByText("Lesson script LLM")).toHaveCount(0);
+  await expect(
+    accountPage.getByText("openai/gpt-5.6-luna"),
+  ).toHaveCount(0);
   await expect(accountPage.getByText("Realtime voice model")).toBeVisible();
   await expect(accountPage.getByText("gpt-realtime-2.1-mini")).toBeVisible();
   await expect(accountPage.getByText("Input transcription")).toBeVisible();
-  await expect(
-    accountPage.getByText("gpt-4o-mini-transcribe"),
-  ).toBeVisible();
+  await expect(accountPage.getByText("gpt-4o-mini-transcribe")).toBeVisible();
 
   await page.getByRole("link", { name: "Back to Guardian dashboard" }).click();
   await expect(page).toHaveURL("/guardian");

@@ -15,7 +15,6 @@ Browser
        -> active-learner resolver -> owned learner identity
             -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
             -> /api/conversations/* -> LiveKit -> D1
-            -> /api/lessons/my/* -> OpenAI -> D1
             -> /api/lesson-recordings/* -> learner consent + private R2 slots
             -> /api/stories/*/personalized-art -> Workers AI + D1 + private R2
             -> /api/dubs/five-little-ducks-v2/* -> D1 consent + private R2 clip slots
@@ -41,8 +40,7 @@ prototype build entry in the shipped product.
   active profile ID, aborts stale work, clears learner-specific client state,
   and reloads before the new learner's routes render.
 - `src/conversation` owns the learner-controlled LiveKit conversation surface.
-- `src/lessons` owns the learner catalog/player and guardian-only custom lesson
-  manager, creation, and deletion.
+- `src/lessons` owns the built-in learner catalog and player.
 - `src/stories` owns the stored-level learner shelf/reader, its always-visible
   public Long stories section, and Guardian-only story settings and
   personalized-art controls. Long stories use the main authenticated routes;
@@ -64,13 +62,12 @@ prototype build entry in the shipped product.
 - `src/shared` owns reusable controls and cards.
 
 Top-level learner navigation stays small. Management starts at `/guardian`,
-with learner CRUD at `/guardian/learners`, custom lesson authoring at
-`/guardian/lessons`, story controls at `/guardian/stories`, and dubbing
-consent/deletion at `/guardian/dubbing`. Learner selection occurs only inside
-the shared Guardian-to-learner chooser. Guardian return targets are validated
-against known Guardian routes; invalid targets fall back to `/guardian`.
-Wildcard routing is mode-aware: Guardian mode returns to `/guardian`, while
-learner mode returns to `/`.
+with learner CRUD at `/guardian/learners`, story controls at `/guardian/stories`,
+and dubbing consent/deletion at `/guardian/dubbing`. Learner selection occurs
+only inside the shared Guardian-to-learner chooser. Guardian return targets are
+validated against known Guardian routes; invalid targets fall back to
+`/guardian`. Wildcard routing is mode-aware: Guardian mode returns to
+`/guardian`, while learner mode returns to `/`.
 
 ## Worker Responsibilities
 
@@ -90,9 +87,8 @@ safe; two or more owned learners without a selection return
 `409 learner_selection_required`.
 
 The Worker exposes authentication, Guardian access, the Guardian learner
-roster, learner profile, conversations, My Lessons, lesson join-in recordings,
-story art, build information, speech evaluation, and Five Little Ducks
-dubbing. The
+roster, learner profile, conversations, lesson join-in recordings, story art,
+build information, speech evaluation, and Five Little Ducks dubbing. The
 authenticated `/api/dubs/five-little-ducks-v2/*` family owns consent-aware
 status, raw clip upload, private clip streaming, durable consent grant, and
 whole-dub revocation/deletion. Static assets are the final fallback.
@@ -130,9 +126,8 @@ re-prove account ownership; malformed, missing, and foreign IDs share a generic
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
 before roster reads/mutations, Guardian profile reads/updates, profile
-preference changes, custom-lesson creation/generation/deletion,
-personalized-art mutations, dubbing consent grant, and whole-dub deletion when
-the current session lacks a live unlock.
+preference changes, personalized-art mutations, dubbing consent grant, and
+whole-dub deletion when the current session lacks a live unlock.
 Conversation start is purpose-aware: profile edits
 always require the current session's live unlock, while onboarding remains
 learner-safe only until the owner profile is completed or bypassed. The
@@ -163,12 +158,11 @@ One `learner_profile` row per account is marked `legacy_storage_owner`; it owns
 all migrated account-level media compatibility paths. Added learners are
 nonlegacy. `learner_profile.story_level` stores one of the four supported IDs
 and defaults to `first-words`. Profile-specific tables store onboarding bypass,
-dub consent, and story-art generation leases. Lessons, conversations, and
-personalized art retain `auth_user_id` for account deletion and carry
-`learner_profile_id` for sibling isolation. Compatibility columns remain
-nullable until a later contract migration, but only the marked legacy learner
-may read a null-profile row. New writes always carry the resolved profile ID;
-a null-profile legacy lesson remains read-only, while a legacy art row is
+dub consent, and story-art generation leases. Conversations and personalized
+art retain `auth_user_id` for account deletion and carry `learner_profile_id`
+for sibling isolation. Compatibility columns remain nullable until a later
+contract migration, but only the marked legacy learner may read a null-profile
+row. New writes always carry the resolved profile ID; a legacy art row is
 attached to that learner before mutation.
 
 ## Durable and Transient State
@@ -206,8 +200,6 @@ header to select a profile or storage namespace.
 ├── /talk-to-peppa
 ├── /lessons
 │   ├── /lessons/parrot/:lessonId/scenes/:sceneNumber
-│   ├── /lessons/my/:lessonId/scenes/:sceneNumber
-│   ├── /lessons/my/create                       (guardian)
 ├── /stories
 │   └── /stories/:storyId/pages/:pageNumber
 ├── /dubs/five-little-ducks
@@ -217,7 +209,6 @@ header to select a profile or storage namespace.
 │   ├── /guardian/account
 │   ├── /guardian/profile
 │   ├── /guardian/profile/setup
-│   ├── /guardian/lessons
 │   ├── /guardian/stories
 │   └── /guardian/dubbing
 ├── /profile                         (compatibility alias; guardian after setup)
@@ -227,38 +218,31 @@ header to select a profile or storage namespace.
 
 Guardian profile return targets accept only known Guardian management routes.
 Missing, malformed, cross-origin, learner-mode, self-referential, and unknown
-targets resolve to `/guardian`. Lesson authoring Back and Save actions resolve
-to `/guardian/lessons`. A Guardian who reaches a learner route can return to the
-dashboard without locking or explicitly lock and enter learner mode, so no
-fallback strands an unlocked session at a learner-only screen.
+targets resolve to `/guardian`. A Guardian who reaches a learner route can
+return to the dashboard without locking or explicitly lock and enter learner
+mode, so no fallback strands an unlocked session at a learner-only screen.
 
 ## Ownership Boundaries
 
-| State or record | Authoritative scope |
-| --- | --- |
-| Better Auth account | Guardian account |
-| Better Auth session and Guardian unlock | Account session |
-| Active learner selection | Account session plus owned learner |
-| Learner profile, story level, onboarding progress | Learner profile |
-| Custom lessons | Learner profile |
-| Conversation session | Learner profile fixed at creation |
-| Conversation turns and facts | Inherit the conversation's stored learner |
-| Personalized art and generation lease | Learner profile plus story |
-| Dubbing consent and clip namespace | Learner profile |
-| Lesson-recording consent and clip namespace | Learner profile |
-| Rate limits | Guardian account plus existing IP dimensions |
-| Account-deletion tombstone | Guardian account |
+| State or record                                   | Authoritative scope                          |
+| ------------------------------------------------- | -------------------------------------------- |
+| Better Auth account                               | Guardian account                             |
+| Better Auth session and Guardian unlock           | Account session                              |
+| Active learner selection                          | Account session plus owned learner           |
+| Learner profile, story level, onboarding progress | Learner profile                              |
+| Conversation session                              | Learner profile fixed at creation            |
+| Conversation turns and facts                      | Inherit the conversation's stored learner    |
+| Personalized art and generation lease             | Learner profile plus story                   |
+| Dubbing consent and clip namespace                | Learner profile                              |
+| Lesson-recording consent and clip namespace       | Learner profile                              |
+| Rate limits                                       | Guardian account plus existing IP dimensions |
+| Account-deletion tombstone                        | Guardian account                             |
 
 Browser conversation reads require the currently selected learner. Trusted
 LiveKit agent turns and finalization use the learner stored on the conversation
 row, not a later session selection. Whole-account deletion remains
 account-scoped and enumerates all learner storage identities before the user
 row cascades.
-
-Custom-lesson deletion first marks the owned lesson as non-recordable, then
-purges that learner and lesson's exact recording namespace, and finally removes
-the row. If storage cleanup fails, the marked row remains as a retry anchor
-while new recording uploads stay blocked.
 
 ## Dubbing Capability Boundary
 
@@ -298,11 +282,10 @@ Worker.
   their narration IDs resolve through the same static audio manifest.
 - `content/learner-profile/questionnaire-v2.json` owns form-fallback prompts.
 
-Built-in lesson JSON never stores asset filenames. My Lessons are validated
-against the same contract and stored in D1. Story language, vocabulary, and
-participation choices are reviewed before check-in. Runtime story records keep
-only the identity, shelf level, title, cover, reader pages, and completion text
-consumed by the product.
+Built-in lesson JSON never stores asset filenames. Story language, vocabulary,
+and participation choices are reviewed before check-in. Runtime story records
+keep only the identity, shelf level, title, cover, reader pages, and completion
+text consumed by the product.
 
 Five Little Ducks voice clips use a generation marker and 24 format-agnostic
 fixed slots beneath the private account-purge prefix. The marked legacy learner
@@ -408,9 +391,7 @@ commands, smoke tests, monitoring signals, and rollback rules are in
 - Built-in lesson lines use checked-in ElevenLabs audio assets.
 - Five Little Ducks line guides use checked-in ElevenLabs narrator MP3s; the
   browser never substitutes device speech for a missing guide.
-- My Lessons use cancellable browser English speech.
 - Groq evaluates lesson speech and supports profile enrichment.
-- OpenAI generates custom lesson drafts.
 - LiveKit carries realtime conversation audio; the agent uses explicit model
   IDs and purpose-specific prompts.
 
@@ -429,7 +410,7 @@ npm run test:browser
 ```
 
 Responsive browser coverage includes the home, headers, lesson catalog, lesson
-player, story shelf, story reader, conversation surface, custom lesson flows,
+player, story shelf, story reader, conversation surface,
 authentication/profile boundaries, learner/guardian switching, unlock errors,
 lock errors, refresh persistence, expiry, and protected deep links from 280 px
 through desktop widths. Guardian/learner responsive gates explicitly cover

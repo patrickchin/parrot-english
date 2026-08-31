@@ -25,8 +25,8 @@ mode (or the generic `Learner` label when none is selected) and the Guardian
 account in Guardian mode.
 
 The learner dropdown contains one `Grown-up access` action. It never lists
-sibling names or exposes profile selection, editing, content authoring,
-consent, privacy, sign-out, or account controls. The Guardian dropdown shows the
+sibling names or exposes profile selection, editing, consent, privacy, sign-out,
+or account controls. The Guardian dropdown shows the
 four account actions in a stable order: Guardian dashboard, Manage learners,
 Account & privacy, and Sign out. It does not show a current learner or account
 deletion shortcut. Learner administration stays on Manage learners, while
@@ -52,32 +52,29 @@ Guardian management surface; it never chooses a sibling. Learner choice happens
 only when the Guardian next uses `Switch to learner`.
 
 Learner mode exposes no profile editing, AI/data notice, sign-out, account
-deletion, lesson authoring, story settings, photo, consent, generation, or
-deletion controls. Guardian mode exposes those management actions but not a
-duplicate learner activity catalog.
+deletion, story settings, photo, consent, or deletion controls. Guardian mode
+exposes those management actions but not a duplicate learner activity catalog.
 
-| Capability | Learner | Guardian | Enforcement |
-| --- | --- | --- | --- |
-| Complete first-time learner setup | Yes, for the selected learner | Yes | Authenticated session plus selected learner |
-| List, add, edit, or delete learner profiles | No | Yes | Live Guardian unlock; ownership checked by the server |
-| Choose who enters learner mode | No | Yes, during Switch to learner | Live Guardian unlock plus owned-learner selection |
-| Talk, play lessons, read stories | Yes | Switch to learner | Authenticated session |
-| See whether voice dubbing is available | Yes | Yes | Authenticated, learner-scoped status |
-| Record, retake, and replay saved dub lines | Yes, after guardian consent for that learner | Switch to learner | Current learner's durable consent grant |
-| Allow voice-clip storage | No | Yes | Guardian unlock plus learner-scoped v2 consent |
-| Turn off dubbing and delete saved clips | No | Yes | Guardian unlock plus learner-scoped fenced cleanup |
-| Join in with lesson phrases | Yes | Switch to learner | Authenticated selected learner |
-| Save the latest lesson join-in clip | Yes, after guardian consent for that learner | Switch to learner | Current learner's durable recording consent |
-| Allow, stop, or delete lesson voice recordings | No | Yes | Guardian unlock plus learner-scoped fenced cleanup |
-| View saved custom lessons for playback | Yes | Switch to learner | Selected-learner read |
-| Edit learner profile or redo setup | No | Yes | Guardian unlock |
-| Choose stored story level | No | Yes | Guardian unlock |
-| Create, generate, import, or delete custom lessons | No | Yes | Guardian unlock |
-| Upload a learner photo or generate/delete story art | No | Yes | Guardian unlock plus consent for the active learner |
-| View already-generated story art | Yes | Yes | Selected-learner read |
-| Open AI/data notice | No | Yes | Guardian UI boundary |
-| Sign out | No | Yes | Guardian UI boundary |
-| Delete account and every learner's data | No | Yes | Guardian UI plus account-password confirmation |
+| Capability                                          | Learner                                      | Guardian                      | Enforcement                                           |
+| --------------------------------------------------- | -------------------------------------------- | ----------------------------- | ----------------------------------------------------- |
+| Complete first-time learner setup                   | Yes, for the selected learner                | Yes                           | Authenticated session plus selected learner           |
+| List, add, edit, or delete learner profiles         | No                                           | Yes                           | Live Guardian unlock; ownership checked by the server |
+| Choose who enters learner mode                      | No                                           | Yes, during Switch to learner | Live Guardian unlock plus owned-learner selection     |
+| Talk, play lessons, read stories                    | Yes                                          | Switch to learner             | Authenticated session                                 |
+| See whether voice dubbing is available              | Yes                                          | Yes                           | Authenticated, learner-scoped status                  |
+| Record, retake, and replay saved dub lines          | Yes, after guardian consent for that learner | Switch to learner             | Current learner's durable consent grant               |
+| Allow voice-clip storage                            | No                                           | Yes                           | Guardian unlock plus learner-scoped v2 consent        |
+| Turn off dubbing and delete saved clips             | No                                           | Yes                           | Guardian unlock plus learner-scoped fenced cleanup    |
+| Join in with lesson phrases                         | Yes                                          | Switch to learner             | Authenticated selected learner                        |
+| Save the latest lesson join-in clip                 | Yes, after guardian consent for that learner | Switch to learner             | Current learner's durable recording consent           |
+| Allow, stop, or delete lesson voice recordings      | No                                           | Yes                           | Guardian unlock plus learner-scoped fenced cleanup    |
+| Edit learner profile or redo setup                  | No                                           | Yes                           | Guardian unlock                                       |
+| Choose stored story level                           | No                                           | Yes                           | Guardian unlock                                       |
+| Upload a learner photo or generate/delete story art | No                                           | Yes                           | Guardian unlock plus consent for the active learner   |
+| View already-generated story art                    | Yes                                          | Yes                           | Selected-learner read                                 |
+| Open AI/data notice                                 | No                                           | Yes                           | Guardian UI boundary                                  |
+| Sign out                                            | No                                           | Yes                           | Guardian UI boundary                                  |
+| Delete account and every learner's data             | No                                           | Yes                           | Guardian UI plus account-password confirmation        |
 
 ## Entry and Navigation
 
@@ -95,7 +92,6 @@ Durable learner routes are:
 - `/talk-to-peppa`
 - `/lessons`
 - `/lessons/parrot/:lessonId/scenes/:sceneNumber`
-- `/lessons/my/:lessonId/scenes/:sceneNumber`
 - `/stories`
 - `/stories/:storyId/pages/:pageNumber`
 - `/dubs/five-little-ducks`
@@ -107,10 +103,8 @@ Canonical guardian routes are:
 - `/guardian/learners/:learnerId` — page-local learner details and setup redo;
 - `/guardian/profile` — retired compatibility route redirected to Manage
   learners;
-- `/guardian/lessons` — saved custom lesson management;
 - `/guardian/stories` — stored story level and personalized-art management;
 - `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
-- `/lessons/my/create` — the Guardian-only authoring URL.
 
 Initial `/profile/setup` remains available to either mode until onboarding is
 complete; later editing and setup redo are Guardian-only. Adding a learner asks
@@ -129,11 +123,10 @@ remains navigable and the next `Switch to learner` opens the chooser.
 Guardian navigation is recoverable from every state. Missing, malformed,
 external, learner-mode, unknown, or self-referential Guardian `returnTo` values
 fall back to `/guardian`. Profile Back, Cancel, Save, setup completion, errors,
-and redo use that policy. Custom-lesson Back and Save return to
-`/guardian/lessons`. If an unlocked Guardian reaches a learner route, the mode
-boundary offers both `Back to Guardian dashboard` and an explicit switch to
-learner mode. Unknown routes fall back to `/guardian` in Guardian mode and `/`
-in learner mode.
+and redo use that policy. If an unlocked Guardian reaches a learner route, the
+mode boundary offers both `Back to Guardian dashboard` and an explicit switch
+to learner mode. Unknown routes fall back to `/guardian` in Guardian mode and
+`/` in learner mode.
 
 ## Talk to Peppa
 
@@ -151,13 +144,10 @@ changing the session's active learner does not reassign earlier conversations.
 
 ## Speaking Lessons
 
-The learner lesson catalog shows seven ready-made lessons first, then any saved
-custom lessons for the active learner. Each row has one clear Start action.
-Creation and deletion live at `/guardian/lessons` and its protected create
-route, so authoring does not compete with learner practice. Selecting another
-learner refreshes the catalog before that learner's pages render. Ready-made
-lessons use one consistent 16:9 scene illustration per step as their default
-presentation; learners do not choose between rendering experiments.
+The learner lesson catalog shows the ready-made built-in lessons. Each row has
+one clear Start action. Ready-made lessons use one consistent 16:9 scene
+illustration per step as their default presentation; learners do not choose
+between rendering experiments.
 
 A lesson plays as a short, continuous cartoon episode:
 
@@ -264,11 +254,8 @@ publicly or sent to speech recognition.
 
 Built-in lesson JSON contains text and catalog IDs, never image filenames,
 audio filenames, voice IDs, or generation settings. Global catalogs own visual
-assets, and the static audio manifest owns saved speech.
-
-My Lessons use the same validated lesson contract but are scoped to one learner
-profile in D1. Story scripts are checked in and validated against their level
-limits. Profiles, onboarding progress, conversations, personalized art, dubbing
-consent, and saved clips remain isolated per learner; authentication, Guardian
-unlock, rate limits, and whole-account deletion remain account- or
-session-scoped.
+assets, and the static audio manifest owns saved speech. Story scripts are
+checked in and validated against their level limits. Profiles, onboarding
+progress, conversations, personalized art, dubbing consent, and saved clips
+remain isolated per learner; authentication, Guardian unlock, rate limits, and
+whole-account deletion remain account- or session-scoped.
