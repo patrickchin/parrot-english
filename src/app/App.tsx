@@ -65,6 +65,7 @@ import {
   getLessonScenePath,
   getLoginPath,
   getLearnerProfilePath,
+  getPostLoginDestination,
   getProfilePath,
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
@@ -1325,7 +1326,9 @@ export function AuthenticatedApplication({
     isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
   const safeReturnTo = guardianRoute
     ? getSafeGuardianReturnTo(location.search)
-    : (getSafeReturnTo(location.search) ?? "/");
+    : onLoginRoute
+      ? getPostLoginDestination(location.search)
+      : (getSafeReturnTo(location.search) ?? "/");
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
     location.search,

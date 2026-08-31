@@ -1522,7 +1522,7 @@ function createSessionClient(initialState) {
 }
 
 describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
-  it("redirects an authenticated login alias before learner-profile loading", async () => {
+  it("redirects an authenticated login alias to learner home before profile loading", async () => {
     const learnerProfile = deferred();
     const learnerProfileRequestRoutes = [];
     const api = {
@@ -1557,9 +1557,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() =>
-      assert.equal(currentRoute().path, "/guardian/stories?section=art#cover"),
-    );
+    await waitFor(() => assert.equal(currentRoute().path, "/"));
     await waitFor(() => assert.ok(learnerProfileRequestRoutes.length > 0));
     assert.equal(
       learnerProfileRequestRoutes.some((route) => route.startsWith("/login")),
@@ -1567,7 +1565,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       "The login alias must redirect before learner-profile requests begin.",
     );
     learnerProfile.resolve();
-    await waitFor(() => text(/Story settings/));
+    await waitFor(() => text(/Switch to learner mode/));
   });
 
   it("returns unknown Guardian URLs to the Guardian dashboard", async () => {

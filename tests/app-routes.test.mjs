@@ -203,6 +203,27 @@ describe("app route helpers", () => {
     assert.equal(routes.isRedoLearnerProfileRequest("?redo=0"), false);
   });
 
+  it("normalizes post-login destinations to learner routes", () => {
+    assert.equal(routes.getPostLoginDestination("?returnTo=%2Fguardian"), "/");
+    assert.equal(
+      routes.getPostLoginDestination(
+        "?returnTo=%2Flessons%2Fparrot%2Fhello%2Fscenes%2F2%3Fx%3D1%23y",
+      ),
+      "/lessons/parrot/hello/scenes/2?x=1#y",
+    );
+    assert.equal(routes.getPostLoginDestination(""), "/");
+    assert.equal(
+      routes.getPostLoginDestination("?returnTo=https%3A%2F%2Fevil.example"),
+      "/",
+    );
+    assert.equal(
+      routes.getPostLoginDestination(
+        "?returnTo=%2Fguardian%2Fstories%3Fsection%3Dart%23cover",
+      ),
+      "/",
+    );
+  });
+
   it("builds and classifies only canonical guardian routes", () => {
     assert.equal(
       typeof routes.getGuardianAccountPath,
