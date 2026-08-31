@@ -10,6 +10,7 @@ const playedAudioSources: string[] = [];
 const createdObjectUrls: string[] = [];
 const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
+let wordGameAutoplayBlocked = false;
 const backingStarts: Array<{ at: number; frequencyHz: number }> = [];
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
@@ -3185,6 +3186,14 @@ class MockAudioElement {
     }
     const lessonScenario = getE2eLessonScenario();
     const wordGameAudioId = getWordGameAudioId(this.src);
+    if (
+      lessonScenario === "autoplay-blocked" &&
+      wordGameAudioId &&
+      !wordGameAutoplayBlocked
+    ) {
+      wordGameAutoplayBlocked = true;
+      throw new DOMException("Autoplay is not allowed.", "NotAllowedError");
+    }
     this.lessonCue =
       this.src.includes("lesson-join-in-") ||
       wordGameAudioId !== null;

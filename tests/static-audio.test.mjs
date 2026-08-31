@@ -13,42 +13,42 @@ import {
 import { STORIES } from "../src/stories/story-catalog.ts";
 
 const WORD_GAME_EXPECTED_AUDIO = [
-  ["word-game-animals-cat-prompt", "Which is the cat?"], ["word-game-animals-cat-label", "This is a cat."], ["word-game-animals-cat-correct", "Yes, this is a cat."],
-  ["word-game-animals-dog-prompt", "Which is the dog?"], ["word-game-animals-dog-label", "This is a dog."], ["word-game-animals-dog-correct", "Yes, this is a dog."],
-  ["word-game-animals-bird-prompt", "Which is the bird?"], ["word-game-animals-bird-label", "This is a bird."], ["word-game-animals-bird-correct", "Yes, this is a bird."],
-  ["word-game-animals-fish-prompt", "Which is the fish?"], ["word-game-animals-fish-label", "This is a fish."], ["word-game-animals-fish-correct", "Yes, this is a fish."],
-  ["word-game-animals-duck-prompt", "Which is the duck?"], ["word-game-animals-duck-label", "This is a duck."], ["word-game-animals-duck-correct", "Yes, this is a duck."],
-  ["word-game-animals-frog-prompt", "Which is the frog?"], ["word-game-animals-frog-label", "This is a frog."], ["word-game-animals-frog-correct", "Yes, this is a frog."],
-  ["word-game-colors-red-prompt", "Where is red?"], ["word-game-colors-red-label", "This is red."], ["word-game-colors-red-correct", "Yes, this is red."],
-  ["word-game-colors-blue-prompt", "Where is blue?"], ["word-game-colors-blue-label", "This is blue."], ["word-game-colors-blue-correct", "Yes, this is blue."],
-  ["word-game-colors-yellow-prompt", "Where is yellow?"], ["word-game-colors-yellow-label", "This is yellow."], ["word-game-colors-yellow-correct", "Yes, this is yellow."],
-  ["word-game-colors-green-prompt", "Where is green?"], ["word-game-colors-green-label", "This is green."], ["word-game-colors-green-correct", "Yes, this is green."],
-  ["word-game-colors-orange-prompt", "Where is orange?"], ["word-game-colors-orange-label", "This is orange."], ["word-game-colors-orange-correct", "Yes, this is orange."],
-  ["word-game-colors-purple-prompt", "Where is purple?"], ["word-game-colors-purple-label", "This is purple."], ["word-game-colors-purple-correct", "Yes, this is purple."],
-  ["word-game-body-parts-eyes-prompt", "Where are the eyes?"], ["word-game-body-parts-eyes-label", "These are the eyes."], ["word-game-body-parts-eyes-correct", "Yes, these are the eyes."],
-  ["word-game-body-parts-ears-prompt", "Where are the ears?"], ["word-game-body-parts-ears-label", "These are the ears."], ["word-game-body-parts-ears-correct", "Yes, these are the ears."],
-  ["word-game-body-parts-nose-prompt", "Which is the nose?"], ["word-game-body-parts-nose-label", "This is a nose."], ["word-game-body-parts-nose-correct", "Yes, this is a nose."],
-  ["word-game-body-parts-mouth-prompt", "Which is the mouth?"], ["word-game-body-parts-mouth-label", "This is a mouth."], ["word-game-body-parts-mouth-correct", "Yes, this is a mouth."],
-  ["word-game-body-parts-hand-prompt", "Which is the hand?"], ["word-game-body-parts-hand-label", "This is a hand."], ["word-game-body-parts-hand-correct", "Yes, this is a hand."],
-  ["word-game-body-parts-foot-prompt", "Which is the foot?"], ["word-game-body-parts-foot-label", "This is a foot."], ["word-game-body-parts-foot-correct", "Yes, this is a foot."],
-  ["word-game-food-apple-prompt", "Which is the apple?"], ["word-game-food-apple-label", "This is an apple."], ["word-game-food-apple-correct", "Yes, this is an apple."],
-  ["word-game-food-banana-prompt", "Which is the banana?"], ["word-game-food-banana-label", "This is a banana."], ["word-game-food-banana-correct", "Yes, this is a banana."],
-  ["word-game-food-carrot-prompt", "Which is the carrot?"], ["word-game-food-carrot-label", "This is a carrot."], ["word-game-food-carrot-correct", "Yes, this is a carrot."],
-  ["word-game-food-orange-prompt", "Which is the orange?"], ["word-game-food-orange-label", "This is an orange."], ["word-game-food-orange-correct", "Yes, this is an orange."],
-  ["word-game-food-bread-prompt", "Which is the bread?"], ["word-game-food-bread-label", "This is bread."], ["word-game-food-bread-correct", "Yes, this is bread."],
-  ["word-game-food-cheese-prompt", "Which is the cheese?"], ["word-game-food-cheese-label", "This is cheese."], ["word-game-food-cheese-correct", "Yes, this is cheese."],
-  ["word-game-toys-ball-prompt", "Which is the ball?"], ["word-game-toys-ball-label", "This is a ball."], ["word-game-toys-ball-correct", "Yes, this is a ball."],
-  ["word-game-toys-toy-car-prompt", "Which is the toy car?"], ["word-game-toys-toy-car-label", "This is a toy car."], ["word-game-toys-toy-car-correct", "Yes, this is a toy car."],
-  ["word-game-toys-doll-prompt", "Which is the doll?"], ["word-game-toys-doll-label", "This is a doll."], ["word-game-toys-doll-correct", "Yes, this is a doll."],
-  ["word-game-toys-kite-prompt", "Which is the kite?"], ["word-game-toys-kite-label", "This is a kite."], ["word-game-toys-kite-correct", "Yes, this is a kite."],
-  ["word-game-toys-blocks-prompt", "Where are the blocks?"], ["word-game-toys-blocks-label", "These are blocks."], ["word-game-toys-blocks-correct", "Yes, these are blocks."],
-  ["word-game-toys-teddy-bear-prompt", "Which is the teddy bear?"], ["word-game-toys-teddy-bear-label", "This is a teddy bear."], ["word-game-toys-teddy-bear-correct", "Yes, this is a teddy bear."],
-  ["word-game-feelings-happy-prompt", "Which face is happy?"], ["word-game-feelings-happy-label", "This face is happy."], ["word-game-feelings-happy-correct", "Yes, this face is happy."],
-  ["word-game-feelings-sad-prompt", "Which face is sad?"], ["word-game-feelings-sad-label", "This face is sad."], ["word-game-feelings-sad-correct", "Yes, this face is sad."],
-  ["word-game-feelings-angry-prompt", "Which face is angry?"], ["word-game-feelings-angry-label", "This face is angry."], ["word-game-feelings-angry-correct", "Yes, this face is angry."],
-  ["word-game-feelings-sleepy-prompt", "Which face is sleepy?"], ["word-game-feelings-sleepy-label", "This face is sleepy."], ["word-game-feelings-sleepy-correct", "Yes, this face is sleepy."],
-  ["word-game-feelings-surprised-prompt", "Which face is surprised?"], ["word-game-feelings-surprised-label", "This face is surprised."], ["word-game-feelings-surprised-correct", "Yes, this face is surprised."],
-  ["word-game-feelings-silly-prompt", "Which face is silly?"], ["word-game-feelings-silly-label", "This face is silly."], ["word-game-feelings-silly-correct", "Yes, this face is silly."],
+  ["word-game-animals-cat-prompt", "Cat. Which is the cat?"], ["word-game-animals-cat-label", "This is a cat."], ["word-game-animals-cat-correct", "Yes, this is a cat."],
+  ["word-game-animals-dog-prompt", "Dog. Which is the dog?"], ["word-game-animals-dog-label", "This is a dog."], ["word-game-animals-dog-correct", "Yes, this is a dog."],
+  ["word-game-animals-bird-prompt", "Bird. Which is the bird?"], ["word-game-animals-bird-label", "This is a bird."], ["word-game-animals-bird-correct", "Yes, this is a bird."],
+  ["word-game-animals-fish-prompt", "Fish. Which is the fish?"], ["word-game-animals-fish-label", "This is a fish."], ["word-game-animals-fish-correct", "Yes, this is a fish."],
+  ["word-game-animals-duck-prompt", "Duck. Which is the duck?"], ["word-game-animals-duck-label", "This is a duck."], ["word-game-animals-duck-correct", "Yes, this is a duck."],
+  ["word-game-animals-frog-prompt", "Frog. Which is the frog?"], ["word-game-animals-frog-label", "This is a frog."], ["word-game-animals-frog-correct", "Yes, this is a frog."],
+  ["word-game-colors-red-prompt", "Red. Where is red?"], ["word-game-colors-red-label", "This is red."], ["word-game-colors-red-correct", "Yes, this is red."],
+  ["word-game-colors-blue-prompt", "Blue. Where is blue?"], ["word-game-colors-blue-label", "This is blue."], ["word-game-colors-blue-correct", "Yes, this is blue."],
+  ["word-game-colors-yellow-prompt", "Yellow. Where is yellow?"], ["word-game-colors-yellow-label", "This is yellow."], ["word-game-colors-yellow-correct", "Yes, this is yellow."],
+  ["word-game-colors-green-prompt", "Green. Where is green?"], ["word-game-colors-green-label", "This is green."], ["word-game-colors-green-correct", "Yes, this is green."],
+  ["word-game-colors-orange-prompt", "Orange. Where is orange?"], ["word-game-colors-orange-label", "This is orange."], ["word-game-colors-orange-correct", "Yes, this is orange."],
+  ["word-game-colors-purple-prompt", "Purple. Where is purple?"], ["word-game-colors-purple-label", "This is purple."], ["word-game-colors-purple-correct", "Yes, this is purple."],
+  ["word-game-body-parts-eyes-prompt", "Eyes. Where are the eyes?"], ["word-game-body-parts-eyes-label", "These are the eyes."], ["word-game-body-parts-eyes-correct", "Yes, these are the eyes."],
+  ["word-game-body-parts-ears-prompt", "Ears. Where are the ears?"], ["word-game-body-parts-ears-label", "These are the ears."], ["word-game-body-parts-ears-correct", "Yes, these are the ears."],
+  ["word-game-body-parts-nose-prompt", "Nose. Which is the nose?"], ["word-game-body-parts-nose-label", "This is a nose."], ["word-game-body-parts-nose-correct", "Yes, this is a nose."],
+  ["word-game-body-parts-mouth-prompt", "Mouth. Which is the mouth?"], ["word-game-body-parts-mouth-label", "This is a mouth."], ["word-game-body-parts-mouth-correct", "Yes, this is a mouth."],
+  ["word-game-body-parts-hand-prompt", "Hand. Which is the hand?"], ["word-game-body-parts-hand-label", "This is a hand."], ["word-game-body-parts-hand-correct", "Yes, this is a hand."],
+  ["word-game-body-parts-foot-prompt", "Foot. Which is the foot?"], ["word-game-body-parts-foot-label", "This is a foot."], ["word-game-body-parts-foot-correct", "Yes, this is a foot."],
+  ["word-game-food-apple-prompt", "Apple. Which is the apple?"], ["word-game-food-apple-label", "This is an apple."], ["word-game-food-apple-correct", "Yes, this is an apple."],
+  ["word-game-food-banana-prompt", "Banana. Which is the banana?"], ["word-game-food-banana-label", "This is a banana."], ["word-game-food-banana-correct", "Yes, this is a banana."],
+  ["word-game-food-carrot-prompt", "Carrot. Which is the carrot?"], ["word-game-food-carrot-label", "This is a carrot."], ["word-game-food-carrot-correct", "Yes, this is a carrot."],
+  ["word-game-food-orange-prompt", "Orange. Which is the orange?"], ["word-game-food-orange-label", "This is an orange."], ["word-game-food-orange-correct", "Yes, this is an orange."],
+  ["word-game-food-bread-prompt", "Bread. Which is the bread?"], ["word-game-food-bread-label", "This is bread."], ["word-game-food-bread-correct", "Yes, this is bread."],
+  ["word-game-food-cheese-prompt", "Cheese. Which is the cheese?"], ["word-game-food-cheese-label", "This is cheese."], ["word-game-food-cheese-correct", "Yes, this is cheese."],
+  ["word-game-toys-ball-prompt", "Ball. Which is the ball?"], ["word-game-toys-ball-label", "This is a ball."], ["word-game-toys-ball-correct", "Yes, this is a ball."],
+  ["word-game-toys-toy-car-prompt", "Toy car. Which is the toy car?"], ["word-game-toys-toy-car-label", "This is a toy car."], ["word-game-toys-toy-car-correct", "Yes, this is a toy car."],
+  ["word-game-toys-doll-prompt", "Doll. Which is the doll?"], ["word-game-toys-doll-label", "This is a doll."], ["word-game-toys-doll-correct", "Yes, this is a doll."],
+  ["word-game-toys-kite-prompt", "Kite. Which is the kite?"], ["word-game-toys-kite-label", "This is a kite."], ["word-game-toys-kite-correct", "Yes, this is a kite."],
+  ["word-game-toys-blocks-prompt", "Blocks. Where are the blocks?"], ["word-game-toys-blocks-label", "These are blocks."], ["word-game-toys-blocks-correct", "Yes, these are blocks."],
+  ["word-game-toys-teddy-bear-prompt", "Teddy bear. Which is the teddy bear?"], ["word-game-toys-teddy-bear-label", "This is a teddy bear."], ["word-game-toys-teddy-bear-correct", "Yes, this is a teddy bear."],
+  ["word-game-feelings-happy-prompt", "Happy. Which face is happy?"], ["word-game-feelings-happy-label", "This face is happy."], ["word-game-feelings-happy-correct", "Yes, this face is happy."],
+  ["word-game-feelings-sad-prompt", "Sad. Which face is sad?"], ["word-game-feelings-sad-label", "This face is sad."], ["word-game-feelings-sad-correct", "Yes, this face is sad."],
+  ["word-game-feelings-angry-prompt", "Angry. Which face is angry?"], ["word-game-feelings-angry-label", "This face is angry."], ["word-game-feelings-angry-correct", "Yes, this face is angry."],
+  ["word-game-feelings-sleepy-prompt", "Sleepy. Which face is sleepy?"], ["word-game-feelings-sleepy-label", "This face is sleepy."], ["word-game-feelings-sleepy-correct", "Yes, this face is sleepy."],
+  ["word-game-feelings-surprised-prompt", "Surprised. Which face is surprised?"], ["word-game-feelings-surprised-label", "This face is surprised."], ["word-game-feelings-surprised-correct", "Yes, this face is surprised."],
+  ["word-game-feelings-silly-prompt", "Silly. Which face is silly?"], ["word-game-feelings-silly-label", "This face is silly."], ["word-game-feelings-silly-correct", "Yes, this face is silly."],
   ["word-game-retry", "Listen and try again."], ["word-game-complete", "Great listening! You finished the game."],
 ];
 
@@ -141,11 +141,13 @@ describe("static audio cache metadata", () => {
       assert.equal(line.lang, "en-US");
       assert.match(line.ttsText, /^\[[^\]]+\] /);
     }
-    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-prompt").ttsText, /warm.*playful.*clear.*curiosity/i);
-    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-label").ttsText, /clear.*first-word.*teaching/i);
-    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-correct").ttsText, /bright.*encouragement/i);
-    assert.match(staticAudio.getStaticAudioLineById("word-game-retry").ttsText, /gentle.*encouragement/i);
-    assert.match(staticAudio.getStaticAudioLineById("word-game-complete").ttsText, /happy.*not-loud.*celebration/i);
+    assert.ok(entries.every(([, line]) => line.voiceStyle === "energetic-character"));
+    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-prompt").ttsText, /excited.*playful.*young child.*target word.*first.*curiosity/i);
+    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-prompt").ttsText, /\] Kat\. Which is the cat\?$/);
+    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-label").ttsText, /bright.*playful.*teaching.*young child/i);
+    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-correct").ttsText, /joyful.*enthusiastic.*encouragement.*young child/i);
+    assert.match(staticAudio.getStaticAudioLineById("word-game-retry").ttsText, /gentle.*upbeat.*encouragement.*young child/i);
+    assert.match(staticAudio.getStaticAudioLineById("word-game-complete").ttsText, /happy.*excited.*not-loud.*celebration.*young child/i);
   });
 
   it("rejects duplicate IDs before static and word-game manifests merge", () => {

@@ -89,7 +89,15 @@ describe("word-game catalog", () => {
       assert.ok(topic);
       assert.equal(topic.items.length, 6);
       assert.deepEqual(topic.items.map(({ id, label, prompt, teachingLabel, successSentence }) =>
-        [id, label, prompt, teachingLabel, successSentence]), expectedItems);
+        [id, label, prompt, teachingLabel, successSentence]), expectedItems.map(
+          ([id, label, question, teachingLabel, successSentence]) => [
+            id,
+            label,
+            `${label[0].toUpperCase()}${label.slice(1)}. ${question}`,
+            teachingLabel,
+            successSentence,
+          ],
+        ));
       assert.deepEqual(topic.items.map(({ alt }) => alt), ALT_TEXT[topicId]);
       assert.equal(Object.isFrozen(topic), true);
       assert.equal(Object.isFrozen(topic.items), true);

@@ -1174,7 +1174,7 @@ function WordGameRouteDecisionView({
     return <Navigate replace={decision.replace} to={decision.to} />;
   }
 
-  return <WordGamePlayer topic={decision.topic} />;
+  return <WordGamePlayer key={decision.topic.id} topic={decision.topic} />;
 }
 
 function WordGameRoute() {
