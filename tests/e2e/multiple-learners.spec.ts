@@ -1486,24 +1486,26 @@ test("requires Guardian unlock before revealing a selection-required roster", as
   ).toHaveCount(2);
 });
 
-test("shows a learner-safe no-selection state and lets an incomplete learner use activities", async ({
+test("requires a direct learner choice and lets an incomplete learner use activities", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "selection-required", "learner"));
 
   await expect(
-    page.getByRole("heading", {
-      name: "Ask a grown-up to choose a learner",
-    }),
+    page.getByRole("heading", { name: "Who is learning now?" }),
   ).toBeVisible();
-  await expect(page.getByText("Mia", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("Noah", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Start learner mode as Mia" }),
+  ).toBeVisible();
   await page
-    .getByRole("button", { name: /Profile for Learner, learner mode/ })
+    .getByRole("button", { name: "Start learner mode as Noah" })
     .click();
   await expect(
-    page.getByRole("menu", { name: "Account menu" }).getByRole("menuitem"),
-  ).toHaveText(["Grown-up accessSwitch modes"]);
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
+  ).toBeVisible();
 
   await page.goto(
     learnerScenarioUrl("/guardian/learners", "selection-required"),

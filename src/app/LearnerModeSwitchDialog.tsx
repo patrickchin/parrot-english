@@ -2,11 +2,17 @@ import {
   useEffect,
   useRef,
   useState,
+  type ReactNode,
   type RefObject,
 } from "react";
 import { useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { useLearnerSelection } from "../learner-profile/LearnerProfileContext";
+import {
+  LearnerProfileCard,
+  LearnerProfileScreen,
+  LearnerProfileStepHeading,
+} from "../learner-profile/LearnerProfileLayout";
 import {
   loadLearnerProfiles,
   type LearnerProfileRoster,
@@ -137,20 +143,14 @@ function LearnerModePickerContent({
   onClose,
   picker,
 }: {
-  heading: "h1" | "h2";
+  heading: ReactNode;
   onClose?: () => void;
   picker: LearnerModePicker;
 }) {
-  const Heading = heading;
   return (
     <>
       <header className="grid gap-2">
-        <Heading
-          className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
-          id="learner-mode-switch-title"
-        >
-          Who is learning now?
-        </Heading>
+        {heading}
         <p className="m-0 font-bold leading-relaxed text-slate-700">
           Choose who will use learner mode.
         </p>
@@ -271,15 +271,27 @@ export function LearnerModeSelectionPage(props: LearnerModePickerProps) {
   const picker = useLearnerModePicker(props);
 
   return (
-    <main className="grid h-dvh w-full items-start justify-items-center overflow-y-auto bg-learner-profile p-3.5 font-ui sm:place-items-center sm:p-8 lg:p-12">
-      <section
+    <LearnerProfileScreen>
+      <LearnerProfileCard
         aria-busy={picker.isSwitching}
         aria-labelledby="learner-mode-switch-title"
-        className="my-auto grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+        className="grid gap-5 p-7 sm:p-12"
+        width="narrow"
       >
-        <LearnerModePickerContent heading="h1" picker={picker} />
-      </section>
-    </main>
+        <LearnerModePickerContent
+          heading={
+            <LearnerProfileStepHeading
+              className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl"
+              id="learner-mode-switch-title"
+              stepKey="learner-selection"
+            >
+              Who is learning now?
+            </LearnerProfileStepHeading>
+          }
+          picker={picker}
+        />
+      </LearnerProfileCard>
+    </LearnerProfileScreen>
   );
 }
 
@@ -325,7 +337,14 @@ export function LearnerModeSwitchDialog({
         tabIndex={-1}
       >
         <LearnerModePickerContent
-          heading="h2"
+          heading={
+            <h2
+              className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
+              id="learner-mode-switch-title"
+            >
+              Who is learning now?
+            </h2>
+          }
           onClose={onClose}
           picker={picker}
         />

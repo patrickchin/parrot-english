@@ -327,6 +327,9 @@ test("the required page selects and resumes a learner deep link without locking 
 
   await waitFor(() => namedButton(container, "Start learner mode as Mary"));
   assert.equal(container.querySelectorAll("h1").length, 1);
+  const heading = container.querySelector("h1");
+  assert.equal(heading?.getAttribute("tabindex"), "-1");
+  await waitFor(() => assert.strictEqual(document.activeElement, heading));
   assert.match(container.textContent, /Who is learning now\?/);
   assert.equal(container.querySelector('[role="dialog"]'), null);
   assert.doesNotMatch(container.textContent, /Ask a grown-up|Cancel/);

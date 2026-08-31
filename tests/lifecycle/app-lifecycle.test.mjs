@@ -11321,17 +11321,17 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       method: "POST",
     });
     const afterUnlock = {
-      a: (await sessionA.fetch("/api/learner-profiles")).status,
-      b: (await sessionB.fetch("/api/learner-profiles")).status,
-      page: (await window.fetch("/api/learner-profiles")).status,
+      a: (await sessionA.fetch("/api/profile")).status,
+      b: (await sessionB.fetch("/api/profile")).status,
+      page: (await window.fetch("/api/profile")).status,
     };
     const lockB = await sessionB.fetch("/api/guardian-access", {
       method: "DELETE",
     });
     const afterBLock = {
-      a: (await sessionA.fetch("/api/learner-profiles")).status,
-      b: (await sessionB.fetch("/api/learner-profiles")).status,
-      page: (await window.fetch("/api/learner-profiles")).status,
+      a: (await sessionA.fetch("/api/profile")).status,
+      b: (await sessionB.fetch("/api/profile")).status,
+      page: (await window.fetch("/api/profile")).status,
     };
 
     assert.deepEqual(
