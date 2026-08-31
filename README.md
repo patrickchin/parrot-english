@@ -178,6 +178,30 @@ Apply future reviewed migrations with:
 npx wrangler d1 migrations apply parrot-english --remote
 ```
 
+### One-time custom lesson recording purge
+
+The audited purge command considers only the two complete custom-recording R2
+key shapes below. It never deletes built-in `parrot` recordings, personalized
+story art, or other bucket objects. It is a dry run unless `--execute` is
+provided, and the execute path verifies a fresh scan has zero exact matches.
+
+```text
+personalized-story-art/<account>/lesson-recordings/my/...
+personalized-story-art/<account>/learners/<learner>/lesson-recordings/my/...
+```
+
+Review the dry-run key list first:
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art
+```
+
+Only after that review, explicitly execute the sequential deletes:
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art --execute
+```
+
 `BETTER_AUTH_SECRET` must be a production-only random value of at least 32
 characters. `BETTER_AUTH_URL` must exactly match the deployed Worker origin.
 The URL is not sensitive and can be moved to a Wrangler environment variable
