@@ -44,7 +44,9 @@ application code.
 - Keep the lyric, note lane, waveform cursor, melody, and recording duration
   on one score-derived clock.
 - Use the guidance while recording, hearing an example, playing a learner
-  take, and playing a scene or full rhyme.
+  take, and playing a full rhyme. Preserve score-relative positions for the
+  engine's existing scene-range API without reintroducing a separate **Play
+  scene** control that the current UI deliberately omits.
 - Use a standard score format instead of inventing note and lyric timing
   fields.
 - Make one self-contained directory the authored source for each rhyme's
@@ -137,6 +139,7 @@ or word timing.
   "slug": "twinkle-twinkle",
   "title": "Twinkle Twinkle Little Star",
   "countInBeats": 2,
+  "countInMidi": 72,
   "score": {
     "src": "score.musicxml",
     "melodyPart": "P1",
@@ -176,10 +179,12 @@ line artwork, and line order come from the nested scene structure. Runtime
 have the same non-zero line count because the current project and storage UI
 assume that invariant.
 
-`countInBeats` is required and must currently equal `2`. Keeping it in the
-manifest records the content/playback contract without adding a learner
-setting. A later schema version may permit another value if a real rhyme needs
-one.
+`countInBeats` is required and must currently equal `2`. `countInMidi` is the
+audible click pitch from 0 through 127; it preserves the current per-rhyme
+count sound without pretending that a metronome click is a melody lyric note.
+Keeping both in the manifest records the content/playback contract without
+adding a learner setting. A later schema version may permit another beat count
+if a real rhyme needs one.
 
 ### `score.musicxml`
 
@@ -209,6 +214,14 @@ An `<extend>` continues a syllable over later notes. The compiler groups these
 syllables into the visible words from `rhyme.json` and rejects any normalized
 text mismatch. Punctuation and display capitalization remain owned by the
 manifest; the score owns when each normalized word is sung.
+
+Some current spoken lines contain more words than melody attacks. Authors may
+split one unchanged pitch/duration into tied same-pitch note fragments and put
+successive lyric words on those fragments. The compiler preserves the fragment
+boundaries for word timing but coalesces the complete tie chain back into one
+audible/note-lane interval. This supplies distinct non-overlapping word cues
+without changing the established melody. An `<extend>` still represents one
+word held across later notes; it is not used for successive words.
 
 The accepted MusicXML subset is intentionally small:
 
@@ -240,7 +253,8 @@ Add one Node command, `npm run generate:rhyme-catalog`, that scans
    durations, and total duration;
 6. verifies guide MP3 existence and decodability using the existing
    FFmpeg/FFprobe toolchain;
-7. derives the 32 guide-waveform bars now stored by hand;
+7. derives the 32 guide-waveform bars now stored by hand on each line's score
+   duration, padding a short guide with silence and ignoring an overlong tail;
 8. validates global uniqueness and storage compatibility; and
 9. writes a deterministic static TypeScript module under `src/dubbing`.
 
@@ -304,20 +318,49 @@ type DubLine = Readonly<{
   durationMs: number;
   guideAudioId: string;
   guideAudioSrc: string;
+  guidePeakBars: readonly number[];
   words: readonly DubWordCue[];
 }>;
+
+type DubGuide = Readonly<{
+  id: string;
+  src: string;
+  text: string;
+  durationMs: number;
+}>;
 ```
+
+Each definition owns a deduplicated `guides: readonly DubGuide[]` list for
+static-audio publishing. Waveform bars remain line-owned because the same
+guide clip can be shown against two different score durations; a unique guide
+record therefore does not carry ambiguous `peakBars`.
 
 The compiled music score supplies the selected melody notes plus any playback
 notes for each line. Existing UI/state code receives flattened lines, scene
 titles, scene/line artwork, and `linesPerScene`; it does not need to understand
 MusicXML or package paths.
 
+The score compiler also emits `music.countInBeatMs` and
+`music.countInDurationMs` from rounded absolute metronome boundaries plus the
+manifest's `countInMidi`. Keeping the final duration boundary avoids cumulative
+333/334ms rounding drift.
+
 Word cues contain UTF-16 character offsets into the exact manifest `text`.
 React slices and interleaves that original string; it never rebuilds a lyric
 from score syllables. This preserves whitespace, punctuation, curly quotes,
 contractions, and compounds such as `E-I-E-I-O` in visible and accessible
 text.
+
+For comparison only, both manifest words and completed MusicXML lyric tokens
+are normalized to NFC, lowercased, and given canonical ASCII apostrophes and
+hyphens (`‘`, `’`, and `ʼ` become `'`; `‐` and `‑` become `-`). The manifest
+is tokenized with
+`/[\p{L}\p{N}]+(?:[’‘ʼ'‐‑-][\p{L}\p{N}]+)*/gu`; a MusicXML `single` lyric or
+completed `begin`/`middle`/`end` chain must normalize to exactly one such
+token. Outer punctuation is ignored, internal apostrophes/hyphens are kept,
+and any mismatch is rejected. Match against the original source first, then
+normalize only the matched slice, so these comparison keys never replace the
+source text or alter its UTF-16 offsets.
 
 ## Playback and Recording Clock
 
@@ -333,15 +376,16 @@ the boundary on the main thread. This is best-effort browser synchronization,
 tested within a small tolerance rather than represented as sample-exact. A
 sample-accurate custom capture pipeline would be a separate feature.
 
-For line playback, elapsed time is line-relative. For scene and full playback,
-the player derives the active line from the score's absolute cue and passes
-`elapsedMs - line.cueMs` to the guidance UI. Do not add an independent React
-interval or wall-clock timer.
+For line playback, elapsed time is line-relative. For the playback engine's
+scene range and for full playback, the player derives the active line from the
+score's absolute cue and passes `elapsedMs - line.cueMs` to consumers. The
+current rendered UI exposes full playback, not a separate scene-play button.
+Do not add an independent React interval or wall-clock timer.
 
 Replace the recording-only elapsed state with one presentation state that can
 represent the selected performance across Record, Hear line, Play my
-recording, scene playback, and full playback. Reset it on cancellation, line
-change, operation completion, and consent loss.
+recording, and full playback. Reset it on cancellation, line change, operation
+completion, and the existing consent-loss path.
 
 ### Two-beat recording count-in
 
@@ -357,6 +401,11 @@ Recording follows this order:
 5. Stop the recorder and melody at the compiled line duration, then preserve
    the existing preview/upload flow.
 
+Every audible count click uses the shared engine constant
+`DUB_COUNT_CLICK_DURATION_MS = 200`, preserving the current click length while
+pitch and spacing remain content-derived. Full playback and prepared recording
+both use this constant; it is not another manifest setting.
+
 The microphone stream may be open during the count-in so permission and device
 startup complete before the downbeat. `MediaRecorder` is not intentionally
 started before the downbeat, so the two-beat count-in is not saved. Browser
@@ -364,10 +413,12 @@ scheduling can introduce a few milliseconds of start/stop skew; it cannot add
 the authored count-in interval to the take. The melody is connected only to
 the device output; it is never connected to the recorder's microphone stream.
 
-Stopping, navigating, losing consent, unmounting, or encountering an audio
-failure during count-in cancels scheduled clicks, closes the AudioContext,
-stops microphone tracks, produces no blob, and performs no upload. Cleanup
-remains idempotent.
+Stopping, navigating, unmounting, or encountering an audio failure during
+count-in cancels scheduled clicks, closes the AudioContext, stops microphone
+tracks, produces no blob, and performs no upload. If the application's
+existing consent-loss handler is invoked while a count-in is active, it uses
+the same cleanup path; this feature does not add revocation polling or a new
+consent signal. Cleanup remains idempotent.
 
 During `counting-in`, the Record control becomes an enabled **Cancel** action.
 Other media and navigation controls remain locked. Cancelling returns focus to
@@ -434,9 +485,10 @@ targets.
   guide-vocal production is deferred.
 - **Play my recording:** play the learner take with the score melody and the
   same guidance.
-- **Scene/full playback:** advance artwork, active lyric, word highlight, and
-  melody lane from the full score clock. Saved takes remain preferred, with
-  the existing public-guide fallback.
+- **Full playback:** advance artwork, active lyric, word highlight, and melody
+  lane from the full score clock. Saved takes remain preferred, with the
+  existing public-guide fallback. The engine's scene-range path reports the
+  same line-relative positions, but no new scene-play control is added.
 
 ## Validation and Error Reporting
 
@@ -596,12 +648,15 @@ feature-branch merge is permitted.
   authored count-in interval early.
 - Assert recorded duration excludes count-in and remains within tolerance of
   the compiled line duration.
-- Assert early Stop, abort, consent loss, setup failure, and unmount close each
-  resource once and never upload a count-in-only take.
-- Assert Hear line, take playback, scene playback, and full playback report
-  correct line-relative elapsed time.
+- Assert early Stop, abort, invocation of the existing consent-loss cleanup,
+  setup failure, and unmount close each resource once and never upload a
+  count-in-only take.
+- Assert Hear line, take playback, the engine's scene-range path, and full
+  playback report correct line-relative elapsed time.
 - Assert an overlong guide may finish after frozen one-line score guidance and
   does not change the recording phrase duration.
+- Assert a short guide may finish before music/guidance reaches the authored
+  score boundary; neither clock is stretched to imitate the other.
 - Preserve the test that saved audio contains only the microphone stream.
 - Preserve `echoCancellation: true` and `noiseSuppression: false` coverage.
 
@@ -613,8 +668,9 @@ feature-branch merge is permitted.
 - Assert note geometry, active note, cursor position, and the one-pitch case.
 - Assert count-in exposes an understandable visual `2`, then `1`, before the
   recording timer begins.
-- Test Record, Hear line, Play my recording, listen-only playback, scene
-  playback, and full playback through accessible locators.
+- Test Record, Hear line, Play my recording, listen-only playback, and full
+  playback through accessible locators; preserve the rendered absence of a
+  separate **Play scene** control.
 - Keep every existing privacy/consent boundary: listen-only makes no private
   request and never opens the microphone.
 - Run responsive browser coverage at 280x568, 320x480, 640x360, and desktop;
