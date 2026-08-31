@@ -198,3 +198,131 @@ All four failures are the documented downstream home-menu bitmap decode conditio
 
 - The v8 word-game bitmaps are still unpublished, so the known home-menu decode checks remain red until the later publishing/integration tasks land.
 - Final breakpoint polish is intentionally left to Task 8; this task provides the required large `max-w-7xl`, document-scrollable surface and basic containment only.
+
+## Review fix: normalized browser cue IDs
+
+Review found that the browser cue assertions pinned saved sources but did not expose or assert the stable requested audio IDs. The catalog tests already independently pin descriptor ID, source, and text, so the fix remains entirely at the E2E Audio boundary and does not instrument production playback.
+
+### RED
+
+The principal browser test first required the initial prompt request as a literal ID/source pair:
+
+```text
+{
+  audioId: "word-game-animals-cat-prompt",
+  source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+}
+```
+
+Command:
+
+```text
+npx playwright test tests/e2e/word-game.spec.ts --grep "keeps picture exploration" --reporter=line
+```
+
+Output:
+
+```text
+Running 1 test using 1 worker
+
+- Expected  - 1
++ Received  + 1
+
+  Array [
+    Object {
+-     "audioId": "word-game-animals-cat-prompt",
++     "audioId": undefined,
+      "source": "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+  ]
+
+1 failed
+  [chromium] › tests/e2e/word-game.spec.ts:79:1 › keeps picture exploration separate from choosing and uses saved audio
+```
+
+The RED preserved the requested source and failed only because the normalized ID was absent.
+
+### GREEN
+
+The E2E mock now normalizes the requested Audio URL pathname, accepts only exact `/assets/audio/word-game-*.mp3` assets, derives the stable basename ID, and adds optional `audioId` metadata only to those word-game static cues. Existing lesson cue objects retain their prior runtime fields and behavior.
+
+All word-game saved-cue assertions now check both the ID and source, including prompt/replay, teaching labels, retry, correct feedback, every next-round prompt, completion, and play again.
+
+Principal command and output:
+
+```text
+npx playwright test tests/e2e/word-game.spec.ts --grep "keeps picture exploration" --reporter=line
+
+Running 1 test using 1 worker
+1 passed (1.2s)
+```
+
+### Review-fix verification
+
+Word-game plus shared lesson-cue browser coverage:
+
+```text
+npx playwright test tests/e2e/word-game.spec.ts tests/e2e/lesson-player.spec.ts --reporter=line
+
+Running 53 tests using 7 workers
+53 passed (14.7s)
+```
+
+Fresh final focused check:
+
+```text
+npx playwright test tests/e2e/word-game.spec.ts --reporter=line
+
+Running 5 tests using 5 workers
+5 passed (1.8s)
+```
+
+Full Node suite:
+
+```text
+npm test
+ℹ tests 1516
+ℹ suites 124
+ℹ pass 1516
+ℹ fail 0
+ℹ duration_ms 14712.592542
+```
+
+Build:
+
+```text
+npm run build
+✓ 1968 modules transformed.
+✓ built in 466ms
+```
+
+The existing large-chunk advisory remains unchanged.
+
+Lint:
+
+```text
+npm run lint
+✖ 2 problems (0 errors, 2 warnings)
+```
+
+The two warnings remain the existing unused-disable warnings in generated `worker-configuration.d.ts`.
+
+### Review-fix files
+
+- `src/testing/e2e-browser-mocks.ts`
+- `tests/e2e/word-game.spec.ts`
+- `.superpowers/sdd/2026-08-31-listening-picture-games/task-3-report.md`
+
+### Review-fix self-review
+
+- Confirmed the source-to-ID normalization exists only in the E2E mock; production `playAudioLine`, `playAudioSequence`, and player semantics are unchanged.
+- Confirmed matching is pathname-normalized and limited to exact saved word-game MP3 paths.
+- Confirmed existing lesson static cues do not gain an `audioId` runtime property and the complete lesson-player browser file remains green.
+- Confirmed each word-game request assertion checks both stable ID and exact requested source.
+- Confirmed catalog tests remain the independent source of truth for descriptor ID/source/text mappings.
+- Confirmed no MP3 files were created or changed.
+- `git diff --check` is clean.
+
+### Review-fix concerns
+
+- No new concern. The missing saved MP3 files remain explicitly assigned to the combined Tasks 4/5 and were not generated in this fix.

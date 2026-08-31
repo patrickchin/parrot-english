@@ -45,6 +45,7 @@ const E2E_LESSON_SCENARIO = new URL(window.location.href).searchParams.get(
   "parrotE2eLesson",
 );
 type E2ELessonCue = {
+  audioId?: string;
   endedAt: number | null;
   kind: "device" | "static";
   startedAt: number;
@@ -3126,6 +3127,11 @@ function getMockAudioDelayMs(src: string) {
     : MOCK_AUDIO_DELAY_MS;
 }
 
+function getWordGameAudioId(src: string) {
+  const pathname = new URL(src, window.location.origin).pathname;
+  return pathname.match(/^\/assets\/audio\/(word-game-[a-z0-9-]+)\.mp3$/)?.[1] ?? null;
+}
+
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
   onerror: RecorderHandler<Event> = null;
@@ -3184,9 +3190,10 @@ class MockAudioElement {
       return;
     }
     const lessonScenario = getE2eLessonScenario();
+    const wordGameAudioId = getWordGameAudioId(this.src);
     this.lessonCue =
       this.src.includes("lesson-join-in-") ||
-      this.src.includes("/assets/audio/word-game-");
+      wordGameAudioId !== null;
     const heldLessonAudio =
       (this.lessonCue &&
         (lessonScenario === "held-cue" ||
@@ -3197,6 +3204,7 @@ class MockAudioElement {
           lessonScenario === "held-preflight"));
     const cue: E2ELessonCue | null = this.lessonCue
       ? {
+          ...(wordGameAudioId ? { audioId: wordGameAudioId } : {}),
           endedAt: null,
           kind: "static" as const,
           startedAt: performance.now(),

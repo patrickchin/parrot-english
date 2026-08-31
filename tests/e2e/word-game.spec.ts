@@ -11,7 +11,11 @@ const animals = [
 
 type MediaSnapshot = {
   cueCancellations: number;
-  cues: Array<{ kind: "device" | "static"; text: string }>;
+  cues: Array<{
+    audioId?: string;
+    kind: "device" | "static";
+    text: string;
+  }>;
   pendingCues: number;
 };
 
@@ -27,10 +31,20 @@ async function mediaSnapshot(page: Page) {
   });
 }
 
-async function staticSources(page: Page) {
+async function staticRequests(page: Page) {
   return (await mediaSnapshot(page)).cues
     .filter(({ kind }) => kind === "static")
-    .map(({ text }) => text);
+    .map(({ audioId, text: source }) => ({ audioId, source }));
+}
+
+async function hasStaticRequest(
+  page: Page,
+  expected: { audioId: string; source: string },
+) {
+  return (await staticRequests(page)).some(
+    ({ audioId, source }) =>
+      audioId === expected.audioId && source === expected.source,
+  );
 }
 
 async function releaseNextCue(page: Page) {
@@ -86,14 +100,23 @@ test("keeps picture exploration separate from choosing and uses saved audio", as
   await expect(choices.getByRole("button", { name: /^Listen: / })).toHaveCount(3);
   await expect(choices.getByText("Listen", { exact: true })).toHaveCount(3);
   await expectChoicePictures(choices, 0);
-  await expect.poll(() => staticSources(page)).toEqual([
-    "/assets/audio/word-game-animals-cat-prompt.mp3",
+  await expect.poll(() => staticRequests(page)).toEqual([
+    {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
   ]);
 
   await main.getByRole("button", { name: "Listen again" }).click();
-  await expect.poll(() => staticSources(page)).toEqual([
-    "/assets/audio/word-game-animals-cat-prompt.mp3",
-    "/assets/audio/word-game-animals-cat-prompt.mp3",
+  await expect.poll(() => staticRequests(page)).toEqual([
+    {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+    {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
   ]);
 
   const listenDog = choices.getByRole("button", { name: "Listen: dog" });
@@ -106,10 +129,19 @@ test("keeps picture exploration separate from choosing and uses saved audio", as
     await expect(choose).toBeEnabled();
     await expect(choose).toHaveAttribute("aria-pressed", "false");
   }
-  await expect.poll(() => staticSources(page)).toEqual([
-    "/assets/audio/word-game-animals-cat-prompt.mp3",
-    "/assets/audio/word-game-animals-cat-prompt.mp3",
-    "/assets/audio/word-game-animals-dog-label.mp3",
+  await expect.poll(() => staticRequests(page)).toEqual([
+    {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+    {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+    {
+      audioId: "word-game-animals-dog-label",
+      source: "/assets/audio/word-game-animals-dog-label.mp3",
+    },
   ]);
 
   await choices.getByRole("button", { name: "Choose bird" }).click();
@@ -121,13 +153,23 @@ test("keeps picture exploration separate from choosing and uses saved audio", as
   }
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
   await expect(main.getByRole("button", { name: "Next" })).toHaveCount(0);
-  await expect.poll(() => staticSources(page)).toContain(
-    "/assets/audio/word-game-animals-bird-label.mp3",
-  );
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-animals-bird-label",
+        source: "/assets/audio/word-game-animals-bird-label.mp3",
+      }),
+    )
+    .toBe(true);
   await releaseNextCue(page);
-  await expect.poll(() => staticSources(page)).toContain(
-    "/assets/audio/word-game-retry.mp3",
-  );
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-retry",
+        source: "/assets/audio/word-game-retry.mp3",
+      }),
+    )
+    .toBe(true);
 
   await choices.getByRole("button", { name: "Choose cat" }).click();
   await expect(main.getByRole("status", { name: "Answer feedback" })).toHaveText(
@@ -137,9 +179,14 @@ test("keeps picture exploration separate from choosing and uses saved audio", as
     await expect(choose).toBeDisabled();
   }
   await expect(main.getByRole("button", { name: "Next" })).toBeVisible();
-  await expect.poll(() => staticSources(page)).toContain(
-    "/assets/audio/word-game-animals-cat-correct.mp3",
-  );
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-animals-cat-correct",
+        source: "/assets/audio/word-game-animals-cat-correct.mp3",
+      }),
+    )
+    .toBe(true);
   await expect(main.getByText(/quiz|score|question 1 of/i)).toHaveCount(0);
 });
 
@@ -164,9 +211,15 @@ test("completes all six Animals rounds, focuses transitions, and plays again", a
       .click();
     if (index < animals.length - 1) {
       await expect(main.getByRole("heading", { level: 2, name: animals[index + 1][1] })).toBeFocused();
-      await expect.poll(() => staticSources(page)).toContain(
-        `/assets/audio/word-game-animals-${animals[index + 1][0]}-prompt.mp3`,
-      );
+      const nextPromptId = `word-game-animals-${animals[index + 1][0]}-prompt`;
+      await expect
+        .poll(() =>
+          hasStaticRequest(page, {
+            audioId: nextPromptId,
+            source: `/assets/audio/${nextPromptId}.mp3`,
+          }),
+        )
+        .toBe(true);
     }
   }
 
@@ -178,17 +231,27 @@ test("completes all six Animals rounds, focuses transitions, and plays again", a
   await expect(completion).toBeFocused();
   await expect(main.getByText("You finished the game.")).toBeVisible();
   await expect(main.getByRole("link", { name: "Back to games" }).last()).toHaveAttribute("href", "/word-games");
-  await expect.poll(() => staticSources(page)).toContain(
-    "/assets/audio/word-game-complete.mp3",
-  );
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-complete",
+        source: "/assets/audio/word-game-complete.mp3",
+      }),
+    )
+    .toBe(true);
 
   await main.getByRole("button", { name: "Play again" }).click();
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
   await expect(main.getByRole("heading", { level: 2, name: "Which is the cat?" })).toBeFocused();
   await expect(choices.getByRole("button", { name: "Choose cat" })).toBeVisible();
-  await expect.poll(() => staticSources(page)).toContain(
-    "/assets/audio/word-game-animals-cat-prompt.mp3",
-  );
+  await expect
+    .poll(() =>
+      hasStaticRequest(page, {
+        audioId: "word-game-animals-cat-prompt",
+        source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+      }),
+    )
+    .toBe(true);
 });
 
 test("cancels replaced and unmounted saved playback", async ({ page }) => {
