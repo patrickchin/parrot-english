@@ -267,12 +267,11 @@ async function preflightPackageAssets(packages, contentRealPath) {
 }
 
 function assertProtectedIds(catalog, ledger, ledgerPath) {
-  const definitions = new Map(catalog.map((definition) => [definition.id, definition]));
-  for (const protectedRhyme of ledger.rhymes) {
-    const definition = definitions.get(protectedRhyme.id);
-    if (!definition) {
+  for (const [rhymeIndex, protectedRhyme] of ledger.rhymes.entries()) {
+    const definition = catalog[rhymeIndex];
+    if (definition?.id !== protectedRhyme.id) {
       throw new Error(
-        `${ledgerPath}: protected deployed rhyme id ${protectedRhyme.id} is missing or renamed`,
+        `${ledgerPath}: protected deployed rhyme id ${protectedRhyme.id} is missing, renamed, reordered, or preceded by a new rhyme; new rhyme IDs may only be appended`,
       );
     }
     const lineIds = definition.lines.map(({ id }) => id);
@@ -401,9 +400,8 @@ export async function compileNurseryRhymePackages({
 export function appendCatalogToDeploymentLedger(catalog, ledger, ledgerPath) {
   const validatedLedger = validateDeploymentLedger(ledger, ledgerPath);
   assertProtectedIds(catalog, validatedLedger, ledgerPath);
-  const definitions = new Map(catalog.map((definition) => [definition.id, definition]));
-  const rhymes = validatedLedger.rhymes.map((protectedRhyme) => {
-    const lineIds = definitions.get(protectedRhyme.id).lines.map(({ id }) => id);
+  const rhymes = validatedLedger.rhymes.map((protectedRhyme, rhymeIndex) => {
+    const lineIds = catalog[rhymeIndex].lines.map(({ id }) => id);
     return {
       id: protectedRhyme.id,
       lineIds: [
@@ -412,14 +410,11 @@ export function appendCatalogToDeploymentLedger(catalog, ledger, ledgerPath) {
       ],
     };
   });
-  const protectedIds = new Set(rhymes.map(({ id }) => id));
-  for (const definition of catalog) {
-    if (!protectedIds.has(definition.id)) {
-      rhymes.push({
-        id: definition.id,
-        lineIds: definition.lines.map(({ id }) => id),
-      });
-    }
+  for (const definition of catalog.slice(validatedLedger.rhymes.length)) {
+    rhymes.push({
+      id: definition.id,
+      lineIds: definition.lines.map(({ id }) => id),
+    });
   }
   return { schemaVersion: 1, rhymes };
 }

@@ -201,6 +201,23 @@ function fakeAudioRunner(calls = []) {
   };
 }
 
+function pcmWithPeak(sampleIndex) {
+  const output = Buffer.alloc((sampleIndex + 1) * 4);
+  output.writeFloatLE(1, sampleIndex * 4);
+  return output;
+}
+
+function timelineAudioRunner(calls = []) {
+  return async (file, args, options) => {
+    calls.push({ args, file, options });
+    if (file === "ffprobe") {
+      return { stdout: JSON.stringify({ format: { duration: "0.75" } }) };
+    }
+    const timelineSeconds = args[args.indexOf("-t") + 1];
+    return { stdout: pcmWithPeak(timelineSeconds === "1" ? 0 : 1_000) };
+  };
+}
+
 describe("nursery rhyme package discovery and compilation", () => {
   it("discovers packages deterministically by global order, independent of creation order", async (t) => {
     const first = await compilerFixture(t);
@@ -297,7 +314,7 @@ describe("nursery rhyme package discovery and compilation", () => {
 
     const [definition] = await compileNurseryRhymePackages({
       ...fixture,
-      runTool: fakeAudioRunner(calls),
+      runTool: timelineAudioRunner(calls),
     });
 
     assert.equal(calls.length, 4);
@@ -305,6 +322,12 @@ describe("nursery rhyme package discovery and compilation", () => {
     assert.deepEqual(
       definition.lines.map(({ durationMs }) => durationMs),
       [1_000, 2_000, 1_000],
+    );
+    const oneSecondBars = [1, ...Array(31).fill(0)];
+    const twoSecondBars = [0, 1, ...Array(30).fill(0)];
+    assert.deepEqual(
+      definition.lines.map(({ guidePeakBars }) => guidePeakBars),
+      [oneSecondBars, twoSecondBars, oneSecondBars],
     );
   });
 
@@ -560,6 +583,42 @@ describe("compiler filesystem containment", () => {
 });
 
 describe("append-only deployed ID ledger", () => {
+  it("rejects reordered or prefixed protected rhymes in both modes without writes", async (t) => {
+    const protectedIds = [
+      { id: "alpha-v1", lineIds: ["alpha-v1-line-1"] },
+      { id: "beta-v1", lineIds: ["beta-v1-line-1"] },
+    ];
+    for (const mutation of ["swap", "insert ahead"]) {
+      const fixture = await generatorFixture(t, protectedIds);
+      if (mutation === "insert ahead") {
+        await writePackage(fixture.contentRoot, { order: 1, slug: "new-rhyme" });
+      }
+      await writePackage(fixture.contentRoot, {
+        order: 2,
+        slug: "alpha",
+      });
+      await writePackage(fixture.contentRoot, {
+        order: mutation === "swap" ? 1 : 3,
+        slug: "beta",
+      });
+      const ledgerBefore = await readFile(fixture.ledgerPath);
+      const generatedBefore = await readFile(fixture.outputPath);
+
+      for (const check of [false, true]) {
+        await assert.rejects(
+          runRhymeCatalogGenerator({
+            check,
+            rootDir: fixture.rootDir,
+            runTool: fakeAudioRunner(),
+          }),
+          /protected.*rhyme.*order|ordered.*prefix|rhyme.*append/i,
+        );
+        assert.deepEqual(await readFile(fixture.ledgerPath), ledgerBefore);
+        assert.deepEqual(await readFile(fixture.outputPath), generatedBefore);
+      }
+    }
+  });
+
   it("rejects missing or renamed protected rhyme and line IDs in check and write modes", async (t) => {
     const protectedIds = [{
       id: "twinkle-twinkle-v1",
