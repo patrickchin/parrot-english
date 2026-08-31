@@ -308,7 +308,7 @@ export async function startAtomicR2Uploader(
           break;
         }
       } catch {
-        // The loopback listener is not ready yet.
+        // The deployed helper endpoint is not ready yet.
       }
       await pause(100);
     }
