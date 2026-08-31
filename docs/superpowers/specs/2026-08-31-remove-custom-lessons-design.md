@@ -105,8 +105,8 @@ remain as lineage rather than being rewritten.
   retained data.
 - Built-in lesson recording failures keep their existing visible and retryable
   behavior.
-- The R2 purge aborts if a listed key falls outside the validated learner
-  recording prefix or if pagination fails to advance.
+- The R2 purge ignores and never deletes a listed key outside the two validated
+  custom-recording shapes, and aborts if pagination fails to advance.
 - D1 and R2 cleanup are verified independently because neither storage system can
   transactionally delete the other.
 
