@@ -6,7 +6,7 @@ import { DubTakeWaveform } from "./DubTakeWaveform";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import type { DubOperation } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
-import type { DubDefinition, DubLine } from "./rhyme-catalog";
+import { getDubLineMusicPhrase, type DubDefinition, type DubLine } from "./rhyme-catalog";
 
 export type DubSceneEditorProps = {
   activeLine: DubLine;
@@ -76,9 +76,10 @@ export function DubSceneEditor({
   const hasPlayableTake = pendingTake !== null || hasSavedTake;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
-  const elapsedMs = Math.min(definition.recordingMs, Math.max(0, recordingElapsedMs));
+  const recordingDurationMs = getDubLineMusicPhrase(definition, activeLine).durationMs;
+  const elapsedMs = Math.min(recordingDurationMs, Math.max(0, recordingElapsedMs));
   const elapsedLabel = formatDuration(elapsedMs);
-  const recordingLimitLabel = formatDuration(definition.recordingMs);
+  const recordingLimitLabel = formatDuration(recordingDurationMs);
   const firstLineInScene = lineNumber === 1;
   const lastLineInScene = lineNumber === definition.linesPerScene;
   const recordLabel = operation === "mic-opening"
@@ -107,7 +108,7 @@ export function DubSceneEditor({
           ? error
           : hasPlayableTake
             ? "Recorded ✓"
-            : `Up to ${definition.recordingMs / 1_000} seconds`;
+            : `Melody length: ${recordingLimitLabel}`;
 
   return (
     <main aria-busy={locked} className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-4 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24">
@@ -165,6 +166,7 @@ export function DubSceneEditor({
           <section aria-label="Recording feedback" className="grid h-36 content-start gap-1.5 overflow-visible rounded-2xl bg-sky-50 p-2 short-wide:h-[5.5rem] short-wide:gap-1 short-wide:p-0.5">
             <DubTakeWaveform
               blob={pendingTake}
+              durationMs={recordingDurationMs}
               guideAudioId={guideAudioId}
               recordingElapsedMs={recordingElapsedMs}
               recordingStream={recordingStream}
@@ -172,12 +174,12 @@ export function DubSceneEditor({
             {recording ? (
               <>
                 <p aria-label="Recording duration" className="m-0 flex items-center justify-between gap-2 text-sm font-black text-brand-rose" role="timer">
-                  <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-3 rounded-full bg-red-600" />Recording</span>
+                  <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-3 rounded-full bg-red-600" />Recording with melody</span>
                   <span>{elapsedLabel} / {recordingLimitLabel}</span>
                 </p>
                 <div
                   aria-label="Recording time"
-                  aria-valuemax={definition.recordingMs}
+                  aria-valuemax={recordingDurationMs}
                   aria-valuemin={0}
                   aria-valuenow={elapsedMs}
                   aria-valuetext={`${elapsedLabel} of ${recordingLimitLabel}`}
@@ -187,7 +189,7 @@ export function DubSceneEditor({
                   <span
                     aria-hidden="true"
                     className="block h-full rounded-full bg-brand-rose transition-[width] duration-100 motion-reduce:transition-none"
-                    style={{ width: `${elapsedMs / definition.recordingMs * 100}%` }}
+                    style={{ width: `${elapsedMs / recordingDurationMs * 100}%` }}
                   />
                 </div>
               </>

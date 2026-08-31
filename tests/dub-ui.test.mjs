@@ -21,6 +21,8 @@ const originalMediaRecorder = globalThis.MediaRecorder;
 const originalMediaDevices = navigator.mediaDevices;
 const originalCreateObjectUrl = URL.createObjectURL;
 const originalRevokeObjectUrl = URL.revokeObjectURL;
+const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+const originalCancelAnimationFrame = globalThis.cancelAnimationFrame;
 
 const vite = await createServer({
   appType: "custom",
@@ -48,6 +50,8 @@ afterEach(async () => {
   globalThis.Audio = originalAudio;
   globalThis.AudioContext = originalAudioContext;
   globalThis.MediaRecorder = originalMediaRecorder;
+  globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+  globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
   URL.createObjectURL = originalCreateObjectUrl;
   URL.revokeObjectURL = originalRevokeObjectUrl;
   Object.defineProperty(navigator, "mediaDevices", {
@@ -106,13 +110,36 @@ function mountDuckDub() {
 }
 
 function installRecordingHarness() {
+  return installSynchronizedRecordingHarness().track;
+}
+
+function installSynchronizedRecordingHarness({
+  melodyStartError,
+  melodyPreparationError,
+  rejectMicrophone = false,
+} = {}) {
+  const events = [];
+  const contexts = [];
+  const callbacks = new Map();
   const track = { stopped: false, stop() { this.stopped = true; } };
+  let nextFrame = 1;
+
+  globalThis.requestAnimationFrame = (callback) => {
+    const id = nextFrame++;
+    callbacks.set(id, callback);
+    return id;
+  };
+  globalThis.cancelAnimationFrame = (id) => callbacks.delete(id);
+
   class Recorder {
     static isTypeSupported() { return false; }
 
     constructor() { this.state = "inactive"; }
 
-    start() { this.state = "recording"; }
+    start() {
+      this.state = "recording";
+      events.push("recorder:start");
+    }
 
     stop() {
       this.state = "inactive";
@@ -120,24 +147,111 @@ function installRecordingHarness() {
       this.onstop?.();
     }
   }
+
+  class Param {
+    constructor() { this.value = 1; }
+    setValueAtTime() {}
+    linearRampToValueAtTime() {}
+  }
+
+  class AudioContext {
+    constructor() {
+      this.currentTime = 10;
+      this.destination = {};
+      this.closeCalls = 0;
+      this.oscillators = [];
+      this.sources = [];
+      contexts.push(this);
+    }
+
+    close() {
+      this.closeCalls += 1;
+      return Promise.resolve();
+    }
+
+    createAnalyser() {
+      return {
+        fftSize: 256,
+        getFloatTimeDomainData(samples) { samples.fill(0); },
+        smoothingTimeConstant: 0,
+      };
+    }
+
+    createBufferSource() {
+      const source = {
+        buffer: null,
+        connect() {},
+        startTimes: [],
+        start(when) { this.startTimes.push(when); },
+        stop() {},
+      };
+      this.sources.push(source);
+      return source;
+    }
+
+    createGain() {
+      if (melodyStartError) throw melodyStartError;
+      return { connect() {}, gain: new Param() };
+    }
+
+    createMediaStreamSource() {
+      return { connect() {}, disconnect() {} };
+    }
+
+    createOscillator() {
+      const oscillator = {
+        connect() {},
+        frequency: new Param(),
+        startTimes: [],
+        stop() {},
+        type: "sine",
+        start(when) {
+          this.startTimes.push(when);
+          if (this.type === "triangle") events.push("melody:start");
+        },
+      };
+      this.oscillators.push(oscillator);
+      return oscillator;
+    }
+
+    decodeAudioData() { return Promise.resolve({ duration: 1 }); }
+    resume() {
+      return contexts.length === 1 && melodyPreparationError
+        ? Promise.reject(melodyPreparationError)
+        : Promise.resolve();
+    }
+  }
+
+  globalThis.AudioContext = AudioContext;
   globalThis.MediaRecorder = Recorder;
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,
-    value: { async getUserMedia() { return { getTracks: () => [track] }; } },
+    value: {
+      async getUserMedia() {
+        if (rejectMicrophone) throw new Error("microphone denied");
+        return { getTracks: () => [track] };
+      },
+    },
   });
-  return track;
-}
 
-function installAudioHarness(playedSources = []) {
-  globalThis.Audio = class Audio {
-    constructor(src) { this.src = src; }
-    pause() {}
-    play() {
-      playedSources.push(this.src);
-      return Promise.resolve();
-    }
+  return {
+    callbacks,
+    contexts,
+    events,
+    track,
+    finishBacking() {
+      const backing = contexts.find(({ oscillators }) =>
+        oscillators.some(({ type, startTimes }) => type === "triangle" && startTimes[0] === 10),
+      );
+      assert.ok(backing, "recording should schedule the prepared backing");
+      backing.currentTime += 4;
+      while (callbacks.size && backing.closeCalls === 0) {
+        const [frameId, callback] = callbacks.entries().next().value;
+        callbacks.delete(frameId);
+        callback(0);
+      }
+    },
   };
-  return playedSources;
 }
 
 function renderProjectHome(viewProps = {}) {
@@ -190,6 +304,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
+      durationMs: 4_000,
       guideAudioId: "five-little-ducks-v2-guide-line-1",
       recordingElapsedMs: 500,
       recordingStream: { getTracks: () => [] },
@@ -228,6 +343,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
+      durationMs: 4_000,
       guideAudioId: "five-little-ducks-v2-guide-line-1",
       recordingElapsedMs: 500,
       recordingStream: { getTracks: () => [] },
@@ -264,6 +380,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
+      durationMs: 4_000,
       guideAudioId: "five-little-ducks-v2-guide-line-1",
       recordingElapsedMs: 500,
       recordingStream: { getTracks: () => [] },
@@ -301,6 +418,7 @@ describe("duck dubbing storyboard presentation", () => {
       advanceElapsed = () => setElapsed((current) => current + 100);
       return createElement(DubTakeWaveform, {
         blob: null,
+        durationMs: 4_000,
         guideAudioId: "five-little-ducks-v2-guide-line-1",
         recordingElapsedMs: elapsed,
         recordingStream,
@@ -503,6 +621,178 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
+  it("starts microphone capture before the selected melody and saves once at phrase end", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        uploads += 1;
+        return Response.json({ recordedAt: "2026-08-25T10:00:00.000Z" }, { status: 201 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+
+    assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
+    assert.equal(
+      container.querySelector('[aria-label="Recording time"]')?.getAttribute("aria-valuemax"),
+      "4000",
+    );
+
+    await act(async () => audio.finishBacking());
+    await waitFor(() => assert.equal(uploads, 1));
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("saves a partial take when the learner stops the melody early", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        uploads += 1;
+        return Response.json({ recordedAt: "2026-08-25T10:00:00.000Z" }, { status: 201 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await click(container.querySelector('[aria-label="Stop recording"]'));
+
+    await waitFor(() => assert.equal(uploads, 1));
+    assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("discards an active recording and backing on unmount without uploading", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
+      if (init.method === "PUT") uploads += 1;
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await cleanupMountedRoots();
+
+    assert.equal(uploads, 0);
+    assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.equal(audio.track.stopped, true);
+  });
+
+  it("stops prepared backing when microphone access is rejected", async () => {
+    const audio = installSynchronizedRecordingHarness({ rejectMicrophone: true });
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
+      if (init.method === "PUT") uploads += 1;
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.match(container.textContent, /microphone is off/i));
+
+    assert.equal(uploads, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("cancels the microphone session when prepared melody start fails", async () => {
+    const audio = installSynchronizedRecordingHarness({ melodyStartError: new Error("melody failed") });
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
+      if (init.method === "PUT") uploads += 1;
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.match(container.textContent, /melody could not start/i));
+
+    assert.equal(uploads, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.equal(audio.track.stopped, true);
+  });
+
+  it("does not open microphone capture when melody preparation fails", async () => {
+    const audio = installSynchronizedRecordingHarness({ melodyPreparationError: new Error("melody unavailable") });
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
+      if (init.method === "PUT") uploads += 1;
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.match(container.textContent, /melody could not start/i));
+
+    assert.equal(audio.events.includes("recorder:start"), false);
+    assert.equal(uploads, 0);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("synchronizes guide and saved-take voices with their melody", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledFirstSceneStatus());
+      }
+      if (String(path).endsWith(".mp3") || String(path).endsWith("/audio")) {
+        return new Response(new Uint8Array([1, 2, 3]));
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    const hearLine = () => [...container.querySelectorAll("button")].find(
+      ({ textContent }) => textContent?.includes("Hear line"),
+    );
+    await waitFor(() => assert.ok(hearLine()));
+    await click(hearLine());
+    await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
+    const guide = audio.contexts.find(({ sources }) => sources.length);
+    assert.equal(
+      guide.sources[0].startTimes[0],
+      guide.oscillators.find(({ type }) => type === "triangle").startTimes[0],
+    );
+
+    await click(container.querySelector('[aria-label="Play my recording"]'));
+    await waitFor(() => assert.equal(audio.contexts.filter(({ sources }) => sources.length).length, 2));
+    const take = audio.contexts.filter(({ sources }) => sources.length)[1];
+    assert.equal(
+      take.sources[0].startTimes[0],
+      take.oscillators.find(({ type }) => type === "triangle").startTimes[0],
+    );
+  });
+
   it("clears a revoking save into disabled learner guidance", async () => {
     const revokedUrls = [];
     URL.createObjectURL = () => "blob:revoking-take";
@@ -566,24 +856,16 @@ describe("duck dubbing storyboard presentation", () => {
     assert.deepEqual(revokedUrls, ["blob:saved-take"]);
   });
 
-  it("loads a previously saved recording as a private blob without using the guide", async () => {
-    const clip = new Blob(["saved learner voice"], { type: "audio/webm" });
-    const createdBlobs = [];
+  it("plays a previously saved recording directly without using the guide", async () => {
+    const audio = installSynchronizedRecordingHarness();
     const fetches = [];
-    const playedSources = installAudioHarness();
-    const revokedUrls = [];
-    URL.createObjectURL = (blob) => {
-      createdBlobs.push(blob);
-      return "blob:private-saved-take";
-    };
-    URL.revokeObjectURL = (url) => revokedUrls.push(url);
     globalThis.fetch = async (path, init = {}) => {
       fetches.push(String(path));
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledFirstSceneStatus());
       }
       if (path === "/api/dubs/five-little-ducks-v2/lines/line-1/audio" && !init.method) {
-        return new Response(clip);
+        return new Response(new Uint8Array([1, 2, 3]));
       }
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
@@ -598,17 +880,16 @@ describe("duck dubbing storyboard presentation", () => {
     assert.ok(container.querySelector('[aria-label="Record again"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
     await click(container.querySelector('[aria-label="Play my recording"]'));
-    await waitFor(() => assert.deepEqual(playedSources, ["blob:private-saved-take"]));
+    await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
 
-    assert.deepEqual(createdBlobs, [clip]);
     assert.equal(fetches.filter((path) => path.endsWith("/lines/line-1/audio")).length, 1);
     assert.equal(fetches.some((path) => path.includes("/assets/audio/")), false);
     assert.ok(container.querySelector('[aria-label="Record again"]'));
     await click(container.querySelector('[aria-label="Stop my recording"]'));
-    await waitFor(() => assert.deepEqual(revokedUrls, ["blob:private-saved-take"]));
   });
 
   it("locks immediately when saved recording playback reports consent loss", async () => {
+    installSynchronizedRecordingHarness();
     let createdObjectUrls = 0;
     URL.createObjectURL = () => {
       createdObjectUrls += 1;
@@ -664,12 +945,11 @@ describe("duck dubbing storyboard presentation", () => {
   });
 
   it("keeps pending preview playback private-GET free with a separate URL lifetime", async () => {
+    const audio = installSynchronizedRecordingHarness();
     const privateFetches = [];
     const revokedUrls = [];
-    const playedSources = installAudioHarness();
     URL.createObjectURL = () => "blob:pending-take";
     URL.revokeObjectURL = (url) => revokedUrls.push(url);
-    installRecordingHarness();
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledDubStatus());
@@ -681,6 +961,7 @@ describe("duck dubbing storyboard presentation", () => {
         privateFetches.push(String(path));
         return new Response(new Blob(["wrong source"]));
       }
+      if (path === "blob:pending-take") return new Response(new Uint8Array([1, 2, 3]));
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
@@ -693,22 +974,18 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Stop recording"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
     await click(container.querySelector('[aria-label="Play my recording"]'));
-    await waitFor(() => assert.deepEqual(playedSources, ["blob:pending-take"]));
+    await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
     await click(container.querySelector('[aria-label="Stop my recording"]'));
 
     assert.deepEqual(privateFetches, []);
     assert.deepEqual(revokedUrls, []);
   });
 
-  it("does not create a fetched object URL after saved recording playback is aborted", async () => {
-    const createdBlobs = [];
+  it("does not start saved playback after its pending request is aborted", async () => {
+    const audio = installSynchronizedRecordingHarness();
     let resolveAudioFetch;
     let audioResponseReturned = false;
     const audioResponse = new Promise((resolve) => { resolveAudioFetch = resolve; });
-    URL.createObjectURL = (blob) => {
-      createdBlobs.push(blob);
-      return "blob:stale-take";
-    };
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledFirstSceneStatus());
@@ -733,22 +1010,15 @@ describe("duck dubbing storyboard presentation", () => {
     await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
     assert.ok(container.querySelector('[aria-label="Play full video"]'));
-    assert.deepEqual(createdBlobs, []);
+    assert.equal(audio.contexts.some(({ sources }) => sources.length), false);
   });
 
-  it("keeps a successor fetched take URL owned when an older aborted fetch settles", async () => {
-    const playedSources = installAudioHarness();
-    const createdBlobs = [];
-    const revokedUrls = [];
+  it("keeps successor saved playback active when an older aborted fetch settles", async () => {
+    const audio = installSynchronizedRecordingHarness();
     let audioFetchCount = 0;
     let resolveOlderAudioFetch;
     let olderAudioResponseReturned = false;
     const olderAudioResponse = new Promise((resolve) => { resolveOlderAudioFetch = resolve; });
-    URL.createObjectURL = (blob) => {
-      createdBlobs.push(blob);
-      return "blob:successor-take";
-    };
-    URL.revokeObjectURL = (url) => revokedUrls.push(url);
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledFirstSceneStatus());
@@ -775,21 +1045,17 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Stop my recording"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
     await click(container.querySelector('[aria-label="Play my recording"]'));
-    await waitFor(() => assert.deepEqual(playedSources, ["blob:successor-take"]));
+    await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
 
     assert.equal(audioFetchCount, 2);
-    assert.equal(createdBlobs.length, 1);
-    assert.deepEqual(revokedUrls, []);
 
     resolveOlderAudioFetch(new Response(new Blob(["older learner voice"], { type: "audio/webm" })));
     await waitFor(() => assert.equal(olderAudioResponseReturned, true));
     await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
 
     assert.ok(container.querySelector('[aria-label="Stop my recording"]'));
-    assert.deepEqual(revokedUrls, []);
 
     await click(container.querySelector('[aria-label="Stop my recording"]'));
-    await waitFor(() => assert.deepEqual(revokedUrls, ["blob:successor-take"]));
   });
 
   it("clears saved storyboard data when full playback reports consent loss", async () => {
@@ -912,23 +1178,41 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("keeps recording available when a guide waveform asset is missing", () => {
     const html = renderSceneEditor({
-      activeLine: { ...DUB_LINES[0], text: "A newly authored duck line." },
+      activeLine: DUB_LINES[0],
     });
 
-    assert.match(html, /A newly authored duck line\./);
+    assert.match(html, /Five little ducks went out one day\./);
     assert.match(html, /aria-label="Original audio waveform"/);
     assert.match(html, /aria-label="Record line"/);
   });
 
-  it("turns the fixed record action into an immediate stop action with elapsed time", () => {
+  it("derives recording copy and progress from the selected melody phrase", () => {
+    const line = OLD_MACDONALD_DUB.lines[2];
+    const idle = renderSceneEditor({ activeLine: line, definition: OLD_MACDONALD_DUB });
+    const recording = renderSceneEditor({
+      activeLine: line,
+      definition: OLD_MACDONALD_DUB,
+      operation: "recording",
+      recordingElapsedMs: 1_500,
+      recordingStream: { getTracks: () => [] },
+    });
+
+    assert.match(idle, /Melody length: 0:02/);
+    assert.match(recording, /Recording with melody/);
+    assert.match(recording, /0:01 \/ 0:02/);
+    assert.match(recording, /aria-valuemax="2000"/);
+    assert.match(recording, /aria-valuenow="1500"/);
+  });
+
+  it("turns the phrase-length record action into an immediate stop action with elapsed time", () => {
     const html = renderSceneEditor({
       operation: "recording",
       recordingStream: { getTracks: () => [] },
       recordingElapsedMs: 2_100,
     });
     assert.match(html, /aria-label="Stop recording"/);
-    assert.match(html, /role="timer"[\s\S]*?Recording[\s\S]*?0:02 \/ 0:06/);
-    assert.match(html, /<div(?=[^>]*aria-label="Recording time")(?=[^>]*aria-valuemax="6000")(?=[^>]*aria-valuenow="2100")(?=[^>]*role="progressbar")[^>]*>/);
+    assert.match(html, /role="timer"[\s\S]*?Recording with melody[\s\S]*?0:02 \/ 0:04/);
+    assert.match(html, /<div(?=[^>]*aria-label="Recording time")(?=[^>]*aria-valuemax="4000")(?=[^>]*aria-valuenow="2100")(?=[^>]*role="progressbar")[^>]*>/);
     assert.match(html, /aria-label="Original audio waveform"/);
     assert.match(html, /aria-label="Next line"/);
     assert.doesNotMatch(html, /countdown|Get ready/i);

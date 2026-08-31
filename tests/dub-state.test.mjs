@@ -5,7 +5,6 @@ import {
   DUB_ID,
   DUB_LINES,
   DUB_LINES_PER_VERSE,
-  DUB_RECORDING_MS,
   DUB_ROUTE,
 } from "../src/dubbing/dub-script.ts";
 import {
@@ -20,7 +19,6 @@ describe("five little ducks dub domain", () => {
   it("authors the complete traditional rhyme as 24 four-second cues", () => {
     assert.equal(DUB_ID, "five-little-ducks-v2");
     assert.equal(DUB_ROUTE, "/dubs/five-little-ducks");
-    assert.equal(DUB_RECORDING_MS, 6_000);
     assert.equal(DUB_DURATION_MS, 98_000);
     assert.equal(DUB_LINES.length, 24);
     assert.deepEqual(DUB_LINES.map(({ cueMs }) => cueMs), [

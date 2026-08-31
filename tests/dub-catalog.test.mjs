@@ -219,6 +219,7 @@ describe("rhyme catalog", () => {
     );
 
     for (const definition of DUB_DEFINITIONS) {
+      assert.equal("recordingMs" in definition, false);
       for (const line of definition.lines) {
         const phrase = getDubLineMusicPhrase(definition, line);
         assert.ok(definition.music.linePhrases.includes(phrase));
