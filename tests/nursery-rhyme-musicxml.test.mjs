@@ -32,6 +32,7 @@ function lyric({
 
 function note({
   alter,
+  attributes: noteAttributes = "",
   chord = false,
   duration = 1,
   extra = "",
@@ -53,7 +54,7 @@ function note({
     ? `<notations>${ties.map((type) => `<tied type="${type}"/>`).join("")}</notations>`
     : "";
   return [
-    "<note>",
+    `<note${noteAttributes ? ` ${noteAttributes}` : ""}>`,
     chord ? "<chord/>" : "",
     grace ? "<grace/>" : "",
     pitch,
@@ -446,6 +447,42 @@ describe("ties, line boundaries, and exact lyric offsets", () => {
     ]);
   });
 
+  it("rejects a repeated same-pitch tie start before it can replace the active chain", () => {
+    const xml = scoreXml({
+      parts: [
+        part("P1", [
+          measure(
+            1,
+            attributes(2)
+              + tempo()
+              + rest(4)
+              + '<bookmark id="line-1"/>'
+              + note({
+                duration: 1,
+                ties: ["start"],
+                lyrics: [lyric({ syllabic: "single", text: "One" })],
+              })
+              + note({
+                duration: 1,
+                ties: ["start"],
+                lyrics: [lyric({ syllabic: "single", text: "two" })],
+              })
+              + note({
+                duration: 1,
+                ties: ["stop"],
+                lyrics: [lyric({ endLine: true, syllabic: "single", text: "three" })],
+              }),
+          ),
+        ]),
+      ],
+    });
+
+    assert.throws(
+      () => compile(xml, manifest(["One two three"])),
+      /tie.*active|repeated.*tie start|tie.*overwrite/i,
+    );
+  });
+
   it("joins begin, middle, and end syllables without inserting characters", () => {
     const xml = scoreXml({
       parts: [
@@ -654,6 +691,36 @@ describe("parts, voices, and supported notes", () => {
         manifest(["Hello"], { playbackParts: ["P1", "P2"] }),
       ),
       /chord|overlap|duration/i,
+    );
+  });
+
+  it("rejects an accompaniment chord whose immediate anchor is a rest", () => {
+    const melody = part("P1", [
+      measure(
+        1,
+        attributes(2)
+          + tempo()
+          + rest(4)
+          + '<bookmark id="line-1"/>'
+          + lineNote("Hello"),
+      ),
+    ]);
+    const accompaniment = part("P2", [
+      measure(
+        1,
+        attributes(2)
+          + rest(4)
+          + rest(2)
+          + note({ chord: true, duration: 2, octave: 3 }),
+      ),
+    ]);
+
+    assert.throws(
+      () => compile(
+        scoreXml({ partIds: ["P1", "P2"], parts: [melody, accompaniment] }),
+        manifest(["Hello"], { playbackParts: ["P1", "P2"] }),
+      ),
+      /chord.*pitched|chord.*rest|rest.*anchor/i,
     );
   });
 
@@ -934,6 +1001,12 @@ describe("unsupported and invalid score constructs", () => {
     assert.throws(() => compile(transposed), /transpose/i);
   });
 
+  it("rejects unsupported MusicXML note attributes that alter playback timing", () => {
+    const [xml] = scoreWithBody(lineNote("Hello", { attributes: 'attack="1"' }));
+
+    assert.throws(() => compile(xml), /note.*attribute|attack.*unsupported/i);
+  });
+
   it("rejects a mid-score tempo change", () => {
     const [xml] = scoreWithBody(
       note({ duration: 1, lyrics: [lyric({ syllabic: "begin", text: "Hel" })] })
@@ -1007,5 +1080,15 @@ describe("unsupported and invalid score constructs", () => {
     });
 
     assert.throws(() => compile(xml), /line-1.*8,?000|8,?000.*line-1/i);
+  });
+
+  it("rejects rational timing that collapses or exceeds safe millisecond boundaries", () => {
+    for (const perMinute of ["1000000", "0.000000000001"]) {
+      const xml = scoreXml().replace(tempo(), tempo({ perMinute }));
+      assert.throws(
+        () => compile(xml),
+        /timing.*(?:positive|safe|representable)|millisecond.*(?:collapse|safe|representable)/i,
+      );
+    }
   });
 });

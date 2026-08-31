@@ -21,6 +21,9 @@ const BEAT_UNITS = Object.freeze({
   quarter: [1n, 1n],
   whole: [4n, 1n],
 });
+const MAX_SAFE_MILLISECONDS = BigInt(Number.MAX_SAFE_INTEGER);
+
+class UnrepresentableScoreTimingError extends Error {}
 
 function scoreError(sourcePath, message) {
   return new Error(`${sourcePath}: ${message}`);
@@ -85,10 +88,15 @@ function roundedRational(value) {
   if (value.numerator < 0n) {
     throw new RangeError("Score positions must not be negative.");
   }
-  return Number(
+  const rounded =
     (value.numerator * 2n + value.denominator) /
-      (value.denominator * 2n),
-  );
+      (value.denominator * 2n);
+  if (rounded > MAX_SAFE_MILLISECONDS) {
+    throw new UnrepresentableScoreTimingError(
+      "Score timing exceeds the largest safe-integer millisecond boundary.",
+    );
+  }
+  return Number(rounded);
 }
 
 function millisecondsAt(position, millisecondsPerQuarter) {
@@ -487,6 +495,13 @@ function parseNote(
   noteElement,
   { anchor, cursor, divisions, isMelody, partId, sourcePath, voice },
 ) {
+  const noteAttributes = noteElement.getAttributeNames();
+  if (noteAttributes.length > 0) {
+    throw scoreError(
+      sourcePath,
+      `Part ${partId} note attributes are unsupported: ${noteAttributes.join(", ")}.`,
+    );
+  }
   const allowed = new Set([
     "chord", "pitch", "rest", "tie", "duration", "voice", "notations", "lyric",
   ]);
@@ -534,6 +549,9 @@ function parseNote(
   const midi = pitchElements.length === 1
     ? parsePitch(noteElement, sourcePath, partId)
     : null;
+  if (chord && anchor.midi === null) {
+    throw scoreError(sourcePath, `Part ${partId} chord must follow a pitched note, not a rest.`);
+  }
   const ties = parseTies(noteElement, sourcePath, partId);
   const lyric = parseLyric(noteElement, sourcePath, partId, isMelody);
   if (midi === null && (ties.size > 0 || lyric || chord)) {
@@ -550,7 +568,7 @@ function parseNote(
   }
 
   return {
-    anchor: chord ? anchor : { end, start },
+    anchor: chord ? anchor : { end, midi, start },
     nextCursor: chord ? cursor : end,
     note: midi === null
       ? null
@@ -698,6 +716,12 @@ function coalesceTies(part, sourcePath) {
   for (const currentNote of part.notes) {
     const stops = currentNote.ties.has("stop");
     const starts = currentNote.ties.has("start");
+    if (starts && !stops && active.has(currentNote.midi)) {
+      throw scoreError(
+        sourcePath,
+        `Part ${part.partId} repeats a tie start while the same pitch is still active.`,
+      );
+    }
     let chain;
     if (stops) {
       chain = active.get(currentNote.midi);
@@ -943,6 +967,61 @@ function sortNotes(left, right) {
     || left.role.localeCompare(right.role);
 }
 
+function assertMillisecondValue(value, label, { positive = false } = {}) {
+  if (
+    !Number.isSafeInteger(value)
+    || (positive ? value <= 0 : value < 0)
+  ) {
+    throw new UnrepresentableScoreTimingError(
+      `Score timing ${label} must be a ${positive ? "positive " : ""}safe-integer millisecond value; rounded boundaries must not collapse.`,
+    );
+  }
+}
+
+function validateCompiledMilliseconds(compiled) {
+  assertMillisecondValue(compiled.countInBeatMs, "count-in beat", { positive: true });
+  assertMillisecondValue(compiled.countInDurationMs, "count-in duration", { positive: true });
+  assertMillisecondValue(compiled.durationMs, "score duration", { positive: true });
+  if (compiled.countInDurationMs <= compiled.countInBeatMs) {
+    throw new UnrepresentableScoreTimingError(
+      "Score timing count-in boundaries must remain distinct after millisecond rounding.",
+    );
+  }
+  for (const currentLine of compiled.lines) {
+    assertMillisecondValue(currentLine.cueMs, `line ${currentLine.id} cue`);
+    assertMillisecondValue(
+      currentLine.durationMs,
+      `line ${currentLine.id} duration`,
+      { positive: true },
+    );
+    for (const [kind, notes] of [
+      ["melody note", currentLine.notes],
+      ["playback note", currentLine.playbackNotes],
+    ]) {
+      for (const currentNote of notes) {
+        assertMillisecondValue(currentNote.atMs, `line ${currentLine.id} ${kind} onset`);
+        assertMillisecondValue(
+          currentNote.durationMs,
+          `line ${currentLine.id} ${kind} duration`,
+          { positive: true },
+        );
+      }
+    }
+    for (const currentWord of currentLine.words) {
+      assertMillisecondValue(currentWord.atMs, `line ${currentLine.id} word onset`);
+      assertMillisecondValue(
+        currentWord.durationMs,
+        `line ${currentLine.id} word duration`,
+        { positive: true },
+      );
+    }
+  }
+  for (const currentNote of compiled.outroNotes) {
+    assertMillisecondValue(currentNote.atMs, "outro note onset");
+    assertMillisecondValue(currentNote.durationMs, "outro note duration", { positive: true });
+  }
+}
+
 function compileParsedScore(root, manifest, sourcePath) {
   const lines = manifestLines(manifest, sourcePath);
   const melodyPart = manifest?.score?.melodyPart;
@@ -1089,7 +1168,7 @@ function compileParsedScore(root, manifest, sourcePath) {
     ))
     .sort(sortNotes);
 
-  return {
+  const compiled = {
     countInBeatMs: millisecondsAt(
       tempo.beatQuarterLength,
       tempo.millisecondsPerQuarter,
@@ -1102,6 +1181,8 @@ function compileParsedScore(root, manifest, sourcePath) {
     lines: compiledLines,
     outroNotes,
   };
+  validateCompiledMilliseconds(compiled);
+  return compiled;
 }
 
 export function compileMusicXml({ manifest, sourcePath, xml }) {
@@ -1114,6 +1195,11 @@ export function compileMusicXml({ manifest, sourcePath, xml }) {
   });
   try {
     return compileParsedScore(parseDocument(xml, sourcePath, window), manifest, sourcePath);
+  } catch (error) {
+    if (error instanceof UnrepresentableScoreTimingError) {
+      throw scoreError(sourcePath, error.message);
+    }
+    throw error;
   } finally {
     window.close();
   }
