@@ -267,6 +267,7 @@ test("recording-disabled learners watch public video without private media", asy
   await expect(page.getByRole("button", { name: /^Scene \d/ })).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Scene video" })).toHaveCount(0);
   await expect(page.getByRole("progressbar", { name: "Project recording progress" })).toHaveCount(0);
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("");
   expect((await dubStoreSnapshot(page)).guideFetches).toEqual([]);
 
   const microphoneBefore = await microphoneSnapshot(page);
