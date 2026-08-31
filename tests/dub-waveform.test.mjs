@@ -2,11 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
 const waveform = await import("../src/dubbing/dub-waveform.ts").catch(() => ({}));
-const { DUB_LINES = [] } = await import("../src/dubbing/dub-script.ts").catch(() => ({}));
 const { DUB_DEFINITIONS = [] } = await import("../src/dubbing/rhyme-catalog.ts").catch(() => ({}));
-const { getStaticAudioLineForSpeech = () => ({ id: "" }) } = await import("../lib/static-audio.js").catch(() => ({}));
 const getNormalizedPeakBars = waveform.getNormalizedPeakBars ?? (() => null);
-const getDubGuidePeakBars = waveform.getDubGuidePeakBars ?? (() => []);
 
 describe("dub take waveform peaks", () => {
   it("reduces signed PCM samples into normalized peak bars", () => {
@@ -41,34 +38,14 @@ describe("dub take waveform peaks", () => {
     assert.equal(visibleBars(8_000), 1);
   });
 
-  it("provides a normalized waveform for every saved duck guide", () => {
-    for (const lineNumber of [1, 2, 3, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 23, 24]) {
-      const bars = getDubGuidePeakBars(`five-little-ducks-v2-guide-line-${lineNumber}`);
-      assert.equal(bars.length, 32);
-      assert.ok(bars.some((bar) => bar > 0));
-      assert.ok(bars.every((bar) => bar >= 0 && bar <= 1));
-    }
-  });
-
-  it("maps every authored duck lyric to a saved guide waveform", () => {
-    assert.equal(DUB_LINES.length, 24);
-    for (const line of DUB_LINES) {
-      const { id } = getStaticAudioLineForSpeech("narrator", line.text);
-      const bars = getDubGuidePeakBars(id);
-      assert.equal(bars.length, 32, `${line.id} should resolve ${id}`);
-      assert.ok(bars.some((bar) => bar > 0), `${line.id} should not be silent`);
-    }
-  });
-
-  it("maps every catalog lyric to a visible saved guide waveform", () => {
+  it("keeps every visible guide waveform on its owning catalog line", () => {
     assert.equal(DUB_DEFINITIONS.length, 6);
     for (const definition of DUB_DEFINITIONS) {
       for (const line of definition.lines) {
-        const { id } = getStaticAudioLineForSpeech("narrator", line.text);
-        const bars = getDubGuidePeakBars(id);
-        assert.equal(bars.length, 32, `${line.id} should resolve ${id}`);
-        assert.ok(bars.some((bar) => bar > 0), `${line.id} should not be silent`);
-        assert.ok(bars.every((bar) => bar >= 0 && bar <= 1));
+        assert.ok(Array.isArray(line.guidePeakBars), `${line.id} owns guide bars`);
+        assert.equal(line.guidePeakBars.length, 32, line.id);
+        assert.ok(line.guidePeakBars.some((bar) => bar > 0), `${line.id} should not be silent`);
+        assert.ok(line.guidePeakBars.every((bar) => bar >= 0 && bar <= 1));
       }
     }
   });

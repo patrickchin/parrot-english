@@ -55,7 +55,6 @@ const {
 const { NURSERY_RHYMES_COVER_ARTWORK } = await vite.ssrLoadModule(
   "/src/dubbing/dub-artwork.ts",
 );
-const { getStaticAudioLineForSpeech } = await vite.ssrLoadModule("/lib/static-audio.js");
 const staticMediaPlan = createStaticMediaPublishPlan(STATIC_MEDIA_ASSETS, {
   bucket: "parrot-english-media",
   mediaOrigin: "https://media.parrotbook.com",
@@ -343,7 +342,7 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
       durationMs: 4_000,
-      guideAudioId: "five-little-ducks-v2-guide-line-1",
+      guidePeakBars: [1, ...Array(31).fill(0)],
       recordingElapsedMs: 500,
       recordingStream: { getTracks: () => [] },
     }));
@@ -351,6 +350,10 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(
       container.querySelector('[aria-label="Original audio waveform"]'),
     ));
+    assert.equal(
+      container.querySelector('[aria-label="Original audio waveform"] rect')?.getAttribute("height"),
+      "32",
+    );
     assert.equal(
       container.querySelector('[aria-label="Your live recording waveform"]'),
       null,
@@ -382,7 +385,7 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
       durationMs: 4_000,
-      guideAudioId: "five-little-ducks-v2-guide-line-1",
+      guidePeakBars: [1, ...Array(31).fill(0)],
       recordingElapsedMs: 500,
       recordingStream: { getTracks: () => [] },
     }));
@@ -419,7 +422,7 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
       durationMs: 4_000,
-      guideAudioId: "five-little-ducks-v2-guide-line-1",
+      guidePeakBars: [1, ...Array(31).fill(0)],
       recordingElapsedMs: 500,
       recordingStream: { getTracks: () => [] },
     }));
@@ -457,7 +460,7 @@ describe("duck dubbing storyboard presentation", () => {
       return createElement(DubTakeWaveform, {
         blob: null,
         durationMs: 4_000,
-        guideAudioId: "five-little-ducks-v2-guide-line-1",
+        guidePeakBars: [1, ...Array(31).fill(0)],
         recordingElapsedMs: elapsed,
         recordingStream,
       });
@@ -1543,21 +1546,22 @@ describe("duck dubbing storyboard presentation", () => {
     }), /aria-label="Stop my recording"/);
   });
 
-  it("keeps private playback resolvable when a saved line has no guide", () => {
-    const source = resolveDubLineAudioSource(
-      DUB_LINES[4],
-      { "line-5": "saved" },
-      () => { throw new Error("guide missing"); },
+  it("resolves saved and unsaved playback from explicit line guide metadata", () => {
+    const line = {
+      id: "line-5",
+      guideAudioSrc:
+        "/assets/nursery-rhymes/five-little-ducks/guides/five-little-ducks-v2-guide-line-5.mp3",
+    };
+    assert.deepEqual(
+      resolveDubLineAudioSource(line, { "line-5": "saved" }, "five-little-ducks-v2"),
+      {
+        fallbackUrl: line.guideAudioSrc,
+        preferredUrl: "/api/dubs/five-little-ducks-v2/lines/line-5/audio",
+      },
     );
-    assert.deepEqual(source, {
-      preferredUrl: "/api/dubs/five-little-ducks-v2/lines/line-5/audio",
+    assert.deepEqual(resolveDubLineAudioSource(line, {}, "five-little-ducks-v2"), {
+      preferredUrl: line.guideAudioSrc,
     });
-    assert.throws(
-      () => resolveDubLineAudioSource(DUB_LINES[5], {}, () => {
-        throw new Error("guide missing");
-      }),
-      /guide missing/,
-    );
   });
 
   it("shows public video playback without private or recording controls", () => {
@@ -1581,8 +1585,9 @@ describe("duck dubbing storyboard presentation", () => {
       for (const line of definition.lines) {
         const source = resolveGuideOnlyDubLineAudioSource(line);
         assert.deepEqual(source, {
-          preferredUrl: getStaticAudioLineForSpeech("narrator", line.text).src,
+          preferredUrl: line.guideAudioSrc,
         });
+        assert.match(source.preferredUrl, /^\/assets\/nursery-rhymes\//);
         assert.equal(source.preferredUrl.includes("/api/dubs/"), false);
         assert.equal(Object.hasOwn(source, "fallbackUrl"), false);
       }

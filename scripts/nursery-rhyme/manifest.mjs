@@ -1,4 +1,5 @@
 import path from "node:path";
+import { URL } from "node:url";
 import { z } from "zod";
 
 const ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;

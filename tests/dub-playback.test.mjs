@@ -11,6 +11,7 @@ import {
   scheduleDubAudio,
   startDubPlayback,
 } from "../src/dubbing/dub-playback.ts";
+import * as dubPlayback from "../src/dubbing/dub-playback.ts";
 
 function abortError() {
   const error = new Error("request aborted");
@@ -289,6 +290,85 @@ describe("duck dub playback", () => {
     assert.deepEqual(
       [...sources.values()].map(({ stopCalls }) => stopCalls),
       Array.from({ length: 23 }, () => 1),
+    );
+  });
+
+  it("schedules generated role notes, count clicks, and the eligible outro exactly once", async () => {
+    const line = {
+      cueMs: 800,
+      durationMs: 1_000,
+      guideAudioId: "generated-guide-line-1",
+      guideAudioSrc: "/assets/nursery-rhymes/generated/guides/generated-guide-line-1.mp3",
+      guidePeakBars: Array(32).fill(0.5),
+      id: "generated-line-1",
+      text: "Generated line.",
+      words: [{ startOffset: 0, endOffset: 9, atMs: 0, durationMs: 250 }],
+    };
+    const definition = {
+      countInBeats: 2,
+      countInMidi: 72,
+      durationMs: 2_000,
+      finalCueTailMs: 1_200,
+      guides: [{
+        id: line.guideAudioId,
+        src: line.guideAudioSrc,
+        text: line.text,
+        durationMs: 500,
+      }],
+      id: "generated-v1",
+      lines: [line],
+      linesPerScene: 1,
+      music: {
+        countInBeatMs: 400,
+        countInDurationMs: 800,
+        linePhrases: [{
+          durationMs: 1_000,
+          notes: [{ atMs: 0, durationMs: 1_000, midi: 99 }],
+          playbackNotes: [
+            { atMs: 0, durationMs: 250, midi: 60, role: "melody" },
+            { atMs: 100, durationMs: 500, midi: 48, role: "accompaniment" },
+          ],
+        }],
+        outroNotes: [{
+          atMs: 1_800,
+          durationMs: 200,
+          midi: 55,
+          role: "accompaniment",
+        }],
+        volume: 0.12,
+      },
+      route: "/dubs/generated",
+      sceneArtwork: [],
+      sceneTitles: ["Generated"],
+      title: "Generated",
+    };
+    const audio = createAudioHarness();
+    const raf = createRaf();
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition,
+      fetch: audio.fetch,
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const oscillators = audio.contexts[0].oscillators;
+    assert.equal(dubPlayback.DUB_COUNT_CLICK_DURATION_MS, 200);
+    assert.deepEqual(oscillators.map(({ type }) => type), [
+      "sine", "sine", "triangle", "sine", "sine",
+    ]);
+    assert.deepEqual(oscillators.map(roundedFrequency), [
+      523.251, 523.251, 261.626, 130.813, 195.998,
+    ]);
+    assert.deepEqual(
+      oscillators.map(({ connections }) => connections[0].gain.events[1][1]),
+      [0.35, 0.35, 0.78, 0.24, 0.24],
+    );
+    assert.deepEqual(
+      oscillators.map(({ stopTimes }) => Number(stopTimes[0].toFixed(2))),
+      [10.32, 10.72, 11.17, 11.52, 12.12],
     );
   });
 
@@ -627,7 +707,7 @@ describe("duck dub playback", () => {
           onTick() {},
           requestAnimationFrame: raf.requestAnimationFrame,
         }),
-        /one phrase per line or scene line/,
+        /one phrase per line/,
       );
     }
   });

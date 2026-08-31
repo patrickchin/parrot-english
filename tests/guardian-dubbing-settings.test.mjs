@@ -131,7 +131,7 @@ test("guardian settings manages stored clips without a recording permission gate
   assert.match(
     enabledText,
     new RegExp(
-      `4 of ${DUB_LINE_COUNT} clips saved; Mia can record and replace lines across all six nursery rhymes\\.`,
+      `4 of ${DUB_LINE_COUNT} clips saved; Mia can record and replace lines across every nursery rhyme\\.`,
     ),
   );
   assert.match(enabledText, /Back to guardian dashboard/);
@@ -298,7 +298,7 @@ test("loads and totals saved clips from every voice-dubbing rhyme", async () => 
     assert.match(
       container.textContent,
       new RegExp(
-        `9 of ${DUB_LINE_COUNT} clips saved; Mia can record and replace lines across all six nursery rhymes\\.`,
+        `9 of ${DUB_LINE_COUNT} clips saved; Mia can record and replace lines across every nursery rhyme\\.`,
       ),
     ),
   );

@@ -238,7 +238,7 @@ test("learners can watch public video without private media during cleanup", asy
     dubStoreSnapshot(page),
     microphoneSnapshot(page),
   ]);
-  expect(store.guideFetches.every((url) => url.startsWith("/assets/audio/"))).toBe(true);
+  expect(store.guideFetches.every((url) => url.startsWith("/assets/nursery-rhymes/"))).toBe(true);
   expect(store.privateFetches).toEqual([]);
   expect(store.uploads).toEqual([]);
   expect(store.createdObjectUrls).toEqual([]);
@@ -246,7 +246,8 @@ test("learners can watch public video without private media during cleanup", asy
 });
 
 test("listen-only guide failure restores Play with one child-readable alert", async ({ page }) => {
-  await page.route("**/assets/audio/*", (route) => route.fulfill({ status: 503 }));
+  await page.route("**/assets/nursery-rhymes/*/guides/*.mp3", (route) =>
+    route.fulfill({ status: 503 }));
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
 
   await page.getByRole("button", { name: "Play full video" }).click();
@@ -306,13 +307,13 @@ test("guardian mode deletes a complete private dub and revokes consent", async (
   ).toBeVisible();
   await expect.soft(
     page.getByText(
-      "81 of 81 clips saved; Mia can record and replace lines across all six nursery rhymes.",
+      "81 of 81 clips saved; Mia can record and replace lines across every nursery rhyme.",
       { exact: true },
     ),
   ).toBeVisible();
   await expect.soft(
     page.getByText(
-      "Manage Mia's private voice clips for all six nursery rhymes.",
+      "Manage Mia's private voice clips for every nursery rhyme.",
       { exact: true },
     ),
   ).toHaveCount(0);
@@ -636,7 +637,7 @@ test("an empty project plays a fully generated draft", async ({ page }) => {
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toHaveLength(24);
   await expect.poll(async () => (await dubStoreSnapshot(page)).privateFetches).toEqual([]);
   expect((await dubStoreSnapshot(page)).guideFetches.every((url) =>
-    url.startsWith("/assets/audio/five-little-ducks-v2-guide-line-"),
+    url.startsWith("/assets/nursery-rhymes/five-little-ducks/guides/"),
   )).toBe(true);
   await page.getByRole("button", { name: "Stop full video" }).click();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
@@ -773,7 +774,7 @@ test("Old MacDonald full playback is observed by the browser guide mock", async 
   await page.getByRole("button", { name: "Play full video" }).click();
 
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toContain(
-    "/assets/audio/old-macdonald-v1-guide-line-1.mp3",
+    "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
   );
 });
 
@@ -1400,7 +1401,7 @@ test("corrupt private audio falls back to its guide and marks the scene Needs re
   })).toBeVisible();
   await expect(page.getByRole("button", { name: "Fix Scene 2" })).toBeVisible();
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toContain(
-    "/assets/audio/five-little-ducks-v2-guide-line-5.mp3",
+    "/assets/nursery-rhymes/five-little-ducks/guides/five-little-ducks-v2-guide-line-5.mp3",
   );
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible({ timeout: 8_000 });
   await openScene(page, 2);

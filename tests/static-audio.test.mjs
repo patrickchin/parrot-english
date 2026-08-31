@@ -108,6 +108,17 @@ const OLD_MACDONALD_GUIDE_FILES = [
 ].sort();
 
 describe("static audio cache metadata", () => {
+  it("publishes the catalog's explicit unique guide records from their package URLs", () => {
+    const catalogGuides = DUB_DEFINITIONS.flatMap(({ guides }) => guides ?? []);
+    assert.equal(catalogGuides.length, 59);
+    for (const guide of catalogGuides) {
+      const published = staticAudio.getStaticAudioLineById(guide.id);
+      assert.equal(published.src, guide.src, guide.id);
+      assert.equal(published.text, guide.text, guide.id);
+      assert.match(published.src, /^\/assets\/nursery-rhymes\/[^/]+\/guides\/.+\.mp3$/);
+    }
+  });
+
   it("preserves every deployed nursery-rhyme guide recording", () => {
     const guides = Object.entries(staticAudio.STATIC_AUDIO_LINES)
       .filter(([id]) => /-guide-line-\d+$/.test(id))
@@ -232,7 +243,6 @@ describe("static audio cache metadata", () => {
   });
 
   it("pins the complete non-empty decodable Old MacDonald guide inventory", () => {
-    const audioDirectory = new URL("../public/assets/audio/", import.meta.url);
     const guideLines = new Map();
     for (const { text } of OLD_MACDONALD_DUB.lines) {
       const line = getStaticAudioLineForSpeech("narrator", text);
@@ -247,14 +257,19 @@ describe("static audio cache metadata", () => {
       [...guideLines.values()].map((id) => `${id}.mp3`).sort(),
       OLD_MACDONALD_GUIDE_FILES,
     );
-    const files = readdirSync(audioDirectory)
-      .filter((filename) => filename.startsWith("old-macdonald-v1-guide-") && filename.endsWith(".mp3"))
+    const files = OLD_MACDONALD_DUB.guides
+      .map(({ src }) => basename(src))
       .sort();
     assert.deepEqual(files, OLD_MACDONALD_GUIDE_FILES);
-    for (const filename of files) {
-      const file = new URL(filename, audioDirectory);
+    for (const { id, src } of OLD_MACDONALD_DUB.guides) {
+      assert.match(src, /^\/assets\/nursery-rhymes\/old-macdonald\/guides\/.+\.mp3$/);
+      const file = new URL(`../public${src}`, import.meta.url);
       assert.equal(existsSync(file), true);
-      assert.ok(statSync(file).size > 0, `${filename} is empty`);
+      assert.equal(
+        existsSync(new URL(`../public/assets/audio/${id}.mp3`, import.meta.url)),
+        false,
+      );
+      assert.ok(statSync(file).size > 0, `${id}.mp3 is empty`);
       assert.notEqual(
         execFileSync("ffprobe", [
           "-v", "error",
@@ -263,7 +278,7 @@ describe("static audio cache metadata", () => {
           file.pathname,
         ], { encoding: "utf8" }).trim(),
         "",
-        `${basename(file.pathname)} is not decodable`,
+        `${id}.mp3 is not decodable`,
       );
     }
   });
@@ -366,7 +381,11 @@ describe("static audio cache metadata", () => {
       assert.equal(line.lang, "en-US", `${id} language`);
       assert.doesNotMatch(line.text, /[\u3400-\u9fff]/u, `${id} text`);
       assert.doesNotMatch(line.text, /\bBella\b/i, `${id} fixed learner name`);
-      assert.match(line.src, /^\/assets\/audio\/.+\.mp3$/, `${id} source`);
+      assert.match(
+        line.src,
+        /^\/assets\/(?:audio|nursery-rhymes\/[^/]+\/guides)\/[^/]+\.mp3$/,
+        `${id} source`,
+      );
     }
   });
 

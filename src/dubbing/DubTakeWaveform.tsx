@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getDubGuidePeakBars, getNormalizedPeakBars } from "./dub-waveform";
+import { getNormalizedPeakBars } from "./dub-waveform";
 
 const BAR_COUNT = 32;
 const BASELINE_BARS = Array.from({ length: BAR_COUNT }, () => 0);
@@ -207,17 +207,16 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number, duration
 export function DubTakeWaveform({
   blob,
   durationMs,
-  guideAudioId,
+  guidePeakBars,
   recordingElapsedMs,
   recordingStream,
 }: {
   blob: Blob | null;
   durationMs: number;
-  guideAudioId: string;
+  guidePeakBars: readonly number[];
   recordingElapsedMs: number;
   recordingStream: MediaStream | null;
 }) {
-  const guidePeaks = getDubGuidePeakBars(guideAudioId);
   const recordedPeaks = useRecordedPeakBars(blob, durationMs);
   const live = useLivePeakBars(recordingStream, recordingElapsedMs, durationMs);
 
@@ -225,7 +224,7 @@ export function DubTakeWaveform({
     <div aria-label="Waveform comparison" className="grid w-full" role="group">
       <Waveform
         accessibleName="Original audio waveform"
-        bars={guidePeaks.length === BAR_COUNT ? guidePeaks : BASELINE_BARS}
+        bars={guidePeakBars.length === BAR_COUNT ? guidePeakBars : BASELINE_BARS}
         className="text-violet-700"
       />
       {recordingStream && live.available ? (

@@ -4,12 +4,29 @@ import { readFileSync } from "node:fs";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import process from "node:process";
 import { promisify } from "node:util";
 import { describe, it } from "node:test";
+import { GENERATED_DUB_DEFINITIONS } from "../src/dubbing/generated-rhyme-catalog.ts";
 
 const execFileAsync = promisify(execFile);
 
 describe("static audio generator", () => {
+  it("recognizes an existing nested package guide without generating audio", async () => {
+    const guide = GENERATED_DUB_DEFINITIONS[0].guides[0];
+    assert.match(guide.src, /^\/assets\/nursery-rhymes\/[^/]+\/guides\/.+\.mp3$/);
+
+    const { stdout } = await execFileAsync(
+      process.execPath,
+      ["scripts/generate-static-audio.mjs", `--only=${guide.id}`],
+      {
+        env: { ...process.env, ELEVENLABS_API_KEY: "unused-test-key" },
+      },
+    );
+
+    assert.equal(stdout.trim(), `skipped: ${guide.id} (elevenlabs)`);
+  });
+
   it("chooses ElevenLabs voices from speaker metadata", () => {
     const generator = readFileSync(
       new URL("../scripts/generate-static-audio.mjs", import.meta.url),

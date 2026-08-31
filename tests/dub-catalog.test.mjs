@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import snapshot from "./fixtures/nursery-rhyme-runtime-snapshot.json" with { type: "json" };
+import * as catalog from "../src/dubbing/rhyme-catalog.ts";
 import {
   DUB_DEFINITIONS,
   HUMPTY_DUMPTY_DUB,
@@ -12,50 +13,22 @@ import {
   getDubDefinition,
 } from "../src/dubbing/rhyme-catalog.ts";
 import { FIVE_LITTLE_DUCKS_DUB } from "../src/dubbing/dub-script.ts";
-import {
-  FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
-  HUMPTY_DUMPTY_LINE_ARTWORK,
-  HUMPTY_DUMPTY_SCENE_ARTWORK,
-  MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK,
-  NURSERY_RHYMES_COVER_ARTWORK,
-  OLD_MACDONALD_SCENE_ARTWORK,
-  ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK,
-  ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
-  TWINKLE_TWINKLE_SCENE_ARTWORK,
-} from "../src/dubbing/dub-artwork.ts";
+import { NURSERY_RHYMES_COVER_ARTWORK } from "../src/dubbing/dub-artwork.ts";
 
-function normalizeLegacyScore(definition) {
+function normalizeRuntimeScore(definition) {
   const firstCueMs = definition.lines[0].cueMs;
   const events = definition.lines.flatMap((line) => {
     const phrase = getDubLineMusicPhrase(definition, line);
     const phraseAtMs = line.cueMs - firstCueMs;
-    return [
-      {
-        role: "accompaniment",
-        midi: phrase.bassMidi,
-        atMs: phraseAtMs,
-        durationMs: Math.min(1_600, phrase.durationMs),
-      },
-      ...phrase.notes.map(({ midi, atMs, durationMs }) => ({
-        role: "melody",
-        midi,
-        atMs: phraseAtMs + atMs,
-        durationMs,
-      })),
-    ];
+    return phrase.playbackNotes.map((note) => ({
+      ...note,
+      atMs: phraseAtMs + note.atMs,
+    }));
   });
-  const finalLine = definition.lines.at(-1);
-  const finalPhrase = getDubLineMusicPhrase(definition, finalLine);
-  const outroAtMs = finalLine.cueMs - firstCueMs + finalPhrase.durationMs;
-  const outroDurationMs = definition.durationMs - firstCueMs - outroAtMs;
-  if (outroDurationMs > 0) {
-    events.push(...definition.music.outroMidi.map((midi) => ({
-      role: "accompaniment",
-      midi,
-      atMs: outroAtMs,
-      durationMs: outroDurationMs,
-    })));
-  }
+  events.push(...definition.music.outroNotes.map((note) => ({
+    ...note,
+    atMs: note.atMs - firstCueMs,
+  })));
   return events.sort((left, right) =>
     left.atMs - right.atMs
     || left.role.localeCompare(right.role)
@@ -68,7 +41,7 @@ function catalogContract(definitions) {
     id: definition.id,
     route: definition.route,
     title: definition.title,
-    countInMidi: definition.countInMidi ?? definition.music.countIn[0].midi,
+    countInMidi: definition.countInMidi,
     musicVolume: definition.music.volume,
     phraseDurationsMs: definition.music.linePhrases.map(({ durationMs }) => durationMs),
     linesPerScene: definition.linesPerScene,
@@ -78,7 +51,18 @@ function catalogContract(definitions) {
     lines: definition.lines.map(({ id, text }) => ({ id, text })),
     relativeCuesMs: definition.lines.map(({ cueMs }) => cueMs - definition.lines[0].cueMs),
     durationAfterLeadInMs: definition.durationMs - definition.lines[0].cueMs,
-    normalizedScore: normalizeLegacyScore(definition),
+    normalizedScore: normalizeRuntimeScore(definition),
+  }));
+}
+
+function expandedSnapshotCatalog() {
+  return snapshot.catalog.map((definition) => ({
+    ...definition,
+    phraseDurationsMs: definition.phraseDurationsMs.length === definition.lines.length
+      ? definition.phraseDurationsMs
+      : definition.lines.map(
+          (_, index) => definition.phraseDurationsMs[index % definition.linesPerScene],
+        ),
   }));
 }
 
@@ -151,9 +135,51 @@ const NEW_RHYMES = [
   },
 ];
 
+function assertDeeplyFrozen(value, path = "catalog") {
+  if (value === null || typeof value !== "object") return;
+  assert.equal(Object.isFrozen(value), true, `${path} should be frozen`);
+  for (const [key, nested] of Object.entries(value)) {
+    assertDeeplyFrozen(nested, `${path}.${key}`);
+  }
+}
+
 describe("rhyme catalog", () => {
+  it("normalizes one deeply frozen generated catalog behind every compatibility export", () => {
+    const namedDefinitions = [
+      catalog.FIVE_LITTLE_DUCKS_DUB,
+      catalog.OLD_MACDONALD_DUB,
+      catalog.TWINKLE_TWINKLE_DUB,
+      catalog.ROW_ROW_ROW_YOUR_BOAT_DUB,
+      catalog.MARY_HAD_A_LITTLE_LAMB_DUB,
+      catalog.HUMPTY_DUMPTY_DUB,
+    ];
+
+    namedDefinitions.forEach((definition, index) => {
+      assert.equal(definition, DUB_DEFINITIONS[index]);
+    });
+    assert.equal(FIVE_LITTLE_DUCKS_DUB, catalog.FIVE_LITTLE_DUCKS_DUB);
+    assertDeeplyFrozen(DUB_DEFINITIONS);
+
+    for (const definition of DUB_DEFINITIONS) {
+      assert.equal(definition.countInBeats, 2);
+      assert.ok(Number.isInteger(definition.countInMidi));
+      assert.equal(definition.music.countInDurationMs, definition.lines[0].cueMs);
+      assert.equal(definition.music.linePhrases.length, definition.lines.length);
+      assert.ok(definition.guides.length > 0);
+      for (const line of definition.lines) {
+        assert.match(line.guideAudioSrc, /^\/assets\/nursery-rhymes\/[^/]+\/guides\/.+\.mp3$/);
+        assert.equal(line.guidePeakBars.length, 32);
+        assert.ok(line.words.length > 0);
+      }
+      for (const phrase of definition.music.linePhrases) {
+        assert.ok(phrase.playbackNotes.some(({ role }) => role === "melody"));
+        assert.ok(phrase.playbackNotes.some(({ role }) => role === "accompaniment"));
+      }
+    }
+  });
+
   it("preserves the deployed nursery-rhyme runtime contract", () => {
-    assert.deepEqual(catalogContract(DUB_DEFINITIONS), snapshot.catalog);
+    assert.deepEqual(catalogContract(DUB_DEFINITIONS), expandedSnapshotCatalog());
   });
 
   it("contains the traditional five-scene Old MacDonald definition", () => {
@@ -319,25 +345,24 @@ describe("rhyme catalog", () => {
           linePhrases: TWINKLE_TWINKLE_DUB.music.linePhrases.slice(0, 1),
         },
       }, TWINKLE_TWINKLE_DUB.lines[0]),
-      /one phrase per line or scene line/,
+      /one phrase per line/,
     );
   });
 
   it("owns one deeply immutable, bounded repeating or whole-song score", () => {
     for (const definition of DUB_DEFINITIONS) {
       assert.ok(
-        definition.music.linePhrases.length === definition.linesPerScene
-          || definition.music.linePhrases.length === definition.lines.length,
+        definition.music.linePhrases.length === definition.lines.length,
       );
       assert.equal(Object.isFrozen(definition.music), true);
-      assert.equal(Object.isFrozen(definition.music.countIn), true);
       assert.equal(Object.isFrozen(definition.music.linePhrases), true);
-      assert.equal(Object.isFrozen(definition.music.outroMidi), true);
+      assert.equal(Object.isFrozen(definition.music.outroNotes), true);
       assert.ok(definition.music.volume > 0 && definition.music.volume < 1);
 
       for (const phrase of definition.music.linePhrases) {
         assert.equal(Object.isFrozen(phrase), true);
         assert.equal(Object.isFrozen(phrase.notes), true);
+        assert.equal(Object.isFrozen(phrase.playbackNotes), true);
         assert.ok(phrase.durationMs > 0);
         assert.ok(phrase.notes.length > 0);
         for (const note of phrase.notes) {
@@ -352,11 +377,14 @@ describe("rhyme catalog", () => {
 
     assert.deepEqual(
       FIVE_LITTLE_DUCKS_DUB.music.linePhrases.map(({ durationMs }) => durationMs),
-      [4_000, 4_000, 4_000, 4_000],
+      Array(24).fill(4_000),
     );
     assert.deepEqual(
       OLD_MACDONALD_DUB.music.linePhrases.map(({ durationMs }) => durationMs),
-      [8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000],
+      Array.from(
+        { length: 5 },
+        () => [8_000, 8_000, 2_000, 2_000, 2_000, 2_000, 8_000],
+      ).flat(),
     );
     assert.deepEqual(
       TWINKLE_TWINKLE_DUB.music.linePhrases.map(({ durationMs }) => durationMs),
@@ -368,7 +396,7 @@ describe("rhyme catalog", () => {
     );
     assert.deepEqual(
       MARY_HAD_A_LITTLE_LAMB_DUB.music.linePhrases.map(({ durationMs }) => durationMs),
-      [4_000, 4_000, 4_000, 4_000],
+      Array(8).fill(4_000),
     );
     assert.deepEqual(
       HUMPTY_DUMPTY_DUB.music.linePhrases.map(({ durationMs }) => durationMs),
@@ -400,6 +428,10 @@ describe("rhyme catalog", () => {
       [69, 69, 69, 71, 74, 74],
       [71, 69, 67, 69, 71, 71, 71],
       [69, 69, 71, 69, 67],
+      [71, 69, 67, 69, 71, 71, 71],
+      [69, 69, 69, 71, 74, 74],
+      [71, 69, 67, 69, 71, 71, 71],
+      [69, 69, 71, 69, 67],
     ]);
     assert.deepEqual(pitches(HUMPTY_DUMPTY_DUB), [
       [74, 77, 75, 79, 77, 79, 81, 82],
@@ -410,31 +442,23 @@ describe("rhyme catalog", () => {
   });
 
   it("defines complete immutable generated artwork for all six rhymes", () => {
-    assert.equal(FIVE_LITTLE_DUCKS_DUB.sceneArtwork, FIVE_LITTLE_DUCKS_SCENE_ARTWORK);
-    assert.equal(OLD_MACDONALD_DUB.sceneArtwork, OLD_MACDONALD_SCENE_ARTWORK);
-    assert.equal(TWINKLE_TWINKLE_DUB.sceneArtwork, TWINKLE_TWINKLE_SCENE_ARTWORK);
-    assert.equal(ROW_ROW_ROW_YOUR_BOAT_DUB.sceneArtwork, ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK);
-    assert.equal(ROW_ROW_ROW_YOUR_BOAT_DUB.lineArtwork, ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK);
-    assert.equal(MARY_HAD_A_LITTLE_LAMB_DUB.sceneArtwork, MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK);
-    assert.equal(HUMPTY_DUMPTY_DUB.sceneArtwork, HUMPTY_DUMPTY_SCENE_ARTWORK);
-    assert.equal(HUMPTY_DUMPTY_DUB.lineArtwork, HUMPTY_DUMPTY_LINE_ARTWORK);
-    assert.equal(FIVE_LITTLE_DUCKS_SCENE_ARTWORK.length, 6);
-    assert.equal(OLD_MACDONALD_SCENE_ARTWORK.length, 5);
-    assert.equal(TWINKLE_TWINKLE_SCENE_ARTWORK.length, 3);
-    assert.equal(ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK.length, 1);
-    assert.equal(ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK.length, 4);
-    assert.equal(MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK.length, 2);
-    assert.equal(HUMPTY_DUMPTY_SCENE_ARTWORK.length, 1);
-    assert.equal(HUMPTY_DUMPTY_LINE_ARTWORK.length, 4);
+    assert.equal(FIVE_LITTLE_DUCKS_DUB.sceneArtwork.length, 6);
+    assert.equal(OLD_MACDONALD_DUB.sceneArtwork.length, 5);
+    assert.equal(TWINKLE_TWINKLE_DUB.sceneArtwork.length, 3);
+    assert.equal(ROW_ROW_ROW_YOUR_BOAT_DUB.sceneArtwork.length, 1);
+    assert.equal(ROW_ROW_ROW_YOUR_BOAT_DUB.lineArtwork.length, 4);
+    assert.equal(MARY_HAD_A_LITTLE_LAMB_DUB.sceneArtwork.length, 2);
+    assert.equal(HUMPTY_DUMPTY_DUB.sceneArtwork.length, 1);
+    assert.equal(HUMPTY_DUMPTY_DUB.lineArtwork.length, 4);
 
     const artwork = [
       NURSERY_RHYMES_COVER_ARTWORK,
-      ...FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
-      ...OLD_MACDONALD_SCENE_ARTWORK,
-      ...TWINKLE_TWINKLE_SCENE_ARTWORK,
-      ...ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK,
-      ...MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK,
-      ...HUMPTY_DUMPTY_LINE_ARTWORK,
+      ...FIVE_LITTLE_DUCKS_DUB.sceneArtwork,
+      ...OLD_MACDONALD_DUB.sceneArtwork,
+      ...TWINKLE_TWINKLE_DUB.sceneArtwork,
+      ...ROW_ROW_ROW_YOUR_BOAT_DUB.lineArtwork,
+      ...MARY_HAD_A_LITTLE_LAMB_DUB.sceneArtwork,
+      ...HUMPTY_DUMPTY_DUB.lineArtwork,
     ];
     assert.equal(artwork.length, 25);
     assert.equal(new Set(artwork.map(({ src }) => src)).size, 25);
@@ -445,13 +469,11 @@ describe("rhyme catalog", () => {
       assert.ok(image.alt.length >= 20);
       assert.equal(Object.isFrozen(image), true);
     }
-    assert.equal(Object.isFrozen(FIVE_LITTLE_DUCKS_SCENE_ARTWORK), true);
-    assert.equal(Object.isFrozen(OLD_MACDONALD_SCENE_ARTWORK), true);
-    assert.equal(Object.isFrozen(TWINKLE_TWINKLE_SCENE_ARTWORK), true);
-    assert.equal(Object.isFrozen(ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK), true);
-    assert.equal(Object.isFrozen(ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK), true);
-    assert.equal(Object.isFrozen(MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK), true);
-    assert.equal(Object.isFrozen(HUMPTY_DUMPTY_SCENE_ARTWORK), true);
-    assert.equal(Object.isFrozen(HUMPTY_DUMPTY_LINE_ARTWORK), true);
+    for (const definition of DUB_DEFINITIONS) {
+      assert.equal(Object.isFrozen(definition.sceneArtwork), true);
+      if (definition.lineArtwork) {
+        assert.equal(Object.isFrozen(definition.lineArtwork), true);
+      }
+    }
   });
 });

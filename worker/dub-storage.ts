@@ -1,5 +1,7 @@
-import { DUB_ID } from "../src/dubbing/dub-script.ts";
-import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  DUB_DEFINITIONS,
+  DUB_ID,
+} from "../src/dubbing/rhyme-catalog.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 
 const GENERATION_MARKER = ".dub-generation";

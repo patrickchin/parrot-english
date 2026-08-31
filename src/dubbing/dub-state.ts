@@ -1,5 +1,7 @@
-import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";
-import type { DubDefinition } from "./rhyme-catalog.ts";
+import {
+  FIVE_LITTLE_DUCKS_DUB,
+  type DubDefinition,
+} from "./rhyme-catalog.ts";
 
 export type DubSaveRecovery = "record" | "save";
 export type DubView = "loading" | "listen-only" | "project" | "scene";

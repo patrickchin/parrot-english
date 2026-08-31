@@ -9,7 +9,6 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getNurseryRhymesPath } from "../app/app-routes";
 import { isAbortError } from "../media/audio-playback";
@@ -36,13 +35,16 @@ import {
 import { DubListenOnly } from "./DubListenOnly";
 import { DubProjectHome } from "./DubProjectHome";
 import { DubSceneEditor } from "./DubSceneEditor";
-import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import {
   createInitialDubState,
   reduceDubState,
   type DubOperation,
 } from "./dub-state";
-import type { DubDefinition, DubLine } from "./rhyme-catalog";
+import {
+  FIVE_LITTLE_DUCKS_DUB,
+  type DubDefinition,
+  type DubLine,
+} from "./rhyme-catalog";
 
 type TakePreview = {
   blob: Blob;
@@ -111,30 +113,22 @@ function isControlLocked(operation: DubOperation) {
 }
 
 export function resolveDubLineAudioSource(
-  line: { id: string; text: string },
+  line: Pick<DubLine, "id" | "guideAudioSrc">,
   saved: Readonly<Record<string, string>>,
-  resolveGuide: typeof getStaticAudioLineForSpeech = getStaticAudioLineForSpeech,
-  dubId: string = FIVE_LITTLE_DUCKS_DUB.id,
+  dubId: string,
 ): DubAudioSource {
-  if (Object.hasOwn(saved, line.id)) {
-    const preferredUrl = getDubLineAudioUrl(line.id, { dubId });
-    try {
-      return {
-        fallbackUrl: resolveGuide("narrator", line.text).src,
-        preferredUrl,
-      };
-    } catch {
-      return { preferredUrl };
-    }
-  }
-  return { preferredUrl: resolveGuide("narrator", line.text).src };
+  return Object.hasOwn(saved, line.id)
+    ? {
+        preferredUrl: getDubLineAudioUrl(line.id, { dubId }),
+        fallbackUrl: line.guideAudioSrc,
+      }
+    : { preferredUrl: line.guideAudioSrc };
 }
 
 export function resolveGuideOnlyDubLineAudioSource(
-  line: Pick<DubLine, "text">,
-  resolveGuide: typeof getStaticAudioLineForSpeech = getStaticAudioLineForSpeech,
+  line: Pick<DubLine, "guideAudioSrc">,
 ): DubAudioSource {
-  return { preferredUrl: resolveGuide("narrator", line.text).src };
+  return { preferredUrl: line.guideAudioSrc };
 }
 
 export function DubEntry({
@@ -483,14 +477,6 @@ export function DubStudio({
     const line = definition.lines[state.selectedLineIndex];
     guideControllerRef.current = controller;
     dispatch({ type: "OPERATION_STARTED", operation: "guide-playing" });
-    let guide;
-    try {
-      guide = getStaticAudioLineForSpeech("narrator", definition.lines[state.selectedLineIndex].text);
-    } catch {
-      dispatch({ type: "OPERATION_FINISHED" });
-      dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
-      return;
-    }
     void (async () => {
       try {
         const playback = await startDubPlayback({
@@ -506,7 +492,7 @@ export function DubStudio({
           onLineUnavailable() {
             throw new Error("The guide source is unavailable.");
           },
-          resolveAudioSource: () => ({ preferredUrl: guide.src }),
+          resolveAudioSource: resolveGuideOnlyDubLineAudioSource,
           signal: controller.signal,
         });
         if (generation !== mediaGenerationRef.current) playback.stop();
@@ -575,8 +561,8 @@ export function DubStudio({
     })();
   }
 
-  function resolveLineAudio(line: Pick<DubLine, "id" | "text">): DubAudioSource {
-    return resolveDubLineAudioSource(line, state.saved, getStaticAudioLineForSpeech, definition.id);
+  function resolveLineAudio(line: Pick<DubLine, "id" | "guideAudioSrc">): DubAudioSource {
+    return resolveDubLineAudioSource(line, state.saved, definition.id);
   }
 
   async function startPlayback(scope: "full" | "scene") {
