@@ -2904,7 +2904,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(rosterReads, 0);
   });
 
-  it("changed broadcast reloads the authoritative roster without storage proof", async () => {
+  it("changed broadcast and persisted page restore reload the authoritative roster", async () => {
     const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
     const originalWindowBroadcastChannel = window.BroadcastChannel;
     const SharedBroadcastChannel = installSharedBroadcastChannels();
@@ -2961,6 +2961,18 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           "learner-bob",
         ),
       );
+
+      activeProfileId = "learner-mary";
+      const restoredPage = new window.Event("pageshow");
+      Object.defineProperty(restoredPage, "persisted", { value: true });
+      await act(async () => window.dispatchEvent(restoredPage));
+      await waitFor(() => assert.equal(rosterReads, 2));
+      await waitFor(() =>
+        assert.equal(
+          output("Changed broadcast receiver active learner").textContent,
+          "learner-mary",
+        ),
+      );
       assert.equal(window.localStorage.length, 0);
     } finally {
       globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
@@ -3014,7 +3026,26 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(window.localStorage.length, 0);
   });
 
-  it("account transition aborts an old mutation and ignores its late roster", async () => {
+  it("account transition aborts an old mutation and ignores its late roster", async (t) => {
+    const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "crypto",
+    );
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {},
+    });
+    t.after(() => {
+      if (originalCryptoDescriptor) {
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
+      } else {
+        delete globalThis.crypto;
+      }
+    });
     const heldSelection = deferred();
     let currentAccount = "account-a";
     let mutationSignal = null;
@@ -3047,7 +3078,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         },
       }),
     );
-    await waitFor(() => button("Select Bob before account transition"));
+    await waitFor(() =>
+      assert.equal(
+        button("Select Bob before account transition").closest("[inert]"),
+        null,
+      ),
+    );
     await click(button("Select Bob before account transition"));
     await waitFor(() => assert.ok(mutationSignal));
     assert.equal(mutationSignal.aborted, false);
@@ -3077,6 +3113,98 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       output("Select Bob before account transition active learner").textContent,
       "learner-sam",
     );
+  });
+
+  it("keeps replacement-account actions blocked until learner sync is subscribed", async (t) => {
+    const replacementDigest = deferred();
+    const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "crypto",
+    );
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        ...globalThis.crypto,
+        subtle: {
+          digest: async (_algorithm, value) =>
+            new globalThis.TextDecoder().decode(value) === "account-b|session"
+              ? replacementDigest.promise
+              : new Uint8Array(32).buffer,
+        },
+      },
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    t.after(() => {
+      if (originalCryptoDescriptor) {
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
+      } else {
+        delete globalThis.crypto;
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    });
+    let currentAccount = "account-a";
+    let profileRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        const replacementAccount = currentAccount === "account-b";
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: replacementAccount ? "learner-sam" : "learner-mary",
+            name: replacementAccount ? "Sam" : "Mary",
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(AccountTransitionLearnerSelectionHarness, {
+        onSwitchAccount() {
+          currentAccount = "account-b";
+        },
+      }),
+    );
+    await waitFor(() => {
+      const action = button("Select Bob before account transition");
+      assert.equal(action.closest("[inert]"), null);
+      assert.equal(SharedBroadcastChannel.peerCount(), 1);
+    });
+    const initialProfileRequests = profileRequests;
+
+    act(() => button("Switch learner account").click());
+    const pendingAction = button("Select Bob before account transition");
+    assert.notEqual(pendingAction.closest("[hidden]"), null);
+    assert.notEqual(pendingAction.closest("[inert]"), null);
+    text(/Checking the current learner/);
+    assert.equal(SharedBroadcastChannel.peerCount(), 0);
+    assert.equal(profileRequests, initialProfileRequests);
+
+    await act(async () => {
+      replacementDigest.resolve(new Uint8Array(32).buffer);
+    });
+    await waitFor(() => {
+      const action = button("Select Bob before account transition");
+      assert.equal(action.closest("[inert]"), null);
+      assert.equal(SharedBroadcastChannel.peerCount(), 1);
+      assert.equal(
+        output("Select Bob before account transition active learner")
+          .textContent,
+        "learner-sam",
+      );
+    });
+    assert.equal(profileRequests, initialProfileRequests + 1);
   });
 
   for (const lateMutation of [
@@ -3626,9 +3754,16 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     }
   });
 
-  it("preserves routed learner drafts across same-learner focus and visibility checks", async () => {
-    const revalidation = deferred();
-    let holdRevalidation = false;
+  it("does not recheck or interrupt routed learner drafts on routine tab return when cross-tab sync is available", async (t) => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    t.after(() => {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    });
     let profileRequests = 0;
     let rosterRequests = 0;
     let routeMounts = 0;
@@ -3662,7 +3797,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/learner-profile" && init.method === "GET") {
         profileRequests += 1;
-        return holdRevalidation ? revalidation.promise : json(learnerState);
+        return json(learnerState);
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
         rosterRequests += 1;
@@ -3673,22 +3808,30 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await mountStrict(
       createElement(
-        LearnerProfileGate,
+        AccountActionProvider,
         {
-          completedLearnerProfileFallback: createElement("p", null, "HOME"),
-          isConversationRoute: false,
-          isLearnerProfileRoute: false,
-          isProfileRoute: false,
-          learnerProfileFallback: createElement("p", null, "SETUP"),
-          onCloseProfileRoute() {},
-          onConversationCompleted() {},
-          onOpenLessons() {},
-          onOpenProfileRoute() {},
-          onRedoCompleted() {},
-          onRedoLearnerProfileRoute() {},
-          redoLearnerProfile: false,
+          profileAction: null,
+          sessionIdentity: "user-1|routine-tab-return",
+          setProfileAction() {},
         },
-        createElement(RoutedLearnerDraft),
+        createElement(
+          LearnerProfileGate,
+          {
+            completedLearnerProfileFallback: createElement("p", null, "HOME"),
+            isConversationRoute: false,
+            isLearnerProfileRoute: false,
+            isProfileRoute: false,
+            learnerProfileFallback: createElement("p", null, "SETUP"),
+            onCloseProfileRoute() {},
+            onConversationCompleted() {},
+            onOpenLessons() {},
+            onOpenProfileRoute() {},
+            onRedoCompleted() {},
+            onRedoLearnerProfileRoute() {},
+            redoLearnerProfile: false,
+          },
+          createElement(RoutedLearnerDraft),
+        ),
       ),
     );
     const topic = await waitFor(() => {
@@ -3696,37 +3839,304 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         'textarea[aria-label="Lesson topic draft"]',
       );
       assert.ok(candidate);
+      assert.equal(SharedBroadcastChannel.peerCount(), 1);
       return candidate;
     });
     await input(topic, "Unsaved garden lesson");
     const originalMount = topic.dataset.mount;
     const initialProfileRequests = profileRequests;
     const initialRosterRequests = rosterRequests;
-    holdRevalidation = true;
 
     await act(async () => {
       window.dispatchEvent(new window.Event("focus"));
       document.dispatchEvent(new window.Event("visibilitychange"));
     });
-    await waitFor(() =>
-      assert.equal(profileRequests, initialProfileRequests + 1),
+    await flush();
+    assert.equal(profileRequests, initialProfileRequests);
+    noText(/Checking the current learner/);
+    const currentTopic = document.querySelector(
+      'textarea[aria-label="Lesson topic draft"]',
     );
-    text(/Checking the current learner/);
+    assert.equal(
+      currentTopic?.closest("[hidden]"),
+      null,
+      "The routed page stays visible after returning to the tab.",
+    );
+    assert.equal(
+      currentTopic?.closest("[inert]"),
+      null,
+      "The routed page stays interactive after returning to the tab.",
+    );
+    await input(currentTopic, "Unsaved garden lesson continued");
     assert.equal(
       document.querySelector('textarea[aria-label="Lesson topic draft"]')
         ?.value,
-      "Unsaved garden lesson",
+      "Unsaved garden lesson continued",
+    );
+    assert.equal(currentTopic?.dataset.mount, originalMount);
+    assert.equal(rosterRequests, initialRosterRequests);
+  });
+
+  it("subscribes to learner changes before loading and enabling learner actions", async (t) => {
+    const channelDigest = deferred();
+    const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "crypto",
+    );
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        ...globalThis.crypto,
+        subtle: {
+          digest: () => channelDigest.promise,
+        },
+      },
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    t.after(() => {
+      if (originalCryptoDescriptor) {
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
+      } else {
+        delete globalThis.crypto;
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    });
+    let activeProfileId = "learner-mary";
+    let profileRequests = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: activeProfileId,
+            name: activeProfileId === "learner-bob" ? "Bob" : "Mary",
+          },
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Select Bob after learner sync",
+        profileId: "learner-bob",
+        sessionIdentity: "user-1|delayed-learner-sync",
+      }),
+    );
+    assert.equal(profileRequests, 0);
+    const pendingAction = [...document.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent === "Select Bob after learner sync",
+    );
+    assert.ok(pendingAction);
+    assert.notEqual(pendingAction.closest("[hidden]"), null);
+    assert.notEqual(pendingAction.closest("[inert]"), null);
+
+    activeProfileId = "learner-bob";
+    channelDigest.resolve(new Uint8Array(32).buffer);
+    await waitFor(() => {
+      button("Select Bob after learner sync");
+      assert.equal(SharedBroadcastChannel.peerCount(), 1);
+      assert.equal(
+        output("Select Bob after learner sync active learner").textContent,
+        "learner-bob",
+      );
+    });
+    assert.ok(profileRequests > 0);
+  });
+
+  it("lets a changed signal supersede an initial learner load", async (t) => {
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    t.after(() => {
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    });
+    const initialProfile = deferred();
+    let initialProfileSignal = null;
+    let profileRequests = 0;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        if (profileRequests === 1) {
+          initialProfileSignal = init.signal;
+          return initialProfile.promise;
+        }
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-bob",
+            name: "Bob",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return json({
+          activeProfileId: "learner-bob",
+          profiles: [
+            learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Observe startup learner sync",
+        sessionIdentity: "user-1|startup-sync",
+      }),
+    );
+    await waitFor(() => {
+      assert.ok(initialProfileSignal);
+      assert.equal(SharedBroadcastChannel.peerCount(), 1);
+    });
+
+    await act(async () => {
+      assert.equal(SharedBroadcastChannel.deliverToPeer(0, "changed"), true);
+    });
+    await waitFor(() => assert.equal(initialProfileSignal.aborted, true));
+    await waitFor(() =>
+      assert.equal(
+        output("Observe startup learner sync active learner").textContent,
+        "learner-bob",
+      ),
     );
 
-    revalidation.resolve(json(learnerState));
-    await waitFor(() => {
-      const current = document.querySelector(
-        'textarea[aria-label="Lesson topic draft"]',
-      );
-      assert.equal(current?.value, "Unsaved garden lesson");
-      assert.equal(current?.dataset.mount, originalMount);
+    initialProfile.resolve(
+      json({
+        ...completedLearnerProfileState(),
+        profile: {
+          ...completedLearnerProfileState().profile,
+          id: "learner-mary",
+          name: "Mary",
+        },
+      }),
+    );
+    await flush();
+    assert.equal(
+      output("Observe startup learner sync active learner").textContent,
+      "learner-bob",
+    );
+    assert.equal(profileRequests, 2);
+    assert.equal(rosterReads, 1);
+  });
+
+  it("uses an immediate changed signal as the authoritative startup load", async (t) => {
+    const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "crypto",
+    );
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const heldRoster = deferred();
+    let announced = false;
+    class ImmediateChangeBroadcastChannel {
+      #onmessage = null;
+
+      constructor() {}
+
+      get onmessage() {
+        return this.#onmessage;
+      }
+
+      set onmessage(next) {
+        this.#onmessage = next;
+        if (!announced && typeof next === "function") {
+          announced = true;
+          next({ data: "changed" });
+        }
+      }
+
+      close() {}
+
+      postMessage() {}
+    }
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        ...globalThis.crypto,
+        subtle: {
+          digest: async () => new Uint8Array(32).buffer,
+        },
+      },
     });
-    assert.equal(rosterRequests, initialRosterRequests);
+    globalThis.BroadcastChannel = ImmediateChangeBroadcastChannel;
+    window.BroadcastChannel = ImmediateChangeBroadcastChannel;
+    t.after(() => {
+      if (originalCryptoDescriptor) {
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
+      } else {
+        delete globalThis.crypto;
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    });
+    let profileRequests = 0;
+    let rosterReads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        profileRequests += 1;
+        return json({
+          ...completedLearnerProfileState(),
+          profile: {
+            ...completedLearnerProfileState().profile,
+            id: "learner-bob",
+            name: "Bob",
+          },
+        });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        rosterReads += 1;
+        return heldRoster.promise;
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerSelectionSessionHarness, {
+        label: "Observe immediate learner sync",
+        sessionIdentity: "user-1|immediate-startup-sync",
+      }),
+    );
+    const profileRequestsBeforeRoster = profileRequests;
+    heldRoster.resolve(
+      json({
+        activeProfileId: "learner-bob",
+        profiles: [
+          learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
+        ],
+      }),
+    );
+    await waitFor(() =>
+      assert.equal(
+        output("Observe immediate learner sync active learner").textContent,
+        "learner-bob",
+      ),
+    );
+    assert.equal(profileRequestsBeforeRoster, 0);
+    assert.equal(profileRequests, 1);
+    assert.equal(rosterReads, 1);
   });
 
   it("preserves unsaved Guardian profile fields when visibility confirms the same learner", async () => {
@@ -4783,7 +5193,38 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
   });
 
-  it("fails closed when both the delete response and roster reconciliation are unknown", async () => {
+  it("fails closed when both the delete response and roster reconciliation are unknown", async (t) => {
+    const originalCryptoDescriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "crypto",
+    );
+    const originalGlobalBroadcastChannel = globalThis.BroadcastChannel;
+    const originalWindowBroadcastChannel = window.BroadcastChannel;
+    const SharedBroadcastChannel = installSharedBroadcastChannels();
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        ...globalThis.crypto,
+        subtle: {
+          digest: async () => new Uint8Array(32).buffer,
+        },
+      },
+    });
+    globalThis.BroadcastChannel = SharedBroadcastChannel;
+    window.BroadcastChannel = SharedBroadcastChannel;
+    t.after(() => {
+      if (originalCryptoDescriptor) {
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
+      } else {
+        delete globalThis.crypto;
+      }
+      globalThis.BroadcastChannel = originalGlobalBroadcastChannel;
+      window.BroadcastChannel = originalWindowBroadcastChannel;
+    });
     let deleteRequests = 0;
     let rosterAvailable = false;
     let rosterReads = 0;
@@ -4832,7 +5273,16 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         sessionIdentity: "user-1|shared-session",
       }),
     );
-    await waitFor(() => button("Delete with no authoritative response"));
+    await waitFor(() => {
+      const deleteButton = button("Delete with no authoritative response");
+      assert.equal(deleteButton.closest("[inert]"), null);
+      assert.equal(
+        output(
+          "Delete with no authoritative response active learner",
+        ).textContent,
+        "learner-mia",
+      );
+    });
     await click(button("Delete with no authoritative response"));
 
     await waitFor(() => text(/couldn't verify the current learner/i));
@@ -4915,7 +5365,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           }),
         ),
       );
-      await waitFor(() => button("Select Bob without a channel"));
+      await waitFor(() => {
+        const action = button("Select Bob without a channel");
+        assert.equal(action.closest("[inert]"), null);
+        assert.equal(
+          output("Select Bob without a channel active learner").textContent,
+          "learner-mary",
+        );
+      });
       await click(button("Select Bob without a channel"));
       await waitFor(() =>
         assert.equal(
@@ -5026,7 +5483,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         button("Select from source tab");
         button("Same-account sibling tab");
         button("Different-account tab");
-        assert.equal(profileRequests, 6);
+        assert.equal(profileRequests, 3);
         assert.equal(SharedBroadcastChannel.names().length, 2);
       });
       assert.equal(
@@ -5124,7 +5581,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
       await waitFor(() => {
         button("Switch with a malformed response");
-        assert.equal(profileRequests, 4);
+        assert.equal(profileRequests, 2);
         assert.equal(SharedBroadcastChannel.peerCount(), 2);
       });
       const initialProfileRequests = profileRequests;
@@ -5276,7 +5733,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
       await waitFor(() => {
         button("Reject an empty learner");
-        assert.equal(profileRequests, 4);
+        assert.equal(profileRequests, 2);
         assert.equal(SharedBroadcastChannel.peerCount(), 2);
       });
       const initialProfileRequests = profileRequests;
@@ -5350,7 +5807,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
       await waitFor(() => {
         button("Reject a learner name");
-        assert.equal(profileRequests, 4);
+        assert.equal(profileRequests, 2);
         assert.equal(SharedBroadcastChannel.peerCount(), 2);
       });
       const initialProfileRequests = profileRequests;
@@ -5538,7 +5995,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       await waitFor(() => {
         button("Select while sibling reloads");
         assert.equal(SharedBroadcastChannel.peerCount(), 2);
-        assert.equal(profileRequests, 4);
+        assert.equal(profileRequests, 2);
       });
       const initialProfileRequests = profileRequests;
       holdNextRoster = true;
