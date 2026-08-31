@@ -160,7 +160,7 @@ test("lesson catalog presents one canonical path without artwork experiments", (
   assert.doesNotMatch(html, /full-scene|same lesson, same audio|comparison/i);
 });
 
-test("story shelf presents a curated learner library without research controls", () => {
+test("story shelf presents one curated shelf at a time without research controls", () => {
   const html = renderInRouter(
     createElement(
       LearnerProfileProvider,
@@ -220,19 +220,24 @@ test("story shelf presents a curated learner library without research controls",
   assert.ok(STORIES.every(({ level }) => level !== "original-baseline"));
   assert.match(html, /Pick a story/);
   assert.match(html, /Tap a picture\. I can read it to you\./);
-  assert.deepEqual(shelfHeadings, [
+  assert.deepEqual(shelfHeadings, ["Pick a story shelf", "Little stories"]);
+  assert.equal((html.match(/role="tab"/g) ?? []).length, 6);
+  assert.equal((html.match(/aria-selected="true"/g) ?? []).length, 1);
+  for (const label of [
     "First English words",
     "Start here",
     "Say it again",
     "Little stories",
     "Big adventures",
     "Long stories",
-  ]);
-  assert.equal(storyHrefs.length, 25);
-  assert.equal(new Set(storyHrefs).size, 25);
+  ]) {
+    assert.match(visibleText, new RegExp(label));
+  }
+  assert.equal(storyHrefs.length, 5);
+  assert.equal(new Set(storyHrefs).size, 5);
   assert.match(visibleText, /Recommended for Mia/);
   assert.equal((html.match(/<img[^>]*loading="eager"/g) ?? []).length, 1);
-  assert.equal((html.match(/<img[^>]*loading="lazy"/g) ?? []).length, 24);
+  assert.equal((html.match(/<img[^>]*loading="lazy"/g) ?? []).length, 4);
   assert.doesNotMatch(
     html,
     /Grown-up options|Guardian consent|Choose story level|Upload learner photo|Generate story art/,

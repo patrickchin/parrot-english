@@ -799,7 +799,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   ).toBeVisible();
   await expect(
     page.getByText(
-      "All stories stay visible. This level is highlighted for Mia Updated.",
+      "This shelf opens first for Mia Updated. Every story shelf is still available.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -909,31 +909,35 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await page.getByRole("link", { name: "Story time" }).click();
   await expect(page).toHaveURL("/stories");
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  await expect(shelf.getByRole("heading", { level: 2 })).toHaveText([
-    "First English words",
-    "Start here",
-    "Say it again",
-    "Little stories",
-    "Big adventures",
-    "Long stories",
-  ]);
+  const shelfPicker = shelf.getByRole("tablist", {
+    name: "Pick a story shelf",
+  });
+  await expect(shelfPicker.getByRole("tab")).toHaveCount(6);
+  await expect(
+    shelfPicker.getByRole("tab", { name: "Little stories" }),
+  ).toHaveAttribute("aria-selected", "true");
   await expect(
     shelf.getByRole("link", { name: /^Listen to story:/ }),
-  ).toHaveCount(25);
+  ).toHaveCount(5);
   await expect(
     shelf
-      .getByRole("region", { name: /^Little stories(?: stories)?$/ })
+      .getByRole("tabpanel", { name: "Little stories" })
       .getByText("Recommended for Mia Updated", { exact: true }),
   ).toBeVisible();
   for (const label of ["First English words", "Long stories"]) {
+    await shelfPicker.getByRole("tab", { exact: true, name: label }).click();
     await expect(
       shelf
-        .getByRole("region", {
-          name: new RegExp(`^${label}(?: stories)?$`),
-        })
+        .getByRole("tabpanel", { name: label })
         .getByText(/^Recommended for /),
     ).toHaveCount(0);
   }
+
+  await shelfPicker.getByRole("tab", { name: "Start here" }).click();
+  await expect(page).toHaveURL("/stories?level=first-words");
+  await expect(
+    shelf.getByRole("link", { name: /^Listen to story:/ }),
+  ).toHaveCount(4);
 
   await expect
     .poll(() =>
