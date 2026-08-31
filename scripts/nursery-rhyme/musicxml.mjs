@@ -236,10 +236,9 @@ function stripDeclarations(xml, sourcePath) {
 }
 
 function parseDocument(xml, sourcePath, window) {
-  const document = new window.DOMParser().parseFromString(
-    stripDeclarations(xml, sourcePath),
-    "application/xml",
-  );
+  const declarationFreeXml = stripDeclarations(xml, sourcePath);
+  const parser = new window.DOMParser();
+  const document = parser.parseFromString(declarationFreeXml, "application/xml");
   if (document.getElementsByTagName("parsererror").length > 0) {
     throw scoreError(sourcePath, "MusicXML is malformed.");
   }
