@@ -330,6 +330,14 @@ test("the required page selects and resumes a learner deep link without locking 
   const heading = container.querySelector("h1");
   assert.equal(heading?.getAttribute("tabindex"), "-1");
   await waitFor(() => assert.strictEqual(document.activeElement, heading));
+  const pageNavigation = container.querySelector(
+    'nav[aria-label="Page navigation"]',
+  );
+  assert.ok(pageNavigation, "Expected the shared page navigation landmark.");
+  assert.equal(
+    namedLink(pageNavigation, "Manage learners").getAttribute("href"),
+    "/guardian/learners",
+  );
   assert.match(container.textContent, /Who is learning now\?/);
   assert.equal(container.querySelector('[role="dialog"]'), null);
   assert.doesNotMatch(container.textContent, /Ask a grown-up|Cancel/);

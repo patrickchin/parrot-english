@@ -1,3 +1,4 @@
+import { UsersRound } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -18,6 +19,7 @@ import {
   type LearnerProfileRoster,
 } from "../learner-profile/learner-profile-api";
 import { ActionButton, ActionLink } from "../shared/ui";
+import { HeaderLink, RouteHeader } from "./AppHeader";
 import { getGuardianLearnersPath } from "./app-routes";
 import { useDialogFocus } from "./useDialogFocus";
 
@@ -272,6 +274,15 @@ export function LearnerModeSelectionPage(props: LearnerModePickerProps) {
 
   return (
     <LearnerProfileScreen>
+      <RouteHeader>
+        <HeaderLink
+          aria-label="Manage learners"
+          icon={<UsersRound />}
+          to={getGuardianLearnersPath()}
+        >
+          Manage learners
+        </HeaderLink>
+      </RouteHeader>
       <LearnerProfileCard
         aria-busy={picker.isSwitching}
         aria-labelledby="learner-mode-switch-title"
