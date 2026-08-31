@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import * as dubScript from "../src/dubbing/dub-script.ts";
 import {
   DUB_DURATION_MS,
   DUB_ID,
   DUB_LINES,
-  DUB_RECORDING_MS,
+  DUB_LINES_PER_VERSE,
   DUB_ROUTE,
-  getDubLineAtElapsed,
 } from "../src/dubbing/dub-script.ts";
 import {
   createInitialDubState,
@@ -22,7 +20,6 @@ describe("five little ducks dub domain", () => {
   it("authors the complete traditional rhyme as 24 four-second cues", () => {
     assert.equal(DUB_ID, "five-little-ducks-v2");
     assert.equal(DUB_ROUTE, "/dubs/five-little-ducks");
-    assert.equal(DUB_RECORDING_MS, 6_000);
     assert.equal(DUB_DURATION_MS, 98_000);
     assert.equal(DUB_LINES.length, 24);
     assert.deepEqual(DUB_LINES.map(({ cueMs }) => cueMs), [
@@ -30,7 +27,6 @@ describe("five little ducks dub domain", () => {
       32800, 36800, 40800, 44800, 48800, 52800, 56800, 60800,
       64800, 68800, 72800, 76800, 80800, 84800, 88800, 92800,
     ]);
-    assert.equal(getDubLineAtElapsed(92_900)?.id, "line-24");
   });
 
   it("keeps the authored script immutable", () => {
@@ -42,9 +38,15 @@ describe("five little ducks dub domain", () => {
   });
 
   it("groups the rhyme into six natural four-line scenes", () => {
-    assert.equal(dubScript.DUB_LINES_PER_VERSE, 4);
+    assert.equal(DUB_LINES_PER_VERSE, 4);
     assert.deepEqual(
-      dubScript.DUB_VERSES.map((verse) => verse.map(({ id }) => id)),
+      Array.from(
+        { length: DUB_LINES.length / DUB_LINES_PER_VERSE },
+        (_, index) => DUB_LINES.slice(
+          index * DUB_LINES_PER_VERSE,
+          (index + 1) * DUB_LINES_PER_VERSE,
+        ).map(({ id }) => id),
+      ),
       [
         ["line-1", "line-2", "line-3", "line-4"],
         ["line-5", "line-6", "line-7", "line-8"],
@@ -54,12 +56,6 @@ describe("five little ducks dub domain", () => {
         ["line-21", "line-22", "line-23", "line-24"],
       ],
     );
-  });
-
-  it("holds a scene's fourth line through its recorded tail", () => {
-    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 0).id, "line-5");
-    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 12_000).id, "line-8");
-    assert.equal(dubScript.getDubVerseLineAtElapsed(1, 17_999).id, "line-8");
   });
 
   it("exposes the storyboard reducer as the single canonical dub state surface", () => {

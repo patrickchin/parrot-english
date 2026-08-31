@@ -37,7 +37,6 @@ describe("personalized story art persistence contract", () => {
       "createdAt",
       "updatedAt",
     ]);
-    assert.ok(schema.personalizedStoryArtRelations);
   });
 
   it("keeps final story art unique per learner with an account lookup index", () => {

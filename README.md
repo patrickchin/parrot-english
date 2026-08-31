@@ -43,13 +43,17 @@ Worker-backed app:
 
 ```bash
 cp .dev.vars.example .dev.vars
+cp .env.example .env.local
 npm run db:migrate:local
 npm run dev
 ```
 
 Replace `BETTER_AUTH_SECRET` with at least 32 random characters.
 `BETTER_AUTH_URL` must exactly match the Worker origin; the default local value
-is `http://localhost:3000`. `.dev.vars` is gitignored and must not be committed.
+is `http://localhost:3000`. Add a Turnstile widget in Cloudflare, then put its
+secret key in `.dev.vars` as `TURNSTILE_SECRET_KEY` and its public site key in
+`.env.local` as `VITE_TURNSTILE_SITE_KEY`. Both local files are gitignored and
+must not be committed.
 
 Drizzle owns the complete schema and migration history for the shared
 `parrot-english` D1 database. Add future application tables to
@@ -148,7 +152,12 @@ acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic
 acknowledgments; the browser never receives either provider key.
 
 Email/password authentication currently has no email verification, password
-reset, social sign-in, or Resend integration.
+reset, social sign-in, or Resend integration. Signed-out visitors can also
+start an anonymous guest session. Turnstile protects guest login and account
+creation; returning-user sign-in does not require a challenge. Guest sessions
+currently have the same feature and token usage access as other authenticated
+sessions. Signing out of a guest session removes that temporary account and its
+saved data because it cannot be signed back into later.
 
 ### Production Authentication Setup
 
@@ -159,6 +168,7 @@ be configured without committing them:
 ```bash
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put BETTER_AUTH_URL
+npx wrangler secret put TURNSTILE_SECRET_KEY
 npx wrangler secret put ELEVENLABS_API_KEY
 ```
 
@@ -172,6 +182,9 @@ npx wrangler d1 migrations apply parrot-english --remote
 characters. `BETTER_AUTH_URL` must exactly match the deployed Worker origin.
 The URL is not sensitive and can be moved to a Wrangler environment variable
 later; it is stored as a secret here to match the current deployment procedure.
+Create a production Turnstile widget for the deployed hostnames, store its
+secret with Wrangler as shown above, and set its public site key as the GitHub
+Actions repository variable `TURNSTILE_SITE_KEY` before deploying.
 
 Set `ELEVENLABS_API_KEY` to generate missing saved lesson audio. Use
 `--only=<audio-id>` to avoid spending credits on unrelated lines. Built-in
@@ -213,9 +226,10 @@ Groq call over the saved transcript and persists the resulting profile.
 Raw audio is not stored: LiveKit session recording is explicitly disabled with
 `record: false`. Onboarding completes only when the finished transcript provides
 both name and age; otherwise it grants the existing session-scoped bypass. The
-active agent creates no structured fact rows. The legacy fact table remains
-dormant for rollback safety, while conversation rows cascade from the Better
-Auth user and remain until account deletion under the current retention policy.
+active agent creates no structured fact rows. Migration 0016 drops the legacy
+`conversation_fact` table, so it is absent from current and fresh deployments;
+conversation rows cascade from the Better Auth user and remain until account
+deletion under the current retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.
 LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit

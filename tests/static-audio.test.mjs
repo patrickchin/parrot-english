@@ -112,14 +112,15 @@ describe("static audio cache metadata", () => {
     ]);
 
     for (const definition of DUB_DEFINITIONS) {
+      const guideAudioPrefix = `${definition.id}-guide-`;
       const guides = new Map();
       definition.lines.forEach(({ text }, index) => {
         const line = getStaticAudioLineForSpeech("narrator", text);
-        assert.ok(line.id.startsWith(definition.guideAudioPrefix));
+        assert.ok(line.id.startsWith(guideAudioPrefix));
         assert.equal(line.text, text);
         assert.match(line.ttsText, /^\[warm, rhythmic nursery-rhyme delivery\]/);
         if (!guides.has(text)) {
-          assert.equal(line.id, `${definition.guideAudioPrefix}line-${index + 1}`);
+          assert.equal(line.id, `${guideAudioPrefix}line-${index + 1}`);
           guides.set(text, line.id);
         } else {
           assert.equal(line.id, guides.get(text));

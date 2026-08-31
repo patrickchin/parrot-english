@@ -28,6 +28,19 @@ describe("dub take waveform peaks", () => {
     );
   });
 
+  it("scales one second of samples across two-, four-, and eight-second timelines", () => {
+    const samples = Array.from({ length: 8 }, () => 1);
+    const visibleBars = (durationMs) => getNormalizedPeakBars(
+      samples,
+      8,
+      Math.round(8 * durationMs / 1_000),
+    ).filter((peak) => peak > 0).length;
+
+    assert.equal(visibleBars(2_000), 4);
+    assert.equal(visibleBars(4_000), 2);
+    assert.equal(visibleBars(8_000), 1);
+  });
+
   it("provides a normalized waveform for every saved duck guide", () => {
     for (const lineNumber of [1, 2, 3, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 23, 24]) {
       const bars = getDubGuidePeakBars(`five-little-ducks-v2-guide-line-${lineNumber}`);

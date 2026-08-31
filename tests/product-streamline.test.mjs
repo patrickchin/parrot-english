@@ -39,7 +39,7 @@ function renderInRouter(element, initialEntry = "/") {
   );
 }
 
-test("home gives children four clear, working learning choices", () => {
+test("home gives children five clear, working learning choices", () => {
   const html = renderInRouter(createElement(HomeMenu));
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
     ([, href]) => href,
@@ -50,11 +50,13 @@ test("home gives children four clear, working learning choices", () => {
     "/talk-to-peppa",
     "/stories",
     "/dubs",
+    "/word-game",
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.match(html, /Tap a picture\./i);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
   assert.match(html, /Nursery rhymes/);
+  assert.match(html, /Word game/);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
@@ -158,7 +160,7 @@ test("lesson catalog presents one canonical path without artwork experiments", (
   assert.doesNotMatch(html, /full-scene|same lesson, same audio|comparison/i);
 });
 
-test("story shelf presents a curated learner library without research controls", () => {
+test("story shelf presents one curated shelf at a time without research controls", () => {
   const html = renderInRouter(
     createElement(
       LearnerProfileProvider,
@@ -194,6 +196,7 @@ test("story shelf presents a curated learner library without research controls",
   const visibleText = html
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<[^>]+>/g, " ")
+    .replaceAll("&amp;", "&")
     .replace(/\s+/g, " ");
 
   assert.deepEqual(
@@ -219,18 +222,25 @@ test("story shelf presents a curated learner library without research controls",
   assert.match(html, /Pick a story/);
   assert.match(html, /Tap a picture\. I can read it to you\./);
   assert.deepEqual(shelfHeadings, [
-    "First English words",
-    "Start here",
-    "Say it again",
-    "Little stories",
-    "Big adventures",
-    "Long stories",
+    "Choose a story level",
+    "Level 3 · Short stories",
   ]);
-  assert.equal(storyHrefs.length, 25);
-  assert.equal(new Set(storyHrefs).size, 25);
+  assert.equal((html.match(/role="tab"/g) ?? []).length, 5);
+  assert.equal((html.match(/aria-selected="true"/g) ?? []).length, 1);
+  for (const label of [
+    "Level 1 · Words & pictures",
+    "Level 2 · Repeating stories",
+    "Level 3 · Short stories",
+    "Level 4 · Longer stories",
+    "Storytime · Listen to a full story",
+  ]) {
+    assert.match(visibleText, new RegExp(label));
+  }
+  assert.equal(storyHrefs.length, 5);
+  assert.equal(new Set(storyHrefs).size, 5);
   assert.match(visibleText, /Recommended for Mia/);
   assert.equal((html.match(/<img[^>]*loading="eager"/g) ?? []).length, 1);
-  assert.equal((html.match(/<img[^>]*loading="lazy"/g) ?? []).length, 24);
+  assert.equal((html.match(/<img[^>]*loading="lazy"/g) ?? []).length, 4);
   assert.doesNotMatch(
     html,
     /Grown-up options|Guardian consent|Choose story level|Upload learner photo|Generate story art/,

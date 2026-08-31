@@ -106,18 +106,40 @@ describe("app route helpers", () => {
     );
   });
 
-  it("builds one canonical all-library story shelf path", () => {
-    for (const levelId of [
-      undefined,
-      "first-english-words",
-      "first-words",
-      "repeating-patterns",
-      "tiny-stories",
+  it("builds and resolves focused story shelf paths", () => {
+    assert.equal(routes.getStoryShelfPath(), "/stories");
+    assert.equal(
+      routes.getStoryShelfPath("first-words"),
+      "/stories?level=first-words",
+    );
+    assert.equal(
+      routes.getStoryShelfPath("first-english-words"),
+      "/stories?level=first-words",
+    );
+    assert.equal(
+      routes.getStoryShelfPath("long-stories"),
+      "/stories?level=long-stories",
+    );
+
+    assert.equal(
+      routes.resolveStoryShelfLevel("?level=early-a1", "tiny-stories"),
       "early-a1",
-      "long-stories",
-    ]) {
-      assert.equal(routes.getStoryShelfPath(levelId), "/stories");
-    }
+    );
+    assert.equal(
+      routes.resolveStoryShelfLevel(
+        "?level=first-english-words",
+        "tiny-stories",
+      ),
+      "first-words",
+    );
+    assert.equal(
+      routes.resolveStoryShelfLevel("", "tiny-stories"),
+      "tiny-stories",
+    );
+    assert.equal(
+      routes.resolveStoryShelfLevel("?level=not-a-level", "tiny-stories"),
+      "tiny-stories",
+    );
   });
 
   it("rejects empty, dot-segment, and unencodable story IDs", () => {
@@ -843,6 +865,10 @@ describe("app route helpers", () => {
       ),
       "/stories/the-lantern-trail/pages/2",
     );
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/word-game")),
+      "/word-game",
+    );
     for (const guardianPath of [
       "/guardian",
       "/guardian/lessons",
@@ -881,6 +907,7 @@ describe("app route helpers", () => {
       "/stories//the-lantern-trail",
       "/stories/the-lantern-trail//pages/1",
       "/stories/the-lantern-trail/pages/1/extra",
+      "/word-game/extra",
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",

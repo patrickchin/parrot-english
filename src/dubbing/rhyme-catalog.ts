@@ -12,6 +12,7 @@ import {
   OLD_MACDONALD_MUSIC,
   ROW_ROW_ROW_YOUR_BOAT_MUSIC,
   TWINKLE_TWINKLE_MUSIC,
+  type DubMelodyPhrase,
   type DubMusicScore,
 } from "./dub-melodies.ts";
 
@@ -37,14 +38,36 @@ export type DubDefinition = {
   readonly title: string;
   readonly durationMs: number;
   readonly finalCueTailMs: number;
-  readonly recordingMs: number;
   readonly linesPerScene: number;
   readonly music: DubMusicScore;
   readonly sceneArtwork: readonly DubArtwork[];
   readonly sceneTitles: readonly string[];
   readonly lines: readonly DubLine[];
-  readonly guideAudioPrefix: string;
 };
+
+export function getDubLineMusicPhrase(
+  definition: DubDefinition,
+  line: DubLine,
+): DubMelodyPhrase {
+  const lineIndex = definition.lines.indexOf(line);
+  if (lineIndex < 0) throw new TypeError("Dub music requires one canonical dub line.");
+
+  const phraseCount = definition.music.linePhrases.length;
+  const phraseIndex = phraseCount === definition.lines.length
+    ? lineIndex
+    : phraseCount === definition.linesPerScene
+      ? lineIndex % definition.linesPerScene
+      : -1;
+  if (phraseIndex < 0) {
+    throw new TypeError("Dub music must define one phrase per line or scene line.");
+  }
+
+  const phrase = definition.music.linePhrases[phraseIndex];
+  if (!phrase) {
+    throw new TypeError("Dub music must define one phrase per line or scene line.");
+  }
+  return phrase;
+}
 
 const OLD_ANIMALS = [
   { animal: "some cows", beat: "cows", sounds: ["moo-moo", "moo-moo", "moo", "moo-moo"], title: "Cows on the farm" },
@@ -91,13 +114,11 @@ export const OLD_MACDONALD_DUB: DubDefinition = Object.freeze({
   title: "Old MacDonald Had a Farm",
   durationMs: 162_000,
   finalCueTailMs: 9_200,
-  recordingMs: 6_000,
   linesPerScene: 7,
   music: OLD_MACDONALD_MUSIC,
   sceneArtwork: OLD_MACDONALD_SCENE_ARTWORK,
   sceneTitles: Object.freeze(OLD_ANIMALS.map(({ title }) => title)),
   lines: oldMacDonaldLines,
-  guideAudioPrefix: "old-macdonald-v1-guide-",
 });
 
 function createTimedLines(
@@ -134,13 +155,11 @@ export const TWINKLE_TWINKLE_DUB: DubDefinition = Object.freeze({
   title: "Twinkle Twinkle Little Star",
   durationMs: 26_000,
   finalCueTailMs: 5_200,
-  recordingMs: 6_000,
   linesPerScene: 2,
   music: TWINKLE_TWINKLE_MUSIC,
   sceneArtwork: TWINKLE_TWINKLE_SCENE_ARTWORK,
   sceneTitles: Object.freeze(["A little star", "High above the world", "A diamond in the sky"]),
   lines: twinkleLines,
-  guideAudioPrefix: "twinkle-twinkle-v1-guide-",
 });
 
 const rowLines = createTimedLines(
@@ -161,13 +180,11 @@ export const ROW_ROW_ROW_YOUR_BOAT_DUB: DubDefinition = Object.freeze({
   title: "Row Row Row Your Boat",
   durationMs: 18_000,
   finalCueTailMs: 5_200,
-  recordingMs: 6_000,
   linesPerScene: 2,
   music: ROW_ROW_ROW_YOUR_BOAT_MUSIC,
   sceneArtwork: ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
   sceneTitles: Object.freeze(["Down the stream", "A merry dream"]),
   lines: rowLines,
-  guideAudioPrefix: "row-row-row-your-boat-v1-guide-",
 });
 
 const maryLines = createTimedLines(
@@ -195,13 +212,11 @@ export const MARY_HAD_A_LITTLE_LAMB_DUB: DubDefinition = Object.freeze({
   title: "Mary Had a Little Lamb",
   durationMs: 34_000,
   finalCueTailMs: 5_200,
-  recordingMs: 6_000,
   linesPerScene: 4,
   music: MARY_HAD_A_LITTLE_LAMB_MUSIC,
   sceneArtwork: MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK,
   sceneTitles: Object.freeze(["Mary and her lamb", "The lamb follows Mary"]),
   lines: maryLines,
-  guideAudioPrefix: "mary-had-a-little-lamb-v1-guide-",
 });
 
 const humptyLines = createTimedLines(
@@ -222,13 +237,11 @@ export const HUMPTY_DUMPTY_DUB: DubDefinition = Object.freeze({
   title: "Humpty Dumpty",
   durationMs: 18_000,
   finalCueTailMs: 5_200,
-  recordingMs: 6_000,
   linesPerScene: 2,
   music: HUMPTY_DUMPTY_MUSIC,
   sceneArtwork: HUMPTY_DUMPTY_SCENE_ARTWORK,
   sceneTitles: Object.freeze(["Humpty on the wall", "Helping Humpty"]),
   lines: humptyLines,
-  guideAudioPrefix: "humpty-dumpty-v1-guide-",
 });
 
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";

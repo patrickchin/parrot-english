@@ -25,6 +25,7 @@ export default defineConfig({
       PARROT_FRONTEND_COMMIT_SHA: "e2e-web",
       PARROT_FRONTEND_VERSION: "0.1.e2e",
       VITE_PARROT_E2E: "1",
+      VITE_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
     },
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,

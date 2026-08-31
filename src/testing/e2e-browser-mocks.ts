@@ -12,6 +12,7 @@ const playedAudioSources: string[] = [];
 const createdObjectUrls: string[] = [];
 const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
+const backingStarts: Array<{ at: number; frequencyHz: number }> = [];
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
@@ -213,7 +214,7 @@ function matchActiveE2eDubLinePath(pathname: string) {
 
 function matchActiveE2eDubGuidePath(pathname: string) {
   const definition = getActiveE2eDubDefinition();
-  const prefix = `/assets/audio/${definition.guideAudioPrefix}`;
+  const prefix = `/assets/audio/${definition.id}-guide-`;
   if (!pathname.startsWith(prefix) || !pathname.endsWith(".mp3")) return null;
   const suffix = pathname.slice(prefix.length, -4);
   return definition.lines.find(({ id }) => id === suffix || id.endsWith(`-${suffix}`))?.id ?? null;
@@ -1869,6 +1870,12 @@ function getE2eDubScenario() {
   return persisted && E2E_DUB_SCENARIOS.has(persisted) ? persisted : null;
 }
 
+function holdsE2eDubRecordingEnd() {
+  return new URL(window.location.href).searchParams.get(
+    "parrotE2eDubRecording",
+  ) === "held";
+}
+
 if (getE2eDubScenario()) {
   const createObjectURL = URL.createObjectURL.bind(URL);
   const revokeObjectURL = URL.revokeObjectURL.bind(URL);
@@ -2367,6 +2374,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
     snapshot() {
       return {
         audioContextDoubleCloses,
+        backingStarts: backingStarts.map((start) => ({ ...start })),
         createdObjectUrls: [...createdObjectUrls],
         guideFetches: [...guideFetches],
         playedAudioSources: [...playedAudioSources],
@@ -3507,9 +3515,33 @@ class MockAnalyserNode extends MockAudioNode {
 class MockScheduledAudioNode extends MockAudioNode {
   buffer: AudioBuffer | null = null;
   frequency = new MockAudioParam();
+  onended: (() => void) | null = null;
   type: OscillatorType = "sine";
-  start() {}
-  stop() {}
+  private endTimer: ReturnType<typeof setTimeout> | null = null;
+  constructor(
+    private readonly kind: "voice" | "oscillator",
+    private readonly audioNow: () => number,
+  ) {
+    super();
+  }
+  start(when = 0) {
+    if (this.kind === "oscillator" && getE2eDubScenario()) {
+      backingStarts.push({ at: when, frequencyHz: this.frequency.value });
+    }
+  }
+  stop(when = 0) {
+    if (this.endTimer !== null) clearTimeout(this.endTimer);
+    if (!this.onended) return;
+    if (
+      this.kind === "oscillator" &&
+      this.frequency.value === 0 &&
+      holdsE2eDubRecordingEnd()
+    ) return;
+    this.endTimer = setTimeout(() => {
+      this.endTimer = null;
+      this.onended?.();
+    }, Math.max(0, (when - this.audioNow()) * 50));
+  }
 }
 
 class MockGainNode extends MockAudioNode {
@@ -3536,7 +3568,7 @@ class MockAudioContext {
     this.closed = true;
   }
   createBufferSource() {
-    return new MockScheduledAudioNode();
+    return new MockScheduledAudioNode("voice", () => this.currentTime);
   }
   createAnalyser() {
     return new MockAnalyserNode();
@@ -3548,7 +3580,7 @@ class MockAudioContext {
     return new MockAudioNode();
   }
   createOscillator() {
-    return new MockScheduledAudioNode();
+    return new MockScheduledAudioNode("oscillator", () => this.currentTime);
   }
   async decodeAudioData(bytes: ArrayBuffer) {
     if (new TextDecoder().decode(bytes).includes("corrupt-line-5")) {
@@ -3948,5 +3980,22 @@ Object.defineProperty(navigator, "mediaDevices", {
 });
 
 installE2eProfileFetchMock();
+
+Object.defineProperty(window, "turnstile", {
+  configurable: true,
+  value: {
+    remove() {},
+    render(
+      container: HTMLElement,
+      options: { callback: (token: string) => void },
+    ) {
+      const marker = document.createElement("span");
+      marker.textContent = "Security check ready";
+      container.replaceChildren(marker);
+      queueMicrotask(() => options.callback("parrot-e2e-turnstile-token"));
+      return "parrot-e2e-turnstile";
+    },
+  },
+});
 
 export {};

@@ -82,7 +82,7 @@ function renderApplicationRoute(initialEntry) {
   );
 }
 
-test("home menu prioritizes the four learner activities", () => {
+test("home menu prioritizes the five learner activities", () => {
   assert.equal(typeof HomeMenu, "function", "Expected an executable HomeMenu");
 
   const html = renderInRouter(createElement(HomeMenu));
@@ -97,6 +97,7 @@ test("home menu prioritizes the four learner activities", () => {
     "/talk-to-peppa",
     "/stories",
     "/dubs",
+    "/word-game",
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
@@ -105,7 +106,8 @@ test("home menu prioritizes the four learner activities", () => {
   assert.match(html, />Talk to Peppa</);
   assert.match(html, />Story time</);
   assert.match(html, />Nursery rhymes</);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.match(html, />Word game</);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
   assert.doesNotMatch(
     html,
     /Listen and speak\.|Say hello and chat\.|Listen to a story\.|Tap one\./,
@@ -204,6 +206,9 @@ test("authenticated application routes include the core learner activities", () 
     renderApplicationRoute("/stories"),
     /<h1[^>]*>Pick a story<\/h1>/,
   );
+  const wordGame = renderApplicationRoute("/word-game");
+  assert.match(wordGame, /<h1[^>]*>Word game<\/h1>/);
+  assert.match(wordGame, /Question 1 of 6/);
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
   assert.match(dub, /Loading your private dub…/);

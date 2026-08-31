@@ -4,34 +4,61 @@ import { useLocation, useNavigate } from "react-router";
 import {
   getStoryPagePath,
   getStoryShelfPath,
+  resolveStoryShelfLevel,
 } from "../app/app-routes";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
-import { InteractiveCardLink } from "../shared/ui";
+import {
+  InteractiveCardLink,
+  SegmentedButton,
+  SegmentedControl,
+} from "../shared/ui";
 import { StoryArtwork } from "./StoryArtwork";
 import {
+  getStoryLevel,
+  getStoryShelfLevelId,
   isLearnerStoryLevelId,
+  isStoryLevelId,
   STORIES,
   STORY_LEVELS,
   type Story,
   type StoryLevel,
+  type StoryLevelId,
 } from "./story-catalog";
 
 const STORY_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 305px";
+const STORY_SHELF_LEVELS = STORY_LEVELS.filter(
+  ({ id }) => getStoryShelfLevelId(id) === id,
+);
 
 export function StoryList() {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile } = useLearnerProfile();
   const learnerName = profile.name?.trim() || "Learner";
-  const canonicalPath = getStoryShelfPath();
+  const activeLevelId = resolveStoryShelfLevel(
+    location.search,
+    profile.storyLevel,
+  );
+  const requestedLevelId = new URLSearchParams(location.search).get("level");
+  const activeLevel = getStoryLevel(activeLevelId);
+  const stories = STORIES.filter(
+    (story) => getStoryShelfLevelId(story.level) === activeLevelId,
+  );
+  const canonicalPath = isStoryLevelId(requestedLevelId)
+    ? getStoryShelfPath(requestedLevelId)
+    : getStoryShelfPath();
 
   useEffect(() => {
     if (`${location.pathname}${location.search}` !== canonicalPath) {
       navigate(canonicalPath, { replace: true });
     }
   }, [canonicalPath, location.pathname, location.search, navigate]);
+
+  function selectLevel(levelId: StoryLevelId) {
+    navigate(getStoryShelfPath(levelId), { replace: true });
+  }
 
   return (
     <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-10 pt-20 short:pt-16 sm:px-4 md:px-8 md:pb-14 md:pt-24 lg:px-16">
@@ -57,21 +84,47 @@ export function StoryList() {
         aria-label="Read-aloud stories"
         className="mx-auto grid w-full max-w-7xl gap-4 sm:gap-5"
       >
-        {STORY_LEVELS.map((level, levelIndex) => (
-          <StoryShelfSection
-            id={`story-level-${level.id}`}
-            key={level.id}
-            level={level}
-            priorityFirstStory={levelIndex === 0}
-            recommendedFor={
-              isLearnerStoryLevelId(level.id) &&
-              level.id === profile.storyLevel
-                ? learnerName
-                : undefined
-            }
-            stories={STORIES.filter((story) => story.level === level.id)}
-          />
-        ))}
+        <div className="rounded-3xl border-4 border-white bg-white/90 p-2 shadow-card sm:p-3">
+          <h2
+            className="m-0 px-2 pb-2 text-center text-lg leading-none text-brand-navy sm:text-xl"
+            id="story-shelf-picker-heading"
+          >
+            Choose a story level
+          </h2>
+          <SegmentedControl
+            aria-labelledby="story-shelf-picker-heading"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+            role="tablist"
+          >
+            {STORY_SHELF_LEVELS.map((level) => (
+              <SegmentedButton
+                aria-controls="story-shelf-panel"
+                className="min-h-14 justify-center px-2 text-center text-xs leading-tight last:col-span-2 min-[360px]:px-3 min-[360px]:text-sm lg:last:col-span-1"
+                id={`story-shelf-tab-${level.id}`}
+                key={level.id}
+                onClick={() => selectLevel(level.id)}
+                role="tab"
+                selected={level.id === activeLevelId}
+                type="button"
+              >
+                <span>{level.label}</span>
+              </SegmentedButton>
+            ))}
+          </SegmentedControl>
+        </div>
+
+        <StoryShelfSection
+          id="story-shelf"
+          labelledBy={`story-shelf-tab-${activeLevelId}`}
+          level={activeLevel}
+          recommendedFor={
+            isLearnerStoryLevelId(activeLevel.id) &&
+            activeLevel.id === profile.storyLevel
+              ? learnerName
+              : undefined
+          }
+          stories={stories}
+        />
       </section>
     </main>
   );
@@ -79,23 +132,23 @@ export function StoryList() {
 
 function StoryShelfSection({
   id,
+  labelledBy,
   level,
-  priorityFirstStory,
   recommendedFor,
   stories,
 }: {
   id: string;
+  labelledBy: string;
   level: StoryLevel;
-  priorityFirstStory: boolean;
   recommendedFor?: string;
   stories: readonly Story[];
 }) {
   return (
     <section
-      aria-label={level.label}
+      aria-labelledby={labelledBy}
       className="grid gap-3 sm:gap-4"
-      id={`${id}-panel`}
-      role="region"
+      id="story-shelf-panel"
+      role="tabpanel"
     >
       <header className="grid gap-1 text-center">
         <h2
@@ -126,7 +179,7 @@ function StoryShelfSection({
               <div className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
                 <StoryArtwork
                   artwork={story.cover}
-                  priority={priorityFirstStory && storyIndex === 0}
+                  priority={storyIndex === 0}
                   sizes={STORY_SHELF_IMAGE_SIZES}
                 />
               </div>

@@ -1,7 +1,10 @@
 import { LESSONS, type LessonCatalogEntry } from "../lessons/lesson-catalog";
 import {
+  getStoryShelfLevelId,
+  isStoryLevelId,
   resolveStory as resolveCatalogStory,
   type Story,
+  type StoryLevelId,
 } from "../stories/story-catalog";
 import { isSafeRouteId } from "../../lib/route-id";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
@@ -22,6 +25,7 @@ export type StoryRouteDecision =
 const GATE_ROUTE_PATH =
   /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
+const WORD_GAME_ROUTE_PATH = /^\/word-game\/*$/i;
 const GUARDIAN_LEARNERS_ROUTE_PATH = /^\/guardian\/learners\/*$/i;
 const GUARDIAN_LEARNER_ROUTE_PATH =
   /^\/guardian\/learners\/([^/]+)\/*$/i;
@@ -58,9 +62,11 @@ const SAFE_RETURN_PATHS = [
   /^\/stories\/*$/i,
   /^\/stories\/[^/]+\/*$/i,
   /^\/stories\/[^/]+\/pages\/[^/]+\/*$/i,
+  WORD_GAME_ROUTE_PATH,
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
 const PARROT_LESSONS = new Map(LESSONS.map((entry) => [entry.id, entry]));
+const DEFAULT_STORY_LEVEL_ID: StoryLevelId = "first-words";
 
 export function getGuardianPath() {
   return "/guardian";
@@ -162,8 +168,22 @@ export function getOldMacDonaldDubPath() {
   return "/dubs/old-macdonald" as const;
 }
 
-export function getStoryShelfPath() {
-  return "/stories" as const;
+export function getStoryShelfPath(
+  levelId?: StoryLevelId,
+) {
+  return levelId === undefined
+    ? "/stories"
+    : `/stories?level=${encodeURIComponent(getStoryShelfLevelId(levelId))}`;
+}
+
+export function resolveStoryShelfLevel(
+  search: string,
+  fallbackLevelId: StoryLevelId = DEFAULT_STORY_LEVEL_ID,
+): StoryLevelId {
+  const levelId = new URLSearchParams(search).get("level");
+  return getStoryShelfLevelId(
+    isStoryLevelId(levelId) ? levelId : fallbackLevelId,
+  );
 }
 
 export function getStoryPagePath(storyId: string, pageIndex: number) {

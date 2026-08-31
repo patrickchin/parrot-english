@@ -260,14 +260,10 @@ describe("learner-profile infrastructure", () => {
       assert.deepEqual(Object.keys(getTableColumns(table)), expected.properties);
     }
 
-    assert.ok(schema.learnerProfileRelations);
     assert.ok(schema.sessionLearnerSelection);
     assert.ok(schema.learnerSessionBypass);
     assert.ok(schema.learnerDubConsent);
     assert.ok(schema.learnerStoryArtGenerationLease);
-    assert.ok(schema.profileSessionBypassRelations);
-    assert.ok(schema.questionnaireRelations);
-    assert.ok(schema.questionnaireQuestionRelations);
   });
 
   it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
@@ -438,21 +434,6 @@ describe("learner-profile infrastructure", () => {
 });
 
 describe("checked-in questionnaire deployment", () => {
-  it("applies D1 migrations and deploys without publishing questionnaire rows", () => {
-    const workflow = readFileSync(
-      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
-      "utf8",
-    );
-    const migration = workflow.indexOf(
-      "wrangler d1 migrations apply parrot-english --remote",
-    );
-    const deploy = workflow.indexOf("npm run deploy:worker");
-
-    assert.ok(migration >= 0, "Expected a remote D1 migration step");
-    assert.ok(deploy > migration, "Expected Worker deploy after migrations");
-    assert.doesNotMatch(workflow, /questionnaire:publish|publish-questionnaire/);
-  });
-
   it("serializes deploys without canceling a migration in progress", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),

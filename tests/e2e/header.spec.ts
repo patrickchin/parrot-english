@@ -41,6 +41,11 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to home", role: "link" },
   },
   {
+    name: "word game",
+    path: "/word-game",
+    control: { name: "Back to home", role: "link" },
+  },
+  {
     name: "story reader",
     path: "/stories/the-lantern-trail/pages/1",
     control: { name: "Back to stories", role: "link" },
@@ -307,7 +312,13 @@ for (const mode of ["sign-in", "sign-up"] as const) {
       const submit = page.getByRole("button", {
         name: mode === "sign-up" ? "Create account" : "Sign in and start",
       });
+      const guest = page.getByRole("button", { name: "Continue as guest" });
+      const securityCheck = page.getByRole("group", {
+        name: "Security check",
+      });
       await expect(submit).toBeVisible();
+      await expect(guest).toBeEnabled();
+      await expect(securityCheck).toBeVisible();
       const sizing = await main.evaluate((element) => ({
         clientHeight: element.clientHeight,
         clientWidth: element.clientWidth,
@@ -326,6 +337,8 @@ for (const mode of ["sign-in", "sign-up"] as const) {
       await submit.focus();
       await expect(submit).toBeFocused();
       await expectInsideViewport(submit, viewport);
+      await guest.scrollIntoViewIfNeeded();
+      await expectInsideViewport(guest, viewport);
       if (sizing.scrollHeight > sizing.clientHeight) {
         await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
         expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
@@ -333,6 +346,70 @@ for (const mode of ["sign-in", "sign-up"] as const) {
     });
   }
 }
+
+test("Continue as guest creates one protected session and enters the app", async ({
+  page,
+}) => {
+  const timestamp = "2026-08-31T00:00:00.000Z";
+  const authenticatedSession = {
+    session: {
+      id: "e2e-guest-session",
+      userId: "e2e-guest-user",
+      token: "e2e-guest-token",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      ipAddress: null,
+      userAgent: "Playwright",
+    },
+    user: {
+      id: "e2e-guest-user",
+      name: "Guest",
+      email: "temporary@example.test",
+      emailVerified: false,
+      isAnonymous: true,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+  };
+  let isAuthenticated = false;
+  let guestRequests = 0;
+
+  await page.route("**/api/auth/get-session", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      json: isAuthenticated ? authenticatedSession : null,
+      status: 200,
+    });
+  });
+  await page.route("**/api/auth/sign-in/anonymous", async (route) => {
+    guestRequests += 1;
+    expect(route.request().method()).toBe("POST");
+    expect(route.request().headers()["x-captcha-response"]).toBe(
+      "parrot-e2e-turnstile-token",
+    );
+    isAuthenticated = true;
+    await route.fulfill({
+      contentType: "application/json",
+      json: {
+        token: authenticatedSession.session.token,
+        user: authenticatedSession.user,
+      },
+      status: 200,
+    });
+  });
+
+  await page.goto("/login");
+  const guest = page.getByRole("button", { name: "Continue as guest" });
+  await expect(guest).toBeEnabled();
+  await guest.click();
+
+  await expect.poll(() => guestRequests).toBe(1);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("complementary", { name: "Account" }),
+  ).toBeVisible();
+});
 
 for (const route of routes) {
   for (const viewport of mobileViewports) {

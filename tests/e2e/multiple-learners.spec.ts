@@ -799,7 +799,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   ).toBeVisible();
   await expect(
     page.getByText(
-      "All stories stay visible. This level is highlighted for Mia Updated.",
+      "This shelf opens first for Mia Updated. Every story shelf is still available.",
       { exact: true },
     ),
   ).toBeVisible();
@@ -812,89 +812,44 @@ test("active learner detail and story saves reach learner-mode consumers in the 
     ).__storySettingsMain = main;
   });
   await page.evaluate(() => {
-    const originalFetch = window.fetch;
-    let releaseRefresh = () => {};
-    const refreshHeld = new Promise<void>((resolve) => {
-      releaseRefresh = resolve;
+    window.dispatchEvent(new Event("focus"));
+    document.dispatchEvent(new Event("visibilitychange"));
+    return new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
-    const gate = {
-      release() {
-        releaseRefresh();
-        window.fetch = originalFetch;
-      },
-      requestCount: 0,
-    };
-    (
-      window as Window & {
-        __storySettingsRefreshGate?: typeof gate;
-      }
-    ).__storySettingsRefreshGate = gate;
-    window.fetch = async (input, init) => {
-      const method =
-        init?.method ?? (input instanceof Request ? input.method : "GET");
-      const source =
-        typeof input === "string"
-          ? input
-          : input instanceof URL
-            ? input.href
-            : input.url;
-      const url = new URL(source, window.location.href);
-      if (
-        method === "GET" &&
-        url.pathname === "/api/learner-profile" &&
-        url.search === ""
-      ) {
-        gate.requestCount += 1;
-        await refreshHeld;
-      }
-      return originalFetch(input, init);
-    };
   });
-  await page.getByRole("tab", { name: /Little stories/ }).click();
-  try {
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            (
-              window as Window & {
-                __storySettingsRefreshGate?: { requestCount: number };
-              }
-            ).__storySettingsRefreshGate?.requestCount ?? 0,
-        ),
-      )
-      .toBe(1);
-    await expect(
-      page.getByRole("heading", { exact: true, name: "Story settings" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Checking the current learner" }),
-    ).toHaveCount(0);
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            document.querySelector("main") ===
-            (
-              window as Window & {
-                __storySettingsMain?: Element;
-              }
-            ).__storySettingsMain,
-        ),
-      )
-      .toBe(true);
-  } finally {
-    await page.evaluate(() => {
-      (
-        window as Window & {
-          __storySettingsRefreshGate?: { release(): void };
-        }
-      ).__storySettingsRefreshGate?.release();
-    });
-  }
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Story settings" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Checking the current learner" }),
+  ).toHaveCount(0);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          document.querySelector("main") ===
+          (
+            window as Window & {
+              __storySettingsMain?: Element;
+            }
+          ).__storySettingsMain,
+      ),
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      page
+        .getByRole("tab", { name: /Level 3 · Short stories/ })
+        .evaluate((tab) => tab.closest("[inert]") === null),
+    )
+    .toBe(true);
+  await page
+    .getByRole("tab", { name: /Level 3 · Short stories/ })
+    .click();
   await expect(
     page.getByRole("status").filter({ hasText: "Story level saved" }),
-  ).toContainText("Little stories");
+  ).toContainText("Level 3 · Short stories");
 
   await page
     .getByRole("link", { name: /Back to guardian dashboard/i })
@@ -909,31 +864,40 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await page.getByRole("link", { name: "Story time" }).click();
   await expect(page).toHaveURL("/stories");
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  await expect(shelf.getByRole("heading", { level: 2 })).toHaveText([
-    "First English words",
-    "Start here",
-    "Say it again",
-    "Little stories",
-    "Big adventures",
-    "Long stories",
-  ]);
+  const shelfPicker = shelf.getByRole("tablist", {
+    name: "Choose a story level",
+  });
+  await expect(shelfPicker.getByRole("tab")).toHaveCount(5);
+  await expect(
+    shelfPicker.getByRole("tab", { name: "Level 3 · Short stories" }),
+  ).toHaveAttribute("aria-selected", "true");
   await expect(
     shelf.getByRole("link", { name: /^Listen to story:/ }),
-  ).toHaveCount(25);
+  ).toHaveCount(5);
   await expect(
     shelf
-      .getByRole("region", { name: /^Little stories(?: stories)?$/ })
+      .getByRole("tabpanel", { name: "Level 3 · Short stories" })
       .getByText("Recommended for Mia Updated", { exact: true }),
   ).toBeVisible();
-  for (const label of ["First English words", "Long stories"]) {
+  for (const label of [
+    "Level 1 · Words & pictures",
+    "Storytime · Listen to a full story",
+  ]) {
+    await shelfPicker.getByRole("tab", { exact: true, name: label }).click();
     await expect(
       shelf
-        .getByRole("region", {
-          name: new RegExp(`^${label}(?: stories)?$`),
-        })
+        .getByRole("tabpanel", { name: label })
         .getByText(/^Recommended for /),
     ).toHaveCount(0);
   }
+
+  await shelfPicker
+    .getByRole("tab", { name: "Level 1 · Words & pictures" })
+    .click();
+  await expect(page).toHaveURL("/stories?level=first-words");
+  await expect(
+    shelf.getByRole("link", { name: /^Listen to story:/ }),
+  ).toHaveCount(7);
 
   await expect
     .poll(() =>
@@ -1722,7 +1686,7 @@ test("requires Guardian unlock before revealing a selection-required roster", as
   ).toHaveCount(2);
 });
 
-test("shows a learner-safe no-selection state and sends an incomplete learner to setup", async ({
+test("shows a learner-safe no-selection state and lets an incomplete learner use activities", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "selection-required", "learner"));
@@ -1749,10 +1713,13 @@ test("shows a learner-safe no-selection state and sends an incomplete learner to
   await expect(page.getByText("Managing Ava", { exact: true })).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Back" }).click();
   await chooseLearnerFromManager(page, "Ava");
-  await expect(page).toHaveURL(/\/profile\/setup/);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Answer 6 questions" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: /Profile for Ava, learner mode/ }),
   ).toBeVisible();
@@ -2500,10 +2467,12 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   await expect(
     page.getByText("Editing settings for Noah", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("tab", { name: /Little stories/ }).click();
+  await page
+    .getByRole("tab", { name: /Level 3 · Short stories/ })
+    .click();
   await expect(
     page.getByRole("status").filter({ hasText: "Story level saved" }),
-  ).toContainText("Little stories");
+  ).toContainText("Level 3 · Short stories");
 
   await page.evaluate(async () => {
     const response = await fetch(

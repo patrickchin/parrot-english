@@ -12,7 +12,7 @@ import {
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getNurseryRhymesPath } from "../app/app-routes";
-import { isAbortError, playAudioLine } from "../media/audio-playback";
+import { isAbortError } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
   RecordingUnsupportedError,
@@ -24,11 +24,15 @@ import {
   DubNotEnabledError,
   DubTakeRejectedError,
   getDubLineAudioUrl,
-  loadDubLineAudio,
   loadDubStatus,
   saveDubLine,
 } from "./dub-api";
-import { startDubPlayback, type DubAudioSource } from "./dub-playback";
+import {
+  prepareDubLineBacking,
+  startDubPlayback,
+  type DubAudioSource,
+  type PreparedDubLineBacking,
+} from "./dub-playback";
 import { DubListenOnly } from "./DubListenOnly";
 import { DubProjectHome } from "./DubProjectHome";
 import { DubSceneEditor } from "./DubSceneEditor";
@@ -208,14 +212,11 @@ export function DubStudio({
   const playbackControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
   const recordingSessionRef = useRef<SpeechRecordingSession | null>(null);
-  const recordingStartedAtRef = useRef<number | null>(null);
-  const recordingProgressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordingBackingRef = useRef<PreparedDubLineBacking | null>(null);
   const playbackRef = useRef<{ stop(): void } | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
   const pendingLineIdRef = useRef<string | null>(null);
   const takePreviewRef = useRef<TakePreview | null>(null);
-  const fetchedTakeUrlRef = useRef<string | null>(null);
   const fullPlaybackButtonRef = useRef<HTMLButtonElement>(null);
   const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
   const lineHeadingRef = useRef<HTMLHeadingElement>(null);
@@ -253,19 +254,7 @@ export function DubStudio({
   }, [clearTakePreview]);
 
   const clearRecordingProgress = useCallback((reset: boolean) => {
-    if (recordingProgressTimerRef.current !== null) {
-      clearInterval(recordingProgressTimerRef.current);
-      recordingProgressTimerRef.current = null;
-    }
-    recordingStartedAtRef.current = null;
     if (reset && mountedRef.current) setRecordingElapsedMs(0);
-  }, []);
-
-  const clearFetchedTakeUrl = useCallback((owner?: string) => {
-    const url = fetchedTakeUrlRef.current;
-    if (!url || (owner !== undefined && url !== owner)) return;
-    fetchedTakeUrlRef.current = null;
-    URL.revokeObjectURL(url);
   }, []);
 
   const cancelMedia = useCallback((discardTake: boolean) => {
@@ -274,7 +263,6 @@ export function DubStudio({
     guideControllerRef.current = null;
     takeControllerRef.current?.abort();
     takeControllerRef.current = null;
-    clearFetchedTakeUrl();
     uploadControllerRef.current?.abort();
     uploadControllerRef.current = null;
     playbackControllerRef.current?.abort();
@@ -283,12 +271,10 @@ export function DubStudio({
     playbackRef.current = null;
     recordingControllerRef.current?.abort();
     recordingControllerRef.current = null;
+    recordingBackingRef.current?.stop();
+    recordingBackingRef.current = null;
     recordingSessionRef.current?.cancel();
     recordingSessionRef.current = null;
-    if (recordingTimerRef.current !== null) {
-      clearTimeout(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
     clearRecordingProgress(true);
     if (discardTake) {
       pendingBlobRef.current = null;
@@ -296,7 +282,7 @@ export function DubStudio({
       clearTakePreview();
     }
     return mediaGenerationRef.current;
-  }, [clearFetchedTakeUrl, clearRecordingProgress, clearTakePreview]);
+  }, [clearRecordingProgress, clearTakePreview]);
 
   const handleConsentLoss = useCallback(() => {
     const generation = cancelMedia(true);
@@ -392,10 +378,9 @@ export function DubStudio({
     const session = recordingSessionRef.current;
     if (!session) return;
     recordingSessionRef.current = null;
-    if (recordingTimerRef.current !== null) {
-      clearTimeout(recordingTimerRef.current);
-      recordingTimerRef.current = null;
-    }
+    const backing = recordingBackingRef.current;
+    recordingBackingRef.current = null;
+    backing?.stop();
     clearRecordingProgress(false);
     dispatch({ type: "OPERATION_STARTED", operation: "saving" });
     try {
@@ -417,41 +402,67 @@ export function DubStudio({
     }
   }
 
+  function failRecording(generation: number) {
+    if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
+    const nextGeneration = cancelMedia(true);
+    dispatch({ type: "OPERATION_FINISHED" });
+    dispatch({ type: "SET_ERROR", message: "The melody could not start. Try recording again." });
+    focusAfterRender(recordButtonRef, nextGeneration);
+  }
+
   async function startRecording() {
     if (isUnsafeOperation(state.operation)) return;
     const generation = cancelMedia(true);
-    const lineId = definition.lines[state.selectedLineIndex].id;
+    const line = definition.lines[state.selectedLineIndex];
     const controller = new AbortController();
+    let backing: PreparedDubLineBacking | null = null;
+    let backingPrepared = false;
+    let session: SpeechRecordingSession | null = null;
     recordingControllerRef.current = controller;
-    pendingLineIdRef.current = lineId;
+    pendingLineIdRef.current = line.id;
     dispatch({ type: "OPERATION_STARTED", operation: "mic-opening" });
     try {
-      const session = await startSpeechRecording({ signal: controller.signal });
+      backing = await prepareDubLineBacking({
+        definition,
+        line,
+        onEnded: () => void finishRecording(generation),
+        onFailure: () => failRecording(generation),
+        onTick: (elapsedMs) => {
+          if (mountedRef.current && generation === mediaGenerationRef.current) {
+            setRecordingElapsedMs(elapsedMs);
+          }
+        },
+        signal: controller.signal,
+      });
+      backingPrepared = true;
+      recordingBackingRef.current = backing;
+      session = await startSpeechRecording({ signal: controller.signal });
       if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         session.cancel();
+        if (recordingBackingRef.current === backing) recordingBackingRef.current = null;
+        backing.stop();
         return;
       }
       recordingSessionRef.current = session;
-      recordingStartedAtRef.current = Date.now();
+      backing.start();
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
       setRecordingElapsedMs(0);
       dispatch({ type: "OPERATION_STARTED", operation: "recording" });
-      recordingProgressTimerRef.current = setInterval(() => {
-        const startedAt = recordingStartedAtRef.current;
-        if (!mountedRef.current || generation !== mediaGenerationRef.current || startedAt === null) return;
-        setRecordingElapsedMs(Math.min(definition.recordingMs, Date.now() - startedAt));
-      }, 100);
-      recordingTimerRef.current = setTimeout(() => {
-        if (mountedRef.current && generation === mediaGenerationRef.current) {
-          setRecordingElapsedMs(definition.recordingMs);
-        }
-        void finishRecording(generation);
-      }, definition.recordingMs);
     } catch (error) {
       if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
       recordingControllerRef.current = null;
       pendingLineIdRef.current = null;
+      if (recordingSessionRef.current === session) recordingSessionRef.current = null;
+      session?.cancel();
+      if (recordingBackingRef.current === backing) recordingBackingRef.current = null;
+      backing?.stop();
       dispatch({ type: "OPERATION_FINISHED" });
-      dispatch({ type: "SET_ERROR", message: microphoneMessage(error) });
+      dispatch({
+        type: "SET_ERROR",
+        message: !backingPrepared || session
+          ? "The melody could not start. Try recording again."
+          : microphoneMessage(error),
+      });
       focusAfterRender(recordButtonRef, generation);
     }
   }
@@ -469,6 +480,7 @@ export function DubStudio({
     if (isUnsafeOperation(state.operation)) return;
     const generation = cancelMedia(false);
     const controller = new AbortController();
+    const line = definition.lines[state.selectedLineIndex];
     guideControllerRef.current = controller;
     dispatch({ type: "OPERATION_STARTED", operation: "guide-playing" });
     let guide;
@@ -479,20 +491,33 @@ export function DubStudio({
       dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
       return;
     }
-    void playAudioLine({
-      audioId: guide.id,
-      audioSrc: guide.src,
-      lang: guide.lang,
-      signal: controller.signal,
-      text: guide.text,
-    }).catch((error: unknown) => {
-      if (controller.signal.aborted || isAbortError(error)) return;
-      dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
-    }).finally(() => {
-      if (generation !== mediaGenerationRef.current || guideControllerRef.current !== controller) return;
-      guideControllerRef.current = null;
-      dispatch({ type: "OPERATION_FINISHED" });
-    });
+    void (async () => {
+      try {
+        const playback = await startDubPlayback({
+          definition,
+          lines: [line],
+          onEnded() {
+            if (generation !== mediaGenerationRef.current) return;
+            playbackRef.current = null;
+            guideControllerRef.current = null;
+            dispatch({ type: "OPERATION_FINISHED" });
+          },
+          onTick() {},
+          onLineUnavailable() {
+            throw new Error("The guide source is unavailable.");
+          },
+          resolveAudioSource: () => ({ preferredUrl: guide.src }),
+          signal: controller.signal,
+        });
+        if (generation !== mediaGenerationRef.current) playback.stop();
+        else playbackRef.current = playback;
+      } catch (error) {
+        if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
+        guideControllerRef.current = null;
+        dispatch({ type: "OPERATION_FINISHED" });
+        dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
+      }
+    })();
   }
 
   function handleHearTake() {
@@ -515,20 +540,27 @@ export function DubStudio({
     dispatch({ type: "OPERATION_STARTED", operation: "take-playing" });
 
     void (async () => {
-      let fetchedUrl: string | null = null;
       try {
-        let audioSrc = preview?.url;
-        if (!audioSrc) {
-          const blob = await loadDubLineAudio(line.id, {
-            dubId: definition.id,
-            signal: controller.signal,
-          });
-          if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
-          fetchedUrl = URL.createObjectURL(blob);
-          audioSrc = fetchedUrl;
-          fetchedTakeUrlRef.current = fetchedUrl;
-        }
-        await playAudioLine({ audioSrc, signal: controller.signal, text: line.text });
+        const audioUrl = preview?.url
+          ?? getDubLineAudioUrl(line.id, { dubId: definition.id });
+        const playback = await startDubPlayback({
+          definition,
+          lines: [line],
+          onEnded() {
+            if (generation !== mediaGenerationRef.current) return;
+            playbackRef.current = null;
+            takeControllerRef.current = null;
+            dispatch({ type: "OPERATION_FINISHED" });
+          },
+          onTick() {},
+          onLineUnavailable() {
+            throw new Error("The saved take source is unavailable.");
+          },
+          resolveAudioSource: () => ({ preferredUrl: audioUrl }),
+          signal: controller.signal,
+        });
+        if (generation !== mediaGenerationRef.current) playback.stop();
+        else playbackRef.current = playback;
       } catch (error) {
         if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
         if (error instanceof DubNotEnabledError) {
@@ -537,10 +569,8 @@ export function DubStudio({
         }
         dispatch({ type: "MARK_NEEDS_RETAKE", lineId: line.id });
         dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
-      } finally {
         if (takeControllerRef.current === controller) takeControllerRef.current = null;
-        if (fetchedUrl) clearFetchedTakeUrl(fetchedUrl);
-        if (generation === mediaGenerationRef.current) dispatch({ type: "OPERATION_FINISHED" });
+        dispatch({ type: "OPERATION_FINISHED" });
       }
     })();
   }
@@ -703,7 +733,7 @@ export function DubStudio({
   if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
   } else if (state.operation === "recording") {
-    liveStatus = "Recording…";
+    liveStatus = "Recording with melody…";
   } else if (state.operation === "saving") {
     liveStatus = "Saving your take…";
   } else if (state.operation === "guide-playing") {
@@ -764,7 +794,7 @@ export function DubStudio({
         definition={definition}
         error={state.error}
         locked={locked}
-        needsRetake={new Set(Object.keys(state.needsRetake))}
+        needsRetake={state.needsRetake}
         onOpenScene={handleOpenScene}
         onTogglePlayback={() => void startPlayback("full")}
         playback={state.playbackScope === "full"

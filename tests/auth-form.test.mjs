@@ -118,6 +118,15 @@ test("short-password error code uses the password validation message", () => {
   );
 });
 
+test("Turnstile errors ask the user to repeat the security check", () => {
+  for (const code of ["MISSING_RESPONSE", "VERIFICATION_FAILED", "UNKNOWN_ERROR"]) {
+    assert.equal(
+      getAuthErrorMessage({ code }),
+      "The security check expired or was rejected. Please try again.",
+    );
+  }
+});
+
 test("missing and unknown errors use a safe fallback", () => {
   for (const error of [
     undefined,

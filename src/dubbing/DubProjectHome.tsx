@@ -6,6 +6,7 @@ import {
   getFirstActionableDubSceneIndex,
   getDubSceneStatus,
   type DubSceneStatus,
+  type DubState,
 } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
@@ -15,7 +16,7 @@ export type DubProjectHomeProps = {
   definition?: DubDefinition;
   error?: string;
   locked: boolean;
-  needsRetake: ReadonlySet<string>;
+  needsRetake: DubState["needsRetake"];
   onOpenScene(sceneIndex: number): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
@@ -61,31 +62,29 @@ export function DubProjectHome({
   saved,
   visualLine = activeLine,
 }: DubProjectHomeProps) {
-  const retakeState: Record<string, true> = Object.fromEntries(
-    [...needsRetake].map((lineId) => [lineId, true]),
-  );
+  const retakeCount = Object.keys(needsRetake).length;
   const sceneLines = getSceneLines(definition);
   const ready = definition.lines.filter(
-    ({ id }) => Object.hasOwn(saved, id) && !needsRetake.has(id),
+    ({ id }) => Object.hasOwn(saved, id) && !Object.hasOwn(needsRetake, id),
   ).length;
   const sceneStatuses = sceneLines.map((_, sceneIndex) =>
-    getDubSceneStatus({ needsRetake: retakeState, saved }, sceneIndex, definition),
+    getDubSceneStatus({ needsRetake, saved }, sceneIndex, definition),
   );
   const recommendedSceneIndex = getFirstActionableDubSceneIndex(
-    { needsRetake: retakeState, saved },
+    { needsRetake, saved },
     definition,
   );
   const recommendedStatus = recommendedSceneIndex === null
     ? null
     : sceneStatuses[recommendedSceneIndex];
-  const progressText = ready === 0 && needsRetake.size === 0
+  const progressText = ready === 0 && retakeCount === 0
     ? "Ready to start"
     : ready === definition.lines.length
       ? `All ${definition.lines.length} lines ready`
       : `${ready} of ${definition.lines.length} lines ready`;
   const recommendedText = recommendedSceneIndex === null
     ? ""
-    : ready === 0 && needsRetake.size === 0
+    : ready === 0 && retakeCount === 0
       ? "Start with Scene 1"
       : recommendedStatus?.kind === "needs-retake"
         ? `Fix Scene ${recommendedSceneIndex + 1}`

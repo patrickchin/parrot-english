@@ -21,7 +21,6 @@ export type ControlSize =
   | "large"
   | "hero"
   | "header"
-  | "cardAction"
   | "inline"
   | "menu";
 export type ControlShape = "pill" | "rounded";
@@ -108,8 +107,6 @@ export function controlClassName({
       "min-h-16 gap-2 px-6 py-2 text-xl md:min-h-20 md:text-2xl",
     size === "header" &&
       "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-12 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5",
-    size === "cardAction" &&
-      "size-12 min-h-0 min-w-0 shrink-0 gap-1 p-0 text-sm min-[360px]:w-auto min-[360px]:min-w-20 sm:min-w-21",
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
     size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
     variant === "brand" && "bg-brand-pink text-brand-action-ink",
@@ -247,18 +244,6 @@ export function TextButton({
     <button className={textControlClassName(className)} ref={ref} {...props}>
       {children}
     </button>
-  );
-}
-
-export function TextLink({
-  children,
-  className,
-  ...props
-}: ComponentProps<typeof Link> & { children: ReactNode }) {
-  return (
-    <Link className={textControlClassName(className)} {...props}>
-      {children}
-    </Link>
   );
 }
 
@@ -441,21 +426,16 @@ export function Card({
 
 function interactiveCardClassName({
   className,
-  button = false,
   tone = "glass",
 }: {
   className?: string;
-  button?: boolean;
   tone?: CardTone;
 } = {}) {
   return cx(
     cardClassName({ tone }),
     "touch-manipulation no-underline transition-[filter] duration-150 ease-out motion-reduce:transition-none",
     tone === "muted" ? "text-slate-700" : "text-slate-900",
-    !button &&
-      "cursor-pointer hover:brightness-105 active:brightness-95",
-    button &&
-      "enabled:cursor-pointer enabled:hover:brightness-105 enabled:active:brightness-95 disabled:cursor-not-allowed disabled:opacity-80",
+    "cursor-pointer hover:brightness-105 active:brightness-95",
     focusClassName,
     className,
   );
@@ -471,24 +451,5 @@ export function InteractiveCardLink({
     <Link className={interactiveCardClassName({ className, tone })} {...props}>
       {children}
     </Link>
-  );
-}
-
-export function InteractiveCardButton({
-  children,
-  className,
-  tone,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
-  children: ReactNode;
-  tone?: CardTone;
-}) {
-  return (
-    <button
-      className={interactiveCardClassName({ button: true, className, tone })}
-      {...props}
-    >
-      {children}
-    </button>
   );
 }

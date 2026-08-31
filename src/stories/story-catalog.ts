@@ -22,39 +22,39 @@ export type {
 export const STORY_LEVELS: readonly StoryLevel[] = [
   {
     id: "first-english-words",
-    label: "First English words",
+    label: "Level 1 · Words & pictures",
     cefrReference: "Before Pre-A1",
-    description: "Look. Listen. Say it.",
+    description: "A few familiar words on each page.",
   },
   {
     id: "first-words",
-    label: "Start here",
+    label: "Level 1 · Words & pictures",
     cefrReference: "Entry Pre-A1",
-    description: "Very short. One idea on each page.",
+    description: "A few familiar words on each page.",
   },
   {
     id: "repeating-patterns",
-    label: "Say it again",
+    label: "Level 2 · Repeating stories",
     cefrReference: "Supported Pre-A1",
-    description: "The same words come back.",
+    description: "Short sentences repeat so you can join in.",
   },
   {
     id: "tiny-stories",
-    label: "Little stories",
+    label: "Level 3 · Short stories",
     cefrReference: "Secure Pre-A1",
-    description: "A little story with short lines.",
+    description: "Short sentences tell a whole story.",
   },
   {
     id: "early-a1",
-    label: "Big adventures",
+    label: "Level 4 · Longer stories",
     cefrReference: "Pre-A1 to A1 bridge",
-    description: "A longer story with more words.",
+    description: "More words and pages build a fuller story.",
   },
   {
     id: "long-stories",
-    label: "Long stories",
+    label: "Storytime · Listen to a full story",
     cefrReference: "Read aloud",
-    description: "Longer stories with saved narration.",
+    description: "Long read-alouds to listen to together.",
   },
 ];
 
@@ -77,6 +77,12 @@ export function getStoryLevel(levelId: StoryLevelId): StoryLevel {
     throw new Error(`Unknown story level: ${levelId}`);
   }
   return level;
+}
+
+export function getStoryShelfLevelId(
+  levelId: StoryLevelId,
+): StoryLevelId {
+  return levelId === "first-english-words" ? "first-words" : levelId;
 }
 
 export function resolveStory(storyId: string | undefined): Story | null {
