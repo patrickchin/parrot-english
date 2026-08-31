@@ -400,6 +400,14 @@ export function DubStudio({
     }
   }
 
+  function failRecording(generation: number) {
+    if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
+    const nextGeneration = cancelMedia(true);
+    dispatch({ type: "OPERATION_FINISHED" });
+    dispatch({ type: "SET_ERROR", message: "The melody could not start. Try recording again." });
+    focusAfterRender(recordButtonRef, nextGeneration);
+  }
+
   async function startRecording() {
     if (isUnsafeOperation(state.operation)) return;
     const generation = cancelMedia(true);
@@ -416,6 +424,7 @@ export function DubStudio({
         definition,
         line,
         onEnded: () => void finishRecording(generation),
+        onFailure: () => failRecording(generation),
         onTick: (elapsedMs) => {
           if (mountedRef.current && generation === mediaGenerationRef.current) {
             setRecordingElapsedMs(elapsedMs);
@@ -434,6 +443,7 @@ export function DubStudio({
       }
       recordingSessionRef.current = session;
       backing.start();
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
       setRecordingElapsedMs(0);
       dispatch({ type: "OPERATION_STARTED", operation: "recording" });
     } catch (error) {

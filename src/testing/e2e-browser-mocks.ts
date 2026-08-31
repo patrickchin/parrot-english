@@ -3509,8 +3509,13 @@ class MockAnalyserNode extends MockAudioNode {
 class MockScheduledAudioNode extends MockAudioNode {
   buffer: AudioBuffer | null = null;
   frequency = new MockAudioParam();
+  onended: (() => void) | null = null;
   type: OscillatorType = "sine";
-  constructor(private readonly kind: "voice" | "oscillator") {
+  private endTimer: ReturnType<typeof setTimeout> | null = null;
+  constructor(
+    private readonly kind: "voice" | "oscillator",
+    private readonly audioNow: () => number,
+  ) {
     super();
   }
   start(when = 0) {
@@ -3518,7 +3523,14 @@ class MockScheduledAudioNode extends MockAudioNode {
       backingStarts.push({ at: when, frequencyHz: this.frequency.value });
     }
   }
-  stop() {}
+  stop(when = 0) {
+    if (this.endTimer !== null) clearTimeout(this.endTimer);
+    if (!this.onended) return;
+    this.endTimer = setTimeout(() => {
+      this.endTimer = null;
+      this.onended?.();
+    }, Math.max(0, (when - this.audioNow()) * 50));
+  }
 }
 
 class MockGainNode extends MockAudioNode {
@@ -3545,7 +3557,7 @@ class MockAudioContext {
     this.closed = true;
   }
   createBufferSource() {
-    return new MockScheduledAudioNode("voice");
+    return new MockScheduledAudioNode("voice", () => this.currentTime);
   }
   createAnalyser() {
     return new MockAnalyserNode();
@@ -3557,7 +3569,7 @@ class MockAudioContext {
     return new MockAudioNode();
   }
   createOscillator() {
-    return new MockScheduledAudioNode("oscillator");
+    return new MockScheduledAudioNode("oscillator", () => this.currentTime);
   }
   async decodeAudioData(bytes: ArrayBuffer) {
     if (new TextDecoder().decode(bytes).includes("corrupt-line-5")) {

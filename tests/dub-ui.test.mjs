@@ -123,9 +123,15 @@ function installSynchronizedRecordingHarness({
   const contexts = [];
   const callbacks = new Map();
   const track = { stopped: false, stop() { this.stopped = true; } };
+  let failingCallback = null;
+  let frameFailure = null;
   let nextFrame = 1;
 
   globalThis.requestAnimationFrame = (callback) => {
+    if (callback === failingCallback) {
+      failingCallback = null;
+      throw frameFailure;
+    }
     const id = nextFrame++;
     callbacks.set(id, callback);
     return id;
@@ -204,6 +210,7 @@ function installSynchronizedRecordingHarness({
       const oscillator = {
         connect() {},
         frequency: new Param(),
+        onended: null,
         startTimes: [],
         stop() {},
         type: "sine",
@@ -244,17 +251,23 @@ function installSynchronizedRecordingHarness({
     contexts,
     events,
     track,
+    failBackingProgress(error = new Error("recording progress failed")) {
+      const frame = [...callbacks].find(([, callback]) => callback.name === "tick");
+      assert.ok(frame, "recording should schedule a presentation frame");
+      const [frameId, callback] = frame;
+      callbacks.delete(frameId);
+      failingCallback = callback;
+      frameFailure = error;
+      callback(0);
+    },
     finishBacking() {
       const backing = contexts.find(({ oscillators }) =>
         oscillators.some(({ type, startTimes }) => type === "triangle" && startTimes[0] === 10),
       );
       assert.ok(backing, "recording should schedule the prepared backing");
-      backing.currentTime += 4;
-      while (callbacks.size && backing.closeCalls === 0) {
-        const [frameId, callback] = callbacks.entries().next().value;
-        callbacks.delete(frameId);
-        callback(0);
-      }
+      const terminal = backing.oscillators.at(-1);
+      assert.equal(typeof terminal.onended, "function");
+      terminal.onended();
     },
   };
 }
@@ -679,6 +692,29 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.equal(uploads, 1));
     assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
     assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("discards an active recorder when the backing progress loop fails", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
+      if (init.method === "PUT") uploads += 1;
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await act(async () => audio.failBackingProgress());
+    await waitFor(() => assert.match(container.textContent, /melody could not start/i));
+
+    assert.equal(uploads, 0);
+    assert.equal(audio.track.stopped, true);
+    assert.equal(audio.contexts[0].closeCalls, 1);
+    assert.ok(container.querySelector('[aria-label="Record line"]'));
   });
 
   it("discards an active recording and backing on unmount without uploading", async () => {

@@ -50,6 +50,7 @@ type PrepareDubLineBackingOptions = {
   definition?: DubDefinition;
   line: DubLine;
   onEnded?: () => void;
+  onFailure?: (error: unknown) => void;
   onTick?: (elapsedMs: number) => void;
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
   signal?: AbortSignal;
@@ -263,6 +264,7 @@ export async function prepareDubLineBacking({
   definition = FIVE_LITTLE_DUCKS_DUB,
   line,
   onEnded,
+  onFailure,
   onTick = () => {},
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
   signal,
@@ -271,22 +273,46 @@ export async function prepareDubLineBacking({
   const context = new AudioContextClass();
   let frameId: number | null = null;
   let oscillators: OscillatorNode[] = [];
+  let terminal: OscillatorNode | null = null;
   let started = false;
   let stopped = false;
   const stop = () => {
     if (stopped) return;
     stopped = true;
+    const terminalNode = terminal;
+    terminal = null;
+    if (terminalNode) terminalNode.onended = null;
     if (frameId !== null) {
-      cancelFrame(frameId);
+      const pendingFrameId = frameId;
       frameId = null;
+      try {
+        cancelFrame(pendingFrameId);
+      } catch {
+        // Presentation cleanup must not strand the audio graph.
+      }
     }
     oscillators.forEach(stopNode);
-    signal?.removeEventListener("abort", stop);
+    if (terminalNode) stopNode(terminalNode);
+    try {
+      signal?.removeEventListener("abort", stop);
+    } catch {
+      // Continue closing the audio context.
+    }
     try {
       void context.close().catch(() => undefined);
     } catch {
       return;
     }
+  };
+  const fail = (error: unknown) => {
+    if (stopped) return;
+    stop();
+    onFailure?.(error);
+  };
+  const end = () => {
+    if (stopped) return;
+    stop();
+    onEnded?.();
   };
 
   signal?.addEventListener("abort", stop, { once: true });
@@ -321,20 +347,23 @@ export async function prepareDubLineBacking({
           music,
           startAt,
         );
+        terminal = context.createOscillator();
+        terminal.onended = end;
+        terminal.start(startAt);
+        terminal.stop(startAt + phrase.durationMs / 1_000);
         const tick = () => {
           frameId = null;
-          const elapsedMs = Math.min(
-            phrase.durationMs,
-            Math.max(0, (context.currentTime - startAt) * 1_000),
-          );
-          onTick(elapsedMs);
           if (stopped) return;
-          if (elapsedMs >= phrase.durationMs) {
-            stop();
-            onEnded?.();
-            return;
+          try {
+            const elapsedMs = Math.min(
+              phrase.durationMs,
+              Math.max(0, (context.currentTime - startAt) * 1_000),
+            );
+            onTick(elapsedMs);
+            if (!stopped) frameId = requestFrame(tick);
+          } catch (error) {
+            fail(error);
           }
-          frameId = requestFrame(tick);
         };
         onTick(0);
         if (!stopped) frameId = requestFrame(tick);

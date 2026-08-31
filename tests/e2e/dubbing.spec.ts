@@ -1315,12 +1315,13 @@ test("Old MacDonald records on its two- and eight-second phrase windows", async 
   await page.getByRole("button", { name: "Next line" }).click();
   await page.getByRole("button", { name: "Next line" }).click();
   await expect(page.getByText("Melody length: 0:02", { exact: true })).toBeVisible();
+  const backingCount = (await dubStoreSnapshot(page)).backingStarts.length;
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("progressbar", { name: "Recording time" }))
     .toHaveAttribute("aria-valuemax", "2000");
-  await expectSavedTake(page, 2);
   await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
-    .toBeGreaterThan(0);
+    .toBeGreaterThan(backingCount);
+  await expectSavedTake(page, 2);
 });
 
 for (const definition of DUB_DEFINITIONS) {
