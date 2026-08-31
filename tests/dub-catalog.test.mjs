@@ -13,10 +13,12 @@ import {
 import { FIVE_LITTLE_DUCKS_DUB } from "../src/dubbing/dub-script.ts";
 import {
   FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
+  HUMPTY_DUMPTY_LINE_ARTWORK,
   HUMPTY_DUMPTY_SCENE_ARTWORK,
   MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK,
   NURSERY_RHYMES_COVER_ARTWORK,
   OLD_MACDONALD_SCENE_ARTWORK,
+  ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK,
   ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
   TWINKLE_TWINKLE_SCENE_ARTWORK,
 } from "../src/dubbing/dub-artwork.ts";
@@ -43,9 +45,9 @@ const NEW_RHYMES = [
     definition: ROW_ROW_ROW_YOUR_BOAT_DUB,
     durationMs: 18_000,
     id: "row-row-row-your-boat-v1",
-    linesPerScene: 2,
+    linesPerScene: 4,
     route: "/dubs/row-row-row-your-boat",
-    sceneCount: 2,
+    sceneCount: 1,
     texts: [
       "Row, row, row your boat,",
       "Gently down the stream.",
@@ -77,9 +79,9 @@ const NEW_RHYMES = [
     definition: HUMPTY_DUMPTY_DUB,
     durationMs: 18_000,
     id: "humpty-dumpty-v1",
-    linesPerScene: 2,
+    linesPerScene: 4,
     route: "/dubs/humpty-dumpty",
-    sceneCount: 2,
+    sceneCount: 1,
     texts: [
       "Humpty Dumpty sat on a wall,",
       "Humpty Dumpty had a great fall.",
@@ -188,6 +190,22 @@ describe("rhyme catalog", () => {
       assert.equal(Object.isFrozen(definition), true);
       assert.equal(Object.isFrozen(definition.lines), true);
       assert.ok(definition.lines.every(Object.isFrozen));
+    }
+  });
+
+  it("keeps short-rhyme recording scenes independent from line artwork", () => {
+    for (const definition of [
+      ROW_ROW_ROW_YOUR_BOAT_DUB,
+      HUMPTY_DUMPTY_DUB,
+    ]) {
+      assert.equal(definition.linesPerScene, 4);
+      assert.equal(definition.sceneArtwork.length, 1);
+      assert.equal(definition.sceneTitles.length, 1);
+      assert.equal(definition.lineArtwork?.length, 4);
+      assert.equal(
+        new Set(definition.lineArtwork.map(({ src }) => src)).size,
+        4,
+      );
     }
   });
 
@@ -333,28 +351,32 @@ describe("rhyme catalog", () => {
     assert.equal(OLD_MACDONALD_DUB.sceneArtwork, OLD_MACDONALD_SCENE_ARTWORK);
     assert.equal(TWINKLE_TWINKLE_DUB.sceneArtwork, TWINKLE_TWINKLE_SCENE_ARTWORK);
     assert.equal(ROW_ROW_ROW_YOUR_BOAT_DUB.sceneArtwork, ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK);
+    assert.equal(ROW_ROW_ROW_YOUR_BOAT_DUB.lineArtwork, ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK);
     assert.equal(MARY_HAD_A_LITTLE_LAMB_DUB.sceneArtwork, MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK);
     assert.equal(HUMPTY_DUMPTY_DUB.sceneArtwork, HUMPTY_DUMPTY_SCENE_ARTWORK);
+    assert.equal(HUMPTY_DUMPTY_DUB.lineArtwork, HUMPTY_DUMPTY_LINE_ARTWORK);
     assert.equal(FIVE_LITTLE_DUCKS_SCENE_ARTWORK.length, 6);
     assert.equal(OLD_MACDONALD_SCENE_ARTWORK.length, 5);
     assert.equal(TWINKLE_TWINKLE_SCENE_ARTWORK.length, 3);
-    assert.equal(ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK.length, 2);
+    assert.equal(ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK.length, 1);
+    assert.equal(ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK.length, 4);
     assert.equal(MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK.length, 2);
-    assert.equal(HUMPTY_DUMPTY_SCENE_ARTWORK.length, 2);
+    assert.equal(HUMPTY_DUMPTY_SCENE_ARTWORK.length, 1);
+    assert.equal(HUMPTY_DUMPTY_LINE_ARTWORK.length, 4);
 
     const artwork = [
       NURSERY_RHYMES_COVER_ARTWORK,
       ...FIVE_LITTLE_DUCKS_SCENE_ARTWORK,
       ...OLD_MACDONALD_SCENE_ARTWORK,
       ...TWINKLE_TWINKLE_SCENE_ARTWORK,
-      ...ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK,
+      ...ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK,
       ...MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK,
-      ...HUMPTY_DUMPTY_SCENE_ARTWORK,
+      ...HUMPTY_DUMPTY_LINE_ARTWORK,
     ];
-    assert.equal(artwork.length, 21);
-    assert.equal(new Set(artwork.map(({ src }) => src)).size, 21);
+    assert.equal(artwork.length, 25);
+    assert.equal(new Set(artwork.map(({ src }) => src)).size, 25);
     for (const image of artwork) {
-      assert.match(image.src, /^https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/.+\.webp$/);
+      assert.match(image.src, /^https:\/\/media\.parrotbook\.com\/assets\/v[67]\/dubbing\/.+\.webp$/);
       assert.equal(image.width, 1536);
       assert.equal(image.height, 864);
       assert.ok(image.alt.length >= 20);
@@ -364,7 +386,9 @@ describe("rhyme catalog", () => {
     assert.equal(Object.isFrozen(OLD_MACDONALD_SCENE_ARTWORK), true);
     assert.equal(Object.isFrozen(TWINKLE_TWINKLE_SCENE_ARTWORK), true);
     assert.equal(Object.isFrozen(ROW_ROW_ROW_YOUR_BOAT_SCENE_ARTWORK), true);
+    assert.equal(Object.isFrozen(ROW_ROW_ROW_YOUR_BOAT_LINE_ARTWORK), true);
     assert.equal(Object.isFrozen(MARY_HAD_A_LITTLE_LAMB_SCENE_ARTWORK), true);
     assert.equal(Object.isFrozen(HUMPTY_DUMPTY_SCENE_ARTWORK), true);
+    assert.equal(Object.isFrozen(HUMPTY_DUMPTY_LINE_ARTWORK), true);
   });
 });

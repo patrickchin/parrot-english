@@ -15,7 +15,9 @@ export function IllustratedDubScene({
 }) {
   const lineIndex = Math.max(0, definition.lines.findIndex(({ id }) => id === line.id));
   const sceneIndex = Math.floor(lineIndex / definition.linesPerScene);
-  const image = definition.sceneArtwork[sceneIndex] ?? definition.sceneArtwork[0];
+  const image = definition.lineArtwork?.[lineIndex]
+    ?? definition.sceneArtwork[sceneIndex]
+    ?? definition.sceneArtwork[0];
   const art = (
     <img
       alt={image.alt}
