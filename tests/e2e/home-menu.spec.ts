@@ -95,7 +95,7 @@ test("home keeps five equal cards in one desktop row", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test("desktop home keeps every visible card label on one line inside its label region", async ({ page }) => {
+test("desktop home keeps one activity icon and an unobstructed label on each card", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/");
 
@@ -113,8 +113,9 @@ test("desktop home keeps every visible card label on one line inside its label r
     await expect(label).toBeVisible();
 
     const metrics = await label.evaluate((element) => {
+      const card = element.closest("a");
       const labelRect = element.getBoundingClientRect();
-      const arrowRect = element.nextElementSibling?.getBoundingClientRect();
+      const pictureRect = card?.querySelector("img")?.getBoundingClientRect();
       const textRange = document.createRange();
       textRange.selectNodeContents(element);
       const textRects = [...textRange.getClientRects()].filter(
@@ -122,20 +123,23 @@ test("desktop home keeps every visible card label on one line inside its label r
       );
 
       return {
-        arrowLeft: arrowRect?.left ?? null,
+        iconCount: card?.querySelectorAll("svg").length ?? 0,
         labelLeft: labelRect.left,
         labelRight: labelRect.right,
         lineCount: textRects.length,
+        pictureWidth: pictureRect?.width ?? 0,
         textLeft: Math.min(...textRects.map((rect) => rect.left)),
         textRight: Math.max(...textRects.map((rect) => rect.right)),
       };
     });
 
+    expect(metrics.iconCount).toBe(1);
     expect(metrics.lineCount).toBe(1);
-    expect(metrics.arrowLeft).not.toBeNull();
     expect(metrics.textLeft).toBeGreaterThanOrEqual(metrics.labelLeft - 1);
     expect(metrics.textRight).toBeLessThanOrEqual(metrics.labelRight + 1);
-    expect(metrics.labelRight).toBeLessThanOrEqual(metrics.arrowLeft!);
+    expect(metrics.labelRight - metrics.labelLeft).toBeGreaterThanOrEqual(
+      metrics.pictureWidth - 1,
+    );
   }
 });
 

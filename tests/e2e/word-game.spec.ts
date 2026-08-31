@@ -101,6 +101,19 @@ async function expectHorizontallyContained(
     .toBe(true);
 }
 
+async function expectWheelScrollsMain(page: Page, main: Locator) {
+  await expect
+    .poll(() =>
+      main.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeGreaterThan(0);
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
+  await page.mouse.move(viewport!.width / 2, viewport!.height / 2);
+  await page.mouse.wheel(0, 10_000);
+  await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+}
+
 async function expectKeyboardReachable(page: Page, locator: Locator) {
   await locator.scrollIntoViewIfNeeded();
   if (await locator.evaluate((element) => element === document.activeElement)) {
@@ -364,7 +377,7 @@ test("keeps visual play usable with one persistent saved-sound failure", async (
   await expect((await mediaSnapshot(page)).cues.every(({ kind }) => kind === "static")).toBe(true);
 });
 
-test("uses a large scrollable game surface", async ({ page }) => {
+test("uses a large game surface", async ({ page }) => {
   await page.setViewportSize({ height: 800, width: 1280 });
   await page.goto("/word-games/animals");
   const { main, progress } = game(page);
@@ -374,12 +387,35 @@ test("uses a large scrollable game surface", async ({ page }) => {
   expect((await gameSurface.boundingBox())?.width).toBeGreaterThanOrEqual(1100);
   expect((await gameSurface.boundingBox())?.height).toBeGreaterThanOrEqual(600);
   await expect(progress).toBeInViewport();
+});
 
+test("word-game library wheel-scrolls to the final topic", async ({ page }) => {
+  await page.setViewportSize({ height: 568, width: 390 });
+  await page.goto("/word-games");
+  const main = page.getByRole("main");
+  const finalTopic = main.getByRole("navigation", { name: "Word games" }).getByRole("link").last();
+
+  await expectWheelScrollsMain(page, main);
+  await expect(finalTopic).toBeInViewport();
+});
+
+test("word-game player scrolls the next focused question into view", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await page.goto("/word-games/animals?parrotE2eLesson=held-cue");
+  const { choices, main } = game(page);
+  await main.getByRole("button", { name: "Start listening" }).click();
+
+  await expectWheelScrollsMain(page, main);
   await expect(main.getByRole("button", { name: "Listen: bird" })).toBeInViewport();
-  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await choices.getByRole("button", { name: "Choose cat" }).click();
+  await main.getByRole("button", { name: "Next" }).click();
+
+  const nextQuestion = main.getByRole("heading", {
+    level: 2,
+    name: "Which is the dog?",
+  });
+  await expect(nextQuestion).toBeFocused();
+  await expect(nextQuestion).toBeInViewport();
 });
 
 for (const viewport of responsiveViewports) {

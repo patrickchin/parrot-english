@@ -65,6 +65,24 @@ test("nursery rhyme picker presents six large illustrated projects", async ({ pa
   expect(boxes[3]!.y).toBeGreaterThan(boxes[0]!.y + boxes[0]!.height);
 });
 
+test("nursery rhyme picker wheel-scrolls to the final project", async ({ page }) => {
+  await page.setViewportSize({ height: 568, width: 390 });
+  await page.goto("/dubs");
+  const main = page.getByRole("main");
+  const finalProject = page.getByRole("link", {
+    name: /^Humpty Dumpty\s+Sing & record$/,
+  });
+  await expect
+    .poll(() =>
+      main.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeGreaterThan(0);
+  await page.mouse.move(195, 284);
+  await page.mouse.wheel(0, 10_000);
+  await expect.poll(() => main.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect(finalProject).toBeInViewport();
+});
+
 for (const viewport of [
   { width: 280, height: 568 },
   { width: 320, height: 480 },

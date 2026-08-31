@@ -77,9 +77,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
 
   useEffect(() => {
     if (!focusAfterChangeRef.current) return;
-    (complete ? completionHeadingRef.current : questionHeadingRef.current)?.focus({
-      preventScroll: true,
-    });
+    (complete ? completionHeadingRef.current : questionHeadingRef.current)?.focus();
     focusAfterChangeRef.current = false;
   }, [complete, roundIndex, started]);
 
@@ -144,7 +142,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
   }
 
   return (
-    <main className="relative min-h-dvh w-full overflow-x-hidden bg-story-shelf px-3 pb-6 pt-20 sm:px-5 md:px-8 md:pt-24">
+    <main className="relative h-dvh w-full overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-6 pt-20 sm:px-5 md:px-8 md:pt-24">
       <RouteHeader>
         <HeaderLink aria-label="Back to games" icon={<ArrowLeft />} to="/word-games">
           Back to games
