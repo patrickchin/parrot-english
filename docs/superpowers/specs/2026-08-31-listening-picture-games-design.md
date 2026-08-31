@@ -72,15 +72,17 @@ Ship six topics with six concrete targets apiece:
 | --- | --- | --- |
 | Animals | cat, dog, bird, fish, duck, frog | “Which is the cat?” |
 | Colors | red, blue, yellow, green, orange, purple | “Where is blue?” |
-| Body parts | eyes, ears, nose, mouth, hand, foot | Natural singular/plural “Which…” |
+| Body parts | eyes, ears, nose, mouth, hand, foot | Exact simple singular/plural prompts |
 | Food | apple, banana, carrot, orange, bread, cheese | “Which is the apple?” |
 | Toys | ball, toy car, doll, kite, blocks, teddy bear | “Which is the ball?” |
 | Feelings | happy, sad, angry, sleepy, surprised, silly | “Which face is happy?” |
 
 Each item also owns a teaching label and success sentence. Examples are “This
 is a dog.” / “Yes, this is a dog.”, “These are the eyes.” / “Yes, these are the
-eyes.”, and “This face is happy.” / “Yes, this face is happy.” The authored
-content contains no personal names.
+eyes.”, and “This face is happy.” / “Yes, this face is happy.” The exact body
+prompts are “Where are the eyes?”, “Where are the ears?”, “Which is the nose?”,
+“Which is the mouth?”, “Which is the hand?”, and “Which is the foot?” The
+authored content contains no personal names.
 
 ## Catalog and Routes
 
@@ -121,7 +123,9 @@ After start:
      “Listen: cat”; it plays “This is a cat.” without selecting, scoring, or
      advancing anything.
 3. A wrong picture plays that item's teaching label followed by the saved line
-   “Listen and try again.” The round stays open and uses calm neutral styling.
+   “Listen and try again.” The round stays open, all three choices remain
+   selectable, and the wrong picture is not permanently disabled or marked in
+   punitive red styling.
 4. The right picture plays its complete success sentence, marks the card, and
    reveals a large Next action.
 5. Next advances and automatically plays the new prompt. After round six, the
@@ -156,11 +160,12 @@ release rather than silently changing voice quality.
 
 ## Visual Design and Media
 
-Colors use native circular swatches with subtle texture and shape contrast;
-they do not need generated bitmap files. The other 30 targets use purpose-made
-illustrations. Each answer image contains exactly one isolated subject or, for
-feelings, one simple expressive face. It contains no child, adult, hand holding
-the object, scene narrative, words, logos, watermark, or protected character.
+Colors use identical native circular swatches whose only changing property is
+color; they do not need generated bitmap files. The other 30 targets use
+purpose-made illustrations. Each answer image contains exactly one isolated
+subject or, for feelings, one simple expressive face. It contains no child,
+adult, hand holding the object, scene narrative, words, logos, watermark, or
+protected character.
 
 The visual system is consistent across topics: friendly flat picture-book
 illustration, rounded forms, confident navy outline, restrained soft shading,
@@ -172,12 +177,15 @@ kind rather than frightening.
 Generate one ordered 3×2 source sheet per illustrated topic, inspect it at
 original detail, and derive six individual square/near-square cards from each
 accepted sheet. Normalize public choices to lightweight WebP files. Preserve
-the ignored originals and prompts during generation, and publish the public
-cards to fresh immutable keys under
-`https://media.parrotbook.com/assets/v1/word-games/<topic>/<item>.webp` with
-`image/webp` and one-year immutable caching. A small guarded media plan may
-extend the existing provenance/publish utilities, but must preflight every key,
+the ignored originals during generation, but commit the exact five prompts and
+a source-to-key manifest with fixed crop rectangles. Publish through a small,
+tested word-game media planner/publisher to fresh immutable keys under
+`https://media.parrotbook.com/assets/v8/word-games/<topic>/<item>.webp` with
+`image/webp` and one-year immutable caching. The publisher must constrain
+source paths, reject duplicate or out-of-bounds crops, preflight every key,
 refuse overwrite, and verify status, MIME, cache policy, dimensions, and decode.
+Per-card acceptance also checks the intended isolated subject, adequate margin,
+and no adjacent-cell leakage.
 
 The card renderer uses `object-contain`; it does not reuse the story reader's
 cropped `object-cover` scene renderer. Topic covers reuse representative card
@@ -190,17 +198,18 @@ scrollable app route, not an exclusive fullscreen mode. Its central surface
 uses the available viewport up to the existing wide content limit, with a much
 larger question, three image-forward answer cards, and child-sized tap targets.
 
-At ordinary phone widths the three cards share a row when they remain legible;
-at the ultra-narrow 280px boundary they stack to preserve large pictures. Short
-landscape uses a compact three-column row and scrolls vertically rather than
-clipping controls. Desktop keeps three generous cards without stretching the
-art beyond its intended size. Tailwind utilities stay in the React components;
-no page-specific stylesheet is added.
+The choice grid uses one column below 360px, two columns from 360px through
+small-phone and short-landscape widths, and three columns from the tablet
+breakpoint. This keeps pictures and Listen controls genuinely large instead of
+squeezing three roughly 120px cards onto a 390px phone. Short landscape scrolls
+vertically rather than clipping controls. Desktop keeps three generous cards
+without stretching the art beyond its intended size. Tailwind utilities stay
+in the React components; no page-specific stylesheet is added.
 
 ## Testing and Verification
 
 - Catalog tests pin exactly six topics, six items each, deterministic
-  three-choice rounds, natural sentence forms, unique IDs, immutable R2 URLs,
+  three-choice rounds, exact natural sentence forms, unique IDs, immutable v8 R2 URLs,
   and the absence of soap/washing/cleanliness and vague former questions.
 - Route and shell tests cover the library, all six topic routes, legacy
   redirect, safe auth returns, unknown IDs, and the home card.
