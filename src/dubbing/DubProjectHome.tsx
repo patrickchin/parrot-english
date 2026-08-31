@@ -156,7 +156,6 @@ export function DubProjectHome({
           </div>
 
           <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:gap-1.5 short-wide:rounded-2xl short-wide:p-2 md:p-4 short-wide:md:p-2">
-            <h2 className="m-0 text-xl text-brand-ink short-wide:sr-only">Choose a scene</h2>
             {completionText ? <p className="m-0 text-center font-black text-brand-ink">{completionText}</p> : null}
             {recommendedSceneIndex !== null ? (
               <ActionButton
@@ -191,6 +190,9 @@ export function DubProjectHome({
               const selected = sceneIndex === activeSceneIndex;
               const artwork = definition.sceneArtwork[sceneIndex];
               const title = definition.sceneTitles[sceneIndex];
+              const hideInitialStatus = ready === 0
+                && retakeCount === 0
+                && status.kind === "not-started";
               return (
                 <ActionButton
                   aria-current={selected ? "step" : undefined}
@@ -215,7 +217,9 @@ export function DubProjectHome({
                   <span className="grid min-w-0 gap-0.5 px-1 short-wide:grid-cols-[auto_minmax(0,1fr)] short-wide:items-center short-wide:gap-x-1 short-wide:gap-y-px short-wide:px-0">
                     <span className="text-xs font-black uppercase tracking-wide opacity-75 short-wide:leading-3">Scene {sceneIndex + 1}</span>
                     <strong className="line-clamp-2 text-base leading-tight short-wide:text-xs short-wide:leading-3">{title}</strong>
-                    <span className="text-sm font-black short-wide:col-span-2 short-wide:text-xs short-wide:leading-3" data-status-icon={status.kind}>{statusIcon} {statusText}</span>
+                    {hideInitialStatus ? null : (
+                      <span className="text-sm font-black short-wide:col-span-2 short-wide:text-xs short-wide:leading-3" data-status-icon={status.kind}>{statusIcon} {statusText}</span>
+                    )}
                   </span>
                 </ActionButton>
               );

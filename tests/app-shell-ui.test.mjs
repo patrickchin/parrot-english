@@ -138,7 +138,8 @@ test("home menu prioritizes the five learner activities", () => {
   ]) {
     assert.match(nursery, new RegExp(`href="${route}"`));
   }
-  assert.equal((nursery.match(/>Sing &amp; record</g) ?? []).length, 6);
+  assert.match(nursery, />Ask a grown-up before recording\.<\/p>/);
+  assert.doesNotMatch(nursery, /Sing &amp; record/);
 });
 
 test("word-game library renders six topic choices and a home link", () => {
@@ -154,6 +155,10 @@ test("word-game library renders six topic choices and a home link", () => {
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
   assert.match(html, /<h1[^>]*>Pick a word game<\/h1>/);
+  assert.doesNotMatch(
+    html,
+    /Parrot English|Listen, look, and choose|Listen and find the|>Start\s*</,
+  );
   assert.match(html, /aria-label="Back to home"/);
   assert.ok(hrefs.includes("/"));
   assert.deepEqual(

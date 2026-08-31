@@ -1,4 +1,4 @@
-import { ChevronLeft, Mic2 } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { InteractiveCardLink } from "../shared/ui";
 import { DUB_DEFINITIONS } from "./rhyme-catalog";
@@ -16,7 +16,7 @@ export function NurseryRhymeList() {
           <header className="grid gap-2 text-center">
             <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>
             <p className="m-0 text-base font-bold leading-snug text-brand-navy sm:text-lg">
-              Choose a rhyme to watch. With a grown-up&apos;s permission, you can sing and save your recording.
+              Ask a grown-up before recording.
             </p>
           </header>
           <nav aria-label="Nursery rhymes" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 sm:gap-5">
@@ -29,10 +29,6 @@ export function NurseryRhymeList() {
                   </span>
                   <span className="grid content-between gap-3 p-3.5 sm:p-4">
                     <strong className="min-w-0 text-xl leading-tight text-brand-navy sm:text-2xl">{definition.title}</strong>
-                    <span className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand-pink px-4 text-base font-black text-brand-action-ink shadow-control-pink">
-                      <Mic2 aria-hidden="true" className="size-5" />
-                      Sing &amp; record
-                    </span>
                   </span>
                 </InteractiveCardLink>
               );
