@@ -104,32 +104,33 @@ describe("story script catalog", () => {
     );
   });
 
-  it("renders two public long stories beneath every saved learner shelf", async () => {
+  it("renders two public long stories when that shelf is selected", async () => {
     const container = await mountStrict(
-      storyListAt("tiny-stories", "/stories?level=tiny-stories"),
+      storyListAt("tiny-stories", "/stories?level=long-stories"),
     );
-    const section = container.querySelector(
-      'section[aria-label="Long stories"]',
-    );
+    const section = container.querySelector('section[role="tabpanel"]');
 
     assert.ok(section);
+    assert.match(
+      container.querySelector('[role="tab"][aria-selected="true"]')
+        ?.textContent ?? "",
+      /Long stories/,
+    );
     assert.equal(
       section.querySelectorAll('a[aria-label^="Listen to story:"]').length,
       2,
     );
   });
 
-  // Production break caught: a saved preference or legacy level query filters
-  // sections/cards, produces duplicate routes, or preserves a second shelf URL.
-  it("renders all six sections and 25 unique stories for every saved learner profile", async () => {
-    const expectedSections = [
-      ["First English words", 3],
-      ["Start here", 4],
-      ["Say it again", 6],
-      ["Little stories", 5],
-      ["Big adventures", 5],
-      ["Long stories", 2],
-    ];
+  // Production break caught: a saved preference is ignored and the learner
+  // gets every large story card at once instead of one focused shelf.
+  it("renders only the saved shelf while keeping all six shelves available", async () => {
+    const expectedShelves = new Map([
+      ["first-words", ["Start here", 4]],
+      ["repeating-patterns", ["Say it again", 6]],
+      ["tiny-stories", ["Little stories", 5]],
+      ["early-a1", ["Big adventures", 5]],
+    ]);
 
     for (const storyLevel of LEARNER_STORY_LEVEL_IDS) {
       const container = await mountStrict(
@@ -141,31 +142,35 @@ describe("story script catalog", () => {
           'section[aria-label="Read-aloud stories"]',
         );
         assert.ok(shelf, `${storyLevel} shelf`);
-        const sections = [...shelf.children].filter((child) =>
-          child.matches("section[aria-label]"),
+        assert.equal(
+          shelf.querySelectorAll('[role="tab"]').length,
+          6,
+          `${storyLevel} picker tabs`,
         );
-        assert.deepEqual(
-          sections.map((section) => [
-            section.querySelector("h2")?.textContent,
-            section.querySelectorAll('a[aria-label^="Listen to story:"]')
-              .length,
-          ]),
-          expectedSections,
-          `${storyLevel} sections`,
+        const selectedTab = shelf.querySelector(
+          '[role="tab"][aria-selected="true"]',
         );
+        const panel = shelf.querySelector('section[role="tabpanel"]');
+        const [expectedLabel, expectedCount] = expectedShelves.get(storyLevel);
+        assert.match(selectedTab?.textContent ?? "", new RegExp(expectedLabel));
+        assert.ok(panel, `${storyLevel} panel`);
 
         const playableLinks = [
-          ...container.querySelectorAll(
+          ...panel.querySelectorAll(
             'a[aria-label^="Listen to story:"]',
           ),
         ];
         const playableHrefs = playableLinks.map((link) =>
           link.getAttribute("href"),
         );
-        assert.equal(playableLinks.length, 25, `${storyLevel} story links`);
+        assert.equal(
+          playableLinks.length,
+          expectedCount,
+          `${storyLevel} story links`,
+        );
         assert.equal(
           new Set(playableHrefs).size,
-          25,
+          expectedCount,
           `${storyLevel} unique story links`,
         );
         for (const href of playableHrefs) {
@@ -179,7 +184,7 @@ describe("story script catalog", () => {
             container.querySelector(
               'output[aria-label="Current story route"]',
             )?.textContent,
-            "/stories",
+            `/stories?level=${storyLevel}`,
           ),
         );
       } finally {

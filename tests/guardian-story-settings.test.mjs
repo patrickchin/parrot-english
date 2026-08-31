@@ -300,11 +300,7 @@ test("guardian story settings owns level and art management", () => {
   assert.match(html, /Choose story level/);
   assert.match(
     renderedText,
-    /All stories stay visible\. This level is highlighted for Mia\./,
-  );
-  assert.doesNotMatch(
-    renderedText,
-    /story shelf always opens at this level/i,
+    /This shelf opens first for Mia\. Every story shelf is still available\./,
   );
   assert.equal(levelTabs.length, 4);
   assert.equal(

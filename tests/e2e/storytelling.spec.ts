@@ -3,12 +3,12 @@ import { STORIES } from "../../src/stories/story-catalog";
 
 const firstStoryPath = "/stories/the-red-ball/pages/1";
 const expectedStoryShelves = [
-  { count: 3, label: "First English words" },
-  { count: 4, label: "Start here" },
-  { count: 6, label: "Say it again" },
-  { count: 5, label: "Little stories" },
-  { count: 5, label: "Big adventures" },
-  { count: 2, label: "Long stories" },
+  { count: 3, id: "first-english-words", label: "First English words" },
+  { count: 4, id: "first-words", label: "Start here" },
+  { count: 6, id: "repeating-patterns", label: "Say it again" },
+  { count: 5, id: "tiny-stories", label: "Little stories" },
+  { count: 5, id: "early-a1", label: "Big adventures" },
+  { count: 2, id: "long-stories", label: "Long stories" },
 ] as const;
 
 const viewports = [
@@ -463,7 +463,45 @@ test.beforeEach(async ({ page }) => {
   await installStoryMediaGuard(page);
 });
 
-test("the learner shelf shows six ordered shelves and 25 unique playable stories", async ({
+test("the learner shelf opens one recommended shelf and switches shelves on demand", async ({
+  page,
+}) => {
+  await page.goto("/stories");
+
+  const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  const shelfPicker = shelf.getByRole("tablist", {
+    name: "Pick a story shelf",
+  });
+  const startHere = shelfPicker.getByRole("tab", { name: "Start here" });
+
+  await expect(shelfPicker.getByRole("tab")).toHaveCount(6);
+  await expect(startHere).toHaveAttribute("aria-selected", "true");
+  await expect(shelf.getByRole("tabpanel")).toHaveCount(1);
+  await expect(
+    shelf.getByRole("link", { name: /^Listen to story:/ }),
+  ).toHaveCount(4);
+  await expect(
+    shelf.getByRole("link", { name: "Listen to story: The Red Ball" }),
+  ).toBeVisible();
+
+  await shelfPicker.getByRole("tab", { name: "Big adventures" }).click();
+
+  await expect(page).toHaveURL("/stories?level=early-a1");
+  await expect(
+    shelfPicker.getByRole("tab", { name: "Big adventures" }),
+  ).toHaveAttribute("aria-selected", "true");
+  await expect(
+    shelf.getByRole("link", { name: /^Listen to story:/ }),
+  ).toHaveCount(5);
+  await expect(
+    shelf.getByRole("link", { name: "Listen to story: The Moon Bus" }),
+  ).toBeVisible();
+  await expect(
+    shelf.getByRole("link", { name: "Listen to story: The Red Ball" }),
+  ).toHaveCount(0);
+});
+
+test("the shelf picker keeps all 25 stories available across six shelves", async ({
   page,
 }) => {
   await page.goto("/stories");
@@ -472,26 +510,30 @@ test("the learner shelf shows six ordered shelves and 25 unique playable stories
     page.getByRole("heading", { exact: true, name: "Pick a story" }),
   ).toBeVisible();
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const panels = shelf.getByRole("region");
-
-  await expect(panels).toHaveCount(6);
-  await expect(shelf.getByRole("heading", { level: 2 })).toHaveText(
-    expectedStoryShelves.map(({ label }) => label),
-  );
-  for (const { count, label } of expectedStoryShelves) {
-    await expect(
-      shelf.getByRole("region", {
-        name: new RegExp(`^${label}(?: stories)?$`),
-      }).getByRole("article"),
-    ).toHaveCount(count);
-  }
-  const storyLinks = shelf.getByRole("link", {
-    name: /^Listen to story:/,
+  const shelfPicker = shelf.getByRole("tablist", {
+    name: "Pick a story shelf",
   });
-  await expect(storyLinks).toHaveCount(25);
-  const storyHrefs = await storyLinks.evaluateAll((links) =>
-    links.map((link) => link.getAttribute("href")),
-  );
+  const storyHrefs: Array<string | null> = [];
+
+  await expect(shelfPicker.getByRole("tab")).toHaveCount(6);
+  for (const { count, id, label } of expectedStoryShelves) {
+    const tab = shelfPicker.getByRole("tab", { exact: true, name: label });
+    await tab.click();
+    await expect(page).toHaveURL(`/stories?level=${id}`);
+    await expect(tab).toHaveAttribute("aria-selected", "true");
+
+    const panel = shelf.getByRole("tabpanel", { name: label });
+    await expect(panel.getByRole("article")).toHaveCount(count);
+    storyHrefs.push(
+      ...(await panel
+        .getByRole("link", { name: /^Listen to story:/ })
+        .evaluateAll((links) =>
+          links.map((link) => link.getAttribute("href")),
+        )),
+    );
+  }
+
+  expect(storyHrefs).toHaveLength(25);
   expect(new Set(storyHrefs).size).toBe(25);
   expect(
     storyHrefs.every((href) =>
@@ -506,10 +548,11 @@ test("the saved learner level is the only recommended shelf and exposes no grown
   await page.goto("/stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const startHere = shelf.getByRole("region", {
-    name: /^Start here(?: stories)?$/,
+  const shelfPicker = shelf.getByRole("tablist", {
+    name: "Pick a story shelf",
   });
-  await expect(shelf.getByRole("tablist")).toHaveCount(0);
+  const startHere = shelf.getByRole("tabpanel", { name: "Start here" });
+  await expect(shelfPicker).toBeVisible();
   await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: /Generate story art/ }),
@@ -524,15 +567,6 @@ test("the saved learner level is the only recommended shelf and exposes no grown
   await expect(
     startHere.getByText("Recommended for Mia", { exact: true }),
   ).toBeVisible();
-  for (const label of ["First English words", "Long stories"]) {
-    await expect(
-      shelf
-        .getByRole("region", {
-          name: new RegExp(`^${label}(?: stories)?$`),
-        })
-        .getByText(/^Recommended for /),
-    ).toHaveCount(0);
-  }
 
   const redBallCard = startHere.getByRole("article", { name: "The Red Ball" });
   await expect(redBallCard.getByText("Listen", { exact: true })).toBeVisible();
@@ -545,15 +579,24 @@ test("the saved learner level is the only recommended shelf and exposes no grown
       { exact: true },
     ),
   ).toHaveCount(0);
+
+  for (const label of ["First English words", "Long stories"]) {
+    await shelfPicker.getByRole("tab", { exact: true, name: label }).click();
+    await expect(
+      shelf
+        .getByRole("tabpanel", { name: label })
+        .getByText(/^Recommended for /),
+    ).toHaveCount(0);
+  }
 });
 
-test("only the first library cover loads eagerly", async ({ page }) => {
+test("only the active shelf loads covers and its first cover loads eagerly", async ({
+  page,
+}) => {
   await page.goto("/stories");
 
   const shelf = page.getByRole("region", { name: "Read-aloud stories" });
-  const startHere = shelf.getByRole("region", {
-    name: /^Start here(?: stories)?$/,
-  });
+  const startHere = shelf.getByRole("tabpanel", { name: "Start here" });
   const redBallCover = startHere.getByRole("img", {
     name: "A bright red ball beside a smiling young child",
   });
@@ -570,16 +613,13 @@ test("only the first library cover loads eagerly", async ({ page }) => {
   expect.soft(
     loadingModes.filter((mode) => mode === "lazy"),
     "lazy shelf covers",
-  ).toHaveLength(24);
+  ).toHaveLength(3);
   expect(loadingModes[0]).toBe("eager");
 
   await expect(
     startHere.getByRole("link", { name: "Listen to story: The Red Ball" }),
   ).toHaveAttribute("href", firstStoryPath);
-  expect.soft(
-    await redBallCover.getAttribute("loading"),
-    "the second shelf's first cover",
-  ).toBe("lazy");
+  await expect(redBallCover).toHaveAttribute("loading", "eager");
   await expect(redBallCover).toHaveAttribute(
     "srcset",
     "https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-384.webp 384w, https://media.parrotbook.com/assets/v3/stories/the-red-ball-cover-768.webp 768w",
@@ -598,19 +638,31 @@ test("only the first library cover loads eagerly", async ({ page }) => {
   ).toHaveAttribute("loading", "lazy");
 });
 
-test("legacy shelf queries and reader back links use the sole library URL", async ({ page }) => {
+test("shelf queries and reader back links restore the matching shelf", async ({
+  page,
+}) => {
   await page.goto("/stories?level=not-a-level");
   await expect(page).toHaveURL("/stories");
 
   await page.goto("/stories?level=tiny-stories");
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL("/stories?level=tiny-stories");
+  await expect(
+    page.getByRole("tab", { name: "Little stories" }),
+  ).toHaveAttribute("aria-selected", "true");
 
   for (const story of [
     {
+      backTo: "/stories?level=tiny-stories",
+      count: 5,
       heading: "The Lantern Trail",
       path: "/stories/the-lantern-trail/pages/1",
     },
-    { heading: "The Gruffalo", path: "/stories/the-gruffalo/pages/1" },
+    {
+      backTo: "/stories?level=long-stories",
+      count: 2,
+      heading: "The Gruffalo",
+      path: "/stories/the-gruffalo/pages/1",
+    },
   ]) {
     await page.goto(story.path);
     await expect(
@@ -619,14 +671,14 @@ test("legacy shelf queries and reader back links use the sole library URL", asyn
     const backToStories = page.getByRole("link", {
       name: "Back to stories",
     });
-    await expect(backToStories).toHaveAttribute("href", "/stories");
+    await expect(backToStories).toHaveAttribute("href", story.backTo);
     await backToStories.click();
-    await expect(page).toHaveURL("/stories");
+    await expect(page).toHaveURL(story.backTo);
     await expect(
       page
         .getByRole("region", { name: "Read-aloud stories" })
         .getByRole("link", { name: /^Listen to story:/ }),
-    ).toHaveCount(25);
+    ).toHaveCount(story.count);
   }
 });
 
@@ -653,8 +705,10 @@ test("a phone keeps learner story cards contained without management controls", 
   await expect(redBall).toBeVisible();
   await expect(
     shelf.getByRole("link", { name: /^Listen to story:/ }),
-  ).toHaveCount(25);
-  await expect(shelf.getByRole("tablist")).toHaveCount(0);
+  ).toHaveCount(4);
+  await expect(
+    shelf.getByRole("tablist", { name: "Pick a story shelf" }),
+  ).toBeVisible();
   await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
   await expectInsideViewportHorizontally(redBall, page);
   await expectNoHorizontalOverflow(page);
@@ -1489,7 +1543,7 @@ test("finishing a prototype uses story-owned completion copy", async ({ page }) 
   await expect(complete.getByRole("button", { name: "Start again" })).toBeEnabled();
   await expect(complete.getByRole("link", { name: "Pick another story" })).toHaveAttribute(
     "href",
-    "/stories",
+    "/stories?level=first-words",
   );
 });
 
@@ -1698,7 +1752,7 @@ test("a wide desktop gives the full shelf and reader room beyond the old caps", 
 });
 
 for (const viewport of viewports) {
-  test(`the full shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({
+  test(`the focused shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
@@ -1708,14 +1762,17 @@ for (const viewport of viewports) {
     const readStory = shelf.getByRole("link", {
       name: "Listen to story: The Red Ball",
     });
-    await expect(shelf.getByRole("region")).toHaveCount(6);
-    await expect(shelf.getByRole("article")).toHaveCount(25);
+    const shelfPicker = shelf.getByRole("tablist", {
+      name: "Pick a story shelf",
+    });
+    await expect(shelf.getByRole("tabpanel")).toHaveCount(1);
+    await expect(shelf.getByRole("article")).toHaveCount(4);
     await expect(
       shelf.getByText(/Assumes familiar|Teaching notes|Prompt test|CEFR/i),
     ).toHaveCount(0);
     await expectInsideViewportHorizontally(shelf, page);
     await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
-    await expect(shelf.getByRole("tablist")).toHaveCount(0);
+    await expectInsideViewportHorizontally(shelfPicker, page);
     await expectInsideViewportHorizontally(readStory, page);
     await expectNoHorizontalOverflow(page);
 

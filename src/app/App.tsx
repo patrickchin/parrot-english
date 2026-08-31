@@ -1256,7 +1256,7 @@ function StoryRouteDecisionView({
 
   return (
     <StoryReader
-      backToStories={getStoryShelfPath()}
+      backToStories={getStoryShelfPath(decision.story.level)}
       onNavigatePage={(pageIndex) =>
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }

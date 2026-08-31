@@ -299,7 +299,7 @@ test("learner routes recover progress, invalid story and lesson details, and wil
     page.getByRole("region", { exact: true, name: "Story reader" }),
   ).toBeVisible();
   await page.getByRole("link", { exact: true, name: "Back to stories" }).click();
-  await expect(page).toHaveURL("/stories");
+  await expect(page).toHaveURL("/stories?level=first-words");
 
   await page.goto(
     scenarioUrl("/lessons/my/not-a-lesson", "multiple", "learner"),

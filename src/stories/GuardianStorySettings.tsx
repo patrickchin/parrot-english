@@ -81,8 +81,9 @@ function GuardianStorySettingsContent({
               className="m-0 min-w-0 text-sm font-bold text-slate-600 [overflow-wrap:anywhere]"
               dir="ltr"
             >
-              All stories stay visible. This level is highlighted for{" "}
-              <BidiLearnerName learnerName={managedLearnerName} />.
+              This shelf opens first for{" "}
+              <BidiLearnerName learnerName={managedLearnerName} />. Every story
+              shelf is still available.
             </p>
           </div>
 
