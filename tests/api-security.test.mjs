@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import * as apiSecurity from "../worker/api-security.ts";
 
@@ -99,29 +100,16 @@ describe("API security", () => {
     ]);
   });
 
-  it("rate limits lesson generation by user and client address", async () => {
-    const limiter = fakeLimiter([true, false]);
-    const env = { LESSON_GENERATION_RATE_LIMITER: limiter };
-
-    assert.equal(
-      await apiSecurity.checkLessonGenerationRateLimit(
-        request("/api/lessons/my/generate"),
-        env,
-        "user-1",
-      ),
-      null,
-    );
-    const limited = await apiSecurity.checkLessonGenerationRateLimit(
-      request("/api/lessons/my/generate"),
-      env,
-      "user-1",
+  it("does not define a rate-limit environment binding for retired lesson generation", () => {
+    const apiSecuritySource = readFileSync(
+      new URL("../worker/api-security.ts", import.meta.url),
+      "utf8",
     );
 
-    assert.equal(limited.status, 429);
-    assert.deepEqual(limiter.keys, [
-      "user-1:203.0.113.42",
-      "user-1:203.0.113.42",
-    ]);
+    assert.doesNotMatch(
+      apiSecuritySource,
+      /\bLESSON_GENERATION_RATE_LIMITER\b/,
+    );
   });
 
   it("rate limits guardian password attempts by user and client address", async () => {

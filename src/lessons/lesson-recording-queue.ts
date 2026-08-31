@@ -19,12 +19,7 @@ type RetainedFailure = {
 };
 
 function slotKey(slot: LessonRecordingSlot): string {
-  return JSON.stringify([
-    slot.source,
-    slot.lessonId,
-    slot.sceneIndex,
-    slot.stepIndex,
-  ]);
+  return JSON.stringify([slot.lessonId, slot.sceneIndex, slot.stepIndex]);
 }
 
 export function createLessonRecordingQueue({ save }: { save: Save }) {

@@ -1,9 +1,9 @@
 # Lesson JSON Schema Reference
 
-This document describes the implemented lesson JSON format used by built-in
-Parrot Lessons and learner-created My Lessons. It is a writer-facing reference
-for the contract enforced in `lib/lesson-data.js` and the playback behavior in
-`lib/lesson-state.js` and `lib/lesson-scene.js`.
+This document describes the implemented JSON format for built-in Parrot
+Lessons. It is a writer-facing reference for the contract enforced in
+`lib/lesson-data.js` and the playback behavior in `lib/lesson-state.js` and
+`lib/lesson-scene.js`.
 
 For a shorter, plain-language introduction, start with the
 [Lesson Writing Quick Guide](./lesson-writing-quick-guide.md).
@@ -73,13 +73,7 @@ type Response = {
   after: "retry" | "continue";
 };
 
-type Emote =
-  | "idle"
-  | "talking"
-  | "listening"
-  | "happy"
-  | "sad"
-  | "surprised";
+type Emote = "idle" | "talking" | "listening" | "happy" | "sad" | "surprised";
 ```
 
 All required text fields must contain non-whitespace text. The runtime permits
@@ -87,38 +81,38 @@ extra metadata fields, but only the core fields above affect playback.
 
 ## Root Lesson Object
 
-| Field | Type | Required | Runtime meaning |
-| --- | --- | --- | --- |
-| `title` | string | Yes | Display name in the lesson catalog and player. |
-| `childName` | string | Yes | Learner name associated with the lesson. It does not have to appear in dialogue. |
-| `goalPhrases` | string[] | Yes | Zero or more non-empty phrases shown as lesson metadata. They do not need matching user steps. |
-| `summary` | string | Yes | Short catalog description. There is no fixed sentence count. |
-| `detailedSummary` | string | Yes | Longer description. There is no fixed sentence count. |
-| `location` | object | Yes | Display metadata containing `name` and `description`. |
-| `scenes` | Scene[] | Yes | One or more playable scenes in order. |
+| Field             | Type     | Required | Runtime meaning                                                                                |
+| ----------------- | -------- | -------- | ---------------------------------------------------------------------------------------------- |
+| `title`           | string   | Yes      | Display name in the lesson catalog and player.                                                 |
+| `childName`       | string   | Yes      | Learner name associated with the lesson. It does not have to appear in dialogue.               |
+| `goalPhrases`     | string[] | Yes      | Zero or more non-empty phrases shown as lesson metadata. They do not need matching user steps. |
+| `summary`         | string   | Yes      | Short catalog description. There is no fixed sentence count.                                   |
+| `detailedSummary` | string   | Yes      | Longer description. There is no fixed sentence count.                                          |
+| `location`        | object   | Yes      | Display metadata containing `name` and `description`.                                          |
+| `scenes`          | Scene[]  | Yes      | One or more playable scenes in order.                                                          |
 
 The schema does not impose a language, curriculum structure, fixed number of
 goal phrases, or fixed number of scenes.
 
 ### Location Object
 
-| Field | Type | Required | Runtime meaning |
-| --- | --- | --- | --- |
-| `name` | string | Yes | Human-readable location name. |
-| `description` | string | Yes | Human-readable location description. |
+| Field         | Type   | Required | Runtime meaning                      |
+| ------------- | ------ | -------- | ------------------------------------ |
+| `name`        | string | Yes      | Human-readable location name.        |
+| `description` | string | Yes      | Human-readable location description. |
 
 Location text is metadata. Visual selection is controlled by each scene's
 `background` ID.
 
 ## Scene Object
 
-| Field | Type | Required | Runtime meaning |
-| --- | --- | --- | --- |
-| `title` | string | Yes | Scene title shown in the lesson HUD. |
-| `settingDescription` | string | Yes | Accessible/free-form description of the scene. |
-| `background` | string | Yes | ID from `content/catalogs/backgrounds.json`. |
-| `characters` | string[] | Yes | Unique visible character IDs for this scene. The array may be empty. |
-| `steps` | Step[] | Yes | One or more steps played in array order. |
+| Field                | Type     | Required | Runtime meaning                                                      |
+| -------------------- | -------- | -------- | -------------------------------------------------------------------- |
+| `title`              | string   | Yes      | Scene title shown in the lesson HUD.                                 |
+| `settingDescription` | string   | Yes      | Accessible/free-form description of the scene.                       |
+| `background`         | string   | Yes      | ID from `content/catalogs/backgrounds.json`.                         |
+| `characters`         | string[] | Yes      | Unique visible character IDs for this scene. The array may be empty. |
+| `steps`              | Step[]   | Yes      | One or more steps played in array order.                             |
 
 The currently supported background IDs are:
 
@@ -141,21 +135,21 @@ visible.
 
 ## Step Object
 
-| Field | Type | Required | Runtime meaning |
-| --- | --- | --- | --- |
-| `speaker` | speaker ID | Yes | Determines who speaks and whether playback waits for the learner. |
-| `dialogue` | string | Yes | Text spoken or targeted by this step. |
-| `emotes` | object | No | Partial visible-character emote changes. |
-| `check` | Check | No | Evaluation and scripted response rules; valid only on a `user` step. |
+| Field      | Type       | Required | Runtime meaning                                                      |
+| ---------- | ---------- | -------- | -------------------------------------------------------------------- |
+| `speaker`  | speaker ID | Yes      | Determines who speaks and whether playback waits for the learner.    |
+| `dialogue` | string     | Yes      | Text spoken or targeted by this step.                                |
+| `emotes`   | object     | No       | Partial visible-character emote changes.                             |
+| `check`    | Check      | No       | Evaluation and scripted response rules; valid only on a `user` step. |
 
 ### Speaker IDs
 
-| ID | Visual | Behavior |
-| --- | --- | --- |
-| `peppa` | If listed in `characters` | Plays automatically as a character line. |
-| `dolly` | If listed in `characters` | Plays automatically as a character line. |
-| `narrator` | Never | Plays automatically as a narrator caption. |
-| `user` | Never | Waits for press-and-hold microphone input. |
+| ID         | Visual                    | Behavior                                   |
+| ---------- | ------------------------- | ------------------------------------------ |
+| `peppa`    | If listed in `characters` | Plays automatically as a character line.   |
+| `dolly`    | If listed in `characters` | Plays automatically as a character line.   |
+| `narrator` | Never                     | Plays automatically as a narrator caption. |
+| `user`     | Never                     | Waits for press-and-hold microphone input. |
 
 User lines are flexible. They do not need a preceding model line and do not
 need to repeat another speaker's dialogue.
@@ -216,14 +210,14 @@ only IDs from the scene's `characters` array as emote keys.
 
 A `check` is allowed only when the enclosing step has `"speaker": "user"`.
 
-| Field | Type | Required | Runtime meaning |
-| --- | --- | --- | --- |
-| `maxAttempts` | integer 1–5 | Yes | Number of unsuccessful attempts allowed before a final response is selected. |
-| `correct` | Response | Yes | Played when evaluation returns `correct`. |
-| `incorrect` | Response | Yes | Played after a non-final `incorrect` result. |
-| `incorrectFinal` | Response | Yes | Played when an incorrect result reaches `maxAttempts`. |
-| `noInput` | Response | No | Played after a non-final empty recording. Falls back to `incorrect`. |
-| `noInputFinal` | Response | No | Played when empty input reaches `maxAttempts`. Falls back to `incorrectFinal`. |
+| Field            | Type        | Required | Runtime meaning                                                                |
+| ---------------- | ----------- | -------- | ------------------------------------------------------------------------------ |
+| `maxAttempts`    | integer 1–5 | Yes      | Number of unsuccessful attempts allowed before a final response is selected.   |
+| `correct`        | Response    | Yes      | Played when evaluation returns `correct`.                                      |
+| `incorrect`      | Response    | Yes      | Played after a non-final `incorrect` result.                                   |
+| `incorrectFinal` | Response    | Yes      | Played when an incorrect result reaches `maxAttempts`.                         |
+| `noInput`        | Response    | No       | Played after a non-final empty recording. Falls back to `incorrect`.           |
+| `noInputFinal`   | Response    | No       | Played when empty input reaches `maxAttempts`. Falls back to `incorrectFinal`. |
 
 Only unsuccessful `incorrect` and `noInput` results increase the attempt count.
 A correct result selects `correct` immediately. With `maxAttempts: 1`, the first
@@ -231,25 +225,25 @@ unsuccessful result selects a final response.
 
 ### Outcome Selection
 
-| Evaluation result | Attempts after result | Selected response |
-| --- | --- | --- |
-| `correct` | Unchanged | `correct` |
-| `incorrect` | Less than `maxAttempts` | `incorrect` |
-| `incorrect` | At `maxAttempts` | `incorrectFinal` |
-| `noInput` | Less than `maxAttempts` | `noInput`, or `incorrect` when omitted |
-| `noInput` | At `maxAttempts` | `noInputFinal`, or `incorrectFinal` when omitted |
+| Evaluation result | Attempts after result   | Selected response                                |
+| ----------------- | ----------------------- | ------------------------------------------------ |
+| `correct`         | Unchanged               | `correct`                                        |
+| `incorrect`       | Less than `maxAttempts` | `incorrect`                                      |
+| `incorrect`       | At `maxAttempts`        | `incorrectFinal`                                 |
+| `noInput`         | Less than `maxAttempts` | `noInput`, or `incorrect` when omitted           |
+| `noInput`         | At `maxAttempts`        | `noInputFinal`, or `incorrectFinal` when omitted |
 
 If the evaluation service itself fails, no response is selected. The player
 shows an error and returns to the same user step.
 
 ## Response Object
 
-| Field | Type | Required | Runtime meaning |
-| --- | --- | --- | --- |
-| `speaker` | `peppa`, `dolly`, or `narrator` | Yes | Character or narrator who delivers the response. `user` is not allowed. |
-| `dialogue` | string | Yes | Response text to display and play. |
-| `emotes` | object | No | Partial emote changes applied while the response plays. |
-| `after` | `retry` or `continue` | Yes | Action taken after response playback finishes. |
+| Field      | Type                            | Required | Runtime meaning                                                         |
+| ---------- | ------------------------------- | -------- | ----------------------------------------------------------------------- |
+| `speaker`  | `peppa`, `dolly`, or `narrator` | Yes      | Character or narrator who delivers the response. `user` is not allowed. |
+| `dialogue` | string                          | Yes      | Response text to display and play.                                      |
+| `emotes`   | object                          | No       | Partial emote changes applied while the response plays.                 |
+| `after`    | `retry` or `continue`           | Yes      | Action taken after response playback finishes.                          |
 
 The `correct`, `incorrectFinal`, and `noInputFinal` responses must use
 `"after": "continue"`. Non-final `incorrect` and `noInput` responses may either
@@ -324,10 +318,7 @@ recording, and a final unsuccessful attempt:
 {
   "title": "The Helpful Friend",
   "childName": "Mia",
-  "goalPhrases": [
-    "Can you help me, please?",
-    "Thank you!"
-  ],
+  "goalPhrases": ["Can you help me, please?", "Thank you!"],
   "summary": "Peppa asks Dolly for help.",
   "detailedSummary": "Peppa needs help reaching a ball, and Dolly helps her.",
   "location": {
@@ -339,10 +330,7 @@ recording, and a final unsuccessful attempt:
       "title": "The High Ball",
       "settingDescription": "Peppa and Dolly stand below a ball in a tree.",
       "background": "episode-garden",
-      "characters": [
-        "peppa",
-        "dolly"
-      ],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "peppa",
@@ -407,44 +395,23 @@ There are two related boundaries:
 
 ### Playable Lesson Validation
 
-Built-in lessons and saved lessons must contain all required root, location,
-scene, and step fields. Validation rejects missing or blank required text,
-unknown backgrounds, unknown scene characters, duplicate scene characters,
-unsupported speakers, invalid visible emotes, malformed checks, and scenes with
-no steps.
+Built-in lessons must contain all required root, location, scene, and step
+fields. Validation rejects missing or blank required text, unknown backgrounds,
+unknown scene characters, duplicate scene characters, unsupported speakers,
+invalid visible emotes, malformed checks, and scenes with no steps.
 
 Extra metadata is permitted, but the player ignores fields it does not know.
 
-### Generated or Pasted Draft Preparation
-
-Generated and pasted My Lesson scripts pass through a repair step before they
-are saved. Recoverable problems produce warnings and safe values:
-
-- Missing display text receives a fallback.
-- Missing goal phrases become an empty array.
-- Unsupported backgrounds use the first available catalog background.
-- Unsupported or duplicate scene characters are removed.
-- Unsupported speakers become `narrator`.
-- Non-object or blank-dialogue steps are removed.
-- Invalid supplied emotes become `idle`; omitted emotes remain omitted.
-- A check on a non-user step is removed.
-- A malformed check on a user step is removed.
-- A scene with no playable steps is removed.
-
-Invalid JSON, input larger than the editor's size limit, and a draft with no
-playable dialogue remain fatal.
-
-## Built-in and My Lesson Audio
+## Built-in Lesson Audio
 
 Lesson JSON never contains audio filenames or voice IDs.
 
 - Built-in Parrot Lessons resolve every non-user step and check response by
   exact speaker plus dialogue text in the static audio catalog.
-- My Lessons play non-user steps and check responses with browser device speech.
 - User steps never play synthesized or saved speech as the learner's voice.
 
 When adding new built-in dialogue or check responses, add the corresponding
-saved audio metadata and assets. This requirement does not apply to My Lessons.
+saved audio metadata and assets.
 
 ## Author Checklist
 
@@ -463,8 +430,5 @@ saved audio metadata and assets. This requirement does not apply to My Lessons.
 - For built-in lessons, ensure every automatic line and response has saved
   audio.
 
-The generation instructions live in
-[`worker/prompts/lesson-generator.ts`](../worker/prompts/lesson-generator.ts).
-That exported text is the prompt used at runtime. The catalog files under
-`content/catalogs` are the source of truth for currently available background,
-character, and emote IDs.
+The catalog files under `content/catalogs` are the source of truth for currently
+available background, character, and emote IDs.

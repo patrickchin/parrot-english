@@ -96,7 +96,11 @@ async function renderedControlContrast(locator: Locator) {
     };
     const computed = getComputedStyle(element);
     const effects = [];
-    for (let current: Element | null = element; current; current = current.parentElement) {
+    for (
+      let current: Element | null = element;
+      current;
+      current = current.parentElement
+    ) {
       const currentStyle = getComputedStyle(current);
       effects.push({
         filter: currentStyle.filter,
@@ -137,10 +141,14 @@ async function renderedControlContrast(locator: Locator) {
       opacity,
     };
   });
-  const backdrop = style.backgrounds.reverse().reduce(
-    (background, layer) => composite(layer, background),
-    { alpha: 1, blue: 255, green: 255, red: 255 },
-  );
+  const backdrop = style.backgrounds
+    .reverse()
+    .reduce((background, layer) => composite(layer, background), {
+      alpha: 1,
+      blue: 255,
+      green: 255,
+      red: 255,
+    });
   let background = composite(style.background, backdrop);
   let foreground = composite(style.foreground, background);
 
@@ -182,17 +190,21 @@ async function expectPointerStateContrast({
 }) {
   await page.mouse.move(0, 0);
   const normal = await renderedControlContrast(visual);
-  expect.soft(
-    normal.ratio,
-    `${name} normal contrast (${normal.ratio.toFixed(3)}:1; ${normal.filter}; opacity ${normal.opacity})`,
-  ).toBeGreaterThanOrEqual(minimum);
+  expect
+    .soft(
+      normal.ratio,
+      `${name} normal contrast (${normal.ratio.toFixed(3)}:1; ${normal.filter}; opacity ${normal.opacity})`,
+    )
+    .toBeGreaterThanOrEqual(minimum);
 
   await interaction.hover();
   const hover = await renderedControlContrast(visual);
-  expect.soft(
-    hover.ratio,
-    `${name} hover contrast (${hover.ratio.toFixed(3)}:1; ${hover.filter}; opacity ${hover.opacity})`,
-  ).toBeGreaterThanOrEqual(minimum);
+  expect
+    .soft(
+      hover.ratio,
+      `${name} hover contrast (${hover.ratio.toFixed(3)}:1; ${hover.filter}; opacity ${hover.opacity})`,
+    )
+    .toBeGreaterThanOrEqual(minimum);
 
   await page.evaluate(() => {
     document.addEventListener(
@@ -207,10 +219,12 @@ async function expectPointerStateContrast({
   await page.mouse.down();
   try {
     const active = await renderedControlContrast(visual);
-    expect.soft(
-      active.ratio,
-      `${name} active contrast (${active.ratio.toFixed(3)}:1; ${active.filter}; opacity ${active.opacity})`,
-    ).toBeGreaterThanOrEqual(minimum);
+    expect
+      .soft(
+        active.ratio,
+        `${name} active contrast (${active.ratio.toFixed(3)}:1; ${active.filter}; opacity ${active.opacity})`,
+      )
+      .toBeGreaterThanOrEqual(minimum);
   } finally {
     await page.mouse.up();
     await page.mouse.move(0, 0);
@@ -218,16 +232,22 @@ async function expectPointerStateContrast({
 
   await interaction.focus();
   const focused = await renderedControlContrast(visual);
-  expect.soft(
-    focused.ratio,
-    `${name} focus contrast (${focused.ratio.toFixed(3)}:1; ${focused.filter}; opacity ${focused.opacity})`,
-  ).toBeGreaterThanOrEqual(minimum);
+  expect
+    .soft(
+      focused.ratio,
+      `${name} focus contrast (${focused.ratio.toFixed(3)}:1; ${focused.filter}; opacity ${focused.opacity})`,
+    )
+    .toBeGreaterThanOrEqual(minimum);
 }
 
 async function renderedAppearance(locator: Locator) {
   return locator.evaluate((element) => {
     let opacity = 1;
-    for (let current: Element | null = element; current; current = current.parentElement) {
+    for (
+      let current: Element | null = element;
+      current;
+      current = current.parentElement
+    ) {
       opacity *= Number.parseFloat(getComputedStyle(current).opacity);
     }
     const style = getComputedStyle(element);
@@ -259,7 +279,9 @@ async function expectVisibleSurfaceFrame(locator: Locator) {
 
 async function focusWithKeyboard(page: Page, locator: Locator) {
   for (let index = 0; index < 12; index += 1) {
-    if (await locator.evaluate((element) => element === document.activeElement)) {
+    if (
+      await locator.evaluate((element) => element === document.activeElement)
+    ) {
       return;
     }
     await page.keyboard.press("Tab");
@@ -314,10 +336,12 @@ async function renderedFocusContrast(locator: Locator) {
 
   const adjacent = style.backgrounds
     .reverse()
-    .reduce(
-      (background, layer) => composite(layer, background),
-      { alpha: 1, blue: 255, green: 255, red: 255 },
-    );
+    .reduce((background, layer) => composite(layer, background), {
+      alpha: 1,
+      blue: 255,
+      green: 255,
+      red: 255,
+    });
 
   return {
     ...style,
@@ -325,10 +349,7 @@ async function renderedFocusContrast(locator: Locator) {
   };
 }
 
-async function preparePage(
-  page: Page,
-  viewport: (typeof viewports)[number],
-) {
+async function preparePage(page: Page, viewport: (typeof viewports)[number]) {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize(viewport);
 }
@@ -377,7 +398,6 @@ test("guardian dashboard cards share one rendered frame and elevation", async ({
   await page.goto(guardianPath("/guardian"));
   const cards = [
     "Learner profiles",
-    "My Lessons",
     "Story settings",
     "Voice dubbing",
     "Account & privacy",
@@ -429,15 +449,15 @@ for (const viewport of viewports) {
   }) => {
     await preparePage(page, viewport);
 
-    await page.goto(guardianPath("/guardian/lessons"));
-    const createLesson = page.getByRole("link", {
-      name: "Create custom lesson",
+    await page.goto(guardianPath("/guardian"));
+    const storySettings = page.getByRole("link", {
+      name: "Open story settings",
     });
-    await createLesson.scrollIntoViewIfNeeded();
+    await storySettings.scrollIntoViewIfNeeded();
     await expectPointerStateContrast({
-      interaction: createLesson,
+      interaction: storySettings,
       minimum: 4.5,
-      name: "Create custom lesson link",
+      name: "Open story settings link",
       page,
     });
   });

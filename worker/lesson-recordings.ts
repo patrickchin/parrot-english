@@ -91,18 +91,18 @@ function parseIndex(value: string) {
 function parseRoute(pathname: string): "consent" | LessonRecordingSlot | null {
   if (pathname === "/api/lesson-recordings/consent") return "consent";
   const match =
-    /^\/api\/lesson-recordings\/([^/]+)\/([^/]+)\/scenes\/([^/]+)\/steps\/([^/]+)$/.exec(
+    /^\/api\/lesson-recordings\/parrot\/([^/]+)\/scenes\/([^/]+)\/steps\/([^/]+)$/.exec(
       pathname,
     );
-  if (!match || (match[1] !== "parrot" && match[1] !== "my")) return null;
+  if (!match) return null;
   try {
-    const lessonId = decodeURIComponent(match[2]);
-    const sceneIndex = parseIndex(match[3]);
-    const stepIndex = parseIndex(match[4]);
+    const lessonId = decodeURIComponent(match[1]);
+    const sceneIndex = parseIndex(match[2]);
+    const stepIndex = parseIndex(match[3]);
     if (!isSafeRouteId(lessonId) || sceneIndex === null || stepIndex === null) {
       return null;
     }
-    return { lessonId, sceneIndex, source: match[1], stepIndex };
+    return { lessonId, sceneIndex, stepIndex };
   } catch {
     return null;
   }
@@ -202,19 +202,8 @@ export async function handleLessonRecordingRequest(
     requireAccess(initialAccess);
     const consentGeneration = initialAccess.consent.generation;
 
-    const target = await resolveLessonRecordingTarget(
-      input.database,
-      input.identity,
-      route,
-    );
+    const target = resolveLessonRecordingTarget(route);
     if (!target) throw new LessonRecordingApiError(404, "not_found");
-    const lessonGeneration = target.lessonGeneration;
-    if (
-      route.source === "my" &&
-      input.request.headers.get("X-Parrot-Lesson-Revision") !== target.revision
-    ) {
-      throw new LessonRecordingApiError(409, "lesson_changed");
-    }
     if (
       new TextEncoder().encode(target.targetText).byteLength >
       MAX_TARGET_TEXT_BYTES
@@ -252,16 +241,10 @@ export async function handleLessonRecordingRequest(
         consentGeneration: String(consentGeneration),
         consentVersion: LESSON_RECORDING_CONSENT_VERSION,
         lessonId: route.lessonId,
-        ...(lessonGeneration === null
-          ? {}
-          : { lessonGeneration: String(lessonGeneration) }),
-        ...(target.revision === null
-          ? {}
-          : { lessonRevision: target.revision }),
         payloadOffset: String(encoded.payloadOffset),
         recordedAt,
         sceneIndex: String(route.sceneIndex),
-        source: route.source,
+        source: "parrot",
         state: "audio",
         stepIndex: String(route.stepIndex),
         targetText: target.targetText,
@@ -278,7 +261,7 @@ export async function handleLessonRecordingRequest(
         bucket,
         key,
         uploadNonce,
-        { consentGeneration, lessonGeneration },
+        consentGeneration,
         wait,
       );
       let reservedAccess: Awaited<ReturnType<typeof accessState>> | undefined;
@@ -302,20 +285,6 @@ export async function handleLessonRecordingRequest(
         );
         throw error;
       }
-      if (route.source === "my") {
-        const currentTarget = await resolveLessonRecordingTarget(
-          input.database,
-          input.identity,
-          route,
-        );
-        if (
-          !currentTarget ||
-          currentTarget.revision !== target.revision ||
-          currentTarget.lessonGeneration !== lessonGeneration
-        ) {
-          throw new LessonRecordingApiError(409, "lesson_changed");
-        }
-      }
       stored = await putLessonRecordingAudio(
         bucket,
         key,
@@ -326,20 +295,6 @@ export async function handleLessonRecordingRequest(
       );
       if (stored) break;
       requireAccess(await accessState(), consentGeneration);
-      if (route.source === "my") {
-        const currentTarget = await resolveLessonRecordingTarget(
-          input.database,
-          input.identity,
-          route,
-        );
-        if (
-          !currentTarget ||
-          currentTarget.revision !== target.revision ||
-          currentTarget.lessonGeneration !== lessonGeneration
-        ) {
-          throw new LessonRecordingApiError(409, "lesson_changed");
-        }
-      }
     }
     if (!stored) throw new Error("Lesson recording could not be stored.");
 
@@ -376,41 +331,6 @@ export async function handleLessonRecordingRequest(
         wait,
       );
       requireAccess(after, consentGeneration);
-    }
-    if (route.source === "my") {
-      let currentTarget: Awaited<ReturnType<typeof resolveLessonRecordingTarget>>;
-      try {
-        currentTarget = await resolveLessonRecordingTarget(
-          input.database,
-          input.identity,
-          route,
-        );
-      } catch (error) {
-        await fenceLessonRecordingUpload(
-          bucket,
-          key,
-          stored,
-          uploadNonce,
-          "state-unknown",
-          wait,
-        );
-        throw error;
-      }
-      if (
-        !currentTarget ||
-        currentTarget.revision !== target.revision ||
-        currentTarget.lessonGeneration !== lessonGeneration
-      ) {
-        await fenceLessonRecordingUpload(
-          bucket,
-          key,
-          stored,
-          uploadNonce,
-          "lesson-changed",
-          wait,
-        );
-        throw new LessonRecordingApiError(409, "lesson_changed");
-      }
     }
     return json({ recordedAt }, { status: 201 });
   } catch (error) {

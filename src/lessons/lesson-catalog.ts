@@ -1,9 +1,6 @@
 /// <reference types="vite/client" />
 
-import {
-  prepareLesson,
-  validateLesson,
-} from "../../lib/lesson-data";
+import { validateLesson } from "../../lib/lesson-data";
 import { LESSON_VISUAL_CATALOG } from "../../lib/lesson-visual-catalog";
 
 const lessonModules = import.meta.glob("../../content/lessons/*.json", {
@@ -14,7 +11,6 @@ const lessonModules = import.meta.glob("../../content/lessons/*.json", {
 export const VISUAL_CATALOG = LESSON_VISUAL_CATALOG;
 
 export type Lesson = ReturnType<typeof validateLesson>;
-export type LessonDraft = ReturnType<typeof prepareLesson>;
 export type LessonCatalogEntry = {
   id: string;
   lesson: Lesson;

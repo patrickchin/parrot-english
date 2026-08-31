@@ -34,7 +34,6 @@ async function retryRateLimited<T>(operation: () => Promise<T>, wait: Wait) {
 export type LessonRecordingSlot = {
   lessonId: string;
   sceneIndex: number;
-  source: "my" | "parrot";
   stepIndex: number;
 };
 
@@ -54,7 +53,7 @@ export function lessonRecordingObjectKey(
   identity: LessonRecordingOwner,
   slot: LessonRecordingSlot,
 ) {
-  return `${lessonRecordingOwnerPrefix(identity)}${slot.source}/${encodeURIComponent(slot.lessonId)}/scene-${slot.sceneIndex}/step-${slot.stepIndex}.audio`;
+  return `${lessonRecordingOwnerPrefix(identity)}parrot/${encodeURIComponent(slot.lessonId)}/scene-${slot.sceneIndex}/step-${slot.stepIndex}.audio`;
 }
 
 export function lessonRecordingAudioBody(
@@ -86,10 +85,7 @@ export async function reserveLessonRecordingUpload(
   bucket: LessonRecordingWriteBucket,
   key: string,
   uploadNonce: string,
-  generations: {
-    consentGeneration: number;
-    lessonGeneration: number | null;
-  },
+  consentGeneration: number,
   wait: Wait,
 ) {
   for (let conflict = 0; conflict < MAX_WRITE_CONFLICTS; conflict += 1) {
@@ -104,10 +100,7 @@ export async function reserveLessonRecordingUpload(
           ),
           {
             customMetadata: {
-              consentGeneration: String(generations.consentGeneration),
-              ...(generations.lessonGeneration === null
-                ? {}
-                : { lessonGeneration: String(generations.lessonGeneration) }),
+              consentGeneration: String(consentGeneration),
               state: "uploading",
               uploadNonce,
             },
@@ -164,7 +157,6 @@ export async function fenceLessonRecordingUpload(
     | "account-deleting"
     | "consent-revoked"
     | "learner-deleting"
-    | "lesson-changed"
     | "state-unknown",
   wait: Wait,
 ) {
@@ -204,31 +196,26 @@ export async function fenceLessonRecordingUpload(
   }
 }
 
-function isOlderGeneration(
-  object: R2Object,
-  metadataKey: "consentGeneration" | "lessonGeneration",
-  boundary: number,
-) {
+function isOlderConsentGeneration(object: R2Object, boundary: number) {
   if (
     object.customMetadata?.state === "account-deleting" ||
     object.customMetadata?.state === "learner-deleting"
   ) {
     return false;
   }
-  const generation = Number(object.customMetadata?.[metadataKey]);
+  const generation = Number(object.customMetadata?.consentGeneration);
   return !Number.isSafeInteger(generation) || generation < boundary;
 }
 
 async function purgeOlderObject(
   bucket: LessonRecordingBucket,
   listed: R2Object,
-  metadataKey: "consentGeneration" | "lessonGeneration",
   boundary: number,
   wait: Wait,
 ) {
   let current: R2Object | null = listed;
   for (let conflict = 0; conflict < MAX_WRITE_CONFLICTS; conflict += 1) {
-    if (!isOlderGeneration(current, metadataKey, boundary)) return;
+    if (!isOlderConsentGeneration(current, boundary)) return;
     const purged = await retryRateLimited(
       () => bucket.put(
         current!.key,
@@ -255,7 +242,6 @@ async function purgeOlderObject(
 async function purgePrefix(
   bucket: LessonRecordingBucket,
   prefix: string,
-  metadataKey: "consentGeneration" | "lessonGeneration",
   boundary: number,
   wait: Wait,
 ) {
@@ -282,7 +268,7 @@ async function purgePrefix(
       seenCursors.add(page.cursor);
     }
     for (const object of page.objects) {
-      await purgeOlderObject(bucket, object, metadataKey, boundary, wait);
+      await purgeOlderObject(bucket, object, boundary, wait);
     }
     if (!page.truncated) return;
     cursor = page.cursor;
@@ -298,24 +284,7 @@ export function deleteAllLessonRecordings(
   return purgePrefix(
     bucket,
     lessonRecordingOwnerPrefix(identity),
-    "consentGeneration",
     consentGenerationBoundary,
-    wait,
-  );
-}
-
-export function deleteLessonRecordingsForLesson(
-  bucket: LessonRecordingBucket,
-  identity: LessonRecordingOwner,
-  lessonId: string,
-  lessonGenerationBoundary: number,
-  wait: Wait,
-) {
-  return purgePrefix(
-    bucket,
-    `${lessonRecordingOwnerPrefix(identity)}my/${encodeURIComponent(lessonId)}/`,
-    "lessonGeneration",
-    lessonGenerationBoundary,
     wait,
   );
 }

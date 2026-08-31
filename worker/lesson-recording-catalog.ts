@@ -5,14 +5,7 @@ import lesson04 from "../content/lessons/04-playground-words.json" with { type: 
 import lesson05 from "../content/lessons/05-market-day.json" with { type: "json" };
 import lesson06 from "../content/lessons/06-picnic-time.json" with { type: "json" };
 import lesson07 from "../content/lessons/07-bedtime-story.json" with { type: "json" };
-import type { Database } from "./database.ts";
 import type { LessonRecordingSlot } from "./lesson-recording-storage.ts";
-import {
-  createMyLessonRepository,
-  DELETING_MY_LESSON_RECORDING_GENERATION,
-  lessonJsonRevision,
-} from "./my-lessons-repository.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
 
 const BUILT_IN_LESSONS = new Map<string, unknown>([
   ["01-peppas-high-ball", lesson01],
@@ -23,6 +16,10 @@ const BUILT_IN_LESSONS = new Map<string, unknown>([
   ["06-picnic-time", lesson06],
   ["07-bedtime-story", lesson07],
 ]);
+
+type LessonRecordingTarget = {
+  targetText: string;
+};
 
 function userTarget(lesson: unknown, slot: LessonRecordingSlot) {
   if (!lesson || typeof lesson !== "object" || Array.isArray(lesson)) {
@@ -45,33 +42,9 @@ function userTarget(lesson: unknown, slot: LessonRecordingSlot) {
     : null;
 }
 
-export async function resolveLessonRecordingTarget(
-  database: Database,
-  identity: LearnerIdentity,
+export function resolveLessonRecordingTarget(
   slot: LessonRecordingSlot,
-) {
-  if (slot.source === "parrot") {
-    const targetText = userTarget(BUILT_IN_LESSONS.get(slot.lessonId), slot);
-    return targetText
-      ? { lessonGeneration: null, revision: null, targetText }
-      : null;
-  }
-  const row = await createMyLessonRepository(database).findOwned(
-    slot.lessonId,
-    identity,
-  );
-  if (!row) return null;
-  if (
-    row.recordingGeneration === DELETING_MY_LESSON_RECORDING_GENERATION
-  ) {
-    return null;
-  }
-  const targetText = userTarget(JSON.parse(row.lessonJson), slot);
-  return targetText
-    ? {
-        lessonGeneration: row.recordingGeneration,
-        revision: await lessonJsonRevision(row.lessonJson),
-        targetText,
-      }
-    : null;
+): LessonRecordingTarget | null {
+  const targetText = userTarget(BUILT_IN_LESSONS.get(slot.lessonId), slot);
+  return targetText ? { targetText } : null;
 }

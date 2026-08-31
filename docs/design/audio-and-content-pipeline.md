@@ -7,8 +7,7 @@ lesson so authors can add or remove story content without managing filenames.
 All active lesson dialogue, instructions, and feedback are in English.
 
 Built-in Parrot Lesson playback uses saved audio in `public/assets/audio`.
-Authenticated My Lessons use browser on-device English speech synthesis.
-Neither playback mode adds audio fields to the lesson-authoring format.
+Lesson JSON never adds audio fields to the authoring format.
 
 Storytelling uses a separate checked-in runtime contract containing each
 story's shelf identity, cover, reader pages, and completion line. Each page
@@ -35,7 +34,6 @@ ends. The path does not use a third-party player or a mixed downloadable video.
 ## Sources of Truth
 
 - Lessons: `content/lessons/*.json`
-- My Lessons: validated JSON in the D1 `learner_lesson` table
 - Global emotes: `content/catalogs/emotes.json`
 - Global characters and sprite paths: `content/catalogs/characters.json`
 - Global background IDs, alt text, and delivery URLs:
@@ -80,22 +78,16 @@ No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
 
 ## Runtime Playback Rules
 
-`src/media/audio-playback.ts` plays built-in static asset lines.
-`src/media/device-speech.ts`
-plays generated and pasted My Lesson lines with the browser Web Speech API,
-preferring an available local English voice and applying modest character
-pitch/rate profiles. There is no `/api/tts` Worker route and no provider key is
-sent to the browser.
+`src/media/audio-playback.ts` plays built-in static asset lines. There is no
+`/api/tts` Worker route and no provider key is sent to the browser.
 
 `lib/static-audio.js` resolves a cache entry by both `speaker` and exact `text`.
 The speaker is required because the same sentence may be spoken by Peppa and
 Dolly with different cached voices. User steps never require saved playback.
-Built-in scripted check responses use saved audio; My Lesson responses use the
-same device-speech path as their other lines.
+Built-in scripted check responses use saved audio.
 
 A missing built-in metadata entry or file should fail tests during development
-instead of silently falling back to device speech. Device speech is selected
-only by the `my` lesson source and is cancelled on scene or route changes.
+instead of silently falling back to device speech.
 
 For Storytelling, saved playback resolves the narration audio ID checked into
 the current page. The resolved exact-text cache entry must match that ID.
@@ -160,7 +152,7 @@ failure; the dubbing UI must not substitute browser speech.
 
 Use `--only=<audio-id>` to avoid regenerating existing assets or spending
 credits unnecessarily. Never substitute local or macOS system speech for a
-missing built-in saved asset; My Lessons are the explicit on-device exception.
+missing built-in saved asset.
 
 ## Visual Generation
 
@@ -191,8 +183,6 @@ URL rather than overwriting an existing object.
 - Confirm each character/emote catalog path exists.
 - Confirm each built-in scripted non-user line and check response resolves by
   speaker plus text.
-- Confirm My Lesson device speech completes, fails clearly when unsupported,
-  and cancels on navigation.
 - Confirm each audio metadata path exists under `public`.
 - Run `npm run verify:backgrounds` after any background catalog change.
 - Run focused lesson/audio tests.

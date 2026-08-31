@@ -4,14 +4,16 @@ import { setImmediate } from "node:timers";
 import { saveLessonRecording } from "../src/lessons/lesson-recording-api.ts";
 import { createLessonRecordingQueue } from "../src/lessons/lesson-recording-queue.ts";
 
-const PARROT_SLOT = {
+const BUILT_IN_SLOT = {
   lessonId: "lesson-1",
   sceneIndex: 0,
-  source: "parrot",
   stepIndex: 1,
 };
-const MY_SLOT = { ...PARROT_SLOT, source: "my" };
-const MY_REVISION_SLOT = { ...MY_SLOT, lessonRevision: "a".repeat(64) };
+const SECOND_BUILT_IN_SLOT = {
+  lessonId: "lesson-2",
+  sceneIndex: 1,
+  stepIndex: 0,
+};
 
 function deferred() {
   let resolve;
@@ -49,12 +51,12 @@ describe("lesson recording save queue", () => {
     };
     const queue = createLessonRecordingQueue({ save });
 
-    queue.enqueue(PARROT_SLOT, older);
+    queue.enqueue(BUILT_IN_SLOT, older);
     await flush();
     firstSave.resolve();
     await queue.settle();
 
-    queue.enqueue(PARROT_SLOT, newer);
+    queue.enqueue(BUILT_IN_SLOT, newer);
     await flush();
     const retry = queue.retryFailed();
     newerSave.resolve();
@@ -81,8 +83,8 @@ describe("lesson recording save queue", () => {
     const firstBlob = new Blob(["first"], { type: "audio/webm" });
     const secondBlob = new Blob(["second"], { type: "audio/webm" });
 
-    queue.enqueue(PARROT_SLOT, firstBlob);
-    queue.enqueue(PARROT_SLOT, secondBlob);
+    queue.enqueue(BUILT_IN_SLOT, firstBlob);
+    queue.enqueue(BUILT_IN_SLOT, secondBlob);
     await flush();
     assert.equal(maxActive, 1);
     assert.equal(saved.length, 1);
@@ -95,13 +97,13 @@ describe("lesson recording save queue", () => {
     gates[1].resolve();
     await queue.settle();
     assert.deepEqual(saved, [
-      [firstBlob, PARROT_SLOT],
-      [secondBlob, PARROT_SLOT],
+      [firstBlob, BUILT_IN_SLOT],
+      [secondBlob, BUILT_IN_SLOT],
     ]);
     assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
   });
 
-  it("allows different slots to save concurrently and passes no abort signal", async () => {
+  it("allows different built-in slots to save concurrently and passes no abort signal", async () => {
     const gates = [deferred(), deferred()];
     const calls = [];
     let active = 0;
@@ -115,16 +117,16 @@ describe("lesson recording save queue", () => {
       return { saved: true, recordedAt: "now" };
     };
     const queue = createLessonRecordingQueue({ save });
-    const firstBlob = new Blob(["parrot"], { type: "audio/webm" });
-    const secondBlob = new Blob(["my"], { type: "audio/webm" });
+    const firstBlob = new Blob(["first"], { type: "audio/webm" });
+    const secondBlob = new Blob(["second"], { type: "audio/webm" });
 
-    queue.enqueue(PARROT_SLOT, firstBlob);
-    queue.enqueue(MY_SLOT, secondBlob);
+    queue.enqueue(BUILT_IN_SLOT, firstBlob);
+    queue.enqueue(SECOND_BUILT_IN_SLOT, secondBlob);
     await flush();
     assert.equal(maxActive, 2);
     assert.deepEqual(calls, [
-      [firstBlob, PARROT_SLOT],
-      [secondBlob, MY_SLOT],
+      [firstBlob, BUILT_IN_SLOT],
+      [secondBlob, SECOND_BUILT_IN_SLOT],
     ]);
 
     gates[0].resolve();
@@ -144,7 +146,7 @@ describe("lesson recording save queue", () => {
       const queue = createLessonRecordingQueue({
         save: async () => ({ saved: true, recordedAt: "now" }),
       });
-      queue.enqueue(PARROT_SLOT, new Blob(["audio"], { type: "audio/webm" }));
+      queue.enqueue(BUILT_IN_SLOT, new Blob(["audio"], { type: "audio/webm" }));
       await queue.settle();
       assert.equal(constructed, 0);
     } finally {
@@ -165,8 +167,8 @@ describe("lesson recording save queue", () => {
     };
     const queue = createLessonRecordingQueue({ save });
 
-    queue.enqueue(PARROT_SLOT, firstBlob);
-    queue.enqueue(PARROT_SLOT, newestBlob);
+    queue.enqueue(BUILT_IN_SLOT, firstBlob);
+    queue.enqueue(BUILT_IN_SLOT, newestBlob);
     await queue.settle();
     assert.equal(queue.snapshot().failed, 1);
 
@@ -178,36 +180,37 @@ describe("lesson recording save queue", () => {
   it("treats a resolved recording-disabled result as settled", async () => {
     const save = async () => ({ saved: false, reason: "recording_disabled" });
     const queue = createLessonRecordingQueue({ save });
-    queue.enqueue(PARROT_SLOT, new Blob(["audio"], { type: "audio/webm" }));
+    queue.enqueue(BUILT_IN_SLOT, new Blob(["audio"], { type: "audio/webm" }));
 
     await queue.settle();
     assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
   });
 
-  it("does not retain or retry a changed lesson or learner response", async () => {
-    for (const error of ["lesson_changed", "learner_selection_changed"]) {
-      let requests = 0;
-      const queue = createLessonRecordingQueue({
-        save: (blob, slot) => saveLessonRecording(blob, slot, {
-          expectedLearnerProfileId: "profile-1",
-          fetch: async () => {
-            requests += 1;
-            return Response.json({ error }, { status: 409 });
-          },
-        }),
-      });
-      queue.enqueue(
-        MY_REVISION_SLOT,
-        new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
-          type: "audio/webm",
-        }),
-      );
+  it("does not retain or retry a changed learner response", async () => {
+    let requests = 0;
+    const queue = createLessonRecordingQueue({
+      save: (blob, slot) => saveLessonRecording(blob, slot, {
+        expectedLearnerProfileId: "profile-1",
+        fetch: async () => {
+          requests += 1;
+          return Response.json(
+            { error: "learner_selection_changed" },
+            { status: 409 },
+          );
+        },
+      }),
+    });
+    queue.enqueue(
+      BUILT_IN_SLOT,
+      new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
+        type: "audio/webm",
+      }),
+    );
 
-      await queue.settle();
-      assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 }, error);
-      await queue.retryFailed();
-      assert.equal(requests, 1, error);
-    }
+    await queue.settle();
+    assert.deepEqual(queue.snapshot(), { pending: 0, failed: 0 });
+    await queue.retryFailed();
+    assert.equal(requests, 1);
   });
 
   it("notifies subscribers only when counts change and keeps snapshots stable", async () => {
@@ -218,7 +221,7 @@ describe("lesson recording save queue", () => {
     const initial = queue.snapshot();
     const unsubscribe = queue.subscribe(() => snapshots.push(queue.snapshot()));
 
-    queue.enqueue(PARROT_SLOT, new Blob(["audio"], { type: "audio/webm" }));
+    queue.enqueue(BUILT_IN_SLOT, new Blob(["audio"], { type: "audio/webm" }));
     const pending = queue.snapshot();
     assert.notStrictEqual(pending, initial);
     await queue.settle();
@@ -227,7 +230,7 @@ describe("lesson recording save queue", () => {
     assert.strictEqual(queue.snapshot(), queue.snapshot());
 
     unsubscribe();
-    queue.enqueue(MY_SLOT, new Blob(["audio"], { type: "audio/webm" }));
+    queue.enqueue(SECOND_BUILT_IN_SLOT, new Blob(["audio"], { type: "audio/webm" }));
     await queue.settle();
     assert.equal(snapshots.length, 2);
   });

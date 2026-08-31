@@ -28,15 +28,6 @@ function getParrotLessonRouteDecision(lessonId, sceneNumber) {
   return routes.resolveParrotLessonRouteDecision(lessonId, sceneNumber);
 }
 
-function getMyLessonRouteDecision(entry, lessonId, sceneNumber) {
-  assert.equal(
-    typeof routes.resolveMyLessonRouteDecision,
-    "function",
-    "Expected an executable My lesson route decision boundary",
-  );
-  return routes.resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
-}
-
 function getStoryRouteDecision(storyId, pageNumber) {
   assert.equal(
     typeof routes.resolveStoryRouteDecision,
@@ -47,37 +38,35 @@ function getStoryRouteDecision(storyId, pageNumber) {
 }
 
 describe("app route helpers", () => {
-  it("builds source-specific lesson paths", () => {
+  it("builds built-in lesson paths", () => {
     assert.equal(
-      routes.getLessonPath("parrot", "01-peppas-high-ball"),
+      routes.getLessonPath("01-peppas-high-ball"),
       "/lessons/parrot/01-peppas-high-ball",
     );
     assert.equal(
-      routes.getLessonPath("my", "lesson/id"),
-      "/lessons/my/lesson%2Fid",
+      routes.getLessonPath("lesson/id"),
+      "/lessons/parrot/lesson%2Fid",
     );
     assert.equal(
-      routes.getLessonPath("my", "100% ready"),
-      "/lessons/my/100%25%20ready",
+      routes.getLessonPath("100% ready"),
+      "/lessons/parrot/100%25%20ready",
     );
     assert.equal(
-      routes.getLessonScenePath("parrot", "01-peppas-high-ball", 0),
+      routes.getLessonScenePath("01-peppas-high-ball", 0),
       "/lessons/parrot/01-peppas-high-ball/scenes/1",
     );
-    assert.equal(
-      routes.getLessonScenePath("my", "same-id", 2),
-      "/lessons/my/same-id/scenes/3",
-    );
-    assert.equal(
-      routes.getMyLessonCreatePath("learner /Noah"),
-      "/lessons/my/create?learnerProfileId=learner+%2FNoah",
-    );
+  });
+
+  it("does not expose retired custom-lesson route helpers", () => {
+    assert.equal("getGuardianLessonsPath" in routes, false);
+    assert.equal("getMyLessonCreatePath" in routes, false);
+    assert.equal("resolveMyLessonRouteDecision" in routes, false);
   });
 
   it("rejects empty, dot-segment, and unencodable lesson IDs", () => {
     for (const lessonId of ["", "   ", ".", "..", "\ud800"]) {
       assert.throws(
-        () => routes.getLessonPath("parrot", lessonId),
+        () => routes.getLessonPath(lessonId),
         /Lesson ID must be non-empty, encodable, and cannot be a dot segment/,
       );
     }
@@ -191,14 +180,9 @@ describe("app route helpers", () => {
     assert.equal(routes.getGuardianAccountPath(), "/guardian/account");
     assert.equal(routes.getGuardianPath(), "/guardian");
     assert.equal(routes.getGuardianDubbingPath(), "/guardian/dubbing");
-    assert.equal(routes.getGuardianLessonsPath(), "/guardian/lessons");
     assert.equal(
       routes.getGuardianDubbingPath("learner /Noah"),
       "/guardian/dubbing?learnerProfileId=learner+%2FNoah",
-    );
-    assert.equal(
-      routes.getGuardianLessonsPath("learner /Noah"),
-      "/guardian/lessons?learnerProfileId=learner+%2FNoah",
     );
     assert.equal(routes.getGuardianLearnersPath(), "/guardian/learners");
     assert.equal(
@@ -223,7 +207,6 @@ describe("app route helpers", () => {
       ["/guardian"],
       ["/guardian/account"],
       ["/guardian/dubbing"],
-      ["/guardian/lessons"],
       ["/guardian/learners/learner-noah"],
       ["/guardian/learners/learner%2Fnoah"],
       ["/guardian/profile"],
@@ -232,7 +215,6 @@ describe("app route helpers", () => {
       ["/guardian/stories"],
       ["/profile"],
       ["/profile/setup", "?redo=1"],
-      ["/lessons/my/create"],
     ]) {
       assert.equal(routes.isGuardianRoute(pathname, search), true);
     }
@@ -243,12 +225,12 @@ describe("app route helpers", () => {
       ["/profile/setup"],
       ["/profile/setup", "?redo=01"],
       ["/guardianish"],
+      ["/guardian/lessons"],
       ["/guardian/lessons/extra"],
       ["/guardian/dubbing/extra"],
       ["/guardian/learners/%E0%A4%A"],
       ["/guardian/learners/learner-noah/extra"],
-      ["/lessons/my/lesson-1/edit"],
-      ["/lessons/my/lesson-1/edit/extra"],
+      ["/lessons/my/create"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
       assert.equal(routes.isGuardianRoute(pathname, search), false);
@@ -425,7 +407,6 @@ describe("app route helpers", () => {
         null,
       ],
       ["/lessons", "/Lessons//", null],
-      ["/lessons/my/create", "/Lessons/My/Create///", null],
       ["/lessons/parrot/:lessonId", "/Lessons/Parrot/demo//", null],
       [
         "/lessons/parrot/:lessonId/scenes/:sceneNumber",
@@ -607,24 +588,11 @@ describe("app route helpers", () => {
 
     assert.equal(entry.id, "01-peppas-high-ball");
     assert.equal(
-      routes.getLessonScenePath("parrot", entry.id, 0),
+      routes.getLessonScenePath(entry.id, 0),
       "/lessons/parrot/01-peppas-high-ball/scenes/1",
     );
     assert.equal(resolved.entry, entry);
     assert.equal(resolved.sceneIndex, 1);
-  });
-
-  it("resolves a loaded owner-scoped My lesson scene", () => {
-    assert.equal(typeof routes.resolveMyLessonScene, "function");
-    const entry = {
-      id: "same-id",
-      lesson: routes.resolveParrotLesson("01-peppas-high-ball").lesson,
-    };
-    assert.deepEqual(routes.resolveMyLessonScene(entry, "same-id", "2"), {
-      entry,
-      sceneIndex: 1,
-    });
-    assert.equal(routes.resolveMyLessonScene(entry, "other-id", "1"), null);
   });
 
   it("resolves a stable story ID and one-based page", () => {
@@ -781,27 +749,6 @@ describe("app route helpers", () => {
     assert.equal(decision.sceneIndex, 1);
   });
 
-  it("canonicalizes loaded My lesson routes and rejects invalid scenes", () => {
-    const entry = {
-      id: "same-id",
-      lesson: routes.resolveParrotLesson("01-peppas-high-ball").lesson,
-    };
-    assert.deepEqual(getMyLessonRouteDecision(entry, "same-id", undefined), {
-      kind: "redirect",
-      replace: true,
-      to: "/lessons/my/same-id/scenes/1",
-    });
-    const playable = getMyLessonRouteDecision(entry, "same-id", "2");
-    assert.equal(playable.kind, "lesson");
-    assert.equal(playable.entry, entry);
-    assert.equal(playable.sceneIndex, 1);
-    assert.deepEqual(getMyLessonRouteDecision(entry, "same-id", "99"), {
-      kind: "redirect",
-      replace: true,
-      to: "/lessons/my/same-id/scenes/1",
-    });
-  });
-
   it("rejects unknown lessons and non-canonical scene values", () => {
     for (const value of [
       undefined,
@@ -844,7 +791,6 @@ describe("app route helpers", () => {
       "/stories/the-lantern-trail/pages/2///",
       "/profile//",
       "/lessons//",
-      "/lessons/my/create///",
       "/lessons/parrot/01-peppas-high-ball//",
       "/lessons/parrot/01-peppas-high-ball/scenes/2///",
     ]) {
@@ -871,7 +817,6 @@ describe("app route helpers", () => {
     );
     for (const guardianPath of [
       "/guardian",
-      "/guardian/lessons",
       "/guardian/stories",
     ]) {
       assert.equal(
@@ -913,6 +858,9 @@ describe("app route helpers", () => {
       "//lessons",
       "/guardianish",
       "/guardian/lessons/extra",
+      "/guardian/lessons",
+      "/lessons/my/create",
+      "/lessons/my/same-id/scenes/1",
       "/guardian/learners/%20",
       "/guardian/learners/%E0%A4%A",
       "/guardian%2Fstories",

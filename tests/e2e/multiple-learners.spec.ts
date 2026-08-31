@@ -5,7 +5,6 @@ import {
   type Locator,
   type Page,
 } from "@playwright/test";
-import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const GUARDIAN_PASSWORD = "e2e-guardian-password";
 
@@ -29,18 +28,16 @@ type TargetedRequestCase = {
   path: string;
 };
 
-const TARGETED_MIA_LESSON_ID = "lesson-learner-mia-1";
-const TARGETED_NOAH_LESSON_ID = "lesson-learner-noah-1";
 const TARGETED_WEBM_BYTES = [0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00];
 const TARGETED_TINY_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEUlEQVR4nGPQqNjyH4QZYAwATjwJTSZS7G8AAAAASUVORK5CYII=";
-const targetedLessonBody = JSON.stringify({
-  lesson: createLessonScript({ childName: "Mia", title: "Targeted lesson" }),
-  source: "uploaded",
-});
 
 const targetedSecurityCases: TargetedRequestCase[] = [
-  { method: "GET", name: "learner-profile alias", path: "/api/learner-profile" },
+  {
+    method: "GET",
+    name: "learner-profile alias",
+    path: "/api/learner-profile",
+  },
   {
     body: JSON.stringify({ questionKey: "name", rawAnswer: "Target changed" }),
     headers: { "Content-Type": "application/json" },
@@ -115,31 +112,6 @@ const targetedSecurityCases: TargetedRequestCase[] = [
     method: "PUT",
     name: "lesson recording slot",
     path: "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
-  },
-  { method: "GET", name: "My Lessons list", path: "/api/lessons/my" },
-  {
-    body: targetedLessonBody,
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-    name: "My Lessons create",
-    path: "/api/lessons/my",
-  },
-  {
-    body: JSON.stringify({ topic: "targeted practice" }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-    name: "My Lessons generate",
-    path: "/api/lessons/my/generate",
-  },
-  {
-    method: "GET",
-    name: "My Lessons detail",
-    path: `/api/lessons/my/${TARGETED_MIA_LESSON_ID}`,
-  },
-  {
-    method: "DELETE",
-    name: "My Lessons delete",
-    path: `/api/lessons/my/${TARGETED_MIA_LESSON_ID}`,
   },
   {
     method: "GET",
@@ -236,10 +208,7 @@ type TargetedQueryCase = {
   value: string;
 };
 
-async function setGuardianAccess(
-  page: Page,
-  mode: "guardian" | "learner",
-) {
+async function setGuardianAccess(page: Page, mode: "guardian" | "learner") {
   const result = await page.evaluate(
     async ({ password, requestedMode }) => {
       const response = await fetch("/api/guardian-access", {
@@ -261,61 +230,18 @@ async function setGuardianAccess(
 }
 
 async function seedTargetedAuthorizationState(page: Page) {
-  const result = await page.evaluate(
-    async ({ miaLesson, noahLesson }) => {
-      const create = async (
-        lesson: ReturnType<typeof createLessonScript>,
-        target: string,
-      ) => {
-        const response = await fetch(`/api/lessons/my${target}`, {
-          body: JSON.stringify({ lesson, source: "uploaded" }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        const body = (await response.json()) as {
-          lesson?: { id?: string };
-        };
-        return { id: body.lesson?.id ?? null, status: response.status };
-      };
-
-      return {
-        mia: await create(miaLesson, ""),
-        noah: await create(
-          noahLesson,
-          "?learnerProfileId=learner-noah",
-        ),
-        recordingConsent: await fetch(
-          "/api/profile/lesson-recording-consent",
-          {
-            body: JSON.stringify({ enabled: true }),
-            headers: { "Content-Type": "application/json" },
-            method: "PUT",
-          },
-        ).then(async (response) => ({
-          body: await response.json(),
-          status: response.status,
-        })),
-      };
-    },
-    {
-      miaLesson: createLessonScript({
-        childName: "Mia",
-        title: "Mia authorization fixture",
-      }),
-      noahLesson: createLessonScript({
-        childName: "Noah",
-        title: "Noah authorization fixture",
-      }),
-    },
-  );
+  const result = await page.evaluate(async () => {
+    const response = await fetch("/api/profile/lesson-recording-consent", {
+      body: JSON.stringify({ enabled: true }),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    });
+    return { body: await response.json(), status: response.status };
+  });
 
   expect(result).toEqual({
-    mia: { id: TARGETED_MIA_LESSON_ID, status: 201 },
-    noah: { id: TARGETED_NOAH_LESSON_ID, status: 201 },
-    recordingConsent: {
-      body: { cleanupPending: false, enabled: true },
-      status: 200,
-    },
+    body: { cleanupPending: false, enabled: true },
+    status: 200,
   });
 }
 
@@ -350,12 +276,11 @@ async function readTargetedAccountState(page: Page) {
       const target = new URLSearchParams({
         learnerProfileId: profileId,
       }).toString();
-      const [learnerProfile, profile, recording, lessons, dubbing, storyArt] =
+      const [learnerProfile, profile, recording, dubbing, storyArt] =
         await Promise.all([
           json(`/api/learner-profile?${target}`),
           json(`/api/profile?${target}`),
           json(`/api/lesson-recordings/consent?${target}`),
-          json(`/api/lessons/my?${target}`),
           json(`/api/dubs/five-little-ducks-v2?${target}`),
           json(`/api/stories/the-red-ball/personalized-art?${target}`),
         ]);
@@ -366,7 +291,6 @@ async function readTargetedAccountState(page: Page) {
       return {
         dubbing,
         learnerProfile,
-        lessons,
         profile,
         recording: {
           endpoint: recording,
@@ -469,7 +393,10 @@ async function exerciseTargetedRequests(
                 initFor(requestCase),
               );
               return {
-                body: await response.clone().json().catch(() => null),
+                body: await response
+                  .clone()
+                  .json()
+                  .catch(() => null),
                 cacheControl: response.headers.get("Cache-Control"),
                 contentType: response.headers.get("Content-Type"),
                 method: requestCase.method,
@@ -523,8 +450,8 @@ function learnerCard(page: Page, name: string) {
 
 async function openLearnerModeChooser(
   page: Page,
-  triggerName: "Switch to learner" | "Switch to learner mode" =
-    "Switch to learner",
+  triggerName:
+    "Switch to learner" | "Switch to learner mode" = "Switch to learner",
 ) {
   const trigger = page.getByRole("button", {
     exact: true,
@@ -539,8 +466,8 @@ async function openLearnerModeChooser(
 async function chooseLearnerAndStart(
   page: Page,
   name: string,
-  triggerName: "Switch to learner" | "Switch to learner mode" =
-    "Switch to learner",
+  triggerName:
+    "Switch to learner" | "Switch to learner mode" = "Switch to learner",
 ) {
   const dialog = await openLearnerModeChooser(page, triggerName);
   await dialog
@@ -668,7 +595,9 @@ async function expectLearnerDeletionDialogContained(page: Page, name: string) {
 
   const dialog = page.getByRole("dialog", { name: `Delete ${name}?` });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByRole("heading", { name: `Delete ${name}?` })).toBeVisible();
+  await expect(
+    dialog.getByRole("heading", { name: `Delete ${name}?` }),
+  ).toBeVisible();
   await expect(dialog).toContainText(`This removes ${name}'s learner profile`);
   const confirm = dialog.getByRole("button", { name: `Delete ${name}` });
   const cancel = dialog.getByRole("button", { name: "Cancel" });
@@ -766,7 +695,9 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
   await page.reload();
   await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
   await expect(
-    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
+    page.getByRole("button", {
+      name: /Profile for Alex Guardian, guardian mode/,
+    }),
   ).toBeVisible();
 });
 
@@ -778,9 +709,9 @@ test("active learner detail and story saves reach learner-mode consumers in the 
     .getByRole("button", { name: "Edit Mia's profile" })
     .click();
 
-  await page.getByRole("textbox", { exact: true, name: "Name" }).fill(
-    "Mia Updated",
-  );
+  await page
+    .getByRole("textbox", { exact: true, name: "Name" })
+    .fill("Mia Updated");
   await page
     .getByRole("button", { name: "Allow lesson voice recordings" })
     .click();
@@ -790,9 +721,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await page.getByRole("button", { exact: true, name: "Save changes" }).click();
   await expect(page).toHaveURL("/guardian/learners");
 
-  await page
-    .getByRole("link", { name: /Back to Guardian dashboard/i })
-    .click();
+  await page.getByRole("link", { name: /Back to Guardian dashboard/i }).click();
   await page.getByRole("link", { name: "Open story settings" }).click();
   await expect(
     page.getByText("Editing settings for Mia Updated", { exact: true }),
@@ -851,9 +780,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
     page.getByRole("status").filter({ hasText: "Story level saved" }),
   ).toContainText("Level 3 · Short stories");
 
-  await page
-    .getByRole("link", { name: /Back to guardian dashboard/i })
-    .click();
+  await page.getByRole("link", { name: /Back to guardian dashboard/i }).click();
   await chooseLearnerAndStart(page, "Mia Updated");
   await expect(page).toHaveURL("/");
   await expect(
@@ -1031,12 +958,10 @@ test("scopes learner selections to authenticated browser sessions", async ({
       },
     ]);
 
-    await expect.poll(() => activeLearnerId(sameSessionTab)).toBe(
-      "learner-mia",
-    );
-    await expect.poll(() => activeLearnerId(secondSession)).toBe(
-      "learner-mia",
-    );
+    await expect
+      .poll(() => activeLearnerId(sameSessionTab))
+      .toBe("learner-mia");
+    await expect.poll(() => activeLearnerId(secondSession)).toBe("learner-mia");
     await firstSession.bringToFront();
     await chooseLearnerFromManager(firstSession, "Noah");
 
@@ -1047,12 +972,10 @@ test("scopes learner selections to authenticated browser sessions", async ({
       }),
     ).toBeVisible();
     await expect.poll(() => activeLearnerId(firstSession)).toBe("learner-noah");
-    await expect.poll(() => activeLearnerId(sameSessionTab)).toBe(
-      "learner-noah",
-    );
-    await expect.poll(() => activeLearnerId(secondSession)).toBe(
-      "learner-mia",
-    );
+    await expect
+      .poll(() => activeLearnerId(sameSessionTab))
+      .toBe("learner-noah");
+    await expect.poll(() => activeLearnerId(secondSession)).toBe("learner-mia");
     await expect(
       secondSession.getByRole("heading", { name: "Manage learners" }),
     ).toBeVisible();
@@ -1140,7 +1063,7 @@ test("shares real-browser mock deletion across sessions while clearing only the 
   });
 });
 
-test("hides an unsaved Guardian draft during handoff and restores persisted data after unlock", async ({
+test("hides an unsaved Guardian profile edit during handoff and restores persisted data after unlock", async ({
   baseURL,
   browser,
 }) => {
@@ -1156,7 +1079,7 @@ test("hides an unsaved Guardian draft during handoff and restores persisted data
     await Promise.all([
       draftPage.goto(
         learnerScenarioUrl(
-          "/lessons/my/create",
+          "/guardian/learners/learner-mia",
           "multiple",
           "guardian",
           "e2e-session-draft-revalidation",
@@ -1172,26 +1095,6 @@ test("hides an unsaved Guardian draft during handoff and restores persisted data
       ),
     ]);
 
-    const lessonTopic = draftPage.getByLabel(
-      "What should this lesson be about?",
-    );
-    await lessonTopic.fill("Unsaved garden helpers lesson");
-    await managerPage.bringToFront();
-    await draftPage.bringToFront();
-    await draftPage.evaluate(() => {
-      window.dispatchEvent(new Event("focus"));
-      document.dispatchEvent(new Event("visibilitychange"));
-    });
-    await expect(lessonTopic).toHaveValue("Unsaved garden helpers lesson");
-
-    await draftPage.goto(
-      learnerScenarioUrl(
-        "/guardian/learners/learner-mia",
-        "multiple",
-        "guardian",
-        "e2e-session-draft-revalidation",
-      ),
-    );
     const profileName = draftPage.getByLabel("Name", { exact: true });
     await profileName.fill("Unsaved Mia name");
     await managerPage.bringToFront();
@@ -1253,9 +1156,7 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
       ),
     ]);
 
-    await profilePage
-      .getByLabel("Name", { exact: true })
-      .fill("Mia Targeted");
+    await profilePage.getByLabel("Name", { exact: true }).fill("Mia Targeted");
     await profilePage.getByRole("button", { name: "Save changes" }).click();
     await expect(profilePage).toHaveURL("/guardian/learners");
     await expect(learnerCard(profilePage, "Mia Targeted")).toBeVisible();
@@ -1280,22 +1181,14 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
   }
 });
 
-test("keeps lessons, conversations, art, and dubbing isolated by selected learner", async ({
+test("keeps conversations, art, and dubbing isolated by selected learner", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
-  const miaData = await page.evaluate(async (lesson) => {
-    const savedLessonResponse = await fetch("/api/lessons/my", {
-      body: JSON.stringify({ lesson, source: "uploaded" }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-    const savedLesson = (await savedLessonResponse.json()) as {
-      lesson: { id: string };
-    };
+  const miaData = await page.evaluate(async () => {
     const conversationResponse = await fetch("/api/conversations", {
       body: JSON.stringify({ purpose: "small-chat" }),
       headers: { "Content-Type": "application/json" },
@@ -1303,14 +1196,6 @@ test("keeps lessons, conversations, art, and dubbing isolated by selected learne
     });
     const conversation = (await conversationResponse.json()) as {
       conversation: { id: string };
-    };
-    const generationResponse = await fetch("/api/lessons/my/generate", {
-      body: JSON.stringify({ topic: "garden helpers" }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-    const generated = (await generationResponse.json()) as {
-      lesson?: { childName?: string };
     };
     const artResponse = await fetch(
       "/api/stories/the-red-ball/personalized-art",
@@ -1331,58 +1216,36 @@ test("keeps lessons, conversations, art, and dubbing isolated by selected learne
       artStatus: artResponse.status,
       consentStatus: consentResponse.status,
       conversationId: conversation.conversation.id,
-      generatedChildName: generated.lesson?.childName,
-      generationStatus: generationResponse.status,
-      lessonId: savedLesson.lesson.id,
     };
-  }, createLessonScript());
+  });
 
   expect(miaData.artStatus).toBe(201);
   expect(miaData.consentStatus).toBe(204);
-  expect(miaData.generationStatus).toBe(200);
-  expect(miaData.generatedChildName).toBe("Mia");
   await chooseLearnerFromManager(page, "Noah");
   await unlockGuardianFromLearnerMenu(page);
 
-  const noahData = await page.evaluate(async ({ conversationId, lessonId }) => {
-    const [lessons, siblingLesson, siblingConversation, art, dub, generated] =
-      await Promise.all([
-        fetch("/api/lessons/my").then((response) => response.json()),
-        fetch(`/api/lessons/my/${lessonId}`),
-        fetch(`/api/conversations/${conversationId}`),
-        fetch("/api/stories/the-red-ball/personalized-art").then((response) =>
-          response.json(),
-        ),
-        fetch("/api/dubs/five-little-ducks-v2").then((response) =>
-          response.json(),
-        ),
-        fetch("/api/lessons/my/generate", {
-          body: JSON.stringify({ topic: "rainy day" }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        }).then((response) => response.json()),
-      ]);
+  const noahData = await page.evaluate(async ({ conversationId }) => {
+    const [siblingConversation, art, dub] = await Promise.all([
+      fetch(`/api/conversations/${conversationId}`),
+      fetch("/api/stories/the-red-ball/personalized-art").then((response) =>
+        response.json(),
+      ),
+      fetch("/api/dubs/five-little-ducks-v2").then((response) =>
+        response.json(),
+      ),
+    ]);
     return {
       art,
       dub,
-      generated,
-      lessons,
       siblingConversationStatus: siblingConversation.status,
-      siblingLessonStatus: siblingLesson.status,
     };
   }, miaData);
 
-  expect(noahData.lessons).toEqual({ lessons: [] });
-  expect(noahData.siblingLessonStatus).toBe(404);
   expect(noahData.siblingConversationStatus).toBe(404);
   expect(noahData.art).toMatchObject({ hasStoredArt: false, stories: {} });
   expect(noahData.dub).toMatchObject({
     consentState: "not_granted",
     recordingEnabled: false,
-  });
-  expect(noahData.generated).toMatchObject({
-    lesson: { childName: "Noah" },
-    warnings: [],
   });
 });
 
@@ -1447,9 +1310,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   await unlockGuardianFromLearnerMenu(page);
   await chooseLearnerAndStart(page, "Noah");
   await unlockGuardianFromLearnerMenu(page);
-  await page.goto(
-    "/guardian/learners/learner-noah",
-  );
+  await page.goto("/guardian/learners/learner-noah");
   await expect(
     page
       .getByRole("region", { name: "Lesson voice recordings" })
@@ -1470,9 +1331,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   expect((await recordingSnapshot()).getUserMediaCalls).toBe(0);
 
   await unlockGuardianFromLearnerMenu(page);
-  await page.goto(
-    "/guardian/learners/learner-mia",
-  );
+  await page.goto("/guardian/learners/learner-mia");
   await expect(
     page
       .getByRole("region", { name: "Lesson voice recordings" })
@@ -1500,11 +1359,9 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   expect(storedRecordings.noah).toEqual([]);
 });
 
-test("rejects Mia's queued lesson recording after the Guardian switches to Noah", async ({
+test("keeps Mia's queued built-in recording out of Noah after the Guardian switches", async ({
   page,
 }) => {
-  const oneLineLesson = createLessonScript();
-  oneLineLesson.scenes = oneLineLesson.scenes.slice(0, 1);
   const recordingFor = (profileId: string) =>
     page.evaluate((learnerProfileId) => {
       const learners = (
@@ -1560,24 +1417,12 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   await page.goto("/guardian/learners/learner-noah");
   await allowRecordings();
 
-  const lessonId = await page.evaluate(async (lesson) => {
-    const response = await fetch("/api/lessons/my", {
-      body: JSON.stringify({ lesson, source: "uploaded" }),
-      headers: { "Content-Type": "application/json" },
-      method: "POST",
-    });
-    if (!response.ok) throw new Error("The Mia lesson could not be saved.");
-    const payload = (await response.json()) as { lesson: { id: string } };
-    return payload.lesson.id;
-  }, oneLineLesson);
-  const lessonPath = `/lessons/my/${encodeURIComponent(lessonId)}/scenes/1?parrotE2eLesson=upload-held`;
+  const lessonPath =
+    "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=upload-held";
 
   await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
   await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
-  await expect(
-    page.getByRole("heading", { name: "You finished Garden Help!" }),
-  ).toBeVisible();
   await expect
     .poll(async () => (await recordingFor("learner-mia"))?.pendingUploads)
     .toBe(1);
@@ -1585,20 +1430,10 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
     .poll(async () => (await mediaSnapshot()).recorderStops.length)
     .toBe(1);
 
-  await page.getByRole("button", { name: "Replay lesson" }).click();
-  await expect
-    .poll(async () => (await mediaSnapshot()).recorderStops.length)
-    .toBe(2);
-  await expect(
-    page.getByRole("heading", { name: "You finished Garden Help!" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Saving your voices…", { exact: true }),
-  ).toBeVisible();
   const queuedForMia = await recordingFor("learner-mia");
   expect(
     queuedForMia?.uploads,
-    "only the first of two completed recordings should have started its PUT",
+    "the completed built-in recording should have started its PUT",
   ).toEqual([
     expect.objectContaining({
       expectedLearnerProfileId: "learner-mia",
@@ -1621,9 +1456,6 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   await expect
     .poll(async () => (await recordingFor("learner-mia"))?.pendingUploads)
     .toBe(0);
-  await expect
-    .poll(async () => (await recordingFor("learner-noah"))?.uploads.length)
-    .toBe(1);
   const mia = await recordingFor("learner-mia");
   const noah = await recordingFor("learner-noah");
   expect(mia?.uploads).toEqual([
@@ -1633,14 +1465,7 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
     }),
   ]);
   expect(mia?.uploads.some(({ outcome }) => outcome === "saved")).toBe(false);
-  expect(noah?.uploads).toEqual([
-    expect.objectContaining({
-      expectedLearnerProfileId: "learner-mia",
-      outcome: "learner_selection_changed",
-      size: 0,
-      type: "",
-    }),
-  ]);
+  expect(noah?.uploads).toEqual([]);
   expect(noah?.pendingUploads).toBe(0);
 });
 
@@ -1731,9 +1556,9 @@ test("reconciles a rejected learner selection without switching learner mode", a
   await page.goto(learnerScenarioUrl("/guardian/learners", "select-error"));
   const dialog = await chooseLearnerFromManager(page, "Noah");
 
-  await expect(
-    dialog.getByRole("alert"),
-  ).toHaveText("Could not select this learner.");
+  await expect(dialog.getByRole("alert")).toHaveText(
+    "Could not select this learner.",
+  );
   await expect(
     dialog.getByRole("button", {
       exact: true,
@@ -1761,9 +1586,9 @@ test("keeps the roster and learner mode stable when learner creation fails", asy
   await page.getByLabel("Preferred name").fill("Ava");
   await page.getByRole("button", { name: "Add learner" }).click();
 
-  await expect(
-    page.getByRole("main").getByRole("alert"),
-  ).toHaveText("The learner could not be added.");
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    "The learner could not be added.",
+  );
   expect(
     await page.evaluate(() =>
       (
@@ -1985,7 +1810,9 @@ for (const viewport of requiredViewports) {
     });
     const noah = learnerCard(page, "Noah");
     const add = page.getByRole("button", { name: "Add learner" });
-    await expect(page.getByText("Managing Mia", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Managing Mia", { exact: true })).toHaveCount(
+      0,
+    );
     await expect(noah).toContainText("Setup complete");
     await expect(
       noah.getByRole("button", { name: /Use .* learner mode/ }),
@@ -2006,7 +1833,9 @@ for (const viewport of requiredViewports) {
     await trigger.click();
     const menu = page.getByRole("menu", { name: "Account menu" });
     const panel = menu.locator("..");
-    await expect(panel.getByRole("group", { name: "Active profile" })).toHaveCount(0);
+    await expect(
+      panel.getByRole("group", { name: "Active profile" }),
+    ).toHaveCount(0);
     await expect(panel).not.toContainText("Managing Mia");
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Guardian dashboard",
@@ -2049,7 +1878,6 @@ for (const viewport of requiredViewports) {
 
 const guardianNameSurfaces = [
   { heading: "Learner details", path: "/guardian/learners/learner-mia" },
-  { heading: "My Lessons", path: "/guardian/lessons" },
   { heading: "Story settings", path: "/guardian/stories" },
   { heading: "Voice dubbing", path: "/guardian/dubbing" },
 ] as const;
@@ -2102,13 +1930,6 @@ async function expectGuardianNameSurfacesContained(page: Page, name: string) {
       await expect(
         page.getByText(`About ${name}`, { exact: true }),
       ).toBeVisible();
-    } else if (surface.path === "/guardian/lessons") {
-      await expect(
-        page
-          .getByRole("main")
-          .getByRole("status")
-          .filter({ hasText: "No custom lessons yet." }),
-      ).toHaveText("No custom lessons yet.");
     } else if (surface.path === "/guardian/stories") {
       const art = page.getByRole("region", { name: "Personalized story art" });
       await expect(art).toBeVisible();
@@ -2206,10 +2027,7 @@ test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian nav
   page,
 }) => {
   await page.goto(
-    learnerScenarioUrl(
-      "/guardian/learners/learner-mia",
-      "multiple",
-    ),
+    learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
   );
   await expect(
     page.getByRole("heading", { name: "Learner details" }),
@@ -2253,196 +2071,6 @@ test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian nav
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
   await expect(page).toHaveURL("/guardian");
-});
-
-test("targets Noah through lesson list, creation, deletion, refresh, and history without changing learner mode", async ({
-  page,
-}) => {
-  const miaLesson = createLessonScript({ title: "Mia's garden lesson" });
-  const noahLesson = createLessonScript({ title: "Noah's space lesson" });
-  await page.goto(learnerScenarioUrl("/guardian/lessons", "multiple"));
-  await expect(
-    page.getByRole("group", { name: "Choose learner settings target" }),
-  ).toBeVisible();
-  const seeded = await page.evaluate(
-    async ({ miaLesson, noahLesson }) => {
-      const save = async (lesson: unknown, learnerProfileId?: string) => {
-        const target = learnerProfileId
-          ? `?${new URLSearchParams({ learnerProfileId })}`
-          : "";
-        const response = await fetch(`/api/lessons/my${target}`, {
-          body: JSON.stringify({ lesson, source: "uploaded" }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        const payload = (await response.json()) as { lesson: { id: string } };
-        return payload.lesson.id;
-      };
-      return {
-        miaLessonId: await save(miaLesson),
-        noahLessonId: await save(noahLesson, "learner-noah"),
-      };
-    },
-    { miaLesson, noahLesson },
-  );
-  await page.reload();
-
-  const target = page.getByRole("group", {
-    name: "Choose learner settings target",
-  });
-  await expect(
-    target.getByRole("button", { exact: true, name: "Mia" }),
-  ).toBeVisible();
-  await expect(
-    target.getByRole("button", { exact: true, name: "Noah" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Mia's garden lesson", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Noah's space lesson", { exact: true }),
-  ).toHaveCount(0);
-
-  await target.getByRole("button", { exact: true, name: "Noah" }).click();
-  await expect(page).toHaveURL(/learnerProfileId=learner-noah/);
-  await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Noah's space lesson", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Mia's garden lesson", { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: /Switch and play/i }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: "Manage learners" }),
-  ).toHaveCount(0);
-
-  await page.getByRole("link", { name: "Create custom lesson" }).click();
-  await expect(page).toHaveURL(
-    /\/lessons\/my\/create.*learnerProfileId=learner-noah/,
-  );
-  await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
-  ).toBeVisible();
-  await page.getByRole("tab", { name: "Import JSON" }).click();
-  await expect(page).toHaveURL(
-    /tab=upload.*learnerProfileId=learner-noah|learnerProfileId=learner-noah.*tab=upload/,
-  );
-  await page
-    .getByLabel("Editable lesson script (JSON)")
-    .fill(JSON.stringify(createLessonScript({ title: "Noah's new lesson" })));
-  await page.getByRole("button", { name: "Review script" }).click();
-  await page.getByRole("button", { exact: true, name: "Save lesson" }).click();
-  await expect(page).toHaveURL(
-    /\/guardian\/lessons.*learnerProfileId=learner-noah/,
-  );
-  await expect(
-    page.getByText("Noah's new lesson", { exact: true }),
-  ).toBeVisible();
-
-  page.once("dialog", async (dialog) => {
-    expect(dialog.message()).toContain("Noah's space lesson");
-    expect(dialog.message()).toMatch(/cannot be undone/i);
-    await dialog.accept();
-  });
-  await page
-    .getByRole("button", { name: "Delete lesson: Noah's space lesson" })
-    .click();
-  await expect(
-    page.getByText("Noah's space lesson", { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("status").filter({ hasText: "1 saved lesson." }),
-  ).toHaveText("1 saved lesson.");
-
-  await target.getByRole("button", { exact: true, name: "Mia" }).click();
-  await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
-  ).toBeVisible();
-  await page.goBack();
-  await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
-  ).toBeVisible();
-  await page.reload();
-  await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
-  ).toBeVisible();
-
-  const state = await page.evaluate(async ({ miaLessonId, noahLessonId }) => {
-    const [mia, noah] = await Promise.all([
-      fetch("/api/lessons/my").then((response) => response.json()) as Promise<{
-        lessons: Array<{ id: string }>;
-      }>,
-      fetch("/api/lessons/my?learnerProfileId=learner-noah").then((response) =>
-        response.json(),
-      ) as Promise<{ lessons: Array<{ id: string }> }>,
-    ]);
-    return {
-      activeProfileId: (
-        window as Window & {
-          __parrotE2eLearners?: {
-            snapshot(): { activeProfileId: string | null };
-          };
-        }
-      ).__parrotE2eLearners?.snapshot().activeProfileId,
-      miaHasMiaLesson: mia.lessons.some(({ id }) => id === miaLessonId),
-      miaHasNoahLesson: mia.lessons.some(({ id }) => id === noahLessonId),
-      noahHasNoahLesson: noah.lessons.some(({ id }) => id === noahLessonId),
-      noahLessonCount: noah.lessons.length,
-    };
-  }, seeded);
-  expect(state).toEqual({
-    activeProfileId: "learner-mia",
-    miaHasMiaLesson: true,
-    miaHasNoahLesson: false,
-    noahHasNoahLesson: false,
-    noahLessonCount: 1,
-  });
-});
-
-test("mocked My Lessons details reject retired methods and malformed IDs without mutation", async ({
-  page,
-}) => {
-  await page.goto(learnerScenarioUrl("/guardian", "multiple"));
-  await expect(
-    page.getByRole("heading", { name: "Guardian dashboard" }),
-  ).toBeVisible();
-  await seedTargetedAuthorizationState(page);
-
-  const result = await page.evaluate(async (lessonId) => {
-    const target = "learnerProfileId=learner-noah";
-    const readLessons = async () =>
-      fetch(`/api/lessons/my?${target}`).then(async (response) => ({
-        body: await response.json(),
-        status: response.status,
-      }));
-    const request = async (path: string, init?: RequestInit) => {
-      const response = await fetch(`${path}?${target}`, init);
-      return {
-        body: await response.json(),
-        mockApi: response.headers.get("X-Parrot-Mock-Api"),
-        status: response.status,
-      };
-    };
-    const before = await readLessons();
-    const responses = await Promise.all([
-      request(`/api/lessons/my/${lessonId}`, { method: "PUT" }),
-      request("/api/lessons/my/%E0%A4%A"),
-      request("/api/lessons/my/%20", { method: "DELETE" }),
-    ]);
-    return { after: await readLessons(), before, responses };
-  }, TARGETED_NOAH_LESSON_ID);
-
-  expect(result.before).toEqual(result.after);
-  expect(result.responses).toEqual([
-    { body: { error: "not_found" }, mockApi: "browser", status: 404 },
-    { body: { error: "not_found" }, mockApi: "browser", status: 404 },
-    { body: { error: "not_found" }, mockApi: "browser", status: 404 },
-  ]);
 });
 
 test("targets Noah's story level and personalized art without changing Mia's learner mode", async ({
@@ -2587,9 +2215,9 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
   await expect(
     page.getByRole("button", { name: /Switch to .*start dubbing/i }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole("link", { name: "Manage learners" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Manage learners" })).toHaveCount(
+    0,
+  );
 
   const granted = await page.evaluate(async () => {
     const [mia, noah] = await Promise.all([
@@ -2647,7 +2275,7 @@ test("targets Noah's dubbing grant and deletion without switching learner mode",
     .toBe("learner-mia");
 });
 
-test("locked 26-row targeted security matrix handles all 52 requests before parsing or resolution", async ({
+test("locked 21-row targeted security matrix handles all 42 requests before parsing or resolution", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
@@ -2670,11 +2298,11 @@ test("locked 26-row targeted security matrix handles all 52 requests before pars
   await setGuardianAccess(page, "guardian");
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(52);
+  expect(result.responses).toHaveLength(42);
   expect(
     result.responses.filter(({ mutationCapable }) => mutationCapable),
-    "25-row mutation-capable subset across two locked target shapes",
-  ).toHaveLength(50);
+    "20-row mutation-capable subset across two locked target shapes",
+  ).toHaveLength(40);
   expect(
     result.responses
       .filter(({ mutationCapable }) => !mutationCapable)
@@ -2684,7 +2312,9 @@ test("locked 26-row targeted security matrix handles all 52 requests before pars
     "learner-profile question skip / foreign",
   ]);
   for (const response of result.responses) {
-    expect(response.body, response.name).toEqual({ error: "guardian_required" });
+    expect(response.body, response.name).toEqual({
+      error: "guardian_required",
+    });
     expect(response.cacheControl, response.name).toBe("no-store");
     expect(response.contentType, response.name).toContain("application/json");
     expect(response.mockApi, response.name).toBe("browser");
@@ -2859,10 +2489,9 @@ test("singleton targeted fixtures return the Worker method contract without nati
   ).toBeVisible();
 
   const response = await page.evaluate(async () => {
-    const result = await fetch(
-      "/api/profile?learnerProfileId=e2e-learner",
-      { method: "DELETE" },
-    );
+    const result = await fetch("/api/profile?learnerProfileId=e2e-learner", {
+      method: "DELETE",
+    });
     const text = await result.text();
     return {
       body: text ? JSON.parse(text) : null,
@@ -2903,7 +2532,7 @@ test("malformed targeted question-skip JSON matches the Worker invalid-json resp
   expect(await readTargetedAccountState(page)).toEqual(before);
 });
 
-test("unlocked malformed targets in the 26-row security matrix resolve all 182 combinations once to generic 404", async ({
+test("unlocked malformed targets in the 21-row security matrix resolve all 147 combinations once to generic 404", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian", "multiple"));
@@ -2928,19 +2557,17 @@ test("unlocked malformed targets in the 26-row security matrix resolve all 182 c
   const result = await exerciseTargetedRequests(page, invalidQueries);
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(182);
+  expect(result.responses).toHaveLength(147);
   expect(
     result.responses.filter(({ mutationCapable }) => mutationCapable),
-    "25-row mutation-capable subset across seven invalid target shapes",
-  ).toHaveLength(175);
+    "20-row mutation-capable subset across seven invalid target shapes",
+  ).toHaveLength(140);
   expect(
     result.responses
       .filter(({ mutationCapable }) => !mutationCapable)
       .map(({ name }) => name),
   ).toEqual(
-    invalidQueries.map(
-      ({ name }) => `learner-profile question skip / ${name}`,
-    ),
+    invalidQueries.map(({ name }) => `learner-profile question skip / ${name}`),
   );
   for (const response of result.responses) {
     expect(response.body, response.name).toEqual({ error: "not_found" });
@@ -2960,9 +2587,8 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
-  const lesson = createLessonScript({ title: "Noah's targeted lesson" });
 
-  const result = await page.evaluate(async (lessonScript) => {
+  const result = await page.evaluate(async () => {
     const target = "learnerProfileId=learner-noah";
     const json = async (path: string, init?: RequestInit) => {
       const response = await fetch(path, init);
@@ -2999,11 +2625,6 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
         method: "PUT",
       },
     );
-    const createdLesson = await json(`/api/lessons/my?${target}`, {
-      body: JSON.stringify({ lesson: lessonScript, source: "uploaded" }),
-      headers,
-      method: "POST",
-    });
     const dubConsent = await fetch(
       `/api/dubs/five-little-ducks-v2/consent?${target}`,
       {
@@ -3015,10 +2636,9 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
         method: "PUT",
       },
     );
-    const dubDelete = await fetch(
-      `/api/dubs/five-little-ducks-v2?${target}`,
-      { method: "DELETE" },
-    );
+    const dubDelete = await fetch(`/api/dubs/five-little-ducks-v2?${target}`, {
+      method: "DELETE",
+    });
     const artCreate = await json(
       `/api/stories/the-red-ball/personalized-art?${target}`,
       { body: new FormData(), method: "POST" },
@@ -3056,7 +2676,6 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
       artCreate,
       artDeleteStatus: artDelete.status,
       artSrc,
-      createdLesson,
       dubConsentStatus: dubConsent.status,
       dubDeleteStatus: dubDelete.status,
       learnerProfile,
@@ -3067,7 +2686,7 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
       recordingStatus,
       savedProfile,
     };
-  }, lesson);
+  });
 
   expect(result).toMatchObject({
     activeProfileId: "learner-mia",
@@ -3075,10 +2694,6 @@ test("targeted profile aliases and mutations stay on Noah while Mia remains in l
     artAssetStatus: 200,
     artCreate: { body: { hasStoredArt: true }, status: 201 },
     artDeleteStatus: 204,
-    createdLesson: {
-      body: { lesson: { lesson: { title: "Noah's targeted lesson" } } },
-      status: 201,
-    },
     dubConsentStatus: 204,
     dubDeleteStatus: 204,
     learnerProfile: {

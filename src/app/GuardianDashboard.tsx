@@ -1,5 +1,4 @@
 import {
-  BookOpen,
   LogOut,
   Mic,
   ShieldCheck,
@@ -16,7 +15,6 @@ import {
   getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
-  getGuardianLessonsPath,
   getGuardianStoriesPath,
 } from "./app-routes";
 import { LearnerModeSwitchDialog } from "./LearnerModeSwitchDialog";
@@ -90,36 +88,7 @@ export function GuardianDashboardView({
           >
             Learning &amp; content
           </h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card
-              aria-labelledby="my-lessons-heading"
-              className="grid content-start gap-4 !bg-sky-50 p-5 sm:p-6"
-              tone="muted"
-            >
-              <span
-                aria-hidden="true"
-                className="grid size-12 place-items-center rounded-2xl bg-sky-100 text-sky-800"
-              >
-                <BookOpen className="size-7" strokeWidth={2.5} />
-              </span>
-              <h3
-                className="m-0 text-2xl leading-tight text-brand-navy"
-                id="my-lessons-heading"
-              >
-                My Lessons
-              </h3>
-              <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Create or delete custom lessons for the learner.
-              </p>
-              <ActionLink
-                className="mt-auto"
-                fullWidth
-                to={getGuardianLessonsPath()}
-              >
-                Manage lessons
-              </ActionLink>
-            </Card>
-
+          <div className="grid gap-4 md:grid-cols-2">
             <Card
               aria-labelledby="story-settings-heading"
               className="grid content-start gap-4 !bg-violet-50 p-5 sm:p-6"

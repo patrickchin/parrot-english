@@ -226,12 +226,6 @@ test("authenticated application routes include the core learner activities", () 
     assert.match(rhyme, /Loading your private dub…/);
   }
 
-  const createLesson = renderApplicationRoute("/lessons/my/create");
-  assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
-  assert.match(createLesson, /Loading learner settings/);
-  assert.doesNotMatch(createLesson, /LEARN YOUR WAY/);
-  assert.doesNotMatch(createLesson, /<form|<textarea/);
-
   const retiredProgress = renderApplicationRoute("/progress");
   assert.doesNotMatch(retiredProgress, /Progress|coming soon/i);
 });
@@ -273,9 +267,10 @@ test("lesson routes expose one back control to the lesson list", () => {
   );
 });
 
-test("Create Lesson stays statically ranked ahead of dynamic My lesson routes", () => {
-  const createLesson = renderApplicationRoute("/lessons/my/create");
-  assert.match(createLesson, /<h1[^>]*>Create a custom lesson<\/h1>/);
-  assert.match(createLesson, /Loading learner settings/);
-  assert.doesNotMatch(createLesson, /Parrot English speaking lesson/);
+test("retired lesson routes do not render retired feature screens", () => {
+  for (const route of ["/guardian/lessons", "/lessons/my/create"]) {
+    const html = renderApplicationRoute(route);
+
+    assert.doesNotMatch(html, /Made for you|My Lessons|custom lesson/i);
+  }
 });

@@ -35,7 +35,6 @@ The repository already treats stories and lessons as bounded presentation layers
 not general media stores:
 
 - stories are durable route-backed reader content under `/stories/...`;
-- learner lessons are profile-scoped JSON under `/api/lessons/my/*`;
 - current public R2 media is only for approved non-personal background art, not
   for private learner media. See [background-media-r2.md](../deployment/background-media-r2.md).
 

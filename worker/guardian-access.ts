@@ -209,15 +209,6 @@ export function requiresGuardianAccess(
   if (pathname === "/api/profile/lesson-recording-consent") {
     return method === "PUT";
   }
-  if (pathname === "/api/lessons/my") {
-    return method === "POST";
-  }
-  if (pathname === "/api/lessons/my/generate") {
-    return method === "POST";
-  }
-  if (/^\/api\/lessons\/my\/[^/]+$/.test(pathname)) {
-    return method === "DELETE";
-  }
   return (
     /^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname) &&
     (method === "POST" || method === "DELETE")

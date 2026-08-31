@@ -2,9 +2,7 @@ export { loadLessonRecordingConsent } from "../learner-profile/learner-profile-a
 
 export type LessonRecordingSlot = {
   lessonId: string;
-  lessonRevision?: string;
   sceneIndex: number;
-  source: "my" | "parrot";
   stepIndex: number;
 };
 
@@ -19,7 +17,6 @@ export type LessonRecordingSaveResult =
   | {
       reason:
         | "learner_selection_changed"
-        | "lesson_changed"
         | "recording_disabled";
       saved: false;
     };
@@ -66,11 +63,8 @@ export async function saveLessonRecording(
     "Content-Type": blob.type,
     [EXPECTED_LEARNER_PROFILE_HEADER]: expectedLearnerProfileId,
   };
-  if (slot.source === "my" && slot.lessonRevision) {
-    headers["X-Parrot-Lesson-Revision"] = slot.lessonRevision;
-  }
   const response = await request(
-    `/api/lesson-recordings/${slot.source}/${encodeURIComponent(slot.lessonId)}/scenes/${slot.sceneIndex}/steps/${slot.stepIndex}`,
+    `/api/lesson-recordings/parrot/${encodeURIComponent(slot.lessonId)}/scenes/${slot.sceneIndex}/steps/${slot.stepIndex}`,
     {
       body: blob,
       headers,
@@ -94,9 +88,6 @@ export async function saveLessonRecording(
     (response.status === 409 && code === "account_deletion_pending")
   ) {
     return { reason: "recording_disabled", saved: false };
-  }
-  if (response.status === 409 && code === "lesson_changed") {
-    return { reason: "lesson_changed", saved: false };
   }
   if (response.status === 409 && code === "learner_selection_changed") {
     return { reason: "learner_selection_changed", saved: false };

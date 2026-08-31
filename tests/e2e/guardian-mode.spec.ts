@@ -78,8 +78,8 @@ function guardianLearnerUrl(path: string, scenario: string) {
 async function chooseLearnerAndStart(
   page: Page,
   name: string,
-  triggerName: "Switch to learner" | "Switch to learner mode" =
-    "Switch to learner",
+  triggerName:
+    "Switch to learner" | "Switch to learner mode" = "Switch to learner",
 ) {
   const trigger = page.getByRole("button", {
     exact: true,
@@ -169,9 +169,7 @@ test("incorrect password keeps learner mode and the unlock dialog open", async (
   expect(await horizontalOverflow(page)).toBe(false);
 });
 
-test("account-menu unlock accepts an empty password", async ({
-  page,
-}) => {
+test("account-menu unlock accepts an empty password", async ({ page }) => {
   await page.goto("/");
   const dialog = await openGuardianUnlock(page);
   const password = dialog.getByLabel("Password");
@@ -187,9 +185,7 @@ test("account-menu unlock accepts an empty password", async ({
   ).toBeVisible();
 });
 
-test("direct Guardian unlock accepts an empty password", async ({
-  page,
-}) => {
+test("direct Guardian unlock accepts an empty password", async ({ page }) => {
   await page.goto("/guardian/stories");
   const main = page.getByRole("main");
   const password = main.getByLabel("Password");
@@ -284,13 +280,18 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   for (const heading of [
     "Learner profiles",
     "Learning & content",
-    "My Lessons",
     "Story settings",
     "Voice dubbing",
     "Account & privacy",
   ]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
+  await expect(page.getByRole("heading", { name: "My Lessons" })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("link", { name: "Create custom lesson" }),
+  ).toHaveCount(0);
 
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu).toHaveCount(0);
@@ -383,17 +384,19 @@ for (const viewport of lessonPrivacyViewports) {
         },
       }),
     );
-    await page.route((url) => url.pathname === "/api/profile", (route) =>
-      route.fulfill({
-        json: {
-          profile: {
-            ...profile,
-            lessonRecordingCleanupPending: cleanupPending,
-            lessonRecordingConsent: consent,
+    await page.route(
+      (url) => url.pathname === "/api/profile",
+      (route) =>
+        route.fulfill({
+          json: {
+            profile: {
+              ...profile,
+              lessonRecordingCleanupPending: cleanupPending,
+              lessonRecordingConsent: consent,
+            },
+            questions: [],
           },
-          questions: [],
-        },
-      }),
+        }),
     );
     await page.route(
       (url) => url.pathname === "/api/profile/lesson-recording-consent",
@@ -407,9 +410,7 @@ for (const viewport of lessonPrivacyViewports) {
       },
     );
 
-    await page.goto(
-      guardianUrl("/guardian/learners/e2e-learner", "guardian"),
-    );
+    await page.goto(guardianUrl("/guardian/learners/e2e-learner", "guardian"));
 
     const account = page.getByRole("button", {
       name: "Profile for Alex Guardian, guardian mode",
@@ -463,7 +464,9 @@ for (const viewport of lessonPrivacyViewports) {
 
     page.once("dialog", async (dialog) => {
       expect(dialog.type()).toBe("confirm");
-      expect(dialog.message()).toMatch(/delete all saved lesson voice recordings/i);
+      expect(dialog.message()).toMatch(
+        /delete all saved lesson voice recordings/i,
+      );
       await dialog.accept();
     });
     await revoke.click();
@@ -509,8 +512,9 @@ test("a locked guardian deep link never flashes protected content", async ({
         node instanceof HTMLHeadingElement &&
         node.textContent?.trim() === "Story settings"
       ) {
-        (window as Window & { __protectedHeadingSeen?: boolean })
-          .__protectedHeadingSeen = true;
+        (
+          window as Window & { __protectedHeadingSeen?: boolean }
+        ).__protectedHeadingSeen = true;
       }
       node.childNodes.forEach(inspect);
     };
@@ -556,12 +560,6 @@ for (const { path, protectedName, unlockedPath } of [
     protectedName: "Update my profile",
   },
   {
-    path: "/guardian/lessons",
-    protectedName: "My Lessons",
-    unlockedPath:
-      "/guardian/lessons?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
-  },
-  {
     path: "/guardian/stories",
     protectedName: "Story settings",
     unlockedPath:
@@ -577,15 +575,10 @@ for (const { path, protectedName, unlockedPath } of [
     path: "/profile/setup?redo=1&returnTo=%2Fguardian",
     protectedName: "Update my profile",
   },
-  {
-    path: "/lessons/my/create",
-    protectedName: "Create a custom lesson",
-    unlockedPath:
-      "/lessons/my/create?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
-  },
 ]) {
-  test(`locked ${path} shows only the Guardian unlock gate`, async ({ page }) => {
-
+  test(`locked ${path} shows only the Guardian unlock gate`, async ({
+    page,
+  }) => {
     await page.addInitScript((expectedProtectedName) => {
       const inspected = new WeakSet<Node>();
       const inspect = (node: Node) => {
@@ -678,7 +671,9 @@ test("a valid guardian unlock resumes after refresh", async ({ page }) => {
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
+    page.getByRole("button", {
+      name: /Profile for Alex Guardian, guardian mode/,
+    }),
   ).toBeVisible();
 });
 
@@ -687,7 +682,9 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
 }) => {
   await page.goto(guardianUrl("/", "guardian"));
   await expect(
-    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
+    page.getByRole("button", {
+      name: /Profile for Alex Guardian, guardian mode/,
+    }),
   ).toBeVisible();
   const expiresAtBeforeRefresh = await page.evaluate(async () => {
     const response = await fetch("/api/guardian-access");
@@ -697,7 +694,9 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
 
   await page.reload();
   await expect(
-    page.getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ }),
+    page.getByRole("button", {
+      name: /Profile for Alex Guardian, guardian mode/,
+    }),
   ).toBeVisible();
 
   const expiresAtAfterRefresh = await page.evaluate(async () => {
@@ -715,8 +714,10 @@ test("an expired guardian session returns the same deep link to the Guardian unl
   await page.clock.install({
     time: new Date("2026-08-25T08:00:00.000Z"),
   });
-  await page.goto(guardianUrl("/guardian/lessons", "expired"));
-  await expect(page.getByRole("heading", { name: "My Lessons" })).toBeVisible();
+  await page.goto(guardianUrl("/guardian/stories", "expired"));
+  await expect(
+    page.getByRole("heading", { name: "Story settings" }),
+  ).toBeVisible();
   await page.evaluate(() => {
     window.history.pushState(null, "", "/guardian/stories");
     window.dispatchEvent(new PopStateEvent("popstate"));

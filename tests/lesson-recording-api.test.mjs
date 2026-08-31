@@ -7,12 +7,10 @@ import {
 } from "../src/lessons/lesson-recording-api.ts";
 
 const SLOT = {
-  source: "parrot",
   lessonId: "01-peppas-high-ball",
   sceneIndex: 0,
   stepIndex: 2,
 };
-const MY_LESSON_REVISION = "a".repeat(64);
 
 function responseFetch(payload, status = 200) {
   const calls = [];
@@ -72,6 +70,10 @@ describe("lesson recording browser API", () => {
       method: "PUT",
       signal: undefined,
     });
+    assert.equal(
+      "X-Parrot-Lesson-Revision" in request.calls[0][1].headers,
+      false,
+    );
     assert.strictEqual(request.calls[0][1].body, blob);
   });
 
@@ -102,40 +104,6 @@ describe("lesson recording browser API", () => {
       );
     }
     assert.equal(request.calls.length, 0);
-  });
-
-  it("encodes a My Lesson ID without sending target or user metadata", async () => {
-    const request = responseFetch(
-      { recordedAt: "2026-08-26T08:00:00.000Z" },
-      201,
-    );
-    const blob = new Blob([new Uint8Array([0x4f, 0x67, 0x67, 0x53])], {
-      type: "audio/ogg",
-    });
-
-    await saveLessonRecording(
-      blob,
-      {
-        ...SLOT,
-        source: "my",
-        lessonId: "lesson/one",
-        lessonRevision: MY_LESSON_REVISION,
-      },
-      {
-        expectedLearnerProfileId: "profile-1",
-        fetch: request.fetch,
-      },
-    );
-
-    assert.equal(
-      request.calls[0][0],
-      "/api/lesson-recordings/my/lesson%2Fone/scenes/0/steps/2",
-    );
-    assert.deepEqual(request.calls[0][1].headers, {
-      "Content-Type": "audio/ogg",
-      "X-Parrot-Expected-Learner-Profile": "profile-1",
-      "X-Parrot-Lesson-Revision": MY_LESSON_REVISION,
-    });
   });
 
   it("turns revoked consent into a resolved disabled-recording result", async () => {
@@ -177,29 +145,6 @@ describe("lesson recording browser API", () => {
         },
       ),
       { reason: "recording_disabled", saved: false },
-    );
-  });
-
-  it("turns a changed My Lesson into a terminal stale-lesson result", async () => {
-    const request = responseFetch({ error: "lesson_changed" }, 409);
-
-    assert.deepEqual(
-      await saveLessonRecording(
-        new Blob([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3])], {
-          type: "audio/webm",
-        }),
-        {
-          ...SLOT,
-          lessonId: "lesson-1",
-          lessonRevision: MY_LESSON_REVISION,
-          source: "my",
-        },
-        {
-          expectedLearnerProfileId: "profile-1",
-          fetch: request.fetch,
-        },
-      ),
-      { reason: "lesson_changed", saved: false },
     );
   });
 

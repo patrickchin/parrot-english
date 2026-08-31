@@ -16,9 +16,6 @@ const GUARDED_REQUESTS = [
   ["PUT", "/api/profile"],
   ["PUT", "/api/profile/preferences"],
   ["PUT", "/api/profile/lesson-recording-consent"],
-  ["POST", "/api/lessons/my"],
-  ["POST", "/api/lessons/my/generate"],
-  ["DELETE", "/api/lessons/my/lesson-1"],
   ["POST", "/api/stories/the-red-ball/personalized-art"],
   ["DELETE", "/api/stories/the-red-ball/personalized-art"],
   ["PUT", "/api/dubs/five-little-ducks-v2/consent"],
@@ -28,9 +25,6 @@ const GUARDED_REQUESTS = [
 const LEARNER_SAFE_REQUESTS = [
   ["GET", "/api/learner-profile"],
   ["GET", "/api/lesson-recordings/consent"],
-  ["GET", "/api/lessons/my"],
-  ["GET", "/api/lessons/my/lesson-1"],
-  ["PUT", "/api/lessons/my/lesson-1"],
   ["GET", "/api/stories/the-red-ball/personalized-art"],
   ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
   ["GET", "/api/dubs/five-little-ducks-v2"],
@@ -44,7 +38,6 @@ const TARGETABLE_LEARNER_REQUESTS = [
   ["GET", "/api/learner-profile"],
   ["GET", "/api/profile/preferences"],
   ["GET", "/api/lesson-recordings/consent"],
-  ["GET", "/api/lessons/my"],
   ["GET", "/api/stories/the-red-ball/personalized-art"],
   ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
   ["GET", "/api/dubs/five-little-ducks-v2"],
@@ -228,10 +221,6 @@ describe("guardian management authorization", () => {
             return new Response("auth");
           },
         }),
-        async checkLessonGenerationRateLimit() {
-          limiterCalls += 1;
-          return null;
-        },
         async checkLearnerProfileEnrichmentRateLimit() {
           limiterCalls += 1;
           return null;
@@ -241,7 +230,6 @@ describe("guardian management authorization", () => {
           return null;
         },
         handleLearnerProfileRequest: routed,
-        handleMyLessonRequest: routed,
         handlePersonalizedStoryArtRequest: routed,
         handleDubRequest: routed,
       });
@@ -273,7 +261,7 @@ describe("guardian management authorization", () => {
         assert.deepEqual(await response.json(), { routed: true });
       }
       assert.equal(handlerCalls, GUARDED_REQUESTS.length);
-      assert.equal(limiterCalls, 3);
+      assert.equal(limiterCalls, 2);
     } finally {
       state.close();
     }
@@ -303,7 +291,6 @@ describe("guardian management authorization", () => {
           },
         }),
         handleLearnerProfileRequest: routed,
-        handleMyLessonRequest: routed,
         handleLessonRecordingRequest: routed,
         handlePersonalizedStoryArtRequest: routed,
         handleDubRequest: routed,
@@ -315,8 +302,6 @@ describe("guardian management authorization", () => {
 
       for (const [method, path] of [
         ...TARGETABLE_LEARNER_REQUESTS,
-        ["GET", "/api/lessons/my?learnerProfileId="],
-        ["GET", "/api/lessons/my?learnerProfileId=foreign"],
       ]) {
         const separator = path.includes("?") ? "&" : "?";
         const targetPath = path.includes("learnerProfileId=")
@@ -365,7 +350,6 @@ describe("guardian management authorization", () => {
           },
         }),
         handleLearnerProfileRequest: routed,
-        handleMyLessonRequest: routed,
         handleLessonRecordingRequest: routed,
         handlePersonalizedStoryArtRequest: routed,
         handleDubRequest: routed,
@@ -434,7 +418,7 @@ describe("guardian management authorization", () => {
             return new Response("auth");
           },
         }),
-        async handleMyLessonRequest() {
+        async handleLearnerProfileRequest() {
           handlerCalls += 1;
           return Response.json({ routed: true });
         },
@@ -456,7 +440,7 @@ describe("guardian management authorization", () => {
         `learnerProfileId=${"p".repeat(129)}`,
       ]) {
         const response = await worker.fetch(
-          new Request(`https://example.test/api/lessons/my?${query}`),
+          new Request(`https://example.test/api/learner-profile?${query}`),
           env,
         );
         assert.equal(response.status, 404, query);

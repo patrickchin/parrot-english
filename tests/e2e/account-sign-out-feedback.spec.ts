@@ -121,7 +121,9 @@ for (const viewport of viewports) {
     expect(
       await status.evaluate((message) => getComputedStyle(message).color),
     ).toBe(
-      await pendingAccount.evaluate((control) => getComputedStyle(control).color),
+      await pendingAccount.evaluate(
+        (control) => getComputedStyle(control).color,
+      ),
     );
     await expect(page.getByRole("menu", { name: "Account menu" })).toBeHidden();
 
@@ -145,7 +147,9 @@ for (const viewport of viewports) {
     await pendingAccount.hover();
     expect(await pendingAccount.boundingBox()).toEqual(accountBox);
     expect(
-      await pendingAccount.evaluate((control) => getComputedStyle(control).cursor),
+      await pendingAccount.evaluate(
+        (control) => getComputedStyle(control).cursor,
+      ),
     ).toBe("wait");
     expect(
       await pendingAccount.evaluate((control) => {
@@ -220,7 +224,9 @@ for (const viewport of viewports) {
     await expect.poll(() => requestCount).toBe(2);
 
     await account.click();
-    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Sign out" }),
+    ).toBeVisible();
   });
 }
 
@@ -257,9 +263,9 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   await expect(status).toBeVisible();
   await expect(pendingAccount).toBeFocused();
   expect(
-    await status.locator("svg").evaluate((spinner) =>
-      getComputedStyle(spinner).animationName,
-    ),
+    await status
+      .locator("svg")
+      .evaluate((spinner) => getComputedStyle(spinner).animationName),
   ).toBe("none");
   const focusStyle = await pendingAccount.evaluate((control) => {
     const style = getComputedStyle(control);
@@ -274,9 +280,7 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   expect(focusStyle.outlineWidth).toBeGreaterThanOrEqual(2);
 
   releaseRequest();
-  await expect(page.getByRole("alert")).toHaveText(
-    "Sign out did not finish.",
-  );
+  await expect(page.getByRole("alert")).toHaveText("Sign out did not finish.");
   await expect(account).toBeFocused();
   const retry = page.getByRole("button", {
     exact: true,
@@ -296,7 +300,6 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   expect(retryFocusStyle.focusVisible).toBe(true);
   expect(retryFocusStyle.outlineStyle).not.toBe("none");
   expect(retryFocusStyle.outlineWidth).toBeGreaterThanOrEqual(2);
-
 });
 
 test("route heading focus does not override a faster account interaction", async ({
@@ -371,10 +374,10 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
   await waitForVisualAssets(page);
 
   const heading = page.getByRole("heading", { name: "Guardian dashboard" });
-  const management = page.getByRole("heading", { name: "My Lessons" });
-  const [headingBefore, managementBefore] = await Promise.all([
+  const storySettings = page.getByRole("heading", { name: "Story settings" });
+  const [headingBefore, storySettingsBefore] = await Promise.all([
     heading.boundingBox(),
-    management.boundingBox(),
+    storySettings.boundingBox(),
   ]);
   const account = page.getByRole("button", {
     name: "Profile for Alex Guardian, guardian mode",
@@ -390,37 +393,34 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
   await expect(pending).toBeVisible();
   await expect(pendingAccount).toBeFocused();
   expect(await heading.boundingBox()).toEqual(headingBefore);
-  expect(await management.boundingBox()).toEqual(managementBefore);
+  expect(await storySettings.boundingBox()).toEqual(storySettingsBefore);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
 
   releaseRequest();
-  await expect(page.getByRole("alert")).toHaveText(
-    "Sign out did not finish.",
-  );
+  await expect(page.getByRole("alert")).toHaveText("Sign out did not finish.");
   await expect(account).toBeFocused();
   const retry = page.getByRole("button", {
     exact: true,
     name: "Sign out again",
   });
-  const [retryBox, headingAfter, managementAfter] = await Promise.all([
+  const [retryBox, headingAfter, storySettingsAfter] = await Promise.all([
     retry.boundingBox(),
     heading.boundingBox(),
-    management.boundingBox(),
+    storySettings.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
   expect(headingAfter).toEqual(headingBefore);
-  expect(managementAfter).toEqual(managementBefore);
+  expect(storySettingsAfter).toEqual(storySettingsBefore);
   expect(boxesOverlap(retryBox!, headingAfter!)).toBe(false);
-  expect(boxesOverlap(retryBox!, managementAfter!)).toBe(false);
+  expect(boxesOverlap(retryBox!, storySettingsAfter!)).toBe(false);
 
   await page.keyboard.press("Tab");
   await expect(retry).toBeFocused();
   const retryPaint = await focusedPaintBox(retry);
   expect(boxesOverlap(retryPaint, headingAfter!)).toBe(false);
-  expect(boxesOverlap(retryPaint, managementAfter!)).toBe(false);
-
+  expect(boxesOverlap(retryPaint, storySettingsAfter!)).toBe(false);
 });
 
 test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard", async ({
@@ -437,9 +437,7 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
   });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
-  await expect(page.getByRole("alert")).toHaveText(
-    "Sign out did not finish.",
-  );
+  await expect(page.getByRole("alert")).toHaveText("Sign out did not finish.");
   await expect(account).toBeFocused();
   const retry = page.getByRole("button", {
     exact: true,
@@ -452,7 +450,6 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(280);
-
 });
 
 test("learner lesson HUD excludes sign-out recovery controls", async ({
@@ -474,9 +471,10 @@ test("learner lesson HUD excludes sign-out recovery controls", async ({
   const hud = page.getByRole("region", { name: "Lesson progress" });
   await expect(hud).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Sign out" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sign out again" })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Sign out again" }),
+  ).toHaveCount(0);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
-
 });

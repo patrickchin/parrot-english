@@ -1,5 +1,4 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 async function expectNoHorizontalOverflow(page: Page) {
   await expect
@@ -21,19 +20,6 @@ async function visibleBox(locator: Locator) {
   const box = await locator.boundingBox();
   expect(box).not.toBeNull();
   return box!;
-}
-
-async function expectContained(parent: Locator, child: Locator) {
-  const parentBox = await visibleBox(parent);
-  const childBox = await visibleBox(child);
-  expect(childBox.x).toBeGreaterThanOrEqual(parentBox.x - 1);
-  expect(childBox.y).toBeGreaterThanOrEqual(parentBox.y - 1);
-  expect(childBox.x + childBox.width).toBeLessThanOrEqual(
-    parentBox.x + parentBox.width + 1,
-  );
-  expect(childBox.y + childBox.height).toBeLessThanOrEqual(
-    parentBox.y + parentBox.height + 1,
-  );
 }
 
 async function expectReachableByPageScroll(page: Page, lastElement: Locator) {
@@ -109,13 +95,6 @@ const readyMadeArtwork = [
 test("ready-made lessons show distinct story-specific artwork", async ({
   page,
 }) => {
-  await page.route("**/api/lessons/my", async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({ lessons: [] }),
-      contentType: "application/json",
-      status: 200,
-    });
-  });
   await page.goto("/lessons");
 
   const readyMadeLessons = page
@@ -155,13 +134,6 @@ test("ready-made lessons show distinct story-specific artwork", async ({
 test("every ready-made lesson exposes one canonical start link", async ({
   page,
 }) => {
-  await page.route("**/api/lessons/my", async (route) => {
-    await route.fulfill({
-      body: JSON.stringify({ lessons: [] }),
-      contentType: "application/json",
-      status: 200,
-    });
-  });
   await page.goto("/lessons");
 
   const cards = page
@@ -189,13 +161,6 @@ for (const viewport of [
   test(`lesson discovery is picture-led and reachable at ${viewport.width}px`, async ({
     page,
   }) => {
-    await page.route("**/api/lessons/my", async (route) => {
-      await route.fulfill({
-        body: JSON.stringify({ lessons: [] }),
-        contentType: "application/json",
-        status: 200,
-      });
-    });
     await page.setViewportSize(viewport);
     await page.goto("/lessons");
 
@@ -264,6 +229,9 @@ for (const viewport of [
     await expect(
       page.getByRole("link", { name: "Create custom lesson" }),
     ).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "My Lessons" })).toHaveCount(
+      0,
+    );
     await expect(
       page.getByRole("button", { name: "Profile for Mia, learner mode" }),
     ).toBeVisible();
@@ -277,13 +245,6 @@ for (const viewport of [
   test(`lesson discovery becomes a roomy visual grid at ${viewport.width}px`, async ({
     page,
   }) => {
-    await page.route("**/api/lessons/my", async (route) => {
-      await route.fulfill({
-        body: JSON.stringify({ lessons: [] }),
-        contentType: "application/json",
-        status: 200,
-      });
-    });
     await page.setViewportSize(viewport);
     await page.goto("/lessons");
 
@@ -324,277 +285,6 @@ for (const viewport of [
     await expectNoHorizontalOverflow(page);
   });
 }
-
-for (const viewport of [
-  {
-    failureBody: "null",
-    failureContentType: "application/json",
-    failureStatus: 200,
-    height: 568,
-    width: 280,
-  },
-  {
-    failureBody: JSON.stringify({
-      error: "database_unavailable",
-      message: "D1 binding LESSON_DB is missing.",
-    }),
-    failureContentType: "application/json",
-    failureStatus: 500,
-    height: 844,
-    width: 390,
-  },
-  {
-    failureBody: "<html>not json</html>",
-    failureContentType: "text/html",
-    failureStatus: 200,
-    height: 360,
-    width: 640,
-  },
-]) {
-  test(`My Lessons recovers safely at ${viewport.width}x${viewport.height}`, async ({
-    page,
-  }) => {
-    let attempts = 0;
-    let retryMode = false;
-    let releaseRetry = () => {};
-    let reportRetryStarted = () => {};
-    const retryGate = new Promise<void>((resolve) => {
-      releaseRetry = resolve;
-    });
-    const retryStarted = new Promise<void>((resolve) => {
-      reportRetryStarted = resolve;
-    });
-    const pageErrors: string[] = [];
-    page.on("pageerror", (error) => pageErrors.push(error.message));
-    await page.route("**/api/lessons/my", async (route) => {
-      attempts += 1;
-      if (!retryMode) {
-        await route.fulfill({
-          body: viewport.failureBody,
-          contentType: viewport.failureContentType,
-          status: viewport.failureStatus,
-        });
-        return;
-      }
-
-      reportRetryStarted();
-      await retryGate;
-      await route.fulfill({
-        body: JSON.stringify({ lessons: [] }),
-        contentType: "application/json",
-        status: 200,
-      });
-    });
-    await page.setViewportSize(viewport);
-    await page.goto("/lessons");
-
-    const readyMadeLessons = page
-      .getByRole("region", { name: "Lessons" })
-      .getByRole("article");
-    await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-    await expect(
-      readyMadeLessons.first().getByRole("link", {
-        name: "Start lesson: Peppa's High Ball",
-      }),
-    ).toBeVisible();
-
-    const main = page.getByRole("main");
-    await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
-    const panel = page.getByRole("region", { name: "Saved lesson status" });
-    const status = panel.getByRole("status");
-    const retry = panel.getByRole("button", { name: "Try again" });
-
-    await expect(status).toHaveText("We couldn't load My Lessons.");
-    await expect(status).toHaveAttribute("aria-live", "polite");
-    await expect(status).toHaveAttribute("aria-atomic", "true");
-    await expect(retry).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Create custom lesson" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByText(
-        /Cannot read properties|TypeError|invalid_response|database_unavailable|D1 binding/i,
-      ),
-    ).toHaveCount(0);
-    const panelBox = await visibleBox(panel);
-    const statusBox = await visibleBox(status);
-    const retryBox = await visibleBox(retry);
-    expect(statusBox.width).toBeGreaterThanOrEqual(180);
-    expect(retryBox.height).toBeGreaterThanOrEqual(44);
-    expect(retryBox.width).toBeGreaterThanOrEqual(44);
-    expect(panelBox.y).toBeGreaterThanOrEqual(0);
-    expect(panelBox.y + panelBox.height).toBeLessThanOrEqual(viewport.height);
-    await expectContained(panel, retry);
-    await expectNoHorizontalOverflow(page);
-    expect(pageErrors).toEqual([]);
-
-    const attemptsBeforeRetry = attempts;
-    retryMode = true;
-    await retry.evaluate((button) => {
-      const statusElement = document.getElementById("my-lessons-status");
-      const metrics = window as Window & {
-        parrotMyLessonsFeedbackMs?: number;
-        parrotMyLessonsFeedbackStart?: number;
-      };
-      metrics.parrotMyLessonsFeedbackMs = undefined;
-      button.addEventListener(
-        "click",
-        () => {
-          metrics.parrotMyLessonsFeedbackStart = performance.now();
-        },
-        { capture: true, once: true },
-      );
-      const observer = new MutationObserver(() => {
-        if (
-          statusElement?.textContent === "Loading My Lessons…" &&
-          metrics.parrotMyLessonsFeedbackStart !== undefined
-        ) {
-          metrics.parrotMyLessonsFeedbackMs =
-            performance.now() - metrics.parrotMyLessonsFeedbackStart;
-          observer.disconnect();
-        }
-      });
-      observer.observe(statusElement!, {
-        characterData: true,
-        childList: true,
-        subtree: true,
-      });
-    });
-    await retry.click();
-    await expect(status).toHaveText("Loading My Lessons…", { timeout: 500 });
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            (window as Window & { parrotMyLessonsFeedbackMs?: number })
-              .parrotMyLessonsFeedbackMs ?? null,
-        ),
-      )
-      .not.toBeNull();
-    const feedbackMs = await page.evaluate(
-      () =>
-        (window as Window & { parrotMyLessonsFeedbackMs?: number })
-          .parrotMyLessonsFeedbackMs!,
-    );
-    expect(feedbackMs).toBeLessThan(100);
-    await retryStarted;
-    await expect(retry).toHaveAttribute("aria-disabled", "true");
-    await expect(retry).toBeFocused();
-    expect(attempts).toBe(attemptsBeforeRetry + 1);
-    await retry.press("Enter");
-    expect(attempts).toBe(attemptsBeforeRetry + 1);
-    await expect(page).toHaveURL("/lessons");
-    expect(await main.evaluate((element) => element.scrollTop)).toBeGreaterThan(
-      0,
-    );
-    await expectContained(panel, retry);
-    await expectNoHorizontalOverflow(page);
-
-    releaseRetry();
-    await expect(status).toHaveText("No made-for-you lessons yet.");
-    await expect(retry).toHaveCount(0);
-    await expect(status).toBeFocused();
-    await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-    expect(pageErrors).toEqual([]);
-  });
-}
-
-test("My Lessons keeps recovery stable across a failed retry and populated success", async ({
-  page,
-}) => {
-  const savedLesson = {
-    id: "recovered-garden",
-    lesson: createLessonScript({ title: "Recovered Garden" }),
-    revision: "a".repeat(64),
-    source: "uploaded",
-  };
-  let attempts = 0;
-  let phase: "initial-failure" | "retry-failure" | "success" =
-    "initial-failure";
-  let releaseRetryFailure = () => {};
-  let reportRetryFailureStarted = () => {};
-  const retryFailureGate = new Promise<void>((resolve) => {
-    releaseRetryFailure = resolve;
-  });
-  const retryFailureStarted = new Promise<void>((resolve) => {
-    reportRetryFailureStarted = resolve;
-  });
-  const pageErrors: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.route("**/api/lessons/my", async (route) => {
-    attempts += 1;
-    if (phase === "initial-failure") {
-      await route.abort("failed");
-      return;
-    }
-    if (phase === "retry-failure") {
-      reportRetryFailureStarted();
-      await retryFailureGate;
-      await route.fulfill({
-        body: JSON.stringify({
-          error: "database_unavailable",
-          message: "D1 binding LESSON_DB is missing.",
-        }),
-        contentType: "application/json",
-        status: 503,
-      });
-      return;
-    }
-    await route.fulfill({
-      body: JSON.stringify({ lessons: [savedLesson] }),
-      contentType: "application/json",
-      status: 200,
-    });
-  });
-  await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto("/lessons");
-
-  const readyMadeLessons = page
-    .getByRole("region", { name: "Lessons" })
-    .getByRole("article");
-  const panel = page.getByRole("region", { name: "Saved lesson status" });
-  const status = panel.getByRole("status");
-  const retry = panel.getByRole("button", { name: "Try again" });
-  await expect(status).toHaveText("We couldn't load My Lessons.");
-  await panel.scrollIntoViewIfNeeded();
-  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-  await expect(
-    page.getByRole("link", { name: "Create custom lesson" }),
-  ).toHaveCount(0);
-
-  const attemptsBeforeFailedRetry = attempts;
-  phase = "retry-failure";
-  await retry.click();
-  await expect(status).toHaveText("Loading My Lessons…", { timeout: 500 });
-  await retryFailureStarted;
-  await expect(retry).toHaveAttribute("aria-disabled", "true");
-  await expect(retry).toBeFocused();
-  await retry.press("Enter");
-  expect(attempts).toBe(attemptsBeforeFailedRetry + 1);
-  releaseRetryFailure();
-
-  await expect(status).toHaveText("We couldn't load My Lessons.");
-  await expect(retry).not.toHaveAttribute("aria-disabled", "true");
-  await expect(retry).toBeFocused();
-  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-  await expect(
-    page.getByText(/database_unavailable|D1 binding|503|TypeError/i),
-  ).toHaveCount(0);
-
-  const attemptsBeforeSuccess = attempts;
-  phase = "success";
-  await retry.click();
-  await expect(
-    page.getByRole("heading", { name: "Recovered Garden" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Start lesson: Recovered Garden" }),
-  ).toBeVisible();
-  expect(attempts).toBe(attemptsBeforeSuccess + 1);
-  await expect(status).toBeFocused();
-  await expect(readyMadeLessons).toHaveCount(readyMadeArtwork.length);
-  expect(pageErrors).toEqual([]);
-});
 
 test("signed-out protected routes preserve the destination and show account access", async ({
   page,
@@ -783,13 +473,6 @@ const guardianContentPages = [
     path: "/guardian/learners",
   },
   {
-    heading: "My Lessons",
-    lastControl: (page: Page) =>
-      page.getByRole("button", { name: "Delete lesson: Saved lesson 5" }),
-    name: "lesson manager",
-    path: "/guardian/lessons",
-  },
-  {
     heading: "Story settings",
     lastControl: (page: Page) =>
       page.getByRole("img", { name: "Storybook portrait preview" }),
@@ -821,24 +504,6 @@ for (const guardianPage of guardianContentPages) {
     test(`${guardianPage.name} content stays reachable at ${viewport.width}x${viewport.height}`, async ({
       page,
     }) => {
-      if (guardianPage.path === "/guardian/lessons") {
-        await page.route(/\/api\/lessons\/my(?:\?.*)?$/, async (route) => {
-          await route.fulfill({
-            body: JSON.stringify({
-              lessons: Array.from({ length: 5 }, (_, index) => ({
-                id: `saved-lesson-${index + 1}`,
-                lesson: createLessonScript({
-                  title: `Saved lesson ${index + 1}`,
-                }),
-                revision: String(index + 1).repeat(64),
-                source: "uploaded",
-              })),
-            }),
-            contentType: "application/json",
-            status: 200,
-          });
-        });
-      }
       await page.setViewportSize(viewport);
       await page.goto(guardianPath(guardianPage.path));
       await expect(
@@ -847,10 +512,7 @@ for (const guardianPage of guardianContentPages) {
           name: guardianPage.heading,
         }),
       ).toBeVisible();
-      await expectReachableByPageScroll(
-        page,
-        guardianPage.lastControl(page),
-      );
+      await expectReachableByPageScroll(page, guardianPage.lastControl(page));
     });
   }
 }
@@ -880,7 +542,7 @@ test("guardian learner details has one clear manager exit without a duplicate se
 test("guardian learner details opens from and returns to Manage learners", async ({
   page,
 }) => {
-  await page.goto(guardianPath("/guardian/lessons"));
+  await page.goto(guardianPath("/guardian"));
   await page
     .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
     .click();
@@ -981,7 +643,7 @@ test("account deletion requires the password and returns to sign in only after p
     .click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "This removes your account, all learner profiles and their My Lessons, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
+    "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
   );
   const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();
@@ -989,9 +651,7 @@ test("account deletion requires the password and returns to sign in only after p
   await expect(confirm).toBeEnabled();
   await confirm.click();
 
-  await expect(page).toHaveURL(
-    /\/login\?returnTo=%2Fguardian%2Faccount/,
-  );
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian%2Faccount/);
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeFocused();

@@ -10,8 +10,6 @@ import { createDatabase } from "../worker/database.ts";
 import { markerKey } from "../worker/dub-storage.ts";
 import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
-import { handleMyLessonRequest } from "../worker/my-lessons.ts";
-import { createLessonScript } from "./fixtures/lesson-script.mjs";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const USER_ID = "user-1";
@@ -165,35 +163,6 @@ function seedDatabase({ consent = true } = {}) {
     timestamp,
     timestamp,
   );
-  const insertLesson = state.sqlite.prepare(
-    `INSERT INTO learner_lesson
-      (id, auth_user_id, learner_profile_id, source, lesson_json, created_at, updated_at)
-     VALUES (?, ?, ?, 'uploaded', ?, ?, ?)`,
-  );
-  insertLesson.run(
-    "lesson-1",
-    USER_ID,
-    "profile-1",
-    JSON.stringify(createLessonScript()),
-    timestamp,
-    timestamp,
-  );
-  insertLesson.run(
-    "sibling-lesson",
-    USER_ID,
-    "profile-sibling",
-    JSON.stringify(createLessonScript({ childName: "Leo" })),
-    timestamp,
-    timestamp,
-  );
-  insertLesson.run(
-    "other-lesson",
-    "user-2",
-    "profile-2",
-    JSON.stringify(createLessonScript({ childName: "Noah" })),
-    timestamp,
-    timestamp,
-  );
   return { ...state, database: createDatabase(state.d1) };
 }
 
@@ -224,38 +193,16 @@ function setConsent(state, enabled, learnerProfileId = "profile-1") {
   );
 }
 
-function setMyLessonTarget(state, targetText) {
-  const lesson = createLessonScript();
-  lesson.scenes[0].steps[1].dialogue = targetText;
-  state.sqlite.prepare(
-    `UPDATE learner_lesson
-     SET lesson_json = ?, recording_generation = recording_generation + 1,
-         recording_cleanup_before_generation = recording_generation + 1
-     WHERE id = ? AND auth_user_id = ?`,
-  ).run(JSON.stringify(lesson), "lesson-1", USER_ID);
-}
-
-function myLessonRevision(state, lessonId = "lesson-1") {
-  const { lesson_json: lessonJson } = state.sqlite
-    .prepare("SELECT lesson_json FROM learner_lesson WHERE id = ?")
-    .get(lessonId);
-  return createHash("sha256").update(lessonJson).digest("hex");
-}
-
 function request(path, {
   body = WEBM,
   contentType = "audio/webm",
   expectedLearnerProfileId = null,
-  lessonRevision,
   method = "PUT",
 } = {}) {
   const headers = {};
   if (contentType !== null) headers["Content-Type"] = contentType;
   if (expectedLearnerProfileId !== null) {
     headers["X-Parrot-Expected-Learner-Profile"] = expectedLearnerProfileId;
-  }
-  if (lessonRevision !== undefined) {
-    headers["X-Parrot-Lesson-Revision"] = lessonRevision;
   }
   return new Request(`https://example.test${path}`, {
     method,
@@ -293,28 +240,6 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
       wait: options.wait,
     },
   );
-}
-
-function deleteMyLesson(state, bucket) {
-  return handleMyLessonRequest({
-    database: state.database,
-    env: {
-      DB: state.d1,
-      GROQ_API_KEY: "test-key",
-      PERSONALIZED_STORY_ART_BUCKET: bucket,
-    },
-    identity: {
-      sessionId: "session-1",
-      userId: USER_ID,
-      userName: "Parent",
-      learnerProfileId: "profile-1",
-      learnerName: "Mia",
-      legacyStorageOwner: true,
-    },
-    request: new Request("https://example.test/api/lessons/my/lesson-1", {
-      method: "DELETE",
-    }),
-  });
 }
 
 function saveRecordingConsent(state, bucket, enabled, identity = {}) {
@@ -526,110 +451,30 @@ describe("lesson recording Worker handler", () => {
     }
   });
 
-  it("resolves only owner-scoped My Lesson user steps", async () => {
-    const state = seedDatabase();
-    try {
-      const bucket = createBucket();
-      const owned = await call(
-        state,
-        bucket,
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1?targetText=forged",
-        { lessonRevision: myLessonRevision(state) },
-      );
-      assert.equal(owned.status, 201);
-      assert.equal(
-        audioWrites(bucket)[0].options.customMetadata.targetText,
-        "Can you help me?",
-      );
-      assert.equal(
-        audioWrites(bucket)[0].options.customMetadata.lessonRevision,
-        myLessonRevision(state),
-      );
-      assert.equal(
-        audioWrites(bucket)[0].options.customMetadata.lessonGeneration,
-        "0",
-      );
-
-      for (const path of [
-        "/api/lesson-recordings/my/other-lesson/scenes/0/steps/1",
-        "/api/lesson-recordings/my/sibling-lesson/scenes/0/steps/1",
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/0",
-        "/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/0",
-      ]) {
-        const isolatedBucket = createBucket();
-        const response = await call(state, isolatedBucket, path);
-        assert.equal(response.status, 404, path);
-        assert.deepEqual(await response.json(), { error: "not_found" }, path);
-        assert.equal(isolatedBucket.calls.put.length, 0, path);
-      }
-    } finally {
-      state.close();
-    }
-  });
-
-  it("rejects missing or mismatched My Lesson revisions before storage", async () => {
-    const state = seedDatabase();
-    try {
-      for (const lessonRevision of [undefined, "b".repeat(64)]) {
-        const bucket = createBucket();
-        const response = await call(
-          state,
-          bucket,
-          "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-          { lessonRevision },
-        );
-        assert.equal(response.status, 409);
-        assert.deepEqual(await response.json(), { error: "lesson_changed" });
-        assert.equal(bucket.calls.put.length, 0);
-      }
-    } finally {
-      state.close();
-    }
-  });
-
-  it("fences an in-flight My Lesson take when deletion purges before its write", async () => {
+  it("rejects a valid-format My recording route before learner preconditions", async () => {
     const state = seedDatabase();
     const bucket = createBucket();
-    const uploadReachedStorage = deferred();
-    const releaseUpload = deferred();
-    bucket.onBeforeAudioPut = async ({ options }) => {
-      if (options.customMetadata.uploadNonce === "stale-my-upload") {
-        uploadReachedStorage.resolve();
-        await releaseUpload.promise;
-      }
-    };
-
     try {
-      const stale = call(
-        state,
-        bucket,
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-        {
-          createUploadNonce: () => "stale-my-upload",
-          lessonRevision: myLessonRevision(state),
+      const response = await handleLessonRecordingRequest({
+        database: state.database,
+        env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+        identity: {
+          sessionId: "session-1",
+          userId: USER_ID,
+          userName: "Parent",
+          learnerProfileId: "profile-1",
+          learnerName: "Mia",
+          legacyStorageOwner: true,
         },
-      );
-      await uploadReachedStorage.promise;
-
-      const deletion = await deleteMyLesson(state, bucket);
-      assert.equal(deletion.status, 204);
-      assert.equal(bucket.calls.list.length, 1);
-      assert.equal(bucket.calls.delete.length, 0);
-
-      releaseUpload.resolve();
-      const response = await stale;
-      assert.equal(response.status, 409);
-      assert.deepEqual(await response.json(), { error: "lesson_changed" });
-      const current = [...bucket.stored.values()][0];
-      assert.equal(current.options.customMetadata.state, "purged");
-      assert.equal(
-        [...bucket.stored.values()].some(
-          ({ options }) => options.customMetadata?.state === "audio",
+        request: new Request(
+          "https://example.test/api/lesson-recordings/my/lesson-1/scenes/0/steps/0",
+          { method: "PUT" },
         ),
-        false,
-      );
+      });
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+      assert.equal(bucket.calls.put.length, 0);
     } finally {
-      releaseUpload.resolve();
       state.close();
     }
   });
@@ -673,43 +518,6 @@ describe("lesson recording Worker handler", () => {
     }
   });
 
-  it("blocks a new My Lesson take while deletion cleanup is listing", async () => {
-    const state = seedDatabase();
-    const bucket = createBucket();
-    const deletionReachedList = deferred();
-    const releaseDeletionList = deferred();
-    let held = false;
-    bucket.onList = async () => {
-      if (held) return;
-      held = true;
-      deletionReachedList.resolve();
-      await releaseDeletionList.promise;
-    };
-
-    try {
-      const deleting = deleteMyLesson(state, bucket);
-      await deletionReachedList.promise;
-
-      const blocked = await call(
-        state,
-        bucket,
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-        {
-          lessonRevision: myLessonRevision(state),
-        },
-      );
-      assert.equal(blocked.status, 404);
-      assert.deepEqual(await blocked.json(), { error: "not_found" });
-      assert.equal(audioWrites(bucket).length, 0);
-
-      releaseDeletionList.resolve();
-      assert.equal((await deleting).status, 204);
-    } finally {
-      releaseDeletionList.resolve();
-      state.close();
-    }
-  });
-
   it("rejects an old consent generation even when consent is regranted mid-write", async () => {
     const state = seedDatabase();
     const bucket = createBucket();
@@ -742,91 +550,6 @@ describe("lesson recording Worker handler", () => {
       );
     } finally {
       releaseWrite.resolve();
-      state.close();
-    }
-  });
-
-  it("rejects an old My Lesson generation after an identical-json edit mid-write", async () => {
-    const state = seedDatabase();
-    const bucket = createBucket();
-    const writeReached = deferred();
-    const releaseWrite = deferred();
-    bucket.onBeforeAudioPut = async () => {
-      writeReached.resolve();
-      await releaseWrite.promise;
-    };
-
-    try {
-      const revision = myLessonRevision(state);
-      const stale = call(
-        state,
-        bucket,
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-        {
-          createUploadNonce: () => "old-lesson-generation",
-          lessonRevision: revision,
-        },
-      );
-      await writeReached.promise;
-      state.sqlite.prepare(
-        `UPDATE learner_lesson
-         SET recording_generation = recording_generation + 1,
-             recording_cleanup_before_generation = recording_generation + 1
-         WHERE id = ? AND auth_user_id = ?`,
-      ).run("lesson-1", USER_ID);
-      assert.equal(myLessonRevision(state), revision);
-      releaseWrite.resolve();
-
-      const response = await stale;
-      assert.equal(response.status, 409);
-      assert.deepEqual(await response.json(), { error: "lesson_changed" });
-      assert.equal(
-        [...bucket.stored.values()].some(
-          ({ options }) => options.customMetadata?.state === "audio",
-        ),
-        false,
-      );
-    } finally {
-      releaseWrite.resolve();
-      state.close();
-    }
-  });
-
-  it("accepts a 4096-byte target and rejects a 4097-byte target before storage", async () => {
-    const state = seedDatabase();
-    const acceptedTarget = `${"你".repeat(1365)}a`;
-    const rejectedTarget = `${"你".repeat(1365)}ab`;
-    const encoder = new TextEncoder();
-    assert.equal(encoder.encode(acceptedTarget).byteLength, 4096);
-    assert.equal(encoder.encode(rejectedTarget).byteLength, 4097);
-
-    try {
-      setMyLessonTarget(state, acceptedTarget);
-      const acceptedBucket = createBucket();
-      const accepted = await call(
-        state,
-        acceptedBucket,
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-        { lessonRevision: myLessonRevision(state) },
-      );
-      assert.equal(accepted.status, 201);
-      assert.equal(
-        audioWrites(acceptedBucket)[0].options.customMetadata.targetText,
-        acceptedTarget,
-      );
-
-      setMyLessonTarget(state, rejectedTarget);
-      const rejectedBucket = createBucket();
-      const rejected = await call(
-        state,
-        rejectedBucket,
-        "/api/lesson-recordings/my/lesson-1/scenes/0/steps/1",
-        { lessonRevision: myLessonRevision(state) },
-      );
-      assert.equal(rejected.status, 422);
-      assert.deepEqual(await rejected.json(), { error: "target_too_large" });
-      assert.equal(rejectedBucket.calls.put.length, 0);
-    } finally {
       state.close();
     }
   });

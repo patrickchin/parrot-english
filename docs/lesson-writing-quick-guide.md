@@ -1,9 +1,7 @@
 # Lesson Writing Quick Guide
 
-This is the short, non-technical guide for creating a Parrot English lesson.
-Custom lessons use the app's GUI editor after AI generation or JSON import, so
-you do not need to edit JSON by hand. For every validation rule and field, or
-for preparing an import or built-in lesson file, see the
+This is the short, non-technical guide for writing a built-in Parrot English
+lesson. For every validation rule and field, see the
 [Lesson JSON Schema Reference](./lesson-json-schema.md).
 
 ## What You Need Before You Start
@@ -24,46 +22,37 @@ Decide these things first:
 There is no required number of goal phrases or scenes. A lesson only needs at
 least one scene with at least one spoken line.
 
-## Build the Story Visually
+## Plan the Story
 
-The lesson studio keeps the story itself in the foreground:
+Keep the story itself in the foreground:
 
-1. Use the **Storyboard** strip to choose a scene. Each thumbnail shows its
-   background and on-stage characters.
-2. Watch the **Live scene preview** while you work. It shows the selected
-   dialogue line, speaker, character moods, and background together.
-3. Choose backgrounds, characters, and moods from illustrated cards. You do
-   not need to remember catalog IDs.
-4. Use the **Dialogue timeline** below the preview to choose the line you want
-   to edit. Add, remove, or move lines to change playback order.
-5. Open **Scene title and notes**, **Lesson setup and goals**, or speaking
-   feedback only when you need their text fields. These details are kept out of
-   the main visual workflow but remain fully editable.
+1. Give each scene one background and a small on-stage character set.
+2. Put dialogue in playback order, including any learner join-in line.
+3. Add an emote only when a character changes expression.
+4. Add a speaking check only where feedback changes the story.
+5. Review the scene as a short, continuous cartoon episode before checking it
+   in.
 
-On a phone, swipe the storyboard sideways; the live preview appears above the
-controls for the selected scene.
+## What the JSON Stores
 
-## What the GUI Edits
+The field names below describe every checked-in lesson file.
 
-The editor labels these concepts in plain language. The field names below are
-also useful when importing JSON or maintaining a built-in lesson.
-
-| Information | Where it goes | Example |
-| --- | --- | --- |
-| Lesson name | `title` | `"The Helpful Friend"` |
-| Child's name | `childName` | `"Mia"` |
-| Practice phrases | `goalPhrases` | `["Can you help me?"]` |
-| Short description | `summary` | `"Peppa asks Dolly for help."` |
-| Longer description | `detailedSummary` | `"Peppa needs help reaching her ball."` |
-| Location name and description | `location` | Garden and a short description |
-| Story sections | `scenes` | One object for each scene |
-| Scene picture | A scene's `background` | `"episode-garden"` |
-| Visible characters | A scene's `characters` | `["peppa", "dolly"]` |
-| Spoken lines | A scene's `steps` | One step for each line |
-| Who says a line | A step's `speaker` | `"dolly"` or `"user"` |
-| The words spoken | A step's `dialogue` | `"Can you help me?"` |
-| Character expression changes | A step's optional `emotes` | `{ "dolly": "happy" }` |
-| Speaking result responses | A user step's optional `check` | Correct and incorrect replies |
+| Information                   | Where it goes                  | Example                                 |
+| ----------------------------- | ------------------------------ | --------------------------------------- |
+| Lesson name                   | `title`                        | `"The Helpful Friend"`                  |
+| Child's name                  | `childName`                    | `"Mia"`                                 |
+| Practice phrases              | `goalPhrases`                  | `["Can you help me?"]`                  |
+| Short description             | `summary`                      | `"Peppa asks Dolly for help."`          |
+| Longer description            | `detailedSummary`              | `"Peppa needs help reaching her ball."` |
+| Location name and description | `location`                     | Garden and a short description          |
+| Story sections                | `scenes`                       | One object for each scene               |
+| Scene picture                 | A scene's `background`         | `"episode-garden"`                      |
+| Visible characters            | A scene's `characters`         | `["peppa", "dolly"]`                    |
+| Spoken lines                  | A scene's `steps`              | One step for each line                  |
+| Who says a line               | A step's `speaker`             | `"dolly"` or `"user"`                   |
+| The words spoken              | A step's `dialogue`            | `"Can you help me?"`                    |
+| Character expression changes  | A step's optional `emotes`     | `{ "dolly": "happy" }`                  |
+| Speaking result responses     | A user step's optional `check` | Correct and incorrect replies           |
 
 ## Speaker Choices
 
@@ -77,8 +66,7 @@ Only Peppa and Dolly are visible. Put the visible characters for a scene in its
 
 ## Background Choices
 
-Choose one illustrated background card for each scene. Imported JSON uses the
-matching ID:
+Choose one supported background ID for each scene:
 
 - `episode-garden`
 - `meadow-day`
@@ -87,8 +75,7 @@ matching ID:
 
 ## Character Expressions
 
-Choose a character portrait to change that character's mood for the selected
-dialogue line. Imported JSON stores the choice in `emotes`:
+Use `emotes` to change a character's mood for a dialogue line:
 
 - `idle`
 - `talking`
@@ -143,9 +130,7 @@ Correct and final replies must use `"after": "continue"`.
 {
   "title": "Ask for Help",
   "childName": "Mia",
-  "goalPhrases": [
-    "Can you help me?"
-  ],
+  "goalPhrases": ["Can you help me?"],
   "summary": "Peppa asks Dolly for help.",
   "detailedSummary": "Peppa needs help reaching her ball.",
   "location": {
@@ -157,10 +142,7 @@ Correct and final replies must use `"after": "continue"`.
       "title": "The High Ball",
       "settingDescription": "Peppa and Dolly stand below a ball in a tree.",
       "background": "episode-garden",
-      "characters": [
-        "peppa",
-        "dolly"
-      ],
+      "characters": ["peppa", "dolly"],
       "steps": [
         {
           "speaker": "dolly",
@@ -203,20 +185,6 @@ Correct and final replies must use `"after": "continue"`.
 
 ## Where to Put the Lesson
 
-### My Lesson
-
-Choose **Create a Lesson** on the Home page. You can also use the Create action
-in **Lessons → My lessons**. Use **Make with AI** for the simple topic flow, or
-**Import JSON** to bring in a complete script. Both paths open the same GUI
-editor, where you can change lesson details, scenes, backgrounds, characters,
-speakers, dialogue, expressions, and speaking checks without editing raw JSON.
-Start with the storyboard and live preview, then expand lesson setup, scene
-notes, or speaking feedback only when needed. Review any warnings and save the
-lesson. My lessons use the device's available speech voice, so no audio files
-are needed.
-
-### Built-in Parrot Lesson
-
 Save the JSON as its own file in `content/lessons`. Built-in automatic lines
 and speaking-check replies need matching saved audio entries and files under
 `public/assets/audio`.
@@ -228,11 +196,10 @@ Useful locations:
 - Available characters: `content/catalogs/characters.json`
 - Available expressions: `content/catalogs/emotes.json`
 - Full technical reference: `docs/lesson-json-schema.md`
-- Lesson generator instructions: `worker/prompts/lesson-generator.ts`
 
 ## Final Check
 
-Before saving, confirm:
+Before checking in the lesson, confirm:
 
 - The lesson has a name, child name, summaries, location, and at least one
   scene.
@@ -241,5 +208,4 @@ Before saving, confirm:
 - `user` and `narrator` are not listed as visible characters.
 - Every `check` is attached to a `user` step.
 - Correct and final replies continue rather than retry.
-- If you are importing or maintaining a JSON file, it has no comments or
-  trailing commas.
+- The JSON file has no comments or trailing commas.

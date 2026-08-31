@@ -1,10 +1,8 @@
 import { Buffer } from "node:buffer";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { createLessonScript } from "../fixtures/lesson-script.mjs";
 
 const narrowPhone = { width: 280, height: 568 };
 const storyPath = "/stories/the-red-ball/pages/1";
-const lessonPath = "/lessons/my/personalized-speaking-turn/scenes/1";
 const guardianConsentLabel =
   "I am 18 or older. I confirm I am Mia's guardian or have permission to use this photo, and I agree to send a cropped copy to Cloudflare Workers AI to make the illustration.";
 const personalizedStoryAlt = "You holding a bright red ball";
@@ -123,19 +121,18 @@ async function mockPersonalizedStoryArtApis(
               : state === "cleanup-only"
                 ? {
                     enabled: false,
-                    guardianConsentVersion:
-                      "guardian-photo-cloudflare-v1",
+                    guardianConsentVersion: "guardian-photo-cloudflare-v1",
                     hasStoredArt: true,
                     stories: {},
                     updatedAt: "2026-08-09T12:00:00.000Z",
                   }
-              : {
-                  enabled: true,
-                  guardianConsentVersion: "guardian-photo-cloudflare-v1",
-                  hasStoredArt: false,
-                  stories: {},
-                  updatedAt: null,
-                },
+                : {
+                    enabled: true,
+                    guardianConsentVersion: "guardian-photo-cloudflare-v1",
+                    hasStoredArt: false,
+                    stories: {},
+                    updatedAt: null,
+                  },
           ),
           contentType: "application/json",
           status: 200,
@@ -214,47 +211,6 @@ async function mockPersonalizedStoryArtApis(
   return { deleteCount: () => deleteCount };
 }
 
-async function mockSpeakingTurnLesson(page: Page) {
-  let requestCount = 0;
-  const lesson = createLessonScript({ title: "Personalized Speaking Turn" });
-  lesson.scenes = [
-    {
-      title: "Show the ball",
-      settingDescription: "Peppa and Dolly wait for Mia to speak.",
-      background: "episode-garden",
-      characters: ["peppa", "dolly"],
-      steps: [
-        {
-          speaker: "user",
-          dialogue: "Red ball!",
-          emotes: {
-            dolly: "listening",
-            peppa: "listening",
-          },
-        },
-      ],
-    },
-  ];
-
-  await page.route("**/api/lessons/my/personalized-speaking-turn", async (route) => {
-    requestCount += 1;
-    await route.fulfill({
-      body: JSON.stringify({
-        lesson: {
-          id: "personalized-speaking-turn",
-          lesson,
-          revision: "a".repeat(64),
-          source: "generated",
-        },
-      }),
-      contentType: "application/json",
-      status: 200,
-    });
-  });
-
-  return { requestCount: () => requestCount };
-}
-
 test("storytelling shelf offers guardian-consented story-art opt-in on a 280px phone", async ({
   page,
 }) => {
@@ -290,7 +246,9 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
   await consent.check();
   await generate.click();
 
-  await expect(panel.getByText("Story art ready", { exact: true })).toBeVisible();
+  await expect(
+    panel.getByText("Story art ready", { exact: true }),
+  ).toBeVisible();
   await expect(
     panel.getByRole("button", { name: "Delete story art" }),
   ).toBeVisible();
@@ -455,56 +413,4 @@ test("deleting story art falls back to the default story placeholder", async ({
   await expect(
     reader.getByRole("img", { name: personalizedStoryAlt }),
   ).toHaveCount(0);
-});
-
-test("a generated learner lesson uses group join-in without portrait requests on a 280px phone", async ({
-  page,
-}) => {
-  await page.setViewportSize(narrowPhone);
-  let storyArtRequests = 0;
-  page.on("request", (request) => {
-    if (
-      new URL(request.url()).pathname.startsWith(
-        "/api/stories/the-red-ball/personalized-art",
-      )
-    ) {
-      storyArtRequests += 1;
-    }
-  });
-  const lessonRequests = await mockSpeakingTurnLesson(page);
-  await page.goto(`${lessonPath}?parrotE2eLesson=held-cue-no-consent`);
-  const start = page.getByRole("button", { exact: true, name: "Let's go" });
-  await expect(start).toBeFocused();
-  const requestCountBeforeStart = lessonRequests.requestCount();
-  await start.click();
-
-  const prompt = page.getByRole("region", { name: "Join in" });
-  const controls = page.getByRole("navigation", {
-    name: "Lesson playback controls",
-  });
-  const artwork = page.getByRole("img", {
-    name: "A sunny garden with flowers and a tall tree",
-  });
-  const peppa = page.getByRole("img", { name: "Peppa" });
-  const dolly = page.getByRole("img", { name: "Dolly" });
-
-  await expect(prompt.getByText("Red ball!", { exact: true })).toBeVisible();
-  await expect(prompt.getByRole("status")).toHaveCount(0);
-  for (const element of [prompt, controls, artwork, peppa, dolly]) {
-    await expectInsideViewportHorizontally(element, page);
-  }
-  await expect(page.getByRole("region", { name: "Your turn" })).toHaveCount(0);
-  await expect(
-    page.getByRole("img", { name: "You in storybook style" }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("navigation", { name: "Speaking controls" }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Skip speaking turn" }),
-  ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Start lesson" })).toHaveCount(0);
-  await expectNoHorizontalOverflow(page);
-  expect(storyArtRequests).toBe(0);
-  expect(lessonRequests.requestCount()).toBe(requestCountBeforeStart);
 });

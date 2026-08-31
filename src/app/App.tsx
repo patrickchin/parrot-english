@@ -27,7 +27,6 @@ import {
 import {
   getLessonAudioLine,
   getLessonJoinInAudioLine,
-  getLessonSpeechLine,
 } from "../../lib/lesson-audio";
 import { getLessonProgressLabel } from "../../lib/lesson-progress";
 import {
@@ -78,11 +77,9 @@ import {
   isGuardianRoute,
   isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
-  resolveMyLessonRouteDecision,
   resolveParrotLessonRouteDecision,
   resolveStoryRouteDecision,
   type LessonRouteDecision,
-  type LessonSource,
   type StoryRouteDecision,
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
@@ -100,10 +97,8 @@ import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
   VISUAL_CATALOG,
   type Lesson,
-  type LessonCatalogEntry,
 } from "../lessons/lesson-catalog";
 import { LessonList } from "../lessons/LessonList";
-import { GuardianLessonManager } from "../lessons/GuardianLessonManager";
 import { DubStudio } from "../dubbing/DubStudio";
 import {
   FULL_SCENE_LESSONS,
@@ -122,8 +117,6 @@ import {
   LessonSpeech,
   LessonStage,
 } from "../lessons/LessonPlayerUi";
-import { playDeviceSpeech } from "../media/device-speech";
-import { loadMyLesson } from "../lessons/my-lessons-api";
 import {
   requestMicrophoneAccess,
   startSpeechRecording,
@@ -149,14 +142,6 @@ const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
   ({ route }) => route !== getDuckDubPath(),
 );
 
-const LessonCreator = import.meta.env.SSR
-  ? (await import("../lessons/LessonCreator")).LessonCreator
-  : lazy(() =>
-      import("../lessons/LessonCreator").then(({ LessonCreator }) => ({
-        default: LessonCreator,
-      })),
-    );
-
 const APPLICATION_ROUTE_PATTERNS = [
   "/",
   "/guardian",
@@ -164,18 +149,14 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian/dubbing",
   "/guardian/learners",
   "/guardian/learners/:learnerId",
-  "/guardian/lessons",
   "/guardian/profile",
   "/guardian/profile/setup",
   "/guardian/stories",
   "/talk-to-peppa",
   "/word-game",
   "/lessons",
-  "/lessons/my/create",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
-  "/lessons/my/:lessonId",
-  "/lessons/my/:lessonId/scenes/:sceneNumber",
   "/progress",
   "/stories",
   getNurseryRhymesPath(),
@@ -253,12 +234,10 @@ type LessonPlayerProps = {
   fullSceneArtwork?: FullSceneImage[];
   lesson: Lesson;
   lessonId: string;
-  lessonRevision?: string;
   onBack: () => void;
   onNavigateScene: (sceneIndex: number) => void;
   routedLocationKey: string;
   routedSceneIndex: number;
-  source: LessonSource;
 };
 
 type RegisterLessonRouteExitBarrier = (barrier: () => void) => () => void;
@@ -270,12 +249,10 @@ export function LessonPlayer({
   fullSceneArtwork,
   lesson: currentLesson,
   lessonId,
-  lessonRevision,
   onBack,
   onNavigateScene,
   routedLocationKey,
   routedSceneIndex,
-  source,
 }: LessonPlayerProps) {
   const { profile: learnerProfile } = useLearnerProfile();
   const registerLessonRouteExitBarrier = useContext(
@@ -589,17 +566,10 @@ export function LessonPlayer({
       onPlaybackControl: (control: PlaybackControl | null) => void,
     ) => Promise<void>;
     try {
-      if (source === "my") {
-        const speechLine = getLessonSpeechLine(state, currentLesson);
-        if (!speechLine) return;
-        startPlayback = (signal, onPlaybackControl) =>
-          playDeviceSpeech({ ...speechLine, onPlaybackControl, signal });
-      } else {
-        const audioLine = getLessonAudioLine(state, currentLesson);
-        if (!audioLine) return;
-        startPlayback = (signal, onPlaybackControl) =>
-          playAudioLine({ ...audioLine, onPlaybackControl, signal });
-      }
+      const audioLine = getLessonAudioLine(state, currentLesson);
+      if (!audioLine) return;
+      startPlayback = (signal, onPlaybackControl) =>
+        playAudioLine({ ...audioLine, onPlaybackControl, signal });
     } catch {
       setError(LESSON_AUDIO_ERROR_MESSAGE);
       return;
@@ -656,7 +626,6 @@ export function LessonPlayer({
     currentArtworkDecoded,
     dispatchLessonEvent,
     routedSceneIndex,
-    source,
     state.sceneIndex,
     state.stepIndex,
     storyPlaybackPhase,
@@ -675,9 +644,7 @@ export function LessonPlayer({
     let session: SpeechRecordingSession | null = null;
     const slot = {
       lessonId,
-      ...(lessonRevision ? { lessonRevision } : {}),
       sceneIndex: state.sceneIndex,
-      source,
       stepIndex: state.stepIndex,
     };
     const isCurrent = () =>
@@ -693,18 +660,6 @@ export function LessonPlayer({
     setJoinInRecording(false);
 
     const playCue = async () => {
-      if (source === "my") {
-        await playDeviceSpeech({
-          onPlaybackControl: (control) => {
-            if (isCurrent()) playbackControlRef.current = control;
-          },
-          signal: controller.signal,
-          speaker: "narrator",
-          text: currentStep.dialogue,
-          volume: 0.28,
-        });
-        return;
-      }
       const cue = getLessonJoinInAudioLine(state, currentLesson);
       if (!cue) throw new Error("The join-in cue is missing.");
       await playAudioLine({
@@ -806,10 +761,8 @@ export function LessonPlayer({
     currentArtworkDecoded,
     dispatchLessonEvent,
     lessonId,
-    lessonRevision,
     recordingQueue,
     showMicrophoneNotice,
-    source,
     state.phase,
     state.sceneIndex,
     state.stepIndex,
@@ -1105,12 +1058,8 @@ export function LessonPlayer({
 }
 function LessonRouteDecisionView({
   decision,
-  lessonRevision,
-  source,
 }: {
   decision: LessonRouteDecision;
-  lessonRevision?: string;
-  source: LessonSource;
 }) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -1119,27 +1068,22 @@ function LessonRouteDecisionView({
     return <Navigate replace={decision.replace} to={decision.to} />;
   }
 
-  const fullSceneArtwork =
-    source === "parrot"
-      ? FULL_SCENE_LESSONS.find(
-          (candidate) => candidate.lessonId === decision.entry.id,
-        )?.scenes
-      : undefined;
+  const fullSceneArtwork = FULL_SCENE_LESSONS.find(
+    (candidate) => candidate.lessonId === decision.entry.id,
+  )?.scenes;
 
   return (
     <LessonPlayer
       fullSceneArtwork={fullSceneArtwork}
-      key={`${source}:${decision.entry.id}`}
+      key={decision.entry.id}
       lesson={decision.entry.lesson}
       lessonId={decision.entry.id}
-      lessonRevision={lessonRevision}
       onBack={() => navigate("/lessons")}
       onNavigateScene={(sceneIndex) =>
-        navigate(getLessonScenePath(source, decision.entry.id, sceneIndex))
+        navigate(getLessonScenePath(decision.entry.id, sceneIndex))
       }
       routedLocationKey={location.key}
       routedSceneIndex={decision.sceneIndex}
-      source={source}
     />
   );
 }
@@ -1147,99 +1091,13 @@ function LessonRouteDecisionView({
 function ParrotLessonRedirect() {
   const { lessonId } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, undefined);
-  return (
-    <LessonRouteDecisionView
-      decision={decision}
-      source="parrot"
-    />
-  );
+  return <LessonRouteDecisionView decision={decision} />;
 }
 
 function ParrotLessonSceneRoute() {
   const { lessonId, sceneNumber } = useParams();
   const decision = resolveParrotLessonRouteDecision(lessonId, sceneNumber);
-  return (
-    <LessonRouteDecisionView
-      decision={decision}
-      source="parrot"
-    />
-  );
-}
-
-function MyLessonRoute() {
-  const { lessonId, sceneNumber } = useParams();
-  const [entry, setEntry] = useState<
-    (LessonCatalogEntry & { revision: string }) | null
-  >(null);
-  const [loadError, setLoadError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadSequence, setLoadSequence] = useState(0);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    if (!lessonId) {
-      setLoadError("This lesson link is incomplete.");
-      setIsLoading(false);
-      return () => controller.abort();
-    }
-    setIsLoading(true);
-    setLoadError("");
-    void loadMyLesson(lessonId, { signal: controller.signal })
-      .then((descriptor) => {
-        setEntry({
-          id: descriptor.id,
-          lesson: descriptor.lesson,
-          revision: descriptor.revision,
-        });
-      })
-      .catch((caughtError: unknown) => {
-        if (controller.signal.aborted) return;
-        setEntry(null);
-        setLoadError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Your lesson could not be loaded.",
-        );
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false);
-      });
-    return () => controller.abort();
-  }, [lessonId, loadSequence]);
-
-  if (isLoading) {
-    return (
-      <FeaturePlaceholder
-        actionLabel="Back to lessons"
-        actionTo="/lessons"
-        busy
-        description="Getting the story and speaking practice ready."
-        title="Loading your lesson…"
-      />
-    );
-  }
-  if (!entry) {
-    return (
-      <FeaturePlaceholder
-        actionLabel="Back to lessons"
-        actionTo="/lessons"
-        description={
-          loadError ||
-          "It may have been removed, or your lessons may still be loading."
-        }
-        onRetry={() => setLoadSequence((current) => current + 1)}
-        title="We couldn’t open that lesson"
-      />
-    );
-  }
-  const decision = resolveMyLessonRouteDecision(entry, lessonId, sceneNumber);
-  return (
-    <LessonRouteDecisionView
-      decision={decision}
-      lessonRevision={entry.revision}
-      source="my"
-    />
-  );
+  return <LessonRouteDecisionView decision={decision} />;
 }
 
 function StoryRouteDecisionView({
@@ -1329,7 +1187,6 @@ export function ApplicationRoutes({
           element={<GuardianLearnerDetails />}
           path="/guardian/learners/:learnerId"
         />
-        <Route element={<GuardianLessonManager />} path="/guardian/lessons" />
         <Route element={<GuardianStorySettings />} path="/guardian/stories" />
         <Route
           element={<GuardianDubbingSettings />}
@@ -1351,7 +1208,6 @@ export function ApplicationRoutes({
           path="/talk-to-peppa"
         />
         <Route element={<LessonList />} path="/lessons" />
-        <Route element={<LessonCreator />} path="/lessons/my/create" />
         <Route
           element={<ParrotLessonRedirect />}
           path="/lessons/parrot/:lessonId"
@@ -1359,11 +1215,6 @@ export function ApplicationRoutes({
         <Route
           element={<ParrotLessonSceneRoute />}
           path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
-        />
-        <Route element={<MyLessonRoute />} path="/lessons/my/:lessonId" />
-        <Route
-          element={<MyLessonRoute />}
-          path="/lessons/my/:lessonId/scenes/:sceneNumber"
         />
         <Route element={<Navigate replace to="/" />} path="/progress" />
         <Route element={<StoryList />} path="/stories" />

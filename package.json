@@ -29,6 +29,7 @@
     "publish:story-media": "node scripts/publish-story-media.mjs",
     "publish:static-media": "node scripts/publish-static-media.mjs",
     "verify:backgrounds": "node scripts/verify-background-media.mjs",
+    "purge:custom-lesson-recordings": "node scripts/purge-custom-lesson-recordings.mjs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
     "start": "wrangler dev --local --port 3000",
     "preview": "vite preview --host 0.0.0.0",
