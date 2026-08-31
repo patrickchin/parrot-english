@@ -182,6 +182,27 @@ describe("nursery rhyme guide audio inspection", () => {
     }
   });
 
+  it("quantizes normalized peak bars to three decimals", async () => {
+    const { guidePath, packageDir } = await temporaryGuide();
+    await writeFile(guidePath, "guide bytes");
+    const samples = Array(501).fill(0);
+    samples[0] = 0.1234;
+    samples[500] = 1;
+    try {
+      const result = await inspectGuideAudio({
+        filePath: guidePath,
+        timelineDurationMs: 1_000,
+        runTool: runnerWithPcm(pcm(samples)),
+      });
+
+      // Bar 1 peaks at 0.1234, bar 2 peaks at 1, so 0.1234 / 1 rounds to 0.123.
+      assert.equal(result.peakBars[0], 0.123);
+      assert.equal(result.peakBars[1], 1);
+    } finally {
+      await rm(packageDir, { force: true, recursive: true });
+    }
+  });
+
   it("rejects non-buffer, misaligned, and non-finite decoded PCM", async () => {
     const { guidePath, packageDir } = await temporaryGuide();
     await writeFile(guidePath, "guide bytes");
