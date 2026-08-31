@@ -1000,8 +1000,6 @@ describe("word-game media publishing", () => {
       "/private/helper/wrangler.json",
       "--var",
       "UPLOAD_SECRET:capability",
-      "--log-level",
-      "error",
     ]);
     assert.equal(directRequests.length, 1);
     assert.equal(
@@ -1066,8 +1064,6 @@ describe("word-game media publishing", () => {
         "/private/helper/wrangler.json",
         "--var",
         "UPLOAD_SECRET:capability",
-        "--log-level",
-        "error",
       ],
       ["delete", "parrot-wg-service-id", "--force"],
     ]);

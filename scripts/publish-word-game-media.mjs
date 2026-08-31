@@ -279,8 +279,6 @@ export async function startAtomicR2Uploader(
         configFile,
         "--var",
         `UPLOAD_SECRET:${secret}`,
-        "--log-level",
-        "error",
       ],
       {
         cwd: temporaryDirectory,
