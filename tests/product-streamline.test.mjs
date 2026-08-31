@@ -50,7 +50,7 @@ test("home gives children five clear, working learning choices", () => {
     "/talk-to-peppa",
     "/stories",
     "/dubs",
-    "/word-game",
+    "/word-games",
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);

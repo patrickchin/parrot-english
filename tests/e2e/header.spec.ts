@@ -41,9 +41,14 @@ const routes: HeaderRoute[] = [
     control: { name: "Back to home", role: "link" },
   },
   {
-    name: "word game",
-    path: "/word-game",
+    name: "word game library",
+    path: "/word-games",
     control: { name: "Back to home", role: "link" },
+  },
+  {
+    name: "word game player",
+    path: "/word-games/animals",
+    control: { name: "Back to games", role: "link" },
   },
   {
     name: "story reader",
@@ -488,14 +493,14 @@ test("arbitrary guardian identity cannot cover the compact Back action", async (
     identity = nextIdentity;
     for (const viewport of compactViewports) {
       await page.setViewportSize(viewport);
-      await page.goto(guardianPath("/guardian/stories"));
+      await page.goto(guardianPath("/guardian/account"));
 
       const account = page.getByRole("button", {
         name: /^Profile for .+, guardian mode$/,
       });
       const back = page.getByRole("link", {
         exact: true,
-        name: "Back to guardian dashboard",
+        name: "Back to Guardian dashboard",
       });
       const accountBox = await expectInsideViewport(account, viewport);
       const backBox = await expectInsideViewport(back, viewport);

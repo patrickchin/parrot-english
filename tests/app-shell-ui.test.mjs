@@ -18,6 +18,9 @@ const homeModule = await vite
 const placeholderModule = await vite
   .ssrLoadModule("/src/app/FeaturePlaceholder.tsx")
   .catch(() => ({}));
+const wordGameListModule = await vite
+  .ssrLoadModule("/src/games/WordGameList.tsx")
+  .catch(() => ({}));
 const appModule = await vite
   .ssrLoadModule("/src/app/App.tsx")
   .catch(() => ({}));
@@ -25,6 +28,7 @@ const { LearnerProfileProvider, LearnerSelectionProvider } =
   await vite.ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx");
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
+const { WordGameList } = wordGameListModule;
 const { ApplicationRoutes } = appModule;
 
 after(async () => {
@@ -97,7 +101,7 @@ test("home menu prioritizes the five learner activities", () => {
     "/talk-to-peppa",
     "/stories",
     "/dubs",
-    "/word-game",
+    "/word-games",
   ]);
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.equal((html.match(/<button/g) ?? []).length, 0);
@@ -135,6 +139,44 @@ test("home menu prioritizes the five learner activities", () => {
     assert.match(nursery, new RegExp(`href="${route}"`));
   }
   assert.equal((nursery.match(/>Sing &amp; record</g) ?? []).length, 6);
+});
+
+test("word-game library renders six topic choices and a home link", () => {
+  assert.equal(
+    typeof WordGameList,
+    "function",
+    "Expected an executable word-game library",
+  );
+  const html = renderInRouter(createElement(WordGameList), "/word-games");
+  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+
+  assert.equal((html.match(/<h1/g) ?? []).length, 1);
+  assert.match(html, /<h1[^>]*>Pick a word game<\/h1>/);
+  assert.match(html, /aria-label="Back to home"/);
+  assert.ok(hrefs.includes("/"));
+  assert.deepEqual(
+    hrefs.filter((href) => href.startsWith("/word-games/")),
+    [
+      "/word-games/animals",
+      "/word-games/colors",
+      "/word-games/body-parts",
+      "/word-games/food",
+      "/word-games/toys",
+      "/word-games/feelings",
+    ],
+  );
+  for (const title of [
+    "Animals",
+    "Colors",
+    "Body Parts",
+    "Food",
+    "Toys",
+    "Feelings",
+  ]) {
+    assert.match(html, new RegExp(`>${title}<`));
+  }
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -206,9 +248,16 @@ test("authenticated application routes include the core learner activities", () 
     renderApplicationRoute("/stories"),
     /<h1[^>]*>Pick a story<\/h1>/,
   );
-  const wordGame = renderApplicationRoute("/word-game");
-  assert.match(wordGame, /<h1[^>]*>Word game<\/h1>/);
-  assert.match(wordGame, /Question 1 of 6/);
+  const wordGameLibrary = renderApplicationRoute("/word-games");
+  assert.match(wordGameLibrary, /<h1[^>]*>Pick a word game<\/h1>/);
+  const wordGame = renderApplicationRoute("/word-games/animals");
+  assert.match(wordGame, /<h1[^>]*>Animals<\/h1>/);
+  assert.match(wordGame, /Which is the cat\?/);
+  assert.match(wordGame, /Start listening/);
+  assert.match(wordGame, /aria-valuetext="1 of 6"/);
+  const encodedWordGame = renderApplicationRoute("/word-games/%61nimals");
+  assert.doesNotMatch(encodedWordGame, /<h1[^>]*>Animals<\/h1>/);
+  assert.doesNotMatch(encodedWordGame, /Which is the cat\?/);
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
   assert.match(dub, /Loading your private dub…/);

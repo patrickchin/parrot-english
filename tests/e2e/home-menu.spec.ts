@@ -47,7 +47,7 @@ for (const viewport of phoneViewports) {
     await expect(activities.getByRole("link", { name: "Talk to Peppa" })).toHaveAttribute("href", "/talk-to-peppa");
     await expect(activities.getByRole("link", { name: "Story time" })).toHaveAttribute("href", "/stories");
     await expect(activities.getByRole("link", { name: "Nursery rhymes" })).toHaveAttribute("href", "/dubs");
-    await expect(activities.getByRole("link", { name: "Play word game" })).toHaveAttribute("href", "/word-game");
+    await expect(activities.getByRole("link", { name: "Play word game" })).toHaveAttribute("href", "/word-games");
 
     const boxes = await Promise.all((await links.all()).map((link) => link.boundingBox()));
     for (const [index, box] of boxes.entries()) {
