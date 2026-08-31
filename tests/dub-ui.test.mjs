@@ -31,17 +31,19 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const { IllustratedDubScene } = await vite.ssrLoadModule("/src/dubbing/IllustratedDubScene.tsx");
+const { DubListenOnly } = await vite.ssrLoadModule("/src/dubbing/DubListenOnly.tsx");
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
 const { DuckDub } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const {
-  DubEntry,
   DubLoading,
+  resolveGuideOnlyDubLineAudioSource,
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DubStudio.tsx");
 const { DUB_LINES, FIVE_LITTLE_DUCKS_DUB } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
-const { OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const { DUB_DEFINITIONS, OLD_MACDONALD_DUB } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const { getStaticAudioLineForSpeech } = await vite.ssrLoadModule("/lib/static-audio.js");
 
 afterEach(async () => {
   await cleanupMountedRoots();
@@ -478,15 +480,17 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Full video player"/);
     assert.match(html, /aria-label="Play full video"/);
     assert.match(html, /aria-label="Scene selection"/);
+    assert.match(html, /aria-current="step"/);
     assert.match(html, />Choose a scene<\/h2>/);
-    assert.doesNotMatch(html, /Continue Scene|>Continue</);
+    assert.match(html, />Start with Scene 1</);
     for (let scene = 1; scene <= 6; scene += 1) {
-      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Not started"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Ready to start"`));
     }
-    assert.doesNotMatch(html, />Draft<|>Your dub<|>Not started<|voice clips recorded/);
+    assert.doesNotMatch(html, />Draft<|voice clips recorded/);
     assert.doesNotMatch(html, />0 \/ 4<|>Done<|>Retake</);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
     assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
+    assert.doesNotMatch(html, /whole rhyme/i);
   });
 
   it("keeps full figure markup out of the six scene buttons", () => {
@@ -499,21 +503,23 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(sceneButtons.join(""), /<figure\b/);
   });
 
-  it("shows large direct scene choices with title and status and no continue action", () => {
-    const html = renderProjectHome();
-    assert.doesNotMatch(html, /Continue Scene|>Continue</);
-    for (const [index, title] of [
-      "Five little ducks",
-      "Four little ducks",
-      "Three little ducks",
-      "Two little ducks",
-      "One little duck",
-      "Sad mother duck",
-    ].entries()) {
-      assert.match(html, new RegExp(`aria-label="Scene ${index + 1}, ${title}, Not started"`));
-      assert.match(html, new RegExp(`>${title}<`));
-    }
-    assert.equal((html.match(/<img[^>]*five-little-ducks\/scene-[^"]+\.webp/g) ?? []).length, 7);
+  it("guides empty, partial, retake, and complete projects", () => {
+    assert.match(renderProjectHome(), /Ready to start/);
+    assert.match(renderProjectHome(), />Start with Scene 1</);
+
+    const partial = renderProjectHome({ saved: { "line-1": "saved" } });
+    assert.match(partial, /1 of 24 lines ready/);
+    assert.match(partial, />Continue with Scene 1</);
+
+    const saved = Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"]));
+    const retake = renderProjectHome({ needsRetake: { "line-5": true }, saved });
+    assert.match(retake, />Fix Scene 2</);
+    assert.match(retake, /Scene 2, Four little ducks, Needs a new take/);
+
+    const complete = renderProjectHome({ activeLine: DUB_LINES[23], saved });
+    assert.match(complete, /All 24 lines ready/);
+    assert.match(complete, /Your video is ready — great singing!/);
+    assert.doesNotMatch(complete, /Start with Scene|Continue with Scene|Fix Scene/);
   });
 
   it("derives the Old MacDonald project home from the passed dub definition", () => {
@@ -523,9 +529,9 @@ describe("duck dubbing storyboard presentation", () => {
     });
 
     assert.match(html, /Old MacDonald Had a Farm/);
-    assert.match(html, /aria-label="Project recording progress"[\s\S]*?>0 \/ 35</);
-    assert.equal((html.match(/aria-label="Scene \d, [^"]+, Not started"/g) ?? []).length, 5);
-    assert.match(html, /aria-label="Scene 1, Cows on the farm, Not started"[\s\S]*?>○ 0 \/ 7</);
+    assert.match(html, /aria-label="Project recording progress"[\s\S]*?>Ready to start</);
+    assert.equal((html.match(/aria-label="Scene \d, [^"]+, Ready to start"/g) ?? []).length, 5);
+    assert.match(html, /aria-label="Scene 1, Cows on the farm, Ready to start"[\s\S]*?>○ Ready to start</);
   });
 
   it("keeps every scene selectable after all clips are recorded", () => {
@@ -533,10 +539,11 @@ describe("duck dubbing storyboard presentation", () => {
       activeLine: DUB_LINES[23],
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.doesNotMatch(html, />Your dub<|>Draft<|All scenes recorded/);
-    assert.doesNotMatch(html, /aria-label="Continue Scene/);
+    assert.match(html, /All 24 lines ready/);
+    assert.match(html, /Your video is ready — great singing!/);
+    assert.doesNotMatch(html, /Start with Scene|Continue with Scene|Fix Scene/);
     for (let scene = 1; scene <= 6; scene += 1) {
-      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Done"`));
+      assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Scene ready"`));
     }
   });
 
@@ -546,9 +553,8 @@ describe("duck dubbing storyboard presentation", () => {
       needsRetake: { "line-5": true },
       saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
     });
-    assert.doesNotMatch(html, />Draft<|>Your dub<|All scenes recorded/);
-    assert.doesNotMatch(html, /aria-label="Continue Scene/);
-    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs retake"/);
+    assert.match(html, />Fix Scene 2</);
+    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs a new take"/);
   });
 
   it("shows non-blocking project playback errors and retake status", () => {
@@ -559,20 +565,8 @@ describe("duck dubbing storyboard presentation", () => {
       saved: { "line-5": "saved" },
     });
     assert.match(html, /aria-label="Stop full video"/);
-    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs retake"/);
+    assert.match(html, /aria-label="Scene 2, Four little ducks, Needs a new take"/);
     assert.match(html, /role="alert"/);
-  });
-
-  it("keeps consent and destructive choices in Guardian mode", () => {
-    const disabled = renderToStaticMarkup(createElement(DubEntry, {
-      error: "",
-      onRetryLoad() {},
-    }));
-    assert.match(disabled, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
-    assert.doesNotMatch(
-      disabled,
-      /checkbox|I’m the grown-up|Grown-up options|Delete|Start dubbing|Continue dubbing/,
-    );
   });
 
   it("loads an enabled route directly into the project without an entry action", async () => {
@@ -603,7 +597,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.equal(
       container.querySelectorAll('nav[aria-label="Page navigation"] [aria-label="Back to full video"]')
         .length,
@@ -612,12 +606,12 @@ describe("duck dubbing storyboard presentation", () => {
 
     await click(container.querySelector('nav[aria-label="Page navigation"] [aria-label="Back to full video"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    const backHome = container.querySelector('nav[aria-label="Page navigation"] a[aria-label="Back to home"]');
-    assert.ok(backHome);
-    assert.equal(backHome.getAttribute("href"), "/");
+    const backToRhymes = container.querySelector('nav[aria-label="Page navigation"] a[aria-label="Back to Nursery rhymes"]');
+    assert.ok(backToRhymes);
+    assert.equal(backToRhymes.getAttribute("href"), "/dubs");
   });
 
-  it("shows disabled learner guidance as soon as status loads", async () => {
+  it("shows listen-only playback as soon as recording-disabled status loads", async () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
@@ -628,9 +622,9 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountDuckDub();
     await waitFor(() => assert.match(
       container.textContent,
-      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      /You can watch the video now/,
     ));
-    assert.equal(container.querySelector('[aria-label="Play full video"]'), null);
+    assert.ok(container.querySelector('[aria-label="Play full video"]'));
     assert.equal(
       [...container.querySelectorAll("button")].filter(({ textContent }) =>
         /Start dubbing|Continue dubbing|Continue Scene/.test(textContent),
@@ -871,7 +865,7 @@ describe("duck dubbing storyboard presentation", () => {
     ));
   });
 
-  it("clears a revoking save into disabled learner guidance", async () => {
+  it("clears a revoking save into listen-only playback", async () => {
     const revokedUrls = [];
     URL.createObjectURL = () => "blob:revoking-take";
     URL.revokeObjectURL = (url) => revokedUrls.push(url);
@@ -888,8 +882,8 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]')));
-    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]')));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
@@ -897,10 +891,11 @@ describe("duck dubbing storyboard presentation", () => {
 
     await waitFor(() => assert.match(
       container.textContent,
-      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      /You can watch the video now/,
     ));
     assert.equal(track.stopped, true);
     assert.deepEqual(revokedUrls, ["blob:revoking-take"]);
+    assert.ok(container.querySelector('[aria-label="Play full video"]'));
     assert.doesNotMatch(container.textContent, /Save again|Start dubbing|Continue Scene|Record line/);
   });
 
@@ -921,8 +916,8 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]')));
-    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Not started"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]')));
+    await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
@@ -966,7 +961,7 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Stop my recording"]'));
   });
 
-  it("locks immediately when saved recording playback reports consent loss", async () => {
+  it("shows listen-only playback immediately when saved recording playback reports consent loss", async () => {
     installSynchronizedRecordingHarness();
     let createdObjectUrls = 0;
     URL.createObjectURL = () => {
@@ -991,10 +986,11 @@ describe("duck dubbing storyboard presentation", () => {
 
     await waitFor(() => assert.match(
       container.textContent,
-      /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+      /You can watch the video now/,
     ));
     assert.equal(createdObjectUrls, 0);
     assert.equal(container.querySelector('[aria-label="Record again"]'), null);
+    assert.ok(container.querySelector('[aria-label="Play full video"]'));
   });
 
   it("keeps the editor open and offers Record again when saved recording playback fails", async () => {
@@ -1030,7 +1026,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.ok(container.querySelector('[aria-label="Record again"]'));
     await click(container.querySelector('[aria-label="Back to full video"]'));
     await waitFor(() => assert.ok(
-      container.querySelector('[aria-label="Scene 1, Five little ducks, Needs retake"]'),
+      container.querySelector('[aria-label="Scene 1, Five little ducks, Needs a new take"]'),
     ));
   });
 
@@ -1173,9 +1169,10 @@ describe("duck dubbing storyboard presentation", () => {
       await click(container.querySelector('[aria-label="Play full video"]'));
       await waitFor(() => assert.match(
         container.textContent,
-        /Ask a grown-up to turn on voice dubbing in Guardian mode/,
+        /You can watch the video now/,
       ));
-      assert.doesNotMatch(container.textContent, /Play full video|Continue dubbing|Record line/);
+      assert.doesNotMatch(container.textContent, /Continue dubbing|Record line/);
+      assert.ok(container.querySelector('[aria-label="Play full video"]'));
       await cleanupMountedRoots();
       document.body.replaceChildren();
     }
@@ -1193,10 +1190,10 @@ describe("duck dubbing storyboard presentation", () => {
         "line-12": "saved",
       },
     });
-    assert.match(project, /aria-label="Scene 1, Five little ducks, 1 \/ 4"[\s\S]*?data-status-icon="in-progress"[^>]*>◐ 1 \/ 4<\/span>/);
-    assert.match(project, /aria-label="Scene 2, Four little ducks, Needs retake"[\s\S]*?data-status-icon="needs-retake"[^>]*>! Retake<\/span>/);
-    assert.match(project, /aria-label="Scene 3, Three little ducks, Done"[\s\S]*?data-status-icon="done"[^>]*>✓ Done<\/span>/);
-    assert.match(project, /aria-label="Scene 4, Two little ducks, Not started"[\s\S]*?data-status-icon="not-started"[^>]*>○ 0 \/ 4<\/span>/);
+    assert.match(project, /aria-label="Scene 1, Five little ducks, 1 of 4 lines ready"[\s\S]*?data-status-icon="in-progress"[^>]*>◐ 1 of 4 lines ready<\/span>/);
+    assert.match(project, /aria-label="Scene 2, Four little ducks, Needs a new take"[\s\S]*?data-status-icon="needs-retake"[^>]*>! Needs a new take<\/span>/);
+    assert.match(project, /aria-label="Scene 3, Three little ducks, Scene ready"[\s\S]*?data-status-icon="done"[^>]*>✓ Scene ready<\/span>/);
+    assert.match(project, /aria-label="Scene 4, Two little ducks, Ready to start"[\s\S]*?data-status-icon="not-started"[^>]*>○ Ready to start<\/span>/);
   });
 
   it("renders one Choicer-style line flow without competing editor controls", () => {
@@ -1362,17 +1359,6 @@ describe("duck dubbing storyboard presentation", () => {
     assert.doesNotMatch(loading, /Finish deleting|Delete my dub|Grown-up options/);
   });
 
-  it("keeps the locked learner entry concise and leaves grown-up controls in Guardian mode", () => {
-    const html = renderToStaticMarkup(createElement(DubEntry, {
-      error: "",
-      onRetryLoad() {},
-    }));
-
-    assert.match(html, /Ask a grown-up to turn on voice dubbing in Guardian mode/);
-    assert.doesNotMatch(html, /Start dubbing|Continue dubbing|Continue Scene/);
-    assert.doesNotMatch(html, /checkbox|I’m the grown-up|More grown-up options|Delete/);
-  });
-
   it("discards rejected-take preview and exposes one Record again action", () => {
     const html = renderSceneEditor({
       error: "That recording is too long.",
@@ -1407,5 +1393,34 @@ describe("duck dubbing storyboard presentation", () => {
       }),
       /guide missing/,
     );
+  });
+
+  it("shows public video playback without private or recording controls", () => {
+    const html = renderToStaticMarkup(createElement(DubListenOnly, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      error: "",
+      onTogglePlayback() {},
+      playback: "idle",
+      visualLine: DUB_LINES[0],
+    }));
+    assert.match(html, /You can watch the video now/);
+    assert.match(html, /aria-label="Play full video"/);
+    assert.doesNotMatch(
+      html,
+      /Record again|Record line|Play my recording|Save again|Guardian|Delete/,
+    );
+  });
+
+  it("resolves every listen-only line to its public guide and never private audio", () => {
+    for (const definition of DUB_DEFINITIONS) {
+      for (const line of definition.lines) {
+        const source = resolveGuideOnlyDubLineAudioSource(line);
+        assert.deepEqual(source, {
+          preferredUrl: getStaticAudioLineForSpeech("narrator", line.text).src,
+        });
+        assert.equal(source.preferredUrl.includes("/api/dubs/"), false);
+        assert.equal(Object.hasOwn(source, "fallbackUrl"), false);
+      }
+    }
   });
 });

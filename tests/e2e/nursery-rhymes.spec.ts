@@ -34,9 +34,14 @@ test("nursery rhyme picker presents six large illustrated projects", async ({ pa
   const picker = page.getByRole("navigation", { name: "Nursery rhymes" });
   const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
   const back = routeHeader.getByRole("link", { name: "Back to home" });
+  await expect(page.getByText(
+    "Choose a rhyme to watch. With a grown-up's permission, you can sing and save your recording.",
+  )).toBeVisible();
   await expect(picker.getByRole("link")).toHaveCount(6);
   for (const [name, route] of RHYMES) {
-    const card = picker.getByRole("link", { name });
+    const card = picker.getByRole("link", {
+      name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+Sing & record$`),
+    });
     await expect(card).toHaveAttribute("href", route);
     await expect(card.getByText("Sing & record", { exact: true })).toBeVisible();
   }
@@ -75,7 +80,9 @@ for (const viewport of [
     await expect(back).toBeVisible();
     await expectSharedHeaderTarget(back);
     for (const [name] of RHYMES) {
-      const card = page.getByRole("link", { name });
+      const card = page.getByRole("link", {
+        name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+Sing & record$`),
+      });
       await expect(card).toBeVisible();
       await expectContained(page, card);
     }
@@ -90,4 +97,23 @@ test("every new rhyme opens its own recording workspace", async ({ page }) => {
       page.getByRole("button", { name: "Play full video" }),
     ).toBeVisible();
   }
+});
+
+test("the visible Old MacDonald project title wraps without ellipsis", async ({ page }) => {
+  await page.setViewportSize({ height: 640, width: 320 });
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
+  const heading = page.getByRole("heading", { name: "Old MacDonald Had a Farm" });
+  const metrics = await heading.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      clientHeight: element.clientHeight,
+      clientWidth: element.clientWidth,
+      scrollHeight: element.scrollHeight,
+      scrollWidth: element.scrollWidth,
+      textOverflow: style.textOverflow,
+    };
+  });
+  expect(metrics.scrollWidth).toBeLessThanOrEqual(metrics.clientWidth);
+  expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.clientHeight);
+  expect(metrics.textOverflow).not.toBe("ellipsis");
 });

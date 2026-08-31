@@ -11,6 +11,7 @@ import {
 } from "react";
 import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
+import { getNurseryRhymesPath } from "../app/app-routes";
 import { isAbortError } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
@@ -32,6 +33,7 @@ import {
   type DubAudioSource,
   type PreparedDubLineBacking,
 } from "./dub-playback";
+import { DubListenOnly } from "./DubListenOnly";
 import { DubProjectHome } from "./DubProjectHome";
 import { DubSceneEditor } from "./DubSceneEditor";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
@@ -128,6 +130,13 @@ export function resolveDubLineAudioSource(
   return { preferredUrl: resolveGuide("narrator", line.text).src };
 }
 
+export function resolveGuideOnlyDubLineAudioSource(
+  line: Pick<DubLine, "text">,
+  resolveGuide: typeof getStaticAudioLineForSpeech = getStaticAudioLineForSpeech,
+): DubAudioSource {
+  return { preferredUrl: resolveGuide("narrator", line.text).src };
+}
+
 export function DubEntry({
   error,
   onRetryLoad,
@@ -141,18 +150,10 @@ export function DubEntry({
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
       <section className="mx-auto grid w-full max-w-2xl gap-4 rounded-3xl border-4 border-white bg-white/90 p-5 shadow-card">
         <h1 className="m-0 text-3xl text-brand-ink md:text-4xl">{title}</h1>
-        {error ? (
-          <>
-            <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">
-              {error}
-            </p>
-            <ActionButton onClick={onRetryLoad}>Try loading again</ActionButton>
-          </>
-        ) : (
-          <p className="m-0 rounded-2xl bg-sky-50 p-3 font-bold leading-snug text-brand-ink">
-            Ask a grown-up to turn on voice dubbing in Guardian mode.
-          </p>
-        )}
+        <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">
+          {error || "Your saved dub could not be loaded."}
+        </p>
+        <ActionButton onClick={onRetryLoad}>Try loading again</ActionButton>
       </section>
     </main>
   );
@@ -284,10 +285,11 @@ export function DubStudio({
   }, [clearRecordingProgress, clearTakePreview]);
 
   const handleConsentLoss = useCallback(() => {
-    cancelMedia(true);
+    const generation = cancelMedia(true);
     setLoadError("");
     setPlaybackLineIndex(0);
     dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
+    focusAfterRender(fullPlaybackButtonRef, generation);
   }, [cancelMedia]);
 
   useEffect(() => {
@@ -587,6 +589,7 @@ export function DubStudio({
       dispatch({ type: "OPERATION_FINISHED" });
       return;
     }
+    const guideOnlyPlayback = state.view === "listen-only";
     const generation = cancelMedia(false);
     const controller = new AbortController();
     const sceneIndex = state.selectedSceneIndex;
@@ -611,7 +614,7 @@ export function DubStudio({
           );
         },
         onLineFallback(lineId) {
-          dispatch({ type: "MARK_NEEDS_RETAKE", lineId });
+          if (!guideOnlyPlayback) dispatch({ type: "MARK_NEEDS_RETAKE", lineId });
         },
         onLineUnavailable(lineId) {
           unavailableLineIds.add(lineId);
@@ -623,11 +626,21 @@ export function DubStudio({
             : getDubSceneLineAtElapsed(definition, sceneIndex, elapsedMs);
           setPlaybackLineIndex(getLineIndex(definition, line.id));
         },
-        resolveAudioSource: resolveLineAudio,
+        resolveAudioSource: guideOnlyPlayback
+          ? resolveGuideOnlyDubLineAudioSource
+          : resolveLineAudio,
         signal: controller.signal,
       });
       if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         playback.stop();
+        return;
+      }
+      if (guideOnlyPlayback && unavailableLineIds.size === lines.length) {
+        playback.stop();
+        playbackControllerRef.current = null;
+        dispatch({ type: "OPERATION_FINISHED" });
+        dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
+        focusAfterRender(fullPlaybackButtonRef, generation);
         return;
       }
       playbackRef.current = playback;
@@ -646,6 +659,10 @@ export function DubStudio({
       }
       dispatch({ type: "OPERATION_FINISHED" });
       dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
+      focusAfterRender(
+        scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
+        generation,
+      );
     }
   }
 
@@ -711,8 +728,7 @@ export function DubStudio({
   const selectedSceneLineNumber = state.selectedLineIndex % definition.linesPerScene + 1;
   const playbackSceneNumber = Math.floor(playbackLineIndex / definition.linesPerScene) + 1;
   const playbackSceneLineNumber = playbackLineIndex % definition.linesPerScene + 1;
-  const savedCount = Object.keys(state.saved).length;
-  let liveStatus = "Ready to open your dub.";
+  let liveStatus = "";
   const activeError = state.error || loadError;
   if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
@@ -731,13 +747,11 @@ export function DubStudio({
       ? `Playing full video: Scene ${playbackSceneNumber}, line ${playbackSceneLineNumber}.`
       : `Playing Scene ${state.selectedSceneIndex + 1}: line ${playbackSceneLineNumber}.`;
   } else if (activeError) {
-    liveStatus = activeError;
+    liveStatus = "";
   } else if (state.view === "loading") {
     liveStatus = "Loading your private dub…";
-  } else if (state.view === "locked") {
-    liveStatus = "Voice dubbing is off. Ask a grown-up to turn it on in Guardian mode.";
-  } else if (state.view === "project") {
-    liveStatus = `${savedCount} of ${definition.lines.length} voice clips recorded.`;
+  } else if (state.view === "listen-only" || state.view === "project") {
+    liveStatus = "";
   } else if (state.view === "scene") {
     const selectedState = Object.hasOwn(state.needsRetake, selectedLine.id)
       ? "Needs retake"
@@ -756,12 +770,21 @@ export function DubStudio({
         title={definition.title}
       />
     );
-  } else if (state.view === "locked") {
+  } else if (state.view === "listen-only") {
     content = (
-      <DubEntry
-        error={loadError}
-        onRetryLoad={handleRetryLoad}
-        title={definition.title}
+      <DubListenOnly
+        definition={definition}
+        error={state.error}
+        onTogglePlayback={() => void startPlayback("full")}
+        playback={state.playbackScope === "full"
+          ? state.operation === "playback"
+            ? "playing"
+            : state.operation === "playback-loading"
+              ? "loading"
+              : "idle"
+          : "idle"}
+        playbackButtonRef={fullPlaybackButtonRef}
+        visualLine={visualLine}
       />
     );
   } else if (state.view === "project") {
@@ -826,8 +849,8 @@ export function DubStudio({
             Full video
           </HeaderButton>
         ) : (
-          <HeaderLink aria-label="Back to home" icon={<ChevronLeft strokeWidth={3.2} />} to="/">
-            Back home
+          <HeaderLink aria-label="Back to Nursery rhymes" icon={<ChevronLeft strokeWidth={3.2} />} to={getNurseryRhymesPath()}>
+            Nursery rhymes
           </HeaderLink>
         )}
       </RouteHeader>

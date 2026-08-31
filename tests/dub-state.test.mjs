@@ -10,10 +10,11 @@ import {
 import {
   createInitialDubState,
   firstMissingDubLineIndex,
+  getFirstActionableDubSceneIndex,
   getDubSceneStatus,
   reduceDubState,
 } from "../src/dubbing/dub-state.ts";
-import { OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
+import { DUB_DEFINITIONS, OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
 
 describe("five little ducks dub domain", () => {
   it("authors the complete traditional rhyme as 24 four-second cues", () => {
@@ -81,13 +82,13 @@ describe("five little ducks dub domain", () => {
     assert.equal(Object.hasOwn(state.saved, "line-1"), true);
   });
 
-  it("keeps disabled status in the locked view", () => {
+  it("keeps disabled status in the listen-only view", () => {
     const state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
       recordingEnabled: false,
       savedLineIds: [],
     });
-    assert.equal(state.view, "locked");
+    assert.equal(state.view, "listen-only");
   });
 
   it("resumes at the first missing line and opens exact scene selections", () => {
@@ -131,6 +132,74 @@ describe("five little ducks dub domain", () => {
       }, 0),
       { kind: "needs-retake", recorded: 4 },
     );
+  });
+
+  it("finds the first actionable scene and returns null only when all are ready", () => {
+    assert.equal(getFirstActionableDubSceneIndex({ saved: {}, needsRetake: {} }), 0);
+    assert.equal(getFirstActionableDubSceneIndex({
+      saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
+      needsRetake: {},
+    }), 1);
+    assert.equal(getFirstActionableDubSceneIndex({
+      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+      needsRetake: { "line-9": true },
+    }), 2);
+    assert.equal(getFirstActionableDubSceneIndex({
+      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+      needsRetake: {},
+    }), null);
+  });
+
+  it("opens a retake before an earlier unsaved line in the same scene", () => {
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      recordingEnabled: true,
+      savedLineIds: ["line-1"],
+    });
+    state = reduceDubState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-4" });
+    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    assert.deepEqual([state.selectedSceneIndex, state.selectedLineIndex], [0, 3]);
+  });
+
+  it("uses Old MacDonald's seven-line scene boundaries", () => {
+    const saved = Object.fromEntries(
+      OLD_MACDONALD_DUB.lines.slice(0, 8).map(({ id }) => [id, "saved"]),
+    );
+    assert.equal(
+      getFirstActionableDubSceneIndex({ saved, needsRetake: {} }, OLD_MACDONALD_DUB),
+      1,
+    );
+  });
+
+  it("finds catalog progress and retakes in every authored scene shape", () => {
+    for (const definition of DUB_DEFINITIONS) {
+      const firstSceneSaved = Object.fromEntries(
+        definition.lines
+          .slice(0, definition.linesPerScene)
+          .map(({ id }) => [id, "saved"]),
+      );
+      const expected = definition.lines.length === definition.linesPerScene ? null : 1;
+      assert.equal(
+        getFirstActionableDubSceneIndex(
+          { saved: firstSceneSaved, needsRetake: {} },
+          definition,
+        ),
+        expected,
+        definition.id,
+      );
+
+      let state = reduceDubState(createInitialDubState(definition), {
+        type: "LOADED",
+        recordingEnabled: true,
+        savedLineIds: [],
+      }, definition);
+      state = reduceDubState(state, {
+        type: "MARK_NEEDS_RETAKE",
+        lineId: definition.lines[1].id,
+      }, definition);
+      state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 }, definition);
+      assert.equal(state.selectedLineIndex, 1, `${definition.id}: retake precedence`);
+    }
   });
 
   it("uses the active rhyme's scene size and line count", () => {
@@ -270,7 +339,7 @@ describe("five little ducks dub domain", () => {
     assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
   });
 
-  it("clears storyboard data when Guardian consent is lost", () => {
+  it("loads recording-disabled status into listen-only and clears private state", () => {
     let state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
       recordingEnabled: true,
@@ -282,6 +351,6 @@ describe("five little ducks dub domain", () => {
       recordingEnabled: false,
       savedLineIds: [],
     });
-    assert.deepEqual(state, { ...createInitialDubState(), view: "locked" });
+    assert.deepEqual(state, { ...createInitialDubState(), view: "listen-only" });
   });
 });

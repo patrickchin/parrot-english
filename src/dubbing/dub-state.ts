@@ -2,7 +2,7 @@ import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script.ts";
 import type { DubDefinition } from "./rhyme-catalog.ts";
 
 export type DubSaveRecovery = "record" | "save";
-export type DubView = "loading" | "locked" | "project" | "scene";
+export type DubView = "loading" | "listen-only" | "project" | "scene";
 export type DubOperation =
   | "idle"
   | "guide-playing"
@@ -103,19 +103,27 @@ function canChangeSelection(state: DubState): boolean {
   return !DUB_UNSAFE_OPERATIONS.has(state.operation) && state.saveRecovery !== "save";
 }
 
-function getFirstMissingSceneLineIndex(
-  savedLineIds: ReadonlySet<string>,
+function getSceneEntryLineIndex(
+  state: Pick<DubState, "needsRetake" | "saved">,
   sceneIndex: number,
   definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
 ): number {
   const sceneStart = getSceneStartIndex(sceneIndex, definition);
-  const index = definition.lines.findIndex(
+  const sceneEnd = sceneStart + definition.linesPerScene;
+  const retakeIndex = definition.lines.findIndex(
     ({ id }, lineIndex) =>
       lineIndex >= sceneStart
-      && lineIndex < sceneStart + definition.linesPerScene
-      && !savedLineIds.has(id),
+      && lineIndex < sceneEnd
+      && Object.hasOwn(state.needsRetake, id),
   );
-  return index < 0 ? sceneStart : index;
+  if (retakeIndex >= 0) return retakeIndex;
+  const missingIndex = definition.lines.findIndex(
+    ({ id }, lineIndex) =>
+      lineIndex >= sceneStart
+      && lineIndex < sceneEnd
+      && !hasSavedLine(state.saved, id),
+  );
+  return missingIndex >= 0 ? missingIndex : sceneStart;
 }
 
 function selectScene(
@@ -124,8 +132,8 @@ function selectScene(
   definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
 ): DubState {
   if (!isSceneIndex(sceneIndex, definition)) return state;
-  const selectedLineIndex = getFirstMissingSceneLineIndex(
-    new Set(Object.keys(state.saved)),
+  const selectedLineIndex = getSceneEntryLineIndex(
+    state,
     sceneIndex,
     definition,
   );
@@ -160,6 +168,19 @@ export function getDubSceneStatus(
   return { kind: "in-progress", recorded };
 }
 
+export function getFirstActionableDubSceneIndex(
+  state: Pick<DubState, "needsRetake" | "saved">,
+  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+): number | null {
+  const sceneCount = definition.lines.length / definition.linesPerScene;
+  for (let sceneIndex = 0; sceneIndex < sceneCount; sceneIndex += 1) {
+    if (getDubSceneStatus(state, sceneIndex, definition).kind !== "done") {
+      return sceneIndex;
+    }
+  }
+  return null;
+}
+
 export function firstMissingDubLineIndex(
   savedLineIds: ReadonlySet<string>,
   definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
@@ -185,7 +206,7 @@ export function reduceDubState(
       saved,
       selectedLineIndex,
       selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
-      view: event.recordingEnabled ? "project" : "locked",
+      view: event.recordingEnabled ? "project" : "listen-only",
     };
   }
   if (event.type === "OPEN_SCENE") {

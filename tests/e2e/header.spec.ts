@@ -70,12 +70,12 @@ const routes: HeaderRoute[] = [
   {
     name: "duck dubbing studio",
     path: "/dubs/five-little-ducks?parrotE2eDub=partial",
-    control: { name: "Back to home", role: "link" },
+    control: { name: "Back to Nursery rhymes", role: "link" },
   },
   {
     name: "Old MacDonald dubbing studio",
     path: "/dubs/old-macdonald?parrotE2eDub=partial",
-    control: { name: "Back to home", role: "link" },
+    control: { name: "Back to Nursery rhymes", role: "link" },
   },
 ];
 

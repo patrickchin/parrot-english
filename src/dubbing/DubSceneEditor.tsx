@@ -145,7 +145,7 @@ export function DubSceneEditor({
             onClick={onRecord}
             ref={recordButtonRef}
             size="large"
-            variant="rose"
+            variant="brand"
           >
             {operation === "mic-opening" || operation === "saving"
               ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
@@ -194,10 +194,10 @@ export function DubSceneEditor({
                 </div>
               </>
             ) : (
-              <div className="flex min-h-10 items-center justify-between gap-1 short-wide:min-h-12">
+              <div className={`flex min-h-10 items-center justify-between gap-1 short-wide:min-h-12 ${feedbackError ? "flex-wrap short-wide:flex-nowrap" : ""}`}>
                 <p
                   aria-label={feedbackError ? error : undefined}
-                  className={`m-0 min-w-0 flex-1 text-sm font-black short-wide:text-xs ${feedbackError ? "text-red-800 short-wide:line-clamp-2 short-wide:leading-tight" : operation === "mic-opening" || operation === "saving" ? "truncate whitespace-nowrap text-brand-rose" : "truncate whitespace-nowrap text-slate-600"}`}
+                  className={`m-0 min-w-0 text-sm font-black short-wide:text-xs ${feedbackError ? "w-full flex-none break-words leading-tight text-red-800 short-wide:w-auto short-wide:flex-1" : "flex-1 truncate whitespace-nowrap " + (operation === "mic-opening" || operation === "saving" ? "text-brand-rose" : "text-slate-600")}`}
                   role={feedbackError ? "alert" : undefined}
                 >
                   {feedbackLabel}
@@ -209,7 +209,7 @@ export function DubSceneEditor({
                     </TextButton>
                   ) : null}
                   {pendingTake && saveRecovery === "save" ? (
-                    <TextButton aria-label="Save again" className="relative z-0 min-h-10 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:min-h-12 short-wide:min-w-12 short-wide:text-sm" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save</TextButton>
+                    <TextButton aria-label="Save again" className="relative z-0 min-h-12 min-w-12 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save</TextButton>
                   ) : null}
                 </div>
               </div>
