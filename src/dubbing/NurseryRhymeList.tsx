@@ -1,7 +1,12 @@
 import { ChevronLeft } from "lucide-react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { InteractiveCardLink } from "../shared/ui";
+import { retryOriginalImage } from "../shared/responsive-image";
+import { dubArtworkSrcSet } from "./dub-artwork";
 import { DUB_DEFINITIONS } from "./rhyme-catalog";
+
+const RHYME_CARD_IMAGE_SIZES =
+  "(max-width: 519px) calc(100vw - 1.5rem), (max-width: 1023px) calc((100vw - 3rem) / 2), min(calc((100vw - 10rem) / 3), 25rem)";
 
 export function NurseryRhymeList() {
   return (
@@ -25,7 +30,7 @@ export function NurseryRhymeList() {
               return (
                 <InteractiveCardLink className="grid min-h-full min-w-0 grid-rows-[auto_1fr] overflow-hidden text-left" key={definition.id} to={definition.route}>
                   <span className="aspect-[3/2] min-h-0 overflow-hidden border-b-4 border-white">
-                    <img alt="" className="size-full object-cover" decoding="async" height={image.height} src={image.src} width={image.width} />
+                    <img alt="" className="size-full object-cover" decoding="async" height={image.height} onError={({ currentTarget }) => retryOriginalImage(currentTarget)} sizes={RHYME_CARD_IMAGE_SIZES} src={image.src} srcSet={dubArtworkSrcSet(image.src)} width={image.width} />
                   </span>
                   <span className="grid content-between gap-3 p-3.5 sm:p-4">
                     <strong className="min-w-0 text-xl leading-tight text-brand-navy sm:text-2xl">{definition.title}</strong>

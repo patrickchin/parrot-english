@@ -1,6 +1,7 @@
 import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
 import { ActionButton } from "../shared/ui";
+import { retryOriginalImage } from "../shared/responsive-image";
 import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import {
   getFirstActionableDubSceneIndex,
@@ -9,7 +10,11 @@ import {
   type DubState,
 } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
+import { dubArtworkSrcSet } from "./dub-artwork";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
+
+const DUB_THUMBNAIL_IMAGE_SIZES =
+  "(min-width: 560px) and (max-height: 620px) 1px, (max-width: 1023px) calc((100vw - 3.75rem) / 2), 12rem";
 
 export type DubProjectHomeProps = {
   activeLine: DubLine;
@@ -211,7 +216,10 @@ export function DubProjectHome({
                     decoding="async"
                     height={artwork.height}
                     loading="lazy"
+                    onError={({ currentTarget }) => retryOriginalImage(currentTarget)}
+                    sizes={DUB_THUMBNAIL_IMAGE_SIZES}
                     src={artwork.src}
+                    srcSet={dubArtworkSrcSet(artwork.src)}
                     width={artwork.width}
                   />
                   <span className="grid min-w-0 gap-0.5 px-1 short-wide:grid-cols-[auto_minmax(0,1fr)] short-wide:items-center short-wide:gap-x-1 short-wide:gap-y-px short-wide:px-0">

@@ -5,6 +5,10 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import test, { after } from "node:test";
 import { createServer } from "vite";
+import {
+  STATIC_MEDIA_ASSETS,
+  createStaticMediaPublishPlan,
+} from "../scripts/static-media.mjs";
 
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const expectedLessonIds = [
@@ -47,6 +51,12 @@ const stageFixture = {
     src: "https://media.parrotbook.com/assets/v3/full-scenes/02-garden-colors/01-colorful-flowers.webp",
   },
 };
+const staticMediaPlan = createStaticMediaPublishPlan(STATIC_MEDIA_ASSETS, {
+  bucket: "parrot-english-media",
+  mediaOrigin: "https://media.parrotbook.com",
+  sourceVersion: 2,
+  targetVersion: 3,
+});
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -143,6 +153,42 @@ test("every ready-made lesson has one five-scene artwork set", async () => {
   );
 });
 
+test("static media publishes both responsive widths for every full scene", () => {
+  const expectedTargets = new Set();
+
+  for (const scene of getFullSceneLessons().flatMap(({ scenes }) => scenes)) {
+    const canonicalPath = new URL(scene.src).pathname.replace("/assets/v3/", "");
+    for (const width of [384, 768]) {
+      const responsivePath = canonicalPath.replace(/\.webp$/, `-${width}.webp`);
+      expectedTargets.add(`assets/v3/${responsivePath}`);
+      assert.deepEqual(
+        staticMediaPlan.find(({ targetKey }) =>
+          targetKey === `assets/v3/${responsivePath}`),
+        {
+          bucket: "parrot-english-media",
+          cacheControl: "public, max-age=31536000, immutable",
+          contentType: "image/webp",
+          path: responsivePath,
+          resizeWidth: width,
+          sourceKey: `assets/v2/${canonicalPath}`,
+          sourceUrl: `https://media.parrotbook.com/assets/v2/${canonicalPath}`,
+          targetKey: `assets/v3/${responsivePath}`,
+          targetUrl: `https://media.parrotbook.com/assets/v3/${responsivePath}`,
+        },
+      );
+    }
+  }
+
+  assert.deepEqual(
+    new Set(staticMediaPlan
+      .filter(({ path, resizeWidth }) =>
+        resizeWidth && path.startsWith("full-scenes/"),
+      )
+      .map(({ targetKey }) => targetKey)),
+    expectedTargets,
+  );
+});
+
 test("every ready-made scene declares a scene-aware learning-panel composition", () => {
   const scenes = getFullSceneLessons().flatMap((lesson) => lesson.scenes);
   const layouts = new Set();
@@ -228,10 +274,20 @@ test("boxed lesson artwork renders as one labelled image without experiment chro
   const html = renderStage(stageFixture);
   const alt = escapeRegExp(escapeHtmlAttribute(stageFixture.image.alt));
   const src = escapeRegExp(escapeHtmlAttribute(stageFixture.image.src));
+  const srcSet = escapeRegExp(escapeHtmlAttribute(
+    `${stageFixture.image.src.replace(/\.webp$/, "-384.webp")} 384w, ` +
+      `${stageFixture.image.src.replace(/\.webp$/, "-768.webp")} 768w, ` +
+      `${stageFixture.image.src} 1672w`,
+  ));
 
   assert.match(html, /aria-label="Lesson artwork"/);
   assert.match(html, /role="region"/);
   assert.match(html, new RegExp(`<img[^>]*alt="${alt}"[^>]*src="${src}"`));
+  assert.match(html, new RegExp(`<img[^>]*srcSet="${srcSet}"`));
+  assert.match(
+    html,
+    /<img[^>]*sizes="\(max-width: 559px\) calc\(100vw - 1rem\), \(max-height: 480px\) 60vw, calc\(100vw - 3rem\)"/,
+  );
   assert.doesNotMatch(html, /Landscape|Portrait|Wide|Natural size/);
   assert.equal((html.match(/<img\b/g) ?? []).length, 1);
   assert.doesNotMatch(html, /data-character=/);

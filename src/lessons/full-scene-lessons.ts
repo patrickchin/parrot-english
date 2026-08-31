@@ -10,6 +10,16 @@ export type FullSceneLesson = {
   scenes: FullSceneImage[];
 };
 
+export const FULL_SCENE_IMAGE_SIZES =
+  "(max-width: 559px) calc(100vw - 1rem), (max-height: 480px) 60vw, calc(100vw - 3rem)";
+
+export function fullSceneImageSrcSet(src: string) {
+  return [384, 768]
+    .map((width) => `${src.replace(/\.webp$/, `-${width}.webp`)} ${width}w`)
+    .concat(`${src} 1672w`)
+    .join(", ");
+}
+
 function scene(
   src: string,
   alt: string,

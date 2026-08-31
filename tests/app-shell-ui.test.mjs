@@ -112,6 +112,10 @@ test("home menu prioritizes the five learner activities", () => {
   assert.match(html, />Nursery rhymes</);
   assert.match(html, />Word game</);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
+  assert.match(
+    html,
+    /<img[^>]*sizes="\(max-width: 767px\) calc\(\(100vw - 3.25rem\) \/ 2\), \(max-width: 1279px\) calc\(\(100vw - 7rem\) \/ 3\), min\(calc\(\(100vw - 8rem\) \/ 5\), 15rem\)"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp"[^>]*srcSet="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-768\.webp 768w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp 1536w"/,
+  );
   assert.doesNotMatch(
     html,
     /Listen and speak\.|Say hello and chat\.|Listen to a story\.|Tap one\./,
@@ -140,6 +144,11 @@ test("home menu prioritizes the five learner activities", () => {
   }
   assert.match(nursery, />Ask a grown-up before recording\.<\/p>/);
   assert.doesNotMatch(nursery, /Sing &amp; record/);
+  assert.equal((nursery.match(/<img[^>]*srcSet="[^"]+"/g) ?? []).length, 6);
+  assert.equal(
+    (nursery.match(/sizes="\(max-width: 519px\) calc\(100vw - 1.5rem\), \(max-width: 1023px\) calc\(\(100vw - 3rem\) \/ 2\), min\(calc\(\(100vw - 10rem\) \/ 3\), 25rem\)"/g) ?? []).length,
+    6,
+  );
 });
 
 test("word-game library renders six topic choices and a home link", () => {
