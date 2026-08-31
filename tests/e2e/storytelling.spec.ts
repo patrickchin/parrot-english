@@ -556,6 +556,50 @@ test("the level picker keeps all 25 stories available across five choices", asyn
   ).toBe(true);
 });
 
+for (const viewport of [
+  { height: 844, name: "phone", width: 390 },
+  { height: 800, name: "desktop", width: 1280 },
+]) {
+  test(`story shelf typography descends from page to shelf to card on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/stories");
+
+    const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+    const headings = [
+      page.getByRole("heading", { level: 1, name: "Pick a story" }),
+      shelf.getByRole("heading", {
+        level: 2,
+        name: "Level 1 · Words & pictures",
+      }),
+      shelf.getByRole("heading", { level: 3 }).first(),
+    ];
+    await Promise.all(headings.map((heading) => expect(heading).toBeVisible()));
+    await expect(headings[0]).toBeFocused();
+    expect(
+      await headings[0].evaluate(
+        (element) => getComputedStyle(element).outlineStyle,
+      ),
+    ).toBe("none");
+
+    const fontSizes = await Promise.all(
+      headings.map((heading) =>
+        heading.evaluate((element) =>
+          Number.parseFloat(getComputedStyle(element).fontSize),
+        ),
+      ),
+    );
+    expect(fontSizes[0]).toBeGreaterThan(fontSizes[1]);
+    expect(fontSizes[1]).toBeGreaterThan(fontSizes[2]);
+
+    const boxes = await Promise.all(headings.map((heading) => heading.boundingBox()));
+    expect(boxes.every(Boolean)).toBe(true);
+    expect(boxes[0]!.y + boxes[0]!.height).toBeLessThan(boxes[1]!.y);
+    expect(boxes[1]!.y + boxes[1]!.height).toBeLessThan(boxes[2]!.y);
+  });
+}
+
 test("the saved learner level is the only recommended shelf and exposes no grown-up internals", async ({
   page,
 }) => {
@@ -650,9 +694,11 @@ test("only the active shelf loads covers and its first cover loads eagerly", asy
   );
   await expect
     .poll(() =>
-      redBallCover.evaluate((element: HTMLImageElement) =>
-        new URL(element.currentSrc).pathname,
-      ),
+      redBallCover.evaluate((element: HTMLImageElement) => {
+        return element.currentSrc
+          ? new URL(element.currentSrc).pathname
+          : "";
+      }),
     )
     .toMatch(/\/assets\/v3\/stories\/the-red-ball-cover-(384|768)\.webp$/);
   await expect(
@@ -1614,7 +1660,7 @@ test("finishing a prototype uses story-owned completion copy", async ({ page }) 
   await expect(
     complete.getByRole("heading", { name: "Great job!" }),
   ).toBeVisible();
-  await expect(complete.getByText("The end!", { exact: true })).toBeVisible();
+  await expect(complete.getByText("The end!", { exact: true })).toHaveCount(0);
   await expect(complete.getByText("The red ball is home.", { exact: true })).toBeVisible();
   await expect(
     complete.getByRole("img", {

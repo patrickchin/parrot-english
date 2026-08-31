@@ -21,6 +21,15 @@
 - `AuthGate` owns the account header through `AccountHeader`. Routes compose
   `RouteHeader` with `HeaderButton` or `HeaderLink`; they must not redefine
   header sizing, typography, colors, or shadows.
+- Give every route one route-level `h1`.
+- Do not use decorative eyebrows or kickers that repeat the brand, audience,
+  mode, or section.
+- Keep helper copy only when it adds information not already supplied by the
+  title, navigation, learner selector, or first control.
+- Use section and card headings only for real structure, with a descending
+  visual hierarchy.
+- Preserve learner targets, progress, safety, consent, privacy, warnings,
+  errors, and live statuses when simplifying UI.
 - Build lesson-player presentation from `src/lessons/LessonPlayerUi.tsx`; its HUD,
   characters, speech, start action, controls, and errors are domain components
   that use Tailwind and the shared control primitives.

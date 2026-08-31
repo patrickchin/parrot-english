@@ -229,7 +229,7 @@ describe("personalized story art UI", () => {
       storyTitle: "The Red Ball",
     });
     const lockedText = textFromMarkup(locked);
-    assert.match(locked, /guardian consent/i);
+    assert.doesNotMatch(locked, />\s*Guardian consent\s*</i);
     assert.match(locked, /I am 18 or older/i);
     assert.match(lockedText, /look like Mia/);
     assert.match(lockedText, /I am Mia's guardian/i);

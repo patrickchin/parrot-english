@@ -60,8 +60,6 @@ function GuardianDubbingSettingsShell({
   children: ReactNode;
   target: GuardianLearnerTargetState;
 }) {
-  const managedLearnerName = target.learnerName?.trim() || "Learner";
-
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
       <RouteHeader>
@@ -80,15 +78,6 @@ function GuardianDubbingSettingsShell({
             Voice dubbing
           </h1>
           <GuardianLearnerTarget state={target} />
-          {target.phase === "ready" && target.learnerName !== null ? (
-            <p
-              className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-              dir="ltr"
-            >
-              Manage <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s private voice clips for all six nursery rhymes.
-            </p>
-          ) : null}
         </header>
 
         {children}
@@ -216,16 +205,13 @@ function GuardianDubbingSettingsContent({
             >
               Voice dubbing is on
             </h2>
-            <p className="m-0 font-extrabold text-brand-blue">
-              {savedCount} of {DUB_LINE_COUNT} clips saved across all six
-              nursery rhymes
-            </p>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
               dir="ltr"
             >
+              {savedCount} of {DUB_LINE_COUNT} clips saved;{" "}
               <BidiLearnerName learnerName={managedLearnerName} /> can record
-              and replace lines in all six nursery rhymes.
+              and replace lines across all six nursery rhymes.
             </p>
           </div>
           <div className="grid gap-3">

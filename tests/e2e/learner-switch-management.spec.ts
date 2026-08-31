@@ -79,6 +79,9 @@ test("Manage learners is CRUD-only and deletion of an inactive learner persists"
   const main = page.getByRole("main");
 
   await expect(main.getByRole("heading", { name: "Manage learners" })).toBeVisible();
+  await expect(
+    main.getByText("Add, update, or remove learner profiles.", { exact: true }),
+  ).toHaveCount(0);
   await expect(main.getByRole("radio")).toHaveCount(0);
   await expect(main.getByRole("button", { name: /Use .* learner mode/ })).toHaveCount(0);
   await expect(main).not.toContainText(/Learner mode|Current learner|Managing /);

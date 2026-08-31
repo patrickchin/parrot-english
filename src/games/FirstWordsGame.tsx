@@ -176,9 +176,6 @@ export function FirstWordsGame() {
 
       <section className="mx-auto grid min-h-full w-full max-w-7xl content-center gap-3 py-2 sm:gap-4 md:h-full md:min-h-0 md:grid-rows-[auto_minmax(0,1fr)] md:content-stretch md:py-0">
         <header className="grid gap-1 text-center">
-          <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue sm:text-sm">
-            First English words
-          </p>
           <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink sm:text-5xl lg:text-6xl">
             Word game
           </h1>

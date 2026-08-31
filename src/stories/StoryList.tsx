@@ -69,15 +69,9 @@ export function StoryList() {
       </RouteHeader>
 
       <header className="mx-auto mb-4 grid w-full max-w-3xl gap-1.5 text-center md:mb-6">
-        <p className="m-0 text-xs font-black uppercase tracking-[0.16em] text-brand-blue sm:text-sm">
-          Story time
-        </p>
-        <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink sm:text-5xl md:text-6xl">
+        <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-5xl md:text-6xl">
           Pick a story
         </h1>
-        <p className="mx-auto m-0 max-w-2xl text-sm font-extrabold leading-snug text-brand-blue sm:text-lg">
-          Tap a picture. I can read it to you.
-        </p>
       </header>
 
       <section
@@ -85,14 +79,8 @@ export function StoryList() {
         className="mx-auto grid w-full max-w-7xl gap-4 sm:gap-5"
       >
         <div className="rounded-3xl border-4 border-white bg-white/90 p-2 shadow-card sm:p-3">
-          <h2
-            className="m-0 px-2 pb-2 text-center text-lg leading-none text-brand-navy sm:text-xl"
-            id="story-shelf-picker-heading"
-          >
-            Choose a story level
-          </h2>
           <SegmentedControl
-            aria-labelledby="story-shelf-picker-heading"
+            aria-label="Choose a story level"
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
             role="tablist"
           >
@@ -157,9 +145,6 @@ function StoryShelfSection({
         >
           {level.label}
         </h2>
-        <p className="m-0 text-xs font-extrabold leading-snug text-brand-blue sm:text-sm">
-          {level.description}
-        </p>
         {recommendedFor ? (
           <p className="m-0 justify-self-center rounded-full bg-brand-yellow px-3 py-1 text-xs font-black text-brand-navy sm:text-sm">
             Recommended for{" "}
@@ -186,7 +171,7 @@ function StoryShelfSection({
 
               <div className="grid content-between gap-3 p-3.5 sm:p-4">
                 <h3
-                  className="m-0 text-2xl leading-tight text-brand-ink"
+                  className="m-0 text-lg leading-tight text-brand-ink sm:text-xl"
                   id={`story-card-${story.id}`}
                 >
                   {story.title}

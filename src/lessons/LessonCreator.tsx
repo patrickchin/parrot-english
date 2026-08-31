@@ -204,10 +204,6 @@ function LessonCreatorLayout({
             Create a custom lesson
           </h1>
           <GuardianLearnerTarget state={target} />
-          <p className="m-0 mt-1 text-lg font-bold text-slate-600">
-            Grown-up tools: start with AI or import a lesson, then shape every
-            detail in the visual editor.
-          </p>
         </header>
         {children}
       </Card>

@@ -65,7 +65,7 @@ export function GuardianDashboardView({
               className="m-0 text-3xl leading-tight text-brand-navy"
               id="manage-learners-heading"
             >
-              Manage learners
+              Learner profiles
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
               Add, edit, or delete learner profiles. You’ll choose a learner
@@ -85,7 +85,7 @@ export function GuardianDashboardView({
           className="grid gap-4"
         >
           <h2
-            className="m-0 text-2xl leading-tight text-brand-navy"
+            className="m-0 text-3xl leading-tight text-brand-navy"
             id="learning-content-heading"
           >
             Learning &amp; content

@@ -30,9 +30,6 @@ export function AccountPrivacyPage() {
 
       <div className="mx-auto grid w-full max-w-3xl gap-6">
         <header className="grid gap-2 text-center">
-          <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-blue">
-            For grown-ups
-          </p>
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
             Account &amp; privacy
           </h1>

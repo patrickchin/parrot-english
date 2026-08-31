@@ -156,10 +156,6 @@ export function PersonalizedStoryArtPanel({
       <div className="grid gap-4 sm:grid-cols-[minmax(0,1.1fr)_minmax(15rem,0.9fr)] sm:items-start short-wide:grid-cols-1">
         <div className="grid gap-3">
           <div className="grid gap-1">
-            <p className="m-0 inline-flex items-center gap-2 text-xs font-black uppercase tracking-wider text-brand-blue">
-              <ShieldCheck aria-hidden="true" className="size-4" />
-              Guardian consent
-            </p>
             <h2
               className="m-0 min-w-0 text-xl leading-tight text-brand-navy [overflow-wrap:anywhere] sm:text-2xl"
               dir="ltr"

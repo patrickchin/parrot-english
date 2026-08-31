@@ -467,7 +467,7 @@ test("learner lesson HUD excludes sign-out recovery controls", async ({
     .getByRole("region", { name: "Join in" })
     .filter({ hasText: "It is up high!" });
   await expect(speech.getByText("It is up high!", { exact: true })).toBeVisible();
-  await expect(speech.getByRole("status")).toHaveText("Voices are joining in");
+  await expect(speech.getByRole("status")).toHaveCount(0);
   await waitForVisualAssets(page);
   await applyTextSpacing(page);
 

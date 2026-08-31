@@ -370,12 +370,18 @@ test("guardian mode deletes a complete private dub and revokes consent", async (
   await expect(
     page.getByRole("heading", { name: "Voice dubbing is on" }),
   ).toBeVisible();
-  await expect(
+  await expect.soft(
     page.getByText(
-      "81 of 81 clips saved across all six nursery rhymes",
+      "81 of 81 clips saved; Mia can record and replace lines across all six nursery rhymes.",
       { exact: true },
     ),
   ).toBeVisible();
+  await expect.soft(
+    page.getByText(
+      "Manage Mia's private voice clips for all six nursery rhymes.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
   await page
     .getByRole("button", {
       name: "Turn off Mia's voice dubbing and delete all nursery-rhyme clips",

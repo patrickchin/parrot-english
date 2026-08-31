@@ -10904,7 +10904,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       applicationRoutesInMemory({ initialEntries: ["/lessons"] }),
     );
-    text(/Listen\. Then speak\./);
+    text(/Pick a lesson/);
+    noText(/Listen\. Then speak\./);
     await click(document.querySelector('a[aria-label^="Start lesson:"]'));
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));
     assert.ok(
@@ -10912,7 +10913,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await click(button("Back to lesson list"));
     await waitFor(() => assert.equal(currentRoute().path, "/lessons"));
-    text(/Listen\. Then speak\./);
+    text(/Pick a lesson/);
+    noText(/Listen\. Then speak\./);
 
     await click(document.querySelector('a[aria-label^="Start lesson:"]'));
     await waitFor(() => assert.equal(currentRoute().path, lessonScenePath(1)));

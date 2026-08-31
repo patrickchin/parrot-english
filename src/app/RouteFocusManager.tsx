@@ -26,6 +26,7 @@ export function RouteFocusManager() {
       ) {
         return;
       }
+      heading.dataset.routeFocusTarget = "";
       heading.tabIndex = -1;
       heading.focus({ preventScroll: true });
     });

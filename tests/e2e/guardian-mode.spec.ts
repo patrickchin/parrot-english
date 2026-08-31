@@ -152,6 +152,9 @@ test("incorrect password keeps learner mode and the unlock dialog open", async (
   const dialog = await openGuardianUnlock(page);
   const password = dialog.getByLabel("Password");
 
+  await expect(
+    dialog.getByText("For grown-ups", { exact: true }),
+  ).toHaveCount(0);
   await expect(password).toBeFocused();
   await password.fill("wrong-password");
   await dialog.getByRole("button", { name: "Unlock guardian mode" }).click();
@@ -279,7 +282,7 @@ test("successful unlock opens guardian management and announces the fifteen-minu
   ).toHaveText("Guardian mode unlocked for 15 minutes");
 
   for (const heading of [
-    "Manage learners",
+    "Learner profiles",
     "Learning & content",
     "My Lessons",
     "Story settings",
@@ -976,14 +979,13 @@ for (const viewport of [
     const controls = page.getByRole("navigation", {
       name: "Lesson playback controls",
     });
-    await expect(status).toHaveText("Voices are joining in");
+    await expect(status).toHaveCount(0);
     for (const element of [
       profile,
       back,
       hud,
       speech,
       phrase,
-      status,
       controls,
     ]) {
       await expectInsideViewport(element, viewport);

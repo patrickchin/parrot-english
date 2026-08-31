@@ -1204,6 +1204,9 @@ test("Account & privacy explains caregiver facts before optional technical detai
     accountPage.getByRole("heading", { level: 1, name: "Account & privacy" }),
   ).toBeFocused();
   await expect(
+    accountPage.getByText("For grown-ups", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
     accountPage.getByRole("heading", { name: "How Parrot uses AI" }),
   ).toBeVisible();
   await expect(

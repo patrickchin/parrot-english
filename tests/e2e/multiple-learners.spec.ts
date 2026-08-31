@@ -1576,7 +1576,7 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
   await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
   await expect(
-    page.getByRole("heading", { name: "Lesson complete!" }),
+    page.getByRole("heading", { name: "You finished Garden Help!" }),
   ).toBeVisible();
   await expect
     .poll(async () => (await recordingFor("learner-mia"))?.pendingUploads)
@@ -1590,7 +1590,7 @@ test("rejects Mia's queued lesson recording after the Guardian switches to Noah"
     .poll(async () => (await mediaSnapshot()).recorderStops.length)
     .toBe(2);
   await expect(
-    page.getByRole("heading", { name: "Lesson complete!" }),
+    page.getByRole("heading", { name: "You finished Garden Help!" }),
   ).toBeVisible();
   await expect(
     page.getByText("Saving your voices…", { exact: true }),

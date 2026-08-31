@@ -760,7 +760,6 @@ async function lessonShelfHeadingGeometry(page: Page, heading: Locator) {
     back: await roundedLocatorBox(page.getByRole("link", { name: "Back to home" })),
     firstLesson: await roundedLocatorBox(firstLessonLink(page)),
     heading: await roundedLocatorBox(heading),
-    subtitle: await roundedLocatorBox(page.getByText("Listen. Then speak.", { exact: true })),
     text,
     ...presentation,
   };
@@ -1354,6 +1353,37 @@ test("retained pending focus stays visible", async ({ page }) => {
   } finally {
     releaseRetry();
   }
+});
+
+test("route reading focus stays visually quiet outside forced colors", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 844, width: 390 });
+  await page.goto(guardianPath("/guardian"));
+  const heading = page.getByRole("heading", {
+    exact: true,
+    level: 1,
+    name: "Guardian dashboard",
+  });
+
+  await expect(heading).toBeFocused();
+  await expect(heading).toHaveAttribute("data-route-focus-target", "");
+  await expect
+    .poll(() =>
+      heading.evaluate((element) => getComputedStyle(element).outlineStyle),
+    )
+    .toBe("none");
+
+  await page.emulateMedia({ forcedColors: "active" });
+  const forcedColorsIndicator = await heading.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      outlineStyle: style.outlineStyle,
+      outlineWidth: Number.parseFloat(style.outlineWidth),
+    };
+  });
+  expect(forcedColorsIndicator.outlineStyle).not.toBe("none");
+  expect(forcedColorsIndicator.outlineWidth).toBeGreaterThanOrEqual(2);
 });
 
 test("forced colors keeps a visible keyboard focus indicator", async ({ page }) => {

@@ -345,11 +345,8 @@ export function StoryReader({
               className="size-14 rounded-full bg-brand-green p-3 text-white shadow-control-green"
             />
             <div>
-              <p className="m-0 text-sm font-black uppercase tracking-wider text-brand-green">
-                The end!
-              </p>
               <h1
-                className="mx-auto mb-0 mt-1 w-fit text-3xl leading-none text-brand-ink outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-4xl"
+                className="mx-auto mb-0 mt-0 w-fit text-3xl leading-none text-brand-ink outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2 sm:text-4xl"
                 ref={completionHeadingRef}
                 tabIndex={-1}
               >
@@ -599,12 +596,6 @@ export function StoryReader({
               className="relative grid min-w-0 grid-cols-2 gap-1 rounded-xl bg-sky-100 px-1"
               role="group"
             >
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-100 px-1.5 text-[0.625rem] font-black uppercase leading-none tracking-wider text-brand-blue"
-              >
-                Listen
-              </span>
               <ActionButton
                 aria-label={narrationLabel}
                 className={cx(

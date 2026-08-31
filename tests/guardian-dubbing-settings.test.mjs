@@ -127,7 +127,6 @@ test("guardian settings owns voice consent and deletion", () => {
   assert.match(disabledText, /I am Mia's guardian/);
   assert.match(disabledText, /Mia's private voice clips/);
   assert.match(disabledText, /all voice-dubbing rhymes/i);
-  assert.match(disabledText, /all six nursery rhymes/i);
   assert.match(disabled, /type="checkbox"/);
   assert.match(disabled, /<button[^>]*disabled=""[^>]*>Allow voice dubbing/);
 
@@ -135,11 +134,9 @@ test("guardian settings owns voice consent and deletion", () => {
   const enabledText = textFromMarkup(enabled);
   assert.match(
     enabledText,
-    new RegExp(`4 of ${DUB_LINE_COUNT} clips saved across all six nursery rhymes`),
-  );
-  assert.match(
-    enabledText,
-    /record and replace lines in all six nursery rhymes/,
+    new RegExp(
+      `4 of ${DUB_LINE_COUNT} clips saved; Mia can record and replace lines across all six nursery rhymes\\.`,
+    ),
   );
   assert.match(enabledText, /Back to guardian dashboard/);
   assert.doesNotMatch(enabledText, /Manage learners/);
@@ -307,7 +304,9 @@ test("loads and totals saved clips from every voice-dubbing rhyme", async () => 
   await waitFor(() =>
     assert.match(
       container.textContent,
-      new RegExp(`9 of ${DUB_LINE_COUNT} clips saved across all six nursery rhymes`),
+      new RegExp(
+        `9 of ${DUB_LINE_COUNT} clips saved; Mia can record and replace lines across all six nursery rhymes\\.`,
+      ),
     ),
   );
   assert.deepEqual(
