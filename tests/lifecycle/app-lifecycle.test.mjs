@@ -55,6 +55,7 @@ let useLearnerSelection;
 let usePeppaConversation;
 let createAuthGate;
 let createGuardianAccessProvider;
+let notifyGuardianAccessRequired;
 let useGuardianAccess;
 let GuardianDashboard;
 let GuardianLearnerProfiles;
@@ -64,6 +65,7 @@ let RouteFocusManager;
 let useAccountExperience;
 let useClearProfileAccountAction;
 let useProfileAccountAction;
+let dubDefinitions;
 let firstLesson;
 let firstLessonId;
 
@@ -78,7 +80,11 @@ before(async () => {
     useClearProfileAccountAction,
     useProfileAccountAction,
   } = await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
-  ({ createGuardianAccessProvider, useGuardianAccess } =
+  ({
+    createGuardianAccessProvider,
+    notifyGuardianAccessRequired,
+    useGuardianAccess,
+  } =
     await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
   ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
@@ -111,6 +117,9 @@ before(async () => {
     .catch(() => ({})));
   ({ GuardianLearnerProfiles } = await vite.ssrLoadModule(
     "/src/learner-profile/GuardianLearnerProfiles.tsx",
+  ));
+  ({ DUB_DEFINITIONS: dubDefinitions } = await vite.ssrLoadModule(
+    "/src/dubbing/rhyme-catalog.ts",
   ));
   const catalog = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
@@ -1065,6 +1074,11 @@ function RouterHistoryControls() {
       "button",
       { onClick: () => navigate(lessonScenePath(2)), type: "button" },
       "Open scene 2",
+    ),
+    createElement(
+      "button",
+      { onClick: () => navigate("/profile"), type: "button" },
+      "Open learner profile",
     ),
     createElement(
       "button",
@@ -2512,7 +2526,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Story settings/);
   });
 
-  it("locked guardian routes render only the mode-switch screen", async () => {
+  it("locked guardian routes switch modes automatically without rendering a prompt", async () => {
+    let unlockCalls = 0;
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2523,6 +2538,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return { mode: "learner" };
           },
           async unlockGuardianAccess() {
+            unlockCalls += 1;
             return {
               expiresAt: "2099-01-01T00:00:00.000Z",
               mode: "guardian",
@@ -2533,8 +2549,47 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => text(/Switch to guardian mode/));
-    noText(/Save changes|Redo setup questions/);
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => text(/Save changes/));
+    noText(/Switch to guardian mode/);
+    assert.equal(currentRoute().path, "/profile");
+  });
+
+  it("keeps an automatic Guardian access failure on the requested route and retries", async () => {
+    let unlockCalls = 0;
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            unlockCalls += 1;
+            if (unlockCalls === 1) {
+              throw new Error(
+                "Guardian access could not be checked. Please try again.",
+              );
+            }
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: "/profile",
+      }),
+    );
+
+    await waitFor(() => text(/Guardian tools did not open/));
+    assert.equal(currentRoute().path, "/profile");
+    noText(/Save changes|Switch to guardian mode/);
+
+    await click(button("Try again"));
+    await waitFor(() => text(/Save changes/));
+    assert.equal(unlockCalls, 2);
     assert.equal(currentRoute().path, "/profile");
   });
 
@@ -2593,7 +2648,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Save changes|Redo setup questions|Switch to guardian mode/);
   });
 
-  it("resumes a locked guardian deep link at the same URL and cancels home", async () => {
+  it("resumes a locked guardian deep link automatically at the same URL", async () => {
     const api = {
       async loadGuardianAccess() {
         return { mode: "learner" };
@@ -2610,22 +2665,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     };
     await mountStrict(modeRoutesInMemory({ api, initialEntry: "/profile" }));
-    await waitFor(() => text(/Switch to guardian mode/));
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    await click(button("Switch to guardian mode"));
     await waitFor(() => text(/Save changes/));
+    noText(/Switch to guardian mode/);
     assert.equal(currentRoute().path, "/profile");
-
-    await cleanupMountedRoots();
-    document.body.replaceChildren();
-    await mountStrict(modeRoutesInMemory({ api, initialEntry: "/profile" }));
-    await waitFor(() => text(/Switch to guardian mode/));
-    await click(button("Cancel"));
-    await waitFor(() => assert.equal(currentRoute().path, "/"));
   });
 
-  it("replaces expired guardian content with the same-URL unlock screen", async () => {
+  it("restores expired guardian content automatically at the same URL", async () => {
     let expire = () => assert.fail("Expected guardian expiry to be scheduled.");
+    let unlockCalls = 0;
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2639,7 +2686,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return { mode: "learner" };
           },
           async unlockGuardianAccess() {
-            return { mode: "learner" };
+            unlockCalls += 1;
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
           },
         },
         initialEntry: "/profile",
@@ -2652,9 +2703,58 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Save changes/));
     await act(async () => expire());
-    await waitFor(() => text(/Switch to guardian mode/));
-    noText(/Save changes|Redo setup questions/);
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => text(/Save changes/));
+    noText(/Switch to guardian mode/);
     assert.equal(currentRoute().path, "/profile");
+  });
+
+  it("stops automatic recovery after a protected route rejects the refreshed access", async () => {
+    let serverMode = "guardian";
+    let unlockCalls = 0;
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return serverMode === "guardian"
+              ? {
+                  expiresAt: "2099-01-01T00:00:00.000Z",
+                  mode: "guardian",
+                }
+              : { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            serverMode = "learner";
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            unlockCalls += 1;
+            serverMode = "guardian";
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: "/profile",
+      }),
+    );
+    await waitFor(() => text(/Save changes/));
+
+    await act(async () => notifyGuardianAccessRequired());
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => text(/Save changes/));
+
+    await act(async () => notifyGuardianAccessRequired());
+    await waitFor(() => text(/Guardian tools did not open/));
+    await flush();
+    await flush();
+    assert.equal(unlockCalls, 1);
+    assert.equal(currentRoute().path, "/profile");
+
+    await click(button("Try again"));
+    await waitFor(() => assert.equal(unlockCalls, 2));
+    await waitFor(() => text(/Save changes/));
   });
 
   it("focuses the guardian dashboard heading after access resolves", async () => {
@@ -2721,9 +2821,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(currentRoute().path, "/lessons");
   });
 
-  it("dashboard awaits lock and exits route work before switching profiles", async () => {
+  it("dashboard awaits lock and keeps fresh Guardian routes in learner mode", async () => {
     const lock = deferred();
     const exitRoutes = [];
+    let unlockCalls = 0;
     installModeSwitchRosterFetch();
     await mountStrict(
       modeRoutesInMemory({
@@ -2738,7 +2839,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return lock.promise;
           },
           async unlockGuardianAccess() {
-            return { mode: "learner" };
+            unlockCalls += 1;
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
           },
         },
         initialEntry: "/guardian",
@@ -2755,7 +2860,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await act(async () => lock.resolve({ mode: "learner" }));
     await waitFor(() => assert.equal(currentRoute().path, "/"));
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
     assert.deepEqual(exitRoutes, ["/guardian"]);
+    assert.equal(unlockCalls, 0);
+    text(/Learner home/);
+
+    await click(button("Open learner profile"));
+    await waitFor(() => assert.equal(currentRoute().path, "/"));
+    assert.equal(unlockCalls, 0);
+    text(/Learner home/);
   });
 
   it("keeps loading visible until the StrictMode onboarding request resolves", async () => {
@@ -6587,12 +6700,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(requests.some((request) => request.includes("/active")), false);
   });
 
-  it("turns an authoritative targeted dubbing 403 into a same-URL unlock boundary", async () => {
+  it("recovers an authoritative targeted dubbing 403 automatically at the same URL", async () => {
     let guardianMode = "guardian";
     let targetedLoads = 0;
+    let unlockCalls = 0;
     const deepLink =
       "/guardian/dubbing?learnerProfileId=learner-noah&from=deep-link";
     globalThis.fetch = async (path, init = {}) => {
+      const requestUrl = new URL(path, "https://example.test");
+      const dubId = requestUrl.pathname.match(/^\/api\/dubs\/([^/]+)$/)?.[1];
       if (path === "/api/learner-profile" && init.method === "GET") {
         return json(completedLearnerProfileState());
       }
@@ -6619,22 +6735,24 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           ],
         });
       }
-      if (
-        path ===
-          "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-noah" &&
-        (init.method ?? "GET") === "GET"
-      ) {
+      if (dubId && requestUrl.searchParams.get("learnerProfileId") === "learner-noah") {
         targetedLoads += 1;
         if (targetedLoads === 1) {
           guardianMode = "learner";
           return json({ error: "guardian_required" }, 403);
         }
+        const definition = dubDefinitions.find(({ id }) => id === dubId);
+        assert.ok(definition);
         return json({
           complete: false,
           consentState: "not_granted",
-          dubId: "five-little-ducks-v2",
+          dubId,
           guardianConsentVersion: "guardian-voice-r2-v2",
-          lines: [],
+          lines: definition.lines.map(({ id }) => ({
+            id,
+            recordedAt: null,
+            saved: false,
+          })),
           recordingEnabled: false,
         });
       }
@@ -6658,6 +6776,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           },
           async unlockGuardianAccess(password) {
             assert.equal(password, "");
+            unlockCalls += 1;
             guardianMode = "guardian";
             return {
               expiresAt: "2099-01-01T00:00:00.000Z",
@@ -6669,16 +6788,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => text(/Switch to guardian mode/));
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => assert.ok(targetedLoads > 1));
+    await waitFor(() => noText(/Your saved dub could not be loaded/));
+    text(/Editing settings for Noah/);
     assert.equal(currentRoute().path, deepLink);
-    noText(/Your saved dub could not be loaded/);
-    const loadsBeforeUnlock = targetedLoads;
-
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    await click(button("Switch to guardian mode"));
-    await waitFor(() => text(/Editing settings for Noah/));
-    assert.equal(currentRoute().path, deepLink);
-    assert.ok(targetedLoads > loadsBeforeUnlock);
+    noText(/Switch to guardian mode/);
   });
 
   it("returns structurally matched invalid learner details to Manage learners before the learner-mode boundary", async () => {

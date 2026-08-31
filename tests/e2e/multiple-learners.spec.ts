@@ -606,12 +606,6 @@ async function expectLearnerDeletionDialogContained(page: Page, name: string) {
   await cancel.click();
 }
 
-async function unlockGuardianScreen(page: Page) {
-  const main = page.getByRole("main");
-  await expect(main.getByLabel("Password")).toHaveCount(0);
-  await main.getByRole("button", { name: "Switch to guardian mode" }).click();
-}
-
 async function unlockGuardianFromLearnerMenu(page: Page) {
   await page
     .getByRole("button", { name: /Profile for .+, learner mode/ })
@@ -1054,7 +1048,7 @@ test("shares real-browser mock deletion across sessions while clearing only the 
   });
 });
 
-test("hides an unsaved Guardian profile edit during handoff and restores persisted data after unlock", async ({
+test("hides an unsaved Guardian profile edit during handoff and restores persisted data after returning", async ({
   baseURL,
   browser,
 }) => {
@@ -1100,10 +1094,12 @@ test("hides an unsaved Guardian profile edit during handoff and restores persist
     await chooseLearnerFromManager(managerPage, "Noah");
 
     await draftPage.bringToFront();
-    await expect(
-      draftPage.getByRole("heading", { name: "Switch to guardian mode" }),
-    ).toBeVisible();
-    await unlockGuardianScreen(draftPage);
+    await expect(draftPage).toHaveURL("/");
+    await unlockGuardianFromLearnerMenu(draftPage);
+    await draftPage.getByRole("link", { name: "Manage learners" }).click();
+    await learnerCard(draftPage, "Mia")
+      .getByRole("button", { name: "Edit Mia's profile" })
+      .click();
     await expect(
       draftPage.getByText("Managing Mia", { exact: true }),
     ).toBeVisible();
@@ -1155,10 +1151,9 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
     await managerPage.bringToFront();
     await chooseLearnerFromManager(managerPage, "Noah");
     await profilePage.bringToFront();
-    await expect(
-      profilePage.getByRole("heading", { name: "Switch to guardian mode" }),
-    ).toBeVisible();
-    await unlockGuardianScreen(profilePage);
+    await expect(profilePage).toHaveURL("/");
+    await unlockGuardianFromLearnerMenu(profilePage);
+    await profilePage.getByRole("link", { name: "Manage learners" }).click();
     await expect(
       profilePage.getByRole("heading", { name: "Manage learners" }),
     ).toBeVisible();
@@ -1444,7 +1439,7 @@ test("keeps Mia's queued built-in recording out of Noah after the Guardian switc
   expect(noah?.pendingUploads).toBe(0);
 });
 
-test("requires Guardian unlock before revealing a selection-required roster", async ({
+test("automatically reveals a selection-required roster in Guardian mode", async ({
   page,
 }) => {
   const requestedUrl = learnerScenarioUrl(
@@ -1454,24 +1449,8 @@ test("requires Guardian unlock before revealing a selection-required roster", as
   );
   await page.goto(requestedUrl);
 
-  await expect(
-    page.getByRole("heading", { name: "Switch to guardian mode" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Manage learners" }),
-  ).toHaveCount(0);
-  await expect(page.getByText("Noah", { exact: true })).toHaveCount(0);
-  const lockedRoster = await page.evaluate(async () => {
-    const response = await fetch("/api/learner-profiles");
-    return { body: await response.json(), status: response.status };
-  });
-  expect(lockedRoster).toEqual({
-    body: { error: "guardian_required" },
-    status: 403,
-  });
-
-  await unlockGuardianScreen(page);
   await expect(page).toHaveURL(requestedUrl);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();

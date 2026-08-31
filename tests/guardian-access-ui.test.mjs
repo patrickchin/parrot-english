@@ -921,6 +921,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     });
     assert.equal(result, null);
     assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
   });
 
   it("reports the lock error when a lock response still grants guardian mode", async () => {
@@ -973,6 +974,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     await act(async () => emitGuardianLock(storageKey));
 
     assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
     assert.equal(api.lockCalls, 0);
   });
 
@@ -1012,6 +1014,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       await new Promise((resolve) => window.setTimeout(resolve, 0));
     });
     assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
 
     server.mode = "guardian";
     await act(async () => {
@@ -1027,7 +1030,101 @@ describe("guardian access provider", { concurrency: false }, () => {
     });
     assert.equal(result, null);
     assert.equal(states.at(-1).mode, "guardian");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, false);
     assert.equal(window.localStorage.getItem(storageKey), null);
+  });
+
+  it("keeps learner-switch provenance when a visibility recheck fails", async () => {
+    const states = [];
+    let failLoad = false;
+    const api = createApi({
+      async loadGuardianAccess() {
+        this.loadCalls += 1;
+        if (failLoad) throw new Error("Status check failed.");
+        return {
+          mode: "guardian",
+          expiresAt: "2099-08-25T08:15:00.000Z",
+        };
+      },
+    });
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
+
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+    await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
+    const storageKey = await waitForGuardianLockStorageKey("id:user-1");
+    await act(async () => states.at(-1).lock());
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
+
+    failLoad = true;
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
+    const previousLoadCalls = api.loadCalls;
+    await act(async () => {
+      document.dispatchEvent(new window.Event("visibilitychange"));
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => assert.ok(api.loadCalls > previousLoadCalls));
+    assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
+    assert.ok(window.localStorage.getItem(storageKey));
+  });
+
+  it("keeps learner-switch provenance when cross-tab storage is unavailable", async () => {
+    originalCrypto = globalThis.crypto;
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      value: {
+        randomUUID: () => "unused-without-a-storage-scope",
+      },
+      writable: true,
+    });
+    const states = [];
+    let serverMode = "guardian";
+    const api = createApi({
+      async loadGuardianAccess() {
+        this.loadCalls += 1;
+        return serverMode === "guardian"
+          ? {
+              mode: "guardian",
+              expiresAt: "2099-08-25T08:15:00.000Z",
+            }
+          : { mode: "learner" };
+      },
+      async lockGuardianAccess() {
+        this.lockCalls += 1;
+        serverMode = "learner";
+        return { mode: "learner" };
+      },
+    });
+    const Provider = createGuardianAccessProvider({
+      api,
+      schedule: () => () => {},
+    });
+
+    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
+    await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
+    await act(async () => states.at(-1).lock());
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
+    const previousLoadCalls = api.loadCalls;
+    await act(async () => {
+      document.dispatchEvent(new window.Event("visibilitychange"));
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+    });
+
+    await waitFor(() => assert.ok(api.loadCalls > previousLoadCalls));
+    assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
   });
 
   it("writes one opaque marker for an explicit lock", async () => {
@@ -1258,6 +1355,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       await new Promise((resolve) => window.setTimeout(resolve, 0));
     });
     assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
     assert.equal(window.localStorage.getItem(storageKey), "old-lock");
 
     let result;
@@ -1686,7 +1784,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     assert.equal(states.at(-1).mode, "learner");
   });
 
-  it("returns an error to a stale lock caller without mutating synchronized learner state", async () => {
+  it("lets an in-flight explicit lock own a concurrent guardian-required notification", async () => {
     const pendingLock = deferred();
     const states = [];
     const clock = createClock("2026-08-25T08:00:00.000Z");
@@ -1717,13 +1815,14 @@ describe("guardian access provider", { concurrency: false }, () => {
       await Promise.resolve();
     });
     await act(async () => notifyGuardianAccessRequired());
-    assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).mode, "guardian");
 
     pendingLock.resolve({ mode: "learner" });
     await act(async () => lockPromise);
-    assert.equal(typeof lockResult, "string");
-    assert.ok(lockResult.length > 0);
+    assert.equal(lockResult, null);
     assert.equal(states.at(-1).mode, "learner");
+    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
+    assert.equal(api.lockCalls, 1);
   });
 
   it("queues a visibility status check behind an in-flight unlock", async () => {

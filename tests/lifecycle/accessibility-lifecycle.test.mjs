@@ -14,7 +14,6 @@ import { createServer } from "vite";
 import {
   cleanupMountedRoots,
   click,
-  deferred,
   input,
   installDom,
   mountStrict,
@@ -36,8 +35,6 @@ let AccountDeleteDialog;
 let AccountHeader;
 let createAuthGate;
 let ConversationSurface;
-let GuardianUnlockDialog;
-let GuardianUnlockForm;
 let RouteFocusManager;
 let AccountActionProvider;
 let useProfileAccountAction;
@@ -54,9 +51,6 @@ before(async () => {
   ));
   ({ AccountHeader } = await vite.ssrLoadModule("/src/app/AppHeader.tsx"));
   ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
-  ({ GuardianUnlockDialog, GuardianUnlockForm } = await vite.ssrLoadModule(
-    "/src/auth/GuardianUnlock.tsx",
-  ));
   ({ AccountActionProvider, useProfileAccountAction } =
     await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
   ({
@@ -143,49 +137,10 @@ function guardianApi(overrides = {}) {
   };
 }
 
-function AccessMode() {
-  const { mode } = useGuardianAccess();
-  return createElement(
-    "output",
-    { "aria-label": "Guardian access mode" },
-    mode,
-  );
-}
-
 function AccessCapture({ onAccess }) {
   const access = useGuardianAccess();
   useEffect(() => onAccess(access), [access, onAccess]);
   return null;
-}
-
-function UnlockHarness({ api, dialog = false, onUnlocked = () => {} }) {
-  const [Provider] = useState(() =>
-    createGuardianAccessProvider({ api, schedule: () => () => {} }),
-  );
-  const [isOpen, setIsOpen] = useState(!dialog);
-  const openerRef = useRef(null);
-  return createElement(
-    Provider,
-    { sessionIdentity: "id:guardian" },
-    createElement(AccessMode),
-    dialog &&
-      createElement(
-        "button",
-        { onClick: () => setIsOpen(true), ref: openerRef, type: "button" },
-        "Open guardian mode",
-      ),
-    isOpen &&
-      (dialog
-        ? createElement(GuardianUnlockDialog, {
-            onClose: () => setIsOpen(false),
-            onUnlocked,
-            returnFocusRef: openerRef,
-          })
-        : createElement(GuardianUnlockForm, {
-            onCancel: () => setIsOpen(false),
-            onUnlocked,
-          })),
-  );
 }
 
 function AccountExperienceRegistration({ experience }) {
@@ -1103,38 +1058,6 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(registrations.at(-1), second);
   });
 
-  it("keeps a failed direct switch in learner mode", async () => {
-    let attempts = 0;
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          async unlockGuardianAccess() {
-            attempts += 1;
-            throw new Error("Guardian mode could not be opened.");
-          },
-        }),
-      }),
-    );
-    const switchButton = button("Switch to guardian mode");
-    switchButton.focus();
-    await click(switchButton);
-    await waitFor(() =>
-      assert.equal(
-        document.querySelector('[role="alert"]').textContent.trim(),
-        "Guardian mode could not be opened.",
-      ),
-    );
-
-    assert.equal(attempts, 1);
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    assert.equal(document.activeElement, switchButton);
-    assert.equal(
-      document.querySelector('output[aria-label="Guardian access mode"]')
-        .textContent,
-      "learner",
-    );
-  });
-
   it("shows a direct-switch failure in the account shell", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
@@ -1171,206 +1094,6 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.ok(button("Profile for Learner, learner mode"));
-  });
-
-  it("keeps learner and expired switch responses in the switch form", async () => {
-    for (const { dialog, response } of [
-      { dialog: false, response: { mode: "learner" } },
-      {
-        dialog: true,
-        response: {
-          expiresAt: "2000-01-01T00:00:00.000Z",
-          mode: "guardian",
-        },
-      },
-    ]) {
-      let unlocked = 0;
-      await mountStrict(
-        createElement(UnlockHarness, {
-          api: guardianApi({
-            async unlockGuardianAccess() {
-              return response;
-            },
-          }),
-          dialog,
-          onUnlocked: () => {
-            unlocked += 1;
-          },
-        }),
-      );
-      if (dialog) await click(button("Open guardian mode"));
-      const switchButton = button("Switch to guardian mode");
-      switchButton.focus();
-      await click(switchButton);
-      await waitFor(() =>
-        assert.equal(
-          document.querySelector('[role="alert"]')?.textContent.trim(),
-          "Guardian access could not be checked. Please try again.",
-        ),
-      );
-
-      assert.equal(unlocked, 0);
-      assert.equal(document.activeElement, switchButton);
-      assert.equal(
-        document.querySelector('output[aria-label="Guardian access mode"]')
-          .textContent,
-        "learner",
-      );
-      if (dialog) assert.ok(document.querySelector('[role="dialog"]'));
-
-      await cleanupMountedRoots();
-      document.body.replaceChildren();
-    }
-  });
-
-  it("disables switch controls while pending and submits without credentials", async () => {
-    const attempt = deferred();
-    const passwords = [];
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          unlockGuardianAccess(password) {
-            passwords.push(password);
-            return attempt.promise;
-          },
-        }),
-      }),
-    );
-    const switchButton = button("Switch to guardian mode");
-    switchButton.focus();
-    await act(async () => switchButton.form.requestSubmit());
-
-    assert.deepEqual(passwords, [""]);
-    assert.equal(switchButton.form.querySelector("fieldset").disabled, true);
-    assert.match(switchButton.form.textContent, /Switching modes…/);
-    attempt.resolve({
-      expiresAt: "2099-01-01T00:00:00.000Z",
-      mode: "guardian",
-    });
-    await waitFor(() =>
-      assert.equal(
-        document.querySelector('output[aria-label="Guardian access mode"]')
-          .textContent,
-        "guardian",
-      ),
-    );
-  });
-
-  it("renders no password field for a guardian mode switch", async () => {
-    const passwords = [];
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          async unlockGuardianAccess(password) {
-            passwords.push(password);
-            return {
-              expiresAt: "2099-01-01T00:00:00.000Z",
-              mode: "guardian",
-            };
-          },
-        }),
-      }),
-    );
-    const switchButton = button("Switch to guardian mode");
-    assert.equal(document.querySelector('input[name="password"]'), null);
-
-    await act(async () => switchButton.form.requestSubmit());
-
-    assert.deepEqual(passwords, [""]);
-    assert.equal(
-      document.querySelector('output[aria-label="Guardian access mode"]')
-        .textContent,
-      "guardian",
-    );
-  });
-
-  it("announces a deep-link unlock from the stable account shell", async () => {
-    let unlocked = 0;
-    const Provider = createGuardianAccessProvider({
-      api: guardianApi(),
-      schedule: () => () => {},
-    });
-    const TestAuthGate = createAuthGate({
-      client: authClientForHeader(),
-      GuardianAccessBoundary: Provider,
-    });
-    await mountStrict(
-      createElement(
-        TestAuthGate,
-        null,
-        createElement(
-          "main",
-          { "aria-label": "Deep-link guardian unlock" },
-          createElement(GuardianUnlockForm, {
-            onCancel() {},
-            onUnlocked: () => {
-              unlocked += 1;
-            },
-          }),
-        ),
-      ),
-    );
-    await click(button("Switch to guardian mode"));
-    await waitFor(() =>
-      assert.equal(
-        [...document.querySelectorAll('[role="status"]')].filter(
-          (status) =>
-            status.textContent.trim() ===
-            "Guardian mode",
-        ).length,
-        1,
-      ),
-    );
-
-    assert.equal(unlocked, 1);
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    assert.ok(
-      !document
-        .querySelector('main[aria-label="Deep-link guardian unlock"]')
-        .querySelector('[role="status"]'),
-    );
-    assert.ok(button("Profile for Patrick, guardian mode"));
-  });
-
-  it("keeps network failures in learner mode", async () => {
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          async unlockGuardianAccess() {
-            throw new Error(
-              "Guardian access could not be checked. Please try again.",
-            );
-          },
-        }),
-      }),
-    );
-    await click(button("Switch to guardian mode"));
-    await waitFor(() => assert.ok(document.querySelector('[role="alert"]')));
-
-    assert.equal(
-      document.querySelector('output[aria-label="Guardian access mode"]')
-        .textContent,
-      "learner",
-    );
-  });
-
-  it("focuses the switch action and restores the mode opener on cancel", async () => {
-    await mountStrict(
-      createElement(UnlockHarness, { api: guardianApi(), dialog: true }),
-    );
-    const opener = button("Open guardian mode");
-    opener.focus();
-    await click(opener);
-    const switchButton = button("Switch to guardian mode");
-    assert.equal(
-      document.querySelector('[role="dialog"]').getAttribute("aria-label"),
-      "Switch to guardian mode",
-    );
-    await waitFor(() => assert.equal(document.activeElement, switchButton));
-
-    await click(button("Cancel"));
-    assert.equal(document.querySelector('[role="dialog"]'), null);
-    assert.equal(document.activeElement, opener);
   });
 
   it("navigates a successful profile-dropdown switch to guardian home", async () => {

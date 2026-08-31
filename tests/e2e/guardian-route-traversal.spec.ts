@@ -260,10 +260,11 @@ test("learner routes recover progress, invalid story and lesson details, and wil
 
   await page.goto(scenarioUrl("/profile", "multiple", "learner"));
   await expect(
-    page.getByRole("heading", { exact: true, name: "Switch to guardian mode" }),
+    page.getByRole("heading", { exact: true, name: "Learner details" }),
   ).toBeVisible();
-  await page.getByRole("main").getByRole("button", { name: "Cancel" }).click();
-  await expect(page).toHaveURL("/");
+  await page.evaluate(() => fetch("/api/guardian-access", { method: "DELETE" }));
+  await page.goto(scenarioUrl("/", "multiple", "learner"));
+  await expect(page).toHaveURL(/\/\?.*parrotE2eGuardian=learner/);
   await expect(
     page.getByRole("navigation", { name: "Learning activities" }),
   ).toBeVisible();
@@ -310,20 +311,9 @@ test("Guardian wildcard and account gates recover without selecting a learner", 
     scenarioUrl("/guardian/account", "selection-required", "learner"),
   );
   await expect(
-    page.getByRole("heading", { exact: true, name: "Switch to guardian mode" }),
-  ).toBeVisible();
-  await expect(
     page.getByRole("heading", { exact: true, name: "Account & privacy" }),
-  ).toHaveCount(0);
-  await expect(page.getByRole("main").getByLabel("Password")).toHaveCount(0);
-  await page
-    .getByRole("main")
-    .getByRole("button", { exact: true, name: "Switch to guardian mode" })
-    .click();
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/guardian\/account/);
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Account & privacy" }),
-  ).toBeVisible();
 
   await page.goto(scenarioUrl("/guardian/account", "zero-learners"));
   await expect(
