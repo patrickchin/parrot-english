@@ -515,11 +515,12 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Play full video"/);
     assert.match(html, /aria-label="Scene selection"/);
     assert.match(html, /aria-current="step"/);
-    assert.match(html, />Choose a scene<\/h2>/);
+    assert.doesNotMatch(html, />Choose a scene<\/h2>/);
     assert.match(html, />Start with Scene 1</);
     for (let scene = 1; scene <= 6; scene += 1) {
       assert.match(html, new RegExp(`aria-label="Scene ${scene}, [^"]+, Ready to start"`));
     }
+    assert.doesNotMatch(html, /data-status-icon="not-started"/);
     assert.doesNotMatch(html, />Draft<|voice clips recorded/);
     assert.doesNotMatch(html, />0 \/ 4<|>Done<|>Retake</);
     assert.doesNotMatch(html, /waveform|Record line|Next line/i);
@@ -565,7 +566,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /Old MacDonald Had a Farm/);
     assert.match(html, /aria-label="Project recording progress"[\s\S]*?>Ready to start</);
     assert.equal((html.match(/aria-label="Scene \d, [^"]+, Ready to start"/g) ?? []).length, 5);
-    assert.match(html, /aria-label="Scene 1, Cows on the farm, Ready to start"[\s\S]*?>○ Ready to start</);
+    assert.doesNotMatch(html, /data-status-icon="not-started"/);
   });
 
   it("keeps every scene selectable after all clips are recorded", () => {

@@ -389,6 +389,35 @@ test("uses a large game surface", async ({ page }) => {
   await expect(progress).toBeInViewport();
 });
 
+test("word-game library gives each topic one visible label", async ({ page }) => {
+  await page.goto("/word-games");
+  const main = page.getByRole("main");
+  const library = main.getByRole("navigation", { name: "Word games" });
+
+  await expect(
+    main.getByRole("heading", { level: 1, name: "Pick a word game" }),
+  ).toBeVisible();
+  await expect(main.getByText("Parrot English", { exact: true })).toHaveCount(0);
+  await expect(
+    main.getByText("Listen, look, and choose.", { exact: true }),
+  ).toHaveCount(0);
+
+  for (const title of [
+    "Animals",
+    "Colors",
+    "Body Parts",
+    "Food",
+    "Toys",
+    "Feelings",
+  ]) {
+    const topic = library.getByRole("link", { exact: true, name: title });
+    await expect(topic).toBeVisible();
+    await expect(topic.getByText(title, { exact: true })).toBeVisible();
+    await expect(topic.getByText(/^Listen and find the /)).toHaveCount(0);
+    await expect(topic.getByText("Start", { exact: true })).toHaveCount(0);
+  }
+});
+
 test("word-game library wheel-scrolls to the final topic", async ({ page }) => {
   await page.setViewportSize({ height: 568, width: 390 });
   await page.goto("/word-games");
