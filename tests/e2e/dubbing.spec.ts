@@ -1120,17 +1120,48 @@ test("saved recording consent loss shows listen-only playback immediately", asyn
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
 });
 
-test("saved recording failure offers record again and marks the scene Needs retake", async ({ page }) => {
+test("saved recording failure keeps its error readable beside take controls on a narrow phone", async ({ page }) => {
+  await page.setViewportSize({ height: 480, width: 320 });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=audio-fetch-failed");
   await expectDubProject(page);
   await openScene(page, 1);
 
   await page.getByRole("button", { name: "Play my recording" }).click();
-  await expect(page.getByRole("alert", {
+  const error = page.getByRole("alert", {
     name: "Your recording could not be played. Record the line again.",
-  })).toHaveText("Your recording could not be played. Record the line again.");
+  });
+  await expect(error).toHaveText("Your recording could not be played. Record the line again.");
+  const wordFragments = await error.evaluate((element) => {
+    const text = element.textContent ?? "";
+    const node = [...element.childNodes].find(({ nodeType }) => nodeType === Node.TEXT_NODE);
+    if (!node) throw new Error("Expected the error to have text.");
+    let offset = 0;
+    return text.match(/\S+/g)?.map((word) => {
+      const start = text.indexOf(word, offset);
+      offset = start + word.length;
+      const range = document.createRange();
+      range.setStart(node, start);
+      range.setEnd(node, start + word.length);
+      return { fragments: range.getClientRects().length, word };
+    }) ?? [];
+  });
+  expect(wordFragments).toEqual([
+    { fragments: 1, word: "Your" },
+    { fragments: 1, word: "recording" },
+    { fragments: 1, word: "could" },
+    { fragments: 1, word: "not" },
+    { fragments: 1, word: "be" },
+    { fragments: 1, word: "played." },
+    { fragments: 1, word: "Record" },
+    { fragments: 1, word: "the" },
+    { fragments: 1, word: "line" },
+    { fragments: 1, word: "again." },
+  ]);
   await expect(page.getByRole("button", { name: "Record again" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play my recording" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Scene video" })).toBeVisible();
+  await expectLearnerTargetsAtLeast48px(page);
+  await expectNoHorizontalOverflow(page);
   await page.getByRole("button", { name: "Back to full video" }).click();
   await expect(page.getByRole("button", {
     name: "Scene 1, Five little ducks, Needs a new take",
