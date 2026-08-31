@@ -929,6 +929,7 @@ describe("word-game media publishing", () => {
       { binding: "PUBLIC_BUCKET", bucket_name: "public-media", remote: true },
       { binding: "SOURCE_BUCKET", bucket_name: "private-source", remote: true },
     ]);
+    assert.equal(definition.config.compatibility_date, "2026-05-22");
     assert.equal(definition.config.vars, undefined);
     assert.equal(JSON.stringify(definition.config).includes("capability"), false);
     assert.equal(definition.config.main, "/private/helper/worker.mjs");

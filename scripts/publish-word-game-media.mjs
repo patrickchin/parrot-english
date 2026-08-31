@@ -13,6 +13,8 @@ import {
   verifyWordGameMediaDelivery,
 } from "./word-game-media.mjs";
 
+const WORKER_COMPATIBILITY_DATE = "2026-05-22";
+
 function parseArguments(args) {
   let apply = false;
   let dryRun = false;
@@ -142,7 +144,7 @@ export function createAtomicR2HelperDefinition({
 }) {
   return {
     config: {
-      compatibility_date: "2026-08-31",
+      compatibility_date: WORKER_COMPATIBILITY_DATE,
       main: workerFile,
       name: workerName,
       r2_buckets: [
