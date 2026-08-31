@@ -1,9 +1,8 @@
-/* global AbortSignal, Response, URL, process, setTimeout */
+/* global URL, process */
 
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-import os from "node:os";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -11,8 +10,6 @@ import {
   prepareWordGameMediaUploads,
   verifyWordGameMediaDelivery,
 } from "./word-game-media.mjs";
-
-const WORKER_COMPATIBILITY_DATE = "2026-05-22";
 
 function parseArguments(args) {
   let apply = false;
@@ -71,7 +68,7 @@ function runProcess(command, args, { cwd, input }) {
   };
 }
 
-function getArguments(upload) {
+function createGetArguments(upload) {
   return [
     "exec",
     "--offline",
@@ -86,292 +83,29 @@ function getArguments(upload) {
   ];
 }
 
+function createPutArguments(upload) {
+  const args = [
+    "exec",
+    "--offline",
+    "--",
+    "wrangler",
+    "r2",
+    "object",
+    "put",
+    `${upload.bucket}/${upload.key}`,
+    "--pipe",
+    "--remote",
+    "--content-type",
+    upload.contentType,
+  ];
+  if (upload.cacheControl) args.push("--cache-control", upload.cacheControl);
+  return args;
+}
+
 function isMissingObjectError(stderr) {
   return /\bNoSuchKey\b|\bR2 object does not exist\b|\b(?:specified )?(?:object|key) does not exist\b/i.test(
     stderr,
   );
-}
-
-export async function atomicR2WorkerFetch(request, environment, secret) {
-  if (!secret || request.headers.get("x-parrot-upload-secret") !== secret) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  const url = new URL(request.url);
-  if (request.method === "GET" && url.pathname === "/health") {
-    return new Response(null, { status: 204 });
-  }
-  if (request.method !== "PUT" || url.pathname !== "/upload") {
-    return new Response("Invalid request", { status: 400 });
-  }
-  const scope = url.searchParams.get("scope");
-  const key = url.searchParams.get("key");
-  if ((scope !== "public" && scope !== "private") || !key) {
-    return new Response("Invalid upload target", { status: 400 });
-  }
-  const bucket = scope === "public"
-    ? environment.PUBLIC_BUCKET
-    : environment.SOURCE_BUCKET;
-  const contentType = request.headers.get("content-type");
-  if (!contentType || !request.body) {
-    return new Response("Missing upload body or content type", { status: 400 });
-  }
-  const cacheControl = request.headers.get("cache-control");
-  const httpMetadata = cacheControl
-    ? { cacheControl, contentType }
-    : { contentType };
-  try {
-    const created = await bucket.put(key, request.body, {
-      httpMetadata,
-      onlyIf: { etagDoesNotMatch: "*" },
-    });
-    if (created === null) {
-      return new Response("Object was created concurrently", { status: 412 });
-    }
-    return new Response(null, { status: 201 });
-  } catch (error) {
-    return new Response(`R2 create-only upload failed: ${error.message}`, {
-      status: 502,
-    });
-  }
-}
-
-export function createAtomicR2HelperDefinition({
-  publicBucket,
-  sourceBucket,
-  workerFile,
-  workerName,
-}) {
-  return {
-    config: {
-      compatibility_date: WORKER_COMPATIBILITY_DATE,
-      main: workerFile,
-      name: workerName,
-      workers_dev: true,
-      r2_buckets: [
-        {
-          binding: "PUBLIC_BUCKET",
-          bucket_name: publicBucket,
-        },
-        {
-          binding: "SOURCE_BUCKET",
-          bucket_name: sourceBucket,
-        },
-      ],
-    },
-    source: `const atomicR2WorkerFetch = ${atomicR2WorkerFetch.toString()};\nexport default { fetch(request, environment) { return atomicR2WorkerFetch(request, environment, environment.UPLOAD_SECRET); } };\n`,
-  };
-}
-
-function wait(milliseconds) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
-
-function combinedError(primary, secondary, secondaryLabel) {
-  return new AggregateError(
-    [primary, secondary],
-    `${primary.message}; ${secondaryLabel}: ${secondary.message}`,
-  );
-}
-
-async function cleanupAtomicR2Helper(
-  { deployAttempted, temporaryDirectory, workerName, wrangler },
-  { removeDirectory, runCommand },
-) {
-  const errors = [];
-  if (deployAttempted) {
-    try {
-      const result = runCommand(
-        wrangler,
-        ["delete", workerName, "--force"],
-        { cwd: temporaryDirectory, input: undefined },
-      );
-      if (result.status !== 0) {
-        throw new Error(result.stderr.trim() || `exit ${result.status}`);
-      }
-    } catch (error) {
-      errors.push(new Error(`exact helper deletion failed: ${error.message}`, {
-        cause: error,
-      }));
-    }
-  }
-  try {
-    await removeDirectory(temporaryDirectory, { force: true, recursive: true });
-  } catch (error) {
-    errors.push(new Error(`temporary-directory removal failed: ${error.message}`, {
-      cause: error,
-    }));
-  }
-  if (errors.length === 1) throw errors[0];
-  if (errors.length > 1) {
-    throw new AggregateError(
-      errors,
-      errors.map(({ message }) => message).join("; "),
-    );
-  }
-}
-
-export function parseDeployedWorkerUrl(output, workerName) {
-  const candidates = String(output).match(
-    /https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)*\.workers\.dev\/?/gi,
-  ) ?? [];
-  for (const candidate of candidates) {
-    const url = new URL(candidate);
-    if (
-      url.protocol === "https:" &&
-      url.hostname.split(".")[0] === workerName &&
-      url.hostname.endsWith(".workers.dev")
-    ) {
-      return url.origin;
-    }
-  }
-  throw new Error(
-    `Deploy output must contain an https workers.dev endpoint for the exact generated service ${workerName}`,
-  );
-}
-
-export async function startAtomicR2Uploader(
-  { cwd, publicBucket, sourceBucket },
-  dependencies = {},
-) {
-  const {
-    createTimeoutSignal = (milliseconds) => AbortSignal.timeout(milliseconds),
-    createId = randomUUID,
-    fetchImplementation = globalThis.fetch,
-    makeTemporaryDirectory = mkdtemp,
-    pause = wait,
-    removeDirectory = rm,
-    runCommand = runProcess,
-    write = writeFile,
-  } = dependencies;
-  const temporaryDirectory = await makeTemporaryDirectory(
-    path.join(os.tmpdir(), "parrot-word-game-r2-"),
-  );
-  let secret;
-  let workerName;
-  let deployAttempted = false;
-  let baseUrl;
-  const wrangler = path.join(cwd, "node_modules/.bin/wrangler");
-  try {
-    const workerFile = path.join(temporaryDirectory, "worker.mjs");
-    const configFile = path.join(temporaryDirectory, "wrangler.json");
-    secret = createId();
-    workerName = `parrot-wg-${createId()}`;
-    if (!/^parrot-wg-[a-z0-9-]+$/.test(workerName) || workerName.length > 63) {
-      throw new Error("Generated helper service name is invalid");
-    }
-    const definition = createAtomicR2HelperDefinition({
-      publicBucket,
-      sourceBucket,
-      workerFile,
-      workerName,
-    });
-    // Keep writes sequential so cleanup cannot race an unsettled config write.
-    await write(workerFile, definition.source, { mode: 0o600 });
-    await write(configFile, `${JSON.stringify(definition.config)}\n`, {
-      mode: 0o600,
-    });
-    deployAttempted = true;
-    const deployResult = runCommand(
-      wrangler,
-      [
-        "deploy",
-        "--config",
-        configFile,
-        "--var",
-        `UPLOAD_SECRET:${secret}`,
-      ],
-      {
-        cwd: temporaryDirectory,
-        input: undefined,
-      },
-    );
-    if (deployResult.status !== 0) {
-      throw new Error(
-        `Could not deploy the create-only R2 upload helper: ${deployResult.stderr.trim() || `exit ${deployResult.status}`}`,
-      );
-    }
-    baseUrl = parseDeployedWorkerUrl(
-      `${deployResult.stdout}\n${deployResult.stderr}`,
-      workerName,
-    );
-    let ready = false;
-    for (let attempt = 0; attempt < 75; attempt += 1) {
-      try {
-        const response = await fetchImplementation(`${baseUrl}/health`, {
-          headers: { "x-parrot-upload-secret": secret },
-          signal: createTimeoutSignal(500),
-        });
-        if (response.status === 204) {
-          ready = true;
-          break;
-        }
-      } catch {
-        // The deployed helper endpoint is not ready yet.
-      }
-      await pause(100);
-    }
-    if (!ready) {
-      throw new Error(
-        `Could not reach the deployed create-only R2 upload helper at ${baseUrl}`,
-      );
-    }
-  } catch (error) {
-    try {
-      await cleanupAtomicR2Helper(
-        { deployAttempted, temporaryDirectory, workerName, wrangler },
-        { removeDirectory, runCommand },
-      );
-    } catch (cleanupError) {
-      throw combinedError(error, cleanupError, "helper cleanup also failed");
-    }
-    throw error;
-  }
-
-  let closed = false;
-  return {
-    async close() {
-      if (closed) return;
-      closed = true;
-      await cleanupAtomicR2Helper(
-        { deployAttempted, temporaryDirectory, workerName, wrangler },
-        { removeDirectory, runCommand },
-      );
-    },
-    async put(upload) {
-      const url = new URL(`${baseUrl}/upload`);
-      url.searchParams.set("scope", upload.scope);
-      url.searchParams.set("key", upload.key);
-      const headers = {
-        "content-type": upload.contentType,
-        "x-parrot-upload-secret": secret,
-      };
-      if (upload.cacheControl) headers["cache-control"] = upload.cacheControl;
-      const signal = createTimeoutSignal(30_000);
-      let response;
-      try {
-        response = await fetchImplementation(url, {
-          body: upload.bytes,
-          headers,
-          method: "PUT",
-          signal,
-        });
-      } catch (error) {
-        if (signal.aborted) {
-          throw new Error(
-            "create-only upload timed out; its result is indeterminate; do not retry this media version",
-            { cause: error },
-          );
-        }
-        throw error;
-      }
-      if (response.status === 201) return;
-      if (response.status === 412) {
-        throw new Error("was created concurrently; do not retry this media version");
-      }
-      const detail = (await response.text()).trim();
-      throw new Error(detail || `create-only helper returned HTTP ${response.status}`);
-    },
-  };
 }
 
 async function readManifest(cwd) {
@@ -423,7 +157,6 @@ export async function runWordGameMediaPublisher({
   cwd = process.cwd(),
   env = process.env,
   fetch = globalThis.fetch,
-  createUploader = startAtomicR2Uploader,
   runCommand = runProcess,
   writeOutput = (value) => process.stdout.write(value),
 } = {}) {
@@ -465,7 +198,7 @@ export async function runWordGameMediaPublisher({
     const objectName = `${upload.bucket}/${upload.key}`;
     let result;
     try {
-      result = runCommand("npm", getArguments(upload), {
+      result = runCommand("npm", createGetArguments(upload), {
         cwd,
         input: undefined,
       });
@@ -508,66 +241,35 @@ export async function runWordGameMediaPublisher({
     );
   }
 
-  const uploader = await createUploader({ cwd, publicBucket, sourceBucket });
-  let uploadError = null;
-  try {
-    for (const upload of uploads) {
-      try {
-        await uploader.put(upload);
-      } catch (error) {
-        throw new Error(
-          `Could not upload ${upload.bucket}/${upload.key}: ${error.message}. Do not retry this media version.`,
-        );
-      }
-      writeOutput(`Uploaded ${upload.bucket}/${upload.key}\n`);
-    }
-  } catch (error) {
-    uploadError = error;
-  }
-  let cleanupError = null;
-  try {
-    await uploader.close();
-  } catch (error) {
-    cleanupError = error;
-  }
-  if (uploadError) {
-    if (cleanupError) {
-      throw combinedError(
-        uploadError,
-        cleanupError,
-        "helper cleanup also failed",
+  // Wrangler has no create-only R2 put. Follow the repository's established
+  // immutable-media pattern: exact absence preflight, one sequential writer,
+  // and no retry after any possibly partial media-version upload.
+  for (const upload of uploads) {
+    let result;
+    try {
+      result = runCommand("npm", createPutArguments(upload), {
+        cwd,
+        input: upload.bytes,
+      });
+    } catch (error) {
+      throw new Error(
+        `Could not upload ${upload.bucket}/${upload.key}: ${error.message}. Do not retry this media version.`,
+        { cause: error },
       );
     }
-    throw uploadError;
+    if (result.status !== 0) {
+      throw new Error(
+        `Could not upload ${upload.bucket}/${upload.key}: ${result.stderr.trim() || `exit ${result.status}`}. Do not retry this media version.`,
+      );
+    }
+    writeOutput(`Uploaded ${upload.bucket}/${upload.key}\n`);
   }
 
-  let verification;
-  let deliveryError = null;
-  try {
-    verification = await verifyWordGameMediaDelivery(prepared, {
-      cacheBust,
-      fetch,
-      mediaOrigin,
-    });
-  } catch (error) {
-    deliveryError = error;
-  }
-  if (deliveryError) {
-    if (cleanupError) {
-      throw combinedError(
-        deliveryError,
-        cleanupError,
-        `all ${uploads.length} uploads completed, but helper cleanup also failed`,
-      );
-    }
-    throw deliveryError;
-  }
-  if (cleanupError) {
-    throw new Error(
-      `${uploads.length} uploads completed and ${verification.verified.length} delivery objects verified, but helper cleanup failed: ${cleanupError.message}`,
-      { cause: cleanupError },
-    );
-  }
+  const verification = await verifyWordGameMediaDelivery(prepared, {
+    cacheBust,
+    fetch,
+    mediaOrigin,
+  });
   writeOutput(
     `Published ${uploads.length} and verified ${verification.verified.length} word-game media objects.\n`,
   );
