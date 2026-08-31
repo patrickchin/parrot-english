@@ -1053,6 +1053,7 @@ test("recording shows elapsed time, saves, and leaves Next in its fixed action s
   const controls = page.getByRole("complementary", { name: "Scene line controls" });
   const idleRecordBox = await visibleBoxWithin(page.getByRole("button", { name: "Record line" }), controls);
   const idleNextBox = await visibleBoxWithin(page.getByRole("button", { name: "Next line" }), controls);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   const timer = page.getByRole("timer", { name: "Recording duration" });
   const progress = page.getByRole("progressbar", { name: "Recording time" });
@@ -1063,6 +1064,7 @@ test("recording shows elapsed time, saves, and leaves Next in its fixed action s
   const liveWaveform = page.getByRole("img", { name: "Your live recording waveform" });
   expectSameActionSlot(await visibleBox(liveWaveform), await visibleBox(guideWaveform));
   await expect(page.getByText(/get ready|3…|2…|1…/i)).toHaveCount(0);
+  await page.getByRole("button", { name: "Stop recording" }).click();
   await expectSavedTake(page, 1);
 
   await expect(page.getByRole("img", { name: "Your recording waveform" })).toBeVisible();
@@ -1437,6 +1439,7 @@ for (const viewport of [
     await page.goto("/dubs/five-little-ducks?parrotE2eDub=upload-retry-held");
     await expectDubProject(page);
     await openScene(page, 1);
+    await holdDubRecordingEnd(page);
     await page.getByRole("button", { name: "Record line" }).click();
     await page.getByRole("button", { name: "Stop recording" }).click();
 
