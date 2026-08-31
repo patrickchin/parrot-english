@@ -181,17 +181,51 @@ personalized-story-art/<account>/lesson-recordings/my/...
 personalized-story-art/<account>/learners/<learner>/lesson-recordings/my/...
 ```
 
-Review the dry-run key list first:
+#### Custom-lesson removal production handoff
 
-```bash
-CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art
-```
+The following production-only sequence must be run by an authorized operator
+in this exact order. It is intentionally **not** part of local verification;
+do not run it without production authority and the required Cloudflare
+credentials.
 
-Only after that review, explicitly execute the sequential deletes:
+1. Deploy the runtime removal:
 
-```bash
-CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art --execute
-```
+   ```bash
+   npm run deploy:worker
+   ```
+
+2. Record the remote D1 row count before applying the migration:
+
+   ```bash
+   npx wrangler d1 execute parrot-english --remote --command "SELECT count(*) AS learner_lesson_rows FROM learner_lesson"
+   ```
+
+3. Apply the reviewed remote D1 migration:
+
+   ```bash
+   npx wrangler d1 migrations apply parrot-english --remote
+   ```
+
+4. Confirm that the retired table is absent after the migration. This query
+   must return no rows:
+
+   ```bash
+   npx wrangler d1 execute parrot-english --remote --command "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'learner_lesson'"
+   ```
+
+5. Review the exact R2 key list from the required dry run:
+
+   ```bash
+   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art
+   ```
+
+6. Only after reviewing that dry run, explicitly execute the sequential
+   deletes, then confirm the utility's fresh scan reports zero exact
+   custom-recording keys:
+
+   ```bash
+   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art --execute
+   ```
 
 `BETTER_AUTH_SECRET` must be a production-only random value of at least 32
 characters. `BETTER_AUTH_URL` must exactly match the deployed Worker origin.
