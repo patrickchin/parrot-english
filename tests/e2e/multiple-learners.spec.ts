@@ -1978,7 +1978,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     if (path.startsWith("/dubs/")) {
       await expect(
         page.getByRole("main").getByRole("paragraph").filter({
-          hasText: "Ask a grown-up to turn on voice dubbing in Guardian mode.",
+          hasText: "You can watch the video now. Ask a grown-up to turn on voice recording if you want to sing and save your own version.",
         }),
       ).toBeVisible();
       await expect(
