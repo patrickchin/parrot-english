@@ -1,5 +1,7 @@
 # Parrot English Agent Notes
 
+- Merge changes into `main` only through a pull request; never merge feature branches directly.
+
 ## Learner Names
 
 - When authored learner content needs a personal name, reuse only Bob, Mary,
