@@ -267,6 +267,8 @@ test("listen-only guide failure restores Play with one child-readable alert", as
 
 test("disabled dubbing mock records rejected private media attempts", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
+  await expect.poll(() => page.evaluate(() =>
+    "__parrotE2eDub" in window)).toBe(true);
   const attempts = await page.evaluate(async () => Promise.all([
     fetch("/api/dubs/five-little-ducks-v2/lines/line-1/audio"),
     fetch("/api/dubs/five-little-ducks-v2/lines/line-1", {

@@ -157,7 +157,7 @@ function scheduleDubMusic(
   definition: DubDefinition,
   lines: readonly DubLine[],
   cueOffsetMs: number,
-  durationMs: number,
+  authoredDurationMs: number,
   output: AudioNode,
   startAt: number,
 ) {
@@ -195,7 +195,7 @@ function scheduleDubMusic(
       }
     }
 
-    const playbackEndMs = cueOffsetMs + durationMs;
+    const playbackEndMs = cueOffsetMs + authoredDurationMs;
     for (const note of definition.music.outroNotes) {
       if (note.atMs < cueOffsetMs || note.atMs >= playbackEndMs) continue;
       const melody = note.role === "melody";
@@ -515,7 +515,7 @@ export async function startDubPlayback({
     ] => line !== null);
 
     if (signal?.aborted) throw createAbortError();
-    const durationMs = Math.max(
+    const playbackDurationMs = Math.max(
       authoredDurationMs,
       ...decodedLines.map(([line, buffer]) =>
         line.cueMs - cueOffsetMs + buffer.duration * 1_000),
@@ -552,7 +552,7 @@ export async function startDubPlayback({
       definition,
       lines,
       cueOffsetMs,
-      durationMs,
+      authoredDurationMs,
       music,
       startAt,
     );
@@ -560,9 +560,9 @@ export async function startDubPlayback({
     const tick = () => {
       frameId = null;
       const elapsedMs = Math.max(0, (context.currentTime - startAt) * 1_000);
-      onTick(Math.min(durationMs, elapsedMs));
+      onTick(Math.min(authoredDurationMs, elapsedMs));
       if (stopped) return;
-      if (elapsedMs >= durationMs) {
+      if (elapsedMs >= playbackDurationMs) {
         void stopPlayback();
         onEnded?.();
         return;

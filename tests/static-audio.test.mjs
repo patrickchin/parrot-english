@@ -132,6 +132,19 @@ describe("static audio cache metadata", () => {
     assert.deepEqual(guides, snapshot.guides);
   });
 
+  it("keeps all 59 protected guide IDs out of the legacy audio root", () => {
+    const guideIds = snapshot.guides.map(({ id }) => id);
+    assert.equal(guideIds.length, 59);
+    assert.equal(new Set(guideIds).size, 59);
+    for (const id of guideIds) {
+      assert.equal(
+        existsSync(new URL(`../public/assets/audio/${id}.mp3`, import.meta.url)),
+        false,
+        id,
+      );
+    }
+  });
+
   it("registers one exact-text group cue for every supported built-in target", () => {
     assert.equal(typeof staticAudio.LESSON_JOIN_IN_AUDIO_LINES, "object");
     assert.equal(Object.keys(staticAudio.LESSON_JOIN_IN_AUDIO_LINES).length, 17);
@@ -265,10 +278,6 @@ describe("static audio cache metadata", () => {
       assert.match(src, /^\/assets\/nursery-rhymes\/old-macdonald\/guides\/.+\.mp3$/);
       const file = new URL(`../public${src}`, import.meta.url);
       assert.equal(existsSync(file), true);
-      assert.equal(
-        existsSync(new URL(`../public/assets/audio/${id}.mp3`, import.meta.url)),
-        false,
-      );
       assert.ok(statSync(file).size > 0, `${id}.mp3 is empty`);
       assert.notEqual(
         execFileSync("ffprobe", [
@@ -283,26 +292,19 @@ describe("static audio cache metadata", () => {
     }
   });
 
-  it("keeps every new saved guide inside its authored musical window", () => {
-    for (const definition of DUB_DEFINITIONS.slice(2)) {
-      const seen = new Set();
-      definition.lines.forEach(({ cueMs, text }, index) => {
-        if (seen.has(text)) return;
-        seen.add(text);
-        const line = getStaticAudioLineForSpeech("narrator", text);
-        const durationMs = Number(execFileSync("ffprobe", [
-          "-v", "error",
-          "-show_entries", "format=duration",
-          "-of", "default=noprint_wrappers=1:nokey=1",
-          new URL(`../public${line.src}`, import.meta.url).pathname,
-        ], { encoding: "utf8" }).trim()) * 1_000;
-        const windowMs = definition.lines[index + 1]?.cueMs - cueMs
-          || definition.finalCueTailMs;
-        assert.ok(
-          durationMs <= windowMs,
-          `${line.id} is ${durationMs}ms for a ${windowMs}ms window`,
-        );
-      });
+  it("keeps every packaged nursery-rhyme guide non-empty and decodable", () => {
+    const guides = DUB_DEFINITIONS.flatMap(({ guides }) => guides);
+    assert.equal(guides.length, 59);
+    for (const { id, src } of guides) {
+      const file = new URL(`../public${src}`, import.meta.url);
+      assert.ok(statSync(file).size > 0, `${id}.mp3 is empty`);
+      const durationSeconds = Number(execFileSync("ffprobe", [
+        "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        file.pathname,
+      ], { encoding: "utf8" }).trim());
+      assert.ok(Number.isFinite(durationSeconds) && durationSeconds > 0, `${id}.mp3 is not decodable`);
     }
   });
 

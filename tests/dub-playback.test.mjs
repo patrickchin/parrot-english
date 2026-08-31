@@ -28,6 +28,64 @@ function guideUrl(lineId) {
   return `/assets/audio/five-little-ducks-v2-guide-${lineId}.mp3`;
 }
 
+const EARLY_TAIL_LINE = {
+  cueMs: 800,
+  durationMs: 1_000,
+  guideAudioId: "authored-scope-guide-line-1",
+  guideAudioSrc: "/assets/nursery-rhymes/authored-scope/guides/authored-scope-guide-line-1.mp3",
+  guidePeakBars: Array(32).fill(0.5),
+  id: "authored-scope-line-1",
+  text: "Early line.",
+  words: [{ startOffset: 0, endOffset: 5, atMs: 0, durationMs: 500 }],
+};
+const FINAL_TAIL_LINE = {
+  ...EARLY_TAIL_LINE,
+  cueMs: 1_800,
+  guideAudioId: "authored-scope-guide-line-2",
+  guideAudioSrc: "/assets/nursery-rhymes/authored-scope/guides/authored-scope-guide-line-2.mp3",
+  id: "authored-scope-line-2",
+  text: "Final line.",
+};
+const AUTHORED_SCOPE_PHRASE = {
+  durationMs: 1_000,
+  notes: [{ atMs: 0, durationMs: 1_000, midi: 60 }],
+  playbackNotes: [
+    { atMs: 0, durationMs: 1_000, midi: 60, role: "melody" },
+    { atMs: 0, durationMs: 1_000, midi: 48, role: "accompaniment" },
+  ],
+};
+const AUTHORED_SCOPE_DEFINITION = {
+  countInBeats: 2,
+  countInMidi: 72,
+  durationMs: 7_000,
+  finalCueTailMs: 5_200,
+  guides: [EARLY_TAIL_LINE, FINAL_TAIL_LINE].map((line) => ({
+    durationMs: line === EARLY_TAIL_LINE ? 6_000 : 1_000,
+    id: line.guideAudioId,
+    src: line.guideAudioSrc,
+    text: line.text,
+  })),
+  id: "authored-scope-v1",
+  lines: [EARLY_TAIL_LINE, FINAL_TAIL_LINE],
+  linesPerScene: 1,
+  music: {
+    countInBeatMs: 400,
+    countInDurationMs: 800,
+    linePhrases: [AUTHORED_SCOPE_PHRASE, AUTHORED_SCOPE_PHRASE],
+    outroNotes: [{
+      atMs: 5_800,
+      durationMs: 200,
+      midi: 55,
+      role: "accompaniment",
+    }],
+    volume: 0.12,
+  },
+  route: "/dubs/authored-scope",
+  sceneArtwork: [],
+  sceneTitles: ["Early", "Final"],
+  title: "Authored scope",
+};
+
 function roundedFrequency(oscillator) {
   return Number(oscillator.frequency.value.toFixed(3));
 }
@@ -372,6 +430,74 @@ describe("duck dub playback", () => {
     );
   });
 
+  it("does not widen an early line's score scope to its six-second decoded voice tail", async () => {
+    const audio = createAudioHarness({
+      decodeDurations: { [EARLY_TAIL_LINE.id]: 6 },
+    });
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: AUTHORED_SCOPE_DEFINITION,
+      fetch: audio.fetch,
+      lines: [EARLY_TAIL_LINE],
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(Math.round(elapsedMs)),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    const context = audio.contexts[0];
+    assert.deepEqual(
+      context.oscillators.map(roundedFrequency),
+      [261.626, 130.813],
+    );
+    assert.ok(context.oscillators.every(({ stopTimes }) => stopTimes[0] <= 11.12));
+
+    context.currentTime = 11.121;
+    raf.runNext();
+    assert.deepEqual(ticks, [1_000]);
+    assert.equal(ended, 0);
+    assert.equal(context.closeCalls, 0);
+    assert.equal(context.sources[0].stopCalls, 0);
+
+    context.currentTime = 16.119;
+    raf.runNext();
+    assert.deepEqual(ticks, [1_000, 1_000]);
+    assert.equal(ended, 0);
+    assert.equal(context.closeCalls, 0);
+    assert.equal(context.sources[0].stopCalls, 0);
+
+    context.currentTime = 16.121;
+    raf.runNext();
+    assert.deepEqual(ticks, [1_000, 1_000, 1_000]);
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+    assert.equal(context.sources[0].stopCalls, 1);
+  });
+
+  it("schedules one eligible outro for selected final-line playback", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+
+    await startDubPlayback({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: AUTHORED_SCOPE_DEFINITION,
+      fetch: audio.fetch,
+      lines: [FINAL_TAIL_LINE],
+      onTick() {},
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    assert.deepEqual(
+      audio.contexts[0].oscillators.map(roundedFrequency),
+      [261.626, 130.813, 195.998],
+    );
+  });
+
   it("prepares an exact two-second line backing without fetching audio", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
@@ -674,13 +800,13 @@ describe("duck dub playback", () => {
     const context = audio.contexts[0];
     context.currentTime = 36.121;
     raf.runNext();
-    assert.deepEqual(ticks.map(Math.round), [26_001]);
+    assert.deepEqual(ticks.map(Math.round), [26_000]);
     assert.equal(ended, 0);
     assert.equal(context.closeCalls, 0);
 
     context.currentTime = 36.921;
     raf.runNext();
-    assert.deepEqual(ticks.map(Math.round), [26_001, 26_800]);
+    assert.deepEqual(ticks.map(Math.round), [26_000, 26_000]);
     assert.equal(ended, 1);
     assert.equal(context.closeCalls, 1);
   });
@@ -811,7 +937,7 @@ describe("duck dub playback", () => {
     assert.deepEqual(ticks, [3_500]);
     context.currentTime = 28.12;
     raf.runNext();
-    assert.deepEqual(ticks, [3_500, 18_000]);
+    assert.deepEqual(ticks, [3_500, 16_000]);
     assert.equal(ended, 1);
     assert.equal(context.closeCalls, 1);
     assert.equal(raf.callbacks.size, 0);
@@ -842,7 +968,7 @@ describe("duck dub playback", () => {
     const context = audio.contexts[0];
     context.currentTime = 28.12;
     raf.runNext();
-    assert.deepEqual(ticks, [18_000]);
+    assert.deepEqual(ticks, [17_200]);
     assert.equal(ended, 1);
   });
 
@@ -1303,7 +1429,7 @@ describe("duck dub playback", () => {
     context.currentTime = 28.12;
     raf.runNext();
 
-    assert.deepEqual(ticks, [18_000]);
+    assert.deepEqual(ticks, [16_000]);
     assert.equal(ended, 1);
   });
 
