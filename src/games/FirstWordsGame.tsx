@@ -167,7 +167,7 @@ export function FirstWordsGame() {
   }
 
   return (
-    <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-4 pt-20 short:pt-16 sm:px-4 md:overflow-hidden md:px-8 md:pb-8 md:pt-24">
+    <main className="relative h-dvh w-screen overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-4 pt-20 short:pt-16 sm:px-4 md:px-8 md:pb-8 md:pt-24">
       <RouteHeader>
         <HeaderLink aria-label="Back to home" icon={<ArrowLeft />} to="/">
           Back to home

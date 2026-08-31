@@ -225,6 +225,38 @@ test("reads each prompt and speaks the selected answer with feedback", async ({
     .toBe(4);
 });
 
+test("keeps the quiz playable when speech is unavailable", async ({ page }) => {
+  await page.goto("/word-game?parrotE2eLesson=cue-failure");
+
+  const main = page.getByRole("main");
+  const progress = main.getByRole("progressbar", {
+    name: "Question progress",
+  });
+  const answers = main.getByRole("group", {
+    name: "Choose the right answer",
+  });
+  const soundError = main.getByRole("alert");
+
+  await main.getByRole("button", { name: "Start listening" }).click();
+  await expect(soundError).toHaveText(
+    "Sound is not available. You can still play.",
+  );
+  await expect(answers.getByRole("button")).toHaveCount(3);
+
+  await answers.getByRole("button", { exact: true, name: "Dog" }).click();
+  await expect(main.getByRole("status", { name: "Answer feedback" })).toHaveText(
+    "Try again.",
+  );
+  await expect(soundError).toBeVisible();
+
+  await answers.getByRole("button", { exact: true, name: "Cat" }).click();
+  await expect(main.getByRole("button", { name: "Next" })).toBeVisible();
+  await main.getByRole("button", { name: "Next" }).click();
+  await expect(progress).toHaveAttribute("aria-valuenow", "2");
+  await expect(answers.getByRole("button")).toHaveCount(3);
+  await expect(soundError).toBeVisible();
+});
+
 test("stops a spoken prompt when the child leaves the game", async ({ page }) => {
   await page.goto("/word-game?parrotE2eLesson=held-cue");
   await page.getByRole("button", { name: "Start listening" }).click();
@@ -247,6 +279,40 @@ test("uses most of the desktop workspace for the active game", async ({ page }) 
   expect(box).not.toBeNull();
   expect(box!.width).toBeGreaterThanOrEqual(1100);
   expect(box!.height).toBeGreaterThanOrEqual(500);
+});
+
+test("keeps controls reachable at the short tablet boundary", async ({ page }) => {
+  await page.setViewportSize({ height: 360, width: 768 });
+  await page.goto("/word-game");
+
+  const main = page.getByRole("main");
+  const start = main.getByRole("button", { name: "Start listening" });
+  await main.hover();
+  await page.mouse.wheel(0, 2_000);
+  await expect
+    .poll(() => main.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0);
+  await expect(start).toBeInViewport();
+  await start.click();
+
+  const answers = main.getByRole("group", {
+    name: "Choose the right answer",
+  });
+  await main.hover();
+  await page.mouse.wheel(0, 2_000);
+  await expect(
+    answers.getByRole("button", { exact: true, name: "Bird" }),
+  ).toBeInViewport();
+
+  await answers.getByRole("button", { exact: true, name: "Cat" }).click();
+  await main.hover();
+  await page.mouse.wheel(0, 2_000);
+  const next = main.getByRole("button", { name: "Next" });
+  await expect(next).toBeInViewport();
+  await next.click();
+  await expect(
+    main.getByRole("progressbar", { name: "Question progress" }),
+  ).toHaveAttribute("aria-valuenow", "2");
 });
 
 for (const viewport of [
