@@ -76,13 +76,18 @@ a multi-learner session with no valid selection shows the required
 `Who is learning now?` picker immediately. Learner mode contains Talk to
 Peppa, lesson playback, stories at the
 selected learner's stored level, and consented recording activities. Its
-profile dropdown exposes `Switch learner` and the password-gated grown-up
-gateway; it does not expose profile editing, consent, AI/data, sign-out,
-deletion, or story-art controls.
+profile dropdown exposes `Switch learner` and the grown-up access action; it
+does not expose profile editing, consent, AI/data, sign-out, deletion, or
+story-art controls.
 
-Selecting Guardian asks for the current account password. The Worker unlocks
-only that Better Auth session for a fixed 15 minutes; refreshes may resume it,
-but activity does not extend it. `/guardian` is the management dashboard. Its
+The current temporary flow opens `Grown-up access` without asking for the
+account password again. Selecting it, or entering a declared Guardian route
+directly, automatically grants the authenticated Better Auth session Guardian
+access for a fixed 15 minutes; refreshes may resume the grant, but activity does
+not extend it. Genuine grant failures stay on the requested URL with a visible
+retry. This passwordless handoff is a temporary weaker boundary:
+authentication, account ownership, and Guardian-only management authorization
+remain enforced. `/guardian` is the management dashboard. Its
 `Switch to learner` action and the learner account menu share the chooser that
 changes the session's learner selection. `/guardian/learners` owns learner
 creation and deletion, while

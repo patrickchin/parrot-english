@@ -10,7 +10,7 @@ API and falls back to static Vite assets for non-API requests.
 Browser
   -> Cloudflare Worker
        -> /api/auth/* -> Better Auth -> Drizzle -> D1
-       -> /api/guardian-access -> Better Auth password check -> D1
+       -> /api/guardian-access -> authenticated session grant -> D1
        -> /api/learner-profiles -> authenticated ownership
             -> D1 roster + session selection
        -> active-learner resolver -> owned learner identity
@@ -35,7 +35,8 @@ prototype build entry in the shipped product.
 - `src/app/HomeMenu.tsx` exposes the four learner activities, including Five
   Little Ducks dubbing.
 - `src/auth` owns the Better Auth session, account UI, guardian-access state,
-  password unlock, fixed expiry, and learner/guardian route boundaries.
+  automatic temporary grant, fixed expiry, and learner/guardian route
+  boundaries.
 - `src/learner-profile` owns onboarding, active-learner state, Guardian roster
   management, and profile editing. A successful profile change replaces the
   active profile ID, aborts stale work, clears learner-specific client state,
@@ -96,10 +97,14 @@ authenticated `/api/dubs/five-little-ducks-v2/*` family owns consent-aware
 status, raw clip upload, private clip streaming, durable consent grant, and
 whole-dub revocation/deletion. Static assets are the final fallback.
 
-`GET`, `POST`, and `DELETE /api/guardian-access` read, unlock, and lock the
-current Better Auth session. Unlock verifies the same password used for the
-Guardian's Better Auth account; there is no separate Guardian password or PIN.
-The check is rate-limited, writes a fixed 15-minute expiry, and returns
+`GET`, `POST`, and `DELETE /api/guardian-access` read, grant, and revoke the
+current Better Auth session. In the current temporary flow, `POST` accepts no
+password body and grants the already-authenticated session Guardian access.
+Declared Guardian routes request that grant automatically; a genuine request or
+response failure remains visible at the requested URL with Retry. This
+passwordless entry is a weaker temporary boundary, not a removal of Better Auth,
+owned-learner resolution, or Guardian-only endpoint checks. The grant request is
+rate-limited, writes the actual fixed 15-minute expiry, and returns
 `Cache-Control: no-store`. Expired rows are treated as absent and cleaned up
 lazily. No password, Guardian token, or mode history is stored.
 
@@ -184,8 +189,9 @@ role or long-lived account permission. The active learner is separate server
 state for that same session, so different sessions can manage different
 learners without changing one another. Guardian settings use explicit
 learner-target URLs and never mutate that state. The shared switch dialog first
-selects its explicit radio choice, then locks Guardian access, then navigates;
-it begins with no preselected choice and keeps the current page on failure.
+selects the learner named by a direct learner button, then locks Guardian access
+when leaving Guardian mode, then navigates. The button is the complete selection
+action, and the dialog keeps the current page on failure.
 
 Dubbing and lesson-recording consent are deliberately durable learner state so
 the selected learner may record after Guardian mode is locked. Lesson and dub

@@ -746,6 +746,54 @@ test("locking guardian access in one tab returns a sibling tab to learner mode",
   }
 });
 
+test("a sibling learner switch does not block the next Guardian route from profile setup", async ({
+  page,
+}) => {
+  const sibling = await page.context().newPage();
+  try {
+    await Promise.all([
+      page.goto(guardianLearnerUrl("/guardian", "guardian")),
+      sibling.goto(
+        guardianUrl(
+          "/profile/setup?parrotE2eProfile=viewport-stability",
+          "guardian",
+        ),
+      ),
+    ]);
+    await expect(
+      page.getByRole("heading", { name: "Guardian dashboard" }),
+    ).toBeVisible();
+    await expect(
+      sibling.getByRole("heading", {
+        name: "Answer 6 questions",
+      }),
+    ).toBeVisible();
+
+    await chooseLearnerAndStart(page, "Noah");
+    await expect(page).toHaveURL("/");
+    await expect(sibling).toHaveURL(/\/profile\/setup/);
+
+    await sibling.evaluate(() => {
+      window.history.pushState(null, "", "/guardian/stories");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await expect(sibling).toHaveURL("/guardian/stories");
+    await expect(
+      sibling.getByRole("heading", { name: "Story settings" }),
+    ).toBeVisible();
+
+    await sibling.reload();
+    await expect(sibling).toHaveURL(
+      "/guardian/stories?learnerProfileId=e2e-learner",
+    );
+    await expect(
+      sibling.getByRole("heading", { name: "Story settings" }),
+    ).toBeVisible();
+  } finally {
+    await sibling.close();
+  }
+});
+
 test("direct switching closes learner menu while guardian-menu keys follow rendered items", async ({
   page,
 }) => {

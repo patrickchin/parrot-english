@@ -11,9 +11,12 @@ focused activities:
 4. **Dub a rhyme** for recording and replaying a private saved performance.
 
 The authenticated home presents only these learner activities. Profile,
-content, consent, privacy, and account management live in password-protected
-guardian mode. Product experiments, comparison renderers, internal content
-metrics, and roadmap placeholders do not appear in learner navigation.
+content, consent, privacy, and account management live behind authenticated
+Guardian-only UI and API boundaries. The current temporary Guardian-entry flow
+is passwordless for a signed-in session; it does not remove authentication,
+ownership checks, or those management boundaries. Product experiments,
+comparison renderers, internal content metrics, and roadmap placeholders do not
+appear in learner navigation.
 
 ## Learner and Guardian Modes
 
@@ -33,20 +36,26 @@ Account & privacy, and Sign out. It does not show a current learner or account
 deletion shortcut. Learner administration stays on Manage learners, while
 account deletion stays inside the Account & privacy page's Danger zone.
 
-Selecting `Grown-up access` requires the same password used to sign in to the
-Guardian account. There is no separate Guardian password or PIN. A successful
-check unlocks Guardian mode for that auth session for at most 15 minutes. The
-fixed expiry survives refresh and another tab sharing the session, but ordinary
-activity never extends it. `Switch to learner` first opens `Who is learning
-now?`, with no learner preselected. The Guardian chooses a learner and confirms
-`Start learner mode as {name}`. The app selects that learner, removes the
-server unlock, then opens the requested learner route. If selection or locking
-fails, the Guardian screen and URL remain in place with an error. Cancel changes
-neither the active learner nor Guardian access. Expiry retains a Guardian deep
-link behind the password gate so a new unlock can resume it without flashing
-protected content. In learner mode, `Switch learner` opens the same chooser;
-selecting an owned profile returns to learner home without calling the Guardian
-lock API.
+Selecting `Grown-up access`, or entering a declared Guardian route directly,
+automatically requests Guardian access for the already-authenticated Better Auth
+session. The current temporary flow has no intermediate password dialog. This
+passwordless handoff is a deliberately weaker temporary boundary; account
+authentication, learner ownership, and Guardian-only server authorization still
+apply. A successful grant lasts for at most 15 minutes. Its fixed expiry
+survives refresh and another tab sharing the session, but ordinary activity
+never extends it. Genuine access failures keep the requested URL behind a
+visible error and Retry action.
+
+`Switch to learner` opens `Who is learning now?`. The chooser presents one
+direct `Start learner mode as {name}` button per owned learner; choosing the
+button is the complete selection action. The app selects that learner, removes
+the server grant, then opens the requested learner route. If selection or
+locking fails, the Guardian screen and URL remain in place with an error. Cancel
+changes neither the active learner nor Guardian access. Expiry retains a
+Guardian deep link behind the automatic access check so a new grant can resume
+it without flashing protected content. In learner mode, `Switch learner` opens
+the same chooser; selecting an owned profile returns to learner home without
+calling the Guardian lock API.
 
 When a session has more than one learner and no valid selection, learner mode
 fails closed with the required `Who is learning now?` page. It does not guess a

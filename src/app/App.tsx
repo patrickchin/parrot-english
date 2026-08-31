@@ -1297,7 +1297,11 @@ export function AuthenticatedApplication({
   const location = useLocation();
   const navigate = useNavigate();
   const accountExperience = useAccountExperience();
-  const { mode: guardianAccessMode } = useGuardianAccess();
+  const {
+    acknowledgeLearnerSwitch,
+    blockedByLearnerSwitch,
+    mode: guardianAccessMode,
+  } = useGuardianAccess();
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
   const isLearnerProfileRoute = gateRoute === "learner-profile";
@@ -1307,6 +1311,7 @@ export function AuthenticatedApplication({
     location.pathname,
   );
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const learnerProfileRoute = isLearnerProfileRoute && !guardianRoute;
   const guardianBoundaryRoute = guardianRoute || guardianLearnerChildRoute;
   const guardianDashboardRoute =
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
@@ -1334,6 +1339,20 @@ export function AuthenticatedApplication({
     location.search,
     location.hash,
   );
+  useEffect(() => {
+    if (
+      learnerProfileRoute &&
+      guardianAccessMode === "learner" &&
+      blockedByLearnerSwitch
+    ) {
+      acknowledgeLearnerSwitch();
+    }
+  }, [
+    acknowledgeLearnerSwitch,
+    blockedByLearnerSwitch,
+    guardianAccessMode,
+    learnerProfileRoute,
+  ]);
   const openProfileRoute = useCallback(() => {
     onExitLessonRoute();
     navigate(getProfilePath(requestedProtectedTarget));
@@ -1407,7 +1426,7 @@ export function AuthenticatedApplication({
     return applicationRoutes;
   }
 
-  if (isLearnerProfileRoute && !guardianRoute) {
+  if (learnerProfileRoute) {
     return routeContent;
   }
 
