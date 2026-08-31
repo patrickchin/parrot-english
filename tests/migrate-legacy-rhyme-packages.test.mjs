@@ -45,6 +45,19 @@ function compileGenerated({ manifest, packageDir, scoreBytes }) {
 }
 
 describe("legacy nursery-rhyme package migration", () => {
+  it("emits human-reviewable MusicXML with deterministic structural formatting", async (t) => {
+    const rootDir = await temporaryRoot(t);
+    await runLegacyRhymeMigration({ onlySlug: "row-row-row-your-boat", rootDir });
+    const score = (
+      await generatedPackage(rootDir, "row-row-row-your-boat")
+    ).scoreBytes.toString("utf8");
+
+    assert.match(score, /\n  <part-list>\n    <score-part id="P1">\n/);
+    assert.match(score, /\n  <part id="P1">\n    <measure number="1">\n/);
+    assert.match(score, /\n      <note>\n        <rest\/>\n        <duration>800<\/duration>\n      <\/note>\n/);
+    assert.doesNotMatch(score, /<\/(?:note|measure|part)><(?:note|measure|part)\b/);
+  });
+
   it("writes deterministic manifest and MusicXML bytes without network or TTS", async (t) => {
     const rootDir = await temporaryRoot(t);
     const writes = [];

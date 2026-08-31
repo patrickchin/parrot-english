@@ -645,6 +645,33 @@ describe("ties, line boundaries, and exact lyric offsets", () => {
     ]);
   });
 
+  it("rejects a text-only lyric on a rest", () => {
+    const xml = scoreXml({
+      parts: [
+        part("P1", [
+          measure(
+            1,
+            attributes(2)
+              + tempo()
+              + rest(4)
+              + '<bookmark id="line-1"/>'
+              + note({
+                duration: 1,
+                lyrics: [lyric({ syllabic: "single", text: "Hello" })],
+              })
+              + note({
+                duration: 1,
+                lyrics: [lyric({ text: "tail" })],
+                rest: true,
+              }),
+          ),
+        ]),
+      ],
+    });
+
+    assert.throws(() => compile(xml), /rest.*marker-only|marker-only.*rest/i);
+  });
+
   it("rejects malformed rest markers and marker-only pitched lyrics", () => {
     const invalidLyrics = [
       lyric({ endLine: true, syllabic: "single", text: "Hello" }),
@@ -696,6 +723,32 @@ describe("ties, line boundaries, and exact lyric offsets", () => {
 });
 
 describe("parts, voices, and supported notes", () => {
+  it("rejects a marker-only rest lyric in a non-melody part", () => {
+    const melody = part("P1", [
+      measure(
+        1,
+        attributes(2) + tempo() + rest(4) + '<bookmark id="line-1"/>' + lineNote("Hello"),
+      ),
+    ]);
+    const accompaniment = part("P2", [
+      measure(
+        1,
+        attributes(2)
+          + rest(4)
+          + note({ duration: 2, lyrics: [lyric({ endLine: true })], rest: true }),
+      ),
+    ]);
+    const xml = scoreXml({
+      partIds: ["P1", "P2"],
+      parts: [melody, accompaniment],
+    });
+
+    assert.throws(
+      () => compile(xml, manifest(["Hello"], { playbackParts: ["P1", "P2"] })),
+      /only the melody part may contain lyrics/i,
+    );
+  });
+
   it("accepts accompaniment chords and omits an unselected part", () => {
     const melody = part("P1", [
       measure(

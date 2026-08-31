@@ -599,12 +599,16 @@ git commit -m "feat: generate static nursery rhyme catalog"
 ### Task 6: Generate and review all six legacy-compatible content packages
 
 **Files:**
+- Modify: `docs/superpowers/plans/2026-09-01-nursery-rhyme-content-packages.md`
+- Modify: `docs/superpowers/specs/2026-09-01-nursery-rhyme-karaoke-content-design.md`
 - Temporarily create: `scripts/migrate-legacy-rhyme-packages.mjs`
+- Modify: `scripts/nursery-rhyme/musicxml.mjs`
 - Temporarily create: `tests/migrate-legacy-rhyme-packages.test.mjs`
 - Create all six package trees listed in the File Map.
 - Regenerate: `src/dubbing/generated-rhyme-catalog.ts`
 - Update: `scripts/nursery-rhyme-deployed-ids.json`
 - Modify: `tests/nursery-rhyme-compiler.test.mjs`
+- Modify: `tests/nursery-rhyme-musicxml.test.mjs`
 - Modify: `tests/web-assets.test.mjs`
 
 This task copies guide bytes into packages while retaining the old
@@ -716,7 +720,7 @@ hashes.
 - [ ] **Step 8: Commit reviewable packages without changing runtime URLs**
 
 ```bash
-git add scripts/migrate-legacy-rhyme-packages.mjs scripts/nursery-rhyme-deployed-ids.json public/assets/nursery-rhymes src/dubbing/generated-rhyme-catalog.ts tests/migrate-legacy-rhyme-packages.test.mjs tests/nursery-rhyme-compiler.test.mjs tests/web-assets.test.mjs
+git add docs/superpowers/plans/2026-09-01-nursery-rhyme-content-packages.md docs/superpowers/specs/2026-09-01-nursery-rhyme-karaoke-content-design.md scripts/migrate-legacy-rhyme-packages.mjs scripts/nursery-rhyme-deployed-ids.json scripts/nursery-rhyme/musicxml.mjs public/assets/nursery-rhymes src/dubbing/generated-rhyme-catalog.ts tests/migrate-legacy-rhyme-packages.test.mjs tests/nursery-rhyme-compiler.test.mjs tests/nursery-rhyme-musicxml.test.mjs tests/web-assets.test.mjs
 git commit -m "content: add validated nursery rhyme packages"
 ```
 

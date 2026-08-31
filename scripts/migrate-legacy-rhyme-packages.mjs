@@ -23,6 +23,23 @@ function escapeXml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function formatXml(xml) {
+  let depth = 0;
+  const lines = xml.trim().replaceAll(/>\s*</g, ">\n<").split("\n");
+  return `${lines.map((line) => {
+    if (line.startsWith("</")) depth -= 1;
+    const formatted = `${"  ".repeat(depth)}${line}`;
+    if (
+      /^<[A-Za-z][^>]*>$/.test(line)
+      && !line.endsWith("/>")
+      && !line.includes("</")
+    ) {
+      depth += 1;
+    }
+    return formatted;
+  }).join("\n")}\n`;
+}
+
 function pitchXml(midi) {
   const steps = ["C", "C", "D", "D", "E", "F", "F", "G", "G", "A", "A", "B"];
   const alters = [0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0];
@@ -252,7 +269,7 @@ function accompanimentPartXml(definition) {
 }
 
 function scoreMusicXml(definition) {
-  return [
+  return formatXml([
     '<?xml version="1.0" encoding="UTF-8"?>\n',
     '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n',
     '<score-partwise version="4.0">',
@@ -261,7 +278,7 @@ function scoreMusicXml(definition) {
     melodyPartXml(definition),
     accompanimentPartXml(definition),
     "</score-partwise>\n",
-  ].join("");
+  ].join(""));
 }
 
 export async function runLegacyRhymeMigration({
