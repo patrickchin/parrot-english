@@ -196,9 +196,11 @@ boundary so a Guardian can translate a password, consent, or destructive-action
 dialog without violating modal keyboard containment. The underlying global
 control remains behind the overlay.
 
-The visible option names are written in their own language and script. Each
-button has a localized accessible name and a clear selected state. Switching
-updates text immediately while retaining focus on the chosen language option.
+The visible and accessible option names are stable self-names written in their
+own language and script (`English`, `中文`). The localized group label explains
+that the control selects the Guardian guidance language, and each button has a
+clear selected state. Switching updates the group language and surrounding copy
+immediately while retaining focus on the chosen language option.
 
 ## Document Language Semantics
 
