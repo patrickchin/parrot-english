@@ -342,14 +342,14 @@ describe("Worker authentication", () => {
       assert.equal((await response.json()).code, "SHARED_GUEST_UNAVAILABLE");
       assert.equal(
         state.sqlite
-          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
-          .get(SHARED_GUEST_USER_ID).count,
+          .prepare("SELECT count(*) AS count FROM user")
+          .get().count,
         0,
       );
       assert.equal(
         state.sqlite
-          .prepare("SELECT count(*) AS count FROM session WHERE user_id = ?")
-          .get(SHARED_GUEST_USER_ID).count,
+          .prepare("SELECT count(*) AS count FROM session")
+          .get().count,
         0,
       );
     } finally {
