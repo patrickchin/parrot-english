@@ -120,7 +120,10 @@ function GuardianStorySettingsContent({
               className="grid gap-1 rounded-2xl bg-sky-50 px-4 py-3 text-center"
               role="group"
             >
-              <p className="m-0 text-xs font-black text-brand-blue">
+              <p
+                className="m-0 text-xs font-black text-brand-blue"
+                lang="en"
+              >
                 {copy.cefrLabel}: {selectedLevelCopy.cefrReference}
               </p>
               <p className="m-0 text-sm font-bold text-slate-700">

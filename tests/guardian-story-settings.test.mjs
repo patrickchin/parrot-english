@@ -377,6 +377,10 @@ test("Chinese guardian story settings localizes guidance while preserving story 
   assert.match(text, /每页只有几个熟悉的单词/);
   assert.match(text, /CEFR/);
   assert.match(text, /Entry Pre-A1/);
+  const cefrReference = [...container.querySelectorAll("p")].find(
+    (node) => node.textContent === "CEFR: Entry Pre-A1",
+  );
+  assert.equal(cefrReference?.getAttribute("lang"), "en");
   assert.match(html, /aria-label="个性化故事图片"/);
   assert.match(text, /私密/);
   const title = [...container.querySelectorAll('[lang="en"]')].find(
