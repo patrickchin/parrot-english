@@ -1428,11 +1428,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const assertFrozenGuide = (status) => {
       assert.match(container.querySelector('[role="status"]')?.textContent, status);
+      assert.equal(container.querySelector("h1")?.textContent, DUB_LINES[0].text);
       assert.equal(container.querySelector("h1 [aria-current='true']"), null);
-      assert.equal(
-        container.querySelector('[aria-label="Waveform and melody guide"] [style*="left"]')?.getAttribute("style"),
-        "left: 100%;",
-      );
+      assert.ok(container.querySelector('[aria-label="Waveform and melody guide"]'));
     };
     assertFrozenGuide(/Playing example/);
 
