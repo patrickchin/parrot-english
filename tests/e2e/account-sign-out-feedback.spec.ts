@@ -198,7 +198,11 @@ for (const viewport of viewports) {
       ]);
     expect(failureAccountBox).not.toBeNull();
     expect(retryBox).not.toBeNull();
-    expect(headingAfterFailure).toEqual(headingBefore);
+    if (viewport.width < 1360) {
+      expect(headingAfterFailure!.y - headingBefore!.y).toBe(48);
+    } else {
+      expect(headingAfterFailure).toEqual(headingBefore);
+    }
     expect(backBox).not.toBeNull();
     expect(languageBox).not.toBeNull();
     expect(Math.round(retryBox!.height)).toBeGreaterThanOrEqual(44);
@@ -448,8 +452,8 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
     account.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
-  expect(headingAfter).toEqual(headingBefore);
-  expect(storySettingsAfter).toEqual(storySettingsBefore);
+  expect(headingAfter!.y - headingBefore!.y).toBe(48);
+  expect(storySettingsAfter!.y - storySettingsBefore!.y).toBe(48);
   expect(retryBox!.y).toBeGreaterThanOrEqual(
     accountBox!.y + accountBox!.height,
   );
@@ -474,6 +478,7 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
   await page.goto(guardianPath("/guardian"));
   await applyTextSpacing(page);
 
+  const heading = page.getByRole("heading", { name: "Guardian dashboard" });
   const account = page.getByRole("button", {
     name: "Profile for Alex Guardian, guardian mode",
   });
@@ -485,24 +490,27 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
     exact: true,
     name: "Sign out again",
   });
-  const [retryBox, languageBox, routeBox, accountBox] = await Promise.all([
+  const [retryBox, languageBox, routeBox, accountBox, headingBox] = await Promise.all([
     retry.boundingBox(),
     page
       .getByRole("group", { name: /Guardian guidance language|家长指导语言/ })
       .boundingBox(),
     page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
     account.boundingBox(),
+    heading.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
   expect(languageBox).not.toBeNull();
   expect(routeBox).not.toBeNull();
   expect(accountBox).not.toBeNull();
+  expect(headingBox).not.toBeNull();
   expect(retryBox!.y).toBeGreaterThanOrEqual(
     accountBox!.y + accountBox!.height,
   );
   expect(boxesOverlap(retryBox!, languageBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, routeBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, accountBox!)).toBe(false);
+  expect(headingBox!.y - (retryBox!.y + retryBox!.height)).toBeGreaterThanOrEqual(8);
   await page.keyboard.press("Tab");
   await expect(retry).toBeFocused();
   const retryPaint = await focusedPaintBox(retry);
@@ -510,6 +518,7 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
   expect(retryPaint.y).toBeGreaterThanOrEqual(0);
   expect(retryPaint.x + retryPaint.width).toBeLessThanOrEqual(280);
   expect(retryPaint.y + retryPaint.height).toBeLessThanOrEqual(568);
+  expect(boxesOverlap(retryPaint, headingBox!)).toBe(false);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(280);

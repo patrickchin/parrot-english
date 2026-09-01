@@ -47,6 +47,7 @@ export function resolveGuardianLanguage(
 }
 
 export function isGuardianGuidanceSurface(pathname: string, search = "") {
+  if (/^\/profile\/*$/i.test(pathname)) return false;
   return getGateRouteKind(pathname) === "login" || isGuardianRoute(pathname, search);
 }
 

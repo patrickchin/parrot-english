@@ -514,6 +514,25 @@ for (const viewport of mobileViewports) {
   });
 }
 
+test("wide language and route controls have separate shared header slots", async ({
+  page,
+}) => {
+  const viewport = { height: 900, name: "wide", width: 1360 };
+  await page.setViewportSize(viewport);
+  await page.goto(guardianPath("/guardian/account"));
+
+  const language = page.getByRole("group", {
+    name: "Guardian guidance language",
+  });
+  const routeControl = page.getByRole("link", {
+    exact: true,
+    name: "Back to Guardian dashboard",
+  });
+  await expectInsideViewport(language, viewport);
+  await expectInsideViewport(routeControl, viewport);
+  await expectNoOverlap(language, routeControl);
+});
+
 test("arbitrary guardian identity cannot cover the compact Back action", async ({
   page,
 }) => {

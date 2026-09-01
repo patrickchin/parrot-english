@@ -670,6 +670,7 @@ export function AuthGateView({
   const userLabel =
     session.user.name?.trim() || session.user.email || "Learner";
   const accountError = profileError || formError;
+  const showNarrowSignOutRecovery = Boolean(signOutError) && !isSigningOut;
 
   return (
     <>
@@ -685,7 +686,13 @@ export function AuthGateView({
         signOutError={signOutError}
         userEmail={session.user.email}
       />
-      {children}
+      <div
+        className={
+          showNarrowSignOutRecovery ? "max-wide:[&_main]:!pt-40" : undefined
+        }
+      >
+        {children}
+      </div>
     </>
   );
 }

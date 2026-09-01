@@ -64,7 +64,7 @@ export function RouteHeader({
   return (
     <nav
       aria-label={ariaLabel}
-      className="absolute left-38 top-3.5 z-20 flex gap-2.5 short:top-2.5 md:top-6 wide:left-40"
+      className="absolute left-38 top-3.5 z-20 flex gap-2.5 short:top-2.5 md:top-6 wide:left-41"
     >
       {children}
     </nav>

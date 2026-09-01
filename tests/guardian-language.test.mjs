@@ -23,6 +23,9 @@ const vite = await createServer({
 const controlModule = await vite.ssrLoadModule(
   "/src/i18n/GuardianLanguageControl.tsx",
 );
+const harnessModule = await vite.ssrLoadModule(
+  "/tests/helpers/guardian-language-harness.tsx",
+);
 const languageModule = await vite.ssrLoadModule("/src/i18n/guardian-language.tsx");
 const englishModule = await vite.ssrLoadModule("/src/i18n/messages/en.ts");
 const chineseModule = await vite.ssrLoadModule("/src/i18n/messages/zh-Hans.ts");
@@ -36,6 +39,7 @@ const {
   useGuardianLanguage,
 } = languageModule;
 const { GuardianLanguageControl } = controlModule;
+const { GuardianLanguageHarness } = harnessModule;
 
 afterEach(async () => {
   await cleanupMountedRoots();
@@ -98,6 +102,7 @@ describe("guardian language domain", () => {
     assert.equal(isGuardianGuidanceSurface("/profile/setup", "?redo=1"), true);
     assert.equal(isGuardianGuidanceSurface("/login"), true);
     assert.equal(isGuardianGuidanceSurface("/profile/setup"), false);
+    assert.equal(isGuardianGuidanceSurface("/profile"), false);
     assert.equal(isGuardianGuidanceSurface("/lessons"), false);
   });
 });
@@ -228,6 +233,68 @@ describe("GuardianLanguageControl", { concurrency: false }, () => {
     assert.match(html, /lang="zh-Hans"/);
     assert.match(html, />English</);
     assert.match(html, />中文</);
+  });
+
+  it("updates the group label on click, keeps focus, and restores only its document language", async () => {
+    document.documentElement.lang = "before-test";
+    const container = await mountStrict(
+      createElement(GuardianLanguageHarness, {
+        initialLanguage: "en",
+        route: "/login",
+      }),
+    );
+    const group = container.querySelector('[role="group"]');
+    const chinese = container.querySelector('button[lang="zh-Hans"]');
+    assert.equal(group?.getAttribute("aria-label"), "Guardian guidance language");
+    assert.equal(document.documentElement.lang, "en");
+
+    chinese?.focus();
+    await click(chinese);
+    await flush();
+
+    assert.equal(group?.getAttribute("aria-label"), "家长指导语言");
+    assert.equal(group?.lang, "zh-Hans");
+    assert.equal(chinese?.getAttribute("aria-pressed"), "true");
+    assert.equal(document.activeElement, chinese);
+    assert.equal(document.documentElement.lang, "zh-Hans");
+    await cleanupMountedRoots();
+    assert.equal(document.documentElement.lang, "before-test");
+  });
+
+  for (const [route, expectedLanguage] of [
+    ["/login", "zh-Hans"],
+    ["/guardian", "zh-Hans"],
+    ["/guardian/learners/a", "zh-Hans"],
+    ["/", "en"],
+    ["/lessons", "en"],
+    ["/profile", "en"],
+  ]) {
+    it(`uses ${expectedLanguage} for ${route} and restores the previous document language`, async () => {
+      document.documentElement.lang = "before-test";
+      await mountStrict(
+        createElement(GuardianLanguageHarness, {
+          initialLanguage: "zh-Hans",
+          route,
+        }),
+      );
+      assert.equal(document.documentElement.lang, expectedLanguage);
+      await cleanupMountedRoots();
+      assert.equal(document.documentElement.lang, "before-test");
+    });
+  }
+
+  it("does not overwrite a newer document language owner during cleanup", async () => {
+    document.documentElement.lang = "before-test";
+    await mountStrict(
+      createElement(GuardianLanguageHarness, {
+        initialLanguage: "zh-Hans",
+        route: "/guardian",
+      }),
+    );
+    assert.equal(document.documentElement.lang, "zh-Hans");
+    document.documentElement.lang = "newer-owner";
+    await cleanupMountedRoots();
+    assert.equal(document.documentElement.lang, "newer-owner");
   });
 });
 
