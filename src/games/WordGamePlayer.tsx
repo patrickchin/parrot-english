@@ -129,31 +129,30 @@ export function WordGamePlayer({
   }, [complete, roundIndex]);
 
   useEffect(() => {
-    const nextRound = rounds[roundIndex + 1];
-    if (!nextRound) return;
-
-    for (const choice of rounds[roundIndex].choices) {
+    for (const choice of rounds[0].choices) {
       if (choice.visual.kind === "image") {
         seenImageSourcesRef.current.add(choice.visual.src);
       }
     }
 
-    for (const choice of nextRound.choices) {
-      if (
-        choice.visual.kind !== "image" ||
-        seenImageSourcesRef.current.has(choice.visual.src)
-      ) continue;
+    for (const lessonRound of rounds) {
+      for (const choice of lessonRound.choices) {
+        if (
+          choice.visual.kind !== "image" ||
+          seenImageSourcesRef.current.has(choice.visual.src)
+        ) continue;
 
-      const image = new Image();
-      image.decoding = "async";
-      image.src = choice.visual.src;
-      preloadedImagesRef.current.push(image);
-      seenImageSourcesRef.current.add(choice.visual.src);
-      if (typeof image.decode === "function") {
-        void image.decode().catch(() => undefined);
+        const image = new Image();
+        image.decoding = "async";
+        image.src = choice.visual.src;
+        preloadedImagesRef.current.push(image);
+        seenImageSourcesRef.current.add(choice.visual.src);
+        if (typeof image.decode === "function") {
+          void image.decode().catch(() => undefined);
+        }
       }
     }
-  }, [roundIndex, rounds]);
+  }, [rounds]);
 
   function listenToChoice(choiceIndex: number) {
     playLine(round.choices[choiceIndex].labelAudio);

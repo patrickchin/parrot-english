@@ -186,31 +186,13 @@ test("navigates through a category and plays saved four-choice feedback in seque
   await expect.poll(() => hasStaticRequest(page, "word-game-animals-dog-prompt")).toBe(true);
 });
 
-test("preloads the next question's new picture before advancing", async ({ page }) => {
-  await page.addInitScript(() => {
-    const NativeImage = window.Image;
-    const preloadedSources: string[] = [];
-    Object.defineProperty(window, "Image", {
-      configurable: true,
-      value: class extends NativeImage {
-        override set src(value: string) {
-          preloadedSources.push(new URL(value, window.location.href).pathname);
-          super.src = value;
-        }
-
-        override get src() {
-          return super.src;
-        }
-      },
-    });
-    Object.defineProperty(window, "__parrotE2eWordGamePreloads", {
-      value: preloadedSources,
-    });
-  });
-  let duckRequested = false;
-  await page.route("**/assets/word-games/fluent-3d/1f986.png", async (route) => {
-    duckRequested = true;
-    await route.continue();
+test("preloads every picture in the lesson before advancing", async ({ page }) => {
+  const requestedPictures = new Set<string>();
+  page.on("request", (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname.startsWith("/assets/word-games/fluent-3d/")) {
+      requestedPictures.add(pathname);
+    }
   });
   await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
 
@@ -219,10 +201,12 @@ test("preloads the next question's new picture before advancing", async ({ page 
     main.getByRole("heading", { level: 2, name: "Which is the cat?" }),
   ).toBeVisible();
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
-  await expect.poll(() => duckRequested).toBe(true);
-  await expect.poll(() => page.evaluate(() => (
-    window as Window & { __parrotE2eWordGamePreloads?: string[] }
-  ).__parrotE2eWordGamePreloads)).toEqual([
+  await expect.poll(() => [...requestedPictures].sort()).toEqual([
+    "/assets/word-games/fluent-3d/1f415.png",
+    "/assets/word-games/fluent-3d/1f41f.png",
+    "/assets/word-games/fluent-3d/1f426.png",
+    "/assets/word-games/fluent-3d/1f431.png",
+    "/assets/word-games/fluent-3d/1f438.png",
     "/assets/word-games/fluent-3d/1f986.png",
   ]);
 });
