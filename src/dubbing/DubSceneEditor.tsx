@@ -7,7 +7,6 @@ import type { DubOperation } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import {
   FIVE_LITTLE_DUCKS_DUB,
-  getDubLineMusicPhrase,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog";
@@ -73,7 +72,7 @@ export function DubSceneEditor({
   const hasPlayableTake = pendingTake !== null || hasSavedTake;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
-  const recordingDurationMs = getDubLineMusicPhrase(definition, activeLine).durationMs;
+  const recordingDurationMs = activeLine.durationMs;
   const presentationElapsedMs = presentation.lineId === activeLine.id
     ? presentation.elapsedMs
     : null;

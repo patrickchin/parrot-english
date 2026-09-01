@@ -1773,22 +1773,27 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Record line"/);
   });
 
-  it("derives recording copy and progress from the selected melody phrase", () => {
-    const line = OLD_MACDONALD_DUB.lines[2];
-    const idle = renderSceneEditor({ activeLine: line, definition: OLD_MACDONALD_DUB });
+  it("derives recording copy and progress from the selected line duration", () => {
+    const line = { ...OLD_MACDONALD_DUB.lines[2], durationMs: 3_000 };
+    const definition = {
+      ...OLD_MACDONALD_DUB,
+      lines: OLD_MACDONALD_DUB.lines.map((candidate, index) => index === 2 ? line : candidate),
+    };
+    const idle = renderSceneEditor({ activeLine: line, definition });
     const recording = renderSceneEditor({
       activeLine: line,
-      definition: OLD_MACDONALD_DUB,
+      definition,
       operation: "recording",
-      presentation: { countInBeat: null, elapsedMs: 1_500, lineId: line.id },
+      presentation: { countInBeat: null, elapsedMs: 2_500, lineId: line.id },
       recordingStream: { getTracks: () => [] },
     });
 
-    assert.match(idle, /Melody length: 0:02/);
+    assert.equal(definition.music.linePhrases[2].durationMs, 2_000);
+    assert.match(idle, /Melody length: 0:03/);
     assert.match(recording, /Recording with melody/);
-    assert.match(recording, /0:01 \/ 0:02/);
-    assert.match(recording, /aria-valuemax="2000"/);
-    assert.match(recording, /aria-valuenow="1500"/);
+    assert.match(recording, /0:02 \/ 0:03/);
+    assert.match(recording, /aria-valuemax="3000"/);
+    assert.match(recording, /aria-valuenow="2500"/);
   });
 
   it("turns the phrase-length record action into an immediate stop action with elapsed time", () => {
@@ -1824,8 +1829,8 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Previous line"[^>]*disabled/);
     assert.match(html, /aria-label="Next line"[^>]*disabled/);
     assert.doesNotMatch(html, /aria-label="Cancel count-in"[^>]*disabled/);
-    assert.doesNotMatch(html, /fill-brand-rose/);
-    assert.doesNotMatch(html, /pointer-events-none absolute inset-y-0/);
+    assert.doesNotMatch(html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? "", /aria-current/);
+    assert.match(html, /aria-label="Waveform and melody guide"/);
   });
 
   it("makes microphone startup and saving visible in the fixed record slot", () => {

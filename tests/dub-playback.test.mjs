@@ -693,6 +693,51 @@ describe("duck dub playback", () => {
     assert.deepEqual(ticks, [0]);
   });
 
+  it("uses line duration when a prepared backing's music phrase duration drifts", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const ticks = [];
+    let ended = 0;
+    const line = {
+      ...FIVE_LITTLE_DUCKS_DUB.lines[0],
+      durationMs: 2_500,
+    };
+    const definition = {
+      ...FIVE_LITTLE_DUCKS_DUB,
+      lines: [line, ...FIVE_LITTLE_DUCKS_DUB.lines.slice(1)],
+    };
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition,
+      line,
+      onEnded: () => { ended += 1; },
+      onTick: (elapsedMs) => ticks.push(elapsedMs),
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    assert.equal(definition.music.linePhrases[0].durationMs, 4_000);
+    assert.equal(backing.durationMs, 2_500);
+    backing.start();
+    const context = audio.contexts[0];
+    const downbeatAt = 10 + definition.music.countInDurationMs / 1_000;
+    const terminal = context.oscillators.find(({ frequency }) => frequency.value === 0);
+    assert.equal(terminal.stopTimes[0], downbeatAt + 2.5);
+    assert.ok(context.oscillators
+      .filter(({ connections }) => connections.length > 0)
+      .every(({ stopTimes }) => stopTimes[0] <= downbeatAt + 2.5));
+
+    context.oscillators.find(
+      ({ connections, stopTimes }) => connections.length === 0 && stopTimes[0] === downbeatAt,
+    ).finish();
+    context.currentTime = downbeatAt + 3;
+    raf.runNext();
+    assert.deepEqual(ticks, [0, 2_500]);
+    terminal.finish();
+    assert.equal(ended, 1);
+    assert.equal(context.closeCalls, 1);
+  });
+
   it("cancels prepared count-in markers without late callbacks or duplicate cleanup", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();

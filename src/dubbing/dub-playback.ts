@@ -179,12 +179,14 @@ function scheduleDubMusic(
       const phrase = getPhrase(line);
       const phraseStartsMs = line.cueMs - cueOffsetMs;
       for (const note of phrase.playbackNotes) {
+        const noteStartsMs = phraseStartsMs + note.atMs;
+        if (noteStartsMs < 0 || noteStartsMs >= authoredDurationMs) continue;
         const melody = note.role === "melody";
         scheduleTone(context, output, oscillators, {
-          durationMs: note.durationMs,
+          durationMs: Math.min(note.durationMs, authoredDurationMs - noteStartsMs),
           gain: melody ? 0.78 : 0.24,
           midi: note.midi,
-          startsAt: startAt + (phraseStartsMs + note.atMs) / 1_000,
+          startsAt: startAt + noteStartsMs / 1_000,
           type: melody ? "triangle" : "sine",
         });
       }
@@ -316,7 +318,7 @@ export async function prepareDubLineBacking({
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
   signal,
 }: PrepareDubLineBackingOptions): Promise<PreparedDubLineBacking> {
-  const phrase = getDubLineMusicPhrase(definition, line);
+  void getDubLineMusicPhrase(definition, line);
   const context = new AudioContextClass();
   let frameId: number | null = null;
   let oscillators: OscillatorNode[] = [];
@@ -377,7 +379,7 @@ export async function prepareDubLineBacking({
 
   return {
     countInDurationMs: definition.music.countInDurationMs,
-    durationMs: phrase.durationMs,
+    durationMs: line.durationMs,
     start() {
       if (started || stopped) throw new Error("Dub line backing is not startable.");
       started = true;
@@ -396,7 +398,7 @@ export async function prepareDubLineBacking({
           definition,
           [line],
           line.cueMs,
-          phrase.durationMs,
+          line.durationMs,
           music,
           downbeatAt,
           false,
@@ -405,13 +407,13 @@ export async function prepareDubLineBacking({
         terminal.frequency.value = 0;
         terminal.onended = end;
         terminal.start(startAt);
-        terminal.stop(downbeatAt + phrase.durationMs / 1_000);
+        terminal.stop(downbeatAt + line.durationMs / 1_000);
         const tick = () => {
           frameId = null;
           if (stopped) return;
           try {
             const elapsedMs = Math.min(
-              phrase.durationMs,
+              line.durationMs,
               Math.max(0, (context.currentTime - downbeatAt) * 1_000),
             );
             onTick(elapsedMs);
