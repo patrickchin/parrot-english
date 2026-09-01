@@ -35,7 +35,6 @@ async function createWordGameGeneratorRepo() {
   const tempRoot = await mkdtemp(join(tmpdir(), "parrot-word-game-audio-"));
   await mkdir(join(tempRoot, "scripts"), { recursive: true });
   await mkdir(join(tempRoot, "public", "assets", "audio"), { recursive: true });
-  await mkdir(join(tempRoot, "third_party"), { recursive: true });
   await cp(
     join(rootDir, "scripts", "generate-static-audio.mjs"),
     join(tempRoot, "scripts", "generate-static-audio.mjs"),
@@ -50,10 +49,6 @@ async function createWordGameGeneratorRepo() {
     join(rootDir, "public", "assets", "word-games"),
     join(tempRoot, "public", "assets", "word-games"),
     { recursive: true },
-  );
-  await cp(
-    join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
-    join(tempRoot, "third_party", "fluentui-emoji-LICENSE"),
   );
   await symlink(join(rootDir, "node_modules"), join(tempRoot, "node_modules"), "dir");
 

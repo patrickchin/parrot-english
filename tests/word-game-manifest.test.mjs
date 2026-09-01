@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  parseFluentAssetManifest,
+import * as manifestParsers from "../scripts/word-game/manifest.mjs";
+
+const {
+  parseIllustrationAssetManifest,
   parseWordGameManifest,
   parseWordGamePlayerManifest,
-} from "../scripts/word-game/manifest.mjs";
+} = manifestParsers;
 
 const categorySourcePath = "/content/animals.json";
-const fluentSourcePath = "/content/fluent-3d-assets.json";
+const illustrationSourcePath = "/content/illustrated-assets.json";
 const playerSourcePath = "/content/player.json";
 
 function validCategory() {
@@ -18,7 +20,7 @@ function validCategory() {
       id,
       label: `animal ${number}`,
       alt: `Animal ${number}.`,
-      visual: { assetId: `1f4${String(number).padStart(2, "0")}`, kind: "fluent-3d" },
+      visual: { assetId: `animals-${id}`, kind: "illustration" },
       labelAudio: {
         id: `word-game-animals-${id}-label`,
         text: `This is animal ${number}.`,
@@ -95,19 +97,15 @@ function validPlayerManifest() {
   };
 }
 
-function validFluentManifest() {
+function validIllustrationManifest() {
   return {
     schemaVersion: 1,
-    repository: "https://github.com/microsoft/fluentui-emoji",
-    revision: "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
-    license: "MIT",
-    licensePath: "LICENSE",
     assets: [
       {
-        id: "1f431",
-        upstreamPath: "assets/Cat/3D/cat_3d.png",
-        publicPath: "/assets/word-games/fluent-3d/1f431.png",
-        sha256: "5d3fcbbfb0be45d9be0ade47fe4eb1b97d33130fe67d46a8db697e434f13289b",
+        id: "animals-cat",
+        publicPath: "/assets/word-games/illustrated/animals-cat.webp",
+        sha256: "a".repeat(64),
+        source: "original-v8",
       },
     ],
   };
@@ -121,12 +119,15 @@ function errorAt(sourcePath, fieldPath) {
 }
 
 describe("word-game manifests", () => {
-  it("accepts complete schema-version-2 category, player, and Fluent manifests", () => {
+  it("accepts complete category, player, and illustration manifests", () => {
     const category = validCategory();
     assert.deepEqual(parseWordGameManifest(category, categorySourcePath), category);
     assert.deepEqual(
-      parseFluentAssetManifest(validFluentManifest(), fluentSourcePath),
-      validFluentManifest(),
+      parseIllustrationAssetManifest(
+        validIllustrationManifest(),
+        illustrationSourcePath,
+      ),
+      validIllustrationManifest(),
     );
     assert.deepEqual(
       parseWordGamePlayerManifest(validPlayerManifest(), playerSourcePath),
@@ -134,26 +135,47 @@ describe("word-game manifests", () => {
     );
   });
 
-  it("accepts exactly two copies for a Fluent visual", () => {
+  it("accepts illustrated answer-card asset references", () => {
     const category = validCategory();
-    category.items[0].visual.copies = 2;
+    category.items[0].visual = {
+      assetId: "animals-cat",
+      kind: "illustration",
+    };
 
-    assert.equal(
-      parseWordGameManifest(category, categorySourcePath).items[0].visual.copies,
-      2,
+    assert.deepEqual(
+      parseWordGameManifest(category, categorySourcePath).items[0].visual,
+      { assetId: "animals-cat", kind: "illustration" },
     );
   });
 
-  it("rejects unsupported Fluent copy counts", () => {
-    for (const copies of [0, 1, 3]) {
-      const category = validCategory();
-      category.items[0].visual.copies = copies;
+  it("rejects retired Fluent answer-card references", () => {
+    const category = validCategory();
+    category.items[0].visual = { assetId: "1f431", kind: "fluent-3d" };
 
-      assert.throws(
-        () => parseWordGameManifest(category, categorySourcePath),
-        errorAt(categorySourcePath, "items[0].visual.copies"),
-      );
-    }
+    assert.throws(
+      () => parseWordGameManifest(category, categorySourcePath),
+      errorAt(categorySourcePath, "items[0].visual.kind"),
+    );
+  });
+
+  it("accepts an illustrated artwork inventory", () => {
+    const manifest = validIllustrationManifest();
+
+    assert.equal(typeof manifestParsers.parseIllustrationAssetManifest, "function");
+    assert.deepEqual(
+      manifestParsers.parseIllustrationAssetManifest(manifest, illustrationSourcePath),
+      manifest,
+    );
+  });
+
+  it("rejects copy composition on an illustration visual", () => {
+    const category = validCategory();
+    category.items[0].visual.copies = 2;
+
+    assert.throws(
+      () => parseWordGameManifest(category, categorySourcePath),
+      errorAt(categorySourcePath, "items[0].visual.copies"),
+    );
   });
 
   it("rejects copy metadata on a swatch visual", () => {
@@ -247,7 +269,7 @@ describe("word-game manifests", () => {
       fieldPath: "items[0].labelAudio.surprise",
     },
     {
-      name: "unknown Fluent visual fields",
+      name: "unknown illustration visual fields",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
@@ -306,18 +328,18 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].quizzes[0].questions[0].surprise",
     },
     {
-      name: "unknown Fluent manifest fields",
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
-      value: () => ({ ...validFluentManifest(), surprise: true }),
+      name: "unknown illustration manifest fields",
+      parse: parseIllustrationAssetManifest,
+      sourcePath: illustrationSourcePath,
+      value: () => ({ ...validIllustrationManifest(), surprise: true }),
       fieldPath: "surprise",
     },
     {
-      name: "unknown Fluent asset fields",
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
+      name: "unknown illustration asset fields",
+      parse: parseIllustrationAssetManifest,
+      sourcePath: illustrationSourcePath,
       value: () => {
-        const manifest = validFluentManifest();
+        const manifest = validIllustrationManifest();
         manifest.assets[0].surprise = true;
         return manifest;
       },
@@ -342,12 +364,12 @@ describe("word-game manifests", () => {
       fieldPath: "id",
     },
     {
-      name: "filename-shaped Fluent asset IDs",
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
+      name: "filename-shaped illustration asset IDs",
+      parse: parseIllustrationAssetManifest,
+      sourcePath: illustrationSourcePath,
       value: () => {
-        const manifest = validFluentManifest();
-        manifest.assets[0].id = "emoji_u1f431.svg";
+        const manifest = validIllustrationManifest();
+        manifest.assets[0].id = "animals/cat.webp";
         return manifest;
       },
       fieldPath: "assets[0].id",
@@ -364,41 +386,27 @@ describe("word-game manifests", () => {
       fieldPath: "items[0].visual.color",
     },
     {
-      name: "non-40-character Fluent revisions",
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
-      value: () => ({ ...validFluentManifest(), revision: "a".repeat(39) }),
-      fieldPath: "revision",
-    },
-    {
-      name: "unapproved 40-character Fluent revisions",
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
-      value: () => ({ ...validFluentManifest(), revision: "a".repeat(40) }),
-      fieldPath: "revision",
-    },
-    {
-      name: "non-64-character Fluent SHA-256 values",
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
+      name: "non-64-character illustration SHA-256 values",
+      parse: parseIllustrationAssetManifest,
+      sourcePath: illustrationSourcePath,
       value: () => {
-        const manifest = validFluentManifest();
+        const manifest = validIllustrationManifest();
         manifest.assets[0].sha256 = "a".repeat(63);
         return manifest;
       },
       fieldPath: "assets[0].sha256",
     },
-    ...[
-      ["repository", "https://example.com/fluentui-emoji"],
-      ["license", "Apache-2.0"],
-      ["licensePath", "assets/LICENSE"],
-    ].map(([field, replacement]) => ({
-      name: `wrong Fluent ${field}`,
-      parse: parseFluentAssetManifest,
-      sourcePath: fluentSourcePath,
-      value: () => ({ ...validFluentManifest(), [field]: replacement }),
-      fieldPath: field,
-    })),
+    {
+      name: "unknown illustration sources",
+      parse: parseIllustrationAssetManifest,
+      sourcePath: illustrationSourcePath,
+      value: () => {
+        const manifest = validIllustrationManifest();
+        manifest.assets[0].source = "stock-photo";
+        return manifest;
+      },
+      fieldPath: "assets[0].source",
+    },
     {
       name: "wrong tier IDs and order",
       parse: parseWordGameManifest,

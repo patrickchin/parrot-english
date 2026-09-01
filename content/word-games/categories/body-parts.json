@@ -12,8 +12,8 @@
       "label": "eyes",
       "alt": "A pair of eyes.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f440"
+        "assetId": "body-parts-eyes",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-eyes-label",
@@ -29,9 +29,8 @@
       "label": "ears",
       "alt": "A pair of ears.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f442",
-        "copies": 2
+        "assetId": "body-parts-ears",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-ears-label",
@@ -47,8 +46,8 @@
       "label": "nose",
       "alt": "A nose.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f443"
+        "assetId": "body-parts-nose",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-nose-label",
@@ -64,8 +63,8 @@
       "label": "mouth",
       "alt": "A mouth.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f444"
+        "assetId": "body-parts-mouth",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-mouth-label",
@@ -81,8 +80,8 @@
       "label": "hand",
       "alt": "A hand.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "270b"
+        "assetId": "body-parts-hand",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-hand-label",
@@ -98,8 +97,8 @@
       "label": "foot",
       "alt": "A foot.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9b6"
+        "assetId": "body-parts-foot",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-foot-label",
@@ -115,8 +114,8 @@
       "label": "arm",
       "alt": "An arm.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f4aa"
+        "assetId": "body-parts-arm",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-arm-label",
@@ -132,8 +131,8 @@
       "label": "leg",
       "alt": "A leg.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9b5"
+        "assetId": "body-parts-leg",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-leg-label",
@@ -149,8 +148,8 @@
       "label": "tooth",
       "alt": "A tooth.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9b7"
+        "assetId": "body-parts-tooth",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-tooth-label",
@@ -166,8 +165,8 @@
       "label": "tongue",
       "alt": "A tongue.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f445"
+        "assetId": "body-parts-tongue",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-tongue-label",
@@ -183,8 +182,8 @@
       "label": "brain",
       "alt": "A brain.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e0"
+        "assetId": "body-parts-brain",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-brain-label",
@@ -200,8 +199,8 @@
       "label": "heart",
       "alt": "A heart.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "2764"
+        "assetId": "body-parts-heart",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-body-parts-heart-label",

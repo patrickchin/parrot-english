@@ -190,7 +190,7 @@ test("preloads every picture in the lesson before advancing", async ({ page }) =
   const requestedPictures = new Set<string>();
   page.on("request", (request) => {
     const pathname = new URL(request.url()).pathname;
-    if (pathname.startsWith("/assets/word-games/fluent-3d/")) {
+    if (pathname.startsWith("/assets/word-games/illustrated/")) {
       requestedPictures.add(pathname);
     }
   });
@@ -202,12 +202,12 @@ test("preloads every picture in the lesson before advancing", async ({ page }) =
   ).toBeVisible();
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
   await expect.poll(() => [...requestedPictures].sort()).toEqual([
-    "/assets/word-games/fluent-3d/1f415.png",
-    "/assets/word-games/fluent-3d/1f41f.png",
-    "/assets/word-games/fluent-3d/1f426.png",
-    "/assets/word-games/fluent-3d/1f431.png",
-    "/assets/word-games/fluent-3d/1f438.png",
-    "/assets/word-games/fluent-3d/1f986.png",
+    "/assets/word-games/illustrated/animals-bird.webp",
+    "/assets/word-games/illustrated/animals-cat.webp",
+    "/assets/word-games/illustrated/animals-dog.webp",
+    "/assets/word-games/illustrated/animals-duck.webp",
+    "/assets/word-games/illustrated/animals-fish.webp",
+    "/assets/word-games/illustrated/animals-frog.webp",
   ]);
 });
 
@@ -381,17 +381,17 @@ test("routes every malformed word-game URL back to the word-game shelf", async (
   }
 });
 
-test("renders the generated hierarchy, Fluent covers, and native color swatches", async ({ page }) => {
+test("renders the generated hierarchy, illustrated covers, and accessible color choices", async ({ page }) => {
   const covers = [
-    ["Animals", "A friendly cat.", "/assets/word-games/fluent-3d/1f431.png"],
-    ["Colors", "The color red.", "rgb(239, 68, 68)"],
-    ["Body Parts", "A pair of eyes.", "/assets/word-games/fluent-3d/1f440.png"],
-    ["Food", "An apple.", "/assets/word-games/fluent-3d/1f34e.png"],
-    ["Toys", "A ball.", "/assets/word-games/fluent-3d/26bd.png"],
-    ["Feelings", "A happy face.", "/assets/word-games/fluent-3d/1f604.png"],
-    ["Home", "A house.", "/assets/word-games/fluent-3d/1f3e0.png"],
-    ["Clothes", "A shirt.", "/assets/word-games/fluent-3d/1f455.png"],
-    ["Transport", "A car.", "/assets/word-games/fluent-3d/1f697.png"],
+    ["Animals", "A friendly cat.", "/assets/word-games/illustrated/animals-cat.webp"],
+    ["Colors", "The color red.", null],
+    ["Body Parts", "A pair of eyes.", "/assets/word-games/illustrated/body-parts-eyes.webp"],
+    ["Food", "An apple.", "/assets/word-games/illustrated/food-apple.webp"],
+    ["Toys", "A ball.", "/assets/word-games/illustrated/toys-ball.webp"],
+    ["Feelings", "A happy face.", "/assets/word-games/illustrated/feelings-happy.webp"],
+    ["Home", "A house.", "/assets/word-games/illustrated/home-house.webp"],
+    ["Clothes", "A shirt.", "/assets/word-games/illustrated/clothes-shirt.webp"],
+    ["Transport", "A car.", "/assets/word-games/illustrated/transport-car.webp"],
   ] as const;
 
   await page.goto("/word-games");
@@ -401,15 +401,11 @@ test("renders the generated hierarchy, Fluent covers, and native color swatches"
     .toHaveAttribute("href", "/");
   const categoryNav = shelf.getByRole("navigation", { name: "Word games" });
   await expect(categoryNav.getByRole("link")).toHaveCount(9);
-  for (const [title, alt, presentation] of covers) {
+  for (const [title, alt, src] of covers) {
     const visual = categoryNav.getByRole("link", { name: title })
       .getByRole("img", { name: alt });
-    if (presentation.startsWith("/")) {
-      await expect(visual).toHaveAttribute("src", presentation);
-    } else {
-      await expect.poll(() => visual.evaluate((element) =>
-        getComputedStyle(element).backgroundColor)).toBe(presentation);
-    }
+    await expect(visual).toBeVisible();
+    if (src) await expect(visual).toHaveAttribute("src", src);
   }
 
   await categoryNav.getByRole("link", { name: "Animals" }).click();
@@ -433,42 +429,29 @@ test("renders the generated hierarchy, Fluent covers, and native color swatches"
   await expect(player.getByRole("link", { name: "Back to Animals" }))
     .toHaveAttribute("href", "/word-games/animals");
   for (const [alt, src] of [
-    ["A friendly cat.", "/assets/word-games/fluent-3d/1f431.png"],
-    ["A friendly dog.", "/assets/word-games/fluent-3d/1f415.png"],
-    ["A friendly bird.", "/assets/word-games/fluent-3d/1f426.png"],
-    ["A friendly fish.", "/assets/word-games/fluent-3d/1f41f.png"],
+    ["A friendly cat.", "/assets/word-games/illustrated/animals-cat.webp"],
+    ["A friendly dog.", "/assets/word-games/illustrated/animals-dog.webp"],
+    ["A friendly bird.", "/assets/word-games/illustrated/animals-bird.webp"],
+    ["A friendly fish.", "/assets/word-games/illustrated/animals-fish.webp"],
   ]) {
     await expect(player.getByRole("img", { name: alt })).toHaveAttribute("src", src);
   }
 
   await page.goto("/word-games/colors/simple-1");
   const swatches = page.getByRole("group", { name: "Picture choices" });
-  for (const [alt, color] of [
-    ["The color red.", "rgb(239, 68, 68)"],
-    ["The color blue.", "rgb(59, 130, 246)"],
-    ["The color yellow.", "rgb(234, 179, 8)"],
-    ["The color green.", "rgb(34, 197, 94)"],
+  for (const alt of [
+    "The color red.", "The color blue.", "The color yellow.", "The color green.",
   ]) {
-    const swatch = swatches.getByRole("img", { name: alt });
-    await expect.poll(() => swatch.evaluate((element) =>
-      getComputedStyle(element).backgroundColor)).toBe(color);
+    await expect(swatches.getByRole("img", { name: alt })).toBeVisible();
   }
 });
 
-test("renders plural artwork as one named composition with two decorative copies", async ({ page }) => {
+test("renders plural artwork as one semantic image", async ({ page }) => {
   await page.goto("/word-games/body-parts/simple-1?parrotE2eLesson=held-cue");
   const bodyPartChoices = page.getByRole("group", { name: "Picture choices" });
   const earsChoice = bodyPartChoices.getByRole("button", { name: "Choose ears" });
   await expect(earsChoice.getByRole("img", { name: "A pair of ears." })).toHaveCount(1);
-  await expect(earsChoice.locator("img")).toHaveCount(2);
-  await expect(earsChoice.locator("img").nth(0)).toHaveAttribute("alt", "");
-  await expect(earsChoice.locator("img").nth(1)).toHaveAttribute("alt", "");
-
-  await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
-  const animalChoices = page.getByRole("group", { name: "Picture choices" });
-  const catChoice = animalChoices.getByRole("button", { name: "Choose cat" });
-  await expect(catChoice.getByRole("img", { name: "A friendly cat." })).toHaveCount(1);
-  await expect(catChoice.locator("img")).toHaveCount(1);
+  await expect(earsChoice.locator("img")).toHaveCount(1);
 });
 
 for (const viewport of responsiveViewports) {

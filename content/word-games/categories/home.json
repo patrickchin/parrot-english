@@ -12,8 +12,8 @@
       "label": "bed",
       "alt": "A bed.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6cf"
+        "assetId": "home-bed",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-bed-label",
@@ -29,8 +29,8 @@
       "label": "chair",
       "alt": "A chair.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa91"
+        "assetId": "home-chair",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-chair-label",
@@ -46,8 +46,8 @@
       "label": "door",
       "alt": "A door.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6aa"
+        "assetId": "home-door",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-door-label",
@@ -63,8 +63,8 @@
       "label": "window",
       "alt": "A window.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa9f"
+        "assetId": "home-window",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-window-label",
@@ -80,8 +80,8 @@
       "label": "house",
       "alt": "A house.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f3e0"
+        "assetId": "home-house",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-house-label",
@@ -97,8 +97,8 @@
       "label": "key",
       "alt": "A key.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f511"
+        "assetId": "home-key",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-key-label",
@@ -114,8 +114,8 @@
       "label": "sofa",
       "alt": "A sofa.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6cb"
+        "assetId": "home-sofa",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-sofa-label",
@@ -131,8 +131,8 @@
       "label": "bathtub",
       "alt": "A bathtub.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6c1"
+        "assetId": "home-bathtub",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-bathtub-label",
@@ -148,8 +148,8 @@
       "label": "toilet",
       "alt": "A toilet.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6bd"
+        "assetId": "home-toilet",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-toilet-label",
@@ -165,8 +165,8 @@
       "label": "shower",
       "alt": "A shower.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6bf"
+        "assetId": "home-shower",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-shower-label",
@@ -182,8 +182,8 @@
       "label": "mirror",
       "alt": "A mirror.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa9e"
+        "assetId": "home-mirror",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-mirror-label",
@@ -199,8 +199,8 @@
       "label": "broom",
       "alt": "A broom.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9f9"
+        "assetId": "home-broom",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-home-broom-label",

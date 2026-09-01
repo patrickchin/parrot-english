@@ -12,8 +12,8 @@
       "label": "ball",
       "alt": "A ball.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "26bd"
+        "assetId": "toys-ball",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-ball-label",
@@ -29,8 +29,8 @@
       "label": "toy car",
       "alt": "A toy car.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f697"
+        "assetId": "toys-toy-car",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-toy-car-label",
@@ -46,8 +46,8 @@
       "label": "doll",
       "alt": "A doll.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa86"
+        "assetId": "toys-doll",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-doll-label",
@@ -63,8 +63,8 @@
       "label": "kite",
       "alt": "A kite.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa81"
+        "assetId": "toys-kite",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-kite-label",
@@ -80,8 +80,8 @@
       "label": "blocks",
       "alt": "Building blocks.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9f1"
+        "assetId": "toys-blocks",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-blocks-label",
@@ -97,8 +97,8 @@
       "label": "teddy bear",
       "alt": "A teddy bear.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9f8"
+        "assetId": "toys-teddy-bear",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-teddy-bear-label",
@@ -114,8 +114,8 @@
       "label": "toy train",
       "alt": "A toy train.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f686"
+        "assetId": "toys-toy-train",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-toy-train-label",
@@ -131,8 +131,8 @@
       "label": "drum",
       "alt": "A drum.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f941"
+        "assetId": "toys-drum",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-drum-label",
@@ -148,8 +148,8 @@
       "label": "puzzle",
       "alt": "A puzzle.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e9"
+        "assetId": "toys-puzzle",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-puzzle-label",
@@ -165,8 +165,8 @@
       "label": "robot",
       "alt": "A robot.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f916"
+        "assetId": "toys-robot",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-robot-label",
@@ -182,8 +182,8 @@
       "label": "yo-yo",
       "alt": "A yo-yo.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa80"
+        "assetId": "toys-yo-yo",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-yo-yo-label",
@@ -199,8 +199,8 @@
       "label": "skateboard",
       "alt": "A skateboard.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6f9"
+        "assetId": "toys-skateboard",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-toys-skateboard-label",

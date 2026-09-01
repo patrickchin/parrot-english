@@ -12,8 +12,8 @@
       "label": "shirt",
       "alt": "A shirt.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f455"
+        "assetId": "clothes-shirt",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-shirt-label",
@@ -29,9 +29,8 @@
       "label": "shoes",
       "alt": "A pair of shoes.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f45f",
-        "copies": 2
+        "assetId": "clothes-shoes",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-shoes-label",
@@ -47,8 +46,8 @@
       "label": "hat",
       "alt": "A hat.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e2"
+        "assetId": "clothes-hat",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-hat-label",
@@ -64,8 +63,8 @@
       "label": "socks",
       "alt": "A pair of socks.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e6"
+        "assetId": "clothes-socks",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-socks-label",
@@ -81,8 +80,8 @@
       "label": "coat",
       "alt": "A coat.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e5"
+        "assetId": "clothes-coat",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-coat-label",
@@ -98,8 +97,8 @@
       "label": "pants",
       "alt": "A pair of pants.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f456"
+        "assetId": "clothes-pants",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-pants-label",
@@ -115,8 +114,8 @@
       "label": "dress",
       "alt": "A dress.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f457"
+        "assetId": "clothes-dress",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-dress-label",
@@ -132,8 +131,8 @@
       "label": "shorts",
       "alt": "A pair of shorts.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa73"
+        "assetId": "clothes-shorts",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-shorts-label",
@@ -149,8 +148,8 @@
       "label": "scarf",
       "alt": "A scarf.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e3"
+        "assetId": "clothes-scarf",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-scarf-label",
@@ -166,9 +165,8 @@
       "label": "boots",
       "alt": "A pair of boots.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f462",
-        "copies": 2
+        "assetId": "clothes-boots",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-boots-label",
@@ -184,8 +182,8 @@
       "label": "gloves",
       "alt": "A pair of gloves.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9e4"
+        "assetId": "clothes-gloves",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-gloves-label",
@@ -201,8 +199,8 @@
       "label": "swimsuit",
       "alt": "A swimsuit.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1fa71"
+        "assetId": "clothes-swimsuit",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-clothes-swimsuit-label",

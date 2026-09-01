@@ -126,7 +126,7 @@ test("home menu prioritizes the five learner activities", () => {
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
   assert.match(
     html,
-    /<img[^>]*alt="A friendly cat\."[^>]*height="512"[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"[^>]*width="512"/,
+    /<img[^>]*alt="A friendly cat\."[^>]*height="512"[^>]*src="\/assets\/word-games\/illustrated\/animals-cat\.webp"[^>]*width="512"/,
   );
   assert.match(
     html,
@@ -213,7 +213,7 @@ test("word-game library renders nine category choices and a home link", () => {
   ]) {
     assert.match(html, new RegExp(`>${title}<`));
   }
-  assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"/);
+  assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/illustrated\/animals-cat\.webp"/);
 });
 
 test("word-game category renders ordered tier sections and canonical quiz links", () => {
@@ -250,23 +250,12 @@ test("word-game category renders ordered tier sections and canonical quiz links"
   assert.equal((html.match(/>6 questions</g) ?? []).length, 9);
 });
 
-test("word-game copied artwork is one named composition with decorative image copies", () => {
+test("word-game illustrations render as one named image", () => {
   assert.equal(typeof WordGameVisual, "function");
-  const bodyParts = resolveWordGameCategory("body-parts");
   const animals = resolveWordGameCategory("animals");
-  assert.ok(bodyParts && animals);
-  const ears = bodyParts.items.find(({ id }) => id === "ears");
+  assert.ok(animals);
   const cat = animals.items.find(({ id }) => id === "cat");
-  assert.ok(ears && cat);
-
-  const pairHtml = renderToStaticMarkup(
-    createElement(WordGameVisual, { item: ears, showLabel: false }),
-  );
-  assert.match(pairHtml, /aria-label="A pair of ears\."/);
-  assert.match(pairHtml, /role="img"/);
-  assert.equal((pairHtml.match(/<img/g) ?? []).length, 2);
-  assert.equal((pairHtml.match(/alt=""/g) ?? []).length, 2);
-  assert.doesNotMatch(pairHtml, /<img[^>]*alt="A pair of ears\."/);
+  assert.ok(cat);
 
   const catHtml = renderToStaticMarkup(
     createElement(WordGameVisual, { item: cat, showLabel: false }),
