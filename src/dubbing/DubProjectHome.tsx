@@ -100,10 +100,10 @@ export function DubProjectHome({
         </header>
 
         <div className="grid min-w-0 items-start gap-4 short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
-          <div className="grid min-w-0 content-start gap-3 short-wide:min-h-0 short-wide:gap-1">
+          <div className="grid min-w-0 content-start gap-3 short-wide:min-h-0 short-wide:gap-1 lg:h-full lg:grid-rows-[minmax(0,1fr)_auto_auto] lg:content-stretch">
             <section
               aria-label="Full video player"
-              className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl"
+              className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl lg:h-full lg:w-auto lg:max-w-full lg:justify-self-start"
             >
               <IllustratedDubScene
                 compact

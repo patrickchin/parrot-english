@@ -1135,6 +1135,31 @@ test("Old MacDonald keeps page scrolling out of the lyric workspace", async ({
   expect(lyricScroll.scrollHeight).toBeGreaterThan(lyricScroll.clientHeight);
 });
 
+test("Old MacDonald keeps its player transport visible on a wide short desktop", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 768, width: 1920 });
+  await page.goto("/dubs/old-macdonald?parrotE2eDub=partial&parrotE2eDubPlayback=held");
+  await expectDubProject(page);
+
+  const player = page.getByRole("region", { name: "Full video player" });
+  await expect(player).toBeInViewport();
+  const play = page.getByRole("button", { name: "Play full video" });
+  await expect(play).toBeInViewport();
+  const playerBox = await boundingBoxOrThrow(player);
+  expect(playerBox.width / playerBox.height).toBeCloseTo(16 / 9, 1);
+  const documentScroll = await page.evaluate(() => {
+    const root = document.scrollingElement;
+    if (!root) throw new Error("Expected a document scrolling element.");
+    return { clientHeight: root.clientHeight, scrollHeight: root.scrollHeight };
+  });
+  expect(documentScroll.scrollHeight).toBeLessThanOrEqual(documentScroll.clientHeight + 1);
+
+  await play.click();
+  await expect(page.getByRole("region", { name: "Karaoke guide" })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeInViewport();
+});
+
 test("Old MacDonald keeps original and learner recordings on separate tracks", async ({
   page,
 }) => {
