@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import console from "node:console";
-import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { constants } from "node:fs";
+import { lstat, open, realpath, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, URL } from "node:url";
@@ -11,17 +12,94 @@ import {
 
 const MAX_DIAGNOSTIC_LINE_LENGTH = 160;
 
-async function readExisting(filePath) {
+function pathIsInside(parent, child) {
+  const relative = path.relative(parent, child);
+  return relative.length > 0
+    && relative !== ".."
+    && !relative.startsWith(`..${path.sep}`)
+    && !path.isAbsolute(relative);
+}
+
+async function inspectOutputPaths(rootDir) {
+  let rootStat;
   try {
-    return await readFile(filePath, "utf8");
+    rootStat = await lstat(rootDir);
+  } catch (error) {
+    throw new Error(`${rootDir}: repository root is missing or unreadable (${error.message})`, {
+      cause: error,
+    });
+  }
+  if (rootStat.isSymbolicLink()) {
+    throw new Error(`${rootDir}: repository root must not be a symbolic link`);
+  }
+  if (!rootStat.isDirectory()) {
+    throw new Error(`${rootDir}: repository root must be a directory`);
+  }
+  const rootRealPath = await realpath(rootDir);
+  const outputDirectory = path.join(rootDir, "src", "games");
+  let outputDirectoryStat;
+  try {
+    outputDirectoryStat = await lstat(outputDirectory);
+  } catch (error) {
+    throw new Error(`${outputDirectory}: output directory is missing or unreadable (${error.message})`, {
+      cause: error,
+    });
+  }
+  if (outputDirectoryStat.isSymbolicLink()) {
+    throw new Error(`${outputDirectory}: output directory must not be a symbolic link`);
+  }
+  if (!outputDirectoryStat.isDirectory()) {
+    throw new Error(`${outputDirectory}: output directory must be a directory`);
+  }
+  const outputDirectoryRealPath = await realpath(outputDirectory);
+  if (!pathIsInside(rootRealPath, outputDirectoryRealPath)) {
+    throw new Error(`${outputDirectory}: output directory resolves outside the repository root`);
+  }
+  return {
+    outputDirectoryRealPath,
+    outputPath: path.join(outputDirectory, "generated-word-game-catalog.ts"),
+  };
+}
+
+async function readExisting(filePath, outputDirectoryRealPath) {
+  let stat;
+  try {
+    stat = await lstat(filePath);
   } catch (error) {
     if (error.code === "ENOENT") return null;
-    throw error;
+    throw new Error(`${filePath}: generated catalog is unreadable (${error.message})`, {
+      cause: error,
+    });
+  }
+  if (stat.isSymbolicLink()) {
+    throw new Error(`${filePath}: generated catalog must not be a symbolic link`);
+  }
+  if (!stat.isFile()) {
+    throw new Error(`${filePath}: generated catalog must be a regular file`);
+  }
+  const outputRealPath = await realpath(filePath);
+  if (!pathIsInside(outputDirectoryRealPath, outputRealPath)) {
+    throw new Error(`${filePath}: generated catalog resolves outside its output directory`);
+  }
+  let handle;
+  try {
+    handle = await open(filePath, constants.O_RDONLY | constants.O_NOFOLLOW);
+  } catch (error) {
+    throw new Error(`${filePath}: generated catalog changed before it could be opened safely`, {
+      cause: error,
+    });
+  }
+  try {
+    if (!(await handle.stat()).isFile()) {
+      throw new Error(`${filePath}: opened generated catalog must be a regular file`);
+    }
+    return await handle.readFile("utf8");
+  } finally {
+    await handle.close();
   }
 }
 
 async function atomicWrite(filePath, contents) {
-  await mkdir(path.dirname(filePath), { recursive: true });
   const temporaryPath = `${filePath}.tmp-${process.pid}-${randomUUID()}`;
   try {
     await writeFile(temporaryPath, contents, { flag: "wx" });
@@ -51,10 +129,10 @@ function firstGeneratedDifference(expected, current) {
 }
 
 export async function runWordGameCatalogGenerator({ check, rootDir }) {
-  const outputPath = path.join(rootDir, "src", "games", "generated-word-game-catalog.ts");
+  const { outputDirectoryRealPath, outputPath } = await inspectOutputPaths(rootDir);
+  const current = await readExisting(outputPath, outputDirectoryRealPath);
   const compiled = await compileWordGamePackages({ rootDir });
   const expected = serializeGeneratedWordGameCatalog(compiled);
-  const current = await readExisting(outputPath);
   if (check) {
     if (current !== expected) {
       throw new Error(

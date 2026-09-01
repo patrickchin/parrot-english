@@ -6,8 +6,10 @@ import {
   lstat,
   mkdir,
   mkdtemp,
+  open,
   readFile,
   readdir,
+  rename,
   rm,
   symlink,
   unlink,
@@ -391,6 +393,7 @@ describe("word-game package compilation", () => {
       "public/assets/audio/word-game-animals-cat-label.mp3",
       "public/assets/audio/word-game-animals-frog-label.mp3",
     ]);
+    assert.ok(plan.missingFiles.every((filePath) => !filePath.includes("\\")));
     assert.deepEqual(plan.lines.map(({ id }) => id), [
       "word-game-animals-bird-label",
       "word-game-animals-cat-label",
@@ -414,6 +417,96 @@ describe("word-game package compilation", () => {
     await assert.rejects(
       planWordGameAudio({ rootDir: fixture.rootDir }),
       /SHA-256.*mismatch/i,
+    );
+  });
+
+  it("does not classify non-ENOENT audio errors as missing", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const oversizedId = `word-game-animals-${"a".repeat(300)}`;
+    fixture.category.items[0].audio.id = oversizedId;
+    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+
+    await assert.rejects(
+      planWordGameAudio({ rootDir: fixture.rootDir }),
+      (error) => {
+        assert.equal(error.cause?.code, "ENAMETOOLONG");
+        return true;
+      },
+    );
+  });
+
+  it("opens validated JSON and SVG paths without following a symlink swap", async (t) => {
+    for (const { name, targetPath } of [
+      {
+        name: "category JSON",
+        targetPath: (fixture) => path.join(fixture.paths.categoryRoot, "animals.json"),
+      },
+      {
+        name: "asset manifest JSON",
+        targetPath: (fixture) => fixture.paths.assetManifestPath,
+      },
+      {
+        name: "SVG hashing",
+        targetPath: (fixture) => path.join(
+          fixture.paths.publicRoot,
+          "assets",
+          "word-games",
+          "noto",
+          "emoji_u1f431.svg",
+        ),
+      },
+    ]) {
+      await t.test(name, async (t) => {
+        const fixture = await repositoryFixture(t);
+        const guardedPath = targetPath(fixture);
+        const externalPath = path.join(fixture.rootDir, `external-${path.basename(guardedPath)}`);
+        await copyFile(guardedPath, externalPath);
+        let swapped = false;
+        const openFile = async (filePath, flags) => {
+          if (!swapped && filePath === guardedPath) {
+            swapped = true;
+            await rename(guardedPath, `${guardedPath}.original`);
+            await symlink(externalPath, guardedPath);
+          }
+          return open(filePath, flags);
+        };
+
+        await assert.rejects(
+          compileWordGamePackages({ ...fixture.paths, openFile }),
+          /changed before it could be opened safely|symbolic link/i,
+        );
+        assert.equal(swapped, true);
+      });
+    }
+  });
+
+  it("uses code-unit ordering instead of the host locale", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const descriptor = Object.getOwnPropertyDescriptor(String.prototype, "localeCompare");
+    Object.defineProperty(String.prototype, "localeCompare", {
+      configurable: true,
+      value: () => 0,
+      writable: true,
+    });
+    t.after(() => Object.defineProperty(String.prototype, "localeCompare", descriptor));
+    await Promise.all(
+      fixture.category.items.map(({ audio }) =>
+        unlink(path.join(fixture.paths.audioRoot, `${audio.id}.mp3`))),
+    );
+
+    const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
+
+    assert.deepEqual(plan.lines.map(({ id }) => id), [
+      "word-game-animals-bird-label",
+      "word-game-animals-cat-label",
+      "word-game-animals-dog-label",
+      "word-game-animals-duck-label",
+      "word-game-animals-fish-label",
+      "word-game-animals-frog-label",
+    ]);
+    assert.deepEqual(
+      plan.missingFiles,
+      plan.missingFiles.toSorted((left, right) => left < right ? -1 : left > right ? 1 : 0),
     );
   });
 });
@@ -466,6 +559,73 @@ describe("word-game catalog serialization and generation", () => {
       /Word-game catalog is stale.*generated-word-game-catalog\.ts.*First generated difference/i,
     );
     assert.equal(await readFile(outputPath, "utf8"), "stale\n");
+  });
+
+  it("rejects an output-directory symlink without writing outside the repository", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const outputDirectory = path.join(fixture.rootDir, "src", "games");
+    const externalDirectory = await mkdtemp(path.join(tmpdir(), "parrot-word-game-output-"));
+    t.after(() => rm(externalDirectory, { force: true, recursive: true }));
+    await rm(outputDirectory, { recursive: true });
+    await symlink(externalDirectory, outputDirectory);
+
+    await assert.rejects(
+      runWordGameCatalogGenerator({ check: false, rootDir: fixture.rootDir }),
+      /output directory.*symbolic link/i,
+    );
+    await assert.rejects(
+      lstat(path.join(externalDirectory, "generated-word-game-catalog.ts")),
+      { code: "ENOENT" },
+    );
+  });
+
+  it("rejects a non-directory output parent", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const outputDirectory = path.join(fixture.rootDir, "src", "games");
+    await rm(outputDirectory, { recursive: true });
+    await writeFile(outputDirectory, "not a directory");
+
+    await assert.rejects(
+      runWordGameCatalogGenerator({ check: false, rootDir: fixture.rootDir }),
+      /output directory.*must be a directory/i,
+    );
+  });
+
+  it("rejects a generated-file symlink without replacing or changing its target", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const outputPath = path.join(fixture.rootDir, "src", "games", "generated-word-game-catalog.ts");
+    const externalPath = path.join(fixture.rootDir, "external-generated.ts");
+    await writeFile(externalPath, "external sentinel\n");
+    await symlink(externalPath, outputPath);
+
+    await assert.rejects(
+      runWordGameCatalogGenerator({ check: false, rootDir: fixture.rootDir }),
+      /generated catalog.*symbolic link/i,
+    );
+    assert.equal(await readFile(externalPath, "utf8"), "external sentinel\n");
+    assert.equal((await lstat(outputPath)).isSymbolicLink(), true);
+  });
+
+  it("rejects a non-regular generated output", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const outputPath = path.join(fixture.rootDir, "src", "games", "generated-word-game-catalog.ts");
+    await mkdir(outputPath);
+
+    await assert.rejects(
+      runWordGameCatalogGenerator({ check: false, rootDir: fixture.rootDir }),
+      /generated catalog.*must be a regular file/i,
+    );
+  });
+
+  it("reports a missing output as stale in check mode without creating it", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const outputPath = path.join(fixture.rootDir, "src", "games", "generated-word-game-catalog.ts");
+
+    await assert.rejects(
+      runWordGameCatalogGenerator({ check: true, rootDir: fixture.rootDir }),
+      /Word-game catalog is stale.*current=<missing>/i,
+    );
+    await assert.rejects(lstat(outputPath), { code: "ENOENT" });
   });
 
   it("rejects invalid CLI arguments before compiling content", async () => {
