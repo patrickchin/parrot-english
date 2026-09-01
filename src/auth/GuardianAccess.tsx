@@ -335,7 +335,7 @@ export function createGuardianAccessProvider({
             return;
           }
           applyState(state, identity, generation);
-        } catch (error) {
+        } catch {
           if (!isCurrent(identity, generation) || controller.signal.aborted) {
             return;
           }

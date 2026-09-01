@@ -2043,7 +2043,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/What animals do you like/);
   });
 
-  it("keeps Guardian form-mode redo recovery to Retry and Back without learner skips", async () => {
+  it("keeps Guardian form-mode redo recovery to Try again and Back without learner skips", async () => {
     const api = {
       async loadGuardianAccess() {
         return {
@@ -2079,7 +2079,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/Profile is taking a break/));
-    button("Retry");
+    button("Try again");
     noText(/Skip for now|Skip question/);
     await click(button("Back"));
     await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
@@ -2127,13 +2127,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/Profile is taking a break/));
-    text(/selected learner profile could not be loaded/i);
+    text(/The learner profile could not be loaded/i);
     noText(/Hi! I'm Peppa/);
-    button("Retry");
+    button("Try again");
     button("Back");
   });
 
-  it("keeps an initial Guardian form-redo load failure to Retry and Back without learner skips", async () => {
+  it("keeps an initial Guardian form-redo load failure to Try again and Back without learner skips", async () => {
     const api = {
       async loadGuardianAccess() {
         return {
@@ -2163,7 +2163,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/Questions are taking a break/));
-    button("Retry");
+    button("Try again");
     noText(/Skip for now|Skip question/);
     await click(button("Back"));
     await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
@@ -2216,7 +2216,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(currentRoute().path, "/guardian"));
     await click(button("Open guardian redo"));
     await waitFor(() => text(/Questions are taking a break/));
-    await click(button("Retry"));
+    await click(button("Try again"));
     await waitFor(() => assert.ok(heldProfileSignal));
 
     await click(button("History back"));
@@ -5065,12 +5065,16 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.ok(source);
     assert.ok(peer);
     await waitFor(() => {
-      assert.ok(source.querySelector('button[aria-label="Delete Noah"]'));
-      assert.ok(peer.querySelector('button[aria-label="Delete Noah"]'));
+      assert.ok(
+        source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
+      );
+      assert.ok(peer.querySelector('button[aria-label="Delete ⁨Noah⁩"]'));
     });
     const initialRosterReads = rosterReads;
 
-    await click(source.querySelector('button[aria-label="Delete Noah"]'));
+    await click(
+      source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
+    );
     const dialog = source.querySelector('[role="dialog"]');
     assert.ok(dialog);
     const confirm = [...dialog.querySelectorAll("button")].find(
@@ -5089,7 +5093,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => assert.equal(peer.closest("[hidden]"), null));
     await new Promise((resolve) => setTimeout(resolve, 0));
     const peerRefreshed =
-      peer.querySelector('button[aria-label="Delete Noah"]') === null;
+      peer.querySelector('button[aria-label="Delete ⁨Noah⁩"]') === null;
     const settlementRosterReads = rosterReads - initialRosterReads;
     await cleanupMountedRoots();
     assert.equal(peerRefreshed, true);
@@ -5165,9 +5169,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.ok(source);
     assert.ok(peer);
     await waitFor(() =>
-      assert.ok(source.querySelector('button[aria-label="Delete Noah"]')),
+      assert.ok(
+        source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
+      ),
     );
-    await click(source.querySelector('button[aria-label="Delete Noah"]'));
+    await click(
+      source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
+    );
     const dialog = source.querySelector('[role="dialog"]');
     assert.ok(dialog);
     const confirm = [...dialog.querySelectorAll("button")].find(
@@ -5184,7 +5192,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => {
       assert.equal(peer.closest("[hidden]"), null);
       assert.ok(
-        peer.querySelector('button[aria-label="Finish deleting Noah"]'),
+        peer.querySelector(
+          'button[aria-label="Finish deleting ⁨Noah⁩"]',
+        ),
       );
       assert.equal(source.querySelector('[role="dialog"]'), dialog);
     });
@@ -6613,12 +6623,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const initialProfileLoads = loadedProfileIds.length;
     await input(document.querySelector("#preferred-name"), "Ava");
     await click(button("Add learner"));
-    await waitFor(() => text(/The response was lost/i));
+    await waitFor(() => text(/The learner could not be added/i));
     await waitFor(() => text(/Ava/));
     assert.equal(loadedProfileIds.length, initialProfileLoads);
     assert.equal(selectedId, "learner-mia");
-    button("Edit Mia's profile");
-    button("Edit Ava's profile");
+    button("Edit ⁨Mia⁩'s profile");
+    button("Edit ⁨Ava⁩'s profile");
     assert.equal(currentRoute().path, "/guardian/learners");
   });
 
@@ -6679,12 +6689,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const initialProfileLoads = profileLoads;
     await input(document.querySelector("#preferred-name"), "Ava");
     await click(button("Add learner"));
-    await waitFor(() => text(/The newly added learner could not be loaded/i));
+    await waitFor(() => text(/The learner could not be added/i));
     assert.equal(profileLoads, initialProfileLoads);
     assert.equal(currentRoute().path, "/guardian/learners");
-    button("Edit Mia's profile");
+    button("Edit ⁨Mia⁩'s profile");
     assert.equal(
-      document.querySelector('button[aria-label="Edit Ava\'s profile"]'),
+      document.querySelector('button[aria-label="Edit ⁨Ava⁩\'s profile"]'),
       null,
     );
   });
@@ -10639,7 +10649,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
     await waitFor(() => text(/Questions are taking a break/));
-    await click(button("Retry"));
+    await click(button("Try again"));
     await waitFor(() => text(/Answer 1 question/));
     await click(button("Skip for now"));
     await waitFor(() => text(/BYPASSED LESSONS/));
@@ -10802,7 +10812,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
 
     await waitFor(() =>
-      text(/The selected learner profile could not be saved/),
+      text(/The learner profile could not be saved/),
     );
     text(/Learner details/);
     noText(/Leo's saved response/);

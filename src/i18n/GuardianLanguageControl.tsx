@@ -25,7 +25,7 @@ export function GuardianLanguageControl({
         selected={language === "en"}
         type="button"
       >
-        English
+        {messages.language.englishOption}
       </SegmentedButton>
       <SegmentedButton
         lang="zh-Hans"
@@ -33,7 +33,7 @@ export function GuardianLanguageControl({
         selected={language === "zh-Hans"}
         type="button"
       >
-        中文
+        {messages.language.chineseOption}
       </SegmentedButton>
     </SegmentedControl>
   );
