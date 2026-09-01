@@ -228,6 +228,41 @@ describe("word-game package compilation", () => {
     }
   });
 
+  it("defers malformed tier entries to parser field diagnostics", async (t) => {
+    const base = await readJson(path.join(fixtureRoot, "animals.json"));
+    const tierWithoutId = clone(base.tiers[0]);
+    delete tierWithoutId.id;
+    for (const { name, tiers, fieldPath } of [
+      {
+        name: "null entries",
+        tiers: [null, null],
+        fieldPath: "tiers[0]",
+      },
+      {
+        name: "objects without string IDs",
+        tiers: [tierWithoutId, clone(tierWithoutId)],
+        fieldPath: "tiers[0].id",
+      },
+    ]) {
+      await t.test(name, async (t) => {
+        const category = { ...clone(base), tiers };
+        const fixture = await repositoryFixture(t, {
+          categories: [{ filename: "animals.json", value: category }],
+        });
+        const categoryPath = path.join(fixture.paths.categoryRoot, "animals.json");
+
+        await assert.rejects(
+          compileWordGamePackages(fixture.paths),
+          (error) => {
+            assert.ok(error.message.startsWith(`${categoryPath}:${fieldPath}:`));
+            assert.doesNotMatch(error.message, /TypeError|duplicate tier id undefined/i);
+            return true;
+          },
+        );
+      });
+    }
+  });
+
   it("rejects missing references, repeated quiz targets, and items never targeted", async (t) => {
     const base = await readJson(path.join(fixtureRoot, "animals.json"));
     for (const { name, mutate, pattern } of [

@@ -109,6 +109,11 @@ function duplicate(values, key) {
 
 function assertRawTierIds(value, sourcePath) {
   if (!Array.isArray(value?.tiers)) return;
+  if (!value.tiers.every((tier) =>
+    tier !== null
+    && typeof tier === "object"
+    && !Array.isArray(tier)
+    && typeof tier.id === "string")) return;
   const duplicateId = duplicate(value.tiers, "id");
   if (duplicateId !== null) {
     throw new Error(`${sourcePath}: duplicate tier id ${duplicateId}`);
