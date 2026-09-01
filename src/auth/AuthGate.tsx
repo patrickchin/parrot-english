@@ -12,6 +12,7 @@ import {
   type SetStateAction,
 } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
 import { AccountHeader } from "../app/AppHeader";
 import {
   getGuardianAccountPath,
@@ -52,9 +53,15 @@ type CaptchaFetchOptions = {
 };
 
 export interface AuthActionClient {
+  $fetch(
+    path: "/sign-in/shared-guest",
+    options: {
+      headers: { "x-captcha-response": string };
+      method: "POST";
+    },
+  ): Promise<AuthActionResult>;
   deleteUser(fields: { password: string }): Promise<AuthActionResult>;
   signIn: {
-    anonymous(fields: CaptchaFetchOptions): Promise<AuthActionResult>;
     email(fields: {
       email: string;
       password: string;
@@ -86,15 +93,10 @@ interface SignInGuestSessionOptions {
 
 interface SignOutSessionOptions {
   client: AuthActionClient;
-  deleteGuestAccountAction?: typeof deleteGuestAccount;
-  isAnonymous?: boolean;
-  refetch?: () => Promise<unknown>;
 }
 
 interface DeleteAccountSessionOptions {
   client: AuthActionClient;
-  deleteGuestAccountAction?: typeof deleteGuestAccount;
-  isAnonymous?: boolean;
   password: string;
   refetch: () => Promise<unknown>;
 }
@@ -104,18 +106,6 @@ const DELETE_ACCOUNT_ERROR_MESSAGE =
   "Unable to delete the account. The account and private story art were kept. Please try again.";
 const TURNSTILE_REQUIRED_MESSAGE =
   "Complete the security check, then try again.";
-
-type AuthFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
-
-export async function deleteGuestAccount(
-  request: AuthFetch = fetch,
-): Promise<AuthActionResult> {
-  const response = await request("/api/guest-account", { method: "POST" });
-  return { error: response.ok ? null : { status: response.status } };
-}
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
@@ -200,10 +190,9 @@ export async function signInGuestSession({
   if (!turnstileToken) return TURNSTILE_REQUIRED_MESSAGE;
 
   try {
-    const result = await client.signIn.anonymous({
-      fetchOptions: {
-        headers: { "x-captcha-response": turnstileToken },
-      },
+    const result = await client.$fetch("/sign-in/shared-guest", {
+      headers: { "x-captcha-response": turnstileToken },
+      method: "POST",
     });
     if (result.error) return getAuthErrorMessage(result.error);
     await refetch();
@@ -215,18 +204,10 @@ export async function signInGuestSession({
 
 export async function signOutSession({
   client,
-  deleteGuestAccountAction = deleteGuestAccount,
-  isAnonymous = false,
-  refetch,
 }: SignOutSessionOptions): Promise<string | null> {
   try {
-    const result = isAnonymous
-      ? await deleteGuestAccountAction()
-      : await client.signOut();
-    if (result.error) return SIGN_OUT_ERROR_MESSAGE;
-    if (isAnonymous) await refetch?.();
-
-    return null;
+    const result = await client.signOut();
+    return result.error ? SIGN_OUT_ERROR_MESSAGE : null;
   } catch {
     return SIGN_OUT_ERROR_MESSAGE;
   }
@@ -234,15 +215,11 @@ export async function signOutSession({
 
 export async function deleteAccountSession({
   client,
-  deleteGuestAccountAction = deleteGuestAccount,
-  isAnonymous = false,
   password,
   refetch,
 }: DeleteAccountSessionOptions): Promise<string | null> {
   try {
-    const result = isAnonymous
-      ? await deleteGuestAccountAction()
-      : await client.deleteUser({ password });
+    const result = await client.deleteUser({ password });
     if (result.error) return DELETE_ACCOUNT_ERROR_MESSAGE;
 
     await refetch();
@@ -259,7 +236,6 @@ interface AuthSession {
   user: {
     email: string;
     id?: string | null;
-    isAnonymous?: boolean | null;
     name?: string | null;
   };
 }
@@ -799,6 +775,7 @@ export function createAuthGate({
     const signOutAttemptRef = useRef<{ owner: string } | null>(null);
     const guestSignInAttemptRef = useRef(false);
     const sessionIdentity = getSessionIdentity(session);
+    const isSharedGuest = session?.user.id === SHARED_GUEST_USER_ID;
     const currentSessionIdentityRef = useRef(sessionIdentity);
     currentSessionIdentityRef.current = sessionIdentity;
     const profileAction =
@@ -916,8 +893,6 @@ export function createAuthGate({
       try {
         nextError = await signOutAction({
           client,
-          isAnonymous: session?.user.isAnonymous === true,
-          refetch,
         });
       } catch {
         nextError = SIGN_OUT_ERROR_MESSAGE;
@@ -935,7 +910,6 @@ export function createAuthGate({
     async function handleDeleteAccount(password: string) {
       return deleteAccountAction({
         client,
-        isAnonymous: session?.user.isAnonymous === true,
         password,
         refetch,
       });
@@ -944,7 +918,7 @@ export function createAuthGate({
     return (
       <AccountActionProvider
         deleteAccount={handleDeleteAccount}
-        isAnonymous={session?.user.isAnonymous === true}
+        isSharedGuest={isSharedGuest}
         profileAction={profileAction}
         sessionIdentity={sessionIdentity}
         setProfileAction={setProfileAction}

@@ -11,6 +11,7 @@ import {
 import { Link, MemoryRouter, Route, Routes } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
+import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
 import {
   cleanupMountedRoots,
   click,
@@ -105,7 +106,7 @@ async function press(target, key, options = {}) {
   return event;
 }
 
-function DialogHarness({ kind, onDelete = async () => null, requiresPassword }) {
+function DialogHarness({ kind, onDelete = async () => null }) {
   const [isOpen, setIsOpen] = useState(false);
   return createElement(
     "main",
@@ -119,7 +120,6 @@ function DialogHarness({ kind, onDelete = async () => null, requiresPassword }) 
       ? createElement(AccountDeleteDialog, {
           onClose: () => setIsOpen(false),
           onDelete,
-          requiresPassword,
         })
       : null,
   );
@@ -174,6 +174,7 @@ function accountHeaderProps(overrides = {}) {
 
 function authClientForHeader() {
   return {
+    $fetch: async () => ({ error: null }),
     deleteUser: async () => ({ error: null }),
     signIn: { email: async () => ({ error: null }) },
     signOut: async () => ({ error: null }),
@@ -654,33 +655,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(document.body.textContent, /DASHBOARD DESTINATION/);
   });
 
-  it("lets a guest confirm cleanup-first deletion without an impossible password", async () => {
-    const passwords = [];
-    await mountStrict(
-      createElement(
-        DialogHarness,
-        {
-          kind: "delete",
-          onDelete: async (password) => {
-            passwords.push(password);
-            return null;
-          },
-          requiresPassword: false,
-        },
-      ),
-    );
-
-    await click(button("Open delete"));
-    assert.ok(!document.querySelector("#delete-account-password"));
-    const confirm = button("Delete account now");
-    assert.equal(confirm.disabled, false);
-    await waitFor(() => assert.equal(document.activeElement, confirm));
-
-    await click(confirm);
-    await waitFor(() => assert.deepEqual(passwords, [""]));
-  });
-
-  it("wires a guest account page to passwordless cleanup-first deletion", async () => {
+  it("keeps shared account privacy information while hiding destructive controls", async () => {
     const deletionCalls = [];
     const client = authClientForHeader();
     client.useSession = () => ({
@@ -688,8 +663,7 @@ describe("keyboard accessibility lifecycles", () => {
         session: { id: "guest-session" },
         user: {
           email: "guest@example.test",
-          id: "guest-user",
-          isAnonymous: true,
+          id: SHARED_GUEST_USER_ID,
           name: "Guest",
         },
       },
@@ -725,12 +699,20 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Delete account"));
-    assert.ok(!document.querySelector("#delete-account-password"));
-    await click(button("Delete account now"));
-    await waitFor(() => assert.equal(deletionCalls.length, 1));
-    assert.equal(deletionCalls[0].isAnonymous, true);
-    assert.equal(deletionCalls[0].password, "");
+    assert.equal(document.querySelector("h1")?.textContent, "Account & privacy");
+    assert.match(document.body.textContent, /How Parrot uses AI/);
+    assert.match(document.body.textContent, /What this account keeps/);
+    assert.match(document.body.textContent, /Technical build details/);
+    assert.doesNotMatch(document.body.textContent, /Danger zone/);
+    assert.equal(
+      [...document.querySelectorAll("button")].some(
+        (candidate) => candidate.textContent.trim() === "Delete account",
+      ),
+      false,
+    );
+    assert.equal(document.querySelector("#delete-account-password"), null);
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(deletionCalls.length, 0);
   });
 
   it("tears down an open Guardian menu for every learner transition", async () => {
