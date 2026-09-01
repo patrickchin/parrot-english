@@ -57,7 +57,7 @@ describe("nursery rhyme guide audio inspection", () => {
     }
   });
 
-  it("uses decoded frame duration and passes binary-safe s16 tool arguments with bounded output", async () => {
+  it("uses decoded frame duration and a fixed-point mono s16 waveform pipeline", async () => {
     const { guidePath, packageDir } = await temporaryGuide();
     await writeFile(guidePath, "guide bytes");
     const calls = [];
@@ -83,8 +83,10 @@ describe("nursery rhyme guide audio inspection", () => {
         {
           file: "/tools/ffmpeg with spaces",
           args: [
-            "-v", "error", "-xerror", "-i", guidePath, "-map", "0:a:0", "-t", "1",
-            "-ac", "1", "-ar", "16000", "-f", "s16le", "-",
+            "-v", "error", "-xerror", "-c:a", "mp3", "-i", guidePath,
+            "-map", "0:a:0", "-t", "1",
+            "-af", "aresample=sample_rate=16000:osf=s16:tsf=s16p:ochl=mono:resampler=swr:dither_method=0:exact_rational=1",
+            "-f", "s16le", "-",
           ],
           options: { encoding: null, maxBuffer: 97_536 },
         },

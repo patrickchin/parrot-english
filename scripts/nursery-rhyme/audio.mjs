@@ -101,8 +101,9 @@ export async function inspectGuideAudio({
     ({ stdout: pcm } = await runTool(
       ffmpegPath,
       [
-        "-v", "error", "-xerror", "-i", filePath, "-map", "0:a:0",
-        "-t", String(timelineDurationMs / 1_000), "-ac", "1", "-ar", String(SAMPLE_RATE),
+        "-v", "error", "-xerror", "-c:a", "mp3", "-i", filePath,
+        "-map", "0:a:0", "-t", String(timelineDurationMs / 1_000),
+        "-af", `aresample=sample_rate=${SAMPLE_RATE}:osf=s16:tsf=s16p:ochl=mono:resampler=swr:dither_method=0:exact_rational=1`,
         "-f", "s16le", "-",
       ],
       { encoding: null, maxBuffer },

@@ -420,12 +420,14 @@ Use injected `runTool` with argument arrays; never invoke a shell. Request
 FFprobe JSON for the selected audio stream's `sample_rate` and every decoded
 frame's `nb_samples` with UTF-8 encoding. Sum positive integer frame sample
 counts, divide by the positive integer sample rate, and do not use container
-`format.duration`. Request FFmpeg mono 16 kHz `s16le` PCM stdout with
-`encoding: null`, parse its `Buffer` explicitly with `readInt16LE`, and limit
-waveform decoding to the score timeline. Set
-`maxBuffer = timelineSampleCount * 2 + 64 * 1024`; the 8,000ms score bound
-keeps it finite, and this avoids relying on `execFile`'s default 1 MiB buffer.
-Reject misaligned/non-Buffer PCM. Compute
+`format.duration`. Select FFmpeg's fixed-point MP3 decoder with `-c:a mp3`
+before `-i`, then use the explicit integer mono 16 kHz resampler
+`aresample=sample_rate=16000:osf=s16:tsf=s16p:ochl=mono:resampler=swr:dither_method=0:exact_rational=1`
+and request `s16le` PCM stdout with `encoding: null`. Parse its `Buffer`
+explicitly with `readInt16LE` and limit waveform decoding to the score timeline.
+Set `maxBuffer = timelineSampleCount * 2 + 64 * 1024`; the 8,000ms score
+bound keeps it finite, and this avoids relying on `execFile`'s default 1 MiB
+buffer. Reject misaligned/non-Buffer PCM. Compute
 `timelineSampleCount = round(sampleRate * timelineDurationMs / 1000)` and feed
 that boundary to the existing `getNormalizedPeakBars` algorithm: missing
 samples become trailing zero bars and samples after the phrase are ignored.
