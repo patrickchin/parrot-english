@@ -448,7 +448,7 @@ export function LearnerProfileGateView({
             <LearnerProfileScreen>
               <LearnerProfileStatusCard aria-busy="true" role="status">
                 <p className="m-0 font-bold leading-relaxed text-slate-600">
-                  Loading learner profiles…
+                  {messages.learners.roster.loading}
                 </p>
               </LearnerProfileStatusCard>
             </LearnerProfileScreen>
@@ -485,7 +485,7 @@ export function LearnerProfileGateView({
           <LearnerProfileScreen>
             <LearnerProfileStatusCard aria-busy="true" role="status">
               <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Loading learner profiles…
+                {messages.learners.roster.loading}
               </p>
             </LearnerProfileStatusCard>
           </LearnerProfileScreen>
@@ -905,6 +905,10 @@ export function LearnerProfileGate({
   onRedoLearnerProfileRoute,
   redoLearnerProfile,
 }: LearnerProfileGateProps) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages = guardianRoute
+    ? selectedMessages
+    : englishGuardianMessages;
   const clearProfileAccountAction = useClearProfileAccountAction();
   const sessionIdentity = useAccountSessionIdentity();
   const learnerSelectionChannel = useMemo(
@@ -2806,13 +2810,13 @@ export function LearnerProfileGate({
           >
             <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
               {learnerIdentityCheck === "checking"
-                ? "Checking the current learner"
-                : "We couldn't verify the current learner"}
+                ? messages.learners.identityCheck.checkingTitle
+                : messages.learners.identityCheck.failedTitle}
             </h1>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
               {learnerIdentityCheck === "checking"
-                ? "Please wait before making changes."
-                : "Try again before continuing so changes are saved for the right learner."}
+                ? messages.learners.identityCheck.checkingDescription
+                : messages.learners.identityCheck.failedDescription}
             </p>
             {learnerIdentityCheck === "failed" ? (
               <div className="mt-2 flex justify-end">
@@ -2820,7 +2824,7 @@ export function LearnerProfileGate({
                   onClick={retryLearnerIdentity}
                   type="button"
                 >
-                  Try again
+                  {messages.common.retry}
                 </ActionButton>
               </div>
             ) : null}

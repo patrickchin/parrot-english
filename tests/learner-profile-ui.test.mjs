@@ -1341,6 +1341,33 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(dashboard, /GUARDIAN MANAGER REDIRECT/);
   });
 
+  it("localizes Guardian dashboard roster loading without changing learner-route English", () => {
+    const guardianDashboard = renderGate(
+      {
+        data: { mode: "selection-required" },
+        guardianDashboardRoute: true,
+        guardianRoute: true,
+        guardianSelectionRosterPhase: "loading",
+        isLearnerProfileRoute: false,
+      },
+      "zh-Hans",
+    );
+    assert.match(guardianDashboard, /正在加载孩子资料…/);
+    assert.doesNotMatch(guardianDashboard, /Loading learner profiles…/);
+
+    const learnerRoute = renderGate(
+      {
+        data: { mode: "selection-required" },
+        guardianAccessMode: "guardian",
+        guardianSelectionRosterPhase: "loading",
+        isLearnerProfileRoute: false,
+      },
+      "zh-Hans",
+    );
+    assert.match(learnerRoute, /Loading learner profiles…/);
+    assert.doesNotMatch(learnerRoute, /正在加载孩子资料…/);
+  });
+
   it("keeps zero-profile Guardian onboarding in Manage learners", () => {
     const dashboard = renderGate({
       data: { mode: "selection-required" },

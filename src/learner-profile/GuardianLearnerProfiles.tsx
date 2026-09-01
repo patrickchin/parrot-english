@@ -357,6 +357,7 @@ export function GuardianLearnerProfiles() {
   const mountedRef = useRef(false);
   const operationRef = useRef(0);
   const rosterRevisionRef = useRef(rosterRevision);
+  const deletedStatusRevisionRef = useRef<number | null>(null);
 
   const beginOperation = useCallback(() => {
     controllerRef.current?.abort();
@@ -379,10 +380,13 @@ export function GuardianLearnerProfiles() {
     setProfiles(nextRoster.profiles);
   }, []);
 
-  const loadRoster = useCallback(async () => {
+  const loadRoster = useCallback(async (preserveStatus = false) => {
     const operation = beginOperation();
     setError(null);
-    setStatusMessage(null);
+    if (!preserveStatus) {
+      deletedStatusRevisionRef.current = null;
+      setStatusMessage(null);
+    }
     setIsLoading(true);
     setPendingProfileId(null);
     try {
@@ -415,7 +419,9 @@ export function GuardianLearnerProfiles() {
   useEffect(() => {
     if (rosterRevisionRef.current === rosterRevision) return;
     rosterRevisionRef.current = rosterRevision;
-    void loadRoster();
+    const preserveStatus = deletedStatusRevisionRef.current === rosterRevision;
+    deletedStatusRevisionRef.current = null;
+    void loadRoster(preserveStatus);
   }, [loadRoster, rosterRevision]);
 
   async function reconcileRosterAfterMutation(
@@ -435,6 +441,7 @@ export function GuardianLearnerProfiles() {
     const operation = beginOperation();
     const previousActiveProfileId = activeProfileIdRef.current;
     setError(null);
+    deletedStatusRevisionRef.current = null;
     setStatusMessage(null);
     setPendingProfileId(ADD_PENDING_PROFILE_ID);
     try {
@@ -468,6 +475,7 @@ export function GuardianLearnerProfiles() {
   ): Promise<LearnerRosterErrorCode | null> {
     const operation = beginOperation();
     setError(null);
+    deletedStatusRevisionRef.current = rosterRevisionRef.current + 1;
     setStatusMessage(null);
     setPendingProfileId(profile.id);
     try {
@@ -477,6 +485,7 @@ export function GuardianLearnerProfiles() {
       setStatusMessage({ kind: "deleted", learnerName: profile.name });
       return null;
     } catch (caughtError) {
+      deletedStatusRevisionRef.current = null;
       if (operation.isCurrent()) {
         const reconciledRoster = learnerDeletionRoster(caughtError);
         if (reconciledRoster) applyRoster(reconciledRoster);

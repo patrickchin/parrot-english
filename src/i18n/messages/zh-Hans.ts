@@ -121,6 +121,12 @@ export const chineseGuardianMessages = {
     editingFor: (name: string) => `正在编辑 ⁨${name}⁩ 的设置`,
   },
   learners: {
+    identityCheck: {
+      checkingTitle: "正在检查当前孩子",
+      checkingDescription: "请稍候，再进行更改。",
+      failedTitle: "无法确认当前孩子",
+      failedDescription: "请重试，确认更改会保存到正确的孩子资料后再继续。",
+    },
     roster: {
       backToDashboard: "返回家长中心",
       backToDashboardAria: "返回家长中心",

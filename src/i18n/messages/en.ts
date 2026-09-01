@@ -130,6 +130,13 @@ export const englishGuardianMessages = {
     editingFor: (name: string) => `Editing settings for ⁨${name}⁩`,
   },
   learners: {
+    identityCheck: {
+      checkingTitle: "Checking the current learner",
+      checkingDescription: "Please wait before making changes.",
+      failedTitle: "We couldn't verify the current learner",
+      failedDescription:
+        "Try again before continuing so changes are saved for the right learner.",
+    },
     roster: {
       backToDashboard: "Back to guardian dashboard",
       backToDashboardAria: "Back to guardian dashboard",
