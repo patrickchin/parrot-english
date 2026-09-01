@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-toys-ball-label",
-        "text": "This is a ball."
+        "text": "ball"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-toys-toy-car-label",
-        "text": "This is a toy car."
+        "text": "toy car"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-toys-doll-label",
-        "text": "This is a doll."
+        "text": "doll"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-toys-kite-label",
-        "text": "This is a kite."
+        "text": "kite"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-toys-blocks-label",
-        "text": "These are blocks."
+        "text": "blocks"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-toys-teddy-bear-label",
-        "text": "This is a teddy bear."
+        "text": "teddy bear"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-toys-toy-train-label",
-        "text": "This is a toy train."
+        "text": "toy train"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-toys-drum-label",
-        "text": "This is a drum."
+        "text": "drum"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-toys-puzzle-label",
-        "text": "This is a puzzle."
+        "text": "puzzle"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-toys-robot-label",
-        "text": "This is a robot."
+        "text": "robot"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-toys-yo-yo-label",
-        "text": "This is a yo-yo."
+        "text": "yo-yo"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-toys-skateboard-label",
-        "text": "This is a skateboard."
+        "text": "skateboard"
       }
     }
   ],

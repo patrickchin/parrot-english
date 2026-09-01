@@ -169,11 +169,14 @@ function validateFixedCategoryShape(manifest, sourcePath) {
 
   const audioPrefix = `word-game-${manifest.id}-`;
   for (const [itemIndex, currentItem] of manifest.items.entries()) {
-    if (!currentItem.audio.id.startsWith(audioPrefix)) {
+    if (
+      !currentItem.audio.id.startsWith(audioPrefix)
+      && !currentItem.audio.id.startsWith("word-game-shared-")
+    ) {
       fixedShapeError(
         sourcePath,
         `items[${itemIndex}].audio.id`,
-        `must begin with ${audioPrefix}`,
+        `must begin with ${audioPrefix} or word-game-shared-`,
       );
     }
   }

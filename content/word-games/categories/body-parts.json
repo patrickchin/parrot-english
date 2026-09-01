@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-eyes-label",
-        "text": "These are the eyes."
+        "text": "eyes"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-ears-label",
-        "text": "These are the ears."
+        "text": "ears"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-nose-label",
-        "text": "This is a nose."
+        "text": "nose"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-mouth-label",
-        "text": "This is a mouth."
+        "text": "mouth"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-hand-label",
-        "text": "This is a hand."
+        "text": "hand"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-foot-label",
-        "text": "This is a foot."
+        "text": "foot"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-arm-label",
-        "text": "This is an arm."
+        "text": "arm"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-leg-label",
-        "text": "This is a leg."
+        "text": "leg"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-tooth-label",
-        "text": "This is a tooth."
+        "text": "tooth"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-tongue-label",
-        "text": "This is a tongue."
+        "text": "tongue"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-brain-label",
-        "text": "This is a brain."
+        "text": "brain"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-body-parts-heart-label",
-        "text": "This is a heart."
+        "text": "heart"
       }
     }
   ],

@@ -231,9 +231,9 @@ function validateCategoryReferences(currentPackage, assetById, audioById, usedAs
       if (priorText !== item.audio.text) {
         throw new Error(`${sourcePath}: audio id ${item.audio.id} is reused with different text`);
       }
-      throw new Error(`${sourcePath}: duplicate global audio id ${item.audio.id}`);
+    } else {
+      audioById.set(item.audio.id, item.audio.text);
     }
-    audioById.set(item.audio.id, item.audio.text);
     if (item.visual.kind === "noto-svg") {
       if (!assetById.has(item.visual.assetId)) {
         throw new Error(`${sourcePath}: Noto asset ${item.visual.assetId} is not listed`);

@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-food-apple-label",
-        "text": "This is an apple."
+        "text": "apple"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-food-banana-label",
-        "text": "This is a banana."
+        "text": "banana"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-food-carrot-label",
-        "text": "This is a carrot."
+        "text": "carrot"
       }
     },
     {
@@ -55,8 +55,8 @@
         "assetId": "1f34a"
       },
       "audio": {
-        "id": "word-game-food-orange-label",
-        "text": "This is an orange."
+        "id": "word-game-shared-orange-label",
+        "text": "orange"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-food-bread-label",
-        "text": "This is bread."
+        "text": "bread"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-food-cheese-label",
-        "text": "This is cheese."
+        "text": "cheese"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-food-rice-label",
-        "text": "This is rice."
+        "text": "rice"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-food-egg-label",
-        "text": "This is an egg."
+        "text": "egg"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-food-milk-label",
-        "text": "This is milk."
+        "text": "milk"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-food-tomato-label",
-        "text": "This is a tomato."
+        "text": "tomato"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-food-potato-label",
-        "text": "This is a potato."
+        "text": "potato"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-food-sandwich-label",
-        "text": "This is a sandwich."
+        "text": "sandwich"
       }
     }
   ],

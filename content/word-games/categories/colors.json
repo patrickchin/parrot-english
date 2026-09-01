@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-colors-red-label",
-        "text": "This is red."
+        "text": "red"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-colors-blue-label",
-        "text": "This is blue."
+        "text": "blue"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-colors-yellow-label",
-        "text": "This is yellow."
+        "text": "yellow"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-colors-green-label",
-        "text": "This is green."
+        "text": "green"
       }
     },
     {
@@ -68,8 +68,8 @@
         "color": "#f97316"
       },
       "audio": {
-        "id": "word-game-colors-orange-label",
-        "text": "This is orange."
+        "id": "word-game-shared-orange-label",
+        "text": "orange"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-colors-purple-label",
-        "text": "This is purple."
+        "text": "purple"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-colors-black-label",
-        "text": "This is black."
+        "text": "black"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-colors-white-label",
-        "text": "This is white."
+        "text": "white"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-colors-pink-label",
-        "text": "This is pink."
+        "text": "pink"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-colors-brown-label",
-        "text": "This is brown."
+        "text": "brown"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-colors-gray-label",
-        "text": "This is gray."
+        "text": "gray"
       }
     }
   ],

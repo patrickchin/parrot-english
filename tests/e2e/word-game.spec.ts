@@ -1,12 +1,12 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const animals = [
-  ["cat", "Cat. Which is the cat?", "Great job! This is a cat."],
-  ["dog", "Dog. Which is the dog?", "Great job! This is a dog."],
-  ["bird", "Bird. Which is the bird?", "Great job! This is a bird."],
-  ["fish", "Fish. Which is the fish?", "Great job! This is a fish."],
-  ["duck", "Duck. Which is the duck?", "Great job! This is a duck."],
-  ["frog", "Frog. Which is the frog?", "Great job! This is a frog."],
+  ["cat", "Cat. Which is the cat?", "Correct!"],
+  ["dog", "Dog. Which is the dog?", "Correct!"],
+  ["bird", "Bird. Which is the bird?", "Correct!"],
+  ["fish", "Fish. Which is the fish?", "Correct!"],
+  ["duck", "Duck. Which is the duck?", "Correct!"],
+  ["frog", "Frog. Which is the frog?", "Correct!"],
 ] as const;
 
 const authoredChoices = [
@@ -145,21 +145,49 @@ test("navigates through a category and plays saved four-choice feedback in seque
 
   await choices.getByRole("button", { name: "Choose bird" }).click();
   await expect(main.getByRole("status", { name: "Answer feedback" }))
-    .toHaveText("This is a bird. Listen and try again.");
+    .toHaveText("bird");
   expect(await choiceOrder(choices)).toEqual(initialChoiceOrder);
   await expect.poll(() => hasStaticRequest(page, "word-game-animals-bird-label")).toBe(true);
   await releaseNextCue(page);
-  await expect.poll(() => hasStaticRequest(page, "word-game-retry")).toBe(true);
+  await expect.poll(async () => (await mediaSnapshot(page)).pendingCues).toBe(0);
+  expect(await hasStaticRequest(page, "word-game-retry")).toBe(false);
 
   await choices.getByRole("button", { name: "Choose cat" }).click();
   await expect(main.getByRole("status", { name: "Answer feedback" })).toHaveText(animals[0][2]);
-  await expect.poll(() => hasStaticRequest(page, "narrator-feedback-success")).toBe(true);
+  await expect.poll(async () => (await staticRequests(page)).at(-1)?.audioId)
+    .toBe("word-game-animals-cat-label");
   await releaseNextCue(page);
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
-  await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-label")).toBe(true);
+  await expect.poll(async () => (await staticRequests(page)).at(-1)?.audioId)
+    .toBe("word-game-correct");
   await releaseNextCue(page);
   await expect(progress).toHaveAttribute("aria-valuetext", "2 of 6");
   await expect(main.getByRole("heading", { level: 2, name: animals[1][1] })).toBeFocused();
+  await expect.poll(async () => (await staticRequests(page)).at(-1)?.audioId)
+    .toBe("word-game-animals-dog-label");
+});
+
+test("renders Listen again as an icon-only accessible control", async ({ page }) => {
+  await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
+
+  const listenAgain = game(page).main.getByRole("button", { name: "Listen again" });
+  await expect(listenAgain).toBeVisible();
+  await expect(listenAgain).toHaveText("");
+});
+
+test("aligns Listen again on the question line", async ({ page }) => {
+  await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
+
+  const { main } = game(page);
+  const questionBox = await visibleBox(
+    main.getByRole("heading", { level: 2, name: animals[0][1] }),
+  );
+  const listenAgainBox = await visibleBox(
+    main.getByRole("button", { name: "Listen again" }),
+  );
+
+  expect(listenAgainBox.y).toBeLessThan(questionBox.y + questionBox.height);
+  expect(listenAgainBox.y + listenAgainBox.height).toBeGreaterThan(questionBox.y);
 });
 
 test("keeps authored question order and deterministically reshuffles only on Play again", async ({ page }) => {
@@ -224,7 +252,7 @@ test("keeps visual play usable with one persistent saved-sound failure", async (
   await expect(main.getByRole("alert")).toHaveText("Sound is not available. You can still play.");
   await choices.getByRole("button", { name: "Choose bird" }).click();
   await expect(main.getByRole("status", { name: "Answer feedback" }))
-    .toHaveText("This is a bird. Listen and try again.");
+    .toHaveText("bird");
   await choices.getByRole("button", { name: "Choose cat" }).click();
   await expect(progress).toHaveAttribute("aria-valuetext", "2 of 6");
   await expect(choices.getByRole("button", { name: /^Choose / })).toHaveCount(4);

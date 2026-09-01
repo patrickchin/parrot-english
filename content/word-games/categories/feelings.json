@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-feelings-happy-label",
-        "text": "This face is happy."
+        "text": "happy"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-feelings-sad-label",
-        "text": "This face is sad."
+        "text": "sad"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-feelings-angry-label",
-        "text": "This face is angry."
+        "text": "angry"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-feelings-sleepy-label",
-        "text": "This face is sleepy."
+        "text": "sleepy"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-feelings-surprised-label",
-        "text": "This face is surprised."
+        "text": "surprised"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-feelings-silly-label",
-        "text": "This face is silly."
+        "text": "silly"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-feelings-scared-label",
-        "text": "This face is scared."
+        "text": "scared"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-feelings-excited-label",
-        "text": "This face is excited."
+        "text": "excited"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-feelings-calm-label",
-        "text": "This face is calm."
+        "text": "calm"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-feelings-worried-label",
-        "text": "This face is worried."
+        "text": "worried"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-feelings-confused-label",
-        "text": "This face is confused."
+        "text": "confused"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-feelings-bored-label",
-        "text": "This face is bored."
+        "text": "bored"
       }
     }
   ],

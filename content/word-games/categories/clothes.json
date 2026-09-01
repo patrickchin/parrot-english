@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-clothes-shirt-label",
-        "text": "This is a shirt."
+        "text": "shirt"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-clothes-shoes-label",
-        "text": "These are shoes."
+        "text": "shoes"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-clothes-hat-label",
-        "text": "This is a hat."
+        "text": "hat"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-clothes-socks-label",
-        "text": "These are socks."
+        "text": "socks"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-clothes-coat-label",
-        "text": "This is a coat."
+        "text": "coat"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-clothes-pants-label",
-        "text": "These are pants."
+        "text": "pants"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-clothes-dress-label",
-        "text": "This is a dress."
+        "text": "dress"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-clothes-shorts-label",
-        "text": "These are shorts."
+        "text": "shorts"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-clothes-scarf-label",
-        "text": "This is a scarf."
+        "text": "scarf"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-clothes-boots-label",
-        "text": "These are boots."
+        "text": "boots"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-clothes-gloves-label",
-        "text": "These are gloves."
+        "text": "gloves"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-clothes-swimsuit-label",
-        "text": "This is a swimsuit."
+        "text": "swimsuit"
       }
     }
   ],

@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-home-bed-label",
-        "text": "This is a bed."
+        "text": "bed"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-home-chair-label",
-        "text": "This is a chair."
+        "text": "chair"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-home-door-label",
-        "text": "This is a door."
+        "text": "door"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-home-window-label",
-        "text": "This is a window."
+        "text": "window"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-home-house-label",
-        "text": "This is a house."
+        "text": "house"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-home-key-label",
-        "text": "This is a key."
+        "text": "key"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-home-sofa-label",
-        "text": "This is a sofa."
+        "text": "sofa"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-home-bathtub-label",
-        "text": "This is a bathtub."
+        "text": "bathtub"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-home-toilet-label",
-        "text": "This is a toilet."
+        "text": "toilet"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-home-shower-label",
-        "text": "This is a shower."
+        "text": "shower"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-home-mirror-label",
-        "text": "This is a mirror."
+        "text": "mirror"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-home-broom-label",
-        "text": "This is a broom."
+        "text": "broom"
       }
     }
   ],
