@@ -56,6 +56,7 @@ export interface AuthActionClient {
   $fetch(
     path: "/sign-in/shared-guest",
     options: {
+      body: Record<string, never>;
       headers: { "x-captcha-response": string };
       method: "POST";
     },
@@ -191,6 +192,7 @@ export async function signInGuestSession({
 
   try {
     const result = await client.$fetch("/sign-in/shared-guest", {
+      body: {},
       headers: { "x-captcha-response": turnstileToken },
       method: "POST",
     });

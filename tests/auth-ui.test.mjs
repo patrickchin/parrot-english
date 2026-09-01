@@ -793,6 +793,7 @@ test("guest login sends one Turnstile proof and refetches the new session", asyn
     {
       path: "/sign-in/shared-guest",
       options: {
+        body: {},
         headers: { "x-captcha-response": "opaque-guest-proof" },
         method: "POST",
       },
