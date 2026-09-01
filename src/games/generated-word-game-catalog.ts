@@ -6224,7 +6224,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "promptAudio": {
             "id": "word-game-clothes-boots-prompt",
-            "text": "Which is the boots?",
+            "text": "Which are the boots?",
             "source": "/assets/audio/word-game-clothes-boots-prompt.mp3"
           },
           "visual": {

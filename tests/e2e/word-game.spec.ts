@@ -136,8 +136,18 @@ test("navigates through a category and plays saved four-choice feedback in seque
     source: "/assets/audio/word-game-animals-cat-prompt.mp3",
   }]);
 
+  const beforeListenAgainCount = (await staticRequests(page)).length;
   await main.getByRole("button", { name: "Listen again" }).click();
-  await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-prompt")).toBe(true);
+  await expect.poll(async () => {
+    const requests = await staticRequests(page);
+    return { count: requests.length, tail: requests.at(-1) };
+  }).toEqual({
+    count: beforeListenAgainCount + 1,
+    tail: {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+  });
 
   const listenDog = choices.getByRole("button", { name: "Listen: dog" });
   await listenDog.click();
@@ -198,8 +208,19 @@ test("keeps authored question order and deterministically reshuffles only on Pla
     .toHaveAttribute("href", "/word-games/animals");
   await expect.poll(() => hasStaticRequest(page, "word-game-complete")).toBe(true);
 
+  const beforePlayAgainCount = (await staticRequests(page)).length;
   await main.getByRole("button", { name: "Play again" }).click();
   await expect(main.getByRole("heading", { level: 2, name: animals[0][1] })).toBeFocused();
+  await expect.poll(async () => {
+    const requests = await staticRequests(page);
+    return { count: requests.length, tail: requests.at(-1) };
+  }).toEqual({
+    count: beforePlayAgainCount + 1,
+    tail: {
+      audioId: "word-game-animals-cat-prompt",
+      source: "/assets/audio/word-game-animals-cat-prompt.mp3",
+    },
+  });
   const replayOrder = await choiceOrder(choices);
   expect(replayOrder).not.toEqual(firstOrder);
   expect(new Set(replayOrder)).toEqual(new Set(authoredChoices[0]));

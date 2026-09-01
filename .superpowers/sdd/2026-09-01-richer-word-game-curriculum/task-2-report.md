@@ -186,11 +186,12 @@ Final audio evidence:
 
 ## Verification
 
-- Independent JSON audit at snapshot `f2cb2638…`: passed exact
+- Independent JSON audit at snapshot `f2cb2638…` reported a pass for exact
   9 categories/27 tiers/81 quizzes/486 questions/107 items, target and cyclic
   choice orders, globally unique strict IDs, grammatical category-appropriate
   prompts, no disallowed names, all 107 label IDs/texts/audio bytes unchanged,
-  and 217 unique cue IDs.
+  and 217 unique cue IDs. Subsequent review found that its plural grammar set
+  omitted `boots`; the review fix and stronger regression oracle are below.
 - `npm run generate:word-game-catalog` — passed.
 - `npm run check:content-catalogs` — passed.
 - Focused Task 2 Node suite — 121 passed, 0 failed.
@@ -215,6 +216,37 @@ strict ID/text ownership, deep freezing, prompt/feedback playback parity,
 accessible route structure, and the absence of runtime/content Noto references.
 The Task 1 Fluent manifest, pinned hashes, 94 PNGs, tracked inventory, and license
 remain unchanged.
+
+## Review fixes
+
+Review found two scoped issues after commit `31c7ee3e`:
+
+1. `boots` was missing from the plural grammar regression set, leaving its
+   prompt as `Which is the boots?`. Adding `boots` to the oracle produced the
+   intended RED failure with that exact actual/expected mismatch. The source now
+   says `Which are the boots?`.
+2. The Listen again and Play again browser checks only proved that a matching
+   prompt request existed somewhere in history. They now assert that each action
+   adds exactly one request and that the new tail is the exact visible cat prompt
+   ID and source. The two focused browser behaviors passed 2/2 before the content
+   fix, confirming this was test hardening around existing runtime behavior.
+
+Before regeneration, the tracked boots prompt matched commit `31c7ee3e`; only
+that exact file was removed. The compiler then reported exactly one missing ID,
+`word-game-clothes-boots-prompt`. The checked-in ElevenLabs generator recreated
+only that cue using the same process-memory credential injection,
+`NODE_USE_SYSTEM_CA=1`, and existing voice/model/format/language defaults. Final
+review-fix evidence:
+
+- Compiler missing oracle: 0.
+- Corrected boots prompt: non-empty MP3, FFprobe codec `mp3`, clean FFmpeg decode.
+- Git/blob comparison with `31c7ee3e`: all 107 labels and the other 106 prompts
+  are byte-for-byte unchanged; only the boots prompt changed.
+- Focused compiler/curriculum/catalog/static-audio suite: 77 passed, 0 failed.
+- Isolated word-game Playwright suite: 14 passed, 0 failed.
+- Applicable ESLint scope and production build: passed; the build retained only
+  the existing Vite chunk-size advisory.
+- Generated catalog/content check and `git diff --check`: passed.
 
 ## Concerns
 

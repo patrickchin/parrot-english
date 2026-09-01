@@ -232,7 +232,7 @@ describe("production word-game curriculum", () => {
       if (categoryId === "colors") assert.equal(promptAudio.text, `Which color is ${label}?`);
       else if (categoryId === "body-parts") assert.equal(promptAudio.text, `Which picture shows the ${label}?`);
       else if (categoryId === "feelings") assert.equal(promptAudio.text, `Which face looks ${label}?`);
-      else if (["shoes", "socks", "pants", "shorts", "gloves", "blocks"].includes(id)) {
+      else if (["shoes", "socks", "pants", "shorts", "boots", "gloves", "blocks"].includes(id)) {
         assert.equal(promptAudio.text, `Which are the ${label}?`);
       }
       else assert.equal(promptAudio.text, `Which is the ${label}?`);
