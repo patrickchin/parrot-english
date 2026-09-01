@@ -42,6 +42,34 @@ function renderInRouter(element, initialEntry = "/") {
   );
 }
 
+function renderLearnerWithChinesePreference(element, initialEntry = "/") {
+  return renderInRouter(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      element,
+    ),
+    initialEntry,
+  );
+}
+
+test("representative learner catalogs remain English under a Chinese preference", () => {
+  const home = renderLearnerWithChinesePreference(createElement(HomeMenu));
+  assert.match(home, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
+  assert.match(home, /Lessons/);
+  assert.match(home, /Talk to Peppa/);
+  assert.match(home, /Story time/);
+  assert.doesNotMatch(home, /[\p{Script=Han}]/u);
+
+  const lessons = renderLearnerWithChinesePreference(
+    createElement(LessonListView),
+    "/lessons",
+  );
+  assert.match(lessons, /Pick a lesson/);
+  assert.match(lessons, /aria-label="Back to home"/);
+  assert.doesNotMatch(lessons, /[\p{Script=Han}]/u);
+});
+
 test("home gives children five clear, working learning choices", () => {
   const html = renderInRouter(createElement(HomeMenu));
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(

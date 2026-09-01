@@ -40,6 +40,12 @@ const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
 const { DuckDub } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
+const { NurseryRhymeList } = await vite.ssrLoadModule(
+  "/src/dubbing/NurseryRhymeList.tsx",
+);
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 const {
   DubLoading,
   resolveGuideOnlyDubLineAudioSource,
@@ -118,12 +124,30 @@ function enabledFirstSceneStatus() {
   );
 }
 
-function mountDuckDub() {
+function mountDuckDub(language = "en") {
   return mountStrict(
     createElement(
-      MemoryRouter,
-      { initialEntries: ["/dubs/five-little-ducks"] },
-      createElement(DuckDub),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/dubs/five-little-ducks"] },
+        createElement(DuckDub),
+      ),
+    ),
+  );
+}
+
+function renderNurseryRhymes(language = "en") {
+  return renderToStaticMarkup(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/dubs"] },
+        createElement(NurseryRhymeList),
+      ),
     ),
   );
 }
@@ -332,6 +356,19 @@ function renderSceneEditor(viewProps = {}) {
 }
 
 describe("duck dubbing storyboard presentation", () => {
+  it("keeps the nursery-rhyme catalog English with the approved recording caution", () => {
+    const html = renderNurseryRhymes("zh-Hans");
+
+    assert.match(html, /<h1[^>]*>Nursery rhymes<\/h1>/);
+    assert.match(html, /Ask a grown-up before recording/);
+    assert.match(
+      html,
+      /<span[^>]*lang="zh-Hans"[^>]*>录音前请先征得家长同意。<\/span>/,
+    );
+    assert.match(html, /aria-label="Back to home"/);
+    assert.doesNotMatch(html, /返回首页|童谣/);
+  });
+
   it("keeps optional waveform setup failures from interrupting recording", async () => {
     globalThis.AudioContext = class AudioContext {
       constructor() {
@@ -918,6 +955,37 @@ describe("duck dubbing storyboard presentation", () => {
 
     assert.equal(uploads, 0);
     assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("adds Chinese guidance only to the microphone-permission failure", async () => {
+    installSynchronizedRecordingHarness({ rejectMicrophone: true });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub("zh-Hans");
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.match(container.textContent, /microphone is off/i));
+
+    const helper = [...container.querySelectorAll('[lang="zh-Hans"]')].find(
+      ({ textContent }) =>
+        textContent === "请让家长开启麦克风权限，然后重试。",
+    );
+    assert.ok(helper);
+
+    await click(container.querySelector('[aria-label="Back to full video"]'));
+    await waitFor(() => assert.equal(
+      [...container.querySelectorAll('[lang="zh-Hans"]')].filter(
+        ({ textContent }) =>
+          textContent === "请让家长开启麦克风权限，然后重试。",
+      ).length,
+      0,
+    ));
   });
 
   it("cancels the microphone session when prepared melody start fails", async () => {

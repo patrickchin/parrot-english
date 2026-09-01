@@ -1249,6 +1249,45 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(learnerFailure, /语音回答未完成/);
   });
 
+  it("adds only the approved adult helpers to learner onboarding in Chinese", () => {
+    const setup = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileSetupView, {
+          answeredQuestionCount: 0,
+          audience: "learner",
+          onSkip() {},
+          onStart() {},
+          questionCount: 6,
+        }),
+      ),
+    );
+    assert.match(setup, /We save your answers/);
+    assert.match(
+      setup,
+      /<span[^>]*lang="zh-Hans"[^>]*>我们会保存你的回答，家长可以修改你的姓名和年龄。<\/span>/,
+    );
+    assert.match(setup, />Start questions</);
+    assert.match(setup, />Skip for now</);
+    assert.doesNotMatch(setup, /开始回答|暂时跳过/);
+
+    const recoverableFailure = renderGate(
+      {
+        data: fullState(),
+        isLearnerProfileRoute: false,
+        isLoading: false,
+        loadError: "load-failed",
+      },
+      "zh-Hans",
+    );
+    assert.match(
+      recoverableFailure,
+      /Your questions could not be loaded. Please try again./,
+    );
+    assert.match(recoverableFailure, />Try again</);
+    assert.doesNotMatch(recoverableFailure, /[\p{Script=Han}]/u);
+  });
+
   it("keeps selection-required learner mode free of profile and sibling content", () => {
     const html = renderGate({
       data: { mode: "selection-required" },
@@ -1258,6 +1297,27 @@ describe("onboarding and profile gate", () => {
     assert.match(html, /Ask a grown-up to choose a learner/);
     assert.doesNotMatch(html, /account menu/);
     assert.doesNotMatch(html, /LESSON CONTENT|Mia/);
+  });
+
+  it("shows bilingual adult-only guidance when learner selection is required", () => {
+    const html = renderGate(
+      {
+        data: { mode: "selection-required" },
+        isLearnerProfileRoute: false,
+      },
+      "zh-Hans",
+    );
+
+    assert.match(html, /Ask a grown-up to choose a learner/);
+    assert.match(
+      html,
+      /<span[^>]*lang="zh-Hans"[^>]*>请家长先选择一位孩子<\/span>/,
+    );
+    assert.match(
+      html,
+      /<span[^>]*lang="zh-Hans"[^>]*>家长可以进入家长模式，选择正在学习的孩子后再返回。<\/span>/,
+    );
+    assert.doesNotMatch(html, /LESSON CONTENT/);
   });
 
   it("lets an unlocked Guardian reach the learner chooser boundary when selection is required", () => {

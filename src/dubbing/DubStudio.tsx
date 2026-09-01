@@ -11,6 +11,7 @@ import {
 } from "react";
 import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getNurseryRhymesPath } from "../app/app-routes";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
 import { isAbortError } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
@@ -52,6 +53,9 @@ type TakePreview = {
   url: string;
 };
 
+const MICROPHONE_PERMISSION_MESSAGE =
+  "The microphone is off. Ask a grown-up to allow it, then try again.";
+
 function getSceneLines(definition: DubDefinition) {
   return Array.from(
     { length: definition.lines.length / definition.linesPerScene },
@@ -89,7 +93,7 @@ function microphoneMessage(error: unknown) {
     return "This browser cannot record yet. Try another device or browser.";
   }
   if (error instanceof MicrophoneAccessError) {
-    return "The microphone is off. Ask a grown-up to allow it, then try again.";
+    return MICROPHONE_PERMISSION_MESSAGE;
   }
   return "The microphone did not start. Try recording again.";
 }
@@ -855,6 +859,9 @@ export function DubStudio({
         {liveStatus}
       </span>
       {content}
+      {activeError === MICROPHONE_PERMISSION_MESSAGE ? (
+        <AdultBoundaryHelper message="recordingPermissionHelper" />
+      ) : null}
     </>
   );
 }

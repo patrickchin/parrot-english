@@ -103,6 +103,9 @@ test("opening audio keeps the learner waiting until Peppa finishes", async ({
 test("reconnecting and error states keep recovery language in the same stage", async ({
   page,
 }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
   await page.goto("/talk-to-peppa?parrotE2eConversation=reconnecting");
   await startSmallChat(page);
   await expect(
@@ -122,6 +125,7 @@ test("reconnecting and error states keep recovery language in the same stage", a
     page.getByRole("img", { exact: true, name: "Peppa" }),
   );
   await expectAnimationCount(page, 1);
+  await expect(page.getByRole("main")).not.toContainText(/[\p{Script=Han}]/u);
 
   await page.goto("/talk-to-peppa?parrotE2eConversation=error");
   await startSmallChat(page);
@@ -133,6 +137,7 @@ test("reconnecting and error states keep recovery language in the same stage", a
   await expect(
     page.getByRole("button", { name: /Tap, then talk|I’m done/ }),
   ).toHaveCount(0);
+  await expect(page.getByRole("main")).not.toContainText(/[\p{Script=Han}]/u);
 });
 
 test("a technical start response becomes one literal child recovery step", async ({

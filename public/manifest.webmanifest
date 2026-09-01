@@ -2,7 +2,7 @@
   "name": "Parrot English",
   "short_name": "Parrot",
   "description": "Short listening, speaking, and story activities for young English learners.",
-  "lang": "zh-CN",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

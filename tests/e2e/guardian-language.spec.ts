@@ -105,10 +105,56 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
   await page.goto("/lessons");
   await page.getByRole("button", { name: /learner mode/i }).click();
   const learnerMenu = page.getByRole("menu", { name: "Account menu" });
-  await expect(
-    learnerMenu.getByRole("menuitem", { name: /Grown-up access.*家长入口/ }),
-  ).toBeVisible();
+  const grownUpAccess = learnerMenu.getByRole("menuitem", {
+    name: /Grown-up access.*家长入口/,
+  });
+  await expect(grownUpAccess).toBeVisible();
   await expect(learnerMenu.getByText("Switch modes", { exact: true })).toBeVisible();
+
+  await grownUpAccess.click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "家长中心" })).toBeVisible();
+});
+
+test("Chinese preference keeps representative learner destinations English and locale-free", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  const destinations = [
+    ["/", "Parrot English"],
+    ["/lessons", "Pick a lesson"],
+    ["/lessons/parrot/01-peppas-high-ball/scenes/1", "Peppa's High Ball"],
+    ["/stories", "Pick a story"],
+    ["/stories/the-red-ball/pages/1", "The Red Ball"],
+    ["/word-games", "Pick a word game"],
+    ["/word-games/animals", "Animals"],
+    ["/dubs", "Nursery rhymes"],
+    ["/dubs/five-little-ducks?parrotE2eDub=empty", "Five little ducks"],
+    ["/talk-to-peppa", "Chat with Peppa"],
+  ] as const;
+
+  for (const [route, heading] of destinations) {
+    await page.goto(route);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("heading", { name: heading }).first()).toBeVisible();
+    const links = await page.locator("a[href]").evaluateAll((anchors) =>
+      anchors.map((anchor) => anchor.getAttribute("href") ?? ""),
+    );
+    for (const href of links) {
+      const url = new URL(href, page.url());
+      expect(url.searchParams.has("lang"), href).toBe(false);
+      expect(url.pathname, href).not.toMatch(/^\/(?:en|zh|zh-Hans)(?:\/|$)/);
+    }
+  }
+
+  await page.goto("/dubs");
+  await expect(page.getByText("Ask a grown-up before recording.")).toBeVisible();
+  await expect(page.getByText("录音前请先征得家长同意。")).toHaveAttribute(
+    "lang",
+    "zh-Hans",
+  );
 });
 
 test("browser Chinese preference is inferred without a persistence write", async ({ page }) => {
@@ -152,6 +198,12 @@ test("guardian document language changes immediately while learner document lang
     "zh-Hans",
   );
   await expectUnchangedNavigation(page, learnerSnapshot);
+
+  await page.goto("/stories");
+  await page.goBack();
+  await expect(page).toHaveURL(learnerSnapshot.href);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/stories(?:\?|$)/);
 });
 
 test("Chinese Guardian dashboard and learner chooser are consistently localized", async ({ page }) => {
@@ -269,7 +321,8 @@ test("learner document stays English while its adult chooser is fully Chinese", 
   await expect(
     page.getByText("请家长切换到学习模式后继续。"),
   ).toHaveAttribute("lang", "zh-Hans");
-  await page.getByRole("button", { name: "Switch to learner mode" }).click();
+  const opener = page.getByRole("button", { name: "Switch to learner mode" });
+  await opener.click();
 
   const dialog = page.getByRole("dialog", { name: "谁在学习？" });
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -277,4 +330,14 @@ test("learner document stays English while its adult chooser is fully Chinese", 
   await expect(dialog).toContainText("请选择谁来使用学习模式。");
   await expect(dialog.getByRole("button", { name: "取消" })).toBeVisible();
   await expect(dialog.getByText("Who is learning now?")).toHaveCount(0);
+
+  await dialog.getByRole("button", { exact: true, name: "English" }).click();
+  const englishDialog = page.getByRole("dialog", { name: "Who is learning now?" });
+  await expect(englishDialog).toHaveAttribute("lang", "en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await englishDialog.getByRole("button", { exact: true, name: "中文" }).click();
+  await expect(dialog).toHaveAttribute("lang", "zh-Hans");
+  await dialog.getByRole("button", { name: "取消" }).click();
+  await expect(opener).toBeFocused();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
 });

@@ -462,10 +462,12 @@ export function LearnerProfileGateView({
             <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
               Ask a grown-up to choose a learner
             </h1>
+            <AdultBoundaryHelper message="chooseLearnerTitleHelper" />
             <p className="m-0 font-bold leading-relaxed text-slate-600">
               A grown-up can open Guardian mode, then choose who is learning
               when switching back.
             </p>
+            <AdultBoundaryHelper message="chooseLearnerBodyHelper" />
           </LearnerProfileStatusCard>
         </LearnerProfileScreen>
       );
