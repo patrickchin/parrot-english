@@ -1294,7 +1294,9 @@ test("a replacement overwrites the chosen canonical slot", async ({ page }) => {
 });
 
 test("a saved take keeps its local review URL while the line stays active", async ({ page }) => {
-  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await page.goto(
+    "/dubs/five-little-ducks?parrotE2eDub=empty&parrotE2eDubPlayback=held",
+  );
   await expectDubProject(page);
   await openScene(page, 1);
   await stopAndSave(page);

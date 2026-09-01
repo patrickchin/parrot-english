@@ -3331,10 +3331,12 @@ class MockScheduledAudioNode extends MockAudioNode {
   constructor(
     private readonly kind: "voice" | "oscillator",
     private readonly audioNow: () => number,
+    private readonly onStart: () => void = () => {},
   ) {
     super();
   }
   start(when = 0) {
+    this.onStart();
     if (this.kind === "voice" && isActiveE2eDubRoute()) {
       dubMediaMetrics.scheduledVoiceStarts += 1;
     }
@@ -3379,13 +3381,27 @@ class MockAudioContext {
   private readonly startedAt = performance.now();
   private closed = false;
   private readonly dubContext = isActiveE2eDubRoute();
+  private heldDubPlaybackAt: number | null = null;
 
   constructor() {
     if (this.dubContext) dubMediaMetrics.audioContextsCreated += 1;
   }
 
   get currentTime() {
+    return this.heldDubPlaybackAt ?? this.scaledCurrentTime();
+  }
+
+  private scaledCurrentTime() {
     return ((performance.now() - this.startedAt) / 1_000) * 20;
+  }
+
+  private holdDubPlayback() {
+    if (
+      !this.dubContext ||
+      !hasHeldE2eDubPlayback() ||
+      this.heldDubPlaybackAt !== null
+    ) return;
+    this.heldDubPlaybackAt = this.scaledCurrentTime();
   }
 
   async close() {
@@ -3400,7 +3416,11 @@ class MockAudioContext {
     if (this.dubContext) dubMediaMetrics.audioContextCloses += 1;
   }
   createBufferSource() {
-    return new MockScheduledAudioNode("voice", () => this.currentTime);
+    return new MockScheduledAudioNode(
+      "voice",
+      () => this.currentTime,
+      () => this.holdDubPlayback(),
+    );
   }
   createAnalyser() {
     return new MockAnalyserNode();
