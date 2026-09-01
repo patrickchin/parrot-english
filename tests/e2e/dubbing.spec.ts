@@ -1582,7 +1582,11 @@ test("exposes recorder, microphone, context, and scheduled-backing evidence only
   expect(snapshot.recorderStopCount).toBe(0);
   expect(snapshot.microphoneRequests).toBe(1);
   expect(snapshot.microphoneConstraints).toEqual([{
-    audio: { echoCancellation: true, noiseSuppression: false },
+    audio: {
+      autoGainControl: { exact: false },
+      echoCancellation: { exact: false },
+      noiseSuppression: { exact: false },
+    },
   }]);
   expect(snapshot.recordedStreamTrackKinds).toEqual([["audio"]]);
   expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(true);
