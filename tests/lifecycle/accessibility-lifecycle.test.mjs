@@ -1665,6 +1665,55 @@ describe("keyboard accessibility lifecycles", () => {
     ]);
   });
 
+  it("retranslates the mounted Guardian-mode announcement when language changes", async () => {
+    const Provider = createGuardianAccessProvider({
+      api: guardianApi(),
+      schedule: () => () => {},
+    });
+    const TestAuthGate = createAuthGate({
+      client: authClientForHeader(),
+      GuardianAccessBoundary: Provider,
+    });
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "en", storage: null },
+        createElement(GuardianLanguageControl),
+        createElement(
+          TestAuthGate,
+          null,
+          createElement(AccountExperienceRegistration, {
+            experience: {
+              error: "",
+              hasActiveLearner: true,
+              learnerName: "Mia",
+              onOpenProfile() {},
+            },
+          }),
+          "LEARNER APP",
+        ),
+      ),
+    );
+    await click(await waitFor(() => button("Profile for Mia, learner mode")));
+    await click(button("Grown-up accessSwitch modes"));
+    const liveStatuses = document.querySelectorAll(
+      'span[role="status"][aria-live="polite"]',
+    );
+    const liveStatus = liveStatuses[liveStatuses.length - 1];
+    await waitFor(() =>
+      assert.equal(liveStatus.textContent.trim(), "Guardian mode"),
+    );
+
+    await click(button("中文"));
+
+    assert.equal(
+      document.querySelectorAll('span[role="status"][aria-live="polite"]')
+        .item(liveStatuses.length - 1),
+      liveStatus,
+    );
+    assert.equal(liveStatus.textContent.trim(), "家长模式");
+  });
+
   it("supports menu arrow, Home, End, and Escape keyboard navigation", async () => {
     await mountStrict(
       createElement(

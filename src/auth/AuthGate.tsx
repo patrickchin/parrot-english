@@ -333,7 +333,9 @@ function AccountExperienceHeader({
 }) {
   const access = useGuardianAccess();
   const { messages } = useGuardianLanguage();
-  const [announcement, setAnnouncement] = useState("");
+  const [announcement, setAnnouncement] = useState<
+    "guardian" | "learner" | null
+  >(null);
   const [isSwitchingMode, setIsSwitchingMode] = useState(false);
   const [switchError, setSwitchError] = useState<
     import("./GuardianAccess").GuardianAccessErrorCode | null
@@ -356,11 +358,11 @@ function AccountExperienceHeader({
     const previousMode = previousAccessModeRef.current;
     previousAccessModeRef.current = access.mode;
     if (previousMode === "learner" && access.mode === "guardian") {
-      setAnnouncement(messages.account.guardianModeStatus);
+      setAnnouncement("guardian");
     } else if (previousMode === "guardian" && access.mode === "learner") {
-      setAnnouncement(englishGuardianMessages.account.learnerModeStatus);
+      setAnnouncement("learner");
     }
-  }, [access.mode, messages.account.guardianModeStatus]);
+  }, [access.mode]);
 
   async function switchToGuardian() {
     if (access.mode === "guardian" || isSwitchingMode) return;
@@ -413,7 +415,11 @@ function AccountExperienceHeader({
         className="sr-only"
         role="status"
       >
-        {announcement}
+        {announcement === "guardian"
+          ? messages.account.guardianModeStatus
+          : announcement === "learner"
+            ? englishGuardianMessages.account.learnerModeStatus
+            : ""}
       </span>
     </>
   );
