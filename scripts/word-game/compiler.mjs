@@ -265,7 +265,7 @@ function validateAssetRecords(assetManifest, assetManifestPath) {
         `${assetManifestPath}: asset ${asset.id} publicPath must stay within the approved Fluent root as ${expectedPublicPath}`,
       );
     }
-    if (!/^assets\/[^/]+(?:\/Default)?\/3D\/[^/]+_3d(?:_default)?\.png$/.test(asset.upstreamPath)) {
+    if (!isSafeFluentUpstreamPath(asset.upstreamPath)) {
       throw new Error(
         `${assetManifestPath}: asset ${asset.id} upstreamPath must be a safe Fluent 3D PNG path`,
       );
@@ -281,6 +281,20 @@ function validateAssetRecords(assetManifest, assetManifestPath) {
     }
   }
   return new Map(assetManifest.assets.map((asset) => [asset.id, asset]));
+}
+
+function isSafeFluentUpstreamPath(value) {
+  if (value.includes("\\") || path.posix.isAbsolute(value)) return false;
+  const segments = value.split("/");
+  const hasDefault = segments.length === 5 && segments[2] === "Default";
+  if (segments.length !== 4 && !hasDefault) return false;
+  const [root, assetName] = segments;
+  const format = segments.at(-2);
+  const filename = segments.at(-1);
+  return root === "assets"
+    && format === "3D"
+    && /^[A-Za-z0-9](?:[A-Za-z0-9 -]*[A-Za-z0-9])?$/u.test(assetName)
+    && /^[a-z0-9](?:[a-z0-9_-]*[a-z0-9])?_3d(?:_default)?\.png$/u.test(filename);
 }
 
 async function validateFluentFiles({ assetManifest, fluentRoot, fluentRealPath, openFile }) {
@@ -328,7 +342,11 @@ function compileCategory(manifest, assetById) {
       promptAudio: compileAudio(item.promptAudio),
       visual: item.visual.kind === "swatch"
         ? { ...item.visual }
-        : { kind: "image", src: assetById.get(item.visual.assetId).publicPath },
+        : {
+            ...(item.visual.copies === undefined ? {} : { copies: item.visual.copies }),
+            kind: "image",
+            src: assetById.get(item.visual.assetId).publicPath,
+          },
     })),
   };
 }

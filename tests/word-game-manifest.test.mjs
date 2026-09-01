@@ -134,6 +134,42 @@ describe("word-game manifests", () => {
     );
   });
 
+  it("accepts exactly two copies for a Fluent visual", () => {
+    const category = validCategory();
+    category.items[0].visual.copies = 2;
+
+    assert.equal(
+      parseWordGameManifest(category, categorySourcePath).items[0].visual.copies,
+      2,
+    );
+  });
+
+  it("rejects unsupported Fluent copy counts", () => {
+    for (const copies of [0, 1, 3]) {
+      const category = validCategory();
+      category.items[0].visual.copies = copies;
+
+      assert.throws(
+        () => parseWordGameManifest(category, categorySourcePath),
+        errorAt(categorySourcePath, "items[0].visual.copies"),
+      );
+    }
+  });
+
+  it("rejects copy metadata on a swatch visual", () => {
+    const category = validCategory();
+    category.items[0].visual = {
+      color: "#ef4444",
+      copies: 2,
+      kind: "swatch",
+    };
+
+    assert.throws(
+      () => parseWordGameManifest(category, categorySourcePath),
+      errorAt(categorySourcePath, "items[0].visual.copies"),
+    );
+  });
+
   it("rejects the retired schema-version-1 item and question copy", () => {
     const oldVersion = validCategory();
     oldVersion.schemaVersion = 1;

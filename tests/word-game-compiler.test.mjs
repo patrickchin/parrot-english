@@ -180,6 +180,24 @@ describe("word-game package compilation", () => {
     assert.deepEqual(JSON.parse(JSON.stringify(compiled)), compiled);
   });
 
+  it("preserves JSON-owned Fluent copy composition in compiler output", async (t) => {
+    const fixture = await repositoryFixture(t);
+    fixture.category.items[0].visual.copies = 2;
+    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+
+    const compiled = await compileWordGamePackages(fixture.paths);
+
+    assert.deepEqual(compiled.categories[0].items[0].visual, {
+      copies: 2,
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f431.png",
+    });
+    assert.deepEqual(compiled.categories[0].items[1].visual, {
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f431.png",
+    });
+  });
+
   it("sorts categories by order then ID without changing nested authored order", async (t) => {
     const category = await readJson(path.join(fixtureRoot, "animals.json"));
     const pets = secondCategory(category, { id: "pets", order: 1 });
@@ -426,6 +444,27 @@ describe("word-game package compilation", () => {
       compileWordGamePackages({ ...unsafeAudio.paths, audioRoot: externalAudio }),
       /audio root.*outside/i,
     );
+  });
+
+  it("rejects malformed Fluent upstream path segments", async (t) => {
+    for (const upstreamPath of [
+      "assets/../3D/cat_3d.png",
+      "assets/Ca\\t/3D/cat_3d.png",
+      "assets/Cat/3D/.._3d.png",
+      "assets//3D/cat_3d.png",
+      "/assets/Cat/3D/cat_3d.png",
+    ]) {
+      await t.test(upstreamPath, async (t) => {
+        const fixture = await repositoryFixture(t);
+        fixture.assetManifest.assets[0].upstreamPath = upstreamPath;
+        await writeJson(fixture.paths.assetManifestPath, fixture.assetManifest);
+
+        await assert.rejects(
+          compileWordGamePackages(fixture.paths),
+          /upstreamPath must be a safe Fluent 3D PNG path/i,
+        );
+      });
+    }
   });
 
   it("rejects symlinks and missing or non-regular files", async (t) => {

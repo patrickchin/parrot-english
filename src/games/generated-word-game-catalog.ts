@@ -1751,6 +1751,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
             "source": "/assets/audio/word-game-body-parts-ears-prompt.mp3"
           },
           "visual": {
+            "copies": 2,
             "kind": "image",
             "src": "/assets/word-games/fluent-3d/1f442.png"
           }
@@ -6076,6 +6077,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
             "source": "/assets/audio/word-game-clothes-shoes-prompt.mp3"
           },
           "visual": {
+            "copies": 2,
             "kind": "image",
             "src": "/assets/word-games/fluent-3d/1f45f.png"
           }
@@ -6228,6 +6230,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
             "source": "/assets/audio/word-game-clothes-boots-prompt.mp3"
           },
           "visual": {
+            "copies": 2,
             "kind": "image",
             "src": "/assets/word-games/fluent-3d/1f462.png"
           }

@@ -233,6 +233,20 @@ describe("production word-game curriculum", () => {
     }
   });
 
+  it("requests two copies only for plural targets whose pinned artwork is singular", async () => {
+    const categories = await readCategories();
+    const copiedItems = categories.flatMap(({ id: categoryId, items }) =>
+      items
+        .filter(({ visual }) => visual.copies === 2)
+        .map(({ id }) => `${categoryId}/${id}`));
+
+    assert.deepEqual(copiedItems, [
+      "body-parts/ears",
+      "clothes/shoes",
+      "clothes/boots",
+    ]);
+  });
+
   it("contains no authored personal names or retired washing content", async () => {
     const authoredText = JSON.stringify(await readCategories());
     assert.doesNotMatch(authoredText, /\b(?:Bob|Mary|Rose|Jack|Ben|Sam)\b/u);

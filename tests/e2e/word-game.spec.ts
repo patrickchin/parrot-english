@@ -430,6 +430,22 @@ test("renders the generated hierarchy, Fluent covers, and native color swatches"
   }
 });
 
+test("renders plural artwork as one named composition with two decorative copies", async ({ page }) => {
+  await page.goto("/word-games/body-parts/simple-1?parrotE2eLesson=held-cue");
+  const bodyPartChoices = page.getByRole("group", { name: "Picture choices" });
+  const earsChoice = bodyPartChoices.getByRole("button", { name: "Choose ears" });
+  await expect(earsChoice.getByRole("img", { name: "A pair of ears." })).toHaveCount(1);
+  await expect(earsChoice.locator("img")).toHaveCount(2);
+  await expect(earsChoice.locator("img").nth(0)).toHaveAttribute("alt", "");
+  await expect(earsChoice.locator("img").nth(1)).toHaveAttribute("alt", "");
+
+  await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
+  const animalChoices = page.getByRole("group", { name: "Picture choices" });
+  const catChoice = animalChoices.getByRole("button", { name: "Choose cat" });
+  await expect(catChoice.getByRole("img", { name: "A friendly cat." })).toHaveCount(1);
+  await expect(catChoice.locator("img")).toHaveCount(1);
+});
+
 for (const viewport of responsiveViewports) {
   test(`renders four choices in ${viewport.rows} rows and ${viewport.columns} columns at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);

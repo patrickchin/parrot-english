@@ -30,7 +30,8 @@
       "alt": "A pair of shoes.",
       "visual": {
         "kind": "fluent-3d",
-        "assetId": "1f45f"
+        "assetId": "1f45f",
+        "copies": 2
       },
       "labelAudio": {
         "id": "word-game-clothes-shoes-label",
@@ -166,7 +167,8 @@
       "alt": "A pair of boots.",
       "visual": {
         "kind": "fluent-3d",
-        "assetId": "1f462"
+        "assetId": "1f462",
+        "copies": 2
       },
       "labelAudio": {
         "id": "word-game-clothes-boots-label",

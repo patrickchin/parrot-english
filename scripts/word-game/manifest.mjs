@@ -28,6 +28,7 @@ const visual = z.discriminatedUnion("kind", [
   z
     .object({
       assetId,
+      copies: z.literal(2).optional(),
       kind: z.literal("fluent-3d"),
     })
     .strict(),

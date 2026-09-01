@@ -30,7 +30,8 @@
       "alt": "A pair of ears.",
       "visual": {
         "kind": "fluent-3d",
-        "assetId": "1f442"
+        "assetId": "1f442",
+        "copies": 2
       },
       "labelAudio": {
         "id": "word-game-body-parts-ears-label",

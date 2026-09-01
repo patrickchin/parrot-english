@@ -118,6 +118,27 @@ describe("generated word-game catalog runtime", () => {
     assertDeepFrozen(WORD_GAME_COMPLETE_AUDIO);
   });
 
+  it("preserves and freezes copied visuals without changing single images", () => {
+    const bodyParts = resolveWordGameCategory("body-parts");
+    const clothes = resolveWordGameCategory("clothes");
+    const animals = resolveWordGameCategory("animals");
+    assert.ok(bodyParts && clothes && animals);
+
+    assert.deepEqual(bodyParts.items.find(({ id }) => id === "ears")?.visual, {
+      copies: 2,
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f442.png",
+    });
+    for (const id of ["shoes", "boots"]) {
+      assert.equal(clothes.items.find((item) => item.id === id)?.visual.copies, 2);
+    }
+    assert.deepEqual(animals.items.find(({ id }) => id === "cat")?.visual, {
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f431.png",
+    });
+    assertDeepFrozen(bodyParts.items.find(({ id }) => id === "ears")?.visual);
+  });
+
   it("keeps authored questions and choice membership immutable while shuffling fresh tuples", () => {
     const selection = resolveWordGameQuiz("animals", "simple-1");
     assert.ok(selection);

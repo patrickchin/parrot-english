@@ -24,6 +24,9 @@ const wordGameListModule = await vite
 const wordGameCategoryModule = await vite
   .ssrLoadModule("/src/games/WordGameCategory.tsx")
   .catch(() => ({}));
+const wordGameVisualModule = await vite
+  .ssrLoadModule("/src/games/WordGameVisual.tsx")
+  .catch(() => ({}));
 const wordGameCatalogModule = await vite
   .ssrLoadModule("/src/games/word-game-catalog.ts")
   .catch(() => ({}));
@@ -36,6 +39,7 @@ const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
 const { WordGameList } = wordGameListModule;
 const { WordGameCategory } = wordGameCategoryModule;
+const { WordGameVisual } = wordGameVisualModule;
 const { resolveWordGameCategory } = wordGameCatalogModule;
 const { ApplicationRoutes } = appModule;
 
@@ -244,6 +248,31 @@ test("word-game category renders ordered tier sections and canonical quiz links"
     "A friendly pig.", "A friendly horse.", "A friendly elephant.",
   ]) assert.match(html, new RegExp(`<img[^>]*alt="${alt.replace(".", "\\.")}"`));
   assert.equal((html.match(/>6 questions</g) ?? []).length, 9);
+});
+
+test("word-game copied artwork is one named composition with decorative image copies", () => {
+  assert.equal(typeof WordGameVisual, "function");
+  const bodyParts = resolveWordGameCategory("body-parts");
+  const animals = resolveWordGameCategory("animals");
+  assert.ok(bodyParts && animals);
+  const ears = bodyParts.items.find(({ id }) => id === "ears");
+  const cat = animals.items.find(({ id }) => id === "cat");
+  assert.ok(ears && cat);
+
+  const pairHtml = renderToStaticMarkup(
+    createElement(WordGameVisual, { item: ears, showLabel: false }),
+  );
+  assert.match(pairHtml, /aria-label="A pair of ears\."/);
+  assert.match(pairHtml, /role="img"/);
+  assert.equal((pairHtml.match(/<img/g) ?? []).length, 2);
+  assert.equal((pairHtml.match(/alt=""/g) ?? []).length, 2);
+  assert.doesNotMatch(pairHtml, /<img[^>]*alt="A pair of ears\."/);
+
+  const catHtml = renderToStaticMarkup(
+    createElement(WordGameVisual, { item: cat, showLabel: false }),
+  );
+  assert.equal((catHtml.match(/<img/g) ?? []).length, 1);
+  assert.match(catHtml, /<img[^>]*alt="A friendly cat\."/);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {

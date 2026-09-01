@@ -7,7 +7,7 @@ export type WordGameAudioLine = Readonly<{
 }>;
 
 export type WordGameVisual =
-  | Readonly<{ kind: "image"; src: string }>
+  | Readonly<{ kind: "image"; src: string; copies?: 2 }>
   | Readonly<{ kind: "swatch"; color: string }>;
 
 export type WordGameItem = Readonly<{

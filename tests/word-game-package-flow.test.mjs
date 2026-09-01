@@ -35,6 +35,7 @@ async function createPackageRoot(context) {
   ]);
 
   const animals = JSON.parse(await readFile(join(fixtureRoot, "animals.json"), "utf8"));
+  animals.items[0].visual.copies = 2;
   const fixtureCategory = JSON.parse(JSON.stringify(animals));
   fixtureCategory.id = "fixtures";
   fixtureCategory.order = 2;
@@ -138,6 +139,12 @@ test("an appended schema-v2 JSON package flows through generation, runtime resol
   assert.equal(selection?.category.id, "fixtures");
   assert.equal(selection?.quiz.coverItem.id, fixtureCategory.tiers[0].quizzes[0].questions[0].targetId);
   assert.equal(selection?.quiz.coverItem, selection?.category.items[0]);
+  assert.deepEqual(selection?.category.items[0].visual, {
+    copies: 2,
+    kind: "image",
+    src: "/assets/word-games/fluent-3d/1f431.png",
+  });
+  assert.equal(Object.isFrozen(selection?.category.items[0].visual), true);
   assert.deepEqual(runtime.categories.map(({ id }) => id), ["animals", "fixtures"]);
   const plannedAudio = new Map(audioPlan.lines.map((line) => [line.id, line.text]));
   assert.equal(
