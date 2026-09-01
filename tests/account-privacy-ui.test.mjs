@@ -150,7 +150,8 @@ test("Chinese account privacy localizes every guardian-facing section and danger
     /Parrot 不会把这些活动的音频保存到账户中/,
     /童谣配音会保存这位孩子的私密配音片段/,
     /课程会为每个跟读时刻保存一个私密语音片段/,
-    /裁剪后的照片会发送到 Cloudflare Workers AI/,
+    /以前创建过私密故事图片的账户/,
+    /原始照片不会被保存/,
     /外部 AI 和语音服务/,
     /删除账户会移除账户、所有孩子资料及其已保存的数据/,
     /永久删除此账户及其已保存的孩子数据/,
@@ -162,8 +163,7 @@ test("Chinese account privacy localizes every guardian-facing section and danger
 
 test("technical build states localize labels but preserve raw values and date policy", async () => {
   const request = deferred();
-  globalThis.fetch = async () =>
-    Response.json(await request.promise);
+  globalThis.fetch = async () => Response.json(await request.promise);
   await mountStrict(
     languageHarness(createElement(AccountPrivacySections), "zh-Hans"),
   );

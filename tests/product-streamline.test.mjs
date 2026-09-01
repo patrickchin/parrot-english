@@ -43,7 +43,7 @@ const { WordGameList } = await vite.ssrLoadModule(
 const { WordGamePlayer } = await vite.ssrLoadModule(
   "/src/games/WordGamePlayer.tsx",
 );
-const { WORD_GAME_TOPICS } = await vite.ssrLoadModule(
+const { resolveWordGameQuiz } = await vite.ssrLoadModule(
   "/src/games/word-game-catalog.ts",
 );
 const { LearnerProfileProvider } = await vite.ssrLoadModule(
@@ -222,17 +222,20 @@ test("word-game list and player remain English under a Chinese preference", () =
   );
   assertEnglishOnly(list, ["Pick a word game", "Word games", "Animals"]);
 
+  const selection = resolveWordGameQuiz("animals", "simple-1");
+  assert.ok(selection);
   const player = renderLearnerWithChinesePreference(
-    createElement(WordGamePlayer, { topic: WORD_GAME_TOPICS[0] }),
-    "/word-games/animals",
+    createElement(WordGamePlayer, { selection }),
+    "/word-games/animals/simple-1",
   );
   assertEnglishOnly(player, [
     "Animals",
+    "Simple Animals: First look",
     "Game progress",
     "1 of 6",
-    "Cat. Which is the cat?",
+    "Which is the cat?",
     "Listen again",
-    "Back to games",
+    "Back to Animals",
   ]);
 });
 
@@ -249,7 +252,10 @@ test("home gives children five clear, working learning choices", () => {
     "/dubs",
     "/word-games",
   ]);
-  assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
+  assert.doesNotMatch(
+    html,
+    /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/,
+  );
   assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
   assert.doesNotMatch(html, /Tap a picture\.|>Parrot English<\/p>/i);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
@@ -287,9 +293,15 @@ test("guardian dashboard presents one learner-management destination", () => {
   assert.equal((html.match(/>Manage learners<\/a>/g) ?? []).length, 1);
   assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
   assert.match(html, /aria-label="Switch to learner"/);
-  assert.doesNotMatch(html, /is using learner mode|select who uses learner mode/);
+  assert.doesNotMatch(
+    html,
+    /is using learner mode|select who uses learner mode/,
+  );
   assert.doesNotMatch(html, /Managing Mia/);
-  assert.doesNotMatch(html, />Manage learners<\/h2>|Learner details|Manage learner details/);
+  assert.doesNotMatch(
+    html,
+    />Manage learners<\/h2>|Learner details|Manage learner details/,
+  );
 });
 
 test("guardian dashboard localizes all authored navigation in Chinese", () => {
@@ -312,7 +324,6 @@ test("guardian dashboard localizes all authored navigation in Chinese", () => {
     "孩子资料",
     "管理孩子",
     "学习与内容",
-    "故事设置",
     "配音管理",
     "账户与隐私",
   ]) {
@@ -351,11 +362,7 @@ test("guardian dashboard shows only the remaining learning and content cards", (
     [...html.matchAll(/<h[23][^>]*>([^<]+)<\/h[23]>/g)]
       .map(([, heading]) => heading)
       .filter((heading) => heading !== "Learning &amp; content"),
-    [
-      "Learner profiles",
-      "Voice dubbing",
-      "Account &amp; privacy",
-    ],
+    ["Learner profiles", "Voice dubbing", "Account &amp; privacy"],
   );
   assert.doesNotMatch(html, /Story settings|Open story settings/);
   assert.doesNotMatch(html, /href="\/guardian\/stories"/);
@@ -391,10 +398,7 @@ test("guardian dashboard links a separate account and privacy destination", () =
 });
 
 test("lesson catalog presents one canonical path without artwork experiments", () => {
-  const html = renderInRouter(
-    createElement(LessonListView),
-    "/lessons",
-  );
+  const html = renderInRouter(createElement(LessonListView), "/lessons");
 
   assert.match(html, /Pick a lesson/);
   assert.doesNotMatch(
@@ -432,9 +436,9 @@ test("story shelf presents one curated shelf at a time without research controls
     ),
     "/stories",
   );
-  const storyHrefs = [...html.matchAll(/<a[^>]*href="(\/stories\/[^"#?]+\/pages\/1)"/g)].map(
-    ([, href]) => href,
-  );
+  const storyHrefs = [
+    ...html.matchAll(/<a[^>]*href="(\/stories\/[^"#?]+\/pages\/1)"/g),
+  ].map(([, href]) => href);
   const shelfHeadings = [...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map(
     ([, heading]) => heading,
   );
@@ -456,8 +460,8 @@ test("story shelf presents one curated shelf at a time without research controls
     ],
   );
   assert.deepEqual(
-    STORY_LEVELS.map(({ id }) =>
-      STORIES.filter(({ level }) => level === id).length,
+    STORY_LEVELS.map(
+      ({ id }) => STORIES.filter(({ level }) => level === id).length,
     ),
     [3, 4, 6, 5, 5, 2],
   );

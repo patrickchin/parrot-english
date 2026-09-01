@@ -48,7 +48,8 @@ function visitLeaves(value, path = [], leaves = []) {
     value.forEach((item, index) => visitLeaves(item, [...path, index], leaves));
   } else if (value && typeof value === "object") {
     Object.entries(value).forEach(([key, item]) =>
-      visitLeaves(item, [...path, key], leaves));
+      visitLeaves(item, [...path, key], leaves),
+    );
   } else {
     leaves.push({ path: path.join("."), value });
   }
@@ -76,7 +77,8 @@ describe("English-only shipped UI", () => {
     ];
 
     for (const file of shippedRoots.flatMap((path) =>
-      collectTextFiles(resolve(root, path)))) {
+      collectTextFiles(resolve(root, path)),
+    )) {
       const path = projectPath(file);
       const source = readFileSync(file, "utf8");
       if (hanCatalogFiles.has(path)) {
@@ -94,7 +96,9 @@ describe("English-only shipped UI", () => {
     }
 
     for (const path of questionnaireExceptions) {
-      const questionnaire = JSON.parse(readFileSync(resolve(root, path), "utf8"));
+      const questionnaire = JSON.parse(
+        readFileSync(resolve(root, path), "utf8"),
+      );
       const hanLeaves = visitLeaves(questionnaire).filter(
         ({ value }) => typeof value === "string" && han.test(value),
       );
@@ -118,7 +122,7 @@ describe("English-only shipped UI", () => {
       "lib/static-audio.js",
       "content/lessons",
       "content/catalogs",
-      "content/media",
+      "content/word-games",
       "public/assets/nursery-rhymes",
     ];
 
@@ -135,5 +139,4 @@ describe("English-only shipped UI", () => {
     );
     assert.equal(manifest.lang, "en");
   });
-
 });

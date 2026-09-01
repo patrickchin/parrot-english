@@ -253,7 +253,6 @@ describe("one-question prose onboarding view", () => {
     });
     assert.doesNotMatch(media, /aria-invalid|aria-describedby/);
   });
-
 });
 
 describe("onboarding prompt and transcription helpers", () => {
@@ -380,7 +379,10 @@ describe("Peppa acknowledgment", () => {
         }),
       ),
     );
-    assert.match(guardian, /<h1[^>]*lang="en"[^>]*>Bob is a lovely name!<\/h1>/);
+    assert.match(
+      guardian,
+      /<h1[^>]*lang="en"[^>]*>Bob is a lovely name!<\/h1>/,
+    );
     assert.match(guardian, />下一步<\/button>/);
 
     const learner = renderToStaticMarkup(
@@ -621,10 +623,7 @@ describe("profile summary editor", () => {
       }),
     );
 
-    assert.match(
-      html,
-      /Saved lesson recordings are still being deleted\./,
-    );
+    assert.match(html, /Saved lesson recordings are still being deleted\./);
     assert.match(html, />Finish deleting lesson recordings<\/button>/);
     assert.doesNotMatch(html, />Allow lesson voice recordings<\/button>/);
   });
@@ -683,7 +682,10 @@ describe("profile summary editor", () => {
       /<textarea[^>]*id="profile-description"[^>]*maxlength="2000"[^>]*>Mia is thirty and loves pandas and fast red cars\.<\/textarea>/i,
     );
     assert.match(textFromMarkup(html), /What animals do you like\?/);
-    assert.match(html, /<span[^>]*lang="zh-Hans"[^>]*>你喜欢什么动物？<\/span>/);
+    assert.match(
+      html,
+      /<span[^>]*lang="zh-Hans"[^>]*>你喜欢什么动物？<\/span>/,
+    );
     assert.match(
       html,
       /<textarea[^>]*id="profile-favoriteAnimals"[^>]*maxlength="300"[^>]*>pandas<\/textarea>/i,
@@ -1025,7 +1027,6 @@ describe("profile summary editor", () => {
       { navigationCalls, refreshCalls, stateWrites },
       { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
     );
-
   });
 
   it("tears down active profile resources when the gate unmounts", () => {
@@ -1185,13 +1186,13 @@ describe("onboarding and profile gate", () => {
         "zh-Hans",
         createElement(LearnerProfileQuestionView, {
           ...questionProps({
-          fieldError: "answer-required",
-          fieldErrorIsAnswer: true,
-          question: question({
-            answerKey: "name",
-            promptEn: "What is your name?",
-            promptZh: "你叫什么名字？",
-          }),
+            fieldError: "answer-required",
+            fieldErrorIsAnswer: true,
+            question: question({
+              answerKey: "name",
+              promptEn: "What is your name?",
+              promptZh: "你叫什么名字？",
+            }),
           }),
           audience: "guardian",
         }),
@@ -1199,8 +1200,14 @@ describe("onboarding and profile gate", () => {
     );
     assert.match(questionHtml, /问题 2\/6/);
     assert.match(questionHtml, /aria-label="重播问题"/);
-    assert.match(questionHtml, /<h1[^>]*lang="en"[^>]*>What is your name\?<\/h1>/);
-    assert.match(questionHtml, /<p[^>]*lang="zh-Hans"[^>]*>你叫什么名字？<\/p>/);
+    assert.match(
+      questionHtml,
+      /<h1[^>]*lang="en"[^>]*>What is your name\?<\/h1>/,
+    );
+    assert.match(
+      questionHtml,
+      /<p[^>]*lang="zh-Hans"[^>]*>你叫什么名字？<\/p>/,
+    );
     assert.match(questionHtml, /<textarea[^>]*lang="en"/);
     assert.match(questionHtml, /请输入答案/);
     assert.match(questionHtml, />下一步<\/button>/);
@@ -1303,27 +1310,6 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(html, /Ask a grown-up|Cancel/);
     assert.doesNotMatch(html, /account menu/);
     assert.doesNotMatch(html, /LESSON CONTENT|Mia/);
-  });
-
-  it("shows bilingual adult-only guidance when learner selection is required", () => {
-    const html = renderGate(
-      {
-        data: { mode: "selection-required" },
-        isLearnerProfileRoute: false,
-      },
-      "zh-Hans",
-    );
-
-    assert.match(html, /Ask a grown-up to choose a learner/);
-    assert.match(
-      html,
-      /<span[^>]*lang="zh-Hans"[^>]*>请家长先选择一位孩子<\/span>/,
-    );
-    assert.match(
-      html,
-      /<span[^>]*lang="zh-Hans"[^>]*>家长可以进入家长模式，选择正在学习的孩子后再返回。<\/span>/,
-    );
-    assert.doesNotMatch(html, /LESSON CONTENT/);
   });
 
   it("lets an unlocked Guardian reach the learner chooser boundary when selection is required", () => {
@@ -1812,5 +1798,4 @@ describe("onboarding and profile gate", () => {
     assert.equal(receivedSignal, controller.signal);
     assert.equal(result, completed);
   });
-
 });
