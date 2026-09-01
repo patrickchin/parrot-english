@@ -386,7 +386,8 @@ git commit -m "feat: compile nursery rhyme MusicXML timing"
 **Interfaces:**
 - Produces `inspectGuideAudio({ filePath, timelineDurationMs, ffmpegPath?, ffprobePath?, runTool? }): Promise<{ durationMs, peakBars }>` where `runTool(file, args, options)` defaults to promisified `execFile`.
 - `peakBars` always contains 32 finite numbers from 0 through 1.
-- Duration is metadata only; shorter and longer guide clips are both valid.
+- Duration comes from the full decoded audio-frame sample count; shorter and
+  longer guide clips are both valid and waveform decoding remains score-bounded.
 
 - [ ] **Step 1: Write failing decode, waveform, and mismatch tests**
 
@@ -402,9 +403,10 @@ assert.ok(first.peakBars.every((peak) => Number.isFinite(peak) && peak >= 0 && p
 
 Include one fixture whose guide is shorter than its score phrase and assert
 the trailing bars are zero. Include one whose guide is longer and assert audio
-after the score phrase is omitted from its bars. Neither may throw or alter
-phrase duration. Call one shared guide with two timeline durations and assert
-two line-specific bar arrays are produced.
+after the score phrase is omitted from its bars while its full decoded duration
+is retained. Neither may throw or alter phrase duration. Call one shared guide
+with two timeline durations and assert two line-specific bar arrays are
+produced. Prove duration ignores differing container `format.duration` values.
 
 - [ ] **Step 2: Run the focused test and verify RED**
 
@@ -414,13 +416,16 @@ node --test tests/nursery-rhyme-audio.test.mjs
 
 - [ ] **Step 3: Implement FFprobe and waveform extraction**
 
-Use injected `runTool` with argument arrays for FFprobe JSON and FFmpeg mono
-16 kHz `f32le` PCM output; never invoke a shell. Request FFprobe output with
-UTF-8 encoding. Request FFmpeg stdout with `encoding: null`, parse its `Buffer`
-explicitly with `readFloatLE`, and limit decoding to the score timeline. Set
-`maxBuffer = timelineSampleCount * 4 + 64 * 1024`; the 8,000ms score bound
+Use injected `runTool` with argument arrays; never invoke a shell. Request
+FFprobe JSON for the selected audio stream's `sample_rate` and every decoded
+frame's `nb_samples` with UTF-8 encoding. Sum positive integer frame sample
+counts, divide by the positive integer sample rate, and do not use container
+`format.duration`. Request FFmpeg mono 16 kHz `s16le` PCM stdout with
+`encoding: null`, parse its `Buffer` explicitly with `readInt16LE`, and limit
+waveform decoding to the score timeline. Set
+`maxBuffer = timelineSampleCount * 2 + 64 * 1024`; the 8,000ms score bound
 keeps it finite, and this avoids relying on `execFile`'s default 1 MiB buffer.
-Reject misaligned/non-Buffer PCM and non-finite samples. Compute
+Reject misaligned/non-Buffer PCM. Compute
 `timelineSampleCount = round(sampleRate * timelineDurationMs / 1000)` and feed
 that boundary to the existing `getNormalizedPeakBars` algorithm: missing
 samples become trailing zero bars and samples after the phrase are ignored.

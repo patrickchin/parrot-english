@@ -12,8 +12,8 @@ const SAMPLE_RATE = 16_000;
 const rootDir = fileURLToPath(new URL("..", import.meta.url));
 
 function pcm(samples) {
-  const output = Buffer.alloc(samples.length * 4);
-  samples.forEach((sample, index) => output.writeFloatLE(sample, index * 4));
+  const output = Buffer.alloc(samples.length * 2);
+  samples.forEach((sample, index) => output.writeInt16LE(Math.round(sample * 32_767), index * 2));
   return output;
 }
 
@@ -25,11 +25,15 @@ async function temporaryGuide(source) {
   return { guidePath, packageDir };
 }
 
-function runnerWithPcm(output, calls = []) {
+function runnerWithPcm(output, calls = [], probe = {
+  format: { duration: "99.999" },
+  frames: [{ nb_samples: "8000" }, { nb_samples: "12000" }],
+  streams: [{ sample_rate: "16000" }],
+}) {
   return async (file, args, options) => {
     calls.push({ args, file, options });
     if (file.includes("ffprobe")) {
-      return { stdout: JSON.stringify({ format: { duration: "1.25" } }) };
+      return { stdout: JSON.stringify(probe) };
     }
     return { stdout: output };
   };
@@ -53,7 +57,7 @@ describe("nursery rhyme guide audio inspection", () => {
     }
   });
 
-  it("passes binary-safe FFprobe and FFmpeg argument arrays with bounded output", async () => {
+  it("uses decoded frame duration and passes binary-safe s16 tool arguments with bounded output", async () => {
     const { guidePath, packageDir } = await temporaryGuide();
     await writeFile(guidePath, "guide bytes");
     const calls = [];
@@ -71,7 +75,8 @@ describe("nursery rhyme guide audio inspection", () => {
         {
           file: "/tools/ffprobe with spaces",
           args: [
-            "-v", "error", "-show_entries", "format=duration", "-of", "json", guidePath,
+            "-v", "error", "-select_streams", "a:0", "-show_frames",
+            "-show_entries", "stream=sample_rate:frame=nb_samples", "-of", "json", guidePath,
           ],
           options: { encoding: "utf8" },
         },
@@ -79,9 +84,9 @@ describe("nursery rhyme guide audio inspection", () => {
           file: "/tools/ffmpeg with spaces",
           args: [
             "-v", "error", "-xerror", "-i", guidePath, "-map", "0:a:0", "-t", "1",
-            "-ac", "1", "-ar", "16000", "-f", "f32le", "-",
+            "-ac", "1", "-ar", "16000", "-f", "s16le", "-",
           ],
-          options: { encoding: null, maxBuffer: 129_536 },
+          options: { encoding: null, maxBuffer: 97_536 },
         },
       ]);
     } finally {
@@ -115,6 +120,20 @@ describe("nursery rhyme guide audio inspection", () => {
           filePath: guidePath,
           timelineDurationMs: 1_000,
           runTool: async () => ({ stdout: "not JSON" }),
+        }),
+        new RegExp(guidePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      );
+
+      await assert.rejects(
+        inspectGuideAudio({
+          filePath: guidePath,
+          timelineDurationMs: 1_000,
+          runTool: async () => ({
+            stdout: JSON.stringify({
+              frames: [null],
+              streams: [{ sample_rate: "16000" }],
+            }),
+          }),
         }),
         new RegExp(guidePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
       );
@@ -153,6 +172,30 @@ describe("nursery rhyme guide audio inspection", () => {
         ])),
       });
 
+      assert.deepEqual(result.peakBars, Array(32).fill(1));
+    } finally {
+      await rm(packageDir, { force: true, recursive: true });
+    }
+  });
+
+  it("derives full guide duration while keeping waveform decoding score-bounded", async () => {
+    const { guidePath, packageDir } = await temporaryGuide();
+    await writeFile(guidePath, "guide bytes");
+    try {
+      const result = await inspectGuideAudio({
+        filePath: guidePath,
+        timelineDurationMs: 1_000,
+        runTool: runnerWithPcm(
+          pcm(Array.from({ length: SAMPLE_RATE }, () => 0.25)),
+          [],
+          {
+            frames: [{ nb_samples: "16000" }, { nb_samples: "16000" }],
+            streams: [{ sample_rate: "16000" }],
+          },
+        ),
+      });
+
+      assert.equal(result.durationMs, 2_000);
       assert.deepEqual(result.peakBars, Array(32).fill(1));
     } finally {
       await rm(packageDir, { force: true, recursive: true });
@@ -204,11 +247,11 @@ describe("nursery rhyme guide audio inspection", () => {
     }
   });
 
-  it("rejects non-buffer, misaligned, and non-finite decoded PCM", async () => {
+  it("rejects non-buffer and misaligned decoded PCM", async () => {
     const { guidePath, packageDir } = await temporaryGuide();
     await writeFile(guidePath, "guide bytes");
     try {
-      for (const output of ["not a buffer", Buffer.from([0, 0, 0]), pcm([Number.NaN])]) {
+      for (const output of ["not a buffer", Buffer.from([0, 0, 0])]) {
         await assert.rejects(
           inspectGuideAudio({
             filePath: guidePath,

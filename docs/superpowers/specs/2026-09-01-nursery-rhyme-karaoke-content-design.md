@@ -256,9 +256,11 @@ Add one Node command, `npm run generate:rhyme-catalog`, that scans
 5. derives absolute line cues, line-relative notes, word intervals, line
    durations, and total duration;
 6. verifies guide MP3 existence and decodability using the existing
-   FFmpeg/FFprobe toolchain;
-7. derives the 32 guide-waveform bars now stored by hand on each line's score
-   duration, padding a short guide with silence and ignoring an overlong tail;
+   FFmpeg/FFprobe toolchain, and derives full guide duration from decoded audio
+   frame sample totals rather than container duration metadata;
+7. derives the 32 guide-waveform bars now stored by hand from timeline-limited
+   mono 16 kHz signed 16-bit PCM on each line's score duration, padding a short
+   guide with silence and ignoring an overlong tail;
 8. validates global uniqueness and storage compatibility; and
 9. writes a deterministic static TypeScript module under `src/dubbing`.
 
