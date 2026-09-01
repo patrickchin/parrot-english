@@ -122,6 +122,31 @@ test("Chinese preference keeps representative learner destinations English and l
   await page.addInitScript(() =>
     localStorage.setItem("parrot:guardian-language", "zh-Hans"),
   );
+  await page.goto("/");
+  await expect(languageGroup(page)).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await page.getByRole("link", { name: "Play a lesson" }).click();
+  await page
+    .getByRole("link", { name: "Start lesson: Peppa's High Ball" })
+    .click();
+  const lessonSnapshot = await page.evaluate(() => ({
+    historyLength: history.length,
+    href: location.href,
+  }));
+  await expect(languageGroup(page)).toBeVisible();
+  await expect(page.getByRole("button", { exact: true, name: "Let's go" })).toBeVisible();
+  await page.getByRole("button", { exact: true, name: "Let's go" }).click();
+  await expect(languageGroup(page)).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("region", { name: "Lesson progress" })).toContainText(
+    "Scene 1 of 5",
+  );
+  await expect(page.getByRole("button", { name: "Pause lesson" })).toBeVisible();
+  await expect(page.getByRole("status", { name: "Lesson updates" })).toContainText(
+    /Playing|Listen|Scene/,
+  );
+  await expectUnchangedNavigation(page, lessonSnapshot);
+
   const destinations = [
     ["/", "Parrot English"],
     ["/lessons", "Pick a lesson"],

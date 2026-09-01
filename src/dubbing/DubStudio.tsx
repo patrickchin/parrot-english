@@ -53,6 +53,8 @@ type TakePreview = {
   url: string;
 };
 
+type RecordingErrorKind = "permission" | null;
+
 const MICROPHONE_PERMISSION_MESSAGE =
   "The microphone is off. Ask a grown-up to allow it, then try again.";
 
@@ -199,6 +201,8 @@ export function DubStudio({
   const [loadSequence, setLoadSequence] = useState(0);
   const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
   const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
+  const [recordingErrorKind, setRecordingErrorKind] =
+    useState<RecordingErrorKind>(null);
   const [takePreview, setTakePreview] = useState<TakePreview | null>(null);
 
   const mountedRef = useRef(false);
@@ -257,6 +261,7 @@ export function DubStudio({
 
   const cancelMedia = useCallback((discardTake: boolean) => {
     mediaGenerationRef.current += 1;
+    if (mountedRef.current) setRecordingErrorKind(null);
     guideControllerRef.current?.abort();
     guideControllerRef.current = null;
     takeControllerRef.current?.abort();
@@ -454,6 +459,11 @@ export function DubStudio({
       session?.cancel();
       if (recordingBackingRef.current === backing) recordingBackingRef.current = null;
       backing?.stop();
+      const recordingErrorKind: RecordingErrorKind =
+        backingPrepared && !session && error instanceof MicrophoneAccessError
+          ? "permission"
+          : null;
+      setRecordingErrorKind(recordingErrorKind);
       dispatch({ type: "OPERATION_FINISHED" });
       dispatch({
         type: "SET_ERROR",
@@ -806,6 +816,12 @@ export function DubStudio({
         activeLine={selectedLine}
         definition={definition}
         error={state.error}
+        errorHelper={recordingErrorKind === "permission" ? (
+          <AdultBoundaryHelper
+            message="recordingPermissionHelper"
+            placement="compact"
+          />
+        ) : null}
         hasSavedTake={Object.hasOwn(state.saved, selectedLine.id)}
         locked={locked}
         onHearGuide={handleHearGuide}
@@ -859,9 +875,6 @@ export function DubStudio({
         {liveStatus}
       </span>
       {content}
-      {activeError === MICROPHONE_PERMISSION_MESSAGE ? (
-        <AdultBoundaryHelper message="recordingPermissionHelper" />
-      ) : null}
     </>
   );
 }

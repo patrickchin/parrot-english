@@ -972,11 +972,26 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Record line"]'));
     await waitFor(() => assert.match(container.textContent, /microphone is off/i));
 
-    const helper = [...container.querySelectorAll('[lang="zh-Hans"]')].find(
+    const permissionAlert = [...container.querySelectorAll('[role="alert"]')].find(
+      ({ textContent }) => /microphone is off/i.test(textContent),
+    );
+    assert.ok(permissionAlert);
+    const helper = [...permissionAlert.querySelectorAll('[lang="zh-Hans"]')].find(
       ({ textContent }) =>
         textContent === "请让家长开启麦克风权限，然后重试。",
     );
     assert.ok(helper);
+
+    await click([...container.querySelectorAll("button")].find(
+      ({ textContent }) => textContent?.includes("Hear line"),
+    ));
+    await waitFor(() => assert.equal(
+      [...container.querySelectorAll('[lang="zh-Hans"]')].filter(
+        ({ textContent }) =>
+          textContent === "请让家长开启麦克风权限，然后重试。",
+      ).length,
+      0,
+    ));
 
     await click(container.querySelector('[aria-label="Back to full video"]'));
     await waitFor(() => assert.equal(
@@ -1565,6 +1580,26 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Save again"/);
     assert.match(html, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /role="alert"/);
+  });
+
+  it("renders permission guidance only from an explicit editor error kind", () => {
+    const message =
+      "The microphone is off. Ask a grown-up to allow it, then try again.";
+    const unrelated = renderSceneEditor({ error: message });
+    assert.doesNotMatch(unrelated, /请让家长开启麦克风权限/);
+
+    const permission = renderSceneEditor({
+      error: message,
+      errorHelper: createElement(
+        "span",
+        { lang: "zh-Hans" },
+        "请让家长开启麦克风权限，然后重试。",
+      ),
+    });
+    assert.match(
+      permission,
+      /role="alert"[\s\S]*The microphone is off[\s\S]*lang="zh-Hans"[\s\S]*请让家长开启麦克风权限，然后重试。/,
+    );
   });
 
   it("keeps replay controls visible but disabled during a retry save", () => {

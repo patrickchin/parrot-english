@@ -24,7 +24,28 @@ const { GuardianLanguageProvider } = await vite.ssrLoadModule(
 const { LessonListView } = await vite.ssrLoadModule(
   "/src/lessons/LessonList.tsx",
 );
+const {
+  LessonCompletion,
+  LessonErrorBanner,
+  LessonHud,
+  LessonIntroduction,
+  LessonJoinInPrompt,
+  LessonPlaybackControls,
+  LessonSpeech,
+} = await vite.ssrLoadModule("/src/lessons/LessonPlayerUi.tsx");
 const { StoryList } = await vite.ssrLoadModule("/src/stories/StoryList.tsx");
+const { StoryReader } = await vite.ssrLoadModule(
+  "/src/stories/StoryReader.tsx",
+);
+const { WordGameList } = await vite.ssrLoadModule(
+  "/src/games/WordGameList.tsx",
+);
+const { WordGamePlayer } = await vite.ssrLoadModule(
+  "/src/games/WordGamePlayer.tsx",
+);
+const { WORD_GAME_TOPICS } = await vite.ssrLoadModule(
+  "/src/games/word-game-catalog.ts",
+);
 const { LearnerProfileProvider } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileContext.tsx",
 );
@@ -53,6 +74,11 @@ function renderLearnerWithChinesePreference(element, initialEntry = "/") {
   );
 }
 
+function assertEnglishOnly(html, expectedCopy) {
+  for (const copy of expectedCopy) assert.match(html, new RegExp(copy));
+  assert.doesNotMatch(html, /[\p{Script=Han}]/u);
+}
+
 test("representative learner catalogs remain English under a Chinese preference", () => {
   const home = renderLearnerWithChinesePreference(createElement(HomeMenu));
   assert.match(home, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
@@ -68,6 +94,146 @@ test("representative learner catalogs remain English under a Chinese preference"
   assert.match(lessons, /Pick a lesson/);
   assert.match(lessons, /aria-label="Back to home"/);
   assert.doesNotMatch(lessons, /[\p{Script=Han}]/u);
+});
+
+test("lesson player states remain English under a Chinese preference", () => {
+  const html = renderLearnerWithChinesePreference(
+    createElement(
+      "main",
+      null,
+      createElement(LessonHud, {
+        currentScene: 1,
+        sceneCount: 5,
+        title: "Peppa's High Ball",
+      }),
+      createElement(LessonIntroduction, {
+        lessonTitle: "Peppa's High Ball",
+        onStart() {},
+        sceneCount: 5,
+      }),
+      createElement(LessonSpeech, {
+        characterCount: 1,
+        characterIndex: 0,
+        speech: {
+          kind: "character",
+          speaker: "peppa",
+          text: "My red ball is high in the tree!",
+        },
+      }),
+      createElement(LessonJoinInPrompt, {
+        dialogue: "The ball is high!",
+        recording: true,
+      }),
+      createElement(LessonPlaybackControls, {
+        atFinalScene: false,
+        atFirstScene: true,
+        isPaused: false,
+        onNext() {},
+        onPauseResume() {},
+        onPrevious() {},
+      }),
+      createElement(LessonErrorBanner, {
+        error: "The sound did not play. You can try it again or skip it.",
+        onRetry() {},
+        onSkip() {},
+      }),
+      createElement(LessonCompletion, {
+        lessonTitle: "Peppa's High Ball",
+        onBack() {},
+        onReplay() {},
+        onRetrySaving() {},
+        saveState: "failed",
+      }),
+    ),
+    "/lessons/parrot/01-peppas-high-ball/scenes/1",
+  );
+
+  assertEnglishOnly(html, [
+    "Scene 1 of 5",
+    "Let&#x27;s go",
+    "My red ball is high in the tree!",
+    "The ball is high!",
+    "Your microphone is joining in too",
+    'aria-label="Pause lesson"',
+    "The sound did not play",
+    "Try sound",
+    "Skip sound",
+    "Some voices have not saved yet",
+    "Try saving again",
+  ]);
+});
+
+test("story shelf and reader remain English under a Chinese preference", () => {
+  const profile = {
+    age: 6,
+    answers: {
+      legacyAnswers: null,
+      questionnaireVersion: 2,
+      responses: {},
+      schemaVersion: 2,
+    },
+    completedAt: "2026-08-25T08:00:00.000Z",
+    currentQuestionKey: null,
+    description: "Likes animals",
+    name: "Sam",
+    profileStatus: "completed",
+    questionnaireVersion: 2,
+    storyLevel: "tiny-stories",
+  };
+  const shelf = renderLearnerWithChinesePreference(
+    createElement(
+      LearnerProfileProvider,
+      { profile, replaceProfile() {} },
+      createElement(StoryList),
+    ),
+    "/stories",
+  );
+  assertEnglishOnly(shelf, [
+    "Pick a story",
+    "Choose a story level",
+    "Recommended for [\\s\\S]*Sam",
+    "Listen to story:",
+  ]);
+
+  const story = STORIES.find(({ id }) => id === "the-red-ball");
+  assert.ok(story);
+  const reader = renderLearnerWithChinesePreference(
+    createElement(StoryReader, {
+      backToStories: "/stories",
+      onNavigatePage() {},
+      pageIndex: 0,
+      story,
+    }),
+    "/stories/the-red-ball/pages/1",
+  );
+  assertEnglishOnly(reader, [
+    "The Red Ball",
+    "Page 1 of",
+    "Listen to this page",
+    "Keep playing to the end",
+    "Back to stories",
+  ]);
+});
+
+test("word-game list and player remain English under a Chinese preference", () => {
+  const list = renderLearnerWithChinesePreference(
+    createElement(WordGameList),
+    "/word-games",
+  );
+  assertEnglishOnly(list, ["Pick a word game", "Word games", "Animals"]);
+
+  const player = renderLearnerWithChinesePreference(
+    createElement(WordGamePlayer, { topic: WORD_GAME_TOPICS[0] }),
+    "/word-games/animals",
+  );
+  assertEnglishOnly(player, [
+    "Animals",
+    "Game progress",
+    "1 of 6",
+    "Cat. Which is the cat?",
+    "Listen again",
+    "Back to games",
+  ]);
 });
 
 test("home gives children five clear, working learning choices", () => {
