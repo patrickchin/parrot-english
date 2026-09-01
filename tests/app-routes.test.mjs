@@ -12,6 +12,9 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const routes = await vite.ssrLoadModule("/src/app/app-routes.ts").catch(() => ({}));
+const catalog = await vite
+  .ssrLoadModule("/src/games/word-game-catalog.ts")
+  .catch(() => ({}));
 
 after(async () => vite.close());
 
@@ -37,13 +40,13 @@ function getStoryRouteDecision(storyId, pageNumber) {
   return routes.resolveStoryRouteDecision(storyId, pageNumber);
 }
 
-function getWordGameRouteDecision(gameId) {
+function getWordGameRouteDecision(categoryId, quizId, pathname) {
   assert.equal(
     typeof routes.resolveWordGameRouteDecision,
     "function",
     "Expected an executable word-game route decision boundary",
   );
-  return routes.resolveWordGameRouteDecision(gameId);
+  return routes.resolveWordGameRouteDecision(categoryId, quizId, pathname);
 }
 
 describe("app route helpers", () => {
@@ -72,22 +75,40 @@ describe("app route helpers", () => {
     assert.equal("resolveMyLessonRouteDecision" in routes, false);
   });
 
-  it("resolves each catalog word-game route and sends invalid topics to the library", () => {
-    for (const gameId of [
-      "animals",
-      "colors",
-      "body-parts",
-      "food",
-      "toys",
-      "feelings",
-    ]) {
-      const decision = getWordGameRouteDecision(gameId);
-      assert.equal(decision.kind, "game");
-      assert.equal(decision.topic.id, gameId);
+  it("resolves all canonical category and quiz routes and rejects malformed shapes", () => {
+    assert.equal(catalog.WORD_GAME_CATEGORIES.length, 9);
+    for (const category of catalog.WORD_GAME_CATEGORIES) {
+      assert.deepEqual(
+        getWordGameRouteDecision(
+          category.id.toUpperCase(),
+          undefined,
+          `/Word-Games/${category.id.toUpperCase()}`,
+        ),
+        { kind: "category", category },
+      );
+      for (const tier of category.tiers) {
+        for (const quiz of tier.quizzes) {
+          assert.deepEqual(
+            getWordGameRouteDecision(
+              category.id,
+              quiz.id,
+              `/word-games/${category.id}/${quiz.id}`,
+            ),
+            { kind: "game", selection: { category, tier, quiz } },
+          );
+        }
+      }
     }
 
-    for (const gameId of [undefined, "missing", "%2F", ".", "..", "%E0%A4%A"]) {
-      assert.deepEqual(getWordGameRouteDecision(gameId), {
+    for (const [categoryId, quizId, pathname] of [
+      [undefined, undefined, "/word-games"],
+      ["missing", undefined, "/word-games/missing"],
+      ["animals", "missing", "/word-games/animals/missing"],
+      ["%61nimals", undefined, "/word-games/%61nimals"],
+      ["animals", "%73imple-1", "/word-games/animals/%73imple-1"],
+      ["animals", "simple-1", "/word-games/animals/simple-1/extra"],
+    ]) {
+      assert.deepEqual(getWordGameRouteDecision(categoryId, quizId, pathname), {
         kind: "redirect",
         replace: true,
         to: "/word-games",
@@ -429,7 +450,8 @@ describe("app route helpers", () => {
       ["/profile", "/Profile//", "profile"],
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/word-games", "/Word-Games///", null],
-      ["/word-games/:gameId", "/Word-Games/Animals///", null],
+      ["/word-games/:categoryId", "/Word-Games/Animals///", null],
+      ["/word-games/:categoryId/:quizId", "/Word-Games/Animals/Simple-1///", null],
       ["/progress", "/Progress///", null],
       ["/stories", "/Stories///", null],
       ["/dubs/five-little-ducks", "/Dubs/Five-Little-Ducks///", null],
@@ -859,6 +881,11 @@ describe("app route helpers", () => {
       "/word-games/food",
       "/word-games/toys",
       "/word-games/feelings",
+      "/word-games/home",
+      "/word-games/clothes",
+      "/word-games/transport",
+      "/word-games/animals/simple-1",
+      "/Word-Games/Animals/Advanced-1///",
       "/word-games/%61nimals",
       "/Word-Games/%41nimals///",
     ]) {
@@ -907,7 +934,8 @@ describe("app route helpers", () => {
       "/word-game/extra",
       "/word-games/missing",
       "/word-games/%2F",
-      "/word-games/animals/extra",
+      "/word-games/animals/missing",
+      "/word-games/animals/simple-1/extra",
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",

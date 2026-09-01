@@ -45,6 +45,17 @@ const E2E_MICROPHONE_SCENARIOS = new Set(["delayed", "denied", "unsupported"]);
 const E2E_LESSON_SCENARIO = new URL(window.location.href).searchParams.get(
   "parrotE2eLesson",
 );
+if (
+  new URL(window.location.href).searchParams.get("parrotE2eWordGameRandom") ===
+  "reshuffle"
+) {
+  let wordGameRandomCalls = 0;
+  Math.random = () => {
+    const playThrough = Math.floor(wordGameRandomCalls / 18);
+    wordGameRandomCalls += 1;
+    return playThrough % 2 === 0 ? 0 : 1 - Number.EPSILON;
+  };
+}
 type E2ELessonCue = {
   audioId?: string;
   endedAt: number | null;
@@ -3118,7 +3129,9 @@ function getMockAudioDelayMs(src: string) {
 
 function getWordGameAudioId(src: string) {
   const pathname = new URL(src, window.location.origin).pathname;
-  return pathname.match(/^\/assets\/audio\/(word-game-[a-z0-9-]+)\.mp3$/)?.[1] ?? null;
+  return pathname.match(
+    /^\/assets\/audio\/(word-game-[a-z0-9-]+|narrator-feedback-success)\.mp3$/,
+  )?.[1] ?? null;
 }
 
 class MockAudioElement {

@@ -58,6 +58,7 @@ test("home gives children five clear, working learning choices", () => {
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
   assert.match(html, /Nursery rhymes/);
   assert.match(html, /Word game/);
+  assert.match(html, /src="\/assets\/word-games\/noto\/emoji_u1f431\.svg"/);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,

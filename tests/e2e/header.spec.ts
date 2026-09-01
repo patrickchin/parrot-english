@@ -47,8 +47,8 @@ const routes: HeaderRoute[] = [
   },
   {
     name: "word game player",
-    path: "/word-games/animals",
-    control: { name: "Back to games", role: "link" },
+    path: "/word-games/animals/simple-1",
+    control: { name: "Back to Animals", role: "link" },
   },
   {
     name: "story reader",

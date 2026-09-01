@@ -1,23 +1,23 @@
-import type { WordGameItem, WordGameTopic } from "./word-game-catalog";
+import type { WordGameCategory, WordGameItem } from "./word-game-catalog";
 import { cx } from "../shared/ui";
 
 export function WordGameVisual({
   className,
   item: suppliedItem,
   showLabel = true,
-  topic,
+  category,
 }: ({
   className?: string;
-  topic: WordGameTopic;
+  category: WordGameCategory;
   item?: never;
   showLabel?: boolean;
 } | {
   className?: string;
   item: WordGameItem;
   showLabel?: boolean;
-  topic?: never;
+  category?: never;
 })) {
-  const item = suppliedItem ?? topic.items[0];
+  const item = suppliedItem ?? category.coverItem;
 
   if (item.visual.kind === "swatch") {
     return (

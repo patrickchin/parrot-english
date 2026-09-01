@@ -13,9 +13,9 @@ import { retryOriginalImage } from "../shared/responsive-image";
 import { cx, InteractiveCardLink } from "../shared/ui";
 import { getNurseryRhymesPath } from "./app-routes";
 import { LESSON_LEARNING_PATH } from "./learning-paths";
-import { resolveWordGameTopic } from "../games/word-game-catalog";
+import { resolveWordGameCategory } from "../games/word-game-catalog";
 
-const WORD_GAME_HOME_ARTWORK = resolveWordGameTopic("animals")?.items[0].visual;
+const WORD_GAME_HOME_ARTWORK = resolveWordGameCategory("animals")?.coverItem.visual;
 
 type LearningPath = {
   accessibleLabel: string;

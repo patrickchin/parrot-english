@@ -1,5 +1,5 @@
 import { ArrowLeft, RotateCcw, Trophy, Volume2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
   isAbortError,
@@ -10,10 +10,12 @@ import {
 import { ActionButton, ActionLink } from "../shared/ui";
 import {
   buildWordGameRounds,
+  getWordGameCategoryRoute,
   WORD_GAME_COMPLETE_AUDIO,
   WORD_GAME_RETRY_AUDIO,
+  WORD_GAME_SUCCESS_AUDIO,
   type WordGameAudioLine,
-  type WordGameTopic,
+  type WordGameSelection,
 } from "./word-game-catalog";
 import { WordGameVisual } from "./WordGameVisual";
 
@@ -32,8 +34,12 @@ function isBlockedAutoplay(error: unknown) {
   return error instanceof Error && error.name === "NotAllowedError";
 }
 
-export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
-  const rounds = useMemo(() => buildWordGameRounds(topic), [topic]);
+export function WordGamePlayer({
+  selection,
+}: {
+  selection: WordGameSelection;
+}) {
+  const [rounds, setRounds] = useState(() => buildWordGameRounds(selection));
   const [answeredCorrectly, setAnsweredCorrectly] = useState(false);
   const [complete, setComplete] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -47,6 +53,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
   const questionHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const round = rounds[roundIndex];
   const progress = roundIndex + 1;
+  const categoryRoute = getWordGameCategoryRoute(selection.category.id);
 
   const stopPlayback = useCallback(() => {
     playbackGenerationRef.current += 1;
@@ -74,9 +81,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
         }
         onSettled?.();
       };
-      void operation(controller.signal)
-        .then(() => settle())
-        .catch(settle);
+      void operation(controller.signal).then(() => settle()).catch(settle);
     },
     [stopPlayback],
   );
@@ -97,15 +102,13 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
     let active = true;
     queueMicrotask(() => {
       if (active) {
-        playLine(rounds[0].target.audio.prompt, {
-          ignoreBlockedAutoplay: true,
-        });
+        playLine(rounds[0].target.audio, { ignoreBlockedAutoplay: true });
       }
     });
     return () => {
       active = false;
     };
-  }, [playLine, rounds]);
+  }, [playLine, selection]);
 
   useEffect(() => {
     if (!focusAfterChangeRef.current) return;
@@ -114,7 +117,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
   }, [complete, roundIndex]);
 
   function listenToChoice(choiceIndex: number) {
-    playLine(round.choices[choiceIndex].audio.label);
+    playLine(round.choices[choiceIndex].audio);
   }
 
   function advanceGame() {
@@ -129,7 +132,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
     setAnsweredCorrectly(false);
     setFeedback("");
     setSelectedId(null);
-    playLine(rounds[nextIndex].target.audio.prompt);
+    playLine(rounds[nextIndex].target.audio);
   }
 
   function choose(choiceIndex: number) {
@@ -140,44 +143,49 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
     setAnsweredCorrectly(correct);
     setFeedback(
       correct
-        ? round.target.successSentence
-        : `${choice.teachingLabel} ${WORD_GAME_RETRY_AUDIO.text}`,
+        ? round.question.success
+        : `${choice.audio.text} ${WORD_GAME_RETRY_AUDIO.text}`,
     );
-    if (correct) {
-      playLine(round.target.audio.correct, { onSettled: advanceGame });
-      return;
-    }
-    startPlayback((signal) =>
-      playAudioSequence({
-        lines: [playable(choice.audio.label), playable(WORD_GAME_RETRY_AUDIO)],
-        signal,
-      }),
-    );
+    startPlayback((signal) => playAudioSequence({
+      lines: correct
+        ? [playable(WORD_GAME_SUCCESS_AUDIO), playable(round.target.audio)]
+        : [playable(choice.audio), playable(WORD_GAME_RETRY_AUDIO)],
+      signal,
+    }), correct ? { onSettled: advanceGame } : undefined);
   }
 
   function playAgain() {
+    const replayRounds = buildWordGameRounds(selection);
     focusAfterChangeRef.current = true;
+    setRounds(replayRounds);
     setComplete(false);
     setRoundIndex(0);
     setAnsweredCorrectly(false);
     setFeedback("");
     setSelectedId(null);
-    playLine(rounds[0].target.audio.prompt);
+    playLine(replayRounds[0].target.audio);
   }
 
   return (
     <main className="relative h-dvh w-full overflow-x-hidden overflow-y-auto bg-story-shelf px-3 pb-6 pt-20 sm:px-5 md:px-8 md:pt-24">
       <RouteHeader>
-        <HeaderLink aria-label="Back to games" icon={<ArrowLeft />} to="/word-games">
-          Back to games
+        <HeaderLink
+          aria-label={`Back to ${selection.category.title}`}
+          icon={<ArrowLeft />}
+          to={categoryRoute}
+        >
+          Back to {selection.category.title}
         </HeaderLink>
       </RouteHeader>
 
       <section className="mx-auto grid w-full max-w-7xl gap-4">
         <header className="grid justify-items-center gap-2 text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl">
-            {topic.title}
+            {selection.quiz.title}
           </h1>
+          <p className="m-0 font-black text-brand-navy">
+            {selection.category.title} · {selection.tier.title}
+          </p>
           {!complete ? (
             <div className="grid w-full max-w-xl gap-1">
               <div
@@ -222,8 +230,8 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
                 <RotateCcw aria-hidden="true" className="size-5" />
                 Play again
               </ActionButton>
-              <ActionLink fullWidth size="large" to="/word-games" variant="navy">
-                Back to games
+              <ActionLink fullWidth size="large" to={categoryRoute} variant="navy">
+                Back to {selection.category.title}
               </ActionLink>
             </div>
           </section>
@@ -239,11 +247,11 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
                 ref={questionHeadingRef}
                 tabIndex={-1}
               >
-                {round.target.prompt}
+                {round.question.prompt}
               </h2>
               <ActionButton
                 disabled={answeredCorrectly}
-                onClick={() => playLine(round.target.audio.prompt)}
+                onClick={() => playLine(round.target.audio)}
                 size="compact"
                 type="button"
               >
@@ -252,7 +260,7 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
               </ActionButton>
             </div>
 
-            <div aria-label="Picture choices" className="grid gap-3 min-[360px]:grid-cols-2 md:grid-cols-3" role="group">
+            <div aria-label="Picture choices" className="grid grid-cols-2 gap-3 md:grid-cols-4" role="group">
               {round.choices.map((choice, index) => {
                 const selected = choice.id === selectedId;
                 const correct = selected && answeredCorrectly;
