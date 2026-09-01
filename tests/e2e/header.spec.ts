@@ -488,7 +488,7 @@ for (const viewport of mobileViewports) {
       name: "Back to Guardian dashboard",
     });
     const account = page.getByRole("button", {
-      name: /Profile for .+, guardian mode/,
+      name: /Profile for .+, guardian mode|.+的档案，家长模式/,
     });
 
     for (const option of [english, chinese]) {

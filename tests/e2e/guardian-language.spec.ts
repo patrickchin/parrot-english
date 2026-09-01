@@ -31,6 +31,10 @@ test("language selection persists locally without changing login navigation", as
   await expect(chinese).toHaveAttribute("aria-pressed", "true");
   await expect(chinese).toHaveAttribute("lang", "zh-Hans");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
+  await expect(page.getByRole("heading", { name: "欢迎回来" })).toBeVisible();
+  await expect(page.getByLabel("电子邮箱")).toBeVisible();
+  await expect(page.getByLabel(/^密码/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "以访客身份继续" })).toBeVisible();
 
   await page.reload();
   await expect(languageGroup(page)).toHaveAttribute("lang", "zh-Hans");
@@ -62,9 +66,49 @@ test("language control is always visible and keeps learner documents English", a
 });
 
 test("language control remains available when the session check fails", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
   await page.route("**/api/auth/get-session", (route) => route.abort("failed"));
   await page.goto("/login");
   await expect(languageGroup(page)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "暂时无法登录" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "重试" })).toBeVisible();
+});
+
+test("learner session recovery stays English under a Chinese preference", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.route("**/api/auth/get-session", (route) => route.abort("failed"));
+  await page.goto("/lessons");
+
+  await expect(
+    page.getByRole("heading", { name: "Sign-in is temporarily unavailable" }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(page.getByText("暂时无法登录")).toHaveCount(0);
+});
+
+test("account chrome localizes Guardian mode and keeps learner chrome English", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto("/guardian?parrotE2eGuardian=guardian");
+  await page.getByRole("button", { name: /家长模式/ }).click();
+  const guardianMenu = page.getByRole("menu", { name: "账户菜单" });
+  await expect(guardianMenu.getByRole("menuitem", { name: "家长控制面板" })).toBeVisible();
+  await expect(guardianMenu.getByRole("menuitem", { name: "管理学习者" })).toBeVisible();
+  await expect(guardianMenu.getByRole("menuitem", { name: "账户与隐私" })).toBeVisible();
+  await expect(guardianMenu.getByRole("menuitem", { name: "退出登录" })).toBeVisible();
+
+  await page.goto("/lessons");
+  await page.getByRole("button", { name: /learner mode/i }).click();
+  const learnerMenu = page.getByRole("menu", { name: "Account menu" });
+  await expect(
+    learnerMenu.getByRole("menuitem", { name: /Grown-up access.*家长入口/ }),
+  ).toBeVisible();
+  await expect(learnerMenu.getByText("Switch modes", { exact: true })).toBeVisible();
 });
 
 test("browser Chinese preference is inferred without a persistence write", async ({ page }) => {

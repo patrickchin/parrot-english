@@ -10300,7 +10300,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(document.querySelector('[role="menu"]'), null);
     assert.equal(signOutCalls, 1);
 
-    failure.resolve("Sign out did not finish.");
+    failure.resolve("sign-out-failed");
     await waitFor(() => {
       assert.equal(account.getAttribute("aria-disabled"), null);
       assert.equal(status.textContent.trim(), "");
@@ -10337,7 +10337,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(document.querySelector('[role="alert"]'), alert);
     noText(/Sign out again/);
 
-    secondFailure.resolve("Sign out did not finish.");
+    secondFailure.resolve("sign-out-failed");
     await waitFor(() => {
       assert.equal(account.getAttribute("aria-disabled"), null);
       assert.equal(status.textContent.trim(), "");
@@ -10403,7 +10403,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(signOutCalls, 2);
     assert.equal(account.getAttribute("aria-disabled"), "true");
 
-    firstAttempt.resolve("Sign out did not finish.");
+    firstAttempt.resolve("sign-out-failed");
     await flush();
     assert.equal(account.getAttribute("aria-disabled"), "true");
     assert.equal(
@@ -10485,12 +10485,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(signOutCalls, 2);
     assert.equal(noahAccount.getAttribute("aria-disabled"), "true");
 
-    firstAttempt.resolve("Sign out did not finish.");
+    firstAttempt.resolve("sign-out-failed");
     await flush();
     assert.equal(noahAccount.getAttribute("aria-disabled"), "true");
     noText(/Sign out did not finish|Sign out again/);
 
-    secondAttempt.resolve("Sign out did not finish.");
+    secondAttempt.resolve("sign-out-failed");
     await waitFor(() => {
       assert.equal(noahAccount.getAttribute("aria-disabled"), null);
       text(/Sign out did not finish/);
@@ -10509,7 +10509,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const TestAuthGate = createAuthGate({
       client,
       GuardianAccessBoundary: guardianAccessBoundary(),
-      signOutAction: async () => "Sign out did not finish.",
+      signOutAction: async () => "sign-out-failed",
     });
 
     await mountStrict(

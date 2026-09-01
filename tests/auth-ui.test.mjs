@@ -43,6 +43,12 @@ const { AccountHeader, GuardianLearnerContextLabel } = await vite.ssrLoadModule(
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
   "/src/auth/GuardianAccess.tsx",
 );
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
+const { GuardianUnlockDialog } = await vite.ssrLoadModule(
+  "/src/auth/GuardianUnlock.tsx",
+);
 const StaticGuardianAccessProvider = createGuardianAccessProvider({
   api: {
     loadGuardianAccess: async () => ({ mode: "learner" }),
@@ -72,7 +78,7 @@ function createAuthClientStub(overrides = {}) {
   };
 }
 
-function renderAuthGate(overrides = {}) {
+function renderAuthGate(overrides = {}, language = "en") {
   assert.equal(
     typeof AuthGateView,
     "function",
@@ -112,39 +118,48 @@ function renderAuthGate(overrides = {}) {
   return renderAuthGateView(
     props,
     createElement("div", { "data-lesson-child": true }, "LESSON CONTENT"),
+    language,
   );
 }
 
-function renderAuthGateView(props, children = props.children) {
+function renderAuthGateView(props, children = props.children, language = "en") {
   return renderToStaticMarkup(
     createElement(
-      StaticGuardianAccessProvider,
-      { sessionIdentity: "id:test" },
-      createElement(AuthGateView, props, children),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        StaticGuardianAccessProvider,
+        { sessionIdentity: "id:test" },
+        createElement(AuthGateView, props, children),
+      ),
     ),
   );
 }
 
-function renderAccountHeader(overrides = {}) {
+function renderAccountHeader(overrides = {}, language = "en") {
   return renderToStaticMarkup(
-    createElement(AccountHeader, {
-      activeMode: "learner",
-      error: "",
-      guardianLabel: "Patrick",
-      isModePending: false,
-      isSigningOut: false,
-      learnerLabel: "Mia",
-      onDeleteAccount: async () => null,
-      onOpenGuardianDashboard() {},
-      onOpenLearnerProfiles() {},
-      onOpenProfile() {},
-      onSelectGuardian() {},
-      onSelectLearner() {},
-      onSignOut() {},
-      signOutError: "",
-      userEmail: "patrick@example.test",
-      ...overrides,
-    }),
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(AccountHeader, {
+        activeMode: "learner",
+        error: "",
+        guardianLabel: "Patrick",
+        isModePending: false,
+        isSigningOut: false,
+        learnerLabel: "Mia",
+        onDeleteAccount: async () => null,
+        onOpenGuardianDashboard() {},
+        onOpenLearnerProfiles() {},
+        onOpenProfile() {},
+        onSelectGuardian() {},
+        onSelectLearner() {},
+        onSignOut() {},
+        signOutError: "",
+        userEmail: "patrick@example.test",
+        ...overrides,
+      }),
+    ),
   );
 }
 
@@ -234,7 +249,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
     },
     submitAction: async (options) => {
       submitCalls.push(options);
-      return "The email or password is incorrect.";
+      return "invalid-credentials";
     },
     stateHook: stateHarness.useState,
     View: CaptureView,
@@ -303,7 +318,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
   });
 
   renderContainer();
-  assert.equal(capturedProps.formError, "The email or password is incorrect.");
+  assert.equal(capturedProps.formError, "invalid-credentials");
 
   capturedProps.onFieldChange("email", "new@example.com");
   capturedProps.onModeChange("sign-up");
@@ -535,6 +550,114 @@ test("signed-out views switch between sign-in and sign-up fields", () => {
   assert.doesNotMatch(signUp, /PARROT ENGLISH|注册后就可以开始英语口语练习/);
 });
 
+test("guardian auth surfaces render the selected Chinese catalog", () => {
+  const pending = renderAuthGate({ isPending: true }, "zh-Hans");
+  const failed = renderAuthGate(
+    { sessionError: new Error("SERVER COPY") },
+    "zh-Hans",
+  );
+  const signIn = renderAuthGate({}, "zh-Hans");
+  const signUp = renderAuthGate({ mode: "sign-up" }, "zh-Hans");
+
+  assert.match(pending, /正在检查登录状态…/);
+  assert.match(failed, /暂时无法登录/);
+  assert.match(failed, /请检查网络连接，然后重试。/);
+  assert.match(failed, />重试</);
+  assert.doesNotMatch(failed, /SERVER COPY/);
+  assert.match(signIn, /欢迎回来/);
+  assert.match(signIn, />登录</);
+  assert.match(signIn, />电子邮箱</);
+  assert.match(signIn, />密码</);
+  assert.match(signUp, /创建账户/);
+  assert.match(signUp, />账户姓名</);
+  assert.match(signUp, /至少 8 个字符/);
+  assert.match(signUp, /安全验证/);
+  assert.match(signUp, /以访客身份继续/);
+});
+
+test("auth error codes resolve during render for both languages", () => {
+  const expected = {
+    "name-required": "请输入姓名。",
+    "invalid-email": "请输入有效的电子邮箱地址。",
+    "password-too-short": "密码必须至少包含 8 个字符。",
+    "email-registered": "此电子邮箱已注册。请改为登录。",
+    "invalid-credentials": "电子邮箱或密码不正确。",
+    "security-check-required": "请先完成安全验证，然后重试。",
+    "security-check-rejected": "安全验证已过期或被拒绝。请重试。",
+    "sign-in-failed": "无法登录。请重试。",
+    "sign-out-failed": "退出登录未完成。",
+  };
+
+  for (const [code, copy] of Object.entries(expected)) {
+    assert.match(renderAuthGate({ formError: code }, "zh-Hans"), new RegExp(copy));
+  }
+
+  assert.match(
+    renderAuthGate({ formError: "invalid-credentials" }),
+    /The email or password is incorrect\./,
+  );
+});
+
+test("learner auth recovery remains English under a Chinese preference", () => {
+  const pending = renderAuthGate(
+    { guardianAudience: false, isPending: true },
+    "zh-Hans",
+  );
+  const failed = renderAuthGate(
+    { guardianAudience: false, sessionError: new Error("offline") },
+    "zh-Hans",
+  );
+
+  assert.match(pending, /Checking your session…/);
+  assert.match(failed, /Sign-in is temporarily unavailable/);
+  assert.doesNotMatch(`${pending}${failed}`, /正在检查登录状态|暂时无法登录/);
+});
+
+test("account chrome localizes only Guardian mode and allowlisted learner helpers", () => {
+  const guardian = renderAccountHeader(
+    {
+      activeMode: "guardian",
+      error: "无法检查家长访问权限。请重试。",
+      signOutError: "退出登录未完成。",
+    },
+    "zh-Hans",
+  );
+  const learner = renderAccountHeader({}, "zh-Hans");
+  const learnerFailure = renderAccountHeader(
+    {
+      error: "Guardian access could not be checked. Please try again.",
+      errorHelper: "guardianAccessErrorHelper",
+    },
+    "zh-Hans",
+  );
+
+  assert.match(guardian, /aria-label="账户"/);
+  assert.match(guardian, /家长/);
+  assert.match(learner, /aria-label="Account"/);
+  assert.match(learner, />Learner</);
+  assert.match(learnerFailure, /Guardian access could not be checked/);
+  assert.match(learnerFailure, /<span[^>]*lang="zh-Hans"[^>]*>请让家长重试。<\/span>/);
+});
+
+test("dormant Guardian unlock dialog localizes without changing its production mounting", () => {
+  const html = renderToStaticMarkup(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(
+        StaticGuardianAccessProvider,
+        { sessionIdentity: "id:test" },
+        createElement(GuardianUnlockDialog, { onClose() {} }),
+      ),
+    ),
+  );
+
+  assert.match(html, /role="dialog"[^>]*lang="zh-Hans"/);
+  assert.match(html, /切换到家长模式/);
+  assert.match(html, /取消/);
+  assert.match(html, /aria-label="家长指导语言"/);
+});
+
 test("failed form state preserves values and disables controls while submitting", () => {
   const html = renderAuthGate({
     fields: {
@@ -542,7 +665,7 @@ test("failed form state preserves values and disables controls while submitting"
       email: " learner@example.com ",
       password: "password",
     },
-    formError: "The email or password is incorrect.",
+    formError: "invalid-credentials",
     isSubmitting: true,
     mode: "sign-up",
   });
@@ -690,7 +813,7 @@ test("auth submission validates before calling the client", async () => {
     },
   });
 
-  assert.equal(error, "Enter a valid email address.");
+  assert.equal(error, "invalid-email");
   assert.equal(clientCalls, 0);
   assert.equal(refetchCalls, 0);
 });
@@ -761,7 +884,7 @@ test("sign-up waits for the security check before calling Better Auth", async ()
     turnstileToken: null,
   });
 
-  assert.equal(error, "Complete the security check, then try again.");
+  assert.equal(error, "security-check-required");
   assert.equal(clientCalls, 0);
 });
 
@@ -818,7 +941,7 @@ test("guest login waits for the security check and maps rejected proof", async (
       refetch: async () => {},
       turnstileToken: null,
     }),
-    "Complete the security check, then try again.",
+    "security-check-required",
   );
   assert.equal(clientCalls, 0);
   assert.equal(
@@ -827,7 +950,7 @@ test("guest login waits for the security check and maps rejected proof", async (
       refetch: async () => {},
       turnstileToken: "rejected-proof",
     }),
-    "The security check expired or was rejected. Please try again.",
+    "security-check-rejected",
   );
   assert.equal(clientCalls, 1);
 });
@@ -862,7 +985,7 @@ test("sign-in maps result errors, omits the name, and does not refetch", async (
     },
   });
 
-  assert.equal(error, "The email or password is incorrect.");
+  assert.equal(error, "invalid-credentials");
   assert.deepEqual(payloads, [
     { email: "learner@example.com", password: "password" },
   ]);
@@ -886,7 +1009,7 @@ test("sign-out maps failures and lets the reactive session own successful refres
     }),
     refetch,
   });
-  assert.equal(failure, "Sign out did not finish.");
+  assert.equal(failure, "sign-out-failed");
   assert.equal(refetchCalls, 0);
 
   const thrownFailure = await signOutSession({
@@ -897,7 +1020,7 @@ test("sign-out maps failures and lets the reactive session own successful refres
     }),
     refetch,
   });
-  assert.equal(thrownFailure, "Sign out did not finish.");
+  assert.equal(thrownFailure, "sign-out-failed");
   assert.equal(refetchCalls, 0);
 
   const success = await signOutSession({

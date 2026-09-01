@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AUTH_TURNSTILE_ACTION } from "../../lib/auth-captcha";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 
 const TURNSTILE_SCRIPT_URL =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -65,14 +67,20 @@ export function loadTurnstile(): Promise<TurnstileApi> {
 }
 
 export function TurnstileWidget({
+  guardianAudience = true,
   load = loadTurnstile,
   onTokenChange,
   siteKey,
 }: {
+  guardianAudience?: boolean;
   load?: () => Promise<TurnstileApi>;
   onTokenChange: (token: string | null) => void;
   siteKey: string;
 }) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages = guardianAudience
+    ? selectedMessages
+    : englishGuardianMessages;
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<
     "checking" | "complete" | "error" | "unavailable"
@@ -130,16 +138,16 @@ export function TurnstileWidget({
 
   const message =
     status === "complete"
-      ? "Security check complete."
+      ? messages.auth.securityComplete
       : status === "checking"
-        ? "Checking that you’re human…"
+        ? messages.auth.securityChecking
         : status === "unavailable"
-          ? "Guest access and sign-up are temporarily unavailable."
-          : "The security check could not load. Refresh and try again.";
+          ? messages.auth.securityUnavailable
+          : messages.auth.securityLoadFailed;
 
   return (
     <div
-      aria-label="Security check"
+      aria-label={messages.auth.securityCheck}
       className="grid min-w-0 max-w-full justify-items-stretch gap-1 overflow-hidden rounded-2xl bg-sky-50 p-2"
       role="group"
     >

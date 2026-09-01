@@ -35,6 +35,7 @@ let AccountPrivacyPage;
 let AccountDeleteDialog;
 let AccountHeader;
 let createAuthGate;
+let AuthGateView;
 let ConversationSurface;
 let GuardianUnlockDialog;
 let GuardianUnlockForm;
@@ -44,6 +45,8 @@ let useProfileAccountAction;
 let createGuardianAccessProvider;
 let notifyGuardianAccessRequired;
 let useGuardianAccess;
+let GuardianLanguageProvider;
+let GuardianLanguageControl;
 
 before(async () => {
   ({ AccountPrivacyPage } = await vite
@@ -53,7 +56,9 @@ before(async () => {
     "/src/app/AccountDeleteDialog.tsx",
   ));
   ({ AccountHeader } = await vite.ssrLoadModule("/src/app/AppHeader.tsx"));
-  ({ createAuthGate } = await vite.ssrLoadModule("/src/auth/AuthGate.tsx"));
+  ({ AuthGateView, createAuthGate } = await vite.ssrLoadModule(
+    "/src/auth/AuthGate.tsx",
+  ));
   ({ GuardianUnlockDialog, GuardianUnlockForm } = await vite.ssrLoadModule(
     "/src/auth/GuardianUnlock.tsx",
   ));
@@ -66,6 +71,12 @@ before(async () => {
   } = await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
   ({ ConversationSurface } = await vite.ssrLoadModule(
     "/src/conversation/ConversationSurface.tsx",
+  ));
+  ({ GuardianLanguageProvider } = await vite.ssrLoadModule(
+    "/src/i18n/guardian-language.tsx",
+  ));
+  ({ GuardianLanguageControl } = await vite.ssrLoadModule(
+    "/src/i18n/GuardianLanguageControl.tsx",
   ));
   ({ RouteFocusManager } = await vite.ssrLoadModule(
     "/src/app/RouteFocusManager.tsx",
@@ -308,6 +319,61 @@ function DirectActionHarness({ action, onActivate }) {
 }
 
 describe("keyboard accessibility lifecycles", () => {
+  it("retranslates a visible auth error without resetting fields or submitting", async () => {
+    let submissions = 0;
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "en", storage: null },
+        createElement(GuardianLanguageControl),
+        createElement(AuthGateView, {
+          children: null,
+          fields: {
+            email: "mary@example.com",
+            name: "Mary",
+            password: "password",
+          },
+          formError: "invalid-credentials",
+          hasActiveLearner: false,
+          isGuestSubmitting: false,
+          isPending: false,
+          isRetrying: false,
+          isSigningOut: false,
+          isSubmitting: false,
+          learnerName: null,
+          mode: "sign-in",
+          onFieldChange() {},
+          onGuestSignIn() {},
+          onModeChange() {},
+          onNavigate() {},
+          onRetry() {},
+          onSignOut() {},
+          onSubmit() {
+            submissions += 1;
+          },
+          onTurnstileTokenChange() {},
+          profileError: "",
+          session: null,
+          sessionError: null,
+          signOutError: "",
+          signedOutFallback: null,
+          turnstileResetKey: 0,
+          turnstileSiteKey: "",
+          turnstileToken: null,
+        }),
+      ),
+    );
+    const email = document.querySelector("#auth-email");
+    assert.match(document.body.textContent, /The email or password is incorrect/);
+
+    await click(button("中文"));
+
+    assert.equal(document.querySelector("#auth-email"), email);
+    assert.equal(email.value, "mary@example.com");
+    assert.match(document.body.textContent, /电子邮箱或密码不正确/);
+    assert.equal(submissions, 0);
+  });
+
   it("moves focus to the new view heading after ordinary route navigation", async () => {
     await mountStrict(
       createElement(
@@ -570,6 +636,66 @@ describe("keyboard accessibility lifecycles", () => {
       document.querySelector('[aria-label="Active profile"]')?.textContent ??
         "",
       /Managing Mia/,
+    );
+  });
+
+  it("localizes Guardian account chrome while learner helpers follow preference", async () => {
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "zh-Hans", storage: null },
+        createElement(GuardianLanguageControl),
+        createElement(
+          AccountHeader,
+          accountHeaderProps({
+            error: "Guardian access could not be checked. Please try again.",
+            errorHelper: "guardianAccessErrorHelper",
+          }),
+        ),
+      ),
+    );
+
+    await click(button("Profile for Mia, learner mode"));
+    const menu = document.querySelector('[role="menu"]');
+    assert.equal(menu.getAttribute("aria-label"), "Account menu");
+    assert.match(menu.textContent, /Grown-up access/);
+    assert.match(menu.textContent, /Switch modes/);
+    assert.equal(menu.querySelector('[lang="zh-Hans"]')?.textContent, "家长入口");
+    assert.equal(
+      document.querySelector('[role="alert"] [lang="zh-Hans"]')?.textContent,
+      "请让家长重试。",
+    );
+
+    await click(button("English"));
+    assert.equal(document.querySelector('[role="menu"]'), menu);
+    assert.equal(menu.querySelector('[lang="zh-Hans"]'), null);
+    assert.equal(document.querySelector('[role="alert"] [lang="zh-Hans"]'), null);
+    assert.match(
+      [...document.querySelectorAll('[role="alert"]')].find(
+        (alert) => alert.textContent.trim() !== "",
+      ).textContent,
+      /Guardian access/,
+    );
+
+    await cleanupMountedRoots();
+    document.body.replaceChildren();
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "zh-Hans", storage: null },
+        createElement(
+          AccountHeader,
+          accountHeaderProps({ activeMode: "guardian" }),
+        ),
+      ),
+    );
+    await click(button("Patrick的档案，家长模式"));
+    const guardianMenu = document.querySelector('[role="menu"]');
+    assert.equal(document.querySelector("aside").getAttribute("aria-label"), "账户");
+    assert.equal(guardianMenu.getAttribute("aria-label"), "账户菜单");
+    assert.deepEqual(
+      [...guardianMenu.children].map((item) => item.textContent.trim()),
+      ["家长控制面板", "管理学习者", "账户与隐私", "退出登录"],
     );
   });
 
@@ -874,7 +1000,7 @@ describe("keyboard accessibility lifecycles", () => {
         [...document.querySelectorAll('[role="alert"]')]
           .find((alert) => alert.textContent.trim() !== "")
           ?.textContent.trim(),
-        "Guardian status is unavailable.",
+        "Guardian access could not be checked. Please try again.",
       ),
     );
     assert.equal(
@@ -1101,7 +1227,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() =>
       assert.equal(
         document.querySelector('[role="alert"]').textContent.trim(),
-        "Guardian mode could not be opened.",
+        "Guardian access could not be checked. Please try again.",
       ),
     );
 
@@ -1147,7 +1273,7 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.equal(
       alert.textContent.trim(),
-      "Guardian mode could not be opened.",
+      "Guardian access could not be checked. Please try again.",
     );
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.ok(button("Profile for Learner, learner mode"));
@@ -1318,7 +1444,7 @@ describe("keyboard accessibility lifecycles", () => {
         api: guardianApi({
           async unlockGuardianAccess() {
             throw new Error(
-              "Guardian access could not be checked. Please try again.",
+              "check-failed",
             );
           },
         }),
@@ -1348,6 +1474,51 @@ describe("keyboard accessibility lifecycles", () => {
     );
     await waitFor(() => assert.equal(document.activeElement, switchButton));
 
+    await click(button("Cancel"));
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(document.activeElement, opener);
+  });
+
+  it("keeps dialog language control available during a pending unlock", async () => {
+    const attempt = deferred();
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "zh-Hans", storage: null },
+        createElement(UnlockHarness, {
+          api: guardianApi({
+            unlockGuardianAccess() {
+              return attempt.promise;
+            },
+          }),
+          dialog: true,
+        }),
+      ),
+    );
+    const opener = button("Open guardian mode");
+    opener.focus();
+    await click(opener);
+    const dialog = document.querySelector('[role="dialog"]');
+    assert.equal(dialog.getAttribute("lang"), "zh-Hans");
+    const switchButton = button("切换到家长模式");
+    await waitFor(() => assert.equal(document.activeElement, switchButton));
+    await act(async () => switchButton.form.requestSubmit());
+    await waitFor(() => assert.match(dialog.textContent, /正在切换模式…/));
+
+    const english = button("English");
+    assert.equal(dialog.contains(english), true);
+    assert.equal(english.closest("fieldset"), null);
+    assert.equal(english.disabled, false);
+    await click(english);
+    assert.equal(document.querySelector('[role="dialog"]'), dialog);
+    assert.equal(dialog.getAttribute("lang"), "en");
+    assert.match(dialog.textContent, /Switching modes…/);
+
+    attempt.reject(new Error("SERVER COPY"));
+    await waitFor(() =>
+      assert.match(dialog.textContent, /Guardian access could not be checked/),
+    );
+    assert.doesNotMatch(dialog.textContent, /SERVER COPY/);
     await click(button("Cancel"));
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.activeElement, opener);

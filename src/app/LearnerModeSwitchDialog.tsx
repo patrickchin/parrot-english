@@ -6,6 +6,8 @@ import {
 } from "react";
 import { useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
+import type { GuardianAccessErrorCode } from "../auth/GuardianAccess";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { useLearnerSelection } from "../learner-profile/LearnerProfileContext";
 import {
   loadLearnerProfiles,
@@ -42,6 +44,7 @@ export function LearnerModeSwitchDialog({
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const { lock } = useGuardianAccess();
+  const { messages } = useGuardianLanguage();
   const { selectLearner } = useLearnerSelection();
   const navigate = useNavigate();
   const [reloadKey, setReloadKey] = useState(0);
@@ -52,6 +55,8 @@ export function LearnerModeSwitchDialog({
     null,
   );
   const [error, setError] = useState("");
+  const [accessError, setAccessError] =
+    useState<GuardianAccessErrorCode | null>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const lastLearnerButtonRef = useRef<HTMLButtonElement>(null);
@@ -84,8 +89,10 @@ export function LearnerModeSwitchDialog({
   }, [reloadKey]);
 
   useEffect(() => {
-    if (!isSwitching && error) lastLearnerButtonRef.current?.focus();
-  }, [error, isSwitching]);
+    if (!isSwitching && (error || accessError)) {
+      lastLearnerButtonRef.current?.focus();
+    }
+  }, [accessError, error, isSwitching]);
 
   async function switchToLearner(
     profileId: string,
@@ -98,11 +105,12 @@ export function LearnerModeSwitchDialog({
     setIsSwitching(true);
     setSwitchingProfileId(profileId);
     setError("");
+    setAccessError(null);
     try {
       await selectLearner(profileId);
       const lockError = await lock();
       if (lockError) {
-        setError(lockError);
+        setAccessError(lockError);
         return;
       }
       onBeforeNavigate?.();
@@ -226,12 +234,14 @@ export function LearnerModeSwitchDialog({
                 </div>
               )}
 
-              {error ? (
+              {error || accessError ? (
                 <p
                   className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
                   role="alert"
                 >
-                  {error}
+                  {accessError
+                    ? messages.guardianAccess.errors[accessError]
+                    : error}
                 </p>
               ) : null}
 

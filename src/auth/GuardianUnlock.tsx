@@ -9,9 +9,9 @@ import {
 import { ActionButton, Card } from "../shared/ui";
 import { useDialogFocus } from "../app/useDialogFocus";
 import { useGuardianAccess } from "./GuardianAccess";
-
-const UNLOCK_FALLBACK_ERROR =
-  "Guardian access could not be checked. Please try again.";
+import type { GuardianAccessErrorCode } from "./GuardianAccess";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 
 export type GuardianUnlockFormProps = {
   autoFocus?: boolean;
@@ -27,7 +27,8 @@ export const GuardianUnlockForm = forwardRef<
   switchButtonRef,
 ) {
   const { unlock } = useGuardianAccess();
-  const [error, setError] = useState("");
+  const { messages } = useGuardianLanguage();
+  const [error, setError] = useState<GuardianAccessErrorCode | null>(null);
   const [isPending, setIsPending] = useState(false);
   const pendingRef = useRef(false);
   const titleId = useId();
@@ -38,7 +39,7 @@ export const GuardianUnlockForm = forwardRef<
 
     pendingRef.current = true;
     setIsPending(true);
-    setError("");
+    setError(null);
     try {
       const nextError = await unlock("");
       if (nextError) {
@@ -47,7 +48,7 @@ export const GuardianUnlockForm = forwardRef<
       }
       onUnlocked?.();
     } catch {
-      setError(UNLOCK_FALLBACK_ERROR);
+      setError("check-failed");
     } finally {
       pendingRef.current = false;
       setIsPending(false);
@@ -66,11 +67,11 @@ export const GuardianUnlockForm = forwardRef<
           className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
           id={titleId}
         >
-          Switch to guardian mode
+          {messages.unlock.title}
         </h1>
       </header>
       <p className="m-0 font-bold leading-relaxed text-slate-700">
-        Guardian tools and learner activities stay in separate modes.
+        {messages.unlock.body}
       </p>
       <fieldset
         className="m-0 grid min-w-0 gap-5 border-0 p-0 disabled:opacity-75"
@@ -81,15 +82,15 @@ export const GuardianUnlockForm = forwardRef<
             className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
             role="alert"
           >
-            {error}
+            {messages.guardianAccess.errors[error]}
           </p>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <ActionButton onClick={onCancel} type="button" variant="surface">
-            Cancel
+            {messages.common.cancel}
           </ActionButton>
           <ActionButton autoFocus={autoFocus} ref={switchButtonRef} type="submit">
-            {isPending ? "Switching modes…" : "Switch to guardian mode"}
+            {isPending ? messages.unlock.pending : messages.unlock.action}
           </ActionButton>
         </div>
       </fieldset>
@@ -106,6 +107,7 @@ export function GuardianUnlockDialog({
   onUnlocked?: () => void;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
+  const { language, messages } = useGuardianLanguage();
   const dialogRef = useRef<HTMLElement>(null);
   const switchButtonRef = useRef<HTMLButtonElement>(null);
   const canClose = () =>
@@ -128,11 +130,12 @@ export function GuardianUnlockDialog({
       }}
     >
       <section
-        aria-label="Switch to guardian mode"
+        aria-label={messages.unlock.title}
         aria-modal="true"
         className="grid max-h-[calc(100dvh-2rem)] w-full max-w-lg gap-5 overflow-y-auto rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
         ref={dialogRef}
         role="dialog"
+        lang={language}
         tabIndex={-1}
       >
         <GuardianUnlockForm
@@ -141,6 +144,7 @@ export function GuardianUnlockDialog({
           onUnlocked={onUnlocked}
           ref={switchButtonRef}
         />
+        <GuardianLanguageControl placement="dialog" />
       </section>
     </div>
   );

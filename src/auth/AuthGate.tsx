@@ -20,8 +20,9 @@ import {
   getSafeGuardianUnlockDestination,
 } from "../app/app-routes";
 import {
-  getAuthErrorMessage,
+  getAuthErrorCode,
   validateAuthForm,
+  type AuthErrorCode,
   type AuthFields,
   type AuthMode,
 } from "./auth-form";
@@ -32,6 +33,8 @@ import {
 import { authClient } from "./auth-client";
 import { TurnstileWidget } from "./Turnstile";
 import { GuardianAccessProvider, useGuardianAccess } from "./GuardianAccess";
+import { isGuardianGuidanceSurface, useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   ActionButton,
   Card,
@@ -99,11 +102,10 @@ interface DeleteAccountSessionOptions {
   refetch: () => Promise<unknown>;
 }
 
-const SIGN_OUT_ERROR_MESSAGE = "Sign out did not finish.";
+const SIGN_OUT_ERROR = "sign-out-failed" as const;
 const DELETE_ACCOUNT_ERROR_MESSAGE =
   "Unable to delete the account. The account and private story art were kept. Please try again.";
-const TURNSTILE_REQUIRED_MESSAGE =
-  "Complete the security check, then try again.";
+const TURNSTILE_REQUIRED_ERROR = "security-check-required" as const;
 
 type AuthFetch = (
   input: RequestInfo | URL,
@@ -158,13 +160,13 @@ export async function submitAuthForm({
   mode,
   refetch,
   turnstileToken = null,
-}: SubmitAuthFormOptions): Promise<string | null> {
+}: SubmitAuthFormOptions): Promise<AuthErrorCode | null> {
   const validationError = validateAuthForm(mode, fields);
   if (validationError) return validationError;
 
   const normalizedEmail = fields.email.trim();
   if (mode === "sign-up" && !turnstileToken) {
-    return TURNSTILE_REQUIRED_MESSAGE;
+    return TURNSTILE_REQUIRED_ERROR;
   }
 
   try {
@@ -183,12 +185,12 @@ export async function submitAuthForm({
             password: fields.password,
           });
 
-    if (result.error) return getAuthErrorMessage(result.error);
+    if (result.error) return getAuthErrorCode(result.error);
 
     await refetch();
     return null;
   } catch (caughtError) {
-    return getAuthErrorMessage(caughtError);
+    return getAuthErrorCode(caughtError);
   }
 }
 
@@ -196,8 +198,8 @@ export async function signInGuestSession({
   client,
   refetch,
   turnstileToken,
-}: SignInGuestSessionOptions): Promise<string | null> {
-  if (!turnstileToken) return TURNSTILE_REQUIRED_MESSAGE;
+}: SignInGuestSessionOptions): Promise<AuthErrorCode | null> {
+  if (!turnstileToken) return TURNSTILE_REQUIRED_ERROR;
 
   try {
     const result = await client.signIn.anonymous({
@@ -205,11 +207,11 @@ export async function signInGuestSession({
         headers: { "x-captcha-response": turnstileToken },
       },
     });
-    if (result.error) return getAuthErrorMessage(result.error);
+    if (result.error) return getAuthErrorCode(result.error);
     await refetch();
     return null;
   } catch (caughtError) {
-    return getAuthErrorMessage(caughtError);
+    return getAuthErrorCode(caughtError);
   }
 }
 
@@ -218,17 +220,17 @@ export async function signOutSession({
   deleteGuestAccountAction = deleteGuestAccount,
   isAnonymous = false,
   refetch,
-}: SignOutSessionOptions): Promise<string | null> {
+}: SignOutSessionOptions): Promise<AuthErrorCode | null> {
   try {
     const result = isAnonymous
       ? await deleteGuestAccountAction()
       : await client.signOut();
-    if (result.error) return SIGN_OUT_ERROR_MESSAGE;
+    if (result.error) return SIGN_OUT_ERROR;
     if (isAnonymous) await refetch?.();
 
     return null;
   } catch {
-    return SIGN_OUT_ERROR_MESSAGE;
+    return SIGN_OUT_ERROR;
   }
 }
 
@@ -267,7 +269,8 @@ interface AuthSession {
 interface AuthGateViewProps {
   children: ReactNode;
   fields: AuthFields;
-  formError: string;
+  formError: AuthErrorCode | "";
+  guardianAudience?: boolean;
   guardianUnlockDestination?: string | null;
   isPending: boolean;
   isRetrying: boolean;
@@ -288,7 +291,7 @@ interface AuthGateViewProps {
   profileError: string;
   session: AuthSession | null;
   sessionError: unknown;
-  signOutError: string;
+  signOutError: AuthErrorCode | "";
   signedOutFallback: ReactNode | null;
   turnstileResetKey: number;
   turnstileSiteKey: string;
@@ -325,30 +328,44 @@ function AccountExperienceHeader({
   learnerName: string | null;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
   onSignOut: () => void;
-  signOutError: string;
+  signOutError: AuthErrorCode | "";
   userEmail: string;
 }) {
   const access = useGuardianAccess();
+  const { messages } = useGuardianLanguage();
   const [announcement, setAnnouncement] = useState("");
   const [isSwitchingMode, setIsSwitchingMode] = useState(false);
-  const [switchError, setSwitchError] = useState("");
+  const [switchError, setSwitchError] = useState<
+    import("./GuardianAccess").GuardianAccessErrorCode | null
+  >(null);
   const activeMode = access.mode === "guardian" ? "guardian" : "learner";
+  const accessErrorCode = access.error ?? switchError;
+  const accessError = accessErrorCode
+    ? activeMode === "guardian"
+      ? messages.guardianAccess.errors[accessErrorCode]
+      : englishGuardianMessages.guardianAccess.errors[accessErrorCode]
+    : "";
+  const accountError = accessError || error;
+  const localizedSignOutError = signOutError
+    ? (activeMode === "guardian" ? messages : englishGuardianMessages).auth
+        .errors[signOutError]
+    : "";
   const previousAccessModeRef = useRef(access.mode);
 
   useEffect(() => {
     const previousMode = previousAccessModeRef.current;
     previousAccessModeRef.current = access.mode;
     if (previousMode === "learner" && access.mode === "guardian") {
-      setAnnouncement("Guardian mode");
+      setAnnouncement(messages.account.guardianModeStatus);
     } else if (previousMode === "guardian" && access.mode === "learner") {
-      setAnnouncement("Learner mode");
+      setAnnouncement(englishGuardianMessages.account.learnerModeStatus);
     }
-  }, [access.mode]);
+  }, [access.mode, messages.account.guardianModeStatus]);
 
   async function switchToGuardian() {
     if (access.mode === "guardian" || isSwitchingMode) return;
     setIsSwitchingMode(true);
-    setSwitchError("");
+    setSwitchError(null);
     const nextError = await access.unlock("");
     setIsSwitchingMode(false);
     if (nextError) {
@@ -364,7 +381,12 @@ function AccountExperienceHeader({
     <>
       <AccountHeader
         activeMode={activeMode}
-        error={access.error || switchError || error}
+        error={accountError}
+        errorHelper={
+          activeMode === "learner" && accessErrorCode
+            ? "guardianAccessErrorHelper"
+            : undefined
+        }
         guardianLabel={guardianLabel}
         hasActiveLearner={hasActiveLearner}
         isModePending={isSwitchingMode}
@@ -382,7 +404,7 @@ function AccountExperienceHeader({
         }
         onSelectGuardian={() => void switchToGuardian()}
         onSignOut={onSignOut}
-        signOutError={activeMode === "guardian" ? signOutError : ""}
+        signOutError={activeMode === "guardian" ? localizedSignOutError : ""}
         userEmail={userEmail}
       />
       <span
@@ -401,6 +423,7 @@ export function AuthGateView({
   children,
   fields,
   formError,
+  guardianAudience = true,
   guardianUnlockDestination,
   hasActiveLearner,
   isPending,
@@ -427,6 +450,10 @@ export function AuthGateView({
   turnstileSiteKey,
   turnstileToken,
 }: AuthGateViewProps) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages = guardianAudience
+    ? selectedMessages
+    : englishGuardianMessages;
   const authHeadingRef = useRef<HTMLHeadingElement>(null);
   const authHeadingKey =
     isPending || isRetrying
@@ -457,7 +484,7 @@ export function AuthGateView({
           role="status"
         >
           <AuthParrotMark />
-          <p>Checking your session…</p>
+          <p>{messages.auth.checkingSession}</p>
         </AuthCard>
       </AuthScreen>
     );
@@ -476,13 +503,13 @@ export function AuthGateView({
             ref={authHeadingRef}
             tabIndex={-1}
           >
-            Sign-in is temporarily unavailable
+            {messages.auth.sessionUnavailableTitle}
           </h1>
           <p className="m-0 leading-relaxed">
-            Check your connection, then try again.
+            {messages.auth.sessionUnavailableBody}
           </p>
           <ActionButton onClick={onRetry} type="button">
-            Try again
+            {messages.common.retry}
           </ActionButton>
         </AuthCard>
       </AuthScreen>
@@ -514,13 +541,14 @@ export function AuthGateView({
               ref={authHeadingRef}
               tabIndex={-1}
             >
-              {isSignUp ? "Create your account" : "Welcome back"}
+              {isSignUp
+                ? messages.auth.createAccountTitle
+                : messages.auth.welcomeBackTitle}
             </h1>
           </header>
           {isSignUp ? (
             <p className="mb-6 mt-0 font-bold leading-relaxed text-slate-600">
-              Use the grown-up’s name for this Guardian account. You can add
-              learner profiles next.
+              {messages.auth.signUpHelp}
             </p>
           ) : null}
 
@@ -530,7 +558,7 @@ export function AuthGateView({
               disabled={authActionPending}
             >
               <SegmentedControl
-                aria-label="Choose sign in or sign up"
+                aria-label={messages.auth.modeLabel}
                 className="grid-cols-1 sm:grid-cols-2"
               >
                 <SegmentedButton
@@ -538,14 +566,14 @@ export function AuthGateView({
                   selected={!isSignUp}
                   type="button"
                 >
-                  Sign in
+                  {messages.auth.signIn}
                 </SegmentedButton>
                 <SegmentedButton
                   onClick={() => onModeChange("sign-up")}
                   selected={isSignUp}
                   type="button"
                 >
-                  Sign up
+                  {messages.auth.signUp}
                 </SegmentedButton>
               </SegmentedControl>
 
@@ -554,7 +582,7 @@ export function AuthGateView({
                   className="grid gap-2 font-black text-brand-ink"
                   htmlFor="auth-name"
                 >
-                  <span>Account name</span>
+                  <span>{messages.auth.accountName}</span>
                   <input
                     autoComplete="name"
                     id="auth-name"
@@ -574,7 +602,7 @@ export function AuthGateView({
                 className="grid gap-2 font-black text-brand-ink"
                 htmlFor="auth-email"
               >
-                <span>Email</span>
+                <span>{messages.auth.email}</span>
                 <input
                   autoComplete="email"
                   id="auth-email"
@@ -594,7 +622,7 @@ export function AuthGateView({
                 className="grid gap-2 font-black text-brand-ink"
                 htmlFor="auth-password"
               >
-                <span>Password</span>
+                <span>{messages.auth.password}</span>
                 <input
                   autoComplete={isSignUp ? "new-password" : "current-password"}
                   id="auth-password"
@@ -609,7 +637,7 @@ export function AuthGateView({
                   value={fields.password}
                 />
                 <small className="text-xs font-bold text-slate-500">
-                  At least 8 characters
+                  {messages.auth.passwordHint}
                 </small>
               </label>
 
@@ -618,18 +646,18 @@ export function AuthGateView({
                   className="m-0 rounded-xl bg-rose-50 px-3 py-2.5 font-extrabold leading-snug text-red-800"
                   role="alert"
                 >
-                  {formError}
+                  {messages.auth.errors[formError]}
                 </p>
               ) : null}
 
               <TurnstileWidget
+                guardianAudience={guardianAudience}
                 key={turnstileResetKey}
                 onTokenChange={onTurnstileTokenChange}
                 siteKey={turnstileSiteKey}
               />
               <p className="m-0 text-center text-xs font-bold leading-snug text-slate-500">
-                The security check is needed only for guest access and new
-                accounts.
+                {messages.auth.securityHelp}
               </p>
 
               <ActionButton
@@ -639,17 +667,17 @@ export function AuthGateView({
               >
                 {isSubmitting
                   ? isSignUp
-                    ? "Creating account…"
-                    : "Signing in…"
+                    ? messages.auth.creatingAccount
+                    : messages.auth.signingIn
                   : isSignUp
-                    ? "Create account"
-                    : "Sign in and start"}
+                    ? messages.auth.createAccount
+                    : messages.auth.signInAndStart}
               </ActionButton>
               <div
                 aria-hidden="true"
                 className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-xs font-black uppercase tracking-widest text-slate-400 before:h-px before:bg-sky-200 after:h-px after:bg-sky-200"
               >
-                or
+                {messages.auth.or}
               </div>
               <ActionButton
                 disabled={!securityCheckComplete || authActionPending}
@@ -658,7 +686,9 @@ export function AuthGateView({
                 type="button"
                 variant="surface"
               >
-                {isGuestSubmitting ? "Continuing as guest…" : "Continue as guest"}
+                {isGuestSubmitting
+                  ? messages.auth.continuingAsGuest
+                  : messages.auth.continueAsGuest}
               </ActionButton>
             </fieldset>
           </form>
@@ -669,7 +699,9 @@ export function AuthGateView({
 
   const userLabel =
     session.user.name?.trim() || session.user.email || "Learner";
-  const accountError = profileError || formError;
+  const accountError =
+    profileError ||
+    (formError ? englishGuardianMessages.auth.errors[formError] : "");
   const showNarrowSignOutRecovery = Boolean(signOutError) && !isSigningOut;
 
   return (
@@ -699,6 +731,7 @@ export function AuthGateView({
 
 interface AuthGateProps {
   children: ReactNode;
+  guardianAudience?: boolean;
   guardianUnlockDestination?: string | null;
   navigate?: (path: string, options?: { replace?: boolean }) => void;
   signedOutFallback?: ReactNode;
@@ -707,7 +740,7 @@ interface AuthGateProps {
 const EMPTY_FIELDS: AuthFields = { name: "", email: "", password: "" };
 
 interface SignOutState {
-  error: string;
+  error: AuthErrorCode | "";
   isPending: boolean;
   owner: string | null;
 }
@@ -780,14 +813,16 @@ export function createAuthGate({
 }: CreateAuthGateOptions) {
   return function AuthGateContainer({
     children,
+    guardianAudience = true,
     guardianUnlockDestination,
     navigate = navigateInBrowser,
     signedOutFallback,
   }: AuthGateProps) {
-    const { data: session, isPending, error, refetch } = client.useSession();
+    const { data: sessionData, isPending, error, refetch } = client.useSession();
+    const session = sessionData?.user ? sessionData : null;
     const [mode, setMode] = stateHook<AuthMode>("sign-in");
     const [fields, setFields] = stateHook<AuthFields>(EMPTY_FIELDS);
-    const [formError, setFormError] = stateHook("");
+    const [formError, setFormError] = stateHook<AuthErrorCode | "">("");
     const [isSubmitting, setIsSubmitting] = stateHook(false);
     const [isGuestSubmitting, setIsGuestSubmitting] = stateHook(false);
     const [turnstileToken, setTurnstileToken] = stateHook<string | null>(null);
@@ -913,15 +948,15 @@ export function createAuthGate({
       });
       setFormError("");
 
-      let nextError: string | null;
+      let nextError: AuthErrorCode | null;
       try {
         nextError = await signOutAction({
           client,
-          isAnonymous: session?.user.isAnonymous === true,
+          isAnonymous: session?.user?.isAnonymous === true,
           refetch,
         });
       } catch {
-        nextError = SIGN_OUT_ERROR_MESSAGE;
+        nextError = SIGN_OUT_ERROR;
       }
 
       if (signOutAttemptRef.current !== attempt || nextError === null) return;
@@ -936,7 +971,7 @@ export function createAuthGate({
     async function handleDeleteAccount(password: string) {
       return deleteAccountAction({
         client,
-        isAnonymous: session?.user.isAnonymous === true,
+        isAnonymous: session?.user?.isAnonymous === true,
         password,
         refetch,
       });
@@ -945,7 +980,7 @@ export function createAuthGate({
     return (
       <AccountActionProvider
         deleteAccount={handleDeleteAccount}
-        isAnonymous={session?.user.isAnonymous === true}
+        isAnonymous={session?.user?.isAnonymous === true}
         profileAction={profileAction}
         sessionIdentity={sessionIdentity}
         setProfileAction={setProfileAction}
@@ -957,6 +992,7 @@ export function createAuthGate({
           <View
             fields={fields}
             formError={formError}
+            guardianAudience={guardianAudience}
             isPending={isPending}
             isRetrying={isRetrying}
             isSigningOut={ownsSignOutState && signOutState.isPending}
@@ -1006,6 +1042,10 @@ export function AuthGate(props: Omit<AuthGateProps, "navigate">) {
   return (
     <ProductionAuthGate
       {...props}
+      guardianAudience={isGuardianGuidanceSurface(
+        location.pathname,
+        location.search,
+      )}
       guardianUnlockDestination={getSafeGuardianUnlockDestination(
         location.pathname,
         location.search,
