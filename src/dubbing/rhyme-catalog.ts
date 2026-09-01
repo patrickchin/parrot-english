@@ -52,7 +52,7 @@ export type DubDefinition = Readonly<{
   finalCueTailMs: number;
   guides: readonly DubGuide[];
   id: string;
-  lineArtwork?: readonly DubArtwork[];
+  lineArtwork: readonly (DubArtwork | null)[] | null;
   lines: readonly DubLine[];
   linesPerScene: number;
   music: DubMusicScore;
@@ -62,9 +62,7 @@ export type DubDefinition = Readonly<{
   title: string;
 }>;
 
-type GeneratedDubDefinition = Omit<DubDefinition, "lineArtwork"> & Readonly<{
-  lineArtwork: readonly DubArtwork[] | null;
-}>;
+type GeneratedDubDefinition = DubDefinition;
 
 function cloneAndFreeze<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -81,11 +79,7 @@ function cloneAndFreeze<T>(value: T): T {
 function normalizeDefinition(
   generated: GeneratedDubDefinition,
 ): DubDefinition {
-  const { lineArtwork, ...definition } = generated;
-  return cloneAndFreeze({
-    ...definition,
-    ...(lineArtwork === null ? {} : { lineArtwork }),
-  }) as unknown as DubDefinition;
+  return cloneAndFreeze(generated);
 }
 
 export function normalizeGeneratedDubDefinitions(

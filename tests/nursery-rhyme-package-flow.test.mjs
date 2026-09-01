@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
+import { execFile } from "node:child_process";
 import {
   copyFile,
   cp,
@@ -10,13 +11,18 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import process from "node:process";
 import { after, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter } from "react-router";
 import { createServer } from "vite";
-import { compileNurseryRhymePackages } from "../scripts/nursery-rhyme/compiler.mjs";
+import {
+  compileNurseryRhymePackages,
+  serializeGeneratedCatalog,
+} from "../scripts/nursery-rhyme/compiler.mjs";
 import { parseDubRoute } from "../worker/dub-route.ts";
 import {
   createDubStorageKeys,
@@ -24,6 +30,7 @@ import {
 } from "../worker/dub-storage.ts";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
+const execFileAsync = promisify(execFile);
 const vite = await createServer({
   appType: "custom",
   logLevel: "silent",
@@ -32,6 +39,9 @@ const vite = await createServer({
 });
 const { NurseryRhymeList } = await vite.ssrLoadModule(
   "/src/dubbing/NurseryRhymeList.tsx",
+);
+const { IllustratedDubScene } = await vite.ssrLoadModule(
+  "/src/dubbing/IllustratedDubScene.tsx",
 );
 const { DUB_DEFINITIONS, normalizeGeneratedDubDefinitions } =
   await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
@@ -75,6 +85,12 @@ async function addSeventhPackage(contentRoot) {
             id: "one-little-bell-v1-line-1",
             text: "Ring.",
             guide: "guides/one-little-bell-v1-guide-line-1.mp3",
+            artwork: {
+              src: "https://media.parrotbook.com/assets/v8/dubbing/one-little-bell/line-1.webp",
+              alt: "A small golden bell rings beside a sunny window.",
+              width: 1536,
+              height: 864,
+            },
           },
           {
             id: "one-little-bell-v1-line-2",
@@ -144,6 +160,49 @@ it("flows one compiled seventh package through shelf, learner, Worker, and stora
   });
 
   assert.equal(compiledLiterals.length, 7);
+  assert.deepEqual(compiledLiterals[6].lineArtwork, [
+    {
+      alt: "A small golden bell rings beside a sunny window.",
+      height: 864,
+      src: "https://media.parrotbook.com/assets/v8/dubbing/one-little-bell/line-1.webp",
+      width: 1536,
+    },
+    null,
+  ]);
+
+  const generatedPath = path.join(root, "mixed-art-generated.ts");
+  const typecheckPath = path.join(root, "mixed-art-typecheck.ts");
+  const catalogImport = path.relative(
+    root,
+    path.join(repositoryRoot, "src", "dubbing", "rhyme-catalog.ts"),
+  ).replaceAll(path.sep, "/");
+  await writeFile(
+    generatedPath,
+    serializeGeneratedCatalog([compiledLiterals[6]]),
+  );
+  await writeFile(
+    typecheckPath,
+    [
+      `import { normalizeGeneratedDubDefinitions } from "./${catalogImport}";`,
+      'import { GENERATED_DUB_DEFINITIONS } from "./mixed-art-generated.ts";',
+      "normalizeGeneratedDubDefinitions(GENERATED_DUB_DEFINITIONS);",
+      "",
+    ].join("\n"),
+  );
+  await execFileAsync(process.execPath, [
+    path.join(repositoryRoot, "node_modules", "typescript", "bin", "tsc"),
+    "--allowImportingTsExtensions",
+    "--isolatedModules",
+    "--lib", "DOM,DOM.Iterable,ES2022",
+    "--module", "ESNext",
+    "--moduleResolution", "Bundler",
+    "--noEmit",
+    "--skipLibCheck",
+    "--strict",
+    "--target", "ES2022",
+    typecheckPath,
+  ], { cwd: repositoryRoot });
+
   assert.equal(DUB_DEFINITIONS.length, 6);
   assert.equal(
     typeof normalizeGeneratedDubDefinitions,
@@ -156,7 +215,26 @@ it("flows one compiled seventh package through shelf, learner, Worker, and stora
     "Expected learner routes to be derived from supplied definitions",
   );
   const definitions = normalizeGeneratedDubDefinitions(compiledLiterals);
+  assert.equal(definitions[0].lineArtwork, null);
   const seventh = definitions[6];
+  assert.equal(Object.isFrozen(seventh.lineArtwork), true);
+  assert.equal(Object.isFrozen(seventh.lineArtwork[0]), true);
+  assert.equal(seventh.lineArtwork[1], null);
+
+  const firstLineScene = renderToStaticMarkup(
+    createElement(IllustratedDubScene, {
+      definition: seventh,
+      line: seventh.lines[0],
+    }),
+  );
+  assert.match(firstLineScene, /A small golden bell rings beside a sunny window\./);
+  const secondLineScene = renderToStaticMarkup(
+    createElement(IllustratedDubScene, {
+      definition: seventh,
+      line: seventh.lines[1],
+    }),
+  );
+  assert.match(secondLineScene, /A bright bell rings in the sunshine\./);
 
   const shelf = renderToStaticMarkup(
     createElement(
