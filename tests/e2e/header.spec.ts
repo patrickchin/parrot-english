@@ -1093,7 +1093,7 @@ test("the learner menu switches to a sibling and returns to learner home", async
 
   const chooser = page.getByRole("dialog", { name: "Who is learning now?" });
   await chooser
-    .getByRole("button", { name: "Start learner mode as Noah" })
+    .getByRole("button", { name: "Start learner mode as ⁨Noah⁩" })
     .click();
 
   await expect(page).toHaveURL("/");
@@ -1379,9 +1379,7 @@ test("Account & privacy explains caregiver facts before optional technical detai
     accountPage.getByText("Worker deployment e2e-deployment"),
   ).toBeVisible();
   await expect(accountPage.getByText("Lesson script LLM")).toHaveCount(0);
-  await expect(
-    accountPage.getByText("openai/gpt-5.6-luna"),
-  ).toHaveCount(0);
+  await expect(accountPage.getByText("openai/gpt-5.6-luna")).toHaveCount(0);
   await expect(accountPage.getByText("Realtime voice model")).toBeVisible();
   await expect(accountPage.getByText("gpt-realtime-2.1-mini")).toBeVisible();
   await expect(accountPage.getByText("Input transcription")).toBeVisible();
@@ -1497,12 +1495,10 @@ test("desktop header controls share one rendered chrome and focus outline", asyn
   expect(outlines[0]).toEqual(outlines[1]);
 });
 
-test("shared route-header icons render at one stroke weight", async ({ page }) => {
-  const routes = [
-    "/stories",
-    "/dubs",
-    guardianPath("/guardian/account"),
-  ];
+test("shared route-header icons render at one stroke weight", async ({
+  page,
+}) => {
+  const routes = ["/stories", "/dubs", guardianPath("/guardian/account")];
   const strokeWidths = [];
 
   for (const path of routes) {
