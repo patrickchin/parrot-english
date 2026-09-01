@@ -164,6 +164,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/word-games",
   "/word-games/:categoryId",
   "/word-games/:categoryId/:quizId",
+  "/word-games/*",
   "/lessons",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
@@ -1256,6 +1257,7 @@ export function ApplicationRoutes({
         <Route element={<WordGameList />} path="/word-games" />
         <Route element={<WordGameRoute />} path="/word-games/:categoryId/:quizId" />
         <Route element={<WordGameRoute />} path="/word-games/:categoryId" />
+        <Route element={<WordGameRoute />} path="/word-games/*" />
         <Route
           element={
             <FeaturePlaceholder

@@ -55,7 +55,11 @@ test("home gives children five clear, working learning choices", () => {
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
   assert.doesNotMatch(html, /Tap a picture\.|>Parrot English<\/p>/i);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.match(
+    html,
+    /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/noto\/emoji_u1f431\.svg"/,
+  );
   assert.match(html, /Nursery rhymes/);
   assert.match(html, /Word game/);
   assert.match(html, /src="\/assets\/word-games\/noto\/emoji_u1f431\.svg"/);

@@ -49,12 +49,11 @@ if (
   new URL(window.location.href).searchParams.get("parrotE2eWordGameRandom") ===
   "reshuffle"
 ) {
-  let wordGameRandomCalls = 0;
-  Math.random = () => {
-    const playThrough = Math.floor(wordGameRandomCalls / 18);
-    wordGameRandomCalls += 1;
-    return playThrough % 2 === 0 ? 0 : 1 - Number.EPSILON;
-  };
+  Object.defineProperty(window, "__parrotE2eWordGameRandom", {
+    configurable: true,
+    value: (playThrough: number) => () =>
+      playThrough % 2 === 0 ? 0 : 1 - Number.EPSILON,
+  });
 }
 type E2ELessonCue = {
   audioId?: string;

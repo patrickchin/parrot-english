@@ -94,13 +94,18 @@ async function renderedColumns(locator: Locator) {
 }
 
 async function expectHorizontallyContained(page: Page, locator: Locator) {
-  await locator.scrollIntoViewIfNeeded();
   const box = await visibleBox(locator);
   const width = page.viewportSize()!.width;
   expect(box.x).toBeGreaterThanOrEqual(-0.5);
   expect(box.x + box.width).toBeLessThanOrEqual(width + 0.5);
   await expect.poll(() => page.evaluate(() =>
     document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+async function expectNextTabReaches(page: Page, locator: Locator) {
+  await page.keyboard.press("Tab");
+  await expect(locator).toBeFocused();
+  await expect(locator).toBeInViewport();
 }
 
 async function finishCorrectFeedback(page: Page) {
@@ -158,8 +163,17 @@ test("navigates through a category and plays saved four-choice feedback in seque
 });
 
 test("keeps authored question order and deterministically reshuffles only on Play again", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "__wordGameUnrelatedRandom", {
+      configurable: true,
+      value: Math.random,
+    });
+  });
   await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue&parrotE2eWordGameRandom=reshuffle");
   const { choices, main, progress } = game(page);
+  await expect.poll(() => page.evaluate(() => Math.random === (
+    window as Window & { __wordGameUnrelatedRandom?: typeof Math.random }
+  ).__wordGameUnrelatedRandom)).toBe(true);
   const firstOrder = await choiceOrder(choices);
 
   for (const [index, [answer, prompt, success]] of animals.entries()) {
@@ -218,14 +232,117 @@ test("keeps visual play usable with one persistent saved-sound failure", async (
 
 test("keeps all short-wide controls scrollable and reachable", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
-  await page.goto("/word-games/animals/simple-1");
+  await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
   const { choices, main } = game(page);
   await expect.poll(() => main.evaluate((element) => element.scrollHeight - element.clientHeight))
     .toBeGreaterThan(0);
-  const finalListen = choices.getByRole("button", { name: /^Listen: / }).last();
-  await finalListen.scrollIntoViewIfNeeded();
-  await expect(finalListen).toBeInViewport();
-  await expectHorizontallyContained(page, finalListen);
+  const headerBack = main.getByRole("link", { name: "Back to Animals" });
+  await page.keyboard.press("Shift+Tab");
+  await expect(headerBack).toBeFocused();
+  await expect(headerBack).toBeInViewport();
+  const targetListen = main.getByRole("button", { name: "Listen again" });
+  await expectNextTabReaches(page, targetListen);
+  const chooseButtons = choices.getByRole("button", { name: /^Choose / });
+  const listenButtons = choices.getByRole("button", { name: /^Listen: / });
+  for (let index = 0; index < 4; index += 1) {
+    await expectNextTabReaches(page, chooseButtons.nth(index));
+    await expectNextTabReaches(page, listenButtons.nth(index));
+  }
+
+  for (const [answer] of animals) {
+    await choices.getByRole("button", { name: `Choose ${answer}` }).click();
+    await finishCorrectFeedback(page);
+  }
+  const replay = main.getByRole("button", { name: "Play again" });
+  const completionBack = main.getByRole("link", { name: "Back to Animals" }).last();
+  await expectNextTabReaches(page, replay);
+  await expectNextTabReaches(page, completionBack);
+});
+
+test("routes every malformed word-game URL back to the word-game shelf", async ({ page }) => {
+  for (const path of [
+    "/word-games/animals/simple-1/extra",
+    "/word-games/animals/simple-1/extra/more",
+    "/word-games/%61nimals",
+    "/word-games/animals/%73imple-1",
+    "/word-games/missing",
+    "/word-games/animals/missing",
+  ]) {
+    await page.goto(path);
+    await expect(page).toHaveURL("/word-games");
+    await expect(page.getByRole("heading", { level: 1, name: "Pick a word game" }))
+      .toBeVisible();
+  }
+});
+
+test("renders the generated hierarchy, Noto covers, and native color swatches", async ({ page }) => {
+  const covers = [
+    ["Animals", "A friendly cat.", "/assets/word-games/noto/emoji_u1f431.svg"],
+    ["Colors", "The color red.", "rgb(239, 68, 68)"],
+    ["Body Parts", "A pair of eyes.", "/assets/word-games/noto/emoji_u1f440.svg"],
+    ["Food", "An apple.", "/assets/word-games/noto/emoji_u1f34e.svg"],
+    ["Toys", "A ball.", "/assets/word-games/noto/emoji_u26bd.svg"],
+    ["Feelings", "A happy face.", "/assets/word-games/noto/emoji_u1f604.svg"],
+    ["Home", "A house.", "/assets/word-games/noto/emoji_u1f3e0.svg"],
+    ["Clothes", "A shirt.", "/assets/word-games/noto/emoji_u1f455.svg"],
+    ["Transport", "A car.", "/assets/word-games/noto/emoji_u1f697.svg"],
+  ] as const;
+
+  await page.goto("/word-games");
+  const shelf = page.getByRole("main");
+  await expect(shelf.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(shelf.getByRole("link", { name: "Back to home" }))
+    .toHaveAttribute("href", "/");
+  const categoryNav = shelf.getByRole("navigation", { name: "Word games" });
+  await expect(categoryNav.getByRole("link")).toHaveCount(9);
+  for (const [title, alt, presentation] of covers) {
+    const visual = categoryNav.getByRole("link", { name: title })
+      .getByRole("img", { name: alt });
+    if (presentation.startsWith("/")) {
+      await expect(visual).toHaveAttribute("src", presentation);
+    } else {
+      await expect.poll(() => visual.evaluate((element) =>
+        getComputedStyle(element).backgroundColor)).toBe(presentation);
+    }
+  }
+
+  await categoryNav.getByRole("link", { name: "Animals" }).click();
+  const category = page.getByRole("main");
+  await expect(category.getByRole("heading", { level: 1, name: "Animals" }))
+    .toHaveCount(1);
+  await expect(category.getByRole("link", { name: "Back to word games" }))
+    .toHaveAttribute("href", "/word-games");
+  await expect(category.getByRole("heading", { level: 2 }).allTextContents())
+    .resolves.toEqual(["Simple", "Intermediate", "Advanced"]);
+  await expect(category.getByRole("img", { name: "A friendly cat." })).toHaveCount(4);
+
+  await category.getByRole("link", { name: "Simple animals" }).click();
+  const player = page.getByRole("main");
+  await expect(player.getByRole("heading", { level: 1, name: "Simple animals" }))
+    .toHaveCount(1);
+  await expect(player.getByRole("link", { name: "Back to Animals" }))
+    .toHaveAttribute("href", "/word-games/animals");
+  for (const [alt, src] of [
+    ["A friendly cat.", "/assets/word-games/noto/emoji_u1f431.svg"],
+    ["A friendly dog.", "/assets/word-games/noto/emoji_u1f415.svg"],
+    ["A friendly bird.", "/assets/word-games/noto/emoji_u1f426.svg"],
+    ["A friendly fish.", "/assets/word-games/noto/emoji_u1f41f.svg"],
+  ]) {
+    await expect(player.getByRole("img", { name: alt })).toHaveAttribute("src", src);
+  }
+
+  await page.goto("/word-games/colors/simple-1");
+  const swatches = page.getByRole("group", { name: "Picture choices" });
+  for (const [alt, color] of [
+    ["The color red.", "rgb(239, 68, 68)"],
+    ["The color blue.", "rgb(59, 130, 246)"],
+    ["The color yellow.", "rgb(234, 179, 8)"],
+    ["The color green.", "rgb(34, 197, 94)"],
+  ]) {
+    const swatch = swatches.getByRole("img", { name: alt });
+    await expect.poll(() => swatch.evaluate((element) =>
+      getComputedStyle(element).backgroundColor)).toBe(color);
+  }
 });
 
 for (const viewport of responsiveViewports) {

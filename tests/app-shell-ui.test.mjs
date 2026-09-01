@@ -119,7 +119,11 @@ test("home menu prioritizes the five learner activities", () => {
   assert.match(html, />Story time</);
   assert.match(html, />Nursery rhymes</);
   assert.match(html, />Word game</);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.match(
+    html,
+    /<img[^>]*alt="A friendly cat\."[^>]*height="512"[^>]*src="\/assets\/word-games\/noto\/emoji_u1f431\.svg"[^>]*width="512"/,
+  );
   assert.match(
     html,
     /<img[^>]*sizes="\(max-width: 767px\) calc\(\(100vw - 3.25rem\) \/ 2\), \(max-width: 1279px\) calc\(\(100vw - 7rem\) \/ 3\), min\(calc\(\(100vw - 8rem\) \/ 5\), 15rem\)"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp"[^>]*srcSet="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-768\.webp 768w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp 1536w"/,

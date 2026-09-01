@@ -107,6 +107,8 @@ describe("app route helpers", () => {
       ["%61nimals", undefined, "/word-games/%61nimals"],
       ["animals", "%73imple-1", "/word-games/animals/%73imple-1"],
       ["animals", "simple-1", "/word-games/animals/simple-1/extra"],
+      [undefined, undefined, "/word-games/animals/simple-1/extra"],
+      [undefined, undefined, "/word-games/animals/simple-1/extra/more"],
     ]) {
       assert.deepEqual(getWordGameRouteDecision(categoryId, quizId, pathname), {
         kind: "redirect",

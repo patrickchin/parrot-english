@@ -20,6 +20,9 @@ import {
 import { WordGameVisual } from "./WordGameVisual";
 
 const SOUND_ERROR = "Sound is not available. You can still play.";
+type WordGameE2EWindow = Window & {
+  __parrotE2eWordGameRandom?: (playThrough: number) => () => number;
+};
 
 type PlaybackOptions = {
   ignoreBlockedAutoplay?: boolean;
@@ -34,12 +37,19 @@ function isBlockedAutoplay(error: unknown) {
   return error instanceof Error && error.name === "NotAllowedError";
 }
 
+function buildRounds(selection: WordGameSelection, playThrough: number) {
+  const e2eRandom = typeof window === "undefined"
+    ? undefined
+    : (window as WordGameE2EWindow).__parrotE2eWordGameRandom?.(playThrough);
+  return buildWordGameRounds(selection, e2eRandom);
+}
+
 export function WordGamePlayer({
   selection,
 }: {
   selection: WordGameSelection;
 }) {
-  const [rounds, setRounds] = useState(() => buildWordGameRounds(selection));
+  const [rounds, setRounds] = useState(() => buildRounds(selection, 0));
   const [answeredCorrectly, setAnsweredCorrectly] = useState(false);
   const [complete, setComplete] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -50,6 +60,7 @@ export function WordGamePlayer({
   const focusAfterChangeRef = useRef(false);
   const playbackAbortRef = useRef<AbortController | null>(null);
   const playbackGenerationRef = useRef(0);
+  const playThroughRef = useRef(0);
   const questionHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const round = rounds[roundIndex];
   const progress = roundIndex + 1;
@@ -155,7 +166,8 @@ export function WordGamePlayer({
   }
 
   function playAgain() {
-    const replayRounds = buildWordGameRounds(selection);
+    playThroughRef.current += 1;
+    const replayRounds = buildRounds(selection, playThroughRef.current);
     focusAfterChangeRef.current = true;
     setRounds(replayRounds);
     setComplete(false);
