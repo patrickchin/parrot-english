@@ -4000,7 +4000,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           sessionIdentity: "account-1|session-a",
         }),
       );
-      await waitFor(() => button("Create Rose before selection clears"));
+      await waitFor(() =>
+        assert.equal(
+          output("Create Rose before selection clears active learner")
+            .textContent,
+          "learner-mary",
+        ),
+      );
       await click(button("Create Rose before selection clears"));
 
       await waitFor(() =>

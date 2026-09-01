@@ -420,13 +420,28 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
     page.getByRole("complementary", { name: "Account" }),
   ).toBeVisible();
 
+  await page.goto(guardianPath("/guardian"));
+  const accountCard = page.getByRole("region", {
+    name: "Account & privacy",
+  });
+  await expect(accountCard).toContainText(
+    "View technical build details and available account controls.",
+  );
+  await expect(accountCard).not.toContainText("permanently delete");
+
   await page.goto(guardianPath("/guardian/account"));
   await expect(
     page.getByRole("heading", { level: 1, name: "Account & privacy" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "How Parrot uses AI" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "What this account keeps" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "What you can do" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Technical build details" }),
   ).toBeVisible();
@@ -1130,7 +1145,13 @@ test("Guardian menu opens the protected Account & privacy page with deletion onl
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "How Parrot uses AI" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "What this account keeps" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "What you can do" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Technical build details" }),
   ).toBeVisible();
@@ -1310,7 +1331,7 @@ test("forced colors keeps account exit actions visibly focused", async ({
   expect(Number.parseFloat(deleteOutline.width)).toBeGreaterThanOrEqual(2);
 });
 
-test("Account & privacy explains caregiver facts before optional technical details", async ({
+test("Account & privacy keeps optional technical details without retired guidance", async ({
   page,
 }) => {
   const viewport = mobileViewports.find(({ name }) => name === "small phone")!;
@@ -1330,32 +1351,13 @@ test("Account & privacy explains caregiver facts before optional technical detai
   ).toHaveCount(0);
   await expect(
     accountPage.getByRole("heading", { name: "How Parrot uses AI" }),
-  ).toBeVisible();
-  await expect(
-    accountPage.getByRole("heading", { name: "What this account keeps" }),
-  ).toBeVisible();
-  await expect(
-    accountPage.getByText(
-      "Lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
-      { exact: true },
-    ),
-  ).toBeVisible();
-  await expect(
-    accountPage.getByText(
-      /^Voice-dubbing rhymes save that learner’s private voice clips/i,
-    ),
-  ).toBeVisible();
-  await expect(
-    accountPage.getByText("Raw audio is not added to the Parrot account.", {
-      exact: false,
-    }),
   ).toHaveCount(0);
   await expect(
-    accountPage.getByText(
-      "Choosing a learner in Guardian settings changes only which learner’s data you manage. Learner mode changes only through Switch to learner, where you choose who will use the session.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+    accountPage.getByRole("heading", { name: "What this account keeps" }),
+  ).toHaveCount(0);
+  await expect(
+    accountPage.getByRole("heading", { name: "What you can do" }),
+  ).toHaveCount(0);
   await expect(
     accountPage.getByRole("heading", { name: "Web app" }),
   ).toBeHidden();
@@ -1412,10 +1414,13 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
   const accountPage = page.getByRole("main");
   await expect(
     accountPage.getByRole("heading", { name: "How Parrot uses AI" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await expect(
     accountPage.getByRole("heading", { name: "What this account keeps" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(
+    accountPage.getByRole("heading", { name: "What you can do" }),
+  ).toHaveCount(0);
 
   const technicalDetails = accountPage.getByLabel("Technical build details");
   await technicalDetails.scrollIntoViewIfNeeded();
@@ -1426,7 +1431,7 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
   await expect(
     accountPage
       .getByText(
-        "Technical details could not load. The AI and saved data notes above are still available.",
+        "Technical details could not load. Please try again later.",
         { exact: true },
       )
       .first(),

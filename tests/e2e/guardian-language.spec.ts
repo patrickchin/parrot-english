@@ -328,9 +328,13 @@ test("Chinese Guardian dashboard and learner chooser are consistently localized"
     page.getByRole("navigation", { name: "页面导航" }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "家长中心" })).toBeVisible();
-  for (const heading of ["孩子资料", "学习与内容", "配音管理", "账户与隐私"]) {
+  for (const heading of ["孩子资料", "配音管理", "账户与隐私"]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
+  await expect(page.getByText("学习与内容", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByText("查看技术构建详情和可用的账户操作。", { exact: true }),
+  ).toBeVisible();
 
   await page.getByRole("button", { name: "切换到学习模式" }).click();
   const dialog = page.getByRole("dialog", { name: "谁在学习？" });
@@ -384,12 +388,17 @@ test("Chinese account privacy and deletion dialog keep technical data and focus 
     page.getByRole("navigation", { name: "页面导航" }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "账户与隐私" })).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "AI 与已保存的数据" }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("以前创建过私密故事图片的账户", { exact: false }).first(),
-  ).toBeVisible();
+  await expect(page.getByLabel("技术构建详情")).toBeVisible();
+  for (const retiredHeading of [
+    "AI 与已保存的数据",
+    "Parrot 如何使用 AI",
+    "此账户保存什么",
+    "你可以做什么",
+  ]) {
+    await expect(
+      page.getByRole("heading", { name: retiredHeading }),
+    ).toHaveCount(0);
+  }
   await expect(page.getByRole("heading", { name: "危险操作区" })).toBeVisible();
 
   const opener = page.getByRole("button", { name: "删除账户" });

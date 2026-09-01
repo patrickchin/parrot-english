@@ -116,7 +116,7 @@ function button(label) {
   return match;
 }
 
-test("Chinese account privacy localizes every guardian-facing section and danger action", async () => {
+test("Chinese account privacy localizes compact technical details and danger actions", async () => {
   globalThis.fetch = async () => Response.json(buildInfo());
   await mountStrict(accountPageHarness());
 
@@ -127,14 +127,7 @@ test("Chinese account privacy localizes every guardian-facing section and danger
     "页面导航",
   );
   assert.match(document.body.textContent, /返回家长中心/);
-  for (const heading of [
-    "AI 与已保存的数据",
-    "Parrot 如何使用 AI",
-    "此账户保存什么",
-    "你可以做什么",
-    "技术构建详情",
-    "危险操作区",
-  ]) {
+  for (const heading of ["技术构建详情", "危险操作区"]) {
     assert.ok(
       [...document.querySelectorAll("h2, h3")].some(
         (candidate) => candidate.textContent === heading,
@@ -143,22 +136,16 @@ test("Chinese account privacy localizes every guardian-facing section and danger
     );
   }
   for (const fragment of [
-    /AI 可帮助把语音转成文字/,
-    /AI 可能听错或说错/,
-    /所有孩子资料及其已保存的数据/,
-    /学习模式只会通过“切换到学习模式”更改/,
-    /“和 Peppa 聊天”/,
-    /Parrot 不会把这些活动的音频保存到账户中/,
-    /童谣配音会保存这位孩子的私密配音片段/,
-    /课程会为每个跟读时刻保存一个私密语音片段/,
-    /以前创建过私密故事图片的账户/,
-    /原始照片不会被保存/,
-    /外部 AI 和语音服务/,
-    /删除账户会移除账户、所有孩子资料及其已保存的数据/,
+    /用于故障排查的版本和 AI 服务/,
+    /当前服务包括用于托管的 Cloudflare/,
     /永久删除此账户及其已保存的孩子数据/,
   ]) {
     assert.match(document.body.textContent, fragment);
   }
+  assert.doesNotMatch(
+    document.body.textContent,
+    /AI 与已保存的数据|Parrot 如何使用 AI|此账户保存什么|你可以做什么/,
+  );
   assert.doesNotMatch(document.body.textContent, /佩奇/);
   assert.ok(button("删除账户"));
 });
@@ -306,8 +293,9 @@ test("technical failure is catalogued and retranslates without another request",
   };
   await mountStrict(languageHarness(createElement(AccountPrivacySections)));
   const failure = await waitFor(() => {
-    const candidate = [...document.querySelectorAll("p")].find((paragraph) =>
-      /无法加载技术详情/.test(paragraph.textContent ?? ""),
+    const candidate = [...document.querySelectorAll("p")].find(
+      (paragraph) =>
+        paragraph.textContent === "无法加载技术详情。请稍后重试。",
     );
     assert.ok(candidate);
     return candidate;
@@ -315,6 +303,9 @@ test("technical failure is catalogued and retranslates without another request",
   assert.doesNotMatch(document.body.textContent, /SERVER BUILD SENTENCE/);
   const settledFetchCount = fetchCount;
   await click(button("English"));
-  assert.match(failure.textContent, /Technical details could not load/);
+  assert.equal(
+    failure.textContent,
+    "Technical details could not load. Please try again later.",
+  );
   assert.equal(fetchCount, settledFetchCount);
 });

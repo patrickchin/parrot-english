@@ -67,13 +67,11 @@ export const chineseGuardianMessages = {
     learnerProfilesDescription:
       "添加、编辑或删除孩子资料。切换到学习模式时，你需要选择一位孩子。",
     manageLearners: "管理孩子",
-    learningContentTitle: "学习与内容",
     voiceDubbingTitle: "配音管理",
     voiceDubbingDescription: "查看和删除私密的童谣配音片段。",
     manageVoiceDubbing: "管理配音",
     accountPrivacyTitle: "账户与隐私",
-    accountPrivacyDescription:
-      "查看 AI 的使用方式、Parrot 保存的内容以及账户删除选项。",
+    accountPrivacyDescription: "查看技术构建详情和可用的账户操作。",
     openAccountPrivacy: "打开账户与隐私",
   },
   dubbingSettings: {
@@ -107,32 +105,6 @@ export const chineseGuardianMessages = {
   accountPrivacy: {
     backToDashboard: "返回家长中心",
     title: "账户与隐私",
-    aiDataTitle: "AI 与已保存的数据",
-    aiUseTitle: "Parrot 如何使用 AI",
-    aiUseBody:
-      "AI 可帮助把语音转成文字、检查口语回答、进行语音对话，并汇总孩子资料。",
-    aiWarning:
-      "AI 可能听错或说错。请检查语音反馈，并在语音对话时陪在孩子身边。",
-    accountKeepsTitle: "此账户保存什么",
-    keepsProfiles:
-      "Parrot 会保存所有孩子资料及其已保存的数据，包括文字形式的对话内容。提前结束的对话也可能保存了文字。",
-    keepsTarget:
-      "在家长设置中选择孩子，只会更改你正在管理哪位孩子的数据。学习模式只会通过“切换到学习模式”更改，并由你选择谁来使用本次会话。",
-    keepsActivityAudio:
-      "语音服务会在“和 Peppa 聊天”、孩子设置及口语检查期间处理音频，但 Parrot 不会把这些活动的音频保存到账户中。",
-    keepsDubbing:
-      "童谣配音会保存这位孩子的私密配音片段。新录音会替换同一句的旧片段，家长可以删除全部已保存片段。",
-    keepsLessons:
-      "课程会为每个跟读时刻保存一个私密语音片段。新录音会替换该时刻的旧录音。Parrot 目前不会为这些片段评分或转写。停止课程录音或删除账户会移除它们。",
-    keepsLessonProfiles: "每位孩子已保存的课程录音都单独管理。",
-    keepsStoryArt:
-      "以前创建过私密故事图片的账户，可能会继续保存已生成的图片，直到对应孩子资料或账户被删除。原始照片不会被保存。",
-    outsideServices: "外部 AI 和语音服务会按照各自的数据保留规则处理部分输入。",
-    actionsTitle: "你可以做什么",
-    actionsBody:
-      "孩子可以随时结束对话。在家长模式中，选择一位孩子即可管理其已保存的资料、课程语音录音和童谣配音片段。",
-    deletionBody:
-      "删除账户会移除账户、所有孩子资料及其已保存的数据，包括对话文字、所有童谣的私密配音片段、课程语音录音和以前保存的私密故事图片。系统会保留一个小型删除标记，防止已删除的私密媒体再次出现。",
     technicalLabel: "技术构建详情",
     technicalTitle: "技术构建详情",
     technicalSubtitle: "用于故障排查的版本和 AI 服务",
@@ -148,8 +120,7 @@ export const chineseGuardianMessages = {
     realtimeModel: "实时语音模型",
     transcriptionModel: "输入转写模型",
     loadingTechnical: "正在加载技术详情…",
-    technicalFailed:
-      "无法加载技术详情。上方有关 AI 和已保存数据的说明仍可查看。",
+    technicalFailed: "无法加载技术详情。请稍后重试。",
     agentMissing: "对话代理尚未报告。开始对话时，它会报告自己的构建信息。",
     matchesWeb: "与网页提交一致",
     differsFromWeb: "与网页应用的提交不同",

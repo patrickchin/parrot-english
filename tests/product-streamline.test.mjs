@@ -323,9 +323,9 @@ test("guardian dashboard localizes all authored navigation in Chinese", () => {
   for (const copy of [
     "孩子资料",
     "管理孩子",
-    "学习与内容",
     "配音管理",
     "账户与隐私",
+    "查看技术构建详情和可用的账户操作。",
   ]) {
     assert.match(html, new RegExp(copy));
   }
@@ -340,9 +340,10 @@ test("guardian dashboard localizes all authored navigation in Chinese", () => {
   ]) {
     assert.doesNotMatch(html, new RegExp(english));
   }
+  assert.doesNotMatch(html, /学习与内容/);
 });
 
-test("guardian dashboard shows only the remaining learning and content cards", () => {
+test("guardian dashboard presents its remaining destinations as peers", () => {
   const html = renderInRouter(
     createElement(GuardianDashboardView, {
       learnerName: "Mia",
@@ -350,20 +351,7 @@ test("guardian dashboard shows only the remaining learning and content cards", (
     }),
     "/guardian",
   );
-  assert.match(
-    html,
-    /<section[^>]*aria-labelledby="learning-content-heading"[^>]*>/,
-  );
-  assert.match(
-    html,
-    /<h2[^>]*id="learning-content-heading"[^>]*>Learning &amp; content<\/h2>/,
-  );
-  assert.deepEqual(
-    [...html.matchAll(/<h[23][^>]*>([^<]+)<\/h[23]>/g)]
-      .map(([, heading]) => heading)
-      .filter((heading) => heading !== "Learning &amp; content"),
-    ["Learner profiles", "Voice dubbing", "Account &amp; privacy"],
-  );
+  assert.doesNotMatch(html, /Learning &amp; content/);
   assert.doesNotMatch(html, /Story settings|Open story settings/);
   assert.doesNotMatch(html, /href="\/guardian\/stories"/);
   assert.doesNotMatch(html, /My Lessons/);
@@ -391,7 +379,7 @@ test("guardian dashboard links a separate account and privacy destination", () =
   assert.match(html, />Open account &amp; privacy<\/a>/);
   assert.match(
     html,
-    /Review how AI is used, what Parrot saves, and account deletion controls/,
+    /View technical build details and available account controls/,
   );
   assert.doesNotMatch(html, /profile dropdown/i);
   assert.match(html, /Switch to learner/);

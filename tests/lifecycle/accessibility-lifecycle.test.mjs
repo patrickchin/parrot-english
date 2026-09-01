@@ -808,7 +808,7 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("keeps account privacy content, dashboard navigation, and deletion on the protected page", async () => {
+  it("keeps account controls, technical details, and dashboard navigation on the protected page", async () => {
     assert.equal(
       typeof AccountPrivacyPage,
       "function",
@@ -866,23 +866,10 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.equal(
-      document.querySelector("h1")?.textContent,
-      "Account & privacy",
-    );
-    assert.match(document.body.textContent, /How Parrot uses AI/);
-    assert.match(document.body.textContent, /What this account keeps/);
-    assert.match(
-      document.body.textContent,
-      /Voice-dubbing rhymes.*private voice clips/i,
-    );
-    assert.match(
-      document.body.textContent,
-      /Learner mode changes only through Switch to learner/,
-    );
+    assert.equal(document.querySelector("h1")?.textContent, "Account & privacy");
     assert.doesNotMatch(
       document.body.textContent,
-      /Use in learner mode|Guardian profile editing can change the selected learner/,
+      /How Parrot uses AI|What this account keeps|What you can do|AI and saved data/,
     );
     assert.match(document.body.textContent, /Technical build details/);
     const deleteAccount = button("Delete account");
@@ -920,7 +907,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(document.body.textContent, /DASHBOARD DESTINATION/);
   });
 
-  it("keeps shared account privacy information while hiding destructive controls", async () => {
+  it("keeps shared account technical details while hiding destructive controls", async () => {
     const deletionCalls = [];
     const client = authClientForHeader();
     client.useSession = () => ({
@@ -964,12 +951,11 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.equal(
-      document.querySelector("h1")?.textContent,
-      "Account & privacy",
+    assert.equal(document.querySelector("h1")?.textContent, "Account & privacy");
+    assert.doesNotMatch(
+      document.body.textContent,
+      /How Parrot uses AI|What this account keeps|What you can do|AI and saved data/,
     );
-    assert.match(document.body.textContent, /How Parrot uses AI/);
-    assert.match(document.body.textContent, /What this account keeps/);
     assert.match(document.body.textContent, /Technical build details/);
     assert.doesNotMatch(document.body.textContent, /Danger zone/);
     assert.equal(

@@ -71,14 +71,13 @@ export const englishGuardianMessages = {
     learnerProfilesDescription:
       "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
     manageLearners: "Manage learners",
-    learningContentTitle: "Learning & content",
     voiceDubbingTitle: "Voice dubbing",
     voiceDubbingDescription:
       "Review and delete private nursery-rhyme voice clips.",
     manageVoiceDubbing: "Manage voice dubbing",
     accountPrivacyTitle: "Account & privacy",
     accountPrivacyDescription:
-      "Review how AI is used, what Parrot saves, and account deletion controls.",
+      "View technical build details and available account controls.",
     openAccountPrivacy: "Open account & privacy",
   },
   dubbingSettings: {
@@ -116,34 +115,6 @@ export const englishGuardianMessages = {
   accountPrivacy: {
     backToDashboard: "Back to Guardian dashboard",
     title: "Account & privacy",
-    aiDataTitle: "AI and saved data",
-    aiUseTitle: "How Parrot uses AI",
-    aiUseBody:
-      "AI helps turn speech into text, check spoken answers, run voice conversations, and summarize learner profiles.",
-    aiWarning:
-      "AI can hear words wrongly or say something wrong. Please check speech feedback and stay nearby during voice chats.",
-    accountKeepsTitle: "What this account keeps",
-    keepsProfiles:
-      "Parrot keeps all learner profiles and their saved data, including conversation words as text. A conversation that ends early may still have saved text.",
-    keepsTarget:
-      "Choosing a learner in Guardian settings changes only which learner’s data you manage. Learner mode changes only through Switch to learner, where you choose who will use the session.",
-    keepsActivityAudio:
-      "Voice services process audio during Talk to Peppa, learner setup, and speech checks, but Parrot does not save that activity audio to the account.",
-    keepsDubbing:
-      "Voice-dubbing rhymes save that learner’s private voice clips to the account. A new take replaces the saved clip for that line, and the Guardian can delete every saved clip.",
-    keepsLessons:
-      "Lessons save one private voice clip for each join-in moment. A new take replaces the previous take for that moment. Parrot does not score or transcribe these clips yet. Stopping lesson recording or deleting the account deletes them.",
-    keepsLessonProfiles:
-      "Saved lesson recordings are managed independently for each selected learner profile.",
-    keepsStoryArt:
-      "Accounts that previously made a private story picture may keep that generated picture until its learner or the account is deleted. The original photo was not stored.",
-    outsideServices:
-      "Outside AI and voice services process some inputs under their own retention rules.",
-    actionsTitle: "What you can do",
-    actionsBody:
-      "A learner can finish a conversation at any time. In Guardian mode, choose a learner to manage their saved details, lesson voice recordings, and nursery-rhyme voice clips.",
-    deletionBody:
-      "Delete account removes the account, all learner profiles and their saved data, including saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and any previously saved private story pictures. A small deletion marker stays so removed private media cannot return.",
     technicalLabel: "Technical build details",
     technicalTitle: "Technical build details",
     technicalSubtitle: "Versions and AI services for troubleshooting",
@@ -160,7 +131,7 @@ export const englishGuardianMessages = {
     transcriptionModel: "Input transcription",
     loadingTechnical: "Loading technical details…",
     technicalFailed:
-      "Technical details could not load. The AI and saved data notes above are still available.",
+      "Technical details could not load. Please try again later.",
     agentMissing:
       "Not reported yet. It reports its build when it starts a conversation.",
     matchesWeb: "Matches the web commit",

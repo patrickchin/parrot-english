@@ -101,7 +101,6 @@ describe("guardian language domain", () => {
     const messages = chineseModule.chineseGuardianMessages;
 
     assert.doesNotMatch(JSON.stringify(messages), /佩奇/);
-    assert.match(messages.accountPrivacy.keepsActivityAudio, /和 Peppa 聊天/);
     assert.match(messages.learners.profile.redoDescription, /Peppa/);
     assert.equal(messages.learners.profile.peppaAlt, "Peppa 微笑");
     assert.equal(messages.learners.setup.peppaAlt, "Peppa 挥手问好");
