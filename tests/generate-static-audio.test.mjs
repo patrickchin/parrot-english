@@ -101,15 +101,15 @@ describe("static audio generator", () => {
   it("runs only catalog check mode before every content-sensitive lifecycle command", () => {
     const expectedHooks = {
       prebuild: [
-        "npm run check:rhyme-catalog",
+        "npm run check:content-catalogs",
         "node scripts/prepare-workers-ci-metadata.mjs",
       ],
-      pretest: ["npm run check:rhyme-catalog"],
-      "pretest:browser": ["npm run check:rhyme-catalog"],
-      "predev:vite": ["npm run check:rhyme-catalog"],
-      prestart: ["npm run check:rhyme-catalog"],
-      "pregenerate:audio:elevenlabs": ["npm run check:rhyme-catalog"],
-      "predeploy:worker": ["npm run check:rhyme-catalog"],
+      pretest: ["npm run check:content-catalogs"],
+      "pretest:browser": ["npm run check:content-catalogs"],
+      "predev:vite": ["npm run check:content-catalogs"],
+      prestart: ["npm run check:content-catalogs"],
+      "pregenerate:audio:elevenlabs": ["npm run check:content-catalogs"],
+      "predeploy:worker": ["npm run check:content-catalogs"],
     };
 
     for (const [hook, expectedCommands] of Object.entries(expectedHooks)) {

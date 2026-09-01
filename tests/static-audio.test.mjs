@@ -161,22 +161,20 @@ describe("static audio cache metadata", () => {
   it("rejects duplicate IDs before static and word-game manifests merge", () => {
     assert.throws(
       () => staticAudio.mergeStaticAudioLineGroups(
-        { "word-game-animals-cat-prompt": { text: "old" } },
-        { "word-game-animals-cat-prompt": { text: "new" } },
+        { "word-game-animals-cat-label": { text: "old" } },
+        { "word-game-animals-cat-label": { text: "new" } },
       ),
-      /Duplicate static audio ID: word-game-animals-cat-prompt/,
+      /Duplicate static audio ID: word-game-animals-cat-label/,
     );
   });
 
   it("keeps exactly the complete decodable word-game file inventory", () => {
     const audioDirectory = new URL("../public/assets/audio/", import.meta.url);
     const files = readdirSync(audioDirectory).filter((filename) => filename.startsWith("word-game-") && filename.endsWith(".mp3")).sort();
-    assert.equal(files.length, 181);
-    assert.equal(files.filter((filename) => filename.endsWith("-label.mp3")).length, 107);
-    assert.equal(files.filter((filename) => filename.endsWith("-prompt.mp3")).length, 36);
-    assert.equal(files.filter((filename) => filename.endsWith("-correct.mp3")).length, 36);
-    assert.ok(files.includes("word-game-retry.mp3"));
-    assert.ok(files.includes("word-game-complete.mp3"));
+    const expectedFiles = WORD_GAME_EXPECTED_AUDIO
+      .map(([id]) => `${id}.mp3`)
+      .sort();
+    assert.deepEqual(files, expectedFiles);
     for (const filename of files) {
       const file = new URL(filename, audioDirectory);
       assert.ok(statSync(file).size > 0, `${filename} is empty`);

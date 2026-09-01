@@ -52,6 +52,18 @@ export type WordGameCategory = Readonly<{
   coverItem: WordGameItem;
 }>;
 
+export type WordGameCategoryDefinition = Readonly<{
+  schemaVersion: number;
+  order: number;
+  id: string;
+  title: string;
+  description: string;
+  theme: string;
+  coverItemId: string;
+  items: readonly WordGameItem[];
+  tiers: readonly WordGameTier[];
+}>;
+
 export type WordGameSelection = Readonly<{
   category: WordGameCategory;
   tier: WordGameTier;
@@ -88,10 +100,12 @@ export const WORD_GAME_SUCCESS_AUDIO = deepFreeze(
   audioLine("narrator-feedback-success", "Great job!"),
 );
 
-const CATEGORY_ITEM_LOOKUPS = new Map<string, ReadonlyMap<string, WordGameItem>>();
-
-export const WORD_GAME_CATEGORIES: readonly WordGameCategory[] = deepFreeze(
-  GENERATED_WORD_GAME_CATALOG.map((definition) => {
+export function createWordGameCatalog(
+  definitions: readonly WordGameCategoryDefinition[],
+) {
+  const categoryItemLookups = new Map<string, ReadonlyMap<string, WordGameItem>>();
+  const categories: readonly WordGameCategory[] = deepFreeze(
+    definitions.map((definition) => {
     const items: WordGameItem[] = definition.items.map((item) => ({
       id: item.id,
       label: item.label,
@@ -100,7 +114,7 @@ export const WORD_GAME_CATEGORIES: readonly WordGameCategory[] = deepFreeze(
       audio: { ...item.audio },
     }));
     const itemsById = new Map(items.map((item) => [item.id, item]));
-    CATEGORY_ITEM_LOOKUPS.set(definition.id, itemsById);
+    categoryItemLookups.set(definition.id, itemsById);
     const coverItem = itemsById.get(definition.coverItemId);
     if (!coverItem) throw new Error(`Missing word-game cover item: ${definition.coverItemId}`);
 
@@ -131,38 +145,76 @@ export const WORD_GAME_CATEGORIES: readonly WordGameCategory[] = deepFreeze(
       })),
       coverItem,
     };
-  }),
-);
-
-const CATEGORIES_BY_ID = new Map(
-  WORD_GAME_CATEGORIES.map((category) => [category.id, category]),
-);
-
-const QUIZZES_BY_CATEGORY_AND_ID = new Map<string, WordGameSelection>();
-for (const category of WORD_GAME_CATEGORIES) {
-  for (const tier of category.tiers) {
-    for (const quiz of tier.quizzes) {
-      QUIZZES_BY_CATEGORY_AND_ID.set(
-        `${category.id}\0${quiz.id}`,
-        Object.freeze({ category, tier, quiz }),
-      );
+    }),
+  );
+  const categoriesById = new Map(
+    categories.map((category) => [category.id, category]),
+  );
+  const quizzesByCategoryAndId = new Map<string, WordGameSelection>();
+  for (const category of categories) {
+    for (const tier of category.tiers) {
+      for (const quiz of tier.quizzes) {
+        quizzesByCategoryAndId.set(
+          `${category.id}\0${quiz.id}`,
+          Object.freeze({ category, tier, quiz }),
+        );
+      }
     }
   }
+
+  return Object.freeze({
+    categories,
+    resolveCategory(categoryId: string | undefined): WordGameCategory | null {
+      return categoryId ? (categoriesById.get(categoryId) ?? null) : null;
+    },
+    resolveQuiz(
+      categoryId: string | undefined,
+      quizId: string | undefined,
+    ): WordGameSelection | null {
+      return categoryId && quizId
+        ? (quizzesByCategoryAndId.get(`${categoryId}\0${quizId}`) ?? null)
+        : null;
+    },
+    buildRounds(
+      selection: WordGameSelection,
+      random: () => number = Math.random,
+    ): readonly WordGameRound[] {
+      const itemsById = categoryItemLookups.get(selection.category.id);
+      if (!itemsById) {
+        throw new Error(`Missing word-game category items: ${selection.category.id}`);
+      }
+
+      return deepFreeze(selection.quiz.questions.map((question) => {
+        const target = itemsById.get(question.targetId);
+        const choices = question.choiceIds.map((itemId) => itemsById.get(itemId));
+        if (!target || choices.some((choice) => !choice)) {
+          throw new Error(`Missing word-game item for question: ${question.id}`);
+        }
+        return {
+          question,
+          target,
+          choices: shuffled(choices as WordGameItem[], random),
+        };
+      }));
+    },
+  });
 }
+
+const WORD_GAME_CATALOG = createWordGameCatalog(GENERATED_WORD_GAME_CATALOG);
+
+export const WORD_GAME_CATEGORIES = WORD_GAME_CATALOG.categories;
 
 export function resolveWordGameCategory(
   categoryId: string | undefined,
 ): WordGameCategory | null {
-  return categoryId ? (CATEGORIES_BY_ID.get(categoryId) ?? null) : null;
+  return WORD_GAME_CATALOG.resolveCategory(categoryId);
 }
 
 export function resolveWordGameQuiz(
   categoryId: string | undefined,
   quizId: string | undefined,
 ): WordGameSelection | null {
-  return categoryId && quizId
-    ? (QUIZZES_BY_CATEGORY_AND_ID.get(`${categoryId}\0${quizId}`) ?? null)
-    : null;
+  return WORD_GAME_CATALOG.resolveQuiz(categoryId, quizId);
 }
 
 export function getWordGameCategoryRoute(categoryId: string): string {
@@ -190,19 +242,5 @@ export function buildWordGameRounds(
   selection: WordGameSelection,
   random: () => number = Math.random,
 ): readonly WordGameRound[] {
-  const itemsById = CATEGORY_ITEM_LOOKUPS.get(selection.category.id);
-  if (!itemsById) throw new Error(`Missing word-game category items: ${selection.category.id}`);
-
-  return deepFreeze(selection.quiz.questions.map((question) => {
-    const target = itemsById.get(question.targetId);
-    const choices = question.choiceIds.map((itemId) => itemsById.get(itemId));
-    if (!target || choices.some((choice) => !choice)) {
-      throw new Error(`Missing word-game item for question: ${question.id}`);
-    }
-    return {
-      question,
-      target,
-      choices: shuffled(choices as WordGameItem[], random),
-    };
-  }));
+  return WORD_GAME_CATALOG.buildRounds(selection, random);
 }

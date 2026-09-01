@@ -199,11 +199,11 @@ function deploymentWorkflowWithCheckSetting(context, setting) {
   const workflowPath = join(root, "deploy-cloudflare.yml");
   const workflow = readFileSync(deploymentUrl, "utf8");
   const variant = workflow.replace(
-    "      - name: Check generated nursery rhyme catalog\n"
-      + "        run: npm run check:rhyme-catalog",
-    "      - name: Check generated nursery rhyme catalog\n"
+    "      - name: Check generated content catalogs\n"
+      + "        run: npm run check:content-catalogs",
+    "      - name: Check generated content catalogs\n"
       + `        ${setting}\n`
-      + "        run: npm run check:rhyme-catalog",
+      + "        run: npm run check:content-catalogs",
   );
   assert.notEqual(variant, workflow, "Expected to mutate the catalog-check step.");
   writeFileSync(workflowPath, variant);
@@ -243,10 +243,10 @@ test("pull requests install FFmpeg before media integrity tests run", () => {
   assert.ok(installIndex < testIndex, "Expected FFmpeg before npm test.");
 });
 
-test("deployment checks generated rhyme content after FFmpeg and before publishing media", () => {
+test("deployment checks all generated content after FFmpeg and before publishing media", () => {
   const steps = workflowSteps(deploymentUrl);
   const installIndex = stepRunning(steps, "sudo apt-get install --yes ffmpeg");
-  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  const checkIndex = stepRunning(steps, "npm run check:content-catalogs");
   const publishIndex = stepRunning(steps, "npm run publish:static-media -- --apply");
 
   assert.notEqual(installIndex, -1, "Expected FFmpeg installation before catalog checks.");
@@ -269,8 +269,8 @@ test("unnamed following steps do not lend their conditions to the catalog check"
     writeFileSync(workflowPath, `jobs:
   deploy:
     steps:
-      - name: Check generated nursery rhyme catalog
-        run: npm run check:rhyme-catalog
+      - name: Check generated content catalogs
+        run: npm run check:content-catalogs
 ${step}
         if: false
         with:
@@ -281,7 +281,7 @@ ${step}
 `);
 
     const steps = workflowSteps(workflowPath);
-    const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+    const checkIndex = stepRunning(steps, "npm run check:content-catalogs");
     assert.notEqual(checkIndex, -1, syntax);
     assertRequiredWorkflowStep(steps[checkIndex], `${syntax} generated-catalog check`);
     assert.equal(steps.length, 2, `Expected exact-indent ${syntax} workflow steps.`);
@@ -292,7 +292,7 @@ test("deployment guard rejects a conditional generated-catalog check", (context)
   const steps = workflowSteps(
     deploymentWorkflowWithCheckSetting(context, "if: false"),
   );
-  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  const checkIndex = stepRunning(steps, "npm run check:content-catalogs");
   assert.notEqual(checkIndex, -1);
 
   assert.throws(
@@ -305,7 +305,7 @@ test("deployment guard rejects a non-fatal generated-catalog check", (context) =
   const steps = workflowSteps(
     deploymentWorkflowWithCheckSetting(context, "continue-on-error: true"),
   );
-  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  const checkIndex = stepRunning(steps, "npm run check:content-catalogs");
   assert.notEqual(checkIndex, -1);
 
   assert.throws(
