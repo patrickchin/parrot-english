@@ -253,6 +253,14 @@ export function getWordGameQuizRoute(categoryId: string, quizId: string): string
   return `${getWordGameCategoryRoute(categoryId)}/${quizId}`;
 }
 
+export function getWordGameQuizDisplayName({
+  category,
+  tier,
+  quiz,
+}: WordGameSelection): string {
+  return `Level ${category.tiers.indexOf(tier) + 1} · Quiz ${tier.quizzes.indexOf(quiz) + 1}`;
+}
+
 function shuffled<T>(values: readonly T[], random: () => number): readonly T[] {
   const result = [...values];
   for (let index = result.length - 1; index > 0; index -= 1) {
