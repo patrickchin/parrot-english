@@ -553,14 +553,14 @@ for (const viewport of [
       });
       const action = page.getByRole("button", { name: state.action });
 
+      await expect(pageHeading).toBeVisible();
+      await expect(stateHeading).toBeVisible();
       const headerBoxes = await Promise.all([back, account].map(visibleBox));
       for (const box of headerBoxes) {
         expect(box.x).toBeGreaterThanOrEqual(0);
         expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
       }
       expect(boxesOverlap(headerBoxes[0], headerBoxes[1])).toBe(false);
-      await expect(pageHeading).toBeVisible();
-      await expect(stateHeading).toBeVisible();
       await action.scrollIntoViewIfNeeded();
       const actionBox = await visibleBox(action);
       expect(actionBox.x).toBeGreaterThanOrEqual(0);

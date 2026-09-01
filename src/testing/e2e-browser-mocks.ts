@@ -3143,6 +3143,7 @@ class MockAudioElement {
       (this.lessonCue &&
         (lessonScenario === "held-cue" ||
           lessonScenario === "held-cue-no-consent" ||
+          lessonScenario === "consent-error" ||
           lessonScenario === "malformed-consent")) ||
       (!this.lessonCue &&
         (lessonScenario === "held-story" ||
