@@ -352,7 +352,7 @@ describe("duck dub playback", () => {
     );
   });
 
-  it("schedules generated role notes, count clicks, and the eligible outro exactly once", async () => {
+  it("schedules generated role notes, full-gain count clicks, and the eligible outro exactly once", async () => {
     const line = {
       cueMs: 800,
       durationMs: 1_000,
@@ -413,7 +413,8 @@ describe("duck dub playback", () => {
       requestAnimationFrame: raf.requestAnimationFrame,
     });
 
-    const oscillators = audio.contexts[0].oscillators;
+    const context = audio.contexts[0];
+    const oscillators = context.oscillators;
     assert.equal(dubPlayback.DUB_COUNT_CLICK_DURATION_MS, 200);
     assert.deepEqual(oscillators.map(({ type }) => type), [
       "sine", "sine", "triangle", "sine", "sine",
@@ -425,6 +426,9 @@ describe("duck dub playback", () => {
       oscillators.map(({ connections }) => connections[0].gain.events[1][1]),
       [0.35, 0.35, 0.78, 0.24, 0.24],
     );
+    const [master] = context.gains;
+    assert.ok(oscillators.slice(0, 2).every(({ connections }) =>
+      connections[0].connections.includes(master)));
     assert.deepEqual(
       oscillators.map(({ stopTimes }) => Number(stopTimes[0].toFixed(2))),
       [10.32, 10.72, 11.17, 11.52, 12.12],
@@ -876,17 +880,17 @@ describe("duck dub playback", () => {
     ]);
     assert.ok(accompaniment);
     assert.deepEqual(gainEvents(accompaniment.connections[0]), [
-      ["set", 0.24, 10.8],
-      ["ramp", 0, 12.4],
+      ["set", 0.24, 11.6],
+      ["ramp", 0, 13.2],
     ]);
     assert.deepEqual(gainEvents(melody[0].connections[0]), [
-      ["set", 0.78, 10.8],
-      ["ramp", 0, 11.3],
+      ["set", 0.78, 11.6],
+      ["ramp", 0, 12.1],
     ]);
     assert.deepEqual(gainEvents(melody[1].connections[0]), [
-      ["set", 0, 11.3],
-      ["ramp", 0.78, 11.32],
-      ["ramp", 0, 11.8],
+      ["set", 0, 12.1],
+      ["ramp", 0.78, 12.12],
+      ["ramp", 0, 12.6],
     ]);
   });
 
@@ -1457,7 +1461,7 @@ describe("duck dub playback", () => {
     }
   });
 
-  it("ends full Old MacDonald at the exact 162-second boundary", async () => {
+  it("ends full Old MacDonald at the exact 162.8-second boundary", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const ticks = [];
@@ -1474,18 +1478,18 @@ describe("duck dub playback", () => {
     });
 
     const context = audio.contexts[0];
-    context.currentTime = 172.119;
+    context.currentTime = 172.919;
     raf.runNext();
 
-    assert.deepEqual(ticks, [161_999]);
+    assert.deepEqual(ticks, [162_799]);
     assert.equal(ended, 0);
     assert.equal(context.closeCalls, 0);
     assert.equal(raf.callbacks.size, 1);
 
-    context.currentTime = 172.121;
+    context.currentTime = 172.921;
     raf.runNext();
 
-    assert.deepEqual(ticks.map(Math.round), [161_999, 162_001]);
+    assert.deepEqual(ticks.map(Math.round), [162_799, 162_801]);
     assert.equal(ended, 1);
     assert.equal(context.closeCalls, 1);
     assert.equal(raf.callbacks.size, 0);

@@ -66,6 +66,12 @@ function expandedSnapshotCatalog() {
   }));
 }
 
+function wordCues(line) {
+  return line.words.map(({ atMs, durationMs, endOffset, startOffset }) => [
+    line.text.slice(startOffset, endOffset), atMs, durationMs,
+  ]);
+}
+
 const NEW_RHYMES = [
   {
     definition: TWINKLE_TWINKLE_DUB,
@@ -161,7 +167,7 @@ describe("rhyme catalog", () => {
     assertDeeplyFrozen(DUB_DEFINITIONS);
 
     for (const definition of DUB_DEFINITIONS) {
-      assert.equal(definition.countInBeats, 2);
+      assert.equal(definition.countInBeats, definition === OLD_MACDONALD_DUB ? 4 : 2);
       assert.ok(Number.isInteger(definition.countInMidi));
       assert.equal(definition.music.countInDurationMs, definition.lines[0].cueMs);
       assert.equal(definition.music.linePhrases.length, definition.lines.length);
@@ -299,17 +305,86 @@ describe("rhyme catalog", () => {
   });
 
   it("aligns every Old MacDonald scene to its traditional musical phrases", () => {
-    assert.equal(OLD_MACDONALD_DUB.durationMs, 162_000);
+    assert.equal(OLD_MACDONALD_DUB.countInBeats, 4);
+    assert.equal(OLD_MACDONALD_DUB.music.countInBeatMs, 400);
+    assert.equal(OLD_MACDONALD_DUB.music.countInDurationMs, 1_600);
+    assert.equal(OLD_MACDONALD_DUB.lines[0].cueMs, 1_600);
+    assert.equal(OLD_MACDONALD_DUB.durationMs, 162_800);
     assert.equal(OLD_MACDONALD_DUB.finalCueTailMs, 9_200);
     assert.deepEqual(
-      OLD_MACDONALD_DUB.lines.slice(0, 7).map(({ cueMs }) => cueMs - 800),
+      OLD_MACDONALD_DUB.lines.slice(0, 7).map(({ cueMs }) => cueMs - 1_600),
       [0, 8_000, 16_000, 18_000, 20_000, 22_000, 24_000],
     );
     assert.deepEqual(
       Array.from({ length: 5 }, (_, sceneIndex) =>
         OLD_MACDONALD_DUB.lines[sceneIndex * 7].cueMs),
-      [800, 32_800, 64_800, 96_800, 128_800],
+      [1_600, 33_600, 65_600, 97_600, 129_600],
     );
+  });
+
+  it("maps every repeated Old MacDonald opening phrase to its melody note onsets", () => {
+    const expected = [
+      ["Old", 0, 500],
+      ["MacDonald", 500, 1_500],
+      ["had", 2_000, 500],
+      ["a", 2_500, 500],
+      ["farm", 3_000, 1_000],
+      ["E-I-E-I-O", 4_000, 3_500],
+    ];
+
+    for (const index of [0, 6, 7, 13, 14, 20, 21, 27, 28, 34]) {
+      assert.deepEqual(wordCues(OLD_MACDONALD_DUB.lines[index]), expected);
+    }
+  });
+
+  it("maps every Old MacDonald animal-introduction phrase to its melody note onsets", () => {
+    const expectedAnimals = [
+      [1, "some", "cows"],
+      [8, "some", "ducks"],
+      [15, "some", "pigs"],
+      [22, "a", "dog"],
+      [29, "some", "sheep"],
+    ];
+
+    for (const [index, article, animal] of expectedAnimals) {
+      assert.deepEqual(wordCues(OLD_MACDONALD_DUB.lines[index]), [
+        ["And", 0, 500],
+        ["on", 500, 500],
+        ["his", 1_000, 500],
+        ["farm", 1_500, 500],
+        ["he", 2_000, 500],
+        ["had", 2_500, 500],
+        [article, 3_000, 500],
+        [animal, 3_500, 500],
+        ["E-I-E-I-O", 4_000, 3_500],
+      ]);
+    }
+  });
+
+  it("maps every Old MacDonald everywhere phrase to its melody note onsets", () => {
+    const expectedAnimals = ["moo-moo", "quack-quack", "snort-snort", "woof-woof", "baa-baa"];
+
+    for (const [sceneIndex, animal] of expectedAnimals.entries()) {
+      assert.deepEqual(wordCues(OLD_MACDONALD_DUB.lines[sceneIndex * 7 + 5]), [
+        ["Everywhere", 0, 1_000],
+        ["a", 1_000, 500],
+        [animal, 1_500, 500],
+      ]);
+    }
+  });
+
+  it("gives every highlighted Old MacDonald word an audible melody onset", () => {
+    for (const [lineIndex, line] of OLD_MACDONALD_DUB.lines.entries()) {
+      const noteOnsets = new Set(
+        OLD_MACDONALD_DUB.music.linePhrases[lineIndex].notes.map(({ atMs }) => atMs),
+      );
+      for (const word of wordCues(line)) {
+        assert.ok(
+          noteOnsets.has(word[1]),
+          `line ${lineIndex + 1} highlights ${JSON.stringify(word[0])} at ${word[1]}ms without a melody onset`,
+        );
+      }
+    }
   });
 
   it("resolves every canonical line to its one authored recording phrase", () => {
