@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
-import { act, createElement, useState } from "react";
+import { act, createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import test from "node:test";
@@ -47,9 +47,10 @@ const detailsModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerDetails.tsx")
   .catch(() => ({}));
 const { GuardianLearnerDetails } = detailsModule;
-const { LearnerSelectionProvider } = await vite.ssrLoadModule(
-  "/src/learner-profile/LearnerProfileContext.tsx",
-);
+const { LearnerSelectionProvider, useLearnerSelection } =
+  await vite.ssrLoadModule(
+    "/src/learner-profile/LearnerProfileContext.tsx",
+  );
 const mia = {
   age: 6,
   createdAt: "2026-08-25T08:00:00.000Z",
@@ -273,50 +274,11 @@ function managerHarness({
   );
 }
 
-function RevisionManagerHarness({ deleteLearner }) {
-  const [rosterRevision, setRosterRevision] = useState(0);
-  return createElement(
-    "div",
-    null,
-    createElement(GuardianLanguageControl),
-    createElement(
-      LearnerSelectionProvider,
-      {
-        activeProfileId: mia.id,
-        async createAndSelectLearner() {
-          throw new Error("Learner management must not select a learner.");
-        },
-        async deleteLearner(profileId) {
-          const nextRoster = await deleteLearner(profileId);
-          setRosterRevision((current) => current + 1);
-          return nextRoster;
-        },
-        async reloadSelectedLearner() {
-          return fullProfile(mia);
-        },
-        rosterRevision,
-        async selectLearner() {
-          throw new Error("Learner management must not select a learner.");
-        },
-      },
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/guardian/learners"] },
-        createElement(GuardianLearnerProfiles),
-      ),
-    ),
-    createElement(
-      "button",
-      {
-        onClick: () => setRosterRevision((current) => current + 1),
-        type: "button",
-      },
-      "Publish unrelated roster revision",
-    ),
-  );
-}
-
-function identityGateHarness({ guardianAccessMode, guardianRoute }) {
+function learnerGateHarness({
+  children = createElement("p", null, "SAFE CONTENT"),
+  guardianAccessMode,
+  guardianRoute,
+}) {
   return createElement(
     AccountActionProvider,
     {
@@ -343,7 +305,24 @@ function identityGateHarness({ guardianAccessMode, guardianRoute }) {
         onRedoLearnerProfileRoute() {},
         redoLearnerProfile: false,
       },
-      createElement("p", null, "SAFE CONTENT"),
+      children,
+    ),
+  );
+}
+
+function RealGateLearnerManager() {
+  const { selectLearner } = useLearnerSelection();
+  return createElement(
+    "div",
+    null,
+    createElement(GuardianLearnerProfiles),
+    createElement(
+      "button",
+      {
+        onClick: () => void selectLearner(mia.id),
+        type: "button",
+      },
+      "Select current learner again",
     ),
   );
 }
@@ -648,38 +627,75 @@ test("deletes through learner context and applies the authoritative roster", asy
   });
 });
 
-test("keeps a deleted status through its authoritative roster revision only", async () => {
+test("keeps a deleted status through real Gate mutation revisions only", async () => {
   const remaining = roster(mia.id, [mia]);
   const heldRefresh = deferred();
-  let holdPostDeleteRefresh = false;
+  let deleteRequests = 0;
+  let learnerReads = 0;
   let postDeleteRosterReads = 0;
+  let selectionRequests = 0;
+  let deletionSettled = false;
   globalThis.fetch = async (input, init = {}) => {
-    assert.equal(String(input), "/api/learner-profiles");
-    assert.equal(init.method, "GET");
-    if (!holdPostDeleteRefresh) return Response.json(roster());
-    postDeleteRosterReads += 1;
-    if (postDeleteRosterReads === 1) return heldRefresh.promise;
-    return Response.json(remaining);
+    const path = String(input);
+    if (path === "/api/learner-profile" && init.method === "GET") {
+      learnerReads += 1;
+      return Response.json(completedGateState());
+    }
+    if (path === "/api/learner-profiles" && init.method === "GET") {
+      if (!deletionSettled) return Response.json(roster());
+      postDeleteRosterReads += 1;
+      return postDeleteRosterReads === 1
+        ? heldRefresh.promise
+        : Response.json(remaining);
+    }
+    if (
+      path === "/api/learner-profiles/learner-noah" &&
+      init.method === "DELETE"
+    ) {
+      deleteRequests += 1;
+      deletionSettled = true;
+      return Response.json(remaining);
+    }
+    if (
+      path === "/api/learner-profiles/learner-mia/active" &&
+      init.method === "PUT"
+    ) {
+      selectionRequests += 1;
+      return Response.json(remaining);
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
 
   const container = await mountStrict(
     createElement(
       GuardianLanguageProvider,
       { initialLanguage: "en", storage: null },
-      createElement(RevisionManagerHarness, {
-        async deleteLearner(profileId) {
-          assert.equal(profileId, noah.id);
-          return remaining;
-        },
-      }),
+      createElement(
+        "div",
+        null,
+        createElement(GuardianLanguageControl),
+        createElement(
+          MemoryRouter,
+          { initialEntries: ["/guardian/learners"] },
+          learnerGateHarness({
+            children: createElement(RealGateLearnerManager),
+            guardianAccessMode: "guardian",
+            guardianRoute: true,
+          }),
+        ),
+      ),
     ),
   );
 
-  await waitFor(() => button(container, "Delete Noah"));
-  holdPostDeleteRefresh = true;
+  await waitFor(() =>
+    assert.equal(button(container, "Delete Noah").closest("[inert]"), null),
+  );
   await click(button(container, "Delete Noah"));
   await click(button(container.querySelector('[role="dialog"]'), "Delete Noah"));
-  await waitFor(() => assert.equal(postDeleteRosterReads, 1));
+  await waitFor(() => {
+    assert.equal(deleteRequests, 1);
+    assert.equal(postDeleteRosterReads, 1);
+  });
   await act(async () => heldRefresh.resolve(Response.json(remaining)));
   await waitFor(() => {
     assert.equal(container.querySelector('[role="dialog"]'), null);
@@ -695,9 +711,12 @@ test("keeps a deleted status through its authoritative roster revision only", as
     "Noah 已删除。",
   );
 
-  await click(button(container, "Publish unrelated roster revision"));
+  await click(button(container, "Select current learner again"));
   await waitFor(() => {
+    assert.equal(deleteRequests, 1);
+    assert.equal(selectionRequests, 1);
     assert.equal(postDeleteRosterReads, 2);
+    assert.ok(learnerReads >= 2);
     assert.equal(
       container.querySelector('main [role="status"]')?.textContent.trim(),
       "",
@@ -732,7 +751,7 @@ test("retranslates stable Guardian learner identity checking and recovery", asyn
         "div",
         null,
         createElement(GuardianLanguageControl),
-        identityGateHarness({
+        learnerGateHarness({
           guardianAccessMode: "guardian",
           guardianRoute: true,
         }),
@@ -795,7 +814,7 @@ test("keeps learner-route identity recovery English under a Chinese preference",
         "div",
         null,
         createElement(GuardianLanguageControl),
-        identityGateHarness({
+        learnerGateHarness({
           guardianAccessMode: "learner",
           guardianRoute: false,
         }),
