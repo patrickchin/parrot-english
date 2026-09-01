@@ -310,6 +310,298 @@ describe("Worker authentication", () => {
     }
   });
 
+  it("blocks account-wide session management for shared guests without revoking either session", async () => {
+    const state = createTestD1Database();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      const worker = createTestWorker();
+      const env = createAuthEnvironment({ DB: state.d1 });
+      const signIn = async () =>
+        worker.fetch(
+          new Request("https://example.test/api/auth/sign-in/shared-guest", {
+            body: "{}",
+            headers: {
+              "cf-connecting-ip": "192.0.2.4",
+              "content-type": "application/json",
+              origin: "https://example.test",
+              "x-captcha-response": "valid-turnstile-proof",
+            },
+            method: "POST",
+          }),
+          env,
+        );
+      const first = await signIn();
+      const second = await signIn();
+      const firstCookie = first.headers.get("set-cookie");
+      const secondBody = await second.json();
+      assert.ok(firstCookie);
+
+      const statuses = [];
+      for (const [pathname, method, body] of [
+        ["/api/auth/list-sessions", "GET", undefined],
+        [
+          "/api/auth/revoke-session",
+          "POST",
+          JSON.stringify({ token: secondBody.token }),
+        ],
+        ["/api/auth/revoke-other-sessions", "POST", "{}"],
+        ["/api/auth/revoke-sessions", "POST", "{}"],
+      ]) {
+        const response = await worker.fetch(
+          new Request(`https://example.test${pathname}`, {
+            body,
+            headers: {
+              "cf-connecting-ip": "192.0.2.4",
+              cookie: firstCookie,
+              "content-type": "application/json",
+              origin: "https://example.test",
+            },
+            method,
+          }),
+          env,
+        );
+        statuses.push(response.status);
+      }
+
+      assert.deepEqual(statuses, [403, 403, 403, 403]);
+      assert.equal(
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM session WHERE user_id = ?",
+          )
+          .get(SHARED_GUEST_USER_ID).count,
+        2,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
+    }
+  });
+
+  it("preserves Better Auth authorization for anonymous session-management requests", async () => {
+    const state = createTestD1Database();
+    try {
+      const worker = createTestWorker();
+      const env = createAuthEnvironment({ DB: state.d1 });
+
+      for (const [pathname, method, body] of [
+        ["/api/auth/list-sessions", "GET", undefined],
+        [
+          "/api/auth/revoke-session",
+          "POST",
+          JSON.stringify({ token: "not-a-session-token" }),
+        ],
+        ["/api/auth/revoke-other-sessions", "POST", "{}"],
+        ["/api/auth/revoke-sessions", "POST", "{}"],
+      ]) {
+        const response = await worker.fetch(
+          new Request(`https://example.test${pathname}`, {
+            body,
+            headers: {
+              "cf-connecting-ip": "192.0.2.7",
+              "content-type": "application/json",
+              origin: "https://example.test",
+            },
+            method,
+          }),
+          env,
+        );
+        assert.equal(response.status, 401, pathname);
+      }
+    } finally {
+      state.close();
+    }
+  });
+
+  it("preserves Better Auth session management for registered accounts", async () => {
+    const state = createTestD1Database();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      const worker = createTestWorker();
+      const env = createAuthEnvironment({ DB: state.d1 });
+      const signUp = await worker.fetch(
+        new Request("https://example.test/api/auth/sign-up/email", {
+          body: JSON.stringify({
+            email: "mary@example.test",
+            name: "Mary",
+            password: "registered-password",
+          }),
+          headers: {
+            "cf-connecting-ip": "192.0.2.5",
+            "content-type": "application/json",
+            origin: "https://example.test",
+            "x-captcha-response": "valid-turnstile-proof",
+          },
+          method: "POST",
+        }),
+        env,
+      );
+      assert.equal(signUp.status, 200);
+      const cookie = signUp.headers.get("set-cookie");
+      assert.ok(cookie);
+
+      const list = await worker.fetch(
+        new Request("https://example.test/api/auth/list-sessions", {
+          headers: {
+            "cf-connecting-ip": "192.0.2.5",
+            cookie,
+            origin: "https://example.test",
+          },
+        }),
+        env,
+      );
+      assert.equal(list.status, 200);
+      assert.equal((await list.json()).length, 1);
+
+      for (const [pathname, body] of [
+        ["/api/auth/revoke-session", { token: "not-a-session-token" }],
+        ["/api/auth/revoke-other-sessions", {}],
+        ["/api/auth/revoke-sessions", {}],
+      ]) {
+        const response = await worker.fetch(
+          new Request(`https://example.test${pathname}`, {
+            body: JSON.stringify(body),
+            headers: {
+              "cf-connecting-ip": "192.0.2.5",
+              cookie,
+              "content-type": "application/json",
+              origin: "https://example.test",
+            },
+            method: "POST",
+          }),
+          env,
+        );
+        assert.equal(response.status, 200, pathname);
+        assert.deepEqual(await response.json(), { status: true }, pathname);
+      }
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
+    }
+  });
+
+  it("ordinary shared sign-out revokes only the caller session", async () => {
+    const state = createTestD1Database();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      const worker = createTestWorker();
+      const env = createAuthEnvironment({ DB: state.d1 });
+      const signIn = async () =>
+        worker.fetch(
+          new Request("https://example.test/api/auth/sign-in/shared-guest", {
+            body: "{}",
+            headers: {
+              "cf-connecting-ip": "192.0.2.6",
+              "content-type": "application/json",
+              origin: "https://example.test",
+              "x-captcha-response": "valid-turnstile-proof",
+            },
+            method: "POST",
+          }),
+          env,
+        );
+      const first = await signIn();
+      const second = await signIn();
+      const firstCookie = first.headers.get("set-cookie");
+      const secondCookie = second.headers.get("set-cookie");
+      const secondBody = await second.json();
+      assert.ok(firstCookie);
+      assert.ok(secondCookie);
+
+      const secondSession = state.sqlite
+        .prepare("SELECT id FROM session WHERE token = ?")
+        .get(secondBody.token);
+      state.sqlite
+        .prepare(
+          `INSERT INTO session_learner_selection
+            (session_id, auth_user_id, learner_profile_id)
+           VALUES (?, ?, 'shared-guest-sam')`,
+        )
+        .run(secondSession.id, SHARED_GUEST_USER_ID);
+
+      const signOut = await worker.fetch(
+        new Request("https://example.test/api/auth/sign-out", {
+          body: "{}",
+          headers: {
+            "cf-connecting-ip": "192.0.2.6",
+            cookie: firstCookie,
+            "content-type": "application/json",
+            origin: "https://example.test",
+          },
+          method: "POST",
+        }),
+        env,
+      );
+      assert.equal(signOut.status, 200);
+      assert.deepEqual(await signOut.json(), { success: true });
+      assert.deepEqual(
+        {
+          ...state.sqlite
+            .prepare(
+              `SELECT session.token, selection.learner_profile_id
+                 FROM session
+                 LEFT JOIN session_learner_selection AS selection
+                   ON selection.session_id = session.id
+                WHERE session.user_id = ?`,
+            )
+            .get(SHARED_GUEST_USER_ID),
+        },
+        {
+          learner_profile_id: "shared-guest-sam",
+          token: secondBody.token,
+        },
+      );
+
+      const firstSession = await worker.fetch(
+        new Request("https://example.test/api/auth/get-session", {
+          headers: {
+            "cf-connecting-ip": "192.0.2.6",
+            cookie: firstCookie,
+          },
+        }),
+        env,
+      );
+      const secondSessionResponse = await worker.fetch(
+        new Request("https://example.test/api/auth/get-session", {
+          headers: {
+            "cf-connecting-ip": "192.0.2.6",
+            cookie: secondCookie,
+          },
+        }),
+        env,
+      );
+      assert.equal(await firstSession.json(), null);
+      assert.equal(
+        (await secondSessionResponse.json()).user.id,
+        SHARED_GUEST_USER_ID,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
+    }
+  });
+
   it("contains shared guest sign-in when the seed user is absent", async () => {
     const state = createTestD1Database();
     const originalFetch = globalThis.fetch;

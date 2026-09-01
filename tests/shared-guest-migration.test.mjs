@@ -69,6 +69,16 @@ test("seeds one reusable shared guest identity without credentials", () => {
       ({ name }) => name === "0019_shared_guest_account.sql",
     );
     assert.ok(seed);
+    database
+      .prepare("UPDATE user SET name = 'Mary' WHERE id = ?")
+      .run(SHARED_GUEST_USER_ID);
+    database
+      .prepare(
+        `UPDATE learner_profile
+            SET name = 'Rose', story_level = 'tiny-stories'
+          WHERE id = ?`,
+      )
+      .run(SHARED_GUEST_LEARNER_ID);
     const beforeReplay = {
       profile: {
         ...database
@@ -82,22 +92,23 @@ test("seeds one reusable shared guest identity without credentials", () => {
       },
     };
     database.exec(seed.sql);
-    assert.deepEqual(
-      {
-        ...database
-          .prepare("SELECT * FROM user WHERE id = ?")
-          .get(SHARED_GUEST_USER_ID),
-      },
-      beforeReplay.user,
-    );
-    assert.deepEqual(
-      {
+    const afterReplay = {
+      profile: {
         ...database
           .prepare("SELECT * FROM learner_profile WHERE id = ?")
           .get(SHARED_GUEST_LEARNER_ID),
       },
-      beforeReplay.profile,
-    );
+      user: {
+        ...database
+          .prepare("SELECT * FROM user WHERE id = ?")
+          .get(SHARED_GUEST_USER_ID),
+      },
+    };
+    assert.equal(afterReplay.user.name, "Mary");
+    assert.equal(afterReplay.profile.name, "Rose");
+    assert.equal(afterReplay.profile.story_level, "tiny-stories");
+    assert.deepEqual(afterReplay.user, beforeReplay.user);
+    assert.deepEqual(afterReplay.profile, beforeReplay.profile);
   } finally {
     database.close();
   }

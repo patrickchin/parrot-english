@@ -5,6 +5,7 @@ import {
   checkLearnerProfileTranscriptionRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
+import { SHARED_GUEST_USER_ID } from "../lib/shared-guest.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
 import { createDatabase } from "./database.ts";
@@ -81,6 +82,13 @@ interface WorkerDependencies {
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
   handleDubRequest: typeof handleDubRequest;
 }
+
+const SHARED_GUEST_BLOCKED_AUTH_PATHS = new Set([
+  "/api/auth/list-sessions",
+  "/api/auth/revoke-session",
+  "/api/auth/revoke-sessions",
+  "/api/auth/revoke-other-sessions",
+]);
 
 function isLearnerProfilePath(pathname: string) {
   return (
@@ -278,7 +286,19 @@ export function createWorker(
         url.pathname === "/api/auth" ||
         url.pathname.startsWith("/api/auth/")
       ) {
-        return authFactory(env).handler(request);
+        const auth = authFactory(env);
+        if (SHARED_GUEST_BLOCKED_AUTH_PATHS.has(url.pathname)) {
+          const session = await auth.api.getSession({
+            headers: request.headers,
+          });
+          if (session?.user.id === SHARED_GUEST_USER_ID) {
+            return Response.json(
+              { error: "forbidden" },
+              { status: 403, headers: { "Cache-Control": "no-store" } },
+            );
+          }
+        }
+        return auth.handler(request);
       }
 
       if (isLearnerProfilesPath(url.pathname)) {
