@@ -30,6 +30,7 @@ import {
   prepareDubLineBacking,
   startDubPlayback,
   type DubAudioSource,
+  type DubPlaybackPosition,
   type PreparedDubLineBacking,
 } from "./dub-playback";
 import { DubListenOnly } from "./DubListenOnly";
@@ -69,24 +70,6 @@ function getSceneLines(definition: DubDefinition) {
 
 function getLineIndex(definition: DubDefinition, lineId: string) {
   return definition.lines.findIndex((line) => line.id === lineId);
-}
-
-function getDubLineAtElapsed(definition: DubDefinition, elapsedMs: number) {
-  return [...definition.lines].reverse().find(({ cueMs }) => elapsedMs >= cueMs)
-    ?? definition.lines[0];
-}
-
-function getDubSceneLineAtElapsed(
-  definition: DubDefinition,
-  sceneIndex: number,
-  elapsedMs: number,
-) {
-  const sceneLines = getSceneLines(definition)[sceneIndex];
-  if (!sceneLines) throw new RangeError("Unknown dub scene.");
-  const cueOffsetMs = sceneLines[0].cueMs;
-  return [...sceneLines].reverse().find(
-    ({ cueMs }) => elapsedMs >= cueMs - cueOffsetMs,
-  ) ?? sceneLines[0];
 }
 
 function microphoneMessage(error: unknown) {
@@ -200,7 +183,6 @@ export function DubStudio({
   );
   const [loadError, setLoadError] = useState("");
   const [loadSequence, setLoadSequence] = useState(0);
-  const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
   const [presentation, setPresentation] = useState<DubPresentation>(() => ({
     countInBeat: null,
     elapsedMs: null,
@@ -295,7 +277,6 @@ export function DubStudio({
   const handleConsentLoss = useCallback(() => {
     const generation = cancelMedia(true);
     setLoadError("");
-    setPlaybackLineIndex(0);
     resetPresentation(definition.lines[0]?.id ?? null);
     dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
     focusAfterRender(fullPlaybackButtonRef, generation);
@@ -532,9 +513,18 @@ export function DubStudio({
             if (generation !== mediaGenerationRef.current) return;
             playbackRef.current = null;
             guideControllerRef.current = null;
+            resetPresentation();
             dispatch({ type: "OPERATION_FINISHED" });
           },
-          onTick() {},
+          onTick(_rawElapsedMs, position: DubPlaybackPosition) {
+            if (mountedRef.current && generation === mediaGenerationRef.current) {
+              setPresentation({
+                countInBeat: null,
+                elapsedMs: position.lineElapsedMs,
+                lineId: position.line.id,
+              });
+            }
+          },
           onLineUnavailable() {
             throw new Error("The guide source is unavailable.");
           },
@@ -546,6 +536,7 @@ export function DubStudio({
       } catch (error) {
         if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
         guideControllerRef.current = null;
+        resetPresentation();
         dispatch({ type: "OPERATION_FINISHED" });
         dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
       }
@@ -583,9 +574,18 @@ export function DubStudio({
             if (generation !== mediaGenerationRef.current) return;
             playbackRef.current = null;
             takeControllerRef.current = null;
+            resetPresentation();
             dispatch({ type: "OPERATION_FINISHED" });
           },
-          onTick() {},
+          onTick(_rawElapsedMs, position: DubPlaybackPosition) {
+            if (mountedRef.current && generation === mediaGenerationRef.current) {
+              setPresentation({
+                countInBeat: null,
+                elapsedMs: position.lineElapsedMs,
+                lineId: position.line.id,
+              });
+            }
+          },
           onLineUnavailable() {
             throw new Error("The saved take source is unavailable.");
           },
@@ -600,6 +600,7 @@ export function DubStudio({
           handleConsentLoss();
           return;
         }
+        resetPresentation();
         dispatch({ type: "MARK_NEEDS_RETAKE", lineId: line.id });
         dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
         if (takeControllerRef.current === controller) takeControllerRef.current = null;
@@ -630,7 +631,6 @@ export function DubStudio({
     const lines = scope === "full" ? definition.lines : sceneLines[sceneIndex];
     const unavailableLineIds = new Set<string>();
     playbackControllerRef.current = controller;
-    setPlaybackLineIndex(scope === "full" ? 0 : sceneIndex * definition.linesPerScene);
     dispatch({ type: "OPERATION_STARTED", operation: "playback-loading", playbackScope: scope });
     try {
       const playback = await startDubPlayback({
@@ -640,6 +640,7 @@ export function DubStudio({
           if (generation !== mediaGenerationRef.current) return;
           playbackRef.current = null;
           playbackControllerRef.current = null;
+          resetPresentation();
           dispatch({ type: "OPERATION_FINISHED" });
           focusAfterRender(
             scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
@@ -652,12 +653,13 @@ export function DubStudio({
         onLineUnavailable(lineId) {
           unavailableLineIds.add(lineId);
         },
-        onTick(elapsedMs) {
+        onTick(_rawElapsedMs, position: DubPlaybackPosition) {
           if (generation !== mediaGenerationRef.current) return;
-          const line = scope === "full"
-            ? getDubLineAtElapsed(definition, elapsedMs)
-            : getDubSceneLineAtElapsed(definition, sceneIndex, elapsedMs);
-          setPlaybackLineIndex(getLineIndex(definition, line.id));
+          setPresentation({
+            countInBeat: null,
+            elapsedMs: position.lineElapsedMs,
+            lineId: position.line.id,
+          });
         },
         resolveAudioSource: guideOnlyPlayback
           ? resolveGuideOnlyDubLineAudioSource
@@ -671,6 +673,7 @@ export function DubStudio({
       if (guideOnlyPlayback && unavailableLineIds.size === lines.length) {
         playback.stop();
         playbackControllerRef.current = null;
+        resetPresentation();
         dispatch({ type: "OPERATION_FINISHED" });
         dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
         focusAfterRender(fullPlaybackButtonRef, generation);
@@ -691,6 +694,7 @@ export function DubStudio({
         return;
       }
       dispatch({ type: "OPERATION_FINISHED" });
+      resetPresentation();
       dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
       focusAfterRender(
         scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
@@ -754,15 +758,16 @@ export function DubStudio({
   }
 
   const selectedLine = definition.lines[state.selectedLineIndex] ?? definition.lines[0];
-  const playbackLine = definition.lines[playbackLineIndex] ?? selectedLine;
+  const playbackLine = definition.lines.find(({ id }) => id === presentation.lineId) ?? selectedLine;
   const visualLine = state.operation === "playback" || state.operation === "playback-loading"
     ? playbackLine
     : selectedLine;
   const locked = isControlLocked(state.operation);
   const selectedSceneNumber = state.selectedSceneIndex + 1;
   const selectedSceneLineNumber = state.selectedLineIndex % definition.linesPerScene + 1;
-  const playbackSceneNumber = Math.floor(playbackLineIndex / definition.linesPerScene) + 1;
-  const playbackSceneLineNumber = playbackLineIndex % definition.linesPerScene + 1;
+  const playbackLinePosition = Math.max(0, getLineIndex(definition, playbackLine.id));
+  const playbackSceneNumber = Math.floor(playbackLinePosition / definition.linesPerScene) + 1;
+  const playbackSceneLineNumber = playbackLinePosition % definition.linesPerScene + 1;
   let liveStatus = "";
   const activeError = state.error || loadError;
   if (state.operation === "mic-opening") {
@@ -823,6 +828,9 @@ export function DubStudio({
           : "idle"}
         playbackButtonRef={fullPlaybackButtonRef}
         visualLine={visualLine}
+        guidance={state.operation === "playback" && state.playbackScope === "full"
+          ? presentation
+          : null}
       />
     );
   } else if (state.view === "project") {
@@ -845,6 +853,9 @@ export function DubStudio({
         playbackButtonRef={fullPlaybackButtonRef}
         saved={state.saved}
         visualLine={visualLine}
+        guidance={state.operation === "playback" && state.playbackScope === "full"
+          ? presentation
+          : null}
       />
     );
   } else {

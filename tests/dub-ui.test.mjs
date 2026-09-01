@@ -145,6 +145,7 @@ function installSynchronizedRecordingHarness({
   decodeError,
   melodyStartError,
   melodyPreparationError,
+  playbackVoiceDuration = 1,
   recorderStartErrorAt = 0,
   rejectMicrophone = false,
 } = {}) {
@@ -275,7 +276,7 @@ function installSynchronizedRecordingHarness({
 
     decodeAudioData() {
       this.decodeCalls += 1;
-      return decodeError ? Promise.reject(decodeError) : Promise.resolve({ duration: 1 });
+      return decodeError ? Promise.reject(decodeError) : Promise.resolve({ duration: playbackVoiceDuration });
     }
     resume() {
       return contexts.length === 1 && melodyPreparationError
@@ -366,6 +367,16 @@ async function finishRecordingCountIn(audio, container) {
   await act(async () => audio.advanceCountIn());
   await act(async () => audio.finishDownbeat());
   await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+}
+
+async function advanceDubPlayback(audio, elapsedMs) {
+  const context = [...audio.contexts].reverse().find(({ sources }) => sources.length);
+  assert.ok(context, "playback should decode at least one voice");
+  context.currentTime = 10.12 + elapsedMs / 1_000;
+  const frame = [...audio.callbacks].find(([, callback]) => callback.name === "tick");
+  assert.ok(frame, "playback should schedule a score-position tick");
+  audio.callbacks.delete(frame[0]);
+  await act(async () => frame[1]());
 }
 
 function renderProjectHome(viewProps = {}) {
@@ -942,6 +953,28 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
+  it("drives the full project scene and compact guide from playback positions", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      if (String(path).endsWith(".mp3")) return new Response(new Uint8Array([1, 2, 3]));
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    await click(container.querySelector('[aria-label="Play full video"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop full video"]')));
+    await advanceDubPlayback(audio, DUB_LINES[4].cueMs + 1_000);
+
+    const player = container.querySelector('[aria-label="Full video player"]');
+    assert.equal(player?.querySelector("img")?.getAttribute("src"), FIVE_LITTLE_DUCKS_DUB.sceneArtwork[1].src);
+    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUB_LINES[4].text));
+    assert.ok(container.querySelector('[aria-label="Karaoke guide"] svg'));
+  });
+
   it("moves the scene back action into page navigation and restores the project link", async () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
@@ -1008,6 +1041,51 @@ describe("duck dubbing storyboard presentation", () => {
       assert.ok(container.querySelector('[aria-label="Scene selection"]'))
     );
     assert.equal(statusLoads, loadsBeforeRetry + 1);
+  });
+
+  it("keeps listen-only full playback public while updating its compact guide", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    const privateRequests = [];
+    let microphoneRequests = 0;
+    let objectUrls = 0;
+    URL.createObjectURL = () => {
+      objectUrls += 1;
+      return "blob:must-not-exist";
+    };
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        async getUserMedia() {
+          microphoneRequests += 1;
+          throw new Error("listen-only must not request a microphone");
+        },
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
+      }
+      if (String(path).includes("/api/dubs/") || String(path).endsWith("/audio")) {
+        privateRequests.push(String(path));
+        throw new Error("listen-only must not fetch private audio");
+      }
+      if (String(path).endsWith(".mp3")) return new Response(new Uint8Array([1, 2, 3]));
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    await click(container.querySelector('[aria-label="Play full video"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop full video"]')));
+    await advanceDubPlayback(audio, DUB_LINES[4].cueMs + 1_000);
+
+    const player = container.querySelector('[aria-label="Full video player"]');
+    assert.equal(player?.querySelector("img")?.getAttribute("src"), FIVE_LITTLE_DUCKS_DUB.sceneArtwork[1].src);
+    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUB_LINES[4].text));
+    assert.ok(container.querySelector('[aria-label="Karaoke guide"] svg'));
+    assert.equal(microphoneRequests, 0);
+    assert.equal(objectUrls, 0);
+    assert.deepEqual(privateRequests, []);
   });
 
   it("opens the microphone, counts on the score clock, then starts capture on downbeat", async () => {
@@ -1325,6 +1403,43 @@ describe("duck dubbing storyboard presentation", () => {
       take.sources[0].startTimes[0],
       take.oscillators.find(({ type }) => type === "triangle").startTimes[0],
     );
+  });
+
+  it("uses frozen score guidance while overlong guide and take playback continue", async () => {
+    const audio = installSynchronizedRecordingHarness({ playbackVoiceDuration: 5 });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledFirstSceneStatus());
+      }
+      if (String(path).endsWith(".mp3") || String(path).endsWith("/audio")) {
+        return new Response(new Uint8Array([1, 2, 3]));
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click([...container.querySelectorAll("button")].find(
+      ({ textContent }) => textContent?.includes("Hear line"),
+    ));
+    await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
+    await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
+
+    const assertFrozenGuide = (status) => {
+      assert.match(container.querySelector('[role="status"]')?.textContent, status);
+      assert.equal(container.querySelector("h1 [aria-current='true']"), null);
+      assert.equal(
+        container.querySelector('[aria-label="Waveform and melody guide"] [style*="left"]')?.getAttribute("style"),
+        "left: 100%;",
+      );
+    };
+    assertFrozenGuide(/Playing example/);
+
+    await click(container.querySelector('[aria-label="Play my recording"]'));
+    await waitFor(() => assert.equal(audio.contexts.filter(({ sources }) => sources.length).length, 2));
+    await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
+    assertFrozenGuide(/Playing your recording/);
   });
 
   it("does not leave melody playing when a guide cannot decode", async () => {
@@ -1938,6 +2053,40 @@ describe("duck dubbing storyboard presentation", () => {
       html,
       /Record again|Record line|Play my recording|Save again|Guardian|Delete/,
     );
+  });
+
+  it("renders compact score guidance during project and listen-only playback", () => {
+    const guidance = { elapsedMs: 1_200, lineId: DUB_LINES[1].id };
+    const project = renderProjectHome({
+      guidance,
+      playback: "playing",
+      visualLine: DUB_LINES[1],
+    });
+    const listenOnly = renderToStaticMarkup(createElement(DubListenOnly, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      error: "",
+      guidance,
+      onRetryLoad() {},
+      onTogglePlayback() {},
+      playback: "playing",
+      visualLine: DUB_LINES[1],
+    }));
+
+    for (const html of [project, listenOnly]) {
+      assert.match(html.replace(/<[^>]+>/g, ""), new RegExp(DUB_LINES[1].text));
+      assert.match(html, /<svg[^>]*aria-hidden="true"/);
+      assert.equal((html.match(/<h1/g) ?? []).length, 1);
+      assert.doesNotMatch(html, /aria-live|role="status"/);
+    }
+  });
+
+  it("hides compact guidance for unknown playback lines", () => {
+    const html = renderProjectHome({
+      guidance: { elapsedMs: 1_200, lineId: "unknown-line" },
+      playback: "playing",
+    });
+
+    assert.doesNotMatch(html, /Five little ducks went out one day\./);
   });
 
   it("resolves every listen-only line to its public guide and never private audio", () => {
