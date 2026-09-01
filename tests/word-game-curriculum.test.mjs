@@ -267,7 +267,7 @@ describe("production word-game curriculum", () => {
     }
   });
 
-  it("passes compiler cross-checks and plans exactly 71 missing item cues", async () => {
+  it("passes compiler cross-checks with all 107 saved item cues", async () => {
     const plan = await planWordGameAudio({ rootDir });
     assert.equal(plan.lines.length, 107);
     assert.equal(new Set(plan.lines.map(({ id }) => id)).size, 107);
@@ -278,9 +278,8 @@ describe("production word-game curriculum", () => {
       && line.src === `/assets/audio/${line.id}.mp3`
       && line.ttsText === `[bright, playful teaching delivery for a young child] ${line.text}`
       && line.voiceStyle === "energetic-character"));
-    assert.deepEqual(
-      plan.missingFiles,
-      WORD_GAME_MISSING_AUDIO_IDS.map((id) => `public/assets/audio/${id}.mp3`),
-    );
+    assert.deepEqual(plan.missingFiles, []);
+    const plannedIds = new Set(plan.lines.map(({ id }) => id));
+    assert.ok(WORD_GAME_MISSING_AUDIO_IDS.every((id) => plannedIds.has(id)));
   });
 });

@@ -57,8 +57,12 @@ async function createWordGameGeneratorRepo() {
   );
   await symlink(join(rootDir, "node_modules"), join(tempRoot, "node_modules"), "dir");
 
+  const generatedLabelFiles = new Set(
+    WORD_GAME_MISSING_AUDIO_IDS.map((id) => `${id}.mp3`),
+  );
   const existingLabelFiles = (await readdir(join(rootDir, "public", "assets", "audio")))
-    .filter((filename) => /^word-game-.+-label\.mp3$/u.test(filename))
+    .filter((filename) =>
+      /^word-game-.+-label\.mp3$/u.test(filename) && !generatedLabelFiles.has(filename))
     .sort();
   for (const filename of existingLabelFiles) {
     await cp(
