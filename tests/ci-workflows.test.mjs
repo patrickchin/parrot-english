@@ -137,6 +137,44 @@ function runCompatibilityGuard(cwd, env = {}) {
   });
 }
 
+function workflowSteps(url) {
+  const steps = [];
+  let currentStep;
+  let multilineRunIndent;
+
+  for (const line of readFileSync(url, "utf8").split(/\r?\n/u)) {
+    const name = line.match(/^\s*- name:\s*(.+?)\s*$/u)?.[1];
+    if (name) {
+      if (currentStep) steps.push(currentStep);
+      currentStep = { name, run: [] };
+      multilineRunIndent = undefined;
+      continue;
+    }
+    if (!currentStep) continue;
+
+    const run = line.match(/^(\s*)run:\s*(.*?)\s*$/u);
+    if (run) {
+      multilineRunIndent = run[2] === "|" ? run[1].length : undefined;
+      if (run[2] !== "|") currentStep.run.push(run[2]);
+      continue;
+    }
+    if (multilineRunIndent !== undefined) {
+      const indent = line.match(/^\s*/u)[0].length;
+      if (line.trim() && indent > multilineRunIndent) {
+        currentStep.run.push(line.trim());
+      } else if (line.trim()) {
+        multilineRunIndent = undefined;
+      }
+    }
+  }
+  if (currentStep) steps.push(currentStep);
+  return steps;
+}
+
+function stepRunning(steps, command) {
+  return steps.findIndex(({ run }) => run.includes(command));
+}
+
 test("pull requests run one complete verification job including lifecycle tests", () => {
   assert.equal(
     existsSync(verificationUrl),
@@ -161,16 +199,25 @@ test("pull requests run one complete verification job including lifecycle tests"
 });
 
 test("pull requests install FFmpeg before media integrity tests run", () => {
-  const workflow = readFileSync(verificationUrl, "utf8");
-  const installIndex = workflow.indexOf("name: Install FFmpeg");
-  const testIndex = workflow.indexOf("run: npm test");
+  const steps = workflowSteps(verificationUrl);
+  const installIndex = stepRunning(steps, "sudo apt-get install --yes ffmpeg");
+  const testIndex = stepRunning(steps, "npm test");
 
   assert.notEqual(installIndex, -1, "Expected FFmpeg installation in CI.");
-  assert.match(
-    workflow.slice(installIndex, testIndex),
-    /sudo apt-get install --yes ffmpeg/,
-  );
   assert.ok(installIndex < testIndex, "Expected FFmpeg before npm test.");
+});
+
+test("deployment checks generated rhyme content after FFmpeg and before publishing media", () => {
+  const steps = workflowSteps(deploymentUrl);
+  const installIndex = stepRunning(steps, "sudo apt-get install --yes ffmpeg");
+  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  const publishIndex = stepRunning(steps, "npm run publish:static-media -- --apply");
+
+  assert.notEqual(installIndex, -1, "Expected FFmpeg installation before catalog checks.");
+  assert.notEqual(checkIndex, -1, "Expected an explicit generated-catalog check.");
+  assert.notEqual(publishIndex, -1, "Expected immutable media publishing.");
+  assert.ok(installIndex < checkIndex, "Expected FFmpeg before the catalog check.");
+  assert.ok(checkIndex < publishIndex, "Expected the catalog check before publishing.");
 });
 
 test("main deployment does not repeat the pull-request verification sequence", () => {
