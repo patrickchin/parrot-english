@@ -215,12 +215,12 @@ export function DubTakeWaveform({
 }: {
   blob: Blob | null;
   definition: DubDefinition;
-  elapsedMs: number;
+  elapsedMs: number | null;
   line: DubLine;
   recordingStream: MediaStream | null;
 }) {
   const recordedPeaks = useRecordedPeakBars(blob, line.durationMs);
-  const live = useLivePeakBars(recordingStream, elapsedMs, line.durationMs);
+  const live = useLivePeakBars(recordingStream, elapsedMs ?? 0, line.durationMs);
   const playhead = getDubPlayheadPercent(line, elapsedMs);
 
   return (

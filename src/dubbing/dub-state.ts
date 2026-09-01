@@ -9,6 +9,7 @@ export type DubOperation =
   | "idle"
   | "guide-playing"
   | "mic-opening"
+  | "counting-in"
   | "recording"
   | "saving"
   | "take-playing"
@@ -46,6 +47,7 @@ export type DubEvent =
 
 const DUB_UNSAFE_OPERATIONS = new Set<DubOperation>([
   "mic-opening",
+  "counting-in",
   "recording",
   "saving",
 ]);
@@ -245,13 +247,18 @@ export function reduceDubState(
   }
   if (event.type === "OPERATION_STARTED") {
     const preserveRecoveryError = state.saveRecovery !== null
-      && (event.operation === "guide-playing" || event.operation === "take-playing");
+      && (
+        event.operation === "guide-playing"
+        || event.operation === "mic-opening"
+        || event.operation === "counting-in"
+        || event.operation === "take-playing"
+      );
     return {
       ...state,
       error: preserveRecoveryError ? state.error : "",
       operation: event.operation,
       playbackScope: event.playbackScope ?? null,
-      saveRecovery: event.operation === "mic-opening" ? null : state.saveRecovery,
+      saveRecovery: event.operation === "recording" ? null : state.saveRecovery,
     };
   }
   if (event.type === "OPERATION_FINISHED") {
