@@ -284,6 +284,13 @@ export function getSafeReturnTo(search: string) {
   return `${destination.pathname}${destination.search}${destination.hash}`;
 }
 
+export function getPostLoginDestination(search: string) {
+  const safe = getSafeReturnTo(search);
+  if (!safe) return "/";
+  const destination = new URL(safe, RETURN_TO_ORIGIN);
+  return isGuardianRoute(destination.pathname, destination.search) ? "/" : safe;
+}
+
 export function resolveWordGameRouteDecision(
   topicId: string | undefined,
   pathname?: string,

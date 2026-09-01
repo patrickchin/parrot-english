@@ -2401,10 +2401,7 @@ function requiresGuardianAccess(
 ) {
   if (hasLearnerTarget) return true;
   if (url.pathname === "/api/learner-profiles") {
-    return method === "GET" || method === "POST";
-  }
-  if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(url.pathname)) {
-    return method === "PUT";
+    return method === "POST";
   }
   if (/^\/api\/learner-profiles\/[^/]+$/.test(url.pathname)) {
     return method === "DELETE";

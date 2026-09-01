@@ -70,14 +70,17 @@ configuration.
 - Better Auth identifies the Guardian account.
 - Each auth session has at most one selected learner; different sessions may
   select different learners.
-- Only a live session-specific Guardian unlock may list, create, select, or
-  delete profiles. Guardian unlock uses the same account password used to sign
-  in; there is no separate Guardian password or PIN.
+- Any authenticated session may list its own profiles and select one it owns.
+  Only a live session-specific Guardian grant may create or delete profiles or
+  edit Guardian settings. The current temporary entry flow grants an
+  authenticated session access without another password check; this weaker
+  passwordless handoff does not remove authentication, ownership enforcement,
+  or Guardian-only endpoint checks and is not the intended permanent boundary.
 - Learner APIs resolve the selection on the server and never trust a
   browser-supplied profile ID.
 - Profiles, onboarding, conversations, personalized art, dubbing consent, and
   voice clips are learner-scoped.
-- Authentication, Guardian unlock, rate limits, the deletion tombstone, and
+- Authentication, Guardian grants, rate limits, the deletion tombstone, and
   whole-account deletion remain account- or session-scoped.
 - The marked legacy learner retains existing data and exact historical R2
   keys. New learners use profile-prefixed R2 namespaces.
@@ -216,7 +219,8 @@ or learner names into the release log.
 
 Use a nonproduction test account that had data before `0012`:
 
-1. Sign in and unlock Guardian mode with the account password.
+1. Sign in and open Guardian mode through the current automatic, passwordless
+   session grant. Confirm a genuine grant failure stays visible with Retry.
 2. Confirm the existing learner profile and onboarding status are unchanged.
 3. Edit and reload the learner profile.
 4. Load and play a built-in lesson.
@@ -319,18 +323,21 @@ npx wrangler d1 migrations list parrot-english --remote
 
 Use controlled test profiles to verify:
 
-1. `/guardian/learners` requires a fresh Guardian unlock.
+1. Direct `/guardian/learners` entry automatically obtains a fresh 15-minute
+   Guardian grant for the authenticated session without a password prompt;
+   genuine access failure remains on the route with Retry.
 2. The roster lists only profiles owned by that account in stable creation
    order.
 3. Adding a preferred name creates an incomplete learner and opens its details
    flow without changing the session's learner-mode selection.
 4. Manage learners contains only Add, Edit, and Delete. `Switch to learner`
-   opens `Who is learning now?` with no preselected radio; confirming a named
-   learner persists through reload, while a second signed-in session can keep a
-   different active learner.
+   and the learner account menu open the shared `Who is learning now?` chooser
+   with one direct learner button per owned profile; choosing that button is the
+   complete selection action and persists through reload, while a second
+   signed-in session can keep a different active learner.
 5. Missing, stale, and foreign selections fail closed. A multi-learner session
-   with no selection shows only `Ask a grown-up to choose a learner` in learner
-   mode and exposes the roster only after Guardian unlock.
+   with no selection immediately shows the required owned-profile picker in
+   learner mode with no Cancel path or Guardian grant.
 6. Profile details, onboarding, conversations, story level, personalized art,
    each learner's cross-rhyme dubbing consent, and voice clips for both rhyme
    routes remain isolated between two sibling learners.
@@ -348,17 +355,19 @@ Use controlled test profiles to verify:
     dub namespace; deleting that disposable legacy test learner closes the
     account-root compatibility paths without sweeping a sibling's prefixed
     namespace.
-11. Learner mode contains no sibling name, Guardian dashboard, roster, editing,
-    authoring, consent, privacy, sign-out, or deletion control. Neither Five
+11. Outside the owned-profile chooser, learner mode contains no sibling name,
+    Guardian dashboard, roster, editing, authoring, consent, privacy, sign-out,
+    or deletion control. Neither Five
     Little Ducks nor Old MacDonald contains a grown-up checkbox; missing shared
     consent shows only the learner-safe grown-up gateway. Grant once in Guardian
     dubbing settings, confirm both routes authorize status and audio, and save
     one disposable clip in each. Revoke once and confirm both routes fail closed
     during shared cleanup; if cleanup is interrupted, finish it through the one
     retry action, then regrant and confirm both statuses contain no saved clips.
-12. Every Guardian page exposes a dashboard recovery path, invalid Guardian
-    return targets fall back to `/guardian`, and mode-aware wildcard routing
-    returns to the correct home.
+12. Every Guardian page exposes a dashboard recovery path, invalid internal
+    Guardian return targets fall back to `/guardian`, post-login Guardian
+    targets normalize to learner home, and mode-aware wildcard routing returns
+    to the correct home.
 
 Do not exercise whole-account deletion against a production account as a smoke
 test. Its every-learner R2 sweep and upload fences are covered by the automated
@@ -368,7 +377,7 @@ account-deletion suite.
 
 Cloudflare Worker observability is enabled in `wrangler.jsonc`. Establish the
 normal request/error baseline before each release, watch the deployment in real
-time, and continue monitoring through at least the 15-minute Guardian-unlock
+time, and continue monitoring through at least the 15-minute Guardian-grant
 window and a representative new-session window. The current implementation does
 not define bespoke multi-learner counters, so the minimum evidence is platform
 request/log data, controlled smoke-test observations, and the read-only

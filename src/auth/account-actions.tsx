@@ -14,6 +14,7 @@ export type AccountExperience = {
   guardianUnlockDestination?: string | null;
   hasActiveLearner: boolean;
   learnerName: string | null;
+  onOpenLearnerSwitcher: (() => void) | null;
   onOpenProfile: (() => void) | null;
 };
 

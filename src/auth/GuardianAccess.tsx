@@ -23,6 +23,8 @@ export { notifyGuardianAccessRequired } from "./guardian-access-api";
 export type GuardianMode = "loading" | "learner" | "guardian";
 
 export type GuardianAccessContextValue = {
+  acknowledgeLearnerSwitch: () => void;
+  blockedByLearnerSwitch: boolean;
   mode: GuardianMode;
   expiresAt: string | null;
   error: string;
@@ -45,6 +47,7 @@ type GuardianAccessApi = {
 };
 
 type AccessSnapshot = {
+  blockedByLearnerSwitch: boolean;
   error: string;
   expiresAt: string | null;
   identity: string | null;
@@ -139,6 +142,7 @@ function retainGuardianAccessLockMarker(storageKey: string | null) {
 
 function initialSnapshot(identity: string | null): AccessSnapshot {
   return {
+    blockedByLearnerSwitch: false,
     error: "",
     expiresAt: null,
     identity,
@@ -196,10 +200,16 @@ export function createGuardianAccessProvider({
     const controllerRef = useRef<AbortController | null>(null);
     const identityRef = useRef(sessionIdentity);
     const intentRef = useRef<{
+      blocksAutomaticAccess: boolean;
       identity: string | null;
       mode: "guardian" | "learner" | null;
       version: number;
-    }>({ identity: sessionIdentity, mode: null, version: 0 });
+    }>({
+      blocksAutomaticAccess: false,
+      identity: sessionIdentity,
+      mode: null,
+      version: 0,
+    });
     const settledIntentRef = useRef(0);
     const operationTailRef = useRef<Promise<void>>(Promise.resolve());
     const lockStorageKeyPromise = useMemo(
@@ -238,9 +248,18 @@ export function createGuardianAccessProvider({
     }, []);
 
     const beginIntent = useCallback(
-      (identity: string, mode: "guardian" | "learner") => {
+      (
+        identity: string,
+        mode: "guardian" | "learner",
+        blocksAutomaticAccess = false,
+      ) => {
         const version = intentRef.current.version + 1;
-        intentRef.current = { identity, mode, version };
+        intentRef.current = {
+          blocksAutomaticAccess,
+          identity,
+          mode,
+          version,
+        };
         return version;
       },
       [],
@@ -274,6 +293,7 @@ export function createGuardianAccessProvider({
           return false;
         }
         setSnapshot({
+          blockedByLearnerSwitch: false,
           error: "",
           expiresAt: state.expiresAt,
           identity,
@@ -295,15 +315,21 @@ export function createGuardianAccessProvider({
           current.error === "" &&
           current.expiresAt === null
             ? current
-            : initialSnapshot(identity),
+            : {
+                ...initialSnapshot(identity),
+                blockedByLearnerSwitch:
+                  current.identity === identity &&
+                  current.blockedByLearnerSwitch,
+              },
         );
       }
       await enqueue(async () => {
         if (!isCurrent(identity, generation)) return;
         const controller = new AbortController();
         controllerRef.current = controller;
+        let storageKey: string | null = null;
         try {
-          const storageKey = await lockStorageKeyPromise;
+          storageKey = await lockStorageKeyPromise;
           if (!isCurrent(identity, generation) || controller.signal.aborted) {
             return;
           }
@@ -321,11 +347,16 @@ export function createGuardianAccessProvider({
             return;
           }
           if (
-            state.mode === "guardian" &&
             storageKey !== null &&
             guardianAccessLockMarker(storageKey) !== null
           ) {
-            setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
+            setSnapshot((current) => ({
+              ...initialSnapshot(identity),
+              blockedByLearnerSwitch:
+                current.identity === identity &&
+                current.blockedByLearnerSwitch,
+              mode: "learner",
+            }));
             return;
           }
           const settledIntent = intentRef.current;
@@ -335,22 +366,47 @@ export function createGuardianAccessProvider({
           ) {
             return;
           }
-          applyState(state, identity, generation);
+          const liveGuardianState = isLiveGuardianState(state, now());
+          setSnapshot((current) => {
+            if (
+              current.identity === identity &&
+              current.blockedByLearnerSwitch
+            ) {
+              return {
+                ...initialSnapshot(identity),
+                blockedByLearnerSwitch: true,
+                mode: "learner",
+              };
+            }
+            if (!liveGuardianState) {
+              return { ...initialSnapshot(identity), mode: "learner" };
+            }
+            return {
+              blockedByLearnerSwitch: false,
+              error: "",
+              expiresAt: state.expiresAt,
+              identity,
+              mode: "guardian",
+            };
+          });
         } catch (error) {
           if (!isCurrent(identity, generation) || controller.signal.aborted) {
             return;
           }
-          setSnapshot({
+          setSnapshot((current) => ({
+            blockedByLearnerSwitch:
+              current.identity === identity &&
+              current.blockedByLearnerSwitch,
             error: messageFor(error),
             expiresAt: null,
             identity,
             mode: "learner",
-          });
+          }));
         } finally {
           if (controllerRef.current === controller) controllerRef.current = null;
         }
       });
-    }, [applyState, enqueue, isCurrent, lockStorageKeyPromise, sessionIdentity]);
+    }, [enqueue, isCurrent, lockStorageKeyPromise, now, sessionIdentity]);
 
     useEffect(() => {
       generationRef.current += 1;
@@ -359,7 +415,12 @@ export function createGuardianAccessProvider({
       operationTailRef.current = Promise.resolve();
       siblingLockIntentRef.current = null;
       const version = intentRef.current.version + 1;
-      intentRef.current = { identity: sessionIdentity, mode: null, version };
+      intentRef.current = {
+        blocksAutomaticAccess: false,
+        identity: sessionIdentity,
+        mode: null,
+        version,
+      };
       settledIntentRef.current = version;
       if (sessionIdentity === null) setSnapshot(initialSnapshot(null));
       else void load();
@@ -387,6 +448,15 @@ export function createGuardianAccessProvider({
     const reconcileLearner = useCallback(() => {
       const identity = identityRef.current;
       if (identity === null) return;
+      const currentIntent = intentRef.current;
+      if (
+        currentIntent.identity === identity &&
+        currentIntent.mode === "learner" &&
+        (currentIntent.blocksAutomaticAccess ||
+          currentIntent.version !== settledIntentRef.current)
+      ) {
+        return;
+      }
       const generation = generationRef.current;
       const version = beginIntent(identity, "learner");
       controllerRef.current?.abort();
@@ -413,6 +483,7 @@ export function createGuardianAccessProvider({
           if (locked.mode !== "learner") {
             settledIntentRef.current = version;
             setSnapshot({
+              blockedByLearnerSwitch: false,
               error: LOCK_ERROR,
               expiresAt: null,
               identity,
@@ -432,6 +503,7 @@ export function createGuardianAccessProvider({
             setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
           } else {
             setSnapshot({
+              blockedByLearnerSwitch: false,
               error: LOCK_ERROR,
               expiresAt: null,
               identity,
@@ -447,6 +519,7 @@ export function createGuardianAccessProvider({
           }
           settledIntentRef.current = version;
           setSnapshot({
+            blockedByLearnerSwitch: false,
             error: LOCK_ERROR,
             expiresAt: null,
             identity,
@@ -470,14 +543,28 @@ export function createGuardianAccessProvider({
       ) {
         return;
       }
-      const version = beginIntent(identity, "learner");
+      const version = beginIntent(identity, "learner", true);
       settledIntentRef.current = version;
       siblingLockIntentRef.current = { identity, version };
       generationRef.current += 1;
       controllerRef.current?.abort();
       controllerRef.current = null;
-      setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
+      setSnapshot({
+        ...initialSnapshot(identity),
+        blockedByLearnerSwitch: true,
+        mode: "learner",
+      });
     }, [beginIntent]);
+
+    const acknowledgeLearnerSwitch = useCallback(() => {
+      const identity = sessionIdentity;
+      if (identity === null || identityRef.current !== identity) return;
+      setSnapshot((current) =>
+        current.identity === identity && current.blockedByLearnerSwitch
+          ? { ...current, blockedByLearnerSwitch: false }
+          : current,
+      );
+    }, [sessionIdentity]);
 
     const compensateSiblingLock = useCallback(
       async (identity: string) => {
@@ -589,17 +676,6 @@ export function createGuardianAccessProvider({
             }
           };
           window.addEventListener("storage", receiveStorage);
-          const intent = intentRef.current;
-          const unlockIsAwaitingScope =
-            intent.identity === identity &&
-            intent.mode === "guardian" &&
-            intent.version !== settledIntentRef.current;
-          if (
-            !unlockIsAwaitingScope &&
-            guardianAccessLockMarker(storageKey) !== null
-          ) {
-            collapseToLearner(identity);
-          }
         } catch {
           // Storage may be unavailable; visibility rechecks remain authoritative.
         }
@@ -717,6 +793,7 @@ export function createGuardianAccessProvider({
             }
             settledIntentRef.current = version;
             setSnapshot({
+              blockedByLearnerSwitch: false,
               error: "",
               expiresAt: null,
               identity,
@@ -747,7 +824,7 @@ export function createGuardianAccessProvider({
       if (sessionIdentity === null) return FALLBACK_ERROR;
       const identity = sessionIdentity;
       const generation = generationRef.current;
-      const version = beginIntent(identity, "learner");
+      const version = beginIntent(identity, "learner", true);
       setSnapshot((current) =>
         current.identity === identity ? { ...current, error: "" } : current,
       );
@@ -764,6 +841,12 @@ export function createGuardianAccessProvider({
             return STALE_OPERATION_ERROR;
           }
           if (state.mode !== "learner") {
+            intentRef.current = {
+              blocksAutomaticAccess: false,
+              identity,
+              mode: null,
+              version,
+            };
             settledIntentRef.current = version;
             setSnapshot((current) =>
               current.identity === identity
@@ -773,7 +856,11 @@ export function createGuardianAccessProvider({
             return LOCK_ERROR;
           }
           settledIntentRef.current = version;
-          applyState(state, identity, generation);
+          setSnapshot({
+            ...initialSnapshot(identity),
+            blockedByLearnerSwitch: true,
+            mode: "learner",
+          });
           if (storageKey !== null) {
             syncGuardianAccessLock(storageKey, guardianAccessLockToken());
           }
@@ -785,6 +872,12 @@ export function createGuardianAccessProvider({
           ) {
             return STALE_OPERATION_ERROR;
           }
+          intentRef.current = {
+            blocksAutomaticAccess: false,
+            identity,
+            mode: null,
+            version,
+          };
           settledIntentRef.current = version;
           setSnapshot((current) =>
             current.identity === identity
@@ -795,7 +888,6 @@ export function createGuardianAccessProvider({
         }
       });
     }, [
-      applyState,
       beginIntent,
       enqueue,
       isCurrent,
@@ -806,6 +898,8 @@ export function createGuardianAccessProvider({
 
     const value = useMemo<GuardianAccessContextValue>(
       () => ({
+        acknowledgeLearnerSwitch,
+        blockedByLearnerSwitch: visibleSnapshot.blockedByLearnerSwitch,
         error: visibleSnapshot.error,
         expiresAt: visibleSnapshot.expiresAt,
         lock,
@@ -813,7 +907,7 @@ export function createGuardianAccessProvider({
         retry: () => void load(),
         unlock,
       }),
-      [load, lock, unlock, visibleSnapshot],
+      [acknowledgeLearnerSwitch, load, lock, unlock, visibleSnapshot],
     );
 
     return (

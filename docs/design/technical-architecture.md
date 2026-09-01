@@ -10,8 +10,9 @@ API and falls back to static Vite assets for non-API requests.
 Browser
   -> Cloudflare Worker
        -> /api/auth/* -> Better Auth -> Drizzle -> D1
-       -> /api/guardian-access -> Better Auth password check -> D1
-       -> /api/learner-profiles -> Guardian unlock -> D1 roster + session selection
+       -> /api/guardian-access -> authenticated session grant -> D1
+       -> /api/learner-profiles -> authenticated ownership
+            -> D1 roster + session selection
        -> active-learner resolver -> owned learner identity
             -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
             -> /api/conversations/* -> LiveKit -> D1
@@ -34,7 +35,8 @@ prototype build entry in the shipped product.
 - `src/app/HomeMenu.tsx` exposes the four learner activities, including Five
   Little Ducks dubbing.
 - `src/auth` owns the Better Auth session, account UI, guardian-access state,
-  password unlock, fixed expiry, and learner/guardian route boundaries.
+  automatic temporary grant, fixed expiry, and learner/guardian route
+  boundaries.
 - `src/learner-profile` owns onboarding, active-learner state, Guardian roster
   management, and profile editing. A successful profile change replaces the
   active profile ID, aborts stale work, clears learner-specific client state,
@@ -64,8 +66,10 @@ prototype build entry in the shipped product.
 Top-level learner navigation stays small. Management starts at `/guardian`,
 with learner CRUD at `/guardian/learners`, story controls at `/guardian/stories`,
 and dubbing consent/deletion at `/guardian/dubbing`. Learner selection occurs
-only inside the shared Guardian-to-learner chooser. Guardian return targets are
-validated against known Guardian routes; invalid targets fall back to
+inside one shared chooser launched from either the learner account menu or
+Guardian mode. Post-login Guardian return targets normalize to learner home;
+validated learner deep links remain intact. Internal Guardian return targets
+are validated against known Guardian routes and invalid targets fall back to
 `/guardian`. Wildcard routing is mode-aware: Guardian mode returns to
 `/guardian`, while learner mode returns to `/`.
 
@@ -93,19 +97,28 @@ authenticated `/api/dubs/five-little-ducks-v2/*` family owns consent-aware
 status, raw clip upload, private clip streaming, durable consent grant, and
 whole-dub revocation/deletion. Static assets are the final fallback.
 
-`GET`, `POST`, and `DELETE /api/guardian-access` read, unlock, and lock the
-current Better Auth session. Unlock verifies the same password used for the
-Guardian's Better Auth account; there is no separate Guardian password or PIN.
-The check is rate-limited, writes a fixed 15-minute expiry, and returns
+`GET`, `POST`, and `DELETE /api/guardian-access` read, grant, and revoke the
+current Better Auth session. In the current temporary flow, `POST` accepts no
+password body and grants the already-authenticated session Guardian access.
+Declared Guardian routes request that grant automatically; a genuine request or
+response failure remains visible at the requested URL with Retry. This
+passwordless entry is a weaker temporary boundary, not a removal of Better Auth,
+owned-learner resolution, or Guardian-only endpoint checks. The grant request is
+rate-limited, writes the actual fixed 15-minute expiry, and returns
 `Cache-Control: no-store`. Expired rows are treated as absent and cleaned up
 lazily. No password, Guardian token, or mode history is stored.
 
-Guardian-protected roster endpoints are:
+Authenticated owner-scoped roster and selection endpoints are:
 
 ```text
 GET  /api/learner-profiles
-POST /api/learner-profiles
 PUT  /api/learner-profiles/:profileId/active
+```
+
+Guardian-protected roster mutations are:
+
+```text
+POST /api/learner-profiles
 DELETE /api/learner-profiles/:profileId
 ```
 
@@ -115,7 +128,8 @@ creates an incomplete nonlegacy profile, and does not change this session's
 active learner.
 `PUT` selects only a profile owned by the authenticated account; missing and
 foreign IDs share a generic `404`. The browser calls it only from the shared
-`Who is learning now?` chooser, before locking Guardian mode and navigating.
+`Who is learning now?` chooser. A Guardian-mode choice locks back to learner
+mode before navigation; a learner-mode choice does not call the lock API.
 `DELETE` requires the same live Guardian unlock and a name-specific UI
 confirmation. It returns the authoritative remaining roster, rejects the final
 usable learner with `409 last_learner`, and leaves retryable cleanup visible as
@@ -125,7 +139,7 @@ re-prove account ownership; malformed, missing, and foreign IDs share a generic
 `404`.
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
-before roster reads/mutations, Guardian profile reads/updates, profile
+before roster create/delete mutations, Guardian profile reads/updates, profile
 preference changes, personalized-art mutations, dubbing consent grant, and
 whole-dub deletion when the current session lacks a live unlock.
 Conversation start is purpose-aware: profile edits
@@ -175,8 +189,9 @@ role or long-lived account permission. The active learner is separate server
 state for that same session, so different sessions can manage different
 learners without changing one another. Guardian settings use explicit
 learner-target URLs and never mutate that state. The shared switch dialog first
-selects its explicit radio choice, then locks Guardian access, then navigates;
-it begins with no preselected choice and keeps the current page on failure.
+selects the learner named by a direct learner button, then locks Guardian access
+when leaving Guardian mode, then navigates. The button is the complete selection
+action, and the dialog keeps the current page on failure.
 
 Dubbing and lesson-recording consent are deliberately durable learner state so
 the selected learner may record after Guardian mode is locked. Lesson and dub
