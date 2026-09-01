@@ -14,9 +14,9 @@ import { getNurseryRhymesPath } from "../app/app-routes";
 import { isAbortError } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
+  prepareSpeechRecording,
   RecordingUnsupportedError,
-  startSpeechRecording,
-  type SpeechRecordingSession,
+  type PreparedSpeechRecordingSession,
 } from "../media/speech-recorder";
 import { ActionButton } from "../shared/ui";
 import {
@@ -30,9 +30,11 @@ import {
   prepareDubLineBacking,
   startDubPlayback,
   type DubAudioSource,
+  type DubPlaybackPosition,
   type PreparedDubLineBacking,
 } from "./dub-playback";
 import { DubListenOnly } from "./DubListenOnly";
+import type { DubGuidancePosition } from "./DubKaraokeGuide";
 import { DubProjectHome } from "./DubProjectHome";
 import { DubSceneEditor } from "./DubSceneEditor";
 import {
@@ -52,6 +54,10 @@ type TakePreview = {
   url: string;
 };
 
+type DubPresentation = DubGuidancePosition & Readonly<{
+  countInBeat: number | null;
+}>;
+
 function getSceneLines(definition: DubDefinition) {
   return Array.from(
     { length: definition.lines.length / definition.linesPerScene },
@@ -64,24 +70,6 @@ function getSceneLines(definition: DubDefinition) {
 
 function getLineIndex(definition: DubDefinition, lineId: string) {
   return definition.lines.findIndex((line) => line.id === lineId);
-}
-
-function getDubLineAtElapsed(definition: DubDefinition, elapsedMs: number) {
-  return [...definition.lines].reverse().find(({ cueMs }) => elapsedMs >= cueMs)
-    ?? definition.lines[0];
-}
-
-function getDubSceneLineAtElapsed(
-  definition: DubDefinition,
-  sceneIndex: number,
-  elapsedMs: number,
-) {
-  const sceneLines = getSceneLines(definition)[sceneIndex];
-  if (!sceneLines) throw new RangeError("Unknown dub scene.");
-  const cueOffsetMs = sceneLines[0].cueMs;
-  return [...sceneLines].reverse().find(
-    ({ cueMs }) => elapsedMs >= cueMs - cueOffsetMs,
-  ) ?? sceneLines[0];
 }
 
 function microphoneMessage(error: unknown) {
@@ -103,12 +91,14 @@ function unavailableLineMessage(definition: DubDefinition, lineId: string) {
 
 function isUnsafeOperation(operation: DubOperation) {
   return operation === "mic-opening"
+    || operation === "counting-in"
     || operation === "recording"
     || operation === "saving";
 }
 
 function isControlLocked(operation: DubOperation) {
   return operation === "mic-opening"
+    || operation === "counting-in"
     || operation === "saving";
 }
 
@@ -193,8 +183,11 @@ export function DubStudio({
   );
   const [loadError, setLoadError] = useState("");
   const [loadSequence, setLoadSequence] = useState(0);
-  const [playbackLineIndex, setPlaybackLineIndex] = useState(0);
-  const [recordingElapsedMs, setRecordingElapsedMs] = useState(0);
+  const [presentation, setPresentation] = useState<DubPresentation>(() => ({
+    countInBeat: null,
+    elapsedMs: null,
+    lineId: definition.lines[0]?.id ?? null,
+  }));
   const [takePreview, setTakePreview] = useState<TakePreview | null>(null);
 
   const mountedRef = useRef(false);
@@ -205,7 +198,7 @@ export function DubStudio({
   const uploadControllerRef = useRef<AbortController | null>(null);
   const playbackControllerRef = useRef<AbortController | null>(null);
   const recordingControllerRef = useRef<AbortController | null>(null);
-  const recordingSessionRef = useRef<SpeechRecordingSession | null>(null);
+  const recordingSessionRef = useRef<PreparedSpeechRecordingSession | null>(null);
   const recordingBackingRef = useRef<PreparedDubLineBacking | null>(null);
   const playbackRef = useRef<{ stop(): void } | null>(null);
   const pendingBlobRef = useRef<Blob | null>(null);
@@ -217,6 +210,8 @@ export function DubStudio({
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
+  const selectedLineIdRef = useRef(definition.lines[0]?.id ?? null);
+  selectedLineIdRef.current = definition.lines[state.selectedLineIndex]?.id ?? null;
 
   function focusAfterRender(ref: RefObject<HTMLElement | null>, generation: number) {
     let framesRemaining = 4;
@@ -247,8 +242,9 @@ export function DubStudio({
     setTakePreview(preview);
   }, [clearTakePreview]);
 
-  const clearRecordingProgress = useCallback((reset: boolean) => {
-    if (reset && mountedRef.current) setRecordingElapsedMs(0);
+  const resetPresentation = useCallback((lineId = selectedLineIdRef.current) => {
+    if (!mountedRef.current) return;
+    setPresentation({ countInBeat: null, elapsedMs: null, lineId });
   }, []);
 
   const cancelMedia = useCallback((discardTake: boolean) => {
@@ -269,22 +265,22 @@ export function DubStudio({
     recordingBackingRef.current = null;
     recordingSessionRef.current?.cancel();
     recordingSessionRef.current = null;
-    clearRecordingProgress(true);
+    resetPresentation();
     if (discardTake) {
       pendingBlobRef.current = null;
       pendingLineIdRef.current = null;
       clearTakePreview();
     }
     return mediaGenerationRef.current;
-  }, [clearRecordingProgress, clearTakePreview]);
+  }, [clearTakePreview, resetPresentation]);
 
   const handleConsentLoss = useCallback(() => {
     const generation = cancelMedia(true);
     setLoadError("");
-    setPlaybackLineIndex(0);
+    resetPresentation(definition.lines[0]?.id ?? null);
     dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
     focusAfterRender(fullPlaybackButtonRef, generation);
-  }, [cancelMedia]);
+  }, [cancelMedia, definition.lines, resetPresentation]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -375,7 +371,7 @@ export function DubStudio({
     const backing = recordingBackingRef.current;
     recordingBackingRef.current = null;
     backing?.stop();
-    clearRecordingProgress(false);
+    resetPresentation();
     dispatch({ type: "OPERATION_STARTED", operation: "saving" });
     try {
       const blob = await session.stop();
@@ -396,72 +392,102 @@ export function DubStudio({
     }
   }
 
-  function failRecording(generation: number) {
+  function failRecording(generation: number, captureStarted: boolean) {
     if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
-    const nextGeneration = cancelMedia(true);
+    const nextGeneration = cancelMedia(captureStarted);
     dispatch({ type: "OPERATION_FINISHED" });
-    dispatch({ type: "SET_ERROR", message: "The melody could not start. Try recording again." });
+    if (captureStarted || state.saveRecovery === null) {
+      dispatch({ type: "SET_ERROR", message: "The melody could not start. Try recording again." });
+    }
     focusAfterRender(recordButtonRef, nextGeneration);
   }
 
   async function startRecording() {
     if (isUnsafeOperation(state.operation)) return;
-    const generation = cancelMedia(true);
+    const generation = cancelMedia(false);
     const line = definition.lines[state.selectedLineIndex];
     const controller = new AbortController();
     let backing: PreparedDubLineBacking | null = null;
     let backingPrepared = false;
-    let session: SpeechRecordingSession | null = null;
+    let captureStarted = false;
+    let session: PreparedSpeechRecordingSession | null = null;
     recordingControllerRef.current = controller;
-    pendingLineIdRef.current = line.id;
     dispatch({ type: "OPERATION_STARTED", operation: "mic-opening" });
     try {
       backing = await prepareDubLineBacking({
         definition,
         line,
         onEnded: () => void finishRecording(generation),
-        onFailure: () => failRecording(generation),
+        onCountIn: (remainingBeats) => {
+          if (mountedRef.current && generation === mediaGenerationRef.current) {
+            setPresentation({
+              countInBeat: remainingBeats,
+              elapsedMs: null,
+              lineId: line.id,
+            });
+          }
+        },
+        onDownbeat: () => {
+          if (!mountedRef.current || generation !== mediaGenerationRef.current || !session) return;
+          session.start();
+          captureStarted = true;
+          clearTakePreview();
+          pendingBlobRef.current = null;
+          pendingLineIdRef.current = line.id;
+          setPresentation({ countInBeat: null, elapsedMs: 0, lineId: line.id });
+          dispatch({ type: "OPERATION_STARTED", operation: "recording" });
+        },
+        onFailure: () => failRecording(generation, captureStarted),
         onTick: (elapsedMs) => {
           if (mountedRef.current && generation === mediaGenerationRef.current) {
-            setRecordingElapsedMs(elapsedMs);
+            setPresentation({
+              countInBeat: null,
+              elapsedMs,
+              lineId: line.id,
+            });
           }
         },
         signal: controller.signal,
       });
       backingPrepared = true;
-      recordingBackingRef.current = backing;
-      session = await startSpeechRecording({ signal: controller.signal });
+      session = await prepareSpeechRecording({ signal: controller.signal });
       if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         session.cancel();
-        if (recordingBackingRef.current === backing) recordingBackingRef.current = null;
         backing.stop();
         return;
       }
+      recordingBackingRef.current = backing;
       recordingSessionRef.current = session;
+      dispatch({ type: "OPERATION_STARTED", operation: "counting-in" });
       backing.start();
-      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
-      setRecordingElapsedMs(0);
-      dispatch({ type: "OPERATION_STARTED", operation: "recording" });
     } catch (error) {
       if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
       recordingControllerRef.current = null;
-      pendingLineIdRef.current = null;
       if (recordingSessionRef.current === session) recordingSessionRef.current = null;
       session?.cancel();
       if (recordingBackingRef.current === backing) recordingBackingRef.current = null;
       backing?.stop();
+      resetPresentation(line.id);
       dispatch({ type: "OPERATION_FINISHED" });
-      dispatch({
-        type: "SET_ERROR",
-        message: !backingPrepared || session
-          ? "The melody could not start. Try recording again."
-          : microphoneMessage(error),
-      });
+      if (captureStarted || state.saveRecovery === null) {
+        dispatch({
+          type: "SET_ERROR",
+          message: !backingPrepared || session
+            ? "The melody could not start. Try recording again."
+            : microphoneMessage(error),
+        });
+      }
       focusAfterRender(recordButtonRef, generation);
     }
   }
 
   function handleRecord() {
+    if (state.operation === "counting-in") {
+      const generation = cancelMedia(false);
+      dispatch({ type: "OPERATION_FINISHED" });
+      focusAfterRender(recordButtonRef, generation);
+      return;
+    }
     if (state.operation === "recording") {
       void finishRecording();
       return;
@@ -481,14 +507,24 @@ export function DubStudio({
       try {
         const playback = await startDubPlayback({
           definition,
+          includeOutro: false,
           lines: [line],
           onEnded() {
             if (generation !== mediaGenerationRef.current) return;
             playbackRef.current = null;
             guideControllerRef.current = null;
+            resetPresentation();
             dispatch({ type: "OPERATION_FINISHED" });
           },
-          onTick() {},
+          onTick(_rawElapsedMs, position: DubPlaybackPosition) {
+            if (mountedRef.current && generation === mediaGenerationRef.current) {
+              setPresentation({
+                countInBeat: null,
+                elapsedMs: position.lineElapsedMs,
+                lineId: position.line.id,
+              });
+            }
+          },
           onLineUnavailable() {
             throw new Error("The guide source is unavailable.");
           },
@@ -500,6 +536,7 @@ export function DubStudio({
       } catch (error) {
         if (controller.signal.aborted || generation !== mediaGenerationRef.current || isAbortError(error)) return;
         guideControllerRef.current = null;
+        resetPresentation();
         dispatch({ type: "OPERATION_FINISHED" });
         dispatch({ type: "SET_ERROR", message: "I could not play that example. You can still record the words you see." });
       }
@@ -531,14 +568,24 @@ export function DubStudio({
           ?? getDubLineAudioUrl(line.id, { dubId: definition.id });
         const playback = await startDubPlayback({
           definition,
+          includeOutro: false,
           lines: [line],
           onEnded() {
             if (generation !== mediaGenerationRef.current) return;
             playbackRef.current = null;
             takeControllerRef.current = null;
+            resetPresentation();
             dispatch({ type: "OPERATION_FINISHED" });
           },
-          onTick() {},
+          onTick(_rawElapsedMs, position: DubPlaybackPosition) {
+            if (mountedRef.current && generation === mediaGenerationRef.current) {
+              setPresentation({
+                countInBeat: null,
+                elapsedMs: position.lineElapsedMs,
+                lineId: position.line.id,
+              });
+            }
+          },
           onLineUnavailable() {
             throw new Error("The saved take source is unavailable.");
           },
@@ -553,6 +600,7 @@ export function DubStudio({
           handleConsentLoss();
           return;
         }
+        resetPresentation();
         dispatch({ type: "MARK_NEEDS_RETAKE", lineId: line.id });
         dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
         if (takeControllerRef.current === controller) takeControllerRef.current = null;
@@ -583,7 +631,7 @@ export function DubStudio({
     const lines = scope === "full" ? definition.lines : sceneLines[sceneIndex];
     const unavailableLineIds = new Set<string>();
     playbackControllerRef.current = controller;
-    setPlaybackLineIndex(scope === "full" ? 0 : sceneIndex * definition.linesPerScene);
+    resetPresentation(lines[0]?.id ?? null);
     dispatch({ type: "OPERATION_STARTED", operation: "playback-loading", playbackScope: scope });
     try {
       const playback = await startDubPlayback({
@@ -593,6 +641,7 @@ export function DubStudio({
           if (generation !== mediaGenerationRef.current) return;
           playbackRef.current = null;
           playbackControllerRef.current = null;
+          resetPresentation();
           dispatch({ type: "OPERATION_FINISHED" });
           focusAfterRender(
             scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
@@ -605,12 +654,13 @@ export function DubStudio({
         onLineUnavailable(lineId) {
           unavailableLineIds.add(lineId);
         },
-        onTick(elapsedMs) {
+        onTick(_rawElapsedMs, position: DubPlaybackPosition) {
           if (generation !== mediaGenerationRef.current) return;
-          const line = scope === "full"
-            ? getDubLineAtElapsed(definition, elapsedMs)
-            : getDubSceneLineAtElapsed(definition, sceneIndex, elapsedMs);
-          setPlaybackLineIndex(getLineIndex(definition, line.id));
+          setPresentation({
+            countInBeat: null,
+            elapsedMs: position.lineElapsedMs,
+            lineId: position.line.id,
+          });
         },
         resolveAudioSource: guideOnlyPlayback
           ? resolveGuideOnlyDubLineAudioSource
@@ -624,6 +674,7 @@ export function DubStudio({
       if (guideOnlyPlayback && unavailableLineIds.size === lines.length) {
         playback.stop();
         playbackControllerRef.current = null;
+        resetPresentation();
         dispatch({ type: "OPERATION_FINISHED" });
         dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
         focusAfterRender(fullPlaybackButtonRef, generation);
@@ -644,6 +695,7 @@ export function DubStudio({
         return;
       }
       dispatch({ type: "OPERATION_FINISHED" });
+      resetPresentation();
       dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
       focusAfterRender(
         scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
@@ -656,6 +708,7 @@ export function DubStudio({
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
     dispatch({ type: "OPEN_SCENE", sceneIndex });
+    resetPresentation(definition.lines[sceneIndex * definition.linesPerScene]?.id ?? null);
     focusAfterRender(lineHeadingRef, generation);
   }
 
@@ -663,6 +716,7 @@ export function DubStudio({
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(lineId !== definition.lines[state.selectedLineIndex].id);
     dispatch({ type: "SELECT_LINE", lineId });
+    resetPresentation(lineId);
     focusAfterRender(lineHeadingRef, generation);
   }
 
@@ -705,19 +759,22 @@ export function DubStudio({
   }
 
   const selectedLine = definition.lines[state.selectedLineIndex] ?? definition.lines[0];
-  const playbackLine = definition.lines[playbackLineIndex] ?? selectedLine;
+  const playbackLine = definition.lines.find(({ id }) => id === presentation.lineId) ?? selectedLine;
   const visualLine = state.operation === "playback" || state.operation === "playback-loading"
     ? playbackLine
     : selectedLine;
   const locked = isControlLocked(state.operation);
   const selectedSceneNumber = state.selectedSceneIndex + 1;
   const selectedSceneLineNumber = state.selectedLineIndex % definition.linesPerScene + 1;
-  const playbackSceneNumber = Math.floor(playbackLineIndex / definition.linesPerScene) + 1;
-  const playbackSceneLineNumber = playbackLineIndex % definition.linesPerScene + 1;
+  const playbackLinePosition = Math.max(0, getLineIndex(definition, playbackLine.id));
+  const playbackSceneNumber = Math.floor(playbackLinePosition / definition.linesPerScene) + 1;
+  const playbackSceneLineNumber = playbackLinePosition % definition.linesPerScene + 1;
   let liveStatus = "";
   const activeError = state.error || loadError;
   if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
+  } else if (state.operation === "counting-in") {
+    liveStatus = "Get ready. Recording starts after two beats.";
   } else if (state.operation === "recording") {
     liveStatus = "Recording with melody…";
   } else if (state.operation === "saving") {
@@ -772,6 +829,9 @@ export function DubStudio({
           : "idle"}
         playbackButtonRef={fullPlaybackButtonRef}
         visualLine={visualLine}
+        guidance={state.operation === "playback" && state.playbackScope === "full"
+          ? presentation
+          : null}
       />
     );
   } else if (state.view === "project") {
@@ -794,6 +854,9 @@ export function DubStudio({
         playbackButtonRef={fullPlaybackButtonRef}
         saved={state.saved}
         visualLine={visualLine}
+        guidance={state.operation === "playback" && state.playbackScope === "full"
+          ? presentation
+          : null}
       />
     );
   } else {
@@ -812,8 +875,10 @@ export function DubStudio({
         onRetrySave={handleRetrySave}
         operation={state.operation}
         pendingTake={takePreview?.blob ?? null}
-        recordingElapsedMs={recordingElapsedMs}
-        recordingStream={recordingSessionRef.current?.stream ?? null}
+        presentation={presentation}
+        recordingStream={state.operation === "recording"
+          ? recordingSessionRef.current?.stream ?? null
+          : null}
         nextButtonRef={nextButtonRef}
         recordButtonRef={recordButtonRef}
         saveButtonRef={saveButtonRef}

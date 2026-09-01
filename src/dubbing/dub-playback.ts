@@ -27,11 +27,12 @@ type StartDubPlaybackOptions = {
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
   definition?: DubDefinition;
   fetch?: typeof globalThis.fetch;
+  includeOutro?: boolean;
   lines?: readonly DubLine[];
   onEnded?: () => void;
   onLineFallback?: (lineId: DubLine["id"], stage: DubLinePlaybackStage) => void;
   onLineUnavailable?: (lineId: DubLine["id"]) => void;
-  onTick: (elapsedMs: number) => void;
+  onTick: (elapsedMs: number, position: DubPlaybackPosition) => void;
   requestAnimationFrame?: typeof globalThis.requestAnimationFrame;
   resolveAudioSource?: (line: DubLine) => DubAudioSource;
   setTimeout?: typeof globalThis.setTimeout;
@@ -39,6 +40,7 @@ type StartDubPlaybackOptions = {
 };
 
 export type PreparedDubLineBacking = {
+  countInDurationMs: number;
   durationMs: number;
   start(): void;
   stop(): void;
@@ -49,6 +51,8 @@ type PrepareDubLineBackingOptions = {
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
   definition?: DubDefinition;
   line: DubLine;
+  onCountIn?: (remainingBeats: number) => void;
+  onDownbeat?: () => void;
   onEnded?: () => void;
   onFailure?: (error: unknown) => void;
   onTick?: (elapsedMs: number) => void;
@@ -57,6 +61,11 @@ type PrepareDubLineBackingOptions = {
 };
 
 export type DubLinePlaybackStage = "fetch" | "decode";
+
+export type DubPlaybackPosition = Readonly<{
+  line: DubLine;
+  lineElapsedMs: number | null;
+}>;
 
 export type DubAudioSource = {
   fallbackUrl?: string;
@@ -160,52 +169,42 @@ function scheduleDubMusic(
   authoredDurationMs: number,
   output: AudioNode,
   startAt: number,
+  includeOutro = true,
 ) {
   const oscillators: OscillatorNode[] = [];
   const getPhrase = (line: DubLine) => getDubLineMusicPhrase(definition, line);
 
   try {
-    const fullDub = cueOffsetMs === 0
-      && lines.length === definition.lines.length
-      && lines[0] === definition.lines[0];
-    if (fullDub) {
-      for (let beat = 0; beat < definition.countInBeats; beat += 1) {
-        scheduleTone(context, output, oscillators, {
-          durationMs: DUB_COUNT_CLICK_DURATION_MS,
-          gain: 0.35,
-          midi: definition.countInMidi,
-          startsAt: startAt + beat * definition.music.countInBeatMs / 1_000,
-          type: "sine",
-        });
-      }
-    }
-
     for (const line of lines) {
       const phrase = getPhrase(line);
       const phraseStartsMs = line.cueMs - cueOffsetMs;
       for (const note of phrase.playbackNotes) {
+        const noteStartsMs = phraseStartsMs + note.atMs;
+        if (noteStartsMs < 0 || noteStartsMs >= authoredDurationMs) continue;
         const melody = note.role === "melody";
         scheduleTone(context, output, oscillators, {
-          durationMs: note.durationMs,
+          durationMs: Math.min(note.durationMs, authoredDurationMs - noteStartsMs),
           gain: melody ? 0.78 : 0.24,
           midi: note.midi,
-          startsAt: startAt + (phraseStartsMs + note.atMs) / 1_000,
+          startsAt: startAt + noteStartsMs / 1_000,
           type: melody ? "triangle" : "sine",
         });
       }
     }
 
-    const playbackEndMs = cueOffsetMs + authoredDurationMs;
-    for (const note of definition.music.outroNotes) {
-      if (note.atMs < cueOffsetMs || note.atMs >= playbackEndMs) continue;
-      const melody = note.role === "melody";
-      scheduleTone(context, output, oscillators, {
-        durationMs: note.durationMs,
-        gain: melody ? 0.78 : 0.24,
-        midi: note.midi,
-        startsAt: startAt + (note.atMs - cueOffsetMs) / 1_000,
-        type: melody ? "triangle" : "sine",
-      });
+    if (includeOutro) {
+      const playbackEndMs = cueOffsetMs + authoredDurationMs;
+      for (const note of definition.music.outroNotes) {
+        if (note.atMs < cueOffsetMs || note.atMs >= playbackEndMs) continue;
+        const melody = note.role === "melody";
+        scheduleTone(context, output, oscillators, {
+          durationMs: note.durationMs,
+          gain: melody ? 0.78 : 0.24,
+          midi: note.midi,
+          startsAt: startAt + (note.atMs - cueOffsetMs) / 1_000,
+          type: melody ? "triangle" : "sine",
+        });
+      }
     }
   } catch (error) {
     oscillators.forEach(stopNode);
@@ -213,6 +212,47 @@ function scheduleDubMusic(
   }
 
   return oscillators;
+}
+
+function scheduleDubCountClicks(
+  context: AudioContext,
+  definition: DubDefinition,
+  output: AudioNode,
+  startAt: number,
+) {
+  const oscillators: OscillatorNode[] = [];
+  try {
+    for (let beat = 0; beat < definition.countInBeats; beat += 1) {
+      scheduleTone(context, output, oscillators, {
+        durationMs: DUB_COUNT_CLICK_DURATION_MS,
+        gain: 0.35,
+        midi: definition.countInMidi,
+        startsAt: startAt + beat * definition.music.countInBeatMs / 1_000,
+        type: "sine",
+      });
+    }
+  } catch (error) {
+    oscillators.forEach(stopNode);
+    throw error;
+  }
+  return oscillators;
+}
+
+function scheduleMainThreadMarker(
+  context: AudioContext,
+  startAt: number,
+  endsAt: number,
+  onEnded: () => void,
+) {
+  const marker = context.createOscillator();
+  marker.frequency.value = 1;
+  marker.onended = () => {
+    marker.onended = null;
+    onEnded();
+  };
+  marker.start(startAt);
+  marker.stop(endsAt);
+  return marker;
 }
 
 function createAbortError() {
@@ -249,21 +289,40 @@ function getPlaybackScope(
   };
 }
 
+function getPlaybackPosition(
+  lines: readonly DubLine[],
+  cueOffsetMs: number,
+  elapsedMs: number,
+): DubPlaybackPosition {
+  const authoredElapsedMs = cueOffsetMs + Math.round(elapsedMs);
+  const line = [...lines].reverse().find(({ cueMs }) => authoredElapsedMs >= cueMs)
+    ?? lines[0];
+  return {
+    line,
+    lineElapsedMs: authoredElapsedMs < lines[0].cueMs
+      ? null
+      : Math.min(line.durationMs, Math.max(0, authoredElapsedMs - line.cueMs)),
+  };
+}
+
 export async function prepareDubLineBacking({
   AudioContext: AudioContextClass = globalThis.AudioContext,
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
   definition = FIVE_LITTLE_DUCKS_DUB,
   line,
+  onCountIn = () => {},
+  onDownbeat = () => {},
   onEnded,
   onFailure,
   onTick = () => {},
   requestAnimationFrame: requestFrame = globalThis.requestAnimationFrame,
   signal,
 }: PrepareDubLineBackingOptions): Promise<PreparedDubLineBacking> {
-  const phrase = getDubLineMusicPhrase(definition, line);
+  void getDubLineMusicPhrase(definition, line);
   const context = new AudioContextClass();
   let frameId: number | null = null;
   let oscillators: OscillatorNode[] = [];
+  const markers: OscillatorNode[] = [];
   let terminal: OscillatorNode | null = null;
   let started = false;
   let stopped = false;
@@ -273,6 +332,7 @@ export async function prepareDubLineBacking({
     const terminalNode = terminal;
     terminal = null;
     if (terminalNode) terminalNode.onended = null;
+    markers.forEach((marker) => { marker.onended = null; });
     if (frameId !== null) {
       const pendingFrameId = frameId;
       frameId = null;
@@ -283,6 +343,7 @@ export async function prepareDubLineBacking({
       }
     }
     oscillators.forEach(stopNode);
+    markers.forEach(stopNode);
     if (terminalNode) stopNode(terminalNode);
     try {
       signal?.removeEventListener("abort", stop);
@@ -317,7 +378,8 @@ export async function prepareDubLineBacking({
   }
 
   return {
-    durationMs: phrase.durationMs,
+    countInDurationMs: definition.music.countInDurationMs,
+    durationMs: line.durationMs,
     start() {
       if (started || stopped) throw new Error("Dub line backing is not startable.");
       started = true;
@@ -329,26 +391,30 @@ export async function prepareDubLineBacking({
         music.gain.value = definition.music.volume;
         music.connect(master);
         const startAt = context.currentTime;
-        oscillators = scheduleDubMusic(
+        const downbeatAt = startAt + definition.music.countInDurationMs / 1_000;
+        oscillators = scheduleDubCountClicks(context, definition, music, startAt);
+        oscillators.push(...scheduleDubMusic(
           context,
           definition,
           [line],
           line.cueMs,
-          phrase.durationMs,
+          line.durationMs,
           music,
-          startAt,
-        );
+          downbeatAt,
+          false,
+        ));
         terminal = context.createOscillator();
+        terminal.frequency.value = 0;
         terminal.onended = end;
         terminal.start(startAt);
-        terminal.stop(startAt + phrase.durationMs / 1_000);
+        terminal.stop(downbeatAt + line.durationMs / 1_000);
         const tick = () => {
           frameId = null;
           if (stopped) return;
           try {
             const elapsedMs = Math.min(
-              phrase.durationMs,
-              Math.max(0, (context.currentTime - startAt) * 1_000),
+              line.durationMs,
+              Math.max(0, (context.currentTime - downbeatAt) * 1_000),
             );
             onTick(elapsedMs);
             if (!stopped) frameId = requestFrame(tick);
@@ -356,8 +422,38 @@ export async function prepareDubLineBacking({
             fail(error);
           }
         };
-        onTick(0);
-        if (!stopped) frameId = requestFrame(tick);
+        for (let beat = 1; beat < definition.countInBeats; beat += 1) {
+          const remainingBeats = definition.countInBeats - beat;
+          markers.push(scheduleMainThreadMarker(
+            context,
+            startAt,
+            startAt + beat * definition.music.countInBeatMs / 1_000,
+            () => {
+              if (stopped) return;
+              try {
+                onCountIn(remainingBeats);
+              } catch (error) {
+                fail(error);
+              }
+            },
+          ));
+        }
+        markers.push(scheduleMainThreadMarker(context, startAt, downbeatAt, () => {
+          if (stopped) return;
+          try {
+            onDownbeat();
+            if (stopped) return;
+            onTick(0);
+            if (!stopped) frameId = requestFrame(tick);
+          } catch (error) {
+            fail(error);
+          }
+        }));
+        try {
+          onCountIn(definition.countInBeats);
+        } catch (error) {
+          fail(error);
+        }
       } catch (error) {
         stop();
         throw error;
@@ -372,6 +468,7 @@ export async function startDubPlayback({
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
   definition = FIVE_LITTLE_DUCKS_DUB,
   fetch: request = globalThis.fetch,
+  includeOutro = true,
   lines = definition.lines,
   onEnded,
   onLineFallback,
@@ -384,7 +481,10 @@ export async function startDubPlayback({
   setTimeout: scheduleTimeout = globalThis.setTimeout,
   signal,
 }: StartDubPlaybackOptions): Promise<{ stop(): void }> {
-  const { authoredDurationMs, cueOffsetMs } = getPlaybackScope(lines, definition);
+  const { authoredDurationMs, cueOffsetMs, fullDub } = getPlaybackScope(lines, definition);
+  const scoreScopeDurationMs = !includeOutro && lines.length === 1
+    ? lines[0].durationMs
+    : authoredDurationMs;
   const context = new AudioContextClass();
   const loadController = new AbortController();
   let frameId: number | null = null;
@@ -516,7 +616,7 @@ export async function startDubPlayback({
 
     if (signal?.aborted) throw createAbortError();
     const playbackDurationMs = Math.max(
-      authoredDurationMs,
+      scoreScopeDurationMs,
       ...decodedLines.map(([line, buffer]) =>
         line.cueMs - cueOffsetMs + buffer.duration * 1_000),
     );
@@ -547,20 +647,24 @@ export async function startDubPlayback({
       output: master,
       startAt,
     });
-    oscillators = scheduleDubMusic(
+    oscillators = fullDub
+      ? scheduleDubCountClicks(context, definition, music, startAt)
+      : [];
+    oscillators.push(...scheduleDubMusic(
       context,
       definition,
       lines,
       cueOffsetMs,
-      authoredDurationMs,
+      scoreScopeDurationMs,
       music,
       startAt,
-    );
+      includeOutro,
+    ));
 
     const tick = () => {
       frameId = null;
       const elapsedMs = Math.max(0, (context.currentTime - startAt) * 1_000);
-      onTick(Math.min(authoredDurationMs, elapsedMs));
+      onTick(elapsedMs, getPlaybackPosition(lines, cueOffsetMs, elapsedMs));
       if (stopped) return;
       if (elapsedMs >= playbackDurationMs) {
         void stopPlayback();

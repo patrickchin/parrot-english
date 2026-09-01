@@ -9,6 +9,11 @@ import {
   type DubState,
 } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
+import {
+  DubMelodyLane,
+  DubTimedWords,
+  type DubGuidancePosition,
+} from "./DubKaraokeGuide";
 import { dubArtworkSrcSet } from "./dub-artwork";
 import {
   FIVE_LITTLE_DUCKS_DUB,
@@ -31,6 +36,7 @@ export type DubProjectHomeProps = {
   playbackButtonRef?: RefObject<HTMLButtonElement | null>;
   saved: Readonly<Record<string, string>>;
   visualLine?: DubLine;
+  guidance?: DubGuidancePosition | null;
 };
 
 function getSceneLines(definition: DubDefinition) {
@@ -69,6 +75,7 @@ export function DubProjectHome({
   playbackButtonRef,
   saved,
   visualLine = activeLine,
+  guidance = null,
 }: DubProjectHomeProps) {
   const retakeCount = Object.keys(needsRetake).length;
   const sceneLines = getSceneLines(definition);
@@ -117,6 +124,9 @@ export function DubProjectHome({
     : playback === "loading"
       ? "Loading full video…"
       : "Play full video";
+  const guidanceLine = playback === "playing" && guidance?.lineId
+    ? definition.lines.find(({ id }) => id === guidance.lineId)
+    : undefined;
 
   return (
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16">
@@ -149,6 +159,12 @@ export function DubProjectHome({
                 playing={playback === "playing"}
               />
             </section>
+            {guidanceLine ? (
+              <section aria-label="Karaoke guide" className="grid gap-1 rounded-2xl bg-white/90 px-3 py-2 text-center text-base font-black leading-snug text-brand-ink shadow-sm short-wide:px-2 short-wide:py-1 short-wide:text-sm">
+                <p className="m-0"><DubTimedWords elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} /></p>
+                <DubMelodyLane definition={definition} elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} />
+              </section>
+            ) : null}
             <ActionButton
               aria-label={playbackLabel}
               className="h-12 min-h-12 min-w-28 justify-self-start gap-2 border-2 bg-brand-navy/95 px-4 text-base short-wide:px-3 short-wide:text-sm"
