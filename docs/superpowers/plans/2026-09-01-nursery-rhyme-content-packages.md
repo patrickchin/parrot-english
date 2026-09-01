@@ -431,10 +431,10 @@ buffer. Reject misaligned/non-Buffer PCM. Compute
 `timelineSampleCount = round(sampleRate * timelineDurationMs / 1000)` and feed
 that boundary to the existing `getNormalizedPeakBars` algorithm: missing
 samples become trailing zero bars and samples after the phrase are ignored.
-Normalize the resulting 32 peaks, quantize them to three decimals so decoder
-least-significant-bit differences across supported FFmpeg builds cannot churn
-checked-in output, and return zeros for silence. Include the package path in
-every error. Emit bars per line
+Normalize the resulting 32 peaks, quantize them to three decimals to keep the
+checked-in presentation compact, and return zeros for silence. The forced
+fixed-point decoder and explicit integer resampler provide cross-build
+stability. Include the package path in every error. Emit bars per line
 because one reused guide can legally appear on different phrase durations.
 
 - [ ] **Step 4: Run the focused test and verify GREEN**
