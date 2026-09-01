@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-animals-cat-label",
-        "text": "This is a cat."
+        "text": "cat"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-animals-dog-label",
-        "text": "This is a dog."
+        "text": "dog"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-animals-bird-label",
-        "text": "This is a bird."
+        "text": "bird"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-animals-fish-label",
-        "text": "This is a fish."
+        "text": "fish"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-animals-duck-label",
-        "text": "This is a duck."
+        "text": "duck"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-animals-frog-label",
-        "text": "This is a frog."
+        "text": "frog"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-animals-pig-label",
-        "text": "This is a pig."
+        "text": "pig"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-animals-cow-label",
-        "text": "This is a cow."
+        "text": "cow"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-animals-horse-label",
-        "text": "This is a horse."
+        "text": "horse"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-animals-alligator-label",
-        "text": "This is an alligator."
+        "text": "alligator"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-animals-elephant-label",
-        "text": "This is an elephant."
+        "text": "elephant"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-animals-giraffe-label",
-        "text": "This is a giraffe."
+        "text": "giraffe"
       }
     }
   ],

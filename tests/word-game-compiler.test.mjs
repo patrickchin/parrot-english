@@ -400,7 +400,7 @@ describe("word-game package compilation", () => {
     await assert.rejects(compileWordGamePackages(unexpected.paths), /unexpected Noto file surprise\.svg/i);
   });
 
-  it("rejects duplicate global audio IDs even when their text matches", async (t) => {
+  it("reuses a global audio ID when its text matches", async (t) => {
     const fixture = await repositoryFixture(t);
     fixture.category.items[1].audio.id = fixture.category.items[0].audio.id;
     fixture.category.items[1].audio.text = fixture.category.items[0].audio.text;
@@ -409,9 +409,10 @@ describe("word-game package compilation", () => {
     }
     await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
 
-    await assert.rejects(
-      compileWordGamePackages(fixture.paths),
-      /duplicate global audio id word-game-animals-cat-label/i,
+    const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
+    assert.equal(
+      plan.lines.filter(({ id }) => id === "word-game-animals-cat-label").length,
+      1,
     );
   });
 

@@ -17,7 +17,7 @@
       },
       "audio": {
         "id": "word-game-transport-car-label",
-        "text": "This is a car."
+        "text": "car"
       }
     },
     {
@@ -30,7 +30,7 @@
       },
       "audio": {
         "id": "word-game-transport-bus-label",
-        "text": "This is a bus."
+        "text": "bus"
       }
     },
     {
@@ -43,7 +43,7 @@
       },
       "audio": {
         "id": "word-game-transport-bicycle-label",
-        "text": "This is a bicycle."
+        "text": "bicycle"
       }
     },
     {
@@ -56,7 +56,7 @@
       },
       "audio": {
         "id": "word-game-transport-train-label",
-        "text": "This is a train."
+        "text": "train"
       }
     },
     {
@@ -69,7 +69,7 @@
       },
       "audio": {
         "id": "word-game-transport-boat-label",
-        "text": "This is a boat."
+        "text": "boat"
       }
     },
     {
@@ -82,7 +82,7 @@
       },
       "audio": {
         "id": "word-game-transport-airplane-label",
-        "text": "This is an airplane."
+        "text": "airplane"
       }
     },
     {
@@ -95,7 +95,7 @@
       },
       "audio": {
         "id": "word-game-transport-taxi-label",
-        "text": "This is a taxi."
+        "text": "taxi"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "audio": {
         "id": "word-game-transport-truck-label",
-        "text": "This is a truck."
+        "text": "truck"
       }
     },
     {
@@ -121,7 +121,7 @@
       },
       "audio": {
         "id": "word-game-transport-scooter-label",
-        "text": "This is a scooter."
+        "text": "scooter"
       }
     },
     {
@@ -134,7 +134,7 @@
       },
       "audio": {
         "id": "word-game-transport-helicopter-label",
-        "text": "This is a helicopter."
+        "text": "helicopter"
       }
     },
     {
@@ -147,7 +147,7 @@
       },
       "audio": {
         "id": "word-game-transport-motorcycle-label",
-        "text": "This is a motorcycle."
+        "text": "motorcycle"
       }
     },
     {
@@ -160,7 +160,7 @@
       },
       "audio": {
         "id": "word-game-transport-rocket-label",
-        "text": "This is a rocket."
+        "text": "rocket"
       }
     }
   ],

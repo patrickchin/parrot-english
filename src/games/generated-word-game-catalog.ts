@@ -9,7 +9,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly cat.",
         "audio": {
           "id": "word-game-animals-cat-label",
-          "text": "This is a cat.",
+          "text": "cat",
           "source": "/assets/audio/word-game-animals-cat-label.mp3"
         },
         "id": "cat",
@@ -23,7 +23,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly dog.",
         "audio": {
           "id": "word-game-animals-dog-label",
-          "text": "This is a dog.",
+          "text": "dog",
           "source": "/assets/audio/word-game-animals-dog-label.mp3"
         },
         "id": "dog",
@@ -37,7 +37,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly bird.",
         "audio": {
           "id": "word-game-animals-bird-label",
-          "text": "This is a bird.",
+          "text": "bird",
           "source": "/assets/audio/word-game-animals-bird-label.mp3"
         },
         "id": "bird",
@@ -51,7 +51,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly fish.",
         "audio": {
           "id": "word-game-animals-fish-label",
-          "text": "This is a fish.",
+          "text": "fish",
           "source": "/assets/audio/word-game-animals-fish-label.mp3"
         },
         "id": "fish",
@@ -65,7 +65,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly duck.",
         "audio": {
           "id": "word-game-animals-duck-label",
-          "text": "This is a duck.",
+          "text": "duck",
           "source": "/assets/audio/word-game-animals-duck-label.mp3"
         },
         "id": "duck",
@@ -79,7 +79,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly frog.",
         "audio": {
           "id": "word-game-animals-frog-label",
-          "text": "This is a frog.",
+          "text": "frog",
           "source": "/assets/audio/word-game-animals-frog-label.mp3"
         },
         "id": "frog",
@@ -93,7 +93,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly pig.",
         "audio": {
           "id": "word-game-animals-pig-label",
-          "text": "This is a pig.",
+          "text": "pig",
           "source": "/assets/audio/word-game-animals-pig-label.mp3"
         },
         "id": "pig",
@@ -107,7 +107,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly cow.",
         "audio": {
           "id": "word-game-animals-cow-label",
-          "text": "This is a cow.",
+          "text": "cow",
           "source": "/assets/audio/word-game-animals-cow-label.mp3"
         },
         "id": "cow",
@@ -121,7 +121,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly horse.",
         "audio": {
           "id": "word-game-animals-horse-label",
-          "text": "This is a horse.",
+          "text": "horse",
           "source": "/assets/audio/word-game-animals-horse-label.mp3"
         },
         "id": "horse",
@@ -135,7 +135,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly alligator.",
         "audio": {
           "id": "word-game-animals-alligator-label",
-          "text": "This is an alligator.",
+          "text": "alligator",
           "source": "/assets/audio/word-game-animals-alligator-label.mp3"
         },
         "id": "alligator",
@@ -149,7 +149,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly elephant.",
         "audio": {
           "id": "word-game-animals-elephant-label",
-          "text": "This is an elephant.",
+          "text": "elephant",
           "source": "/assets/audio/word-game-animals-elephant-label.mp3"
         },
         "id": "elephant",
@@ -163,7 +163,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A friendly giraffe.",
         "audio": {
           "id": "word-game-animals-giraffe-label",
-          "text": "This is a giraffe.",
+          "text": "giraffe",
           "source": "/assets/audio/word-game-animals-giraffe-label.mp3"
         },
         "id": "giraffe",
@@ -448,7 +448,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color red.",
         "audio": {
           "id": "word-game-colors-red-label",
-          "text": "This is red.",
+          "text": "red",
           "source": "/assets/audio/word-game-colors-red-label.mp3"
         },
         "id": "red",
@@ -462,7 +462,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color blue.",
         "audio": {
           "id": "word-game-colors-blue-label",
-          "text": "This is blue.",
+          "text": "blue",
           "source": "/assets/audio/word-game-colors-blue-label.mp3"
         },
         "id": "blue",
@@ -476,7 +476,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color yellow.",
         "audio": {
           "id": "word-game-colors-yellow-label",
-          "text": "This is yellow.",
+          "text": "yellow",
           "source": "/assets/audio/word-game-colors-yellow-label.mp3"
         },
         "id": "yellow",
@@ -490,7 +490,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color green.",
         "audio": {
           "id": "word-game-colors-green-label",
-          "text": "This is green.",
+          "text": "green",
           "source": "/assets/audio/word-game-colors-green-label.mp3"
         },
         "id": "green",
@@ -503,9 +503,9 @@ export const GENERATED_WORD_GAME_CATALOG = [
       {
         "alt": "The color orange.",
         "audio": {
-          "id": "word-game-colors-orange-label",
-          "text": "This is orange.",
-          "source": "/assets/audio/word-game-colors-orange-label.mp3"
+          "id": "word-game-shared-orange-label",
+          "text": "orange",
+          "source": "/assets/audio/word-game-shared-orange-label.mp3"
         },
         "id": "orange",
         "label": "orange",
@@ -518,7 +518,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color purple.",
         "audio": {
           "id": "word-game-colors-purple-label",
-          "text": "This is purple.",
+          "text": "purple",
           "source": "/assets/audio/word-game-colors-purple-label.mp3"
         },
         "id": "purple",
@@ -532,7 +532,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color black.",
         "audio": {
           "id": "word-game-colors-black-label",
-          "text": "This is black.",
+          "text": "black",
           "source": "/assets/audio/word-game-colors-black-label.mp3"
         },
         "id": "black",
@@ -546,7 +546,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color white.",
         "audio": {
           "id": "word-game-colors-white-label",
-          "text": "This is white.",
+          "text": "white",
           "source": "/assets/audio/word-game-colors-white-label.mp3"
         },
         "id": "white",
@@ -560,7 +560,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color pink.",
         "audio": {
           "id": "word-game-colors-pink-label",
-          "text": "This is pink.",
+          "text": "pink",
           "source": "/assets/audio/word-game-colors-pink-label.mp3"
         },
         "id": "pink",
@@ -574,7 +574,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color brown.",
         "audio": {
           "id": "word-game-colors-brown-label",
-          "text": "This is brown.",
+          "text": "brown",
           "source": "/assets/audio/word-game-colors-brown-label.mp3"
         },
         "id": "brown",
@@ -588,7 +588,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "The color gray.",
         "audio": {
           "id": "word-game-colors-gray-label",
-          "text": "This is gray.",
+          "text": "gray",
           "source": "/assets/audio/word-game-colors-gray-label.mp3"
         },
         "id": "gray",
@@ -873,7 +873,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of eyes.",
         "audio": {
           "id": "word-game-body-parts-eyes-label",
-          "text": "These are the eyes.",
+          "text": "eyes",
           "source": "/assets/audio/word-game-body-parts-eyes-label.mp3"
         },
         "id": "eyes",
@@ -887,7 +887,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of ears.",
         "audio": {
           "id": "word-game-body-parts-ears-label",
-          "text": "These are the ears.",
+          "text": "ears",
           "source": "/assets/audio/word-game-body-parts-ears-label.mp3"
         },
         "id": "ears",
@@ -901,7 +901,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A nose.",
         "audio": {
           "id": "word-game-body-parts-nose-label",
-          "text": "This is a nose.",
+          "text": "nose",
           "source": "/assets/audio/word-game-body-parts-nose-label.mp3"
         },
         "id": "nose",
@@ -915,7 +915,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A mouth.",
         "audio": {
           "id": "word-game-body-parts-mouth-label",
-          "text": "This is a mouth.",
+          "text": "mouth",
           "source": "/assets/audio/word-game-body-parts-mouth-label.mp3"
         },
         "id": "mouth",
@@ -929,7 +929,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A hand.",
         "audio": {
           "id": "word-game-body-parts-hand-label",
-          "text": "This is a hand.",
+          "text": "hand",
           "source": "/assets/audio/word-game-body-parts-hand-label.mp3"
         },
         "id": "hand",
@@ -943,7 +943,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A foot.",
         "audio": {
           "id": "word-game-body-parts-foot-label",
-          "text": "This is a foot.",
+          "text": "foot",
           "source": "/assets/audio/word-game-body-parts-foot-label.mp3"
         },
         "id": "foot",
@@ -957,7 +957,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "An arm.",
         "audio": {
           "id": "word-game-body-parts-arm-label",
-          "text": "This is an arm.",
+          "text": "arm",
           "source": "/assets/audio/word-game-body-parts-arm-label.mp3"
         },
         "id": "arm",
@@ -971,7 +971,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A leg.",
         "audio": {
           "id": "word-game-body-parts-leg-label",
-          "text": "This is a leg.",
+          "text": "leg",
           "source": "/assets/audio/word-game-body-parts-leg-label.mp3"
         },
         "id": "leg",
@@ -985,7 +985,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A tooth.",
         "audio": {
           "id": "word-game-body-parts-tooth-label",
-          "text": "This is a tooth.",
+          "text": "tooth",
           "source": "/assets/audio/word-game-body-parts-tooth-label.mp3"
         },
         "id": "tooth",
@@ -999,7 +999,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A tongue.",
         "audio": {
           "id": "word-game-body-parts-tongue-label",
-          "text": "This is a tongue.",
+          "text": "tongue",
           "source": "/assets/audio/word-game-body-parts-tongue-label.mp3"
         },
         "id": "tongue",
@@ -1013,7 +1013,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A brain.",
         "audio": {
           "id": "word-game-body-parts-brain-label",
-          "text": "This is a brain.",
+          "text": "brain",
           "source": "/assets/audio/word-game-body-parts-brain-label.mp3"
         },
         "id": "brain",
@@ -1027,7 +1027,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A heart.",
         "audio": {
           "id": "word-game-body-parts-heart-label",
-          "text": "This is a heart.",
+          "text": "heart",
           "source": "/assets/audio/word-game-body-parts-heart-label.mp3"
         },
         "id": "heart",
@@ -1312,7 +1312,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "An apple.",
         "audio": {
           "id": "word-game-food-apple-label",
-          "text": "This is an apple.",
+          "text": "apple",
           "source": "/assets/audio/word-game-food-apple-label.mp3"
         },
         "id": "apple",
@@ -1326,7 +1326,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A banana.",
         "audio": {
           "id": "word-game-food-banana-label",
-          "text": "This is a banana.",
+          "text": "banana",
           "source": "/assets/audio/word-game-food-banana-label.mp3"
         },
         "id": "banana",
@@ -1340,7 +1340,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A carrot.",
         "audio": {
           "id": "word-game-food-carrot-label",
-          "text": "This is a carrot.",
+          "text": "carrot",
           "source": "/assets/audio/word-game-food-carrot-label.mp3"
         },
         "id": "carrot",
@@ -1353,9 +1353,9 @@ export const GENERATED_WORD_GAME_CATALOG = [
       {
         "alt": "An orange.",
         "audio": {
-          "id": "word-game-food-orange-label",
-          "text": "This is an orange.",
-          "source": "/assets/audio/word-game-food-orange-label.mp3"
+          "id": "word-game-shared-orange-label",
+          "text": "orange",
+          "source": "/assets/audio/word-game-shared-orange-label.mp3"
         },
         "id": "orange",
         "label": "orange",
@@ -1368,7 +1368,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "Bread.",
         "audio": {
           "id": "word-game-food-bread-label",
-          "text": "This is bread.",
+          "text": "bread",
           "source": "/assets/audio/word-game-food-bread-label.mp3"
         },
         "id": "bread",
@@ -1382,7 +1382,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "Cheese.",
         "audio": {
           "id": "word-game-food-cheese-label",
-          "text": "This is cheese.",
+          "text": "cheese",
           "source": "/assets/audio/word-game-food-cheese-label.mp3"
         },
         "id": "cheese",
@@ -1396,7 +1396,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "Rice.",
         "audio": {
           "id": "word-game-food-rice-label",
-          "text": "This is rice.",
+          "text": "rice",
           "source": "/assets/audio/word-game-food-rice-label.mp3"
         },
         "id": "rice",
@@ -1410,7 +1410,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "An egg.",
         "audio": {
           "id": "word-game-food-egg-label",
-          "text": "This is an egg.",
+          "text": "egg",
           "source": "/assets/audio/word-game-food-egg-label.mp3"
         },
         "id": "egg",
@@ -1424,7 +1424,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "Milk.",
         "audio": {
           "id": "word-game-food-milk-label",
-          "text": "This is milk.",
+          "text": "milk",
           "source": "/assets/audio/word-game-food-milk-label.mp3"
         },
         "id": "milk",
@@ -1438,7 +1438,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A tomato.",
         "audio": {
           "id": "word-game-food-tomato-label",
-          "text": "This is a tomato.",
+          "text": "tomato",
           "source": "/assets/audio/word-game-food-tomato-label.mp3"
         },
         "id": "tomato",
@@ -1452,7 +1452,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A potato.",
         "audio": {
           "id": "word-game-food-potato-label",
-          "text": "This is a potato.",
+          "text": "potato",
           "source": "/assets/audio/word-game-food-potato-label.mp3"
         },
         "id": "potato",
@@ -1466,7 +1466,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A sandwich.",
         "audio": {
           "id": "word-game-food-sandwich-label",
-          "text": "This is a sandwich.",
+          "text": "sandwich",
           "source": "/assets/audio/word-game-food-sandwich-label.mp3"
         },
         "id": "sandwich",
@@ -1751,7 +1751,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A ball.",
         "audio": {
           "id": "word-game-toys-ball-label",
-          "text": "This is a ball.",
+          "text": "ball",
           "source": "/assets/audio/word-game-toys-ball-label.mp3"
         },
         "id": "ball",
@@ -1765,7 +1765,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A toy car.",
         "audio": {
           "id": "word-game-toys-toy-car-label",
-          "text": "This is a toy car.",
+          "text": "toy car",
           "source": "/assets/audio/word-game-toys-toy-car-label.mp3"
         },
         "id": "toy-car",
@@ -1779,7 +1779,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A doll.",
         "audio": {
           "id": "word-game-toys-doll-label",
-          "text": "This is a doll.",
+          "text": "doll",
           "source": "/assets/audio/word-game-toys-doll-label.mp3"
         },
         "id": "doll",
@@ -1793,7 +1793,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A kite.",
         "audio": {
           "id": "word-game-toys-kite-label",
-          "text": "This is a kite.",
+          "text": "kite",
           "source": "/assets/audio/word-game-toys-kite-label.mp3"
         },
         "id": "kite",
@@ -1807,7 +1807,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "Building blocks.",
         "audio": {
           "id": "word-game-toys-blocks-label",
-          "text": "These are blocks.",
+          "text": "blocks",
           "source": "/assets/audio/word-game-toys-blocks-label.mp3"
         },
         "id": "blocks",
@@ -1821,7 +1821,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A teddy bear.",
         "audio": {
           "id": "word-game-toys-teddy-bear-label",
-          "text": "This is a teddy bear.",
+          "text": "teddy bear",
           "source": "/assets/audio/word-game-toys-teddy-bear-label.mp3"
         },
         "id": "teddy-bear",
@@ -1835,7 +1835,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A toy train.",
         "audio": {
           "id": "word-game-toys-toy-train-label",
-          "text": "This is a toy train.",
+          "text": "toy train",
           "source": "/assets/audio/word-game-toys-toy-train-label.mp3"
         },
         "id": "toy-train",
@@ -1849,7 +1849,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A drum.",
         "audio": {
           "id": "word-game-toys-drum-label",
-          "text": "This is a drum.",
+          "text": "drum",
           "source": "/assets/audio/word-game-toys-drum-label.mp3"
         },
         "id": "drum",
@@ -1863,7 +1863,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A puzzle.",
         "audio": {
           "id": "word-game-toys-puzzle-label",
-          "text": "This is a puzzle.",
+          "text": "puzzle",
           "source": "/assets/audio/word-game-toys-puzzle-label.mp3"
         },
         "id": "puzzle",
@@ -1877,7 +1877,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A robot.",
         "audio": {
           "id": "word-game-toys-robot-label",
-          "text": "This is a robot.",
+          "text": "robot",
           "source": "/assets/audio/word-game-toys-robot-label.mp3"
         },
         "id": "robot",
@@ -1891,7 +1891,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A yo-yo.",
         "audio": {
           "id": "word-game-toys-yo-yo-label",
-          "text": "This is a yo-yo.",
+          "text": "yo-yo",
           "source": "/assets/audio/word-game-toys-yo-yo-label.mp3"
         },
         "id": "yo-yo",
@@ -1905,7 +1905,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A skateboard.",
         "audio": {
           "id": "word-game-toys-skateboard-label",
-          "text": "This is a skateboard.",
+          "text": "skateboard",
           "source": "/assets/audio/word-game-toys-skateboard-label.mp3"
         },
         "id": "skateboard",
@@ -2190,7 +2190,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A happy face.",
         "audio": {
           "id": "word-game-feelings-happy-label",
-          "text": "This face is happy.",
+          "text": "happy",
           "source": "/assets/audio/word-game-feelings-happy-label.mp3"
         },
         "id": "happy",
@@ -2204,7 +2204,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A sad face.",
         "audio": {
           "id": "word-game-feelings-sad-label",
-          "text": "This face is sad.",
+          "text": "sad",
           "source": "/assets/audio/word-game-feelings-sad-label.mp3"
         },
         "id": "sad",
@@ -2218,7 +2218,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "An angry face.",
         "audio": {
           "id": "word-game-feelings-angry-label",
-          "text": "This face is angry.",
+          "text": "angry",
           "source": "/assets/audio/word-game-feelings-angry-label.mp3"
         },
         "id": "angry",
@@ -2232,7 +2232,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A sleepy face.",
         "audio": {
           "id": "word-game-feelings-sleepy-label",
-          "text": "This face is sleepy.",
+          "text": "sleepy",
           "source": "/assets/audio/word-game-feelings-sleepy-label.mp3"
         },
         "id": "sleepy",
@@ -2246,7 +2246,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A surprised face.",
         "audio": {
           "id": "word-game-feelings-surprised-label",
-          "text": "This face is surprised.",
+          "text": "surprised",
           "source": "/assets/audio/word-game-feelings-surprised-label.mp3"
         },
         "id": "surprised",
@@ -2260,7 +2260,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A silly face.",
         "audio": {
           "id": "word-game-feelings-silly-label",
-          "text": "This face is silly.",
+          "text": "silly",
           "source": "/assets/audio/word-game-feelings-silly-label.mp3"
         },
         "id": "silly",
@@ -2274,7 +2274,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A scared face.",
         "audio": {
           "id": "word-game-feelings-scared-label",
-          "text": "This face is scared.",
+          "text": "scared",
           "source": "/assets/audio/word-game-feelings-scared-label.mp3"
         },
         "id": "scared",
@@ -2288,7 +2288,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "An excited face.",
         "audio": {
           "id": "word-game-feelings-excited-label",
-          "text": "This face is excited.",
+          "text": "excited",
           "source": "/assets/audio/word-game-feelings-excited-label.mp3"
         },
         "id": "excited",
@@ -2302,7 +2302,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A calm face.",
         "audio": {
           "id": "word-game-feelings-calm-label",
-          "text": "This face is calm.",
+          "text": "calm",
           "source": "/assets/audio/word-game-feelings-calm-label.mp3"
         },
         "id": "calm",
@@ -2316,7 +2316,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A worried face.",
         "audio": {
           "id": "word-game-feelings-worried-label",
-          "text": "This face is worried.",
+          "text": "worried",
           "source": "/assets/audio/word-game-feelings-worried-label.mp3"
         },
         "id": "worried",
@@ -2330,7 +2330,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A confused face.",
         "audio": {
           "id": "word-game-feelings-confused-label",
-          "text": "This face is confused.",
+          "text": "confused",
           "source": "/assets/audio/word-game-feelings-confused-label.mp3"
         },
         "id": "confused",
@@ -2344,7 +2344,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A bored face.",
         "audio": {
           "id": "word-game-feelings-bored-label",
-          "text": "This face is bored.",
+          "text": "bored",
           "source": "/assets/audio/word-game-feelings-bored-label.mp3"
         },
         "id": "bored",
@@ -2629,7 +2629,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A bed.",
         "audio": {
           "id": "word-game-home-bed-label",
-          "text": "This is a bed.",
+          "text": "bed",
           "source": "/assets/audio/word-game-home-bed-label.mp3"
         },
         "id": "bed",
@@ -2643,7 +2643,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A chair.",
         "audio": {
           "id": "word-game-home-chair-label",
-          "text": "This is a chair.",
+          "text": "chair",
           "source": "/assets/audio/word-game-home-chair-label.mp3"
         },
         "id": "chair",
@@ -2657,7 +2657,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A door.",
         "audio": {
           "id": "word-game-home-door-label",
-          "text": "This is a door.",
+          "text": "door",
           "source": "/assets/audio/word-game-home-door-label.mp3"
         },
         "id": "door",
@@ -2671,7 +2671,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A window.",
         "audio": {
           "id": "word-game-home-window-label",
-          "text": "This is a window.",
+          "text": "window",
           "source": "/assets/audio/word-game-home-window-label.mp3"
         },
         "id": "window",
@@ -2685,7 +2685,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A house.",
         "audio": {
           "id": "word-game-home-house-label",
-          "text": "This is a house.",
+          "text": "house",
           "source": "/assets/audio/word-game-home-house-label.mp3"
         },
         "id": "house",
@@ -2699,7 +2699,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A key.",
         "audio": {
           "id": "word-game-home-key-label",
-          "text": "This is a key.",
+          "text": "key",
           "source": "/assets/audio/word-game-home-key-label.mp3"
         },
         "id": "key",
@@ -2713,7 +2713,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A sofa.",
         "audio": {
           "id": "word-game-home-sofa-label",
-          "text": "This is a sofa.",
+          "text": "sofa",
           "source": "/assets/audio/word-game-home-sofa-label.mp3"
         },
         "id": "sofa",
@@ -2727,7 +2727,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A bathtub.",
         "audio": {
           "id": "word-game-home-bathtub-label",
-          "text": "This is a bathtub.",
+          "text": "bathtub",
           "source": "/assets/audio/word-game-home-bathtub-label.mp3"
         },
         "id": "bathtub",
@@ -2741,7 +2741,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A toilet.",
         "audio": {
           "id": "word-game-home-toilet-label",
-          "text": "This is a toilet.",
+          "text": "toilet",
           "source": "/assets/audio/word-game-home-toilet-label.mp3"
         },
         "id": "toilet",
@@ -2755,7 +2755,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A shower.",
         "audio": {
           "id": "word-game-home-shower-label",
-          "text": "This is a shower.",
+          "text": "shower",
           "source": "/assets/audio/word-game-home-shower-label.mp3"
         },
         "id": "shower",
@@ -2769,7 +2769,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A mirror.",
         "audio": {
           "id": "word-game-home-mirror-label",
-          "text": "This is a mirror.",
+          "text": "mirror",
           "source": "/assets/audio/word-game-home-mirror-label.mp3"
         },
         "id": "mirror",
@@ -2783,7 +2783,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A broom.",
         "audio": {
           "id": "word-game-home-broom-label",
-          "text": "This is a broom.",
+          "text": "broom",
           "source": "/assets/audio/word-game-home-broom-label.mp3"
         },
         "id": "broom",
@@ -3068,7 +3068,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A shirt.",
         "audio": {
           "id": "word-game-clothes-shirt-label",
-          "text": "This is a shirt.",
+          "text": "shirt",
           "source": "/assets/audio/word-game-clothes-shirt-label.mp3"
         },
         "id": "shirt",
@@ -3082,7 +3082,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of shoes.",
         "audio": {
           "id": "word-game-clothes-shoes-label",
-          "text": "These are shoes.",
+          "text": "shoes",
           "source": "/assets/audio/word-game-clothes-shoes-label.mp3"
         },
         "id": "shoes",
@@ -3096,7 +3096,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A hat.",
         "audio": {
           "id": "word-game-clothes-hat-label",
-          "text": "This is a hat.",
+          "text": "hat",
           "source": "/assets/audio/word-game-clothes-hat-label.mp3"
         },
         "id": "hat",
@@ -3110,7 +3110,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of socks.",
         "audio": {
           "id": "word-game-clothes-socks-label",
-          "text": "These are socks.",
+          "text": "socks",
           "source": "/assets/audio/word-game-clothes-socks-label.mp3"
         },
         "id": "socks",
@@ -3124,7 +3124,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A coat.",
         "audio": {
           "id": "word-game-clothes-coat-label",
-          "text": "This is a coat.",
+          "text": "coat",
           "source": "/assets/audio/word-game-clothes-coat-label.mp3"
         },
         "id": "coat",
@@ -3138,7 +3138,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of pants.",
         "audio": {
           "id": "word-game-clothes-pants-label",
-          "text": "These are pants.",
+          "text": "pants",
           "source": "/assets/audio/word-game-clothes-pants-label.mp3"
         },
         "id": "pants",
@@ -3152,7 +3152,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A dress.",
         "audio": {
           "id": "word-game-clothes-dress-label",
-          "text": "This is a dress.",
+          "text": "dress",
           "source": "/assets/audio/word-game-clothes-dress-label.mp3"
         },
         "id": "dress",
@@ -3166,7 +3166,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of shorts.",
         "audio": {
           "id": "word-game-clothes-shorts-label",
-          "text": "These are shorts.",
+          "text": "shorts",
           "source": "/assets/audio/word-game-clothes-shorts-label.mp3"
         },
         "id": "shorts",
@@ -3180,7 +3180,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A scarf.",
         "audio": {
           "id": "word-game-clothes-scarf-label",
-          "text": "This is a scarf.",
+          "text": "scarf",
           "source": "/assets/audio/word-game-clothes-scarf-label.mp3"
         },
         "id": "scarf",
@@ -3194,7 +3194,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of boots.",
         "audio": {
           "id": "word-game-clothes-boots-label",
-          "text": "These are boots.",
+          "text": "boots",
           "source": "/assets/audio/word-game-clothes-boots-label.mp3"
         },
         "id": "boots",
@@ -3208,7 +3208,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A pair of gloves.",
         "audio": {
           "id": "word-game-clothes-gloves-label",
-          "text": "These are gloves.",
+          "text": "gloves",
           "source": "/assets/audio/word-game-clothes-gloves-label.mp3"
         },
         "id": "gloves",
@@ -3222,7 +3222,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A swimsuit.",
         "audio": {
           "id": "word-game-clothes-swimsuit-label",
-          "text": "This is a swimsuit.",
+          "text": "swimsuit",
           "source": "/assets/audio/word-game-clothes-swimsuit-label.mp3"
         },
         "id": "swimsuit",
@@ -3507,7 +3507,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A car.",
         "audio": {
           "id": "word-game-transport-car-label",
-          "text": "This is a car.",
+          "text": "car",
           "source": "/assets/audio/word-game-transport-car-label.mp3"
         },
         "id": "car",
@@ -3521,7 +3521,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A bus.",
         "audio": {
           "id": "word-game-transport-bus-label",
-          "text": "This is a bus.",
+          "text": "bus",
           "source": "/assets/audio/word-game-transport-bus-label.mp3"
         },
         "id": "bus",
@@ -3535,7 +3535,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A bicycle.",
         "audio": {
           "id": "word-game-transport-bicycle-label",
-          "text": "This is a bicycle.",
+          "text": "bicycle",
           "source": "/assets/audio/word-game-transport-bicycle-label.mp3"
         },
         "id": "bicycle",
@@ -3549,7 +3549,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A train.",
         "audio": {
           "id": "word-game-transport-train-label",
-          "text": "This is a train.",
+          "text": "train",
           "source": "/assets/audio/word-game-transport-train-label.mp3"
         },
         "id": "train",
@@ -3563,7 +3563,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A boat.",
         "audio": {
           "id": "word-game-transport-boat-label",
-          "text": "This is a boat.",
+          "text": "boat",
           "source": "/assets/audio/word-game-transport-boat-label.mp3"
         },
         "id": "boat",
@@ -3577,7 +3577,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "An airplane.",
         "audio": {
           "id": "word-game-transport-airplane-label",
-          "text": "This is an airplane.",
+          "text": "airplane",
           "source": "/assets/audio/word-game-transport-airplane-label.mp3"
         },
         "id": "airplane",
@@ -3591,7 +3591,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A taxi.",
         "audio": {
           "id": "word-game-transport-taxi-label",
-          "text": "This is a taxi.",
+          "text": "taxi",
           "source": "/assets/audio/word-game-transport-taxi-label.mp3"
         },
         "id": "taxi",
@@ -3605,7 +3605,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A truck.",
         "audio": {
           "id": "word-game-transport-truck-label",
-          "text": "This is a truck.",
+          "text": "truck",
           "source": "/assets/audio/word-game-transport-truck-label.mp3"
         },
         "id": "truck",
@@ -3619,7 +3619,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A scooter.",
         "audio": {
           "id": "word-game-transport-scooter-label",
-          "text": "This is a scooter.",
+          "text": "scooter",
           "source": "/assets/audio/word-game-transport-scooter-label.mp3"
         },
         "id": "scooter",
@@ -3633,7 +3633,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A helicopter.",
         "audio": {
           "id": "word-game-transport-helicopter-label",
-          "text": "This is a helicopter.",
+          "text": "helicopter",
           "source": "/assets/audio/word-game-transport-helicopter-label.mp3"
         },
         "id": "helicopter",
@@ -3647,7 +3647,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A motorcycle.",
         "audio": {
           "id": "word-game-transport-motorcycle-label",
-          "text": "This is a motorcycle.",
+          "text": "motorcycle",
           "source": "/assets/audio/word-game-transport-motorcycle-label.mp3"
         },
         "id": "motorcycle",
@@ -3661,7 +3661,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "alt": "A rocket.",
         "audio": {
           "id": "word-game-transport-rocket-label",
-          "text": "This is a rocket.",
+          "text": "rocket",
           "source": "/assets/audio/word-game-transport-rocket-label.mp3"
         },
         "id": "rocket",

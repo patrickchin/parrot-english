@@ -4,8 +4,8 @@ import { GENERATED_WORD_GAME_CATALOG } from "../src/games/generated-word-game-ca
 import {
   WORD_GAME_CATEGORIES,
   WORD_GAME_COMPLETE_AUDIO,
+  WORD_GAME_CORRECT_AUDIO,
   WORD_GAME_RETRY_AUDIO,
-  WORD_GAME_SUCCESS_AUDIO,
   buildWordGameRounds,
   getWordGameCategoryRoute,
   getWordGameQuizRoute,
@@ -82,22 +82,22 @@ describe("generated word-game catalog runtime", () => {
     assert.equal(resolveWordGameQuiz(undefined, undefined), null);
   });
 
-  it("provides one saved cue per item and shared player cues", () => {
+  it("provides saved item cues, including deliberate cue reuse, and shared player cues", () => {
     const items = WORD_GAME_CATEGORIES.flatMap(({ items }) => items);
     const audio = items.map(({ audio }) => audio);
     assert.equal(audio.length, 107);
-    assert.equal(new Set(audio.map(({ id }) => id)).size, 107);
-    for (const cue of [...audio, WORD_GAME_RETRY_AUDIO, WORD_GAME_COMPLETE_AUDIO, WORD_GAME_SUCCESS_AUDIO]) {
+    assert.equal(new Set(audio.map(({ id }) => id)).size, 106);
+    for (const cue of [...audio, WORD_GAME_CORRECT_AUDIO, WORD_GAME_RETRY_AUDIO, WORD_GAME_COMPLETE_AUDIO]) {
       const line = getStaticAudioLineById(cue.id);
       assert.equal(line.id, cue.id);
       assert.equal(line.src, cue.source);
       assert.equal(line.text, cue.text);
       assert.equal(line.speaker, "narrator");
     }
-    assert.deepEqual(WORD_GAME_SUCCESS_AUDIO, {
-      id: "narrator-feedback-success",
-      source: "/assets/audio/narrator-feedback-success.mp3",
-      text: "Great job!",
+    assert.deepEqual(WORD_GAME_CORRECT_AUDIO, {
+      id: "word-game-correct",
+      source: "/assets/audio/word-game-correct.mp3",
+      text: "Correct.",
     });
     assert.deepEqual(WORD_GAME_RETRY_AUDIO, {
       id: "word-game-retry",

@@ -70,7 +70,7 @@ async function createWordGameGeneratorRepo() {
       join(tempRoot, "public", "assets", "audio", filename),
     );
   }
-  assert.equal(existingLabelFiles.length, 36);
+  assert.equal(existingLabelFiles.length, 35);
   return { existingLabelFiles, tempRoot };
 }
 
@@ -158,7 +158,7 @@ describe("static audio generator", () => {
     }
   });
 
-  it("generates exactly the 71 missing compiler-planned lines and skips 36 existing lines", async () => {
+  it("generates exactly the 71 missing compiler-planned lines and skips 35 existing lines", async () => {
     const { existingLabelFiles, tempRoot } = await createWordGameGeneratorRepo();
     const outputDir = join(tempRoot, "generated-audio");
     const fetchLog = join(tempRoot, "fetch-log.ndjson");
@@ -212,8 +212,8 @@ describe("static audio generator", () => {
         .split("\n")
         .map((line) => JSON.parse(line));
 
-      assert.equal(statuses.length, 107);
-      assert.equal(statuses.filter((line) => line.startsWith("skipped:")).length, 36);
+      assert.equal(statuses.length, 106);
+      assert.equal(statuses.filter((line) => line.startsWith("skipped:")).length, 35);
       assert.deepEqual(
         statuses.filter((line) => line.startsWith("generated:"))
           .map((line) => line.match(/^generated: (.+) \(elevenlabs\)$/u)[1]),
@@ -222,7 +222,7 @@ describe("static audio generator", () => {
       assert.equal(requests.length, 71);
       assert.ok(requests.every(({ body }) => body.model_id === "eleven_v3"));
       assert.ok(requests.every(({ url }) => url.endsWith("?output_format=mp3_44100_128")));
-      assert.equal((await readdir(outputDir)).length, 107);
+      assert.equal((await readdir(outputDir)).length, 106);
     } finally {
       await rm(tempRoot, { force: true, recursive: true });
     }

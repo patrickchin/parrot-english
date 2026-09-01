@@ -109,6 +109,16 @@ describe("word-game manifests", () => {
     );
   });
 
+  it("accepts a shared saved-audio identity for repeated vocabulary", () => {
+    const category = validCategory();
+    category.items[0].audio.id = "word-game-shared-animal-1-label";
+
+    assert.equal(
+      parseWordGameManifest(category, categorySourcePath).items[0].audio.id,
+      "word-game-shared-animal-1-label",
+    );
+  });
+
   for (const { name, parse, sourcePath, value, fieldPath } of [
     {
       name: "unknown category fields",

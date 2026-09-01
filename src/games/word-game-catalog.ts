@@ -96,8 +96,8 @@ export const WORD_GAME_COMPLETE_AUDIO = deepFreeze(
   audioLine("word-game-complete", "Great listening! You finished the game."),
 );
 
-export const WORD_GAME_SUCCESS_AUDIO = deepFreeze(
-  audioLine("narrator-feedback-success", "Great job!"),
+export const WORD_GAME_CORRECT_AUDIO = deepFreeze(
+  audioLine("word-game-correct", "Correct."),
 );
 
 export function createWordGameCatalog(
