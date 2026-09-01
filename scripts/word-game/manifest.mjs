@@ -4,7 +4,7 @@ export const WORD_GAME_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const ASSET_ID_PATTERN = /^[a-f0-9]+(?:_[a-f0-9]+)*$/;
 const HEX_COLOR_PATTERN = /^#[a-f0-9]{6}$/;
-const NOTO_REVISION = "8998f5dd683424a73e2314a8c1f1e359c19e8742";
+const FLUENT_REVISION = "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc";
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const TIER_IDS = ["simple", "intermediate", "advanced"];
 
@@ -28,7 +28,7 @@ const visual = z.discriminatedUnion("kind", [
   z
     .object({
       assetId,
-      kind: z.literal("noto-svg"),
+      kind: z.literal("fluent-3d"),
     })
     .strict(),
   z
@@ -98,7 +98,7 @@ const category = z
   })
   .strict();
 
-const notoAsset = z
+const fluentAsset = z
   .object({
     id: assetId,
     publicPath: text,
@@ -107,16 +107,16 @@ const notoAsset = z
   })
   .strict();
 
-const notoAssetManifest = z
+const fluentAssetManifest = z
   .object({
-    assets: z.array(notoAsset).min(1, "must contain at least one asset"),
-    license: z.literal("Apache-2.0", "must equal Apache-2.0"),
-    licensePath: z.literal("svg/LICENSE", "must equal svg/LICENSE"),
+    assets: z.array(fluentAsset).min(1, "must contain at least one asset"),
+    license: z.literal("MIT", "must equal MIT"),
+    licensePath: z.literal("LICENSE", "must equal LICENSE"),
     repository: z.literal(
-      "https://github.com/googlefonts/noto-emoji",
-      "must equal the official Noto Emoji repository",
+      "https://github.com/microsoft/fluentui-emoji",
+      "must equal the official Fluent Emoji repository",
     ),
-    revision: z.literal(NOTO_REVISION, "must equal the pinned Noto Emoji revision"),
+    revision: z.literal(FLUENT_REVISION, "must equal the pinned Fluent Emoji revision"),
     schemaVersion: z.literal(1, "must equal 1"),
   })
   .strict();
@@ -186,8 +186,8 @@ export function parseWordGameManifest(value, sourcePath) {
   return result.data;
 }
 
-export function parseNotoAssetManifest(value, sourcePath) {
-  const result = notoAssetManifest.safeParse(value);
+export function parseFluentAssetManifest(value, sourcePath) {
+  const result = fluentAssetManifest.safeParse(value);
   if (!result.success) throw manifestError(sourcePath, result.error.issues[0]);
   return result.data;
 }

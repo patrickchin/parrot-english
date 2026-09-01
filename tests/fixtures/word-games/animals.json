@@ -11,42 +11,42 @@
       "id": "cat",
       "label": "cat",
       "alt": "A friendly cat.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "visual": { "kind": "fluent-3d", "assetId": "1f431" },
       "audio": { "id": "word-game-animals-cat-label", "text": "This is a cat." }
     },
     {
       "id": "dog",
       "label": "dog",
       "alt": "A friendly dog.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "visual": { "kind": "fluent-3d", "assetId": "1f431" },
       "audio": { "id": "word-game-animals-dog-label", "text": "This is a dog." }
     },
     {
       "id": "bird",
       "label": "bird",
       "alt": "A friendly bird.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "visual": { "kind": "fluent-3d", "assetId": "1f431" },
       "audio": { "id": "word-game-animals-bird-label", "text": "This is a bird." }
     },
     {
       "id": "fish",
       "label": "fish",
       "alt": "A friendly fish.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "visual": { "kind": "fluent-3d", "assetId": "1f431" },
       "audio": { "id": "word-game-animals-fish-label", "text": "This is a fish." }
     },
     {
       "id": "duck",
       "label": "duck",
       "alt": "A friendly duck.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "visual": { "kind": "fluent-3d", "assetId": "1f431" },
       "audio": { "id": "word-game-animals-duck-label", "text": "This is a duck." }
     },
     {
       "id": "frog",
       "label": "frog",
       "alt": "A friendly frog.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "visual": { "kind": "fluent-3d", "assetId": "1f431" },
       "audio": { "id": "word-game-animals-frog-label", "text": "This is a frog." }
     }
   ],

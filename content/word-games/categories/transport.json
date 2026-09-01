@@ -12,7 +12,7 @@
       "label": "car",
       "alt": "A car.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f697"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "bus",
       "alt": "A bus.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f68c"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "bicycle",
       "alt": "A bicycle.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6b2"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "train",
       "alt": "A train.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f686"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "boat",
       "alt": "A boat.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6a4"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "airplane",
       "alt": "An airplane.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "2708"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "taxi",
       "alt": "A taxi.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f695"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "truck",
       "alt": "A truck.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f69a"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "scooter",
       "alt": "A scooter.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6f4"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "helicopter",
       "alt": "A helicopter.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f681"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "motorcycle",
       "alt": "A motorcycle.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f3cd"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "rocket",
       "alt": "A rocket.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f680"
       },
       "audio": {

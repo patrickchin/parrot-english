@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  parseNotoAssetManifest,
+  parseFluentAssetManifest,
   parseWordGameManifest,
 } from "../scripts/word-game/manifest.mjs";
 
 const categorySourcePath = "/content/animals.json";
-const notoSourcePath = "/content/noto-assets.json";
+const fluentSourcePath = "/content/fluent-3d-assets.json";
 
 function validCategory() {
   const items = Array.from({ length: 12 }, (_, index) => {
@@ -16,7 +16,7 @@ function validCategory() {
       id,
       label: `animal ${number}`,
       alt: `Animal ${number}.`,
-      visual: { assetId: `1f4${String(number).padStart(2, "0")}`, kind: "noto-svg" },
+      visual: { assetId: `1f4${String(number).padStart(2, "0")}`, kind: "fluent-3d" },
       audio: {
         id: `word-game-animals-${id}-label`,
         text: `This is animal ${number}.`,
@@ -74,19 +74,19 @@ function validCategory() {
   };
 }
 
-function validNotoManifest() {
+function validFluentManifest() {
   return {
     schemaVersion: 1,
-    repository: "https://github.com/googlefonts/noto-emoji",
-    revision: "8998f5dd683424a73e2314a8c1f1e359c19e8742",
-    license: "Apache-2.0",
-    licensePath: "svg/LICENSE",
+    repository: "https://github.com/microsoft/fluentui-emoji",
+    revision: "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+    license: "MIT",
+    licensePath: "LICENSE",
     assets: [
       {
         id: "1f431",
-        upstreamPath: "svg/emoji_u1f431.svg",
-        publicPath: "/assets/word-games/noto/emoji_u1f431.svg",
-        sha256: "a".repeat(64),
+        upstreamPath: "assets/Cat/3D/cat_3d.png",
+        publicPath: "/assets/word-games/fluent-3d/1f431.png",
+        sha256: "5d3fcbbfb0be45d9be0ade47fe4eb1b97d33130fe67d46a8db697e434f13289b",
       },
     ],
   };
@@ -100,12 +100,12 @@ function errorAt(sourcePath, fieldPath) {
 }
 
 describe("word-game manifests", () => {
-  it("accepts complete schema-version-1 category and Noto manifests", () => {
+  it("accepts complete schema-version-1 category and Fluent manifests", () => {
     const category = validCategory();
     assert.deepEqual(parseWordGameManifest(category, categorySourcePath), category);
     assert.deepEqual(
-      parseNotoAssetManifest(validNotoManifest(), notoSourcePath),
-      validNotoManifest(),
+      parseFluentAssetManifest(validFluentManifest(), fluentSourcePath),
+      validFluentManifest(),
     );
   });
 
@@ -140,7 +140,7 @@ describe("word-game manifests", () => {
       fieldPath: "items[0].audio.surprise",
     },
     {
-      name: "unknown Noto visual fields",
+      name: "unknown Fluent visual fields",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
@@ -199,18 +199,18 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].quizzes[0].questions[0].surprise",
     },
     {
-      name: "unknown Noto manifest fields",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), surprise: true }),
+      name: "unknown Fluent manifest fields",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), surprise: true }),
       fieldPath: "surprise",
     },
     {
-      name: "unknown Noto asset fields",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
+      name: "unknown Fluent asset fields",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
       value: () => {
-        const manifest = validNotoManifest();
+        const manifest = validFluentManifest();
         manifest.assets[0].surprise = true;
         return manifest;
       },
@@ -235,11 +235,11 @@ describe("word-game manifests", () => {
       fieldPath: "id",
     },
     {
-      name: "filename-shaped Noto asset IDs",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
+      name: "filename-shaped Fluent asset IDs",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
       value: () => {
-        const manifest = validNotoManifest();
+        const manifest = validFluentManifest();
         manifest.assets[0].id = "emoji_u1f431.svg";
         return manifest;
       },
@@ -257,39 +257,39 @@ describe("word-game manifests", () => {
       fieldPath: "items[0].visual.color",
     },
     {
-      name: "non-40-character Noto revisions",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), revision: "a".repeat(39) }),
+      name: "non-40-character Fluent revisions",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), revision: "a".repeat(39) }),
       fieldPath: "revision",
     },
     {
-      name: "unapproved 40-character Noto revisions",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), revision: "a".repeat(40) }),
+      name: "unapproved 40-character Fluent revisions",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), revision: "a".repeat(40) }),
       fieldPath: "revision",
     },
     {
-      name: "non-64-character Noto SHA-256 values",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
+      name: "non-64-character Fluent SHA-256 values",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
       value: () => {
-        const manifest = validNotoManifest();
+        const manifest = validFluentManifest();
         manifest.assets[0].sha256 = "a".repeat(63);
         return manifest;
       },
       fieldPath: "assets[0].sha256",
     },
     ...[
-      ["repository", "https://example.com/noto-emoji"],
-      ["license", "MIT"],
-      ["licensePath", "LICENSE"],
+      ["repository", "https://example.com/fluentui-emoji"],
+      ["license", "Apache-2.0"],
+      ["licensePath", "assets/LICENSE"],
     ].map(([field, replacement]) => ({
-      name: `wrong Noto ${field}`,
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), [field]: replacement }),
+      name: `wrong Fluent ${field}`,
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), [field]: replacement }),
       fieldPath: field,
     })),
     {
@@ -374,6 +374,17 @@ describe("word-game manifests", () => {
         return category;
       },
       fieldPath: "items[0].audio.id",
+    },
+    {
+      name: "retired Noto SVG visuals",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].visual.kind = "noto-svg";
+        return category;
+      },
+      fieldPath: "items[0].visual.kind",
     },
     {
       name: "unsupported visual kinds",

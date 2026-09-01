@@ -12,7 +12,7 @@
       "label": "apple",
       "alt": "An apple.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f34e"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "banana",
       "alt": "A banana.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f34c"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "carrot",
       "alt": "A carrot.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f955"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "orange",
       "alt": "An orange.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f34a"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "bread",
       "alt": "Bread.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f35e"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "cheese",
       "alt": "Cheese.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9c0"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "rice",
       "alt": "Rice.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f35a"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "egg",
       "alt": "An egg.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f95a"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "milk",
       "alt": "Milk.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f95b"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "tomato",
       "alt": "A tomato.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f345"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "potato",
       "alt": "A potato.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f954"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "sandwich",
       "alt": "A sandwich.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f96a"
       },
       "audio": {

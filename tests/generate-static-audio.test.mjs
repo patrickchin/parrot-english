@@ -52,8 +52,8 @@ async function createWordGameGeneratorRepo() {
     { recursive: true },
   );
   await cp(
-    join(rootDir, "third_party", "noto-emoji-svg-LICENSE"),
-    join(tempRoot, "third_party", "noto-emoji-svg-LICENSE"),
+    join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
+    join(tempRoot, "third_party", "fluentui-emoji-LICENSE"),
   );
   await symlink(join(rootDir, "node_modules"), join(tempRoot, "node_modules"), "dir");
 

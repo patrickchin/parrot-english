@@ -122,7 +122,7 @@ test("home menu prioritizes the five learner activities", () => {
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
   assert.match(
     html,
-    /<img[^>]*alt="A friendly cat\."[^>]*height="512"[^>]*src="\/assets\/word-games\/noto\/emoji_u1f431\.svg"[^>]*width="512"/,
+    /<img[^>]*alt="A friendly cat\."[^>]*height="512"[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"[^>]*width="512"/,
   );
   assert.match(
     html,
@@ -209,7 +209,7 @@ test("word-game library renders nine category choices and a home link", () => {
   ]) {
     assert.match(html, new RegExp(`>${title}<`));
   }
-  assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/noto\/emoji_u1f431\.svg"/);
+  assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"/);
 });
 
 test("word-game category renders ordered tier sections and canonical quiz links", () => {

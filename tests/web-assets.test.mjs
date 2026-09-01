@@ -41,8 +41,8 @@ const rhymeScorePattern = new RegExp(
 const rhymeGuidePattern = new RegExp(
   `^nursery-rhymes/${safeSlug}/guides/${safeSlug}\\.mp3$`,
 );
-const wordGameNotoPattern =
-  /^word-games\/noto\/emoji_u[a-f0-9]+(?:_[a-f0-9]+)*\.svg$/;
+const wordGameFluentPattern =
+  /^word-games\/fluent-3d\/[a-f0-9]+(?:_[a-f0-9]+)*\.png$/;
 
 function isSupportedAsset(filePath) {
   if (filePath.startsWith("nursery-rhymes/")) {
@@ -50,7 +50,7 @@ function isSupportedAsset(filePath) {
       || rhymeScorePattern.test(filePath)
       || rhymeGuidePattern.test(filePath);
   }
-  return webAssetExtensions.has(extname(filePath));
+  return wordGameFluentPattern.test(filePath) || webAssetExtensions.has(extname(filePath));
 }
 
 async function listAssetFiles(dir) {
@@ -121,7 +121,7 @@ describe("web asset formats", () => {
     const files = await listAssetFiles(publicDir);
     const bundledImages = files
       .filter((filePath) => staticImageExtensions.has(extname(filePath)))
-      .filter((filePath) => !wordGameNotoPattern.test(relative(publicAssetsDir, filePath)))
+      .filter((filePath) => !wordGameFluentPattern.test(relative(publicAssetsDir, filePath)))
       .map((filePath) => relative(publicDir, filePath));
 
     assert.deepEqual(bundledImages, []);

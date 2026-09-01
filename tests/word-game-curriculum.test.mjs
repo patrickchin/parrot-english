@@ -245,7 +245,7 @@ describe("production word-game curriculum", () => {
     );
   });
 
-  it("uses the pinned Noto mapping for every non-color item", async () => {
+  it("uses the pinned Fluent mapping for every non-color item", async () => {
     const categories = await readCategories();
     for (const category of categories.filter(({ id }) => id !== "colors")) {
       assert.deepEqual(

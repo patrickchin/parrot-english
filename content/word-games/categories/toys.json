@@ -12,7 +12,7 @@
       "label": "ball",
       "alt": "A ball.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "26bd"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "toy car",
       "alt": "A toy car.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f697"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "doll",
       "alt": "A doll.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1fa86"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "kite",
       "alt": "A kite.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1fa81"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "blocks",
       "alt": "Building blocks.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9f1"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "teddy bear",
       "alt": "A teddy bear.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9f8"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "toy train",
       "alt": "A toy train.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f686"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "drum",
       "alt": "A drum.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f941"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "puzzle",
       "alt": "A puzzle.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9e9"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "robot",
       "alt": "A robot.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f916"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "yo-yo",
       "alt": "A yo-yo.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1fa80"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "skateboard",
       "alt": "A skateboard.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6f9"
       },
       "audio": {

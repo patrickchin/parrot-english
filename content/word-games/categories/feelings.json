@@ -12,7 +12,7 @@
       "label": "happy",
       "alt": "A happy face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f604"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "sad",
       "alt": "A sad face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f622"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "angry",
       "alt": "An angry face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f620"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "sleepy",
       "alt": "A sleepy face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f634"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "surprised",
       "alt": "A surprised face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f62e"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "silly",
       "alt": "A silly face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f92a"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "scared",
       "alt": "A scared face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f628"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "excited",
       "alt": "An excited face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f929"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "calm",
       "alt": "A calm face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f60c"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "worried",
       "alt": "A worried face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f61f"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "confused",
       "alt": "A confused face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f615"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "bored",
       "alt": "A bored face.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f611"
       },
       "audio": {

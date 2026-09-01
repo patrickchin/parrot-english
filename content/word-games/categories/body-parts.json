@@ -12,7 +12,7 @@
       "label": "eyes",
       "alt": "A pair of eyes.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f440"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "ears",
       "alt": "A pair of ears.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f442"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "nose",
       "alt": "A nose.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f443"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "mouth",
       "alt": "A mouth.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f444"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "hand",
       "alt": "A hand.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "270b"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "foot",
       "alt": "A foot.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9b6"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "arm",
       "alt": "An arm.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f4aa"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "leg",
       "alt": "A leg.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9b5"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "tooth",
       "alt": "A tooth.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9b7"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "tongue",
       "alt": "A tongue.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f445"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "brain",
       "alt": "A brain.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9e0"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "heart",
       "alt": "A heart.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "2764"
       },
       "audio": {

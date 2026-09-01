@@ -17,11 +17,11 @@ async function createPackageRoot(context) {
 
   const categoryRoot = join(rootDir, "content", "word-games", "categories");
   const audioRoot = join(rootDir, "public", "assets", "audio");
-  const notoRoot = join(rootDir, "public", "assets", "word-games", "noto");
+  const fluentRoot = join(rootDir, "public", "assets", "word-games", "fluent-3d");
   await Promise.all([
     mkdir(categoryRoot, { recursive: true }),
     mkdir(audioRoot, { recursive: true }),
-    mkdir(notoRoot, { recursive: true }),
+    mkdir(fluentRoot, { recursive: true }),
     mkdir(join(rootDir, "src", "games"), { recursive: true }),
     mkdir(join(rootDir, "third_party"), { recursive: true }),
   ]);
@@ -41,11 +41,11 @@ async function createPackageRoot(context) {
       join(categoryRoot, "fixtures.json"),
       `${JSON.stringify(fixtureCategory, null, 2)}\n`,
     ),
-    cp(join(fixtureRoot, "noto-assets.json"), join(rootDir, "content", "word-games", "noto-assets.json")),
-    cp(join(fixtureRoot, "emoji_u1f431.svg"), join(notoRoot, "emoji_u1f431.svg")),
+    cp(join(fixtureRoot, "fluent-3d-assets.json"), join(rootDir, "content", "word-games", "fluent-3d-assets.json")),
+    cp(join(fixtureRoot, "cat_3d.png"), join(fluentRoot, "1f431.png")),
     cp(
-      join(fixtureRoot, "noto-emoji-svg-LICENSE"),
-      join(rootDir, "third_party", "noto-emoji-svg-LICENSE"),
+      join(fixtureRoot, "fluentui-emoji-LICENSE"),
+      join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
     ),
     ...[...animals.items, ...fixtureCategory.items].map(({ audio }) =>
       cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${audio.id}.mp3`))),

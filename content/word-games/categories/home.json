@@ -12,7 +12,7 @@
       "label": "bed",
       "alt": "A bed.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6cf"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "chair",
       "alt": "A chair.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1fa91"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "door",
       "alt": "A door.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6aa"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "window",
       "alt": "A window.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1fa9f"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "house",
       "alt": "A house.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f3e0"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "key",
       "alt": "A key.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f511"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "sofa",
       "alt": "A sofa.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6cb"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "bathtub",
       "alt": "A bathtub.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6c1"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "toilet",
       "alt": "A toilet.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6bd"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "shower",
       "alt": "A shower.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f6bf"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "mirror",
       "alt": "A mirror.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1fa9e"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "broom",
       "alt": "A broom.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f9f9"
       },
       "audio": {

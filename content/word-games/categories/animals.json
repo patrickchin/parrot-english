@@ -12,7 +12,7 @@
       "label": "cat",
       "alt": "A friendly cat.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f431"
       },
       "audio": {
@@ -25,7 +25,7 @@
       "label": "dog",
       "alt": "A friendly dog.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f415"
       },
       "audio": {
@@ -38,7 +38,7 @@
       "label": "bird",
       "alt": "A friendly bird.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f426"
       },
       "audio": {
@@ -51,7 +51,7 @@
       "label": "fish",
       "alt": "A friendly fish.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f41f"
       },
       "audio": {
@@ -64,7 +64,7 @@
       "label": "duck",
       "alt": "A friendly duck.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f986"
       },
       "audio": {
@@ -77,7 +77,7 @@
       "label": "frog",
       "alt": "A friendly frog.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f438"
       },
       "audio": {
@@ -90,7 +90,7 @@
       "label": "pig",
       "alt": "A friendly pig.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f437"
       },
       "audio": {
@@ -103,7 +103,7 @@
       "label": "cow",
       "alt": "A friendly cow.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f404"
       },
       "audio": {
@@ -116,7 +116,7 @@
       "label": "horse",
       "alt": "A friendly horse.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f40e"
       },
       "audio": {
@@ -129,7 +129,7 @@
       "label": "alligator",
       "alt": "A friendly alligator.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f40a"
       },
       "audio": {
@@ -142,7 +142,7 @@
       "label": "elephant",
       "alt": "A friendly elephant.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f418"
       },
       "audio": {
@@ -155,7 +155,7 @@
       "label": "giraffe",
       "alt": "A friendly giraffe.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f992"
       },
       "audio": {

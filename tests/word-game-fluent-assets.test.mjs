@@ -4,12 +4,12 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { parseNotoAssetManifest } from "../scripts/word-game/manifest.mjs";
+import { parseFluentAssetManifest } from "../scripts/word-game/manifest.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
-const manifestPath = path.join(repositoryRoot, "content", "word-games", "noto-assets.json");
-const assetRoot = path.join(repositoryRoot, "public", "assets", "word-games", "noto");
-const licensePath = path.join(repositoryRoot, "third_party", "noto-emoji-svg-LICENSE");
+const manifestPath = path.join(repositoryRoot, "content", "word-games", "fluent-3d-assets.json");
+const assetRoot = path.join(repositoryRoot, "public", "assets", "word-games", "fluent-3d");
+const licensePath = path.join(repositoryRoot, "third_party", "fluentui-emoji-LICENSE");
 const expectedIds = [
   "1f431", "1f415", "1f426", "1f41f", "1f986", "1f438", "1f437", "1f404",
   "1f40e", "1f40a", "1f418", "1f992", "1f440", "1f442", "1f443", "1f444",
@@ -27,46 +27,49 @@ const expectedIds = [
 
 async function readManifest() {
   const value = JSON.parse(await readFile(manifestPath, "utf8"));
-  return parseNotoAssetManifest(value, manifestPath);
+  return parseFluentAssetManifest(value, manifestPath);
 }
 
-describe("pinned Noto word-game artwork", () => {
+describe("pinned Fluent 3D word-game artwork", () => {
   it("pins the official revision and complete deduplicated inventory", async () => {
     const manifest = await readManifest();
 
     assert.equal(manifest.schemaVersion, 1);
-    assert.equal(manifest.revision, "8998f5dd683424a73e2314a8c1f1e359c19e8742");
-    assert.equal(manifest.repository, "https://github.com/googlefonts/noto-emoji");
-    assert.equal(manifest.license, "Apache-2.0");
-    assert.equal(manifest.licensePath, "svg/LICENSE");
+    assert.equal(manifest.revision, "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc");
+    assert.equal(manifest.repository, "https://github.com/microsoft/fluentui-emoji");
+    assert.equal(manifest.license, "MIT");
+    assert.equal(manifest.licensePath, "LICENSE");
     assert.deepEqual(manifest.assets.map(({ id }) => id), expectedIds);
     assert.equal(new Set(manifest.assets.map(({ publicPath }) => publicPath)).size, 94);
   });
 
-  it("uses strict official paths and hashes every exact vendored SVG", async () => {
+  it("uses strict official paths and hashes every exact vendored 256px PNG", async () => {
     const manifest = await readManifest();
     const expectedFiles = [];
 
     for (const asset of manifest.assets) {
-      const filename = `emoji_u${asset.id}.svg`;
+      const filename = `${asset.id}.png`;
       expectedFiles.push(filename);
-      assert.equal(asset.upstreamPath, `svg/${filename}`);
-      assert.equal(asset.publicPath, `/assets/word-games/noto/${filename}`);
+      assert.match(asset.upstreamPath, /^assets\/[^/]+(?:\/Default)?\/3D\/[^/]+_3d(?:_default)?\.png$/);
+      assert.equal(asset.publicPath, `/assets/word-games/fluent-3d/${filename}`);
       assert.equal(path.basename(asset.publicPath), filename);
       const bytes = await readFile(path.join(assetRoot, filename));
+      assert.deepEqual([...bytes.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], filename);
+      assert.equal(bytes.readUInt32BE(16), 256, filename);
+      assert.equal(bytes.readUInt32BE(20), 256, filename);
       assert.equal(createHash("sha256").update(bytes).digest("hex"), asset.sha256, filename);
     }
 
     assert.deepEqual((await readdir(assetRoot)).sort(), expectedFiles.sort());
   });
 
-  it("retains the exact nested SVG license bytes", async () => {
+  it("retains the exact upstream MIT license bytes", async () => {
     const bytes = await readFile(licensePath);
 
-    assert.equal(bytes.length, 574);
+    assert.equal(bytes.length, 1141);
     assert.equal(
       createHash("sha256").update(bytes).digest("hex"),
-      "611ceab36dae96644ca84e8ace6873821790192bf6f73b0d0624a21b24b4b332",
+      "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
     );
   });
 });

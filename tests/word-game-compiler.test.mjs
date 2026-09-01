@@ -55,7 +55,7 @@ function pathsFor(rootDir) {
   return {
     rootDir,
     categoryRoot: path.join(rootDir, "content", "word-games", "categories"),
-    assetManifestPath: path.join(rootDir, "content", "word-games", "noto-assets.json"),
+    assetManifestPath: path.join(rootDir, "content", "word-games", "fluent-3d-assets.json"),
     publicRoot: path.join(rootDir, "public"),
     audioRoot: path.join(rootDir, "public", "assets", "audio"),
   };
@@ -71,13 +71,13 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
   t.after(() => rm(rootDir, { force: true, recursive: true }));
   const paths = pathsFor(rootDir);
   const category = await readJson(path.join(fixtureRoot, "animals.json"));
-  const assetManifest = manifest ?? await readJson(path.join(fixtureRoot, "noto-assets.json"));
+  const assetManifest = manifest ?? await readJson(path.join(fixtureRoot, "fluent-3d-assets.json"));
   const authoredCategories = categories ?? [{ filename: "animals.json", value: category }];
 
   await Promise.all([
     mkdir(paths.categoryRoot, { recursive: true }),
     mkdir(paths.audioRoot, { recursive: true }),
-    mkdir(path.join(paths.publicRoot, "assets", "word-games", "noto"), { recursive: true }),
+    mkdir(path.join(paths.publicRoot, "assets", "word-games", "fluent-3d"), { recursive: true }),
     mkdir(path.join(rootDir, "third_party"), { recursive: true }),
     mkdir(path.join(rootDir, "src", "games"), { recursive: true }),
   ]);
@@ -86,12 +86,12 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
   }
   await writeJson(paths.assetManifestPath, assetManifest);
   await copyFile(
-    path.join(fixtureRoot, "emoji_u1f431.svg"),
-    path.join(paths.publicRoot, "assets", "word-games", "noto", "emoji_u1f431.svg"),
+    path.join(fixtureRoot, "cat_3d.png"),
+    path.join(paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png"),
   );
   await copyFile(
-    path.join(fixtureRoot, "noto-emoji-svg-LICENSE"),
-    path.join(rootDir, "third_party", "noto-emoji-svg-LICENSE"),
+    path.join(fixtureRoot, "fluentui-emoji-LICENSE"),
+    path.join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
   );
   const audioIds = new Set(
     authoredCategories.flatMap(({ value }) => value.items.map(({ audio }) => audio.id)),
@@ -106,16 +106,16 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
 }
 
 async function addAsset(fixture, id) {
-  const svg = await readFile(path.join(fixtureRoot, "emoji_u1f431.svg"));
-  const filename = `emoji_u${id}.svg`;
+  const png = await readFile(path.join(fixtureRoot, "cat_3d.png"));
+  const filename = `${id}.png`;
   fixture.assetManifest.assets.push({
     id,
-    publicPath: `/assets/word-games/noto/${filename}`,
-    sha256: createHash("sha256").update(svg).digest("hex"),
-    upstreamPath: `svg/${filename}`,
+    publicPath: `/assets/word-games/fluent-3d/${filename}`,
+    sha256: createHash("sha256").update(png).digest("hex"),
+    upstreamPath: "assets/Dog/3D/dog_3d.png",
   });
   await writeJson(fixture.paths.assetManifestPath, fixture.assetManifest);
-  await writeFile(path.join(fixture.paths.publicRoot, "assets", "word-games", "noto", filename), svg);
+  await writeFile(path.join(fixture.paths.publicRoot, "assets", "word-games", "fluent-3d", filename), png);
 }
 
 describe("word-game package compilation", () => {
@@ -128,7 +128,7 @@ describe("word-game package compilation", () => {
     assert.equal(compiled.categories[0].tiers[0].quizzes[0].questions.length, 6);
     assert.equal(
       compiled.categories[0].items[0].visual.src,
-      "/assets/word-games/noto/emoji_u1f431.svg",
+      "/assets/word-games/fluent-3d/1f431.png",
     );
     assert.equal(
       compiled.categories[0].items[0].audio.source,
@@ -315,25 +315,25 @@ describe("word-game package compilation", () => {
     }
   });
 
-  it("rejects missing and unused Noto records", async (t) => {
+  it("rejects missing and unused Fluent records", async (t) => {
     const missing = await repositoryFixture(t);
     missing.category.items[0].visual.assetId = "1f436";
     await writeJson(path.join(missing.paths.categoryRoot, "animals.json"), missing.category);
     await assert.rejects(
       compileWordGamePackages(missing.paths),
-      /Noto asset 1f436.*not listed|missing Noto asset 1f436/i,
+      /Fluent asset 1f436.*not listed|missing Fluent asset 1f436/i,
     );
 
     const unused = await repositoryFixture(t);
     await addAsset(unused, "1f436");
-    await assert.rejects(compileWordGamePackages(unused.paths), /unused Noto asset 1f436/i);
+    await assert.rejects(compileWordGamePackages(unused.paths), /unused Fluent asset 1f436/i);
   });
 
-  it("rejects unsafe Noto paths and roots outside the repository", async (t) => {
+  it("rejects unsafe Fluent paths and roots outside the repository", async (t) => {
     const unsafeAsset = await repositoryFixture(t);
-    unsafeAsset.assetManifest.assets[0].publicPath = "/assets/word-games/../private.svg";
+    unsafeAsset.assetManifest.assets[0].publicPath = "/assets/word-games/../private.png";
     await writeJson(unsafeAsset.paths.assetManifestPath, unsafeAsset.assetManifest);
-    await assert.rejects(compileWordGamePackages(unsafeAsset.paths), /publicPath.*approved Noto root/i);
+    await assert.rejects(compileWordGamePackages(unsafeAsset.paths), /publicPath.*approved Fluent root/i);
 
     const unsafeAudio = await repositoryFixture(t);
     const externalAudio = await mkdtemp(path.join(tmpdir(), "parrot-external-audio-"));
@@ -357,20 +357,20 @@ describe("word-game package compilation", () => {
     await unlink(path.join(missingAudio.paths.audioRoot, "word-game-animals-cat-label.mp3"));
     await assert.rejects(compileWordGamePackages(missingAudio.paths), /cat-label\.mp3.*missing/i);
 
-    const directorySvg = await repositoryFixture(t);
-    const svgPath = path.join(
-      directorySvg.paths.publicRoot,
+    const directoryPng = await repositoryFixture(t);
+    const pngPath = path.join(
+      directoryPng.paths.publicRoot,
       "assets",
       "word-games",
-      "noto",
-      "emoji_u1f431.svg",
+      "fluent-3d",
+      "1f431.png",
     );
-    await unlink(svgPath);
-    await mkdir(svgPath);
-    await assert.rejects(compileWordGamePackages(directorySvg.paths), /SVG.*regular file/i);
+    await unlink(pngPath);
+    await mkdir(pngPath);
+    await assert.rejects(compileWordGamePackages(directoryPng.paths), /PNG.*regular file/i);
 
     const licenseLink = await repositoryFixture(t);
-    const licensePath = path.join(licenseLink.rootDir, "third_party", "noto-emoji-svg-LICENSE");
+    const licensePath = path.join(licenseLink.rootDir, "third_party", "fluentui-emoji-LICENSE");
     const licenseTarget = path.join(licenseLink.rootDir, "license-target");
     await copyFile(licensePath, licenseTarget);
     await unlink(licensePath);
@@ -378,7 +378,7 @@ describe("word-game package compilation", () => {
     await assert.rejects(compileWordGamePackages(licenseLink.paths), /license.*symbolic link/i);
   });
 
-  it("rejects SVG hash drift, conflicting audio text, and unexpected Noto files", async (t) => {
+  it("rejects PNG hash drift, malformed PNG files, and unexpected Fluent files", async (t) => {
     const hashDrift = await repositoryFixture(t);
     hashDrift.assetManifest.assets[0].sha256 = "0".repeat(64);
     await writeJson(hashDrift.paths.assetManifestPath, hashDrift.assetManifest);
@@ -394,10 +394,24 @@ describe("word-game package compilation", () => {
 
     const unexpected = await repositoryFixture(t);
     await writeFile(
-      path.join(unexpected.paths.publicRoot, "assets", "word-games", "noto", "surprise.svg"),
+      path.join(unexpected.paths.publicRoot, "assets", "word-games", "fluent-3d", "surprise.png"),
       "surprise",
     );
-    await assert.rejects(compileWordGamePackages(unexpected.paths), /unexpected Noto file surprise\.svg/i);
+    await assert.rejects(compileWordGamePackages(unexpected.paths), /unexpected Fluent file surprise\.png/i);
+
+    const nonPng = await repositoryFixture(t);
+    await writeFile(
+      path.join(nonPng.paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png"),
+      "not a PNG",
+    );
+    await assert.rejects(compileWordGamePackages(nonPng.paths), /invalid signature/i);
+
+    const wrongSize = await repositoryFixture(t);
+    const pngPath = path.join(wrongSize.paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png");
+    const png = await readFile(pngPath);
+    png.writeUInt32BE(255, 16);
+    await writeFile(pngPath, png);
+    await assert.rejects(compileWordGamePackages(wrongSize.paths), /must be 256×256/i);
   });
 
   it("rejects duplicate global audio IDs even when their text matches", async (t) => {
@@ -470,7 +484,7 @@ describe("word-game package compilation", () => {
     );
   });
 
-  it("opens validated JSON and SVG paths without following a symlink swap", async (t) => {
+  it("opens validated JSON and PNG paths without following a symlink swap", async (t) => {
     for (const { name, targetPath } of [
       {
         name: "category JSON",
@@ -481,13 +495,13 @@ describe("word-game package compilation", () => {
         targetPath: (fixture) => fixture.paths.assetManifestPath,
       },
       {
-        name: "SVG hashing",
+        name: "PNG hashing",
         targetPath: (fixture) => path.join(
           fixture.paths.publicRoot,
           "assets",
           "word-games",
-          "noto",
-          "emoji_u1f431.svg",
+          "fluent-3d",
+          "1f431.png",
         ),
       },
     ]) {

@@ -151,7 +151,7 @@ test("home preserves the generated word-game cover without cropping it", async (
   const cover = card.getByRole("img", { name: "A friendly cat." });
   await expect(cover).toHaveAttribute(
     "src",
-    "/assets/word-games/noto/emoji_u1f431.svg",
+    "/assets/word-games/fluent-3d/1f431.png",
   );
   await expect(cover).toHaveAttribute("height", "512");
   await expect(cover).toHaveAttribute("width", "512");

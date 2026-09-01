@@ -16,7 +16,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "cat",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f431.svg"
+          "src": "/assets/word-games/fluent-3d/1f431.png"
         }
       },
       {
@@ -30,7 +30,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "dog",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f415.svg"
+          "src": "/assets/word-games/fluent-3d/1f415.png"
         }
       },
       {
@@ -44,7 +44,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bird",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f426.svg"
+          "src": "/assets/word-games/fluent-3d/1f426.png"
         }
       },
       {
@@ -58,7 +58,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "fish",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f41f.svg"
+          "src": "/assets/word-games/fluent-3d/1f41f.png"
         }
       },
       {
@@ -72,7 +72,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "duck",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f986.svg"
+          "src": "/assets/word-games/fluent-3d/1f986.png"
         }
       },
       {
@@ -86,7 +86,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "frog",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f438.svg"
+          "src": "/assets/word-games/fluent-3d/1f438.png"
         }
       },
       {
@@ -100,7 +100,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "pig",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f437.svg"
+          "src": "/assets/word-games/fluent-3d/1f437.png"
         }
       },
       {
@@ -114,7 +114,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "cow",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f404.svg"
+          "src": "/assets/word-games/fluent-3d/1f404.png"
         }
       },
       {
@@ -128,7 +128,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "horse",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f40e.svg"
+          "src": "/assets/word-games/fluent-3d/1f40e.png"
         }
       },
       {
@@ -142,7 +142,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "alligator",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f40a.svg"
+          "src": "/assets/word-games/fluent-3d/1f40a.png"
         }
       },
       {
@@ -156,7 +156,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "elephant",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f418.svg"
+          "src": "/assets/word-games/fluent-3d/1f418.png"
         }
       },
       {
@@ -170,7 +170,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "giraffe",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f992.svg"
+          "src": "/assets/word-games/fluent-3d/1f992.png"
         }
       }
     ],
@@ -880,7 +880,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "eyes",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f440.svg"
+          "src": "/assets/word-games/fluent-3d/1f440.png"
         }
       },
       {
@@ -894,7 +894,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "ears",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f442.svg"
+          "src": "/assets/word-games/fluent-3d/1f442.png"
         }
       },
       {
@@ -908,7 +908,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "nose",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f443.svg"
+          "src": "/assets/word-games/fluent-3d/1f443.png"
         }
       },
       {
@@ -922,7 +922,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "mouth",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f444.svg"
+          "src": "/assets/word-games/fluent-3d/1f444.png"
         }
       },
       {
@@ -936,7 +936,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "hand",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u270b.svg"
+          "src": "/assets/word-games/fluent-3d/270b.png"
         }
       },
       {
@@ -950,7 +950,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "foot",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9b6.svg"
+          "src": "/assets/word-games/fluent-3d/1f9b6.png"
         }
       },
       {
@@ -964,7 +964,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "arm",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f4aa.svg"
+          "src": "/assets/word-games/fluent-3d/1f4aa.png"
         }
       },
       {
@@ -978,7 +978,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "leg",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9b5.svg"
+          "src": "/assets/word-games/fluent-3d/1f9b5.png"
         }
       },
       {
@@ -992,7 +992,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "tooth",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9b7.svg"
+          "src": "/assets/word-games/fluent-3d/1f9b7.png"
         }
       },
       {
@@ -1006,7 +1006,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "tongue",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f445.svg"
+          "src": "/assets/word-games/fluent-3d/1f445.png"
         }
       },
       {
@@ -1020,7 +1020,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "brain",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e0.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e0.png"
         }
       },
       {
@@ -1034,7 +1034,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "heart",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u2764.svg"
+          "src": "/assets/word-games/fluent-3d/2764.png"
         }
       }
     ],
@@ -1319,7 +1319,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "apple",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f34e.svg"
+          "src": "/assets/word-games/fluent-3d/1f34e.png"
         }
       },
       {
@@ -1333,7 +1333,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "banana",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f34c.svg"
+          "src": "/assets/word-games/fluent-3d/1f34c.png"
         }
       },
       {
@@ -1347,7 +1347,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "carrot",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f955.svg"
+          "src": "/assets/word-games/fluent-3d/1f955.png"
         }
       },
       {
@@ -1361,7 +1361,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "orange",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f34a.svg"
+          "src": "/assets/word-games/fluent-3d/1f34a.png"
         }
       },
       {
@@ -1375,7 +1375,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bread",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f35e.svg"
+          "src": "/assets/word-games/fluent-3d/1f35e.png"
         }
       },
       {
@@ -1389,7 +1389,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "cheese",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9c0.svg"
+          "src": "/assets/word-games/fluent-3d/1f9c0.png"
         }
       },
       {
@@ -1403,7 +1403,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "rice",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f35a.svg"
+          "src": "/assets/word-games/fluent-3d/1f35a.png"
         }
       },
       {
@@ -1417,7 +1417,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "egg",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f95a.svg"
+          "src": "/assets/word-games/fluent-3d/1f95a.png"
         }
       },
       {
@@ -1431,7 +1431,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "milk",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f95b.svg"
+          "src": "/assets/word-games/fluent-3d/1f95b.png"
         }
       },
       {
@@ -1445,7 +1445,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "tomato",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f345.svg"
+          "src": "/assets/word-games/fluent-3d/1f345.png"
         }
       },
       {
@@ -1459,7 +1459,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "potato",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f954.svg"
+          "src": "/assets/word-games/fluent-3d/1f954.png"
         }
       },
       {
@@ -1473,7 +1473,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "sandwich",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f96a.svg"
+          "src": "/assets/word-games/fluent-3d/1f96a.png"
         }
       }
     ],
@@ -1758,7 +1758,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "ball",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u26bd.svg"
+          "src": "/assets/word-games/fluent-3d/26bd.png"
         }
       },
       {
@@ -1772,7 +1772,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "toy car",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f697.svg"
+          "src": "/assets/word-games/fluent-3d/1f697.png"
         }
       },
       {
@@ -1786,7 +1786,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "doll",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa86.svg"
+          "src": "/assets/word-games/fluent-3d/1fa86.png"
         }
       },
       {
@@ -1800,7 +1800,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "kite",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa81.svg"
+          "src": "/assets/word-games/fluent-3d/1fa81.png"
         }
       },
       {
@@ -1814,7 +1814,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "blocks",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9f1.svg"
+          "src": "/assets/word-games/fluent-3d/1f9f1.png"
         }
       },
       {
@@ -1828,7 +1828,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "teddy bear",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9f8.svg"
+          "src": "/assets/word-games/fluent-3d/1f9f8.png"
         }
       },
       {
@@ -1842,7 +1842,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "toy train",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f686.svg"
+          "src": "/assets/word-games/fluent-3d/1f686.png"
         }
       },
       {
@@ -1856,7 +1856,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "drum",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f941.svg"
+          "src": "/assets/word-games/fluent-3d/1f941.png"
         }
       },
       {
@@ -1870,7 +1870,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "puzzle",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e9.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e9.png"
         }
       },
       {
@@ -1884,7 +1884,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "robot",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f916.svg"
+          "src": "/assets/word-games/fluent-3d/1f916.png"
         }
       },
       {
@@ -1898,7 +1898,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "yo-yo",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa80.svg"
+          "src": "/assets/word-games/fluent-3d/1fa80.png"
         }
       },
       {
@@ -1912,7 +1912,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "skateboard",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6f9.svg"
+          "src": "/assets/word-games/fluent-3d/1f6f9.png"
         }
       }
     ],
@@ -2197,7 +2197,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "happy",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f604.svg"
+          "src": "/assets/word-games/fluent-3d/1f604.png"
         }
       },
       {
@@ -2211,7 +2211,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "sad",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f622.svg"
+          "src": "/assets/word-games/fluent-3d/1f622.png"
         }
       },
       {
@@ -2225,7 +2225,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "angry",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f620.svg"
+          "src": "/assets/word-games/fluent-3d/1f620.png"
         }
       },
       {
@@ -2239,7 +2239,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "sleepy",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f634.svg"
+          "src": "/assets/word-games/fluent-3d/1f634.png"
         }
       },
       {
@@ -2253,7 +2253,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "surprised",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f62e.svg"
+          "src": "/assets/word-games/fluent-3d/1f62e.png"
         }
       },
       {
@@ -2267,7 +2267,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "silly",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f92a.svg"
+          "src": "/assets/word-games/fluent-3d/1f92a.png"
         }
       },
       {
@@ -2281,7 +2281,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "scared",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f628.svg"
+          "src": "/assets/word-games/fluent-3d/1f628.png"
         }
       },
       {
@@ -2295,7 +2295,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "excited",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f929.svg"
+          "src": "/assets/word-games/fluent-3d/1f929.png"
         }
       },
       {
@@ -2309,7 +2309,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "calm",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f60c.svg"
+          "src": "/assets/word-games/fluent-3d/1f60c.png"
         }
       },
       {
@@ -2323,7 +2323,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "worried",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f61f.svg"
+          "src": "/assets/word-games/fluent-3d/1f61f.png"
         }
       },
       {
@@ -2337,7 +2337,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "confused",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f615.svg"
+          "src": "/assets/word-games/fluent-3d/1f615.png"
         }
       },
       {
@@ -2351,7 +2351,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bored",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f611.svg"
+          "src": "/assets/word-games/fluent-3d/1f611.png"
         }
       }
     ],
@@ -2636,7 +2636,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bed",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6cf.svg"
+          "src": "/assets/word-games/fluent-3d/1f6cf.png"
         }
       },
       {
@@ -2650,7 +2650,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "chair",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa91.svg"
+          "src": "/assets/word-games/fluent-3d/1fa91.png"
         }
       },
       {
@@ -2664,7 +2664,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "door",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6aa.svg"
+          "src": "/assets/word-games/fluent-3d/1f6aa.png"
         }
       },
       {
@@ -2678,7 +2678,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "window",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa9f.svg"
+          "src": "/assets/word-games/fluent-3d/1fa9f.png"
         }
       },
       {
@@ -2692,7 +2692,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "house",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f3e0.svg"
+          "src": "/assets/word-games/fluent-3d/1f3e0.png"
         }
       },
       {
@@ -2706,7 +2706,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "key",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f511.svg"
+          "src": "/assets/word-games/fluent-3d/1f511.png"
         }
       },
       {
@@ -2720,7 +2720,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "sofa",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6cb.svg"
+          "src": "/assets/word-games/fluent-3d/1f6cb.png"
         }
       },
       {
@@ -2734,7 +2734,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bathtub",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6c1.svg"
+          "src": "/assets/word-games/fluent-3d/1f6c1.png"
         }
       },
       {
@@ -2748,7 +2748,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "toilet",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6bd.svg"
+          "src": "/assets/word-games/fluent-3d/1f6bd.png"
         }
       },
       {
@@ -2762,7 +2762,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "shower",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6bf.svg"
+          "src": "/assets/word-games/fluent-3d/1f6bf.png"
         }
       },
       {
@@ -2776,7 +2776,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "mirror",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa9e.svg"
+          "src": "/assets/word-games/fluent-3d/1fa9e.png"
         }
       },
       {
@@ -2790,7 +2790,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "broom",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9f9.svg"
+          "src": "/assets/word-games/fluent-3d/1f9f9.png"
         }
       }
     ],
@@ -3075,7 +3075,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "shirt",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f455.svg"
+          "src": "/assets/word-games/fluent-3d/1f455.png"
         }
       },
       {
@@ -3089,7 +3089,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "shoes",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f45f.svg"
+          "src": "/assets/word-games/fluent-3d/1f45f.png"
         }
       },
       {
@@ -3103,7 +3103,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "hat",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e2.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e2.png"
         }
       },
       {
@@ -3117,7 +3117,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "socks",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e6.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e6.png"
         }
       },
       {
@@ -3131,7 +3131,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "coat",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e5.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e5.png"
         }
       },
       {
@@ -3145,7 +3145,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "pants",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f456.svg"
+          "src": "/assets/word-games/fluent-3d/1f456.png"
         }
       },
       {
@@ -3159,7 +3159,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "dress",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f457.svg"
+          "src": "/assets/word-games/fluent-3d/1f457.png"
         }
       },
       {
@@ -3173,7 +3173,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "shorts",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa73.svg"
+          "src": "/assets/word-games/fluent-3d/1fa73.png"
         }
       },
       {
@@ -3187,7 +3187,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "scarf",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e3.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e3.png"
         }
       },
       {
@@ -3201,7 +3201,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "boots",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f462.svg"
+          "src": "/assets/word-games/fluent-3d/1f462.png"
         }
       },
       {
@@ -3215,7 +3215,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "gloves",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f9e4.svg"
+          "src": "/assets/word-games/fluent-3d/1f9e4.png"
         }
       },
       {
@@ -3229,7 +3229,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "swimsuit",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1fa71.svg"
+          "src": "/assets/word-games/fluent-3d/1fa71.png"
         }
       }
     ],
@@ -3514,7 +3514,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "car",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f697.svg"
+          "src": "/assets/word-games/fluent-3d/1f697.png"
         }
       },
       {
@@ -3528,7 +3528,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bus",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f68c.svg"
+          "src": "/assets/word-games/fluent-3d/1f68c.png"
         }
       },
       {
@@ -3542,7 +3542,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "bicycle",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6b2.svg"
+          "src": "/assets/word-games/fluent-3d/1f6b2.png"
         }
       },
       {
@@ -3556,7 +3556,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "train",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f686.svg"
+          "src": "/assets/word-games/fluent-3d/1f686.png"
         }
       },
       {
@@ -3570,7 +3570,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "boat",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6a4.svg"
+          "src": "/assets/word-games/fluent-3d/1f6a4.png"
         }
       },
       {
@@ -3584,7 +3584,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "airplane",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u2708.svg"
+          "src": "/assets/word-games/fluent-3d/2708.png"
         }
       },
       {
@@ -3598,7 +3598,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "taxi",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f695.svg"
+          "src": "/assets/word-games/fluent-3d/1f695.png"
         }
       },
       {
@@ -3612,7 +3612,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "truck",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f69a.svg"
+          "src": "/assets/word-games/fluent-3d/1f69a.png"
         }
       },
       {
@@ -3626,7 +3626,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "scooter",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f6f4.svg"
+          "src": "/assets/word-games/fluent-3d/1f6f4.png"
         }
       },
       {
@@ -3640,7 +3640,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "helicopter",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f681.svg"
+          "src": "/assets/word-games/fluent-3d/1f681.png"
         }
       },
       {
@@ -3654,7 +3654,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "motorcycle",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f3cd.svg"
+          "src": "/assets/word-games/fluent-3d/1f3cd.png"
         }
       },
       {
@@ -3668,7 +3668,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
         "label": "rocket",
         "visual": {
           "kind": "image",
-          "src": "/assets/word-games/noto/emoji_u1f680.svg"
+          "src": "/assets/word-games/fluent-3d/1f680.png"
         }
       }
     ],

@@ -275,17 +275,17 @@ test("routes every malformed word-game URL back to the word-game shelf", async (
   }
 });
 
-test("renders the generated hierarchy, Noto covers, and native color swatches", async ({ page }) => {
+test("renders the generated hierarchy, Fluent covers, and native color swatches", async ({ page }) => {
   const covers = [
-    ["Animals", "A friendly cat.", "/assets/word-games/noto/emoji_u1f431.svg"],
+    ["Animals", "A friendly cat.", "/assets/word-games/fluent-3d/1f431.png"],
     ["Colors", "The color red.", "rgb(239, 68, 68)"],
-    ["Body Parts", "A pair of eyes.", "/assets/word-games/noto/emoji_u1f440.svg"],
-    ["Food", "An apple.", "/assets/word-games/noto/emoji_u1f34e.svg"],
-    ["Toys", "A ball.", "/assets/word-games/noto/emoji_u26bd.svg"],
-    ["Feelings", "A happy face.", "/assets/word-games/noto/emoji_u1f604.svg"],
-    ["Home", "A house.", "/assets/word-games/noto/emoji_u1f3e0.svg"],
-    ["Clothes", "A shirt.", "/assets/word-games/noto/emoji_u1f455.svg"],
-    ["Transport", "A car.", "/assets/word-games/noto/emoji_u1f697.svg"],
+    ["Body Parts", "A pair of eyes.", "/assets/word-games/fluent-3d/1f440.png"],
+    ["Food", "An apple.", "/assets/word-games/fluent-3d/1f34e.png"],
+    ["Toys", "A ball.", "/assets/word-games/fluent-3d/26bd.png"],
+    ["Feelings", "A happy face.", "/assets/word-games/fluent-3d/1f604.png"],
+    ["Home", "A house.", "/assets/word-games/fluent-3d/1f3e0.png"],
+    ["Clothes", "A shirt.", "/assets/word-games/fluent-3d/1f455.png"],
+    ["Transport", "A car.", "/assets/word-games/fluent-3d/1f697.png"],
   ] as const;
 
   await page.goto("/word-games");
@@ -323,10 +323,10 @@ test("renders the generated hierarchy, Noto covers, and native color swatches", 
   await expect(player.getByRole("link", { name: "Back to Animals" }))
     .toHaveAttribute("href", "/word-games/animals");
   for (const [alt, src] of [
-    ["A friendly cat.", "/assets/word-games/noto/emoji_u1f431.svg"],
-    ["A friendly dog.", "/assets/word-games/noto/emoji_u1f415.svg"],
-    ["A friendly bird.", "/assets/word-games/noto/emoji_u1f426.svg"],
-    ["A friendly fish.", "/assets/word-games/noto/emoji_u1f41f.svg"],
+    ["A friendly cat.", "/assets/word-games/fluent-3d/1f431.png"],
+    ["A friendly dog.", "/assets/word-games/fluent-3d/1f415.png"],
+    ["A friendly bird.", "/assets/word-games/fluent-3d/1f426.png"],
+    ["A friendly fish.", "/assets/word-games/fluent-3d/1f41f.png"],
   ]) {
     await expect(player.getByRole("img", { name: alt })).toHaveAttribute("src", src);
   }
