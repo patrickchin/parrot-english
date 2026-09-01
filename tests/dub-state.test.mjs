@@ -276,6 +276,18 @@ describe("five little ducks dub domain", () => {
     });
     state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" });
     assert.equal(state.selectedLineIndex, 1);
+    assert.equal(state.saveRecovery, null);
+    assert.equal(state.error, "");
+
+    state = reduceDubState(state, {
+      type: "SAVE_FAILED",
+      message: "Record again.",
+      recovery: "record",
+    });
+    state = reduceDubState(state, { type: "BACK_TO_PROJECT" });
+    assert.equal(state.view, "project");
+    assert.equal(state.saveRecovery, null);
+    assert.equal(state.error, "");
   });
 
   it("preserves retryable save recovery while guide and take audio play", () => {

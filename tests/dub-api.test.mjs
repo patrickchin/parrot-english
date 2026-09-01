@@ -144,6 +144,56 @@ describe("duck dub browser API", () => {
     });
   });
 
+  it("uploads canonical learner waveform metadata with the private clip", async () => {
+    const peakBars = Array.from({ length: 32 }, (_, index) => index / 31);
+    const saved = {
+      lineId: "line-1",
+      peakBars: peakBars.map((peak) => Math.round(peak * 255) / 255),
+      recordedAt: "2026-08-25T10:00:00.000Z",
+    };
+    const upload = requestRecorder(Response.json(saved, { status: 201 }));
+
+    assert.deepEqual(
+      await saveDubLine(
+        "line-1",
+        new Blob(["take"], { type: "audio/webm" }),
+        { fetch: upload.fetch, peakBars },
+      ),
+      saved,
+    );
+    assert.equal(
+      upload.calls[0][1].headers["X-Parrot-Dub-Peak-Bars"],
+      JSON.stringify(peakBars.map((peak) => Math.round(peak * 255))),
+    );
+  });
+
+  it("rejects malformed learner waveform metadata in status and save results", async () => {
+    const malformedStatus = {
+      complete: false,
+      consentState: "granted",
+      dubId: "five-little-ducks-v2",
+      guardianConsentVersion: "guardian-voice-r2-v2",
+      lines: duckStatusLines().map((line, index) => index === 0
+        ? { ...line, peakBars: [1, 2] }
+        : line),
+      recordingEnabled: true,
+    };
+
+    await assert.rejects(
+      loadDubStatus({ fetch: async () => Response.json(malformedStatus) }),
+      /Your saved dub could not be loaded/,
+    );
+    await assert.rejects(
+      saveDubLine("line-1", new Blob(["take"], { type: "audio/webm" }), {
+        fetch: async () => Response.json({
+          peakBars: [1, 2],
+          recordedAt: "2026-08-25T10:00:00.000Z",
+        }),
+      }),
+      /Your take was not saved/,
+    );
+  });
+
   it("targets every dub request and audio URL with one exact learner query", async () => {
     const learnerProfileId = "learner /Noah";
     const status = {

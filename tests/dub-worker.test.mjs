@@ -1220,6 +1220,52 @@ describe("private learner dub API", () => {
     assert.equal(statusPayload.lines[0].recordedAt, "2026-08-25T10:00:00.000Z");
   });
 
+  it("stores validated learner peak bars atomically with the audio slot", async () => {
+    const bucket = createBucket();
+    const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2]);
+    const peakBytes = Array.from({ length: 32 }, (_, index) => index * 8);
+    const encodedPeakBars = JSON.stringify(peakBytes);
+
+    const upload = await callDub({
+      body,
+      bucket,
+      headers: {
+        ...CONSENT_HEADERS,
+        "X-Parrot-Dub-Peak-Bars": encodedPeakBars,
+      },
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+
+    assert.equal(upload.status, 201);
+    assert.deepEqual((await upload.json()).peakBars, peakBytes.map((peak) => peak / 255));
+    assert.equal(bucket.calls.put[0].options.customMetadata.peakBars, encodedPeakBars);
+
+    const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
+    assert.deepEqual(
+      (await status.json()).lines[0].peakBars,
+      peakBytes.map((peak) => peak / 255),
+    );
+  });
+
+  it("rejects malformed peak-bar headers before storing audio", async () => {
+    const bucket = createBucket();
+    const response = await callDub({
+      body: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]),
+      bucket,
+      headers: {
+        ...CONSENT_HEADERS,
+        "X-Parrot-Dub-Peak-Bars": JSON.stringify([1, 2]),
+      },
+      method: "PUT",
+      path: `${DUB_PATH}/lines/line-1`,
+    });
+
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error, "invalid_peak_bars");
+    assert.equal(bucket.calls.put.length, 0);
+  });
+
   it("accepts line 24 and rejects line 25 at the v2 route boundary", async () => {
     const bucket = createBucket();
     const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]);
