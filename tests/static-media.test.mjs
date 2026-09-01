@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { setImmediate } from "node:timers/promises";
 import sharp from "sharp";
 import {
   STATIC_MEDIA_ASSETS,
   createStaticMediaPublishPlan,
+  ensureStaticMedia,
 } from "../scripts/static-media.mjs";
 import { runStaticMediaPublisher } from "../scripts/publish-static-media.mjs";
 
@@ -222,6 +224,173 @@ describe("static media publishing", () => {
       command: "npm",
       input: pngBytes,
     });
+  });
+
+  it("retries a transient media request before failing the deployment", async () => {
+    const plan = createStaticMediaPublishPlan(
+      [
+        {
+          contentType: "image/webp",
+          path: "characters/peppa/peppa-idle.webp",
+        },
+      ],
+      createOptions(),
+    );
+    const retryDelays = [];
+    const attemptsByPhase = new Map();
+
+    const result = await ensureStaticMedia(plan, {
+      cacheBust: "transient-fetch-fixture",
+      fetch: async (url) => {
+        const phase = new URL(url).searchParams.get("parrot-media-check");
+        const attempts = (attemptsByPhase.get(phase) ?? 0) + 1;
+        attemptsByPhase.set(phase, attempts);
+        if (attempts === 1) throw new TypeError("fetch failed");
+        return createImageResponse("image/webp");
+      },
+      putObject() {
+        throw new Error("An existing immutable object must not be uploaded");
+      },
+      retryDelay: async (milliseconds) => {
+        retryDelays.push(milliseconds);
+      },
+    });
+
+    assert.deepEqual(Object.fromEntries(attemptsByPhase), {
+      "preflight-transient-fetch-fixture": 2,
+      "verify-transient-fetch-fixture": 2,
+    });
+    assert.deepEqual(retryDelays, [250, 250]);
+    assert.deepEqual(result, {
+      published: [],
+      verified: ["characters/peppa/peppa-idle.webp"],
+    });
+  });
+
+  it("stops retrying after three transport failures", async () => {
+    const plan = createStaticMediaPublishPlan(
+      [{ contentType: "image/webp", path: "characters/peppa/peppa-idle.webp" }],
+      createOptions(),
+    );
+    const retryDelays = [];
+    let attempts = 0;
+
+    await assert.rejects(
+      ensureStaticMedia(plan, {
+        cacheBust: "exhausted-fetch-fixture",
+        fetch: async () => {
+          attempts += 1;
+          throw new TypeError("fetch failed");
+        },
+        putObject() {
+          throw new Error("Unavailable media must not be uploaded");
+        },
+        retryDelay: async (milliseconds) => {
+          retryDelays.push(milliseconds);
+        },
+      }),
+      /could not be requested: fetch failed/,
+    );
+
+    assert.equal(attempts, 3);
+    assert.deepEqual(retryDelays, [250, 500]);
+  });
+
+  it("does not retry an HTTP failure", async () => {
+    const plan = createStaticMediaPublishPlan(
+      [{ contentType: "image/webp", path: "characters/peppa/peppa-idle.webp" }],
+      createOptions(),
+    );
+    let attempts = 0;
+
+    await assert.rejects(
+      ensureStaticMedia(plan, {
+        cacheBust: "http-failure-fixture",
+        fetch: async () => {
+          attempts += 1;
+          return new Response(null, { status: 503 });
+        },
+        putObject() {
+          throw new Error("Unavailable media must not be uploaded");
+        },
+        retryDelay: async () => {},
+      }),
+      /returned HTTP 503/,
+    );
+
+    assert.equal(attempts, 1);
+  });
+
+  it("retries a transient source download before publishing", async () => {
+    const plan = createStaticMediaPublishPlan(
+      [{ contentType: "image/png", path: "brand/icon-192.png" }],
+      createOptions(),
+    );
+    const pngBytes = new Uint8Array([137, 80, 78, 71]);
+    let sourceAttempts = 0;
+    let uploadedBytes;
+
+    const result = await ensureStaticMedia(plan, {
+      cacheBust: "transient-source-fixture",
+      fetch: async (url, init) => {
+        const parsed = new URL(url);
+        if (init?.method === "HEAD") {
+          return parsed.searchParams.get("parrot-media-check") ===
+            "preflight-transient-source-fixture"
+            ? new Response(null, { status: 404 })
+            : createImageResponse("image/png");
+        }
+        sourceAttempts += 1;
+        if (sourceAttempts === 1) throw new TypeError("fetch failed");
+        return createImageResponse("image/png", pngBytes);
+      },
+      putObject(_asset, bytes) {
+        uploadedBytes = bytes;
+      },
+      retryDelay: async () => {},
+    });
+
+    assert.equal(sourceAttempts, 2);
+    assert.deepEqual(uploadedBytes, pngBytes);
+    assert.deepEqual(result, {
+      published: ["brand/icon-192.png"],
+      verified: ["brand/icon-192.png"],
+    });
+  });
+
+  it("limits concurrent CDN request starts", async () => {
+    const plan = createStaticMediaPublishPlan(
+      Array.from({ length: 20 }, (_, index) => ({
+        contentType: "image/png",
+        path: `brand/concurrency-${index}.png`,
+      })),
+      createOptions(),
+    );
+    let activeRequests = 0;
+    let maximumActiveRequests = 0;
+    let requestCount = 0;
+
+    const result = await ensureStaticMedia(plan, {
+      cacheBust: "concurrency-fixture",
+      fetch: async () => {
+        requestCount += 1;
+        activeRequests += 1;
+        maximumActiveRequests = Math.max(
+          maximumActiveRequests,
+          activeRequests,
+        );
+        await setImmediate();
+        activeRequests -= 1;
+        return createImageResponse("image/png");
+      },
+      putObject() {
+        throw new Error("An existing immutable object must not be uploaded");
+      },
+    });
+
+    assert.equal(maximumActiveRequests, 16);
+    assert.equal(requestCount, 40);
+    assert.equal(result.verified.length, 20);
   });
 
   it("publishes a responsive variant resized from its canonical versioned source", async () => {

@@ -1,8 +1,12 @@
 /* global URL */
 
+import { setTimeout as wait } from "node:timers/promises";
 import sharp from "sharp";
 
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
+const MEDIA_FETCH_ATTEMPTS = 3;
+const MEDIA_FETCH_CONCURRENCY = 16;
+const MEDIA_FETCH_RETRY_DELAY_MS = 250;
 
 const lessonIds = [
   "01-peppas-high-ball",
@@ -415,6 +419,47 @@ function checkedUrl(value, phase, cacheBust) {
   return url.href;
 }
 
+function createMediaFetch(fetch, retryDelay) {
+  let activeRequests = 0;
+  const queuedRequests = [];
+
+  async function acquireRequestSlot() {
+    if (activeRequests < MEDIA_FETCH_CONCURRENCY) {
+      activeRequests += 1;
+      return;
+    }
+    await new Promise((resolve) => queuedRequests.push(resolve));
+  }
+
+  function releaseRequestSlot() {
+    const next = queuedRequests.shift();
+    if (next) {
+      next();
+      return;
+    }
+    activeRequests -= 1;
+  }
+
+  return async (...args) => {
+    await acquireRequestSlot();
+    try {
+      for (let attempt = 1; attempt <= MEDIA_FETCH_ATTEMPTS; attempt += 1) {
+        try {
+          return await fetch(...args);
+        } catch (error) {
+          if (attempt === MEDIA_FETCH_ATTEMPTS) throw error;
+          await retryDelay(
+            MEDIA_FETCH_RETRY_DELAY_MS * (2 ** (attempt - 1)),
+          );
+        }
+      }
+      throw new Error("Media fetch retry loop ended unexpectedly");
+    } finally {
+      releaseRequestSlot();
+    }
+  };
+}
+
 function imageBytesEqual(left, right) {
   if (left.byteLength !== right.byteLength) return false;
   for (let index = 0; index < left.byteLength; index += 1) {
@@ -650,6 +695,7 @@ export async function ensureStaticMedia(
     cacheBust,
     fetch = globalThis.fetch,
     putObject,
+    retryDelay = wait,
   },
 ) {
   if (!Array.isArray(plan) || plan.length === 0) {
@@ -659,14 +705,18 @@ export async function ensureStaticMedia(
   if (typeof putObject !== "function") {
     throw new Error("putObject must be a function");
   }
+  if (typeof retryDelay !== "function") {
+    throw new Error("retryDelay must be a function");
+  }
   const token = requireText(cacheBust, "cacheBust");
+  const mediaFetch = createMediaFetch(fetch, retryDelay);
   const responsiveVariants = await prepareResponsiveVariants(plan, {
     cacheBust: token,
-    fetch,
+    fetch: mediaFetch,
   });
   const preflight = await inspectTargets(plan, {
     cacheBust: token,
-    fetch,
+    fetch: mediaFetch,
     phase: "preflight",
     responsiveVariants,
   });
@@ -693,7 +743,7 @@ export async function ensureStaticMedia(
         throw new Error(`${asset.path} has no prepared canonical derivative`);
       }
     } else {
-      const sourceResponse = await fetch(
+      const sourceResponse = await mediaFetch(
         checkedUrl(asset.sourceUrl, "source", token),
         { method: "GET", redirect: "error" },
       );
@@ -718,7 +768,7 @@ export async function ensureStaticMedia(
 
   const verification = await inspectTargets(plan, {
     cacheBust: token,
-    fetch,
+    fetch: mediaFetch,
     phase: "verify",
     responsiveVariants,
   });
