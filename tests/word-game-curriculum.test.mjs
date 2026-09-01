@@ -9,6 +9,12 @@ import { WORD_GAME_MISSING_AUDIO_IDS } from "./fixtures/word-game-missing-audio-
 
 const rootDir = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const categoryRoot = path.join(rootDir, "content", "word-games", "categories");
+const QUIZ_ORDERS = [
+  [0, 1, 2, 3, 4, 5],
+  [2, 4, 0, 5, 1, 3],
+  [4, 1, 3, 0, 5, 2],
+];
+const QUIZ_PASSES = ["First look", "Mix it up", "Quick check"];
 
 const TARGETS = {
   animals: {
@@ -154,40 +160,6 @@ const NOTO_ASSET_IDS = {
   },
 };
 
-const CATEGORY_DESCRIPTION_COPY = {
-  animals: {
-    simple: ["Simple animal words.", "Six simple animal words."],
-    intermediate: ["Intermediate animal words.", "Six intermediate animal words."],
-    advanced: ["Advanced animal words.", "Six advanced animal words."],
-  },
-  "body-parts": {
-    simple: ["Simple body-part words.", "Six simple body-part words."],
-    intermediate: ["Intermediate body-part words.", "Six intermediate body-part words."],
-    advanced: ["Advanced body-part words.", "Six advanced body-part words."],
-  },
-  colors: {
-    simple: ["Simple color words.", "Six simple color words."],
-    intermediate: ["Intermediate color words.", "Six intermediate color words."],
-    advanced: ["Advanced color words.", "Six advanced color words."],
-  },
-  toys: {
-    simple: ["Simple toy words.", "Six simple toy words."],
-    intermediate: ["Intermediate toy words.", "Six intermediate toy words."],
-    advanced: ["Advanced toy words.", "Six advanced toy words."],
-  },
-};
-
-const TRANSPORT_COPY = {
-  description: "Listen and find the vehicle.",
-  simple: ["Simple vehicle words.", "Simple vehicles", "Six simple vehicle words."],
-  intermediate: [
-    "Intermediate vehicle words.",
-    "Intermediate vehicles",
-    "Six intermediate vehicle words.",
-  ],
-  advanced: ["Advanced vehicle words.", "Advanced vehicles", "Six advanced vehicle words."],
-};
-
 async function readCategories() {
   const filenames = (await readdir(categoryRoot)).sort();
   return Promise.all(filenames.map(async (filename) => {
@@ -208,22 +180,34 @@ describe("production word-game curriculum", () => {
     const items = categories.flatMap(({ items: categoryItems }) => categoryItems);
 
     assert.equal(categories.length, 9);
-    assert.equal(quizzes.length, 27);
-    assert.equal(questions.length, 162);
+    assert.equal(quizzes.length, 81);
+    assert.equal(questions.length, 486);
     assert.equal(items.length, 107);
     assert.deepEqual(categories.map(({ id }) => id).sort(), Object.keys(TARGETS).sort());
 
     for (const category of categories) {
       const targetsByTier = TARGETS[category.id];
       for (const tier of category.tiers) {
-        const targets = tier.quizzes[0].questions.map(({ targetId }) => targetId);
-        assert.deepEqual(targets, targetsByTier[tier.id], `${category.id}/${tier.id} targets`);
-        tier.quizzes[0].questions.forEach((question, index) => {
-          assert.deepEqual(
-            question.choiceIds,
-            expectedChoices(targets, index),
-            `${category.id}/${tier.id}/${question.id} choices`,
-          );
+        assert.equal(tier.quizzes.length, 3, `${category.id}/${tier.id} quiz count`);
+        const authoredOrders = tier.quizzes.map(({ questions: quizQuestions }) =>
+          quizQuestions.map(({ targetId }) => targetId));
+        const expectedOrders = QUIZ_ORDERS.map((order) =>
+          order.map((index) => targetsByTier[tier.id][index]));
+        assert.deepEqual(authoredOrders, expectedOrders, `${category.id}/${tier.id} orders`);
+        assert.equal(new Set(authoredOrders.map((order) => order.join("\0"))).size, 3);
+        assert.equal(new Set(authoredOrders.map(([first]) => first)).size, 3);
+        tier.quizzes.forEach((quiz, quizIndex) => {
+          assert.equal(quiz.id, `${tier.id}-${quizIndex + 1}`);
+          assert.equal(quiz.title, `${tier.title} ${category.title}: ${QUIZ_PASSES[quizIndex]}`);
+          assert.equal(quiz.description, "6 questions");
+          quiz.questions.forEach((question, questionIndex) => {
+            assert.deepEqual(
+              question.choiceIds,
+              expectedChoices(authoredOrders[quizIndex], questionIndex),
+              `${category.id}/${tier.id}/${quiz.id}/${question.id} choices`,
+            );
+            assert.deepEqual(Object.keys(question).sort(), ["choiceIds", "id", "targetId"]);
+          });
         });
       }
     }
@@ -231,9 +215,27 @@ describe("production word-game curriculum", () => {
 
   it("preserves the 36 reusable audio identities and teaching texts", async () => {
     const items = (await readCategories()).flatMap(({ items: categoryItems }) => categoryItems);
-    const audioTextById = Object.fromEntries(items.map(({ audio }) => [audio.id, audio.text]));
+    const audioTextById = Object.fromEntries(items.map(({ labelAudio }) => [labelAudio.id, labelAudio.text]));
     for (const [id, text] of Object.entries(EXISTING_AUDIO_TEXT)) {
       assert.equal(audioTextById[id], text, id);
+    }
+  });
+
+  it("authors one category-appropriate prompt cue for every vocabulary item", async () => {
+    const categories = await readCategories();
+    const items = categories.flatMap(({ id: categoryId, items: categoryItems }) =>
+      categoryItems.map((item) => ({ categoryId, ...item })));
+    assert.equal(items.length, 107);
+    assert.equal(new Set(items.map(({ promptAudio }) => promptAudio.id)).size, 107);
+    for (const { categoryId, id, label, promptAudio } of items) {
+      assert.equal(promptAudio.id, `word-game-${categoryId}-${id}-prompt`);
+      if (categoryId === "colors") assert.equal(promptAudio.text, `Which color is ${label}?`);
+      else if (categoryId === "body-parts") assert.equal(promptAudio.text, `Which picture shows the ${label}?`);
+      else if (categoryId === "feelings") assert.equal(promptAudio.text, `Which face looks ${label}?`);
+      else if (["shoes", "socks", "pants", "shorts", "gloves", "blocks"].includes(id)) {
+        assert.equal(promptAudio.text, `Which are the ${label}?`);
+      }
+      else assert.equal(promptAudio.text, `Which is the ${label}?`);
     }
   });
 
@@ -262,43 +264,14 @@ describe("production word-game curriculum", () => {
     assert.doesNotMatch(authoredText, /\b(?:soap|washing|cleanliness|clean hands)\b/iu);
   });
 
-  it("uses natural singular category nouns in tier and quiz descriptions", async () => {
-    const categories = await readCategories();
-    for (const [categoryId, expectedByTier] of Object.entries(CATEGORY_DESCRIPTION_COPY)) {
-      const category = categories.find(({ id }) => id === categoryId);
-      for (const tier of category.tiers) {
-        const [tierDescription, quizDescription] = expectedByTier[tier.id];
-        assert.equal(tier.description, tierDescription, `${categoryId}/${tier.id} tier`);
-        assert.equal(
-          tier.quizzes[0].description,
-          quizDescription,
-          `${categoryId}/${tier.id} quiz`,
-        );
-      }
-    }
-  });
-
-  it("uses natural vehicle wording throughout the Transport learner copy", async () => {
-    const category = (await readCategories()).find(({ id }) => id === "transport");
-    assert.equal(category.title, "Transport");
-    assert.equal(category.description, TRANSPORT_COPY.description);
-    for (const tier of category.tiers) {
-      const [tierDescription, quizTitle, quizDescription] = TRANSPORT_COPY[tier.id];
-      assert.deepEqual(
-        [tier.description, tier.quizzes[0].title, tier.quizzes[0].description],
-        [tierDescription, quizTitle, quizDescription],
-        `transport/${tier.id}`,
-      );
-    }
-  });
-
-  it("passes compiler cross-checks with all 107 saved item cues", async () => {
+  it("passes compiler cross-checks with all item and player cues", async () => {
     const plan = await planWordGameAudio({ rootDir });
-    assert.equal(plan.lines.length, 107);
-    assert.equal(new Set(plan.lines.map(({ id }) => id)).size, 107);
-    assert.ok(plan.lines.every((line) =>
-      line.id.endsWith("-label")
-      && line.lang === "en-US"
+    assert.equal(plan.lines.length, 217);
+    assert.equal(new Set(plan.lines.map(({ id }) => id)).size, 217);
+    const itemLines = plan.lines.filter(({ id }) => /^word-game-.+-(?:label|prompt)$/u.test(id));
+    assert.equal(itemLines.length, 214);
+    assert.ok(itemLines.every((line) =>
+      line.lang === "en-US"
       && line.speaker === "narrator"
       && line.src === `/assets/audio/${line.id}.mp3`
       && line.ttsText === `[bright, playful teaching delivery for a young child] ${line.text}`
@@ -306,5 +279,8 @@ describe("production word-game curriculum", () => {
     assert.deepEqual(plan.missingFiles, []);
     const plannedIds = new Set(plan.lines.map(({ id }) => id));
     assert.ok(WORD_GAME_MISSING_AUDIO_IDS.every((id) => plannedIds.has(id)));
+    for (const id of ["narrator-feedback-success", "word-game-retry", "word-game-complete"]) {
+      assert.ok(plannedIds.has(id), id);
+    }
   });
 });

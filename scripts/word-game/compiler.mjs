@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   parseFluentAssetManifest,
   parseWordGameManifest,
+  parseWordGamePlayerManifest,
 } from "./manifest.mjs";
 
 const GENERATED_WARNING =
@@ -176,8 +177,15 @@ function assertUniqueIds(values, label, sourcePath) {
   }
 }
 
-function capitalizedLabel(label) {
-  return `${label[0].toUpperCase()}${label.slice(1)}.`;
+function registerAudio(audioById, audio, sourcePath) {
+  const priorText = audioById.get(audio.id);
+  if (priorText !== undefined) {
+    if (priorText !== audio.text) {
+      throw new Error(`${sourcePath}: audio id ${audio.id} is reused with different text`);
+    }
+    throw new Error(`${sourcePath}: duplicate global audio id ${audio.id}`);
+  }
+  audioById.set(audio.id, audio.text);
 }
 
 function validateCategoryReferences(currentPackage, assetById, audioById, usedAssetIds) {
@@ -192,6 +200,23 @@ function validateCategoryReferences(currentPackage, assetById, audioById, usedAs
   const quizzes = manifest.tiers.flatMap(({ quizzes: tierQuizzes }) => tierQuizzes);
   assertUniqueIds(quizzes, "quiz", sourcePath);
   const targetedItems = new Set();
+  for (const tier of manifest.tiers) {
+    const authoredOrders = tier.quizzes.map((quiz) =>
+      quiz.questions.map(({ targetId }) => targetId));
+    const baselineTargets = [...authoredOrders[0]].sort(compareCodeUnits);
+    if (authoredOrders.some((order) =>
+      order.length !== baselineTargets.length
+      || order.toSorted(compareCodeUnits).some((targetId, index) => targetId !== baselineTargets[index]))) {
+      throw new Error(`${sourcePath}: tier ${tier.id} quizzes must use the same target membership`);
+    }
+    if (new Set(authoredOrders.map((order) => order.join("\0"))).size !== authoredOrders.length) {
+      throw new Error(`${sourcePath}: tier ${tier.id} quiz orders must be different`);
+    }
+    if (new Set(authoredOrders.map(([firstTargetId]) => firstTargetId)).size !== authoredOrders.length) {
+      throw new Error(`${sourcePath}: tier ${tier.id} first targets must be different`);
+    }
+  }
+
   for (const quiz of quizzes) {
     assertUniqueIds(quiz.questions, "question", sourcePath);
     const quizTargets = new Set();
@@ -210,16 +235,6 @@ function validateCategoryReferences(currentPackage, assetById, audioById, usedAs
           throw new Error(`${sourcePath}: question ${question.id} choice ${choiceId} is missing`);
         }
       }
-      if (!question.prompt.startsWith(capitalizedLabel(target.label))) {
-        throw new Error(
-          `${sourcePath}: question ${question.id} prompt must begin with ${capitalizedLabel(target.label)}`,
-        );
-      }
-      if (!question.success.includes(target.audio.text)) {
-        throw new Error(
-          `${sourcePath}: question ${question.id} success must contain the exact teaching text`,
-        );
-      }
     }
   }
 
@@ -227,14 +242,8 @@ function validateCategoryReferences(currentPackage, assetById, audioById, usedAs
     if (!targetedItems.has(item.id)) {
       throw new Error(`${sourcePath}: unused item ${item.id}; item is never targeted`);
     }
-    const priorText = audioById.get(item.audio.id);
-    if (priorText !== undefined) {
-      if (priorText !== item.audio.text) {
-        throw new Error(`${sourcePath}: audio id ${item.audio.id} is reused with different text`);
-      }
-      throw new Error(`${sourcePath}: duplicate global audio id ${item.audio.id}`);
-    }
-    audioById.set(item.audio.id, item.audio.text);
+    registerAudio(audioById, item.labelAudio, sourcePath);
+    registerAudio(audioById, item.promptAudio, sourcePath);
     if (item.visual.kind === "fluent-3d") {
       if (!assetById.has(item.visual.assetId)) {
         throw new Error(`${sourcePath}: Fluent asset ${item.visual.assetId} is not listed`);
@@ -315,7 +324,8 @@ function compileCategory(manifest, assetById) {
     ...manifest,
     items: manifest.items.map((item) => ({
       ...item,
-      audio: compileAudio(item.audio),
+      labelAudio: compileAudio(item.labelAudio),
+      promptAudio: compileAudio(item.promptAudio),
       visual: item.visual.kind === "swatch"
         ? { ...item.visual }
         : { kind: "image", src: assetById.get(item.visual.assetId).publicPath },
@@ -356,6 +366,7 @@ async function compile({
   rootDir,
   categoryRoot = path.join(rootDir, "content", "word-games", "categories"),
   assetManifestPath = path.join(rootDir, "content", "word-games", "fluent-3d-assets.json"),
+  playerManifestPath = path.join(rootDir, "content", "word-games", "player.json"),
   publicRoot = path.join(rootDir, "public"),
   audioRoot = path.join(publicRoot, "assets", "audio"),
   openFile = open,
@@ -369,6 +380,9 @@ async function compile({
   }
   if (!pathIsInside(path.resolve(rootDir), path.resolve(assetManifestPath))) {
     throw new Error(`${assetManifestPath}: asset manifest path is outside the repository root`);
+  }
+  if (!pathIsInside(path.resolve(rootDir), path.resolve(playerManifestPath))) {
+    throw new Error(`${playerManifestPath}: player manifest path is outside the repository root`);
   }
   const fluentRoot = path.join(publicRoot, "assets", "word-games", "fluent-3d");
   const fluentRealPath = await inspectDirectory(fluentRoot, "Fluent root", publicRealPath);
@@ -387,11 +401,23 @@ async function compile({
 
   const packages = await discoverCategories(categoryRoot, categoryRealPath, openFile);
   assertUniqueCategories(packages);
+  const playerManifestValue = await readJsonFile(
+    playerManifestPath,
+    "player manifest",
+    rootRealPath,
+    openFile,
+  );
+  const playerManifest = parseWordGamePlayerManifest(playerManifestValue, playerManifestPath);
   const audioById = new Map();
   const usedAssetIds = new Set();
   for (const currentPackage of packages) {
     validateCategoryReferences(currentPackage, assetById, audioById, usedAssetIds);
   }
+  for (const cue of [
+    playerManifest.successAudio,
+    playerManifest.retryAudio,
+    playerManifest.completeAudio,
+  ]) registerAudio(audioById, cue, playerManifestPath);
   for (const asset of assetManifest.assets) {
     if (!usedAssetIds.has(asset.id)) {
       throw new Error(`${assetManifestPath}: unused Fluent asset ${asset.id}`);
@@ -411,8 +437,13 @@ async function compile({
   );
   return {
     compiled: {
-      assets: assetManifest.assets.map((asset) => ({ ...asset })),
       categories: packages.map(({ manifest }) => compileCategory(manifest, assetById)),
+      player: {
+        ...playerManifest,
+        successAudio: compileAudio(playerManifest.successAudio),
+        retryAudio: compileAudio(playerManifest.retryAudio),
+        completeAudio: compileAudio(playerManifest.completeAudio),
+      },
     },
     lines: [...audioById.entries()]
       .map(([id, text]) => plannerLine(id, text))
@@ -433,10 +464,10 @@ export async function planWordGameAudio({ rootDir }) {
 }
 
 export function serializeGeneratedWordGameCatalog(compiled) {
-  if (!compiled || !Array.isArray(compiled.categories)) {
-    throw new TypeError("The compiled word-game catalog must contain categories.");
+  if (!compiled || !Array.isArray(compiled.categories) || !compiled.player) {
+    throw new TypeError("The compiled word-game catalog must contain categories and player cues.");
   }
   return `${GENERATED_WARNING}export const GENERATED_WORD_GAME_CATALOG = ${
-    JSON.stringify(compiled.categories, null, 2)
+    JSON.stringify(compiled, null, 2)
   } as const;\n`;
 }

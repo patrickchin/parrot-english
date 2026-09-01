@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "successAudio": {
+    "id": "narrator-feedback-success",
+    "text": "Great job!"
+  },
+  "retryAudio": {
+    "id": "word-game-retry",
+    "text": "Listen and try again."
+  },
+  "completeAudio": {
+    "id": "word-game-complete",
+    "text": "Great listening! You finished the game."
+  }
+}

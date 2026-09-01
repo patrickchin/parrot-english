@@ -16,10 +16,19 @@ import { GENERATED_WORD_GAME_CATALOG } from "../src/games/generated-word-game-ca
 
 
 const WORD_GAME_EXPECTED_AUDIO = [
-  ...GENERATED_WORD_GAME_CATALOG.flatMap(({ items }) =>
-    items.map(({ audio }) => [audio.id, audio.text])),
-  ["word-game-retry", "Listen and try again."],
-  ["word-game-complete", "Great listening! You finished the game."],
+  ...GENERATED_WORD_GAME_CATALOG.categories.flatMap(({ items }) =>
+    items.flatMap(({ labelAudio, promptAudio }) => [
+      [labelAudio.id, labelAudio.text],
+      [promptAudio.id, promptAudio.text],
+    ])),
+  [
+    GENERATED_WORD_GAME_CATALOG.player.retryAudio.id,
+    GENERATED_WORD_GAME_CATALOG.player.retryAudio.text,
+  ],
+  [
+    GENERATED_WORD_GAME_CATALOG.player.completeAudio.id,
+    GENERATED_WORD_GAME_CATALOG.player.completeAudio.text,
+  ],
 ];
 
 const getStaticAudioLineForSpeech =
@@ -138,8 +147,8 @@ describe("static audio cache metadata", () => {
 
   it("registers the complete word-game narrator inventory by stable ID", () => {
     const entries = Object.entries(staticAudio.STATIC_AUDIO_LINES).filter(([id]) => id.startsWith("word-game-"));
-    assert.equal(entries.length, 109);
-    assert.equal(new Set(entries.map(([id]) => id)).size, 109);
+    assert.equal(entries.length, 216);
+    assert.equal(new Set(entries.map(([id]) => id)).size, 216);
     assert.deepEqual(entries.map(([id, { src, text }]) => [id, src, text]), WORD_GAME_EXPECTED_AUDIO.map(([id, text]) => [id, `/assets/audio/${id}.mp3`, text]));
     for (const [id] of WORD_GAME_EXPECTED_AUDIO) {
       const line = staticAudio.getStaticAudioLineById(id);
@@ -150,6 +159,7 @@ describe("static audio cache metadata", () => {
     }
     assert.ok(entries.every(([, line]) => line.voiceStyle === "energetic-character"));
     assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-label").ttsText, /bright.*playful.*teaching.*young child/i);
+    assert.match(staticAudio.getStaticAudioLineById("word-game-animals-cat-prompt").ttsText, /bright.*playful.*teaching.*young child/i);
     assert.match(staticAudio.getStaticAudioLineById("word-game-retry").ttsText, /gentle.*upbeat.*encouragement.*young child/i);
     assert.match(staticAudio.getStaticAudioLineById("word-game-complete").ttsText, /happy.*excited.*not-loud.*celebration.*young child/i);
     assert.equal(

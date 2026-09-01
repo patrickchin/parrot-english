@@ -3,10 +3,12 @@ import { describe, it } from "node:test";
 import {
   parseFluentAssetManifest,
   parseWordGameManifest,
+  parseWordGamePlayerManifest,
 } from "../scripts/word-game/manifest.mjs";
 
 const categorySourcePath = "/content/animals.json";
 const fluentSourcePath = "/content/fluent-3d-assets.json";
+const playerSourcePath = "/content/player.json";
 
 function validCategory() {
   const items = Array.from({ length: 12 }, (_, index) => {
@@ -17,33 +19,40 @@ function validCategory() {
       label: `animal ${number}`,
       alt: `Animal ${number}.`,
       visual: { assetId: `1f4${String(number).padStart(2, "0")}`, kind: "fluent-3d" },
-      audio: {
+      labelAudio: {
         id: `word-game-animals-${id}-label`,
         text: `This is animal ${number}.`,
       },
+      promptAudio: {
+        id: `word-game-animals-${id}-prompt`,
+        text: `Which is animal ${number}?`,
+      },
     };
   });
-  const quiz = (tierId, offset) => ({
-    id: `${tierId}-1`,
-    title: `${tierId} animals`,
+  const quiz = (tierId, offset, quizNumber, order) => ({
+    id: `${tierId}-${quizNumber}`,
+    title: `${tierId} animals ${quizNumber}`,
     description: `Six ${tierId} animal words.`,
-    questions: Array.from({ length: 6 }, (_, index) => {
+    questions: order.map((orderIndex, index) => {
       const ids = Array.from(
         { length: 4 },
-        (_, choiceOffset) => items[(offset + index + choiceOffset) % items.length].id,
+        (_, choiceOffset) => items[offset + order[(index + choiceOffset) % order.length]].id,
       );
       return {
-        id: `find-${tierId}-${index + 1}`,
+        id: `find-${tierId}-${quizNumber}-${orderIndex + 1}`,
         targetId: ids[0],
         choiceIds: [ids[0], ids[1], ids[2], ids[3]],
-        prompt: `Animal ${offset + index + 1}. Which picture is animal ${offset + index + 1}?`,
-        success: `Great job! This is animal ${offset + index + 1}.`,
       };
     }),
   });
+  const quizzes = (tierId, offset) => [
+    quiz(tierId, offset, 1, [0, 1, 2, 3, 4, 5]),
+    quiz(tierId, offset, 2, [2, 4, 0, 5, 1, 3]),
+    quiz(tierId, offset, 3, [4, 1, 3, 0, 5, 2]),
+  ];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     order: 1,
     id: "animals",
     title: "Animals",
@@ -56,21 +65,33 @@ function validCategory() {
         id: "simple",
         title: "Simple",
         description: "Start with familiar animal words.",
-        quizzes: [quiz("simple", 0)],
+        quizzes: quizzes("simple", 0),
       },
       {
         id: "intermediate",
         title: "Intermediate",
         description: "Try more animal words.",
-        quizzes: [quiz("intermediate", 3)],
+        quizzes: quizzes("intermediate", 3),
       },
       {
         id: "advanced",
         title: "Advanced",
         description: "Practice advanced animal words.",
-        quizzes: [quiz("advanced", 6)],
+        quizzes: quizzes("advanced", 6),
       },
     ],
+  };
+}
+
+function validPlayerManifest() {
+  return {
+    schemaVersion: 1,
+    successAudio: { id: "narrator-feedback-success", text: "Great job!" },
+    retryAudio: { id: "word-game-retry", text: "Listen and try again." },
+    completeAudio: {
+      id: "word-game-complete",
+      text: "Great listening! You finished the game.",
+    },
   };
 }
 
@@ -100,12 +121,52 @@ function errorAt(sourcePath, fieldPath) {
 }
 
 describe("word-game manifests", () => {
-  it("accepts complete schema-version-1 category and Fluent manifests", () => {
+  it("accepts complete schema-version-2 category, player, and Fluent manifests", () => {
     const category = validCategory();
     assert.deepEqual(parseWordGameManifest(category, categorySourcePath), category);
     assert.deepEqual(
       parseFluentAssetManifest(validFluentManifest(), fluentSourcePath),
       validFluentManifest(),
+    );
+    assert.deepEqual(
+      parseWordGamePlayerManifest(validPlayerManifest(), playerSourcePath),
+      validPlayerManifest(),
+    );
+  });
+
+  it("rejects the retired schema-version-1 item and question copy", () => {
+    const oldVersion = validCategory();
+    oldVersion.schemaVersion = 1;
+    assert.throws(
+      () => parseWordGameManifest(oldVersion, categorySourcePath),
+      errorAt(categorySourcePath, "schemaVersion"),
+    );
+
+    const itemAudio = validCategory();
+    itemAudio.items[0].audio = itemAudio.items[0].labelAudio;
+    delete itemAudio.items[0].labelAudio;
+    assert.throws(
+      () => parseWordGameManifest(itemAudio, categorySourcePath),
+      errorAt(categorySourcePath, "items[0].labelAudio"),
+    );
+
+    for (const field of ["prompt", "success"]) {
+      const duplicatedQuestionCopy = validCategory();
+      duplicatedQuestionCopy.tiers[0].quizzes[0].questions[0][field] = "Retired copy.";
+      assert.throws(
+        () => parseWordGameManifest(duplicatedQuestionCopy, categorySourcePath),
+        errorAt(categorySourcePath, `tiers[0].quizzes[0].questions[0].${field}`),
+      );
+    }
+  });
+
+  it("rejects unknown player fields", () => {
+    assert.throws(
+      () => parseWordGamePlayerManifest(
+        { ...validPlayerManifest(), surprise: true },
+        playerSourcePath,
+      ),
+      errorAt(playerSourcePath, "surprise"),
     );
   });
 
@@ -134,10 +195,10 @@ describe("word-game manifests", () => {
       sourcePath: categorySourcePath,
       value: () => {
         const category = validCategory();
-        category.items[0].audio.surprise = true;
+        category.items[0].labelAudio.surprise = true;
         return category;
       },
-      fieldPath: "items[0].audio.surprise",
+      fieldPath: "items[0].labelAudio.surprise",
     },
     {
       name: "unknown Fluent visual fields",
@@ -304,12 +365,12 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].id",
     },
     {
-      name: "empty quiz lists",
+      name: "wrong quiz counts",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
         const category = validCategory();
-        category.tiers[0].quizzes = [];
+        category.tiers[0].quizzes.pop();
         return category;
       },
       fieldPath: "tiers[0].quizzes",
@@ -365,15 +426,26 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].quizzes[0].questions[0].targetId",
     },
     {
-      name: "malformed audio IDs",
+      name: "malformed label audio IDs",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
         const category = validCategory();
-        category.items[0].audio.id = "word-game-colors-animal-1-label";
+        category.items[0].labelAudio.id = "word-game-colors-animal-1-label";
         return category;
       },
-      fieldPath: "items[0].audio.id",
+      fieldPath: "items[0].labelAudio.id",
+    },
+    {
+      name: "malformed prompt audio IDs",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].promptAudio.id = "word-game-animals-animal-1-label";
+        return category;
+      },
+      fieldPath: "items[0].promptAudio.id",
     },
     {
       name: "retired Noto SVG visuals",

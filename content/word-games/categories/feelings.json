@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "order": 6,
   "id": "feelings",
   "title": "Feelings",
@@ -15,9 +15,13 @@
         "kind": "fluent-3d",
         "assetId": "1f604"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-happy-label",
         "text": "This face is happy."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-happy-prompt",
+        "text": "Which face looks happy?"
       }
     },
     {
@@ -28,9 +32,13 @@
         "kind": "fluent-3d",
         "assetId": "1f622"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-sad-label",
         "text": "This face is sad."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-sad-prompt",
+        "text": "Which face looks sad?"
       }
     },
     {
@@ -41,9 +49,13 @@
         "kind": "fluent-3d",
         "assetId": "1f620"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-angry-label",
         "text": "This face is angry."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-angry-prompt",
+        "text": "Which face looks angry?"
       }
     },
     {
@@ -54,9 +66,13 @@
         "kind": "fluent-3d",
         "assetId": "1f634"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-sleepy-label",
         "text": "This face is sleepy."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-sleepy-prompt",
+        "text": "Which face looks sleepy?"
       }
     },
     {
@@ -67,9 +83,13 @@
         "kind": "fluent-3d",
         "assetId": "1f62e"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-surprised-label",
         "text": "This face is surprised."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-surprised-prompt",
+        "text": "Which face looks surprised?"
       }
     },
     {
@@ -80,9 +100,13 @@
         "kind": "fluent-3d",
         "assetId": "1f92a"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-silly-label",
         "text": "This face is silly."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-silly-prompt",
+        "text": "Which face looks silly?"
       }
     },
     {
@@ -93,9 +117,13 @@
         "kind": "fluent-3d",
         "assetId": "1f628"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-scared-label",
         "text": "This face is scared."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-scared-prompt",
+        "text": "Which face looks scared?"
       }
     },
     {
@@ -106,9 +134,13 @@
         "kind": "fluent-3d",
         "assetId": "1f929"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-excited-label",
         "text": "This face is excited."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-excited-prompt",
+        "text": "Which face looks excited?"
       }
     },
     {
@@ -119,9 +151,13 @@
         "kind": "fluent-3d",
         "assetId": "1f60c"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-calm-label",
         "text": "This face is calm."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-calm-prompt",
+        "text": "Which face looks calm?"
       }
     },
     {
@@ -132,9 +168,13 @@
         "kind": "fluent-3d",
         "assetId": "1f61f"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-worried-label",
         "text": "This face is worried."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-worried-prompt",
+        "text": "Which face looks worried?"
       }
     },
     {
@@ -145,9 +185,13 @@
         "kind": "fluent-3d",
         "assetId": "1f615"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-confused-label",
         "text": "This face is confused."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-confused-prompt",
+        "text": "Which face looks confused?"
       }
     },
     {
@@ -158,9 +202,13 @@
         "kind": "fluent-3d",
         "assetId": "1f611"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-feelings-bored-label",
         "text": "This face is bored."
+      },
+      "promptAudio": {
+        "id": "word-game-feelings-bored-prompt",
+        "text": "Which face looks bored?"
       }
     }
   ],
@@ -172,80 +220,202 @@
       "quizzes": [
         {
           "id": "simple-1",
-          "title": "Simple feelings",
-          "description": "Six simple feelings words.",
+          "title": "Simple Feelings: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-happy",
+              "id": "simple-1-find-happy",
               "targetId": "happy",
               "choiceIds": [
                 "happy",
                 "sad",
                 "angry",
                 "sleepy"
-              ],
-              "prompt": "Happy. Which face is happy?",
-              "success": "Great job! This face is happy."
+              ]
             },
             {
-              "id": "find-sad",
+              "id": "simple-1-find-sad",
               "targetId": "sad",
               "choiceIds": [
                 "sad",
                 "angry",
                 "sleepy",
                 "surprised"
-              ],
-              "prompt": "Sad. Which face is sad?",
-              "success": "Great job! This face is sad."
+              ]
             },
             {
-              "id": "find-angry",
+              "id": "simple-1-find-angry",
               "targetId": "angry",
               "choiceIds": [
                 "angry",
                 "sleepy",
                 "surprised",
                 "silly"
-              ],
-              "prompt": "Angry. Which face is angry?",
-              "success": "Great job! This face is angry."
+              ]
             },
             {
-              "id": "find-sleepy",
+              "id": "simple-1-find-sleepy",
               "targetId": "sleepy",
               "choiceIds": [
                 "sleepy",
                 "surprised",
                 "silly",
                 "happy"
-              ],
-              "prompt": "Sleepy. Which face is sleepy?",
-              "success": "Great job! This face is sleepy."
+              ]
             },
             {
-              "id": "find-surprised",
+              "id": "simple-1-find-surprised",
               "targetId": "surprised",
               "choiceIds": [
                 "surprised",
                 "silly",
                 "happy",
                 "sad"
-              ],
-              "prompt": "Surprised. Which face is surprised?",
-              "success": "Great job! This face is surprised."
+              ]
             },
             {
-              "id": "find-silly",
+              "id": "simple-1-find-silly",
               "targetId": "silly",
               "choiceIds": [
                 "silly",
                 "happy",
                 "sad",
                 "angry"
-              ],
-              "prompt": "Silly. Which face is silly?",
-              "success": "Great job! This face is silly."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Feelings: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-angry",
+              "targetId": "angry",
+              "choiceIds": [
+                "angry",
+                "surprised",
+                "happy",
+                "silly"
+              ]
+            },
+            {
+              "id": "simple-2-find-surprised",
+              "targetId": "surprised",
+              "choiceIds": [
+                "surprised",
+                "happy",
+                "silly",
+                "sad"
+              ]
+            },
+            {
+              "id": "simple-2-find-happy",
+              "targetId": "happy",
+              "choiceIds": [
+                "happy",
+                "silly",
+                "sad",
+                "sleepy"
+              ]
+            },
+            {
+              "id": "simple-2-find-silly",
+              "targetId": "silly",
+              "choiceIds": [
+                "silly",
+                "sad",
+                "sleepy",
+                "angry"
+              ]
+            },
+            {
+              "id": "simple-2-find-sad",
+              "targetId": "sad",
+              "choiceIds": [
+                "sad",
+                "sleepy",
+                "angry",
+                "surprised"
+              ]
+            },
+            {
+              "id": "simple-2-find-sleepy",
+              "targetId": "sleepy",
+              "choiceIds": [
+                "sleepy",
+                "angry",
+                "surprised",
+                "happy"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Feelings: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-surprised",
+              "targetId": "surprised",
+              "choiceIds": [
+                "surprised",
+                "sad",
+                "sleepy",
+                "happy"
+              ]
+            },
+            {
+              "id": "simple-3-find-sad",
+              "targetId": "sad",
+              "choiceIds": [
+                "sad",
+                "sleepy",
+                "happy",
+                "silly"
+              ]
+            },
+            {
+              "id": "simple-3-find-sleepy",
+              "targetId": "sleepy",
+              "choiceIds": [
+                "sleepy",
+                "happy",
+                "silly",
+                "angry"
+              ]
+            },
+            {
+              "id": "simple-3-find-happy",
+              "targetId": "happy",
+              "choiceIds": [
+                "happy",
+                "silly",
+                "angry",
+                "surprised"
+              ]
+            },
+            {
+              "id": "simple-3-find-silly",
+              "targetId": "silly",
+              "choiceIds": [
+                "silly",
+                "angry",
+                "surprised",
+                "sad"
+              ]
+            },
+            {
+              "id": "simple-3-find-angry",
+              "targetId": "angry",
+              "choiceIds": [
+                "angry",
+                "surprised",
+                "sad",
+                "sleepy"
+              ]
             }
           ]
         }
@@ -258,80 +428,202 @@
       "quizzes": [
         {
           "id": "intermediate-1",
-          "title": "Intermediate feelings",
-          "description": "Six intermediate feelings words.",
+          "title": "Intermediate Feelings: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-happy",
+              "id": "intermediate-1-find-happy",
               "targetId": "happy",
               "choiceIds": [
                 "happy",
                 "sad",
                 "sleepy",
                 "scared"
-              ],
-              "prompt": "Happy. Which face is happy?",
-              "success": "Great job! This face is happy."
+              ]
             },
             {
-              "id": "find-sad",
+              "id": "intermediate-1-find-sad",
               "targetId": "sad",
               "choiceIds": [
                 "sad",
                 "sleepy",
                 "scared",
                 "excited"
-              ],
-              "prompt": "Sad. Which face is sad?",
-              "success": "Great job! This face is sad."
+              ]
             },
             {
-              "id": "find-sleepy",
+              "id": "intermediate-1-find-sleepy",
               "targetId": "sleepy",
               "choiceIds": [
                 "sleepy",
                 "scared",
                 "excited",
                 "calm"
-              ],
-              "prompt": "Sleepy. Which face is sleepy?",
-              "success": "Great job! This face is sleepy."
+              ]
             },
             {
-              "id": "find-scared",
+              "id": "intermediate-1-find-scared",
               "targetId": "scared",
               "choiceIds": [
                 "scared",
                 "excited",
                 "calm",
                 "happy"
-              ],
-              "prompt": "Scared. Which face is scared?",
-              "success": "Great job! This face is scared."
+              ]
             },
             {
-              "id": "find-excited",
+              "id": "intermediate-1-find-excited",
               "targetId": "excited",
               "choiceIds": [
                 "excited",
                 "calm",
                 "happy",
                 "sad"
-              ],
-              "prompt": "Excited. Which face is excited?",
-              "success": "Great job! This face is excited."
+              ]
             },
             {
-              "id": "find-calm",
+              "id": "intermediate-1-find-calm",
               "targetId": "calm",
               "choiceIds": [
                 "calm",
                 "happy",
                 "sad",
                 "sleepy"
-              ],
-              "prompt": "Calm. Which face is calm?",
-              "success": "Great job! This face is calm."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Feelings: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-sleepy",
+              "targetId": "sleepy",
+              "choiceIds": [
+                "sleepy",
+                "excited",
+                "happy",
+                "calm"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-excited",
+              "targetId": "excited",
+              "choiceIds": [
+                "excited",
+                "happy",
+                "calm",
+                "sad"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-happy",
+              "targetId": "happy",
+              "choiceIds": [
+                "happy",
+                "calm",
+                "sad",
+                "scared"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-calm",
+              "targetId": "calm",
+              "choiceIds": [
+                "calm",
+                "sad",
+                "scared",
+                "sleepy"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-sad",
+              "targetId": "sad",
+              "choiceIds": [
+                "sad",
+                "scared",
+                "sleepy",
+                "excited"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-scared",
+              "targetId": "scared",
+              "choiceIds": [
+                "scared",
+                "sleepy",
+                "excited",
+                "happy"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Feelings: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-excited",
+              "targetId": "excited",
+              "choiceIds": [
+                "excited",
+                "sad",
+                "scared",
+                "happy"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-sad",
+              "targetId": "sad",
+              "choiceIds": [
+                "sad",
+                "scared",
+                "happy",
+                "calm"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-scared",
+              "targetId": "scared",
+              "choiceIds": [
+                "scared",
+                "happy",
+                "calm",
+                "sleepy"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-happy",
+              "targetId": "happy",
+              "choiceIds": [
+                "happy",
+                "calm",
+                "sleepy",
+                "excited"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-calm",
+              "targetId": "calm",
+              "choiceIds": [
+                "calm",
+                "sleepy",
+                "excited",
+                "sad"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-sleepy",
+              "targetId": "sleepy",
+              "choiceIds": [
+                "sleepy",
+                "excited",
+                "sad",
+                "scared"
+              ]
             }
           ]
         }
@@ -344,80 +636,202 @@
       "quizzes": [
         {
           "id": "advanced-1",
-          "title": "Advanced feelings",
-          "description": "Six advanced feelings words.",
+          "title": "Advanced Feelings: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-scared",
+              "id": "advanced-1-find-scared",
               "targetId": "scared",
               "choiceIds": [
                 "scared",
                 "excited",
                 "calm",
                 "worried"
-              ],
-              "prompt": "Scared. Which face is scared?",
-              "success": "Great job! This face is scared."
+              ]
             },
             {
-              "id": "find-excited",
+              "id": "advanced-1-find-excited",
               "targetId": "excited",
               "choiceIds": [
                 "excited",
                 "calm",
                 "worried",
                 "confused"
-              ],
-              "prompt": "Excited. Which face is excited?",
-              "success": "Great job! This face is excited."
+              ]
             },
             {
-              "id": "find-calm",
+              "id": "advanced-1-find-calm",
               "targetId": "calm",
               "choiceIds": [
                 "calm",
                 "worried",
                 "confused",
                 "bored"
-              ],
-              "prompt": "Calm. Which face is calm?",
-              "success": "Great job! This face is calm."
+              ]
             },
             {
-              "id": "find-worried",
+              "id": "advanced-1-find-worried",
               "targetId": "worried",
               "choiceIds": [
                 "worried",
                 "confused",
                 "bored",
                 "scared"
-              ],
-              "prompt": "Worried. Which face is worried?",
-              "success": "Great job! This face is worried."
+              ]
             },
             {
-              "id": "find-confused",
+              "id": "advanced-1-find-confused",
               "targetId": "confused",
               "choiceIds": [
                 "confused",
                 "bored",
                 "scared",
                 "excited"
-              ],
-              "prompt": "Confused. Which face is confused?",
-              "success": "Great job! This face is confused."
+              ]
             },
             {
-              "id": "find-bored",
+              "id": "advanced-1-find-bored",
               "targetId": "bored",
               "choiceIds": [
                 "bored",
                 "scared",
                 "excited",
                 "calm"
-              ],
-              "prompt": "Bored. Which face is bored?",
-              "success": "Great job! This face is bored."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Feelings: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-calm",
+              "targetId": "calm",
+              "choiceIds": [
+                "calm",
+                "confused",
+                "scared",
+                "bored"
+              ]
+            },
+            {
+              "id": "advanced-2-find-confused",
+              "targetId": "confused",
+              "choiceIds": [
+                "confused",
+                "scared",
+                "bored",
+                "excited"
+              ]
+            },
+            {
+              "id": "advanced-2-find-scared",
+              "targetId": "scared",
+              "choiceIds": [
+                "scared",
+                "bored",
+                "excited",
+                "worried"
+              ]
+            },
+            {
+              "id": "advanced-2-find-bored",
+              "targetId": "bored",
+              "choiceIds": [
+                "bored",
+                "excited",
+                "worried",
+                "calm"
+              ]
+            },
+            {
+              "id": "advanced-2-find-excited",
+              "targetId": "excited",
+              "choiceIds": [
+                "excited",
+                "worried",
+                "calm",
+                "confused"
+              ]
+            },
+            {
+              "id": "advanced-2-find-worried",
+              "targetId": "worried",
+              "choiceIds": [
+                "worried",
+                "calm",
+                "confused",
+                "scared"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Feelings: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-confused",
+              "targetId": "confused",
+              "choiceIds": [
+                "confused",
+                "excited",
+                "worried",
+                "scared"
+              ]
+            },
+            {
+              "id": "advanced-3-find-excited",
+              "targetId": "excited",
+              "choiceIds": [
+                "excited",
+                "worried",
+                "scared",
+                "bored"
+              ]
+            },
+            {
+              "id": "advanced-3-find-worried",
+              "targetId": "worried",
+              "choiceIds": [
+                "worried",
+                "scared",
+                "bored",
+                "calm"
+              ]
+            },
+            {
+              "id": "advanced-3-find-scared",
+              "targetId": "scared",
+              "choiceIds": [
+                "scared",
+                "bored",
+                "calm",
+                "confused"
+              ]
+            },
+            {
+              "id": "advanced-3-find-bored",
+              "targetId": "bored",
+              "choiceIds": [
+                "bored",
+                "calm",
+                "confused",
+                "excited"
+              ]
+            },
+            {
+              "id": "advanced-3-find-calm",
+              "targetId": "calm",
+              "choiceIds": [
+                "calm",
+                "confused",
+                "excited",
+                "worried"
+              ]
             }
           ]
         }

@@ -228,11 +228,22 @@ test("word-game category renders ordered tier sections and canonical quiz links"
   assert.deepEqual(headings, ["Simple", "Intermediate", "Advanced"]);
   assert.deepEqual(hrefs.filter((href) => href.startsWith("/word-games/animals/")), [
     "/word-games/animals/simple-1",
+    "/word-games/animals/simple-2",
+    "/word-games/animals/simple-3",
     "/word-games/animals/intermediate-1",
+    "/word-games/animals/intermediate-2",
+    "/word-games/animals/intermediate-3",
     "/word-games/animals/advanced-1",
+    "/word-games/animals/advanced-2",
+    "/word-games/animals/advanced-3",
   ]);
   assert.match(html, /aria-label="Back to word games"/);
-  assert.match(html, /<img[^>]*alt="A friendly cat\."/);
+  for (const alt of [
+    "A friendly cat.", "A friendly bird.", "A friendly duck.",
+    "A friendly cat.", "A friendly bird.", "A friendly cow.",
+    "A friendly pig.", "A friendly horse.", "A friendly elephant.",
+  ]) assert.match(html, new RegExp(`<img[^>]*alt="${alt.replace(".", "\\.")}"`));
+  assert.equal((html.match(/>6 questions</g) ?? []).length, 9);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -311,13 +322,13 @@ test("authenticated application routes include the core learner activities", () 
   assert.match(wordGameCategory, /<h2[^>]*>Simple<\/h2>/);
   assert.match(wordGameCategory, /href="\/word-games\/animals\/advanced-1"/);
   const wordGame = renderApplicationRoute("/word-games/animals/simple-1");
-  assert.match(wordGame, /<h1[^>]*>Simple animals<\/h1>/);
-  assert.match(wordGame, /Cat\. Which is the cat\?/);
+  assert.match(wordGame, /<h1[^>]*>Simple Animals: First look<\/h1>/);
+  assert.match(wordGame, /Which is the cat\?/);
   assert.match(wordGame, /aria-label="Choose cat"/);
   assert.match(wordGame, /aria-valuetext="1 of 6"/);
   const encodedWordGame = renderApplicationRoute("/word-games/%61nimals");
   assert.doesNotMatch(encodedWordGame, /<h1[^>]*>Animals<\/h1>/);
-  assert.doesNotMatch(encodedWordGame, /Cat\. Which is the cat\?/);
+  assert.doesNotMatch(encodedWordGame, /Which is the cat\?/);
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
   assert.match(dub, /Loading your private dub…/);

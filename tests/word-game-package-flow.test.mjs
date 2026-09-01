@@ -32,7 +32,8 @@ async function createPackageRoot(context) {
   fixtureCategory.order = 2;
   fixtureCategory.title = "Fixtures";
   for (const item of fixtureCategory.items) {
-    item.audio.id = item.audio.id.replace("word-game-animals-", "word-game-fixtures-");
+    item.labelAudio.id = item.labelAudio.id.replace("word-game-animals-", "word-game-fixtures-");
+    item.promptAudio.id = item.promptAudio.id.replace("word-game-animals-", "word-game-fixtures-");
   }
 
   await Promise.all([
@@ -42,13 +43,17 @@ async function createPackageRoot(context) {
       `${JSON.stringify(fixtureCategory, null, 2)}\n`,
     ),
     cp(join(fixtureRoot, "fluent-3d-assets.json"), join(rootDir, "content", "word-games", "fluent-3d-assets.json")),
+    cp(join(fixtureRoot, "player.json"), join(rootDir, "content", "word-games", "player.json")),
     cp(join(fixtureRoot, "cat_3d.png"), join(fluentRoot, "1f431.png")),
     cp(
       join(fixtureRoot, "fluentui-emoji-LICENSE"),
       join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
     ),
-    ...[...animals.items, ...fixtureCategory.items].map(({ audio }) =>
-      cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${audio.id}.mp3`))),
+    ...[...animals.items, ...fixtureCategory.items].flatMap(({ labelAudio, promptAudio }) =>
+      [labelAudio, promptAudio].map((audio) =>
+        cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${audio.id}.mp3`)))),
+    ...["narrator-feedback-success", "word-game-retry", "word-game-complete"].map((id) =>
+      cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${id}.mp3`))),
   ]);
 
   return { fixtureCategory, rootDir };
@@ -105,20 +110,22 @@ test("an appended JSON category flows through generation, resolution, shelf data
   await runWordGameCatalogGenerator({ check: false, rootDir });
   const generatedPath = join(rootDir, "src", "games", "generated-word-game-catalog.ts");
   const generated = await import(`${pathToFileURL(generatedPath).href}?test=${Date.now()}`);
-  const runtime = wordGameCatalog.createWordGameCatalog(
-    generated.GENERATED_WORD_GAME_CATALOG,
-  );
+  const runtime = wordGameCatalog.createWordGameCatalog(generated.GENERATED_WORD_GAME_CATALOG);
   const audioLines = staticAudio.createWordGameAudioLines(runtime.categories);
 
   assert.deepEqual(
-    generated.GENERATED_WORD_GAME_CATALOG.map(({ id }) => id),
+    generated.GENERATED_WORD_GAME_CATALOG.categories.map(({ id }) => id),
     ["animals", "fixtures"],
   );
   assert.equal(runtime.resolveCategory("fixtures")?.title, "Fixtures");
   assert.equal(runtime.resolveQuiz("fixtures", "simple-1")?.category.id, "fixtures");
   assert.deepEqual(runtime.categories.map(({ id }) => id), ["animals", "fixtures"]);
   assert.equal(
-    audioLines[fixtureCategory.items[0].audio.id].text,
-    fixtureCategory.items[0].audio.text,
+    audioLines[fixtureCategory.items[0].labelAudio.id].text,
+    fixtureCategory.items[0].labelAudio.text,
+  );
+  assert.equal(
+    audioLines[fixtureCategory.items[0].promptAudio.id].text,
+    fixtureCategory.items[0].promptAudio.text,
   );
 });

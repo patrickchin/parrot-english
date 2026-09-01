@@ -57,21 +57,25 @@ async function createWordGameGeneratorRepo() {
   );
   await symlink(join(rootDir, "node_modules"), join(tempRoot, "node_modules"), "dir");
 
-  const generatedLabelFiles = new Set(
+  const generatedPromptFiles = new Set(
     WORD_GAME_MISSING_AUDIO_IDS.map((id) => `${id}.mp3`),
   );
-  const existingLabelFiles = (await readdir(join(rootDir, "public", "assets", "audio")))
+  const existingAudioFiles = (await readdir(join(rootDir, "public", "assets", "audio")))
     .filter((filename) =>
-      /^word-game-.+-label\.mp3$/u.test(filename) && !generatedLabelFiles.has(filename))
+      (/^word-game-.+-label\.mp3$/u.test(filename)
+        || filename === "narrator-feedback-success.mp3"
+        || filename === "word-game-retry.mp3"
+        || filename === "word-game-complete.mp3")
+      && !generatedPromptFiles.has(filename))
     .sort();
-  for (const filename of existingLabelFiles) {
+  for (const filename of existingAudioFiles) {
     await cp(
       join(rootDir, "public", "assets", "audio", filename),
       join(tempRoot, "public", "assets", "audio", filename),
     );
   }
-  assert.equal(existingLabelFiles.length, 36);
-  return { existingLabelFiles, tempRoot };
+  assert.equal(existingAudioFiles.length, 110);
+  return { existingAudioFiles, tempRoot };
 }
 
 function generatorEnv(overrides = {}) {
@@ -137,7 +141,7 @@ describe("static audio generator", () => {
     assert.equal(stdout.trim(), `skipped: ${guide.id} (elevenlabs)`);
   });
 
-  it("lists only the 71 compiler-planned missing word-game IDs without a key or runtime registry", async () => {
+  it("lists only the 107 compiler-planned missing prompt IDs without a key or runtime registry", async () => {
     const { tempRoot } = await createWordGameGeneratorRepo();
     await mkdir(join(tempRoot, ".dev.vars"));
 
@@ -158,13 +162,13 @@ describe("static audio generator", () => {
     }
   });
 
-  it("generates exactly the 71 missing compiler-planned lines and skips 36 existing lines", async () => {
-    const { existingLabelFiles, tempRoot } = await createWordGameGeneratorRepo();
+  it("generates exactly the 107 missing compiler-planned lines and skips existing cues", async () => {
+    const { existingAudioFiles, tempRoot } = await createWordGameGeneratorRepo();
     const outputDir = join(tempRoot, "generated-audio");
     const fetchLog = join(tempRoot, "fetch-log.ndjson");
     const fetchHarness = join(tempRoot, "fake-fetch.mjs");
     await mkdir(outputDir);
-    for (const filename of existingLabelFiles) {
+    for (const filename of existingAudioFiles) {
       await cp(
         join(tempRoot, "public", "assets", "audio", filename),
         join(outputDir, filename),
@@ -212,17 +216,17 @@ describe("static audio generator", () => {
         .split("\n")
         .map((line) => JSON.parse(line));
 
-      assert.equal(statuses.length, 107);
-      assert.equal(statuses.filter((line) => line.startsWith("skipped:")).length, 36);
+      assert.equal(statuses.length, 217);
+      assert.equal(statuses.filter((line) => line.startsWith("skipped:")).length, 110);
       assert.deepEqual(
         statuses.filter((line) => line.startsWith("generated:"))
           .map((line) => line.match(/^generated: (.+) \(elevenlabs\)$/u)[1]),
         WORD_GAME_MISSING_AUDIO_IDS,
       );
-      assert.equal(requests.length, 71);
+      assert.equal(requests.length, 107);
       assert.ok(requests.every(({ body }) => body.model_id === "eleven_v3"));
       assert.ok(requests.every(({ url }) => url.endsWith("?output_format=mp3_44100_128")));
-      assert.equal((await readdir(outputDir)).length, 107);
+      assert.equal((await readdir(outputDir)).length, 217);
     } finally {
       await rm(tempRoot, { force: true, recursive: true });
     }
@@ -236,7 +240,7 @@ describe("static audio generator", () => {
       ["--word-game-content", "--list-missing", "--only=word-game-animals-cat-label"],
       ["--word-game-content", "--list-missing", "--output-dir=unused"],
       ["--word-game-content", "--unknown"],
-      ["--word-game-content", "--only=word-game-retry"],
+      ["--word-game-content", "--only=word-game-missing"],
     ];
 
     try {

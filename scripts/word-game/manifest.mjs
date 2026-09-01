@@ -42,9 +42,10 @@ const visual = z.discriminatedUnion("kind", [
 const item = z
   .object({
     alt: text,
-    audio,
     id,
     label: text,
+    labelAudio: audio,
+    promptAudio: audio,
     visual,
   })
   .strict();
@@ -54,8 +55,6 @@ const question = z
   .object({
     choiceIds: fourChoices,
     id,
-    prompt: text,
-    success: text,
     targetId: id,
   })
   .strict();
@@ -79,7 +78,7 @@ const tier = z
   .object({
     description: text,
     id,
-    quizzes: z.array(quiz).min(1, "must contain at least one quiz"),
+    quizzes: z.tuple([quiz, quiz, quiz]),
     title: text,
   })
   .strict();
@@ -91,10 +90,19 @@ const category = z
     id,
     items: z.array(item).min(1, "must contain at least one item"),
     order: z.number().int().positive("must be a positive integer"),
-    schemaVersion: z.literal(1, "must equal 1"),
+    schemaVersion: z.literal(2, "must equal 2"),
     theme: text,
     tiers: z.array(tier),
     title: text,
+  })
+  .strict();
+
+const player = z
+  .object({
+    completeAudio: audio.extend({ id: z.literal("word-game-complete") }).strict(),
+    retryAudio: audio.extend({ id: z.literal("word-game-retry") }).strict(),
+    schemaVersion: z.literal(1, "must equal 1"),
+    successAudio: audio.extend({ id: z.literal("narrator-feedback-success") }).strict(),
   })
   .strict();
 
@@ -169,12 +177,15 @@ function validateFixedCategoryShape(manifest, sourcePath) {
 
   const audioPrefix = `word-game-${manifest.id}-`;
   for (const [itemIndex, currentItem] of manifest.items.entries()) {
-    if (!currentItem.audio.id.startsWith(audioPrefix)) {
-      fixedShapeError(
-        sourcePath,
-        `items[${itemIndex}].audio.id`,
-        `must begin with ${audioPrefix}`,
-      );
+    for (const [field, suffix] of [["labelAudio", "label"], ["promptAudio", "prompt"]]) {
+      const expectedId = `${audioPrefix}${currentItem.id}-${suffix}`;
+      if (currentItem[field].id !== expectedId) {
+        fixedShapeError(
+          sourcePath,
+          `items[${itemIndex}].${field}.id`,
+          `must equal ${expectedId}`,
+        );
+      }
     }
   }
 }
@@ -183,6 +194,12 @@ export function parseWordGameManifest(value, sourcePath) {
   const result = category.safeParse(value);
   if (!result.success) throw manifestError(sourcePath, result.error.issues[0]);
   validateFixedCategoryShape(result.data, sourcePath);
+  return result.data;
+}
+
+export function parseWordGamePlayerManifest(value, sourcePath) {
+  const result = player.safeParse(value);
+  if (!result.success) throw manifestError(sourcePath, result.error.issues[0]);
   return result.data;
 }
 

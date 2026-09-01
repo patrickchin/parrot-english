@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "order": 4,
   "id": "food",
   "title": "Food",
@@ -15,9 +15,13 @@
         "kind": "fluent-3d",
         "assetId": "1f34e"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-apple-label",
         "text": "This is an apple."
+      },
+      "promptAudio": {
+        "id": "word-game-food-apple-prompt",
+        "text": "Which is the apple?"
       }
     },
     {
@@ -28,9 +32,13 @@
         "kind": "fluent-3d",
         "assetId": "1f34c"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-banana-label",
         "text": "This is a banana."
+      },
+      "promptAudio": {
+        "id": "word-game-food-banana-prompt",
+        "text": "Which is the banana?"
       }
     },
     {
@@ -41,9 +49,13 @@
         "kind": "fluent-3d",
         "assetId": "1f955"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-carrot-label",
         "text": "This is a carrot."
+      },
+      "promptAudio": {
+        "id": "word-game-food-carrot-prompt",
+        "text": "Which is the carrot?"
       }
     },
     {
@@ -54,9 +66,13 @@
         "kind": "fluent-3d",
         "assetId": "1f34a"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-orange-label",
         "text": "This is an orange."
+      },
+      "promptAudio": {
+        "id": "word-game-food-orange-prompt",
+        "text": "Which is the orange?"
       }
     },
     {
@@ -67,9 +83,13 @@
         "kind": "fluent-3d",
         "assetId": "1f35e"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-bread-label",
         "text": "This is bread."
+      },
+      "promptAudio": {
+        "id": "word-game-food-bread-prompt",
+        "text": "Which is the bread?"
       }
     },
     {
@@ -80,9 +100,13 @@
         "kind": "fluent-3d",
         "assetId": "1f9c0"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-cheese-label",
         "text": "This is cheese."
+      },
+      "promptAudio": {
+        "id": "word-game-food-cheese-prompt",
+        "text": "Which is the cheese?"
       }
     },
     {
@@ -93,9 +117,13 @@
         "kind": "fluent-3d",
         "assetId": "1f35a"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-rice-label",
         "text": "This is rice."
+      },
+      "promptAudio": {
+        "id": "word-game-food-rice-prompt",
+        "text": "Which is the rice?"
       }
     },
     {
@@ -106,9 +134,13 @@
         "kind": "fluent-3d",
         "assetId": "1f95a"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-egg-label",
         "text": "This is an egg."
+      },
+      "promptAudio": {
+        "id": "word-game-food-egg-prompt",
+        "text": "Which is the egg?"
       }
     },
     {
@@ -119,9 +151,13 @@
         "kind": "fluent-3d",
         "assetId": "1f95b"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-milk-label",
         "text": "This is milk."
+      },
+      "promptAudio": {
+        "id": "word-game-food-milk-prompt",
+        "text": "Which is the milk?"
       }
     },
     {
@@ -132,9 +168,13 @@
         "kind": "fluent-3d",
         "assetId": "1f345"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-tomato-label",
         "text": "This is a tomato."
+      },
+      "promptAudio": {
+        "id": "word-game-food-tomato-prompt",
+        "text": "Which is the tomato?"
       }
     },
     {
@@ -145,9 +185,13 @@
         "kind": "fluent-3d",
         "assetId": "1f954"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-potato-label",
         "text": "This is a potato."
+      },
+      "promptAudio": {
+        "id": "word-game-food-potato-prompt",
+        "text": "Which is the potato?"
       }
     },
     {
@@ -158,9 +202,13 @@
         "kind": "fluent-3d",
         "assetId": "1f96a"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-food-sandwich-label",
         "text": "This is a sandwich."
+      },
+      "promptAudio": {
+        "id": "word-game-food-sandwich-prompt",
+        "text": "Which is the sandwich?"
       }
     }
   ],
@@ -172,80 +220,202 @@
       "quizzes": [
         {
           "id": "simple-1",
-          "title": "Simple food",
-          "description": "Six simple food words.",
+          "title": "Simple Food: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-apple",
+              "id": "simple-1-find-apple",
               "targetId": "apple",
               "choiceIds": [
                 "apple",
                 "banana",
                 "carrot",
                 "orange"
-              ],
-              "prompt": "Apple. Which is the apple?",
-              "success": "Great job! This is an apple."
+              ]
             },
             {
-              "id": "find-banana",
+              "id": "simple-1-find-banana",
               "targetId": "banana",
               "choiceIds": [
                 "banana",
                 "carrot",
                 "orange",
                 "bread"
-              ],
-              "prompt": "Banana. Which is the banana?",
-              "success": "Great job! This is a banana."
+              ]
             },
             {
-              "id": "find-carrot",
+              "id": "simple-1-find-carrot",
               "targetId": "carrot",
               "choiceIds": [
                 "carrot",
                 "orange",
                 "bread",
                 "cheese"
-              ],
-              "prompt": "Carrot. Which is the carrot?",
-              "success": "Great job! This is a carrot."
+              ]
             },
             {
-              "id": "find-orange",
+              "id": "simple-1-find-orange",
               "targetId": "orange",
               "choiceIds": [
                 "orange",
                 "bread",
                 "cheese",
                 "apple"
-              ],
-              "prompt": "Orange. Which is the orange?",
-              "success": "Great job! This is an orange."
+              ]
             },
             {
-              "id": "find-bread",
+              "id": "simple-1-find-bread",
               "targetId": "bread",
               "choiceIds": [
                 "bread",
                 "cheese",
                 "apple",
                 "banana"
-              ],
-              "prompt": "Bread. Which is the bread?",
-              "success": "Great job! This is bread."
+              ]
             },
             {
-              "id": "find-cheese",
+              "id": "simple-1-find-cheese",
               "targetId": "cheese",
               "choiceIds": [
                 "cheese",
                 "apple",
                 "banana",
                 "carrot"
-              ],
-              "prompt": "Cheese. Which is the cheese?",
-              "success": "Great job! This is cheese."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Food: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-carrot",
+              "targetId": "carrot",
+              "choiceIds": [
+                "carrot",
+                "bread",
+                "apple",
+                "cheese"
+              ]
+            },
+            {
+              "id": "simple-2-find-bread",
+              "targetId": "bread",
+              "choiceIds": [
+                "bread",
+                "apple",
+                "cheese",
+                "banana"
+              ]
+            },
+            {
+              "id": "simple-2-find-apple",
+              "targetId": "apple",
+              "choiceIds": [
+                "apple",
+                "cheese",
+                "banana",
+                "orange"
+              ]
+            },
+            {
+              "id": "simple-2-find-cheese",
+              "targetId": "cheese",
+              "choiceIds": [
+                "cheese",
+                "banana",
+                "orange",
+                "carrot"
+              ]
+            },
+            {
+              "id": "simple-2-find-banana",
+              "targetId": "banana",
+              "choiceIds": [
+                "banana",
+                "orange",
+                "carrot",
+                "bread"
+              ]
+            },
+            {
+              "id": "simple-2-find-orange",
+              "targetId": "orange",
+              "choiceIds": [
+                "orange",
+                "carrot",
+                "bread",
+                "apple"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Food: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-bread",
+              "targetId": "bread",
+              "choiceIds": [
+                "bread",
+                "banana",
+                "orange",
+                "apple"
+              ]
+            },
+            {
+              "id": "simple-3-find-banana",
+              "targetId": "banana",
+              "choiceIds": [
+                "banana",
+                "orange",
+                "apple",
+                "cheese"
+              ]
+            },
+            {
+              "id": "simple-3-find-orange",
+              "targetId": "orange",
+              "choiceIds": [
+                "orange",
+                "apple",
+                "cheese",
+                "carrot"
+              ]
+            },
+            {
+              "id": "simple-3-find-apple",
+              "targetId": "apple",
+              "choiceIds": [
+                "apple",
+                "cheese",
+                "carrot",
+                "bread"
+              ]
+            },
+            {
+              "id": "simple-3-find-cheese",
+              "targetId": "cheese",
+              "choiceIds": [
+                "cheese",
+                "carrot",
+                "bread",
+                "banana"
+              ]
+            },
+            {
+              "id": "simple-3-find-carrot",
+              "targetId": "carrot",
+              "choiceIds": [
+                "carrot",
+                "bread",
+                "banana",
+                "orange"
+              ]
             }
           ]
         }
@@ -258,80 +428,202 @@
       "quizzes": [
         {
           "id": "intermediate-1",
-          "title": "Intermediate food",
-          "description": "Six intermediate food words.",
+          "title": "Intermediate Food: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-apple",
+              "id": "intermediate-1-find-apple",
               "targetId": "apple",
               "choiceIds": [
                 "apple",
                 "banana",
                 "bread",
                 "rice"
-              ],
-              "prompt": "Apple. Which is the apple?",
-              "success": "Great job! This is an apple."
+              ]
             },
             {
-              "id": "find-banana",
+              "id": "intermediate-1-find-banana",
               "targetId": "banana",
               "choiceIds": [
                 "banana",
                 "bread",
                 "rice",
                 "egg"
-              ],
-              "prompt": "Banana. Which is the banana?",
-              "success": "Great job! This is a banana."
+              ]
             },
             {
-              "id": "find-bread",
+              "id": "intermediate-1-find-bread",
               "targetId": "bread",
               "choiceIds": [
                 "bread",
                 "rice",
                 "egg",
                 "milk"
-              ],
-              "prompt": "Bread. Which is the bread?",
-              "success": "Great job! This is bread."
+              ]
             },
             {
-              "id": "find-rice",
+              "id": "intermediate-1-find-rice",
               "targetId": "rice",
               "choiceIds": [
                 "rice",
                 "egg",
                 "milk",
                 "apple"
-              ],
-              "prompt": "Rice. Which is the rice?",
-              "success": "Great job! This is rice."
+              ]
             },
             {
-              "id": "find-egg",
+              "id": "intermediate-1-find-egg",
               "targetId": "egg",
               "choiceIds": [
                 "egg",
                 "milk",
                 "apple",
                 "banana"
-              ],
-              "prompt": "Egg. Which is the egg?",
-              "success": "Great job! This is an egg."
+              ]
             },
             {
-              "id": "find-milk",
+              "id": "intermediate-1-find-milk",
               "targetId": "milk",
               "choiceIds": [
                 "milk",
                 "apple",
                 "banana",
                 "bread"
-              ],
-              "prompt": "Milk. Which is the milk?",
-              "success": "Great job! This is milk."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Food: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-bread",
+              "targetId": "bread",
+              "choiceIds": [
+                "bread",
+                "egg",
+                "apple",
+                "milk"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-egg",
+              "targetId": "egg",
+              "choiceIds": [
+                "egg",
+                "apple",
+                "milk",
+                "banana"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-apple",
+              "targetId": "apple",
+              "choiceIds": [
+                "apple",
+                "milk",
+                "banana",
+                "rice"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-milk",
+              "targetId": "milk",
+              "choiceIds": [
+                "milk",
+                "banana",
+                "rice",
+                "bread"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-banana",
+              "targetId": "banana",
+              "choiceIds": [
+                "banana",
+                "rice",
+                "bread",
+                "egg"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-rice",
+              "targetId": "rice",
+              "choiceIds": [
+                "rice",
+                "bread",
+                "egg",
+                "apple"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Food: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-egg",
+              "targetId": "egg",
+              "choiceIds": [
+                "egg",
+                "banana",
+                "rice",
+                "apple"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-banana",
+              "targetId": "banana",
+              "choiceIds": [
+                "banana",
+                "rice",
+                "apple",
+                "milk"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-rice",
+              "targetId": "rice",
+              "choiceIds": [
+                "rice",
+                "apple",
+                "milk",
+                "bread"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-apple",
+              "targetId": "apple",
+              "choiceIds": [
+                "apple",
+                "milk",
+                "bread",
+                "egg"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-milk",
+              "targetId": "milk",
+              "choiceIds": [
+                "milk",
+                "bread",
+                "egg",
+                "banana"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-bread",
+              "targetId": "bread",
+              "choiceIds": [
+                "bread",
+                "egg",
+                "banana",
+                "rice"
+              ]
             }
           ]
         }
@@ -344,80 +636,202 @@
       "quizzes": [
         {
           "id": "advanced-1",
-          "title": "Advanced food",
-          "description": "Six advanced food words.",
+          "title": "Advanced Food: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-rice",
+              "id": "advanced-1-find-rice",
               "targetId": "rice",
               "choiceIds": [
                 "rice",
                 "egg",
                 "milk",
                 "tomato"
-              ],
-              "prompt": "Rice. Which is the rice?",
-              "success": "Great job! This is rice."
+              ]
             },
             {
-              "id": "find-egg",
+              "id": "advanced-1-find-egg",
               "targetId": "egg",
               "choiceIds": [
                 "egg",
                 "milk",
                 "tomato",
                 "potato"
-              ],
-              "prompt": "Egg. Which is the egg?",
-              "success": "Great job! This is an egg."
+              ]
             },
             {
-              "id": "find-milk",
+              "id": "advanced-1-find-milk",
               "targetId": "milk",
               "choiceIds": [
                 "milk",
                 "tomato",
                 "potato",
                 "sandwich"
-              ],
-              "prompt": "Milk. Which is the milk?",
-              "success": "Great job! This is milk."
+              ]
             },
             {
-              "id": "find-tomato",
+              "id": "advanced-1-find-tomato",
               "targetId": "tomato",
               "choiceIds": [
                 "tomato",
                 "potato",
                 "sandwich",
                 "rice"
-              ],
-              "prompt": "Tomato. Which is the tomato?",
-              "success": "Great job! This is a tomato."
+              ]
             },
             {
-              "id": "find-potato",
+              "id": "advanced-1-find-potato",
               "targetId": "potato",
               "choiceIds": [
                 "potato",
                 "sandwich",
                 "rice",
                 "egg"
-              ],
-              "prompt": "Potato. Which is the potato?",
-              "success": "Great job! This is a potato."
+              ]
             },
             {
-              "id": "find-sandwich",
+              "id": "advanced-1-find-sandwich",
               "targetId": "sandwich",
               "choiceIds": [
                 "sandwich",
                 "rice",
                 "egg",
                 "milk"
-              ],
-              "prompt": "Sandwich. Which is the sandwich?",
-              "success": "Great job! This is a sandwich."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Food: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-milk",
+              "targetId": "milk",
+              "choiceIds": [
+                "milk",
+                "potato",
+                "rice",
+                "sandwich"
+              ]
+            },
+            {
+              "id": "advanced-2-find-potato",
+              "targetId": "potato",
+              "choiceIds": [
+                "potato",
+                "rice",
+                "sandwich",
+                "egg"
+              ]
+            },
+            {
+              "id": "advanced-2-find-rice",
+              "targetId": "rice",
+              "choiceIds": [
+                "rice",
+                "sandwich",
+                "egg",
+                "tomato"
+              ]
+            },
+            {
+              "id": "advanced-2-find-sandwich",
+              "targetId": "sandwich",
+              "choiceIds": [
+                "sandwich",
+                "egg",
+                "tomato",
+                "milk"
+              ]
+            },
+            {
+              "id": "advanced-2-find-egg",
+              "targetId": "egg",
+              "choiceIds": [
+                "egg",
+                "tomato",
+                "milk",
+                "potato"
+              ]
+            },
+            {
+              "id": "advanced-2-find-tomato",
+              "targetId": "tomato",
+              "choiceIds": [
+                "tomato",
+                "milk",
+                "potato",
+                "rice"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Food: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-potato",
+              "targetId": "potato",
+              "choiceIds": [
+                "potato",
+                "egg",
+                "tomato",
+                "rice"
+              ]
+            },
+            {
+              "id": "advanced-3-find-egg",
+              "targetId": "egg",
+              "choiceIds": [
+                "egg",
+                "tomato",
+                "rice",
+                "sandwich"
+              ]
+            },
+            {
+              "id": "advanced-3-find-tomato",
+              "targetId": "tomato",
+              "choiceIds": [
+                "tomato",
+                "rice",
+                "sandwich",
+                "milk"
+              ]
+            },
+            {
+              "id": "advanced-3-find-rice",
+              "targetId": "rice",
+              "choiceIds": [
+                "rice",
+                "sandwich",
+                "milk",
+                "potato"
+              ]
+            },
+            {
+              "id": "advanced-3-find-sandwich",
+              "targetId": "sandwich",
+              "choiceIds": [
+                "sandwich",
+                "milk",
+                "potato",
+                "egg"
+              ]
+            },
+            {
+              "id": "advanced-3-find-milk",
+              "targetId": "milk",
+              "choiceIds": [
+                "milk",
+                "potato",
+                "egg",
+                "tomato"
+              ]
             }
           ]
         }

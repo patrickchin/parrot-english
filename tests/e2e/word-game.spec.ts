@@ -1,12 +1,12 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const animals = [
-  ["cat", "Cat. Which is the cat?", "Great job! This is a cat."],
-  ["dog", "Dog. Which is the dog?", "Great job! This is a dog."],
-  ["bird", "Bird. Which is the bird?", "Great job! This is a bird."],
-  ["fish", "Fish. Which is the fish?", "Great job! This is a fish."],
-  ["duck", "Duck. Which is the duck?", "Great job! This is a duck."],
-  ["frog", "Frog. Which is the frog?", "Great job! This is a frog."],
+  ["cat", "Which is the cat?", "Great job! This is a cat."],
+  ["dog", "Which is the dog?", "Great job! This is a dog."],
+  ["bird", "Which is the bird?", "Great job! This is a bird."],
+  ["fish", "Which is the fish?", "Great job! This is a fish."],
+  ["duck", "Which is the duck?", "Great job! This is a duck."],
+  ["frog", "Which is the frog?", "Great job! This is a frog."],
 ] as const;
 
 const authoredChoices = [
@@ -118,11 +118,11 @@ test("navigates through a category and plays saved four-choice feedback in seque
   await page.getByRole("navigation", { name: "Word games" })
     .getByRole("link", { name: "Animals" }).click();
   await expect(page).toHaveURL(/\/word-games\/animals/);
-  await page.getByRole("link", { name: "Simple animals" }).click();
+  await page.getByRole("link", { name: "Simple Animals: First look" }).click();
   await expect(page).toHaveURL(/\/word-games\/animals\/simple-1/);
 
   const { choices, main, progress } = game(page);
-  await expect(main.getByRole("heading", { level: 1, name: "Simple animals" })).toBeVisible();
+  await expect(main.getByRole("heading", { level: 1, name: "Simple Animals: First look" })).toBeVisible();
   await expect(main.getByRole("heading", { level: 2, name: animals[0][1] })).toBeVisible();
   await expect(main.getByRole("link", { name: "Back to Animals" }).first())
     .toHaveAttribute("href", "/word-games/animals");
@@ -132,9 +132,12 @@ test("navigates through a category and plays saved four-choice feedback in seque
   expect(new Set(initialChoiceOrder)).toEqual(new Set(authoredChoices[0]));
   await expect(progress).toHaveAttribute("aria-valuetext", "1 of 6");
   await expect.poll(() => staticRequests(page)).toEqual([{
-    audioId: "word-game-animals-cat-label",
-    source: "/assets/audio/word-game-animals-cat-label.mp3",
+    audioId: "word-game-animals-cat-prompt",
+    source: "/assets/audio/word-game-animals-cat-prompt.mp3",
   }]);
+
+  await main.getByRole("button", { name: "Listen again" }).click();
+  await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-prompt")).toBe(true);
 
   const listenDog = choices.getByRole("button", { name: "Listen: dog" });
   await listenDog.click();
@@ -160,6 +163,7 @@ test("navigates through a category and plays saved four-choice feedback in seque
   await releaseNextCue(page);
   await expect(progress).toHaveAttribute("aria-valuetext", "2 of 6");
   await expect(main.getByRole("heading", { level: 2, name: animals[1][1] })).toBeFocused();
+  await expect.poll(() => hasStaticRequest(page, "word-game-animals-dog-prompt")).toBe(true);
 });
 
 test("keeps authored question order and deterministically reshuffles only on Play again", async ({ page }) => {
@@ -185,7 +189,10 @@ test("keeps authored question order and deterministically reshuffles only on Pla
     await finishCorrectFeedback(page);
   }
 
-  const completion = main.getByRole("heading", { level: 2, name: "Great listening!" });
+  const completion = main.getByRole("heading", {
+    level: 2,
+    name: "Great listening! You finished the game.",
+  });
   await expect(completion).toBeFocused();
   await expect(main.getByRole("link", { name: "Back to Animals" }).last())
     .toHaveAttribute("href", "/word-games/animals");
@@ -314,11 +321,15 @@ test("renders the generated hierarchy, Fluent covers, and native color swatches"
     .toHaveAttribute("href", "/word-games");
   await expect(category.getByRole("heading", { level: 2 }).allTextContents())
     .resolves.toEqual(["Simple", "Intermediate", "Advanced"]);
-  await expect(category.getByRole("img", { name: "A friendly cat." })).toHaveCount(4);
+  await expect(category.getByRole("link", { name: /^(?:Simple|Intermediate|Advanced) Animals:/ })).toHaveCount(9);
+  for (const alt of [
+    "A friendly cat.", "A friendly bird.", "A friendly duck.",
+    "A friendly cow.", "A friendly pig.", "A friendly horse.", "A friendly elephant.",
+  ]) await expect(category.getByRole("img", { name: alt }).first()).toBeVisible();
 
-  await category.getByRole("link", { name: "Simple animals" }).click();
+  await category.getByRole("link", { name: "Simple Animals: First look" }).click();
   const player = page.getByRole("main");
-  await expect(player.getByRole("heading", { level: 1, name: "Simple animals" }))
+  await expect(player.getByRole("heading", { level: 1, name: "Simple Animals: First look" }))
     .toHaveCount(1);
   await expect(player.getByRole("link", { name: "Back to Animals" }))
     .toHaveAttribute("href", "/word-games/animals");
@@ -371,5 +382,20 @@ test("keeps the round usable when the browser blocks initial autoplay", async ({
   await expect(main.getByRole("alert")).toHaveCount(0);
   await expect.poll(() => staticRequests(page)).toEqual([]);
   await main.getByRole("button", { name: "Listen again" }).click();
-  await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-label")).toBe(true);
+  await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-prompt")).toBe(true);
+});
+
+test("lays out sibling tiers at large widths and stacks them on small screens", async ({ page }) => {
+  await page.setViewportSize({ height: 900, width: 1280 });
+  await page.goto("/word-games/animals");
+  const headings = page.getByRole("main").getByRole("heading", { level: 2 });
+  await expect(headings).toHaveCount(3);
+  const largeBoxes = await Promise.all((await headings.all()).map(visibleBox));
+  expect(new Set(largeBoxes.map(({ x }) => Math.round(x))).size).toBe(3);
+  expect(new Set(largeBoxes.map(({ y }) => Math.round(y))).size).toBe(1);
+
+  await page.setViewportSize({ height: 900, width: 390 });
+  const smallBoxes = await Promise.all((await headings.all()).map(visibleBox));
+  expect(new Set(smallBoxes.map(({ y }) => Math.round(y))).size).toBe(3);
+  await expect(page.getByRole("main").getByRole("link", { name: "Advanced Animals: Quick check" })).toBeVisible();
 });
