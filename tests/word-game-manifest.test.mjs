@@ -118,6 +118,105 @@ describe("word-game manifests", () => {
       fieldPath: "surprise",
     },
     {
+      name: "unknown item fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].surprise = true;
+        return category;
+      },
+      fieldPath: "items[0].surprise",
+    },
+    {
+      name: "unknown audio fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].audio.surprise = true;
+        return category;
+      },
+      fieldPath: "items[0].audio.surprise",
+    },
+    {
+      name: "unknown Noto visual fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].visual.surprise = true;
+        return category;
+      },
+      fieldPath: "items[0].visual.surprise",
+    },
+    {
+      name: "unknown swatch visual fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].visual = {
+          color: "#ef4444",
+          kind: "swatch",
+          surprise: true,
+        };
+        return category;
+      },
+      fieldPath: "items[0].visual.surprise",
+    },
+    {
+      name: "unknown tier fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.tiers[0].surprise = true;
+        return category;
+      },
+      fieldPath: "tiers[0].surprise",
+    },
+    {
+      name: "unknown quiz fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.tiers[0].quizzes[0].surprise = true;
+        return category;
+      },
+      fieldPath: "tiers[0].quizzes[0].surprise",
+    },
+    {
+      name: "unknown question fields",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.tiers[0].quizzes[0].questions[0].surprise = true;
+        return category;
+      },
+      fieldPath: "tiers[0].quizzes[0].questions[0].surprise",
+    },
+    {
+      name: "unknown Noto manifest fields",
+      parse: parseNotoAssetManifest,
+      sourcePath: notoSourcePath,
+      value: () => ({ ...validNotoManifest(), surprise: true }),
+      fieldPath: "surprise",
+    },
+    {
+      name: "unknown Noto asset fields",
+      parse: parseNotoAssetManifest,
+      sourcePath: notoSourcePath,
+      value: () => {
+        const manifest = validNotoManifest();
+        manifest.assets[0].surprise = true;
+        return manifest;
+      },
+      fieldPath: "assets[0].surprise",
+    },
+    {
       name: "whitespace-only text",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
@@ -162,6 +261,13 @@ describe("word-game manifests", () => {
       parse: parseNotoAssetManifest,
       sourcePath: notoSourcePath,
       value: () => ({ ...validNotoManifest(), revision: "a".repeat(39) }),
+      fieldPath: "revision",
+    },
+    {
+      name: "unapproved 40-character Noto revisions",
+      parse: parseNotoAssetManifest,
+      sourcePath: notoSourcePath,
+      value: () => ({ ...validNotoManifest(), revision: "a".repeat(40) }),
       fieldPath: "revision",
     },
     {
@@ -231,6 +337,21 @@ describe("word-game manifests", () => {
       },
       fieldPath: "tiers[0].quizzes[0].questions[0].choiceIds",
     },
+    ...[3, 5].map((choiceCount) => ({
+      name: `${choiceCount}-choice questions`,
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.tiers[0].quizzes[0].questions[0].choiceIds =
+          category.tiers[0].quizzes[0].questions[0].choiceIds.slice(0, choiceCount);
+        if (choiceCount === 5) {
+          category.tiers[0].quizzes[0].questions[0].choiceIds.push("animal-5");
+        }
+        return category;
+      },
+      fieldPath: "tiers[0].quizzes[0].questions[0].choiceIds",
+    })),
     {
       name: "targets that are not the first choice",
       parse: parseWordGameManifest,

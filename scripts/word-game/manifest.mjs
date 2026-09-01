@@ -4,8 +4,8 @@ export const WORD_GAME_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const ASSET_ID_PATTERN = /^[a-f0-9]+(?:_[a-f0-9]+)*$/;
 const HEX_COLOR_PATTERN = /^#[a-f0-9]{6}$/;
+const NOTO_REVISION = "8998f5dd683424a73e2314a8c1f1e359c19e8742";
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const REVISION_PATTERN = /^[a-f0-9]{40}$/;
 const TIER_IDS = ["simple", "intermediate", "advanced"];
 
 const text = z.string().refine((value) => value.trim().length > 0, {
@@ -116,7 +116,7 @@ const notoAssetManifest = z
       "https://github.com/googlefonts/noto-emoji",
       "must equal the official Noto Emoji repository",
     ),
-    revision: z.string().regex(REVISION_PATTERN, "must be a lowercase 40-character revision"),
+    revision: z.literal(NOTO_REVISION, "must equal the pinned Noto Emoji revision"),
     schemaVersion: z.literal(1, "must equal 1"),
   })
   .strict();
