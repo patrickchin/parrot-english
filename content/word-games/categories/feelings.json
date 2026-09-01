@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "order": 6,
+  "id": "feelings",
+  "title": "Feelings",
+  "description": "Listen and find the feelings.",
+  "theme": "purple",
+  "coverItemId": "happy",
+  "items": [
+    {
+      "id": "happy",
+      "label": "happy",
+      "alt": "A happy face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f604"
+      },
+      "audio": {
+        "id": "word-game-feelings-happy-label",
+        "text": "This face is happy."
+      }
+    },
+    {
+      "id": "sad",
+      "label": "sad",
+      "alt": "A sad face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f622"
+      },
+      "audio": {
+        "id": "word-game-feelings-sad-label",
+        "text": "This face is sad."
+      }
+    },
+    {
+      "id": "angry",
+      "label": "angry",
+      "alt": "An angry face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f620"
+      },
+      "audio": {
+        "id": "word-game-feelings-angry-label",
+        "text": "This face is angry."
+      }
+    },
+    {
+      "id": "sleepy",
+      "label": "sleepy",
+      "alt": "A sleepy face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f634"
+      },
+      "audio": {
+        "id": "word-game-feelings-sleepy-label",
+        "text": "This face is sleepy."
+      }
+    },
+    {
+      "id": "surprised",
+      "label": "surprised",
+      "alt": "A surprised face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f62e"
+      },
+      "audio": {
+        "id": "word-game-feelings-surprised-label",
+        "text": "This face is surprised."
+      }
+    },
+    {
+      "id": "silly",
+      "label": "silly",
+      "alt": "A silly face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f92a"
+      },
+      "audio": {
+        "id": "word-game-feelings-silly-label",
+        "text": "This face is silly."
+      }
+    },
+    {
+      "id": "scared",
+      "label": "scared",
+      "alt": "A scared face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f628"
+      },
+      "audio": {
+        "id": "word-game-feelings-scared-label",
+        "text": "This face is scared."
+      }
+    },
+    {
+      "id": "excited",
+      "label": "excited",
+      "alt": "An excited face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f929"
+      },
+      "audio": {
+        "id": "word-game-feelings-excited-label",
+        "text": "This face is excited."
+      }
+    },
+    {
+      "id": "calm",
+      "label": "calm",
+      "alt": "A calm face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f60c"
+      },
+      "audio": {
+        "id": "word-game-feelings-calm-label",
+        "text": "This face is calm."
+      }
+    },
+    {
+      "id": "worried",
+      "label": "worried",
+      "alt": "A worried face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f61f"
+      },
+      "audio": {
+        "id": "word-game-feelings-worried-label",
+        "text": "This face is worried."
+      }
+    },
+    {
+      "id": "confused",
+      "label": "confused",
+      "alt": "A confused face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f615"
+      },
+      "audio": {
+        "id": "word-game-feelings-confused-label",
+        "text": "This face is confused."
+      }
+    },
+    {
+      "id": "bored",
+      "label": "bored",
+      "alt": "A bored face.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f611"
+      },
+      "audio": {
+        "id": "word-game-feelings-bored-label",
+        "text": "This face is bored."
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple feelings words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple feelings",
+          "description": "Six simple feelings words.",
+          "questions": [
+            {
+              "id": "find-happy",
+              "targetId": "happy",
+              "choiceIds": [
+                "happy",
+                "sad",
+                "angry",
+                "sleepy"
+              ],
+              "prompt": "Happy. Which face is happy?",
+              "success": "Great job! This face is happy."
+            },
+            {
+              "id": "find-sad",
+              "targetId": "sad",
+              "choiceIds": [
+                "sad",
+                "angry",
+                "sleepy",
+                "surprised"
+              ],
+              "prompt": "Sad. Which face is sad?",
+              "success": "Great job! This face is sad."
+            },
+            {
+              "id": "find-angry",
+              "targetId": "angry",
+              "choiceIds": [
+                "angry",
+                "sleepy",
+                "surprised",
+                "silly"
+              ],
+              "prompt": "Angry. Which face is angry?",
+              "success": "Great job! This face is angry."
+            },
+            {
+              "id": "find-sleepy",
+              "targetId": "sleepy",
+              "choiceIds": [
+                "sleepy",
+                "surprised",
+                "silly",
+                "happy"
+              ],
+              "prompt": "Sleepy. Which face is sleepy?",
+              "success": "Great job! This face is sleepy."
+            },
+            {
+              "id": "find-surprised",
+              "targetId": "surprised",
+              "choiceIds": [
+                "surprised",
+                "silly",
+                "happy",
+                "sad"
+              ],
+              "prompt": "Surprised. Which face is surprised?",
+              "success": "Great job! This face is surprised."
+            },
+            {
+              "id": "find-silly",
+              "targetId": "silly",
+              "choiceIds": [
+                "silly",
+                "happy",
+                "sad",
+                "angry"
+              ],
+              "prompt": "Silly. Which face is silly?",
+              "success": "Great job! This face is silly."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate feelings words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate feelings",
+          "description": "Six intermediate feelings words.",
+          "questions": [
+            {
+              "id": "find-happy",
+              "targetId": "happy",
+              "choiceIds": [
+                "happy",
+                "sad",
+                "sleepy",
+                "scared"
+              ],
+              "prompt": "Happy. Which face is happy?",
+              "success": "Great job! This face is happy."
+            },
+            {
+              "id": "find-sad",
+              "targetId": "sad",
+              "choiceIds": [
+                "sad",
+                "sleepy",
+                "scared",
+                "excited"
+              ],
+              "prompt": "Sad. Which face is sad?",
+              "success": "Great job! This face is sad."
+            },
+            {
+              "id": "find-sleepy",
+              "targetId": "sleepy",
+              "choiceIds": [
+                "sleepy",
+                "scared",
+                "excited",
+                "calm"
+              ],
+              "prompt": "Sleepy. Which face is sleepy?",
+              "success": "Great job! This face is sleepy."
+            },
+            {
+              "id": "find-scared",
+              "targetId": "scared",
+              "choiceIds": [
+                "scared",
+                "excited",
+                "calm",
+                "happy"
+              ],
+              "prompt": "Scared. Which face is scared?",
+              "success": "Great job! This face is scared."
+            },
+            {
+              "id": "find-excited",
+              "targetId": "excited",
+              "choiceIds": [
+                "excited",
+                "calm",
+                "happy",
+                "sad"
+              ],
+              "prompt": "Excited. Which face is excited?",
+              "success": "Great job! This face is excited."
+            },
+            {
+              "id": "find-calm",
+              "targetId": "calm",
+              "choiceIds": [
+                "calm",
+                "happy",
+                "sad",
+                "sleepy"
+              ],
+              "prompt": "Calm. Which face is calm?",
+              "success": "Great job! This face is calm."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced feelings words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced feelings",
+          "description": "Six advanced feelings words.",
+          "questions": [
+            {
+              "id": "find-scared",
+              "targetId": "scared",
+              "choiceIds": [
+                "scared",
+                "excited",
+                "calm",
+                "worried"
+              ],
+              "prompt": "Scared. Which face is scared?",
+              "success": "Great job! This face is scared."
+            },
+            {
+              "id": "find-excited",
+              "targetId": "excited",
+              "choiceIds": [
+                "excited",
+                "calm",
+                "worried",
+                "confused"
+              ],
+              "prompt": "Excited. Which face is excited?",
+              "success": "Great job! This face is excited."
+            },
+            {
+              "id": "find-calm",
+              "targetId": "calm",
+              "choiceIds": [
+                "calm",
+                "worried",
+                "confused",
+                "bored"
+              ],
+              "prompt": "Calm. Which face is calm?",
+              "success": "Great job! This face is calm."
+            },
+            {
+              "id": "find-worried",
+              "targetId": "worried",
+              "choiceIds": [
+                "worried",
+                "confused",
+                "bored",
+                "scared"
+              ],
+              "prompt": "Worried. Which face is worried?",
+              "success": "Great job! This face is worried."
+            },
+            {
+              "id": "find-confused",
+              "targetId": "confused",
+              "choiceIds": [
+                "confused",
+                "bored",
+                "scared",
+                "excited"
+              ],
+              "prompt": "Confused. Which face is confused?",
+              "success": "Great job! This face is confused."
+            },
+            {
+              "id": "find-bored",
+              "targetId": "bored",
+              "choiceIds": [
+                "bored",
+                "scared",
+                "excited",
+                "calm"
+              ],
+              "prompt": "Bored. Which face is bored?",
+              "success": "Great job! This face is bored."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

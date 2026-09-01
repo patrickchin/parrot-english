@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "order": 8,
+  "id": "clothes",
+  "title": "Clothes",
+  "description": "Listen and find the clothes.",
+  "theme": "rose",
+  "coverItemId": "shirt",
+  "items": [
+    {
+      "id": "shirt",
+      "label": "shirt",
+      "alt": "A shirt.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f455"
+      },
+      "audio": {
+        "id": "word-game-clothes-shirt-label",
+        "text": "This is a shirt."
+      }
+    },
+    {
+      "id": "shoes",
+      "label": "shoes",
+      "alt": "A pair of shoes.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f45f"
+      },
+      "audio": {
+        "id": "word-game-clothes-shoes-label",
+        "text": "These are shoes."
+      }
+    },
+    {
+      "id": "hat",
+      "label": "hat",
+      "alt": "A hat.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e2"
+      },
+      "audio": {
+        "id": "word-game-clothes-hat-label",
+        "text": "This is a hat."
+      }
+    },
+    {
+      "id": "socks",
+      "label": "socks",
+      "alt": "A pair of socks.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e6"
+      },
+      "audio": {
+        "id": "word-game-clothes-socks-label",
+        "text": "These are socks."
+      }
+    },
+    {
+      "id": "coat",
+      "label": "coat",
+      "alt": "A coat.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e5"
+      },
+      "audio": {
+        "id": "word-game-clothes-coat-label",
+        "text": "This is a coat."
+      }
+    },
+    {
+      "id": "pants",
+      "label": "pants",
+      "alt": "A pair of pants.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f456"
+      },
+      "audio": {
+        "id": "word-game-clothes-pants-label",
+        "text": "These are pants."
+      }
+    },
+    {
+      "id": "dress",
+      "label": "dress",
+      "alt": "A dress.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f457"
+      },
+      "audio": {
+        "id": "word-game-clothes-dress-label",
+        "text": "This is a dress."
+      }
+    },
+    {
+      "id": "shorts",
+      "label": "shorts",
+      "alt": "A pair of shorts.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa73"
+      },
+      "audio": {
+        "id": "word-game-clothes-shorts-label",
+        "text": "These are shorts."
+      }
+    },
+    {
+      "id": "scarf",
+      "label": "scarf",
+      "alt": "A scarf.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e3"
+      },
+      "audio": {
+        "id": "word-game-clothes-scarf-label",
+        "text": "This is a scarf."
+      }
+    },
+    {
+      "id": "boots",
+      "label": "boots",
+      "alt": "A pair of boots.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f462"
+      },
+      "audio": {
+        "id": "word-game-clothes-boots-label",
+        "text": "These are boots."
+      }
+    },
+    {
+      "id": "gloves",
+      "label": "gloves",
+      "alt": "A pair of gloves.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e4"
+      },
+      "audio": {
+        "id": "word-game-clothes-gloves-label",
+        "text": "These are gloves."
+      }
+    },
+    {
+      "id": "swimsuit",
+      "label": "swimsuit",
+      "alt": "A swimsuit.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa71"
+      },
+      "audio": {
+        "id": "word-game-clothes-swimsuit-label",
+        "text": "This is a swimsuit."
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple clothes words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple clothes",
+          "description": "Six simple clothes words.",
+          "questions": [
+            {
+              "id": "find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "shoes",
+                "hat",
+                "socks"
+              ],
+              "prompt": "Shirt. Which is the shirt?",
+              "success": "Great job! This is a shirt."
+            },
+            {
+              "id": "find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "hat",
+                "socks",
+                "coat"
+              ],
+              "prompt": "Shoes. Where are the shoes?",
+              "success": "Great job! These are shoes."
+            },
+            {
+              "id": "find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "socks",
+                "coat",
+                "pants"
+              ],
+              "prompt": "Hat. Which is the hat?",
+              "success": "Great job! This is a hat."
+            },
+            {
+              "id": "find-socks",
+              "targetId": "socks",
+              "choiceIds": [
+                "socks",
+                "coat",
+                "pants",
+                "shirt"
+              ],
+              "prompt": "Socks. Where are the socks?",
+              "success": "Great job! These are socks."
+            },
+            {
+              "id": "find-coat",
+              "targetId": "coat",
+              "choiceIds": [
+                "coat",
+                "pants",
+                "shirt",
+                "shoes"
+              ],
+              "prompt": "Coat. Which is the coat?",
+              "success": "Great job! This is a coat."
+            },
+            {
+              "id": "find-pants",
+              "targetId": "pants",
+              "choiceIds": [
+                "pants",
+                "shirt",
+                "shoes",
+                "hat"
+              ],
+              "prompt": "Pants. Where are the pants?",
+              "success": "Great job! These are pants."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate clothes words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate clothes",
+          "description": "Six intermediate clothes words.",
+          "questions": [
+            {
+              "id": "find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "shoes",
+                "hat",
+                "dress"
+              ],
+              "prompt": "Shirt. Which is the shirt?",
+              "success": "Great job! This is a shirt."
+            },
+            {
+              "id": "find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "hat",
+                "dress",
+                "shorts"
+              ],
+              "prompt": "Shoes. Where are the shoes?",
+              "success": "Great job! These are shoes."
+            },
+            {
+              "id": "find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "dress",
+                "shorts",
+                "scarf"
+              ],
+              "prompt": "Hat. Which is the hat?",
+              "success": "Great job! This is a hat."
+            },
+            {
+              "id": "find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "shorts",
+                "scarf",
+                "shirt"
+              ],
+              "prompt": "Dress. Which is the dress?",
+              "success": "Great job! This is a dress."
+            },
+            {
+              "id": "find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "scarf",
+                "shirt",
+                "shoes"
+              ],
+              "prompt": "Shorts. Where are the shorts?",
+              "success": "Great job! These are shorts."
+            },
+            {
+              "id": "find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "shirt",
+                "shoes",
+                "hat"
+              ],
+              "prompt": "Scarf. Which is the scarf?",
+              "success": "Great job! This is a scarf."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced clothes words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced clothes",
+          "description": "Six advanced clothes words.",
+          "questions": [
+            {
+              "id": "find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "shorts",
+                "scarf",
+                "boots"
+              ],
+              "prompt": "Dress. Which is the dress?",
+              "success": "Great job! This is a dress."
+            },
+            {
+              "id": "find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "scarf",
+                "boots",
+                "gloves"
+              ],
+              "prompt": "Shorts. Where are the shorts?",
+              "success": "Great job! These are shorts."
+            },
+            {
+              "id": "find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "boots",
+                "gloves",
+                "swimsuit"
+              ],
+              "prompt": "Scarf. Which is the scarf?",
+              "success": "Great job! This is a scarf."
+            },
+            {
+              "id": "find-boots",
+              "targetId": "boots",
+              "choiceIds": [
+                "boots",
+                "gloves",
+                "swimsuit",
+                "dress"
+              ],
+              "prompt": "Boots. Where are the boots?",
+              "success": "Great job! These are boots."
+            },
+            {
+              "id": "find-gloves",
+              "targetId": "gloves",
+              "choiceIds": [
+                "gloves",
+                "swimsuit",
+                "dress",
+                "shorts"
+              ],
+              "prompt": "Gloves. Where are the gloves?",
+              "success": "Great job! These are gloves."
+            },
+            {
+              "id": "find-swimsuit",
+              "targetId": "swimsuit",
+              "choiceIds": [
+                "swimsuit",
+                "dress",
+                "shorts",
+                "scarf"
+              ],
+              "prompt": "Swimsuit. Which is the swimsuit?",
+              "success": "Great job! This is a swimsuit."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

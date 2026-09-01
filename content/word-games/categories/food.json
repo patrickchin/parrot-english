@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "order": 4,
+  "id": "food",
+  "title": "Food",
+  "description": "Listen and find the food.",
+  "theme": "orange",
+  "coverItemId": "apple",
+  "items": [
+    {
+      "id": "apple",
+      "label": "apple",
+      "alt": "An apple.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f34e"
+      },
+      "audio": {
+        "id": "word-game-food-apple-label",
+        "text": "This is an apple."
+      }
+    },
+    {
+      "id": "banana",
+      "label": "banana",
+      "alt": "A banana.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f34c"
+      },
+      "audio": {
+        "id": "word-game-food-banana-label",
+        "text": "This is a banana."
+      }
+    },
+    {
+      "id": "carrot",
+      "label": "carrot",
+      "alt": "A carrot.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f955"
+      },
+      "audio": {
+        "id": "word-game-food-carrot-label",
+        "text": "This is a carrot."
+      }
+    },
+    {
+      "id": "orange",
+      "label": "orange",
+      "alt": "An orange.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f34a"
+      },
+      "audio": {
+        "id": "word-game-food-orange-label",
+        "text": "This is an orange."
+      }
+    },
+    {
+      "id": "bread",
+      "label": "bread",
+      "alt": "Bread.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f35e"
+      },
+      "audio": {
+        "id": "word-game-food-bread-label",
+        "text": "This is bread."
+      }
+    },
+    {
+      "id": "cheese",
+      "label": "cheese",
+      "alt": "Cheese.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9c0"
+      },
+      "audio": {
+        "id": "word-game-food-cheese-label",
+        "text": "This is cheese."
+      }
+    },
+    {
+      "id": "rice",
+      "label": "rice",
+      "alt": "Rice.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f35a"
+      },
+      "audio": {
+        "id": "word-game-food-rice-label",
+        "text": "This is rice."
+      }
+    },
+    {
+      "id": "egg",
+      "label": "egg",
+      "alt": "An egg.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f95a"
+      },
+      "audio": {
+        "id": "word-game-food-egg-label",
+        "text": "This is an egg."
+      }
+    },
+    {
+      "id": "milk",
+      "label": "milk",
+      "alt": "Milk.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f95b"
+      },
+      "audio": {
+        "id": "word-game-food-milk-label",
+        "text": "This is milk."
+      }
+    },
+    {
+      "id": "tomato",
+      "label": "tomato",
+      "alt": "A tomato.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f345"
+      },
+      "audio": {
+        "id": "word-game-food-tomato-label",
+        "text": "This is a tomato."
+      }
+    },
+    {
+      "id": "potato",
+      "label": "potato",
+      "alt": "A potato.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f954"
+      },
+      "audio": {
+        "id": "word-game-food-potato-label",
+        "text": "This is a potato."
+      }
+    },
+    {
+      "id": "sandwich",
+      "label": "sandwich",
+      "alt": "A sandwich.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f96a"
+      },
+      "audio": {
+        "id": "word-game-food-sandwich-label",
+        "text": "This is a sandwich."
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple food words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple food",
+          "description": "Six simple food words.",
+          "questions": [
+            {
+              "id": "find-apple",
+              "targetId": "apple",
+              "choiceIds": [
+                "apple",
+                "banana",
+                "carrot",
+                "orange"
+              ],
+              "prompt": "Apple. Which is the apple?",
+              "success": "Great job! This is an apple."
+            },
+            {
+              "id": "find-banana",
+              "targetId": "banana",
+              "choiceIds": [
+                "banana",
+                "carrot",
+                "orange",
+                "bread"
+              ],
+              "prompt": "Banana. Which is the banana?",
+              "success": "Great job! This is a banana."
+            },
+            {
+              "id": "find-carrot",
+              "targetId": "carrot",
+              "choiceIds": [
+                "carrot",
+                "orange",
+                "bread",
+                "cheese"
+              ],
+              "prompt": "Carrot. Which is the carrot?",
+              "success": "Great job! This is a carrot."
+            },
+            {
+              "id": "find-orange",
+              "targetId": "orange",
+              "choiceIds": [
+                "orange",
+                "bread",
+                "cheese",
+                "apple"
+              ],
+              "prompt": "Orange. Which is the orange?",
+              "success": "Great job! This is an orange."
+            },
+            {
+              "id": "find-bread",
+              "targetId": "bread",
+              "choiceIds": [
+                "bread",
+                "cheese",
+                "apple",
+                "banana"
+              ],
+              "prompt": "Bread. Which is the bread?",
+              "success": "Great job! This is bread."
+            },
+            {
+              "id": "find-cheese",
+              "targetId": "cheese",
+              "choiceIds": [
+                "cheese",
+                "apple",
+                "banana",
+                "carrot"
+              ],
+              "prompt": "Cheese. Which is the cheese?",
+              "success": "Great job! This is cheese."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate food words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate food",
+          "description": "Six intermediate food words.",
+          "questions": [
+            {
+              "id": "find-apple",
+              "targetId": "apple",
+              "choiceIds": [
+                "apple",
+                "banana",
+                "bread",
+                "rice"
+              ],
+              "prompt": "Apple. Which is the apple?",
+              "success": "Great job! This is an apple."
+            },
+            {
+              "id": "find-banana",
+              "targetId": "banana",
+              "choiceIds": [
+                "banana",
+                "bread",
+                "rice",
+                "egg"
+              ],
+              "prompt": "Banana. Which is the banana?",
+              "success": "Great job! This is a banana."
+            },
+            {
+              "id": "find-bread",
+              "targetId": "bread",
+              "choiceIds": [
+                "bread",
+                "rice",
+                "egg",
+                "milk"
+              ],
+              "prompt": "Bread. Which is the bread?",
+              "success": "Great job! This is bread."
+            },
+            {
+              "id": "find-rice",
+              "targetId": "rice",
+              "choiceIds": [
+                "rice",
+                "egg",
+                "milk",
+                "apple"
+              ],
+              "prompt": "Rice. Which is the rice?",
+              "success": "Great job! This is rice."
+            },
+            {
+              "id": "find-egg",
+              "targetId": "egg",
+              "choiceIds": [
+                "egg",
+                "milk",
+                "apple",
+                "banana"
+              ],
+              "prompt": "Egg. Which is the egg?",
+              "success": "Great job! This is an egg."
+            },
+            {
+              "id": "find-milk",
+              "targetId": "milk",
+              "choiceIds": [
+                "milk",
+                "apple",
+                "banana",
+                "bread"
+              ],
+              "prompt": "Milk. Which is the milk?",
+              "success": "Great job! This is milk."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced food words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced food",
+          "description": "Six advanced food words.",
+          "questions": [
+            {
+              "id": "find-rice",
+              "targetId": "rice",
+              "choiceIds": [
+                "rice",
+                "egg",
+                "milk",
+                "tomato"
+              ],
+              "prompt": "Rice. Which is the rice?",
+              "success": "Great job! This is rice."
+            },
+            {
+              "id": "find-egg",
+              "targetId": "egg",
+              "choiceIds": [
+                "egg",
+                "milk",
+                "tomato",
+                "potato"
+              ],
+              "prompt": "Egg. Which is the egg?",
+              "success": "Great job! This is an egg."
+            },
+            {
+              "id": "find-milk",
+              "targetId": "milk",
+              "choiceIds": [
+                "milk",
+                "tomato",
+                "potato",
+                "sandwich"
+              ],
+              "prompt": "Milk. Which is the milk?",
+              "success": "Great job! This is milk."
+            },
+            {
+              "id": "find-tomato",
+              "targetId": "tomato",
+              "choiceIds": [
+                "tomato",
+                "potato",
+                "sandwich",
+                "rice"
+              ],
+              "prompt": "Tomato. Which is the tomato?",
+              "success": "Great job! This is a tomato."
+            },
+            {
+              "id": "find-potato",
+              "targetId": "potato",
+              "choiceIds": [
+                "potato",
+                "sandwich",
+                "rice",
+                "egg"
+              ],
+              "prompt": "Potato. Which is the potato?",
+              "success": "Great job! This is a potato."
+            },
+            {
+              "id": "find-sandwich",
+              "targetId": "sandwich",
+              "choiceIds": [
+                "sandwich",
+                "rice",
+                "egg",
+                "milk"
+              ],
+              "prompt": "Sandwich. Which is the sandwich?",
+              "success": "Great job! This is a sandwich."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

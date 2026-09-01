@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "order": 5,
+  "id": "toys",
+  "title": "Toys",
+  "description": "Listen and find the toys.",
+  "theme": "yellow",
+  "coverItemId": "ball",
+  "items": [
+    {
+      "id": "ball",
+      "label": "ball",
+      "alt": "A ball.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "26bd"
+      },
+      "audio": {
+        "id": "word-game-toys-ball-label",
+        "text": "This is a ball."
+      }
+    },
+    {
+      "id": "toy-car",
+      "label": "toy car",
+      "alt": "A toy car.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f697"
+      },
+      "audio": {
+        "id": "word-game-toys-toy-car-label",
+        "text": "This is a toy car."
+      }
+    },
+    {
+      "id": "doll",
+      "label": "doll",
+      "alt": "A doll.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa86"
+      },
+      "audio": {
+        "id": "word-game-toys-doll-label",
+        "text": "This is a doll."
+      }
+    },
+    {
+      "id": "kite",
+      "label": "kite",
+      "alt": "A kite.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa81"
+      },
+      "audio": {
+        "id": "word-game-toys-kite-label",
+        "text": "This is a kite."
+      }
+    },
+    {
+      "id": "blocks",
+      "label": "blocks",
+      "alt": "Building blocks.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9f1"
+      },
+      "audio": {
+        "id": "word-game-toys-blocks-label",
+        "text": "These are blocks."
+      }
+    },
+    {
+      "id": "teddy-bear",
+      "label": "teddy bear",
+      "alt": "A teddy bear.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9f8"
+      },
+      "audio": {
+        "id": "word-game-toys-teddy-bear-label",
+        "text": "This is a teddy bear."
+      }
+    },
+    {
+      "id": "toy-train",
+      "label": "toy train",
+      "alt": "A toy train.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f686"
+      },
+      "audio": {
+        "id": "word-game-toys-toy-train-label",
+        "text": "This is a toy train."
+      }
+    },
+    {
+      "id": "drum",
+      "label": "drum",
+      "alt": "A drum.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f941"
+      },
+      "audio": {
+        "id": "word-game-toys-drum-label",
+        "text": "This is a drum."
+      }
+    },
+    {
+      "id": "puzzle",
+      "label": "puzzle",
+      "alt": "A puzzle.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e9"
+      },
+      "audio": {
+        "id": "word-game-toys-puzzle-label",
+        "text": "This is a puzzle."
+      }
+    },
+    {
+      "id": "robot",
+      "label": "robot",
+      "alt": "A robot.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f916"
+      },
+      "audio": {
+        "id": "word-game-toys-robot-label",
+        "text": "This is a robot."
+      }
+    },
+    {
+      "id": "yo-yo",
+      "label": "yo-yo",
+      "alt": "A yo-yo.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa80"
+      },
+      "audio": {
+        "id": "word-game-toys-yo-yo-label",
+        "text": "This is a yo-yo."
+      }
+    },
+    {
+      "id": "skateboard",
+      "label": "skateboard",
+      "alt": "A skateboard.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6f9"
+      },
+      "audio": {
+        "id": "word-game-toys-skateboard-label",
+        "text": "This is a skateboard."
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple toys words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple toys",
+          "description": "Six simple toys words.",
+          "questions": [
+            {
+              "id": "find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "toy-car",
+                "doll",
+                "kite"
+              ],
+              "prompt": "Ball. Which is the ball?",
+              "success": "Great job! This is a ball."
+            },
+            {
+              "id": "find-toy-car",
+              "targetId": "toy-car",
+              "choiceIds": [
+                "toy-car",
+                "doll",
+                "kite",
+                "blocks"
+              ],
+              "prompt": "Toy car. Which is the toy car?",
+              "success": "Great job! This is a toy car."
+            },
+            {
+              "id": "find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "kite",
+                "blocks",
+                "teddy-bear"
+              ],
+              "prompt": "Doll. Which is the doll?",
+              "success": "Great job! This is a doll."
+            },
+            {
+              "id": "find-kite",
+              "targetId": "kite",
+              "choiceIds": [
+                "kite",
+                "blocks",
+                "teddy-bear",
+                "ball"
+              ],
+              "prompt": "Kite. Which is the kite?",
+              "success": "Great job! This is a kite."
+            },
+            {
+              "id": "find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "teddy-bear",
+                "ball",
+                "toy-car"
+              ],
+              "prompt": "Blocks. Where are the blocks?",
+              "success": "Great job! These are blocks."
+            },
+            {
+              "id": "find-teddy-bear",
+              "targetId": "teddy-bear",
+              "choiceIds": [
+                "teddy-bear",
+                "ball",
+                "toy-car",
+                "doll"
+              ],
+              "prompt": "Teddy bear. Which is the teddy bear?",
+              "success": "Great job! This is a teddy bear."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate toys words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate toys",
+          "description": "Six intermediate toys words.",
+          "questions": [
+            {
+              "id": "find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "doll",
+                "blocks",
+                "toy-train"
+              ],
+              "prompt": "Ball. Which is the ball?",
+              "success": "Great job! This is a ball."
+            },
+            {
+              "id": "find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "blocks",
+                "toy-train",
+                "drum"
+              ],
+              "prompt": "Doll. Which is the doll?",
+              "success": "Great job! This is a doll."
+            },
+            {
+              "id": "find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "toy-train",
+                "drum",
+                "puzzle"
+              ],
+              "prompt": "Blocks. Where are the blocks?",
+              "success": "Great job! These are blocks."
+            },
+            {
+              "id": "find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "drum",
+                "puzzle",
+                "ball"
+              ],
+              "prompt": "Toy train. Which is the toy train?",
+              "success": "Great job! This is a toy train."
+            },
+            {
+              "id": "find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "puzzle",
+                "ball",
+                "doll"
+              ],
+              "prompt": "Drum. Which is the drum?",
+              "success": "Great job! This is a drum."
+            },
+            {
+              "id": "find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "ball",
+                "doll",
+                "blocks"
+              ],
+              "prompt": "Puzzle. Which is the puzzle?",
+              "success": "Great job! This is a puzzle."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced toys words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced toys",
+          "description": "Six advanced toys words.",
+          "questions": [
+            {
+              "id": "find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "drum",
+                "puzzle",
+                "robot"
+              ],
+              "prompt": "Toy train. Which is the toy train?",
+              "success": "Great job! This is a toy train."
+            },
+            {
+              "id": "find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "puzzle",
+                "robot",
+                "yo-yo"
+              ],
+              "prompt": "Drum. Which is the drum?",
+              "success": "Great job! This is a drum."
+            },
+            {
+              "id": "find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "robot",
+                "yo-yo",
+                "skateboard"
+              ],
+              "prompt": "Puzzle. Which is the puzzle?",
+              "success": "Great job! This is a puzzle."
+            },
+            {
+              "id": "find-robot",
+              "targetId": "robot",
+              "choiceIds": [
+                "robot",
+                "yo-yo",
+                "skateboard",
+                "toy-train"
+              ],
+              "prompt": "Robot. Which is the robot?",
+              "success": "Great job! This is a robot."
+            },
+            {
+              "id": "find-yo-yo",
+              "targetId": "yo-yo",
+              "choiceIds": [
+                "yo-yo",
+                "skateboard",
+                "toy-train",
+                "drum"
+              ],
+              "prompt": "Yo-yo. Which is the yo-yo?",
+              "success": "Great job! This is a yo-yo."
+            },
+            {
+              "id": "find-skateboard",
+              "targetId": "skateboard",
+              "choiceIds": [
+                "skateboard",
+                "toy-train",
+                "drum",
+                "puzzle"
+              ],
+              "prompt": "Skateboard. Which is the skateboard?",
+              "success": "Great job! This is a skateboard."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
