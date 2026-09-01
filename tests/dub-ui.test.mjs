@@ -39,6 +39,15 @@ const { DubListenOnly } = await vite.ssrLoadModule("/src/dubbing/DubListenOnly.t
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
+const karaokeGuide = await vite.ssrLoadModule("/src/dubbing/DubKaraokeGuide.tsx").catch(() => ({}));
+const {
+  DubMelodyLane,
+  DubTimedWords,
+  getActiveDubMelodyNoteIndex,
+  getDubMelodyGeometry,
+  getDubPlayheadPercent,
+  getDubTimedWordSegments,
+} = karaokeGuide;
 const { DuckDub } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const {
   DubLoading,
@@ -331,7 +340,122 @@ function renderSceneEditor(viewProps = {}) {
   }));
 }
 
+function exactKaraokeGuide() {
+  assert.equal(typeof DubTimedWords, "function");
+  assert.equal(typeof DubMelodyLane, "function");
+  assert.equal(typeof getDubTimedWordSegments, "function");
+  assert.equal(typeof getDubMelodyGeometry, "function");
+  assert.equal(typeof getActiveDubMelodyNoteIndex, "function");
+  assert.equal(typeof getDubPlayheadPercent, "function");
+  return karaokeGuide;
+}
+
+function karaokeLine(overrides = {}) {
+  return {
+    ...DUB_LINES[0],
+    durationMs: 1_000,
+    text: "  Mary’s  ducks, quack!",
+    words: [
+      { startOffset: 2, endOffset: 8, atMs: 100, durationMs: 200 },
+      { startOffset: 10, endOffset: 15, atMs: 400, durationMs: 200 },
+      { startOffset: 17, endOffset: 22, atMs: 700, durationMs: 200 },
+    ],
+    ...overrides,
+  };
+}
+
+function karaokeDefinition(line, notes = []) {
+  return {
+    ...FIVE_LITTLE_DUCKS_DUB,
+    lines: [line],
+    music: {
+      ...FIVE_LITTLE_DUCKS_DUB.music,
+      linePhrases: [{ durationMs: line.durationMs, notes, playbackNotes: [] }],
+    },
+  };
+}
+
 describe("duck dubbing storyboard presentation", () => {
+  it("slices timed words without changing authored lyric text", () => {
+    exactKaraokeGuide();
+    const line = karaokeLine();
+    const atStart = getDubTimedWordSegments(line, 100);
+    const atEnd = getDubTimedWordSegments(line, 300);
+    const duringGap = getDubTimedWordSegments(line, 350);
+
+    assert.equal(atStart.map(({ text }) => text).join(""), line.text);
+    assert.deepEqual(
+      atStart.filter(({ kind }) => kind === "word").map(({ state }) => state),
+      ["active", "future", "future"],
+    );
+    assert.deepEqual(
+      atEnd.filter(({ kind }) => kind === "word").map(({ state }) => state),
+      ["past", "future", "future"],
+    );
+    assert.equal(
+      duringGap.filter(({ kind, state }) => kind === "word" && state === "active").length,
+      0,
+    );
+    assert.deepEqual(getDubTimedWordSegments(karaokeLine({ words: [] }), 100), [
+      { kind: "text", text: line.text },
+    ]);
+    assert.deepEqual(getDubTimedWordSegments(karaokeLine({ words: [{
+      startOffset: 0,
+      endOffset: 99,
+      atMs: 0,
+      durationMs: 10,
+    }] }), 100), [{ kind: "text", text: line.text }]);
+  });
+
+  it("renders timed words as an unchanged, quiet heading", async () => {
+    exactKaraokeGuide();
+    const line = karaokeLine();
+    const container = await mountStrict(createElement("h1", null,
+      createElement(DubTimedWords, { elapsedMs: 100, line }),
+    ));
+    const heading = container.querySelector("h1");
+    assert.equal(heading?.textContent, line.text);
+    assert.equal(heading?.textContent.replace(/\s+/g, " ").trim(), "Mary’s ducks, quack!");
+    assert.equal(heading?.querySelectorAll('[aria-current="true"]').length, 1);
+    assert.equal(heading?.querySelectorAll("[aria-live], [role=status], [tabindex]").length, 0);
+  });
+
+  it("normalizes melody geometry and clamps its active cursor", () => {
+    exactKaraokeGuide();
+    const line = karaokeLine();
+    const definition = karaokeDefinition(line, [
+      { atMs: 0, durationMs: 250, midi: 60 },
+      { atMs: 500, durationMs: 250, midi: 72 },
+    ]);
+    const geometry = getDubMelodyGeometry(definition, line);
+    assert.deepEqual(geometry.map(({ x, width, y }) => ({ x, width, y })), [
+      { x: 0, width: 25, y: 100 },
+      { x: 50, width: 25, y: 0 },
+    ]);
+    assert.ok(geometry.every((rect) => Object.values(rect).every(Number.isFinite)));
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 0), 0);
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 250), null);
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 500), 1);
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 750), null);
+    assert.equal(getDubPlayheadPercent(line, -1), 0);
+    assert.equal(getDubPlayheadPercent(line, 500), 50);
+    assert.equal(getDubPlayheadPercent(line, 2_000), 100);
+    assert.equal(getDubPlayheadPercent(line, null), null);
+    assert.deepEqual(
+      getDubMelodyGeometry(karaokeDefinition(line, [{ atMs: 0, durationMs: 250, midi: 64 }]), line)
+        .map(({ y }) => y),
+      [50],
+    );
+    assert.equal(
+      renderToStaticMarkup(createElement(DubMelodyLane, {
+        definition: karaokeDefinition(line),
+        elapsedMs: 0,
+        line,
+      })),
+      "",
+    );
+  });
+
   it("keeps optional waveform setup failures from interrupting recording", async () => {
     globalThis.AudioContext = class AudioContext {
       constructor() {
@@ -341,9 +465,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
-      durationMs: 4_000,
-      guidePeakBars: [1, ...Array(31).fill(0)],
-      recordingElapsedMs: 500,
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      elapsedMs: 500,
+      line: { ...DUB_LINES[0], guidePeakBars: [1, ...Array(31).fill(0)] },
       recordingStream: { getTracks: () => [] },
     }));
 
@@ -384,9 +508,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
-      durationMs: 4_000,
-      guidePeakBars: [1, ...Array(31).fill(0)],
-      recordingElapsedMs: 500,
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      elapsedMs: 500,
+      line: DUB_LINES[0],
       recordingStream: { getTracks: () => [] },
     }));
 
@@ -421,9 +545,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
-      durationMs: 4_000,
-      guidePeakBars: [1, ...Array(31).fill(0)],
-      recordingElapsedMs: 500,
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      elapsedMs: 500,
+      line: DUB_LINES[0],
       recordingStream: { getTracks: () => [] },
     }));
 
@@ -459,9 +583,9 @@ describe("duck dubbing storyboard presentation", () => {
       advanceElapsed = () => setElapsed((current) => current + 100);
       return createElement(DubTakeWaveform, {
         blob: null,
-        durationMs: 4_000,
-        guidePeakBars: [1, ...Array(31).fill(0)],
-        recordingElapsedMs: elapsed,
+        definition: FIVE_LITTLE_DUCKS_DUB,
+        elapsedMs: elapsed,
+        line: DUB_LINES[0],
         recordingStream,
       });
     }

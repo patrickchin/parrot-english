@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { DubMelodyLane, getDubPlayheadPercent } from "./DubKaraokeGuide";
 import { getNormalizedPeakBars } from "./dub-waveform";
+import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 const BAR_COUNT = 32;
 const BASELINE_BARS = Array.from({ length: BAR_COUNT }, () => 0);
@@ -37,7 +39,7 @@ function Waveform({
   return (
     <svg
       aria-label={accessibleName}
-      className={`col-start-1 row-start-1 h-12 w-full short-wide:h-8 ${className}`}
+      className={`col-start-1 row-start-1 h-10 w-full short-wide:h-5 ${className}`}
       preserveAspectRatio="none"
       role="img"
       viewBox={`0 0 ${BAR_COUNT * 4} 32`}
@@ -206,42 +208,47 @@ function useLivePeakBars(stream: MediaStream | null, elapsedMs: number, duration
 
 export function DubTakeWaveform({
   blob,
-  durationMs,
-  guidePeakBars,
-  recordingElapsedMs,
+  definition,
+  elapsedMs,
+  line,
   recordingStream,
 }: {
   blob: Blob | null;
-  durationMs: number;
-  guidePeakBars: readonly number[];
-  recordingElapsedMs: number;
+  definition: DubDefinition;
+  elapsedMs: number;
+  line: DubLine;
   recordingStream: MediaStream | null;
 }) {
-  const recordedPeaks = useRecordedPeakBars(blob, durationMs);
-  const live = useLivePeakBars(recordingStream, recordingElapsedMs, durationMs);
+  const recordedPeaks = useRecordedPeakBars(blob, line.durationMs);
+  const live = useLivePeakBars(recordingStream, elapsedMs, line.durationMs);
+  const playhead = getDubPlayheadPercent(line, elapsedMs);
 
   return (
-    <div aria-label="Waveform comparison" className="grid w-full" role="group">
-      <Waveform
-        accessibleName="Original audio waveform"
-        bars={guidePeakBars.length === BAR_COUNT ? guidePeakBars : BASELINE_BARS}
-        className="text-violet-700"
-      />
-      {recordingStream && live.available ? (
+    <div aria-label="Waveform and melody guide" className="relative grid w-full gap-1 short-wide:gap-0" role="group">
+      <div className="grid">
         <Waveform
-          accessibleName="Your live recording waveform"
-          bars={live.bars}
-          className="text-brand-rose"
-          narrow
+          accessibleName="Original audio waveform"
+          bars={line.guidePeakBars.length === BAR_COUNT ? line.guidePeakBars : BASELINE_BARS}
+          className="text-violet-700"
         />
-      ) : blob ? (
-        <Waveform
-          accessibleName="Your recording waveform"
-          bars={recordedPeaks}
-          className="text-brand-blue"
-          narrow
-        />
-      ) : null}
+        {recordingStream && live.available ? (
+          <Waveform
+            accessibleName="Your live recording waveform"
+            bars={live.bars}
+            className="text-brand-rose"
+            narrow
+          />
+        ) : blob ? (
+          <Waveform
+            accessibleName="Your recording waveform"
+            bars={recordedPeaks}
+            className="text-brand-blue"
+            narrow
+          />
+        ) : null}
+      </div>
+      <DubMelodyLane definition={definition} elapsedMs={elapsedMs} line={line} showPlayhead={false} />
+      {playhead === null ? null : <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 z-10 w-0.5 bg-brand-ink" style={{ left: `${playhead}%` }} />}
     </div>
   );
 }

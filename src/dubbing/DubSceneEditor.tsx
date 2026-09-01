@@ -160,9 +160,9 @@ export function DubSceneEditor({
           <section aria-label="Recording feedback" className="grid h-36 content-start gap-1.5 overflow-visible rounded-2xl bg-sky-50 p-2 short-wide:h-[5.5rem] short-wide:gap-1 short-wide:p-0.5">
             <DubTakeWaveform
               blob={pendingTake}
-              durationMs={recordingDurationMs}
-              guidePeakBars={activeLine.guidePeakBars}
-              recordingElapsedMs={recordingElapsedMs}
+              definition={definition}
+              elapsedMs={recordingElapsedMs}
+              line={activeLine}
               recordingStream={recordingStream}
             />
             {recording ? (
