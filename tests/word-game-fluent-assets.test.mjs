@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { promisify } from "node:util";
 import { parseFluentAssetManifest } from "../scripts/word-game/manifest.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -24,6 +26,7 @@ const expectedIds = [
   "1f9e3", "1f462", "1f9e4", "1fa71", "1f68c", "1f6b2", "1f6a4", "2708",
   "1f695", "1f69a", "1f6f4", "1f681", "1f3cd", "1f680",
 ];
+const execFileAsync = promisify(execFile);
 
 async function readManifest() {
   const value = JSON.parse(await readFile(manifestPath, "utf8"));
@@ -61,6 +64,19 @@ describe("pinned Fluent 3D word-game artwork", () => {
     }
 
     assert.deepEqual((await readdir(assetRoot)).sort(), expectedFiles.sort());
+  });
+
+  it("tracks every vendored PNG for deployment", async () => {
+    const { stdout } = await execFileAsync(
+      "git",
+      ["ls-files", "public/assets/word-games/fluent-3d"],
+      { cwd: repositoryRoot },
+    );
+
+    assert.deepEqual(
+      stdout.trim().split("\n").filter(Boolean).sort(),
+      expectedIds.map((id) => `public/assets/word-games/fluent-3d/${id}.png`).sort(),
+    );
   });
 
   it("retains the exact upstream MIT license bytes", async () => {
