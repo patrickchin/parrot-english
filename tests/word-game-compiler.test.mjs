@@ -36,6 +36,14 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function setQuizOrder(quiz, targetIds) {
+  quiz.questions = targetIds.map((targetId, index) => ({
+    id: `find-${targetId}-${quiz.id}`,
+    targetId,
+    choiceIds: [0, 1, 2, 3].map((offset) => targetIds[(index + offset) % targetIds.length]),
+  }));
+}
+
 async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, "utf8"));
 }
@@ -46,7 +54,8 @@ function secondCategory(category, { id = "pets", order = 2 } = {}) {
   result.order = order;
   result.title = "Pets";
   for (const item of result.items) {
-    item.audio.id = item.audio.id.replace("word-game-animals-", `word-game-${id}-`);
+    item.labelAudio.id = item.labelAudio.id.replace("word-game-animals-", `word-game-${id}-`);
+    item.promptAudio.id = item.promptAudio.id.replace("word-game-animals-", `word-game-${id}-`);
   }
   return result;
 }
@@ -55,7 +64,8 @@ function pathsFor(rootDir) {
   return {
     rootDir,
     categoryRoot: path.join(rootDir, "content", "word-games", "categories"),
-    assetManifestPath: path.join(rootDir, "content", "word-games", "noto-assets.json"),
+    assetManifestPath: path.join(rootDir, "content", "word-games", "fluent-3d-assets.json"),
+    playerManifestPath: path.join(rootDir, "content", "word-games", "player.json"),
     publicRoot: path.join(rootDir, "public"),
     audioRoot: path.join(rootDir, "public", "assets", "audio"),
   };
@@ -71,13 +81,13 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
   t.after(() => rm(rootDir, { force: true, recursive: true }));
   const paths = pathsFor(rootDir);
   const category = await readJson(path.join(fixtureRoot, "animals.json"));
-  const assetManifest = manifest ?? await readJson(path.join(fixtureRoot, "noto-assets.json"));
+  const assetManifest = manifest ?? await readJson(path.join(fixtureRoot, "fluent-3d-assets.json"));
   const authoredCategories = categories ?? [{ filename: "animals.json", value: category }];
 
   await Promise.all([
     mkdir(paths.categoryRoot, { recursive: true }),
     mkdir(paths.audioRoot, { recursive: true }),
-    mkdir(path.join(paths.publicRoot, "assets", "word-games", "noto"), { recursive: true }),
+    mkdir(path.join(paths.publicRoot, "assets", "word-games", "fluent-3d"), { recursive: true }),
     mkdir(path.join(rootDir, "third_party"), { recursive: true }),
     mkdir(path.join(rootDir, "src", "games"), { recursive: true }),
   ]);
@@ -86,15 +96,26 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
   }
   await writeJson(paths.assetManifestPath, assetManifest);
   await copyFile(
-    path.join(fixtureRoot, "emoji_u1f431.svg"),
-    path.join(paths.publicRoot, "assets", "word-games", "noto", "emoji_u1f431.svg"),
+    path.join(fixtureRoot, "player.json"),
+    paths.playerManifestPath,
   );
   await copyFile(
-    path.join(fixtureRoot, "noto-emoji-svg-LICENSE"),
-    path.join(rootDir, "third_party", "noto-emoji-svg-LICENSE"),
+    path.join(fixtureRoot, "cat_3d.png"),
+    path.join(paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png"),
+  );
+  await copyFile(
+    path.join(fixtureRoot, "fluentui-emoji-LICENSE"),
+    path.join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
   );
   const audioIds = new Set(
-    authoredCategories.flatMap(({ value }) => value.items.map(({ audio }) => audio.id)),
+    [
+      ...authoredCategories.flatMap(({ value }) => value.items.flatMap(
+        ({ labelAudio, promptAudio }) => [labelAudio.id, promptAudio.id],
+      )),
+      "word-game-correct",
+      "word-game-retry",
+      "word-game-complete",
+    ],
   );
   for (const audioId of audioIds) {
     await copyFile(
@@ -106,16 +127,16 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
 }
 
 async function addAsset(fixture, id) {
-  const svg = await readFile(path.join(fixtureRoot, "emoji_u1f431.svg"));
-  const filename = `emoji_u${id}.svg`;
+  const png = await readFile(path.join(fixtureRoot, "cat_3d.png"));
+  const filename = `${id}.png`;
   fixture.assetManifest.assets.push({
     id,
-    publicPath: `/assets/word-games/noto/${filename}`,
-    sha256: createHash("sha256").update(svg).digest("hex"),
-    upstreamPath: `svg/${filename}`,
+    publicPath: `/assets/word-games/fluent-3d/${filename}`,
+    sha256: createHash("sha256").update(png).digest("hex"),
+    upstreamPath: "assets/Dog/3D/dog_3d.png",
   });
   await writeJson(fixture.paths.assetManifestPath, fixture.assetManifest);
-  await writeFile(path.join(fixture.paths.publicRoot, "assets", "word-games", "noto", filename), svg);
+  await writeFile(path.join(fixture.paths.publicRoot, "assets", "word-games", "fluent-3d", filename), png);
 }
 
 describe("word-game package compilation", () => {
@@ -128,13 +149,53 @@ describe("word-game package compilation", () => {
     assert.equal(compiled.categories[0].tiers[0].quizzes[0].questions.length, 6);
     assert.equal(
       compiled.categories[0].items[0].visual.src,
-      "/assets/word-games/noto/emoji_u1f431.svg",
+      "/assets/word-games/fluent-3d/1f431.png",
     );
     assert.equal(
-      compiled.categories[0].items[0].audio.source,
+      compiled.categories[0].items[0].labelAudio.source,
       "/assets/audio/word-game-animals-cat-label.mp3",
     );
+    assert.equal(
+      compiled.categories[0].items[0].promptAudio.source,
+      "/assets/audio/word-game-animals-cat-prompt.mp3",
+    );
+    assert.deepEqual(compiled.player, {
+      schemaVersion: 1,
+      successAudio: {
+        id: "word-game-correct",
+        source: "/assets/audio/word-game-correct.mp3",
+        text: "Correct!",
+      },
+      retryAudio: {
+        id: "word-game-retry",
+        source: "/assets/audio/word-game-retry.mp3",
+        text: "Listen and try again.",
+      },
+      completeAudio: {
+        id: "word-game-complete",
+        source: "/assets/audio/word-game-complete.mp3",
+        text: "Great listening! You finished the game.",
+      },
+    });
     assert.deepEqual(JSON.parse(JSON.stringify(compiled)), compiled);
+  });
+
+  it("preserves JSON-owned Fluent copy composition in compiler output", async (t) => {
+    const fixture = await repositoryFixture(t);
+    fixture.category.items[0].visual.copies = 2;
+    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+
+    const compiled = await compileWordGamePackages(fixture.paths);
+
+    assert.deepEqual(compiled.categories[0].items[0].visual, {
+      copies: 2,
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f431.png",
+    });
+    assert.deepEqual(compiled.categories[0].items[1].visual, {
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f431.png",
+    });
   });
 
   it("sorts categories by order then ID without changing nested authored order", async (t) => {
@@ -195,7 +256,11 @@ describe("word-game package compilation", () => {
     for (const { name, mutate, pattern } of [
       {
         name: "item",
-        mutate: (value) => { value.items[1].id = value.items[0].id; },
+        mutate: (value) => {
+          value.items[1].id = value.items[0].id;
+          value.items[1].labelAudio.id = value.items[0].labelAudio.id;
+          value.items[1].promptAudio.id = value.items[0].promptAudio.id;
+        },
         pattern: /duplicate item id cat/i,
       },
       {
@@ -215,6 +280,41 @@ describe("word-game package compilation", () => {
             value.tiers[0].quizzes[0].questions[0].id;
         },
         pattern: /duplicate question id find-cat/i,
+      },
+    ]) {
+      await t.test(name, async (t) => {
+        const category = clone(base);
+        mutate(category);
+        const fixture = await repositoryFixture(t, {
+          categories: [{ filename: "animals.json", value: category }],
+        });
+        await assert.rejects(compileWordGamePackages(fixture.paths), pattern);
+      });
+    }
+  });
+
+  it("rejects repeated authored quiz orders and repeated first targets within a tier", async (t) => {
+    const base = await readJson(path.join(fixtureRoot, "animals.json"));
+    for (const { name, mutate, pattern } of [
+      {
+        name: "repeated authored order",
+        mutate: (category) => {
+          const [first, second] = category.tiers[0].quizzes;
+          setQuizOrder(second, first.questions.map(({ targetId }) => targetId));
+        },
+        pattern: /quiz orders.*different|different.*quiz orders/i,
+      },
+      {
+        name: "repeated first target",
+        mutate: (category) => {
+          const [first, second] = category.tiers[0].quizzes;
+          const targetIds = second.questions.map(({ targetId }) => targetId);
+          const firstTarget = first.questions[0].targetId;
+          const firstTargetIndex = targetIds.indexOf(firstTarget);
+          [targetIds[0], targetIds[firstTargetIndex]] = [targetIds[firstTargetIndex], targetIds[0]];
+          setQuizOrder(second, targetIds);
+        },
+        pattern: /first targets.*different|different.*first targets/i,
       },
     ]) {
       await t.test(name, async (t) => {
@@ -282,10 +382,8 @@ describe("word-game package compilation", () => {
           const question = value.tiers[0].quizzes[0].questions[5];
           question.targetId = "cat";
           question.choiceIds = ["cat", "dog", "bird", "fish"];
-          question.prompt = "Cat. Which picture is the cat?";
-          question.success = "Great job! This is a cat.";
         },
-        pattern: /target cat.*once|once.*target cat/i,
+        pattern: /target membership|target cat.*once|once.*target cat/i,
       },
       {
         name: "unused item",
@@ -295,9 +393,13 @@ describe("word-game package compilation", () => {
             id: "mouse",
             label: "mouse",
             alt: "A friendly mouse.",
-            audio: {
+            labelAudio: {
               id: "word-game-animals-mouse-label",
               text: "This is a mouse.",
+            },
+            promptAudio: {
+              id: "word-game-animals-mouse-prompt",
+              text: "Which is the mouse?",
             },
           });
         },
@@ -315,25 +417,25 @@ describe("word-game package compilation", () => {
     }
   });
 
-  it("rejects missing and unused Noto records", async (t) => {
+  it("rejects missing and unused Fluent records", async (t) => {
     const missing = await repositoryFixture(t);
     missing.category.items[0].visual.assetId = "1f436";
     await writeJson(path.join(missing.paths.categoryRoot, "animals.json"), missing.category);
     await assert.rejects(
       compileWordGamePackages(missing.paths),
-      /Noto asset 1f436.*not listed|missing Noto asset 1f436/i,
+      /Fluent asset 1f436.*not listed|missing Fluent asset 1f436/i,
     );
 
     const unused = await repositoryFixture(t);
     await addAsset(unused, "1f436");
-    await assert.rejects(compileWordGamePackages(unused.paths), /unused Noto asset 1f436/i);
+    await assert.rejects(compileWordGamePackages(unused.paths), /unused Fluent asset 1f436/i);
   });
 
-  it("rejects unsafe Noto paths and roots outside the repository", async (t) => {
+  it("rejects unsafe Fluent paths and roots outside the repository", async (t) => {
     const unsafeAsset = await repositoryFixture(t);
-    unsafeAsset.assetManifest.assets[0].publicPath = "/assets/word-games/../private.svg";
+    unsafeAsset.assetManifest.assets[0].publicPath = "/assets/word-games/../private.png";
     await writeJson(unsafeAsset.paths.assetManifestPath, unsafeAsset.assetManifest);
-    await assert.rejects(compileWordGamePackages(unsafeAsset.paths), /publicPath.*approved Noto root/i);
+    await assert.rejects(compileWordGamePackages(unsafeAsset.paths), /publicPath.*approved Fluent root/i);
 
     const unsafeAudio = await repositoryFixture(t);
     const externalAudio = await mkdtemp(path.join(tmpdir(), "parrot-external-audio-"));
@@ -342,6 +444,27 @@ describe("word-game package compilation", () => {
       compileWordGamePackages({ ...unsafeAudio.paths, audioRoot: externalAudio }),
       /audio root.*outside/i,
     );
+  });
+
+  it("rejects malformed Fluent upstream path segments", async (t) => {
+    for (const upstreamPath of [
+      "assets/../3D/cat_3d.png",
+      "assets/Ca\\t/3D/cat_3d.png",
+      "assets/Cat/3D/.._3d.png",
+      "assets//3D/cat_3d.png",
+      "/assets/Cat/3D/cat_3d.png",
+    ]) {
+      await t.test(upstreamPath, async (t) => {
+        const fixture = await repositoryFixture(t);
+        fixture.assetManifest.assets[0].upstreamPath = upstreamPath;
+        await writeJson(fixture.paths.assetManifestPath, fixture.assetManifest);
+
+        await assert.rejects(
+          compileWordGamePackages(fixture.paths),
+          /upstreamPath must be a safe Fluent 3D PNG path/i,
+        );
+      });
+    }
   });
 
   it("rejects symlinks and missing or non-regular files", async (t) => {
@@ -357,20 +480,20 @@ describe("word-game package compilation", () => {
     await unlink(path.join(missingAudio.paths.audioRoot, "word-game-animals-cat-label.mp3"));
     await assert.rejects(compileWordGamePackages(missingAudio.paths), /cat-label\.mp3.*missing/i);
 
-    const directorySvg = await repositoryFixture(t);
-    const svgPath = path.join(
-      directorySvg.paths.publicRoot,
+    const directoryPng = await repositoryFixture(t);
+    const pngPath = path.join(
+      directoryPng.paths.publicRoot,
       "assets",
       "word-games",
-      "noto",
-      "emoji_u1f431.svg",
+      "fluent-3d",
+      "1f431.png",
     );
-    await unlink(svgPath);
-    await mkdir(svgPath);
-    await assert.rejects(compileWordGamePackages(directorySvg.paths), /SVG.*regular file/i);
+    await unlink(pngPath);
+    await mkdir(pngPath);
+    await assert.rejects(compileWordGamePackages(directoryPng.paths), /PNG.*regular file/i);
 
     const licenseLink = await repositoryFixture(t);
-    const licensePath = path.join(licenseLink.rootDir, "third_party", "noto-emoji-svg-LICENSE");
+    const licensePath = path.join(licenseLink.rootDir, "third_party", "fluentui-emoji-LICENSE");
     const licenseTarget = path.join(licenseLink.rootDir, "license-target");
     await copyFile(licensePath, licenseTarget);
     await unlink(licensePath);
@@ -378,67 +501,89 @@ describe("word-game package compilation", () => {
     await assert.rejects(compileWordGamePackages(licenseLink.paths), /license.*symbolic link/i);
   });
 
-  it("rejects SVG hash drift, conflicting audio text, and unexpected Noto files", async (t) => {
+  it("rejects PNG hash drift, malformed PNG files, and unexpected Fluent files", async (t) => {
     const hashDrift = await repositoryFixture(t);
     hashDrift.assetManifest.assets[0].sha256 = "0".repeat(64);
     await writeJson(hashDrift.paths.assetManifestPath, hashDrift.assetManifest);
     await assert.rejects(compileWordGamePackages(hashDrift.paths), /SHA-256.*mismatch/i);
 
-    const conflictingAudio = await repositoryFixture(t);
-    conflictingAudio.category.items[1].audio.id = conflictingAudio.category.items[0].audio.id;
-    await writeJson(
-      path.join(conflictingAudio.paths.categoryRoot, "animals.json"),
-      conflictingAudio.category,
-    );
-    await assert.rejects(compileWordGamePackages(conflictingAudio.paths), /audio id.*different.*text/i);
-
     const unexpected = await repositoryFixture(t);
     await writeFile(
-      path.join(unexpected.paths.publicRoot, "assets", "word-games", "noto", "surprise.svg"),
+      path.join(unexpected.paths.publicRoot, "assets", "word-games", "fluent-3d", "surprise.png"),
       "surprise",
     );
-    await assert.rejects(compileWordGamePackages(unexpected.paths), /unexpected Noto file surprise\.svg/i);
+    await assert.rejects(compileWordGamePackages(unexpected.paths), /unexpected Fluent file surprise\.png/i);
+
+    const nonPng = await repositoryFixture(t);
+    await writeFile(
+      path.join(nonPng.paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png"),
+      "not a PNG",
+    );
+    await assert.rejects(compileWordGamePackages(nonPng.paths), /invalid signature/i);
+
+    const wrongSize = await repositoryFixture(t);
+    const pngPath = path.join(wrongSize.paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png");
+    const png = await readFile(pngPath);
+    png.writeUInt32BE(255, 16);
+    await writeFile(pngPath, png);
+    await assert.rejects(compileWordGamePackages(wrongSize.paths), /must be 256×256/i);
   });
 
-  it("reuses a global audio ID when its text matches", async (t) => {
+  it("reuses a global audio ID only when its text and saved source match", async (t) => {
     const fixture = await repositoryFixture(t);
-    fixture.category.items[1].audio.id = fixture.category.items[0].audio.id;
-    fixture.category.items[1].audio.text = fixture.category.items[0].audio.text;
-    for (const tier of fixture.category.tiers) {
-      tier.quizzes[0].questions[1].success = "Great job! This is a cat.";
-    }
+    const sharedId = "word-game-shared-animal-label";
+    fixture.category.items[0].labelAudio.id = sharedId;
+    fixture.category.items[1].labelAudio.id = sharedId;
     await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
 
-    const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
-    assert.equal(
-      plan.lines.filter(({ id }) => id === "word-game-animals-cat-label").length,
-      1,
+    await assert.rejects(
+      compileWordGamePackages(fixture.paths),
+      /audio id word-game-shared-animal-label is reused with different text/i,
     );
+
+    fixture.category.items[1].labelAudio.text = fixture.category.items[0].labelAudio.text;
+    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+    await copyFile(
+      path.join(fixtureRoot, "tiny.mp3"),
+      path.join(fixture.paths.audioRoot, `${sharedId}.mp3`),
+    );
+
+    const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
+    assert.equal(plan.lines.filter(({ id }) => id === sharedId).length, 1);
   });
 
   it("plans sorted missing audio while retaining every non-audio validation", async (t) => {
     const fixture = await repositoryFixture(t);
     await Promise.all([
-      unlink(path.join(fixture.paths.audioRoot, "word-game-animals-frog-label.mp3")),
-      unlink(path.join(fixture.paths.audioRoot, "word-game-animals-cat-label.mp3")),
+      unlink(path.join(fixture.paths.audioRoot, "word-game-animals-frog-prompt.mp3")),
+      unlink(path.join(fixture.paths.audioRoot, "word-game-animals-cat-prompt.mp3")),
     ]);
 
     const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
 
     assert.deepEqual(plan.missingFiles, [
-      "public/assets/audio/word-game-animals-cat-label.mp3",
-      "public/assets/audio/word-game-animals-frog-label.mp3",
+      "public/assets/audio/word-game-animals-cat-prompt.mp3",
+      "public/assets/audio/word-game-animals-frog-prompt.mp3",
     ]);
     assert.ok(plan.missingFiles.every((filePath) => !filePath.includes("\\")));
     assert.deepEqual(plan.lines.map(({ id }) => id), [
       "word-game-animals-bird-label",
+      "word-game-animals-bird-prompt",
       "word-game-animals-cat-label",
+      "word-game-animals-cat-prompt",
       "word-game-animals-dog-label",
+      "word-game-animals-dog-prompt",
       "word-game-animals-duck-label",
+      "word-game-animals-duck-prompt",
       "word-game-animals-fish-label",
+      "word-game-animals-fish-prompt",
       "word-game-animals-frog-label",
+      "word-game-animals-frog-prompt",
+      "word-game-complete",
+      "word-game-correct",
+      "word-game-retry",
     ]);
-    assert.deepEqual(plan.lines[1], {
+    assert.deepEqual(plan.lines[2], {
       id: "word-game-animals-cat-label",
       lang: "en-US",
       speaker: "narrator",
@@ -458,20 +603,17 @@ describe("word-game package compilation", () => {
 
   it("does not classify non-ENOENT audio errors as missing", async (t) => {
     const fixture = await repositoryFixture(t);
-    const oversizedId = `word-game-animals-${"a".repeat(300)}`;
-    fixture.category.items[0].audio.id = oversizedId;
-    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+    const promptPath = path.join(fixture.paths.audioRoot, "word-game-animals-cat-prompt.mp3");
+    await unlink(promptPath);
+    await mkdir(promptPath);
 
     await assert.rejects(
       planWordGameAudio({ rootDir: fixture.rootDir }),
-      (error) => {
-        assert.equal(error.cause?.code, "ENAMETOOLONG");
-        return true;
-      },
+      /cat-prompt\.mp3.*regular file/i,
     );
   });
 
-  it("opens validated JSON and SVG paths without following a symlink swap", async (t) => {
+  it("opens validated JSON and PNG paths without following a symlink swap", async (t) => {
     for (const { name, targetPath } of [
       {
         name: "category JSON",
@@ -482,13 +624,13 @@ describe("word-game package compilation", () => {
         targetPath: (fixture) => fixture.paths.assetManifestPath,
       },
       {
-        name: "SVG hashing",
+        name: "PNG hashing",
         targetPath: (fixture) => path.join(
           fixture.paths.publicRoot,
           "assets",
           "word-games",
-          "noto",
-          "emoji_u1f431.svg",
+          "fluent-3d",
+          "1f431.png",
         ),
       },
     ]) {
@@ -526,7 +668,7 @@ describe("word-game package compilation", () => {
     });
     t.after(() => Object.defineProperty(String.prototype, "localeCompare", descriptor));
     await Promise.all(
-      fixture.category.items.map(({ audio }) =>
+      fixture.category.items.flatMap(({ labelAudio, promptAudio }) => [labelAudio, promptAudio]).map((audio) =>
         unlink(path.join(fixture.paths.audioRoot, `${audio.id}.mp3`))),
     );
 
@@ -534,11 +676,20 @@ describe("word-game package compilation", () => {
 
     assert.deepEqual(plan.lines.map(({ id }) => id), [
       "word-game-animals-bird-label",
+      "word-game-animals-bird-prompt",
       "word-game-animals-cat-label",
+      "word-game-animals-cat-prompt",
       "word-game-animals-dog-label",
+      "word-game-animals-dog-prompt",
       "word-game-animals-duck-label",
+      "word-game-animals-duck-prompt",
       "word-game-animals-fish-label",
+      "word-game-animals-fish-prompt",
       "word-game-animals-frog-label",
+      "word-game-animals-frog-prompt",
+      "word-game-complete",
+      "word-game-correct",
+      "word-game-retry",
     ]);
     assert.deepEqual(
       plan.missingFiles,
@@ -565,7 +716,7 @@ describe("word-game catalog serialization and generation", () => {
     assert.equal(
       serialized,
       "// Generated by scripts/generate-word-game-catalog.mjs. Do not edit.\n"
-        + `export const GENERATED_WORD_GAME_CATALOG = ${JSON.stringify(firstCompiled.categories, null, 2)} as const;\n`,
+        + `export const GENERATED_WORD_GAME_CATALOG = ${JSON.stringify(firstCompiled, null, 2)} as const;\n`,
     );
   });
 

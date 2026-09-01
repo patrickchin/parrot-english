@@ -112,7 +112,7 @@ export function WordGamePlayer({
     let active = true;
     queueMicrotask(() => {
       if (active) {
-        playLine(rounds[0].target.audio, { ignoreBlockedAutoplay: true });
+        playLine(rounds[0].target.promptAudio, { ignoreBlockedAutoplay: true });
       }
     });
     return () => {
@@ -127,7 +127,7 @@ export function WordGamePlayer({
   }, [complete, roundIndex]);
 
   function listenToChoice(choiceIndex: number) {
-    playLine(round.choices[choiceIndex].audio);
+    playLine(round.choices[choiceIndex].labelAudio);
   }
 
   function advanceGame() {
@@ -142,7 +142,7 @@ export function WordGamePlayer({
     setAnsweredCorrectly(false);
     setFeedback("");
     setSelectedId(null);
-    playLine(rounds[nextIndex].target.audio);
+    playLine(rounds[nextIndex].target.promptAudio);
   }
 
   function choose(choiceIndex: number) {
@@ -151,14 +151,14 @@ export function WordGamePlayer({
     const correct = choice.id === round.target.id;
     setSelectedId(choice.id);
     setAnsweredCorrectly(correct);
-    setFeedback(correct ? "Correct!" : choice.label);
+    setFeedback(correct ? WORD_GAME_CORRECT_AUDIO.text : choice.labelAudio.text);
     if (!correct) {
-      playLine(choice.audio);
+      playLine(choice.labelAudio);
       return;
     }
     startPlayback(
       (signal) => playAudioSequence({
-        lines: [playable(choice.audio), playable(WORD_GAME_CORRECT_AUDIO)],
+        lines: [playable(round.target.labelAudio), playable(WORD_GAME_CORRECT_AUDIO)],
         signal,
       }),
       { onSettled: advanceGame },
@@ -175,7 +175,7 @@ export function WordGamePlayer({
     setAnsweredCorrectly(false);
     setFeedback("");
     setSelectedId(null);
-    playLine(replayRounds[0].target.audio);
+    playLine(replayRounds[0].target.promptAudio);
   }
 
   return (
@@ -233,9 +233,8 @@ export function WordGamePlayer({
             <Trophy aria-hidden="true" className="size-20 text-brand-yellow" />
             <div className="grid gap-2">
               <h2 className="m-0 text-3xl text-brand-navy sm:text-4xl" ref={completionHeadingRef} tabIndex={-1}>
-                Great listening!
+                {WORD_GAME_COMPLETE_AUDIO.text}
               </h2>
-              <p className="m-0 text-lg font-black text-brand-blue">You finished the game.</p>
             </div>
             <div className="grid w-full gap-3 sm:grid-cols-2">
               <ActionButton fullWidth onClick={playAgain} size="large" type="button">
@@ -259,13 +258,13 @@ export function WordGamePlayer({
                 ref={questionHeadingRef}
                 tabIndex={-1}
               >
-                {round.question.prompt}
+                {round.target.promptAudio.text}
               </h2>
               <ActionButton
                 aria-label="Listen again"
                 className="shrink-0"
                 disabled={answeredCorrectly}
-                onClick={() => playLine(round.target.audio)}
+                onClick={() => playLine(round.target.promptAudio)}
                 size="compact"
                 type="button"
               >

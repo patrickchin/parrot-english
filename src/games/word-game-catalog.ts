@@ -7,7 +7,7 @@ export type WordGameAudioLine = Readonly<{
 }>;
 
 export type WordGameVisual =
-  | Readonly<{ kind: "image"; src: string }>
+  | Readonly<{ kind: "image"; src: string; copies?: 2 }>
   | Readonly<{ kind: "swatch"; color: string }>;
 
 export type WordGameItem = Readonly<{
@@ -15,13 +15,12 @@ export type WordGameItem = Readonly<{
   label: string;
   alt: string;
   visual: WordGameVisual;
-  audio: WordGameAudioLine;
+  labelAudio: WordGameAudioLine;
+  promptAudio: WordGameAudioLine;
 }>;
 
 export type WordGameQuestion = Readonly<{
   id: string;
-  prompt: string;
-  success: string;
   targetId: string;
   choiceIds: readonly [string, string, string, string];
 }>;
@@ -31,6 +30,7 @@ export type WordGameQuiz = Readonly<{
   title: string;
   description: string;
   questions: readonly WordGameQuestion[];
+  coverItem: WordGameItem;
 }>;
 
 export type WordGameTier = Readonly<{
@@ -61,7 +61,27 @@ export type WordGameCategoryDefinition = Readonly<{
   theme: string;
   coverItemId: string;
   items: readonly WordGameItem[];
-  tiers: readonly WordGameTier[];
+  tiers: readonly Readonly<{
+    id: string;
+    title: string;
+    description: string;
+    quizzes: readonly Readonly<{
+      id: string;
+      title: string;
+      description: string;
+      questions: readonly WordGameQuestion[];
+    }>[];
+  }>[];
+}>;
+
+export type WordGameCatalogDefinition = Readonly<{
+  categories: readonly WordGameCategoryDefinition[];
+  player: Readonly<{
+    schemaVersion: number;
+    successAudio: WordGameAudioLine;
+    retryAudio: WordGameAudioLine;
+    completeAudio: WordGameAudioLine;
+  }>;
 }>;
 
 export type WordGameSelection = Readonly<{
@@ -84,67 +104,66 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-function audioLine(id: string, text: string): WordGameAudioLine {
-  return { id, source: `/assets/audio/${id}.mp3`, text };
-}
-
-export const WORD_GAME_RETRY_AUDIO = deepFreeze(
-  audioLine("word-game-retry", "Listen and try again."),
-);
-
-export const WORD_GAME_COMPLETE_AUDIO = deepFreeze(
-  audioLine("word-game-complete", "Great listening! You finished the game."),
-);
-
-export const WORD_GAME_CORRECT_AUDIO = deepFreeze(
-  audioLine("word-game-correct", "Correct."),
-);
-
 export function createWordGameCatalog(
-  definitions: readonly WordGameCategoryDefinition[],
+  definition: WordGameCatalogDefinition,
 ) {
   const categoryItemLookups = new Map<string, ReadonlyMap<string, WordGameItem>>();
   const categories: readonly WordGameCategory[] = deepFreeze(
-    definitions.map((definition) => {
-    const items: WordGameItem[] = definition.items.map((item) => ({
-      id: item.id,
-      label: item.label,
-      alt: item.alt,
-      visual: { ...item.visual },
-      audio: { ...item.audio },
-    }));
-    const itemsById = new Map(items.map((item) => [item.id, item]));
-    categoryItemLookups.set(definition.id, itemsById);
-    const coverItem = itemsById.get(definition.coverItemId);
-    if (!coverItem) throw new Error(`Missing word-game cover item: ${definition.coverItemId}`);
+    definition.categories.map((categoryDefinition) => {
+      const items: WordGameItem[] = categoryDefinition.items.map((item) => ({
+        id: item.id,
+        label: item.label,
+        alt: item.alt,
+        visual: { ...item.visual },
+        labelAudio: { ...item.labelAudio },
+        promptAudio: { ...item.promptAudio },
+      }));
+      const itemsById = new Map(items.map((item) => [item.id, item]));
+      categoryItemLookups.set(categoryDefinition.id, itemsById);
+      const coverItem = itemsById.get(categoryDefinition.coverItemId);
+      if (!coverItem) {
+        throw new Error(
+          `Missing word-game cover item: ${categoryDefinition.coverItemId}`,
+        );
+      }
 
-    return {
-      schemaVersion: definition.schemaVersion,
-      order: definition.order,
-      id: definition.id,
-      title: definition.title,
-      description: definition.description,
-      theme: definition.theme,
-      items,
-      tiers: definition.tiers.map((tier) => ({
-        id: tier.id,
-        title: tier.title,
-        description: tier.description,
-        quizzes: tier.quizzes.map((quiz) => ({
-          id: quiz.id,
-          title: quiz.title,
-          description: quiz.description,
-          questions: quiz.questions.map((question) => ({
-            id: question.id,
-            prompt: question.prompt,
-            success: question.success,
-            targetId: question.targetId,
-            choiceIds: [...question.choiceIds] as [string, string, string, string],
+      return {
+        schemaVersion: categoryDefinition.schemaVersion,
+        order: categoryDefinition.order,
+        id: categoryDefinition.id,
+        title: categoryDefinition.title,
+        description: categoryDefinition.description,
+        theme: categoryDefinition.theme,
+        items,
+        tiers: categoryDefinition.tiers.map((tier) => ({
+          id: tier.id,
+          title: tier.title,
+          description: tier.description,
+          quizzes: tier.quizzes.map((quiz) => ({
+            id: quiz.id,
+            title: quiz.title,
+            description: quiz.description,
+            questions: quiz.questions.map((question) => ({
+              id: question.id,
+              targetId: question.targetId,
+              choiceIds: [...question.choiceIds] as [
+                string,
+                string,
+                string,
+                string,
+              ],
+            })),
+            coverItem: (() => {
+              const item = itemsById.get(quiz.questions[0].targetId);
+              if (!item) {
+                throw new Error(`Missing word-game quiz cover item: ${quiz.id}`);
+              }
+              return item;
+            })(),
           })),
         })),
-      })),
-      coverItem,
-    };
+        coverItem,
+      };
     }),
   );
   const categoriesById = new Map(
@@ -164,6 +183,12 @@ export function createWordGameCatalog(
 
   return Object.freeze({
     categories,
+    player: deepFreeze({
+      schemaVersion: definition.player.schemaVersion,
+      successAudio: { ...definition.player.successAudio },
+      retryAudio: { ...definition.player.retryAudio },
+      completeAudio: { ...definition.player.completeAudio },
+    }),
     resolveCategory(categoryId: string | undefined): WordGameCategory | null {
       return categoryId ? (categoriesById.get(categoryId) ?? null) : null;
     },
@@ -203,6 +228,9 @@ export function createWordGameCatalog(
 const WORD_GAME_CATALOG = createWordGameCatalog(GENERATED_WORD_GAME_CATALOG);
 
 export const WORD_GAME_CATEGORIES = WORD_GAME_CATALOG.categories;
+export const WORD_GAME_CORRECT_AUDIO = WORD_GAME_CATALOG.player.successAudio;
+export const WORD_GAME_RETRY_AUDIO = WORD_GAME_CATALOG.player.retryAudio;
+export const WORD_GAME_COMPLETE_AUDIO = WORD_GAME_CATALOG.player.completeAudio;
 
 export function resolveWordGameCategory(
   categoryId: string | undefined,

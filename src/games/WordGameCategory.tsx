@@ -28,25 +28,31 @@ export function WordGameCategory({
           </h1>
         </header>
 
-        {category.tiers.map((tier) => (
-          <section className="grid gap-3" key={tier.id}>
-            <h2 className="m-0 text-3xl text-brand-navy">{tier.title}</h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {tier.quizzes.map((quiz) => (
-                <InteractiveCardLink
-                  aria-label={quiz.title}
-                  className="grid gap-3 p-4"
-                  key={quiz.id}
-                  to={getWordGameQuizRoute(category.id, quiz.id)}
-                >
-                  <WordGameVisual item={category.coverItem} />
-                  <strong className="text-2xl text-brand-ink">{quiz.title}</strong>
-                  <span className="font-bold text-brand-navy">{quiz.description}</span>
-                </InteractiveCardLink>
-              ))}
-            </div>
-          </section>
-        ))}
+        <div className="grid gap-4 lg:grid-cols-3">
+          {category.tiers.map((tier) => (
+            <section className="grid content-start gap-3 rounded-3xl border-4 border-white bg-white/75 p-4 shadow-card" key={tier.id}>
+              <h2 className="m-0 text-3xl text-brand-navy">{tier.title}</h2>
+              <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                {tier.quizzes.map((quiz) => (
+                  <InteractiveCardLink
+                    aria-label={quiz.title}
+                    className="grid grid-cols-[4rem_minmax(0,1fr)] items-center gap-3 p-3 sm:grid-cols-1 sm:justify-items-center sm:text-center lg:grid-cols-[4rem_minmax(0,1fr)] lg:justify-items-stretch lg:text-left"
+                    key={quiz.id}
+                    to={getWordGameQuizRoute(category.id, quiz.id)}
+                  >
+                    <WordGameVisual className="size-16" item={quiz.coverItem} showLabel={false} />
+                    <span className="grid min-w-0 gap-1">
+                      <strong className="text-xl text-brand-ink">
+                        {quiz.title.slice(quiz.title.lastIndexOf(": ") + 2)}
+                      </strong>
+                      <span className="font-bold text-brand-navy">{quiz.description}</span>
+                    </span>
+                  </InteractiveCardLink>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </section>
     </main>
   );

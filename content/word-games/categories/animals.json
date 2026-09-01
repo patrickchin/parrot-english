@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "order": 1,
   "id": "animals",
   "title": "Animals",
@@ -12,12 +12,16 @@
       "label": "cat",
       "alt": "A friendly cat.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f431"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-cat-label",
         "text": "cat"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-cat-prompt",
+        "text": "Which is the cat?"
       }
     },
     {
@@ -25,12 +29,16 @@
       "label": "dog",
       "alt": "A friendly dog.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f415"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-dog-label",
         "text": "dog"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-dog-prompt",
+        "text": "Which is the dog?"
       }
     },
     {
@@ -38,12 +46,16 @@
       "label": "bird",
       "alt": "A friendly bird.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f426"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-bird-label",
         "text": "bird"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-bird-prompt",
+        "text": "Which is the bird?"
       }
     },
     {
@@ -51,12 +63,16 @@
       "label": "fish",
       "alt": "A friendly fish.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f41f"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-fish-label",
         "text": "fish"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-fish-prompt",
+        "text": "Which is the fish?"
       }
     },
     {
@@ -64,12 +80,16 @@
       "label": "duck",
       "alt": "A friendly duck.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f986"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-duck-label",
         "text": "duck"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-duck-prompt",
+        "text": "Which is the duck?"
       }
     },
     {
@@ -77,12 +97,16 @@
       "label": "frog",
       "alt": "A friendly frog.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f438"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-frog-label",
         "text": "frog"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-frog-prompt",
+        "text": "Which is the frog?"
       }
     },
     {
@@ -90,12 +114,16 @@
       "label": "pig",
       "alt": "A friendly pig.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f437"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-pig-label",
         "text": "pig"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-pig-prompt",
+        "text": "Which is the pig?"
       }
     },
     {
@@ -103,12 +131,16 @@
       "label": "cow",
       "alt": "A friendly cow.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f404"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-cow-label",
         "text": "cow"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-cow-prompt",
+        "text": "Which is the cow?"
       }
     },
     {
@@ -116,12 +148,16 @@
       "label": "horse",
       "alt": "A friendly horse.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f40e"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-horse-label",
         "text": "horse"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-horse-prompt",
+        "text": "Which is the horse?"
       }
     },
     {
@@ -129,12 +165,16 @@
       "label": "alligator",
       "alt": "A friendly alligator.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f40a"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-alligator-label",
         "text": "alligator"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-alligator-prompt",
+        "text": "Which is the alligator?"
       }
     },
     {
@@ -142,12 +182,16 @@
       "label": "elephant",
       "alt": "A friendly elephant.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f418"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-elephant-label",
         "text": "elephant"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-elephant-prompt",
+        "text": "Which is the elephant?"
       }
     },
     {
@@ -155,12 +199,16 @@
       "label": "giraffe",
       "alt": "A friendly giraffe.",
       "visual": {
-        "kind": "noto-svg",
+        "kind": "fluent-3d",
         "assetId": "1f992"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-animals-giraffe-label",
         "text": "giraffe"
+      },
+      "promptAudio": {
+        "id": "word-game-animals-giraffe-prompt",
+        "text": "Which is the giraffe?"
       }
     }
   ],
@@ -172,80 +220,202 @@
       "quizzes": [
         {
           "id": "simple-1",
-          "title": "Simple animals",
-          "description": "Six simple animal words.",
+          "title": "Simple Animals: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-cat",
+              "id": "simple-1-find-cat",
               "targetId": "cat",
               "choiceIds": [
                 "cat",
                 "dog",
                 "bird",
                 "fish"
-              ],
-              "prompt": "Cat. Which is the cat?",
-              "success": "Great job! This is a cat."
+              ]
             },
             {
-              "id": "find-dog",
+              "id": "simple-1-find-dog",
               "targetId": "dog",
               "choiceIds": [
                 "dog",
                 "bird",
                 "fish",
                 "duck"
-              ],
-              "prompt": "Dog. Which is the dog?",
-              "success": "Great job! This is a dog."
+              ]
             },
             {
-              "id": "find-bird",
+              "id": "simple-1-find-bird",
               "targetId": "bird",
               "choiceIds": [
                 "bird",
                 "fish",
                 "duck",
                 "frog"
-              ],
-              "prompt": "Bird. Which is the bird?",
-              "success": "Great job! This is a bird."
+              ]
             },
             {
-              "id": "find-fish",
+              "id": "simple-1-find-fish",
               "targetId": "fish",
               "choiceIds": [
                 "fish",
                 "duck",
                 "frog",
                 "cat"
-              ],
-              "prompt": "Fish. Which is the fish?",
-              "success": "Great job! This is a fish."
+              ]
             },
             {
-              "id": "find-duck",
+              "id": "simple-1-find-duck",
               "targetId": "duck",
               "choiceIds": [
                 "duck",
                 "frog",
                 "cat",
                 "dog"
-              ],
-              "prompt": "Duck. Which is the duck?",
-              "success": "Great job! This is a duck."
+              ]
             },
             {
-              "id": "find-frog",
+              "id": "simple-1-find-frog",
               "targetId": "frog",
               "choiceIds": [
                 "frog",
                 "cat",
                 "dog",
                 "bird"
-              ],
-              "prompt": "Frog. Which is the frog?",
-              "success": "Great job! This is a frog."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Animals: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-bird",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "simple-2-find-duck",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "cat",
+                "frog",
+                "dog"
+              ]
+            },
+            {
+              "id": "simple-2-find-cat",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "dog",
+                "fish"
+              ]
+            },
+            {
+              "id": "simple-2-find-frog",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "dog",
+                "fish",
+                "bird"
+              ]
+            },
+            {
+              "id": "simple-2-find-dog",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "simple-2-find-fish",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "bird",
+                "duck",
+                "cat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Animals: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-duck",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "dog",
+                "fish",
+                "cat"
+              ]
+            },
+            {
+              "id": "simple-3-find-dog",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "simple-3-find-fish",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "cat",
+                "frog",
+                "bird"
+              ]
+            },
+            {
+              "id": "simple-3-find-cat",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "simple-3-find-frog",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "bird",
+                "duck",
+                "dog"
+              ]
+            },
+            {
+              "id": "simple-3-find-bird",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "dog",
+                "fish"
+              ]
             }
           ]
         }
@@ -258,80 +428,202 @@
       "quizzes": [
         {
           "id": "intermediate-1",
-          "title": "Intermediate animals",
-          "description": "Six intermediate animal words.",
+          "title": "Intermediate Animals: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-cat",
+              "id": "intermediate-1-find-cat",
               "targetId": "cat",
               "choiceIds": [
                 "cat",
                 "dog",
                 "bird",
                 "pig"
-              ],
-              "prompt": "Cat. Which is the cat?",
-              "success": "Great job! This is a cat."
+              ]
             },
             {
-              "id": "find-dog",
+              "id": "intermediate-1-find-dog",
               "targetId": "dog",
               "choiceIds": [
                 "dog",
                 "bird",
                 "pig",
                 "cow"
-              ],
-              "prompt": "Dog. Which is the dog?",
-              "success": "Great job! This is a dog."
+              ]
             },
             {
-              "id": "find-bird",
+              "id": "intermediate-1-find-bird",
               "targetId": "bird",
               "choiceIds": [
                 "bird",
                 "pig",
                 "cow",
                 "horse"
-              ],
-              "prompt": "Bird. Which is the bird?",
-              "success": "Great job! This is a bird."
+              ]
             },
             {
-              "id": "find-pig",
+              "id": "intermediate-1-find-pig",
               "targetId": "pig",
               "choiceIds": [
                 "pig",
                 "cow",
                 "horse",
                 "cat"
-              ],
-              "prompt": "Pig. Which is the pig?",
-              "success": "Great job! This is a pig."
+              ]
             },
             {
-              "id": "find-cow",
+              "id": "intermediate-1-find-cow",
               "targetId": "cow",
               "choiceIds": [
                 "cow",
                 "horse",
                 "cat",
                 "dog"
-              ],
-              "prompt": "Cow. Which is the cow?",
-              "success": "Great job! This is a cow."
+              ]
             },
             {
-              "id": "find-horse",
+              "id": "intermediate-1-find-horse",
               "targetId": "horse",
               "choiceIds": [
                 "horse",
                 "cat",
                 "dog",
                 "bird"
-              ],
-              "prompt": "Horse. Which is the horse?",
-              "success": "Great job! This is a horse."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Animals: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-bird",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "cow",
+                "cat",
+                "horse"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-cow",
+              "targetId": "cow",
+              "choiceIds": [
+                "cow",
+                "cat",
+                "horse",
+                "dog"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-cat",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "horse",
+                "dog",
+                "pig"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-horse",
+              "targetId": "horse",
+              "choiceIds": [
+                "horse",
+                "dog",
+                "pig",
+                "bird"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-dog",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "pig",
+                "bird",
+                "cow"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-pig",
+              "targetId": "pig",
+              "choiceIds": [
+                "pig",
+                "bird",
+                "cow",
+                "cat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Animals: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-cow",
+              "targetId": "cow",
+              "choiceIds": [
+                "cow",
+                "dog",
+                "pig",
+                "cat"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-dog",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "pig",
+                "cat",
+                "horse"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-pig",
+              "targetId": "pig",
+              "choiceIds": [
+                "pig",
+                "cat",
+                "horse",
+                "bird"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-cat",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "horse",
+                "bird",
+                "cow"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-horse",
+              "targetId": "horse",
+              "choiceIds": [
+                "horse",
+                "bird",
+                "cow",
+                "dog"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-bird",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "cow",
+                "dog",
+                "pig"
+              ]
             }
           ]
         }
@@ -344,80 +636,202 @@
       "quizzes": [
         {
           "id": "advanced-1",
-          "title": "Advanced animals",
-          "description": "Six advanced animal words.",
+          "title": "Advanced Animals: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-pig",
+              "id": "advanced-1-find-pig",
               "targetId": "pig",
               "choiceIds": [
                 "pig",
                 "cow",
                 "horse",
                 "alligator"
-              ],
-              "prompt": "Pig. Which is the pig?",
-              "success": "Great job! This is a pig."
+              ]
             },
             {
-              "id": "find-cow",
+              "id": "advanced-1-find-cow",
               "targetId": "cow",
               "choiceIds": [
                 "cow",
                 "horse",
                 "alligator",
                 "elephant"
-              ],
-              "prompt": "Cow. Which is the cow?",
-              "success": "Great job! This is a cow."
+              ]
             },
             {
-              "id": "find-horse",
+              "id": "advanced-1-find-horse",
               "targetId": "horse",
               "choiceIds": [
                 "horse",
                 "alligator",
                 "elephant",
                 "giraffe"
-              ],
-              "prompt": "Horse. Which is the horse?",
-              "success": "Great job! This is a horse."
+              ]
             },
             {
-              "id": "find-alligator",
+              "id": "advanced-1-find-alligator",
               "targetId": "alligator",
               "choiceIds": [
                 "alligator",
                 "elephant",
                 "giraffe",
                 "pig"
-              ],
-              "prompt": "Alligator. Which is the alligator?",
-              "success": "Great job! This is an alligator."
+              ]
             },
             {
-              "id": "find-elephant",
+              "id": "advanced-1-find-elephant",
               "targetId": "elephant",
               "choiceIds": [
                 "elephant",
                 "giraffe",
                 "pig",
                 "cow"
-              ],
-              "prompt": "Elephant. Which is the elephant?",
-              "success": "Great job! This is an elephant."
+              ]
             },
             {
-              "id": "find-giraffe",
+              "id": "advanced-1-find-giraffe",
               "targetId": "giraffe",
               "choiceIds": [
                 "giraffe",
                 "pig",
                 "cow",
                 "horse"
-              ],
-              "prompt": "Giraffe. Which is the giraffe?",
-              "success": "Great job! This is a giraffe."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Animals: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-horse",
+              "targetId": "horse",
+              "choiceIds": [
+                "horse",
+                "elephant",
+                "pig",
+                "giraffe"
+              ]
+            },
+            {
+              "id": "advanced-2-find-elephant",
+              "targetId": "elephant",
+              "choiceIds": [
+                "elephant",
+                "pig",
+                "giraffe",
+                "cow"
+              ]
+            },
+            {
+              "id": "advanced-2-find-pig",
+              "targetId": "pig",
+              "choiceIds": [
+                "pig",
+                "giraffe",
+                "cow",
+                "alligator"
+              ]
+            },
+            {
+              "id": "advanced-2-find-giraffe",
+              "targetId": "giraffe",
+              "choiceIds": [
+                "giraffe",
+                "cow",
+                "alligator",
+                "horse"
+              ]
+            },
+            {
+              "id": "advanced-2-find-cow",
+              "targetId": "cow",
+              "choiceIds": [
+                "cow",
+                "alligator",
+                "horse",
+                "elephant"
+              ]
+            },
+            {
+              "id": "advanced-2-find-alligator",
+              "targetId": "alligator",
+              "choiceIds": [
+                "alligator",
+                "horse",
+                "elephant",
+                "pig"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Animals: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-elephant",
+              "targetId": "elephant",
+              "choiceIds": [
+                "elephant",
+                "cow",
+                "alligator",
+                "pig"
+              ]
+            },
+            {
+              "id": "advanced-3-find-cow",
+              "targetId": "cow",
+              "choiceIds": [
+                "cow",
+                "alligator",
+                "pig",
+                "giraffe"
+              ]
+            },
+            {
+              "id": "advanced-3-find-alligator",
+              "targetId": "alligator",
+              "choiceIds": [
+                "alligator",
+                "pig",
+                "giraffe",
+                "horse"
+              ]
+            },
+            {
+              "id": "advanced-3-find-pig",
+              "targetId": "pig",
+              "choiceIds": [
+                "pig",
+                "giraffe",
+                "horse",
+                "elephant"
+              ]
+            },
+            {
+              "id": "advanced-3-find-giraffe",
+              "targetId": "giraffe",
+              "choiceIds": [
+                "giraffe",
+                "horse",
+                "elephant",
+                "cow"
+              ]
+            },
+            {
+              "id": "advanced-3-find-horse",
+              "targetId": "horse",
+              "choiceIds": [
+                "horse",
+                "elephant",
+                "cow",
+                "alligator"
+              ]
             }
           ]
         }

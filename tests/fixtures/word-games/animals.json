@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "order": 1,
   "id": "animals",
   "title": "Animals",
@@ -11,43 +11,103 @@
       "id": "cat",
       "label": "cat",
       "alt": "A friendly cat.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
-      "audio": { "id": "word-game-animals-cat-label", "text": "This is a cat." }
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f431"
+      },
+      "labelAudio": {
+        "id": "word-game-animals-cat-label",
+        "text": "This is a cat."
+      },
+      "promptAudio": {
+        "id": "word-game-animals-cat-prompt",
+        "text": "Which is the cat?"
+      }
     },
     {
       "id": "dog",
       "label": "dog",
       "alt": "A friendly dog.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
-      "audio": { "id": "word-game-animals-dog-label", "text": "This is a dog." }
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f431"
+      },
+      "labelAudio": {
+        "id": "word-game-animals-dog-label",
+        "text": "This is a dog."
+      },
+      "promptAudio": {
+        "id": "word-game-animals-dog-prompt",
+        "text": "Which is the dog?"
+      }
     },
     {
       "id": "bird",
       "label": "bird",
       "alt": "A friendly bird.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
-      "audio": { "id": "word-game-animals-bird-label", "text": "This is a bird." }
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f431"
+      },
+      "labelAudio": {
+        "id": "word-game-animals-bird-label",
+        "text": "This is a bird."
+      },
+      "promptAudio": {
+        "id": "word-game-animals-bird-prompt",
+        "text": "Which is the bird?"
+      }
     },
     {
       "id": "fish",
       "label": "fish",
       "alt": "A friendly fish.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
-      "audio": { "id": "word-game-animals-fish-label", "text": "This is a fish." }
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f431"
+      },
+      "labelAudio": {
+        "id": "word-game-animals-fish-label",
+        "text": "This is a fish."
+      },
+      "promptAudio": {
+        "id": "word-game-animals-fish-prompt",
+        "text": "Which is the fish?"
+      }
     },
     {
       "id": "duck",
       "label": "duck",
       "alt": "A friendly duck.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
-      "audio": { "id": "word-game-animals-duck-label", "text": "This is a duck." }
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f431"
+      },
+      "labelAudio": {
+        "id": "word-game-animals-duck-label",
+        "text": "This is a duck."
+      },
+      "promptAudio": {
+        "id": "word-game-animals-duck-prompt",
+        "text": "Which is the duck?"
+      }
     },
     {
       "id": "frog",
       "label": "frog",
       "alt": "A friendly frog.",
-      "visual": { "kind": "noto-svg", "assetId": "1f431" },
-      "audio": { "id": "word-game-animals-frog-label", "text": "This is a frog." }
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f431"
+      },
+      "labelAudio": {
+        "id": "word-game-animals-frog-label",
+        "text": "This is a frog."
+      },
+      "promptAudio": {
+        "id": "word-game-animals-frog-prompt",
+        "text": "Which is the frog?"
+      }
     }
   ],
   "tiers": [
@@ -58,15 +118,203 @@
       "quizzes": [
         {
           "id": "simple-1",
-          "title": "First animals",
-          "description": "Six familiar animal words.",
+          "title": "Simple Animals: First look",
+          "description": "6 questions",
           "questions": [
-            { "id": "find-cat", "targetId": "cat", "choiceIds": ["cat", "dog", "bird", "fish"], "prompt": "Cat. Which picture is the cat?", "success": "Great job! This is a cat." },
-            { "id": "find-dog", "targetId": "dog", "choiceIds": ["dog", "bird", "fish", "duck"], "prompt": "Dog. Which picture is the dog?", "success": "Great job! This is a dog." },
-            { "id": "find-bird", "targetId": "bird", "choiceIds": ["bird", "fish", "duck", "frog"], "prompt": "Bird. Which picture is the bird?", "success": "Great job! This is a bird." },
-            { "id": "find-fish", "targetId": "fish", "choiceIds": ["fish", "duck", "frog", "cat"], "prompt": "Fish. Which picture is the fish?", "success": "Great job! This is a fish." },
-            { "id": "find-duck", "targetId": "duck", "choiceIds": ["duck", "frog", "cat", "dog"], "prompt": "Duck. Which picture is the duck?", "success": "Great job! This is a duck." },
-            { "id": "find-frog", "targetId": "frog", "choiceIds": ["frog", "cat", "dog", "bird"], "prompt": "Frog. Which picture is the frog?", "success": "Great job! This is a frog." }
+            {
+              "id": "find-cat-1",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "dog",
+                "bird",
+                "fish"
+              ]
+            },
+            {
+              "id": "find-dog-1",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "bird",
+                "fish",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-bird-1",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "fish",
+                "duck",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-fish-1",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "duck",
+                "frog",
+                "cat"
+              ]
+            },
+            {
+              "id": "find-duck-1",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "frog",
+                "cat",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-frog-1",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "cat",
+                "dog",
+                "bird"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Animals: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "find-bird-2",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-duck-2",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "cat",
+                "frog",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-cat-2",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "dog",
+                "fish"
+              ]
+            },
+            {
+              "id": "find-frog-2",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "dog",
+                "fish",
+                "bird"
+              ]
+            },
+            {
+              "id": "find-dog-2",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-fish-2",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "bird",
+                "duck",
+                "cat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Animals: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "find-duck-3",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "dog",
+                "fish",
+                "cat"
+              ]
+            },
+            {
+              "id": "find-dog-3",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-fish-3",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "cat",
+                "frog",
+                "bird"
+              ]
+            },
+            {
+              "id": "find-cat-3",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-frog-3",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "bird",
+                "duck",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-bird-3",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "dog",
+                "fish"
+              ]
+            }
           ]
         }
       ]
@@ -78,15 +326,203 @@
       "quizzes": [
         {
           "id": "intermediate-1",
-          "title": "More animals",
-          "description": "Six animal words.",
+          "title": "Intermediate Animals: First look",
+          "description": "6 questions",
           "questions": [
-            { "id": "find-cat-again", "targetId": "cat", "choiceIds": ["cat", "dog", "bird", "fish"], "prompt": "Cat. Which picture is the cat?", "success": "Great job! This is a cat." },
-            { "id": "find-dog-again", "targetId": "dog", "choiceIds": ["dog", "bird", "fish", "duck"], "prompt": "Dog. Which picture is the dog?", "success": "Great job! This is a dog." },
-            { "id": "find-bird-again", "targetId": "bird", "choiceIds": ["bird", "fish", "duck", "frog"], "prompt": "Bird. Which picture is the bird?", "success": "Great job! This is a bird." },
-            { "id": "find-fish-again", "targetId": "fish", "choiceIds": ["fish", "duck", "frog", "cat"], "prompt": "Fish. Which picture is the fish?", "success": "Great job! This is a fish." },
-            { "id": "find-duck-again", "targetId": "duck", "choiceIds": ["duck", "frog", "cat", "dog"], "prompt": "Duck. Which picture is the duck?", "success": "Great job! This is a duck." },
-            { "id": "find-frog-again", "targetId": "frog", "choiceIds": ["frog", "cat", "dog", "bird"], "prompt": "Frog. Which picture is the frog?", "success": "Great job! This is a frog." }
+            {
+              "id": "find-cat-1",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "dog",
+                "bird",
+                "fish"
+              ]
+            },
+            {
+              "id": "find-dog-1",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "bird",
+                "fish",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-bird-1",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "fish",
+                "duck",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-fish-1",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "duck",
+                "frog",
+                "cat"
+              ]
+            },
+            {
+              "id": "find-duck-1",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "frog",
+                "cat",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-frog-1",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "cat",
+                "dog",
+                "bird"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Animals: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "find-bird-2",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-duck-2",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "cat",
+                "frog",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-cat-2",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "dog",
+                "fish"
+              ]
+            },
+            {
+              "id": "find-frog-2",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "dog",
+                "fish",
+                "bird"
+              ]
+            },
+            {
+              "id": "find-dog-2",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-fish-2",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "bird",
+                "duck",
+                "cat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Animals: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "find-duck-3",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "dog",
+                "fish",
+                "cat"
+              ]
+            },
+            {
+              "id": "find-dog-3",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-fish-3",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "cat",
+                "frog",
+                "bird"
+              ]
+            },
+            {
+              "id": "find-cat-3",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-frog-3",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "bird",
+                "duck",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-bird-3",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "dog",
+                "fish"
+              ]
+            }
           ]
         }
       ]
@@ -98,15 +534,203 @@
       "quizzes": [
         {
           "id": "advanced-1",
-          "title": "Animal review",
-          "description": "Six animal words.",
+          "title": "Advanced Animals: First look",
+          "description": "6 questions",
           "questions": [
-            { "id": "review-cat", "targetId": "cat", "choiceIds": ["cat", "dog", "bird", "fish"], "prompt": "Cat. Which picture is the cat?", "success": "Great job! This is a cat." },
-            { "id": "review-dog", "targetId": "dog", "choiceIds": ["dog", "bird", "fish", "duck"], "prompt": "Dog. Which picture is the dog?", "success": "Great job! This is a dog." },
-            { "id": "review-bird", "targetId": "bird", "choiceIds": ["bird", "fish", "duck", "frog"], "prompt": "Bird. Which picture is the bird?", "success": "Great job! This is a bird." },
-            { "id": "review-fish", "targetId": "fish", "choiceIds": ["fish", "duck", "frog", "cat"], "prompt": "Fish. Which picture is the fish?", "success": "Great job! This is a fish." },
-            { "id": "review-duck", "targetId": "duck", "choiceIds": ["duck", "frog", "cat", "dog"], "prompt": "Duck. Which picture is the duck?", "success": "Great job! This is a duck." },
-            { "id": "review-frog", "targetId": "frog", "choiceIds": ["frog", "cat", "dog", "bird"], "prompt": "Frog. Which picture is the frog?", "success": "Great job! This is a frog." }
+            {
+              "id": "find-cat-1",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "dog",
+                "bird",
+                "fish"
+              ]
+            },
+            {
+              "id": "find-dog-1",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "bird",
+                "fish",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-bird-1",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "fish",
+                "duck",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-fish-1",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "duck",
+                "frog",
+                "cat"
+              ]
+            },
+            {
+              "id": "find-duck-1",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "frog",
+                "cat",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-frog-1",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "cat",
+                "dog",
+                "bird"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Animals: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "find-bird-2",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-duck-2",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "cat",
+                "frog",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-cat-2",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "dog",
+                "fish"
+              ]
+            },
+            {
+              "id": "find-frog-2",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "dog",
+                "fish",
+                "bird"
+              ]
+            },
+            {
+              "id": "find-dog-2",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-fish-2",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "bird",
+                "duck",
+                "cat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Animals: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "find-duck-3",
+              "targetId": "duck",
+              "choiceIds": [
+                "duck",
+                "dog",
+                "fish",
+                "cat"
+              ]
+            },
+            {
+              "id": "find-dog-3",
+              "targetId": "dog",
+              "choiceIds": [
+                "dog",
+                "fish",
+                "cat",
+                "frog"
+              ]
+            },
+            {
+              "id": "find-fish-3",
+              "targetId": "fish",
+              "choiceIds": [
+                "fish",
+                "cat",
+                "frog",
+                "bird"
+              ]
+            },
+            {
+              "id": "find-cat-3",
+              "targetId": "cat",
+              "choiceIds": [
+                "cat",
+                "frog",
+                "bird",
+                "duck"
+              ]
+            },
+            {
+              "id": "find-frog-3",
+              "targetId": "frog",
+              "choiceIds": [
+                "frog",
+                "bird",
+                "duck",
+                "dog"
+              ]
+            },
+            {
+              "id": "find-bird-3",
+              "targetId": "bird",
+              "choiceIds": [
+                "bird",
+                "duck",
+                "dog",
+                "fish"
+              ]
+            }
           ]
         }
       ]

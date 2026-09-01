@@ -36,6 +36,34 @@ export function WordGameVisual({
     );
   }
 
+  if (item.visual.copies === 2) {
+    const imageSource = item.visual.src;
+    return (
+      <div
+        aria-label={item.alt}
+        className={cx(
+          "grid aspect-square w-full grid-cols-2 place-items-center overflow-hidden rounded-2xl",
+          className,
+        )}
+        role="img"
+      >
+        {[0, 1].map((copy) => (
+          <img
+            alt=""
+            aria-hidden="true"
+            className="w-full min-w-0 object-contain"
+            decoding="async"
+            height={512}
+            key={copy}
+            loading="lazy"
+            src={imageSource}
+            width={512}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <img
       alt={item.alt}

@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  parseNotoAssetManifest,
+  parseFluentAssetManifest,
   parseWordGameManifest,
+  parseWordGamePlayerManifest,
 } from "../scripts/word-game/manifest.mjs";
 
 const categorySourcePath = "/content/animals.json";
-const notoSourcePath = "/content/noto-assets.json";
+const fluentSourcePath = "/content/fluent-3d-assets.json";
+const playerSourcePath = "/content/player.json";
 
 function validCategory() {
   const items = Array.from({ length: 12 }, (_, index) => {
@@ -16,34 +18,41 @@ function validCategory() {
       id,
       label: `animal ${number}`,
       alt: `Animal ${number}.`,
-      visual: { assetId: `1f4${String(number).padStart(2, "0")}`, kind: "noto-svg" },
-      audio: {
+      visual: { assetId: `1f4${String(number).padStart(2, "0")}`, kind: "fluent-3d" },
+      labelAudio: {
         id: `word-game-animals-${id}-label`,
         text: `This is animal ${number}.`,
       },
+      promptAudio: {
+        id: `word-game-animals-${id}-prompt`,
+        text: `Which is animal ${number}?`,
+      },
     };
   });
-  const quiz = (tierId, offset) => ({
-    id: `${tierId}-1`,
-    title: `${tierId} animals`,
+  const quiz = (tierId, offset, quizNumber, order) => ({
+    id: `${tierId}-${quizNumber}`,
+    title: `${tierId} animals ${quizNumber}`,
     description: `Six ${tierId} animal words.`,
-    questions: Array.from({ length: 6 }, (_, index) => {
+    questions: order.map((orderIndex, index) => {
       const ids = Array.from(
         { length: 4 },
-        (_, choiceOffset) => items[(offset + index + choiceOffset) % items.length].id,
+        (_, choiceOffset) => items[offset + order[(index + choiceOffset) % order.length]].id,
       );
       return {
-        id: `find-${tierId}-${index + 1}`,
+        id: `find-${tierId}-${quizNumber}-${orderIndex + 1}`,
         targetId: ids[0],
         choiceIds: [ids[0], ids[1], ids[2], ids[3]],
-        prompt: `Animal ${offset + index + 1}. Which picture is animal ${offset + index + 1}?`,
-        success: `Great job! This is animal ${offset + index + 1}.`,
       };
     }),
   });
+  const quizzes = (tierId, offset) => [
+    quiz(tierId, offset, 1, [0, 1, 2, 3, 4, 5]),
+    quiz(tierId, offset, 2, [2, 4, 0, 5, 1, 3]),
+    quiz(tierId, offset, 3, [4, 1, 3, 0, 5, 2]),
+  ];
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     order: 1,
     id: "animals",
     title: "Animals",
@@ -56,37 +65,49 @@ function validCategory() {
         id: "simple",
         title: "Simple",
         description: "Start with familiar animal words.",
-        quizzes: [quiz("simple", 0)],
+        quizzes: quizzes("simple", 0),
       },
       {
         id: "intermediate",
         title: "Intermediate",
         description: "Try more animal words.",
-        quizzes: [quiz("intermediate", 3)],
+        quizzes: quizzes("intermediate", 3),
       },
       {
         id: "advanced",
         title: "Advanced",
         description: "Practice advanced animal words.",
-        quizzes: [quiz("advanced", 6)],
+        quizzes: quizzes("advanced", 6),
       },
     ],
   };
 }
 
-function validNotoManifest() {
+function validPlayerManifest() {
   return {
     schemaVersion: 1,
-    repository: "https://github.com/googlefonts/noto-emoji",
-    revision: "8998f5dd683424a73e2314a8c1f1e359c19e8742",
-    license: "Apache-2.0",
-    licensePath: "svg/LICENSE",
+    successAudio: { id: "word-game-correct", text: "Correct!" },
+    retryAudio: { id: "word-game-retry", text: "Listen and try again." },
+    completeAudio: {
+      id: "word-game-complete",
+      text: "Great listening! You finished the game.",
+    },
+  };
+}
+
+function validFluentManifest() {
+  return {
+    schemaVersion: 1,
+    repository: "https://github.com/microsoft/fluentui-emoji",
+    revision: "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc",
+    license: "MIT",
+    licensePath: "LICENSE",
     assets: [
       {
         id: "1f431",
-        upstreamPath: "svg/emoji_u1f431.svg",
-        publicPath: "/assets/word-games/noto/emoji_u1f431.svg",
-        sha256: "a".repeat(64),
+        upstreamPath: "assets/Cat/3D/cat_3d.png",
+        publicPath: "/assets/word-games/fluent-3d/1f431.png",
+        sha256: "5d3fcbbfb0be45d9be0ade47fe4eb1b97d33130fe67d46a8db697e434f13289b",
       },
     ],
   };
@@ -100,21 +121,97 @@ function errorAt(sourcePath, fieldPath) {
 }
 
 describe("word-game manifests", () => {
-  it("accepts complete schema-version-1 category and Noto manifests", () => {
+  it("accepts complete schema-version-2 category, player, and Fluent manifests", () => {
     const category = validCategory();
     assert.deepEqual(parseWordGameManifest(category, categorySourcePath), category);
     assert.deepEqual(
-      parseNotoAssetManifest(validNotoManifest(), notoSourcePath),
-      validNotoManifest(),
+      parseFluentAssetManifest(validFluentManifest(), fluentSourcePath),
+      validFluentManifest(),
+    );
+    assert.deepEqual(
+      parseWordGamePlayerManifest(validPlayerManifest(), playerSourcePath),
+      validPlayerManifest(),
+    );
+  });
+
+  it("accepts exactly two copies for a Fluent visual", () => {
+    const category = validCategory();
+    category.items[0].visual.copies = 2;
+
+    assert.equal(
+      parseWordGameManifest(category, categorySourcePath).items[0].visual.copies,
+      2,
+    );
+  });
+
+  it("rejects unsupported Fluent copy counts", () => {
+    for (const copies of [0, 1, 3]) {
+      const category = validCategory();
+      category.items[0].visual.copies = copies;
+
+      assert.throws(
+        () => parseWordGameManifest(category, categorySourcePath),
+        errorAt(categorySourcePath, "items[0].visual.copies"),
+      );
+    }
+  });
+
+  it("rejects copy metadata on a swatch visual", () => {
+    const category = validCategory();
+    category.items[0].visual = {
+      color: "#ef4444",
+      copies: 2,
+      kind: "swatch",
+    };
+
+    assert.throws(
+      () => parseWordGameManifest(category, categorySourcePath),
+      errorAt(categorySourcePath, "items[0].visual.copies"),
+    );
+  });
+
+  it("rejects the retired schema-version-1 item and question copy", () => {
+    const oldVersion = validCategory();
+    oldVersion.schemaVersion = 1;
+    assert.throws(
+      () => parseWordGameManifest(oldVersion, categorySourcePath),
+      errorAt(categorySourcePath, "schemaVersion"),
+    );
+
+    const itemAudio = validCategory();
+    itemAudio.items[0].audio = itemAudio.items[0].labelAudio;
+    delete itemAudio.items[0].labelAudio;
+    assert.throws(
+      () => parseWordGameManifest(itemAudio, categorySourcePath),
+      errorAt(categorySourcePath, "items[0].labelAudio"),
+    );
+
+    for (const field of ["prompt", "success"]) {
+      const duplicatedQuestionCopy = validCategory();
+      duplicatedQuestionCopy.tiers[0].quizzes[0].questions[0][field] = "Retired copy.";
+      assert.throws(
+        () => parseWordGameManifest(duplicatedQuestionCopy, categorySourcePath),
+        errorAt(categorySourcePath, `tiers[0].quizzes[0].questions[0].${field}`),
+      );
+    }
+  });
+
+  it("rejects unknown player fields", () => {
+    assert.throws(
+      () => parseWordGamePlayerManifest(
+        { ...validPlayerManifest(), surprise: true },
+        playerSourcePath,
+      ),
+      errorAt(playerSourcePath, "surprise"),
     );
   });
 
   it("accepts a shared saved-audio identity for repeated vocabulary", () => {
     const category = validCategory();
-    category.items[0].audio.id = "word-game-shared-animal-1-label";
+    category.items[0].labelAudio.id = "word-game-shared-animal-1-label";
 
     assert.equal(
-      parseWordGameManifest(category, categorySourcePath).items[0].audio.id,
+      parseWordGameManifest(category, categorySourcePath).items[0].labelAudio.id,
       "word-game-shared-animal-1-label",
     );
   });
@@ -144,13 +241,13 @@ describe("word-game manifests", () => {
       sourcePath: categorySourcePath,
       value: () => {
         const category = validCategory();
-        category.items[0].audio.surprise = true;
+        category.items[0].labelAudio.surprise = true;
         return category;
       },
-      fieldPath: "items[0].audio.surprise",
+      fieldPath: "items[0].labelAudio.surprise",
     },
     {
-      name: "unknown Noto visual fields",
+      name: "unknown Fluent visual fields",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
@@ -209,18 +306,18 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].quizzes[0].questions[0].surprise",
     },
     {
-      name: "unknown Noto manifest fields",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), surprise: true }),
+      name: "unknown Fluent manifest fields",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), surprise: true }),
       fieldPath: "surprise",
     },
     {
-      name: "unknown Noto asset fields",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
+      name: "unknown Fluent asset fields",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
       value: () => {
-        const manifest = validNotoManifest();
+        const manifest = validFluentManifest();
         manifest.assets[0].surprise = true;
         return manifest;
       },
@@ -245,11 +342,11 @@ describe("word-game manifests", () => {
       fieldPath: "id",
     },
     {
-      name: "filename-shaped Noto asset IDs",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
+      name: "filename-shaped Fluent asset IDs",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
       value: () => {
-        const manifest = validNotoManifest();
+        const manifest = validFluentManifest();
         manifest.assets[0].id = "emoji_u1f431.svg";
         return manifest;
       },
@@ -267,39 +364,39 @@ describe("word-game manifests", () => {
       fieldPath: "items[0].visual.color",
     },
     {
-      name: "non-40-character Noto revisions",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), revision: "a".repeat(39) }),
+      name: "non-40-character Fluent revisions",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), revision: "a".repeat(39) }),
       fieldPath: "revision",
     },
     {
-      name: "unapproved 40-character Noto revisions",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), revision: "a".repeat(40) }),
+      name: "unapproved 40-character Fluent revisions",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), revision: "a".repeat(40) }),
       fieldPath: "revision",
     },
     {
-      name: "non-64-character Noto SHA-256 values",
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
+      name: "non-64-character Fluent SHA-256 values",
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
       value: () => {
-        const manifest = validNotoManifest();
+        const manifest = validFluentManifest();
         manifest.assets[0].sha256 = "a".repeat(63);
         return manifest;
       },
       fieldPath: "assets[0].sha256",
     },
     ...[
-      ["repository", "https://example.com/noto-emoji"],
-      ["license", "MIT"],
-      ["licensePath", "LICENSE"],
+      ["repository", "https://example.com/fluentui-emoji"],
+      ["license", "Apache-2.0"],
+      ["licensePath", "assets/LICENSE"],
     ].map(([field, replacement]) => ({
-      name: `wrong Noto ${field}`,
-      parse: parseNotoAssetManifest,
-      sourcePath: notoSourcePath,
-      value: () => ({ ...validNotoManifest(), [field]: replacement }),
+      name: `wrong Fluent ${field}`,
+      parse: parseFluentAssetManifest,
+      sourcePath: fluentSourcePath,
+      value: () => ({ ...validFluentManifest(), [field]: replacement }),
       fieldPath: field,
     })),
     {
@@ -314,12 +411,12 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].id",
     },
     {
-      name: "empty quiz lists",
+      name: "wrong quiz counts",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
         const category = validCategory();
-        category.tiers[0].quizzes = [];
+        category.tiers[0].quizzes.pop();
         return category;
       },
       fieldPath: "tiers[0].quizzes",
@@ -375,15 +472,37 @@ describe("word-game manifests", () => {
       fieldPath: "tiers[0].quizzes[0].questions[0].targetId",
     },
     {
-      name: "malformed audio IDs",
+      name: "malformed label audio IDs",
       parse: parseWordGameManifest,
       sourcePath: categorySourcePath,
       value: () => {
         const category = validCategory();
-        category.items[0].audio.id = "word-game-colors-animal-1-label";
+        category.items[0].labelAudio.id = "word-game-colors-animal-1-label";
         return category;
       },
-      fieldPath: "items[0].audio.id",
+      fieldPath: "items[0].labelAudio.id",
+    },
+    {
+      name: "malformed prompt audio IDs",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].promptAudio.id = "word-game-animals-animal-1-label";
+        return category;
+      },
+      fieldPath: "items[0].promptAudio.id",
+    },
+    {
+      name: "retired Noto SVG visuals",
+      parse: parseWordGameManifest,
+      sourcePath: categorySourcePath,
+      value: () => {
+        const category = validCategory();
+        category.items[0].visual.kind = "noto-svg";
+        return category;
+      },
+      fieldPath: "items[0].visual.kind",
     },
     {
       name: "unsupported visual kinds",

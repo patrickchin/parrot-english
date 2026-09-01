@@ -36,7 +36,7 @@ describe("generated word-game catalog runtime", () => {
     assert.equal(WORD_GAME_CATEGORIES.flatMap(({ tiers }) => tiers).length, 27);
     assert.equal(
       WORD_GAME_CATEGORIES.flatMap(({ tiers }) => tiers.flatMap(({ quizzes }) => quizzes)).length,
-      27,
+      81,
     );
     assert.ok(WORD_GAME_CATEGORIES.every(({ tiers }) =>
       tiers.every(({ quizzes }) => quizzes.every(({ questions }) => questions.length === 6))));
@@ -46,7 +46,7 @@ describe("generated word-game catalog runtime", () => {
         itemIds: items.map(({ id: itemId }) => itemId),
         quizzes: tiers.flatMap(({ quizzes }) => quizzes.map(({ id: quizId }) => quizId)),
       })),
-      GENERATED_WORD_GAME_CATALOG.map(({ id, items, tiers }) => ({
+      GENERATED_WORD_GAME_CATALOG.categories.map(({ id, items, tiers }) => ({
         id,
         itemIds: items.map(({ id: itemId }) => itemId),
         quizzes: tiers.flatMap(({ quizzes }) => quizzes.map(({ id: quizId }) => quizId)),
@@ -70,6 +70,8 @@ describe("generated word-game catalog runtime", () => {
           const selection = resolveWordGameQuiz(category.id, quiz.id);
           assert.deepEqual(selection, { category, tier, quiz });
           assertDeepFrozen(selection);
+          assert.equal(quiz.coverItem.id, quiz.questions[0].targetId);
+          assert.ok(category.items.includes(quiz.coverItem));
           assert.equal(
             getWordGameQuizRoute(category.id, quiz.id),
             `/word-games/${category.id}/${quiz.id}`,
@@ -82,11 +84,13 @@ describe("generated word-game catalog runtime", () => {
     assert.equal(resolveWordGameQuiz(undefined, undefined), null);
   });
 
-  it("provides saved item cues, including deliberate cue reuse, and shared player cues", () => {
+  it("provides both saved cues per item, deliberate label reuse, and JSON-owned player cues", () => {
     const items = WORD_GAME_CATEGORIES.flatMap(({ items }) => items);
-    const audio = items.map(({ audio }) => audio);
-    assert.equal(audio.length, 107);
-    assert.equal(new Set(audio.map(({ id }) => id)).size, 106);
+    const audio = items.flatMap(({ labelAudio, promptAudio }) => [labelAudio, promptAudio]);
+    assert.equal(audio.length, 214);
+    assert.equal(new Set(audio.map(({ id }) => id)).size, 213);
+    assert.equal(new Set(items.map(({ labelAudio }) => labelAudio.id)).size, 106);
+    assert.equal(new Set(items.map(({ promptAudio }) => promptAudio.id)).size, 107);
     for (const cue of [...audio, WORD_GAME_CORRECT_AUDIO, WORD_GAME_RETRY_AUDIO, WORD_GAME_COMPLETE_AUDIO]) {
       const line = getStaticAudioLineById(cue.id);
       assert.equal(line.id, cue.id);
@@ -97,7 +101,7 @@ describe("generated word-game catalog runtime", () => {
     assert.deepEqual(WORD_GAME_CORRECT_AUDIO, {
       id: "word-game-correct",
       source: "/assets/audio/word-game-correct.mp3",
-      text: "Correct.",
+      text: "Correct!",
     });
     assert.deepEqual(WORD_GAME_RETRY_AUDIO, {
       id: "word-game-retry",
@@ -109,6 +113,30 @@ describe("generated word-game catalog runtime", () => {
       source: "/assets/audio/word-game-complete.mp3",
       text: "Great listening! You finished the game.",
     });
+    assertDeepFrozen(WORD_GAME_CORRECT_AUDIO);
+    assertDeepFrozen(WORD_GAME_RETRY_AUDIO);
+    assertDeepFrozen(WORD_GAME_COMPLETE_AUDIO);
+  });
+
+  it("preserves and freezes copied visuals without changing single images", () => {
+    const bodyParts = resolveWordGameCategory("body-parts");
+    const clothes = resolveWordGameCategory("clothes");
+    const animals = resolveWordGameCategory("animals");
+    assert.ok(bodyParts && clothes && animals);
+
+    assert.deepEqual(bodyParts.items.find(({ id }) => id === "ears")?.visual, {
+      copies: 2,
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f442.png",
+    });
+    for (const id of ["shoes", "boots"]) {
+      assert.equal(clothes.items.find((item) => item.id === id)?.visual.copies, 2);
+    }
+    assert.deepEqual(animals.items.find(({ id }) => id === "cat")?.visual, {
+      kind: "image",
+      src: "/assets/word-games/fluent-3d/1f431.png",
+    });
+    assertDeepFrozen(bodyParts.items.find(({ id }) => id === "ears")?.visual);
   });
 
   it("keeps authored questions and choice membership immutable while shuffling fresh tuples", () => {

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "order": 2,
   "id": "colors",
   "title": "Colors",
@@ -15,9 +15,13 @@
         "kind": "swatch",
         "color": "#ef4444"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-red-label",
         "text": "red"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-red-prompt",
+        "text": "Which color is red?"
       }
     },
     {
@@ -28,9 +32,13 @@
         "kind": "swatch",
         "color": "#3b82f6"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-blue-label",
         "text": "blue"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-blue-prompt",
+        "text": "Which color is blue?"
       }
     },
     {
@@ -41,9 +49,13 @@
         "kind": "swatch",
         "color": "#eab308"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-yellow-label",
         "text": "yellow"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-yellow-prompt",
+        "text": "Which color is yellow?"
       }
     },
     {
@@ -54,9 +66,13 @@
         "kind": "swatch",
         "color": "#22c55e"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-green-label",
         "text": "green"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-green-prompt",
+        "text": "Which color is green?"
       }
     },
     {
@@ -67,9 +83,13 @@
         "kind": "swatch",
         "color": "#f97316"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-shared-orange-label",
         "text": "orange"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-orange-prompt",
+        "text": "Which color is orange?"
       }
     },
     {
@@ -80,9 +100,13 @@
         "kind": "swatch",
         "color": "#a855f7"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-purple-label",
         "text": "purple"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-purple-prompt",
+        "text": "Which color is purple?"
       }
     },
     {
@@ -93,9 +117,13 @@
         "kind": "swatch",
         "color": "#000000"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-black-label",
         "text": "black"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-black-prompt",
+        "text": "Which color is black?"
       }
     },
     {
@@ -106,9 +134,13 @@
         "kind": "swatch",
         "color": "#ffffff"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-white-label",
         "text": "white"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-white-prompt",
+        "text": "Which color is white?"
       }
     },
     {
@@ -119,9 +151,13 @@
         "kind": "swatch",
         "color": "#ec4899"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-pink-label",
         "text": "pink"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-pink-prompt",
+        "text": "Which color is pink?"
       }
     },
     {
@@ -132,9 +168,13 @@
         "kind": "swatch",
         "color": "#92400e"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-brown-label",
         "text": "brown"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-brown-prompt",
+        "text": "Which color is brown?"
       }
     },
     {
@@ -145,9 +185,13 @@
         "kind": "swatch",
         "color": "#6b7280"
       },
-      "audio": {
+      "labelAudio": {
         "id": "word-game-colors-gray-label",
         "text": "gray"
+      },
+      "promptAudio": {
+        "id": "word-game-colors-gray-prompt",
+        "text": "Which color is gray?"
       }
     }
   ],
@@ -159,80 +203,202 @@
       "quizzes": [
         {
           "id": "simple-1",
-          "title": "Simple colors",
-          "description": "Six simple color words.",
+          "title": "Simple Colors: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-red",
+              "id": "simple-1-find-red",
               "targetId": "red",
               "choiceIds": [
                 "red",
                 "blue",
                 "yellow",
                 "green"
-              ],
-              "prompt": "Red. Where is red?",
-              "success": "Great job! This is red."
+              ]
             },
             {
-              "id": "find-blue",
+              "id": "simple-1-find-blue",
               "targetId": "blue",
               "choiceIds": [
                 "blue",
                 "yellow",
                 "green",
                 "orange"
-              ],
-              "prompt": "Blue. Where is blue?",
-              "success": "Great job! This is blue."
+              ]
             },
             {
-              "id": "find-yellow",
+              "id": "simple-1-find-yellow",
               "targetId": "yellow",
               "choiceIds": [
                 "yellow",
                 "green",
                 "orange",
                 "purple"
-              ],
-              "prompt": "Yellow. Where is yellow?",
-              "success": "Great job! This is yellow."
+              ]
             },
             {
-              "id": "find-green",
+              "id": "simple-1-find-green",
               "targetId": "green",
               "choiceIds": [
                 "green",
                 "orange",
                 "purple",
                 "red"
-              ],
-              "prompt": "Green. Where is green?",
-              "success": "Great job! This is green."
+              ]
             },
             {
-              "id": "find-orange",
+              "id": "simple-1-find-orange",
               "targetId": "orange",
               "choiceIds": [
                 "orange",
                 "purple",
                 "red",
                 "blue"
-              ],
-              "prompt": "Orange. Where is orange?",
-              "success": "Great job! This is orange."
+              ]
             },
             {
-              "id": "find-purple",
+              "id": "simple-1-find-purple",
               "targetId": "purple",
               "choiceIds": [
                 "purple",
                 "red",
                 "blue",
                 "yellow"
-              ],
-              "prompt": "Purple. Where is purple?",
-              "success": "Great job! This is purple."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Colors: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-yellow",
+              "targetId": "yellow",
+              "choiceIds": [
+                "yellow",
+                "orange",
+                "red",
+                "purple"
+              ]
+            },
+            {
+              "id": "simple-2-find-orange",
+              "targetId": "orange",
+              "choiceIds": [
+                "orange",
+                "red",
+                "purple",
+                "blue"
+              ]
+            },
+            {
+              "id": "simple-2-find-red",
+              "targetId": "red",
+              "choiceIds": [
+                "red",
+                "purple",
+                "blue",
+                "green"
+              ]
+            },
+            {
+              "id": "simple-2-find-purple",
+              "targetId": "purple",
+              "choiceIds": [
+                "purple",
+                "blue",
+                "green",
+                "yellow"
+              ]
+            },
+            {
+              "id": "simple-2-find-blue",
+              "targetId": "blue",
+              "choiceIds": [
+                "blue",
+                "green",
+                "yellow",
+                "orange"
+              ]
+            },
+            {
+              "id": "simple-2-find-green",
+              "targetId": "green",
+              "choiceIds": [
+                "green",
+                "yellow",
+                "orange",
+                "red"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Colors: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-orange",
+              "targetId": "orange",
+              "choiceIds": [
+                "orange",
+                "blue",
+                "green",
+                "red"
+              ]
+            },
+            {
+              "id": "simple-3-find-blue",
+              "targetId": "blue",
+              "choiceIds": [
+                "blue",
+                "green",
+                "red",
+                "purple"
+              ]
+            },
+            {
+              "id": "simple-3-find-green",
+              "targetId": "green",
+              "choiceIds": [
+                "green",
+                "red",
+                "purple",
+                "yellow"
+              ]
+            },
+            {
+              "id": "simple-3-find-red",
+              "targetId": "red",
+              "choiceIds": [
+                "red",
+                "purple",
+                "yellow",
+                "orange"
+              ]
+            },
+            {
+              "id": "simple-3-find-purple",
+              "targetId": "purple",
+              "choiceIds": [
+                "purple",
+                "yellow",
+                "orange",
+                "blue"
+              ]
+            },
+            {
+              "id": "simple-3-find-yellow",
+              "targetId": "yellow",
+              "choiceIds": [
+                "yellow",
+                "orange",
+                "blue",
+                "green"
+              ]
             }
           ]
         }
@@ -245,80 +411,202 @@
       "quizzes": [
         {
           "id": "intermediate-1",
-          "title": "Intermediate colors",
-          "description": "Six intermediate color words.",
+          "title": "Intermediate Colors: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-red",
+              "id": "intermediate-1-find-red",
               "targetId": "red",
               "choiceIds": [
                 "red",
                 "blue",
                 "yellow",
                 "black"
-              ],
-              "prompt": "Red. Where is red?",
-              "success": "Great job! This is red."
+              ]
             },
             {
-              "id": "find-blue",
+              "id": "intermediate-1-find-blue",
               "targetId": "blue",
               "choiceIds": [
                 "blue",
                 "yellow",
                 "black",
                 "white"
-              ],
-              "prompt": "Blue. Where is blue?",
-              "success": "Great job! This is blue."
+              ]
             },
             {
-              "id": "find-yellow",
+              "id": "intermediate-1-find-yellow",
               "targetId": "yellow",
               "choiceIds": [
                 "yellow",
                 "black",
                 "white",
                 "pink"
-              ],
-              "prompt": "Yellow. Where is yellow?",
-              "success": "Great job! This is yellow."
+              ]
             },
             {
-              "id": "find-black",
+              "id": "intermediate-1-find-black",
               "targetId": "black",
               "choiceIds": [
                 "black",
                 "white",
                 "pink",
                 "red"
-              ],
-              "prompt": "Black. Where is black?",
-              "success": "Great job! This is black."
+              ]
             },
             {
-              "id": "find-white",
+              "id": "intermediate-1-find-white",
               "targetId": "white",
               "choiceIds": [
                 "white",
                 "pink",
                 "red",
                 "blue"
-              ],
-              "prompt": "White. Where is white?",
-              "success": "Great job! This is white."
+              ]
             },
             {
-              "id": "find-pink",
+              "id": "intermediate-1-find-pink",
               "targetId": "pink",
               "choiceIds": [
                 "pink",
                 "red",
                 "blue",
                 "yellow"
-              ],
-              "prompt": "Pink. Where is pink?",
-              "success": "Great job! This is pink."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Colors: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-yellow",
+              "targetId": "yellow",
+              "choiceIds": [
+                "yellow",
+                "white",
+                "red",
+                "pink"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-white",
+              "targetId": "white",
+              "choiceIds": [
+                "white",
+                "red",
+                "pink",
+                "blue"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-red",
+              "targetId": "red",
+              "choiceIds": [
+                "red",
+                "pink",
+                "blue",
+                "black"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-pink",
+              "targetId": "pink",
+              "choiceIds": [
+                "pink",
+                "blue",
+                "black",
+                "yellow"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-blue",
+              "targetId": "blue",
+              "choiceIds": [
+                "blue",
+                "black",
+                "yellow",
+                "white"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-black",
+              "targetId": "black",
+              "choiceIds": [
+                "black",
+                "yellow",
+                "white",
+                "red"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Colors: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-white",
+              "targetId": "white",
+              "choiceIds": [
+                "white",
+                "blue",
+                "black",
+                "red"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-blue",
+              "targetId": "blue",
+              "choiceIds": [
+                "blue",
+                "black",
+                "red",
+                "pink"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-black",
+              "targetId": "black",
+              "choiceIds": [
+                "black",
+                "red",
+                "pink",
+                "yellow"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-red",
+              "targetId": "red",
+              "choiceIds": [
+                "red",
+                "pink",
+                "yellow",
+                "white"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-pink",
+              "targetId": "pink",
+              "choiceIds": [
+                "pink",
+                "yellow",
+                "white",
+                "blue"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-yellow",
+              "targetId": "yellow",
+              "choiceIds": [
+                "yellow",
+                "white",
+                "blue",
+                "black"
+              ]
             }
           ]
         }
@@ -331,80 +619,202 @@
       "quizzes": [
         {
           "id": "advanced-1",
-          "title": "Advanced colors",
-          "description": "Six advanced color words.",
+          "title": "Advanced Colors: First look",
+          "description": "6 questions",
           "questions": [
             {
-              "id": "find-black",
+              "id": "advanced-1-find-black",
               "targetId": "black",
               "choiceIds": [
                 "black",
                 "white",
                 "pink",
                 "brown"
-              ],
-              "prompt": "Black. Where is black?",
-              "success": "Great job! This is black."
+              ]
             },
             {
-              "id": "find-white",
+              "id": "advanced-1-find-white",
               "targetId": "white",
               "choiceIds": [
                 "white",
                 "pink",
                 "brown",
                 "gray"
-              ],
-              "prompt": "White. Where is white?",
-              "success": "Great job! This is white."
+              ]
             },
             {
-              "id": "find-pink",
+              "id": "advanced-1-find-pink",
               "targetId": "pink",
               "choiceIds": [
                 "pink",
                 "brown",
                 "gray",
                 "purple"
-              ],
-              "prompt": "Pink. Where is pink?",
-              "success": "Great job! This is pink."
+              ]
             },
             {
-              "id": "find-brown",
+              "id": "advanced-1-find-brown",
               "targetId": "brown",
               "choiceIds": [
                 "brown",
                 "gray",
                 "purple",
                 "black"
-              ],
-              "prompt": "Brown. Where is brown?",
-              "success": "Great job! This is brown."
+              ]
             },
             {
-              "id": "find-gray",
+              "id": "advanced-1-find-gray",
               "targetId": "gray",
               "choiceIds": [
                 "gray",
                 "purple",
                 "black",
                 "white"
-              ],
-              "prompt": "Gray. Where is gray?",
-              "success": "Great job! This is gray."
+              ]
             },
             {
-              "id": "find-purple",
+              "id": "advanced-1-find-purple",
               "targetId": "purple",
               "choiceIds": [
                 "purple",
                 "black",
                 "white",
                 "pink"
-              ],
-              "prompt": "Purple. Where is purple?",
-              "success": "Great job! This is purple."
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Colors: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-pink",
+              "targetId": "pink",
+              "choiceIds": [
+                "pink",
+                "gray",
+                "black",
+                "purple"
+              ]
+            },
+            {
+              "id": "advanced-2-find-gray",
+              "targetId": "gray",
+              "choiceIds": [
+                "gray",
+                "black",
+                "purple",
+                "white"
+              ]
+            },
+            {
+              "id": "advanced-2-find-black",
+              "targetId": "black",
+              "choiceIds": [
+                "black",
+                "purple",
+                "white",
+                "brown"
+              ]
+            },
+            {
+              "id": "advanced-2-find-purple",
+              "targetId": "purple",
+              "choiceIds": [
+                "purple",
+                "white",
+                "brown",
+                "pink"
+              ]
+            },
+            {
+              "id": "advanced-2-find-white",
+              "targetId": "white",
+              "choiceIds": [
+                "white",
+                "brown",
+                "pink",
+                "gray"
+              ]
+            },
+            {
+              "id": "advanced-2-find-brown",
+              "targetId": "brown",
+              "choiceIds": [
+                "brown",
+                "pink",
+                "gray",
+                "black"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Colors: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-gray",
+              "targetId": "gray",
+              "choiceIds": [
+                "gray",
+                "white",
+                "brown",
+                "black"
+              ]
+            },
+            {
+              "id": "advanced-3-find-white",
+              "targetId": "white",
+              "choiceIds": [
+                "white",
+                "brown",
+                "black",
+                "purple"
+              ]
+            },
+            {
+              "id": "advanced-3-find-brown",
+              "targetId": "brown",
+              "choiceIds": [
+                "brown",
+                "black",
+                "purple",
+                "pink"
+              ]
+            },
+            {
+              "id": "advanced-3-find-black",
+              "targetId": "black",
+              "choiceIds": [
+                "black",
+                "purple",
+                "pink",
+                "gray"
+              ]
+            },
+            {
+              "id": "advanced-3-find-purple",
+              "targetId": "purple",
+              "choiceIds": [
+                "purple",
+                "pink",
+                "gray",
+                "white"
+              ]
+            },
+            {
+              "id": "advanced-3-find-pink",
+              "targetId": "pink",
+              "choiceIds": [
+                "pink",
+                "gray",
+                "white",
+                "brown"
+              ]
             }
           ]
         }

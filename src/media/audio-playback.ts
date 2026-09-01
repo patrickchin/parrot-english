@@ -43,6 +43,17 @@ export type PlayAudioSequenceOptions = {
   wait?: AudioSequenceWait;
 };
 
+type E2EPlaybackLine = Pick<AssetAudioLine, "audioId" | "audioSrc" | "text">;
+type E2EPlaybackWindow = Window & {
+  __parrotE2ePlaybackLine?: (line: E2EPlaybackLine) => void;
+};
+
+function recordE2EPlaybackLine(line: E2EPlaybackLine) {
+  if (import.meta.env?.DEV && typeof window !== "undefined") {
+    (window as E2EPlaybackWindow).__parrotE2ePlaybackLine?.(line);
+  }
+}
+
 function getBrowserEnvironment(): AudioPlaybackEnvironment {
   return {
     createAudio: (url) => new Audio(url) as AudioLike,
@@ -160,16 +171,19 @@ async function playAudioUrl(
 }
 
 export async function playAudioLine({
+  audioId,
   audioSrc,
   env = getBrowserEnvironment(),
   onPlaybackControl,
   signal,
+  text,
   volume,
 }: PlayAudioLineOptions): Promise<void> {
   if (!audioSrc) {
     throw new Error("Static audio source is missing.");
   }
 
+  recordE2EPlaybackLine({ audioId, audioSrc, text });
   await playAudioUrl(env, audioSrc, signal, onPlaybackControl, volume);
 }
 
