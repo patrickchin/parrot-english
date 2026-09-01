@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "id": "animals-cat",
+      "publicPath": "/assets/word-games/illustrated/animals-cat.webp",
+      "sha256": "1b07f1f4340f182ab1cb350b9695bfb8bc314127f28db7995ff1378ce5e33bde",
+      "source": "original-v8"
+    }
+  ]
+}

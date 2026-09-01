@@ -12,8 +12,8 @@
       "label": "happy",
       "alt": "A happy face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f604"
+        "assetId": "feelings-happy",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-happy-label",
@@ -29,8 +29,8 @@
       "label": "sad",
       "alt": "A sad face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f622"
+        "assetId": "feelings-sad",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-sad-label",
@@ -46,8 +46,8 @@
       "label": "angry",
       "alt": "An angry face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f620"
+        "assetId": "feelings-angry",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-angry-label",
@@ -63,8 +63,8 @@
       "label": "sleepy",
       "alt": "A sleepy face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f634"
+        "assetId": "feelings-sleepy",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-sleepy-label",
@@ -80,8 +80,8 @@
       "label": "surprised",
       "alt": "A surprised face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f62e"
+        "assetId": "feelings-surprised",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-surprised-label",
@@ -97,8 +97,8 @@
       "label": "silly",
       "alt": "A silly face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f92a"
+        "assetId": "feelings-silly",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-silly-label",
@@ -114,8 +114,8 @@
       "label": "scared",
       "alt": "A scared face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f628"
+        "assetId": "feelings-scared",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-scared-label",
@@ -131,8 +131,8 @@
       "label": "excited",
       "alt": "An excited face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f929"
+        "assetId": "feelings-excited",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-excited-label",
@@ -148,8 +148,8 @@
       "label": "calm",
       "alt": "A calm face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f60c"
+        "assetId": "feelings-calm",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-calm-label",
@@ -165,8 +165,8 @@
       "label": "worried",
       "alt": "A worried face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f61f"
+        "assetId": "feelings-worried",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-worried-label",
@@ -182,8 +182,8 @@
       "label": "confused",
       "alt": "A confused face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f615"
+        "assetId": "feelings-confused",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-confused-label",
@@ -199,8 +199,8 @@
       "label": "bored",
       "alt": "A bored face.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f611"
+        "assetId": "feelings-bored",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-feelings-bored-label",

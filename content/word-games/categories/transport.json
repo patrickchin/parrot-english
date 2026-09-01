@@ -12,8 +12,8 @@
       "label": "car",
       "alt": "A car.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f697"
+        "assetId": "transport-car",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-car-label",
@@ -29,8 +29,8 @@
       "label": "bus",
       "alt": "A bus.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f68c"
+        "assetId": "transport-bus",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-bus-label",
@@ -46,8 +46,8 @@
       "label": "bicycle",
       "alt": "A bicycle.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6b2"
+        "assetId": "transport-bicycle",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-bicycle-label",
@@ -63,8 +63,8 @@
       "label": "train",
       "alt": "A train.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f686"
+        "assetId": "transport-train",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-train-label",
@@ -80,8 +80,8 @@
       "label": "boat",
       "alt": "A boat.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6a4"
+        "assetId": "transport-boat",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-boat-label",
@@ -97,8 +97,8 @@
       "label": "airplane",
       "alt": "An airplane.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "2708"
+        "assetId": "transport-airplane",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-airplane-label",
@@ -114,8 +114,8 @@
       "label": "taxi",
       "alt": "A taxi.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f695"
+        "assetId": "transport-taxi",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-taxi-label",
@@ -131,8 +131,8 @@
       "label": "truck",
       "alt": "A truck.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f69a"
+        "assetId": "transport-truck",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-truck-label",
@@ -148,8 +148,8 @@
       "label": "scooter",
       "alt": "A scooter.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f6f4"
+        "assetId": "transport-scooter",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-scooter-label",
@@ -165,8 +165,8 @@
       "label": "helicopter",
       "alt": "A helicopter.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f681"
+        "assetId": "transport-helicopter",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-helicopter-label",
@@ -182,8 +182,8 @@
       "label": "motorcycle",
       "alt": "A motorcycle.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f3cd"
+        "assetId": "transport-motorcycle",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-motorcycle-label",
@@ -199,8 +199,8 @@
       "label": "rocket",
       "alt": "A rocket.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f680"
+        "assetId": "transport-rocket",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-transport-rocket-label",

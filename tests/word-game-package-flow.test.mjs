@@ -18,7 +18,7 @@ async function createPackageRoot(context) {
 
   const categoryRoot = join(rootDir, "content", "word-games", "categories");
   const audioRoot = join(rootDir, "public", "assets", "audio");
-  const fluentRoot = join(rootDir, "public", "assets", "word-games", "fluent-3d");
+  const illustrationRoot = join(rootDir, "public", "assets", "word-games", "illustrated");
   const fixturePlayer = JSON.parse(
     await readFile(join(fixtureRoot, "player.json"), "utf8"),
   );
@@ -29,13 +29,11 @@ async function createPackageRoot(context) {
   await Promise.all([
     mkdir(categoryRoot, { recursive: true }),
     mkdir(audioRoot, { recursive: true }),
-    mkdir(fluentRoot, { recursive: true }),
+    mkdir(illustrationRoot, { recursive: true }),
     mkdir(join(rootDir, "src", "games"), { recursive: true }),
-    mkdir(join(rootDir, "third_party"), { recursive: true }),
   ]);
 
   const animals = JSON.parse(await readFile(join(fixtureRoot, "animals.json"), "utf8"));
-  animals.items[0].visual.copies = 2;
   const fixtureCategory = JSON.parse(JSON.stringify(animals));
   fixtureCategory.id = "fixtures";
   fixtureCategory.order = 2;
@@ -51,16 +49,12 @@ async function createPackageRoot(context) {
       join(categoryRoot, "fixtures.json"),
       `${JSON.stringify(fixtureCategory, null, 2)}\n`,
     ),
-    cp(join(fixtureRoot, "fluent-3d-assets.json"), join(rootDir, "content", "word-games", "fluent-3d-assets.json")),
+    cp(join(fixtureRoot, "illustrated-assets.json"), join(rootDir, "content", "word-games", "illustrated-assets.json")),
     writeFile(
       join(rootDir, "content", "word-games", "player.json"),
       `${JSON.stringify(fixturePlayer, null, 2)}\n`,
     ),
-    cp(join(fixtureRoot, "cat_3d.png"), join(fluentRoot, "1f431.png")),
-    cp(
-      join(fixtureRoot, "fluentui-emoji-LICENSE"),
-      join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
-    ),
+    cp(join(fixtureRoot, "cat.webp"), join(illustrationRoot, "animals-cat.webp")),
     ...[...animals.items, ...fixtureCategory.items].flatMap(({ labelAudio, promptAudio }) =>
       [labelAudio, promptAudio].map((audio) =>
         cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${audio.id}.mp3`)))),
@@ -140,9 +134,8 @@ test("an appended schema-v2 JSON package flows through generation, runtime resol
   assert.equal(selection?.quiz.coverItem.id, fixtureCategory.tiers[0].quizzes[0].questions[0].targetId);
   assert.equal(selection?.quiz.coverItem, selection?.category.items[0]);
   assert.deepEqual(selection?.category.items[0].visual, {
-    copies: 2,
     kind: "image",
-    src: "/assets/word-games/fluent-3d/1f431.png",
+    src: "/assets/word-games/illustrated/animals-cat.webp",
   });
   assert.equal(Object.isFrozen(selection?.category.items[0].visual), true);
   assert.deepEqual(runtime.categories.map(({ id }) => id), ["animals", "fixtures"]);

@@ -12,8 +12,8 @@
       "label": "cat",
       "alt": "A friendly cat.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f431"
+        "assetId": "animals-cat",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-cat-label",
@@ -29,8 +29,8 @@
       "label": "dog",
       "alt": "A friendly dog.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f415"
+        "assetId": "animals-dog",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-dog-label",
@@ -46,8 +46,8 @@
       "label": "bird",
       "alt": "A friendly bird.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f426"
+        "assetId": "animals-bird",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-bird-label",
@@ -63,8 +63,8 @@
       "label": "fish",
       "alt": "A friendly fish.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f41f"
+        "assetId": "animals-fish",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-fish-label",
@@ -80,8 +80,8 @@
       "label": "duck",
       "alt": "A friendly duck.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f986"
+        "assetId": "animals-duck",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-duck-label",
@@ -97,8 +97,8 @@
       "label": "frog",
       "alt": "A friendly frog.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f438"
+        "assetId": "animals-frog",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-frog-label",
@@ -114,8 +114,8 @@
       "label": "pig",
       "alt": "A friendly pig.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f437"
+        "assetId": "animals-pig",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-pig-label",
@@ -131,8 +131,8 @@
       "label": "cow",
       "alt": "A friendly cow.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f404"
+        "assetId": "animals-cow",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-cow-label",
@@ -148,8 +148,8 @@
       "label": "horse",
       "alt": "A friendly horse.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f40e"
+        "assetId": "animals-horse",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-horse-label",
@@ -165,8 +165,8 @@
       "label": "alligator",
       "alt": "A friendly alligator.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f40a"
+        "assetId": "animals-alligator",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-alligator-label",
@@ -182,8 +182,8 @@
       "label": "elephant",
       "alt": "A friendly elephant.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f418"
+        "assetId": "animals-elephant",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-elephant-label",
@@ -199,8 +199,8 @@
       "label": "giraffe",
       "alt": "A friendly giraffe.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f992"
+        "assetId": "animals-giraffe",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-animals-giraffe-label",
