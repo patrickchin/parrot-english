@@ -8,7 +8,6 @@ import {
   prepareAccountDeletion,
 } from "../worker/account-deletion.ts";
 import { handleDubRequest } from "../worker/dubs.ts";
-import { handlePersonalizedStoryArtRequest } from "../worker/personalized-story-art.ts";
 import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
@@ -418,58 +417,6 @@ function prepareDeletion(input) {
   });
 }
 
-function callPersonalizedArt({ bucket, database, d1 }) {
-  const formData = new FormData();
-  formData.set(
-    "source",
-    new File([new Uint8Array([137, 80, 78, 71])], "learner.png", {
-      type: "image/png",
-    }),
-  );
-  formData.set("guardianConsentAccepted", "yes");
-  formData.set(
-    "guardianConsentVersion",
-    "guardian-photo-cloudflare-v1",
-  );
-  return handlePersonalizedStoryArtRequest(
-    {
-      database,
-      env: {
-        AI: {},
-        ASSETS: {},
-        DB: d1,
-        PERSONALIZED_STORY_ART_BUCKET: bucket,
-        PERSONALIZED_STORY_ART_DATA_APPROVED: "1",
-        PERSONALIZED_STORY_ART_ENABLED: "1",
-      },
-      identity: {
-        learnerName: "Mia",
-        learnerProfileId: "learner-a",
-        legacyStorageOwner: true,
-        sessionId: "session-1",
-        userId: USER_ID,
-        userName: "Parent",
-      },
-      request: new Request(
-        "https://example.test/api/stories/the-red-ball/personalized-art",
-        { body: formData, method: "POST" },
-      ),
-    },
-    {
-      createId: () => "art-held",
-      createObjectId: () => "held-candidate",
-      async generateImage() {
-        return {
-          bytes: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
-          contentType: "image/png",
-          extension: "png",
-        };
-      },
-      now: () => new Date("2026-08-25T09:59:00.000Z"),
-    },
-  );
-}
-
 function seedDatabase() {
   const state = createTestD1Database();
   state.sqlite
@@ -513,106 +460,8 @@ function seedDatabase() {
   return { ...state, database: createDatabase(state.d1) };
 }
 
-describe("account deletion personalized-art lifecycle", () => {
-  it("fences a held art candidate so a late put cannot survive cascade when upload cleanup fails", async () => {
-    const state = seedDatabase();
-    const candidatePutStarted = deferred();
-    const releaseCandidatePut = deferred();
-    const bucket = createBucket();
-    const put = bucket.put.bind(bucket);
-    const remove = bucket.delete.bind(bucket);
-    let cleanupAttempts = 0;
-    let upload;
-
-    bucket.put = async (key, bytes, options) => {
-      if (
-        key === HELD_ART_CANDIDATE_KEY &&
-        options?.customMetadata?.guardianConsentVersion
-      ) {
-        candidatePutStarted.resolve();
-        await releaseCandidatePut.promise;
-      }
-      return put(key, bytes, options);
-    };
-    bucket.delete = async (keys) => {
-      const list = Array.isArray(keys) ? keys : [keys];
-      if (list.includes(HELD_ART_CANDIDATE_KEY)) {
-        cleanupAttempts += 1;
-        throw new Error("upload cleanup failed");
-      }
-      return remove(keys);
-    };
-
-    try {
-      state.sqlite
-        .prepare(
-          `INSERT INTO learner_profile
-            (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-           VALUES ('learner-a', ?, 'Mia', 'completed', 1)`,
-        )
-        .run(USER_ID);
-
-      upload = callPersonalizedArt({
-        bucket,
-        database: state.database,
-        d1: state.d1,
-      });
-      await candidatePutStarted.promise;
-
-      await prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async () => {},
-      });
-      assert.deepEqual(
-        JSON.parse(
-          state.sqlite
-            .prepare(
-              `SELECT personalized_art_candidate_keys_json
-               FROM account_deletion_tombstone`,
-            )
-            .get().personalized_art_candidate_keys_json,
-        ),
-        [HELD_ART_CANDIDATE_KEY],
-      );
-      assert.deepEqual(
-        bucket.stored.get(HELD_ART_CANDIDATE_KEY)?.options.customMetadata,
-        {
-          generation: DELETION_GENERATION,
-          state: "account-deleting",
-        },
-      );
-
-      state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
-      releaseCandidatePut.resolve();
-      const response = await upload;
-
-      assert.equal(response.status, 409);
-      assert.equal(cleanupAttempts, 0);
-      assert.deepEqual(
-        bucket.stored.get(HELD_ART_CANDIDATE_KEY)?.options.customMetadata,
-        {
-          generation: DELETION_GENERATION,
-          state: "account-deleting",
-        },
-      );
-      const candidatePut = bucket.calls.put.find(
-        ({ key, options }) =>
-          key === HELD_ART_CANDIDATE_KEY &&
-          options?.customMetadata?.guardianConsentVersion,
-      );
-      assert.deepEqual(candidatePut.options.onlyIf, {
-        etagDoesNotMatch: "*",
-      });
-    } finally {
-      releaseCandidatePut.resolve();
-      await Promise.allSettled([upload].filter(Boolean));
-      state.close();
-    }
-  });
-
-  it("retains the durable art-candidate closure and blocks cascade until its fence succeeds", async () => {
+describe("account deletion legacy private-media cleanup", () => {
+  it("retains the durable legacy art-candidate closure and blocks cascade until its fence succeeds", async () => {
     const state = seedDatabase();
     const bucket = createBucket([{ key: HELD_ART_CANDIDATE_KEY }]);
     const put = bucket.put.bind(bucket);
@@ -776,7 +625,7 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
-  it("routes a DB-owned external art candidate through exact fencing", async () => {
+  it("routes a DB-owned legacy art candidate through exact fencing", async () => {
     const state = seedDatabase();
     const externalCandidate = "legacy-exact/external-candidate.webp";
     const bucket = createBucket([{
@@ -1030,7 +879,7 @@ describe("account deletion personalized-art lifecycle", () => {
     }
   });
 
-  it("tombstones the account, purges art, and retains dub and recording fences", async () => {
+  it("tombstones the account, purges legacy art, and retains dub and recording fences", async () => {
     const state = seedDatabase();
     const events = [];
     try {

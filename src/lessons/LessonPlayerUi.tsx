@@ -26,7 +26,6 @@ import {
   Card,
 } from "../shared/ui";
 import { retryOriginalImage } from "../shared/responsive-image";
-import type { PersonalizedStoryArtwork } from "../stories/personalized-story-art-client";
 import {
   FULL_SCENE_IMAGE_SIZES,
   fullSceneImageSrcSet,
@@ -826,12 +825,10 @@ export function LessonJoinInPrompt({
 
 export function LessonUserPrompt({
   dialogue,
-  portrait,
   reserved = false,
   status = "ready",
 }: {
   dialogue: string;
-  portrait?: PersonalizedStoryArtwork | null;
   reserved?: boolean;
   status?: "checking" | "ready" | "recording";
 }) {
@@ -851,27 +848,13 @@ export function LessonUserPrompt({
         reserved
           ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
           : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:rounded-2xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:px-3 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:py-1.5 [@media(min-width:48rem)_and_(max-height:38.75rem)]:top-[6.75rem] [@media(min-width:48rem)_and_(max-height:30rem)]:top-[9.875rem] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-15.25rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[var(--lesson-layered-dialogue-height)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overflow-hidden",
-        portrait && "lesson-user-prompt-with-portrait",
-        portrait &&
-          "[@media(min-width:35rem)_and_(max-height:26.25rem)]:flex [@media(min-width:35rem)_and_(max-height:26.25rem)]:items-center [@media(min-width:35rem)_and_(max-height:26.25rem)]:gap-2 [@media(min-width:35rem)_and_(max-height:26.25rem)]:text-left",
-        portrait && reserved && "tall-wide:flex tall-wide:items-center tall-wide:gap-2",
       )}
       role="region"
     >
-      {portrait ? (
-        <img
-          alt="You in storybook style"
-          className="lesson-user-portrait mx-auto mb-2 size-20 rounded-[1.4rem] border-3 border-white object-cover shadow-control-surface md:mb-3 md:size-24 tall-wide:mb-0 tall-wide:size-12 tall-wide:shrink-0 tall-wide:rounded-xl tall-wide:border-2 [@media(min-width:35rem)_and_(max-height:26.25rem)]:m-0 [@media(min-width:35rem)_and_(max-height:26.25rem)]:size-14 [@media(min-width:35rem)_and_(max-height:26.25rem)]:shrink-0 [@media(min-width:35rem)_and_(max-height:26.25rem)]:rounded-2xl"
-          src={portrait.src}
-        />
-      ) : null}
       <div
         className={cx(
           "lesson-user-prompt-copy min-w-0",
           reserved && "grid min-h-0 grid-rows-[auto_minmax(0,1fr)]",
-          portrait &&
-            "[@media(min-width:35rem)_and_(max-height:26.25rem)]:flex-[1_1_auto]",
-          portrait && reserved && "tall-wide:flex-1",
         )}
       >
         <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">

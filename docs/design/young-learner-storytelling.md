@@ -322,8 +322,8 @@ repeat the story with the least adult repair.
 The 20 reviewed learner stories have published landscape WebP covers and page
 artwork. They share a warm gouache-and-watercolour picture-book style, simple
 readable silhouettes, and story-specific exact object or character counts. The
-runtime catalog stores the artwork URL, concise generation prompt, and
-descriptive alt text needed by reader and personalized-art behavior.
+runtime catalog stores the artwork URL, concise production prompt, and
+descriptive alt text needed by the reader.
 
 Checked-in pages also carry their saved narration and join-in audio IDs. New or
 revised stories should not reach this runtime shape until a validation set has

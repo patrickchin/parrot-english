@@ -18,8 +18,8 @@ function tableSql(database, table) {
     .get(table)?.sql;
 }
 
-describe("personalized story art persistence contract", () => {
-  it("exports a dedicated personalized_story_art Drizzle model", () => {
+describe("legacy story-art cleanup persistence contract", () => {
+  it("retains the personalized_story_art model for deletion cleanup", () => {
     assert.ok(schema.personalizedStoryArt, "Expected schema.personalizedStoryArt");
     assert.equal(getTableName(schema.personalizedStoryArt), "personalized_story_art");
     assert.deepEqual(Object.keys(getTableColumns(schema.personalizedStoryArt)), [
@@ -39,7 +39,7 @@ describe("personalized story art persistence contract", () => {
     ]);
   });
 
-  it("keeps final story art unique per learner with an account lookup index", () => {
+  it("keeps legacy rows isolated per learner with an account lookup index", () => {
     const migrations = readTestMigrations();
     const artMigration = migrations.find(({ sql }) =>
       /CREATE TABLE [`"]?personalized_story_art[`"]?/i.test(sql),
@@ -97,7 +97,7 @@ describe("personalized story art persistence contract", () => {
     }
   });
 
-  it("retains the account-and-story generation lease as a compatibility table", () => {
+  it("retains the account-and-story lease as a cleanup compatibility table", () => {
     assert.ok(
       schema.personalizedStoryArtGenerationLease,
       "Expected schema.personalizedStoryArtGenerationLease",
@@ -143,7 +143,7 @@ describe("personalized story art persistence contract", () => {
     }
   });
 
-  it("adds a learner-and-story generation lease with independent CAS ownership", () => {
+  it("retains the learner-and-story lease shape for cleanup", () => {
     assert.ok(
       schema.learnerStoryArtGenerationLease,
       "Expected schema.learnerStoryArtGenerationLease",

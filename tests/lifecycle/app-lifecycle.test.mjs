@@ -2326,7 +2326,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       authenticatedApplicationInMemory({
         api,
-        initialEntry: "/guardian/stories",
+        initialEntry: "/guardian/dubbing",
       }),
     );
 
@@ -2520,14 +2520,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       authenticatedApplicationInMemory({
         api,
-        initialEntry: "/guardian/stories",
+        initialEntry: "/guardian/dubbing",
       }),
     );
     await waitFor(() => {
       assert.equal(currentRoute().path, "/guardian/learners");
       text(/Manage learners/);
     });
-    noText(/Story settings/);
+    noText(/Voice dubbing/);
   });
 
   it("locked guardian routes switch modes automatically without rendering a prompt", async () => {
@@ -11753,43 +11753,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
     };
   }
-
-  it("does not let a delayed mock art mutation resurrect a deleted learner", async () => {
-    window.history.replaceState(
-      null,
-      "",
-      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-stale-art&parrotE2eAccount=task5-stale-art-account",
-    );
-    globalThis.localStorage = window.localStorage;
-    globalThis.sessionStorage = window.sessionStorage;
-    await vite.ssrLoadModule(
-      "/src/testing/e2e-browser-mocks.ts?task5-stale-art-contract",
-    );
-    const session = window.__parrotE2eLearners.openSession(
-      "task5-stale-art-writer",
-    );
-    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
-      "learner-noah",
-    );
-
-    try {
-      const response = await session.fetch(
-        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-noah",
-        { method: "POST" },
-      );
-      assert.equal(response.status, 404);
-      assert.deepEqual(await response.json(), { error: "not_found" });
-      const roster = await (
-        await session.fetch("/api/learner-profiles")
-      ).json();
-      assert.deepEqual(
-        roster.profiles.map(({ id }) => id),
-        ["learner-mia"],
-      );
-    } finally {
-      restoreStorage();
-    }
-  });
 
   it("does not let a delayed mock consent read resurrect a deleted learner", async () => {
     window.history.replaceState(

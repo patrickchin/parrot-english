@@ -315,7 +315,6 @@ describe("learnerProfile browser API", () => {
       (fetch) => saveProfileAnswer("name", "Mia", { fetch }),
       (fetch) =>
         learnerProfileApi.saveProfileAnswers({ name: "Mia" }, { fetch }),
-      (fetch) => learnerProfileApi.saveStoryLevel("tiny-stories", { fetch }),
     ]) {
       const request = jsonFetch(invalidProfileState);
       await assert.rejects(
@@ -404,29 +403,6 @@ describe("learnerProfile browser API", () => {
     });
   });
 
-  it("saves exactly one story-level preference", async () => {
-    assert.equal(typeof learnerProfileApi.saveStoryLevel, "function");
-    const payload = {
-      profile: { id: "learner-1", storyLevel: "tiny-stories" },
-      questions: [],
-    };
-    const request = jsonFetch(payload);
-
-    assert.deepEqual(
-      await learnerProfileApi.saveStoryLevel("tiny-stories", {
-        fetch: request.fetch,
-      }),
-      payload,
-    );
-    assert.equal(request.calls[0][0], "/api/profile/preferences");
-    assert.deepEqual(request.calls[0][1], {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: '{"storyLevel":"tiny-stories"}',
-      signal: undefined,
-    });
-  });
-
   it("reads learner-safe recording consent and saves the guardian choice", async () => {
     assert.equal(typeof learnerProfileApi.loadLessonRecordingConsent, "function");
     assert.equal(typeof learnerProfileApi.saveLessonRecordingConsent, "function");
@@ -459,7 +435,7 @@ describe("learnerProfile browser API", () => {
     ]);
   });
 
-  it("targets Guardian profile, preference, and recording requests with one exact learner query", async () => {
+  it("targets Guardian profile and recording requests with one exact learner query", async () => {
     const learnerProfileId = "learner /Noah";
     const profilePayload = {
       profile: { id: learnerProfileId, storyLevel: "tiny-stories" },
@@ -479,11 +455,6 @@ describe("learnerProfile browser API", () => {
       fetch: request.fetch,
       learnerProfileId,
     });
-    await learnerProfileApi.saveStoryLevel("tiny-stories", {
-      fetch: request.fetch,
-      learnerProfileId,
-    });
-
     const consent = jsonFetch({ cleanupPending: false, enabled: true });
     await learnerProfileApi.loadLessonRecordingConsent({
       fetch: consent.fetch,
@@ -500,7 +471,6 @@ describe("learnerProfile browser API", () => {
         "/api/profile?learnerProfileId=learner+%2FNoah",
         "/api/profile?learnerProfileId=learner+%2FNoah",
         "/api/profile?learnerProfileId=learner+%2FNoah",
-        "/api/profile/preferences?learnerProfileId=learner+%2FNoah",
       ],
     );
     assert.deepEqual(

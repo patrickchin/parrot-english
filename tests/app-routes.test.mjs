@@ -242,11 +242,7 @@ describe("app route helpers", () => {
       routes.getGuardianLearnerPath("learner/noah"),
       "/guardian/learners/learner%2Fnoah",
     );
-    assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
-    assert.equal(
-      routes.getGuardianStoriesPath("learner /Noah"),
-      "/guardian/stories?learnerProfileId=learner+%2FNoah",
-    );
+    assert.equal(routes.getGuardianStoriesPath, undefined);
     assert.equal(
       routes.getProfilePath("/guardian"),
       "/guardian/profile?returnTo=%2Fguardian",
@@ -265,7 +261,6 @@ describe("app route helpers", () => {
       ["/guardian/profile"],
       ["/guardian/profile/setup"],
       ["/guardian/profile/setup", "?redo=1"],
-      ["/guardian/stories"],
       ["/profile"],
       ["/profile/setup", "?redo=1"],
     ]) {
@@ -280,6 +275,7 @@ describe("app route helpers", () => {
       ["/guardianish"],
       ["/guardian/lessons"],
       ["/guardian/lessons/extra"],
+      ["/guardian/stories"],
       ["/guardian/dubbing/extra"],
       ["/guardian/learners/%E0%A4%A"],
       ["/guardian/learners/learner-noah/extra"],
@@ -354,7 +350,7 @@ describe("app route helpers", () => {
     assert.equal(routes.getSafeGuardianReturnTo(""), "/guardian");
     assert.equal(
       routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Fstories"),
-      "/guardian/stories",
+      "/guardian",
     );
     assert.equal(
       routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Faccount"),
@@ -390,7 +386,7 @@ describe("app route helpers", () => {
         "?section=art",
         "#cover",
       ),
-      "/guardian/stories?section=art#cover",
+      "/guardian",
     );
     assert.equal(
       routes.getSafeGuardianUnlockDestination(
@@ -888,15 +884,14 @@ describe("app route helpers", () => {
         returnTo.includes("%") ? null : returnTo,
       );
     }
-    for (const guardianPath of [
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/guardian")),
       "/guardian",
-      "/guardian/stories",
-    ]) {
-      assert.equal(
-        routes.getSafeReturnTo(returnToSearch(guardianPath)),
-        guardianPath,
-      );
-    }
+    );
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/guardian/stories")),
+      null,
+    );
     assert.equal(
       routes.getSafeReturnTo("?returnTo=https%3A%2F%2Fevil.example"),
       null,

@@ -26,10 +26,6 @@ import {
 } from "../media/audio-playback";
 import { playDeviceSpeech } from "../media/device-speech";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
-import {
-  getPersonalizedStoryArtOverride,
-  type PersonalizedStoryArtMetadata,
-} from "./personalized-story-art-client";
 import { StoryArtwork } from "./StoryArtwork";
 import type { Story } from "./story-catalog";
 
@@ -65,13 +61,11 @@ export function StoryReader({
   backToStories,
   onNavigatePage,
   pageIndex,
-  personalizedOverrides,
   story,
 }: {
   backToStories: string;
   onNavigatePage: (pageIndex: number) => void;
   pageIndex: number;
-  personalizedOverrides?: PersonalizedStoryArtMetadata["stories"];
   story: Story;
 }) {
   const [error, setError] = useState("");
@@ -92,11 +86,6 @@ export function StoryReader({
   const pageTextRef = useRef<HTMLParagraphElement | null>(null);
   const readingPaneRef = useRef<HTMLDivElement | null>(null);
   const page = story.pages[pageIndex];
-  const personalizedOverride = getPersonalizedStoryArtOverride(
-    { stories: personalizedOverrides ?? {} },
-    story.id,
-    page.id,
-  );
   const isLongStory = story.level === "long-stories";
   const pageParagraphs = isLongStory ? page.text.split(/\n{2,}/u) : [];
   const isFirstPage = pageIndex === 0;
@@ -422,7 +411,6 @@ export function StoryReader({
             artwork={page.artwork}
             className="aspect-[3/2] max-h-[52dvh] min-h-40 short:landscape:h-full short:landscape:max-h-none short:landscape:aspect-auto lg:h-full lg:max-h-none lg:aspect-auto"
             key={page.id}
-            personalizedOverride={personalizedOverride}
             priority
           />
           {isLongStory ? (

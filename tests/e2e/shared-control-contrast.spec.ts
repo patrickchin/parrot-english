@@ -398,7 +398,6 @@ test("guardian dashboard cards share one rendered frame and elevation", async ({
   await page.goto(guardianPath("/guardian"));
   const cards = [
     "Learner profiles",
-    "Story settings",
     "Voice dubbing",
     "Account & privacy",
   ].map((name) => page.getByRole("region", { name }));
@@ -450,14 +449,14 @@ for (const viewport of viewports) {
     await preparePage(page, viewport);
 
     await page.goto(guardianPath("/guardian"));
-    const storySettings = page.getByRole("link", {
-      name: "Open story settings",
+    const voiceDubbing = page.getByRole("link", {
+      name: "Manage voice dubbing",
     });
-    await storySettings.scrollIntoViewIfNeeded();
+    await voiceDubbing.scrollIntoViewIfNeeded();
     await expectPointerStateContrast({
-      interaction: storySettings,
+      interaction: voiceDubbing,
       minimum: 4.5,
-      name: "Open story settings link",
+      name: "Manage voice dubbing link",
       page,
     });
   });

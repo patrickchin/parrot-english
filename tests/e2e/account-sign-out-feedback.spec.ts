@@ -374,10 +374,13 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
   await waitForVisualAssets(page);
 
   const heading = page.getByRole("heading", { name: "Guardian dashboard" });
-  const storySettings = page.getByRole("heading", { name: "Story settings" });
-  const [headingBefore, storySettingsBefore] = await Promise.all([
+  const voiceDubbing = page.getByRole("heading", {
+    exact: true,
+    name: "Voice dubbing",
+  });
+  const [headingBefore, voiceDubbingBefore] = await Promise.all([
     heading.boundingBox(),
-    storySettings.boundingBox(),
+    voiceDubbing.boundingBox(),
   ]);
   const account = page.getByRole("button", {
     name: "Profile for Alex Guardian, guardian mode",
@@ -393,7 +396,7 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
   await expect(pending).toBeVisible();
   await expect(pendingAccount).toBeFocused();
   expect(await heading.boundingBox()).toEqual(headingBefore);
-  expect(await storySettings.boundingBox()).toEqual(storySettingsBefore);
+  expect(await voiceDubbing.boundingBox()).toEqual(voiceDubbingBefore);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
@@ -405,22 +408,22 @@ test("sign-out feedback stays clear over the guardian dashboard", async ({
     exact: true,
     name: "Sign out again",
   });
-  const [retryBox, headingAfter, storySettingsAfter] = await Promise.all([
+  const [retryBox, headingAfter, voiceDubbingAfter] = await Promise.all([
     retry.boundingBox(),
     heading.boundingBox(),
-    storySettings.boundingBox(),
+    voiceDubbing.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
   expect(headingAfter).toEqual(headingBefore);
-  expect(storySettingsAfter).toEqual(storySettingsBefore);
+  expect(voiceDubbingAfter).toEqual(voiceDubbingBefore);
   expect(boxesOverlap(retryBox!, headingAfter!)).toBe(false);
-  expect(boxesOverlap(retryBox!, storySettingsAfter!)).toBe(false);
+  expect(boxesOverlap(retryBox!, voiceDubbingAfter!)).toBe(false);
 
   await page.keyboard.press("Tab");
   await expect(retry).toBeFocused();
   const retryPaint = await focusedPaintBox(retry);
   expect(boxesOverlap(retryPaint, headingAfter!)).toBe(false);
-  expect(boxesOverlap(retryPaint, storySettingsAfter!)).toBe(false);
+  expect(boxesOverlap(retryPaint, voiceDubbingAfter!)).toBe(false);
 });
 
 test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard", async ({

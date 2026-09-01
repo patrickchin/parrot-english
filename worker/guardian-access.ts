@@ -135,14 +135,8 @@ export function requiresGuardianAccess(
   if (pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
   }
-  if (pathname === "/api/profile/preferences") {
-    return method === "PUT";
-  }
   if (pathname === "/api/profile/lesson-recording-consent") {
     return method === "PUT";
   }
-  return (
-    /^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname) &&
-    (method === "POST" || method === "DELETE")
-  );
+  return false;
 }
