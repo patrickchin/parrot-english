@@ -13,6 +13,10 @@
     <measure number="1">
       <attributes>
         <divisions>400</divisions>
+        <time>
+          <beats>4</beats>
+          <beat-type>4</beat-type>
+        </time>
       </attributes>
       <direction>
         <direction-type>
@@ -24,7 +28,7 @@
       </direction>
       <note>
         <rest/>
-        <duration>800</duration>
+        <duration>1600</duration>
       </note>
       <bookmark id="old-macdonald-v1-line-1"/>
       <note>
@@ -45,7 +49,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -55,8 +60,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -87,7 +91,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -98,49 +103,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -201,16 +205,6 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
           <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
@@ -228,13 +222,46 @@
       </note>
       <note>
         <pitch>
-          <step>G</step>
+          <step>A</step>
           <octave>4</octave>
         </pitch>
-        <duration>1000</duration>
+        <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>had</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>some</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>cows</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>E-I-E-I-O</text>
         </lyric>
       </note>
       <note>
@@ -249,13 +276,12 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>some</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -265,19 +291,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>cows</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>E-I-E-I-O</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -325,11 +339,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>moo-moo</text>
@@ -340,11 +350,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -385,11 +391,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>moo-moo</text>
@@ -400,11 +402,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -514,8 +512,7 @@
         </pitch>
         <duration>250</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>a</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -536,7 +533,7 @@
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>moo-moo</text>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -546,7 +543,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>moo-moo</text>
           <end-line/>
         </lyric>
       </note>
@@ -569,7 +567,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -579,8 +578,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -611,7 +609,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -622,49 +621,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -703,7 +701,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -713,8 +712,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -745,7 +743,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -756,49 +755,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -859,16 +857,6 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
           <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
@@ -886,13 +874,46 @@
       </note>
       <note>
         <pitch>
-          <step>G</step>
+          <step>A</step>
           <octave>4</octave>
         </pitch>
-        <duration>1000</duration>
+        <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>had</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>some</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>ducks</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>E-I-E-I-O</text>
         </lyric>
       </note>
       <note>
@@ -907,13 +928,12 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>some</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -923,19 +943,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>ducks</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>E-I-E-I-O</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -983,11 +991,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>quack-quack</text>
@@ -998,11 +1002,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -1043,11 +1043,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>quack-quack</text>
@@ -1058,11 +1054,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -1172,8 +1164,7 @@
         </pitch>
         <duration>250</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>a</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1194,7 +1185,7 @@
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>quack-quack</text>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -1204,7 +1195,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>quack-quack</text>
           <end-line/>
         </lyric>
       </note>
@@ -1227,7 +1219,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -1237,8 +1230,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1269,7 +1261,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -1280,49 +1273,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1361,7 +1353,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -1371,8 +1364,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1403,7 +1395,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -1414,49 +1407,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1517,16 +1509,6 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
           <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
@@ -1544,13 +1526,46 @@
       </note>
       <note>
         <pitch>
-          <step>G</step>
+          <step>A</step>
           <octave>4</octave>
         </pitch>
-        <duration>1000</duration>
+        <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>had</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>some</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>pigs</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>E-I-E-I-O</text>
         </lyric>
       </note>
       <note>
@@ -1565,13 +1580,12 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>some</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1581,19 +1595,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>pigs</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>E-I-E-I-O</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1641,11 +1643,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>snort</text>
@@ -1656,11 +1654,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -1701,11 +1695,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>snort</text>
@@ -1716,11 +1706,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -1830,8 +1816,7 @@
         </pitch>
         <duration>250</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>a</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1852,7 +1837,7 @@
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>snort-snort</text>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -1862,7 +1847,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>snort-snort</text>
           <end-line/>
         </lyric>
       </note>
@@ -1885,7 +1871,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -1895,8 +1882,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -1927,7 +1913,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -1938,49 +1925,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2019,7 +2005,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -2029,8 +2016,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2061,7 +2047,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -2072,49 +2059,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2175,16 +2161,6 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
           <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
@@ -2202,13 +2178,46 @@
       </note>
       <note>
         <pitch>
-          <step>G</step>
+          <step>A</step>
           <octave>4</octave>
         </pitch>
-        <duration>1000</duration>
+        <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>had</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>a</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>dog</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>E-I-E-I-O</text>
         </lyric>
       </note>
       <note>
@@ -2223,13 +2232,12 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>a</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2239,19 +2247,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>dog</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>E-I-E-I-O</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2299,11 +2295,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>woof-woof</text>
@@ -2314,11 +2306,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -2359,11 +2347,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>woof-woof</text>
@@ -2374,11 +2358,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -2488,8 +2468,7 @@
         </pitch>
         <duration>250</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>a</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2510,7 +2489,7 @@
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>woof-woof</text>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -2520,7 +2499,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>woof-woof</text>
           <end-line/>
         </lyric>
       </note>
@@ -2543,7 +2523,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -2553,8 +2534,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2585,7 +2565,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -2596,49 +2577,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2677,7 +2657,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -2687,8 +2668,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2719,7 +2699,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -2730,49 +2711,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2833,16 +2813,6 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>A</step>
-          <octave>4</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
           <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
@@ -2860,13 +2830,46 @@
       </note>
       <note>
         <pitch>
-          <step>G</step>
+          <step>A</step>
           <octave>4</octave>
         </pitch>
-        <duration>1000</duration>
+        <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>had</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>some</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>G</step>
+          <octave>4</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>sheep</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <syllabic>single</syllabic>
+          <text>E-I-E-I-O</text>
         </lyric>
       </note>
       <note>
@@ -2881,13 +2884,12 @@
       </note>
       <note>
         <pitch>
-          <step>E</step>
+          <step>D</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>some</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2897,19 +2899,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>sheep</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>E-I-E-I-O</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -2957,11 +2947,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>baa-baa</text>
@@ -2972,11 +2958,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -3017,11 +2999,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>baa-baa</text>
@@ -3032,11 +3010,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -3146,8 +3120,7 @@
         </pitch>
         <duration>250</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>a</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -3168,7 +3141,7 @@
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>baa-baa</text>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -3178,7 +3151,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>baa-baa</text>
           <end-line/>
         </lyric>
       </note>
@@ -3201,7 +3175,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>MacDonald</text>
         </lyric>
       </note>
       <note>
@@ -3211,8 +3186,7 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <syllabic>single</syllabic>
-          <text>MacDonald</text>
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -3243,7 +3217,8 @@
         </pitch>
         <duration>500</duration>
         <lyric number="1">
-          <extend/>
+          <syllabic>single</syllabic>
+          <text>a</text>
         </lyric>
       </note>
       <note>
@@ -3254,49 +3229,48 @@
         <duration>1000</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
-          <text>a</text>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>E</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <syllabic>single</syllabic>
           <text>farm</text>
         </lyric>
       </note>
       <note>
         <pitch>
-          <step>D</step>
-          <octave>5</octave>
-        </pitch>
-        <duration>500</duration>
-        <lyric number="1">
-          <extend/>
-        </lyric>
-      </note>
-      <note>
-        <pitch>
-          <step>D</step>
+          <step>E</step>
           <octave>5</octave>
         </pitch>
         <duration>500</duration>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>E-I-E-I-O</text>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>E</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
+        </lyric>
+      </note>
+      <note>
+        <pitch>
+          <step>D</step>
+          <octave>5</octave>
+        </pitch>
+        <duration>500</duration>
+        <lyric number="1">
+          <extend/>
         </lyric>
       </note>
       <note>
@@ -3329,7 +3303,7 @@
       </attributes>
       <note>
         <rest/>
-        <duration>800</duration>
+        <duration>1600</duration>
       </note>
       <note>
         <pitch>

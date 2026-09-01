@@ -886,24 +886,24 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal((html.match(/<li\b/g) ?? []).length, DUB_LINES.length);
     for (const [index, line] of DUB_LINES.entries()) {
       assert.match(html, new RegExp(`aria-label="Edit line ${index + 1}: ${line.text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} Not recorded"`));
-      assert.match(html, new RegExp(`aria-label="No recording waveform for line ${index + 1}"`));
     }
+    assert.doesNotMatch(html, /recording waveform for line/i);
+    assert.doesNotMatch(html.replace(/<[^>]+>/g, ""), /\b(?:Recorded|Not recorded|Record again)\b/);
     assert.doesNotMatch(html, /Scene selection|Start with Scene|Continue with Scene|Fix Scene/);
     assert.doesNotMatch(html, /Record line|Next line/i);
     assert.doesNotMatch(html, /Grown-up options|Delete my dub/);
     assert.doesNotMatch(html, /whole rhyme/i);
   });
 
-  it("shows learner peaks only for recordings that own persisted waveform data", () => {
-    const peakBars = Array.from({ length: 32 }, (_, index) => index / 31);
+  it("keeps recording state accessible without rendering waveforms in the lyric list", () => {
     const html = renderProjectHome({
-      recordingPeakBars: { "line-1": peakBars },
       saved: { "line-1": "saved", "line-2": "saved" },
     });
 
-    assert.match(html, /aria-label="Your recording waveform for line 1"/);
-    assert.match(html, /aria-label="No recording waveform for line 2"/);
-    assert.doesNotMatch(html, /aria-label="Recording waveform for line/);
+    assert.match(html, /aria-label="Edit line 1: Five little ducks went out one day\. Recorded"/);
+    assert.match(html, /aria-label="Edit line 2: Over the hill and far away\. Recorded"/);
+    assert.doesNotMatch(html, /recording waveform for line/i);
+    assert.doesNotMatch(html, /<svg[^>]+role="img"/);
   });
 
   it("keeps the full player artwork out of lyric editing rows", () => {
@@ -1185,8 +1185,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(container.querySelector('[aria-label="Line recording controls"] h2 [aria-current="true"]'), null);
     assert.equal(audio.mediaStreamSourceCalls, 0);
     assert.equal(
-      [...container.querySelectorAll("button")].find(({ textContent }) =>
-        textContent?.includes("Hear line"))?.disabled,
+      container.querySelector('[aria-label="Play original"]')?.disabled,
       true,
     );
     assert.equal(container.querySelector('[aria-label="Previous line"]').disabled, true);
@@ -1194,7 +1193,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(container.querySelector('[aria-label="Back to all lyrics"]').disabled, true);
     assert.equal(container.querySelector('[aria-label="Cancel count-in"]').disabled, false);
     const liveStatus = container.querySelector('[aria-label="Dub updates"]');
-    assert.match(liveStatus.textContent, /Get ready\. Recording starts after two beats\./);
+    assert.match(liveStatus.textContent, /Get ready\. Recording starts after 2 beats\./);
     assert.doesNotMatch(liveStatus.textContent, /Count-in [12]/);
 
     await act(async () => audio.advanceCountIn());
@@ -1422,8 +1421,7 @@ describe("duck dubbing storyboard presentation", () => {
       .find(({ textContent }) => textContent === "请让家长开启麦克风权限，然后重试。");
     assert.ok(helper);
 
-    await click([...container.querySelectorAll("button")]
-      .find(({ textContent }) => textContent?.includes("Hear line")));
+    await click(container.querySelector('[aria-label="Play original"]'));
     await waitFor(() => assert.equal(
       [...container.querySelectorAll('[lang="zh-Hans"]')]
         .filter(({ textContent }) => textContent === "请让家长开启麦克风权限，然后重试。")
@@ -1495,9 +1493,7 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Edit line 1:"]')));
     await click(container.querySelector('[aria-label^="Edit line 1:"]'));
-    const hearLine = () => [...container.querySelectorAll("button")].find(
-      ({ textContent }) => textContent?.includes("Hear line"),
-    );
+    const hearLine = () => container.querySelector('[aria-label="Play original"]');
     await waitFor(() => assert.ok(hearLine()));
     await click(hearLine());
     await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
@@ -1536,9 +1532,7 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Edit line 1:"]')));
     await click(container.querySelector('[aria-label^="Edit line 1:"]'));
-    await click([...container.querySelectorAll("button")].find(
-      ({ textContent }) => textContent?.includes("Hear line"),
-    ));
+    await click(container.querySelector('[aria-label="Play original"]'));
     await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
     await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
 
@@ -1581,9 +1575,7 @@ describe("duck dubbing storyboard presentation", () => {
     const container = await mountDuckDub();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Edit line 1:"]')));
     await click(container.querySelector('[aria-label^="Edit line 1:"]'));
-    await click([...container.querySelectorAll("button")].find(
-      ({ textContent }) => textContent?.includes("Hear line"),
-    ));
+    await click(container.querySelector('[aria-label="Play original"]'));
 
     await waitFor(() => assert.equal(
       container.querySelector('[role="alert"]')?.textContent,
@@ -1594,9 +1586,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(audio.contexts[0].closeCalls, 1);
     assert.deepEqual(audio.contexts[0].sources, []);
     assert.deepEqual(audio.contexts[0].oscillators, []);
-    assert.ok([...container.querySelectorAll("button")].some(
-      ({ textContent }) => textContent?.includes("Hear line"),
-    ));
+    assert.ok(container.querySelector('[aria-label="Play original"]'));
   });
 
   it("clears a revoking save into listen-only playback", async () => {
@@ -1907,7 +1897,7 @@ describe("duck dubbing storyboard presentation", () => {
     }
   });
 
-  it("uses explicit line status text alongside each recording waveform", () => {
+  it("keeps line status in accessible edit names without visible status rows", () => {
     const project = renderProjectHome({
       needsRetake: { "line-5": true },
       saved: {
@@ -1923,7 +1913,8 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(project, /aria-label="Edit line 5: Four little ducks went out one day\. Record again"/);
     assert.match(project, /aria-label="Edit line 9: Three little ducks went out one day\. Recorded"/);
     assert.match(project, /aria-label="Edit line 13: Two little ducks went out one day\. Not recorded"/);
-    assert.equal((project.match(/No recording waveform for line \d+/g) ?? []).length, DUB_LINES.length);
+    assert.doesNotMatch(project, /recording waveform for line/i);
+    assert.doesNotMatch(project.replace(/<[^>]+>/g, ""), /\b(?:Recorded|Not recorded|Record again)\b/);
   });
 
   it("renders one Choicer-style line flow without competing editor controls", () => {
@@ -1931,10 +1922,10 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-current="step"[^>]*>Line 1 of 24/);
     assert.match(html.replace(/<[^>]+>/g, ""), /Five little ducks went out one day\./);
     assert.match(html, /aria-label="Original audio waveform"/);
-    assert.match(html, /Hear line/);
+    assert.match(html, /aria-label="Play original"/);
     assert.match(html, /aria-label="Record line"/);
     assert.match(html, /aria-label="Next line"/);
-    assert.ok(html.indexOf("Hear line") < html.indexOf('aria-label="Record line"'));
+    assert.ok(html.indexOf('aria-label="Play original"') < html.indexOf('aria-label="Record line"'));
     assert.ok(html.indexOf('aria-label="Record line"') < html.indexOf('aria-label="Next line"'));
     assert.doesNotMatch(html, /Scene line selectors|Play scene|Scene recording progress|0 \/ 4|Five little ducks<\/h1>/);
     assert.doesNotMatch(html, /<details|<summary|aria-label="Listen"/);
@@ -1943,7 +1934,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("offers replay and record-again for a previously saved line", () => {
     const html = renderSceneEditor({ hasSavedTake: true });
     assert.match(html, /aria-label="Play my recording"/);
-    assert.match(html, />Record again</);
+    assert.match(html, /aria-label="Record again"/);
   });
 
   it("renders previous and next navigation across the full rhyme with a lyric-list back control", () => {
@@ -2018,7 +2009,7 @@ describe("duck dubbing storyboard presentation", () => {
     });
 
     assert.equal(definition.music.linePhrases[2].durationMs, 2_000);
-    assert.match(idle, /Melody length: 0:03/);
+    assert.doesNotMatch(idle, /Melody length:/);
     assert.match(recording, /Recording with melody/);
     assert.match(recording, /0:02 \/ 0:03/);
     assert.match(recording, /aria-valuemax="3000"/);
@@ -2054,7 +2045,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Cancel count-in"/);
     assert.doesNotMatch(html, /role="timer"/);
     assert.doesNotMatch(html, /aria-live/);
-    assert.match(html, /<button(?=[^>]*disabled)[^>]*>[\s\S]*?Hear line<\/button>/);
+    assert.match(html, /<button(?=[^>]*aria-label="Play original")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /aria-label="Previous line"[^>]*disabled/);
     assert.match(html, /aria-label="Next line"[^>]*disabled/);
     assert.doesNotMatch(html, /aria-label="Cancel count-in"[^>]*disabled/);
@@ -2067,10 +2058,10 @@ describe("duck dubbing storyboard presentation", () => {
     const saving = renderSceneEditor({ operation: "saving" });
 
     assert.match(opening, /<button(?=[^>]*aria-label="Starting microphone")(?=[^>]*disabled)[^>]*>/);
-    assert.match(opening, />Starting…</);
+    assert.match(opening, />Start…</);
     assert.match(opening, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
     assert.match(saving, /<button(?=[^>]*aria-label="Saving recording")(?=[^>]*disabled)[^>]*>/);
-    assert.match(saving, />Saving…</);
+    assert.match(saving, />Save…</);
     assert.match(saving, /<button(?=[^>]*aria-label="Next line")(?=[^>]*disabled)[^>]*>/);
   });
 
@@ -2114,7 +2105,7 @@ describe("duck dubbing storyboard presentation", () => {
       pendingTake: new Blob([new Uint8Array([1, 2, 3])], { type: "audio/webm" }),
       saveRecovery: "save",
     });
-    assert.match(html, /<button[^>]*disabled[^>]*>[^<]*<svg[^>]*>.*Hear line<\/button>/s);
+    assert.match(html, /<button(?=[^>]*aria-label="Play original")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /<button(?=[^>]*aria-label="Play my recording")(?=[^>]*disabled)[^>]*>/);
     assert.match(html, /<button(?=[^>]*aria-label="Save again")(?=[^>]*disabled)[^>]*>/);
   });
@@ -2143,8 +2134,9 @@ describe("duck dubbing storyboard presentation", () => {
       saveRecovery: "record",
     });
     assert.match(html, /aria-label="Record again"/);
-    assert.equal((html.match(/Record again/g) ?? []).length, 2);
-    assert.doesNotMatch(html, /Your recording waveform|Save again/);
+    assert.equal((html.match(/Record again/g) ?? []).length, 1);
+    assert.match(html, /Your recording waveform/);
+    assert.doesNotMatch(html, /Save again/);
   });
 
   it("names playing full and local-take controls as stop actions", () => {
