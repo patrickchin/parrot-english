@@ -60,7 +60,9 @@ export function WordGamePlayer({
   const playbackAbortRef = useRef<AbortController | null>(null);
   const playbackGenerationRef = useRef(0);
   const playThroughRef = useRef(0);
+  const preloadedImagesRef = useRef<HTMLImageElement[]>([]);
   const questionHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const seenImageSourcesRef = useRef(new Set<string>());
   const round = rounds[roundIndex];
   const progress = roundIndex + 1;
   const categoryRoute = getWordGameCategoryRoute(selection.category.id);
@@ -125,6 +127,33 @@ export function WordGamePlayer({
     (complete ? completionHeadingRef.current : questionHeadingRef.current)?.focus();
     focusAfterChangeRef.current = false;
   }, [complete, roundIndex]);
+
+  useEffect(() => {
+    const nextRound = rounds[roundIndex + 1];
+    if (!nextRound) return;
+
+    for (const choice of rounds[roundIndex].choices) {
+      if (choice.visual.kind === "image") {
+        seenImageSourcesRef.current.add(choice.visual.src);
+      }
+    }
+
+    for (const choice of nextRound.choices) {
+      if (
+        choice.visual.kind !== "image" ||
+        seenImageSourcesRef.current.has(choice.visual.src)
+      ) continue;
+
+      const image = new Image();
+      image.decoding = "async";
+      image.src = choice.visual.src;
+      preloadedImagesRef.current.push(image);
+      seenImageSourcesRef.current.add(choice.visual.src);
+      if (typeof image.decode === "function") {
+        void image.decode().catch(() => undefined);
+      }
+    }
+  }, [roundIndex, rounds]);
 
   function listenToChoice(choiceIndex: number) {
     playLine(round.choices[choiceIndex].labelAudio);
