@@ -120,10 +120,7 @@ export function requiresGuardianAccess(
 ) {
   if (hasLearnerTarget) return true;
   if (pathname === "/api/learner-profiles") {
-    return method === "GET" || method === "POST";
-  }
-  if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(pathname)) {
-    return method === "PUT";
+    return method === "POST";
   }
   if (/^\/api\/learner-profiles\/[^/]+$/.test(pathname)) {
     return method === "DELETE";

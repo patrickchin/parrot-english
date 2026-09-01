@@ -126,6 +126,7 @@ async function requestElevenLabsSpeech(apiKey, line) {
       "xi-api-key": apiKey,
     },
     body: JSON.stringify({
+      language_code: line.lang.split("-")[0],
       model_id: modelId,
       text: line.ttsText ?? line.text,
       voice_settings: getElevenLabsVoiceSettings(line),

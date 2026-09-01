@@ -5,6 +5,9 @@ import * as speechRecorder from "../src/media/speech-recorder.ts";
 const startSpeechRecording =
   speechRecorder.startSpeechRecording ??
   (() => Promise.reject(new Error("startSpeechRecording is missing")));
+const prepareSpeechRecording =
+  speechRecorder.prepareSpeechRecording ??
+  (() => Promise.reject(new Error("prepareSpeechRecording is missing")));
 const recordSpeechClip =
   speechRecorder.recordSpeechClip ??
   (() => Promise.reject(new Error("recordSpeechClip is missing")));
@@ -151,11 +154,13 @@ function createRecorderClass({ onStart, startError } = {}) {
       this.stream = stream;
       this.options = options;
       this.state = "inactive";
+      this.startCalls = 0;
       this.stopCalls = 0;
       instances.push(this);
     }
 
     start() {
+      this.startCalls += 1;
       if (startError) throw startError;
       this.state = "recording";
       onStart?.();
@@ -219,6 +224,60 @@ describe("microphone preflight", () => {
 });
 
 describe("hold-to-talk speech recorder", () => {
+  it("prepares an inactive one-shot session before starting capture", async () => {
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+
+    const session = await prepareSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    assert.equal(instances[0].state, "inactive");
+    assert.equal(instances[0].startCalls, 0);
+    assert.equal(track.stopCalls, 0);
+
+    session.start();
+    assert.equal(instances[0].startCalls, 1);
+    assert.throws(() => session.start(), /already started|not startable/i);
+
+    await session.stop();
+  });
+
+  it("cancels a prepared session before start and rejects its result", async () => {
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass();
+    const session = await prepareSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    session.cancel();
+    session.cancel();
+
+    assert.equal(track.stopCalls, 1);
+    assert.equal(instances[0].startCalls, 0);
+    assert.equal(instances[0].stopCalls, 0);
+    await assert.rejects(session.stop(), { name: "AbortError" });
+  });
+
+  it("cleans up the stream when starting a prepared session fails", async () => {
+    const { stream, track } = createStream();
+    const { FakeMediaRecorder, instances } = createRecorderClass({
+      startError: new Error("recorder start failed"),
+    });
+    const session = await prepareSpeechRecording({
+      MediaRecorder: FakeMediaRecorder,
+      getUserMedia: async () => stream,
+    });
+
+    assert.throws(() => session.start(), /recorder start failed/);
+    assert.equal(instances[0].startCalls, 1);
+    assert.equal(instances[0].stopCalls, 0);
+    assert.equal(track.stopCalls, 1);
+    await assert.rejects(session.stop(), /recorder start failed/);
+  });
+
   it("does not request microphone access when recording is unsupported", async () => {
     let requestedMicrophone = false;
 

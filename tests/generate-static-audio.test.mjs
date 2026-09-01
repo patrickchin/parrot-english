@@ -256,7 +256,7 @@ describe("static audio generator", () => {
     }
   });
 
-  it("chooses ElevenLabs voices from speaker metadata", () => {
+  it("chooses ElevenLabs voices and language from line metadata", () => {
     const generator = readFileSync(
       new URL("../scripts/generate-static-audio.mjs", import.meta.url),
       "utf8"
@@ -270,6 +270,10 @@ describe("static audio generator", () => {
     assert.match(generator, /5N1BjZ10t6GcJUhZCP40/);
     assert.match(generator, /pFZP5JQG7iQjIQuC4Bku/);
     assert.doesNotMatch(generator, /4NQthjVhIGGVfL3Si000/);
+    assert.match(
+      generator,
+      /language_code:\s*line\.lang\.split\(["']-["']\)\[0\]/,
+    );
     assert.match(generator, /line\.speaker === "narrator"/);
     assert.match(generator, /speed:\s*0\.96/);
     assert.match(generator, /style:\s*0\.35/);

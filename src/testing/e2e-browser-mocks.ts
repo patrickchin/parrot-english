@@ -12,6 +12,22 @@ const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
 let wordGameAutoplayBlocked = false;
 const backingStarts: Array<{ at: number; frequencyHz: number }> = [];
+const dubMediaMetrics = {
+  audioContextCloses: 0,
+  audioContextsCreated: 0,
+  microphoneConstraints: [] as MediaStreamConstraints[],
+  microphoneRequests: 0,
+  microphoneTrackStops: 0,
+  recorderStarts: [] as number[],
+  recorderStops: [] as number[],
+  recordedStreamTrackKinds: [] as string[][],
+  scheduledBacking: [] as Array<{
+    at: number;
+    frequencyHz: number;
+    type: OscillatorType;
+  }>,
+};
+let failedDubMelodyStart = false;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
@@ -23,6 +39,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "delete-held",
   "empty",
   "load-held",
+  "melody-start-failed",
   "multiple-source-failed",
   "not-granted",
   "partial",
@@ -31,6 +48,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "reset-delete-failed",
   "reset-delete-lost-response",
   "reset-interrupted",
+  "recorder-start-failed",
   "revoking",
   "upload-failed",
   "upload-retry-held",
@@ -179,6 +197,16 @@ const DEFAULT_E2E_DUB_DEFINITION =
 function normalizeE2ePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/u, "");
   return normalized === "" ? "/" : normalized.toLowerCase();
+}
+
+function isActiveE2eDubRoute() {
+  const pathname = normalizeE2ePathname(new URL(window.location.href).pathname);
+  return Boolean(
+    getE2eDubScenario() &&
+      DUB_DEFINITIONS.some(
+        ({ route }) => normalizeE2ePathname(route) === pathname,
+      ),
+  );
 }
 
 function getActiveE2eDubDefinition() {
@@ -1926,7 +1954,9 @@ function initialE2eDubLineIds(scenario: string, lineIds: readonly string[]) {
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
     scenario === "multiple-source-failed" ||
+    scenario === "melody-start-failed" ||
     scenario === "playback-setup-failed" ||
+    scenario === "recorder-start-failed" ||
     scenario === "reset-delete-failed" ||
     scenario === "reset-delete-lost-response" ||
     scenario === "reset-interrupted"
@@ -2268,13 +2298,30 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
     },
     snapshot() {
       return {
+        audioContextCloses: dubMediaMetrics.audioContextCloses,
+        audioContextsCreated: dubMediaMetrics.audioContextsCreated,
         audioContextDoubleCloses,
         backingStarts: backingStarts.map((start) => ({ ...start })),
         createdObjectUrls: [...createdObjectUrls],
         guideFetches: [...guideFetches],
+        microphoneConstraints: structuredClone(
+          dubMediaMetrics.microphoneConstraints,
+        ),
+        microphoneRequests: dubMediaMetrics.microphoneRequests,
+        microphoneTrackStops: dubMediaMetrics.microphoneTrackStops,
         playedAudioSources: [...playedAudioSources],
         privateFetches: [...privateFetches],
+        recorderStartCount: dubMediaMetrics.recorderStarts.length,
+        recorderStartWallMs: [...dubMediaMetrics.recorderStarts],
+        recorderStopCount: dubMediaMetrics.recorderStops.length,
+        recorderStopWallMs: [...dubMediaMetrics.recorderStops],
+        recordedStreamTrackKinds: dubMediaMetrics.recordedStreamTrackKinds.map(
+          (kinds) => [...kinds],
+        ),
         revokedObjectUrls: [...revokedObjectUrls],
+        scheduledBacking: dubMediaMetrics.scheduledBacking.map((start) => ({
+          ...start,
+        })),
         uploads: [...uploads],
       };
     },
@@ -2411,10 +2458,7 @@ function requiresGuardianAccess(
 ) {
   if (hasLearnerTarget) return true;
   if (url.pathname === "/api/learner-profiles") {
-    return method === "GET" || method === "POST";
-  }
-  if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(url.pathname)) {
-    return method === "PUT";
+    return method === "POST";
   }
   if (/^\/api\/learner-profiles\/[^/]+$/.test(url.pathname)) {
     return method === "DELETE";
@@ -3299,17 +3343,30 @@ class MockMediaRecorder {
   onstop: RecorderHandler<Event> = null;
   state: RecordingState = "inactive";
   readonly lessonRecorderId: number;
+  readonly dubRecorder: boolean;
 
   constructor(
     readonly stream: MediaStream,
     readonly options?: MediaRecorderOptions,
   ) {
+    this.dubRecorder = isActiveE2eDubRoute();
+    if (this.dubRecorder) {
+      dubMediaMetrics.recordedStreamTrackKinds.push(
+        stream.getTracks().map(({ kind }) => kind),
+      );
+    }
     this.lessonRecorderId = getE2eLessonScenario()
       ? ++lessonMediaMetrics.nextRecorderId
       : 0;
   }
 
   start() {
+    if (this.dubRecorder) {
+      dubMediaMetrics.recorderStarts.push(performance.now());
+      if (getE2eDubScenario() === "recorder-start-failed") {
+        throw new DOMException("Mock dub recorder start failed.", "NotSupportedError");
+      }
+    }
     this.state = "recording";
     if (this.lessonRecorderId) {
       lessonMediaMetrics.recorderStarts.push({
@@ -3341,6 +3398,9 @@ class MockMediaRecorder {
     if (this.state === "inactive") return;
 
     this.state = "inactive";
+    if (this.dubRecorder) {
+      dubMediaMetrics.recorderStops.push(performance.now());
+    }
     if (this.lessonRecorderId) {
       lessonMediaMetrics.recorderStops.push({
         id: this.lessonRecorderId,
@@ -3399,8 +3459,21 @@ class MockScheduledAudioNode extends MockAudioNode {
     super();
   }
   start(when = 0) {
-    if (this.kind === "oscillator" && getE2eDubScenario()) {
+    if (this.kind === "oscillator" && isActiveE2eDubRoute()) {
       backingStarts.push({ at: when, frequencyHz: this.frequency.value });
+      dubMediaMetrics.scheduledBacking.push({
+        at: when,
+        frequencyHz: this.frequency.value,
+        type: this.type,
+      });
+      if (
+        this.type === "triangle" &&
+        getE2eDubScenario() === "melody-start-failed" &&
+        !failedDubMelodyStart
+      ) {
+        failedDubMelodyStart = true;
+        throw new DOMException("Mock dub melody start failed.", "InvalidStateError");
+      }
     }
   }
   stop(when = 0) {
@@ -3426,6 +3499,11 @@ class MockAudioContext {
   readonly destination = new MockAudioNode();
   private readonly startedAt = performance.now();
   private closed = false;
+  private readonly dubContext = isActiveE2eDubRoute();
+
+  constructor() {
+    if (this.dubContext) dubMediaMetrics.audioContextsCreated += 1;
+  }
 
   get currentTime() {
     return ((performance.now() - this.startedAt) / 1_000) * 20;
@@ -3433,13 +3511,14 @@ class MockAudioContext {
 
   async close() {
     if (this.closed) {
-      audioContextDoubleCloses += 1;
+      if (this.dubContext) audioContextDoubleCloses += 1;
       throw new DOMException(
         "Cannot close a closed AudioContext.",
         "InvalidStateError",
       );
     }
     this.closed = true;
+    if (this.dubContext) dubMediaMetrics.audioContextCloses += 1;
   }
   createBufferSource() {
     return new MockScheduledAudioNode("voice", () => this.currentTime);
@@ -3498,6 +3577,7 @@ function createMockStream(onStop?: () => void) {
 }
 
 type PendingMicrophoneRequest = {
+  onStop?: () => void;
   reject: (reason?: unknown) => void;
   resolve: (stream: MediaStream) => void;
 };
@@ -3525,6 +3605,7 @@ const e2eLessonMicrophone = {
     request.resolve(
       createMockStream(() => {
         this.stoppedTracks += 1;
+        request.onStop?.();
       }),
     );
     return true;
@@ -3803,7 +3884,7 @@ Object.defineProperty(window, "MediaRecorder", {
 Object.defineProperty(navigator, "mediaDevices", {
   configurable: true,
   value: {
-    getUserMedia: async () => {
+    getUserMedia: async (constraints: MediaStreamConstraints) => {
       const lessonScenario = getE2eLessonScenario();
       if (lessonScenario) {
         lessonMediaMetrics.getUserMediaCalls += 1;
@@ -3829,21 +3910,52 @@ Object.defineProperty(navigator, "mediaDevices", {
         }
       }
       if (getE2eMicrophoneScenario() === "denied") {
+        if (isActiveE2eDubRoute()) {
+          dubMediaMetrics.microphoneRequests += 1;
+          dubMediaMetrics.microphoneConstraints.push(
+            structuredClone(constraints),
+          );
+        }
         throw new DOMException("Permission denied", "NotAllowedError");
       }
       if (getE2eMicrophoneScenario() === "delayed") {
+        const dubRequest = isActiveE2eDubRoute();
+        if (dubRequest) {
+          dubMediaMetrics.microphoneRequests += 1;
+          dubMediaMetrics.microphoneConstraints.push(
+            structuredClone(constraints),
+          );
+        }
         e2eLessonMicrophone.requests += 1;
         return new Promise<MediaStream>((resolve, reject) => {
-          pendingMicrophoneRequests.push({ reject, resolve });
+          pendingMicrophoneRequests.push({
+            ...(dubRequest
+              ? {
+                  onStop: () => {
+                    dubMediaMetrics.microphoneTrackStops += 1;
+                  },
+                }
+              : {}),
+            reject,
+            resolve,
+          });
           e2eLessonMicrophone.pending = pendingMicrophoneRequests.length;
         });
+      }
+      if (isActiveE2eDubRoute()) {
+        dubMediaMetrics.microphoneRequests += 1;
+        dubMediaMetrics.microphoneConstraints.push(structuredClone(constraints));
       }
       return createMockStream(
         lessonScenario
           ? () => {
               lessonMediaMetrics.stoppedTracks += 1;
             }
-          : undefined,
+          : isActiveE2eDubRoute()
+            ? () => {
+                dubMediaMetrics.microphoneTrackStops += 1;
+              }
+            : undefined,
       );
     },
   },

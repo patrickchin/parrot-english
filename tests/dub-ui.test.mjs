@@ -39,6 +39,15 @@ const { DubListenOnly } = await vite.ssrLoadModule("/src/dubbing/DubListenOnly.t
 const { DubProjectHome } = await vite.ssrLoadModule("/src/dubbing/DubProjectHome.tsx");
 const { DubSceneEditor } = await vite.ssrLoadModule("/src/dubbing/DubSceneEditor.tsx");
 const { DubTakeWaveform } = await vite.ssrLoadModule("/src/dubbing/DubTakeWaveform.tsx");
+const karaokeGuide = await vite.ssrLoadModule("/src/dubbing/DubKaraokeGuide.tsx").catch(() => ({}));
+const {
+  DubMelodyLane,
+  DubTimedWords,
+  getActiveDubMelodyNoteIndex,
+  getDubMelodyGeometry,
+  getDubPlayheadPercent,
+  getDubTimedWordSegments,
+} = karaokeGuide;
 const { DuckDub } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const {
   DubLoading,
@@ -128,23 +137,33 @@ function mountDuckDub() {
   );
 }
 
-function installRecordingHarness() {
-  return installSynchronizedRecordingHarness().track;
-}
-
 function installSynchronizedRecordingHarness({
   decodeError,
   melodyStartError,
   melodyPreparationError,
+  playbackVoiceDuration = 1,
+  recorderStartErrorAt = 0,
   rejectMicrophone = false,
 } = {}) {
   const events = [];
   const contexts = [];
   const callbacks = new Map();
-  const track = { stopped: false, stop() { this.stopped = true; } };
+  const microphoneConstraints = [];
+  const createTrack = () => ({
+    stopCalls: 0,
+    stopped: false,
+    stop() {
+      this.stopCalls += 1;
+      this.stopped = true;
+    },
+  });
+  const track = createTrack();
+  const tracks = [track];
   let failingCallback = null;
   let frameFailure = null;
+  let mediaStreamSourceCalls = 0;
   let nextFrame = 1;
+  let recorderStarts = 0;
 
   globalThis.requestAnimationFrame = (callback) => {
     if (callback === failingCallback) {
@@ -163,6 +182,8 @@ function installSynchronizedRecordingHarness({
     constructor() { this.state = "inactive"; }
 
     start() {
+      recorderStarts += 1;
+      if (recorderStartErrorAt === recorderStarts) throw new Error("recorder start failed");
       this.state = "recording";
       events.push("recorder:start");
     }
@@ -222,21 +243,29 @@ function installSynchronizedRecordingHarness({
     }
 
     createMediaStreamSource() {
+      mediaStreamSourceCalls += 1;
       return { connect() {}, disconnect() {} };
     }
 
     createOscillator() {
       const oscillator = {
-        connect() {},
+        connections: [],
+        connect(output) { this.connections.push(output); },
         frequency: new Param(),
         onended: null,
         startTimes: [],
-        stop() {},
+        stopCalls: 0,
+        stopTimes: [],
+        stop(when) {
+          this.stopCalls += 1;
+          this.stopTimes.push(when);
+        },
         type: "sine",
         start(when) {
           this.startTimes.push(when);
           if (this.type === "triangle") events.push("melody:start");
         },
+        finish() { this.onended?.(); },
       };
       this.oscillators.push(oscillator);
       return oscillator;
@@ -244,7 +273,7 @@ function installSynchronizedRecordingHarness({
 
     decodeAudioData() {
       this.decodeCalls += 1;
-      return decodeError ? Promise.reject(decodeError) : Promise.resolve({ duration: 1 });
+      return decodeError ? Promise.reject(decodeError) : Promise.resolve({ duration: playbackVoiceDuration });
     }
     resume() {
       return contexts.length === 1 && melodyPreparationError
@@ -258,9 +287,14 @@ function installSynchronizedRecordingHarness({
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,
     value: {
-      async getUserMedia() {
+      async getUserMedia(constraints) {
+        microphoneConstraints.push(constraints);
         if (rejectMicrophone) throw new Error("microphone denied");
-        return { getTracks: () => [track] };
+        const nextTrack = tracks.length === 1 && track.stopCalls === 0
+          ? track
+          : createTrack();
+        if (nextTrack !== track) tracks.push(nextTrack);
+        return { getTracks: () => [nextTrack] };
       },
     },
   });
@@ -269,7 +303,43 @@ function installSynchronizedRecordingHarness({
     callbacks,
     contexts,
     events,
+    microphoneConstraints,
+    get mediaStreamSourceCalls() { return mediaStreamSourceCalls; },
+    get recorderStarts() { return recorderStarts; },
     track,
+    tracks,
+    advanceCountIn() {
+      const backing = [...contexts].reverse().find(({ oscillators }) =>
+        oscillators.some(({ frequency }) => frequency.value === 0),
+      );
+      const marker = backing?.oscillators
+        .filter(({ connections, frequency, onended }) =>
+          connections.length === 0 && frequency.value > 0 && onended)
+        .sort((left, right) => left.stopTimes[0] - right.stopTimes[0])[0];
+      assert.ok(marker, "count-in should expose another audio-clock marker");
+      marker.finish();
+    },
+    finishDownbeat() {
+      const backing = [...contexts].reverse().find(({ oscillators }) =>
+        oscillators.some(({ frequency }) => frequency.value === 0),
+      );
+      const marker = backing?.oscillators
+        .filter(({ connections, frequency, onended }) =>
+          connections.length === 0 && frequency.value > 0 && onended)
+        .sort((left, right) => right.stopTimes[0] - left.stopTimes[0])[0];
+      assert.ok(marker, "count-in should expose a downbeat marker");
+      marker.finish();
+    },
+    flushFocus() {
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const frame = [...callbacks].find(([, callback]) => callback.name === "tryFocus");
+        if (!frame) return;
+        const [frameId, callback] = frame;
+        callbacks.delete(frameId);
+        callback(0);
+      }
+      assert.fail("focus should settle within its bounded RAF retries");
+    },
     failBackingProgress(error = new Error("recording progress failed")) {
       const frame = [...callbacks].find(([, callback]) => callback.name === "tick");
       assert.ok(frame, "recording should schedule a presentation frame");
@@ -280,15 +350,32 @@ function installSynchronizedRecordingHarness({
       callback(0);
     },
     finishBacking() {
-      const backing = contexts.find(({ oscillators }) =>
-        oscillators.some(({ type, startTimes }) => type === "triangle" && startTimes[0] === 10),
+      const backing = [...contexts].reverse().find(({ oscillators }) =>
+        oscillators.some(({ frequency }) => frequency.value === 0),
       );
       assert.ok(backing, "recording should schedule the prepared backing");
-      const terminal = backing.oscillators.at(-1);
+      const terminal = backing.oscillators.find(({ frequency }) => frequency.value === 0);
       assert.equal(typeof terminal.onended, "function");
-      terminal.onended();
+      terminal.finish();
     },
   };
+}
+
+async function finishRecordingCountIn(audio, container) {
+  await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+  await act(async () => audio.advanceCountIn());
+  await act(async () => audio.finishDownbeat());
+  await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+}
+
+async function advanceDubPlayback(audio, elapsedMs) {
+  const context = [...audio.contexts].reverse().find(({ sources }) => sources.length);
+  assert.ok(context, "playback should decode at least one voice");
+  context.currentTime = 10.12 + elapsedMs / 1_000;
+  const frame = [...audio.callbacks].find(([, callback]) => callback.name === "tick");
+  assert.ok(frame, "playback should schedule a score-position tick");
+  audio.callbacks.delete(frame[0]);
+  await act(async () => frame[1]());
 }
 
 function renderProjectHome(viewProps = {}) {
@@ -321,8 +408,8 @@ function renderSceneEditor(viewProps = {}) {
     onToggleScenePlayback() {},
     operation: "idle",
     pendingTake: null,
+    presentation: { countInBeat: null, elapsedMs: null, lineId: DUB_LINES[0].id },
     recordingStream: null,
-    recordingElapsedMs: 0,
     locked: false,
     saveRecovery: null,
     saved: {},
@@ -331,7 +418,139 @@ function renderSceneEditor(viewProps = {}) {
   }));
 }
 
+function exactKaraokeGuide() {
+  assert.equal(typeof DubTimedWords, "function");
+  assert.equal(typeof DubMelodyLane, "function");
+  assert.equal(typeof getDubTimedWordSegments, "function");
+  assert.equal(typeof getDubMelodyGeometry, "function");
+  assert.equal(typeof getActiveDubMelodyNoteIndex, "function");
+  assert.equal(typeof getDubPlayheadPercent, "function");
+  return karaokeGuide;
+}
+
+function karaokeLine(overrides = {}) {
+  return {
+    ...DUB_LINES[0],
+    durationMs: 1_000,
+    text: "  Mary’s  ducks, quack!",
+    words: [
+      { startOffset: 2, endOffset: 8, atMs: 100, durationMs: 200 },
+      { startOffset: 10, endOffset: 15, atMs: 400, durationMs: 200 },
+      { startOffset: 17, endOffset: 22, atMs: 700, durationMs: 200 },
+    ],
+    ...overrides,
+  };
+}
+
+function karaokeDefinition(line, notes = []) {
+  return {
+    ...FIVE_LITTLE_DUCKS_DUB,
+    lines: [line],
+    music: {
+      ...FIVE_LITTLE_DUCKS_DUB.music,
+      linePhrases: [{ durationMs: line.durationMs, notes, playbackNotes: [] }],
+    },
+  };
+}
+
 describe("duck dubbing storyboard presentation", () => {
+  it("slices timed words without changing authored lyric text", () => {
+    exactKaraokeGuide();
+    const line = karaokeLine();
+    const atStart = getDubTimedWordSegments(line, 100);
+    const atEnd = getDubTimedWordSegments(line, 300);
+    const duringGap = getDubTimedWordSegments(line, 350);
+
+    assert.equal(atStart.map(({ text }) => text).join(""), line.text);
+    assert.deepEqual(
+      atStart.filter(({ kind }) => kind === "word").map(({ state }) => state),
+      ["active", "future", "future"],
+    );
+    assert.deepEqual(
+      atEnd.filter(({ kind }) => kind === "word").map(({ state }) => state),
+      ["past", "future", "future"],
+    );
+    assert.equal(
+      duringGap.filter(({ kind, state }) => kind === "word" && state === "active").length,
+      0,
+    );
+    assert.deepEqual(getDubTimedWordSegments(karaokeLine({ words: [] }), 100), [
+      { kind: "text", text: line.text },
+    ]);
+    assert.deepEqual(getDubTimedWordSegments(karaokeLine({ words: [{
+      startOffset: 0,
+      endOffset: 99,
+      atMs: 0,
+      durationMs: 10,
+    }] }), 100), [{ kind: "text", text: line.text }]);
+    for (const words of [
+      [
+        { startOffset: 2, endOffset: 8, atMs: 100, durationMs: 400 },
+        { startOffset: 10, endOffset: 15, atMs: 300, durationMs: 200 },
+      ],
+      [
+        { startOffset: 2, endOffset: 8, atMs: 400, durationMs: 100 },
+        { startOffset: 10, endOffset: 15, atMs: 100, durationMs: 100 },
+      ],
+      [
+        { startOffset: 2, endOffset: 8, atMs: 900, durationMs: 200 },
+      ],
+    ]) {
+      assert.deepEqual(getDubTimedWordSegments(karaokeLine({ words }), 300), [
+        { kind: "text", text: line.text },
+      ]);
+    }
+  });
+
+  it("renders timed words as an unchanged, quiet heading", async () => {
+    exactKaraokeGuide();
+    const line = karaokeLine();
+    const container = await mountStrict(createElement("h1", null,
+      createElement(DubTimedWords, { elapsedMs: 100, line }),
+    ));
+    const heading = container.querySelector("h1");
+    assert.equal(heading?.textContent, line.text);
+    assert.equal(heading?.textContent.replace(/\s+/g, " ").trim(), "Mary’s ducks, quack!");
+    assert.equal(heading?.querySelectorAll('[aria-current="true"]').length, 1);
+    assert.equal(heading?.querySelectorAll("[aria-live], [role=status], [tabindex]").length, 0);
+  });
+
+  it("normalizes melody geometry and clamps its active cursor", () => {
+    exactKaraokeGuide();
+    const line = karaokeLine();
+    const definition = karaokeDefinition(line, [
+      { atMs: 0, durationMs: 250, midi: 60 },
+      { atMs: 500, durationMs: 250, midi: 72 },
+    ]);
+    const geometry = getDubMelodyGeometry(definition, line);
+    assert.deepEqual(geometry.map(({ x, width, y }) => ({ x, width, y })), [
+      { x: 0, width: 25, y: 100 },
+      { x: 50, width: 25, y: 0 },
+    ]);
+    assert.ok(geometry.every((rect) => Object.values(rect).every(Number.isFinite)));
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 0), 0);
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 250), null);
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 500), 1);
+    assert.equal(getActiveDubMelodyNoteIndex(definition, line, 750), null);
+    assert.equal(getDubPlayheadPercent(line, -1), 0);
+    assert.equal(getDubPlayheadPercent(line, 500), 50);
+    assert.equal(getDubPlayheadPercent(line, 2_000), 100);
+    assert.equal(getDubPlayheadPercent(line, null), null);
+    assert.deepEqual(
+      getDubMelodyGeometry(karaokeDefinition(line, [{ atMs: 0, durationMs: 250, midi: 64 }]), line)
+        .map(({ y }) => y),
+      [50],
+    );
+    assert.equal(
+      renderToStaticMarkup(createElement(DubMelodyLane, {
+        definition: karaokeDefinition(line),
+        elapsedMs: 0,
+        line,
+      })),
+      "",
+    );
+  });
+
   it("keeps optional waveform setup failures from interrupting recording", async () => {
     globalThis.AudioContext = class AudioContext {
       constructor() {
@@ -341,9 +560,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
-      durationMs: 4_000,
-      guidePeakBars: [1, ...Array(31).fill(0)],
-      recordingElapsedMs: 500,
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      elapsedMs: 500,
+      line: { ...DUB_LINES[0], guidePeakBars: [1, ...Array(31).fill(0)] },
       recordingStream: { getTracks: () => [] },
     }));
 
@@ -384,9 +603,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
-      durationMs: 4_000,
-      guidePeakBars: [1, ...Array(31).fill(0)],
-      recordingElapsedMs: 500,
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      elapsedMs: 500,
+      line: DUB_LINES[0],
       recordingStream: { getTracks: () => [] },
     }));
 
@@ -421,9 +640,9 @@ describe("duck dubbing storyboard presentation", () => {
 
     const container = await mountStrict(createElement(DubTakeWaveform, {
       blob: null,
-      durationMs: 4_000,
-      guidePeakBars: [1, ...Array(31).fill(0)],
-      recordingElapsedMs: 500,
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      elapsedMs: 500,
+      line: DUB_LINES[0],
       recordingStream: { getTracks: () => [] },
     }));
 
@@ -459,9 +678,9 @@ describe("duck dubbing storyboard presentation", () => {
       advanceElapsed = () => setElapsed((current) => current + 100);
       return createElement(DubTakeWaveform, {
         blob: null,
-        durationMs: 4_000,
-        guidePeakBars: [1, ...Array(31).fill(0)],
-        recordingElapsedMs: elapsed,
+        definition: FIVE_LITTLE_DUCKS_DUB,
+        elapsedMs: elapsed,
+        line: DUB_LINES[0],
         recordingStream,
       });
     }
@@ -733,6 +952,28 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
+  it("drives the full project scene and compact guide from playback positions", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      if (String(path).endsWith(".mp3")) return new Response(new Uint8Array([1, 2, 3]));
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    await click(container.querySelector('[aria-label="Play full video"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop full video"]')));
+    await advanceDubPlayback(audio, DUB_LINES[4].cueMs + 1_000);
+
+    const player = container.querySelector('[aria-label="Full video player"]');
+    assert.equal(player?.querySelector("img")?.getAttribute("src"), FIVE_LITTLE_DUCKS_DUB.sceneArtwork[1].src);
+    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUB_LINES[4].text));
+    assert.ok(container.querySelector('[aria-label="Karaoke guide"] svg'));
+  });
+
   it("moves the scene back action into page navigation and restores the project link", async () => {
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
@@ -801,7 +1042,76 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(statusLoads, loadsBeforeRetry + 1);
   });
 
-  it("starts microphone capture before the selected melody and saves once at phrase end", async () => {
+  it("keeps listen-only full playback public while updating its compact guide", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    const privateRequests = [];
+    let microphoneRequests = 0;
+    let objectUrls = 0;
+    URL.createObjectURL = () => {
+      objectUrls += 1;
+      return "blob:must-not-exist";
+    };
+    Object.defineProperty(navigator, "mediaDevices", {
+      configurable: true,
+      value: {
+        async getUserMedia() {
+          microphoneRequests += 1;
+          throw new Error("listen-only must not request a microphone");
+        },
+      },
+    });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
+      }
+      if (String(path).includes("/api/dubs/") || String(path).endsWith("/audio")) {
+        privateRequests.push(String(path));
+        throw new Error("listen-only must not fetch private audio");
+      }
+      if (String(path).endsWith(".mp3")) return new Response(new Uint8Array([1, 2, 3]));
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
+    await click(container.querySelector('[aria-label="Play full video"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop full video"]')));
+    await advanceDubPlayback(audio, DUB_LINES[4].cueMs + 1_000);
+
+    const player = container.querySelector('[aria-label="Full video player"]');
+    assert.equal(player?.querySelector("img")?.getAttribute("src"), FIVE_LITTLE_DUCKS_DUB.sceneArtwork[1].src);
+    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUB_LINES[4].text));
+    assert.ok(container.querySelector('[aria-label="Karaoke guide"] svg'));
+    assert.equal(microphoneRequests, 0);
+    assert.equal(objectUrls, 0);
+    assert.deepEqual(privateRequests, []);
+  });
+
+  it("requests unprocessed microphone audio for melody-backed lines", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+
+    assert.deepEqual(audio.microphoneConstraints, [{
+      audio: {
+        autoGainControl: { exact: false },
+        echoCancellation: { exact: false },
+        noiseSuppression: { exact: false },
+      },
+    }]);
+  });
+
+  it("opens the microphone, counts on the score clock, then starts capture on downbeat", async () => {
     const audio = installSynchronizedRecordingHarness();
     let uploads = 0;
     globalThis.fetch = async (path, init = {}) => {
@@ -819,9 +1129,36 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
 
-    assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
+    assert.equal(audio.recorderStarts, 0);
+    assert.match(container.textContent, /Count-in 2/);
+    assert.equal(container.querySelector('[role="timer"]'), null);
+    assert.equal(container.querySelector('h1 [aria-current="true"]'), null);
+    assert.equal(audio.mediaStreamSourceCalls, 0);
+    assert.equal(
+      [...container.querySelectorAll("button")].find(({ textContent }) =>
+        textContent?.includes("Hear line"))?.disabled,
+      true,
+    );
+    assert.equal(container.querySelector('[aria-label="Previous line"]').disabled, true);
+    assert.equal(container.querySelector('[aria-label^="Next"]').disabled, true);
+    assert.equal(container.querySelector('[aria-label="Back to full video"]').disabled, true);
+    assert.equal(container.querySelector('[aria-label="Cancel count-in"]').disabled, false);
+    const liveStatus = container.querySelector('[aria-label="Dub updates"]');
+    assert.match(liveStatus.textContent, /Get ready\. Recording starts after two beats\./);
+    assert.doesNotMatch(liveStatus.textContent, /Count-in [12]/);
+
+    await act(async () => audio.advanceCountIn());
+    await waitFor(() => assert.match(container.textContent, /Count-in 1/));
+    assert.equal(audio.recorderStarts, 0);
+    assert.equal(audio.mediaStreamSourceCalls, 0);
+
+    await act(async () => audio.finishDownbeat());
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    assert.equal(audio.recorderStarts, 1);
+    assert.ok(container.querySelector('h1 [aria-current="true"]'));
+    await waitFor(() => assert.equal(audio.mediaStreamSourceCalls, 1));
     assert.equal(
       container.querySelector('[aria-label="Recording time"]')?.getAttribute("aria-valuemax"),
       "4000",
@@ -830,6 +1167,101 @@ describe("duck dubbing storyboard presentation", () => {
     await act(async () => audio.finishBacking());
     await waitFor(() => assert.equal(uploads, 1));
     assert.equal(audio.contexts[0].closeCalls, 1);
+  });
+
+  it("keeps a retryable preview through count-in cancellation and replaces it only after downbeat", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    const revoked = [];
+    let nextUrl = 1;
+    let uploads = 0;
+    URL.createObjectURL = () => `blob:take-${nextUrl++}`;
+    URL.revokeObjectURL = (url) => revoked.push(url);
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus(true));
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        uploads += 1;
+        return Response.json({ error: "Try saving again." }, { status: 503 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record again"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+    await act(async () => audio.advanceCountIn());
+    await act(async () => audio.finishDownbeat());
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await click(container.querySelector('[aria-label="Stop recording"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Save again"]')));
+    assert.equal(uploads, 1);
+    assert.deepEqual(revoked, []);
+
+    await click(container.querySelector('[aria-label="Record again"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+    assert.deepEqual(revoked, []);
+    await click(container.querySelector('[aria-label="Cancel count-in"]'));
+    await act(async () => audio.flushFocus());
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Record again"]')));
+    assert.ok(container.querySelector('[aria-label="Save again"]'));
+    assert.equal(document.activeElement, container.querySelector('[aria-label="Record again"]'));
+    assert.equal(uploads, 1);
+    assert.deepEqual(revoked, []);
+    assert.equal(audio.tracks[1].stopCalls, 1);
+
+    await click(container.querySelector('[aria-label="Record again"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+    await act(async () => audio.advanceCountIn());
+    await act(async () => audio.finishDownbeat());
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    assert.deepEqual(revoked, ["blob:take-1"]);
+  });
+
+  it("keeps a retryable preview when recorder start fails on the downbeat", async () => {
+    const audio = installSynchronizedRecordingHarness({ recorderStartErrorAt: 2 });
+    const revoked = [];
+    URL.createObjectURL = () => "blob:old-take";
+    URL.revokeObjectURL = (url) => revoked.push(url);
+    let uploads = 0;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus(true));
+      }
+      if (path === "/api/dubs/five-little-ducks-v2/lines/line-1" && init.method === "PUT") {
+        uploads += 1;
+        return Response.json({ error: "Try saving again." }, { status: 503 });
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record again"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+    await act(async () => audio.advanceCountIn());
+    await act(async () => audio.finishDownbeat());
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await click(container.querySelector('[aria-label="Stop recording"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Save again"]')));
+
+    await click(container.querySelector('[aria-label="Record again"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+    await act(async () => audio.advanceCountIn());
+    await act(async () => audio.finishDownbeat());
+    await act(async () => audio.flushFocus());
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Record again"]')));
+
+    assert.equal(uploads, 1);
+    assert.deepEqual(revoked, []);
+    assert.match(container.textContent, /Not saved/);
+    assert.doesNotMatch(container.textContent, /melody could not start/i);
+    assert.ok(container.querySelector('[aria-label="Save again"]'));
+    assert.equal(document.activeElement, container.querySelector('[aria-label="Record again"]'));
+    assert.equal(audio.tracks[1].stopCalls, 1);
   });
 
   it("saves a partial take when the learner stops the melody early", async () => {
@@ -848,11 +1280,11 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await finishRecordingCountIn(audio, container);
     await click(container.querySelector('[aria-label="Stop recording"]'));
 
     await waitFor(() => assert.equal(uploads, 1));
-    assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
+    assert.equal(audio.recorderStarts, 1);
     assert.equal(audio.contexts[0].closeCalls, 1);
   });
 
@@ -869,7 +1301,7 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await finishRecordingCountIn(audio, container);
     await act(async () => audio.failBackingProgress());
     await waitFor(() => assert.match(container.textContent, /melody could not start/i));
 
@@ -892,11 +1324,11 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await finishRecordingCountIn(audio, container);
     await cleanupMountedRoots();
 
     assert.equal(uploads, 0);
-    assert.deepEqual(audio.events.slice(0, 2), ["recorder:start", "melody:start"]);
+    assert.equal(audio.recorderStarts, 1);
     assert.equal(audio.contexts[0].closeCalls, 1);
     assert.equal(audio.track.stopped, true);
   });
@@ -996,6 +1428,41 @@ describe("duck dubbing storyboard presentation", () => {
     );
   });
 
+  it("uses frozen score guidance while overlong guide and take playback continue", async () => {
+    const audio = installSynchronizedRecordingHarness({ playbackVoiceDuration: 5 });
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledFirstSceneStatus());
+      }
+      if (String(path).endsWith(".mp3") || String(path).endsWith("/audio")) {
+        return new Response(new Uint8Array([1, 2, 3]));
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click([...container.querySelectorAll("button")].find(
+      ({ textContent }) => textContent?.includes("Hear line"),
+    ));
+    await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
+    await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
+
+    const assertFrozenGuide = (status) => {
+      assert.match(container.querySelector('[role="status"]')?.textContent, status);
+      assert.equal(container.querySelector("h1")?.textContent, DUB_LINES[0].text);
+      assert.equal(container.querySelector("h1 [aria-current='true']"), null);
+      assert.ok(container.querySelector('[aria-label="Waveform and melody guide"]'));
+    };
+    assertFrozenGuide(/Playing example/);
+
+    await click(container.querySelector('[aria-label="Play my recording"]'));
+    await waitFor(() => assert.equal(audio.contexts.filter(({ sources }) => sources.length).length, 2));
+    await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
+    assertFrozenGuide(/Playing your recording/);
+  });
+
   it("does not leave melody playing when a guide cannot decode", async () => {
     const audio = installSynchronizedRecordingHarness({
       decodeError: new Error("guide bytes cannot decode"),
@@ -1037,7 +1504,8 @@ describe("duck dubbing storyboard presentation", () => {
     const revokedUrls = [];
     URL.createObjectURL = () => "blob:revoking-take";
     URL.revokeObjectURL = (url) => revokedUrls.push(url);
-    const track = installRecordingHarness();
+    const audio = installSynchronizedRecordingHarness();
+    const track = audio.track;
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledDubStatus());
@@ -1054,7 +1522,7 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await finishRecordingCountIn(audio, container);
     await click(container.querySelector('[aria-label="Stop recording"]'));
 
     await waitFor(() => assert.match(
@@ -1071,7 +1539,7 @@ describe("duck dubbing storyboard presentation", () => {
     const revokedUrls = [];
     URL.createObjectURL = () => "blob:saved-take";
     URL.revokeObjectURL = (url) => revokedUrls.push(url);
-    installRecordingHarness();
+    const audio = installSynchronizedRecordingHarness();
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
         return Response.json(enabledDubStatus());
@@ -1088,7 +1556,7 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Scene 1, Five little ducks, Ready to start"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await finishRecordingCountIn(audio, container);
     await click(container.querySelector('[aria-label="Stop recording"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Your recording waveform"]')));
 
@@ -1224,7 +1692,7 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
+    await finishRecordingCountIn(audio, container);
     await click(container.querySelector('[aria-label="Stop recording"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
     await click(container.querySelector('[aria-label="Play my recording"]'));
@@ -1367,7 +1835,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("renders one Choicer-style line flow without competing editor controls", () => {
     const html = renderSceneEditor();
     assert.match(html, /aria-current="step"[^>]*>Line 1 of 4/);
-    assert.match(html, /<h1[^>]*>Five little ducks went out one day\.<\/h1>/);
+    assert.match(html.replace(/<[^>]+>/g, ""), /Five little ducks went out one day\./);
     assert.match(html, /aria-label="Original audio waveform"/);
     assert.match(html, /Hear line/);
     assert.match(html, /aria-label="Record line"/);
@@ -1417,7 +1885,7 @@ describe("duck dubbing storyboard presentation", () => {
       activeLine: DUB_LINES[1],
     });
     assert.match(html, /aria-current="step"[^>]*>Line 2 of 4/);
-    assert.match(html, /<h1[^>]*>Over the hill and far away\.<\/h1>/);
+    assert.match(html.replace(/<[^>]+>/g, ""), /Over the hill and far away\./);
     assert.match(html, /Five yellow ducklings leave their mother beside a bright spring pond\./);
   });
 
@@ -1428,7 +1896,7 @@ describe("duck dubbing storyboard presentation", () => {
     });
 
     assert.match(html, /aria-current="step"[^>]*>Line 2 of 7/);
-    assert.match(html, /<h1[^>]*>And on his farm he had some cows, E-I-E-I-O!<\/h1>/);
+    assert.match(html.replace(/<[^>]+>/g, ""), /And on his farm he had some cows, E-I-E-I-O!/);
   });
 
   it("keeps recording available when a guide waveform asset is missing", () => {
@@ -1436,34 +1904,39 @@ describe("duck dubbing storyboard presentation", () => {
       activeLine: DUB_LINES[0],
     });
 
-    assert.match(html, /Five little ducks went out one day\./);
+    assert.match(html.replace(/<[^>]+>/g, ""), /Five little ducks went out one day\./);
     assert.match(html, /aria-label="Original audio waveform"/);
     assert.match(html, /aria-label="Record line"/);
   });
 
-  it("derives recording copy and progress from the selected melody phrase", () => {
-    const line = OLD_MACDONALD_DUB.lines[2];
-    const idle = renderSceneEditor({ activeLine: line, definition: OLD_MACDONALD_DUB });
+  it("derives recording copy and progress from the selected line duration", () => {
+    const line = { ...OLD_MACDONALD_DUB.lines[2], durationMs: 3_000 };
+    const definition = {
+      ...OLD_MACDONALD_DUB,
+      lines: OLD_MACDONALD_DUB.lines.map((candidate, index) => index === 2 ? line : candidate),
+    };
+    const idle = renderSceneEditor({ activeLine: line, definition });
     const recording = renderSceneEditor({
       activeLine: line,
-      definition: OLD_MACDONALD_DUB,
+      definition,
       operation: "recording",
-      recordingElapsedMs: 1_500,
+      presentation: { countInBeat: null, elapsedMs: 2_500, lineId: line.id },
       recordingStream: { getTracks: () => [] },
     });
 
-    assert.match(idle, /Melody length: 0:02/);
+    assert.equal(definition.music.linePhrases[2].durationMs, 2_000);
+    assert.match(idle, /Melody length: 0:03/);
     assert.match(recording, /Recording with melody/);
-    assert.match(recording, /0:01 \/ 0:02/);
-    assert.match(recording, /aria-valuemax="2000"/);
-    assert.match(recording, /aria-valuenow="1500"/);
+    assert.match(recording, /0:02 \/ 0:03/);
+    assert.match(recording, /aria-valuemax="3000"/);
+    assert.match(recording, /aria-valuenow="2500"/);
   });
 
   it("turns the phrase-length record action into an immediate stop action with elapsed time", () => {
     const html = renderSceneEditor({
       operation: "recording",
       recordingStream: { getTracks: () => [] },
-      recordingElapsedMs: 2_100,
+      presentation: { countInBeat: null, elapsedMs: 2_100, lineId: DUB_LINES[0].id },
     });
     assert.match(html, /aria-label="Stop recording"/);
     assert.match(html, /role="timer"[\s\S]*?Recording with melody[\s\S]*?0:02 \/ 0:04/);
@@ -1471,6 +1944,29 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(html, /aria-label="Original audio waveform"/);
     assert.match(html, /aria-label="Next line"/);
     assert.doesNotMatch(html, /countdown|Get ready/i);
+  });
+
+  it("renders a quiet count-in with only its cancel action enabled", () => {
+    const html = renderSceneEditor({
+      locked: true,
+      operation: "counting-in",
+      presentation: {
+        countInBeat: 2,
+        elapsedMs: null,
+        lineId: DUB_LINES[0].id,
+      },
+    });
+
+    assert.match(html, /Count-in 2/);
+    assert.match(html, /aria-label="Cancel count-in"/);
+    assert.doesNotMatch(html, /role="timer"/);
+    assert.doesNotMatch(html, /aria-live/);
+    assert.match(html, /<button(?=[^>]*disabled)[^>]*>[\s\S]*?Hear line<\/button>/);
+    assert.match(html, /aria-label="Previous line"[^>]*disabled/);
+    assert.match(html, /aria-label="Next line"[^>]*disabled/);
+    assert.doesNotMatch(html, /aria-label="Cancel count-in"[^>]*disabled/);
+    assert.doesNotMatch(html.match(/<h1[\s\S]*?<\/h1>/)?.[0] ?? "", /aria-current/);
+    assert.match(html, /aria-label="Waveform and melody guide"/);
   });
 
   it("makes microphone startup and saving visible in the fixed record slot", () => {
@@ -1578,6 +2074,40 @@ describe("duck dubbing storyboard presentation", () => {
       html,
       /Record again|Record line|Play my recording|Save again|Guardian|Delete/,
     );
+  });
+
+  it("renders compact score guidance during project and listen-only playback", () => {
+    const guidance = { elapsedMs: 1_200, lineId: DUB_LINES[1].id };
+    const project = renderProjectHome({
+      guidance,
+      playback: "playing",
+      visualLine: DUB_LINES[1],
+    });
+    const listenOnly = renderToStaticMarkup(createElement(DubListenOnly, {
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      error: "",
+      guidance,
+      onRetryLoad() {},
+      onTogglePlayback() {},
+      playback: "playing",
+      visualLine: DUB_LINES[1],
+    }));
+
+    for (const html of [project, listenOnly]) {
+      assert.match(html.replace(/<[^>]+>/g, ""), new RegExp(DUB_LINES[1].text));
+      assert.match(html, /<svg[^>]*aria-hidden="true"/);
+      assert.equal((html.match(/<h1/g) ?? []).length, 1);
+      assert.doesNotMatch(html, /aria-live|role="status"/);
+    }
+  });
+
+  it("hides compact guidance for unknown playback lines", () => {
+    const html = renderProjectHome({
+      guidance: { elapsedMs: 1_200, lineId: "unknown-line" },
+      playback: "playing",
+    });
+
+    assert.doesNotMatch(html, /Five little ducks went out one day\./);
   });
 
   it("resolves every listen-only line to its public guide and never private audio", () => {

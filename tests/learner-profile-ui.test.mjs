@@ -1041,9 +1041,15 @@ describe("onboarding and profile gate", () => {
     const html = renderGate({
       data: { mode: "selection-required" },
       isLearnerProfileRoute: false,
+      learnerSelectionFallback: createElement(
+        "main",
+        null,
+        createElement("h1", null, "Who is learning now?"),
+      ),
     });
 
-    assert.match(html, /Ask a grown-up to choose a learner/);
+    assert.match(html, /Who is learning now\?/);
+    assert.doesNotMatch(html, /Ask a grown-up|Cancel/);
     assert.doesNotMatch(html, /account menu/);
     assert.doesNotMatch(html, /LESSON CONTENT|Mia/);
   });

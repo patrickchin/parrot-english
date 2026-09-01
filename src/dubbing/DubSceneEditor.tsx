@@ -2,11 +2,11 @@ import { ArrowLeft, ArrowRight, LoaderCircle, Mic, Square, Volume2 } from "lucid
 import type { RefObject } from "react";
 import { ActionButton, TextButton } from "../shared/ui";
 import { DubTakeWaveform } from "./DubTakeWaveform";
+import { DubTimedWords, type DubGuidancePosition } from "./DubKaraokeGuide";
 import type { DubOperation } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import {
   FIVE_LITTLE_DUCKS_DUB,
-  getDubLineMusicPhrase,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog";
@@ -25,7 +25,7 @@ export type DubSceneEditorProps = {
   onRetrySave(): void;
   operation: DubOperation;
   pendingTake: Blob | null;
-  recordingElapsedMs: number;
+  presentation: DubGuidancePosition & Readonly<{ countInBeat: number | null }>;
   recordingStream: MediaStream | null;
   nextButtonRef?: RefObject<HTMLButtonElement | null>;
   recordButtonRef?: RefObject<HTMLButtonElement | null>;
@@ -53,7 +53,7 @@ export function DubSceneEditor({
   onRetrySave,
   operation,
   pendingTake,
-  recordingElapsedMs,
+  presentation,
   recordingStream,
   nextButtonRef,
   recordButtonRef,
@@ -66,26 +66,32 @@ export function DubSceneEditor({
     definition.lines.findIndex(({ id }) => id === activeLine.id),
   );
   const lineNumber = activeLineIndex % definition.linesPerScene + 1;
+  const countingIn = operation === "counting-in";
   const recording = operation === "recording";
   const recordAgain = pendingTake !== null || hasSavedTake || saveRecovery !== null;
   const hasPlayableTake = pendingTake !== null || hasSavedTake;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
-  const recordingDurationMs = getDubLineMusicPhrase(definition, activeLine).durationMs;
-  const elapsedMs = Math.min(recordingDurationMs, Math.max(0, recordingElapsedMs));
+  const recordingDurationMs = activeLine.durationMs;
+  const presentationElapsedMs = presentation.lineId === activeLine.id
+    ? presentation.elapsedMs
+    : null;
+  const elapsedMs = Math.min(recordingDurationMs, Math.max(0, presentationElapsedMs ?? 0));
   const elapsedLabel = formatDuration(elapsedMs);
   const recordingLimitLabel = formatDuration(recordingDurationMs);
   const firstLineInScene = lineNumber === 1;
   const lastLineInScene = lineNumber === definition.linesPerScene;
   const recordLabel = operation === "mic-opening"
     ? "Starting microphone"
-    : operation === "saving"
-      ? "Saving recording"
-      : recording
-        ? "Stop recording"
-        : recordAgain
-          ? "Record again"
-          : "Record line";
+    : countingIn
+      ? "Cancel count-in"
+      : operation === "saving"
+        ? "Saving recording"
+        : recording
+          ? "Stop recording"
+          : recordAgain
+            ? "Record again"
+            : "Record line";
   const takeLabel = operation === "take-playing"
     ? "Stop my recording"
     : "Play my recording";
@@ -112,7 +118,7 @@ export function DubSceneEditor({
             <IllustratedDubScene compact definition={definition} line={activeLine} />
           </section>
           <h1 className="m-0 rounded-2xl border-4 border-white bg-white/90 px-3 py-2 text-center text-xl font-black leading-snug text-brand-ink shadow-card short-wide:py-1.5 short-wide:text-base md:text-2xl" ref={lineHeadingRef} tabIndex={-1}>
-            {activeLine.text}
+            <DubTimedWords elapsedMs={presentationElapsedMs} line={activeLine} />
           </h1>
         </section>
 
@@ -134,7 +140,7 @@ export function DubSceneEditor({
 
           <ActionButton
             aria-label={recordLabel}
-            disabled={locked}
+            disabled={locked && !countingIn}
             fullWidth
             onClick={onRecord}
             ref={recordButtonRef}
@@ -143,11 +149,13 @@ export function DubSceneEditor({
           >
             {operation === "mic-opening" || operation === "saving"
               ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
-              : recording
+              : recording || countingIn
                 ? <Square aria-hidden="true" />
                 : <Mic aria-hidden="true" />}
             {operation === "mic-opening"
               ? "Starting…"
+              : countingIn
+                ? "Cancel count-in"
               : operation === "saving"
                 ? "Saving…"
                 : recording
@@ -160,9 +168,9 @@ export function DubSceneEditor({
           <section aria-label="Recording feedback" className="grid h-36 content-start gap-1.5 overflow-visible rounded-2xl bg-sky-50 p-2 short-wide:h-[5.5rem] short-wide:gap-1 short-wide:p-0.5">
             <DubTakeWaveform
               blob={pendingTake}
-              durationMs={recordingDurationMs}
-              guidePeakBars={activeLine.guidePeakBars}
-              recordingElapsedMs={recordingElapsedMs}
+              definition={definition}
+              elapsedMs={presentationElapsedMs}
+              line={activeLine}
               recordingStream={recordingStream}
             />
             {recording ? (
@@ -187,6 +195,10 @@ export function DubSceneEditor({
                   />
                 </div>
               </>
+            ) : countingIn ? (
+              <p className="m-0 text-center text-sm font-black text-brand-rose">
+                Count-in {presentation.countInBeat}
+              </p>
             ) : (
               <div className={`flex min-h-10 items-center justify-between gap-1 short-wide:min-h-12 ${feedbackError ? "flex-wrap short-wide:flex-nowrap" : ""}`}>
                 <p

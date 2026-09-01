@@ -23,6 +23,8 @@ const GUARDED_REQUESTS = [
 ];
 
 const LEARNER_SAFE_REQUESTS = [
+  ["GET", "/api/learner-profiles"],
+  ["PUT", "/api/learner-profiles/learner-a/active"],
   ["GET", "/api/learner-profile"],
   ["GET", "/api/lesson-recordings/consent"],
   ["GET", "/api/stories/the-red-ball/personalized-art"],

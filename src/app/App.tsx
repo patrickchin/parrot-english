@@ -65,6 +65,7 @@ import {
   getLessonScenePath,
   getLoginPath,
   getLearnerProfilePath,
+  getPostLoginDestination,
   getProfilePath,
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
@@ -1331,7 +1332,11 @@ export function AuthenticatedApplication({
   const location = useLocation();
   const navigate = useNavigate();
   const accountExperience = useAccountExperience();
-  const { mode: guardianAccessMode } = useGuardianAccess();
+  const {
+    acknowledgeLearnerSwitch,
+    blockedByLearnerSwitch,
+    mode: guardianAccessMode,
+  } = useGuardianAccess();
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
   const isLearnerProfileRoute = gateRoute === "learner-profile";
@@ -1341,6 +1346,7 @@ export function AuthenticatedApplication({
     location.pathname,
   );
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const learnerProfileRoute = isLearnerProfileRoute && !guardianRoute;
   const guardianBoundaryRoute = guardianRoute || guardianLearnerChildRoute;
   const guardianDashboardRoute =
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
@@ -1360,12 +1366,28 @@ export function AuthenticatedApplication({
     isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
   const safeReturnTo = guardianRoute
     ? getSafeGuardianReturnTo(location.search)
-    : (getSafeReturnTo(location.search) ?? "/");
+    : onLoginRoute
+      ? getPostLoginDestination(location.search)
+      : (getSafeReturnTo(location.search) ?? "/");
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
     location.search,
     location.hash,
   );
+  useEffect(() => {
+    if (
+      learnerProfileRoute &&
+      guardianAccessMode === "learner" &&
+      blockedByLearnerSwitch
+    ) {
+      acknowledgeLearnerSwitch();
+    }
+  }, [
+    acknowledgeLearnerSwitch,
+    blockedByLearnerSwitch,
+    guardianAccessMode,
+    learnerProfileRoute,
+  ]);
   const openProfileRoute = useCallback(() => {
     onExitLessonRoute();
     navigate(getProfilePath(requestedProtectedTarget));
@@ -1412,6 +1434,7 @@ export function AuthenticatedApplication({
       isLearnerProfileRoute={isLearnerProfileRoute}
       isProfileRoute={isProfileRoute}
       learnerManagerRoute={learnerManagerRoute}
+      learnerSelectionDestination={requestedProtectedTarget}
       learnerProfileFallback={
         <Navigate
           replace
@@ -1421,6 +1444,7 @@ export function AuthenticatedApplication({
       onCloseProfileRoute={() => navigate(safeReturnTo, { replace: true })}
       onCloseGuardianRoute={() => navigate(safeReturnTo, { replace: true })}
       onConversationCompleted={() => navigate("/", { replace: true })}
+      onBeforeLearnerSelectionNavigate={onExitLessonRoute}
       onOpenLessons={() => navigate("/lessons", { replace: true })}
       onOpenProfileRoute={openProfileRoute}
       onRedoCompleted={() => navigate(safeReturnTo, { replace: true })}
@@ -1437,7 +1461,7 @@ export function AuthenticatedApplication({
     return applicationRoutes;
   }
 
-  if (isLearnerProfileRoute && !guardianRoute) {
+  if (learnerProfileRoute) {
     return routeContent;
   }
 

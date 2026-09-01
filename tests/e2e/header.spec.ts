@@ -350,7 +350,7 @@ for (const mode of ["sign-in", "sign-up"] as const) {
   }
 }
 
-test("Continue as guest creates one protected session and enters the app", async ({
+test("Continue as guest normalizes a Guardian return target to learner home", async ({
   page,
 }) => {
   const timestamp = "2026-08-31T00:00:00.000Z";
@@ -402,7 +402,7 @@ test("Continue as guest creates one protected session and enters the app", async
     });
   });
 
-  await page.goto("/login");
+  await page.goto("/login?returnTo=%2Fguardian");
   const guest = page.getByRole("button", { name: "Continue as guest" });
   await expect(guest).toBeEnabled();
   await guest.click();
@@ -984,11 +984,38 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
+    "Switch learner",
     "Grown-up accessSwitch modes",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
   ).toHaveCount(0);
+});
+
+test("the learner menu switches to a sibling and returns to learner home", async ({
+  page,
+}) => {
+  await page.goto(
+    "/lessons?parrotE2eGuardian=learner&parrotE2eLearners=multiple",
+  );
+
+  await page
+    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .click();
+  await page.getByRole("menuitem", { name: "Switch learner" }).click();
+
+  const chooser = page.getByRole("dialog", { name: "Who is learning now?" });
+  await chooser
+    .getByRole("button", { name: "Start learner mode as Noah" })
+    .click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Profile for Noah, learner mode" }),
+  ).toBeVisible();
 });
 
 test("Guardian menu opens the protected Account & privacy page with deletion only in its Danger zone", async ({

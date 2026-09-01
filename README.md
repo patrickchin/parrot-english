@@ -72,27 +72,35 @@ changed; a clean no-drift result does not require a new migration.
 
 Every authenticated Guardian account can own one or more learner profiles and
 starts in learner mode. A single owned learner may be selected automatically;
-a multi-learner session with no valid selection fails closed until a Guardian
-chooses one while switching to learner mode. Learner mode contains Talk to
+a multi-learner session with no valid selection shows the required
+`Who is learning now?` picker immediately. Learner mode contains Talk to
 Peppa, lesson playback, stories at the
 selected learner's stored level, and consented recording activities. Its
-profile dropdown contains only the password-gated grown-up gateway; it does not
-expose profile selection or editing, consent, AI/data, sign-out, deletion, or
+profile dropdown exposes `Switch learner` and the grown-up access action; it
+does not expose profile editing, consent, AI/data, sign-out, deletion, or
 story-art controls.
 
-Selecting Guardian asks for the current account password. The Worker unlocks
-only that Better Auth session for a fixed 15 minutes; refreshes may resume it,
-but activity does not extend it. `/guardian` is the management dashboard. Its
-`Switch to learner` chooser is the only UI that changes the session's learner
-selection. `/guardian/learners` owns learner creation and deletion, while
+The current temporary flow opens `Grown-up access` without asking for the
+account password again. Selecting it, or entering a declared Guardian route
+directly, automatically grants the authenticated Better Auth session Guardian
+access for a fixed 15 minutes; refreshes may resume the grant, but activity does
+not extend it. Genuine grant failures stay on the requested URL with a visible
+retry. This passwordless handoff is a temporary weaker boundary:
+authentication, account ownership, and Guardian-only management authorization
+remain enforced. `/guardian` is the management dashboard. Its
+`Switch to learner` action and the learner account menu share the chooser that
+changes the session's learner selection. `/guardian/learners` owns learner
+creation and deletion, while
 `/guardian/learners/:learnerId` owns page-local details and lesson-recording
 consent. `/guardian/stories` owns story level and optional personalized art, and
 `/guardian/dubbing` owns dubbing consent and cleanup. The legacy profile and
 Guardian URLs use the same boundary. Manage learners never changes learner
-mode. Switching selects the named learner, removes the unlock,
-then opens the requested learner route. Individual deletion requires
-confirmation, rejects the final learner, keeps failed cleanup retryable, and
-never auto-selects a sibling after deleting the active learner.
+mode. Switching from Guardian mode selects the named learner, removes the
+unlock, then opens the requested learner route; switching from learner mode
+selects the learner and returns home without a Guardian lock request.
+Individual deletion requires confirmation, rejects the final learner, keeps
+failed cleanup retryable, and never auto-selects a sibling after deleting the
+active learner.
 
 The same-origin `GET|POST|DELETE /api/guardian-access` endpoint reports,
 creates, or removes the current session unlock. D1 table
