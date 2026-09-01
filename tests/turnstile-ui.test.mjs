@@ -52,6 +52,42 @@ function setRenderedWidth(width) {
   };
 }
 
+test("Turnstile announces a busy security check until guest access is ready", async () => {
+  let options;
+
+  await mountStrict(
+    createElement(TurnstileWidget, {
+      load: async () => ({
+        remove() {},
+        render(_container, nextOptions) {
+          options = nextOptions;
+          return "announced-security-check";
+        },
+      }),
+      onTokenChange() {},
+      siteKey: "public-site-key",
+    })
+  );
+  await waitFor(() => assert.ok(options));
+
+  const securityCheck = document.querySelector(
+    '[role="group"][aria-label="Security check"]'
+  );
+  assert.ok(securityCheck);
+  assert.equal(securityCheck.getAttribute("aria-busy"), "true");
+  assert.equal(
+    securityCheck.querySelector('[role="status"]')?.textContent,
+    "Security check in progress. Please wait—guest access will unlock automatically."
+  );
+
+  await act(async () => options.callback("opaque-proof"));
+  assert.equal(securityCheck.getAttribute("aria-busy"), null);
+  assert.equal(
+    securityCheck.querySelector('[role="status"]')?.textContent,
+    "Security check complete. Guest access is ready."
+  );
+});
+
 test("Turnstile uses a compact challenge on narrow screens and clears spent proof", async () => {
   const restoreWidth = setRenderedWidth(240);
   const removed = [];
