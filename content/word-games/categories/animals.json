@@ -168,12 +168,12 @@
     {
       "id": "simple",
       "title": "Simple",
-      "description": "Simple animals words.",
+      "description": "Simple animal words.",
       "quizzes": [
         {
           "id": "simple-1",
           "title": "Simple animals",
-          "description": "Six simple animals words.",
+          "description": "Six simple animal words.",
           "questions": [
             {
               "id": "find-cat",
@@ -254,12 +254,12 @@
     {
       "id": "intermediate",
       "title": "Intermediate",
-      "description": "Intermediate animals words.",
+      "description": "Intermediate animal words.",
       "quizzes": [
         {
           "id": "intermediate-1",
           "title": "Intermediate animals",
-          "description": "Six intermediate animals words.",
+          "description": "Six intermediate animal words.",
           "questions": [
             {
               "id": "find-cat",
@@ -340,12 +340,12 @@
     {
       "id": "advanced",
       "title": "Advanced",
-      "description": "Advanced animals words.",
+      "description": "Advanced animal words.",
       "quizzes": [
         {
           "id": "advanced-1",
           "title": "Advanced animals",
-          "description": "Six advanced animals words.",
+          "description": "Six advanced animal words.",
           "questions": [
             {
               "id": "find-pig",

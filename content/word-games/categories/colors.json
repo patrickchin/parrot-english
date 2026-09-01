@@ -155,12 +155,12 @@
     {
       "id": "simple",
       "title": "Simple",
-      "description": "Simple colors words.",
+      "description": "Simple color words.",
       "quizzes": [
         {
           "id": "simple-1",
           "title": "Simple colors",
-          "description": "Six simple colors words.",
+          "description": "Six simple color words.",
           "questions": [
             {
               "id": "find-red",
@@ -241,12 +241,12 @@
     {
       "id": "intermediate",
       "title": "Intermediate",
-      "description": "Intermediate colors words.",
+      "description": "Intermediate color words.",
       "quizzes": [
         {
           "id": "intermediate-1",
           "title": "Intermediate colors",
-          "description": "Six intermediate colors words.",
+          "description": "Six intermediate color words.",
           "questions": [
             {
               "id": "find-red",
@@ -327,12 +327,12 @@
     {
       "id": "advanced",
       "title": "Advanced",
-      "description": "Advanced colors words.",
+      "description": "Advanced color words.",
       "quizzes": [
         {
           "id": "advanced-1",
           "title": "Advanced colors",
-          "description": "Six advanced colors words.",
+          "description": "Six advanced color words.",
           "questions": [
             {
               "id": "find-black",

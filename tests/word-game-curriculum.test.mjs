@@ -154,6 +154,29 @@ const NOTO_ASSET_IDS = {
   },
 };
 
+const CATEGORY_DESCRIPTION_COPY = {
+  animals: {
+    simple: ["Simple animal words.", "Six simple animal words."],
+    intermediate: ["Intermediate animal words.", "Six intermediate animal words."],
+    advanced: ["Advanced animal words.", "Six advanced animal words."],
+  },
+  "body-parts": {
+    simple: ["Simple body-part words.", "Six simple body-part words."],
+    intermediate: ["Intermediate body-part words.", "Six intermediate body-part words."],
+    advanced: ["Advanced body-part words.", "Six advanced body-part words."],
+  },
+  colors: {
+    simple: ["Simple color words.", "Six simple color words."],
+    intermediate: ["Intermediate color words.", "Six intermediate color words."],
+    advanced: ["Advanced color words.", "Six advanced color words."],
+  },
+  toys: {
+    simple: ["Simple toy words.", "Six simple toy words."],
+    intermediate: ["Intermediate toy words.", "Six intermediate toy words."],
+    advanced: ["Advanced toy words.", "Six advanced toy words."],
+  },
+};
+
 async function readCategories() {
   const filenames = (await readdir(categoryRoot)).sort();
   return Promise.all(filenames.map(async (filename) => {
@@ -226,6 +249,22 @@ describe("production word-game curriculum", () => {
     const authoredText = JSON.stringify(await readCategories());
     assert.doesNotMatch(authoredText, /\b(?:Bob|Mary|Rose|Jack|Ben|Sam)\b/u);
     assert.doesNotMatch(authoredText, /\b(?:soap|washing|cleanliness|clean hands)\b/iu);
+  });
+
+  it("uses natural singular category nouns in tier and quiz descriptions", async () => {
+    const categories = await readCategories();
+    for (const [categoryId, expectedByTier] of Object.entries(CATEGORY_DESCRIPTION_COPY)) {
+      const category = categories.find(({ id }) => id === categoryId);
+      for (const tier of category.tiers) {
+        const [tierDescription, quizDescription] = expectedByTier[tier.id];
+        assert.equal(tier.description, tierDescription, `${categoryId}/${tier.id} tier`);
+        assert.equal(
+          tier.quizzes[0].description,
+          quizDescription,
+          `${categoryId}/${tier.id} quiz`,
+        );
+      }
+    }
   });
 
   it("passes compiler cross-checks and plans exactly 71 missing item cues", async () => {

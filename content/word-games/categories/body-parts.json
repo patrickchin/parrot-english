@@ -168,12 +168,12 @@
     {
       "id": "simple",
       "title": "Simple",
-      "description": "Simple body parts words.",
+      "description": "Simple body-part words.",
       "quizzes": [
         {
           "id": "simple-1",
           "title": "Simple body parts",
-          "description": "Six simple body parts words.",
+          "description": "Six simple body-part words.",
           "questions": [
             {
               "id": "find-eyes",
@@ -254,12 +254,12 @@
     {
       "id": "intermediate",
       "title": "Intermediate",
-      "description": "Intermediate body parts words.",
+      "description": "Intermediate body-part words.",
       "quizzes": [
         {
           "id": "intermediate-1",
           "title": "Intermediate body parts",
-          "description": "Six intermediate body parts words.",
+          "description": "Six intermediate body-part words.",
           "questions": [
             {
               "id": "find-eyes",
@@ -340,12 +340,12 @@
     {
       "id": "advanced",
       "title": "Advanced",
-      "description": "Advanced body parts words.",
+      "description": "Advanced body-part words.",
       "quizzes": [
         {
           "id": "advanced-1",
           "title": "Advanced body parts",
-          "description": "Six advanced body parts words.",
+          "description": "Six advanced body-part words.",
           "questions": [
             {
               "id": "find-arm",

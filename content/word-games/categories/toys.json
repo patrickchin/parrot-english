@@ -168,12 +168,12 @@
     {
       "id": "simple",
       "title": "Simple",
-      "description": "Simple toys words.",
+      "description": "Simple toy words.",
       "quizzes": [
         {
           "id": "simple-1",
           "title": "Simple toys",
-          "description": "Six simple toys words.",
+          "description": "Six simple toy words.",
           "questions": [
             {
               "id": "find-ball",
@@ -254,12 +254,12 @@
     {
       "id": "intermediate",
       "title": "Intermediate",
-      "description": "Intermediate toys words.",
+      "description": "Intermediate toy words.",
       "quizzes": [
         {
           "id": "intermediate-1",
           "title": "Intermediate toys",
-          "description": "Six intermediate toys words.",
+          "description": "Six intermediate toy words.",
           "questions": [
             {
               "id": "find-ball",
@@ -340,12 +340,12 @@
     {
       "id": "advanced",
       "title": "Advanced",
-      "description": "Advanced toys words.",
+      "description": "Advanced toy words.",
       "quizzes": [
         {
           "id": "advanced-1",
           "title": "Advanced toys",
-          "description": "Six advanced toys words.",
+          "description": "Six advanced toy words.",
           "questions": [
             {
               "id": "find-toy-train",
