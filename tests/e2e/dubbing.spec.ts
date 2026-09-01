@@ -1894,6 +1894,7 @@ test("editor actions keep the complete lyric heading and non-live word semantics
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
     "Scene 1, line 1 selected. Recorded.",
   );
+  await expect(heading.locator('[aria-current="true"]')).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Hear line" })).toBeFocused();
 
   await page.getByRole("button", { name: "Play my recording" }).click();
