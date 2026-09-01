@@ -118,7 +118,10 @@ function guardianAccessLockMarker(storageKey: string) {
   }
 }
 
-function syncGuardianAccessLock(storageKey: string, marker: string | null) {
+function syncGuardianAccessLock(
+  storageKey: string,
+  marker: string | null,
+) {
   const storage = guardianAccessStorage();
   if (storage === null) return false;
   try {
@@ -223,8 +226,7 @@ export function createGuardianAccessProvider({
 
     const isCurrent = useCallback(
       (identity: string, generation: number) =>
-        generationRef.current === generation &&
-        identityRef.current === identity,
+        generationRef.current === generation && identityRef.current === identity,
       [],
     );
 
@@ -261,7 +263,11 @@ export function createGuardianAccessProvider({
     );
 
     const isLatestIntent = useCallback(
-      (identity: string, mode: "guardian" | "learner", version: number) => {
+      (
+        identity: string,
+        mode: "guardian" | "learner",
+        version: number,
+      ) => {
         const intent = intentRef.current;
         return (
           intent.identity === identity &&
@@ -273,7 +279,11 @@ export function createGuardianAccessProvider({
     );
 
     const applyState = useCallback(
-      (state: GuardianAccessState, identity: string, generation: number) => {
+      (
+        state: GuardianAccessState,
+        identity: string,
+        generation: number,
+      ) => {
         if (!isCurrent(identity, generation)) return false;
         if (!isLiveGuardianState(state, now())) {
           setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
@@ -291,112 +301,109 @@ export function createGuardianAccessProvider({
       [isCurrent, now],
     );
 
-    const load = useCallback(
-      async (preserveMode = false) => {
-        if (sessionIdentity === null) return;
-        const identity = sessionIdentity;
-        const generation = generationRef.current;
-        if (!preserveMode) {
-          setSnapshot((current) =>
-            current.identity === identity &&
-            current.mode === "loading" &&
-            current.error === null &&
-            current.expiresAt === null
-              ? current
-              : {
-                  ...initialSnapshot(identity),
-                  blockedByLearnerSwitch:
-                    current.identity === identity &&
-                    current.blockedByLearnerSwitch,
-                },
-          );
-        }
-        await enqueue(async () => {
-          if (!isCurrent(identity, generation)) return;
-          const controller = new AbortController();
-          controllerRef.current = controller;
-          let storageKey: string | null = null;
-          try {
-            storageKey = await lockStorageKeyPromise;
-            if (!isCurrent(identity, generation) || controller.signal.aborted) {
-              return;
-            }
-            const intent = intentRef.current;
-            if (
-              intent.identity === identity &&
-              intent.version !== settledIntentRef.current
-            ) {
-              return;
-            }
-            const state = await api.loadGuardianAccess({
-              signal: controller.signal,
-            });
-            if (!isCurrent(identity, generation) || controller.signal.aborted) {
-              return;
-            }
-            if (
-              storageKey !== null &&
-              guardianAccessLockMarker(storageKey) !== null
-            ) {
-              setSnapshot((current) => ({
+    const load = useCallback(async (preserveMode = false) => {
+      if (sessionIdentity === null) return;
+      const identity = sessionIdentity;
+      const generation = generationRef.current;
+      if (!preserveMode) {
+        setSnapshot((current) =>
+          current.identity === identity &&
+          current.mode === "loading" &&
+          current.error === null &&
+          current.expiresAt === null
+            ? current
+            : {
                 ...initialSnapshot(identity),
                 blockedByLearnerSwitch:
                   current.identity === identity &&
                   current.blockedByLearnerSwitch,
-                mode: "learner",
-              }));
-              return;
-            }
-            const settledIntent = intentRef.current;
-            if (
-              settledIntent.identity === identity &&
-              settledIntent.version !== settledIntentRef.current
-            ) {
-              return;
-            }
-            const liveGuardianState = isLiveGuardianState(state, now());
-            setSnapshot((current) => {
-              if (
-                current.identity === identity &&
-                current.blockedByLearnerSwitch
-              ) {
-                return {
-                  ...initialSnapshot(identity),
-                  blockedByLearnerSwitch: true,
-                  mode: "learner",
-                };
-              }
-              if (!liveGuardianState) {
-                return { ...initialSnapshot(identity), mode: "learner" };
-              }
-              return {
-                blockedByLearnerSwitch: false,
-                error: null,
-                expiresAt: state.expiresAt,
-                identity,
-                mode: "guardian",
-              };
-            });
-          } catch {
-            if (!isCurrent(identity, generation) || controller.signal.aborted) {
-              return;
-            }
+              },
+        );
+      }
+      await enqueue(async () => {
+        if (!isCurrent(identity, generation)) return;
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        let storageKey: string | null = null;
+        try {
+          storageKey = await lockStorageKeyPromise;
+          if (!isCurrent(identity, generation) || controller.signal.aborted) {
+            return;
+          }
+          const intent = intentRef.current;
+          if (
+            intent.identity === identity &&
+            intent.version !== settledIntentRef.current
+          ) {
+            return;
+          }
+          const state = await api.loadGuardianAccess({
+            signal: controller.signal,
+          });
+          if (!isCurrent(identity, generation) || controller.signal.aborted) {
+            return;
+          }
+          if (
+            storageKey !== null &&
+            guardianAccessLockMarker(storageKey) !== null
+          ) {
             setSnapshot((current) => ({
+              ...initialSnapshot(identity),
               blockedByLearnerSwitch:
-                current.identity === identity && current.blockedByLearnerSwitch,
-              error: FALLBACK_ERROR,
-              expiresAt: null,
-              identity,
+                current.identity === identity &&
+                current.blockedByLearnerSwitch,
               mode: "learner",
             }));
-          } finally {
-            if (controllerRef.current === controller)
-              controllerRef.current = null;
+            return;
           }
-        });
-      },
-      [enqueue, isCurrent, lockStorageKeyPromise, now, sessionIdentity],
-    );
+          const settledIntent = intentRef.current;
+          if (
+            settledIntent.identity === identity &&
+            settledIntent.version !== settledIntentRef.current
+          ) {
+            return;
+          }
+          const liveGuardianState = isLiveGuardianState(state, now());
+          setSnapshot((current) => {
+            if (
+              current.identity === identity &&
+              current.blockedByLearnerSwitch
+            ) {
+              return {
+                ...initialSnapshot(identity),
+                blockedByLearnerSwitch: true,
+                mode: "learner",
+              };
+            }
+            if (!liveGuardianState) {
+              return { ...initialSnapshot(identity), mode: "learner" };
+            }
+            return {
+              blockedByLearnerSwitch: false,
+              error: null,
+              expiresAt: state.expiresAt,
+              identity,
+              mode: "guardian",
+            };
+          });
+        } catch {
+          if (!isCurrent(identity, generation) || controller.signal.aborted) {
+            return;
+          }
+          setSnapshot((current) => ({
+            blockedByLearnerSwitch:
+              current.identity === identity &&
+              current.blockedByLearnerSwitch,
+            error: FALLBACK_ERROR,
+            expiresAt: null,
+            identity,
+            mode: "learner",
+          }));
+        } finally {
+          if (controllerRef.current === controller) controllerRef.current = null;
+        }
+      });
+    }, [enqueue, isCurrent, lockStorageKeyPromise, now, sessionIdentity]);
 
     useEffect(() => {
       generationRef.current += 1;
@@ -489,10 +496,7 @@ export function createGuardianAccessProvider({
             return;
           }
           settledIntentRef.current = version;
-          if (
-            state.mode === "learner" ||
-            Date.parse(state.expiresAt) <= now()
-          ) {
+          if (state.mode === "learner" || Date.parse(state.expiresAt) <= now()) {
             setSnapshot({ ...initialSnapshot(identity), mode: "learner" });
           } else {
             setSnapshot({
@@ -528,29 +532,26 @@ export function createGuardianAccessProvider({
       lockStorageKeyPromise,
     ]);
 
-    const collapseToLearner = useCallback(
-      (expectedIdentity?: string) => {
-        const identity = identityRef.current;
-        if (
-          identity === null ||
-          (expectedIdentity !== undefined && identity !== expectedIdentity)
-        ) {
-          return;
-        }
-        const version = beginIntent(identity, "learner", true);
-        settledIntentRef.current = version;
-        siblingLockIntentRef.current = { identity, version };
-        generationRef.current += 1;
-        controllerRef.current?.abort();
-        controllerRef.current = null;
-        setSnapshot({
-          ...initialSnapshot(identity),
-          blockedByLearnerSwitch: true,
-          mode: "learner",
-        });
-      },
-      [beginIntent],
-    );
+    const collapseToLearner = useCallback((expectedIdentity?: string) => {
+      const identity = identityRef.current;
+      if (
+        identity === null ||
+        (expectedIdentity !== undefined && identity !== expectedIdentity)
+      ) {
+        return;
+      }
+      const version = beginIntent(identity, "learner", true);
+      settledIntentRef.current = version;
+      siblingLockIntentRef.current = { identity, version };
+      generationRef.current += 1;
+      controllerRef.current?.abort();
+      controllerRef.current = null;
+      setSnapshot({
+        ...initialSnapshot(identity),
+        blockedByLearnerSwitch: true,
+        mode: "learner",
+      });
+    }, [beginIntent]);
 
     const acknowledgeLearnerSwitch = useCallback(() => {
       const identity = sessionIdentity;
@@ -624,19 +625,16 @@ export function createGuardianAccessProvider({
       }
       const identity = sessionIdentity;
       const expiresAt = visibleSnapshot.expiresAt;
-      return schedule(
-        () => {
-          const current = snapshot;
-          if (
-            identity !== null &&
-            current.identity === identity &&
-            current.expiresAt === expiresAt
-          ) {
-            reconcileLearner();
-          }
-        },
-        Math.max(0, Date.parse(expiresAt) - now()),
-      );
+      return schedule(() => {
+        const current = snapshot;
+        if (
+          identity !== null &&
+          current.identity === identity &&
+          current.expiresAt === expiresAt
+        ) {
+          reconcileLearner();
+        }
+      }, Math.max(0, Date.parse(expiresAt) - now()));
     }, [
       reconcileLearner,
       sessionIdentity,
@@ -719,11 +717,7 @@ export function createGuardianAccessProvider({
                 newerGuardianIntent &&
                 state.mode === "guardian"
               ) {
-                await compensateGuardianUnlock(
-                  identity,
-                  generation,
-                  storageKey,
-                );
+                await compensateGuardianUnlock(identity, generation, storageKey);
               } else {
                 await compensateSiblingLock(identity);
               }
@@ -773,11 +767,7 @@ export function createGuardianAccessProvider({
                 newerGuardianIntent &&
                 !isDefinitiveGuardianPasswordFailure(error)
               ) {
-                await compensateGuardianUnlock(
-                  identity,
-                  generation,
-                  storageKey,
-                );
+                await compensateGuardianUnlock(identity, generation, storageKey);
               } else {
                 await compensateSiblingLock(identity);
               }
@@ -812,8 +802,7 @@ export function createGuardianAccessProvider({
             }
           }
         });
-      },
-      [
+      }, [
         applyState,
         beginIntent,
         enqueue,

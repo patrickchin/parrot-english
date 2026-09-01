@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronLeft,
-  LoaderCircle,
-  Mic,
-  Square,
-  Volume2,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, ChevronLeft, LoaderCircle, Mic, Square, Volume2 } from "lucide-react";
 import type { ReactNode, RefObject } from "react";
 import { ActionButton, TextButton } from "../shared/ui";
 import { DubTimedWords, type DubGuidancePosition } from "./DubKaraokeGuide";
@@ -83,57 +75,50 @@ export function DubSceneEditor({
   const lineNumber = activeLineIndex + 1;
   const countingIn = operation === "counting-in";
   const recording = operation === "recording";
-  const recordAgain =
-    pendingTake !== null || hasSavedTake || saveRecovery !== null;
+  const recordAgain = pendingTake !== null || hasSavedTake || saveRecovery !== null;
   const hasPlayableTake = pendingTake !== null || hasSavedTake;
   const mediaLocked = locked || recording;
   const navigationLocked = mediaLocked || saveRecovery === "save";
   const recordingDurationMs = activeLine.durationMs;
-  const presentationElapsedMs =
-    presentation.lineId === activeLine.id ? presentation.elapsedMs : null;
-  const elapsedMs = Math.min(
-    recordingDurationMs,
-    Math.max(0, presentationElapsedMs ?? 0),
-  );
+  const presentationElapsedMs = presentation.lineId === activeLine.id
+    ? presentation.elapsedMs
+    : null;
+  const elapsedMs = Math.min(recordingDurationMs, Math.max(0, presentationElapsedMs ?? 0));
   const elapsedLabel = formatDuration(elapsedMs);
   const recordingLimitLabel = formatDuration(recordingDurationMs);
   const firstLine = lineNumber === 1;
   const lastLine = lineNumber === definition.lines.length;
-  const recordLabel =
-    operation === "mic-opening"
-      ? "Starting microphone"
-      : countingIn
-        ? "Cancel count-in"
-        : operation === "saving"
-          ? "Saving recording"
-          : recording
-            ? "Stop recording"
-            : recordAgain
-              ? "Record again"
-              : "Record line";
-  const takeLabel =
-    operation === "take-playing" ? "Stop my recording" : "Play my recording";
-  const feedbackError =
-    Boolean(error) && operation !== "mic-opening" && operation !== "saving";
-  const feedbackLabel =
-    operation === "mic-opening"
-      ? "Starting microphone…"
+  const recordLabel = operation === "mic-opening"
+    ? "Starting microphone"
+    : countingIn
+      ? "Cancel count-in"
       : operation === "saving"
-        ? "Saving your voice…"
-        : saveRecovery === "save"
-          ? "Not saved"
-          : error
-            ? error
-            : hasPlayableTake
-              ? "Recorded ✓"
-              : `Melody length: ${recordingLimitLabel}`;
+        ? "Saving recording"
+        : recording
+          ? "Stop recording"
+          : recordAgain
+            ? "Record again"
+            : "Record line";
+  const takeLabel = operation === "take-playing"
+    ? "Stop my recording"
+    : "Play my recording";
+  const feedbackError = Boolean(error)
+    && operation !== "mic-opening"
+    && operation !== "saving";
+  const feedbackLabel = operation === "mic-opening"
+    ? "Starting microphone…"
+    : operation === "saving"
+      ? "Saving your voice…"
+      : saveRecovery === "save"
+        ? "Not saved"
+        : error
+          ? error
+          : hasPlayableTake
+            ? "Recorded ✓"
+            : `Melody length: ${recordingLimitLabel}`;
 
   return (
-    <aside
-      aria-busy={locked}
-      aria-label="Line recording controls"
-      className="grid min-w-0 content-start gap-2 self-start rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:max-h-full short-wide:min-h-0 short-wide:gap-1 short-wide:overflow-y-auto short-wide:rounded-2xl short-wide:p-2 md:max-h-[calc(100dvh-10rem)] md:gap-1.5 md:overflow-y-auto md:p-4 short-wide:md:max-h-full short-wide:md:gap-1 short-wide:md:p-2"
-    >
+    <aside aria-busy={locked} aria-label="Line recording controls" className="grid min-w-0 content-start gap-2 self-start rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:max-h-full short-wide:min-h-0 short-wide:gap-1 short-wide:overflow-y-auto short-wide:rounded-2xl short-wide:p-2 md:max-h-[calc(100dvh-10rem)] md:gap-1.5 md:overflow-y-auto md:p-4 short-wide:md:max-h-full short-wide:md:gap-1 short-wide:md:p-2">
       <ActionButton
         aria-label="Back to all lyrics"
         className="min-h-12 justify-self-start px-3"
@@ -146,17 +131,10 @@ export function DubSceneEditor({
         <ChevronLeft aria-hidden="true" /> All lyrics
       </ActionButton>
 
-      <p
-        aria-current="step"
-        className="m-0 text-center text-lg font-black leading-none text-brand-blue short-wide:text-base md:text-xl"
-      >
+      <p aria-current="step" className="m-0 text-center text-lg font-black leading-none text-brand-blue short-wide:text-base md:text-xl">
         Line {lineNumber} of {definition.lines.length}
       </p>
-      <h2
-        className="m-0 rounded-2xl bg-sky-50 px-3 py-2 text-center text-lg font-black leading-snug text-brand-ink short-wide:py-1.5 short-wide:text-base md:text-xl"
-        ref={lineHeadingRef}
-        tabIndex={-1}
-      >
+      <h2 className="m-0 rounded-2xl bg-sky-50 px-3 py-2 text-center text-lg font-black leading-snug text-brand-ink short-wide:py-1.5 short-wide:text-base md:text-xl" ref={lineHeadingRef} tabIndex={-1}>
         <DubTimedWords elapsedMs={presentationElapsedMs} line={activeLine} />
       </h2>
 
@@ -180,16 +158,11 @@ export function DubSceneEditor({
         size="large"
         variant="brand"
       >
-        {operation === "mic-opening" || operation === "saving" ? (
-          <LoaderCircle
-            aria-hidden="true"
-            className="animate-spin motion-reduce:animate-none"
-          />
-        ) : recording || countingIn ? (
-          <Square aria-hidden="true" />
-        ) : (
-          <Mic aria-hidden="true" />
-        )}
+        {operation === "mic-opening" || operation === "saving"
+          ? <LoaderCircle aria-hidden="true" className="animate-spin motion-reduce:animate-none" />
+          : recording || countingIn
+            ? <Square aria-hidden="true" />
+            : <Mic aria-hidden="true" />}
         {operation === "mic-opening"
           ? "Starting…"
           : countingIn
@@ -203,10 +176,7 @@ export function DubSceneEditor({
                   : "Record"}
       </ActionButton>
 
-      <section
-        aria-label="Recording feedback"
-        className="grid h-36 content-start gap-1.5 overflow-visible rounded-2xl bg-sky-50 p-2 short-wide:h-[5.5rem] short-wide:gap-1 short-wide:p-0.5"
-      >
+      <section aria-label="Recording feedback" className="grid h-36 content-start gap-1.5 overflow-visible rounded-2xl bg-sky-50 p-2 short-wide:h-[5.5rem] short-wide:gap-1 short-wide:p-0.5">
         <DubTakeWaveform
           blob={pendingTake}
           definition={definition}
@@ -217,21 +187,9 @@ export function DubSceneEditor({
         />
         {recording ? (
           <>
-            <p
-              aria-label="Recording duration"
-              className="m-0 flex items-center justify-between gap-2 text-sm font-black text-brand-rose"
-              role="timer"
-            >
-              <span className="inline-flex items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className="size-3 rounded-full bg-red-600"
-                />
-                Recording with melody
-              </span>
-              <span>
-                {elapsedLabel} / {recordingLimitLabel}
-              </span>
+            <p aria-label="Recording duration" className="m-0 flex items-center justify-between gap-2 text-sm font-black text-brand-rose" role="timer">
+              <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-3 rounded-full bg-red-600" />Recording with melody</span>
+              <span>{elapsedLabel} / {recordingLimitLabel}</span>
             </p>
             <div
               aria-label="Recording time"
@@ -245,7 +203,7 @@ export function DubSceneEditor({
               <span
                 aria-hidden="true"
                 className="block h-full rounded-full bg-brand-rose transition-[width] duration-100 motion-reduce:transition-none"
-                style={{ width: `${(elapsedMs / recordingDurationMs) * 100}%` }}
+                style={{ width: `${elapsedMs / recordingDurationMs * 100}%` }}
               />
             </div>
           </>
@@ -254,9 +212,7 @@ export function DubSceneEditor({
             Count-in {presentation.countInBeat}
           </p>
         ) : (
-          <div
-            className={`flex min-h-10 items-center justify-between gap-1 short-wide:min-h-12 ${feedbackError ? "flex-wrap short-wide:flex-nowrap" : ""}`}
-          >
+          <div className={`flex min-h-10 items-center justify-between gap-1 short-wide:min-h-12 ${feedbackError ? "flex-wrap short-wide:flex-nowrap" : ""}`}>
             <p
               aria-label={feedbackError ? error : undefined}
               className={`m-0 min-w-0 text-sm font-black short-wide:text-xs ${feedbackError ? "w-full flex-none break-words leading-tight text-red-800 short-wide:w-auto short-wide:flex-1" : "flex-1 truncate whitespace-nowrap " + (operation === "mic-opening" || operation === "saving" ? "text-brand-rose" : "text-slate-600")}`}
@@ -269,34 +225,12 @@ export function DubSceneEditor({
             </p>
             <div className="flex shrink-0 items-center gap-1">
               {hasPlayableTake ? (
-                <TextButton
-                  aria-label={takeLabel}
-                  className="relative z-0 min-h-12 min-w-12 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm"
-                  disabled={mediaLocked}
-                  onClick={onHearTake}
-                >
-                  {operation === "take-playing" ? (
-                    <Square aria-hidden="true" />
-                  ) : (
-                    <Volume2 aria-hidden="true" />
-                  )}{" "}
-                  {saveRecovery === "save"
-                    ? operation === "take-playing"
-                      ? "Stop"
-                      : "Play"
-                    : takeLabel}
+                <TextButton aria-label={takeLabel} className="relative z-0 min-h-12 min-w-12 shrink-0 gap-1 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm" disabled={mediaLocked} onClick={onHearTake}>
+                  {operation === "take-playing" ? <Square aria-hidden="true" /> : <Volume2 aria-hidden="true" />} {saveRecovery === "save" ? (operation === "take-playing" ? "Stop" : "Play") : takeLabel}
                 </TextButton>
               ) : null}
               {pendingTake && saveRecovery === "save" ? (
-                <TextButton
-                  aria-label="Save again"
-                  className="relative z-0 min-h-12 min-w-12 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm"
-                  disabled={locked}
-                  onClick={onRetrySave}
-                  ref={saveButtonRef}
-                >
-                  Save
-                </TextButton>
+                <TextButton aria-label="Save again" className="relative z-0 min-h-12 min-w-12 shrink-0 rounded-lg bg-white px-2 no-underline shadow-sm focus-visible:z-10 focus-visible:outline-offset-0 short-wide:text-sm" disabled={locked} onClick={onRetrySave} ref={saveButtonRef}>Save</TextButton>
               ) : null}
             </div>
           </div>

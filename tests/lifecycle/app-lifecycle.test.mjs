@@ -84,7 +84,8 @@ before(async () => {
     createGuardianAccessProvider,
     notifyGuardianAccessRequired,
     useGuardianAccess,
-  } = await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
+  } =
+    await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
   ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
   ));
@@ -96,9 +97,10 @@ before(async () => {
     LearnerSelectionProvider,
     useLearnerProfile,
     useLearnerSelection,
-  } = await vite
-    .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
-    .catch(() => ({})));
+  } =
+    await vite
+      .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+      .catch(() => ({})));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
   ));
@@ -653,7 +655,8 @@ function SelectionActionHarness({
     createAndSelectLearner,
     deleteLearner,
     selectLearner,
-  } = useLearnerSelection();
+  } =
+    useLearnerSelection();
   const mutateLearner =
     action === "create"
       ? () => createAndSelectLearner(newLearnerName, ["learner-mia"])
@@ -662,7 +665,7 @@ function SelectionActionHarness({
             typeof deleteLearner === "function"
               ? deleteLearner(profileId)
               : Promise.reject(new Error("Learner deletion is unavailable."))
-        : () => selectLearner(profileId);
+      : () => selectLearner(profileId);
   return createElement(
     "section",
     null,
@@ -845,10 +848,7 @@ function AccountTransitionLearnerSelectionHarness({
   );
 }
 
-function installSharedBroadcastChannels({
-  beforeDelivery,
-  deliver = true,
-} = {}) {
+function installSharedBroadcastChannels({ beforeDelivery, deliver = true } = {}) {
   const channels = new Map();
   const messages = [];
   let messagesPosted = 0;
@@ -1181,35 +1181,33 @@ function modeRoutesInMemory({
             ),
             path: "/",
           }),
-          createElement(
-            Route,
-            {
-              element: createElement(GuardianModeBoundary, {
+          createElement(Route, {
+            element: createElement(GuardianModeBoundary, {
+              onBeforeNavigate,
+            }),
+          },
+          createElement(Route, {
+            element: createElement(
+              "main",
+              null,
+              createElement("h1", null, "Learner profile"),
+              createElement("p", null, "Save changes"),
+              createElement("p", null, "Redo setup questions"),
+            ),
+            path: "/profile",
+          }),
+          createElement(Route, {
+            element: createElement(
+              Fragment,
+              null,
+              createElement(RouteFocusManager),
+              createElement(GuardianDashboard, {
+                learnerName,
                 onBeforeNavigate,
               }),
-            },
-            createElement(Route, {
-              element: createElement(
-                "main",
-                null,
-                createElement("h1", null, "Learner profile"),
-                createElement("p", null, "Save changes"),
-                createElement("p", null, "Redo setup questions"),
-              ),
-              path: "/profile",
-            }),
-            createElement(Route, {
-              element: createElement(
-                Fragment,
-                null,
-                createElement(RouteFocusManager),
-                createElement(GuardianDashboard, {
-                  learnerName,
-                  onBeforeNavigate,
-                }),
-              ),
-              path: "/guardian",
-            }),
+            ),
+            path: "/guardian",
+          }),
           ),
           createElement(
             Route,
@@ -2431,7 +2429,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => {
       assert.equal(document.querySelector('[role="dialog"]'), null);
       assert.equal(output("Gate account experience").textContent, "Mary");
-      assert.deepEqual(operations, ["select:learner-mary", "before-navigate"]);
+      assert.deepEqual(operations, [
+        "select:learner-mary",
+        "before-navigate",
+      ]);
     });
   });
 
@@ -3319,7 +3320,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
       } else {
         delete globalThis.crypto;
       }
@@ -3418,7 +3423,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = SharedBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
       } else {
         delete globalThis.crypto;
       }
@@ -3521,7 +3530,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       path: "/api/learner-profiles/learner-bob",
       response: {
         activeProfileId: "learner-mia",
-        profiles: [learnerRosterProfile({ id: "learner-mia", name: "Mary" })],
+        profiles: [
+          learnerRosterProfile({ id: "learner-mia", name: "Mary" }),
+        ],
       },
     },
   ]) {
@@ -3866,7 +3877,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             output(`${creationCase.label} active learner`).textContent,
             "none",
           );
-          assert.deepEqual(fullProfileIds.slice(initialFullProfileReads), []);
+          assert.deepEqual(
+            fullProfileIds.slice(initialFullProfileReads),
+            [],
+          );
           assert.equal(button(creationCase.label).disabled, false);
         }
         assert.equal(rosterReads, 1);
@@ -3939,8 +3953,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
       await waitFor(() =>
         assert.equal(
-          output("Create Rose after reconciliation mutation result")
-            .textContent,
+          output("Create Rose after reconciliation mutation result").textContent,
           "resolved",
         ),
       );
@@ -4175,7 +4188,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = SharedBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
       } else {
         delete globalThis.crypto;
       }
@@ -4261,7 +4278,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         rosterReads += 1;
         return json({
           activeProfileId: "learner-bob",
-          profiles: [learnerRosterProfile({ id: "learner-bob", name: "Bob" })],
+          profiles: [
+            learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
+          ],
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -4351,7 +4370,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = ImmediateChangeBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
       } else {
         delete globalThis.crypto;
       }
@@ -4389,7 +4412,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     heldRoster.resolve(
       json({
         activeProfileId: "learner-bob",
-        profiles: [learnerRosterProfile({ id: "learner-bob", name: "Bob" })],
+        profiles: [
+          learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
+        ],
       }),
     );
     await waitFor(() =>
@@ -4484,7 +4509,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       document.querySelector("#profile-name")?.value,
       "Unsaved Mia name",
     );
-    assert.equal(learnerProfileRequests, initialLearnerProfileRequests + 1);
+    assert.equal(
+      learnerProfileRequests,
+      initialLearnerProfileRequests + 1,
+    );
     assert.equal(profileEditorRequests, initialProfileEditorRequests);
   });
 
@@ -4908,10 +4936,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ) {
         operations.push("select");
         selectedProfileId = "learner-noah";
-        return json({
-          activeProfileId: selectedProfileId,
-          profiles: summaries,
-        });
+        return json({ activeProfileId: selectedProfileId, profiles: summaries });
       }
       if (
         path === "/api/learner-profiles/learner-noah" &&
@@ -4941,7 +4966,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         output("Queued learner mutation result").textContent,
         "resolved",
       );
-      assert.equal(output("Queued learner active learner").textContent, "none");
+      assert.equal(
+        output("Queued learner active learner").textContent,
+        "none",
+      );
     });
     assert.deepEqual(operations, ["select", "delete"]);
   });
@@ -4984,10 +5012,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
         rosterReads += 1;
-        return json({
-          activeProfileId: "learner-mia",
-          profiles: [profiles[0]],
-        });
+        return json({ activeProfileId: "learner-mia", profiles: [profiles[0]] });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
@@ -5048,7 +5073,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             profile: {
               ...completedLearnerProfileState().profile,
               id: currentActiveProfileId,
-              name: currentActiveProfileId === "learner-noah" ? "Noah" : "Mia",
+              name:
+                currentActiveProfileId === "learner-noah" ? "Noah" : "Mia",
             },
           });
         }
@@ -5246,7 +5272,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
       await waitFor(() =>
         assert.equal(
-          output("Pending deletion sibling active learner").closest("[hidden]"),
+          output("Pending deletion sibling active learner").closest(
+            "[hidden]",
+          ),
           null,
         ),
       );
@@ -5291,10 +5319,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
         rosterReads += 1;
-        return json({
-          activeProfileId: "learner-mia",
-          profiles: rosterProfiles,
-        });
+        return json({ activeProfileId: "learner-mia", profiles: rosterProfiles });
       }
       if (
         path === "/api/learner-profiles/learner-noah" &&
@@ -5394,10 +5419,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         });
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
-        return json({
-          activeProfileId: "learner-mia",
-          profiles: rosterProfiles,
-        });
+        return json({ activeProfileId: "learner-mia", profiles: rosterProfiles });
       }
       if (
         path === "/api/learner-profiles/learner-noah" &&
@@ -5481,7 +5503,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = SharedBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
+        Object.defineProperty(
+          globalThis,
+          "crypto",
+          originalCryptoDescriptor,
+        );
       } else {
         delete globalThis.crypto;
       }
@@ -5540,8 +5566,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       const deleteButton = button("Delete with no authoritative response");
       assert.equal(deleteButton.closest("[inert]"), null);
       assert.equal(
-        output("Delete with no authoritative response active learner")
-          .textContent,
+        output(
+          "Delete with no authoritative response active learner",
+        ).textContent,
         "learner-mia",
       );
     });
@@ -6041,7 +6068,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         rosterReads += 1;
         return json({
           activeProfileId: "learner-1",
-          profiles: [learnerRosterProfile({ id: "learner-1", name: "Mia" })],
+          profiles: [
+            learnerRosterProfile({ id: "learner-1", name: "Mia" }),
+          ],
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -6389,7 +6418,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await waitFor(() => {
       assert.equal(currentRoute().path, "/lessons?from=picker#resume");
-      assert.deepEqual(operations, ["select:learner-noah", "before-navigate"]);
+      assert.deepEqual(operations, [
+        "select:learner-noah",
+        "before-navigate",
+      ]);
     });
   });
 
@@ -6675,10 +6707,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/Learner details/));
     assert.equal(document.querySelector("#profile-name")?.value, "Noah");
     assert.equal(currentRoute().path, "/guardian/learners/learner-noah");
-    assert.equal(
-      requests.some((request) => request.includes("/active")),
-      false,
-    );
+    assert.equal(requests.some((request) => request.includes("/active")), false);
   });
 
   it("recovers an authoritative targeted dubbing 403 automatically at the same URL", async () => {
@@ -6716,10 +6745,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           ],
         });
       }
-      if (
-        dubId &&
-        requestUrl.searchParams.get("learnerProfileId") === "learner-noah"
-      ) {
+      if (dubId && requestUrl.searchParams.get("learnerProfileId") === "learner-noah") {
         targetedLoads += 1;
         if (targetedLoads === 1) {
           guardianMode = "learner";
@@ -10285,7 +10311,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
-    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
+    await click(
+      await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")),
+    );
     await click(button("Sign out"));
     await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
@@ -10721,7 +10749,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
+    await click(
+      await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")),
+    );
     await click(button("Sign out"));
     assert.equal(signOutCalls, 1);
 
@@ -10801,7 +10831,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
+    await click(
+      await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")),
+    );
     await click(button("Sign out"));
     assert.equal(
       button("Signing out… Profile for ⁨Mia⁩, guardian mode").getAttribute(
@@ -10864,7 +10896,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
+    await click(
+      await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")),
+    );
     await click(button("Sign out"));
     await waitFor(() => button("Sign out again"));
 
@@ -11424,15 +11458,18 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       method: "DELETE",
     });
     assert.equal(response.status, 503);
-    currentRoster = await (await window.fetch("/api/learner-profiles")).json();
+    currentRoster = await (
+      await window.fetch("/api/learner-profiles")
+    ).json();
     assert.equal(
       currentRoster.profiles.find(({ id }) => id === "learner-noah")
         ?.deletionPending,
       true,
     );
-    response = await window.fetch("/api/learner-profiles/learner-noah/active", {
-      method: "PUT",
-    });
+    response = await window.fetch(
+      "/api/learner-profiles/learner-noah/active",
+      { method: "PUT" },
+    );
     assert.equal(response.status, 404);
 
     response = await window.fetch("/api/learner-profiles/learner-noah", {
@@ -11504,9 +11541,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     miaSession.failNextLearnerDelete();
-    response = await miaSession.fetch("/api/learner-profiles/learner-noah", {
-      method: "DELETE",
-    });
+    response = await miaSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
     assert.equal(response.status, 503);
     const pendingForMia = await (
       await miaSession.fetch("/api/learner-profiles")
@@ -11527,9 +11565,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     assert.equal(response.status, 404);
 
-    response = await miaSession.fetch("/api/learner-profiles/learner-noah", {
-      method: "DELETE",
-    });
+    response = await miaSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
     assert.equal(response.status, 200);
     assert.deepEqual(
       (await response.json()).profiles.map(({ id }) => id),
@@ -11538,13 +11577,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(noahSession.snapshot().activeProfileId, null);
     assert.equal(miaSession.snapshot().activeProfileId, "learner-mia");
 
-    response = await noahSession.fetch("/api/learner-profiles/learner-noah", {
-      method: "DELETE",
-    });
+    response = await noahSession.fetch(
+      "/api/learner-profiles/learner-noah",
+      { method: "DELETE" },
+    );
     assert.equal(response.status, 404);
-    response = await miaSession.fetch("/api/learner-profiles/learner-mia", {
-      method: "DELETE",
-    });
+    response = await miaSession.fetch(
+      "/api/learner-profiles/learner-mia",
+      { method: "DELETE" },
+    );
     assert.equal(response.status, 409);
     assert.deepEqual(await response.json(), { error: "last_learner" });
   });
@@ -11676,8 +11717,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       window,
       "localStorage",
     );
-    const accountKey = Array.from({ length: storage.length }, (_, index) =>
-      storage.key(index),
+    const accountKey = Array.from(
+      { length: storage.length },
+      (_, index) => storage.key(index),
     ).find((key) => {
       if (!key?.startsWith("parrot-e2e-learners:account:")) return false;
       try {
@@ -11738,8 +11780,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const session = window.__parrotE2eLearners.openSession(
       "task5-stale-consent-reader",
     );
-    const restoreStorage =
-      deleteStoredMockLearnerDuringHandleRefresh("learner-noah");
+    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
+      "learner-noah",
+    );
 
     try {
       const response = await session.fetch(
@@ -11773,8 +11816,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const session = window.__parrotE2eLearners.openSession(
       "task5-stale-upload-mismatch-writer",
     );
-    const restoreStorage =
-      deleteStoredMockLearnerDuringHandleRefresh("learner-noah");
+    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
+      "learner-noah",
+    );
 
     try {
       const response = await session.fetch(
@@ -11840,7 +11884,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         1,
       ),
     );
-    const deletingSession = learners.openSession("task5-held-upload-deleter");
+    const deletingSession = learners.openSession(
+      "task5-held-upload-deleter",
+    );
     response = await deletingSession.fetch(
       "/api/learner-profiles/learner-noah",
       { method: "DELETE" },
@@ -11888,7 +11934,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     );
     await waitFor(() =>
-      assert.equal(learners.snapshot(bob.id).lessonRecording.pendingUploads, 1),
+      assert.equal(
+        learners.snapshot(bob.id).lessonRecording.pendingUploads,
+        1,
+      ),
     );
     response = await deletingSession.fetch(
       `/api/learner-profiles/${encodeURIComponent(bob.id)}`,

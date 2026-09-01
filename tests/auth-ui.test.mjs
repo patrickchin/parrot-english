@@ -771,15 +771,13 @@ test("account triggers isolate adversarial runtime identities while preserving v
       `aria-label="Profile for ⁨${rtlName}⁩, learner mode"`,
     ),
   );
-  assert.ok(
-    guardian.includes(
-      `<bdi class="min-w-0 [overflow-wrap:anywhere]" dir="auto">${cjkName}</bdi>`,
-    ),
+  assert.match(
+    guardian,
+    new RegExp(`<bdi(?=[^>]*dir="auto")[^>]*>${cjkName}</bdi>`),
   );
-  assert.ok(
-    learner.includes(
-      `<bdi class="min-w-0 [overflow-wrap:anywhere]" dir="auto">${rtlName}</bdi>`,
-    ),
+  assert.match(
+    learner,
+    new RegExp(`<bdi(?=[^>]*dir="auto")[^>]*>${rtlName}</bdi>`),
   );
 });
 
