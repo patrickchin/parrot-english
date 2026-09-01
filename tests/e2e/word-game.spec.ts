@@ -125,11 +125,11 @@ test("navigates through a category and plays saved four-choice feedback in seque
   await page.getByRole("navigation", { name: "Word games" })
     .getByRole("link", { name: "Animals" }).click();
   await expect(page).toHaveURL(/\/word-games\/animals/);
-  await page.getByRole("link", { name: "Simple Animals: First look" }).click();
+  await page.getByRole("link", { name: "Level 1 · Quiz 1" }).click();
   await expect(page).toHaveURL(/\/word-games\/animals\/simple-1/);
 
   const { choices, main, progress } = game(page);
-  await expect(main.getByRole("heading", { level: 1, name: "Simple Animals: First look" })).toBeVisible();
+  await expect(main.getByRole("heading", { level: 1, name: "Level 1 · Quiz 1" })).toBeVisible();
   await expect(main.getByRole("heading", { level: 2, name: animals[0][1] })).toBeVisible();
   await expect(main.getByRole("link", { name: "Back to Animals" }).first())
     .toHaveAttribute("href", "/word-games/animals");
@@ -414,17 +414,19 @@ test("renders the generated hierarchy, illustrated covers, and accessible color 
     .toHaveCount(1);
   await expect(category.getByRole("link", { name: "Back to word games" }))
     .toHaveAttribute("href", "/word-games");
-  await expect(category.getByRole("heading", { level: 2 }).allTextContents())
-    .resolves.toEqual(["Simple", "Intermediate", "Advanced"]);
-  await expect(category.getByRole("link", { name: /^(?:Simple|Intermediate|Advanced) Animals:/ })).toHaveCount(9);
+  await expect(category.getByRole("heading", { level: 2 })).toHaveCount(0);
+  const quizLinks = category.getByRole("link", { name: /^Level [1-3] · Quiz [1-3]$/ });
+  await expect(quizLinks).toHaveCount(9);
+  await expect(category.getByRole("link", { name: "Level 1 · Quiz 1" }))
+    .toHaveAttribute("href", "/word-games/animals/simple-1");
   for (const alt of [
     "A friendly cat.", "A friendly bird.", "A friendly duck.",
     "A friendly cow.", "A friendly pig.", "A friendly horse.", "A friendly elephant.",
   ]) await expect(category.getByRole("img", { name: alt }).first()).toBeVisible();
 
-  await category.getByRole("link", { name: "Simple Animals: First look" }).click();
+  await category.getByRole("link", { name: "Level 1 · Quiz 1" }).click();
   const player = page.getByRole("main");
-  await expect(player.getByRole("heading", { level: 1, name: "Simple Animals: First look" }))
+  await expect(player.getByRole("heading", { level: 1, name: "Level 1 · Quiz 1" }))
     .toHaveCount(1);
   await expect(player.getByRole("link", { name: "Back to Animals" }))
     .toHaveAttribute("href", "/word-games/animals");
@@ -483,32 +485,27 @@ test("keeps the round usable when the browser blocks initial autoplay", async ({
   await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-prompt")).toBe(true);
 });
 
-test("keeps all tier headings and quiz cards reachable across required category viewports", async ({ page }) => {
-  const smallWidths = new Set([280, 390, 640, 768]);
+test("keeps all independent quiz cards reachable across required category viewports", async ({ page }) => {
   for (const viewport of responsiveViewports) {
     await page.setViewportSize(viewport);
     await page.goto("/word-games/animals");
     const main = page.getByRole("main");
-    const headings = main.getByRole("heading", { level: 2 });
-    const cards = main.getByRole("link", { name: /^(?:Simple|Intermediate|Advanced) Animals:/ });
-    await expect(headings).toHaveCount(3);
+    const cards = main.getByRole("link", { name: /^Level [1-3] · Quiz [1-3]$/ });
+    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(0);
     await expect(cards).toHaveCount(9);
 
-    for (const locator of [...await headings.all(), ...await cards.all()]) {
+    for (const locator of await cards.all()) {
       await locator.scrollIntoViewIfNeeded();
       await expect(locator).toBeInViewport();
       await expectHorizontallyContained(page, locator);
     }
 
-    const headingBoxes = await Promise.all((await headings.all()).map(visibleBox));
-    const cardBoxes = await Promise.all((await cards.all()).slice(0, 3).map(visibleBox));
-    if (smallWidths.has(viewport.width)) {
-      expect(new Set(headingBoxes.map(({ y }) => Math.round(y))).size).toBe(3);
-      expect(cardBoxes.every(({ width }) => width > 0)).toBe(true);
-    } else {
-      expect(new Set(headingBoxes.map(({ x }) => Math.round(x))).size).toBe(3);
-      expect(new Set(headingBoxes.map(({ y }) => Math.round(y))).size).toBe(1);
-      expect(new Set(cardBoxes.map(({ y }) => Math.round(y))).size).toBe(3);
+    const expectedColumns = viewport.width < 360 ? 1 : viewport.width < 768 ? 2 : 3;
+    expect(await renderedColumns(cards)).toBe(expectedColumns);
+    expect(await renderedRows(cards)).toBe(Math.ceil(9 / expectedColumns));
+    if (viewport.width === 390) {
+      const firstLabel = cards.first().getByText("Level 1 · Quiz 1", { exact: true });
+      expect((await visibleBox(firstLabel)).height).toBeLessThan(30);
     }
   }
 });

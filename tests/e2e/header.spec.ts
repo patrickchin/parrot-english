@@ -395,6 +395,10 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
   await page.route("**/api/auth/sign-in/shared-guest", async (route) => {
     guestRequests += 1;
     expect(route.request().method()).toBe("POST");
+    expect(route.request().headers()["content-type"]).toContain(
+      "application/json",
+    );
+    expect(route.request().postDataJSON()).toEqual({});
     expect(route.request().headers()["x-captcha-response"]).toBe(
       "parrot-e2e-turnstile-token",
     );

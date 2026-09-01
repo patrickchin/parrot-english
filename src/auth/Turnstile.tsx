@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { CircleCheckBig, LoaderCircle, TriangleAlert } from "lucide-react";
 import { AUTH_TURNSTILE_ACTION } from "../../lib/auth-captcha";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { englishGuardianMessages } from "../i18n/messages/en";
+import { cx } from "../shared/ui";
 
 const TURNSTILE_SCRIPT_URL =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -147,17 +149,45 @@ export function TurnstileWidget({
 
   return (
     <div
+      aria-busy={status === "checking" || undefined}
       aria-label={messages.auth.securityCheck}
-      className="grid min-w-0 max-w-full justify-items-stretch gap-1 overflow-hidden rounded-2xl bg-sky-50 p-2"
+      className={cx(
+        "grid min-w-0 max-w-full justify-items-stretch gap-2 overflow-hidden rounded-2xl border-3 px-3 py-3 shadow-sm transition-colors",
+        status === "checking" && "border-amber-400 bg-amber-50 text-amber-950",
+        status === "complete" &&
+          "border-emerald-300 bg-emerald-50 text-emerald-900",
+        (status === "error" || status === "unavailable") &&
+          "border-rose-300 bg-rose-50 text-red-900",
+      )}
       role="group"
     >
       <div className="min-w-0 max-w-full" ref={containerRef} />
       <p
+        aria-atomic="true"
         aria-live="polite"
-        className="m-0 text-center text-xs font-bold text-slate-600"
+        className="m-0 inline-flex min-h-10 items-center justify-center gap-3 text-center text-sm font-black leading-snug sm:text-base"
         role={status === "error" || status === "unavailable" ? "alert" : "status"}
       >
-        {message}
+        {status === "checking" ? (
+          <LoaderCircle
+            aria-hidden="true"
+            className="size-7 shrink-0 animate-spin text-amber-700 motion-reduce:animate-none"
+            strokeWidth={3}
+          />
+        ) : status === "complete" ? (
+          <CircleCheckBig
+            aria-hidden="true"
+            className="size-7 shrink-0 text-emerald-700"
+            strokeWidth={3}
+          />
+        ) : (
+          <TriangleAlert
+            aria-hidden="true"
+            className="size-7 shrink-0"
+            strokeWidth={3}
+          />
+        )}
+        <span>{message}</span>
       </p>
     </div>
   );

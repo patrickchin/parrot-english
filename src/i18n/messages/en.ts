@@ -28,8 +28,9 @@ export const englishGuardianMessages = {
     password: "Password",
     passwordHint: "At least 8 characters",
     securityCheck: "Security check",
-    securityComplete: "Security check complete.",
-    securityChecking: "Checking that you’re human…",
+    securityComplete: "Security check complete. Guest access is ready.",
+    securityChecking:
+      "Security check in progress. Please wait—guest access will unlock automatically.",
     securityUnavailable:
       "Guest access and sign-up are temporarily unavailable.",
     securityLoadFailed:

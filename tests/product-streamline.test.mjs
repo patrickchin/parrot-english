@@ -230,7 +230,8 @@ test("word-game list and player remain English under a Chinese preference", () =
   );
   assertEnglishOnly(player, [
     "Animals",
-    "Simple Animals: First look",
+    "Level 1 · Quiz 1",
+    "Animals · Level 1",
     "Game progress",
     "1 of 6",
     "Which is the cat?",
