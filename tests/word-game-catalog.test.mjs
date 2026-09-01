@@ -118,23 +118,22 @@ describe("generated word-game catalog runtime", () => {
     assertDeepFrozen(WORD_GAME_COMPLETE_AUDIO);
   });
 
-  it("preserves and freezes copied visuals without changing single images", () => {
+  it("preserves and freezes illustrated visuals", () => {
     const bodyParts = resolveWordGameCategory("body-parts");
     const clothes = resolveWordGameCategory("clothes");
     const animals = resolveWordGameCategory("animals");
     assert.ok(bodyParts && clothes && animals);
 
     assert.deepEqual(bodyParts.items.find(({ id }) => id === "ears")?.visual, {
-      copies: 2,
       kind: "image",
-      src: "/assets/word-games/fluent-3d/1f442.png",
+      src: "/assets/word-games/illustrated/body-parts-ears.webp",
     });
     for (const id of ["shoes", "boots"]) {
-      assert.equal(clothes.items.find((item) => item.id === id)?.visual.copies, 2);
+      assert.match(clothes.items.find((item) => item.id === id)?.visual.src ?? "", /^\/assets\/word-games\/illustrated\/clothes-.+\.webp$/);
     }
     assert.deepEqual(animals.items.find(({ id }) => id === "cat")?.visual, {
       kind: "image",
-      src: "/assets/word-games/fluent-3d/1f431.png",
+      src: "/assets/word-games/illustrated/animals-cat.webp",
     });
     assertDeepFrozen(bodyParts.items.find(({ id }) => id === "ears")?.visual);
   });

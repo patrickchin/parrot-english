@@ -1,0 +1,581 @@
+{
+  "schemaVersion": 1,
+  "assets": [
+    {
+      "id": "animals-cat",
+      "publicPath": "/assets/word-games/illustrated/animals-cat.webp",
+      "sha256": "1b07f1f4340f182ab1cb350b9695bfb8bc314127f28db7995ff1378ce5e33bde",
+      "source": "original-v8"
+    },
+    {
+      "id": "animals-dog",
+      "publicPath": "/assets/word-games/illustrated/animals-dog.webp",
+      "sha256": "3cea778e97b4a2e735bfba045c0efc0b15e900b6bdfca237c337049b6ecfa49e",
+      "source": "original-v8"
+    },
+    {
+      "id": "animals-bird",
+      "publicPath": "/assets/word-games/illustrated/animals-bird.webp",
+      "sha256": "08b1016cf04d2f6e9a280f076ff23c98e7d354b19b09cd26663829a99313465a",
+      "source": "original-v8"
+    },
+    {
+      "id": "animals-fish",
+      "publicPath": "/assets/word-games/illustrated/animals-fish.webp",
+      "sha256": "2a507387f7d177ea5445c9b22997adf775462ff7540e6c1be4ef65df290ae6d5",
+      "source": "original-v8"
+    },
+    {
+      "id": "animals-duck",
+      "publicPath": "/assets/word-games/illustrated/animals-duck.webp",
+      "sha256": "654dc563d11aabd37f6313676f5ae9f74d99b828cf763e049fc494c624b25169",
+      "source": "original-v8"
+    },
+    {
+      "id": "animals-frog",
+      "publicPath": "/assets/word-games/illustrated/animals-frog.webp",
+      "sha256": "562ddbb75bb5bf893ca3c2e9e0a292db2a491d6dcd35f7730614cfde4aa4ec1d",
+      "source": "original-v8"
+    },
+    {
+      "id": "animals-pig",
+      "publicPath": "/assets/word-games/illustrated/animals-pig.webp",
+      "sha256": "ef1e12ede6a8be2d28c2c019614f2c7d2cc34a435a36534f6e4db80b40c8663b",
+      "source": "generated"
+    },
+    {
+      "id": "animals-cow",
+      "publicPath": "/assets/word-games/illustrated/animals-cow.webp",
+      "sha256": "b2517e6c2af80a0d78d499ad2f368a73573aaee7acf99dfceb2802b12cfe0d74",
+      "source": "generated"
+    },
+    {
+      "id": "animals-horse",
+      "publicPath": "/assets/word-games/illustrated/animals-horse.webp",
+      "sha256": "549be83f781d38d70bea6547663737d0d7b8c74c711787fbc6617d7f42f67382",
+      "source": "generated"
+    },
+    {
+      "id": "animals-alligator",
+      "publicPath": "/assets/word-games/illustrated/animals-alligator.webp",
+      "sha256": "50f2576d5fec47b2d4eb5f909e17b1bf7365aa2a759764785236db6f419acbea",
+      "source": "generated"
+    },
+    {
+      "id": "animals-elephant",
+      "publicPath": "/assets/word-games/illustrated/animals-elephant.webp",
+      "sha256": "bfee215cbdf4610315227894862aad676fea99133efcd546dab79ae315402613",
+      "source": "generated"
+    },
+    {
+      "id": "animals-giraffe",
+      "publicPath": "/assets/word-games/illustrated/animals-giraffe.webp",
+      "sha256": "f7ff66f0b7833fc50c686692ba98aa9fff29c19f887416be6c9e72595e9c100e",
+      "source": "generated"
+    },
+    {
+      "id": "body-parts-eyes",
+      "publicPath": "/assets/word-games/illustrated/body-parts-eyes.webp",
+      "sha256": "6319697095123a05f3fe00fd5d6bca922c426a685c2a48334da8fe6b2db5d857",
+      "source": "original-v8"
+    },
+    {
+      "id": "body-parts-ears",
+      "publicPath": "/assets/word-games/illustrated/body-parts-ears.webp",
+      "sha256": "7ca9e65c1688ea5249b6ba0946e21f6fe8a41f74f91949688e86281627ddf24f",
+      "source": "original-v8"
+    },
+    {
+      "id": "body-parts-nose",
+      "publicPath": "/assets/word-games/illustrated/body-parts-nose.webp",
+      "sha256": "772278798effe83b0e338b3fd871eef7f53ecedf081b81ae9b81ce9db697a662",
+      "source": "original-v8"
+    },
+    {
+      "id": "body-parts-mouth",
+      "publicPath": "/assets/word-games/illustrated/body-parts-mouth.webp",
+      "sha256": "aa82df14c023848835dcc435a218768adccafffaa44affb954e290404c85a016",
+      "source": "original-v8"
+    },
+    {
+      "id": "body-parts-hand",
+      "publicPath": "/assets/word-games/illustrated/body-parts-hand.webp",
+      "sha256": "4d583af3e40faf4ec42efe57a1571ea5408154b542a7f9b7f255abf83e38db9f",
+      "source": "original-v8"
+    },
+    {
+      "id": "body-parts-foot",
+      "publicPath": "/assets/word-games/illustrated/body-parts-foot.webp",
+      "sha256": "4fb91fd7d11c9c7389d12057c2ee5aca39aabbbdc9fd5486740d7207217dfdf7",
+      "source": "original-v8"
+    },
+    {
+      "id": "body-parts-arm",
+      "publicPath": "/assets/word-games/illustrated/body-parts-arm.webp",
+      "sha256": "5909cc7ba49c6f7c9adebebd94c35eace8abf25cae7d41f0c4fcb3b3c42f5740",
+      "source": "generated"
+    },
+    {
+      "id": "body-parts-leg",
+      "publicPath": "/assets/word-games/illustrated/body-parts-leg.webp",
+      "sha256": "cdb42c6a23648f9a4418a1a82dd90ea73c01d01bb1627a10fb9f8b1c26499ce1",
+      "source": "generated"
+    },
+    {
+      "id": "body-parts-tooth",
+      "publicPath": "/assets/word-games/illustrated/body-parts-tooth.webp",
+      "sha256": "2c6be7da0ad979aac302c62bc4d9cddce2664b8b4ff4ecfe40efa8a0d198208b",
+      "source": "generated"
+    },
+    {
+      "id": "body-parts-tongue",
+      "publicPath": "/assets/word-games/illustrated/body-parts-tongue.webp",
+      "sha256": "335a68a3bf0c07e3cece666ee20e9153290597e4f7fc3dbdbfd927edfc5030c7",
+      "source": "generated"
+    },
+    {
+      "id": "body-parts-brain",
+      "publicPath": "/assets/word-games/illustrated/body-parts-brain.webp",
+      "sha256": "69d9837fda7c090db19d0846056d8b35073b0e0d13972b09ababc48a73def644",
+      "source": "generated"
+    },
+    {
+      "id": "body-parts-heart",
+      "publicPath": "/assets/word-games/illustrated/body-parts-heart.webp",
+      "sha256": "420d64ade1f46e1aea1fb681b4e798dd4d5cd8dab4b9d06c35f2db1d5109516d",
+      "source": "generated"
+    },
+    {
+      "id": "food-apple",
+      "publicPath": "/assets/word-games/illustrated/food-apple.webp",
+      "sha256": "4170520aded7e13a415e8c24b9242541d7092b18b3269e330fd14738124b0dd5",
+      "source": "original-v8"
+    },
+    {
+      "id": "food-banana",
+      "publicPath": "/assets/word-games/illustrated/food-banana.webp",
+      "sha256": "2c1f28821ee5d6b48d2d3fa00c5517ba4e0ed73f19a27e07fd20c0e2b98c77fa",
+      "source": "original-v8"
+    },
+    {
+      "id": "food-carrot",
+      "publicPath": "/assets/word-games/illustrated/food-carrot.webp",
+      "sha256": "74566acd343812d7c76c2de9d10e338d58725cb813dbb70a8a3f9f49afe8dc9a",
+      "source": "original-v8"
+    },
+    {
+      "id": "food-orange",
+      "publicPath": "/assets/word-games/illustrated/food-orange.webp",
+      "sha256": "3de8d30989e89e243526f770844274805ea4fdc213b15fba68436efb3a46e983",
+      "source": "original-v8"
+    },
+    {
+      "id": "food-bread",
+      "publicPath": "/assets/word-games/illustrated/food-bread.webp",
+      "sha256": "21c30ce7ce9177d73bb560f940a3f6bf88d09168fc73b771b46f5f76fb683328",
+      "source": "original-v8"
+    },
+    {
+      "id": "food-cheese",
+      "publicPath": "/assets/word-games/illustrated/food-cheese.webp",
+      "sha256": "b3964a6e79a37242b68f7b34530feba58647cea8a8ede50bf3d96cb03cfcc6fe",
+      "source": "original-v8"
+    },
+    {
+      "id": "food-rice",
+      "publicPath": "/assets/word-games/illustrated/food-rice.webp",
+      "sha256": "a512ee88aa5ce23cbcfa8364403c7e2dba5071f531436b6a6798ed3546269ef9",
+      "source": "generated"
+    },
+    {
+      "id": "food-egg",
+      "publicPath": "/assets/word-games/illustrated/food-egg.webp",
+      "sha256": "a7c77bbf68c8ae1b931670062303e852ac5ac7362b21fcfafd44f9939ad6cebe",
+      "source": "generated"
+    },
+    {
+      "id": "food-milk",
+      "publicPath": "/assets/word-games/illustrated/food-milk.webp",
+      "sha256": "24e5de2f3ea88914a5ab1359fb75d27d8a07fa53c61379dff0d363ea43a06b73",
+      "source": "generated"
+    },
+    {
+      "id": "food-tomato",
+      "publicPath": "/assets/word-games/illustrated/food-tomato.webp",
+      "sha256": "1beeaf2bc8ba2367b5af86f6ee2a9951c3abbdc81652bfcd5c697ac954ac2a40",
+      "source": "generated"
+    },
+    {
+      "id": "food-potato",
+      "publicPath": "/assets/word-games/illustrated/food-potato.webp",
+      "sha256": "913ef3da7709365cf0500df3677878908f44d0e20a1bf98c1e49ec80220107ae",
+      "source": "generated"
+    },
+    {
+      "id": "food-sandwich",
+      "publicPath": "/assets/word-games/illustrated/food-sandwich.webp",
+      "sha256": "d1536e9532031bc671d2c727e7a46c429795860cbe5d8e092559e10965f4220c",
+      "source": "generated"
+    },
+    {
+      "id": "toys-ball",
+      "publicPath": "/assets/word-games/illustrated/toys-ball.webp",
+      "sha256": "d18e98b83c1b6f10d3f784df3dc8e143313bd76ae96fe176e1090bb25cc8a7e9",
+      "source": "original-v8"
+    },
+    {
+      "id": "toys-toy-car",
+      "publicPath": "/assets/word-games/illustrated/toys-toy-car.webp",
+      "sha256": "25d539c519dc758888c55ce1fc52676ea21ec9bb0ac71f49341c5ff28e637ef2",
+      "source": "original-v8"
+    },
+    {
+      "id": "toys-doll",
+      "publicPath": "/assets/word-games/illustrated/toys-doll.webp",
+      "sha256": "e43e9f0a2566cb9aa723b5d07a0aa652b76f6292309ae1ac05fd4606f7b4a2c1",
+      "source": "original-v8"
+    },
+    {
+      "id": "toys-kite",
+      "publicPath": "/assets/word-games/illustrated/toys-kite.webp",
+      "sha256": "0b3a936b7b90e660470a83bbfc5b22535e912c4a4e1902899a60f44925cc4fd5",
+      "source": "original-v8"
+    },
+    {
+      "id": "toys-blocks",
+      "publicPath": "/assets/word-games/illustrated/toys-blocks.webp",
+      "sha256": "a81295bfef2c2dabe09094bdf7d981aeea731a117f176df57d7eb377056868ed",
+      "source": "original-v8"
+    },
+    {
+      "id": "toys-teddy-bear",
+      "publicPath": "/assets/word-games/illustrated/toys-teddy-bear.webp",
+      "sha256": "788c6ba1c66f00fed9f5de80510faa60ca1052993044e3334f5cde49b6edd11f",
+      "source": "original-v8"
+    },
+    {
+      "id": "toys-toy-train",
+      "publicPath": "/assets/word-games/illustrated/toys-toy-train.webp",
+      "sha256": "8e06e5d726e6f1b86afe954e02ee8dc9bf0995921c269e85505d1c1c0ff52b43",
+      "source": "generated"
+    },
+    {
+      "id": "toys-drum",
+      "publicPath": "/assets/word-games/illustrated/toys-drum.webp",
+      "sha256": "47a8fb5273b1d764e0ff29c20607bae32195cb29c081bd030c17881449ec3a6f",
+      "source": "generated"
+    },
+    {
+      "id": "toys-puzzle",
+      "publicPath": "/assets/word-games/illustrated/toys-puzzle.webp",
+      "sha256": "d3b61baf7f02757849b2f4ca4a1b88aadb5b93f533486399325b228aa2b22c2c",
+      "source": "generated"
+    },
+    {
+      "id": "toys-robot",
+      "publicPath": "/assets/word-games/illustrated/toys-robot.webp",
+      "sha256": "d31fef783d9b3d052768cd0505d231e6712b3187b3344e107909c57b5869c68b",
+      "source": "generated"
+    },
+    {
+      "id": "toys-yo-yo",
+      "publicPath": "/assets/word-games/illustrated/toys-yo-yo.webp",
+      "sha256": "81fe0d2a91b675af0d4e2a61f90fc182186ff82a43ad7971e49eebede717a382",
+      "source": "generated"
+    },
+    {
+      "id": "toys-skateboard",
+      "publicPath": "/assets/word-games/illustrated/toys-skateboard.webp",
+      "sha256": "39f401108379efc273f344b0389bf9bdb24e1f6de6cf98df32b86e40b90b83aa",
+      "source": "generated"
+    },
+    {
+      "id": "feelings-happy",
+      "publicPath": "/assets/word-games/illustrated/feelings-happy.webp",
+      "sha256": "771fc78b7c66922f1271f07af229e81cf492ea276e39bc6817f624880668cf41",
+      "source": "original-v8"
+    },
+    {
+      "id": "feelings-sad",
+      "publicPath": "/assets/word-games/illustrated/feelings-sad.webp",
+      "sha256": "a9aff9463bad5b311828368005b6888689873a45abb63152f43dcbcef268999f",
+      "source": "original-v8"
+    },
+    {
+      "id": "feelings-angry",
+      "publicPath": "/assets/word-games/illustrated/feelings-angry.webp",
+      "sha256": "e51c48ff647e6d24c33cbf01ca991f70a98dabcb6f94b0c3641d056f930d2210",
+      "source": "original-v8"
+    },
+    {
+      "id": "feelings-sleepy",
+      "publicPath": "/assets/word-games/illustrated/feelings-sleepy.webp",
+      "sha256": "6db7c25fc1401e8cbe5947f8413b33069e127668986cf04b9a9ac0a853eb8402",
+      "source": "original-v8"
+    },
+    {
+      "id": "feelings-surprised",
+      "publicPath": "/assets/word-games/illustrated/feelings-surprised.webp",
+      "sha256": "d5ff78a913a9fc93d2af8e67eb7a4513857b733090dbca32d7f103c626576288",
+      "source": "original-v8"
+    },
+    {
+      "id": "feelings-silly",
+      "publicPath": "/assets/word-games/illustrated/feelings-silly.webp",
+      "sha256": "0cb25ca4c48ba3f86c18fdad3134bd494e8c82bca0cf1af6a987d26f39f5b0a0",
+      "source": "original-v8"
+    },
+    {
+      "id": "feelings-scared",
+      "publicPath": "/assets/word-games/illustrated/feelings-scared.webp",
+      "sha256": "24da6ace693a7805bd4542e20be1cd7ebe4b4f70b3d34e74fec3b40791619e1a",
+      "source": "generated"
+    },
+    {
+      "id": "feelings-excited",
+      "publicPath": "/assets/word-games/illustrated/feelings-excited.webp",
+      "sha256": "2497f54744955e763b1f942e7f80d1216099aa5df52e284b1b829214b7427c36",
+      "source": "generated"
+    },
+    {
+      "id": "feelings-calm",
+      "publicPath": "/assets/word-games/illustrated/feelings-calm.webp",
+      "sha256": "ed1cfdc8e4faaa046bd2fc6640dc175bb7972a33bd4cd5fbda3d17d27b180683",
+      "source": "generated"
+    },
+    {
+      "id": "feelings-worried",
+      "publicPath": "/assets/word-games/illustrated/feelings-worried.webp",
+      "sha256": "110e0a029e085d21e9eb331f7a885a492941cfe31a0ff996cb4fcc17c8b32b19",
+      "source": "generated"
+    },
+    {
+      "id": "feelings-confused",
+      "publicPath": "/assets/word-games/illustrated/feelings-confused.webp",
+      "sha256": "4c0388ac6becd5f34f52c894bc242088a4ad63df4cacbdaa9890efc178319350",
+      "source": "generated"
+    },
+    {
+      "id": "feelings-bored",
+      "publicPath": "/assets/word-games/illustrated/feelings-bored.webp",
+      "sha256": "8c6e6b186ea6888b73c68150e5e9357647c6bbd7b3322b29e88ea72bdf900990",
+      "source": "generated"
+    },
+    {
+      "id": "home-bed",
+      "publicPath": "/assets/word-games/illustrated/home-bed.webp",
+      "sha256": "65914b2f74741cd0a11590ecdb9dcf7ba71246f9e5309728baea671b628a0262",
+      "source": "generated"
+    },
+    {
+      "id": "home-chair",
+      "publicPath": "/assets/word-games/illustrated/home-chair.webp",
+      "sha256": "644c1f01ba1833ddf5e2d6154e008996ebbf2f4ec6c695fdabdee62521139bdb",
+      "source": "generated"
+    },
+    {
+      "id": "home-door",
+      "publicPath": "/assets/word-games/illustrated/home-door.webp",
+      "sha256": "2ee20dcf51c892ccd361e329f184a70c401c1ef4159771d703f48948c816a96e",
+      "source": "generated"
+    },
+    {
+      "id": "home-window",
+      "publicPath": "/assets/word-games/illustrated/home-window.webp",
+      "sha256": "7999a05f2f69b805b67f8ac4809e8557b56db50be338b6df600ef18a7e56686b",
+      "source": "generated"
+    },
+    {
+      "id": "home-house",
+      "publicPath": "/assets/word-games/illustrated/home-house.webp",
+      "sha256": "c2d6c264bb9c143ee189df5aa1924865c5187cacf26dd9e5aca4cd9d22362e1e",
+      "source": "generated"
+    },
+    {
+      "id": "home-key",
+      "publicPath": "/assets/word-games/illustrated/home-key.webp",
+      "sha256": "72e4c8e4d245e6ffadd1163bce0d2f333d262a6233b85f6545e33dad3459b507",
+      "source": "generated"
+    },
+    {
+      "id": "home-sofa",
+      "publicPath": "/assets/word-games/illustrated/home-sofa.webp",
+      "sha256": "5fbd487b77a9ce655078df48de08781dd332ce30237dd1a7d345c1bce878626f",
+      "source": "generated"
+    },
+    {
+      "id": "home-bathtub",
+      "publicPath": "/assets/word-games/illustrated/home-bathtub.webp",
+      "sha256": "ce68d21789bb8b3c08b26c12718545f2b3df665a841cb81caa95682bd7283186",
+      "source": "generated"
+    },
+    {
+      "id": "home-toilet",
+      "publicPath": "/assets/word-games/illustrated/home-toilet.webp",
+      "sha256": "c61c48b4a5bcd017e630e4a410d32088cf3eccf115f3ec068c74a763b4fdf5ae",
+      "source": "generated"
+    },
+    {
+      "id": "home-shower",
+      "publicPath": "/assets/word-games/illustrated/home-shower.webp",
+      "sha256": "9a63f1198cfbe334ced4e941c73fc92ec3b3a5e9b98225c316904b2e8a17b8f4",
+      "source": "generated"
+    },
+    {
+      "id": "home-mirror",
+      "publicPath": "/assets/word-games/illustrated/home-mirror.webp",
+      "sha256": "c2e1692f41bfe096afa2a84be0ec78025adbc9904d406a626a0ccbea3c83b00d",
+      "source": "generated"
+    },
+    {
+      "id": "home-broom",
+      "publicPath": "/assets/word-games/illustrated/home-broom.webp",
+      "sha256": "05d05e6f718cf830c34eccd4e33c1dd42b01880bb239421f0bf50f54321a9c61",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-shirt",
+      "publicPath": "/assets/word-games/illustrated/clothes-shirt.webp",
+      "sha256": "3b05b87f068db36984fc40a3c17288ba3a2550c614836cc986d19dc88b1235af",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-shoes",
+      "publicPath": "/assets/word-games/illustrated/clothes-shoes.webp",
+      "sha256": "2bf3be4028b4d4b5bc9971dfe198b12ebfe1893fa8b83a119d431cab8c7af041",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-hat",
+      "publicPath": "/assets/word-games/illustrated/clothes-hat.webp",
+      "sha256": "c12b47a7d650d44bd93f24d66812b799c26f52c3b1ae4c8411186afee4b2a64f",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-socks",
+      "publicPath": "/assets/word-games/illustrated/clothes-socks.webp",
+      "sha256": "5b47b3743f474138894b65cf005374704ac275e0eb9d65184ea41104469d6b20",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-coat",
+      "publicPath": "/assets/word-games/illustrated/clothes-coat.webp",
+      "sha256": "2a38d0df73694b1bbea96b53b21a52152b03c2dd301625c62e9613db74aea3e0",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-pants",
+      "publicPath": "/assets/word-games/illustrated/clothes-pants.webp",
+      "sha256": "55235696fdb46c6e8bcf7ff55c78e78711890f78d5cc1d935519000fd6d8cde0",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-dress",
+      "publicPath": "/assets/word-games/illustrated/clothes-dress.webp",
+      "sha256": "152fa5e26045197ae0f8c4146c5b23a5a51f7f8acb2eecb0bcea1bd2621fc8f0",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-shorts",
+      "publicPath": "/assets/word-games/illustrated/clothes-shorts.webp",
+      "sha256": "2a77a3785104703c2764df82d25eba5eb53002a461c990ef229b565bdd4284f9",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-scarf",
+      "publicPath": "/assets/word-games/illustrated/clothes-scarf.webp",
+      "sha256": "282336957a88eaba052721dc534566e282c6e63826460393d13059f298ae3d2d",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-boots",
+      "publicPath": "/assets/word-games/illustrated/clothes-boots.webp",
+      "sha256": "052043e5597f0f360c67aa57805805b995e7ffac22c645cd7124d7c368d051b6",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-gloves",
+      "publicPath": "/assets/word-games/illustrated/clothes-gloves.webp",
+      "sha256": "0001a2037d9502e5ed96ab19456c77bb7654faa0ad5dc6dd38553f61dc252ac3",
+      "source": "generated"
+    },
+    {
+      "id": "clothes-swimsuit",
+      "publicPath": "/assets/word-games/illustrated/clothes-swimsuit.webp",
+      "sha256": "f1308e5d3ca30fc484b94259e10b3529e86fdbdfd33dd5cc3ad054f80cd8ade1",
+      "source": "generated"
+    },
+    {
+      "id": "transport-car",
+      "publicPath": "/assets/word-games/illustrated/transport-car.webp",
+      "sha256": "2d4680e16873423ac6c585a835e39da75ba210af2f93a8b5bbb87931c6dde110",
+      "source": "generated"
+    },
+    {
+      "id": "transport-bus",
+      "publicPath": "/assets/word-games/illustrated/transport-bus.webp",
+      "sha256": "237dc924fe0558950b6a21065b9deb83df29da7588854eff290b343c30d0d852",
+      "source": "generated"
+    },
+    {
+      "id": "transport-bicycle",
+      "publicPath": "/assets/word-games/illustrated/transport-bicycle.webp",
+      "sha256": "da9d5b3f15655dcddd06a48f422f8ba2c52f6c50e831e1eb2de97705cfea1293",
+      "source": "generated"
+    },
+    {
+      "id": "transport-train",
+      "publicPath": "/assets/word-games/illustrated/transport-train.webp",
+      "sha256": "b8736d7f88d77418aacbe9fbb24288640207ffb0f003922ac69e0ce1483c29b0",
+      "source": "generated"
+    },
+    {
+      "id": "transport-boat",
+      "publicPath": "/assets/word-games/illustrated/transport-boat.webp",
+      "sha256": "09fc61ae199d0d948169473e5545276e762a2512dde0ef037a629fc31cb3ef08",
+      "source": "generated"
+    },
+    {
+      "id": "transport-airplane",
+      "publicPath": "/assets/word-games/illustrated/transport-airplane.webp",
+      "sha256": "cdd8618d0cfcfe1970dee6852a3dd8d31932fb46f1cb3a5ebcf54b392d68ae67",
+      "source": "generated"
+    },
+    {
+      "id": "transport-taxi",
+      "publicPath": "/assets/word-games/illustrated/transport-taxi.webp",
+      "sha256": "14d9a0229b3e215a061f9edb575f3bc9236e499119ca5091488913ff333e9ef6",
+      "source": "generated"
+    },
+    {
+      "id": "transport-truck",
+      "publicPath": "/assets/word-games/illustrated/transport-truck.webp",
+      "sha256": "b4a6251655ea3c35971688c88d9ebf4bf57beca5cbc0a6e76811472402a7f118",
+      "source": "generated"
+    },
+    {
+      "id": "transport-scooter",
+      "publicPath": "/assets/word-games/illustrated/transport-scooter.webp",
+      "sha256": "db0ccc0160d10aa794edb91876417f3a0d35b415663cef48742f23eecd66972c",
+      "source": "generated"
+    },
+    {
+      "id": "transport-helicopter",
+      "publicPath": "/assets/word-games/illustrated/transport-helicopter.webp",
+      "sha256": "57d54d502516d88b8b032748f817e02175261ad554680039e0a974cf944a2090",
+      "source": "generated"
+    },
+    {
+      "id": "transport-motorcycle",
+      "publicPath": "/assets/word-games/illustrated/transport-motorcycle.webp",
+      "sha256": "12bf92ed3d76f3a3ce074236a071b2d6569903443d40c1644d355801716efc90",
+      "source": "generated"
+    },
+    {
+      "id": "transport-rocket",
+      "publicPath": "/assets/word-games/illustrated/transport-rocket.webp",
+      "sha256": "d353c0000b837059dc0a3e351944084db3175ff25f168c05a2dbbb2804fd1660",
+      "source": "generated"
+    }
+  ]
+}

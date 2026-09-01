@@ -2,9 +2,7 @@ import { z } from "zod";
 
 export const WORD_GAME_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-const ASSET_ID_PATTERN = /^[a-f0-9]+(?:_[a-f0-9]+)*$/;
 const HEX_COLOR_PATTERN = /^#[a-f0-9]{6}$/;
-const FLUENT_REVISION = "1ffb34c752ecf5d402f04cfb4b392c77f57c54bc";
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const TIER_IDS = ["simple", "intermediate", "advanced"];
 
@@ -12,11 +10,6 @@ const text = z.string().refine((value) => value.trim().length > 0, {
   error: "must be a non-empty string",
 });
 const id = z.string().regex(WORD_GAME_ID_PATTERN, "must be lowercase kebab-case");
-const assetId = z.string().regex(
-  ASSET_ID_PATTERN,
-  "must be lowercase hexadecimal codepoints joined with underscores",
-);
-
 const audio = z
   .object({
     id,
@@ -27,9 +20,8 @@ const audio = z
 const visual = z.discriminatedUnion("kind", [
   z
     .object({
-      assetId,
-      copies: z.literal(2).optional(),
-      kind: z.literal("fluent-3d"),
+      assetId: id,
+      kind: z.literal("illustration"),
     })
     .strict(),
   z
@@ -107,25 +99,23 @@ const player = z
   })
   .strict();
 
-const fluentAsset = z
+const illustrationAssetManifest = z
   .object({
-    id: assetId,
-    publicPath: text,
-    sha256: z.string().regex(SHA256_PATTERN, "must be a lowercase 64-character SHA-256"),
-    upstreamPath: text,
-  })
-  .strict();
-
-const fluentAssetManifest = z
-  .object({
-    assets: z.array(fluentAsset).min(1, "must contain at least one asset"),
-    license: z.literal("MIT", "must equal MIT"),
-    licensePath: z.literal("LICENSE", "must equal LICENSE"),
-    repository: z.literal(
-      "https://github.com/microsoft/fluentui-emoji",
-      "must equal the official Fluent Emoji repository",
-    ),
-    revision: z.literal(FLUENT_REVISION, "must equal the pinned Fluent Emoji revision"),
+    assets: z
+      .array(
+        z
+          .object({
+            id,
+            publicPath: text,
+            sha256: z.string().regex(
+              SHA256_PATTERN,
+              "must be a lowercase 64-character SHA-256",
+            ),
+            source: z.enum(["generated", "original-v8"]),
+          })
+          .strict(),
+      )
+      .min(1, "must contain at least one asset"),
     schemaVersion: z.literal(1, "must equal 1"),
   })
   .strict();
@@ -213,8 +203,8 @@ export function parseWordGamePlayerManifest(value, sourcePath) {
   return result.data;
 }
 
-export function parseFluentAssetManifest(value, sourcePath) {
-  const result = fluentAssetManifest.safeParse(value);
+export function parseIllustrationAssetManifest(value, sourcePath) {
+  const result = illustrationAssetManifest.safeParse(value);
   if (!result.success) throw manifestError(sourcePath, result.error.issues[0]);
   return result.data;
 }

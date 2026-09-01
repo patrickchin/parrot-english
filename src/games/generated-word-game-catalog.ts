@@ -22,7 +22,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f431.png"
+            "src": "/assets/word-games/illustrated/animals-cat.webp"
           }
         },
         {
@@ -41,7 +41,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f415.png"
+            "src": "/assets/word-games/illustrated/animals-dog.webp"
           }
         },
         {
@@ -60,7 +60,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f426.png"
+            "src": "/assets/word-games/illustrated/animals-bird.webp"
           }
         },
         {
@@ -79,7 +79,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f41f.png"
+            "src": "/assets/word-games/illustrated/animals-fish.webp"
           }
         },
         {
@@ -98,7 +98,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f986.png"
+            "src": "/assets/word-games/illustrated/animals-duck.webp"
           }
         },
         {
@@ -117,7 +117,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f438.png"
+            "src": "/assets/word-games/illustrated/animals-frog.webp"
           }
         },
         {
@@ -136,7 +136,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f437.png"
+            "src": "/assets/word-games/illustrated/animals-pig.webp"
           }
         },
         {
@@ -155,7 +155,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f404.png"
+            "src": "/assets/word-games/illustrated/animals-cow.webp"
           }
         },
         {
@@ -174,7 +174,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f40e.png"
+            "src": "/assets/word-games/illustrated/animals-horse.webp"
           }
         },
         {
@@ -193,7 +193,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f40a.png"
+            "src": "/assets/word-games/illustrated/animals-alligator.webp"
           }
         },
         {
@@ -212,7 +212,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f418.png"
+            "src": "/assets/word-games/illustrated/animals-elephant.webp"
           }
         },
         {
@@ -231,7 +231,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f992.png"
+            "src": "/assets/word-games/illustrated/animals-giraffe.webp"
           }
         }
       ],
@@ -1733,7 +1733,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f440.png"
+            "src": "/assets/word-games/illustrated/body-parts-eyes.webp"
           }
         },
         {
@@ -1751,9 +1751,8 @@ export const GENERATED_WORD_GAME_CATALOG = {
             "source": "/assets/audio/word-game-body-parts-ears-prompt.mp3"
           },
           "visual": {
-            "copies": 2,
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f442.png"
+            "src": "/assets/word-games/illustrated/body-parts-ears.webp"
           }
         },
         {
@@ -1772,7 +1771,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f443.png"
+            "src": "/assets/word-games/illustrated/body-parts-nose.webp"
           }
         },
         {
@@ -1791,7 +1790,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f444.png"
+            "src": "/assets/word-games/illustrated/body-parts-mouth.webp"
           }
         },
         {
@@ -1810,7 +1809,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/270b.png"
+            "src": "/assets/word-games/illustrated/body-parts-hand.webp"
           }
         },
         {
@@ -1829,7 +1828,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9b6.png"
+            "src": "/assets/word-games/illustrated/body-parts-foot.webp"
           }
         },
         {
@@ -1848,7 +1847,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f4aa.png"
+            "src": "/assets/word-games/illustrated/body-parts-arm.webp"
           }
         },
         {
@@ -1867,7 +1866,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9b5.png"
+            "src": "/assets/word-games/illustrated/body-parts-leg.webp"
           }
         },
         {
@@ -1886,7 +1885,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9b7.png"
+            "src": "/assets/word-games/illustrated/body-parts-tooth.webp"
           }
         },
         {
@@ -1905,7 +1904,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f445.png"
+            "src": "/assets/word-games/illustrated/body-parts-tongue.webp"
           }
         },
         {
@@ -1924,7 +1923,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e0.png"
+            "src": "/assets/word-games/illustrated/body-parts-brain.webp"
           }
         },
         {
@@ -1943,7 +1942,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/2764.png"
+            "src": "/assets/word-games/illustrated/body-parts-heart.webp"
           }
         }
       ],
@@ -2599,7 +2598,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f34e.png"
+            "src": "/assets/word-games/illustrated/food-apple.webp"
           }
         },
         {
@@ -2618,7 +2617,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f34c.png"
+            "src": "/assets/word-games/illustrated/food-banana.webp"
           }
         },
         {
@@ -2637,7 +2636,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f955.png"
+            "src": "/assets/word-games/illustrated/food-carrot.webp"
           }
         },
         {
@@ -2656,7 +2655,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f34a.png"
+            "src": "/assets/word-games/illustrated/food-orange.webp"
           }
         },
         {
@@ -2675,7 +2674,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f35e.png"
+            "src": "/assets/word-games/illustrated/food-bread.webp"
           }
         },
         {
@@ -2694,7 +2693,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9c0.png"
+            "src": "/assets/word-games/illustrated/food-cheese.webp"
           }
         },
         {
@@ -2713,7 +2712,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f35a.png"
+            "src": "/assets/word-games/illustrated/food-rice.webp"
           }
         },
         {
@@ -2732,7 +2731,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f95a.png"
+            "src": "/assets/word-games/illustrated/food-egg.webp"
           }
         },
         {
@@ -2751,7 +2750,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f95b.png"
+            "src": "/assets/word-games/illustrated/food-milk.webp"
           }
         },
         {
@@ -2770,7 +2769,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f345.png"
+            "src": "/assets/word-games/illustrated/food-tomato.webp"
           }
         },
         {
@@ -2789,7 +2788,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f954.png"
+            "src": "/assets/word-games/illustrated/food-potato.webp"
           }
         },
         {
@@ -2808,7 +2807,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f96a.png"
+            "src": "/assets/word-games/illustrated/food-sandwich.webp"
           }
         }
       ],
@@ -3464,7 +3463,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/26bd.png"
+            "src": "/assets/word-games/illustrated/toys-ball.webp"
           }
         },
         {
@@ -3483,7 +3482,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f697.png"
+            "src": "/assets/word-games/illustrated/toys-toy-car.webp"
           }
         },
         {
@@ -3502,7 +3501,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa86.png"
+            "src": "/assets/word-games/illustrated/toys-doll.webp"
           }
         },
         {
@@ -3521,7 +3520,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa81.png"
+            "src": "/assets/word-games/illustrated/toys-kite.webp"
           }
         },
         {
@@ -3540,7 +3539,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9f1.png"
+            "src": "/assets/word-games/illustrated/toys-blocks.webp"
           }
         },
         {
@@ -3559,7 +3558,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9f8.png"
+            "src": "/assets/word-games/illustrated/toys-teddy-bear.webp"
           }
         },
         {
@@ -3578,7 +3577,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f686.png"
+            "src": "/assets/word-games/illustrated/toys-toy-train.webp"
           }
         },
         {
@@ -3597,7 +3596,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f941.png"
+            "src": "/assets/word-games/illustrated/toys-drum.webp"
           }
         },
         {
@@ -3616,7 +3615,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e9.png"
+            "src": "/assets/word-games/illustrated/toys-puzzle.webp"
           }
         },
         {
@@ -3635,7 +3634,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f916.png"
+            "src": "/assets/word-games/illustrated/toys-robot.webp"
           }
         },
         {
@@ -3654,7 +3653,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa80.png"
+            "src": "/assets/word-games/illustrated/toys-yo-yo.webp"
           }
         },
         {
@@ -3673,7 +3672,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6f9.png"
+            "src": "/assets/word-games/illustrated/toys-skateboard.webp"
           }
         }
       ],
@@ -4329,7 +4328,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f604.png"
+            "src": "/assets/word-games/illustrated/feelings-happy.webp"
           }
         },
         {
@@ -4348,7 +4347,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f622.png"
+            "src": "/assets/word-games/illustrated/feelings-sad.webp"
           }
         },
         {
@@ -4367,7 +4366,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f620.png"
+            "src": "/assets/word-games/illustrated/feelings-angry.webp"
           }
         },
         {
@@ -4386,7 +4385,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f634.png"
+            "src": "/assets/word-games/illustrated/feelings-sleepy.webp"
           }
         },
         {
@@ -4405,7 +4404,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f62e.png"
+            "src": "/assets/word-games/illustrated/feelings-surprised.webp"
           }
         },
         {
@@ -4424,7 +4423,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f92a.png"
+            "src": "/assets/word-games/illustrated/feelings-silly.webp"
           }
         },
         {
@@ -4443,7 +4442,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f628.png"
+            "src": "/assets/word-games/illustrated/feelings-scared.webp"
           }
         },
         {
@@ -4462,7 +4461,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f929.png"
+            "src": "/assets/word-games/illustrated/feelings-excited.webp"
           }
         },
         {
@@ -4481,7 +4480,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f60c.png"
+            "src": "/assets/word-games/illustrated/feelings-calm.webp"
           }
         },
         {
@@ -4500,7 +4499,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f61f.png"
+            "src": "/assets/word-games/illustrated/feelings-worried.webp"
           }
         },
         {
@@ -4519,7 +4518,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f615.png"
+            "src": "/assets/word-games/illustrated/feelings-confused.webp"
           }
         },
         {
@@ -4538,7 +4537,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f611.png"
+            "src": "/assets/word-games/illustrated/feelings-bored.webp"
           }
         }
       ],
@@ -5194,7 +5193,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6cf.png"
+            "src": "/assets/word-games/illustrated/home-bed.webp"
           }
         },
         {
@@ -5213,7 +5212,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa91.png"
+            "src": "/assets/word-games/illustrated/home-chair.webp"
           }
         },
         {
@@ -5232,7 +5231,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6aa.png"
+            "src": "/assets/word-games/illustrated/home-door.webp"
           }
         },
         {
@@ -5251,7 +5250,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa9f.png"
+            "src": "/assets/word-games/illustrated/home-window.webp"
           }
         },
         {
@@ -5270,7 +5269,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f3e0.png"
+            "src": "/assets/word-games/illustrated/home-house.webp"
           }
         },
         {
@@ -5289,7 +5288,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f511.png"
+            "src": "/assets/word-games/illustrated/home-key.webp"
           }
         },
         {
@@ -5308,7 +5307,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6cb.png"
+            "src": "/assets/word-games/illustrated/home-sofa.webp"
           }
         },
         {
@@ -5327,7 +5326,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6c1.png"
+            "src": "/assets/word-games/illustrated/home-bathtub.webp"
           }
         },
         {
@@ -5346,7 +5345,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6bd.png"
+            "src": "/assets/word-games/illustrated/home-toilet.webp"
           }
         },
         {
@@ -5365,7 +5364,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6bf.png"
+            "src": "/assets/word-games/illustrated/home-shower.webp"
           }
         },
         {
@@ -5384,7 +5383,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa9e.png"
+            "src": "/assets/word-games/illustrated/home-mirror.webp"
           }
         },
         {
@@ -5403,7 +5402,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9f9.png"
+            "src": "/assets/word-games/illustrated/home-broom.webp"
           }
         }
       ],
@@ -6059,7 +6058,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f455.png"
+            "src": "/assets/word-games/illustrated/clothes-shirt.webp"
           }
         },
         {
@@ -6077,9 +6076,8 @@ export const GENERATED_WORD_GAME_CATALOG = {
             "source": "/assets/audio/word-game-clothes-shoes-prompt.mp3"
           },
           "visual": {
-            "copies": 2,
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f45f.png"
+            "src": "/assets/word-games/illustrated/clothes-shoes.webp"
           }
         },
         {
@@ -6098,7 +6096,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e2.png"
+            "src": "/assets/word-games/illustrated/clothes-hat.webp"
           }
         },
         {
@@ -6117,7 +6115,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e6.png"
+            "src": "/assets/word-games/illustrated/clothes-socks.webp"
           }
         },
         {
@@ -6136,7 +6134,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e5.png"
+            "src": "/assets/word-games/illustrated/clothes-coat.webp"
           }
         },
         {
@@ -6155,7 +6153,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f456.png"
+            "src": "/assets/word-games/illustrated/clothes-pants.webp"
           }
         },
         {
@@ -6174,7 +6172,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f457.png"
+            "src": "/assets/word-games/illustrated/clothes-dress.webp"
           }
         },
         {
@@ -6193,7 +6191,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa73.png"
+            "src": "/assets/word-games/illustrated/clothes-shorts.webp"
           }
         },
         {
@@ -6212,7 +6210,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e3.png"
+            "src": "/assets/word-games/illustrated/clothes-scarf.webp"
           }
         },
         {
@@ -6230,9 +6228,8 @@ export const GENERATED_WORD_GAME_CATALOG = {
             "source": "/assets/audio/word-game-clothes-boots-prompt.mp3"
           },
           "visual": {
-            "copies": 2,
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f462.png"
+            "src": "/assets/word-games/illustrated/clothes-boots.webp"
           }
         },
         {
@@ -6251,7 +6248,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f9e4.png"
+            "src": "/assets/word-games/illustrated/clothes-gloves.webp"
           }
         },
         {
@@ -6270,7 +6267,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1fa71.png"
+            "src": "/assets/word-games/illustrated/clothes-swimsuit.webp"
           }
         }
       ],
@@ -6926,7 +6923,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f697.png"
+            "src": "/assets/word-games/illustrated/transport-car.webp"
           }
         },
         {
@@ -6945,7 +6942,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f68c.png"
+            "src": "/assets/word-games/illustrated/transport-bus.webp"
           }
         },
         {
@@ -6964,7 +6961,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6b2.png"
+            "src": "/assets/word-games/illustrated/transport-bicycle.webp"
           }
         },
         {
@@ -6983,7 +6980,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f686.png"
+            "src": "/assets/word-games/illustrated/transport-train.webp"
           }
         },
         {
@@ -7002,7 +6999,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6a4.png"
+            "src": "/assets/word-games/illustrated/transport-boat.webp"
           }
         },
         {
@@ -7021,7 +7018,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/2708.png"
+            "src": "/assets/word-games/illustrated/transport-airplane.webp"
           }
         },
         {
@@ -7040,7 +7037,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f695.png"
+            "src": "/assets/word-games/illustrated/transport-taxi.webp"
           }
         },
         {
@@ -7059,7 +7056,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f69a.png"
+            "src": "/assets/word-games/illustrated/transport-truck.webp"
           }
         },
         {
@@ -7078,7 +7075,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f6f4.png"
+            "src": "/assets/word-games/illustrated/transport-scooter.webp"
           }
         },
         {
@@ -7097,7 +7094,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f681.png"
+            "src": "/assets/word-games/illustrated/transport-helicopter.webp"
           }
         },
         {
@@ -7116,7 +7113,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f3cd.png"
+            "src": "/assets/word-games/illustrated/transport-motorcycle.webp"
           }
         },
         {
@@ -7135,7 +7132,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           },
           "visual": {
             "kind": "image",
-            "src": "/assets/word-games/fluent-3d/1f680.png"
+            "src": "/assets/word-games/illustrated/transport-rocket.webp"
           }
         }
       ],

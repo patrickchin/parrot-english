@@ -21,6 +21,7 @@ import process from "node:process";
 import { describe, it } from "node:test";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
+import sharp from "sharp";
 import {
   compileWordGamePackages,
   planWordGameAudio,
@@ -64,7 +65,7 @@ function pathsFor(rootDir) {
   return {
     rootDir,
     categoryRoot: path.join(rootDir, "content", "word-games", "categories"),
-    assetManifestPath: path.join(rootDir, "content", "word-games", "fluent-3d-assets.json"),
+    assetManifestPath: path.join(rootDir, "content", "word-games", "illustrated-assets.json"),
     playerManifestPath: path.join(rootDir, "content", "word-games", "player.json"),
     publicRoot: path.join(rootDir, "public"),
     audioRoot: path.join(rootDir, "public", "assets", "audio"),
@@ -81,14 +82,13 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
   t.after(() => rm(rootDir, { force: true, recursive: true }));
   const paths = pathsFor(rootDir);
   const category = await readJson(path.join(fixtureRoot, "animals.json"));
-  const assetManifest = manifest ?? await readJson(path.join(fixtureRoot, "fluent-3d-assets.json"));
+  const assetManifest = manifest ?? await readJson(path.join(fixtureRoot, "illustrated-assets.json"));
   const authoredCategories = categories ?? [{ filename: "animals.json", value: category }];
 
   await Promise.all([
     mkdir(paths.categoryRoot, { recursive: true }),
     mkdir(paths.audioRoot, { recursive: true }),
-    mkdir(path.join(paths.publicRoot, "assets", "word-games", "fluent-3d"), { recursive: true }),
-    mkdir(path.join(rootDir, "third_party"), { recursive: true }),
+    mkdir(path.join(paths.publicRoot, "assets", "word-games", "illustrated"), { recursive: true }),
     mkdir(path.join(rootDir, "src", "games"), { recursive: true }),
   ]);
   for (const { filename, value } of authoredCategories) {
@@ -100,12 +100,8 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
     paths.playerManifestPath,
   );
   await copyFile(
-    path.join(fixtureRoot, "cat_3d.png"),
-    path.join(paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png"),
-  );
-  await copyFile(
-    path.join(fixtureRoot, "fluentui-emoji-LICENSE"),
-    path.join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
+    path.join(fixtureRoot, "cat.webp"),
+    path.join(paths.publicRoot, "assets", "word-games", "illustrated", "animals-cat.webp"),
   );
   const audioIds = new Set(
     [
@@ -127,19 +123,71 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
 }
 
 async function addAsset(fixture, id) {
-  const png = await readFile(path.join(fixtureRoot, "cat_3d.png"));
-  const filename = `${id}.png`;
+  const webp = await readFile(path.join(fixtureRoot, "cat.webp"));
+  const filename = `${id}.webp`;
   fixture.assetManifest.assets.push({
     id,
-    publicPath: `/assets/word-games/fluent-3d/${filename}`,
-    sha256: createHash("sha256").update(png).digest("hex"),
-    upstreamPath: "assets/Dog/3D/dog_3d.png",
+    publicPath: `/assets/word-games/illustrated/${filename}`,
+    sha256: createHash("sha256").update(webp).digest("hex"),
+    source: "generated",
   });
   await writeJson(fixture.paths.assetManifestPath, fixture.assetManifest);
-  await writeFile(path.join(fixture.paths.publicRoot, "assets", "word-games", "fluent-3d", filename), png);
+  await writeFile(
+    path.join(fixture.paths.publicRoot, "assets", "word-games", "illustrated", filename),
+    webp,
+  );
 }
 
 describe("word-game package compilation", () => {
+  it("compiles illustrated WebP answer-card assets", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const illustration = await readFile(path.join(fixtureRoot, "cat.webp"));
+    const illustrationRoot = path.join(
+      fixture.paths.publicRoot,
+      "assets",
+      "word-games",
+      "illustrated",
+    );
+    fixture.paths.assetManifestPath = path.join(
+      fixture.rootDir,
+      "content",
+      "word-games",
+      "illustrated-assets.json",
+    );
+    for (const item of fixture.category.items) {
+      item.visual = { assetId: "animals-cat", kind: "illustration" };
+    }
+    await Promise.all([
+      writeJson(
+        path.join(fixture.paths.categoryRoot, "animals.json"),
+        fixture.category,
+      ),
+      writeJson(fixture.paths.assetManifestPath, {
+        schemaVersion: 1,
+        assets: [
+          {
+            id: "animals-cat",
+            publicPath: "/assets/word-games/illustrated/animals-cat.webp",
+            sha256: createHash("sha256").update(illustration).digest("hex"),
+            source: "original-v8",
+          },
+        ],
+      }),
+      mkdir(illustrationRoot, { recursive: true }),
+    ]);
+    await copyFile(
+      path.join(fixtureRoot, "cat.webp"),
+      path.join(illustrationRoot, "animals-cat.webp"),
+    );
+
+    const compiled = await compileWordGamePackages(fixture.paths);
+
+    assert.deepEqual(compiled.categories[0].items[0].visual, {
+      kind: "image",
+      src: "/assets/word-games/illustrated/animals-cat.webp",
+    });
+  });
+
   it("compiles validated categories into deterministic JSON-compatible literals", async (t) => {
     const fixture = await repositoryFixture(t);
 
@@ -149,7 +197,7 @@ describe("word-game package compilation", () => {
     assert.equal(compiled.categories[0].tiers[0].quizzes[0].questions.length, 6);
     assert.equal(
       compiled.categories[0].items[0].visual.src,
-      "/assets/word-games/fluent-3d/1f431.png",
+      "/assets/word-games/illustrated/animals-cat.webp",
     );
     assert.equal(
       compiled.categories[0].items[0].labelAudio.source,
@@ -178,24 +226,6 @@ describe("word-game package compilation", () => {
       },
     });
     assert.deepEqual(JSON.parse(JSON.stringify(compiled)), compiled);
-  });
-
-  it("preserves JSON-owned Fluent copy composition in compiler output", async (t) => {
-    const fixture = await repositoryFixture(t);
-    fixture.category.items[0].visual.copies = 2;
-    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
-
-    const compiled = await compileWordGamePackages(fixture.paths);
-
-    assert.deepEqual(compiled.categories[0].items[0].visual, {
-      copies: 2,
-      kind: "image",
-      src: "/assets/word-games/fluent-3d/1f431.png",
-    });
-    assert.deepEqual(compiled.categories[0].items[1].visual, {
-      kind: "image",
-      src: "/assets/word-games/fluent-3d/1f431.png",
-    });
   });
 
   it("sorts categories by order then ID without changing nested authored order", async (t) => {
@@ -417,25 +447,31 @@ describe("word-game package compilation", () => {
     }
   });
 
-  it("rejects missing and unused Fluent records", async (t) => {
+  it("rejects missing and unused illustration records", async (t) => {
     const missing = await repositoryFixture(t);
-    missing.category.items[0].visual.assetId = "1f436";
+    missing.category.items[0].visual.assetId = "animals-mouse";
     await writeJson(path.join(missing.paths.categoryRoot, "animals.json"), missing.category);
     await assert.rejects(
       compileWordGamePackages(missing.paths),
-      /Fluent asset 1f436.*not listed|missing Fluent asset 1f436/i,
+      /illustration asset animals-mouse.*not listed/i,
     );
 
     const unused = await repositoryFixture(t);
-    await addAsset(unused, "1f436");
-    await assert.rejects(compileWordGamePackages(unused.paths), /unused Fluent asset 1f436/i);
+    await addAsset(unused, "animals-mouse");
+    await assert.rejects(
+      compileWordGamePackages(unused.paths),
+      /unused illustration asset animals-mouse/i,
+    );
   });
 
-  it("rejects unsafe Fluent paths and roots outside the repository", async (t) => {
+  it("rejects unsafe illustration paths and roots outside the repository", async (t) => {
     const unsafeAsset = await repositoryFixture(t);
-    unsafeAsset.assetManifest.assets[0].publicPath = "/assets/word-games/../private.png";
+    unsafeAsset.assetManifest.assets[0].publicPath = "/assets/word-games/../private.webp";
     await writeJson(unsafeAsset.paths.assetManifestPath, unsafeAsset.assetManifest);
-    await assert.rejects(compileWordGamePackages(unsafeAsset.paths), /publicPath.*approved Fluent root/i);
+    await assert.rejects(
+      compileWordGamePackages(unsafeAsset.paths),
+      /publicPath.*approved illustration root/i,
+    );
 
     const unsafeAudio = await repositoryFixture(t);
     const externalAudio = await mkdtemp(path.join(tmpdir(), "parrot-external-audio-"));
@@ -444,27 +480,6 @@ describe("word-game package compilation", () => {
       compileWordGamePackages({ ...unsafeAudio.paths, audioRoot: externalAudio }),
       /audio root.*outside/i,
     );
-  });
-
-  it("rejects malformed Fluent upstream path segments", async (t) => {
-    for (const upstreamPath of [
-      "assets/../3D/cat_3d.png",
-      "assets/Ca\\t/3D/cat_3d.png",
-      "assets/Cat/3D/.._3d.png",
-      "assets//3D/cat_3d.png",
-      "/assets/Cat/3D/cat_3d.png",
-    ]) {
-      await t.test(upstreamPath, async (t) => {
-        const fixture = await repositoryFixture(t);
-        fixture.assetManifest.assets[0].upstreamPath = upstreamPath;
-        await writeJson(fixture.paths.assetManifestPath, fixture.assetManifest);
-
-        await assert.rejects(
-          compileWordGamePackages(fixture.paths),
-          /upstreamPath must be a safe Fluent 3D PNG path/i,
-        );
-      });
-    }
   });
 
   it("rejects symlinks and missing or non-regular files", async (t) => {
@@ -480,28 +495,23 @@ describe("word-game package compilation", () => {
     await unlink(path.join(missingAudio.paths.audioRoot, "word-game-animals-cat-label.mp3"));
     await assert.rejects(compileWordGamePackages(missingAudio.paths), /cat-label\.mp3.*missing/i);
 
-    const directoryPng = await repositoryFixture(t);
-    const pngPath = path.join(
-      directoryPng.paths.publicRoot,
+    const directoryWebp = await repositoryFixture(t);
+    const webpPath = path.join(
+      directoryWebp.paths.publicRoot,
       "assets",
       "word-games",
-      "fluent-3d",
-      "1f431.png",
+      "illustrated",
+      "animals-cat.webp",
     );
-    await unlink(pngPath);
-    await mkdir(pngPath);
-    await assert.rejects(compileWordGamePackages(directoryPng.paths), /PNG.*regular file/i);
-
-    const licenseLink = await repositoryFixture(t);
-    const licensePath = path.join(licenseLink.rootDir, "third_party", "fluentui-emoji-LICENSE");
-    const licenseTarget = path.join(licenseLink.rootDir, "license-target");
-    await copyFile(licensePath, licenseTarget);
-    await unlink(licensePath);
-    await symlink(licenseTarget, licensePath);
-    await assert.rejects(compileWordGamePackages(licenseLink.paths), /license.*symbolic link/i);
+    await unlink(webpPath);
+    await mkdir(webpPath);
+    await assert.rejects(
+      compileWordGamePackages(directoryWebp.paths),
+      /WebP.*regular file/i,
+    );
   });
 
-  it("rejects PNG hash drift, malformed PNG files, and unexpected Fluent files", async (t) => {
+  it("rejects WebP hash drift, malformed images, and unexpected illustration files", async (t) => {
     const hashDrift = await repositoryFixture(t);
     hashDrift.assetManifest.assets[0].sha256 = "0".repeat(64);
     await writeJson(hashDrift.paths.assetManifestPath, hashDrift.assetManifest);
@@ -509,24 +519,33 @@ describe("word-game package compilation", () => {
 
     const unexpected = await repositoryFixture(t);
     await writeFile(
-      path.join(unexpected.paths.publicRoot, "assets", "word-games", "fluent-3d", "surprise.png"),
+      path.join(unexpected.paths.publicRoot, "assets", "word-games", "illustrated", "surprise.webp"),
       "surprise",
     );
-    await assert.rejects(compileWordGamePackages(unexpected.paths), /unexpected Fluent file surprise\.png/i);
-
-    const nonPng = await repositoryFixture(t);
-    await writeFile(
-      path.join(nonPng.paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png"),
-      "not a PNG",
+    await assert.rejects(
+      compileWordGamePackages(unexpected.paths),
+      /unexpected illustration file surprise\.webp/i,
     );
-    await assert.rejects(compileWordGamePackages(nonPng.paths), /invalid signature/i);
+
+    const nonWebp = await repositoryFixture(t);
+    await writeFile(
+      path.join(nonWebp.paths.publicRoot, "assets", "word-games", "illustrated", "animals-cat.webp"),
+      "not a WebP",
+    );
+    await assert.rejects(compileWordGamePackages(nonWebp.paths), /WebP is invalid/i);
 
     const wrongSize = await repositoryFixture(t);
-    const pngPath = path.join(wrongSize.paths.publicRoot, "assets", "word-games", "fluent-3d", "1f431.png");
-    const png = await readFile(pngPath);
-    png.writeUInt32BE(255, 16);
-    await writeFile(pngPath, png);
-    await assert.rejects(compileWordGamePackages(wrongSize.paths), /must be 256×256/i);
+    const assetPath = path.join(
+      wrongSize.paths.publicRoot,
+      "assets",
+      "word-games",
+      "illustrated",
+      "animals-cat.webp",
+    );
+    const resizedPath = path.join(wrongSize.rootDir, "wrong-size.webp");
+    await sharp(assetPath).resize(256, 256).toFile(resizedPath);
+    await rename(resizedPath, assetPath);
+    await assert.rejects(compileWordGamePackages(wrongSize.paths), /must be 512×512/i);
   });
 
   it("reuses a global audio ID only when its text and saved source match", async (t) => {
@@ -613,7 +632,7 @@ describe("word-game package compilation", () => {
     );
   });
 
-  it("opens validated JSON and PNG paths without following a symlink swap", async (t) => {
+  it("opens validated JSON and WebP paths without following a symlink swap", async (t) => {
     for (const { name, targetPath } of [
       {
         name: "category JSON",
@@ -624,13 +643,13 @@ describe("word-game package compilation", () => {
         targetPath: (fixture) => fixture.paths.assetManifestPath,
       },
       {
-        name: "PNG hashing",
+        name: "WebP hashing",
         targetPath: (fixture) => path.join(
           fixture.paths.publicRoot,
           "assets",
           "word-games",
-          "fluent-3d",
-          "1f431.png",
+          "illustrated",
+          "animals-cat.webp",
         ),
       },
     ]) {

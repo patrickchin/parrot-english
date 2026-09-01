@@ -23,43 +23,30 @@ export function WordGameVisual({
     return (
       <div
         aria-label={item.alt}
-        className={cx("grid aspect-square place-items-center rounded-2xl", className)}
-        role="img"
-        style={{ backgroundColor: item.visual.color }}
-      >
-        {showLabel ? (
-          <span className="rounded-full bg-white/90 px-4 py-2 text-lg font-black text-brand-ink">
-            {item.label}
-          </span>
-        ) : null}
-      </div>
-    );
-  }
-
-  if (item.visual.copies === 2) {
-    const imageSource = item.visual.src;
-    return (
-      <div
-        aria-label={item.alt}
         className={cx(
-          "grid aspect-square w-full grid-cols-2 place-items-center overflow-hidden rounded-2xl",
+          "relative isolate grid aspect-square place-items-center overflow-hidden rounded-2xl ring-1 ring-black/10",
           className,
         )}
         role="img"
+        style={{ backgroundColor: item.visual.color }}
       >
-        {[0, 1].map((copy) => (
-          <img
-            alt=""
-            aria-hidden="true"
-            className="w-full min-w-0 object-contain"
-            decoding="async"
-            height={512}
-            key={copy}
-            loading="lazy"
-            src={imageSource}
-            width={512}
-          />
-        ))}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -left-1/4 -top-1/4 h-3/4 w-3/4 rounded-full bg-white/30 blur-2xl"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-1/3 -right-1/4 h-3/4 w-3/4 rounded-full bg-black/15 blur-2xl"
+        />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute left-[16%] top-[17%] h-[16%] w-[42%] -rotate-12 rounded-full bg-white/35"
+        />
+        {showLabel ? (
+          <span className="relative rounded-full bg-white/90 px-4 py-2 text-lg font-black text-brand-ink shadow-sm">
+            {item.label}
+          </span>
+        ) : null}
       </div>
     );
   }

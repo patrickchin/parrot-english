@@ -78,49 +78,6 @@ const SWATCHES = {
   gray: "#6b7280",
 };
 
-const FLUENT_ASSET_IDS = {
-  animals: {
-    cat: "1f431", dog: "1f415", bird: "1f426", fish: "1f41f", duck: "1f986",
-    frog: "1f438", pig: "1f437", cow: "1f404", horse: "1f40e", alligator: "1f40a",
-    elephant: "1f418", giraffe: "1f992",
-  },
-  "body-parts": {
-    eyes: "1f440", ears: "1f442", nose: "1f443", mouth: "1f444", hand: "270b",
-    foot: "1f9b6", arm: "1f4aa", leg: "1f9b5", tooth: "1f9b7", tongue: "1f445",
-    brain: "1f9e0", heart: "2764",
-  },
-  food: {
-    apple: "1f34e", banana: "1f34c", carrot: "1f955", orange: "1f34a", bread: "1f35e",
-    cheese: "1f9c0", rice: "1f35a", egg: "1f95a", milk: "1f95b", tomato: "1f345",
-    potato: "1f954", sandwich: "1f96a",
-  },
-  toys: {
-    ball: "26bd", "toy-car": "1f697", doll: "1fa86", kite: "1fa81", blocks: "1f9f1",
-    "teddy-bear": "1f9f8", "toy-train": "1f686", drum: "1f941", puzzle: "1f9e9",
-    robot: "1f916", "yo-yo": "1fa80", skateboard: "1f6f9",
-  },
-  feelings: {
-    happy: "1f604", sad: "1f622", angry: "1f620", sleepy: "1f634", surprised: "1f62e",
-    silly: "1f92a", scared: "1f628", excited: "1f929", calm: "1f60c", worried: "1f61f",
-    confused: "1f615", bored: "1f611",
-  },
-  home: {
-    bed: "1f6cf", chair: "1fa91", door: "1f6aa", window: "1fa9f", house: "1f3e0",
-    key: "1f511", sofa: "1f6cb", bathtub: "1f6c1", toilet: "1f6bd", shower: "1f6bf",
-    mirror: "1fa9e", broom: "1f9f9",
-  },
-  clothes: {
-    shirt: "1f455", shoes: "1f45f", hat: "1f9e2", socks: "1f9e6", coat: "1f9e5",
-    pants: "1f456", dress: "1f457", shorts: "1fa73", scarf: "1f9e3", boots: "1f462",
-    gloves: "1f9e4", swimsuit: "1fa71",
-  },
-  transport: {
-    car: "1f697", bus: "1f68c", bicycle: "1f6b2", train: "1f686", boat: "1f6a4",
-    airplane: "2708", taxi: "1f695", truck: "1f69a", scooter: "1f6f4",
-    helicopter: "1f681", motorcycle: "1f3cd", rocket: "1f680",
-  },
-};
-
 async function readCategories() {
   const filenames = (await readdir(categoryRoot)).sort();
   return Promise.all(filenames.map(async (filename) => {
@@ -222,29 +179,14 @@ describe("production word-game curriculum", () => {
     );
   });
 
-  it("uses the pinned Fluent mapping for every non-color item", async () => {
+  it("uses one illustrated asset per non-color item", async () => {
     const categories = await readCategories();
     for (const category of categories.filter(({ id }) => id !== "colors")) {
-      assert.deepEqual(
-        Object.fromEntries(category.items.map(({ id, visual }) => [id, visual.assetId])),
-        FLUENT_ASSET_IDS[category.id],
-        category.id,
-      );
+      assert.deepEqual(category.items.map(({ visual }) => visual), category.items.map(({ id }) => ({
+        assetId: `${category.id}-${id}`,
+        kind: "illustration",
+      })), category.id);
     }
-  });
-
-  it("requests two copies only for plural targets whose pinned artwork is singular", async () => {
-    const categories = await readCategories();
-    const copiedItems = categories.flatMap(({ id: categoryId, items }) =>
-      items
-        .filter(({ visual }) => visual.copies === 2)
-        .map(({ id }) => `${categoryId}/${id}`));
-
-    assert.deepEqual(copiedItems, [
-      "body-parts/ears",
-      "clothes/shoes",
-      "clothes/boots",
-    ]);
   });
 
   it("contains no authored personal names or retired washing content", async () => {

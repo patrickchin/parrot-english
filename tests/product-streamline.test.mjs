@@ -261,11 +261,11 @@ test("home gives children five clear, working learning choices", () => {
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
   assert.match(
     html,
-    /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"/,
+    /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/illustrated\/animals-cat\.webp"/,
   );
   assert.match(html, /Nursery rhymes/);
   assert.match(html, /Word game/);
-  assert.match(html, /src="\/assets\/word-games\/fluent-3d\/1f431\.png"/);
+  assert.match(html, /src="\/assets\/word-games\/illustrated\/animals-cat\.webp"/);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,

@@ -12,8 +12,8 @@
       "label": "apple",
       "alt": "An apple.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f34e"
+        "assetId": "food-apple",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-apple-label",
@@ -29,8 +29,8 @@
       "label": "banana",
       "alt": "A banana.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f34c"
+        "assetId": "food-banana",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-banana-label",
@@ -46,8 +46,8 @@
       "label": "carrot",
       "alt": "A carrot.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f955"
+        "assetId": "food-carrot",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-carrot-label",
@@ -63,8 +63,8 @@
       "label": "orange",
       "alt": "An orange.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f34a"
+        "assetId": "food-orange",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-shared-orange-label",
@@ -80,8 +80,8 @@
       "label": "bread",
       "alt": "Bread.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f35e"
+        "assetId": "food-bread",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-bread-label",
@@ -97,8 +97,8 @@
       "label": "cheese",
       "alt": "Cheese.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f9c0"
+        "assetId": "food-cheese",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-cheese-label",
@@ -114,8 +114,8 @@
       "label": "rice",
       "alt": "Rice.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f35a"
+        "assetId": "food-rice",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-rice-label",
@@ -131,8 +131,8 @@
       "label": "egg",
       "alt": "An egg.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f95a"
+        "assetId": "food-egg",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-egg-label",
@@ -148,8 +148,8 @@
       "label": "milk",
       "alt": "Milk.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f95b"
+        "assetId": "food-milk",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-milk-label",
@@ -165,8 +165,8 @@
       "label": "tomato",
       "alt": "A tomato.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f345"
+        "assetId": "food-tomato",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-tomato-label",
@@ -182,8 +182,8 @@
       "label": "potato",
       "alt": "A potato.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f954"
+        "assetId": "food-potato",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-potato-label",
@@ -199,8 +199,8 @@
       "label": "sandwich",
       "alt": "A sandwich.",
       "visual": {
-        "kind": "fluent-3d",
-        "assetId": "1f96a"
+        "assetId": "food-sandwich",
+        "kind": "illustration"
       },
       "labelAudio": {
         "id": "word-game-food-sandwich-label",
