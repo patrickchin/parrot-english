@@ -1220,7 +1220,7 @@ describe("keyboard accessibility lifecycles", () => {
     switchButton.focus();
     await act(async () => switchButton.form.requestSubmit());
 
-    assert.deepEqual(passwords, [""]);
+    await waitFor(() => assert.deepEqual(passwords, [""]));
     assert.equal(switchButton.form.querySelector("fieldset").disabled, true);
     assert.match(switchButton.form.textContent, /Switching modes…/);
     attempt.resolve({
