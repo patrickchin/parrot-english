@@ -1,6 +1,5 @@
-import { DUB_ID } from "./dub-script.ts";
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
-import { getDubDefinition } from "./rhyme-catalog.ts";
+import { DUB_ID, getDubDefinition } from "./rhyme-catalog.ts";
 
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";

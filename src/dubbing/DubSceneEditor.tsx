@@ -1,12 +1,15 @@
 import { ArrowLeft, ArrowRight, LoaderCircle, Mic, Square, Volume2 } from "lucide-react";
 import type { RefObject } from "react";
-import { getStaticAudioLineForSpeech } from "../../lib/static-audio";
 import { ActionButton, TextButton } from "../shared/ui";
 import { DubTakeWaveform } from "./DubTakeWaveform";
-import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import type { DubOperation } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
-import { getDubLineMusicPhrase, type DubDefinition, type DubLine } from "./rhyme-catalog";
+import {
+  FIVE_LITTLE_DUCKS_DUB,
+  getDubLineMusicPhrase,
+  type DubDefinition,
+  type DubLine,
+} from "./rhyme-catalog";
 
 export type DubSceneEditorProps = {
   activeLine: DubLine;
@@ -34,14 +37,6 @@ export type DubSceneEditorProps = {
 function formatDuration(milliseconds: number) {
   const seconds = Math.floor(milliseconds / 1_000);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-}
-
-function getGuideAudioId(text: string) {
-  try {
-    return getStaticAudioLineForSpeech("narrator", text).id;
-  } catch {
-    return "";
-  }
 }
 
 export function DubSceneEditor({
@@ -94,7 +89,6 @@ export function DubSceneEditor({
   const takeLabel = operation === "take-playing"
     ? "Stop my recording"
     : "Play my recording";
-  const guideAudioId = getGuideAudioId(activeLine.text);
   const feedbackError = Boolean(error)
     && operation !== "mic-opening"
     && operation !== "saving";
@@ -167,7 +161,7 @@ export function DubSceneEditor({
             <DubTakeWaveform
               blob={pendingTake}
               durationMs={recordingDurationMs}
-              guideAudioId={guideAudioId}
+              guidePeakBars={activeLine.guidePeakBars}
               recordingElapsedMs={recordingElapsedMs}
               recordingStream={recordingStream}
             />

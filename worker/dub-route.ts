@@ -1,4 +1,7 @@
-import { getDubDefinition, type DubDefinition } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  DUB_DEFINITIONS,
+  type DubDefinition,
+} from "../src/dubbing/rhyme-catalog.ts";
 
 export type DubRoute = {
   audio: boolean;
@@ -8,17 +11,16 @@ export type DubRoute = {
   lineId: string | null;
 };
 
-export function parseDubRoute(pathname: string): DubRoute | null {
+export function parseDubRoute(
+  pathname: string,
+  definitions: readonly DubDefinition[] = DUB_DEFINITIONS,
+): DubRoute | null {
   const match = /^\/api\/dubs\/([^/]+)(?:\/(consent)|\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
     pathname,
   );
   if (!match) return null;
-  let definition: DubDefinition;
-  try {
-    definition = getDubDefinition(match[1]);
-  } catch {
-    return null;
-  }
+  const definition = definitions.find(({ id }) => id === match[1]);
+  if (!definition) return null;
   const lineId = match[3] ?? null;
   if (lineId !== null && !definition.lines.some((line) => line.id === lineId)) {
     return null;

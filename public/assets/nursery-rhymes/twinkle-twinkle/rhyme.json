@@ -1,0 +1,86 @@
+{
+  "countInBeats": 2,
+  "countInMidi": 72,
+  "id": "twinkle-twinkle-v1",
+  "order": 3,
+  "scenes": [
+    {
+      "artwork": {
+        "alt": "A bright little star twinkles above a sleepy child at a moonlit window.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/twinkle-twinkle/scene-1-little-star.webp",
+        "width": 1536
+      },
+      "id": "scene-1",
+      "lines": [
+        {
+          "guide": "guides/twinkle-twinkle-v1-guide-line-1.mp3",
+          "id": "twinkle-twinkle-v1-line-1",
+          "text": "Twinkle, twinkle, little star,"
+        },
+        {
+          "guide": "guides/twinkle-twinkle-v1-guide-line-2.mp3",
+          "id": "twinkle-twinkle-v1-line-2",
+          "text": "How I wonder what you are!"
+        }
+      ],
+      "title": "A little star"
+    },
+    {
+      "artwork": {
+        "alt": "The friendly star shines high above a tiny moonlit village and rolling hills.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/twinkle-twinkle/scene-2-world-below.webp",
+        "width": 1536
+      },
+      "id": "scene-2",
+      "lines": [
+        {
+          "guide": "guides/twinkle-twinkle-v1-guide-line-3.mp3",
+          "id": "twinkle-twinkle-v1-line-3",
+          "text": "Up above the world so high,"
+        },
+        {
+          "guide": "guides/twinkle-twinkle-v1-guide-line-4.mp3",
+          "id": "twinkle-twinkle-v1-line-4",
+          "text": "Like a diamond in the sky."
+        }
+      ],
+      "title": "High above the world"
+    },
+    {
+      "artwork": {
+        "alt": "The child smiles as the diamond-bright star sparkles across the deep blue sky.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/twinkle-twinkle/scene-3-diamond-sky.webp",
+        "width": 1536
+      },
+      "id": "scene-3",
+      "lines": [
+        {
+          "guide": "guides/twinkle-twinkle-v1-guide-line-1.mp3",
+          "id": "twinkle-twinkle-v1-line-5",
+          "text": "Twinkle, twinkle, little star,"
+        },
+        {
+          "guide": "guides/twinkle-twinkle-v1-guide-line-2.mp3",
+          "id": "twinkle-twinkle-v1-line-6",
+          "text": "How I wonder what you are!"
+        }
+      ],
+      "title": "A diamond in the sky"
+    }
+  ],
+  "schemaVersion": 1,
+  "score": {
+    "melodyPart": "P1",
+    "playbackParts": [
+      "P1",
+      "P2"
+    ],
+    "src": "score.musicxml",
+    "volume": 0.12
+  },
+  "slug": "twinkle-twinkle",
+  "title": "Twinkle Twinkle Little Star"
+}

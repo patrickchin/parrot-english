@@ -1,0 +1,76 @@
+{
+  "countInBeats": 2,
+  "countInMidi": 70,
+  "id": "humpty-dumpty-v1",
+  "order": 6,
+  "scenes": [
+    {
+      "artwork": {
+        "alt": "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/humpty-dumpty/scene-1-on-the-wall.webp",
+        "width": 1536
+      },
+      "id": "scene-1",
+      "lines": [
+        {
+          "artwork": {
+            "alt": "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v6/dubbing/humpty-dumpty/scene-1-on-the-wall.webp",
+            "width": 1536
+          },
+          "guide": "guides/humpty-dumpty-v1-guide-line-1.mp3",
+          "id": "humpty-dumpty-v1-line-1",
+          "text": "Humpty Dumpty sat on a wall,"
+        },
+        {
+          "artwork": {
+            "alt": "A surprised Humpty Dumpty tumbles gently toward soft flowers below the garden wall.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v7/dubbing/humpty-dumpty/line-2-great-fall.webp",
+            "width": 1536
+          },
+          "guide": "guides/humpty-dumpty-v1-guide-line-2.mp3",
+          "id": "humpty-dumpty-v1-line-2",
+          "text": "Humpty Dumpty had a great fall."
+        },
+        {
+          "artwork": {
+            "alt": "Kind royal helpers and two gentle horses gather to help Humpty Dumpty in the castle garden.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v7/dubbing/humpty-dumpty/line-3-royal-help.webp",
+            "width": 1536
+          },
+          "guide": "guides/humpty-dumpty-v1-guide-line-3.mp3",
+          "id": "humpty-dumpty-v1-line-3",
+          "text": "All the king’s horses and all the king’s men"
+        },
+        {
+          "artwork": {
+            "alt": "Kind royal helpers carefully comfort Humpty Dumpty beside the garden wall.",
+            "height": 864,
+            "src": "https://media.parrotbook.com/assets/v6/dubbing/humpty-dumpty/scene-2-helping-humpty.webp",
+            "width": 1536
+          },
+          "guide": "guides/humpty-dumpty-v1-guide-line-4.mp3",
+          "id": "humpty-dumpty-v1-line-4",
+          "text": "Couldn’t put Humpty together again."
+        }
+      ],
+      "title": "Humpty Dumpty"
+    }
+  ],
+  "schemaVersion": 1,
+  "score": {
+    "melodyPart": "P1",
+    "playbackParts": [
+      "P1",
+      "P2"
+    ],
+    "src": "score.musicxml",
+    "volume": 0.12
+  },
+  "slug": "humpty-dumpty",
+  "title": "Humpty Dumpty"
+}

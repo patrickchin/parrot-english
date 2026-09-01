@@ -2,7 +2,6 @@ import { Play, Square } from "lucide-react";
 import type { RefObject } from "react";
 import { ActionButton } from "../shared/ui";
 import { retryOriginalImage } from "../shared/responsive-image";
-import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import {
   getFirstActionableDubSceneIndex,
   getDubSceneStatus,
@@ -11,7 +10,11 @@ import {
 } from "./dub-state";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import { dubArtworkSrcSet } from "./dub-artwork";
-import type { DubDefinition, DubLine } from "./rhyme-catalog";
+import {
+  FIVE_LITTLE_DUCKS_DUB,
+  type DubDefinition,
+  type DubLine,
+} from "./rhyme-catalog";
 
 const DUB_THUMBNAIL_IMAGE_SIZES =
   "(min-width: 560px) and (max-height: 620px) 1px, (max-width: 1023px) calc((100vw - 3.75rem) / 2), 12rem";

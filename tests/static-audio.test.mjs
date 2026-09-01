@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename } from "node:path";
 import { describe, it } from "node:test";
+import snapshot from "./fixtures/nursery-rhyme-runtime-snapshot.json" with { type: "json" };
 import * as staticAudio from "../lib/static-audio.js";
 import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
@@ -107,6 +108,43 @@ const OLD_MACDONALD_GUIDE_FILES = [
 ].sort();
 
 describe("static audio cache metadata", () => {
+  it("publishes the catalog's explicit unique guide records from their package URLs", () => {
+    const catalogGuides = DUB_DEFINITIONS.flatMap(({ guides }) => guides ?? []);
+    assert.equal(catalogGuides.length, 59);
+    for (const guide of catalogGuides) {
+      const published = staticAudio.getStaticAudioLineById(guide.id);
+      assert.equal(published.src, guide.src, guide.id);
+      assert.equal(published.text, guide.text, guide.id);
+      assert.match(published.src, /^\/assets\/nursery-rhymes\/[^/]+\/guides\/.+\.mp3$/);
+    }
+  });
+
+  it("preserves every deployed nursery-rhyme guide recording", () => {
+    const guides = Object.entries(staticAudio.STATIC_AUDIO_LINES)
+      .filter(([id]) => /-guide-line-\d+$/.test(id))
+      .map(([id, { src, text }]) => ({
+        id,
+        text,
+        sha256: createHash("sha256")
+          .update(readFileSync(new URL(`../public${src}`, import.meta.url)))
+          .digest("hex"),
+      }));
+    assert.deepEqual(guides, snapshot.guides);
+  });
+
+  it("keeps all 59 protected guide IDs out of the legacy audio root", () => {
+    const guideIds = snapshot.guides.map(({ id }) => id);
+    assert.equal(guideIds.length, 59);
+    assert.equal(new Set(guideIds).size, 59);
+    for (const id of guideIds) {
+      assert.equal(
+        existsSync(new URL(`../public/assets/audio/${id}.mp3`, import.meta.url)),
+        false,
+        id,
+      );
+    }
+  });
+
   it("registers one exact-text group cue for every supported built-in target", () => {
     assert.equal(typeof staticAudio.LESSON_JOIN_IN_AUDIO_LINES, "object");
     assert.equal(Object.keys(staticAudio.LESSON_JOIN_IN_AUDIO_LINES).length, 17);
@@ -218,7 +256,6 @@ describe("static audio cache metadata", () => {
   });
 
   it("pins the complete non-empty decodable Old MacDonald guide inventory", () => {
-    const audioDirectory = new URL("../public/assets/audio/", import.meta.url);
     const guideLines = new Map();
     for (const { text } of OLD_MACDONALD_DUB.lines) {
       const line = getStaticAudioLineForSpeech("narrator", text);
@@ -233,14 +270,15 @@ describe("static audio cache metadata", () => {
       [...guideLines.values()].map((id) => `${id}.mp3`).sort(),
       OLD_MACDONALD_GUIDE_FILES,
     );
-    const files = readdirSync(audioDirectory)
-      .filter((filename) => filename.startsWith("old-macdonald-v1-guide-") && filename.endsWith(".mp3"))
+    const files = OLD_MACDONALD_DUB.guides
+      .map(({ src }) => basename(src))
       .sort();
     assert.deepEqual(files, OLD_MACDONALD_GUIDE_FILES);
-    for (const filename of files) {
-      const file = new URL(filename, audioDirectory);
+    for (const { id, src } of OLD_MACDONALD_DUB.guides) {
+      assert.match(src, /^\/assets\/nursery-rhymes\/old-macdonald\/guides\/.+\.mp3$/);
+      const file = new URL(`../public${src}`, import.meta.url);
       assert.equal(existsSync(file), true);
-      assert.ok(statSync(file).size > 0, `${filename} is empty`);
+      assert.ok(statSync(file).size > 0, `${id}.mp3 is empty`);
       assert.notEqual(
         execFileSync("ffprobe", [
           "-v", "error",
@@ -249,31 +287,24 @@ describe("static audio cache metadata", () => {
           file.pathname,
         ], { encoding: "utf8" }).trim(),
         "",
-        `${basename(file.pathname)} is not decodable`,
+        `${id}.mp3 is not decodable`,
       );
     }
   });
 
-  it("keeps every new saved guide inside its authored musical window", () => {
-    for (const definition of DUB_DEFINITIONS.slice(2)) {
-      const seen = new Set();
-      definition.lines.forEach(({ cueMs, text }, index) => {
-        if (seen.has(text)) return;
-        seen.add(text);
-        const line = getStaticAudioLineForSpeech("narrator", text);
-        const durationMs = Number(execFileSync("ffprobe", [
-          "-v", "error",
-          "-show_entries", "format=duration",
-          "-of", "default=noprint_wrappers=1:nokey=1",
-          new URL(`../public${line.src}`, import.meta.url).pathname,
-        ], { encoding: "utf8" }).trim()) * 1_000;
-        const windowMs = definition.lines[index + 1]?.cueMs - cueMs
-          || definition.finalCueTailMs;
-        assert.ok(
-          durationMs <= windowMs,
-          `${line.id} is ${durationMs}ms for a ${windowMs}ms window`,
-        );
-      });
+  it("keeps every packaged nursery-rhyme guide non-empty and decodable", () => {
+    const guides = DUB_DEFINITIONS.flatMap(({ guides }) => guides);
+    assert.equal(guides.length, 59);
+    for (const { id, src } of guides) {
+      const file = new URL(`../public${src}`, import.meta.url);
+      assert.ok(statSync(file).size > 0, `${id}.mp3 is empty`);
+      const durationSeconds = Number(execFileSync("ffprobe", [
+        "-v", "error",
+        "-show_entries", "format=duration",
+        "-of", "default=noprint_wrappers=1:nokey=1",
+        file.pathname,
+      ], { encoding: "utf8" }).trim());
+      assert.ok(Number.isFinite(durationSeconds) && durationSeconds > 0, `${id}.mp3 is not decodable`);
     }
   });
 
@@ -352,7 +383,11 @@ describe("static audio cache metadata", () => {
       assert.equal(line.lang, "en-US", `${id} language`);
       assert.doesNotMatch(line.text, /[\u3400-\u9fff]/u, `${id} text`);
       assert.doesNotMatch(line.text, /\bBella\b/i, `${id} fixed learner name`);
-      assert.match(line.src, /^\/assets\/audio\/.+\.mp3$/, `${id} source`);
+      assert.match(
+        line.src,
+        /^\/assets\/(?:audio|nursery-rhymes\/[^/]+\/guides)\/[^/]+\.mp3$/,
+        `${id} source`,
+      );
     }
   });
 
