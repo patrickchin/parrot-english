@@ -133,12 +133,14 @@ function scheduleTone(
   output: AudioNode,
   oscillators: OscillatorNode[],
   {
+    attackMs = 20,
     durationMs,
     gain,
     midi,
     startsAt,
     type,
   }: {
+    attackMs?: number;
     durationMs: number;
     gain: number;
     midi: number;
@@ -152,8 +154,10 @@ function scheduleTone(
   const endsAt = startsAt + durationMs / 1_000;
   oscillator.type = type;
   oscillator.frequency.value = midiFrequency(midi);
-  envelope.gain.setValueAtTime(0, startsAt);
-  envelope.gain.linearRampToValueAtTime(gain, startsAt + 0.02);
+  envelope.gain.setValueAtTime(attackMs === 0 ? gain : 0, startsAt);
+  if (attackMs > 0) {
+    envelope.gain.linearRampToValueAtTime(gain, startsAt + attackMs / 1_000);
+  }
   envelope.gain.linearRampToValueAtTime(0, endsAt);
   oscillator.connect(envelope);
   envelope.connect(output);
@@ -170,6 +174,7 @@ function scheduleDubMusic(
   output: AudioNode,
   startAt: number,
   includeOutro = true,
+  startWithoutAttack = false,
 ) {
   const oscillators: OscillatorNode[] = [];
   const getPhrase = (line: DubLine) => getDubLineMusicPhrase(definition, line);
@@ -183,6 +188,7 @@ function scheduleDubMusic(
         if (noteStartsMs < 0 || noteStartsMs >= authoredDurationMs) continue;
         const melody = note.role === "melody";
         scheduleTone(context, output, oscillators, {
+          attackMs: startWithoutAttack && noteStartsMs === 0 ? 0 : undefined,
           durationMs: Math.min(note.durationMs, authoredDurationMs - noteStartsMs),
           gain: melody ? 0.78 : 0.24,
           midi: note.midi,
@@ -402,6 +408,7 @@ export async function prepareDubLineBacking({
           music,
           downbeatAt,
           false,
+          true,
         ));
         terminal = context.createOscillator();
         terminal.frequency.value = 0;
