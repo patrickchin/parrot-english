@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { APIError } from "better-auth";
+import { SHARED_GUEST_USER_ID } from "../lib/shared-guest.ts";
 import { createAuth } from "../worker/auth.ts";
 import { createDatabase } from "../worker/database.ts";
 import {
@@ -7,6 +9,7 @@ import {
   requiresGuardianAccess,
 } from "../worker/guardian-access.ts";
 import * as workerModule from "../worker/index.ts";
+import { sharedGuestAuth } from "../worker/shared-guest-auth.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const VALID_AUTH_SECRET = "R2F7cFlwMTVNSVZ1LzNZb1ZYVUs5ZDBnKzVYV25VSEk=";
@@ -26,7 +29,7 @@ function createTestWorker(overrides = {}) {
   assert.equal(
     typeof workerModule.createWorker,
     "function",
-    "worker/index.ts must export createWorker for dependency injection"
+    "worker/index.ts must export createWorker for dependency injection",
   );
 
   return workerModule.createWorker(overrides);
@@ -83,24 +86,15 @@ function createAuthStub({
 describe("Worker authentication", () => {
   it("recognizes only exact learner-profile DELETE routes as Guardian-protected", () => {
     assert.equal(
-      requiresGuardianAccess(
-        "/api/learner-profiles/learner-a",
-        "DELETE",
-      ),
+      requiresGuardianAccess("/api/learner-profiles/learner-a", "DELETE"),
       true,
     );
     assert.equal(
-      requiresGuardianAccess(
-        "/api/learner-profiles/learner-a/extra",
-        "DELETE",
-      ),
+      requiresGuardianAccess("/api/learner-profiles/learner-a/extra", "DELETE"),
       false,
     );
     assert.equal(
-      requiresGuardianAccess(
-        "/api/learner-profiles/learner-a",
-        "GET",
-      ),
+      requiresGuardianAccess("/api/learner-profiles/learner-a", "GET"),
       false,
     );
   });
@@ -113,7 +107,7 @@ describe("Worker authentication", () => {
           DB: {},
           BETTER_AUTH_SECRET: "   ",
         }),
-      /BETTER_AUTH_SECRET/
+      /BETTER_AUTH_SECRET/,
     );
     assert.throws(
       () =>
@@ -122,7 +116,7 @@ describe("Worker authentication", () => {
           BETTER_AUTH_SECRET: "too-short",
           BETTER_AUTH_URL: "https://example.test",
         }),
-      /BETTER_AUTH_SECRET.*at least 32 characters/
+      /BETTER_AUTH_SECRET.*at least 32 characters/,
     );
   });
 
@@ -133,7 +127,7 @@ describe("Worker authentication", () => {
           DB: {},
           BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
         }),
-      /BETTER_AUTH_URL/
+      /BETTER_AUTH_URL/,
     );
     assert.throws(
       () =>
@@ -142,7 +136,7 @@ describe("Worker authentication", () => {
           BETTER_AUTH_SECRET: VALID_AUTH_SECRET,
           BETTER_AUTH_URL: "   ",
         }),
-      /BETTER_AUTH_URL/
+      /BETTER_AUTH_URL/,
     );
   });
 
@@ -162,8 +156,11 @@ describe("Worker authentication", () => {
     );
   });
 
-  it("enables anonymous sessions and protects guest login plus sign-up with Turnstile", () => {
+  it("enables shared guest sessions and protects guest login plus sign-up with Turnstile", () => {
     const auth = createAuth(createAuthEnvironment());
+    const sharedGuestPlugin = auth.options.plugins?.find(
+      (plugin) => plugin.id === "shared-guest",
+    );
     const anonymousPlugin = auth.options.plugins?.find(
       (plugin) => plugin.id === "anonymous",
     );
@@ -171,18 +168,18 @@ describe("Worker authentication", () => {
       (plugin) => plugin.id === "captcha",
     );
 
-    assert.ok(anonymousPlugin);
-    assert.equal(anonymousPlugin.options?.generateName?.(), "Guest");
+    assert.ok(sharedGuestPlugin);
+    assert.equal(anonymousPlugin, undefined);
     assert.ok(captchaPlugin);
     assert.deepEqual(captchaPlugin.options, {
-      endpoints: ["/sign-in/anonymous", "/sign-up/email"],
+      endpoints: ["/sign-in/shared-guest", "/sign-up/email"],
       expectedAction: "account_access",
       provider: "cloudflare-turnstile",
       secretKey: VALID_TURNSTILE_SECRET,
     });
   });
 
-  it("purges guest data before Better Auth links and removes an anonymous account", async () => {
+  it("purges regular account data before Better Auth deletes the user", async () => {
     const calls = [];
     const bucket = {};
     const auth = createAuth(
@@ -193,32 +190,17 @@ describe("Worker authentication", () => {
         },
       },
     );
-    const anonymousPlugin = auth.options.plugins?.find(
-      (plugin) => plugin.id === "anonymous",
-    );
-
-    assert.equal(typeof anonymousPlugin?.options?.onLinkAccount, "function");
-    await anonymousPlugin.options.onLinkAccount({
-      anonymousUser: {
-        session: { id: "guest-session" },
-        user: { id: "guest-user", isAnonymous: true },
-      },
-      ctx: {},
-      newUser: {
-        session: { id: "regular-session" },
-        user: { id: "regular-user", isAnonymous: false },
-      },
-    });
+    await auth.options.user?.deleteUser?.beforeDelete?.({ id: "regular-user" });
 
     assert.equal(calls.length, 1);
     assert.equal(calls[0].bucket, bucket);
-    assert.equal(calls[0].userId, "guest-user");
+    assert.equal(calls[0].userId, "regular-user");
   });
 
   it("rejects guest login and sign-up without Turnstile proof before database access", async () => {
     const auth = createAuth(createAuthEnvironment());
     const requests = [
-      ["/api/auth/sign-in/anonymous", {}],
+      ["/api/auth/sign-in/shared-guest", {}],
       [
         "/api/auth/sign-up/email",
         { name: "Mary", email: "mary@example.com", password: "password" },
@@ -230,7 +212,7 @@ describe("Worker authentication", () => {
         new Request(`https://example.test${pathname}`, {
           body: JSON.stringify(body),
           headers: {
-            "cf-connecting-ip": "192.0.2.1",
+            "cf-connecting-ip": "192.0.2.2",
             "content-type": "application/json",
             origin: "https://example.test",
           },
@@ -243,6 +225,234 @@ describe("Worker authentication", () => {
         code: "MISSING_RESPONSE",
         message: "Missing CAPTCHA response",
       });
+    }
+  });
+
+  it("does not expose anonymous Better Auth routes", async () => {
+    const auth = createAuth(createAuthEnvironment());
+
+    for (const pathname of [
+      "/api/auth/sign-in/anonymous",
+      "/api/auth/delete-anonymous-user",
+    ]) {
+      const response = await auth.handler(
+        new Request(`https://example.test${pathname}`, {
+          body: "{}",
+          headers: {
+            "cf-connecting-ip": "192.0.2.3",
+            "content-type": "application/json",
+            origin: "https://example.test",
+          },
+          method: "POST",
+        }),
+      );
+
+      assert.equal(response.status, 404, pathname);
+    }
+  });
+
+  it("creates separate shared guest sessions after Turnstile verification", async () => {
+    const state = createTestD1Database();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      const auth = createAuth(createAuthEnvironment({ DB: state.d1 }));
+      const createRequest = () =>
+        new Request("https://example.test/api/auth/sign-in/shared-guest", {
+          body: "{}",
+          headers: {
+            "cf-connecting-ip": "192.0.2.3",
+            "content-type": "application/json",
+            origin: "https://example.test",
+            "x-captcha-response": "valid-turnstile-proof",
+          },
+          method: "POST",
+        });
+
+      const first = await auth.handler(createRequest());
+      const second = await auth.handler(createRequest());
+      const firstBody = await first.json();
+      const secondBody = await second.json();
+
+      assert.equal(first.status, 200);
+      assert.equal(second.status, 200);
+      assert.equal(firstBody.user.id, SHARED_GUEST_USER_ID);
+      assert.equal(secondBody.user.id, SHARED_GUEST_USER_ID);
+      assert.notEqual(firstBody.token, secondBody.token);
+      assert.match(
+        first.headers.get("set-cookie") ?? "",
+        /better-auth\.session_token=/,
+      );
+      assert.match(
+        second.headers.get("set-cookie") ?? "",
+        /better-auth\.session_token=/,
+      );
+      assert.deepEqual(
+        {
+          ...state.sqlite
+            .prepare(
+              `SELECT user_id, count(*) AS count, count(DISTINCT token) AS tokens
+                 FROM session WHERE user_id = ? GROUP BY user_id`,
+            )
+            .get(SHARED_GUEST_USER_ID),
+        },
+        { user_id: SHARED_GUEST_USER_ID, count: 2, tokens: 2 },
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
+    }
+  });
+
+  it("contains shared guest sign-in when the seed user is absent", async () => {
+    const state = createTestD1Database();
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      state.sqlite
+        .prepare("DELETE FROM user WHERE id = ?")
+        .run(SHARED_GUEST_USER_ID);
+      const auth = createAuth(createAuthEnvironment({ DB: state.d1 }));
+      const response = await auth.handler(
+        new Request("https://example.test/api/auth/sign-in/shared-guest", {
+          body: "{}",
+          headers: {
+            "cf-connecting-ip": "192.0.2.1",
+            "content-type": "application/json",
+            origin: "https://example.test",
+            "x-captcha-response": "valid-turnstile-proof",
+          },
+          method: "POST",
+        }),
+      );
+
+      assert.equal(response.status, 500);
+      assert.equal((await response.json()).code, "SHARED_GUEST_UNAVAILABLE");
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(SHARED_GUEST_USER_ID).count,
+        0,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM session WHERE user_id = ?")
+          .get(SHARED_GUEST_USER_ID).count,
+        0,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
+    }
+  });
+
+  it("contains a shared guest session creation failure", async () => {
+    await assert.rejects(
+      sharedGuestAuth().endpoints.signInSharedGuest({
+        context: {
+          internalAdapter: {
+            async createSession() {
+              return null;
+            },
+            async findUserById(userId) {
+              assert.equal(userId, SHARED_GUEST_USER_ID);
+              return { id: SHARED_GUEST_USER_ID };
+            },
+          },
+        },
+      }),
+      (error) => {
+        assert.ok(error instanceof APIError);
+        assert.equal(error.statusCode, 500);
+        assert.equal(error.body.code, "SHARED_GUEST_SESSION_FAILED");
+        return true;
+      },
+    );
+  });
+
+  it("rejects shared guest deletion before account cleanup", async () => {
+    const state = createTestD1Database();
+    const originalFetch = globalThis.fetch;
+    let cleanupCalls = 0;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      const auth = createAuth(
+        createAuthEnvironment({
+          DB: state.d1,
+          PERSONALIZED_STORY_ART_BUCKET: {},
+        }),
+        {
+          async prepareAccountDeletion() {
+            cleanupCalls += 1;
+          },
+        },
+      );
+      const signIn = await auth.handler(
+        new Request("https://example.test/api/auth/sign-in/shared-guest", {
+          body: "{}",
+          headers: {
+            "cf-connecting-ip": "192.0.2.1",
+            "content-type": "application/json",
+            origin: "https://example.test",
+            "x-captcha-response": "valid-turnstile-proof",
+          },
+          method: "POST",
+        }),
+      );
+      const cookie = signIn.headers.get("set-cookie");
+
+      const deletion = await auth.handler(
+        new Request("https://example.test/api/auth/delete-user", {
+          body: "{}",
+          headers: {
+            "cf-connecting-ip": "192.0.2.1",
+            cookie,
+            "content-type": "application/json",
+            origin: "https://example.test",
+          },
+          method: "POST",
+        }),
+      );
+
+      assert.equal(deletion.status, 403);
+      assert.equal(
+        (await deletion.json()).code,
+        "SHARED_GUEST_DELETE_FORBIDDEN",
+      );
+      assert.equal(cleanupCalls, 0);
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(SHARED_GUEST_USER_ID).count,
+        1,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM session WHERE user_id = ?")
+          .get(SHARED_GUEST_USER_ID).count,
+        1,
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
     }
   });
 
@@ -259,15 +469,15 @@ describe("Worker authentication", () => {
     assert.equal(context.isTrustedOrigin("https://parrotbook.com"), true);
     assert.equal(
       context.isTrustedOrigin(
-        "https://codex-app-home-routing-parrot-english.p-ch.workers.dev"
+        "https://codex-app-home-routing-parrot-english.p-ch.workers.dev",
       ),
-      true
+      true,
     );
     assert.equal(
       context.isTrustedOrigin(
-        "https://e8bf6255-parrot-english.p-ch.workers.dev"
+        "https://e8bf6255-parrot-english.p-ch.workers.dev",
       ),
-      true
+      true,
     );
   });
 
@@ -289,7 +499,7 @@ describe("Worker authentication", () => {
       assert.equal(
         context.isTrustedOrigin(origin),
         false,
-        `Expected ${origin} to remain untrusted`
+        `Expected ${origin} to remain untrusted`,
       );
     }
   });
@@ -397,11 +607,11 @@ describe("Worker authentication", () => {
       new Request("https://example.test/api/auth/sign-in/email", {
         method: "POST",
       }),
-      env
+      env,
     );
     const baseResponse = await worker.fetch(
       new Request("https://example.test/api/auth"),
-      env
+      env,
     );
 
     assert.deepEqual(await signInResponse.json(), { route: "better-auth" });
@@ -728,7 +938,7 @@ describe("Worker authentication", () => {
       new Request("https://example.test/api/evaluate-speech", {
         method: "POST",
       }),
-      env
+      env,
     );
 
     assert.equal(response.status, 401);
@@ -762,7 +972,7 @@ describe("Worker authentication", () => {
         method: "POST",
         headers: { Cookie: "better-auth.session_token=test" },
       }),
-      env
+      env,
     );
 
     assert.equal(response.status, 200);
@@ -793,7 +1003,7 @@ describe("Worker authentication", () => {
       new Request("https://example.test/api/evaluate-speech", {
         method: "POST",
       }),
-      env
+      env,
     );
 
     assert.equal(response.status, 429);
@@ -905,7 +1115,9 @@ describe("Worker authentication", () => {
     });
 
     const response = await worker.fetch(
-      new Request("https://example.test/api/guardian-access", { method: "POST" }),
+      new Request("https://example.test/api/guardian-access", {
+        method: "POST",
+      }),
       env,
     );
 
@@ -942,10 +1154,7 @@ describe("Worker authentication", () => {
       headers,
     });
 
-    const response = await worker.fetch(
-      request,
-      env,
-    );
+    const response = await worker.fetch(request, env);
 
     assert.equal(response.status, 200);
     assert.equal(authFactoryCalls, 1);
@@ -971,7 +1180,7 @@ describe("Worker authentication", () => {
 
     const response = await worker.fetch(
       new Request("https://example.test/lesson"),
-      env
+      env,
     );
 
     assert.equal(await response.text(), "lesson app");
