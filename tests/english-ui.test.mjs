@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, relative, resolve } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { englishGuardianMessages } from "../src/i18n/messages/en.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const han = /\p{Script=Han}/u;
@@ -56,6 +57,13 @@ function visitLeaves(value, path = [], leaves = []) {
 
 describe("English-only shipped UI", () => {
   it("confines Han copy to guardian catalogs and questionnaire promptZh leaves", () => {
+    const catalogHanLeaves = visitLeaves(englishGuardianMessages).filter(
+      ({ value }) => typeof value === "string" && han.test(value),
+    );
+    assert.deepEqual(catalogHanLeaves, [
+      { path: "language.chineseOption", value: "中文" },
+    ]);
+
     const shippedRoots = [
       "src",
       "lib",
@@ -74,16 +82,10 @@ describe("English-only shipped UI", () => {
       if (hanCatalogFiles.has(path)) {
         if (path.endsWith("/zh-Hans.ts")) assert.match(source, han, path);
         else {
-          const nativeOptionMatches = source.match(/chineseOption:\s*"中文"/gu) ?? [];
-          assert.equal(
-            nativeOptionMatches.length,
-            1,
-            `${path} must contain exactly one Chinese native option label`,
-          );
-          assert.doesNotMatch(
-            source.replace(nativeOptionMatches[0], 'chineseOption: ""'),
-            han,
-            path,
+          assert.deepEqual(
+            source.match(/\p{Script=Han}+/gu) ?? [],
+            ["中文"],
+            `${path} must contain no Han outside the loaded language.chineseOption leaf`,
           );
         }
       } else if (!questionnaireExceptions.has(path)) {

@@ -509,6 +509,10 @@ test("retranslates a failed delete dialog without changing its learner or focus"
       /current conversation/,
     ),
   );
+  assert.equal(
+    dialog.querySelector('[role="alert"]')?.textContent,
+    "Could not delete Bob. Finish this learner's current conversation, then try again.",
+  );
 
   const chinese = button(dialog, "中文");
   chinese.focus();
