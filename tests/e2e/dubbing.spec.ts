@@ -1114,6 +1114,10 @@ test("Old MacDonald keeps page scrolling out of the lyric workspace", async ({
   await expect(lyrics.getByRole("button", {
     name: "Edit line 4: And a moo-moo there Not recorded",
   })).toBeVisible();
+  const playerBox = await boundingBoxOrThrow(page.getByRole("region", {
+    name: "Full video player",
+  }));
+  expect(playerBox.width / playerBox.height).toBeCloseTo(16 / 9, 1);
 
   const [documentScroll, mainScroll, lyricScroll] = await Promise.all([
     page.evaluate(() => {

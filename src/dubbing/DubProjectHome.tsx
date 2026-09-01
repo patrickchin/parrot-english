@@ -101,17 +101,19 @@ export function DubProjectHome({
 
         <div className="grid min-w-0 items-start gap-4 short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
           <div className="grid min-w-0 content-start gap-3 short-wide:min-h-0 short-wide:gap-1 lg:h-full lg:grid-rows-[minmax(0,1fr)_auto_auto] lg:content-stretch">
-            <section
-              aria-label="Full video player"
-              className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl lg:h-full lg:w-auto lg:max-w-full lg:justify-self-start"
-            >
-              <IllustratedDubScene
-                compact
-                definition={definition}
-                line={visualLine}
-                playing={playback === "playing" || playingLineId !== null}
-              />
-            </section>
+            <div className="grid min-w-0 lg:min-h-0 lg:[container-type:size]">
+              <section
+                aria-label="Full video player"
+                className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl lg:w-[min(100cqw,177.778cqh)] lg:justify-self-start lg:self-start"
+              >
+                <IllustratedDubScene
+                  compact
+                  definition={definition}
+                  line={visualLine}
+                  playing={playback === "playing" || playingLineId !== null}
+                />
+              </section>
+            </div>
             {guidanceLine ? (
               <section aria-label="Karaoke guide" className="grid gap-1 rounded-2xl bg-white/90 px-3 py-2 text-center text-base font-black leading-snug text-brand-ink shadow-sm short-wide:px-2 short-wide:py-1 short-wide:text-sm">
                 <p className="m-0"><DubTimedWords elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} /></p>
