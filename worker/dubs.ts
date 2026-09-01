@@ -1,4 +1,9 @@
 import { DUB_DEFINITIONS, type DubDefinition } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  DUB_PEAK_BARS_HEADER,
+  parseDubPeakBars,
+  serializeDubPeakBars,
+} from "../src/dubbing/dub-waveform.ts";
 import { isAccountDeletionPending } from "./account-deletion.ts";
 import type { Database } from "./database.ts";
 import {
@@ -680,6 +685,10 @@ function safeRecordedAt(object: R2Object) {
   return Number.isNaN(object.uploaded.getTime()) ? null : object.uploaded.toISOString();
 }
 
+function safePeakBars(object: R2Object) {
+  return parseDubPeakBars(object.customMetadata?.peakBars);
+}
+
 function emptyStatus(
   definition: DubDefinition,
   consentState: "not_granted" | "revoking",
@@ -873,8 +882,10 @@ export async function handleDubRequest(
               )
             : null;
           const saved = current !== null;
+          const peakBars = saved ? safePeakBars(current) : null;
           return {
             id,
+            ...(peakBars ? { peakBars } : {}),
             recordedAt: saved ? safeRecordedAt(current) : null,
             saved,
           };
@@ -1066,6 +1077,12 @@ export async function handleDubRequest(
     await assertDeletionNotPending();
     const consent = await consentRepository.status(input.identity);
     if (!isCurrentGrant(consent)) consentError(consent);
+    const requestedPeakBars = input.request.headers.get(DUB_PEAK_BARS_HEADER);
+    const peakBars = parseDubPeakBars(requestedPeakBars);
+    if (requestedPeakBars !== null && peakBars === null) {
+      throw new DubApiError(400, "invalid_peak_bars");
+    }
+    const serializedPeakBars = peakBars ? serializeDubPeakBars(peakBars) : null;
     const ready = await readyGeneration(bucket, storage);
     const generation = ready ?? LEGACY_GENERATION;
     const contentType = normalizeContentType(input.request);
@@ -1110,6 +1127,7 @@ export async function handleDubRequest(
           guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
           lineId: route.lineId!,
           payloadOffset: String(encodedAudio.payloadOffset),
+          ...(serializedPeakBars ? { peakBars: serializedPeakBars } : {}),
           recordedAt: recordedAt.toISOString(),
           state: "audio",
           uploadNonce,
@@ -1180,7 +1198,11 @@ export async function handleDubRequest(
     }
     await throwIfDeletionPending();
     return json(
-      { lineId: route.lineId, recordedAt: recordedAt.toISOString() },
+      {
+        lineId: route.lineId,
+        ...(peakBars ? { peakBars } : {}),
+        recordedAt: recordedAt.toISOString(),
+      },
       { status: 201 },
     );
   } catch (error) {

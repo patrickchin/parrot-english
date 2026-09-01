@@ -567,7 +567,9 @@ for (const viewport of viewports) {
   test(`nursery Record keeps rendered contrast on a ${viewport.name}`, async ({ page }) => {
     await preparePage(page, viewport);
     await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-    await page.getByRole("button", { name: "Start with Scene 1" }).click();
+    await page.getByRole("button", {
+      name: /^Edit line 1: .* Not recorded$/,
+    }).click();
     await expectPointerStateContrast({
       interaction: page.getByRole("button", { name: "Record line" }),
       minimum: 4.5,

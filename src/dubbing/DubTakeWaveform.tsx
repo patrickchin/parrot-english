@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { DubMelodyLane, getDubPlayheadPercent } from "./DubKaraokeGuide";
-import { getNormalizedPeakBars } from "./dub-waveform";
+import {
+  DUB_PEAK_BAR_COUNT,
+  EMPTY_DUB_PEAK_BARS,
+  getNormalizedPeakBars,
+} from "./dub-waveform";
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
-const BAR_COUNT = 32;
-const BASELINE_BARS = Array.from({ length: BAR_COUNT }, () => 0);
+const BAR_COUNT = DUB_PEAK_BAR_COUNT;
+const BASELINE_BARS = EMPTY_DUB_PEAK_BARS;
 const LIVE_ANALYSER_SIZE = 16_384;
 
 function closeAudioContext(context: AudioContext | null) {
@@ -25,7 +29,7 @@ function disconnectAudioNode(node: AudioNode | null) {
   }
 }
 
-function Waveform({
+export function DubWaveform({
   accessibleName,
   bars,
   className,
@@ -61,51 +65,6 @@ function Waveform({
       })}
     </svg>
   );
-}
-
-function useRecordedPeakBars(blob: Blob | null, durationMs: number) {
-  const [peaks, setPeaks] = useState<number[] | null>(null);
-
-  useEffect(() => {
-    setPeaks(null);
-    if (!blob) return;
-    const AudioContextClass = globalThis.AudioContext;
-    if (!AudioContextClass) return;
-
-    let context: AudioContext;
-    try {
-      context = new AudioContextClass();
-    } catch {
-      setPeaks(BASELINE_BARS);
-      return;
-    }
-    let cancelled = false;
-    let closeRequested = false;
-    const closeContext = () => {
-      if (closeRequested) return;
-      closeRequested = true;
-      closeAudioContext(context);
-    };
-    void blob.arrayBuffer()
-      .then((bytes) => context.decodeAudioData(bytes))
-      .then((audio) => {
-        if (cancelled) return;
-        const samples = audio.getChannelData(0);
-        const timelineSampleCount = Math.round(audio.sampleRate * durationMs / 1_000);
-        setPeaks(getNormalizedPeakBars(samples, BAR_COUNT, timelineSampleCount));
-      })
-      .catch(() => {
-        if (!cancelled) setPeaks(BASELINE_BARS);
-      })
-      .finally(closeContext);
-
-    return () => {
-      cancelled = true;
-      closeContext();
-    };
-  }, [blob, durationMs]);
-
-  return peaks ?? BASELINE_BARS;
 }
 
 function useLivePeakBars(stream: MediaStream | null, elapsedMs: number, durationMs: number) {
@@ -211,37 +170,38 @@ export function DubTakeWaveform({
   definition,
   elapsedMs,
   line,
+  recordedPeakBars,
   recordingStream,
 }: {
   blob: Blob | null;
   definition: DubDefinition;
   elapsedMs: number | null;
   line: DubLine;
+  recordedPeakBars?: readonly number[] | null;
   recordingStream: MediaStream | null;
 }) {
-  const recordedPeaks = useRecordedPeakBars(blob, line.durationMs);
   const live = useLivePeakBars(recordingStream, elapsedMs ?? 0, line.durationMs);
   const playhead = getDubPlayheadPercent(line, elapsedMs);
 
   return (
     <div aria-label="Waveform and melody guide" className="relative grid w-full gap-1 short-wide:gap-0" role="group">
       <div className="grid">
-        <Waveform
+        <DubWaveform
           accessibleName="Original audio waveform"
           bars={line.guidePeakBars.length === BAR_COUNT ? line.guidePeakBars : BASELINE_BARS}
           className="text-violet-700"
         />
         {recordingStream && live.available ? (
-          <Waveform
+          <DubWaveform
             accessibleName="Your live recording waveform"
             bars={live.bars}
             className="text-brand-rose"
             narrow
           />
         ) : blob ? (
-          <Waveform
+          <DubWaveform
             accessibleName="Your recording waveform"
-            bars={recordedPeaks}
+            bars={recordedPeakBars ?? BASELINE_BARS}
             className="text-brand-blue"
             narrow
           />

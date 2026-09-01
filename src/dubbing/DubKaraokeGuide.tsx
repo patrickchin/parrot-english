@@ -146,7 +146,7 @@ export function DubTimedWords({ line, elapsedMs }: {
       : <span
           aria-current={segment.state === "active" ? "true" : undefined}
           className={segment.state === "active"
-            ? "rounded-md bg-amber-200 px-0.5 font-black underline decoration-2 underline-offset-2"
+            ? "rounded-md bg-amber-200 font-black underline decoration-2 underline-offset-2"
             : undefined}
           key={`${segment.startOffset}-${segment.endOffset}`}
         >

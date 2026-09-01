@@ -9,7 +9,7 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { HeaderButton, HeaderLink, RouteHeader } from "../app/AppHeader";
+import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getNurseryRhymesPath } from "../app/app-routes";
 import { isAbortError } from "../media/audio-playback";
 import {
@@ -42,6 +42,7 @@ import {
   reduceDubState,
   type DubOperation,
 } from "./dub-state";
+import { getDubRecordingPeakBars } from "./dub-waveform";
 import {
   FIVE_LITTLE_DUCKS_DUB,
   type DubDefinition,
@@ -51,6 +52,7 @@ import {
 type TakePreview = {
   blob: Blob;
   lineId: string;
+  peakBars: readonly number[] | null;
   url: string;
 };
 
@@ -189,6 +191,9 @@ export function DubStudio({
     lineId: definition.lines[0]?.id ?? null,
   }));
   const [takePreview, setTakePreview] = useState<TakePreview | null>(null);
+  const [recordingPeakBars, setRecordingPeakBars] = useState<
+    Record<string, readonly number[]>
+  >({});
 
   const mountedRef = useRef(false);
   const mediaGenerationRef = useRef(0);
@@ -205,8 +210,9 @@ export function DubStudio({
   const pendingLineIdRef = useRef<string | null>(null);
   const takePreviewRef = useRef<TakePreview | null>(null);
   const fullPlaybackButtonRef = useRef<HTMLButtonElement>(null);
-  const scenePlaybackButtonRef = useRef<HTMLButtonElement>(null);
+  const lineButtonRef = useRef<HTMLButtonElement>(null);
   const lineHeadingRef = useRef<HTMLHeadingElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
   const saveButtonRef = useRef<HTMLButtonElement>(null);
@@ -235,9 +241,13 @@ export function DubStudio({
     setTakePreview(null);
   }, []);
 
-  const replaceTakePreview = useCallback((blob: Blob, lineId: string) => {
+  const replaceTakePreview = useCallback((
+    blob: Blob,
+    lineId: string,
+    peakBars: readonly number[] | null,
+  ) => {
     clearTakePreview();
-    const preview = { blob, lineId, url: URL.createObjectURL(blob) };
+    const preview = { blob, lineId, peakBars, url: URL.createObjectURL(blob) };
     takePreviewRef.current = preview;
     setTakePreview(preview);
   }, [clearTakePreview]);
@@ -277,6 +287,7 @@ export function DubStudio({
   const handleConsentLoss = useCallback(() => {
     const generation = cancelMedia(true);
     setLoadError("");
+    setRecordingPeakBars({});
     resetPresentation(definition.lines[0]?.id ?? null);
     dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
     focusAfterRender(fullPlaybackButtonRef, generation);
@@ -295,9 +306,17 @@ export function DubStudio({
     const controller = new AbortController();
     statusControllerRef.current = controller;
     setLoadError("");
+    setRecordingPeakBars({});
     void loadDubStatus({ dubId: definition.id, signal: controller.signal })
       .then((status) => {
         if (!mountedRef.current || statusControllerRef.current !== controller) return;
+        setRecordingPeakBars(Object.fromEntries(
+          status.recordingEnabled
+            ? status.lines.flatMap(({ id, peakBars, saved }) =>
+              saved && peakBars ? [[id, peakBars] as const] : [],
+            )
+            : [],
+        ));
         dispatch({
           type: "LOADED",
           recordingEnabled: status.recordingEnabled,
@@ -331,15 +350,29 @@ export function DubStudio({
     const controller = new AbortController();
     uploadControllerRef.current = controller;
     try {
+      const preview = takePreviewRef.current?.lineId === lineId
+        ? takePreviewRef.current
+        : null;
       const result = await saveDubLine(lineId, blob, {
         dubId: definition.id,
+        peakBars: preview?.peakBars ?? null,
         signal: controller.signal,
       });
       if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
       pendingBlobRef.current = null;
       pendingLineIdRef.current = null;
+      const peakBars = result.peakBars ?? preview?.peakBars ?? null;
+      if (peakBars) {
+        setRecordingPeakBars((current) => ({ ...current, [lineId]: peakBars }));
+      }
       dispatch({ type: "SAVE_SUCCEEDED", lineId, recordedAt: result.recordedAt });
-      focusAfterRender(nextButtonRef, generation);
+      const savedLineIndex = getLineIndex(definition, lineId);
+      focusAfterRender(
+        savedLineIndex === definition.lines.length - 1
+          ? backButtonRef
+          : nextButtonRef,
+        generation,
+      );
     } catch (error) {
       if (controller.signal.aborted || generation !== mediaGenerationRef.current) return;
       if (error instanceof DubNotEnabledError) {
@@ -379,8 +412,13 @@ export function DubStudio({
       recordingControllerRef.current = null;
       const lineId = pendingLineIdRef.current;
       if (!lineId) return;
+      const line = definition.lines.find(({ id }) => id === lineId);
+      const peakBars = line
+        ? await getDubRecordingPeakBars(blob, line.durationMs)
+        : null;
+      if (!mountedRef.current || generation !== mediaGenerationRef.current) return;
       pendingBlobRef.current = blob;
-      replaceTakePreview(blob, lineId);
+      replaceTakePreview(blob, lineId, peakBars);
       await uploadPendingTake(generation);
     } catch (error) {
       if (generation !== mediaGenerationRef.current || isAbortError(error)) return;
@@ -552,23 +590,27 @@ export function DubStudio({
     })();
   }
 
-  function handleHearTake() {
+  function handleHearTake(lineId = definition.lines[state.selectedLineIndex].id) {
     if (state.operation === "take-playing") {
       cancelMedia(false);
       dispatch({ type: "OPERATION_FINISHED" });
-      return;
+      if (presentation.lineId === lineId) return;
     }
     if (isUnsafeOperation(state.operation)) return;
 
-    const line = definition.lines[state.selectedLineIndex];
+    const line = definition.lines.find(({ id }) => id === lineId);
+    if (!line) return;
     const preview = takePreviewRef.current?.lineId === line.id
       ? takePreviewRef.current
       : null;
     if (!preview && !Object.hasOwn(state.saved, line.id)) return;
+    const failureFocusRef = state.view === "project" ? lineButtonRef : recordButtonRef;
 
     const generation = cancelMedia(false);
     const controller = new AbortController();
     takeControllerRef.current = controller;
+    dispatch({ type: "SELECT_LINE", lineId: line.id });
+    resetPresentation(line.id);
     dispatch({ type: "OPERATION_STARTED", operation: "take-playing" });
 
     void (async () => {
@@ -583,7 +625,7 @@ export function DubStudio({
             if (generation !== mediaGenerationRef.current) return;
             playbackRef.current = null;
             takeControllerRef.current = null;
-            resetPresentation();
+            resetPresentation(line.id);
             dispatch({ type: "OPERATION_FINISHED" });
           },
           onTick(_rawElapsedMs, position: DubPlaybackPosition) {
@@ -609,11 +651,12 @@ export function DubStudio({
           handleConsentLoss();
           return;
         }
-        resetPresentation();
+        resetPresentation(line.id);
         dispatch({ type: "MARK_NEEDS_RETAKE", lineId: line.id });
         dispatch({ type: "SET_ERROR", message: "Your recording could not be played. Record the line again." });
         if (takeControllerRef.current === controller) takeControllerRef.current = null;
         dispatch({ type: "OPERATION_FINISHED" });
+        focusAfterRender(failureFocusRef, generation);
       }
     })();
   }
@@ -633,11 +676,19 @@ export function DubStudio({
       return;
     }
     const guideOnlyPlayback = state.view === "listen-only";
+    const selectedPlaybackIndex = Math.max(
+      0,
+      getLineIndex(definition, presentation.lineId ?? ""),
+    );
     const generation = cancelMedia(false);
     const controller = new AbortController();
     const sceneIndex = state.selectedSceneIndex;
     const sceneLines = getSceneLines(definition);
-    const lines = scope === "full" ? definition.lines : sceneLines[sceneIndex];
+    const lines = scope === "full"
+      ? guideOnlyPlayback
+        ? definition.lines
+        : definition.lines.slice(selectedPlaybackIndex)
+      : sceneLines[sceneIndex];
     const unavailableLineIds = new Set<string>();
     playbackControllerRef.current = controller;
     resetPresentation(lines[0]?.id ?? null);
@@ -652,10 +703,7 @@ export function DubStudio({
           playbackControllerRef.current = null;
           resetPresentation();
           dispatch({ type: "OPERATION_FINISHED" });
-          focusAfterRender(
-            scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
-            generation,
-          );
+          focusAfterRender(fullPlaybackButtonRef, generation);
         },
         onLineFallback(lineId) {
           if (!guideOnlyPlayback) dispatch({ type: "MARK_NEEDS_RETAKE", lineId });
@@ -706,18 +754,15 @@ export function DubStudio({
       dispatch({ type: "OPERATION_FINISHED" });
       resetPresentation();
       dispatch({ type: "SET_ERROR", message: "The video could not start. Try again." });
-      focusAfterRender(
-        scope === "full" ? fullPlaybackButtonRef : scenePlaybackButtonRef,
-        generation,
-      );
+      focusAfterRender(fullPlaybackButtonRef, generation);
     }
   }
 
-  function handleOpenScene(sceneIndex: number) {
+  function handleEditLine(lineId: string) {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
-    dispatch({ type: "OPEN_SCENE", sceneIndex });
-    resetPresentation(definition.lines[sceneIndex * definition.linesPerScene]?.id ?? null);
+    dispatch({ type: "EDIT_LINE", lineId });
+    resetPresentation(lineId);
     focusAfterRender(lineHeadingRef, generation);
   }
 
@@ -731,18 +776,13 @@ export function DubStudio({
 
   function handleNext() {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    const sceneLineIndex = state.selectedLineIndex % definition.linesPerScene;
-    if (sceneLineIndex < definition.linesPerScene - 1) {
-      handleSelectLine(definition.lines[state.selectedLineIndex + 1].id);
-      return;
-    }
-    handleBack();
+    if (state.selectedLineIndex >= definition.lines.length - 1) return;
+    handleSelectLine(definition.lines[state.selectedLineIndex + 1].id);
   }
 
   function handlePrevious() {
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
-    const sceneLineIndex = state.selectedLineIndex % definition.linesPerScene;
-    if (sceneLineIndex === 0) return;
+    if (state.selectedLineIndex === 0) return;
     handleSelectLine(definition.lines[state.selectedLineIndex - 1].id);
   }
 
@@ -750,7 +790,7 @@ export function DubStudio({
     if (isUnsafeOperation(state.operation) || state.saveRecovery === "save") return;
     const generation = cancelMedia(true);
     dispatch({ type: "BACK_TO_PROJECT" });
-    focusAfterRender(fullPlaybackButtonRef, generation);
+    focusAfterRender(lineButtonRef, generation);
   }
 
   function handleRetrySave() {
@@ -791,7 +831,7 @@ export function DubStudio({
   } else if (state.operation === "guide-playing") {
     liveStatus = `Playing example for Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber}.`;
   } else if (state.operation === "take-playing") {
-    liveStatus = `Playing your recording for Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber}.`;
+    liveStatus = `Playing your recording for line ${state.selectedLineIndex + 1}.`;
   } else if (state.operation === "playback-loading") {
     liveStatus = state.playbackScope === "full" ? "Loading full video…" : "Loading scene…";
   } else if (state.operation === "playback") {
@@ -806,12 +846,44 @@ export function DubStudio({
     liveStatus = "";
   } else if (state.view === "scene") {
     const selectedState = Object.hasOwn(state.needsRetake, selectedLine.id)
-      ? "Needs retake"
+      ? "Record again"
       : Object.hasOwn(state.saved, selectedLine.id)
         ? "Recorded"
-        : "Generated";
-    liveStatus = `Scene ${selectedSceneNumber}, line ${selectedSceneLineNumber} selected. ${selectedState}.`;
+        : "Not recorded";
+    liveStatus = `Line ${state.selectedLineIndex + 1} selected. ${selectedState}.`;
   }
+
+  const lineEditor = state.view === "scene" ? (
+    <DubSceneEditor
+      activeLine={selectedLine}
+      definition={definition}
+      error={state.error}
+      hasSavedTake={Object.hasOwn(state.saved, selectedLine.id)}
+      locked={locked}
+      onBack={handleBack}
+      onHearGuide={handleHearGuide}
+      onHearTake={() => handleHearTake()}
+      onNext={handleNext}
+      onPrevious={handlePrevious}
+      onRecord={handleRecord}
+      onRetrySave={handleRetrySave}
+      operation={state.operation}
+      pendingTake={takePreview?.blob ?? null}
+      presentation={presentation}
+      recordingStream={state.operation === "recording"
+        ? recordingSessionRef.current?.stream ?? null
+        : null}
+      recordedPeakBars={takePreview?.lineId === selectedLine.id
+        ? takePreview.peakBars
+        : null}
+      backButtonRef={backButtonRef}
+      nextButtonRef={nextButtonRef}
+      recordButtonRef={recordButtonRef}
+      saveButtonRef={saveButtonRef}
+      saveRecovery={state.saveRecovery}
+      lineHeadingRef={lineHeadingRef}
+    />
+  ) : undefined;
 
   let content;
   if (state.view === "loading") {
@@ -843,15 +915,18 @@ export function DubStudio({
           : null}
       />
     );
-  } else if (state.view === "project") {
+  } else {
     content = (
       <DubProjectHome
         activeLine={selectedLine}
         definition={definition}
-        error={state.error}
+        editor={lineEditor}
+        error={state.view === "project" ? state.error : ""}
+        lineButtonRef={lineButtonRef}
         locked={locked}
         needsRetake={state.needsRetake}
-        onOpenScene={handleOpenScene}
+        onEditLine={handleEditLine}
+        onPlayLine={handleHearTake}
         onTogglePlayback={() => void startPlayback("full")}
         playback={state.playbackScope === "full"
           ? state.operation === "playback"
@@ -861,6 +936,9 @@ export function DubStudio({
               : "idle"
           : "idle"}
         playbackButtonRef={fullPlaybackButtonRef}
+        playbackLocked={isUnsafeOperation(state.operation) || state.saveRecovery === "save"}
+        playingLineId={state.operation === "take-playing" ? playbackLine.id : null}
+        recordingPeakBars={recordingPeakBars}
         saved={state.saved}
         visualLine={visualLine}
         guidance={state.operation === "playback" && state.playbackScope === "full"
@@ -868,56 +946,18 @@ export function DubStudio({
           : null}
       />
     );
-  } else {
-    content = (
-      <DubSceneEditor
-        activeLine={selectedLine}
-        definition={definition}
-        error={state.error}
-        hasSavedTake={Object.hasOwn(state.saved, selectedLine.id)}
-        locked={locked}
-        onHearGuide={handleHearGuide}
-        onHearTake={handleHearTake}
-        onNext={handleNext}
-        onPrevious={handlePrevious}
-        onRecord={handleRecord}
-        onRetrySave={handleRetrySave}
-        operation={state.operation}
-        pendingTake={takePreview?.blob ?? null}
-        presentation={presentation}
-        recordingStream={state.operation === "recording"
-          ? recordingSessionRef.current?.stream ?? null
-          : null}
-        nextButtonRef={nextButtonRef}
-        recordButtonRef={recordButtonRef}
-        saveButtonRef={saveButtonRef}
-        saveRecovery={state.saveRecovery}
-        lineHeadingRef={lineHeadingRef}
-      />
-    );
   }
 
   return (
     <>
       <RouteHeader>
-        {state.view === "scene" ? (
-          <HeaderButton
-            aria-label="Back to full video"
-            disabled={isUnsafeOperation(state.operation) || state.saveRecovery === "save"}
-            icon={<ChevronLeft />}
-            onClick={handleBack}
-          >
-            Full video
-          </HeaderButton>
-        ) : (
-          <HeaderLink
-            aria-label="Back to Nursery rhymes"
-            icon={<ChevronLeft />}
-            to={getNurseryRhymesPath()}
-          >
-            Nursery rhymes
-          </HeaderLink>
-        )}
+        <HeaderLink
+          aria-label="Back to Nursery rhymes"
+          icon={<ChevronLeft />}
+          to={getNurseryRhymesPath()}
+        >
+          Nursery rhymes
+        </HeaderLink>
       </RouteHeader>
       <span
         aria-atomic="true"
