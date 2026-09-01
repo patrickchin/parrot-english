@@ -137,10 +137,6 @@ function mountDuckDub() {
   );
 }
 
-function installRecordingHarness() {
-  return installSynchronizedRecordingHarness().track;
-}
-
 function installSynchronizedRecordingHarness({
   decodeError,
   melodyStartError,

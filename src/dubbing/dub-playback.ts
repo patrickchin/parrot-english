@@ -322,7 +322,7 @@ export async function prepareDubLineBacking({
   const context = new AudioContextClass();
   let frameId: number | null = null;
   let oscillators: OscillatorNode[] = [];
-  let markers: OscillatorNode[] = [];
+  const markers: OscillatorNode[] = [];
   let terminal: OscillatorNode | null = null;
   let started = false;
   let stopped = false;
