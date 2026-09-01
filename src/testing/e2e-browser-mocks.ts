@@ -77,9 +77,15 @@ type E2ELessonCue = {
   audioId?: string;
   endedAt: number | null;
   kind: "device" | "static";
+  source?: string;
   startedAt: number;
   text: string;
   volume: number;
+};
+type E2EPlaybackLine = {
+  audioId?: string;
+  audioSrc: string;
+  text: string;
 };
 type E2ELessonUpload = {
   attempt: number;
@@ -141,6 +147,7 @@ const lessonMediaMetrics = {
   uploads: [] as E2ELessonUpload[],
 };
 const pendingLessonPlayback: PendingLessonPlayback[] = [];
+const pendingE2EPlaybackLines = new Map<string, E2EPlaybackLine[]>();
 const pendingLessonUploads: PendingLessonUpload[] = [];
 let scopedLessonRecordingMedia: ScopedLessonRecordingMedia | null = null;
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
@@ -3028,6 +3035,13 @@ function getWordGameAudioId(src: string) {
   )?.[1] ?? null;
 }
 
+function takeE2EPlaybackLine(audioSrc: string) {
+  const lines = pendingE2EPlaybackLines.get(audioSrc);
+  const line = lines?.shift();
+  if (lines?.length === 0) pendingE2EPlaybackLines.delete(audioSrc);
+  return line;
+}
+
 class MockAudioElement {
   onended: RecorderHandler<Event> = null;
   onerror: RecorderHandler<Event> = null;
@@ -3086,7 +3100,9 @@ class MockAudioElement {
       return;
     }
     const lessonScenario = getE2eLessonScenario();
+    const playbackLine = takeE2EPlaybackLine(this.src);
     const wordGameAudioId = getWordGameAudioId(this.src);
+    const cueAudioId = playbackLine?.audioId ?? wordGameAudioId;
     if (
       lessonScenario === "autoplay-blocked" &&
       wordGameAudioId &&
@@ -3108,11 +3124,12 @@ class MockAudioElement {
           lessonScenario === "held-preflight"));
     const cue: E2ELessonCue | null = this.lessonCue
       ? {
-          ...(wordGameAudioId ? { audioId: wordGameAudioId } : {}),
+          ...(cueAudioId ? { audioId: cueAudioId } : {}),
           endedAt: null,
           kind: "static" as const,
           startedAt: performance.now(),
-          text: this.src,
+          source: playbackLine?.audioSrc ?? this.src,
+          text: playbackLine?.text ?? this.src,
           volume: this.volume,
         }
       : null;
@@ -3689,6 +3706,15 @@ const mockLessonSpeechSynthesis = {
 Object.defineProperty(window, "__parrotE2eLessonMedia", {
   configurable: true,
   value: e2eLessonMedia,
+});
+
+Object.defineProperty(window, "__parrotE2ePlaybackLine", {
+  configurable: true,
+  value: (line: E2EPlaybackLine) => {
+    const lines = pendingE2EPlaybackLines.get(line.audioSrc) ?? [];
+    lines.push({ ...line });
+    pendingE2EPlaybackLines.set(line.audioSrc, lines);
+  },
 });
 
 if (getE2eLessonScenario()) {

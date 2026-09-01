@@ -35,7 +35,7 @@ const promptParityCases = [
 
 type MediaSnapshot = {
   cueCancellations: number;
-  cues: Array<{ audioId?: string; kind: "device" | "static"; text: string }>;
+  cues: Array<{ audioId?: string; kind: "device" | "static"; source?: string; text: string }>;
   pendingCues: number;
 };
 
@@ -52,7 +52,7 @@ async function mediaSnapshot(page: Page) {
 async function staticRequests(page: Page) {
   return (await mediaSnapshot(page)).cues
     .filter(({ kind }) => kind === "static")
-    .map(({ audioId, text: source }) => ({ audioId, source }));
+    .map(({ audioId, source }) => ({ audioId, source }));
 }
 
 async function hasStaticRequest(page: Page, audioId: string) {
@@ -269,10 +269,18 @@ test("uses the rendered saved prompt cue for animal, color, body-part, and feeli
   for (const [categoryId, prompt, audioId] of promptParityCases) {
     await page.goto(`/word-games/${categoryId}/simple-1?parrotE2eLesson=held-cue`);
     const { main } = game(page);
-    await expect(main.getByRole("heading", { level: 2, name: prompt })).toBeVisible();
-    await expect.poll(async () => (await staticRequests(page)).at(-1)).toEqual({
+    const heading = main.getByRole("heading", { level: 2, name: prompt });
+    await expect(heading).toBeVisible();
+    const text = await heading.innerText();
+    await expect.poll(async () => {
+      const cue = (await mediaSnapshot(page)).cues
+        .filter(({ kind }) => kind === "static")
+        .at(-1);
+      return { audioId: cue?.audioId, source: cue?.source, text: cue?.text };
+    }).toEqual({
       audioId,
       source: `/assets/audio/${audioId}.mp3`,
+      text,
     });
   }
 });

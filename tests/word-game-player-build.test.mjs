@@ -21,7 +21,7 @@ async function findJavaScriptFiles(directory) {
   return files;
 }
 
-test("the production bundle omits the word-game E2E random hook", async (t) => {
+test("the production bundle omits word-game E2E hooks", async (t) => {
   const outDir = await mkdtemp(path.join(os.tmpdir(), "parrot-word-game-build-"));
   t.after(() => rm(outDir, { recursive: true, force: true }));
 
@@ -36,7 +36,9 @@ test("the production bundle omits the word-game E2E random hook", async (t) => {
   assert.ok(assetFiles.length > 0, "expected the production build to emit JavaScript");
   const assets = await Promise.all(assetFiles.map((file) => readFile(file, "utf8")));
   assert.ok(
-    assets.every((asset) => !asset.includes("__parrotE2eWordGameRandom")),
-    "production JavaScript must not expose the word-game E2E random hook",
+    assets.every((asset) =>
+      !asset.includes("__parrotE2eWordGameRandom")
+      && !asset.includes("__parrotE2ePlaybackLine")),
+    "production JavaScript must not expose word-game E2E hooks",
   );
 });
