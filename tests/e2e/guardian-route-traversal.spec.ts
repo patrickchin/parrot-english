@@ -85,7 +85,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
     {
       action: "Open account & privacy",
       description:
-        "Review how AI is used, what Parrot saves, and account deletion controls.",
+        "View technical build details and available account controls.",
       heading: "Account & privacy",
     },
   ]) {
@@ -110,17 +110,18 @@ test("every Guardian dashboard card associates its copy and traverses through it
   );
   expect(new Set(cardColors).size).toBe(cardColors.length);
 
-  const [sectionHeadingSize, cardHeadingSize] = await Promise.all(
-    [
-      page.getByRole("heading", { name: "Learning & content" }),
-      page.getByRole("heading", { name: "Voice dubbing" }),
-    ].map((heading) =>
-      heading.evaluate((element) =>
-        Number.parseFloat(getComputedStyle(element).fontSize),
-      ),
-    ),
-  );
-  expect(sectionHeadingSize).toBeGreaterThan(cardHeadingSize);
+  await expect(
+    page.getByRole("heading", { name: "Learning & content" }),
+  ).toHaveCount(0);
+  for (const heading of [
+    "Learner profiles",
+    "Voice dubbing",
+    "Account & privacy",
+  ]) {
+    await expect(
+      page.getByRole("heading", { level: 2, name: heading }),
+    ).toBeVisible();
+  }
 
   await traverseDashboardAction(
     page,
