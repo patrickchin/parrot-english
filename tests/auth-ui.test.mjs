@@ -5,6 +5,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import test from "node:test";
 import { createServer } from "vite";
+import { SHARED_GUEST_USER_ID } from "../lib/shared-guest.ts";
 
 function readSource(path) {
   const url = new URL(path, import.meta.url);
@@ -32,7 +33,6 @@ const {
   AuthGateView,
   createAuthGate,
   deleteAccountSession,
-  deleteGuestAccount,
   signInGuestSession,
   signOutSession,
   submitAuthForm,
@@ -61,9 +61,9 @@ test.after(async () => {
 
 function createAuthClientStub(overrides = {}) {
   return {
+    $fetch: async () => ({ error: null }),
     deleteUser: async () => ({ error: null }),
     signIn: {
-      anonymous: async () => ({ error: null }),
       email: async () => ({ error: null }),
     },
     signOut: async () => ({ error: null }),
@@ -190,7 +190,11 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   const session = {
     session: { id: "session-1" },
-    user: { email: "learner@example.com", isAnonymous: true, name: "小明" },
+    user: {
+      email: "learner@example.com",
+      id: SHARED_GUEST_USER_ID,
+      name: "小明",
+    },
   };
   const sessionError = new Error("stale session");
   let useSessionCalls = 0;
@@ -316,11 +320,7 @@ test("auth gate container bridges its session hook, state, and actions", async (
 
   await capturedProps.onSignOut();
   assert.equal(signOutCalls.length, 1);
-  assert.deepEqual(signOutCalls[0], {
-    client,
-    isAnonymous: true,
-    refetch,
-  });
+  assert.deepEqual(signOutCalls[0], { client });
 });
 
 test("auth gate container forwards an optional signed-out fallback", () => {
@@ -394,11 +394,11 @@ test("auth gate mounts one guardian boundary with the current session identity",
 
 test("auth client uses Better Auth's same-origin defaults", () => {
   assert.match(authClient, /from ["']better-auth\/react["']/);
-  assert.match(authClient, /anonymousClient/);
   assert.match(
     authClient,
-    /export const authClient\s*=\s*createAuthClient\(\s*\{[\s\S]*plugins:\s*\[anonymousClient\(\)\][\s\S]*\}\s*\)/,
+    /export const authClient\s*=\s*createAuthClient\(\s*\)/,
   );
+  assert.doesNotMatch(authClient, /anonymousClient/);
   assert.doesNotMatch(authClient, /baseURL|http:\/\/|https:\/\//);
 });
 
@@ -773,16 +773,13 @@ test("guest login sends one Turnstile proof and refetches the new session", asyn
     "function",
     "Expected an executable guest sign-in action",
   );
-  const payloads = [];
+  const calls = [];
   let refetchCalls = 0;
   const error = await signInGuestSession({
     client: createAuthClientStub({
-      signIn: {
-        anonymous: async (payload) => {
-          payloads.push(payload);
-          return { error: null };
-        },
-        email: async () => ({ error: null }),
+      $fetch: async (path, options) => {
+        calls.push({ path, options });
+        return { error: null };
       },
     }),
     refetch: async () => {
@@ -792,10 +789,12 @@ test("guest login sends one Turnstile proof and refetches the new session", asyn
   });
 
   assert.equal(error, null);
-  assert.deepEqual(payloads, [
+  assert.deepEqual(calls, [
     {
-      fetchOptions: {
+      path: "/sign-in/shared-guest",
+      options: {
         headers: { "x-captcha-response": "opaque-guest-proof" },
+        method: "POST",
       },
     },
   ]);
@@ -805,12 +804,9 @@ test("guest login sends one Turnstile proof and refetches the new session", asyn
 test("guest login waits for the security check and maps rejected proof", async () => {
   let clientCalls = 0;
   const client = createAuthClientStub({
-    signIn: {
-      anonymous: async () => {
-        clientCalls += 1;
-        return { error: { code: "VERIFICATION_FAILED" } };
-      },
-      email: async () => ({ error: null }),
+    $fetch: async () => {
+      clientCalls += 1;
+      return { error: { code: "VERIFICATION_FAILED" } };
     },
   });
 
@@ -832,6 +828,35 @@ test("guest login waits for the security check and maps rejected proof", async (
     "The security check expired or was rejected. Please try again.",
   );
   assert.equal(clientCalls, 1);
+});
+
+test("failed shared guest sessions stay contained and can be retried", async () => {
+  let fetchCalls = 0;
+  let refetchCalls = 0;
+  const client = createAuthClientStub({
+    $fetch: async () => {
+      fetchCalls += 1;
+      return { error: { code: "SHARED_GUEST_SESSION_FAILED" } };
+    },
+  });
+  const options = {
+    client,
+    refetch: async () => {
+      refetchCalls += 1;
+    },
+    turnstileToken: "opaque-guest-proof",
+  };
+
+  assert.equal(
+    await signInGuestSession(options),
+    "Unable to sign you in. Please try again.",
+  );
+  assert.equal(
+    await signInGuestSession(options),
+    "Unable to sign you in. Please try again.",
+  );
+  assert.equal(fetchCalls, 2);
+  assert.equal(refetchCalls, 0);
 });
 
 test("sign-in maps result errors, omits the name, and does not refetch", async () => {
@@ -877,19 +902,12 @@ test("sign-out maps failures and lets the reactive session own successful refres
     "function",
     "Expected executable sign-out actions",
   );
-  let refetchCalls = 0;
-  const refetch = async () => {
-    refetchCalls += 1;
-  };
-
   const failure = await signOutSession({
     client: createAuthClientStub({
       signOut: async () => ({ error: { code: "UNKNOWN" } }),
     }),
-    refetch,
   });
   assert.equal(failure, "Sign out did not finish.");
-  assert.equal(refetchCalls, 0);
 
   const thrownFailure = await signOutSession({
     client: createAuthClientStub({
@@ -897,41 +915,16 @@ test("sign-out maps failures and lets the reactive session own successful refres
         throw new Error("offline");
       },
     }),
-    refetch,
   });
   assert.equal(thrownFailure, "Sign out did not finish.");
-  assert.equal(refetchCalls, 0);
 
   const success = await signOutSession({
     client: createAuthClientStub(),
-    refetch,
   });
   assert.equal(success, null);
-  assert.equal(refetchCalls, 0);
 });
 
-test("guest deletion posts only to Parrot's cleanup-first account route", async () => {
-  assert.equal(
-    typeof deleteGuestAccount,
-    "function",
-    "Expected an executable guest-deletion action",
-  );
-  const requests = [];
-
-  const success = await deleteGuestAccount(async (url, init) => {
-    requests.push({ init, url });
-    return Response.json({ success: true });
-  });
-
-  assert.deepEqual(success, { error: null });
-  assert.deepEqual(requests, [
-    { init: { method: "POST" }, url: "/api/guest-account" },
-  ]);
-});
-
-test("guest sign-out deletes guest data and refreshes instead of orphaning the account", async () => {
-  let guestDeletionCalls = 0;
-  let refetchCalls = 0;
+test("shared guest sign-out uses ordinary Better Auth session revocation", async () => {
   let signOutCalls = 0;
   const result = await signOutSession({
     client: createAuthClientStub({
@@ -940,20 +933,10 @@ test("guest sign-out deletes guest data and refreshes instead of orphaning the a
         return { error: null };
       },
     }),
-    deleteGuestAccountAction: async () => {
-      guestDeletionCalls += 1;
-      return { error: null };
-    },
-    isAnonymous: true,
-    refetch: async () => {
-      refetchCalls += 1;
-    },
   });
 
   assert.equal(result, null);
-  assert.equal(guestDeletionCalls, 1);
-  assert.equal(signOutCalls, 0);
-  assert.equal(refetchCalls, 1);
+  assert.equal(signOutCalls, 1);
 });
 
 test("account deletion sends the password, fails closed, and refetches only after success", async () => {
@@ -1000,33 +983,4 @@ test("account deletion sends the password, fails closed, and refetches only afte
     { password: "parent-password" },
     { password: "parent-password" },
   ]);
-});
-
-test("guest account deletion uses cleanup-first deletion without a password", async () => {
-  let deleteUserCalls = 0;
-  let guestDeletionCalls = 0;
-  let refetchCalls = 0;
-
-  const result = await deleteAccountSession({
-    client: createAuthClientStub({
-      deleteUser: async () => {
-        deleteUserCalls += 1;
-        return { error: null };
-      },
-    }),
-    deleteGuestAccountAction: async () => {
-      guestDeletionCalls += 1;
-      return { error: null };
-    },
-    isAnonymous: true,
-    password: "",
-    refetch: async () => {
-      refetchCalls += 1;
-    },
-  });
-
-  assert.equal(result, null);
-  assert.equal(guestDeletionCalls, 1);
-  assert.equal(deleteUserCalls, 0);
-  assert.equal(refetchCalls, 1);
 });

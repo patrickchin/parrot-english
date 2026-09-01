@@ -1,14 +1,15 @@
-import { betterAuth } from "better-auth";
+import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { anonymous, captcha } from "better-auth/plugins";
+import { captcha } from "better-auth/plugins";
 import { AUTH_TURNSTILE_ACTION } from "../lib/auth-captcha.ts";
+import { SHARED_GUEST_USER_ID } from "../lib/shared-guest.ts";
 import * as schema from "../src/db/schema.ts";
 import { prepareAccountDeletion } from "./account-deletion.ts";
 import { createDatabase } from "./database.ts";
 import { PUBLIC_APP_ORIGIN } from "./public-origin.ts";
+import { sharedGuestAuth } from "./shared-guest-auth.ts";
 
-const PR_PREVIEW_ORIGIN_PATTERN =
-  "https://*-parrot-english.p-ch.workers.dev";
+const PR_PREVIEW_ORIGIN_PATTERN = "https://*-parrot-english.p-ch.workers.dev";
 
 export interface AuthEnv {
   DB: D1Database;
@@ -24,7 +25,7 @@ interface AuthDependencies {
 
 function requireEnvironmentValue(
   env: AuthEnv,
-  key: "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "TURNSTILE_SECRET_KEY"
+  key: "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "TURNSTILE_SECRET_KEY",
 ) {
   const value = env[key]?.trim();
   if (!value) {
@@ -49,10 +50,7 @@ export function createAuth(
 ) {
   const secret = requireAuthSecret(env);
   const baseURL = requireEnvironmentValue(env, "BETTER_AUTH_URL");
-  const turnstileSecret = requireEnvironmentValue(
-    env,
-    "TURNSTILE_SECRET_KEY",
-  );
+  const turnstileSecret = requireEnvironmentValue(env, "TURNSTILE_SECRET_KEY");
   const database = createDatabase(env.DB);
   const accountDeletion =
     dependencies.prepareAccountDeletion ?? prepareAccountDeletion;
@@ -80,13 +78,9 @@ export function createAuth(
       requireEmailVerification: false,
     },
     plugins: [
-      anonymous({
-        generateName: () => "Guest",
-        onLinkAccount: ({ anonymousUser }) =>
-          prepareUserDataForDeletion(anonymousUser.user.id),
-      }),
+      sharedGuestAuth(),
       captcha({
-        endpoints: ["/sign-in/anonymous", "/sign-up/email"],
+        endpoints: ["/sign-in/shared-guest", "/sign-up/email"],
         expectedAction: AUTH_TURNSTILE_ACTION,
         provider: "cloudflare-turnstile",
         secretKey: turnstileSecret,
@@ -98,7 +92,15 @@ export function createAuth(
     user: {
       deleteUser: {
         enabled: true,
-        beforeDelete: (user) => prepareUserDataForDeletion(user.id),
+        beforeDelete: async (user) => {
+          if (user.id === SHARED_GUEST_USER_ID) {
+            throw APIError.fromStatus("FORBIDDEN", {
+              code: "SHARED_GUEST_DELETE_FORBIDDEN",
+              message: "The shared guest account cannot be deleted.",
+            });
+          }
+          await prepareUserDataForDeletion(user.id);
+        },
       },
     },
     advanced: {
