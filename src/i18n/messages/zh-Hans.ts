@@ -20,7 +20,7 @@ export const chineseGuardianMessages = {
     sessionUnavailableBody: "请检查网络连接，然后重试。",
     createAccountTitle: "创建账户",
     welcomeBackTitle: "欢迎回来",
-    signUpHelp: "请使用家长姓名创建此账户。接下来可以添加学习者档案。",
+    signUpHelp: "请使用家长姓名创建此账户。接下来可以添加孩子资料。",
     modeLabel: "选择登录或注册",
     signIn: "登录",
     signUp: "注册",
@@ -119,7 +119,7 @@ export const chineseGuardianMessages = {
     keepsTarget:
       "在家长设置中选择孩子，只会更改你正在管理哪位孩子的数据。学习模式只会通过“切换到学习模式”更改，并由你选择谁来使用本次会话。",
     keepsActivityAudio:
-      "语音服务会在“和佩奇聊天”、孩子设置及口语检查期间处理音频，但 Parrot 不会把这些活动的音频保存到账户中。",
+      "语音服务会在“和 Peppa 聊天”、孩子设置及口语检查期间处理音频，但 Parrot 不会把这些活动的音频保存到账户中。",
     keepsDubbing:
       "童谣配音会保存这位孩子的私密配音片段。新录音会替换同一句的旧片段，家长可以删除全部已保存片段。",
     keepsLessons:
@@ -299,9 +299,9 @@ export const chineseGuardianMessages = {
       deleteRecordingsConfirm: "删除所有已保存的课程语音录音？此操作无法撤销。",
       redoTitle: "重新完成孩子设置",
       redoDescription:
-        "再次回答佩奇的设置问题。普通对话请返回主页并选择“和佩奇对话”。",
+        "再次回答 Peppa 的设置问题。普通对话请返回主页并选择“和 Peppa 对话”。",
       redoAction: "重新回答设置问题",
-      peppaAlt: "佩奇微笑",
+      peppaAlt: "Peppa 微笑",
       saveChanges: "保存更改",
       saving: "正在保存…",
       cancel: "取消",
@@ -332,12 +332,12 @@ export const chineseGuardianMessages = {
       start: "开始回答",
       continue: "继续回答",
       skip: "暂时跳过",
-      peppaAlt: "佩奇挥手问好",
+      peppaAlt: "Peppa 挥手问好",
     },
     question: {
       progress: (current: number, total: number) => `问题 ${current}/${total}`,
       replay: "重播问题",
-      peppaAlt: "你的英语主持人佩奇",
+      peppaAlt: "你的英语主持人 Peppa",
       answer: "你的回答",
       speak: "说出你的回答",
       back: "返回",
@@ -364,7 +364,7 @@ export const chineseGuardianMessages = {
     },
     acknowledgment: {
       next: "下一步",
-      peppaAlt: "佩奇微笑",
+      peppaAlt: "Peppa 微笑",
     },
   },
   account: {
@@ -380,7 +380,7 @@ export const chineseGuardianMessages = {
     grownUpAccess: "家长入口",
     switchingModes: "正在切换模式…",
     switchModes: "切换模式",
-    guardianDashboard: "家长控制面板",
+    guardianDashboard: "家长中心",
     manageLearners: "管理孩子",
     accountPrivacy: "账户与隐私",
     signOut: "退出登录",

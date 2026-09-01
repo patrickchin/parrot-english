@@ -2618,6 +2618,11 @@ export function LearnerProfileGate({
   const canEditProfile = Boolean(fullData && guardianRoute);
   const hasActiveLearner = fullData !== null;
   const activeLearnerName = fullData?.profile.name ?? null;
+  const profileEditorLearnerName = activeLearnerName?.trim()
+    ? activeLearnerName
+    : guardianRoute
+      ? messages.learners.profile.aboutFallback
+      : "Learner";
   const learnerSwitcherProfileId =
     guardianAccessMode === "learner" &&
     learnerIdentityCheck === "confirmed" &&
@@ -2917,7 +2922,7 @@ export function LearnerProfileGate({
                   drafts: profileDrafts,
                   fieldErrors: profileFieldErrors,
                   isSaving: isProfileSaving,
-                  learnerName: fullData?.profile.name ?? "Learner",
+                  learnerName: profileEditorLearnerName,
                   lessonRecordingCleanupPending:
                     profileState.profile.lessonRecordingCleanupPending,
                   lessonRecordingConsent:

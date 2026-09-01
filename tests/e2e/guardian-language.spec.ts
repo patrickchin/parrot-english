@@ -113,7 +113,7 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
   await page.getByRole("button", { name: /家长模式/ }).click();
   const guardianMenu = page.getByRole("menu", { name: "账户菜单" });
   await expect(
-    guardianMenu.getByRole("menuitem", { name: "家长控制面板" }),
+    guardianMenu.getByRole("menuitem", { name: "家长中心" }),
   ).toBeVisible();
   await expect(
     guardianMenu.getByRole("menuitem", { name: "管理孩子" }),
@@ -234,14 +234,31 @@ test("Chinese preference keeps representative learner destinations English and l
     }
   }
 
+  await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/dubs");
-  await expect(
-    page.getByText("Ask a grown-up before recording."),
-  ).toBeVisible();
-  await expect(page.getByText("录音前请先征得家长同意。")).toHaveAttribute(
+  const englishRecordingNotice = page.getByText(
+    "Ask a grown-up before recording.",
+    { exact: true },
+  );
+  const chineseRecordingNotice = page.getByText(
+    "录音前请先征得家长同意。",
+    { exact: true },
+  );
+  await expect(englishRecordingNotice).toHaveAttribute("lang", "en");
+  await expect(chineseRecordingNotice).toHaveAttribute(
     "lang",
     "zh-Hans",
   );
+  await expect(englishRecordingNotice.locator("..")).toContainText(
+    "录音前请先征得家长同意。",
+  );
+  const [englishBox, chineseBox] = await Promise.all([
+    englishRecordingNotice.boundingBox(),
+    chineseRecordingNotice.boundingBox(),
+  ]);
+  expect(englishBox).not.toBeNull();
+  expect(chineseBox).not.toBeNull();
+  expect(chineseBox!.y).toBeGreaterThanOrEqual(englishBox!.y + englishBox!.height);
 });
 
 test("browser Chinese preference is inferred without a persistence write", async ({

@@ -108,7 +108,9 @@ function GuardianDubbingSettingsContent({
 }: GuardianDubbingSettingsViewProps) {
   const { messages } = useGuardianLanguage();
   const copy = messages.dubbingSettings;
-  const managedLearnerName = target.learnerName?.trim() || "Learner";
+  const managedLearnerName = target.learnerName?.trim()
+    ? target.learnerName
+    : messages.learners.profile.aboutFallback;
   const busy = phase === "loading" || mutation !== null;
 
   return (
@@ -454,7 +456,7 @@ function TargetedGuardianDubbingSettings({
     <GuardianDubbingSettingsContent
       canRetryStatus={statusError !== null}
       consentState={status?.consentState ?? null}
-      error={statusError || operationError}
+      error={operationError || statusError}
       mutation={mutation}
       onDelete={remove}
       onRetry={() =>

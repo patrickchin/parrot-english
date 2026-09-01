@@ -278,6 +278,8 @@ function learnerGateHarness({
   children = createElement("p", null, "SAFE CONTENT"),
   guardianAccessMode,
   guardianRoute,
+  isProfileRoute = false,
+  learnerManagerRoute = true,
 }) {
   return createElement(
     AccountActionProvider,
@@ -294,8 +296,9 @@ function learnerGateHarness({
         guardianRoute,
         isConversationRoute: false,
         isLearnerProfileRoute: false,
-        isProfileRoute: false,
-        learnerManagerRoute: true,
+        isProfileRoute,
+        learnerManagerRoute,
+        learnerSelectionDestination: "/",
         learnerProfileFallback: createElement("p", null, "SETUP"),
         onCloseProfileRoute() {},
         onConversationCompleted() {},
@@ -1256,6 +1259,89 @@ test("loads and saves inactive learner details by ID without changing learner mo
     requests.some(({ path }) => path.includes("/active")),
     false,
   );
+});
+
+test("pending learner detail loads keep the localized manager destination", async () => {
+  globalThis.fetch = async () => new Promise(() => {});
+
+  const english = await mountStrict(detailsHarness());
+  const chinese = await mountStrict(detailsHarness({ language: "zh-Hans" }));
+
+  await waitFor(() => {
+    assert.match(english.textContent, /Loading learner details/);
+    const englishBack = [...english.querySelectorAll("a")].find(
+      (link) => link.textContent === "Back to Manage learners",
+    );
+    assert.equal(englishBack?.getAttribute("href"), "/guardian/learners");
+    assert.doesNotMatch(english.textContent, /Back to home/);
+
+    assert.match(chinese.textContent, /正在加载孩子资料/);
+    const chineseBack = [...chinese.querySelectorAll("a")].find(
+      (link) => link.textContent === "返回管理孩子",
+    );
+    assert.equal(chineseBack?.getAttribute("href"), "/guardian/learners");
+    assert.doesNotMatch(chinese.textContent, /Back to home/);
+  });
+});
+
+test("Chinese explicit learner details localize a null learner fallback", async () => {
+  const unnamed = { ...noah, name: null };
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      init.method === "GET"
+    ) {
+      return Response.json(profileEditorState(unnamed));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(detailsHarness({ language: "zh-Hans" }));
+  await waitFor(() =>
+    assert.equal(container.querySelector("#profile-name")?.value, ""),
+  );
+
+  assert.match(container.textContent, /正在管理 这位孩子/);
+  assert.match(container.textContent, /关于 这位孩子/);
+  assert.doesNotMatch(container.textContent, /正在管理 Learner/);
+});
+
+test("Chinese Guardian profile editing localizes a blank learner fallback", async () => {
+  const unnamed = { ...mia, name: "   " };
+  globalThis.fetch = async (input, init = {}) => {
+    const path = String(input);
+    if (path === "/api/learner-profile" && init.method === "GET") {
+      return Response.json({
+        ...completedGateState(),
+        profile: fullProfile(unnamed),
+      });
+    }
+    if (path === "/api/profile" && init.method === "GET") {
+      return Response.json(profileEditorState(unnamed));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      learnerGateHarness({
+        guardianAccessMode: "guardian",
+        guardianRoute: true,
+        isProfileRoute: true,
+        learnerManagerRoute: false,
+      }),
+    ),
+  );
+  await waitFor(() =>
+    assert.equal(container.querySelector("#profile-name")?.value, "   "),
+  );
+
+  assert.match(container.textContent, /正在管理 这位孩子/);
+  assert.match(container.textContent, /关于 这位孩子/);
+  assert.doesNotMatch(container.textContent, /正在管理 Learner/);
 });
 
 test("localizes learner detail loading recovery from stable errors", async () => {

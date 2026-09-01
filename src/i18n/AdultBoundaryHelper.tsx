@@ -15,7 +15,7 @@ export function AdultBoundaryHelper({
 
   return (
     <span
-      className={placement === "compact" ? "text-xs font-bold" : undefined}
+      className={placement === "compact" ? "text-xs font-bold" : "block"}
       lang="zh-Hans"
     >
       {copy}

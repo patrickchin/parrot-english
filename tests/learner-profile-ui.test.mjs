@@ -383,6 +383,8 @@ describe("Peppa acknowledgment", () => {
       guardian,
       /<h1[^>]*lang="en"[^>]*>Bob is a lovely name!<\/h1>/,
     );
+    assert.match(guardian, /alt="Peppa 微笑"/);
+    assert.doesNotMatch(guardian, /佩奇/);
     assert.match(guardian, />下一步<\/button>/);
 
     const learner = renderToStaticMarkup(
@@ -588,7 +590,10 @@ describe("profile summary editor", () => {
     assert.match(guardian, /请输入整数年龄/);
     assert.match(guardian, /不要填写学校、住址、电话、电子邮箱或密码/);
     assert.match(guardian, /无法保存孩子资料/);
-    assert.match(guardian, /alt="佩奇微笑"/);
+    assert.match(guardian, /alt="Peppa 微笑"/);
+    assert.match(guardian, /再次回答 Peppa 的设置问题/);
+    assert.match(guardian, /和 Peppa 对话/);
+    assert.doesNotMatch(guardian, /佩奇/);
     assert.doesNotMatch(guardian, /SERVER/);
 
     const learner = renderToStaticMarkup(
@@ -1180,6 +1185,8 @@ describe("onboarding and profile gate", () => {
     assert.match(setup, /回答 6 个问题/);
     assert.match(setup, /开始回答/);
     assert.match(setup, /暂时跳过/);
+    assert.match(setup, /alt="Peppa 挥手问好"/);
+    assert.doesNotMatch(setup, /佩奇/);
 
     const questionHtml = renderToStaticMarkup(
       withGuardianLanguage(
@@ -1210,6 +1217,8 @@ describe("onboarding and profile gate", () => {
     );
     assert.match(questionHtml, /<textarea[^>]*lang="en"/);
     assert.match(questionHtml, /请输入答案/);
+    assert.match(questionHtml, /alt="你的英语主持人 Peppa"/);
+    assert.doesNotMatch(questionHtml, /佩奇/);
     assert.match(questionHtml, />下一步<\/button>/);
 
     const learner = renderToStaticMarkup(

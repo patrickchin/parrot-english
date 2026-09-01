@@ -241,6 +241,22 @@ test("Chinese dubbing settings localizes private-data management and stable stat
   }
 });
 
+test("Chinese dubbing settings localizes a blank learner fallback", () => {
+  const available = renderView(
+    {
+      consentState: "granted",
+      savedCount: 4,
+      target: readyTarget("learner-mia", "   "),
+    },
+    "zh-Hans",
+  );
+  const text = textFromMarkup(available);
+
+  assert.match(text, /这位孩子 可以在所有童谣中录制和替换台词/);
+  assert.match(text, /删除 这位孩子 已保存的童谣配音片段/);
+  assert.doesNotMatch(text, /Learner/);
+});
+
 const DUB_LINE_COUNT = DUB_DEFINITIONS.reduce(
   (total, definition) => total + definition.lines.length,
   0,
@@ -477,6 +493,92 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
       "Voice clip removal needs to finish",
     ),
   );
+});
+
+test("a failed delete stays primary when its authoritative refresh also fails", async () => {
+  let statusFails = false;
+  installDubbingFetch(async (input, init = {}) => {
+    if (init.method === "DELETE") {
+      statusFails = true;
+      return new Response(null, { status: 500 });
+    }
+    return statusFails
+      ? Response.json({ error: "unavailable" }, { status: 503 })
+      : Response.json(dubStatus("granted", 4, dubIdFromPath(input)));
+  });
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(GuardianLanguageControl),
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/dubbing"] },
+        createElement(
+          GuardianProvider,
+          { lockGuardianAccess: async () => ({ mode: "learner" }) },
+          createElement(GuardianDubbingSettings),
+        ),
+      ),
+    ),
+  );
+  await waitFor(() => button(container, "删除 Mia 已保存的童谣配音片段"));
+  await click(button(container, "删除 Mia 已保存的童谣配音片段"));
+
+  const alert = await waitFor(() => {
+    const candidate = container.querySelector('[role="alert"]');
+    assert.match(candidate?.textContent ?? "", /无法更改配音设置/);
+    assert.doesNotMatch(candidate?.textContent ?? "", /无法加载配音设置/);
+    return candidate;
+  });
+
+  await click(button(container, "English"));
+  assert.equal(container.querySelector('[role="alert"]'), alert);
+  assert.match(alert.textContent, /Voice dubbing settings could not be changed/);
+  assert.doesNotMatch(alert.textContent, /could not be loaded/);
+
+  statusFails = false;
+  await click(button(container, "Try again"));
+  await waitFor(() => {
+    assert.match(container.textContent, /Voice dubbing is available/);
+    assert.equal(container.querySelector('[role="alert"]'), null);
+  });
+});
+
+test("a successful delete with a failed refresh remains a load failure", async () => {
+  let statusFails = false;
+  installDubbingFetch(async (input, init = {}) => {
+    if (init.method === "DELETE") {
+      statusFails = true;
+      return new Response(null, { status: 204 });
+    }
+    return statusFails
+      ? Response.json({ error: "unavailable" }, { status: 503 })
+      : Response.json(dubStatus("granted", 4, dubIdFromPath(input)));
+  });
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/dubbing"] },
+      createElement(
+        GuardianProvider,
+        { lockGuardianAccess: async () => ({ mode: "learner" }) },
+        createElement(GuardianDubbingSettings),
+      ),
+    ),
+  );
+  await waitFor(() =>
+    button(container, "Delete Mia's saved nursery-rhyme voice clips"),
+  );
+  await click(button(container, "Delete Mia's saved nursery-rhyme voice clips"));
+
+  await waitFor(() => {
+    const alert = container.querySelector('[role="alert"]');
+    assert.match(alert?.textContent ?? "", /could not be loaded/);
+    assert.doesNotMatch(alert?.textContent ?? "", /could not be changed/);
+  });
 });
 
 test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {

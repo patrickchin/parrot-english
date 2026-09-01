@@ -804,7 +804,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(guardianMenu.getAttribute("aria-label"), "账户菜单");
     assert.deepEqual(
       [...guardianMenu.children].map((item) => item.textContent.trim()),
-      ["家长控制面板", "管理孩子", "账户与隐私", "退出登录"],
+      ["家长中心", "管理孩子", "账户与隐私", "退出登录"],
     );
   });
 

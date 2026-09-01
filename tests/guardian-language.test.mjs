@@ -97,6 +97,18 @@ describe("guardian language domain", () => {
     assert.equal(GUARDIAN_LANGUAGE_STORAGE_KEY, "parrot:guardian-language");
   });
 
+  it("preserves the Peppa proper name throughout the Chinese catalog", () => {
+    const messages = chineseModule.chineseGuardianMessages;
+
+    assert.doesNotMatch(JSON.stringify(messages), /佩奇/);
+    assert.match(messages.accountPrivacy.keepsActivityAudio, /和 Peppa 聊天/);
+    assert.match(messages.learners.profile.redoDescription, /Peppa/);
+    assert.equal(messages.learners.profile.peppaAlt, "Peppa 微笑");
+    assert.equal(messages.learners.setup.peppaAlt, "Peppa 挥手问好");
+    assert.equal(messages.learners.question.peppaAlt, "你的英语主持人 Peppa");
+    assert.equal(messages.learners.acknowledgment.peppaAlt, "Peppa 微笑");
+  });
+
   it("identifies guardian and login guidance surfaces without changing learner routes", () => {
     assert.equal(isGuardianGuidanceSurface("/guardian"), true);
     assert.equal(isGuardianGuidanceSurface("/profile/setup", "?redo=1"), true);

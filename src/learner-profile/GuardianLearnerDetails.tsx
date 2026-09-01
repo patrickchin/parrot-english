@@ -87,6 +87,8 @@ export function GuardianLearnerDetails() {
   if (isLoading) {
     return (
       <FeaturePlaceholder
+        actionLabel={messages.learners.details.backToRoster}
+        actionTo={getGuardianLearnersPath()}
         busy
         description={messages.learners.details.loadingDescription}
         title={messages.learners.details.loadingTitle}
@@ -106,6 +108,10 @@ export function GuardianLearnerDetails() {
       />
     );
   }
+
+  const learnerName = profileState.profile.name?.trim()
+    ? profileState.profile.name
+    : messages.learners.profile.aboutFallback;
 
   async function save() {
     if (!profileState || isSaving || !validLearnerId) return;
@@ -194,7 +200,7 @@ export function GuardianLearnerDetails() {
       drafts={drafts}
       fieldErrors={fieldErrors}
       isSaving={isSaving}
-      learnerName={profileState.profile.name ?? "Learner"}
+      learnerName={learnerName}
       lessonRecordingCleanupPending={
         profileState.profile.lessonRecordingCleanupPending
       }

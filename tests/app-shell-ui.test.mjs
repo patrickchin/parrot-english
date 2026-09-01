@@ -158,7 +158,7 @@ test("home menu prioritizes the five learner activities", () => {
   ]) {
     assert.match(nursery, new RegExp(`href="${route}"`));
   }
-  assert.match(nursery, />Ask a grown-up before recording\.<\/p>/);
+  assert.match(nursery, /<span lang="en">Ask a grown-up before recording\.<\/span>/);
   assert.doesNotMatch(nursery, /Sing &amp; record/);
   assert.equal((nursery.match(/<img[^>]*srcSet="[^"]+"/g) ?? []).length, 6);
   assert.equal(

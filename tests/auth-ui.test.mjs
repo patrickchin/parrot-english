@@ -568,6 +568,8 @@ test("guardian auth surfaces render the selected Chinese catalog", () => {
   assert.match(signIn, />电子邮箱</);
   assert.match(signIn, />密码</);
   assert.match(signUp, /创建账户/);
+  assert.match(signUp, /接下来可以添加孩子资料。/);
+  assert.doesNotMatch(signUp, /学习者档案/);
   assert.match(signUp, />账户姓名</);
   assert.match(signUp, /至少 8 个字符/);
   assert.match(signUp, /安全验证/);

@@ -548,11 +548,15 @@ describe("duck dubbing storyboard presentation", () => {
     const html = renderNurseryRhymes("zh-Hans");
 
     assert.match(html, /<h1[^>]*>Nursery rhymes<\/h1>/);
-    assert.match(html, /Ask a grown-up before recording/);
-    assert.match(
-      html,
-      /<span[^>]*lang="zh-Hans"[^>]*>录音前请先征得家长同意。<\/span>/,
-    );
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    const guidance = container.querySelector("header p");
+    assert.ok(guidance);
+    assert.equal(guidance.children.length, 2);
+    assert.equal(guidance.children[0].textContent, "Ask a grown-up before recording.");
+    assert.equal(guidance.children[0].getAttribute("lang"), "en");
+    assert.equal(guidance.children[1].textContent, "录音前请先征得家长同意。");
+    assert.equal(guidance.children[1].getAttribute("lang"), "zh-Hans");
     assert.match(html, /aria-label="Back to home"/);
     assert.doesNotMatch(html, /返回首页|童谣/);
   });

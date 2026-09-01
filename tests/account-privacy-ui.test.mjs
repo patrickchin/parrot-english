@@ -147,6 +147,7 @@ test("Chinese account privacy localizes every guardian-facing section and danger
     /AI 可能听错或说错/,
     /所有孩子资料及其已保存的数据/,
     /学习模式只会通过“切换到学习模式”更改/,
+    /“和 Peppa 聊天”/,
     /Parrot 不会把这些活动的音频保存到账户中/,
     /童谣配音会保存这位孩子的私密配音片段/,
     /课程会为每个跟读时刻保存一个私密语音片段/,
@@ -158,6 +159,7 @@ test("Chinese account privacy localizes every guardian-facing section and danger
   ]) {
     assert.match(document.body.textContent, fragment);
   }
+  assert.doesNotMatch(document.body.textContent, /佩奇/);
   assert.ok(button("删除账户"));
 });
 
