@@ -1,0 +1,212 @@
+{
+  "countInBeats": 2,
+  "countInMidi": 72,
+  "id": "five-little-ducks-v2",
+  "order": 1,
+  "scenes": [
+    {
+      "artwork": {
+        "alt": "Five yellow ducklings leave their mother beside a bright spring pond.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-1-five-ducklings.webp",
+        "width": 1536
+      },
+      "id": "scene-1",
+      "lines": [
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-1.mp3",
+          "id": "line-1",
+          "text": "Five little ducks went out one day."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-2.mp3",
+          "id": "line-2",
+          "text": "Over the hill and far away."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-3.mp3",
+          "id": "line-3",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-4.mp3",
+          "id": "line-4",
+          "text": "But only four little ducks came back."
+        }
+      ],
+      "title": "Five little ducks"
+    },
+    {
+      "artwork": {
+        "alt": "Four yellow ducklings return across a flower-lined footbridge in the afternoon.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-2-four-ducklings.webp",
+        "width": 1536
+      },
+      "id": "scene-2",
+      "lines": [
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-5.mp3",
+          "id": "line-5",
+          "text": "Four little ducks went out one day."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-2.mp3",
+          "id": "line-6",
+          "text": "Over the hill and far away."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-3.mp3",
+          "id": "line-7",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-8.mp3",
+          "id": "line-8",
+          "text": "But only three little ducks came back."
+        }
+      ],
+      "title": "Four little ducks"
+    },
+    {
+      "artwork": {
+        "alt": "Three yellow ducklings travel over a broad green hill beneath a clear sky.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-3-three-ducklings.webp",
+        "width": 1536
+      },
+      "id": "scene-3",
+      "lines": [
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-9.mp3",
+          "id": "line-9",
+          "text": "Three little ducks went out one day."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-2.mp3",
+          "id": "line-10",
+          "text": "Over the hill and far away."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-3.mp3",
+          "id": "line-11",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-12.mp3",
+          "id": "line-12",
+          "text": "But only two little ducks came back."
+        }
+      ],
+      "title": "Three little ducks"
+    },
+    {
+      "artwork": {
+        "alt": "Two yellow ducklings return through tall pond reeds during a gentle rain.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-4-two-ducklings.webp",
+        "width": 1536
+      },
+      "id": "scene-4",
+      "lines": [
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-13.mp3",
+          "id": "line-13",
+          "text": "Two little ducks went out one day."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-2.mp3",
+          "id": "line-14",
+          "text": "Over the hill and far away."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-3.mp3",
+          "id": "line-15",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-16.mp3",
+          "id": "line-16",
+          "text": "But only one little duck came back."
+        }
+      ],
+      "title": "Two little ducks"
+    },
+    {
+      "artwork": {
+        "alt": "One yellow duckling returns to mother duck beside the pond at sunset.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-5-one-duckling.webp",
+        "width": 1536
+      },
+      "id": "scene-5",
+      "lines": [
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-17.mp3",
+          "id": "line-17",
+          "text": "One little duck went out one day."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-2.mp3",
+          "id": "line-18",
+          "text": "Over the hill and far away."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-3.mp3",
+          "id": "line-19",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-20.mp3",
+          "id": "line-20",
+          "text": "But none of the five little ducks came back."
+        }
+      ],
+      "title": "One little duck"
+    },
+    {
+      "artwork": {
+        "alt": "Mother duck joyfully reunites with all five yellow ducklings beneath a rainbow.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-6-family-reunion.webp",
+        "width": 1536
+      },
+      "id": "scene-6",
+      "lines": [
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-21.mp3",
+          "id": "line-21",
+          "text": "Sad mother duck went out one day."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-2.mp3",
+          "id": "line-22",
+          "text": "Over the hill and far away."
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-23.mp3",
+          "id": "line-23",
+          "text": "Sad mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "guide": "guides/five-little-ducks-v2-guide-line-24.mp3",
+          "id": "line-24",
+          "text": "And all of the five little ducks came back."
+        }
+      ],
+      "title": "Sad mother duck"
+    }
+  ],
+  "schemaVersion": 1,
+  "score": {
+    "melodyPart": "P1",
+    "playbackParts": [
+      "P1",
+      "P2"
+    ],
+    "src": "score.musicxml",
+    "volume": 0.12
+  },
+  "slug": "five-little-ducks",
+  "title": "Five Little Ducks"
+}

@@ -1,0 +1,1981 @@
+{
+  "catalog": [
+    {
+      "id": "five-little-ducks-v2",
+      "route": "/dubs/five-little-ducks",
+      "title": "Five Little Ducks",
+      "countInMidi": 72,
+      "musicVolume": 0.12,
+      "phraseDurationsMs": [4000, 4000, 4000, 4000],
+      "linesPerScene": 4,
+      "sceneTitles": [
+        "Five little ducks",
+        "Four little ducks",
+        "Three little ducks",
+        "Two little ducks",
+        "One little duck",
+        "Sad mother duck"
+      ],
+      "sceneArtwork": [
+        {
+          "alt": "Five yellow ducklings leave their mother beside a bright spring pond.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-1-five-ducklings.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Four yellow ducklings return across a flower-lined footbridge in the afternoon.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-2-four-ducklings.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Three yellow ducklings travel over a broad green hill beneath a clear sky.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-3-three-ducklings.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Two yellow ducklings return through tall pond reeds during a gentle rain.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-4-two-ducklings.webp",
+          "width": 1536
+        },
+        {
+          "alt": "One yellow duckling returns to mother duck beside the pond at sunset.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-5-one-duckling.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Mother duck joyfully reunites with all five yellow ducklings beneath a rainbow.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-6-family-reunion.webp",
+          "width": 1536
+        }
+      ],
+      "lineArtwork": null,
+      "lines": [
+        { "id": "line-1", "text": "Five little ducks went out one day." },
+        { "id": "line-2", "text": "Over the hill and far away." },
+        {
+          "id": "line-3",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        { "id": "line-4", "text": "But only four little ducks came back." },
+        { "id": "line-5", "text": "Four little ducks went out one day." },
+        { "id": "line-6", "text": "Over the hill and far away." },
+        {
+          "id": "line-7",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        { "id": "line-8", "text": "But only three little ducks came back." },
+        { "id": "line-9", "text": "Three little ducks went out one day." },
+        { "id": "line-10", "text": "Over the hill and far away." },
+        {
+          "id": "line-11",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        { "id": "line-12", "text": "But only two little ducks came back." },
+        { "id": "line-13", "text": "Two little ducks went out one day." },
+        { "id": "line-14", "text": "Over the hill and far away." },
+        {
+          "id": "line-15",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        { "id": "line-16", "text": "But only one little duck came back." },
+        { "id": "line-17", "text": "One little duck went out one day." },
+        { "id": "line-18", "text": "Over the hill and far away." },
+        {
+          "id": "line-19",
+          "text": "Mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "id": "line-20",
+          "text": "But none of the five little ducks came back."
+        },
+        { "id": "line-21", "text": "Sad mother duck went out one day." },
+        { "id": "line-22", "text": "Over the hill and far away." },
+        {
+          "id": "line-23",
+          "text": "Sad mother duck said, “Quack, quack, quack, quack.”"
+        },
+        {
+          "id": "line-24",
+          "text": "And all of the five little ducks came back."
+        }
+      ],
+      "relativeCuesMs": [
+        0, 4000, 8000, 12000, 16000, 20000, 24000, 28000, 32000, 36000, 40000,
+        44000, 48000, 52000, 56000, 60000, 64000, 68000, 72000, 76000, 80000,
+        84000, 88000, 92000
+      ],
+      "durationAfterLeadInMs": 97200,
+      "normalizedScore": [
+        { "role": "accompaniment", "midi": 48, "atMs": 0, "durationMs": 1600 },
+        { "role": "melody", "midi": 64, "atMs": 0, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 500, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 750, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 1000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 1500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 2000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 2500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 3000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 4000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 4000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 4500, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 4750, "durationMs": 250 },
+        { "role": "melody", "midi": 65, "atMs": 5000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 5500, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 6000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 6500, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 7000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 8000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 8000, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 8250, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 8500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 9000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 9500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 10000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 10500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 11000, "durationMs": 750 },
+        { "role": "melody", "midi": 67, "atMs": 11750, "durationMs": 250 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 12000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 12000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 12500, "durationMs": 500 },
+        { "role": "melody", "midi": 65, "atMs": 13000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 13500, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 13750, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 14000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 14500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 15000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 16000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 16000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 16500, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 16750, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 17000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 17500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 18000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 18500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 19000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 20000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 20000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 20500, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 20750, "durationMs": 250 },
+        { "role": "melody", "midi": 65, "atMs": 21000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 21500, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 22000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 22500, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 23000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 24000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 24000, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 24250, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 24500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 25000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 25500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 26000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 26500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 27000, "durationMs": 750 },
+        { "role": "melody", "midi": 67, "atMs": 27750, "durationMs": 250 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 28000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 28000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 28500, "durationMs": 500 },
+        { "role": "melody", "midi": 65, "atMs": 29000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 29500, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 29750, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 30000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 30500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 31000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 32000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 32000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 32500, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 32750, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 33000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 33500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 34000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 34500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 35000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 36000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 36000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 36500, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 36750, "durationMs": 250 },
+        { "role": "melody", "midi": 65, "atMs": 37000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 37500, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 38000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 38500, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 39000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 40000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 40000, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 40250, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 40500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 41000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 41500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 42000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 42500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 43000, "durationMs": 750 },
+        { "role": "melody", "midi": 67, "atMs": 43750, "durationMs": 250 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 44000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 44000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 44500, "durationMs": 500 },
+        { "role": "melody", "midi": 65, "atMs": 45000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 45500, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 45750, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 46000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 46500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 47000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 48000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 48000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 48500, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 48750, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 49000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 49500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 50000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 50500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 51000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 52000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 52000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 52500, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 52750, "durationMs": 250 },
+        { "role": "melody", "midi": 65, "atMs": 53000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 53500, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 54000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 54500, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 55000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 56000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 56000, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 56250, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 56500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 57000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 57500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 58000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 58500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 59000, "durationMs": 750 },
+        { "role": "melody", "midi": 67, "atMs": 59750, "durationMs": 250 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 60000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 60000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 60500, "durationMs": 500 },
+        { "role": "melody", "midi": 65, "atMs": 61000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 61500, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 61750, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 62000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 62500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 63000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 64000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 64000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 64500, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 64750, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 65000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 65500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 66000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 66500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 67000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 68000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 68000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 68500, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 68750, "durationMs": 250 },
+        { "role": "melody", "midi": 65, "atMs": 69000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 69500, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 70000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 70500, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 71000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 72000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 72000, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 72250, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 72500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 73000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 73500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 74000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 74500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 75000, "durationMs": 750 },
+        { "role": "melody", "midi": 67, "atMs": 75750, "durationMs": 250 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 76000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 76000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 76500, "durationMs": 500 },
+        { "role": "melody", "midi": 65, "atMs": 77000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 77500, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 77750, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 78000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 78500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 79000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 80000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 80000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 80500, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 80750, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 81000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 81500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 82000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 82500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 83000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 84000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 84000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 84500, "durationMs": 250 },
+        { "role": "melody", "midi": 60, "atMs": 84750, "durationMs": 250 },
+        { "role": "melody", "midi": 65, "atMs": 85000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 85500, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 86000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 86500, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 87000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 88000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 88000, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 88250, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 88500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 89000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 89500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 90000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 90500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 91000, "durationMs": 750 },
+        { "role": "melody", "midi": 67, "atMs": 91750, "durationMs": 250 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 92000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 92000, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 92500, "durationMs": 500 },
+        { "role": "melody", "midi": 65, "atMs": 93000, "durationMs": 500 },
+        { "role": "melody", "midi": 64, "atMs": 93500, "durationMs": 250 },
+        { "role": "melody", "midi": 64, "atMs": 93750, "durationMs": 250 },
+        { "role": "melody", "midi": 62, "atMs": 94000, "durationMs": 500 },
+        { "role": "melody", "midi": 62, "atMs": 94500, "durationMs": 500 },
+        { "role": "melody", "midi": 60, "atMs": 95000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 96000,
+          "durationMs": 1200
+        },
+        {
+          "role": "accompaniment",
+          "midi": 55,
+          "atMs": 96000,
+          "durationMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "old-macdonald-v1",
+      "route": "/dubs/old-macdonald",
+      "title": "Old MacDonald Had a Farm",
+      "countInMidi": 72,
+      "musicVolume": 0.12,
+      "phraseDurationsMs": [8000, 8000, 2000, 2000, 2000, 2000, 8000],
+      "linesPerScene": 7,
+      "sceneTitles": [
+        "Cows on the farm",
+        "Ducks on the farm",
+        "Pigs on the farm",
+        "A dog on the farm",
+        "Sheep on the farm"
+      ],
+      "sceneArtwork": [
+        {
+          "alt": "Old MacDonald greets three friendly cows in the pasture beside his red barn.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-1-cows.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Old MacDonald watches four white ducks splash in the farm pond.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-2-ducks.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Old MacDonald laughs with three pink pigs playing in a sunny mud patch.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-3-pigs.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Old MacDonald's brown farm dog waits proudly by the barnyard fence.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-4-dog.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Old MacDonald walks with five fluffy sheep in the meadow beyond the red barn.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-5-sheep.webp",
+          "width": 1536
+        }
+      ],
+      "lineArtwork": null,
+      "lines": [
+        {
+          "id": "old-macdonald-v1-line-1",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-2",
+          "text": "And on his farm he had some cows, E-I-E-I-O!"
+        },
+        { "id": "old-macdonald-v1-line-3", "text": "With a moo-moo here" },
+        { "id": "old-macdonald-v1-line-4", "text": "And a moo-moo there" },
+        { "id": "old-macdonald-v1-line-5", "text": "Here a moo, there a moo" },
+        { "id": "old-macdonald-v1-line-6", "text": "Everywhere a moo-moo" },
+        {
+          "id": "old-macdonald-v1-line-7",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-8",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-9",
+          "text": "And on his farm he had some ducks, E-I-E-I-O!"
+        },
+        { "id": "old-macdonald-v1-line-10", "text": "With a quack-quack here" },
+        { "id": "old-macdonald-v1-line-11", "text": "And a quack-quack there" },
+        {
+          "id": "old-macdonald-v1-line-12",
+          "text": "Here a quack, there a quack"
+        },
+        {
+          "id": "old-macdonald-v1-line-13",
+          "text": "Everywhere a quack-quack"
+        },
+        {
+          "id": "old-macdonald-v1-line-14",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-15",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-16",
+          "text": "And on his farm he had some pigs, E-I-E-I-O!"
+        },
+        { "id": "old-macdonald-v1-line-17", "text": "With a snort here" },
+        { "id": "old-macdonald-v1-line-18", "text": "And a snort there" },
+        {
+          "id": "old-macdonald-v1-line-19",
+          "text": "Here a snort, there a snort"
+        },
+        {
+          "id": "old-macdonald-v1-line-20",
+          "text": "Everywhere a snort-snort"
+        },
+        {
+          "id": "old-macdonald-v1-line-21",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-22",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-23",
+          "text": "And on his farm he had a dog, E-I-E-I-O!"
+        },
+        { "id": "old-macdonald-v1-line-24", "text": "With a woof-woof here" },
+        { "id": "old-macdonald-v1-line-25", "text": "And a woof-woof there" },
+        {
+          "id": "old-macdonald-v1-line-26",
+          "text": "Here a woof, there a woof"
+        },
+        { "id": "old-macdonald-v1-line-27", "text": "Everywhere a woof-woof" },
+        {
+          "id": "old-macdonald-v1-line-28",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-29",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        },
+        {
+          "id": "old-macdonald-v1-line-30",
+          "text": "And on his farm he had some sheep, E-I-E-I-O!"
+        },
+        { "id": "old-macdonald-v1-line-31", "text": "With a baa-baa here" },
+        { "id": "old-macdonald-v1-line-32", "text": "And a baa-baa there" },
+        { "id": "old-macdonald-v1-line-33", "text": "Here a baa, there a baa" },
+        { "id": "old-macdonald-v1-line-34", "text": "Everywhere a baa-baa" },
+        {
+          "id": "old-macdonald-v1-line-35",
+          "text": "Old MacDonald had a farm, E-I-E-I-O!"
+        }
+      ],
+      "relativeCuesMs": [
+        0, 8000, 16000, 18000, 20000, 22000, 24000, 32000, 40000, 48000, 50000,
+        52000, 54000, 56000, 64000, 72000, 80000, 82000, 84000, 86000, 88000,
+        96000, 104000, 112000, 114000, 116000, 118000, 120000, 128000, 136000,
+        144000, 146000, 148000, 150000, 152000
+      ],
+      "durationAfterLeadInMs": 161200,
+      "normalizedScore": [
+        { "role": "accompaniment", "midi": 48, "atMs": 0, "durationMs": 1600 },
+        { "role": "melody", "midi": 72, "atMs": 0, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 1000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 1500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 2000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 2500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 3000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 4000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 4500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 5000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 5500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 6000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 8000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 8000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 8500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 9000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 9500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 10000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 10500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 11000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 12000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 12500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 13000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 13500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 14000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 16000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 16000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 16500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 17000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 18000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 18000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 18500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 19000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 20000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 20000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 20250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 20500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 21000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 21250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 21500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 22000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 22000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 22250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 22500, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 22750, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 23000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 23500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 24000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 24000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 24500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 25000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 25500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 26000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 26500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 27000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 28000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 28500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 29000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 29500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 30000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 32000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 32000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 32500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 33000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 33500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 34000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 34500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 35000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 36000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 36500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 37000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 37500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 38000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 40000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 40000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 40500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 41000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 41500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 42000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 42500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 43000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 44000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 44500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 45000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 45500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 46000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 48000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 48000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 48500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 49000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 50000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 50000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 50500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 51000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 52000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 52000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 52250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 52500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 53000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 53250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 53500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 54000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 54000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 54250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 54500, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 54750, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 55000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 55500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 56000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 56000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 56500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 57000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 57500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 58000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 58500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 59000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 60000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 60500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 61000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 61500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 62000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 64000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 64000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 64500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 65000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 65500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 66000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 66500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 67000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 68000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 68500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 69000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 69500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 70000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 72000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 72000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 72500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 73000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 73500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 74000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 74500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 75000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 76000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 76500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 77000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 77500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 78000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 80000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 80000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 80500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 81000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 82000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 82000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 82500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 83000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 84000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 84000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 84250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 84500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 85000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 85250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 85500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 86000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 86000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 86250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 86500, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 86750, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 87000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 87500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 88000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 88000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 88500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 89000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 89500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 90000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 90500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 91000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 92000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 92500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 93000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 93500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 94000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 96000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 96000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 96500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 97000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 97500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 98000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 98500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 99000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 100000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 100500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 101000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 101500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 102000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 104000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 104000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 104500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 105000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 105500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 106000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 106500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 107000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 108000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 108500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 109000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 109500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 110000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 112000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 112000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 112500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 113000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 114000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 114000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 114500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 115000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 116000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 116000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 116250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 116500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 117000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 117250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 117500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 118000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 118000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 118250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 118500, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 118750, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 119000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 119500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 120000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 120000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 120500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 121000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 121500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 122000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 122500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 123000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 124000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 124500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 125000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 125500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 126000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 128000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 128000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 128500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 129000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 129500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 130000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 130500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 131000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 132000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 132500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 133000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 133500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 134000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 136000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 136000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 136500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 137000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 137500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 138000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 138500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 139000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 140000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 140500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 141000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 141500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 142000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 144000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 144000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 144500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 145000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 146000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 146000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 146500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 147000, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 148000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 148000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 148250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 148500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 149000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 149250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 149500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 150000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 150000, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 150250, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 150500, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 150750, "durationMs": 250 },
+        { "role": "melody", "midi": 72, "atMs": 151000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 151500, "durationMs": 500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 152000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 152000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 152500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 153000, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 153500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 154000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 154500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 155000, "durationMs": 1000 },
+        { "role": "melody", "midi": 76, "atMs": 156000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 156500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 157000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 157500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 158000, "durationMs": 1500 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 160000,
+          "durationMs": 1200
+        },
+        {
+          "role": "accompaniment",
+          "midi": 55,
+          "atMs": 160000,
+          "durationMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "twinkle-twinkle-v1",
+      "route": "/dubs/twinkle-twinkle",
+      "title": "Twinkle Twinkle Little Star",
+      "countInMidi": 72,
+      "musicVolume": 0.12,
+      "phraseDurationsMs": [4000, 4000, 4000, 4000, 4000, 4000],
+      "linesPerScene": 2,
+      "sceneTitles": [
+        "A little star",
+        "High above the world",
+        "A diamond in the sky"
+      ],
+      "sceneArtwork": [
+        {
+          "alt": "A bright little star twinkles above a sleepy child at a moonlit window.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/twinkle-twinkle/scene-1-little-star.webp",
+          "width": 1536
+        },
+        {
+          "alt": "The friendly star shines high above a tiny moonlit village and rolling hills.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/twinkle-twinkle/scene-2-world-below.webp",
+          "width": 1536
+        },
+        {
+          "alt": "The child smiles as the diamond-bright star sparkles across the deep blue sky.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/twinkle-twinkle/scene-3-diamond-sky.webp",
+          "width": 1536
+        }
+      ],
+      "lineArtwork": null,
+      "lines": [
+        {
+          "id": "twinkle-twinkle-v1-line-1",
+          "text": "Twinkle, twinkle, little star,"
+        },
+        {
+          "id": "twinkle-twinkle-v1-line-2",
+          "text": "How I wonder what you are!"
+        },
+        {
+          "id": "twinkle-twinkle-v1-line-3",
+          "text": "Up above the world so high,"
+        },
+        {
+          "id": "twinkle-twinkle-v1-line-4",
+          "text": "Like a diamond in the sky."
+        },
+        {
+          "id": "twinkle-twinkle-v1-line-5",
+          "text": "Twinkle, twinkle, little star,"
+        },
+        {
+          "id": "twinkle-twinkle-v1-line-6",
+          "text": "How I wonder what you are!"
+        }
+      ],
+      "relativeCuesMs": [0, 4000, 8000, 12000, 16000, 20000],
+      "durationAfterLeadInMs": 25200,
+      "normalizedScore": [
+        { "role": "accompaniment", "midi": 48, "atMs": 0, "durationMs": 1600 },
+        { "role": "melody", "midi": 72, "atMs": 0, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 500, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 1000, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 1500, "durationMs": 500 },
+        { "role": "melody", "midi": 81, "atMs": 2000, "durationMs": 500 },
+        { "role": "melody", "midi": 81, "atMs": 2500, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 3000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 4000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 77, "atMs": 4000, "durationMs": 500 },
+        { "role": "melody", "midi": 77, "atMs": 4500, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 5000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 5500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 6000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 6500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 7000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 8000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 79, "atMs": 8000, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 8500, "durationMs": 500 },
+        { "role": "melody", "midi": 77, "atMs": 9000, "durationMs": 500 },
+        { "role": "melody", "midi": 77, "atMs": 9500, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 10000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 10500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 11000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 12000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 79, "atMs": 12000, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 12500, "durationMs": 500 },
+        { "role": "melody", "midi": 77, "atMs": 13000, "durationMs": 500 },
+        { "role": "melody", "midi": 77, "atMs": 13500, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 14000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 14500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 15000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 16000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 16000, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 16500, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 17000, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 17500, "durationMs": 500 },
+        { "role": "melody", "midi": 81, "atMs": 18000, "durationMs": 500 },
+        { "role": "melody", "midi": 81, "atMs": 18500, "durationMs": 500 },
+        { "role": "melody", "midi": 79, "atMs": 19000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 20000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 77, "atMs": 20000, "durationMs": 500 },
+        { "role": "melody", "midi": 77, "atMs": 20500, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 21000, "durationMs": 500 },
+        { "role": "melody", "midi": 76, "atMs": 21500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 22000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 22500, "durationMs": 500 },
+        { "role": "melody", "midi": 72, "atMs": 23000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 24000,
+          "durationMs": 1200
+        },
+        {
+          "role": "accompaniment",
+          "midi": 55,
+          "atMs": 24000,
+          "durationMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "row-row-row-your-boat-v1",
+      "route": "/dubs/row-row-row-your-boat",
+      "title": "Row Row Row Your Boat",
+      "countInMidi": 60,
+      "musicVolume": 0.12,
+      "phraseDurationsMs": [4000, 4000, 4000, 4000],
+      "linesPerScene": 4,
+      "sceneTitles": ["Row the boat"],
+      "sceneArtwork": [
+        {
+          "alt": "Two cheerful children row a small wooden boat along a gentle sunny stream.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/row-row-row-your-boat/scene-1-gentle-stream.webp",
+          "width": 1536
+        }
+      ],
+      "lineArtwork": [
+        {
+          "alt": "Two cheerful children row a small wooden boat along a gentle sunny stream.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/row-row-row-your-boat/scene-1-gentle-stream.webp",
+          "width": 1536
+        },
+        {
+          "alt": "The two children paddle their wooden boat gently along a calm willow-lined stream.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v7/dubbing/row-row-row-your-boat/line-2-gentle-stream.webp",
+          "width": 1536
+        },
+        {
+          "alt": "The two children laugh merrily as their boat splashes past water lilies and dragonflies.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v7/dubbing/row-row-row-your-boat/line-3-merrily.webp",
+          "width": 1536
+        },
+        {
+          "alt": "The children laugh as their little boat glides through a dreamy flower-filled river bend.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/row-row-row-your-boat/scene-2-merry-dream.webp",
+          "width": 1536
+        }
+      ],
+      "lines": [
+        {
+          "id": "row-row-row-your-boat-v1-line-1",
+          "text": "Row, row, row your boat,"
+        },
+        {
+          "id": "row-row-row-your-boat-v1-line-2",
+          "text": "Gently down the stream."
+        },
+        {
+          "id": "row-row-row-your-boat-v1-line-3",
+          "text": "Merrily, merrily, merrily, merrily,"
+        },
+        {
+          "id": "row-row-row-your-boat-v1-line-4",
+          "text": "Life is but a dream."
+        }
+      ],
+      "relativeCuesMs": [0, 4000, 8000, 12000],
+      "durationAfterLeadInMs": 17200,
+      "normalizedScore": [
+        { "role": "accompaniment", "midi": 48, "atMs": 0, "durationMs": 1600 },
+        { "role": "melody", "midi": 60, "atMs": 0, "durationMs": 1000 },
+        { "role": "melody", "midi": 60, "atMs": 1000, "durationMs": 1000 },
+        { "role": "melody", "midi": 60, "atMs": 2000, "durationMs": 667 },
+        { "role": "melody", "midi": 62, "atMs": 2667, "durationMs": 333 },
+        { "role": "melody", "midi": 64, "atMs": 3000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 4000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 64, "atMs": 4000, "durationMs": 667 },
+        { "role": "melody", "midi": 62, "atMs": 4667, "durationMs": 333 },
+        { "role": "melody", "midi": 64, "atMs": 5000, "durationMs": 667 },
+        { "role": "melody", "midi": 65, "atMs": 5667, "durationMs": 333 },
+        { "role": "melody", "midi": 67, "atMs": 6000, "durationMs": 2000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 8000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 72, "atMs": 8000, "durationMs": 333 },
+        { "role": "melody", "midi": 72, "atMs": 8333, "durationMs": 334 },
+        { "role": "melody", "midi": 72, "atMs": 8667, "durationMs": 333 },
+        { "role": "melody", "midi": 67, "atMs": 9000, "durationMs": 333 },
+        { "role": "melody", "midi": 67, "atMs": 9333, "durationMs": 334 },
+        { "role": "melody", "midi": 67, "atMs": 9667, "durationMs": 333 },
+        { "role": "melody", "midi": 64, "atMs": 10000, "durationMs": 333 },
+        { "role": "melody", "midi": 64, "atMs": 10333, "durationMs": 334 },
+        { "role": "melody", "midi": 64, "atMs": 10667, "durationMs": 333 },
+        { "role": "melody", "midi": 60, "atMs": 11000, "durationMs": 333 },
+        { "role": "melody", "midi": 60, "atMs": 11333, "durationMs": 334 },
+        { "role": "melody", "midi": 60, "atMs": 11667, "durationMs": 333 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 12000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 67, "atMs": 12000, "durationMs": 667 },
+        { "role": "melody", "midi": 65, "atMs": 12667, "durationMs": 333 },
+        { "role": "melody", "midi": 64, "atMs": 13000, "durationMs": 667 },
+        { "role": "melody", "midi": 62, "atMs": 13667, "durationMs": 333 },
+        { "role": "melody", "midi": 60, "atMs": 14000, "durationMs": 2000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 16000,
+          "durationMs": 1200
+        },
+        {
+          "role": "accompaniment",
+          "midi": 55,
+          "atMs": 16000,
+          "durationMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1",
+      "route": "/dubs/mary-had-a-little-lamb",
+      "title": "Mary Had a Little Lamb",
+      "countInMidi": 67,
+      "musicVolume": 0.12,
+      "phraseDurationsMs": [4000, 4000, 4000, 4000],
+      "linesPerScene": 4,
+      "sceneTitles": ["Mary and her lamb", "The lamb follows Mary"],
+      "sceneArtwork": [
+        {
+          "alt": "Mary hugs her small white lamb in a soft green meadow dotted with flowers.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/mary-had-a-little-lamb/scene-1-white-lamb.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Mary walks along a bright country lane while her devoted little lamb follows.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/mary-had-a-little-lamb/scene-2-lamb-follows.webp",
+          "width": 1536
+        }
+      ],
+      "lineArtwork": null,
+      "lines": [
+        {
+          "id": "mary-had-a-little-lamb-v1-line-1",
+          "text": "Mary had a little lamb,"
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-2",
+          "text": "Little lamb, little lamb,"
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-3",
+          "text": "Mary had a little lamb,"
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-4",
+          "text": "Its fleece was white as snow."
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-5",
+          "text": "Everywhere that Mary went,"
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-6",
+          "text": "Mary went, Mary went,"
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-7",
+          "text": "Everywhere that Mary went,"
+        },
+        {
+          "id": "mary-had-a-little-lamb-v1-line-8",
+          "text": "The lamb was sure to go."
+        }
+      ],
+      "relativeCuesMs": [0, 4000, 8000, 12000, 16000, 20000, 24000, 28000],
+      "durationAfterLeadInMs": 33200,
+      "normalizedScore": [
+        { "role": "accompaniment", "midi": 43, "atMs": 0, "durationMs": 1600 },
+        { "role": "melody", "midi": 71, "atMs": 0, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 1000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 1500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 2000, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 2500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 3000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 4000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 69, "atMs": 4000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 4500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 5000, "durationMs": 1000 },
+        { "role": "melody", "midi": 71, "atMs": 6000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 6500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 7000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 8000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 71, "atMs": 8000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 8500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 9000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 9500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 10000, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 10500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 11000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 12000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 69, "atMs": 12000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 12500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 13000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 13500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 14000, "durationMs": 2000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 16000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 71, "atMs": 16000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 16500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 17000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 17500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 18000, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 18500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 19000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 20000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 69, "atMs": 20000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 20500, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 21000, "durationMs": 1000 },
+        { "role": "melody", "midi": 71, "atMs": 22000, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 22500, "durationMs": 500 },
+        { "role": "melody", "midi": 74, "atMs": 23000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 24000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 71, "atMs": 24000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 24500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 25000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 25500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 26000, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 26500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 27000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 43,
+          "atMs": 28000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 69, "atMs": 28000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 28500, "durationMs": 500 },
+        { "role": "melody", "midi": 71, "atMs": 29000, "durationMs": 500 },
+        { "role": "melody", "midi": 69, "atMs": 29500, "durationMs": 500 },
+        { "role": "melody", "midi": 67, "atMs": 30000, "durationMs": 2000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 32000,
+          "durationMs": 1200
+        },
+        {
+          "role": "accompaniment",
+          "midi": 55,
+          "atMs": 32000,
+          "durationMs": 1200
+        }
+      ]
+    },
+    {
+      "id": "humpty-dumpty-v1",
+      "route": "/dubs/humpty-dumpty",
+      "title": "Humpty Dumpty",
+      "countInMidi": 70,
+      "musicVolume": 0.12,
+      "phraseDurationsMs": [4000, 4000, 4000, 4000],
+      "linesPerScene": 4,
+      "sceneTitles": ["Humpty Dumpty"],
+      "sceneArtwork": [
+        {
+          "alt": "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/humpty-dumpty/scene-1-on-the-wall.webp",
+          "width": 1536
+        }
+      ],
+      "lineArtwork": [
+        {
+          "alt": "A friendly egg-shaped Humpty Dumpty balances happily on a sunny garden wall.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/humpty-dumpty/scene-1-on-the-wall.webp",
+          "width": 1536
+        },
+        {
+          "alt": "A surprised Humpty Dumpty tumbles gently toward soft flowers below the garden wall.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v7/dubbing/humpty-dumpty/line-2-great-fall.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Kind royal helpers and two gentle horses gather to help Humpty Dumpty in the castle garden.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v7/dubbing/humpty-dumpty/line-3-royal-help.webp",
+          "width": 1536
+        },
+        {
+          "alt": "Kind royal helpers carefully comfort Humpty Dumpty beside the garden wall.",
+          "height": 864,
+          "src": "https://media.parrotbook.com/assets/v6/dubbing/humpty-dumpty/scene-2-helping-humpty.webp",
+          "width": 1536
+        }
+      ],
+      "lines": [
+        {
+          "id": "humpty-dumpty-v1-line-1",
+          "text": "Humpty Dumpty sat on a wall,"
+        },
+        {
+          "id": "humpty-dumpty-v1-line-2",
+          "text": "Humpty Dumpty had a great fall."
+        },
+        {
+          "id": "humpty-dumpty-v1-line-3",
+          "text": "All the king’s horses and all the king’s men"
+        },
+        {
+          "id": "humpty-dumpty-v1-line-4",
+          "text": "Couldn’t put Humpty together again."
+        }
+      ],
+      "relativeCuesMs": [0, 4000, 8000, 12000],
+      "durationAfterLeadInMs": 17200,
+      "normalizedScore": [
+        { "role": "accompaniment", "midi": 46, "atMs": 0, "durationMs": 1600 },
+        { "role": "melody", "midi": 74, "atMs": 0, "durationMs": 667 },
+        { "role": "melody", "midi": 77, "atMs": 667, "durationMs": 333 },
+        { "role": "melody", "midi": 75, "atMs": 1000, "durationMs": 667 },
+        { "role": "melody", "midi": 79, "atMs": 1667, "durationMs": 333 },
+        { "role": "melody", "midi": 77, "atMs": 2000, "durationMs": 333 },
+        { "role": "melody", "midi": 79, "atMs": 2333, "durationMs": 334 },
+        { "role": "melody", "midi": 81, "atMs": 2667, "durationMs": 333 },
+        { "role": "melody", "midi": 82, "atMs": 3000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 46,
+          "atMs": 4000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 74, "atMs": 4000, "durationMs": 667 },
+        { "role": "melody", "midi": 77, "atMs": 4667, "durationMs": 333 },
+        { "role": "melody", "midi": 75, "atMs": 5000, "durationMs": 667 },
+        { "role": "melody", "midi": 79, "atMs": 5667, "durationMs": 333 },
+        { "role": "melody", "midi": 77, "atMs": 6000, "durationMs": 333 },
+        { "role": "melody", "midi": 74, "atMs": 6333, "durationMs": 334 },
+        { "role": "melody", "midi": 70, "atMs": 6667, "durationMs": 333 },
+        { "role": "melody", "midi": 72, "atMs": 7000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 51,
+          "atMs": 8000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 74, "atMs": 8000, "durationMs": 333 },
+        { "role": "melody", "midi": 74, "atMs": 8333, "durationMs": 334 },
+        { "role": "melody", "midi": 77, "atMs": 8667, "durationMs": 333 },
+        { "role": "melody", "midi": 75, "atMs": 9000, "durationMs": 333 },
+        { "role": "melody", "midi": 75, "atMs": 9333, "durationMs": 334 },
+        { "role": "melody", "midi": 79, "atMs": 9667, "durationMs": 333 },
+        { "role": "melody", "midi": 77, "atMs": 10000, "durationMs": 333 },
+        { "role": "melody", "midi": 79, "atMs": 10333, "durationMs": 334 },
+        { "role": "melody", "midi": 81, "atMs": 10667, "durationMs": 333 },
+        { "role": "melody", "midi": 82, "atMs": 11000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 46,
+          "atMs": 12000,
+          "durationMs": 1600
+        },
+        { "role": "melody", "midi": 74, "atMs": 12000, "durationMs": 333 },
+        { "role": "melody", "midi": 74, "atMs": 12333, "durationMs": 334 },
+        { "role": "melody", "midi": 70, "atMs": 12667, "durationMs": 333 },
+        { "role": "melody", "midi": 75, "atMs": 13000, "durationMs": 333 },
+        { "role": "melody", "midi": 75, "atMs": 13333, "durationMs": 334 },
+        { "role": "melody", "midi": 74, "atMs": 13667, "durationMs": 333 },
+        { "role": "melody", "midi": 72, "atMs": 14000, "durationMs": 333 },
+        { "role": "melody", "midi": 70, "atMs": 14333, "durationMs": 334 },
+        { "role": "melody", "midi": 69, "atMs": 14667, "durationMs": 333 },
+        { "role": "melody", "midi": 70, "atMs": 15000, "durationMs": 1000 },
+        {
+          "role": "accompaniment",
+          "midi": 48,
+          "atMs": 16000,
+          "durationMs": 1200
+        },
+        {
+          "role": "accompaniment",
+          "midi": 55,
+          "atMs": 16000,
+          "durationMs": 1200
+        }
+      ]
+    }
+  ],
+  "guides": [
+    {
+      "id": "five-little-ducks-v2-guide-line-1",
+      "text": "Five little ducks went out one day.",
+      "sha256": "abb7fe8dae2a7d3ae9d707fca4bb1c2f9361e7a8bd95c36a55a17beedcc24817"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-2",
+      "text": "Over the hill and far away.",
+      "sha256": "fa7e80bdaee8f2ac8a45de84455bf3b40646b50fcd8985dcce68b5f7a5da598d"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-3",
+      "text": "Mother duck said, “Quack, quack, quack, quack.”",
+      "sha256": "0105150ef4331d655e4cee8530037e00104e0a83c2f031efcf1339b7cb2a02e8"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-4",
+      "text": "But only four little ducks came back.",
+      "sha256": "9f6677695fa7fa5f6a9fbcdaac6c7386fe5f74a427eb5d497e028291e275aa22"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-5",
+      "text": "Four little ducks went out one day.",
+      "sha256": "e4864fd36e3d3fdc4a90de147004472245169d0b6ac341d9dd0be9152b1e4657"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-8",
+      "text": "But only three little ducks came back.",
+      "sha256": "c380fe0db9e35eac6069cf8f69edd8f7afe18810e453b12849a20d6e4eb11fc6"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-9",
+      "text": "Three little ducks went out one day.",
+      "sha256": "6347d8e6b6b17cc15b0a50eb26882e6cbef583700c71dfe760bca65bac549e2a"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-12",
+      "text": "But only two little ducks came back.",
+      "sha256": "58c2c2458fd61567e34a95f0112bd435ab7362e6cc227372f7c9a513033c0456"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-13",
+      "text": "Two little ducks went out one day.",
+      "sha256": "f17b60567b35dbc2179d547a675fdd876ee9c32cee33bdad352f09edbe243dc7"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-16",
+      "text": "But only one little duck came back.",
+      "sha256": "827146ea6952fa0caf36e91dd5de7a65eb108a7e280b2a3ce083d976aff32c70"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-17",
+      "text": "One little duck went out one day.",
+      "sha256": "239f0ade660733250e520450f154177390904d79c47c1b9a3121ac37e753d43a"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-20",
+      "text": "But none of the five little ducks came back.",
+      "sha256": "abbf410955aa771cb76a7c15ed681bea1bea40b923324d14be7915ed1a845ddc"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-21",
+      "text": "Sad mother duck went out one day.",
+      "sha256": "6e5a8e7442dfa67ba89764e3ba3759fb537ceb977e0d922b4d3bf357013dea9d"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-23",
+      "text": "Sad mother duck said, “Quack, quack, quack, quack.”",
+      "sha256": "435721a2053c06b97b32c8befe6ace8c5ea3ed8be9bd713a98c8d81dbb79caa9"
+    },
+    {
+      "id": "five-little-ducks-v2-guide-line-24",
+      "text": "And all of the five little ducks came back.",
+      "sha256": "9bc56818b3cac1bddabe0416c48cfc58ee9cc96af64615fbd10f1948b343a624"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-1",
+      "text": "Old MacDonald had a farm, E-I-E-I-O!",
+      "sha256": "51c049b4d0a90c925d4c9866c3601db3ac2f020bdef57bbd54d88d1a6809e3f8"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-2",
+      "text": "And on his farm he had some cows, E-I-E-I-O!",
+      "sha256": "5969775b49238d063fb75725d6f929545a858d05009e4911c7970b6bcfda96c0"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-3",
+      "text": "With a moo-moo here",
+      "sha256": "75e1468cb3c2a37a9523345e5dcf21763e297868d182548f45a6d8fe0cb11de0"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-4",
+      "text": "And a moo-moo there",
+      "sha256": "3b9c9f6f8dcefc0984bdfec53c0b34f427d6a580bcde9f9aa7fdf8dd9a4a3693"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-5",
+      "text": "Here a moo, there a moo",
+      "sha256": "5fec96066ad99214a31eaa64262f7458f0c9faf2516d2716b0dd4384794cd6a0"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-6",
+      "text": "Everywhere a moo-moo",
+      "sha256": "e1f3e86e567a5fd205d5b469aa5a99141769e7ab7628153db59b1ad24ea1a1a6"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-9",
+      "text": "And on his farm he had some ducks, E-I-E-I-O!",
+      "sha256": "3ad04c59a045282e993a36e925c7d5727998c033becb0c3f8552900fb496aa0e"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-10",
+      "text": "With a quack-quack here",
+      "sha256": "3e98bb25b555e6795a4ce373c4209876aa6963e3f833722bc9c1085b955e48a6"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-11",
+      "text": "And a quack-quack there",
+      "sha256": "58b1550e393a118d55244f4d1d53d1a0b92c241ba83ac578965d320b7aaa47a6"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-12",
+      "text": "Here a quack, there a quack",
+      "sha256": "dc94864e4ed3306560006e04cb2a2b7dba2a7f3de01d8e05ee9d3e3a1df1b4e9"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-13",
+      "text": "Everywhere a quack-quack",
+      "sha256": "a8c6db0412f6dda74d9de74d79246bc2a2f843cb80816566ebe3cf90d36b12b5"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-16",
+      "text": "And on his farm he had some pigs, E-I-E-I-O!",
+      "sha256": "5938c52138a2f0429c6d9b08560f412866a38a6d653c81666a3c3b6bdd2c1be1"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-17",
+      "text": "With a snort here",
+      "sha256": "e2e62d57a1239752a15d87b351adda3246add3fda14d4d66c0eaea4919643f2a"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-18",
+      "text": "And a snort there",
+      "sha256": "e1e7f082a0d47aeb2dcc546d61705cfdf441569a3b03c7709f3248ca59de3f47"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-19",
+      "text": "Here a snort, there a snort",
+      "sha256": "3df8802aab8a0310e976681d628ae5151be55611475eb121085ce28dbdf99b47"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-20",
+      "text": "Everywhere a snort-snort",
+      "sha256": "9133dd9ffaa4bfcc9147ee7a88e2a66a165f514bb1e4f164d2ac489593d2f387"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-23",
+      "text": "And on his farm he had a dog, E-I-E-I-O!",
+      "sha256": "ed6d1d54cf8de40b35298b75e7ca9e8868adfeb860c17e92d9ae1f278f88d6c1"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-24",
+      "text": "With a woof-woof here",
+      "sha256": "f5e9580856a88e59c721bd2a0dce1e0326a5dd90f8191be38280652f601e3675"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-25",
+      "text": "And a woof-woof there",
+      "sha256": "41b93a161ce838df9bf4f061a97de6166d74bb2111323a5d0a32bb8c1683c336"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-26",
+      "text": "Here a woof, there a woof",
+      "sha256": "e0814a91980565f97aa4379d7cb27c4c54562669e517e87ee75dcb2337574f96"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-27",
+      "text": "Everywhere a woof-woof",
+      "sha256": "4a1f5b6f07b8588905a46bb96e2dff8ef5c805695a0315e5117affabaa2edc2c"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-30",
+      "text": "And on his farm he had some sheep, E-I-E-I-O!",
+      "sha256": "f2cd362f294aea77b3bbee0404ff032c153f0b0ff55b027a5cd7e20cd808b993"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-31",
+      "text": "With a baa-baa here",
+      "sha256": "e18704df9417d036b91bc9ee7a26202460770d3613e5247d535b6a0e51f7a6fb"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-32",
+      "text": "And a baa-baa there",
+      "sha256": "02d3f4193275c48b28228d92d9a4b9ab6ae12e997a61cdd2be1798f9a923c34e"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-33",
+      "text": "Here a baa, there a baa",
+      "sha256": "c2fed8ea85312c924b98cf58199ac1d965d76cb432ceb08b91c2577374f83855"
+    },
+    {
+      "id": "old-macdonald-v1-guide-line-34",
+      "text": "Everywhere a baa-baa",
+      "sha256": "96142d40860b335848c50f03148b1c5fc0c55a7afe55327f59a97ed38a9f2c05"
+    },
+    {
+      "id": "twinkle-twinkle-v1-guide-line-1",
+      "text": "Twinkle, twinkle, little star,",
+      "sha256": "476dcc3b273fe33f2e967ece2b830faa584576c8dfe79de8a469ee8fa4039fcc"
+    },
+    {
+      "id": "twinkle-twinkle-v1-guide-line-2",
+      "text": "How I wonder what you are!",
+      "sha256": "967c0fbdd46c43f3b0a66b4e8ea6a0f703c8cf7e098b891bbeb9a027b87ee22e"
+    },
+    {
+      "id": "twinkle-twinkle-v1-guide-line-3",
+      "text": "Up above the world so high,",
+      "sha256": "8c15d4d679445996ed6d217810b57693f91d844190cb7be6d4c0f6c7a2be89f8"
+    },
+    {
+      "id": "twinkle-twinkle-v1-guide-line-4",
+      "text": "Like a diamond in the sky.",
+      "sha256": "adb4b7babd3a8ae9fbc33320e50bd00eba9435a2cb6f916d2f0f2ca70cf45f72"
+    },
+    {
+      "id": "row-row-row-your-boat-v1-guide-line-1",
+      "text": "Row, row, row your boat,",
+      "sha256": "c06805ad1d401cef83659479ac7829a554c3f32911759c784feee2437c7357a8"
+    },
+    {
+      "id": "row-row-row-your-boat-v1-guide-line-2",
+      "text": "Gently down the stream.",
+      "sha256": "f518261a3bc48b87016bb5e7f5e36c807470ab9fe567c23e532704fb32064ee1"
+    },
+    {
+      "id": "row-row-row-your-boat-v1-guide-line-3",
+      "text": "Merrily, merrily, merrily, merrily,",
+      "sha256": "584832e811de6689d34e1fa2a73a69b4ecf39c28383e896946ba0fe7a2243ba2"
+    },
+    {
+      "id": "row-row-row-your-boat-v1-guide-line-4",
+      "text": "Life is but a dream.",
+      "sha256": "a6acabdb3e9286afe0bd240e60e43eb387b566e46cffc0ba0a376319020e75c7"
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1-guide-line-1",
+      "text": "Mary had a little lamb,",
+      "sha256": "59c6360c8692c4c3e07851e04b0784537a1c7bdd1e951ab4a7a962d590a58a85"
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1-guide-line-2",
+      "text": "Little lamb, little lamb,",
+      "sha256": "77fcb3b6e6ed0f110432904291e3c5193265a605ce36295be4442a85c4895afb"
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1-guide-line-4",
+      "text": "Its fleece was white as snow.",
+      "sha256": "48058b032bb00b416b68d107cecbc2f7248eda957e1cd914d9fae5b759c5d5d0"
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1-guide-line-5",
+      "text": "Everywhere that Mary went,",
+      "sha256": "acc33b108c3ee5134516329e3195e20e3807d7d2e302fd56893954eb224da77b"
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1-guide-line-6",
+      "text": "Mary went, Mary went,",
+      "sha256": "2f4ee0e6a0564ce0b9753c5cbd790e5706f375d81934dec819f2f6b30eaedaeb"
+    },
+    {
+      "id": "mary-had-a-little-lamb-v1-guide-line-8",
+      "text": "The lamb was sure to go.",
+      "sha256": "b4a208480f6de4d3b3a624d3f5876108ad4e8f30a2930e93a58852efb3099b5c"
+    },
+    {
+      "id": "humpty-dumpty-v1-guide-line-1",
+      "text": "Humpty Dumpty sat on a wall,",
+      "sha256": "b3c81ed21eb5cd1880fdac8ffa511bd6990556abd66de75787091568a4f7e36b"
+    },
+    {
+      "id": "humpty-dumpty-v1-guide-line-2",
+      "text": "Humpty Dumpty had a great fall.",
+      "sha256": "fa8ef59a5b80c09ab56f6869a3f3e45a041ffef16beb5d117c7505d0d93ac7b0"
+    },
+    {
+      "id": "humpty-dumpty-v1-guide-line-3",
+      "text": "All the king’s horses and all the king’s men",
+      "sha256": "0d16c52f27f1ec555f966faad7568ad4cb9dedc25a781f34ebf8fd033b906c3c"
+    },
+    {
+      "id": "humpty-dumpty-v1-guide-line-4",
+      "text": "Couldn’t put Humpty together again.",
+      "sha256": "1239ce06454f71f4540533422493d588e4edbc99dd2b58cad21271db230a417b"
+    }
+  ]
+}

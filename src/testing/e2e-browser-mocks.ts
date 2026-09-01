@@ -10,6 +10,7 @@ const playedAudioSources: string[] = [];
 const createdObjectUrls: string[] = [];
 const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
+let wordGameAutoplayBlocked = false;
 const backingStarts: Array<{ at: number; frequencyHz: number }> = [];
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
@@ -210,14 +211,8 @@ function matchActiveE2eDubLinePath(pathname: string) {
 
 function matchActiveE2eDubGuidePath(pathname: string) {
   const definition = getActiveE2eDubDefinition();
-  const prefix = `/assets/audio/${definition.id}-guide-`;
-  if (!pathname.startsWith(prefix) || !pathname.endsWith(".mp3")) return null;
-  const suffix = pathname.slice(prefix.length, -4);
-  return (
-    definition.lines.find(
-      ({ id }) => id === suffix || id.endsWith(`-${suffix}`),
-    )?.id ?? null
-  );
+  return definition.lines.find(({ guideAudioSrc }) => guideAudioSrc === pathname)?.id
+    ?? null;
 }
 
 const E2E_INCOMPLETE_PROFILE = {
@@ -3182,6 +3177,14 @@ class MockAudioElement {
     }
     const lessonScenario = getE2eLessonScenario();
     const wordGameAudioId = getWordGameAudioId(this.src);
+    if (
+      lessonScenario === "autoplay-blocked" &&
+      wordGameAudioId &&
+      !wordGameAutoplayBlocked
+    ) {
+      wordGameAutoplayBlocked = true;
+      throw new DOMException("Autoplay is not allowed.", "NotAllowedError");
+    }
     this.lessonCue =
       this.src.includes("lesson-join-in-") ||
       wordGameAudioId !== null;

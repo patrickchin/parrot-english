@@ -31,20 +31,18 @@ test("nursery rhyme picker presents six large illustrated projects", async ({ pa
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/dubs");
   await expect(page.getByRole("heading", { name: "Nursery rhymes" })).toBeVisible();
-  await expect(page.getByText("Sing and record", { exact: true })).toHaveCount(0);
   const picker = page.getByRole("navigation", { name: "Nursery rhymes" });
   const routeHeader = page.getByRole("navigation", { name: "Page navigation" });
   const back = routeHeader.getByRole("link", { name: "Back to home" });
-  await expect(page.getByText(
-    "Choose a rhyme to watch. With a grown-up's permission, you can sing and save your recording.",
-  )).toBeVisible();
+  await expect(
+    page.getByText("Ask a grown-up before recording.", { exact: true }),
+  ).toBeVisible();
+  await expect(picker.getByText("Sing & record", { exact: true })).toHaveCount(0);
   await expect(picker.getByRole("link")).toHaveCount(6);
   for (const [name, route] of RHYMES) {
-    const card = picker.getByRole("link", {
-      name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+Sing & record$`),
-    });
+    const card = picker.getByRole("link", { exact: true, name });
     await expect(card).toHaveAttribute("href", route);
-    await expect(card.getByText("Sing & record", { exact: true })).toBeVisible();
+    await expect(card).toHaveText(name);
   }
   await expect.poll(() => picker.locator("img").evaluateAll((images) => images.every((image) => image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0))).toBe(true);
   await expect(back).toBeVisible();
@@ -70,7 +68,8 @@ test("nursery rhyme picker wheel-scrolls to the final project", async ({ page })
   await page.goto("/dubs");
   const main = page.getByRole("main");
   const finalProject = page.getByRole("link", {
-    name: /^Humpty Dumpty\s+Sing & record$/,
+    exact: true,
+    name: "Humpty Dumpty",
   });
   await expect
     .poll(() =>
@@ -99,9 +98,7 @@ for (const viewport of [
     await expect(back).toBeVisible();
     await expectSharedHeaderTarget(back);
     for (const [name] of RHYMES) {
-      const card = page.getByRole("link", {
-        name: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s+Sing & record$`),
-      });
+      const card = page.getByRole("link", { exact: true, name });
       await expect(card).toBeVisible();
       await expectContained(page, card);
     }
@@ -116,6 +113,30 @@ test("every new rhyme opens its own recording workspace", async ({ page }) => {
       page.getByRole("button", { name: "Play full video" }),
     ).toBeVisible();
   }
+});
+
+test("empty nursery projects show one initial status instead of repeating it per scene", async ({
+  page,
+}) => {
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  const sceneSelection = page.getByRole("complementary", {
+    name: "Scene selection",
+  });
+
+  await expect(
+    page.getByRole("progressbar", { name: "Project recording progress" }),
+  ).toHaveText("Ready to start");
+  await expect(
+    sceneSelection.getByRole("heading", { name: "Choose a scene" }),
+  ).toHaveCount(0);
+  await expect(
+    sceneSelection.getByText("Ready to start", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    sceneSelection.getByRole("button", {
+      name: "Scene 1, Five little ducks, Ready to start",
+    }),
+  ).toBeVisible();
 });
 
 for (const project of [

@@ -1,5 +1,7 @@
 /* global URL */
 
+import sharp from "sharp";
+
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 const lessonIds = [
@@ -117,8 +119,18 @@ const storyPageFiles = [
   "which-hat-yellow-hat",
 ];
 
-function webp(path) {
-  return { contentType: "image/webp", path };
+function webp(path, options = {}) {
+  return { contentType: "image/webp", path, ...options };
+}
+
+function responsiveWebps(path, options = {}) {
+  return [384, 768].map((resizeWidth) =>
+    webp(path.replace(/\.webp$/, `-${resizeWidth}.webp`), {
+      resizeWidth,
+      sourcePath: path,
+      ...options,
+    }),
+  );
 }
 
 const peppaResponsiveStates = [
@@ -142,9 +154,48 @@ const characterAssets = [
   ),
 ];
 const fullSceneAssets = lessonIds.flatMap((lessonId) =>
-  fullSceneFiles[lessonId].map((filename) =>
-    webp(`full-scenes/${lessonId}/${filename}.webp`),
-  ),
+  fullSceneFiles[lessonId].flatMap((filename) => {
+    const path = `full-scenes/${lessonId}/${filename}.webp`;
+    return [webp(path), ...responsiveWebps(path)];
+  }),
+);
+const dubbingV6Files = [
+  "nursery-rhymes-cover.webp",
+  "five-little-ducks/scene-1-five-ducklings.webp",
+  "five-little-ducks/scene-2-four-ducklings.webp",
+  "five-little-ducks/scene-3-three-ducklings.webp",
+  "five-little-ducks/scene-4-two-ducklings.webp",
+  "five-little-ducks/scene-5-one-duckling.webp",
+  "five-little-ducks/scene-6-family-reunion.webp",
+  "old-macdonald/scene-1-cows.webp",
+  "old-macdonald/scene-2-ducks.webp",
+  "old-macdonald/scene-3-pigs.webp",
+  "old-macdonald/scene-4-dog.webp",
+  "old-macdonald/scene-5-sheep.webp",
+  "twinkle-twinkle/scene-1-little-star.webp",
+  "twinkle-twinkle/scene-2-world-below.webp",
+  "twinkle-twinkle/scene-3-diamond-sky.webp",
+  "row-row-row-your-boat/scene-1-gentle-stream.webp",
+  "row-row-row-your-boat/scene-2-merry-dream.webp",
+  "mary-had-a-little-lamb/scene-1-white-lamb.webp",
+  "mary-had-a-little-lamb/scene-2-lamb-follows.webp",
+  "humpty-dumpty/scene-1-on-the-wall.webp",
+  "humpty-dumpty/scene-2-helping-humpty.webp",
+];
+const dubbingV7Files = [
+  "row-row-row-your-boat/line-2-gentle-stream.webp",
+  "row-row-row-your-boat/line-3-merrily.webp",
+  "humpty-dumpty/line-2-great-fall.webp",
+  "humpty-dumpty/line-3-royal-help.webp",
+];
+const dubbingResponsiveAssets = [
+  ...dubbingV6Files.map((path) => ({ path, version: 6 })),
+  ...dubbingV7Files.map((path) => ({ path, version: 7 })),
+].flatMap(({ path, version }) =>
+  responsiveWebps(`dubbing/${path}`, {
+    sourceVersion: version,
+    targetVersion: version,
+  }),
 );
 const lessonCoverAssets = lessonIds.flatMap((lessonId) =>
   ["384", "768", null].map((width) =>
@@ -173,6 +224,7 @@ const brandAssets = [
 export const STATIC_MEDIA_ASSETS = Object.freeze([
   ...characterAssets,
   ...fullSceneAssets,
+  ...dubbingResponsiveAssets,
   ...lessonCoverAssets,
   webp("personalization/the-red-ball-scene-reference.webp"),
   ...storyCoverAssets,
@@ -237,7 +289,41 @@ function parseAsset(value, index) {
   ) {
     throw new Error(`assets[${index}] extension must match its content type`);
   }
-  return { contentType: value.contentType, path: assetPath };
+  const sourcePath = value.sourcePath === undefined
+    ? assetPath
+    : requireText(value.sourcePath, `assets[${index}].sourcePath`);
+  if (
+    sourcePath.includes("\\") ||
+    sourcePath.startsWith("/") ||
+    sourcePath.split("/").includes("..") ||
+    !/^[a-z0-9][a-z0-9./-]*\.(?:png|webp)$/.test(sourcePath)
+  ) {
+    throw new Error(`assets[${index}].sourcePath must be a safe relative image path`);
+  }
+  if (
+    (sourcePath.endsWith(".png") && value.contentType !== "image/png") ||
+    (sourcePath.endsWith(".webp") && value.contentType !== "image/webp")
+  ) {
+    throw new Error(`assets[${index}] source extension must match its content type`);
+  }
+  const resizeWidth = value.resizeWidth === undefined
+    ? undefined
+    : requireVersion(value.resizeWidth, `assets[${index}].resizeWidth`);
+  if (resizeWidth !== undefined && value.contentType !== "image/webp") {
+    throw new Error(`assets[${index}].resizeWidth requires image/webp`);
+  }
+  return {
+    contentType: value.contentType,
+    path: assetPath,
+    resizeWidth,
+    sourcePath,
+    sourceVersion: value.sourceVersion === undefined
+      ? undefined
+      : requireVersion(value.sourceVersion, `assets[${index}].sourceVersion`),
+    targetVersion: value.targetVersion === undefined
+      ? undefined
+      : requireVersion(value.targetVersion, `assets[${index}].targetVersion`),
+  };
 }
 
 export function createStaticMediaPublishPlan(assetsValue, optionsValue) {
@@ -266,14 +352,33 @@ export function createStaticMediaPublishPlan(assetsValue, optionsValue) {
     throw new Error("asset paths must be unique");
   }
 
-  return assets.map(({ contentType, path }) => {
-    const sourceKey = `assets/v${sourceVersion}/${path}`;
-    const targetKey = `assets/v${targetVersion}/${path}`;
+  return assets.map(({
+    contentType,
+    path,
+    resizeWidth,
+    sourcePath,
+    sourceVersion: assetSourceVersion,
+    targetVersion: assetTargetVersion,
+  }, index) => {
+    const resolvedSourceVersion = assetSourceVersion ?? sourceVersion;
+    const resolvedTargetVersion = assetTargetVersion ?? targetVersion;
+    if (
+      resolvedTargetVersion < resolvedSourceVersion ||
+      (resolvedTargetVersion === resolvedSourceVersion &&
+        (resizeWidth === undefined || sourcePath === path))
+    ) {
+      throw new Error(
+        `assets[${index}] targetVersion must be newer unless it creates a resized path`,
+      );
+    }
+    const sourceKey = `assets/v${resolvedSourceVersion}/${sourcePath}`;
+    const targetKey = `assets/v${resolvedTargetVersion}/${path}`;
     return {
       bucket,
       cacheControl: CACHE_CONTROL,
       contentType,
       path,
+      ...(resizeWidth === undefined ? {} : { resizeWidth }),
       sourceKey,
       sourceUrl: `${mediaOrigin}/${sourceKey}`,
       targetKey,
@@ -310,7 +415,18 @@ function checkedUrl(value, phase, cacheBust) {
   return url.href;
 }
 
-async function inspectTargets(plan, { cacheBust, fetch, phase }) {
+function imageBytesEqual(left, right) {
+  if (left.byteLength !== right.byteLength) return false;
+  for (let index = 0; index < left.byteLength; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
+async function inspectTargets(
+  plan,
+  { cacheBust, fetch, phase, responsiveVariants },
+) {
   const checks = await Promise.all(
     plan.map(async (asset) => {
       let response;
@@ -357,6 +473,85 @@ async function inspectTargets(plan, { cacheBust, fetch, phase }) {
           exists: true,
         };
       }
+      if (asset.resizeWidth !== undefined) {
+        let imageResponse;
+        try {
+          imageResponse = await fetch(
+            checkedUrl(asset.targetUrl, `${phase}-image`, cacheBust),
+            { method: "GET", redirect: "error" },
+          );
+        } catch (error) {
+          return {
+            asset,
+            error: `image bytes could not be requested: ${error.message}`,
+            exists: true,
+          };
+        }
+        if (!imageResponse.ok) {
+          return {
+            asset,
+            error: `image bytes returned HTTP ${imageResponse.status}`,
+            exists: true,
+          };
+        }
+        const imageType = (imageResponse.headers.get("content-type") ?? "")
+          .split(";", 1)[0]
+          .trim()
+          .toLowerCase();
+        if (imageType !== asset.contentType) {
+          return {
+            asset,
+            error: `image bytes must return ${asset.contentType}`,
+            exists: true,
+          };
+        }
+        try {
+          const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
+          const metadata = await sharp(imageBytes, { failOn: "error" }).metadata();
+          const expected = responsiveVariants.get(asset.targetUrl);
+          if (!expected) {
+            return {
+              asset,
+              error: "has no prepared canonical derivative",
+              exists: true,
+            };
+          }
+          if (metadata.format !== expected.format) {
+            return {
+              asset,
+              error: `must decode as ${expected.format}`,
+              exists: true,
+            };
+          }
+          if (metadata.width !== expected.width) {
+            return {
+              asset,
+              error: `must decode to exactly ${expected.width}px wide`,
+              exists: true,
+            };
+          }
+          if (metadata.height !== expected.height) {
+            return {
+              asset,
+              error: `must decode to exactly ${expected.height}px high`,
+              exists: true,
+            };
+          }
+          if (!imageBytesEqual(imageBytes, expected.bytes)) {
+            return {
+              asset,
+              error: "must match its canonical source",
+              exists: true,
+            };
+          }
+        } catch (error) {
+          return {
+            asset,
+            error: `must be a decodable image: ${error.message}`,
+            exists: true,
+          };
+        }
+      }
       return { asset, bytes };
     }),
   );
@@ -364,6 +559,80 @@ async function inspectTargets(plan, { cacheBust, fetch, phase }) {
     invalid: checks.filter(({ error }) => error),
     verified: checks.filter(({ error }) => !error),
   };
+}
+
+async function prepareResponsiveVariants(plan, { cacheBust, fetch }) {
+  const sources = new Map();
+  for (const asset of plan) {
+    if (asset.resizeWidth === undefined) continue;
+    const current = sources.get(asset.sourceUrl);
+    if (current) {
+      current.requiredWidth = Math.max(current.requiredWidth, asset.resizeWidth);
+      continue;
+    }
+    sources.set(asset.sourceUrl, {
+      asset,
+      requiredWidth: asset.resizeWidth,
+    });
+  }
+
+  const loaded = new Map();
+  await Promise.all([...sources.entries()].map(async ([sourceUrl, source]) => {
+    const sourcePath = source.asset.sourceKey.replace(/^assets\/v\d+\//, "");
+    const response = await fetch(
+      checkedUrl(sourceUrl, "source", cacheBust),
+      { method: "GET", redirect: "error" },
+    );
+    if (!response.ok) {
+      throw new Error(`${sourcePath} source returned HTTP ${response.status}`);
+    }
+    const contentType = (response.headers.get("content-type") ?? "")
+      .split(";", 1)[0]
+      .trim()
+      .toLowerCase();
+    if (contentType !== source.asset.contentType) {
+      throw new Error(`${sourcePath} source must return ${source.asset.contentType}`);
+    }
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength < 1) {
+      throw new Error(`${sourcePath} source must not be empty`);
+    }
+    let metadata;
+    try {
+      metadata = await sharp(bytes, { failOn: "error" }).metadata();
+    } catch (error) {
+      throw new Error(`${sourcePath} source must be a decodable image: ${error.message}`);
+    }
+    if (metadata.format !== "webp") {
+      throw new Error(`${sourcePath} source must decode as webp`);
+    }
+    if (!metadata.width || metadata.width < source.requiredWidth) {
+      throw new Error(
+        `${sourcePath} source must be at least ${source.requiredWidth}px wide`,
+      );
+    }
+    if (!metadata.height) {
+      throw new Error(`${sourcePath} source must have a positive height`);
+    }
+    loaded.set(sourceUrl, bytes);
+  }));
+
+  const variants = new Map();
+  await Promise.all(plan.map(async (asset) => {
+    if (asset.resizeWidth === undefined) return;
+    const sourceBytes = loaded.get(asset.sourceUrl);
+    const { data, info } = await sharp(sourceBytes, { failOn: "error" })
+      .resize({ width: asset.resizeWidth })
+      .webp({ quality: 82 })
+      .toBuffer({ resolveWithObject: true });
+    variants.set(asset.targetUrl, {
+      bytes: new Uint8Array(data),
+      format: info.format,
+      height: info.height,
+      width: info.width,
+    });
+  }));
+  return variants;
 }
 
 function verificationError(invalid) {
@@ -391,18 +660,23 @@ export async function ensureStaticMedia(
     throw new Error("putObject must be a function");
   }
   const token = requireText(cacheBust, "cacheBust");
+  const responsiveVariants = await prepareResponsiveVariants(plan, {
+    cacheBust: token,
+    fetch,
+  });
   const preflight = await inspectTargets(plan, {
     cacheBust: token,
     fetch,
     phase: "preflight",
+    responsiveVariants,
   });
   const existingInvalid = preflight.invalid.filter(({ exists }) => exists);
   if (existingInvalid.length > 0) {
     throw new Error(
       `${existingInvalid
-        .map(({ asset }) => asset.path)
+        .map(({ asset, error }) => `${asset.path} ${error}`)
         .sort()
-        .join(", ")} already exists with invalid immutable metadata; use a new asset version`,
+        .join(", ")} and already exists with invalid immutable metadata; use a new asset version`,
     );
   }
   const unavailable = preflight.invalid.filter(
@@ -412,23 +686,31 @@ export async function ensureStaticMedia(
   const published = [];
 
   for (const { asset } of preflight.invalid.filter(({ missing }) => missing)) {
-    const sourceResponse = await fetch(
-      checkedUrl(asset.sourceUrl, "source", token),
-      { method: "GET", redirect: "error" },
-    );
-    if (!sourceResponse.ok) {
-      throw new Error(`${asset.path} source returned HTTP ${sourceResponse.status}`);
-    }
-    const sourceType = (sourceResponse.headers.get("content-type") ?? "")
-      .split(";", 1)[0]
-      .trim()
-      .toLowerCase();
-    if (sourceType !== asset.contentType) {
-      throw new Error(`${asset.path} source must return ${asset.contentType}`);
-    }
-    const bytes = new Uint8Array(await sourceResponse.arrayBuffer());
-    if (bytes.byteLength < 1) {
-      throw new Error(`${asset.path} source must not be empty`);
+    let bytes;
+    if (asset.resizeWidth !== undefined) {
+      bytes = responsiveVariants.get(asset.targetUrl)?.bytes;
+      if (!bytes) {
+        throw new Error(`${asset.path} has no prepared canonical derivative`);
+      }
+    } else {
+      const sourceResponse = await fetch(
+        checkedUrl(asset.sourceUrl, "source", token),
+        { method: "GET", redirect: "error" },
+      );
+      if (!sourceResponse.ok) {
+        throw new Error(`${asset.path} source returned HTTP ${sourceResponse.status}`);
+      }
+      const sourceType = (sourceResponse.headers.get("content-type") ?? "")
+        .split(";", 1)[0]
+        .trim()
+        .toLowerCase();
+      if (sourceType !== asset.contentType) {
+        throw new Error(`${asset.path} source must return ${asset.contentType}`);
+      }
+      bytes = new Uint8Array(await sourceResponse.arrayBuffer());
+      if (bytes.byteLength < 1) {
+        throw new Error(`${asset.path} source must not be empty`);
+      }
     }
     await putObject(asset, bytes);
     published.push(asset.path);
@@ -438,6 +720,7 @@ export async function ensureStaticMedia(
     cacheBust: token,
     fetch,
     phase: "verify",
+    responsiveVariants,
   });
   if (verification.invalid.length > 0) {
     throw verificationError(verification.invalid);

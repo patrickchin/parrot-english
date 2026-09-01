@@ -28,8 +28,9 @@ GitHub CLI.
 
 - [ ] Write failing tests for exactly six ordered topics and six ordered items
       per topic: Animals, Colors, Body Parts, Food, Toys, and Feelings.
-- [ ] Pin every item's exact prompt, teaching label, success sentence, stable
-      audio IDs, alt text, and image/swatch representation.
+- [ ] Pin every item's exact prompt with the capitalized target label first,
+      teaching label, success sentence, stable audio IDs, alt text, and
+      image/swatch representation.
 - [ ] Pin 36 unique item IDs and 108 unique per-item audio IDs.
 - [ ] Assert that all bitmap URLs are immutable
       `https://media.parrotbook.com/assets/v8/word-games/...webp` URLs and every
@@ -76,16 +77,17 @@ GitHub CLI.
 affected test media mocks in `src/testing/e2e-browser-mocks.ts`.
 
 - [ ] Rewrite the first Playwright scenarios before implementation to require:
-      Start listening, prompt replay, three `Choose …` picture buttons, and
-      three separate `Listen: …` controls.
+      an immediately active first round, prompt replay, three `Choose …` picture
+      buttons, three separate `Listen: …` controls, and graceful blocked
+      autoplay.
 - [ ] Add a red assertion that `Listen: dog` plays “This is a dog.” but leaves
-      progress, feedback, selection, and Next unchanged.
+      progress, feedback, and selection unchanged.
 - [ ] Add a red wrong-choice assertion for the selected teaching label followed
       by “Listen and try again.”, with the round still open.
 - [ ] Assert a wrong choice stays non-punitive and selectable, all three choices
       remain enabled, and the learner can immediately choose the correct card.
 - [ ] Add a red correct-choice assertion for the exact complete success sentence
-      and a child-paced Next/Finish action.
+      and automatic advancement after feedback, with no Next/Finish action.
 - [ ] Have catalog/static-audio tests prove the exact text-to-ID/source mapping;
       have browser media mocks assert requested saved IDs/sources and state
       separation rather than claiming to inspect MP3 speech content.
@@ -94,9 +96,10 @@ affected test media mocks in `src/testing/e2e-browser-mocks.ts`.
       cancellation, and a persistent sound error with continued visual play.
 - [ ] Run only the principal Playwright scenario and confirm it fails against the
       retired quiz.
-- [ ] Implement one player that resolves its route topic, derives rounds, gates
-      first playback behind a user gesture, and uses `playAudioLine` /
-      `playAudioSequence` with one generation-safe `AbortController`.
+- [ ] Implement one player that resolves its route topic, derives rounds, shows
+      the first round immediately, tolerates blocked initial autoplay, and uses
+      `playAudioLine` / `playAudioSequence` with one generation-safe
+      `AbortController`.
 - [ ] Keep the picture selection and audio exploration as sibling buttons; never
       reveal a written answer label beneath the picture.
 - [ ] Use calm retry state, explicit success state, real progressbar semantics,
@@ -113,8 +116,9 @@ manifest import.
 
 - [ ] Add failing tests for three saved narrator lines per item plus the two
       generic lines, totaling 110 unique word-game entries.
-- [ ] Assert exact `text`, stable IDs/paths, English narrator metadata, warm
-      performance `ttsText`, and no collision with existing static audio.
+- [ ] Assert exact `text`, stable IDs/paths, English narrator metadata,
+      `energetic-character` voice style, role-specific young-child performance
+      `ttsText`, and no collision with existing static audio.
 - [ ] Assert every player/catalog audio ID resolves by ID so same-text lines do
       not depend on a linear speaker/text lookup.
 - [ ] Run the focused catalog/static-audio tests and confirm the expected red
@@ -122,27 +126,32 @@ manifest import.
 - [ ] Derive word-game static entries from catalog data rather than duplicating
       108 sentences in the audio manifest.
 - [ ] Add one strict ID resolver if needed by the player; missing IDs must throw.
-- [ ] Run the metadata tests green. File-presence checks should now remain red
-      only for the intentionally not-yet-generated MP3s.
+- [ ] Run the metadata tests green. Do not treat existing-file or decodability
+      checks as proof that saved speech matches changed text or delivery;
+      Task 5 must replace and audibly inspect every word-game clip.
 
 ## Task 5: Generate, inspect, and check in premium English audio
 
 **Files:** `public/assets/audio/word-game-*.mp3`, `tests/static-audio.test.mjs`.
 
-- [ ] Enumerate the 110 expected IDs and confirm no target MP3 already exists.
+- [ ] Enumerate the 110 expected IDs and confirm they match the exact checked-in
+      word-game MP3 inventory that must be replaced.
 - [ ] Build an exact repeated `--only=<id>` argument list from manifest entries
       whose IDs start with `word-game-`; fail before generation unless it contains
       exactly the expected 110 unique IDs and no non-word-game ID.
-- [ ] Invoke the generator with that exact list and the project credential loaded
-      through Node's `--env-file=/Users/patchin/Workspace/parrot-english/.dev.vars`;
-      never copy, source, print, or commit the key.
-- [ ] Generate only missing word-game lines with the pinned `eleven_v3` default.
-- [ ] If rate limited, resume only missing files; never replace successful audio
-      or fall back to local/system TTS.
+- [ ] Invoke the generator with `--force`, an empty staging `--output-dir`, and
+      that exact list. Let the script read the project credential from the
+      environment or the worktree's ignored `.dev.vars`; never copy, source,
+      print, or commit the key.
+- [ ] Generate replacements for all 110 word-game lines with the pinned
+      `eleven_v3` default, even though files with those names already exist.
+- [ ] If rate limited, resume only missing staged files without `--force`; never
+      replace a successful staged clip or fall back to local/system TTS.
 - [ ] Verify the exact file inventory, nonzero bytes, MP3 decoding, duration
       sanity, and listen to a representative prompt/label/success/retry sample.
-- [ ] Run `node --test tests/static-audio.test.mjs` green and commit metadata plus
-      all generated MP3s.
+- [ ] Replace the exact checked-in word-game inventory only after staged audio
+      passes inspection, then run `node --test tests/static-audio.test.mjs` green
+      and commit metadata plus all regenerated MP3s.
 
 ## Task 6: Generate and prepare the isolated picture-card artwork
 
@@ -207,8 +216,9 @@ manifest import.
       768×360, and 1280×800 for both the library and active player.
 - [ ] Require a deliberate 1/2/3-column choice grid: one below 360px, two from
       360px until the tablet breakpoint, and three at tablet/desktop widths.
-- [ ] Assert that every picture, Listen control, Next action, progress indicator,
-      and route header remains horizontally contained and keyboard reachable.
+- [ ] Assert that every picture, Listen control, progress indicator, and route
+      header remains horizontally contained and keyboard reachable through
+      automatic round transitions.
 - [ ] Assert that desktop uses a materially larger active-game surface while the
       route remains a normal scrollable app page rather than exclusive fullscreen.
 - [ ] Run the new responsive scenarios red, then tune only Tailwind utilities in

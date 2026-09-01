@@ -7,7 +7,10 @@ import {
   type StoryLevelId,
 } from "../stories/story-catalog";
 import { isSafeRouteId } from "../../lib/route-id";
-import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
+import {
+  DUB_DEFINITIONS,
+  type DubDefinition,
+} from "../dubbing/rhyme-catalog";
 import {
   resolveWordGameTopic,
   type WordGameTopic,
@@ -50,8 +53,14 @@ const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
   ...GUARDIAN_ROUTE_PATHS,
   /^\/profile\/*$/i,
 ];
-const DUB_ROUTE_PATHS = DUB_DEFINITIONS.map(
-  ({ route }) => new RegExp(`^${route}\\/*$`, "i"),
+export function getDubRoutePaths(
+  definitions: readonly DubDefinition[] = DUB_DEFINITIONS,
+) {
+  return definitions.map(({ route }) => route);
+}
+
+const DUB_ROUTE_PATHS = getDubRoutePaths().map(
+  (route) => new RegExp(`^${route}\\/*$`, "i"),
 );
 const SAFE_RETURN_PATHS = [
   /^\/$/,

@@ -1,7 +1,7 @@
 "use client";
 
-import { FIVE_LITTLE_DUCKS_DUB } from "./dub-script";
 import { DubStudio } from "./DubStudio";
+import { FIVE_LITTLE_DUCKS_DUB } from "./rhyme-catalog";
 
 export {
   DubEntry,

@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, RotateCcw, Trophy, Volume2 } from "lucide-react";
+import { ArrowLeft, RotateCcw, Trophy, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import {
@@ -19,8 +19,17 @@ import { WordGameVisual } from "./WordGameVisual";
 
 const SOUND_ERROR = "Sound is not available. You can still play.";
 
+type PlaybackOptions = {
+  ignoreBlockedAutoplay?: boolean;
+  onSettled?: () => void;
+};
+
 function playable(line: WordGameAudioLine): AssetAudioLine {
   return { audioId: line.id, audioSrc: line.source, text: line.text };
+}
+
+function isBlockedAutoplay(error: unknown) {
+  return error instanceof Error && error.name === "NotAllowedError";
 }
 
 export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
@@ -31,7 +40,6 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
   const [roundIndex, setRoundIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [soundError, setSoundError] = useState("");
-  const [started, setStarted] = useState(false);
   const completionHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const focusAfterChangeRef = useRef(false);
   const playbackAbortRef = useRef<AbortController | null>(null);
@@ -47,28 +55,38 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
   }, []);
 
   const startPlayback = useCallback(
-    (operation: (signal: AbortSignal) => Promise<void>) => {
+    (
+      operation: (signal: AbortSignal) => Promise<void>,
+      { ignoreBlockedAutoplay = false, onSettled }: PlaybackOptions = {},
+    ) => {
       stopPlayback();
       const controller = new AbortController();
       const generation = playbackGenerationRef.current;
       playbackAbortRef.current = controller;
-      void operation(controller.signal)
-        .then(() => {
-          if (generation !== playbackGenerationRef.current) return;
-          playbackAbortRef.current = null;
-        })
-        .catch((error: unknown) => {
-          if (generation !== playbackGenerationRef.current || isAbortError(error)) return;
-          playbackAbortRef.current = null;
+      const settle = (error?: unknown) => {
+        if (
+          generation !== playbackGenerationRef.current ||
+          (error && isAbortError(error))
+        ) return;
+        playbackAbortRef.current = null;
+        if (error && !(ignoreBlockedAutoplay && isBlockedAutoplay(error))) {
           setSoundError(SOUND_ERROR);
-        });
+        }
+        onSettled?.();
+      };
+      void operation(controller.signal)
+        .then(() => settle())
+        .catch(settle);
     },
     [stopPlayback],
   );
 
   const playLine = useCallback(
-    (line: WordGameAudioLine) => {
-      startPlayback((signal) => playAudioLine({ ...playable(line), signal }));
+    (line: WordGameAudioLine, options?: PlaybackOptions) => {
+      startPlayback(
+        (signal) => playAudioLine({ ...playable(line), signal }),
+        options,
+      );
     },
     [startPlayback],
   );
@@ -76,46 +94,30 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
   useEffect(() => stopPlayback, [stopPlayback]);
 
   useEffect(() => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) {
+        playLine(rounds[0].target.audio.prompt, {
+          ignoreBlockedAutoplay: true,
+        });
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [playLine, rounds]);
+
+  useEffect(() => {
     if (!focusAfterChangeRef.current) return;
     (complete ? completionHeadingRef.current : questionHeadingRef.current)?.focus();
     focusAfterChangeRef.current = false;
-  }, [complete, roundIndex, started]);
-
-  function startGame() {
-    focusAfterChangeRef.current = true;
-    setStarted(true);
-    playLine(round.target.audio.prompt);
-  }
+  }, [complete, roundIndex]);
 
   function listenToChoice(choiceIndex: number) {
     playLine(round.choices[choiceIndex].audio.label);
   }
 
-  function choose(choiceIndex: number) {
-    if (answeredCorrectly) return;
-    const choice = round.choices[choiceIndex];
-    const correct = choice.id === round.target.id;
-    setSelectedId(choice.id);
-    setAnsweredCorrectly(correct);
-    setFeedback(
-      correct
-        ? round.target.successSentence
-        : `${choice.teachingLabel} ${WORD_GAME_RETRY_AUDIO.text}`,
-    );
-    if (correct) {
-      playLine(round.target.audio.correct);
-      return;
-    }
-    startPlayback((signal) =>
-      playAudioSequence({
-        lines: [playable(choice.audio.label), playable(WORD_GAME_RETRY_AUDIO)],
-        signal,
-      }),
-    );
-  }
-
-  function continueGame() {
-    if (!answeredCorrectly) return;
+  function advanceGame() {
     focusAfterChangeRef.current = true;
     if (roundIndex === rounds.length - 1) {
       setComplete(true);
@@ -130,6 +132,29 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
     playLine(rounds[nextIndex].target.audio.prompt);
   }
 
+  function choose(choiceIndex: number) {
+    if (answeredCorrectly) return;
+    const choice = round.choices[choiceIndex];
+    const correct = choice.id === round.target.id;
+    setSelectedId(choice.id);
+    setAnsweredCorrectly(correct);
+    setFeedback(
+      correct
+        ? round.target.successSentence
+        : `${choice.teachingLabel} ${WORD_GAME_RETRY_AUDIO.text}`,
+    );
+    if (correct) {
+      playLine(round.target.audio.correct, { onSettled: advanceGame });
+      return;
+    }
+    startPlayback((signal) =>
+      playAudioSequence({
+        lines: [playable(choice.audio.label), playable(WORD_GAME_RETRY_AUDIO)],
+        signal,
+      }),
+    );
+  }
+
   function playAgain() {
     focusAfterChangeRef.current = true;
     setComplete(false);
@@ -137,7 +162,6 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
     setAnsweredCorrectly(false);
     setFeedback("");
     setSelectedId(null);
-    setStarted(true);
     playLine(rounds[0].target.audio.prompt);
   }
 
@@ -217,73 +241,62 @@ export function WordGamePlayer({ topic }: { topic: WordGameTopic }) {
               >
                 {round.target.prompt}
               </h2>
-              {started ? (
-                <ActionButton onClick={() => playLine(round.target.audio.prompt)} size="compact" type="button">
-                  <Volume2 aria-hidden="true" className="size-5" />
-                  Listen again
-                </ActionButton>
-              ) : null}
+              <ActionButton
+                disabled={answeredCorrectly}
+                onClick={() => playLine(round.target.audio.prompt)}
+                size="compact"
+                type="button"
+              >
+                <Volume2 aria-hidden="true" className="size-5" />
+                Listen again
+              </ActionButton>
             </div>
 
-            {started ? (
-              <>
-                <div aria-label="Picture choices" className="grid gap-3 min-[360px]:grid-cols-2 md:grid-cols-3" role="group">
-                  {round.choices.map((choice, index) => {
-                    const selected = choice.id === selectedId;
-                    const correct = selected && answeredCorrectly;
-                    return (
-                      <div className="grid min-w-0 gap-2 rounded-3xl bg-sky-50 p-2" key={choice.id}>
-                        <ActionButton
-                          aria-label={`Choose ${choice.label}`}
-                          aria-pressed={selected}
-                          className="aspect-square min-h-0 min-w-0 overflow-hidden p-1"
-                          disabled={answeredCorrectly}
-                          elevation="flat"
-                          frame={correct ? "white" : "soft"}
-                          fullWidth
-                          onClick={() => choose(index)}
-                          shape="rounded"
-                          size="none"
-                          type="button"
-                          variant={correct ? "success" : "surface"}
-                        >
-                          <WordGameVisual className="h-full w-full" item={choice} showLabel={false} />
-                        </ActionButton>
-                        <ActionButton
-                          aria-label={`Listen: ${choice.label}`}
-                          fullWidth
-                          onClick={() => listenToChoice(index)}
-                          size="compact"
-                          type="button"
-                          variant="navy"
-                        >
-                          <Volume2 aria-hidden="true" className="size-5" />
-                          Listen
-                        </ActionButton>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p
-                  aria-label="Answer feedback"
-                  className="m-0 min-h-7 text-center text-lg font-black text-brand-navy"
-                  role="status"
-                >
-                  {feedback}
-                </p>
-                {answeredCorrectly ? (
-                  <ActionButton className="justify-self-center" onClick={continueGame} size="large" type="button" variant="navy">
-                    {roundIndex === rounds.length - 1 ? "Finish" : "Next"}
-                    <ArrowRight aria-hidden="true" className="size-5" />
-                  </ActionButton>
-                ) : null}
-              </>
-            ) : (
-              <ActionButton className="justify-self-center" onClick={startGame} size="hero" type="button">
-                <Volume2 aria-hidden="true" className="size-7" />
-                Start listening
-              </ActionButton>
-            )}
+            <div aria-label="Picture choices" className="grid gap-3 min-[360px]:grid-cols-2 md:grid-cols-3" role="group">
+              {round.choices.map((choice, index) => {
+                const selected = choice.id === selectedId;
+                const correct = selected && answeredCorrectly;
+                return (
+                  <div className="grid min-w-0 gap-2 rounded-3xl bg-sky-50 p-2" key={choice.id}>
+                    <ActionButton
+                      aria-label={`Choose ${choice.label}`}
+                      aria-pressed={selected}
+                      className="aspect-square min-h-0 min-w-0 overflow-hidden p-1"
+                      disabled={answeredCorrectly}
+                      elevation="flat"
+                      frame={correct ? "white" : "soft"}
+                      fullWidth
+                      onClick={() => choose(index)}
+                      shape="rounded"
+                      size="none"
+                      type="button"
+                      variant={correct ? "success" : "surface"}
+                    >
+                      <WordGameVisual className="h-full w-full" item={choice} showLabel={false} />
+                    </ActionButton>
+                    <ActionButton
+                      aria-label={`Listen: ${choice.label}`}
+                      disabled={answeredCorrectly}
+                      fullWidth
+                      onClick={() => listenToChoice(index)}
+                      size="compact"
+                      type="button"
+                      variant="navy"
+                    >
+                      <Volume2 aria-hidden="true" className="size-5" />
+                      Listen
+                    </ActionButton>
+                  </div>
+                );
+              })}
+            </div>
+            <p
+              aria-label="Answer feedback"
+              className="m-0 min-h-7 text-center text-lg font-black text-brand-navy"
+              role="status"
+            >
+              {feedback}
+            </p>
           </section>
         )}
       </section>

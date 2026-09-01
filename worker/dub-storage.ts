@@ -1,5 +1,7 @@
-import { DUB_ID } from "../src/dubbing/dub-script.ts";
-import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  DUB_DEFINITIONS,
+  DUB_ID,
+} from "../src/dubbing/rhyme-catalog.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 
 const GENERATION_MARKER = ".dub-generation";
@@ -27,6 +29,11 @@ export type DubStorageKeys = {
   objectPrefix: string;
   retiredLegacyMarkerKey: string | null;
   retiredLegacyObjectKey(lineId: string): string | null;
+};
+
+type DubStorageClosure = {
+  markerKeys: string[];
+  slotKeys: string[];
 };
 
 export function objectPrefix(userId: string, dubId: string = DUB_ID) {
@@ -78,8 +85,17 @@ export function createDubStorageKeys(
   };
 }
 
-export function dubStorageClosureKeys(storage: DubStorageKeys) {
-  const definition = DUB_DEFINITIONS.find(({ id }) =>
+export function dubStorageClosureKeys(storage: DubStorageKeys): DubStorageClosure;
+export function dubStorageClosureKeys(
+  storage: DubStorageKeys,
+  definitions: typeof DUB_DEFINITIONS,
+): DubStorageClosure;
+export function dubStorageClosureKeys(
+  storage: DubStorageKeys,
+  definitions: typeof DUB_DEFINITIONS | number = DUB_DEFINITIONS,
+): DubStorageClosure {
+  const catalog = typeof definitions === "number" ? DUB_DEFINITIONS : definitions;
+  const definition = catalog.find(({ id }) =>
     storage.objectPrefix.endsWith(`/learner-dubs/${id}/`)
   );
   if (!definition) {

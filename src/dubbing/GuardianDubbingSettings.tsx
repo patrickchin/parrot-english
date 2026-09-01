@@ -146,7 +146,7 @@ function GuardianDubbingSettingsContent({
             >
               {savedCount} of {DUB_LINE_COUNT} clips saved;{" "}
               <BidiLearnerName learnerName={managedLearnerName} /> can record
-              and replace lines across all six nursery rhymes.
+              and replace lines across every nursery rhyme.
             </p>
           </div>
           <div className="grid gap-3">

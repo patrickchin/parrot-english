@@ -25,8 +25,13 @@ import {
   IconButton,
   Card,
 } from "../shared/ui";
+import { retryOriginalImage } from "../shared/responsive-image";
 import type { PersonalizedStoryArtwork } from "../stories/personalized-story-art-client";
-import type { FullSceneImage } from "./full-scene-lessons";
+import {
+  FULL_SCENE_IMAGE_SIZES,
+  fullSceneImageSrcSet,
+  type FullSceneImage,
+} from "./full-scene-lessons";
 
 type LessonBackgroundAsset = {
   alt: string;
@@ -151,6 +156,7 @@ export function BoxedFullSceneStage({
   onDecoded,
   onFailed,
   onRetry,
+  preloadedSrc,
   reserved = false,
 }: {
   decoded?: boolean;
@@ -158,6 +164,7 @@ export function BoxedFullSceneStage({
   onDecoded?: (src: string) => void;
   onFailed?: (src: string) => void;
   onRetry?: (src: string) => void;
+  preloadedSrc?: string;
   reserved?: boolean;
 }) {
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -167,6 +174,11 @@ export function BoxedFullSceneStage({
   const requestKey = `${image.src}:${retrySequence}`;
   const isDecoded = decoded || decodedRequest === requestKey;
   const didFail = failedRequest === requestKey;
+  const handleImageError = (element: HTMLImageElement) => {
+    if (retryOriginalImage(element)) return;
+    setFailedRequest(requestKey);
+    onFailed?.(image.src);
+  };
 
   useEffect(() => {
     if (decoded) return;
@@ -194,7 +206,12 @@ export function BoxedFullSceneStage({
       if (!active || settled || decoding) return;
       decoding = true;
       try {
-        if (typeof element.decode === "function") await element.decode();
+        if (
+          preloadedSrc !== element.currentSrc &&
+          typeof element.decode === "function"
+        ) {
+          await element.decode();
+        }
       } catch {
         if (!element.complete || element.naturalWidth === 0) {
           reportFailure();
@@ -214,7 +231,6 @@ export function BoxedFullSceneStage({
     const handleLoad = () => void reportDecoded();
 
     element.addEventListener("load", handleLoad);
-    element.addEventListener("error", reportFailure);
     timeoutId = window.setTimeout(reportFailure, 8_000);
     if (element.complete && element.naturalWidth > 0) void reportDecoded();
 
@@ -222,9 +238,8 @@ export function BoxedFullSceneStage({
       active = false;
       clearLoadTimeout();
       element.removeEventListener("load", handleLoad);
-      element.removeEventListener("error", reportFailure);
     };
-  }, [decoded, image.src, onDecoded, onFailed, requestKey]);
+  }, [decoded, image.src, onDecoded, onFailed, preloadedSrc, requestKey]);
 
   return (
     <section
@@ -248,8 +263,11 @@ export function BoxedFullSceneStage({
         fetchPriority="high"
         key={requestKey}
         loading="eager"
+        onError={({ currentTarget }) => handleImageError(currentTarget)}
         ref={imageRef}
+        sizes={FULL_SCENE_IMAGE_SIZES}
         src={image.src}
+        srcSet={fullSceneImageSrcSet(image.src)}
       />
       {isDecoded ? null : (
         <div className="absolute inset-0 grid place-items-center bg-sky-100/95 p-4 text-center text-brand-ink">
@@ -296,6 +314,7 @@ export function BoxedLessonSceneLayout({
   image,
   notice,
   onArtworkDecoded,
+  preloadedArtworkSrc,
 }: {
   artworkDecoded?: boolean;
   controls: ReactNode;
@@ -304,6 +323,7 @@ export function BoxedLessonSceneLayout({
   image: FullSceneImage;
   notice: ReactNode;
   onArtworkDecoded?: (src: string) => void;
+  preloadedArtworkSrc?: string;
 }) {
   const useSceneSafePanel = !notice;
   const isRibbon = image.panelLayout === "ribbon";
@@ -345,6 +365,7 @@ export function BoxedLessonSceneLayout({
             decoded={artworkDecoded}
             image={image}
             onDecoded={onArtworkDecoded}
+            preloadedSrc={preloadedArtworkSrc}
             reserved
           />
         </div>

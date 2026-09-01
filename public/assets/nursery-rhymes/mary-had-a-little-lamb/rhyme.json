@@ -1,0 +1,84 @@
+{
+  "countInBeats": 2,
+  "countInMidi": 67,
+  "id": "mary-had-a-little-lamb-v1",
+  "order": 5,
+  "scenes": [
+    {
+      "artwork": {
+        "alt": "Mary hugs her small white lamb in a soft green meadow dotted with flowers.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/mary-had-a-little-lamb/scene-1-white-lamb.webp",
+        "width": 1536
+      },
+      "id": "scene-1",
+      "lines": [
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-1.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-1",
+          "text": "Mary had a little lamb,"
+        },
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-2.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-2",
+          "text": "Little lamb, little lamb,"
+        },
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-1.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-3",
+          "text": "Mary had a little lamb,"
+        },
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-4.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-4",
+          "text": "Its fleece was white as snow."
+        }
+      ],
+      "title": "Mary and her lamb"
+    },
+    {
+      "artwork": {
+        "alt": "Mary walks along a bright country lane while her devoted little lamb follows.",
+        "height": 864,
+        "src": "https://media.parrotbook.com/assets/v6/dubbing/mary-had-a-little-lamb/scene-2-lamb-follows.webp",
+        "width": 1536
+      },
+      "id": "scene-2",
+      "lines": [
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-5.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-5",
+          "text": "Everywhere that Mary went,"
+        },
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-6.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-6",
+          "text": "Mary went, Mary went,"
+        },
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-5.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-7",
+          "text": "Everywhere that Mary went,"
+        },
+        {
+          "guide": "guides/mary-had-a-little-lamb-v1-guide-line-8.mp3",
+          "id": "mary-had-a-little-lamb-v1-line-8",
+          "text": "The lamb was sure to go."
+        }
+      ],
+      "title": "The lamb follows Mary"
+    }
+  ],
+  "schemaVersion": 1,
+  "score": {
+    "melodyPart": "P1",
+    "playbackParts": [
+      "P1",
+      "P2"
+    ],
+    "src": "score.musicxml",
+    "volume": 0.12
+  },
+  "slug": "mary-had-a-little-lamb",
+  "title": "Mary Had a Little Lamb"
+}

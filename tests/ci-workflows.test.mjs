@@ -137,6 +137,80 @@ function runCompatibilityGuard(cwd, env = {}) {
   });
 }
 
+function workflowSteps(url) {
+  const steps = [];
+  let currentStep;
+  let multilineRunIndent;
+  let stepIndent;
+  let stepPropertyIndent;
+
+  for (const line of readFileSync(url, "utf8").split(/\r?\n/u)) {
+    const item = line.match(/^(\s*)-(?:\s+(.+?))?\s*$/u);
+    const name = item?.[2]?.match(/^name:\s*(.+?)\s*$/u)?.[1];
+    if (name && stepIndent === undefined) stepIndent = item[1].length;
+    if (item && item[1].length === stepIndent) {
+      if (currentStep) steps.push(currentStep);
+      currentStep = { name, run: [] };
+      multilineRunIndent = undefined;
+      stepPropertyIndent = stepIndent + 2;
+      continue;
+    }
+    if (!currentStep) continue;
+
+    const property = line.match(/^(\s*)(if|continue-on-error):\s*(.*?)\s*$/u);
+    if (property && property[1].length === stepPropertyIndent) {
+      currentStep[property[2] === "if" ? "if" : "continueOnError"] = property[3];
+      continue;
+    }
+
+    const run = line.match(/^(\s*)run:\s*(.*?)\s*$/u);
+    if (run) {
+      multilineRunIndent = run[2] === "|" ? run[1].length : undefined;
+      if (run[2] !== "|") currentStep.run.push(run[2]);
+      continue;
+    }
+    if (multilineRunIndent !== undefined) {
+      const indent = line.match(/^\s*/u)[0].length;
+      if (line.trim() && indent > multilineRunIndent) {
+        currentStep.run.push(line.trim());
+      } else if (line.trim()) {
+        multilineRunIndent = undefined;
+      }
+    }
+  }
+  if (currentStep) steps.push(currentStep);
+  return steps;
+}
+
+function stepRunning(steps, command) {
+  return steps.findIndex(({ run }) => run.includes(command));
+}
+
+function assertRequiredWorkflowStep(step, label) {
+  assert.equal(step.if, undefined, `Expected ${label} to be unconditional.`);
+  assert.ok(
+    step.continueOnError === undefined || step.continueOnError === "false",
+    `Expected ${label} failure to stop the workflow.`,
+  );
+}
+
+function deploymentWorkflowWithCheckSetting(context, setting) {
+  const root = mkdtempSync(join(tmpdir(), "parrot-deploy-workflow-"));
+  const workflowPath = join(root, "deploy-cloudflare.yml");
+  const workflow = readFileSync(deploymentUrl, "utf8");
+  const variant = workflow.replace(
+    "      - name: Check generated nursery rhyme catalog\n"
+      + "        run: npm run check:rhyme-catalog",
+    "      - name: Check generated nursery rhyme catalog\n"
+      + `        ${setting}\n`
+      + "        run: npm run check:rhyme-catalog",
+  );
+  assert.notEqual(variant, workflow, "Expected to mutate the catalog-check step.");
+  writeFileSync(workflowPath, variant);
+  context.after(() => rmSync(root, { force: true, recursive: true }));
+  return workflowPath;
+}
+
 test("pull requests run one complete verification job including lifecycle tests", () => {
   assert.equal(
     existsSync(verificationUrl),
@@ -161,16 +235,83 @@ test("pull requests run one complete verification job including lifecycle tests"
 });
 
 test("pull requests install FFmpeg before media integrity tests run", () => {
-  const workflow = readFileSync(verificationUrl, "utf8");
-  const installIndex = workflow.indexOf("name: Install FFmpeg");
-  const testIndex = workflow.indexOf("run: npm test");
+  const steps = workflowSteps(verificationUrl);
+  const installIndex = stepRunning(steps, "sudo apt-get install --yes ffmpeg");
+  const testIndex = stepRunning(steps, "npm test");
 
   assert.notEqual(installIndex, -1, "Expected FFmpeg installation in CI.");
-  assert.match(
-    workflow.slice(installIndex, testIndex),
-    /sudo apt-get install --yes ffmpeg/,
-  );
   assert.ok(installIndex < testIndex, "Expected FFmpeg before npm test.");
+});
+
+test("deployment checks generated rhyme content after FFmpeg and before publishing media", () => {
+  const steps = workflowSteps(deploymentUrl);
+  const installIndex = stepRunning(steps, "sudo apt-get install --yes ffmpeg");
+  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  const publishIndex = stepRunning(steps, "npm run publish:static-media -- --apply");
+
+  assert.notEqual(installIndex, -1, "Expected FFmpeg installation before catalog checks.");
+  assert.notEqual(checkIndex, -1, "Expected an explicit generated-catalog check.");
+  assert.notEqual(publishIndex, -1, "Expected immutable media publishing.");
+  assert.ok(installIndex < checkIndex, "Expected FFmpeg before the catalog check.");
+  assert.ok(checkIndex < publishIndex, "Expected the catalog check before publishing.");
+  assertRequiredWorkflowStep(steps[checkIndex], "the generated-catalog check");
+});
+
+test("unnamed following steps do not lend their conditions to the catalog check", (context) => {
+  const root = mkdtempSync(join(tmpdir(), "parrot-workflow-steps-"));
+  context.after(() => rmSync(root, { force: true, recursive: true }));
+
+  for (const [syntax, step] of Object.entries({
+    inline: "      - uses: actions/cache@v4",
+    standalone: "      -\n        uses: actions/cache@v4",
+  })) {
+    const workflowPath = join(root, `${syntax}.yml`);
+    writeFileSync(workflowPath, `jobs:
+  deploy:
+    steps:
+      - name: Check generated nursery rhyme catalog
+        run: npm run check:rhyme-catalog
+${step}
+        if: false
+        with:
+          path: |
+            public/assets
+            - nested-content
+          key: fixture
+`);
+
+    const steps = workflowSteps(workflowPath);
+    const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+    assert.notEqual(checkIndex, -1, syntax);
+    assertRequiredWorkflowStep(steps[checkIndex], `${syntax} generated-catalog check`);
+    assert.equal(steps.length, 2, `Expected exact-indent ${syntax} workflow steps.`);
+  }
+});
+
+test("deployment guard rejects a conditional generated-catalog check", (context) => {
+  const steps = workflowSteps(
+    deploymentWorkflowWithCheckSetting(context, "if: false"),
+  );
+  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  assert.notEqual(checkIndex, -1);
+
+  assert.throws(
+    () => assertRequiredWorkflowStep(steps[checkIndex], "the generated-catalog check"),
+    /unconditional/,
+  );
+});
+
+test("deployment guard rejects a non-fatal generated-catalog check", (context) => {
+  const steps = workflowSteps(
+    deploymentWorkflowWithCheckSetting(context, "continue-on-error: true"),
+  );
+  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+  assert.notEqual(checkIndex, -1);
+
+  assert.throws(
+    () => assertRequiredWorkflowStep(steps[checkIndex], "the generated-catalog check"),
+    /failure to stop the workflow/,
+  );
 });
 
 test("main deployment does not repeat the pull-request verification sequence", () => {

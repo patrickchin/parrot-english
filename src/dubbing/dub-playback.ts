@@ -1,14 +1,14 @@
 import {
-  FIVE_LITTLE_DUCKS_DUB,
-} from "./dub-script.ts";
-import {
   dubConsentLossError,
 } from "./dub-api.ts";
 import {
+  FIVE_LITTLE_DUCKS_DUB,
   getDubLineMusicPhrase,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog.ts";
+
+export const DUB_COUNT_CLICK_DURATION_MS = 200;
 
 type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 
@@ -157,7 +157,7 @@ function scheduleDubMusic(
   definition: DubDefinition,
   lines: readonly DubLine[],
   cueOffsetMs: number,
-  durationMs: number,
+  authoredDurationMs: number,
   output: AudioNode,
   startAt: number,
 ) {
@@ -169,12 +169,12 @@ function scheduleDubMusic(
       && lines.length === definition.lines.length
       && lines[0] === definition.lines[0];
     if (fullDub) {
-      for (const note of definition.music.countIn) {
+      for (let beat = 0; beat < definition.countInBeats; beat += 1) {
         scheduleTone(context, output, oscillators, {
-          durationMs: note.durationMs,
+          durationMs: DUB_COUNT_CLICK_DURATION_MS,
           gain: 0.35,
-          midi: note.midi,
-          startsAt: startAt + note.atMs / 1_000,
+          midi: definition.countInMidi,
+          startsAt: startAt + beat * definition.music.countInBeatMs / 1_000,
           type: "sine",
         });
       }
@@ -183,37 +183,28 @@ function scheduleDubMusic(
     for (const line of lines) {
       const phrase = getPhrase(line);
       const phraseStartsMs = line.cueMs - cueOffsetMs;
-      scheduleTone(context, output, oscillators, {
-        durationMs: Math.min(1_600, phrase.durationMs),
-        gain: 0.24,
-        midi: phrase.bassMidi,
-        startsAt: startAt + phraseStartsMs / 1_000,
-        type: "sine",
-      });
-      for (const note of phrase.notes) {
+      for (const note of phrase.playbackNotes) {
+        const melody = note.role === "melody";
         scheduleTone(context, output, oscillators, {
           durationMs: note.durationMs,
-          gain: 0.78,
+          gain: melody ? 0.78 : 0.24,
           midi: note.midi,
           startsAt: startAt + (phraseStartsMs + note.atMs) / 1_000,
-          type: "triangle",
+          type: melody ? "triangle" : "sine",
         });
       }
     }
 
-    const lastLine = lines.at(-1)!;
-    const lastPhrase = getPhrase(lastLine);
-    const phraseEndMs = lastLine.cueMs - cueOffsetMs + lastPhrase.durationMs;
-    const outroDurationMs = durationMs - phraseEndMs;
-    if (outroDurationMs > 0) {
-      definition.music.outroMidi.forEach((midi, index) => {
-        scheduleTone(context, output, oscillators, {
-          durationMs: outroDurationMs,
-          gain: index === 0 ? 0.28 : 0.18,
-          midi,
-          startsAt: startAt + phraseEndMs / 1_000,
-          type: "sine",
-        });
+    const playbackEndMs = cueOffsetMs + authoredDurationMs;
+    for (const note of definition.music.outroNotes) {
+      if (note.atMs < cueOffsetMs || note.atMs >= playbackEndMs) continue;
+      const melody = note.role === "melody";
+      scheduleTone(context, output, oscillators, {
+        durationMs: note.durationMs,
+        gain: melody ? 0.78 : 0.24,
+        midi: note.midi,
+        startsAt: startAt + (note.atMs - cueOffsetMs) / 1_000,
+        type: melody ? "triangle" : "sine",
       });
     }
   } catch (error) {
@@ -524,7 +515,7 @@ export async function startDubPlayback({
     ] => line !== null);
 
     if (signal?.aborted) throw createAbortError();
-    const durationMs = Math.max(
+    const playbackDurationMs = Math.max(
       authoredDurationMs,
       ...decodedLines.map(([line, buffer]) =>
         line.cueMs - cueOffsetMs + buffer.duration * 1_000),
@@ -561,7 +552,7 @@ export async function startDubPlayback({
       definition,
       lines,
       cueOffsetMs,
-      durationMs,
+      authoredDurationMs,
       music,
       startAt,
     );
@@ -569,9 +560,9 @@ export async function startDubPlayback({
     const tick = () => {
       frameId = null;
       const elapsedMs = Math.max(0, (context.currentTime - startAt) * 1_000);
-      onTick(Math.min(durationMs, elapsedMs));
+      onTick(Math.min(authoredDurationMs, elapsedMs));
       if (stopped) return;
-      if (elapsedMs >= durationMs) {
+      if (elapsedMs >= playbackDurationMs) {
         void stopPlayback();
         onEnded?.();
         return;
