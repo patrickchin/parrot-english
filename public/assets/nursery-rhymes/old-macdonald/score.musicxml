@@ -236,11 +236,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="start"/>
         <duration>500</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>some</text>
@@ -251,11 +247,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>500</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>cows</text>
@@ -347,11 +339,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>moo-moo</text>
@@ -362,11 +350,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -407,11 +391,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>moo-moo</text>
@@ -422,11 +402,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -912,11 +888,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="start"/>
         <duration>500</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>some</text>
@@ -927,11 +899,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>500</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>ducks</text>
@@ -1023,11 +991,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>quack-quack</text>
@@ -1038,11 +1002,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -1083,11 +1043,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>quack-quack</text>
@@ -1098,11 +1054,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -1588,11 +1540,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="start"/>
         <duration>500</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>some</text>
@@ -1603,11 +1551,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>500</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>pigs</text>
@@ -1699,11 +1643,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>snort</text>
@@ -1714,11 +1654,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -1759,11 +1695,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>snort</text>
@@ -1774,11 +1706,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -2264,11 +2192,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="start"/>
         <duration>500</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>a</text>
@@ -2279,11 +2203,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>500</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>dog</text>
@@ -2375,11 +2295,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>woof-woof</text>
@@ -2390,11 +2306,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -2435,11 +2347,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>woof-woof</text>
@@ -2450,11 +2358,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>
@@ -2940,11 +2844,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="start"/>
         <duration>500</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>some</text>
@@ -2955,11 +2855,7 @@
           <step>G</step>
           <octave>4</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>500</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>sheep</text>
@@ -3051,11 +2947,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>baa-baa</text>
@@ -3066,11 +2958,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>here</text>
@@ -3111,11 +2999,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="start"/>
         <duration>250</duration>
-        <notations>
-          <tied type="start"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>baa-baa</text>
@@ -3126,11 +3010,7 @@
           <step>C</step>
           <octave>5</octave>
         </pitch>
-        <tie type="stop"/>
         <duration>250</duration>
-        <notations>
-          <tied type="stop"/>
-        </notations>
         <lyric number="1">
           <syllabic>single</syllabic>
           <text>there</text>

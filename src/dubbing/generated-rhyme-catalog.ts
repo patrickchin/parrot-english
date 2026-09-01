@@ -7635,7 +7635,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67
             },
             {
@@ -7709,7 +7714,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67,
+              "role": "melody"
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67,
               "role": "melody"
             },
@@ -7760,7 +7771,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -7785,7 +7801,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -7806,7 +7828,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -7831,7 +7858,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -8320,7 +8353,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67
             },
             {
@@ -8394,7 +8432,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67,
+              "role": "melody"
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67,
               "role": "melody"
             },
@@ -8445,7 +8489,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -8470,7 +8519,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -8491,7 +8546,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -8516,7 +8576,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -9005,7 +9071,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67
             },
             {
@@ -9079,7 +9150,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67,
+              "role": "melody"
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67,
               "role": "melody"
             },
@@ -9130,7 +9207,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -9155,7 +9237,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -9176,7 +9264,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -9201,7 +9294,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -9690,7 +9789,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67
             },
             {
@@ -9764,7 +9868,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67,
+              "role": "melody"
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67,
               "role": "melody"
             },
@@ -9815,7 +9925,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -9840,7 +9955,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -9861,7 +9982,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -9886,7 +10012,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -10375,7 +10507,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67
             },
             {
@@ -10449,7 +10586,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 3000,
-              "durationMs": 1000,
+              "durationMs": 500,
+              "midi": 67,
+              "role": "melody"
+            },
+            {
+              "atMs": 3500,
+              "durationMs": 500,
               "midi": 67,
               "role": "melody"
             },
@@ -10500,7 +10643,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -10525,7 +10673,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }
@@ -10546,7 +10700,12 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72
             }
           ],
@@ -10571,7 +10730,13 @@ export const GENERATED_DUB_DEFINITIONS = [
             },
             {
               "atMs": 1000,
-              "durationMs": 500,
+              "durationMs": 250,
+              "midi": 72,
+              "role": "melody"
+            },
+            {
+              "atMs": 1250,
+              "durationMs": 250,
               "midi": 72,
               "role": "melody"
             }

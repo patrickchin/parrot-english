@@ -373,6 +373,20 @@ describe("rhyme catalog", () => {
     }
   });
 
+  it("gives every highlighted Old MacDonald word an audible melody onset", () => {
+    for (const [lineIndex, line] of OLD_MACDONALD_DUB.lines.entries()) {
+      const noteOnsets = new Set(
+        OLD_MACDONALD_DUB.music.linePhrases[lineIndex].notes.map(({ atMs }) => atMs),
+      );
+      for (const word of wordCues(line)) {
+        assert.ok(
+          noteOnsets.has(word[1]),
+          `line ${lineIndex + 1} highlights ${JSON.stringify(word[0])} at ${word[1]}ms without a melody onset`,
+        );
+      }
+    }
+  });
+
   it("resolves every canonical line to its one authored recording phrase", () => {
     assert.deepEqual(
       OLD_MACDONALD_DUB.lines.map((line) =>
