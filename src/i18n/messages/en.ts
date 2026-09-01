@@ -129,6 +129,174 @@ export const englishGuardianMessages = {
     learnerMode: "Learner mode",
     editingFor: (name: string) => `Editing settings for ⁨${name}⁩`,
   },
+  learners: {
+    roster: {
+      backToDashboard: "Back to guardian dashboard",
+      backToDashboardAria: "Back to guardian dashboard",
+      title: "Manage learners",
+      loading: "Loading learner profiles…",
+      age: (age: number) => `Age ${age}`,
+      ageMissing: "Age not added",
+      setupStatuses: {
+        completed: "Setup complete",
+        in_progress: "Setup in progress",
+        not_started: "Setup not started",
+      },
+      editProfile: "Edit profile",
+      editProfileAria: (name: string) => `Edit ${name}'s profile`,
+      delete: "Delete",
+      deleteAria: (name: string) => `Delete ${name}`,
+      deleting: "Deleting ",
+      finishDeleting: "Finish deleting ",
+      finishDeletingAria: (name: string) => `Finish deleting ${name}`,
+      lastLearnerBefore: "Add another learner before deleting ",
+      lastLearnerAfter: ".",
+      addTitle: "Add learner",
+      addDescription:
+        "Use the name they like to be called. You can add their other details next.",
+      preferredName: "Preferred name",
+      adding: "Adding learner…",
+      add: "Add learner",
+      deletedStatusBefore: "",
+      deletedStatusAfter: " was deleted.",
+      errors: {
+        "load-failed": "Learner profiles could not be loaded.",
+        "add-failed": "The learner could not be added.",
+        "last-learner": "Add another learner before deleting this learner.",
+        "learner-busy":
+          "Finish this learner's current conversation, then try again.",
+        "cleanup-pending":
+          "Learner cleanup is still in progress. Try again.",
+        "deletion-uncertain":
+          "We couldn't confirm whether this learner was deleted. Refresh learner profiles before trying again.",
+        "delete-failed": "The learner was not deleted. Try again.",
+      },
+    },
+    deleteDialog: {
+      cannotUndo: "Cannot be undone",
+      titleBefore: "Delete ",
+      titleAfter: "?",
+      descriptionBefore: "This removes ",
+      descriptionAfter:
+        "'s learner profile and private learner data. Your Guardian account and other learners remain.",
+      alertBefore: "Could not delete ",
+      cancel: "Cancel",
+      deleteBefore: "Delete ",
+      deletingBefore: "Deleting ",
+    },
+    details: {
+      loadingTitle: "Loading learner details…",
+      loadingDescription: "Getting this learner’s saved details ready.",
+      errorTitle: "Learner details are taking a break",
+      loadFailed: "The learner profile could not be loaded.",
+      backToRoster: "Back to Manage learners",
+    },
+    profile: {
+      back: "Back",
+      managing: (name: string) => `Managing ${name}`,
+      managingBefore: "Managing ",
+      managingAfter: "",
+      title: "Learner details",
+      loading: "Loading your profile…",
+      loadErrorTitle: "Profile is taking a break",
+      description: "These details personalize chats and lessons.",
+      savedAnswersHelper:
+        "We save your answers. A grown-up can change your name and age.",
+      name: "Name",
+      age: "Age",
+      aboutBefore: "About ",
+      aboutAfter: "",
+      aboutFallback: "this learner",
+      descriptionPlaceholder: "Add a short description",
+      recordingTitle: "Lesson voice recordings",
+      recordingDescription:
+        "Recording is available automatically during each join-in moment. Clips apply only to this learner profile, and one latest clip is saved per join-in moment. You can delete every saved clip here at any time.",
+      recordingAvailable: "Lesson recording is available automatically.",
+      recordingCleanupPending:
+        "Saved lesson recordings are still being deleted.",
+      deleteRecordings: "Delete saved lesson recordings",
+      finishDeletingRecordings: "Finish deleting lesson recordings",
+      deleteRecordingsConfirm:
+        "Delete all saved lesson voice recordings? This cannot be undone.",
+      redoTitle: "Redo learner setup",
+      redoDescription:
+        "Answer Peppa’s setup questions again. For a normal chat, go Home and choose Talk to Peppa.",
+      redoAction: "Redo setup questions",
+      peppaAlt: "Peppa smiling",
+      saveChanges: "Save changes",
+      saving: "Saving…",
+      cancel: "Cancel",
+      pageErrors: {
+        "load-failed": "The learner profile could not be loaded.",
+        "save-failed": "The learner profile could not be saved.",
+        "recording-choice-failed":
+          "The lesson recording choice could not be saved.",
+      },
+      fieldErrors: {
+        "answer-required": "Please enter an answer.",
+        "question-unavailable": "This question is no longer available.",
+        "description-required": "Please enter a description.",
+        "too-long": "Please shorten this answer and try again.",
+        "private-details":
+          "Do not share your school, home address, phone, email, or password.",
+        "preferred-name": "Please use only your first name or nickname.",
+        "age-whole-number":
+          "Please tell me your age using a whole number.",
+        "check-answer": "Please check this answer and try again.",
+      },
+    },
+    setup: {
+      loading: "Loading your questions…",
+      loadErrorTitle: "Questions are taking a break",
+      loadErrorDescription:
+        "Your questions could not be loaded. Please try again.",
+      finishing: "Finishing your profile…",
+      questionCount: (count: number, resuming: boolean) =>
+        `Answer ${count}${resuming ? " more" : ""} ${count === 1 ? "question" : "questions"}`,
+      description:
+        "We save your answers. A grown-up can change your name and age.",
+      start: "Start questions",
+      continue: "Continue questions",
+      skip: "Skip for now",
+      peppaAlt: "Peppa waving hello",
+    },
+    question: {
+      progress: (current: number, total: number) =>
+        `Question ${current} of ${total}`,
+      replay: "Replay question",
+      peppaAlt: "Peppa, your English host",
+      answer: "Your answer",
+      speak: "Speak your answer",
+      back: "Back",
+      skipQuestion: "Skip question",
+      skip: "Skip for now",
+      save: "Save",
+      next: "Next",
+      operationFailed: "Something went wrong. Please try again.",
+      operationErrors: {
+        "sound-start-failed":
+          "Sound did not play. You can keep going or tap the speaker button.",
+        "sound-replay-failed":
+          "Sound did not play. Tap the speaker button again.",
+        "voice-failed":
+          "Voice answer could not finish. You can still type your answer.",
+        "try-again": "Please try again.",
+        "skip-failed": "Skip for now could not finish.",
+        "question-skip-failed": "Skip question could not finish.",
+      },
+      statuses: {
+        opening: "Opening mic…",
+        recording: "Listening…",
+        transcribing: "Writing…",
+        saving: "Thinking…",
+        ready: "Ready.",
+      },
+    },
+    acknowledgment: {
+      next: "Next",
+      peppaAlt: "Peppa smiling",
+    },
+  },
   account: {
     label: "Account",
     profileLabel: (name: string, mode: string) =>

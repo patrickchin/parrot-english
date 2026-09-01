@@ -18,6 +18,9 @@ import {
   useProfileAccountAction,
 } from "../auth/account-actions";
 import type { GuardianMode } from "../auth/GuardianAccess";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import { selectConversationPurpose } from "../../lib/conversation-purpose";
 import {
   createLearnerProfile as createLearnerProfileRequest,
@@ -25,6 +28,7 @@ import {
   loadLearnerProfile,
   loadLearnerProfiles,
   loadProfile,
+  getLearnerProfileFieldErrorCode,
   LearnerProfileApiError,
   LearnerProfileDeletionError,
   saveLearnerProfileAnswer,
@@ -40,6 +44,7 @@ import {
   type LearnerProfileSummary,
   type LearnerProfileAcknowledgment as Acknowledgment,
   type LearnerProfileQuestion,
+  type LearnerProfileFieldErrorCode,
   type LearnerProfileRoster,
   type LearnerProfileState,
   type ProfileState,
@@ -57,10 +62,15 @@ import {
   captureLearnerProfileAnswer,
   playLearnerProfileStart,
   replayLearnerProfileQuestion,
+  type LearnerProfileQuestionErrorCode,
   type QuestionPendingAction,
   type QuestionStatus,
 } from "./LearnerProfileQuestion";
-import { ProfileEditorView } from "./ProfileEditor";
+import {
+  ProfileEditorView,
+  type LearnerDetailsErrorCode,
+  type ProfileEditorAudience,
+} from "./ProfileEditor";
 import { isAbortError } from "../media/audio-playback";
 import { recordSpeechClip } from "../media/speech-recorder";
 import type { ConversationSurface as ConversationSurfaceComponent } from "../conversation/ConversationSurface";
@@ -221,17 +231,22 @@ type LearnerProfileGateViewProps = {
   started: boolean;
 };
 
-function LearnerProfileSetupView({
+export function LearnerProfileSetupView({
+  audience,
   answeredQuestionCount,
   onSkip,
   onStart,
   questionCount,
 }: {
+  audience: ProfileEditorAudience;
   answeredQuestionCount: number;
   onSkip: () => void;
   onStart: () => void;
   questionCount: number;
 }) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages =
+    audience === "guardian" ? selectedMessages : englishGuardianMessages;
   const isResuming = answeredQuestionCount > 0;
   const visibleQuestionCount = isResuming
     ? questionCount - answeredQuestionCount
@@ -240,7 +255,7 @@ function LearnerProfileSetupView({
   return (
     <LearnerProfileCard className="grid justify-items-center gap-4 p-7 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto_auto] short-wide:items-center short-wide:gap-x-5 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-12">
       <LearnerProfilePeppaArt
-        alt="Peppa waving hello"
+        alt={messages.learners.setup.peppaAlt}
         className="aspect-square max-h-56 w-36 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-44 sm:w-52"
         sizes="(min-width: 640px) 13rem, 9rem"
       />
@@ -248,21 +263,33 @@ function LearnerProfileSetupView({
         className="m-0 text-3xl leading-none text-brand-ink short-wide:col-start-2 short-wide:row-start-1 short-wide:max-w-[17rem] short-wide:justify-self-start sm:text-5xl short:text-3xl"
         stepKey="setup"
       >
-        Answer {visibleQuestionCount}
-        {isResuming ? " more" : ""}{" "}
-        {visibleQuestionCount === 1 ? "question" : "questions"}
+        {messages.learners.setup.questionCount(
+          visibleQuestionCount,
+          isResuming,
+        )}
       </LearnerProfileStepHeading>
       <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600 short-wide:col-start-2 short-wide:row-start-2">
-        We save your answers.{" "}
-        <span className="whitespace-nowrap">A grown-up</span> can change your{" "}
-        <span className="whitespace-nowrap">name and age.</span>
+        {audience === "guardian" ? (
+          messages.learners.setup.description
+        ) : (
+          <>
+            We save your answers.{" "}
+            <span className="whitespace-nowrap">A grown-up</span> can change your{" "}
+            <span className="whitespace-nowrap">name and age.</span>
+            <span className="mt-1 block">
+              <AdultBoundaryHelper message="savedAnswersHelper" />
+            </span>
+          </>
+        )}
       </p>
       <div className="grid justify-items-center gap-1 short-wide:col-start-2 short-wide:row-start-3 short-wide:flex short-wide:items-center short-wide:justify-self-start short-wide:gap-4">
         <ActionButton onClick={onStart} type="button">
-          {isResuming ? "Continue questions" : "Start questions"}
+          {isResuming
+            ? messages.learners.setup.continue
+            : messages.learners.setup.start}
         </ActionButton>
         <TextButton onClick={onSkip} type="button">
-          Skip for now
+          {messages.learners.setup.skip}
         </TextButton>
       </div>
     </LearnerProfileCard>
@@ -304,6 +331,12 @@ export function LearnerProfileGateView({
   redoLearnerProfile,
   started,
 }: LearnerProfileGateViewProps) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const audience: ProfileEditorAudience = guardianRoute
+    ? "guardian"
+    : "learner";
+  const messages =
+    audience === "guardian" ? selectedMessages : englishGuardianMessages;
   const fullData = data?.mode === "full" ? data : null;
   const learnerProfileComplete = Boolean(
     fullData &&
@@ -346,7 +379,7 @@ export function LearnerProfileGateView({
           <p className="m-0 font-bold leading-relaxed text-slate-600">
             {isConversationRoute
               ? "Getting Peppa ready…"
-              : "Loading your questions…"}
+              : messages.learners.setup.loading}
           </p>
         </LearnerProfileStatusCard>
       </LearnerProfileScreen>
@@ -361,10 +394,12 @@ export function LearnerProfileGateView({
           <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
             {isConversationRoute
               ? "Peppa is taking a break"
-              : "Questions are taking a break"}
+              : messages.learners.setup.loadErrorTitle}
           </h1>
           <p className="m-0 font-bold leading-relaxed text-slate-600">
-            {loadError}
+            {isConversationRoute
+              ? "Voice chat could not be loaded. Please try again."
+              : messages.learners.setup.loadErrorDescription}
           </p>
           <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
             {redoLearnerProfile || guardianRoute ? (
@@ -376,7 +411,7 @@ export function LearnerProfileGateView({
                 }
                 type="button"
               >
-                Back
+                {messages.common.back}
               </TextButton>
             ) : isConversationRoute ? (
               <TextButton onClick={onCloseConversationRoute} type="button">
@@ -388,7 +423,7 @@ export function LearnerProfileGateView({
               </TextButton>
             )}
             <ActionButton onClick={onRetry} type="button">
-              Retry
+              {messages.common.retry}
             </ActionButton>
           </div>
         </LearnerProfileStatusCard>
@@ -466,6 +501,7 @@ export function LearnerProfileGateView({
       <LearnerProfileScreen>
         <LearnerProfileAcknowledgment
           acknowledgment={acknowledgment.acknowledgment}
+          audience={audience}
           onNext={onAcknowledgmentNext}
           operationId={acknowledgment.operationId}
         />
@@ -495,7 +531,7 @@ export function LearnerProfileGateView({
         <LearnerProfileScreen>
           <LearnerProfileStatusCard aria-busy="true" role="status">
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Loading your profile…
+              {messages.learners.profile.loading}
             </p>
           </LearnerProfileStatusCard>
         </LearnerProfileScreen>
@@ -507,17 +543,17 @@ export function LearnerProfileGateView({
         <LearnerProfileScreen>
           <LearnerProfileStatusCard role="alert">
             <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
-              Profile is taking a break
+              {messages.learners.profile.loadErrorTitle}
             </h1>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              {profileLoadError}
+              {messages.learners.profile.pageErrors["load-failed"]}
             </p>
             <div className="mt-2 flex items-center justify-end gap-4 max-sm:w-full max-sm:justify-between">
               <TextButton onClick={onCloseProfileRoute} type="button">
-                Back
+                {messages.common.back}
               </TextButton>
               <ActionButton onClick={onRetryProfile} type="button">
-                Retry
+                {messages.common.retry}
               </ActionButton>
             </div>
           </LearnerProfileStatusCard>
@@ -528,18 +564,23 @@ export function LearnerProfileGateView({
     if (isProfileFormRedo && profileQuestionProps) {
       return (
         <LearnerProfileScreen>
-          <LearnerProfileQuestionView {...profileQuestionProps} />
+          <LearnerProfileQuestionView
+            {...profileQuestionProps}
+            audience={audience}
+          />
         </LearnerProfileScreen>
       );
     }
 
-    if (profileEditor) return <ProfileEditorView {...profileEditor} />;
+    if (profileEditor) {
+      return <ProfileEditorView {...profileEditor} audience={audience} />;
+    }
 
     return (
       <LearnerProfileScreen>
         <LearnerProfileStatusCard aria-busy="true" role="status">
           <p className="m-0 font-bold leading-relaxed text-slate-600">
-            Loading your profile…
+            {messages.learners.profile.loading}
           </p>
         </LearnerProfileStatusCard>
       </LearnerProfileScreen>
@@ -571,6 +612,7 @@ export function LearnerProfileGateView({
     return (
       <LearnerProfileScreen>
         <LearnerProfileSetupView
+          audience={audience}
           answeredQuestionCount={fullData.progress.answered}
           onSkip={onSkip}
           onStart={onStart}
@@ -583,7 +625,7 @@ export function LearnerProfileGateView({
   if (questionProps) {
     return (
       <LearnerProfileScreen>
-        <LearnerProfileQuestionView {...questionProps} />
+        <LearnerProfileQuestionView {...questionProps} audience={audience} />
       </LearnerProfileScreen>
     );
   }
@@ -592,7 +634,7 @@ export function LearnerProfileGateView({
     <LearnerProfileScreen>
       <LearnerProfileStatusCard aria-busy="true" role="status">
         <p className="m-0 font-bold leading-relaxed text-slate-600">
-          Finishing your profile…
+          {messages.learners.setup.finishing}
         </p>
       </LearnerProfileStatusCard>
     </LearnerProfileScreen>
@@ -890,7 +932,9 @@ export function LearnerProfileGate({
   const [useFormFallback, setUseFormFallback] = useState(false);
   const [redoQuestionIndex, setRedoQuestionIndex] = useState(0);
   const [draft, setDraft] = useState("");
-  const [fieldError, setFieldError] = useState("");
+  const [fieldError, setFieldError] = useState<
+    LearnerProfileQuestionErrorCode | ""
+  >("");
   const [fieldErrorIsAnswer, setFieldErrorIsAnswer] = useState(false);
   const [questionPresentation, setQuestionPresentation] =
     useState<QuestionPresentation>(IDLE_QUESTION_PRESENTATION);
@@ -900,9 +944,10 @@ export function LearnerProfileGate({
     {},
   );
   const [profileFieldErrors, setProfileFieldErrors] = useState<
-    Record<string, string>
+    Record<string, LearnerProfileFieldErrorCode>
   >({});
-  const [profilePageError, setProfilePageError] = useState("");
+  const [profilePageError, setProfilePageError] =
+    useState<LearnerDetailsErrorCode | null>(null);
   const [isProfileSaving, setIsProfileSaving] = useState(false);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileLoadError, setProfileLoadError] = useState("");
@@ -1036,7 +1081,7 @@ export function LearnerProfileGate({
     setProfileState(null);
     setProfileDrafts({});
     setProfileFieldErrors({});
-    setProfilePageError("");
+    setProfilePageError(null);
     setIsProfileSaving(false);
     setIsProfileLoading(false);
     setProfileLoadError("");
@@ -2076,9 +2121,7 @@ export function LearnerProfileGate({
       });
     } catch (error) {
       if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
-        setFieldError(
-          "Sound did not play. You can keep going or tap the speaker button.",
-        );
+        setFieldError("sound-start-failed");
       }
     } finally {
       finishQuestionPlayback(active);
@@ -2097,7 +2140,7 @@ export function LearnerProfileGate({
       });
     } catch (error) {
       if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
-        setFieldError("Sound did not play. Tap the speaker button again.");
+        setFieldError("sound-replay-failed");
       }
     } finally {
       finishQuestionPlayback(active);
@@ -2116,7 +2159,7 @@ export function LearnerProfileGate({
       });
     } catch (error) {
       if (isCurrentQuestionPlayback(active) && !isAbortError(error)) {
-        setFieldError("Sound did not play. Tap the speaker button again.");
+        setFieldError("sound-replay-failed");
       }
     } finally {
       finishQuestionPlayback(active);
@@ -2148,9 +2191,7 @@ export function LearnerProfileGate({
       }
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
-        setFieldError(
-          `${readableError(error)} You can still type your answer.`,
-        );
+        setFieldError("voice-failed");
       }
     } finally {
       finishQuestionOperation(active, settledStatus);
@@ -2182,9 +2223,7 @@ export function LearnerProfileGate({
       }
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
-        setFieldError(
-          `${readableError(error)} You can still type your answer.`,
-        );
+        setFieldError("voice-failed");
       }
     } finally {
       finishQuestionOperation(active, settledStatus);
@@ -2213,10 +2252,14 @@ export function LearnerProfileGate({
       });
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
-        setFieldError(readableError(error));
-        setFieldErrorIsAnswer(
-          error instanceof LearnerProfileApiError && error.isFieldError,
+        const isFieldError =
+          error instanceof LearnerProfileApiError && error.isFieldError;
+        setFieldError(
+          isFieldError
+            ? getLearnerProfileFieldErrorCode(error.message)
+            : "try-again",
         );
+        setFieldErrorIsAnswer(isFieldError);
       }
     } finally {
       finishQuestionOperation(active);
@@ -2256,10 +2299,14 @@ export function LearnerProfileGate({
       setFieldErrorIsAnswer(false);
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
-        setFieldError(readableError(error));
-        setFieldErrorIsAnswer(
-          error instanceof LearnerProfileApiError && error.isFieldError,
+        const isFieldError =
+          error instanceof LearnerProfileApiError && error.isFieldError;
+        setFieldError(
+          isFieldError
+            ? getLearnerProfileFieldErrorCode(error.message)
+            : "try-again",
         );
+        setFieldErrorIsAnswer(isFieldError);
       }
     } finally {
       finishQuestionOperation(active);
@@ -2297,11 +2344,14 @@ export function LearnerProfileGate({
       ) {
         return;
       }
-      const message = readableError(error);
       if (data) {
-        setFieldError(message);
+        setFieldError(
+          error instanceof Error && error.message === "Please try again."
+            ? "try-again"
+            : "skip-failed",
+        );
         setFieldErrorIsAnswer(false);
-      } else setLoadError(message);
+      } else setLoadError(readableError(error));
     } finally {
       if (active) finishQuestionOperation(active);
     }
@@ -2318,7 +2368,7 @@ export function LearnerProfileGate({
       if (isCurrentQuestionOperation(active)) setData(next);
     } catch (error) {
       if (isCurrentQuestionOperation(active) && !isAbortError(error)) {
-        setFieldError(readableError(error));
+        setFieldError("question-skip-failed");
         setFieldErrorIsAnswer(false);
       }
     } finally {
@@ -2401,7 +2451,7 @@ export function LearnerProfileGate({
       setRedoQuestionIndex(0);
       setProfileDrafts(profileDraftsFromState(profile));
       setProfileFieldErrors({});
-      setProfilePageError("");
+      setProfilePageError(null);
     } catch (error) {
       if (isCurrentProfileOperation(profileOperation)) {
         setProfileLoadError(readableError(error));
@@ -2416,16 +2466,16 @@ export function LearnerProfileGate({
     }
   }, [fullData?.profile.id, isActiveProfileRoute, isCurrentProfileOperation]);
 
-  function setProfileFieldError(answerKey: string, message: string) {
-    setProfileFieldErrors((current) => ({ ...current, [answerKey]: message }));
-  }
-
   function handleProfileValueChange(answerKey: string, value: string) {
     if (learnerIdentityCheckRef.current !== "confirmed") return;
     setProfileDrafts((current) =>
       updateProfileDraft(current, answerKey, value),
     );
-    setProfileFieldError(answerKey, "");
+    setProfileFieldErrors((current) => {
+      const next = { ...current };
+      delete next[answerKey];
+      return next;
+    });
   }
 
   async function handleProfileSave() {
@@ -2440,7 +2490,7 @@ export function LearnerProfileGate({
     profileMutationPendingRef.current = true;
     setIsProfileSaving(true);
     setProfileFieldErrors({});
-    setProfilePageError("");
+    setProfilePageError(null);
     try {
       const saved = await saveProfileAnswers(profileDrafts, {
         signal: controller.signal,
@@ -2470,9 +2520,16 @@ export function LearnerProfileGate({
       if (!isCurrentProfileOperation(profileOperation)) return;
       const errors =
         error instanceof LearnerProfileApiError ? error.fieldErrors : {};
-      setProfileFieldErrors(errors);
+      setProfileFieldErrors(
+        Object.fromEntries(
+          Object.entries(errors).map(([answerKey, message]) => [
+            answerKey,
+            getLearnerProfileFieldErrorCode(message),
+          ]),
+        ),
+      );
       if (Object.keys(errors).length === 0) {
-        setProfilePageError(readableError(error));
+        setProfilePageError("save-failed");
       }
     } finally {
       const isCurrent = isCurrentProfileOperation(profileOperation);
@@ -2493,7 +2550,7 @@ export function LearnerProfileGate({
     const { controller } = profileOperation;
     profileMutationPendingRef.current = true;
     setIsProfileSaving(true);
-    setProfilePageError("");
+    setProfilePageError(null);
     try {
       const saved = await saveLessonRecordingConsent(enabled, {
         signal: controller.signal,
@@ -2513,7 +2570,7 @@ export function LearnerProfileGate({
       );
     } catch (error) {
       if (isCurrentProfileOperation(profileOperation) && !isAbortError(error)) {
-        setProfilePageError(readableError(error));
+        setProfilePageError("recording-choice-failed");
       }
     } finally {
       const isCurrent = isCurrentProfileOperation(profileOperation);
@@ -2624,6 +2681,7 @@ export function LearnerProfileGate({
   const progress = fullData?.progress ?? { answered: 0, current: 0, total: 0 };
   const questionProps: QuestionProps | null = activeQuestion
     ? {
+        audience: guardianRoute ? "guardian" : "learner",
         fieldError,
         fieldErrorIsAnswer,
         mode: "learner-profile",
@@ -2654,6 +2712,7 @@ export function LearnerProfileGate({
 
   const profileQuestionProps: QuestionProps | null = redoQuestion
     ? {
+        audience: guardianRoute ? "guardian" : "learner",
         fieldError,
         fieldErrorIsAnswer,
         mode: "profile",
@@ -2815,6 +2874,7 @@ export function LearnerProfileGate({
           profileEditor={
             isProfileRoute && profileState
               ? {
+                  audience: guardianRoute ? "guardian" : "learner",
                   drafts: profileDrafts,
                   fieldErrors: profileFieldErrors,
                   isSaving: isProfileSaving,

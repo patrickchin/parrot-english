@@ -1,12 +1,16 @@
 import { Mic, Volume2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, type FormEvent } from "react";
 import { playAudioLine } from "../media/audio-playback";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   transcribeLearnerProfileAudio,
   type LearnerProfileAudio,
+  type LearnerProfileFieldErrorCode,
   type LearnerProfileQuestion,
 } from "./learner-profile-api";
 import { recordSpeechClip } from "../media/speech-recorder";
+import type { ProfileEditorAudience } from "./ProfileEditor";
 import {
   LearnerProfileCard,
   LearnerProfilePeppaArt,
@@ -29,8 +33,30 @@ export type QuestionPendingAction =
 export type QuestionStatus =
   "idle" | "opening" | "ready" | "recording" | "saving" | "transcribing";
 
+export type LearnerProfileQuestionOperationErrorCode =
+  | "sound-start-failed"
+  | "sound-replay-failed"
+  | "voice-failed"
+  | "try-again"
+  | "skip-failed"
+  | "question-skip-failed";
+
+export type LearnerProfileQuestionErrorCode =
+  | LearnerProfileFieldErrorCode
+  | LearnerProfileQuestionOperationErrorCode;
+
+const QUESTION_OPERATION_ERROR_CODES = new Set<string>([
+  "sound-start-failed",
+  "sound-replay-failed",
+  "voice-failed",
+  "try-again",
+  "skip-failed",
+  "question-skip-failed",
+]);
+
 type LearnerProfileQuestionViewProps = {
-  fieldError: string;
+  audience: ProfileEditorAudience;
+  fieldError: LearnerProfileQuestionErrorCode | "";
   fieldErrorIsAnswer?: boolean;
   mode: "learner-profile" | "profile";
   onBack?: () => void;
@@ -49,6 +75,7 @@ type LearnerProfileQuestionViewProps = {
 };
 
 export function LearnerProfileQuestionView({
+  audience,
   fieldError,
   fieldErrorIsAnswer = false,
   mode,
@@ -66,19 +93,23 @@ export function LearnerProfileQuestionView({
   status,
   value,
 }: LearnerProfileQuestionViewProps) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages =
+    audience === "guardian" ? selectedMessages : englishGuardianMessages;
   const pending = status !== "idle" && status !== "ready";
   const pendingMessage =
-    status === "opening"
-      ? "Opening mic…"
-      : status === "recording"
-        ? "Listening…"
-        : status === "transcribing"
-          ? "Writing…"
-          : status === "saving"
-            ? "Thinking…"
-            : status === "ready"
-              ? "Ready."
-              : "";
+    status === "idle" ? "" : messages.learners.question.statuses[status];
+  const fieldErrorMessage = fieldError
+    ? fieldErrorIsAnswer
+      ? messages.learners.profile.fieldErrors[
+          fieldError as LearnerProfileFieldErrorCode
+        ]
+      : QUESTION_OPERATION_ERROR_CODES.has(fieldError)
+        ? messages.learners.question.operationErrors[
+            fieldError as LearnerProfileQuestionOperationErrorCode
+          ]
+        : messages.learners.question.operationFailed
+    : "";
   const inputId = `learner-profile-answer-${question.answerKey}`;
   const fieldErrorId = `${inputId}-error`;
   const formRef = useRef<HTMLFormElement>(null);
@@ -118,10 +149,13 @@ export function LearnerProfileQuestionView({
     >
       <header className="flex items-center justify-between gap-4 max-sm:justify-start max-sm:gap-2 short-wide:col-start-2 short-wide:row-start-1 short-wide:justify-start short-wide:gap-2">
         <p className="m-0 text-xs font-black uppercase tracking-widest text-brand-rose max-sm:tracking-normal">
-          Question {progress.current} of {progress.total}
+          {messages.learners.question.progress(
+            progress.current,
+            progress.total,
+          )}
         </p>
         <IconButton
-          aria-label="Replay question"
+          aria-label={messages.learners.question.replay}
           aria-disabled={playbackPending || undefined}
           disabled={pending || !question.audio}
           onClick={playbackPending ? undefined : onReplay}
@@ -137,7 +171,7 @@ export function LearnerProfileQuestionView({
 
       <div className="my-5 grid items-center gap-4 text-center max-[360px]:my-2 max-[360px]:gap-2 short:my-2 short:gap-2 short-wide:contents sm:grid-cols-4 sm:gap-8 sm:text-left">
         <LearnerProfilePeppaArt
-          alt="Peppa, your English host"
+          alt={messages.learners.question.peppaAlt}
           className="mx-auto aspect-square max-h-40 w-24 animate-float object-contain motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-3 short-wide:row-start-1 short-wide:w-full short-wide:max-w-28 sm:col-span-1 sm:w-full"
           sizes="(min-width: 640px) 10rem, 7rem"
         />
@@ -145,12 +179,13 @@ export function LearnerProfileQuestionView({
           <LearnerProfileStepHeading
             className="m-0 text-3xl leading-tight text-brand-ink short:text-3xl sm:text-4xl"
             id="learner-profile-question-title"
+            lang="en"
             stepKey={question.answerKey}
           >
             {question.promptEn}
           </LearnerProfileStepHeading>
           {question.promptZh ? (
-            <p className="mb-0 mt-2.5 font-bold text-slate-500" lang="zh-CN">
+            <p className="mb-0 mt-2.5 font-bold text-slate-500" lang="zh-Hans">
               {question.promptZh}
             </p>
           ) : null}
@@ -166,7 +201,7 @@ export function LearnerProfileQuestionView({
           <div className="grid gap-2 font-black text-brand-ink short:gap-1">
             <div className="flex min-h-6 items-center justify-between gap-2">
               <label className="shrink-0" htmlFor={inputId}>
-                Your answer
+                {messages.learners.question.answer}
               </label>
               <p
                 aria-atomic="true"
@@ -188,6 +223,7 @@ export function LearnerProfileQuestionView({
                     "min-h-28 min-w-0 flex-1 scroll-m-2 resize-y leading-relaxed short:h-20 short:min-h-20",
                 })}
                 id={inputId}
+                lang="en"
                 disabled={pending}
                 maxLength={question.maxLength}
                 onChange={(event) => onValueChange(event.target.value)}
@@ -196,7 +232,7 @@ export function LearnerProfileQuestionView({
                 value={value}
               />
               <IconButton
-                aria-label="Speak your answer"
+                aria-label={messages.learners.question.speak}
                 aria-disabled={microphoneOwnsPending || undefined}
                 className={cx(
                   "shrink-0 scroll-m-2",
@@ -221,14 +257,14 @@ export function LearnerProfileQuestionView({
               id={fieldErrorIsAnswer ? fieldErrorId : undefined}
               role="alert"
             >
-              {fieldError}
+              {fieldErrorMessage}
             </p>
           ) : null}
 
           <div className="mt-2 flex flex-wrap items-center justify-end gap-4 max-[360px]:mt-0 max-[360px]:gap-2 short:mt-0 short:gap-2 max-sm:justify-between">
             {mode === "profile" && onBack ? (
               <TextButton onClick={onBack} type="button">
-                Back
+                {messages.learners.question.back}
               </TextButton>
             ) : null}
             {mode === "learner-profile" && !question.required ? (
@@ -242,7 +278,7 @@ export function LearnerProfileQuestionView({
                 onClick={pending ? undefined : onSkipQuestion}
                 type="button"
               >
-                Skip question
+                {messages.learners.question.skipQuestion}
               </TextButton>
             ) : null}
             {mode === "learner-profile" ? (
@@ -256,7 +292,7 @@ export function LearnerProfileQuestionView({
                 onClick={pending ? undefined : onSkip}
                 type="button"
               >
-                Skip for now
+                {messages.learners.question.skip}
               </TextButton>
             ) : null}
             <ActionButton
@@ -268,7 +304,9 @@ export function LearnerProfileQuestionView({
               disabled={pending && !submitOwnsPending}
               type="submit"
             >
-              {mode === "profile" ? "Save" : "Next"}
+              {mode === "profile"
+                ? messages.learners.question.save
+                : messages.learners.question.next}
             </ActionButton>
           </div>
         </fieldset>

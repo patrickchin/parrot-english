@@ -186,6 +186,50 @@ test("Chinese Guardian dashboard and learner chooser are consistently localized"
   await expect(dialog.getByText("Noah", { exact: true })).toBeVisible();
 });
 
+test("Chinese Guardian learner roster and profile editor localize without renaming learners", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto(
+    "/guardian/learners?parrotE2eGuardian=guardian&parrotE2eLearners=multiple",
+  );
+
+  await expect(page.getByRole("navigation", { name: "页面导航" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "管理孩子" })).toBeVisible();
+  await expect(page.getByText("Mia", { exact: true })).toBeVisible();
+  await expect(page.getByText("Noah", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("常用名")).toBeVisible();
+  await page.getByRole("button", { name: "编辑 ⁨Mia⁩ 的资料" }).click();
+
+  await expect(page.getByRole("heading", { name: "孩子资料" })).toBeVisible();
+  await expect(page.getByText("正在管理 Mia", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("姓名")).toHaveValue("Mia");
+  await expect(page.getByLabel("年龄")).toBeVisible();
+  await expect(page.getByRole("region", { name: "课程语音录音" })).toBeVisible();
+});
+
+test("Guardian redo setup localizes controls while learning content stays English", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto(
+    "/guardian/profile/setup?redo=1&returnTo=%2Fguardian&parrotE2eGuardian=guardian&parrotE2eLearners=multiple&parrotE2eProfile=viewport-stability",
+  );
+
+  const prompt = page.getByRole("heading", {
+    name: "Hi! I'm Peppa. What's your name?",
+  });
+  await expect(prompt).toBeVisible();
+  await expect(prompt).toHaveAttribute("lang", "en");
+  await expect(page.getByText("问题 1/6", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "重播问题" })).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "你的回答" }),
+  ).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("button", { name: "返回" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "保存" })).toBeVisible();
+});
+
 test("learner document stays English while its adult chooser is fully Chinese", async ({ page }) => {
   await page.addInitScript(() =>
     localStorage.setItem("parrot:guardian-language", "zh-Hans"),

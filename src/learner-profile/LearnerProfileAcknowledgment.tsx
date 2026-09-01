@@ -4,12 +4,15 @@ import type {
   LearnerProfileAudio,
 } from "./learner-profile-api";
 import { playAudioLine } from "../media/audio-playback";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   LearnerProfileCard,
   LearnerProfilePeppaArt,
   LearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import { ActionButton, cx } from "../shared/ui";
+import type { ProfileEditorAudience } from "./ProfileEditor";
 
 type PlayLine = typeof playAudioLine;
 
@@ -61,13 +64,18 @@ export function beginAcknowledgmentPlayback({
 
 export function LearnerProfileAcknowledgment({
   acknowledgment,
+  audience,
   onNext,
   operationId,
 }: {
   acknowledgment: Acknowledgment;
+  audience: ProfileEditorAudience;
   onNext: () => void;
   operationId: number;
 }) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages =
+    audience === "guardian" ? selectedMessages : englishGuardianMessages;
   const hasLongAcknowledgment = acknowledgment.text.length > 120;
 
   useEffect(
@@ -84,7 +92,7 @@ export function LearnerProfileAcknowledgment({
       className="grid justify-items-center gap-5 p-8 text-center short:gap-2 short:p-4 short-wide:grid-cols-[minmax(8rem,0.75fr)_minmax(0,1.25fr)] short-wide:grid-rows-[auto_auto] short-wide:items-center short-wide:gap-x-6 short-wide:px-6 short-wide:py-4 short-wide:text-left sm:p-14"
     >
       <LearnerProfilePeppaArt
-        alt="Peppa smiling"
+        alt={messages.learners.acknowledgment.peppaAlt}
         className="aspect-square max-h-60 w-40 animate-float object-contain drop-shadow-lg motion-reduce:animate-none short:w-20 short-wide:col-start-1 short-wide:row-span-2 short-wide:row-start-1 short-wide:w-full short-wide:max-w-40 sm:w-56"
         sizes="(min-width: 640px) 14rem, 10rem"
       />
@@ -94,6 +102,7 @@ export function LearnerProfileAcknowledgment({
           hasLongAcknowledgment ? "sm:text-4xl" : "sm:text-5xl",
         )}
         stepKey={operationId}
+        lang="en"
       >
         {acknowledgment.text}
       </LearnerProfileStepHeading>
@@ -102,7 +111,7 @@ export function LearnerProfileAcknowledgment({
         onClick={onNext}
         type="button"
       >
-        Next
+        {messages.learners.acknowledgment.next}
       </ActionButton>
     </LearnerProfileCard>
   );

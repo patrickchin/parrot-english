@@ -589,7 +589,9 @@ async function expectNameContentContained(page: Page, name: string) {
 
 async function expectLearnerDeletionDialogContained(page: Page, name: string) {
   const card = learnerCard(page, name);
-  const deleteButton = card.getByRole("button", { name: `Delete ${name}` });
+  const deleteButton = card.getByRole("button", {
+    name: `Delete ⁨${name}⁩`,
+  });
   await expectContainedHorizontally(deleteButton, page);
   await deleteButton.click();
 
@@ -599,7 +601,7 @@ async function expectLearnerDeletionDialogContained(page: Page, name: string) {
     dialog.getByRole("heading", { name: `Delete ${name}?` }),
   ).toBeVisible();
   await expect(dialog).toContainText(`This removes ${name}'s learner profile`);
-  const confirm = dialog.getByRole("button", { name: `Delete ${name}` });
+  const confirm = dialog.getByRole("button", { name: `Delete ⁨${name}⁩` });
   const cancel = dialog.getByRole("button", { name: "Cancel" });
   await expectContainedHorizontally(dialog, page);
   await expectContainedHorizontally(confirm, page);
@@ -655,6 +657,42 @@ test("chooses a sibling only while switching and keeps that session selection af
   ).toBeVisible();
 });
 
+test("retranslates a failed learner deletion in place without repeating it", async ({
+  page,
+}) => {
+  await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
+  await expect(
+    page.getByRole("heading", { name: "Manage learners" }),
+  ).toBeVisible();
+  const deleteFailurePrimed = await page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLearners?: { failNextLearnerDelete(): void };
+      }
+    ).__parrotE2eLearners;
+    if (!controller) return false;
+    controller.failNextLearnerDelete();
+    return true;
+  });
+  expect(deleteFailurePrimed).toBe(true);
+  await learnerCard(page, "Noah")
+    .getByRole("button", { name: "Delete ⁨Noah⁩" })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Delete ⁨Noah⁩" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "cleanup is still in progress",
+  );
+
+  const chinese = dialog.getByRole("button", { exact: true, name: "中文" });
+  await chinese.click();
+  await expect(dialog).toHaveAttribute("lang", "zh-Hans");
+  await expect(chinese).toBeFocused();
+  await expect(dialog.getByRole("alert")).toContainText("孩子资料清理仍在进行中");
+  await expect(dialog.getByText("Noah", { exact: true }).first()).toBeVisible();
+  await expect(learnerCard(page, "Noah")).toBeVisible();
+});
+
 test("edits Noah by ID while Mia remains in learner mode after Back and refresh", async ({
   page,
 }) => {
@@ -663,7 +701,7 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
   await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
   await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
   await learnerCard(page, "Noah")
-    .getByRole("button", { name: "Edit Noah's profile" })
+    .getByRole("button", { name: "Edit ⁨Noah⁩'s profile" })
     .click();
 
   await expect(page).toHaveURL("/guardian/learners/learner-noah");
@@ -703,7 +741,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
   await learnerCard(page, "Mia")
-    .getByRole("button", { name: "Edit Mia's profile" })
+    .getByRole("button", { name: "Edit ⁨Mia⁩'s profile" })
     .click();
 
   await page.getByRole("textbox", { exact: true, name: "Name" }).fill(
@@ -1789,10 +1827,10 @@ for (const viewport of requiredViewports) {
       noah.getByRole("button", { name: /Use .* learner mode/ }),
     ).toHaveCount(0);
     await expect(
-      noah.getByRole("button", { name: "Edit Noah's profile" }),
+      noah.getByRole("button", { name: "Edit ⁨Noah⁩'s profile" }),
     ).toBeVisible();
     await expect(
-      noah.getByRole("button", { name: "Delete Noah" }),
+      noah.getByRole("button", { name: "Delete ⁨Noah⁩" }),
     ).toBeVisible();
     await expect(add).toBeVisible();
     await expectContainedHorizontally(back, page);

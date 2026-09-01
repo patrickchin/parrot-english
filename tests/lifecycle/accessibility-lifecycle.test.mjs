@@ -50,6 +50,7 @@ let GuardianLanguageControl;
 let FeaturePlaceholder;
 let GuardianModeBoundary;
 let LearnerModeBoundary;
+let LearnerDeleteDialog;
 
 before(async () => {
   ({ AccountPrivacyPage } = await vite
@@ -89,6 +90,9 @@ before(async () => {
   ));
   ({ GuardianModeBoundary, LearnerModeBoundary } = await vite.ssrLoadModule(
     "/src/app/ModeRouteBoundaries.tsx",
+  ));
+  ({ LearnerDeleteDialog } = await vite.ssrLoadModule(
+    "/src/learner-profile/LearnerDeleteDialog.tsx",
   ));
 });
 
@@ -608,6 +612,50 @@ describe("keyboard accessibility lifecycles", () => {
     await press(password, "Escape");
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.activeElement, opener);
+  });
+
+  it("keeps the learner-delete language control trapped and enabled while pending", async () => {
+    const attempt = deferred();
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "en", storage: null },
+        createElement(LearnerDeleteDialog, {
+          onClose() {},
+          onDelete: () => attempt.promise,
+          profile: {
+            age: 7,
+            createdAt: "2026-08-25T08:00:00.000Z",
+            deletionPending: false,
+            id: "learner-bob",
+            name: "Bob",
+            profileStatus: "completed",
+          },
+        }),
+      ),
+    );
+    const dialog = document.querySelector('[role="dialog"]');
+    const confirm = button("Delete Bob");
+    await click(confirm);
+
+    const chinese = button("中文");
+    assert.equal(dialog.contains(chinese), true);
+    assert.equal(chinese.closest("fieldset"), null);
+    assert.equal(chinese.disabled, false);
+    chinese.focus();
+    await click(chinese);
+    assert.equal(document.activeElement, chinese);
+    assert.equal(dialog.getAttribute("lang"), "zh-Hans");
+
+    await press(chinese, "Tab", { shiftKey: true });
+    assert.equal(dialog.contains(document.activeElement), true);
+    await act(async () => attempt.resolve("learner-busy"));
+    await waitFor(() =>
+      assert.match(
+        dialog.querySelector('[role="alert"]')?.textContent ?? "",
+        /请先结束这位孩子当前的对话/,
+      ),
+    );
   });
 
   it("learner mode exposes only the locked grown-up gateway beneath the active identity", async () => {

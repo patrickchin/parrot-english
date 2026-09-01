@@ -6,17 +6,30 @@ import {
   HeaderButton,
   RouteHeader,
 } from "../app/AppHeader";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   LearnerProfileCard,
   LearnerProfilePeppaArt,
   LearnerProfileScreen,
 } from "./LearnerProfileLayout";
 import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
-import type { LearnerProfileQuestion } from "./learner-profile-api";
+import type {
+  LearnerProfileFieldErrorCode,
+  LearnerProfileQuestion,
+} from "./learner-profile-api";
+
+export type ProfileEditorAudience = "guardian" | "learner";
+export type LearnerDetailsErrorCode =
+  | "load-failed"
+  | "save-failed"
+  | "recording-choice-failed";
 
 type ProfileEditorViewProps = {
+  audience: ProfileEditorAudience;
   drafts: Record<string, string>;
-  fieldErrors: Record<string, string>;
+  fieldErrors: Record<string, LearnerProfileFieldErrorCode>;
   isSaving: boolean;
   learnerName: string;
   lessonRecordingCleanupPending: boolean;
@@ -27,12 +40,13 @@ type ProfileEditorViewProps = {
   onRedoLearnerProfile: () => void;
   onSave: () => void;
   onValueChange: (answerKey: string, value: string) => void;
-  pageError: string;
+  pageError: LearnerDetailsErrorCode | null;
   questions?: LearnerProfileQuestion[];
   showRedoLearnerProfile?: boolean;
 };
 
 export function ProfileEditorView({
+  audience,
   drafts,
   fieldErrors,
   isSaving,
@@ -48,6 +62,9 @@ export function ProfileEditorView({
   questions = [],
   showRedoLearnerProfile = true,
 }: ProfileEditorViewProps) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages =
+    audience === "guardian" ? selectedMessages : englishGuardianMessages;
   const interestQuestions = questions.filter(
     ({ answerKey }) => !["name", "age", "description"].includes(answerKey),
   );
@@ -60,9 +77,7 @@ export function ProfileEditorView({
   function deleteLessonRecordings() {
     if (
       !lessonRecordingCleanupPending &&
-      !window.confirm(
-        "Delete all saved lesson voice recordings? This cannot be undone.",
-      )
+      !window.confirm(messages.learners.profile.deleteRecordingsConfirm)
     ) {
       return;
     }
@@ -71,15 +86,15 @@ export function ProfileEditorView({
 
   return (
     <LearnerProfileScreen profile>
-      <RouteHeader>
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
         <HeaderButton
-          aria-label="Back"
+          aria-label={messages.learners.profile.back}
           disabled={isSaving}
           icon={<ArrowLeft />}
           onClick={onClose}
           type="button"
         >
-          Back
+          {messages.learners.profile.back}
         </HeaderButton>
       </RouteHeader>
 
@@ -89,16 +104,25 @@ export function ProfileEditorView({
         width="narrow"
       >
         <header>
-          <GuardianLearnerContextLabel learnerName={learnerName} />
+          <GuardianLearnerContextLabel
+            audience={audience}
+            learnerName={learnerName}
+          />
           <h1
             className="mb-0 mt-2 text-3xl leading-none text-brand-ink sm:text-5xl"
             id="profile-title"
           >
-            Learner details
+            {messages.learners.profile.title}
           </h1>
           <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-600">
-            These details personalize chats and lessons.
+            {messages.learners.profile.description}
           </p>
+          {audience === "learner" ? (
+            <p className="mb-0 mt-2 grid gap-1 text-sm font-bold leading-relaxed text-slate-600">
+              <span>{messages.learners.profile.savedAnswersHelper}</span>
+              <AdultBoundaryHelper message="savedAnswersHelper" />
+            </p>
+          ) : null}
         </header>
 
         <form className="mt-6" onSubmit={submit}>
@@ -110,7 +134,7 @@ export function ProfileEditorView({
               className="grid gap-2 font-black text-brand-ink"
               htmlFor="profile-name"
             >
-              <span>Name</span>
+              <span>{messages.learners.profile.name}</span>
               <input
                 autoComplete="name"
                 className={fieldClassName()}
@@ -128,7 +152,7 @@ export function ProfileEditorView({
                 className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
                 role="alert"
               >
-                {fieldErrors.name}
+                {messages.learners.profile.fieldErrors[fieldErrors.name]}
               </p>
             ) : null}
 
@@ -136,7 +160,7 @@ export function ProfileEditorView({
               className="grid gap-2 font-black text-brand-ink"
               htmlFor="profile-age"
             >
-              <span>Age</span>
+              <span>{messages.learners.profile.age}</span>
               <input
                 id="profile-age"
                 className={fieldClassName()}
@@ -152,7 +176,7 @@ export function ProfileEditorView({
                 className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
                 role="alert"
               >
-                {fieldErrors.age}
+                {messages.learners.profile.fieldErrors[fieldErrors.age]}
               </p>
             ) : null}
 
@@ -160,12 +184,13 @@ export function ProfileEditorView({
               className="grid min-w-0 gap-2 font-black text-brand-ink"
               htmlFor="profile-description"
             >
-              <span className="min-w-0 [overflow-wrap:anywhere]" dir="ltr">
-                About{" "}
+              <span className="min-w-0 [overflow-wrap:anywhere]">
+                {messages.learners.profile.aboutBefore}
                 <BidiLearnerName
-                  fallback="this learner"
+                  fallback={messages.learners.profile.aboutFallback}
                   learnerName={drafts.name ?? ""}
                 />
+                {messages.learners.profile.aboutAfter}
               </span>
               <textarea
                 className={fieldClassName({
@@ -176,7 +201,7 @@ export function ProfileEditorView({
                 onChange={(event) =>
                   onValueChange("description", event.currentTarget.value)
                 }
-                placeholder="Add a short description"
+                placeholder={messages.learners.profile.descriptionPlaceholder}
                 rows={4}
                 value={drafts.description ?? ""}
               />
@@ -186,7 +211,11 @@ export function ProfileEditorView({
                 className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
                 role="alert"
               >
-                {fieldErrors.description}
+                {
+                  messages.learners.profile.fieldErrors[
+                    fieldErrors.description
+                  ]
+                }
               </p>
             ) : null}
 
@@ -198,9 +227,9 @@ export function ProfileEditorView({
                     className="grid gap-1 font-black text-brand-ink"
                     htmlFor={fieldId}
                   >
-                    <span>{question.promptEn}</span>
+                    <span lang="en">{question.promptEn}</span>
                     {question.promptZh ? (
-                      <span className="text-sm text-brand-blue" lang="zh-CN">
+                      <span className="text-sm text-brand-blue" lang="zh-Hans">
                         {question.promptZh}
                       </span>
                     ) : null}
@@ -225,7 +254,11 @@ export function ProfileEditorView({
                       className="m-0 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
                       role="alert"
                     >
-                      {fieldErrors[question.answerKey]}
+                      {
+                        messages.learners.profile.fieldErrors[
+                          fieldErrors[question.answerKey]
+                        ]
+                      }
                     </p>
                   ) : null}
                 </div>
@@ -242,13 +275,10 @@ export function ProfileEditorView({
                 className="m-0 text-xl text-brand-ink"
                 id="lesson-recording-consent-title"
               >
-                Lesson voice recordings
+                {messages.learners.profile.recordingTitle}
               </h2>
               <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                Recording is available automatically during each join-in
-                moment. Clips apply only to this learner profile, and one latest
-                clip is saved per join-in moment. You can delete every saved clip
-                here at any time.
+                {messages.learners.profile.recordingDescription}
               </p>
               <p
                 aria-live="polite"
@@ -256,8 +286,8 @@ export function ProfileEditorView({
                 role="status"
               >
                 {lessonRecordingCleanupPending
-                  ? "Saved lesson recordings are still being deleted."
-                  : "Lesson recording is available automatically."}
+                  ? messages.learners.profile.recordingCleanupPending
+                  : messages.learners.profile.recordingAvailable}
               </p>
             </div>
             <ActionButton
@@ -269,8 +299,8 @@ export function ProfileEditorView({
               variant="dangerSurface"
             >
               {lessonRecordingCleanupPending
-                ? "Finish deleting lesson recordings"
-                : "Delete saved lesson recordings"}
+                ? messages.learners.profile.finishDeletingRecordings
+                : messages.learners.profile.deleteRecordings}
             </ActionButton>
           </section>
 
@@ -280,7 +310,7 @@ export function ProfileEditorView({
               className="mt-5 grid gap-4 rounded-3xl bg-sky-50 p-4 sm:grid-cols-[auto_1fr] sm:items-center"
             >
               <LearnerProfilePeppaArt
-                alt="Peppa smiling"
+                alt={messages.learners.profile.peppaAlt}
                 className="mx-auto size-20 shrink-0 object-contain"
                 sizes="5rem"
               />
@@ -289,11 +319,10 @@ export function ProfileEditorView({
                   className="m-0 text-xl text-brand-ink"
                   id="redo-learner-setup-title"
                 >
-                  Redo learner setup
+                  {messages.learners.profile.redoTitle}
                 </h2>
                 <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                  Answer Peppa’s setup questions again. For a normal chat, go
-                  Home and choose Talk to Peppa.
+                  {messages.learners.profile.redoDescription}
                 </p>
                 <ActionButton
                   className="mt-1 min-w-0"
@@ -304,7 +333,7 @@ export function ProfileEditorView({
                   type="button"
                   variant="navy"
                 >
-                  Redo setup questions
+                  {messages.learners.profile.redoAction}
                 </ActionButton>
               </div>
             </section>
@@ -315,16 +344,18 @@ export function ProfileEditorView({
               className="mt-4 rounded-2xl bg-rose-100 px-3 py-2.5 font-extrabold text-rose-900"
               role="alert"
             >
-              {pageError}
+              {messages.learners.profile.pageErrors[pageError]}
             </p>
           ) : null}
 
           <footer className="mt-6 flex items-center justify-between gap-4 border-t-3 border-sky-100 bg-white/95 pb-1 pt-4 max-sm:flex-col max-sm:items-stretch">
             <ActionButton disabled={isSaving} type="submit">
-              {isSaving ? "Saving…" : "Save changes"}
+              {isSaving
+                ? messages.learners.profile.saving
+                : messages.learners.profile.saveChanges}
             </ActionButton>
             <TextButton disabled={isSaving} onClick={onCancel} type="button">
-              Cancel
+              {messages.learners.profile.cancel}
             </TextButton>
           </footer>
         </form>

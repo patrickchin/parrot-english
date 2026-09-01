@@ -113,6 +113,51 @@ export type LearnerProfileRequestOptions = {
   signal?: AbortSignal;
 };
 
+export type LearnerProfileFieldErrorCode =
+  | "answer-required"
+  | "question-unavailable"
+  | "description-required"
+  | "too-long"
+  | "private-details"
+  | "preferred-name"
+  | "age-whole-number"
+  | "check-answer";
+
+const FIELD_ERROR_CODES = new Map<string, LearnerProfileFieldErrorCode>([
+  ["This question is no longer available.", "question-unavailable"],
+  ["Please enter a description.", "description-required"],
+  ["Please enter an answer.", "answer-required"],
+  ["Please answer this question.", "answer-required"],
+  [
+    "Do not share your school, home address, phone, email, or password.",
+    "private-details",
+  ],
+  ["Please use only your first name or nickname.", "preferred-name"],
+  [
+    "Please tell me the name you would like us to use.",
+    "preferred-name",
+  ],
+  [
+    "Please tell me your age using a whole number.",
+    "age-whole-number",
+  ],
+  ["Please check this answer and try again.", "check-answer"],
+]);
+
+export function getLearnerProfileFieldErrorCode(
+  message: unknown,
+): LearnerProfileFieldErrorCode {
+  if (
+    typeof message === "string" &&
+    /^Please use \d+ characters or fewer\.$/.test(message)
+  ) {
+    return "too-long";
+  }
+  return typeof message === "string"
+    ? (FIELD_ERROR_CODES.get(message) ?? "check-answer")
+    : "check-answer";
+}
+
 export type CreateLearnerProfileOptions = LearnerProfileRequestOptions & {
   activate?: boolean;
 };

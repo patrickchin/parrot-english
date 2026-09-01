@@ -5,37 +5,41 @@ import {
   getGuardianLearnersPath,
 } from "../app/app-routes";
 import { FeaturePlaceholder } from "../app/FeaturePlaceholder";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { useLearnerSelection } from "./LearnerProfileContext";
 import { profileDraftsFromState } from "./LearnerProfileGate";
-import { ProfileEditorView } from "./ProfileEditor";
 import {
+  ProfileEditorView,
+  type LearnerDetailsErrorCode,
+} from "./ProfileEditor";
+import {
+  getLearnerProfileFieldErrorCode,
   LearnerProfileApiError,
   loadProfile,
   saveLessonRecordingConsent,
   saveProfileAnswers,
+  type LearnerProfileFieldErrorCode,
   type ProfileState,
 } from "./learner-profile-api";
-
-function readableError(error: unknown, fallback: string) {
-  return error instanceof Error && error.message.trim()
-    ? error.message
-    : fallback;
-}
 
 function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
 }
 
 export function GuardianLearnerDetails() {
+  const { messages } = useGuardianLanguage();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { activeProfileId, reloadSelectedLearner } = useLearnerSelection();
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Record<string, LearnerProfileFieldErrorCode>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [loadSequence, setLoadSequence] = useState(0);
-  const [pageError, setPageError] = useState("");
+  const [pageError, setPageError] =
+    useState<LearnerDetailsErrorCode | null>(null);
   const [profileState, setProfileState] = useState<ProfileState | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
@@ -47,7 +51,7 @@ export function GuardianLearnerDetails() {
     controllerRef.current?.abort();
     controllerRef.current = controller;
     setIsLoading(true);
-    setPageError("");
+    setPageError(null);
     setProfileState(null);
     void loadProfile({
       learnerProfileId: validLearnerId,
@@ -64,9 +68,7 @@ export function GuardianLearnerDetails() {
       })
       .catch((error) => {
         if (!controller.signal.aborted && !isAbortError(error)) {
-          setPageError(
-            readableError(error, "The learner profile could not be loaded."),
-          );
+          setPageError("load-failed");
         }
       })
       .finally(() => {
@@ -86,8 +88,8 @@ export function GuardianLearnerDetails() {
     return (
       <FeaturePlaceholder
         busy
-        description="Getting this learner’s saved details ready."
-        title="Loading learner details…"
+        description={messages.learners.details.loadingDescription}
+        title={messages.learners.details.loadingTitle}
       />
     );
   }
@@ -95,11 +97,12 @@ export function GuardianLearnerDetails() {
   if (!profileState) {
     return (
       <FeaturePlaceholder
-        actionLabel="Back to Manage learners"
+        actionLabel={messages.learners.details.backToRoster}
         actionTo={getGuardianLearnersPath()}
-        description={pageError || "The learner profile could not be loaded."}
+        description={messages.learners.details.loadFailed}
         onRetry={() => setLoadSequence((current) => current + 1)}
-        title="Learner details are taking a break"
+        retryLabel={messages.common.retry}
+        title={messages.learners.details.errorTitle}
       />
     );
   }
@@ -111,7 +114,7 @@ export function GuardianLearnerDetails() {
     controllerRef.current = controller;
     setIsSaving(true);
     setFieldErrors({});
-    setPageError("");
+    setPageError(null);
     try {
       const saved = await saveProfileAnswers(drafts, {
         learnerProfileId: validLearnerId,
@@ -130,11 +133,16 @@ export function GuardianLearnerDetails() {
       if (controller.signal.aborted || isAbortError(error)) return;
       const errors =
         error instanceof LearnerProfileApiError ? error.fieldErrors : {};
-      setFieldErrors(errors);
+      setFieldErrors(
+        Object.fromEntries(
+          Object.entries(errors).map(([answerKey, message]) => [
+            answerKey,
+            getLearnerProfileFieldErrorCode(message),
+          ]),
+        ),
+      );
       if (Object.keys(errors).length === 0) {
-        setPageError(
-          readableError(error, "The learner profile could not be saved."),
-        );
+        setPageError("save-failed");
       }
     } finally {
       if (!controller.signal.aborted) setIsSaving(false);
@@ -148,7 +156,7 @@ export function GuardianLearnerDetails() {
     controllerRef.current?.abort();
     controllerRef.current = controller;
     setIsSaving(true);
-    setPageError("");
+    setPageError(null);
     try {
       const saved = await saveLessonRecordingConsent(enabled, {
         learnerProfileId: validLearnerId,
@@ -172,12 +180,7 @@ export function GuardianLearnerDetails() {
       }
     } catch (error) {
       if (!controller.signal.aborted && !isAbortError(error)) {
-        setPageError(
-          readableError(
-            error,
-            "The lesson recording choice could not be saved.",
-          ),
-        );
+        setPageError("recording-choice-failed");
       }
     } finally {
       if (!controller.signal.aborted) setIsSaving(false);
@@ -187,6 +190,7 @@ export function GuardianLearnerDetails() {
 
   return (
     <ProfileEditorView
+      audience="guardian"
       drafts={drafts}
       fieldErrors={fieldErrors}
       isSaving={isSaving}
@@ -204,7 +208,11 @@ export function GuardianLearnerDetails() {
       onSave={() => void save()}
       onValueChange={(answerKey, value) => {
         setDrafts((current) => ({ ...current, [answerKey]: value }));
-        setFieldErrors((current) => ({ ...current, [answerKey]: "" }));
+        setFieldErrors((current) => {
+          const next = { ...current };
+          delete next[answerKey];
+          return next;
+        });
       }}
       pageError={pageError}
       questions={profileState.questions}

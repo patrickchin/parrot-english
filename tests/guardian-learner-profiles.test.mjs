@@ -31,6 +31,9 @@ const { GuardianLearnerProfiles, GuardianLearnerProfilesView } = managerModule;
 const { LearnerDeleteDialog } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerDeleteDialog.tsx",
 );
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 const detailsModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerDetails.tsx")
   .catch(() => ({}));
@@ -168,31 +171,38 @@ function renderView(overrides = {}) {
     "function",
     "Expected a rendered Guardian learner manager view",
   );
+  const { language = "en", ...viewOverrides } = overrides;
   return renderToStaticMarkup(
     createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/learners"] },
-      createElement(GuardianLearnerProfilesView, {
-        error: "",
-        isLoading: false,
-        onAdd() {},
-        onDelete() {},
-        onManage() {},
-        onRetry() {},
-        pendingProfileId: null,
-        profiles: [mia, noah],
-        statusMessage: "",
-        ...overrides,
-      }),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/learners"] },
+        createElement(GuardianLearnerProfilesView, {
+          error: null,
+          isLoading: false,
+          onAdd() {},
+          onDelete: async () => null,
+          onManage() {},
+          onRetry() {},
+          pendingProfileId: null,
+          profiles: [mia, noah],
+          statusMessage: null,
+          ...viewOverrides,
+        }),
+      ),
     ),
   );
 }
 
 function button(container, accessibleName) {
+  const normalize = (value) => value.replace(/[⁨⁩]/g, "");
   const match = [...container.querySelectorAll("button")].find(
     (candidate) =>
-      candidate.getAttribute("aria-label") === accessibleName ||
-      candidate.textContent.trim() === accessibleName,
+      normalize(candidate.getAttribute("aria-label") ?? "") ===
+        normalize(accessibleName) ||
+      normalize(candidate.textContent.trim()) === normalize(accessibleName),
   );
   assert.ok(match, `Expected button named "${accessibleName}".`);
   return match;
@@ -256,6 +266,7 @@ function managerHarness({
 
 function detailsHarness({
   activeProfileId = mia.id,
+  language = "en",
   learnerId = noah.id,
   reloadSelectedLearner = async () => fullProfile(mia),
 } = {}) {
@@ -265,33 +276,37 @@ function detailsHarness({
     "Expected an explicit Guardian learner details container",
   );
   return createElement(
-    LearnerSelectionProvider,
-    {
-      activeProfileId,
-      async createAndSelectLearner() {
-        throw new Error("Explicit learner details must not create a learner.");
-      },
-      reloadSelectedLearner,
-      async selectLearner() {
-        throw new Error("Explicit learner details must not select a learner.");
-      },
-    },
+    GuardianLanguageProvider,
+    { initialLanguage: language, storage: null },
     createElement(
-      MemoryRouter,
-      { initialEntries: [`/guardian/learners/${learnerId}`] },
+      LearnerSelectionProvider,
+      {
+        activeProfileId,
+        async createAndSelectLearner() {
+          throw new Error("Explicit learner details must not create a learner.");
+        },
+        reloadSelectedLearner,
+        async selectLearner() {
+          throw new Error("Explicit learner details must not select a learner.");
+        },
+      },
       createElement(
-        Routes,
-        null,
-        createElement(Route, {
-          element: createElement(GuardianLearnerDetails),
-          path: "/guardian/learners/:learnerId",
-        }),
-        createElement(Route, {
-          element: createElement("p", null, "MANAGE LEARNERS"),
-          path: "/guardian/learners",
-        }),
+        MemoryRouter,
+        { initialEntries: [`/guardian/learners/${learnerId}`] },
+        createElement(
+          Routes,
+          null,
+          createElement(Route, {
+            element: createElement(GuardianLearnerDetails),
+            path: "/guardian/learners/:learnerId",
+          }),
+          createElement(Route, {
+            element: createElement("p", null, "MANAGE LEARNERS"),
+            path: "/guardian/learners",
+          }),
+        ),
+        createElement(LocationProbe),
       ),
-      createElement(LocationProbe),
     ),
   );
 }
@@ -308,16 +323,132 @@ test("learner manager exposes administrative profile controls only", () => {
   assert.match(html, /Age 6/);
   assert.match(html, /Setup complete/);
   assert.match(html, /Setup not started/);
-  assert.match(html, /aria-label="Edit Mia&#x27;s profile"/);
-  assert.match(html, /aria-label="Delete Mia"/);
-  assert.match(html, /aria-label="Edit Noah&#x27;s profile"/);
-  assert.match(html, /aria-label="Delete Noah"/);
+  assert.match(html, /aria-label="Edit ⁨Mia⁩&#x27;s profile"/);
+  assert.match(html, /aria-label="Delete ⁨Mia⁩"/);
+  assert.match(html, /aria-label="Edit ⁨Noah⁩&#x27;s profile"/);
+  assert.match(html, /aria-label="Delete ⁨Noah⁩"/);
   assert.match(
     html,
     /<label[^>]*for="preferred-name"[^>]*>Preferred name<\/label>/,
   );
   assert.match(html, /<input[^>]*id="preferred-name"/);
   assert.equal((html.match(/role="status"/g) ?? []).length, 1);
+});
+
+test("localizes the complete Guardian roster from semantic state", () => {
+  const bob = {
+    ...mia,
+    age: 7,
+    id: "learner-bob",
+    name: "Bob",
+    profileStatus: "completed",
+  };
+  const mary = {
+    ...noah,
+    id: "learner-mary",
+    name: "Mary",
+    profileStatus: "in_progress",
+  };
+  const rose = {
+    ...noah,
+    id: "learner-rose",
+    name: "Rose",
+  };
+  const html = renderView({
+    language: "zh-Hans",
+    profiles: [bob, mary, rose],
+  });
+
+  assert.match(html, /aria-label="页面导航"/);
+  assert.match(html, /<h1[^>]*>管理孩子<\/h1>/);
+  assert.match(html, /7 岁/);
+  assert.match(html, /年龄未填写/);
+  assert.match(html, /设置已完成/);
+  assert.match(html, /设置进行中/);
+  assert.match(html, /尚未开始设置/);
+  assert.match(html, /aria-label="编辑 ⁨Bob⁩ 的资料"/);
+  assert.match(html, /aria-label="删除 ⁨Bob⁩"/);
+  assert.match(html, /添加孩子/);
+  assert.match(html, /<label[^>]*for="preferred-name"[^>]*>常用名<\/label>/);
+
+  const loading = renderView({ isLoading: true, language: "zh-Hans" });
+  assert.match(loading, /正在加载孩子资料…/);
+  const failed = renderView({
+    error: "load-failed",
+    language: "zh-Hans",
+    profiles: [],
+  });
+  assert.match(failed, /无法加载孩子资料/);
+  assert.match(failed, />重试<\/button>/);
+  const adding = renderView({
+    language: "zh-Hans",
+    pendingProfileId: "__new-learner__",
+  });
+  assert.match(adding, /正在添加孩子…/);
+});
+
+test("localizes every roster deletion state without exposing supplied server text", () => {
+  const errors = [
+    ["last-learner", /请先添加另一位孩子/],
+    ["learner-busy", /请先结束这位孩子当前的对话/],
+    ["cleanup-pending", /清理仍在进行中/],
+    ["deletion-uncertain", /无法确认.*是否已删除/],
+    ["delete-failed", /未能删除/],
+    ["add-failed", /无法添加孩子/],
+  ];
+  for (const [error, expected] of errors) {
+    const html = renderView({ error, language: "zh-Hans" });
+    assert.match(html, expected);
+    assert.doesNotMatch(html, /SERVER/);
+  }
+  const deleted = renderView({
+    language: "zh-Hans",
+    statusMessage: { kind: "deleted", learnerName: "Bob" },
+  });
+  assert.match(deleted, /<bdi[^>]*dir="auto"[^>]*>Bob<\/bdi> 已删除/);
+});
+
+test("retranslates a failed delete dialog without changing its learner or focus", async () => {
+  let deletionCalls = 0;
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "en", storage: null },
+      createElement(LearnerDeleteDialog, {
+        onClose() {},
+        async onDelete() {
+          deletionCalls += 1;
+          return "learner-busy";
+        },
+        profile: { ...mia, id: "learner-bob", name: "Bob" },
+      }),
+    ),
+  );
+
+  const dialog = container.querySelector('[role="dialog"]');
+  assert.equal(dialog?.getAttribute("lang"), "en");
+  assert.match(dialog?.textContent ?? "", /Cannot be undone/);
+  await click(button(dialog, "Delete Bob"));
+  await waitFor(() =>
+    assert.match(
+      dialog.querySelector('[role="alert"]')?.textContent ?? "",
+      /current conversation/,
+    ),
+  );
+
+  const chinese = button(dialog, "中文");
+  chinese.focus();
+  await click(chinese);
+  assert.equal(container.querySelector('[role="dialog"]'), dialog);
+  assert.equal(dialog.getAttribute("lang"), "zh-Hans");
+  assert.equal(document.activeElement, chinese);
+  assert.equal(dialog.querySelector("bdi")?.textContent, "Bob");
+  assert.equal(deletionCalls, 1);
+  assert.match(
+    dialog.querySelector('[role="alert"]')?.textContent ?? "",
+    /请先结束这位孩子当前的对话/,
+  );
+  assert.equal(chinese.closest("fieldset"), null);
 });
 
 test("turns a malformed roster success into a retryable manager error", async () => {
@@ -556,10 +687,13 @@ test("final learner deletion is disabled and a pending learner can only finish d
     ],
   });
   assert.match(html, /Finish deleting <bdi[^>]*dir="auto"[^>]*>Mia<\/bdi>/);
-  assert.doesNotMatch(html, /aria-label="Edit Mia&#x27;s profile"/);
+  assert.doesNotMatch(html, /aria-label="Edit ⁨Mia⁩&#x27;s profile"/);
 
   const finalLearnerHtml = renderView({ profiles: [{ ...mia, deletionPending: false }] });
-  assert.match(finalLearnerHtml, /aria-label="Delete Mia"[^>]*disabled=""/);
+  assert.match(
+    finalLearnerHtml,
+    /aria-label="Delete ⁨Mia⁩"[^>]*disabled=""/,
+  );
   assert.match(
     finalLearnerHtml,
     /Add another learner before deleting <bdi[^>]*dir="auto"[^>]*>Mia<\/bdi>\./,
@@ -612,8 +746,8 @@ test("isolates the learner name in deletion error copy", async () => {
   const container = await mountStrict(
     createElement(LearnerDeleteDialog, {
       onClose() {},
-      onDelete() {
-        throw new Error("The deletion could not finish.");
+      async onDelete() {
+        return "delete-failed";
       },
       profile: { ...mia, name },
     }),
@@ -826,6 +960,23 @@ test("loads and saves inactive learner details by ID without changing learner mo
     requests.some(({ path }) => path.includes("/active")),
     false,
   );
+});
+
+test("localizes learner detail loading recovery from stable errors", async () => {
+  globalThis.fetch = async () => {
+    throw new Error("SERVER SENTENCE MUST STAY PRIVATE");
+  };
+  const container = await mountStrict(
+    detailsHarness({ language: "zh-Hans", learnerId: "learner-bob" }),
+  );
+
+  await waitFor(() => {
+    assert.match(container.textContent, /孩子资料暂时无法使用/);
+    assert.match(container.textContent, /无法加载孩子资料/);
+    button(container, "重试");
+    assert.match(container.textContent, /返回管理孩子/);
+    assert.doesNotMatch(container.textContent, /SERVER SENTENCE/);
+  });
 });
 
 test("targets recording deletion at an explicit learner without selecting them", async () => {

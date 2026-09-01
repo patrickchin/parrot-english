@@ -9,6 +9,7 @@ import {
 import { useNavigate } from "react-router";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getGuardianLearnerPath, getGuardianPath } from "../app/app-routes";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, Card, fieldClassName } from "../shared/ui";
 import { LearnerDeleteDialog } from "./LearnerDeleteDialog";
 import { useLearnerSelection } from "./LearnerProfileContext";
@@ -22,24 +23,18 @@ import {
 
 const ADD_PENDING_PROFILE_ID = "__new-learner__";
 
-function setupStatusLabel(
-  status: GuardianLearnerProfileSummary["profileStatus"],
-) {
-  switch (status) {
-    case "completed":
-      return "Setup complete";
-    case "in_progress":
-      return "Setup in progress";
-    default:
-      return "Setup not started";
-  }
-}
+export type LearnerRosterErrorCode =
+  | "load-failed"
+  | "add-failed"
+  | "last-learner"
+  | "learner-busy"
+  | "cleanup-pending"
+  | "deletion-uncertain"
+  | "delete-failed";
 
-function errorMessage(error: unknown, fallback: string) {
-  return error instanceof Error && error.message.trim()
-    ? error.message
-    : fallback;
-}
+export type LearnerRosterStatus =
+  | { kind: "deleted"; learnerName: string }
+  | null;
 
 function learnerDeletionErrorCode(error: unknown) {
   return error !== null &&
@@ -49,18 +44,18 @@ function learnerDeletionErrorCode(error: unknown) {
     : null;
 }
 
-function learnerDeletionErrorMessage(error: unknown) {
+function learnerDeletionError(error: unknown): LearnerRosterErrorCode {
   switch (learnerDeletionErrorCode(error)) {
     case "last_learner":
-      return "Add another learner before deleting this learner.";
+      return "last-learner";
     case "learner_busy":
-      return "Finish this learner's current conversation, then try again.";
+      return "learner-busy";
     case "learner_deletion_pending":
-      return "Learner cleanup is still in progress. Try again.";
+      return "cleanup-pending";
     case "learner_deletion_uncertain":
-      return "We couldn't confirm whether this learner was deleted. Refresh learner profiles before trying again.";
+      return "deletion-uncertain";
     default:
-      return "The learner was not deleted. Try again.";
+      return "delete-failed";
   }
 }
 
@@ -106,16 +101,19 @@ export function GuardianLearnerProfilesView({
   profiles,
   statusMessage,
 }: {
-  error: string;
+  error: LearnerRosterErrorCode | null;
   isLoading: boolean;
   onAdd: (name: string) => void;
-  onDelete: (profile: GuardianLearnerProfileSummary) => void | Promise<void>;
+  onDelete: (
+    profile: GuardianLearnerProfileSummary,
+  ) => Promise<LearnerRosterErrorCode | null>;
   onManage: (profile: GuardianLearnerProfileSummary) => void;
   onRetry: () => void;
   pendingProfileId: string | null;
   profiles: GuardianLearnerProfileSummary[];
-  statusMessage: string;
+  statusMessage: LearnerRosterStatus;
 }) {
+  const { messages } = useGuardianLanguage();
   const [preferredName, setPreferredName] = useState("");
   const [profileToDelete, setProfileToDelete] =
     useState<GuardianLearnerProfileSummary | null>(null);
@@ -135,20 +133,20 @@ export function GuardianLearnerProfilesView({
 
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
-      <RouteHeader>
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
         <HeaderLink
-          aria-label="Back to guardian dashboard"
+          aria-label={messages.learners.roster.backToDashboardAria}
           icon={<ArrowLeft />}
           to={getGuardianPath()}
         >
-          Back to guardian dashboard
+          {messages.learners.roster.backToDashboard}
         </HeaderLink>
       </RouteHeader>
 
       <section className="mx-auto grid w-full min-w-0 max-w-5xl gap-6">
         <header className="grid min-w-0 gap-2 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            Manage learners
+            {messages.learners.roster.title}
           </h1>
         </header>
 
@@ -158,13 +156,23 @@ export function GuardianLearnerProfilesView({
           className="m-0 min-h-6 min-w-0 text-center text-sm font-extrabold text-brand-blue [overflow-wrap:anywhere]"
           role="status"
         >
-          {isLoading ? "Loading learner profiles…" : statusMessage}
+          {isLoading
+            ? messages.learners.roster.loading
+            : statusMessage?.kind === "deleted"
+              ? (
+                <>
+                  {messages.learners.roster.deletedStatusBefore}
+                  <BidiLearnerName learnerName={statusMessage.learnerName} />
+                  {messages.learners.roster.deletedStatusAfter}
+                </>
+                )
+              : ""}
         </p>
 
         {error ? (
           <div className="grid justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
             <p className="m-0 font-extrabold text-red-900" role="alert">
-              {error}
+              {messages.learners.roster.errors[error]}
             </p>
             {!profiles.length && !busy ? (
               <ActionButton
@@ -173,7 +181,7 @@ export function GuardianLearnerProfilesView({
                 type="button"
                 variant="surface"
               >
-                Try again
+                {messages.common.retry}
               </ActionButton>
             ) : null}
           </div>
@@ -182,6 +190,7 @@ export function GuardianLearnerProfilesView({
         {profiles.length ? (
           <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2">
             {profiles.map((profile) => {
+              const isolatedName = `\u2068${profile.name}\u2069`;
               const isPending = profile.id === pendingProfileId;
               const finalLearner =
                 !profile.deletionPending && !canDeleteAnotherLearner;
@@ -193,13 +202,21 @@ export function GuardianLearnerProfilesView({
                         <BidiLearnerName learnerName={profile.name} />
                       </h2>
                       <p className="m-0 text-sm font-bold text-slate-600">
-                        {profile.age === null ? null : `Age ${profile.age} · `}
-                        {setupStatusLabel(profile.profileStatus)}
+                        {profile.age === null
+                          ? messages.learners.roster.ageMissing
+                          : messages.learners.roster.age(profile.age)}{" "}
+                        ·{" "}
+                        {
+                          messages.learners.roster.setupStatuses[
+                            profile.profileStatus
+                          ]
+                        }
                       </p>
                       {finalLearner ? (
                         <p className="m-0 min-w-0 whitespace-normal text-sm font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
-                          Add another learner before deleting{" "}
-                          <BidiLearnerName learnerName={profile.name} />.
+                          {messages.learners.roster.lastLearnerBefore}
+                          <BidiLearnerName learnerName={profile.name} />
+                          {messages.learners.roster.lastLearnerAfter}
                         </p>
                       ) : null}
                     </div>
@@ -207,7 +224,9 @@ export function GuardianLearnerProfilesView({
                     <div className="mt-auto grid gap-3 min-[420px]:grid-cols-2">
                       {profile.deletionPending ? (
                         <ActionButton
-                          aria-label={`Finish deleting ${profile.name}`}
+                          aria-label={messages.learners.roster.finishDeletingAria(
+                            isolatedName,
+                          )}
                           disabled={controlsUnavailable}
                           onClick={(event) => {
                             deleteTriggerRef.current = event.currentTarget;
@@ -218,7 +237,9 @@ export function GuardianLearnerProfilesView({
                           variant="rose"
                         >
                           <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
-                            {isPending ? "Deleting " : "Finish deleting "}
+                            {isPending
+                              ? messages.learners.roster.deleting
+                              : messages.learners.roster.finishDeleting}
                             <BidiLearnerName learnerName={profile.name} />
                             {isPending ? "…" : null}
                           </span>
@@ -226,17 +247,21 @@ export function GuardianLearnerProfilesView({
                       ) : (
                         <>
                           <ActionButton
-                            aria-label={`Edit ${profile.name}'s profile`}
+                            aria-label={messages.learners.roster.editProfileAria(
+                              isolatedName,
+                            )}
                             disabled={controlsUnavailable}
                             onClick={() => onManage(profile)}
                             size="compact"
                             type="button"
                             variant="surface"
                           >
-                            Edit profile
+                            {messages.learners.roster.editProfile}
                           </ActionButton>
                           <ActionButton
-                            aria-label={`Delete ${profile.name}`}
+                            aria-label={messages.learners.roster.deleteAria(
+                              isolatedName,
+                            )}
                             disabled={controlsUnavailable || finalLearner}
                             onClick={(event) => {
                               deleteTriggerRef.current = event.currentTarget;
@@ -246,7 +271,7 @@ export function GuardianLearnerProfilesView({
                             type="button"
                             variant="rose"
                           >
-                            Delete
+                            {messages.learners.roster.delete}
                           </ActionButton>
                         </>
                       )}
@@ -261,11 +286,10 @@ export function GuardianLearnerProfilesView({
         <Card className="grid gap-4 p-5 sm:p-6">
           <div className="grid gap-1">
             <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Add learner
+              {messages.learners.roster.addTitle}
             </h2>
             <p className="m-0 text-sm font-bold text-slate-600">
-              Use the name they like to be called. You can add their other
-              details next.
+              {messages.learners.roster.addDescription}
             </p>
           </div>
           <form
@@ -277,7 +301,7 @@ export function GuardianLearnerProfilesView({
                 className="font-ui text-sm font-black text-brand-navy"
                 htmlFor="preferred-name"
               >
-                Preferred name
+                {messages.learners.roster.preferredName}
               </label>
               <input
                 autoComplete="off"
@@ -300,8 +324,8 @@ export function GuardianLearnerProfilesView({
               variant="navy"
             >
               {pendingProfileId === ADD_PENDING_PROFILE_ID
-                ? "Adding learner…"
-                : "Add learner"}
+                ? messages.learners.roster.adding
+                : messages.learners.roster.add}
             </ActionButton>
           </form>
         </Card>
@@ -322,11 +346,12 @@ export function GuardianLearnerProfilesView({
 export function GuardianLearnerProfiles() {
   const navigate = useNavigate();
   const { deleteLearner, rosterRevision } = useLearnerSelection();
-  const [error, setError] = useState("");
+  const [error, setError] = useState<LearnerRosterErrorCode | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingProfileId, setPendingProfileId] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<GuardianLearnerProfileSummary[]>([]);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [statusMessage, setStatusMessage] =
+    useState<LearnerRosterStatus>(null);
   const activeProfileIdRef = useRef<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(false);
@@ -356,8 +381,8 @@ export function GuardianLearnerProfiles() {
 
   const loadRoster = useCallback(async () => {
     const operation = beginOperation();
-    setError("");
-    setStatusMessage("");
+    setError(null);
+    setStatusMessage(null);
     setIsLoading(true);
     setPendingProfileId(null);
     try {
@@ -367,9 +392,7 @@ export function GuardianLearnerProfiles() {
       if (operation.isCurrent()) applyRoster(result);
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
-      setError(
-        errorMessage(caughtError, "Learner profiles could not be loaded."),
-      );
+      setError("load-failed");
     } finally {
       if (operation.isCurrent()) setIsLoading(false);
       if (controllerRef.current === operation.controller) {
@@ -411,8 +434,8 @@ export function GuardianLearnerProfiles() {
   async function addProfile(name: string) {
     const operation = beginOperation();
     const previousActiveProfileId = activeProfileIdRef.current;
-    setError("");
-    setStatusMessage("");
+    setError(null);
+    setStatusMessage(null);
     setPendingProfileId(ADD_PENDING_PROFILE_ID);
     try {
       const result = await createLearnerProfile(name, {
@@ -429,13 +452,9 @@ export function GuardianLearnerProfiles() {
       navigate(getGuardianLearnerPath(created.id));
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
-      const message = errorMessage(
-        caughtError,
-        "The learner could not be added.",
-      );
       await reconcileRosterAfterMutation(operation);
       if (!operation.isCurrent()) return;
-      setError(message);
+      setError("add-failed");
     } finally {
       if (operation.isCurrent()) setPendingProfileId(null);
       if (controllerRef.current === operation.controller) {
@@ -444,22 +463,25 @@ export function GuardianLearnerProfiles() {
     }
   }
 
-  async function deleteProfile(profile: GuardianLearnerProfileSummary) {
+  async function deleteProfile(
+    profile: GuardianLearnerProfileSummary,
+  ): Promise<LearnerRosterErrorCode | null> {
     const operation = beginOperation();
-    setError("");
-    setStatusMessage("");
+    setError(null);
+    setStatusMessage(null);
     setPendingProfileId(profile.id);
     try {
       const result = await deleteLearner(profile.id);
-      if (!operation.isCurrent()) return;
+      if (!operation.isCurrent()) return "delete-failed";
       applyRoster(result);
-      setStatusMessage(`${profile.name} was deleted.`);
+      setStatusMessage({ kind: "deleted", learnerName: profile.name });
+      return null;
     } catch (caughtError) {
       if (operation.isCurrent()) {
         const reconciledRoster = learnerDeletionRoster(caughtError);
         if (reconciledRoster) applyRoster(reconciledRoster);
       }
-      throw new Error(learnerDeletionErrorMessage(caughtError));
+      return learnerDeletionError(caughtError);
     } finally {
       if (operation.isCurrent()) setPendingProfileId(null);
       if (controllerRef.current === operation.controller) {

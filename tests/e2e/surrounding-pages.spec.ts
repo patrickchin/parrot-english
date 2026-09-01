@@ -548,7 +548,7 @@ test("guardian learner details opens from and returns to Manage learners", async
     .click();
   await page.getByRole("menuitem", { name: "Manage learners" }).click();
   await page
-    .getByRole("button", { exact: true, name: "Edit Mia's profile" })
+    .getByRole("button", { exact: true, name: "Edit ⁨Mia⁩'s profile" })
     .click();
   await expect(page).toHaveURL("/guardian/learners/e2e-learner");
   await page.getByRole("button", { name: "Back" }).click();

@@ -376,7 +376,7 @@ test("shared menu items do not move when hovered", async ({ page }) => {
 test("secondary actions keep a visible frame on light cards", async ({ page }) => {
   await page.goto(guardianPath("/guardian/learners"));
   await expectVisibleSurfaceFrame(
-    page.getByRole("button", { name: "Edit Mia's profile" }),
+    page.getByRole("button", { name: "Edit ⁨Mia⁩'s profile" }),
   );
 
   await page.route("**/api/auth/get-session", async (route) => {

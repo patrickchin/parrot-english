@@ -53,11 +53,11 @@ async function readLearnerState(page: Page) {
 
 async function deleteLearner(page: Page, name: string) {
   const card = learnerCard(page, name);
-  const trigger = card.getByRole("button", { name: `Delete ${name}` });
+  const trigger = card.getByRole("button", { name: `Delete ⁨${name}⁩` });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: `Delete ${name}?` });
   await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
-  await dialog.getByRole("button", { name: `Delete ${name}` }).click();
+  await dialog.getByRole("button", { name: `Delete ⁨${name}⁩` }).click();
   return { dialog, trigger };
 }
 
@@ -96,7 +96,7 @@ test("Manage learners is CRUD-only and deletion of an inactive learner persists"
   });
 
   const finalDelete = learnerCard(page, "Mia").getByRole("button", {
-    name: "Delete Mia",
+    name: "Delete ⁨Mia⁩",
   });
   await expect(finalDelete).toBeDisabled();
   await expect(learnerCard(page, "Mia")).toContainText(
@@ -164,7 +164,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(
     learnerCard(page, "Noah").getByRole("button", {
-      name: "Finish deleting Noah",
+      name: "Finish deleting ⁨Noah⁩",
     }),
   ).toBeVisible();
   expect(await readLearnerState(page)).toMatchObject({
@@ -190,7 +190,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
     .click();
   await page.reload();
   const pending = learnerCard(page, "Noah").getByRole("button", {
-    name: "Finish deleting Noah",
+    name: "Finish deleting ⁨Noah⁩",
   });
   await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   const refreshedChooser = await openLearnerChooser(page);
@@ -207,7 +207,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
   await expect(pending).toBeVisible();
   await pending.click();
   const retry = page.getByRole("dialog", { name: "Delete Noah?" });
-  await retry.getByRole("button", { name: "Delete Noah" }).click();
+  await retry.getByRole("button", { name: "Delete ⁨Noah⁩" }).click();
   await expect(retry).toHaveCount(0);
   await expect(learnerCard(page, "Noah")).toHaveCount(0);
 });

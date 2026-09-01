@@ -1199,7 +1199,7 @@ test("switching to guardian mode reaches learner details through Manage learners
     .getByRole("link", { exact: true, name: "Manage learners" })
     .click();
   await page
-    .getByRole("button", { exact: true, name: "Edit Mia's profile" })
+    .getByRole("button", { exact: true, name: "Edit ⁨Mia⁩'s profile" })
     .click();
 
   await expect(page).toHaveURL("/guardian/learners/e2e-learner");
