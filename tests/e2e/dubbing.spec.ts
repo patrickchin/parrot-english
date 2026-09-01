@@ -64,19 +64,43 @@ async function expectNoLearnerAdultControls(page: Page) {
 
 async function expectStaticPresentationText(target: Locator) {
   await expect(target).toHaveCount(1);
-  const semantics = await target.evaluate((element) => ({
-    hasLiveRegion: element.closest("[aria-live]") !== null,
-    hasStatusRole: element.closest('[role~="status"], output') !== null,
-    nativeFocusTarget: element.matches(
-      'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, object, embed, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])',
-    ),
-    tabIndex: (element as HTMLElement).tabIndex,
-  }));
+  const semantics = await target.evaluate((element) => {
+    const activeBefore = document.activeElement;
+    const focusTarget = element as HTMLElement;
+    focusTarget.focus();
+    const acceptedProgrammaticFocus = document.activeElement === element;
+    if (document.activeElement !== activeBefore) {
+      if (activeBefore instanceof HTMLElement) activeBefore.focus();
+      if (
+        document.activeElement !== activeBefore &&
+        document.activeElement instanceof HTMLElement
+      ) {
+        document.activeElement.blur();
+      }
+    }
+    return {
+      acceptedProgrammaticFocus,
+      focusRestored: document.activeElement === activeBefore,
+      hasContentEditable: element.hasAttribute("contenteditable") ||
+        (element as HTMLElement).isContentEditable,
+      hasLiveRegion: element.closest("[aria-live]") !== null,
+      hasLiveRegionRole: element.closest(
+        '[role~="alert" i], [role~="log" i], [role~="marquee" i], [role~="status" i], [role~="timer" i], output, marquee',
+      ) !== null,
+      hasTabIndexAttribute: element.hasAttribute("tabindex"),
+      nativeFocusTarget: element.matches(
+        'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, object, embed, audio[controls], video[controls]',
+      ),
+    };
+  });
   expect(semantics).toEqual({
+    acceptedProgrammaticFocus: false,
+    focusRestored: true,
+    hasContentEditable: false,
     hasLiveRegion: false,
-    hasStatusRole: false,
+    hasLiveRegionRole: false,
+    hasTabIndexAttribute: false,
     nativeFocusTarget: false,
-    tabIndex: -1,
   });
 }
 
