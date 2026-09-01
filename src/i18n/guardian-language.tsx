@@ -59,10 +59,22 @@ function getBrowserStorage(): GuardianLanguageStorage | null {
 }
 
 function getBrowserLanguages(): readonly string[] {
+  let browserNavigator: Navigator;
   try {
     if (typeof navigator === "undefined") return [];
-    if (Array.isArray(navigator.languages)) return navigator.languages;
-    return typeof navigator.language === "string" ? [navigator.language] : [];
+    browserNavigator = navigator;
+  } catch {
+    return [];
+  }
+  try {
+    if (Array.isArray(browserNavigator.languages)) return browserNavigator.languages;
+  } catch {
+    // Fall through to the singular browser language preference.
+  }
+  try {
+    return typeof browserNavigator.language === "string"
+      ? [browserNavigator.language]
+      : [];
   } catch {
     return [];
   }

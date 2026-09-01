@@ -187,6 +187,16 @@ describe("GuardianLanguageProvider", { concurrency: false }, () => {
         configurable: true,
         value: {
           get languages() { throw new Error("blocked"); },
+          language: "zh-CN",
+        },
+      });
+      const languageFallback = await renderProvider({ storage: null });
+      assert.equal(languageFallback.querySelector("output")?.dataset.language, "zh-Hans");
+
+      Object.defineProperty(globalThis, "navigator", {
+        configurable: true,
+        value: {
+          get languages() { throw new Error("blocked"); },
           get language() { throw new Error("blocked"); },
         },
       });

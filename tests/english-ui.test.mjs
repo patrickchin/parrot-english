@@ -27,7 +27,7 @@ describe("English-only shipped UI", () => {
         continue;
       }
       if (file.endsWith("/src/i18n/messages/en.ts")) {
-        assert.doesNotMatch(source.replace("中文", ""), /\p{Script=Han}/u, file);
+        assert.doesNotMatch(source.replace("\u4e2d\u6587", ""), /\p{Script=Han}/u, file);
         continue;
       }
       assert.doesNotMatch(source, /\p{Script=Han}/u, file);
