@@ -54,11 +54,17 @@ function AccountError({
   );
 }
 
-export function RouteHeader({ children }: { children: ReactNode }) {
+export function RouteHeader({
+  ariaLabel = "Page navigation",
+  children,
+}: {
+  ariaLabel?: string;
+  children: ReactNode;
+}) {
   return (
     <nav
-      aria-label="Page navigation"
-      className="absolute left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7"
+      aria-label={ariaLabel}
+      className="absolute left-38 top-3.5 z-20 flex gap-2.5 short:top-2.5 md:top-6 wide:left-40"
     >
       {children}
     </nav>
@@ -288,8 +294,7 @@ export function AccountHeader({
         className={cx(
           "relative inline-flex max-w-full flex-row-reverse items-start gap-4",
           isSigningOut && "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
-          showSignOutRecovery &&
-            "w-[12.25rem] !gap-2 min-[360px]:w-[13.375rem] min-[360px]:!gap-3 md:w-[13.875rem] wide:w-auto",
+          showSignOutRecovery && "wide:gap-3",
         )}
       >
         <ActionButton
@@ -349,7 +354,7 @@ export function AccountHeader({
         {showSignOutRecovery ? (
           <ActionButton
             aria-describedby={signOutAlertId}
-            className="!min-w-0 flex-1 !gap-0.5 !px-0.5 !py-0 text-center leading-tight short:!min-h-12 min-[360px]:whitespace-nowrap wide:flex-none wide:!gap-1 wide:!px-3"
+            className="absolute right-0 top-full mt-2 w-[12.25rem] !gap-0.5 !px-0.5 !py-0 text-center leading-tight short:!min-h-12 min-[360px]:whitespace-nowrap wide:static wide:mt-0 wide:w-auto wide:flex-none wide:!gap-1 wide:!px-3"
             onClick={selectSignOut}
             size="compact"
             type="button"

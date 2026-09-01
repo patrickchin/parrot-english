@@ -20,6 +20,9 @@ const vite = await createServer({
   root: projectRoot,
   server: { middlewareMode: true },
 });
+const controlModule = await vite.ssrLoadModule(
+  "/src/i18n/GuardianLanguageControl.tsx",
+);
 const languageModule = await vite.ssrLoadModule("/src/i18n/guardian-language.tsx");
 const englishModule = await vite.ssrLoadModule("/src/i18n/messages/en.ts");
 const chineseModule = await vite.ssrLoadModule("/src/i18n/messages/zh-Hans.ts");
@@ -32,15 +35,11 @@ const {
   resolveGuardianLanguage,
   useGuardianLanguage,
 } = languageModule;
+const { GuardianLanguageControl } = controlModule;
 
 afterEach(async () => {
   await cleanupMountedRoots();
   window.localStorage.clear();
-});
-
-after(async () => {
-  await vite.close();
-  restoreDom();
 });
 
 function collectLeaves(value, path = "") {
@@ -212,4 +211,27 @@ describe("GuardianLanguageProvider", { concurrency: false }, () => {
     assert.match(html, /data-language="en"/);
     assert.match(html, />Save</);
   });
+});
+
+describe("GuardianLanguageControl", { concurrency: false }, () => {
+  it("renders an English-labelled group with self-named native options", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "en" },
+        createElement(GuardianLanguageControl),
+      ),
+    );
+    assert.match(html, /role="group"/);
+    assert.match(html, /aria-label="Guardian guidance language"/);
+    assert.match(html, /lang="en"/);
+    assert.match(html, /lang="zh-Hans"/);
+    assert.match(html, />English</);
+    assert.match(html, />中文</);
+  });
+});
+
+after(async () => {
+  await vite.close();
+  restoreDom();
 });

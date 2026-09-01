@@ -224,6 +224,12 @@ function boxesOverlap(first: Rect, second: Rect) {
   );
 }
 
+async function expectNoOverlap(first: Locator, second: Locator) {
+  expect(boxesOverlap(await visibleBox(first), await visibleBox(second))).toBe(
+    false,
+  );
+}
+
 function expectBoxInside(inner: Rect, outer: Rect) {
   expect(inner.x).toBeGreaterThanOrEqual(outer.x);
   expect(inner.y).toBeGreaterThanOrEqual(outer.y);
@@ -463,6 +469,49 @@ for (const route of routes) {
         .toBe(true);
     });
   }
+}
+
+for (const viewport of mobileViewports) {
+  test(`guardian language, route, and account controls remain separate on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(guardianPath("/guardian/account"));
+
+    const language = page.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    });
+    const english = page.getByRole("button", { exact: true, name: "English" });
+    const chinese = page.getByRole("button", { exact: true, name: "中文" });
+    const routeControl = page.getByRole("link", {
+      exact: true,
+      name: "Back to Guardian dashboard",
+    });
+    const account = page.getByRole("button", {
+      name: /Profile for .+, guardian mode/,
+    });
+
+    for (const option of [english, chinese]) {
+      await option.click();
+      await expect(option).toBeFocused();
+      await expectInsideViewport(language, viewport);
+      await expectInsideViewport(routeControl, viewport);
+      await expectInsideViewport(account, viewport);
+      await expectNoOverlap(language, routeControl);
+      await expectNoOverlap(language, account);
+      await expectNoOverlap(routeControl, account);
+      await focusWithKeyboard(page, option);
+      await focusWithKeyboard(page, routeControl);
+      await focusWithKeyboard(page, account);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        )
+        .toBe(true);
+    }
+  });
 }
 
 test("arbitrary guardian identity cannot cover the compact Back action", async ({
@@ -733,7 +782,7 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   await expect(retry).toHaveAttribute("aria-describedby", alertId!);
   const accountBox = await expectInsideViewport(account, viewport);
   const retryBox = await expectInsideViewport(retry, viewport);
-  expect(retryBox.x + retryBox.width).toBeLessThanOrEqual(accountBox.x);
+  expect(retryBox.y).toBeGreaterThanOrEqual(accountBox.y + accountBox.height);
   expect(retryBox.height).toBeGreaterThanOrEqual(44);
   expect(retryBox.width).toBeGreaterThanOrEqual(44);
   expect(
@@ -844,7 +893,9 @@ for (const viewport of [
       `,
     });
 
-    const heading = page.getByRole("heading", { name: "Guardian dashboard" });
+    const language = page.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    });
     const back = page.getByRole("button", { name: "Switch to learner" });
     const account = page.getByRole("button", {
       name: "Profile for Alex Guardian, guardian mode",
@@ -857,7 +908,7 @@ for (const viewport of [
       name: "Sign out again",
     });
     const retryBox = await expectInsideViewport(retry, viewport);
-    expect(boxesOverlap(retryBox, await visibleBox(heading))).toBe(false);
+    expect(boxesOverlap(retryBox, await visibleBox(language))).toBe(false);
     expect(boxesOverlap(retryBox, await visibleBox(back))).toBe(false);
     expect(boxesOverlap(retryBox, await visibleBox(account))).toBe(false);
     const sizing = await retry.evaluate((control) => ({
@@ -877,7 +928,6 @@ for (const viewport of [
       x: 0,
       y: 0,
     });
-    expect(boxesOverlap(retryPaint, await visibleBox(heading))).toBe(false);
     expect(boxesOverlap(retryPaint, await visibleBox(back))).toBe(false);
     expect(boxesOverlap(retryPaint, await visibleBox(account))).toBe(false);
     expect(

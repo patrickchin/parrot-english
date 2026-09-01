@@ -143,6 +143,8 @@ import {
   GuardianModeBoundary,
   LearnerModeBoundary,
 } from "./ModeRouteBoundaries";
+import { GuardianLanguageChrome } from "../i18n/GuardianLanguageChrome";
+import { GuardianLanguageProvider } from "../i18n/guardian-language";
 
 const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
   ({ route }) => route !== getDuckDubPath(),
@@ -1472,5 +1474,11 @@ function RoutedApplication() {
 }
 
 export function App() {
-  return <RoutedApplication />;
+  return (
+    <GuardianLanguageProvider>
+      <GuardianLanguageChrome>
+        <RoutedApplication />
+      </GuardianLanguageChrome>
+    </GuardianLanguageProvider>
+  );
 }
