@@ -95,6 +95,7 @@ import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
 import { WordGameList } from "../games/WordGameList";
+import { WordGameCategory } from "../games/WordGameCategory";
 import { WordGamePlayer } from "../games/WordGamePlayer";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
@@ -160,7 +161,9 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/talk-to-peppa",
   "/word-game",
   "/word-games",
-  "/word-games/:gameId",
+  "/word-games/:categoryId",
+  "/word-games/:categoryId/:quizId",
+  "/word-games/*",
   "/lessons",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
@@ -1164,15 +1167,28 @@ function WordGameRouteDecisionView({
     return <Navigate replace={decision.replace} to={decision.to} />;
   }
 
-  return <WordGamePlayer key={decision.topic.id} topic={decision.topic} />;
+  if (decision.kind === "category") {
+    return <WordGameCategory category={decision.category} />;
+  }
+
+  return (
+    <WordGamePlayer
+      key={`${decision.selection.category.id}/${decision.selection.quiz.id}`}
+      selection={decision.selection}
+    />
+  );
 }
 
 function WordGameRoute() {
   const location = useLocation();
-  const { gameId } = useParams();
+  const { categoryId, quizId } = useParams();
   return (
     <WordGameRouteDecisionView
-      decision={resolveWordGameRouteDecision(gameId, location.pathname)}
+      decision={resolveWordGameRouteDecision(
+        categoryId,
+        quizId,
+        location.pathname,
+      )}
     />
   );
 }
@@ -1228,7 +1244,9 @@ export function ApplicationRoutes({
         <Route element={<HomeMenu />} path="/" />
         <Route element={<Navigate replace to="/word-games" />} path="/word-game" />
         <Route element={<WordGameList />} path="/word-games" />
-        <Route element={<WordGameRoute />} path="/word-games/:gameId" />
+        <Route element={<WordGameRoute />} path="/word-games/:categoryId/:quizId" />
+        <Route element={<WordGameRoute />} path="/word-games/:categoryId" />
+        <Route element={<WordGameRoute />} path="/word-games/*" />
         <Route
           element={
             <FeaturePlaceholder

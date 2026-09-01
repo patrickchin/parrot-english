@@ -1,7 +1,10 @@
 import { ChevronLeft } from "lucide-react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { InteractiveCardLink } from "../shared/ui";
-import { getWordGameRoute, WORD_GAME_TOPICS } from "./word-game-catalog";
+import {
+  getWordGameCategoryRoute,
+  WORD_GAME_CATEGORIES,
+} from "./word-game-catalog";
 import { WordGameVisual } from "./WordGameVisual";
 
 export function WordGameList() {
@@ -21,15 +24,15 @@ export function WordGameList() {
         </header>
 
         <nav aria-label="Word games" className="grid gap-4 min-[360px]:grid-cols-2 md:grid-cols-3">
-          {WORD_GAME_TOPICS.map((topic) => (
+          {WORD_GAME_CATEGORIES.map((category) => (
             <InteractiveCardLink
-              aria-label={topic.title}
+              aria-label={category.title}
               className="grid gap-4 p-4"
-              key={topic.id}
-              to={getWordGameRoute(topic.id)}
+              key={category.id}
+              to={getWordGameCategoryRoute(category.id)}
             >
-              <WordGameVisual topic={topic} />
-              <strong className="text-2xl text-brand-ink">{topic.title}</strong>
+              <WordGameVisual category={category} />
+              <strong className="text-2xl text-brand-ink">{category.title}</strong>
             </InteractiveCardLink>
           ))}
         </nav>

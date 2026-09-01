@@ -12,8 +12,10 @@ import {
   type DubDefinition,
 } from "../dubbing/rhyme-catalog";
 import {
-  resolveWordGameTopic,
-  type WordGameTopic,
+  resolveWordGameCategory,
+  resolveWordGameQuiz,
+  type WordGameCategory,
+  type WordGameSelection,
 } from "../games/word-game-catalog";
 
 export type GateRouteKind = "login" | "learner-profile" | "profile";
@@ -29,14 +31,16 @@ export type StoryRouteDecision =
   | { kind: "story"; pageIndex: number; story: Story };
 export type WordGameRouteDecision =
   | { kind: "redirect"; replace: true; to: string }
-  | { kind: "game"; topic: WordGameTopic };
+  | { kind: "category"; category: WordGameCategory }
+  | { kind: "game"; selection: WordGameSelection };
 
 const GATE_ROUTE_PATH =
   /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
 const WORD_GAME_ROUTE_PATH = /^\/word-game\/*$/i;
 const WORD_GAMES_ROUTE_PATH = /^\/word-games\/*$/i;
-const WORD_GAME_TOPIC_ROUTE_PATH = /^\/word-games\/([^/]+)\/*$/i;
+const WORD_GAME_CATEGORY_ROUTE_PATH = /^\/word-games\/([^/]+)\/*$/i;
+const WORD_GAME_QUIZ_ROUTE_PATH = /^\/word-games\/([^/]+)\/([^/]+)\/*$/i;
 const GUARDIAN_LEARNERS_ROUTE_PATH = /^\/guardian\/learners\/*$/i;
 const GUARDIAN_LEARNER_ROUTE_PATH =
   /^\/guardian\/learners\/([^/]+)\/*$/i;
@@ -246,14 +250,22 @@ export function isTalkToPeppaRoute(pathname: string) {
   return TALK_TO_PEPPA_ROUTE_PATH.test(pathname);
 }
 
-function resolveWordGameRouteTopic(topicId: string | undefined) {
-  return topicId ? resolveWordGameTopic(topicId.toLowerCase()) : null;
-}
-
-function getWordGameRouteId(pathname: string) {
-  const match = WORD_GAME_TOPIC_ROUTE_PATH.exec(pathname);
-  if (!match || match[1].includes("%")) return null;
-  return resolveWordGameRouteTopic(match[1])?.id ?? null;
+function isSafeWordGameRoute(pathname: string) {
+  if (WORD_GAMES_ROUTE_PATH.test(pathname)) return true;
+  const quizMatch = WORD_GAME_QUIZ_ROUTE_PATH.exec(pathname);
+  if (quizMatch) {
+    if (quizMatch[1].includes("%") || quizMatch[2].includes("%")) return false;
+    return resolveWordGameQuiz(
+      quizMatch[1].toLowerCase(),
+      quizMatch[2].toLowerCase(),
+    ) !== null;
+  }
+  const categoryMatch = WORD_GAME_CATEGORY_ROUTE_PATH.exec(pathname);
+  return Boolean(
+    categoryMatch &&
+    !categoryMatch[1].includes("%") &&
+    resolveWordGameCategory(categoryMatch[1].toLowerCase()),
+  );
 }
 
 export function getSafeReturnTo(search: string) {
@@ -271,7 +283,7 @@ export function getSafeReturnTo(search: string) {
     destination.origin !== RETURN_TO_ORIGIN ||
     (!SAFE_RETURN_PATHS.some((path) => path.test(destination.pathname)) &&
       getGuardianLearnerRouteId(destination.pathname) === null &&
-      getWordGameRouteId(destination.pathname) === null)
+      !isSafeWordGameRoute(destination.pathname))
   ) {
     return null;
   }
@@ -287,15 +299,39 @@ export function getPostLoginDestination(search: string) {
 }
 
 export function resolveWordGameRouteDecision(
-  topicId: string | undefined,
+  categoryId: string | undefined,
+  quizId: string | undefined,
   pathname?: string,
 ): WordGameRouteDecision {
-  if (pathname && getWordGameRouteId(pathname) === null) {
+  const normalizedCategoryId = categoryId?.toLowerCase();
+  const normalizedQuizId = quizId?.toLowerCase();
+  if (quizId === undefined) {
+    const match = pathname ? WORD_GAME_CATEGORY_ROUTE_PATH.exec(pathname) : null;
+    if (pathname && (
+      !match ||
+      match[1].includes("%") ||
+      match[1].toLowerCase() !== normalizedCategoryId
+    )) {
+      return { kind: "redirect", replace: true, to: "/word-games" };
+    }
+    const category = resolveWordGameCategory(normalizedCategoryId);
+    return category
+      ? { kind: "category", category }
+      : { kind: "redirect", replace: true, to: "/word-games" };
+  }
+  const match = pathname ? WORD_GAME_QUIZ_ROUTE_PATH.exec(pathname) : null;
+  if (pathname && (
+    !match ||
+    match[1].includes("%") ||
+    match[2].includes("%") ||
+    match[1].toLowerCase() !== normalizedCategoryId ||
+    match[2].toLowerCase() !== normalizedQuizId
+  )) {
     return { kind: "redirect", replace: true, to: "/word-games" };
   }
-  const topic = resolveWordGameRouteTopic(topicId);
-  return topic
-    ? { kind: "game", topic }
+  const selection = resolveWordGameQuiz(normalizedCategoryId, normalizedQuizId);
+  return selection
+    ? { kind: "game", selection }
     : { kind: "redirect", replace: true, to: "/word-games" };
 }
 

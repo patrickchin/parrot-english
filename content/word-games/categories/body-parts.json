@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "order": 3,
+  "id": "body-parts",
+  "title": "Body Parts",
+  "description": "Listen and find the body parts.",
+  "theme": "rose",
+  "coverItemId": "eyes",
+  "items": [
+    {
+      "id": "eyes",
+      "label": "eyes",
+      "alt": "A pair of eyes.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f440"
+      },
+      "audio": {
+        "id": "word-game-body-parts-eyes-label",
+        "text": "These are the eyes."
+      }
+    },
+    {
+      "id": "ears",
+      "label": "ears",
+      "alt": "A pair of ears.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f442"
+      },
+      "audio": {
+        "id": "word-game-body-parts-ears-label",
+        "text": "These are the ears."
+      }
+    },
+    {
+      "id": "nose",
+      "label": "nose",
+      "alt": "A nose.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f443"
+      },
+      "audio": {
+        "id": "word-game-body-parts-nose-label",
+        "text": "This is a nose."
+      }
+    },
+    {
+      "id": "mouth",
+      "label": "mouth",
+      "alt": "A mouth.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f444"
+      },
+      "audio": {
+        "id": "word-game-body-parts-mouth-label",
+        "text": "This is a mouth."
+      }
+    },
+    {
+      "id": "hand",
+      "label": "hand",
+      "alt": "A hand.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "270b"
+      },
+      "audio": {
+        "id": "word-game-body-parts-hand-label",
+        "text": "This is a hand."
+      }
+    },
+    {
+      "id": "foot",
+      "label": "foot",
+      "alt": "A foot.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9b6"
+      },
+      "audio": {
+        "id": "word-game-body-parts-foot-label",
+        "text": "This is a foot."
+      }
+    },
+    {
+      "id": "arm",
+      "label": "arm",
+      "alt": "An arm.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f4aa"
+      },
+      "audio": {
+        "id": "word-game-body-parts-arm-label",
+        "text": "This is an arm."
+      }
+    },
+    {
+      "id": "leg",
+      "label": "leg",
+      "alt": "A leg.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9b5"
+      },
+      "audio": {
+        "id": "word-game-body-parts-leg-label",
+        "text": "This is a leg."
+      }
+    },
+    {
+      "id": "tooth",
+      "label": "tooth",
+      "alt": "A tooth.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9b7"
+      },
+      "audio": {
+        "id": "word-game-body-parts-tooth-label",
+        "text": "This is a tooth."
+      }
+    },
+    {
+      "id": "tongue",
+      "label": "tongue",
+      "alt": "A tongue.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f445"
+      },
+      "audio": {
+        "id": "word-game-body-parts-tongue-label",
+        "text": "This is a tongue."
+      }
+    },
+    {
+      "id": "brain",
+      "label": "brain",
+      "alt": "A brain.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9e0"
+      },
+      "audio": {
+        "id": "word-game-body-parts-brain-label",
+        "text": "This is a brain."
+      }
+    },
+    {
+      "id": "heart",
+      "label": "heart",
+      "alt": "A heart.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "2764"
+      },
+      "audio": {
+        "id": "word-game-body-parts-heart-label",
+        "text": "This is a heart."
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple body-part words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple body parts",
+          "description": "Six simple body-part words.",
+          "questions": [
+            {
+              "id": "find-eyes",
+              "targetId": "eyes",
+              "choiceIds": [
+                "eyes",
+                "ears",
+                "nose",
+                "mouth"
+              ],
+              "prompt": "Eyes. Where are the eyes?",
+              "success": "Great job! These are the eyes."
+            },
+            {
+              "id": "find-ears",
+              "targetId": "ears",
+              "choiceIds": [
+                "ears",
+                "nose",
+                "mouth",
+                "hand"
+              ],
+              "prompt": "Ears. Where are the ears?",
+              "success": "Great job! These are the ears."
+            },
+            {
+              "id": "find-nose",
+              "targetId": "nose",
+              "choiceIds": [
+                "nose",
+                "mouth",
+                "hand",
+                "foot"
+              ],
+              "prompt": "Nose. Which is the nose?",
+              "success": "Great job! This is a nose."
+            },
+            {
+              "id": "find-mouth",
+              "targetId": "mouth",
+              "choiceIds": [
+                "mouth",
+                "hand",
+                "foot",
+                "eyes"
+              ],
+              "prompt": "Mouth. Which is the mouth?",
+              "success": "Great job! This is a mouth."
+            },
+            {
+              "id": "find-hand",
+              "targetId": "hand",
+              "choiceIds": [
+                "hand",
+                "foot",
+                "eyes",
+                "ears"
+              ],
+              "prompt": "Hand. Which is the hand?",
+              "success": "Great job! This is a hand."
+            },
+            {
+              "id": "find-foot",
+              "targetId": "foot",
+              "choiceIds": [
+                "foot",
+                "eyes",
+                "ears",
+                "nose"
+              ],
+              "prompt": "Foot. Which is the foot?",
+              "success": "Great job! This is a foot."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate body-part words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate body parts",
+          "description": "Six intermediate body-part words.",
+          "questions": [
+            {
+              "id": "find-eyes",
+              "targetId": "eyes",
+              "choiceIds": [
+                "eyes",
+                "ears",
+                "hand",
+                "arm"
+              ],
+              "prompt": "Eyes. Where are the eyes?",
+              "success": "Great job! These are the eyes."
+            },
+            {
+              "id": "find-ears",
+              "targetId": "ears",
+              "choiceIds": [
+                "ears",
+                "hand",
+                "arm",
+                "leg"
+              ],
+              "prompt": "Ears. Where are the ears?",
+              "success": "Great job! These are the ears."
+            },
+            {
+              "id": "find-hand",
+              "targetId": "hand",
+              "choiceIds": [
+                "hand",
+                "arm",
+                "leg",
+                "tooth"
+              ],
+              "prompt": "Hand. Which is the hand?",
+              "success": "Great job! This is a hand."
+            },
+            {
+              "id": "find-arm",
+              "targetId": "arm",
+              "choiceIds": [
+                "arm",
+                "leg",
+                "tooth",
+                "eyes"
+              ],
+              "prompt": "Arm. Which is the arm?",
+              "success": "Great job! This is an arm."
+            },
+            {
+              "id": "find-leg",
+              "targetId": "leg",
+              "choiceIds": [
+                "leg",
+                "tooth",
+                "eyes",
+                "ears"
+              ],
+              "prompt": "Leg. Which is the leg?",
+              "success": "Great job! This is a leg."
+            },
+            {
+              "id": "find-tooth",
+              "targetId": "tooth",
+              "choiceIds": [
+                "tooth",
+                "eyes",
+                "ears",
+                "hand"
+              ],
+              "prompt": "Tooth. Which is the tooth?",
+              "success": "Great job! This is a tooth."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced body-part words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced body parts",
+          "description": "Six advanced body-part words.",
+          "questions": [
+            {
+              "id": "find-arm",
+              "targetId": "arm",
+              "choiceIds": [
+                "arm",
+                "leg",
+                "tooth",
+                "tongue"
+              ],
+              "prompt": "Arm. Which is the arm?",
+              "success": "Great job! This is an arm."
+            },
+            {
+              "id": "find-leg",
+              "targetId": "leg",
+              "choiceIds": [
+                "leg",
+                "tooth",
+                "tongue",
+                "brain"
+              ],
+              "prompt": "Leg. Which is the leg?",
+              "success": "Great job! This is a leg."
+            },
+            {
+              "id": "find-tooth",
+              "targetId": "tooth",
+              "choiceIds": [
+                "tooth",
+                "tongue",
+                "brain",
+                "heart"
+              ],
+              "prompt": "Tooth. Which is the tooth?",
+              "success": "Great job! This is a tooth."
+            },
+            {
+              "id": "find-tongue",
+              "targetId": "tongue",
+              "choiceIds": [
+                "tongue",
+                "brain",
+                "heart",
+                "arm"
+              ],
+              "prompt": "Tongue. Which is the tongue?",
+              "success": "Great job! This is a tongue."
+            },
+            {
+              "id": "find-brain",
+              "targetId": "brain",
+              "choiceIds": [
+                "brain",
+                "heart",
+                "arm",
+                "leg"
+              ],
+              "prompt": "Brain. Which is the brain?",
+              "success": "Great job! This is a brain."
+            },
+            {
+              "id": "find-heart",
+              "targetId": "heart",
+              "choiceIds": [
+                "heart",
+                "arm",
+                "leg",
+                "tooth"
+              ],
+              "prompt": "Heart. Which is the heart?",
+              "success": "Great job! This is a heart."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "order": 1,
+  "id": "animals",
+  "title": "Animals",
+  "description": "Listen and find the animals.",
+  "theme": "sky",
+  "coverItemId": "cat",
+  "items": [
+    {
+      "id": "cat",
+      "label": "cat",
+      "alt": "A friendly cat.",
+      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "audio": { "id": "word-game-animals-cat-label", "text": "This is a cat." }
+    },
+    {
+      "id": "dog",
+      "label": "dog",
+      "alt": "A friendly dog.",
+      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "audio": { "id": "word-game-animals-dog-label", "text": "This is a dog." }
+    },
+    {
+      "id": "bird",
+      "label": "bird",
+      "alt": "A friendly bird.",
+      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "audio": { "id": "word-game-animals-bird-label", "text": "This is a bird." }
+    },
+    {
+      "id": "fish",
+      "label": "fish",
+      "alt": "A friendly fish.",
+      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "audio": { "id": "word-game-animals-fish-label", "text": "This is a fish." }
+    },
+    {
+      "id": "duck",
+      "label": "duck",
+      "alt": "A friendly duck.",
+      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "audio": { "id": "word-game-animals-duck-label", "text": "This is a duck." }
+    },
+    {
+      "id": "frog",
+      "label": "frog",
+      "alt": "A friendly frog.",
+      "visual": { "kind": "noto-svg", "assetId": "1f431" },
+      "audio": { "id": "word-game-animals-frog-label", "text": "This is a frog." }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Start with familiar animal words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "First animals",
+          "description": "Six familiar animal words.",
+          "questions": [
+            { "id": "find-cat", "targetId": "cat", "choiceIds": ["cat", "dog", "bird", "fish"], "prompt": "Cat. Which picture is the cat?", "success": "Great job! This is a cat." },
+            { "id": "find-dog", "targetId": "dog", "choiceIds": ["dog", "bird", "fish", "duck"], "prompt": "Dog. Which picture is the dog?", "success": "Great job! This is a dog." },
+            { "id": "find-bird", "targetId": "bird", "choiceIds": ["bird", "fish", "duck", "frog"], "prompt": "Bird. Which picture is the bird?", "success": "Great job! This is a bird." },
+            { "id": "find-fish", "targetId": "fish", "choiceIds": ["fish", "duck", "frog", "cat"], "prompt": "Fish. Which picture is the fish?", "success": "Great job! This is a fish." },
+            { "id": "find-duck", "targetId": "duck", "choiceIds": ["duck", "frog", "cat", "dog"], "prompt": "Duck. Which picture is the duck?", "success": "Great job! This is a duck." },
+            { "id": "find-frog", "targetId": "frog", "choiceIds": ["frog", "cat", "dog", "bird"], "prompt": "Frog. Which picture is the frog?", "success": "Great job! This is a frog." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Practice the animal words again.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "More animals",
+          "description": "Six animal words.",
+          "questions": [
+            { "id": "find-cat-again", "targetId": "cat", "choiceIds": ["cat", "dog", "bird", "fish"], "prompt": "Cat. Which picture is the cat?", "success": "Great job! This is a cat." },
+            { "id": "find-dog-again", "targetId": "dog", "choiceIds": ["dog", "bird", "fish", "duck"], "prompt": "Dog. Which picture is the dog?", "success": "Great job! This is a dog." },
+            { "id": "find-bird-again", "targetId": "bird", "choiceIds": ["bird", "fish", "duck", "frog"], "prompt": "Bird. Which picture is the bird?", "success": "Great job! This is a bird." },
+            { "id": "find-fish-again", "targetId": "fish", "choiceIds": ["fish", "duck", "frog", "cat"], "prompt": "Fish. Which picture is the fish?", "success": "Great job! This is a fish." },
+            { "id": "find-duck-again", "targetId": "duck", "choiceIds": ["duck", "frog", "cat", "dog"], "prompt": "Duck. Which picture is the duck?", "success": "Great job! This is a duck." },
+            { "id": "find-frog-again", "targetId": "frog", "choiceIds": ["frog", "cat", "dog", "bird"], "prompt": "Frog. Which picture is the frog?", "success": "Great job! This is a frog." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Review all six animal words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Animal review",
+          "description": "Six animal words.",
+          "questions": [
+            { "id": "review-cat", "targetId": "cat", "choiceIds": ["cat", "dog", "bird", "fish"], "prompt": "Cat. Which picture is the cat?", "success": "Great job! This is a cat." },
+            { "id": "review-dog", "targetId": "dog", "choiceIds": ["dog", "bird", "fish", "duck"], "prompt": "Dog. Which picture is the dog?", "success": "Great job! This is a dog." },
+            { "id": "review-bird", "targetId": "bird", "choiceIds": ["bird", "fish", "duck", "frog"], "prompt": "Bird. Which picture is the bird?", "success": "Great job! This is a bird." },
+            { "id": "review-fish", "targetId": "fish", "choiceIds": ["fish", "duck", "frog", "cat"], "prompt": "Fish. Which picture is the fish?", "success": "Great job! This is a fish." },
+            { "id": "review-duck", "targetId": "duck", "choiceIds": ["duck", "frog", "cat", "dog"], "prompt": "Duck. Which picture is the duck?", "success": "Great job! This is a duck." },
+            { "id": "review-frog", "targetId": "frog", "choiceIds": ["frog", "cat", "dog", "bird"], "prompt": "Frog. Which picture is the frog?", "success": "Great job! This is a frog." }
+          ]
+        }
+      ]
+    }
+  ]
+}

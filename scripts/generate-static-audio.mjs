@@ -7,7 +7,6 @@ import process from "node:process";
 import { setTimeout as wait } from "node:timers/promises";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 
 const execFileAsync = promisify(execFile);
 const ELEVENLABS_BASE_URL = "https://api.elevenlabs.io/v1";
@@ -25,17 +24,53 @@ const ELEVENLABS_SPEAKER_VOICE_IDS = {
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const audioDir = join(rootDir, "public", "assets", "audio");
 const args = process.argv.slice(2);
-const force = args.includes("--force");
-const provider = readArg("provider") ?? "elevenlabs";
-const onlyIds = args
-  .filter((arg) => arg.startsWith("--only="))
-  .map((arg) => arg.replace("--only=", ""));
-const outputDir = readArg("output-dir");
+const {
+  force,
+  listMissing,
+  onlyIds,
+  outputDir,
+  provider,
+  wordGameContent,
+} = parseArgs(args);
 
-function readArg(name) {
-  return args
-    .find((arg) => arg.startsWith(`--${name}=`))
-    ?.replace(`--${name}=`, "");
+function parseArgs(rawArgs) {
+  let force = false;
+  let listMissing = false;
+  let outputDir;
+  let provider = "elevenlabs";
+  let providerSeen = false;
+  let wordGameContent = false;
+  const onlyIds = [];
+
+  for (const arg of rawArgs) {
+    if (arg === "--force" && !force) force = true;
+    else if (arg === "--list-missing" && !listMissing) listMissing = true;
+    else if (arg === "--word-game-content" && !wordGameContent) wordGameContent = true;
+    else if (arg.startsWith("--only=") && arg.length > "--only=".length) {
+      onlyIds.push(arg.slice("--only=".length));
+    } else if (
+      arg.startsWith("--output-dir=")
+      && arg.length > "--output-dir=".length
+      && outputDir === undefined
+    ) {
+      outputDir = arg.slice("--output-dir=".length);
+    } else if (
+      arg.startsWith("--provider=")
+      && arg.length > "--provider=".length
+      && !providerSeen
+    ) {
+      provider = arg.slice("--provider=".length);
+      providerSeen = true;
+    } else {
+      throw new Error(`Invalid static-audio arguments: ${rawArgs.join(" ")}`);
+    }
+  }
+
+  if (listMissing && (!wordGameContent || force || onlyIds.length > 0 || outputDir)) {
+    throw new Error(`Invalid static-audio arguments: ${rawArgs.join(" ")}`);
+  }
+
+  return { force, listMissing, onlyIds, outputDir, provider, wordGameContent };
 }
 
 function parseDotenvValue(contents, key) {
@@ -204,6 +239,26 @@ if (provider !== "elevenlabs") {
   throw new Error(`Unsupported TTS provider: ${provider}`);
 }
 
+let lines;
+if (wordGameContent) {
+  const { planWordGameAudio } = await import("./word-game/compiler.mjs");
+  const plan = await planWordGameAudio({ rootDir });
+  lines = Object.fromEntries(plan.lines.map((line) => [line.id, line]));
+  if (listMissing) {
+    for (const missingFile of plan.missingFiles) {
+      globalThis.console.log(basename(missingFile, ".mp3"));
+    }
+    process.exit(0);
+  }
+  for (const id of onlyIds) {
+    if (!Object.hasOwn(lines, id)) {
+      throw new Error(`Unknown word-game audio ID: ${id}`);
+    }
+  }
+} else {
+  ({ STATIC_AUDIO_LINES: lines } = await import("../lib/static-audio.js"));
+}
+
 const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
 if (!apiKey) {
   throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
@@ -211,7 +266,7 @@ if (!apiKey) {
 
 await mkdir(outputDir ?? audioDir, { recursive: true });
 
-for (const [id, line] of Object.entries(STATIC_AUDIO_LINES)) {
+for (const [id, line] of Object.entries(lines)) {
   if (onlyIds.length > 0 && !onlyIds.includes(id)) continue;
 
   const status = await generateAudioFile(apiKey, id, line);

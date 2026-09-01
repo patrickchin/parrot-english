@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "order": 7,
+  "id": "home",
+  "title": "Home",
+  "description": "Listen and find things at home.",
+  "theme": "mint",
+  "coverItemId": "house",
+  "items": [
+    {
+      "id": "bed",
+      "label": "bed",
+      "alt": "A bed.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6cf"
+      },
+      "audio": {
+        "id": "word-game-home-bed-label",
+        "text": "This is a bed."
+      }
+    },
+    {
+      "id": "chair",
+      "label": "chair",
+      "alt": "A chair.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa91"
+      },
+      "audio": {
+        "id": "word-game-home-chair-label",
+        "text": "This is a chair."
+      }
+    },
+    {
+      "id": "door",
+      "label": "door",
+      "alt": "A door.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6aa"
+      },
+      "audio": {
+        "id": "word-game-home-door-label",
+        "text": "This is a door."
+      }
+    },
+    {
+      "id": "window",
+      "label": "window",
+      "alt": "A window.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa9f"
+      },
+      "audio": {
+        "id": "word-game-home-window-label",
+        "text": "This is a window."
+      }
+    },
+    {
+      "id": "house",
+      "label": "house",
+      "alt": "A house.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f3e0"
+      },
+      "audio": {
+        "id": "word-game-home-house-label",
+        "text": "This is a house."
+      }
+    },
+    {
+      "id": "key",
+      "label": "key",
+      "alt": "A key.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f511"
+      },
+      "audio": {
+        "id": "word-game-home-key-label",
+        "text": "This is a key."
+      }
+    },
+    {
+      "id": "sofa",
+      "label": "sofa",
+      "alt": "A sofa.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6cb"
+      },
+      "audio": {
+        "id": "word-game-home-sofa-label",
+        "text": "This is a sofa."
+      }
+    },
+    {
+      "id": "bathtub",
+      "label": "bathtub",
+      "alt": "A bathtub.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6c1"
+      },
+      "audio": {
+        "id": "word-game-home-bathtub-label",
+        "text": "This is a bathtub."
+      }
+    },
+    {
+      "id": "toilet",
+      "label": "toilet",
+      "alt": "A toilet.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6bd"
+      },
+      "audio": {
+        "id": "word-game-home-toilet-label",
+        "text": "This is a toilet."
+      }
+    },
+    {
+      "id": "shower",
+      "label": "shower",
+      "alt": "A shower.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f6bf"
+      },
+      "audio": {
+        "id": "word-game-home-shower-label",
+        "text": "This is a shower."
+      }
+    },
+    {
+      "id": "mirror",
+      "label": "mirror",
+      "alt": "A mirror.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1fa9e"
+      },
+      "audio": {
+        "id": "word-game-home-mirror-label",
+        "text": "This is a mirror."
+      }
+    },
+    {
+      "id": "broom",
+      "label": "broom",
+      "alt": "A broom.",
+      "visual": {
+        "kind": "noto-svg",
+        "assetId": "1f9f9"
+      },
+      "audio": {
+        "id": "word-game-home-broom-label",
+        "text": "This is a broom."
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple home words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple home",
+          "description": "Six simple home words.",
+          "questions": [
+            {
+              "id": "find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "chair",
+                "door",
+                "window"
+              ],
+              "prompt": "Bed. Which is the bed?",
+              "success": "Great job! This is a bed."
+            },
+            {
+              "id": "find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "door",
+                "window",
+                "house"
+              ],
+              "prompt": "Chair. Which is the chair?",
+              "success": "Great job! This is a chair."
+            },
+            {
+              "id": "find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "window",
+                "house",
+                "key"
+              ],
+              "prompt": "Door. Which is the door?",
+              "success": "Great job! This is a door."
+            },
+            {
+              "id": "find-window",
+              "targetId": "window",
+              "choiceIds": [
+                "window",
+                "house",
+                "key",
+                "bed"
+              ],
+              "prompt": "Window. Which is the window?",
+              "success": "Great job! This is a window."
+            },
+            {
+              "id": "find-house",
+              "targetId": "house",
+              "choiceIds": [
+                "house",
+                "key",
+                "bed",
+                "chair"
+              ],
+              "prompt": "House. Which is the house?",
+              "success": "Great job! This is a house."
+            },
+            {
+              "id": "find-key",
+              "targetId": "key",
+              "choiceIds": [
+                "key",
+                "bed",
+                "chair",
+                "door"
+              ],
+              "prompt": "Key. Which is the key?",
+              "success": "Great job! This is a key."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate home words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate home",
+          "description": "Six intermediate home words.",
+          "questions": [
+            {
+              "id": "find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "chair",
+                "door",
+                "sofa"
+              ],
+              "prompt": "Bed. Which is the bed?",
+              "success": "Great job! This is a bed."
+            },
+            {
+              "id": "find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "door",
+                "sofa",
+                "bathtub"
+              ],
+              "prompt": "Chair. Which is the chair?",
+              "success": "Great job! This is a chair."
+            },
+            {
+              "id": "find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "sofa",
+                "bathtub",
+                "toilet"
+              ],
+              "prompt": "Door. Which is the door?",
+              "success": "Great job! This is a door."
+            },
+            {
+              "id": "find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "bathtub",
+                "toilet",
+                "bed"
+              ],
+              "prompt": "Sofa. Which is the sofa?",
+              "success": "Great job! This is a sofa."
+            },
+            {
+              "id": "find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "toilet",
+                "bed",
+                "chair"
+              ],
+              "prompt": "Bathtub. Which is the bathtub?",
+              "success": "Great job! This is a bathtub."
+            },
+            {
+              "id": "find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "bed",
+                "chair",
+                "door"
+              ],
+              "prompt": "Toilet. Which is the toilet?",
+              "success": "Great job! This is a toilet."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced home words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced home",
+          "description": "Six advanced home words.",
+          "questions": [
+            {
+              "id": "find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "bathtub",
+                "toilet",
+                "shower"
+              ],
+              "prompt": "Sofa. Which is the sofa?",
+              "success": "Great job! This is a sofa."
+            },
+            {
+              "id": "find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "toilet",
+                "shower",
+                "mirror"
+              ],
+              "prompt": "Bathtub. Which is the bathtub?",
+              "success": "Great job! This is a bathtub."
+            },
+            {
+              "id": "find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "shower",
+                "mirror",
+                "broom"
+              ],
+              "prompt": "Toilet. Which is the toilet?",
+              "success": "Great job! This is a toilet."
+            },
+            {
+              "id": "find-shower",
+              "targetId": "shower",
+              "choiceIds": [
+                "shower",
+                "mirror",
+                "broom",
+                "sofa"
+              ],
+              "prompt": "Shower. Which is the shower?",
+              "success": "Great job! This is a shower."
+            },
+            {
+              "id": "find-mirror",
+              "targetId": "mirror",
+              "choiceIds": [
+                "mirror",
+                "broom",
+                "sofa",
+                "bathtub"
+              ],
+              "prompt": "Mirror. Which is the mirror?",
+              "success": "Great job! This is a mirror."
+            },
+            {
+              "id": "find-broom",
+              "targetId": "broom",
+              "choiceIds": [
+                "broom",
+                "sofa",
+                "bathtub",
+                "toilet"
+              ],
+              "prompt": "Broom. Which is the broom?",
+              "success": "Great job! This is a broom."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
