@@ -313,25 +313,6 @@ async function expectInsideViewportHorizontally(locator: Locator, page: Page) {
   expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
 }
 
-async function enablePersonalizedStoryArtPanel(page: Page) {
-  await page.route(
-    /\/api\/stories\/the-red-ball\/personalized-art(?:\?.*)?$/,
-    async (route) => {
-      await route.fulfill({
-        contentType: "application/json",
-        json: {
-          enabled: true,
-          guardianConsentVersion: "guardian-photo-cloudflare-v1",
-          hasStoredArt: false,
-          stories: {},
-          updatedAt: null,
-        },
-        status: 200,
-      });
-    },
-  );
-}
-
 async function visibleBoxWithoutScrolling(locator: Locator) {
   await expect(locator).toBeVisible();
   const box = await locator.boundingBox();
@@ -615,10 +596,6 @@ test("the saved learner level is the only recommended shelf and exposes no grown
   });
   await expect(shelfPicker).toBeVisible();
   await expect(shelf.getByLabel("Grown-up options")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: /Generate story art/ }),
-  ).toHaveCount(0);
-  await expect(page.getByLabel("Upload learner photo")).toHaveCount(0);
   await expect(
     shelf.getByText(
       /CEFR|Pre-A1|reading level|Teaching notes|Prompt test|Assumes familiar|vocabulary profile/i,
@@ -984,7 +961,6 @@ for (const viewport of completionViewports) {
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await enablePersonalizedStoryArtPanel(page);
     const redBall = STORIES.find(({ id }) => id === "the-red-ball");
     if (!redBall) throw new Error("Expected The Red Ball in the story catalog.");
 
@@ -1028,9 +1004,6 @@ for (const viewport of completionViewports) {
       });
       await expect(sentence).toBeFocused();
       await expect(reader.getByLabel("Grown-up options")).toHaveCount(0);
-      await expect(
-        reader.getByRole("region", { name: "Personalized story art" }),
-      ).toHaveCount(0);
 
       for (const name of scenario.controls) {
         await page.keyboard.press("Tab");

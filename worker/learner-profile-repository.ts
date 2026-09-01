@@ -4,7 +4,6 @@ import {
   learnerSessionBypass,
   profileSessionBypass,
 } from "../src/db/schema.ts";
-import type { LearnerStoryLevelId } from "../lib/story-level.ts";
 import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import type { Database } from "./database.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
@@ -269,22 +268,6 @@ export function createLearnerProfileRepository(
       );
   }
 
-  async function saveStoryLevel(
-    identity: LearnerIdentity,
-    storyLevel: LearnerStoryLevelId,
-  ) {
-    await database
-      .update(learnerProfile)
-      .set({ storyLevel, updatedAt: now() })
-      .where(
-        and(
-          eq(learnerProfile.id, identity.learnerProfileId),
-          eq(learnerProfile.authUserId, identity.userId),
-        ),
-      );
-    return loadProfile(identity);
-  }
-
   async function readLessonRecordingConsent(identity: LearnerIdentity) {
     return (await readLessonRecordingConsentState(identity)).enabled;
   }
@@ -446,7 +429,6 @@ export function createLearnerProfileRepository(
     readLessonRecordingConsentState,
     saveAnswer,
     saveLessonRecordingConsent,
-    saveStoryLevel,
     saveTransition,
     skip,
     skipSession,

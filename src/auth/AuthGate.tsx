@@ -101,7 +101,7 @@ interface DeleteAccountSessionOptions {
 
 const SIGN_OUT_ERROR_MESSAGE = "Sign out did not finish.";
 const DELETE_ACCOUNT_ERROR_MESSAGE =
-  "Unable to delete the account. The account and private story art were kept. Please try again.";
+  "Unable to delete the account. The account and private media were kept. Please try again.";
 const TURNSTILE_REQUIRED_MESSAGE =
   "Complete the security check, then try again.";
 

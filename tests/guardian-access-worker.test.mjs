@@ -14,10 +14,7 @@ import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 const GUARDED_REQUESTS = [
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
-  ["PUT", "/api/profile/preferences"],
   ["PUT", "/api/profile/lesson-recording-consent"],
-  ["POST", "/api/stories/the-red-ball/personalized-art"],
-  ["DELETE", "/api/stories/the-red-ball/personalized-art"],
   ["PUT", "/api/dubs/five-little-ducks-v2/consent"],
   ["DELETE", "/api/dubs/five-little-ducks-v2"],
 ];
@@ -27,8 +24,6 @@ const LEARNER_SAFE_REQUESTS = [
   ["PUT", "/api/learner-profiles/learner-a/active"],
   ["GET", "/api/learner-profile"],
   ["GET", "/api/lesson-recordings/consent"],
-  ["GET", "/api/stories/the-red-ball/personalized-art"],
-  ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
   ["GET", "/api/dubs/five-little-ducks-v2"],
   ["PUT", "/api/dubs/five-little-ducks-v2/lines/line-1"],
   ["GET", "/api/dubs/five-little-ducks-v2/lines/line-1/audio"],
@@ -38,10 +33,7 @@ const LEARNER_SAFE_REQUESTS = [
 
 const TARGETABLE_LEARNER_REQUESTS = [
   ["GET", "/api/learner-profile"],
-  ["GET", "/api/profile/preferences"],
   ["GET", "/api/lesson-recordings/consent"],
-  ["GET", "/api/stories/the-red-ball/personalized-art"],
-  ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
   ["GET", "/api/dubs/five-little-ducks-v2"],
   ["GET", "/api/dubs/five-little-ducks-v2/lines/line-1/audio"],
 ];
@@ -227,12 +219,7 @@ describe("guardian management authorization", () => {
           limiterCalls += 1;
           return null;
         },
-        async checkPersonalizedStoryArtRateLimit() {
-          limiterCalls += 1;
-          return null;
-        },
         handleLearnerProfileRequest: routed,
-        handlePersonalizedStoryArtRequest: routed,
         handleDubRequest: routed,
       });
       const env = {
@@ -263,7 +250,7 @@ describe("guardian management authorization", () => {
         assert.deepEqual(await response.json(), { routed: true });
       }
       assert.equal(handlerCalls, GUARDED_REQUESTS.length);
-      assert.equal(limiterCalls, 2);
+      assert.equal(limiterCalls, 1);
     } finally {
       state.close();
     }
@@ -294,7 +281,6 @@ describe("guardian management authorization", () => {
         }),
         handleLearnerProfileRequest: routed,
         handleLessonRecordingRequest: routed,
-        handlePersonalizedStoryArtRequest: routed,
         handleDubRequest: routed,
       });
       const env = {
@@ -353,7 +339,6 @@ describe("guardian management authorization", () => {
         }),
         handleLearnerProfileRequest: routed,
         handleLessonRecordingRequest: routed,
-        handlePersonalizedStoryArtRequest: routed,
         handleDubRequest: routed,
       });
       const env = {

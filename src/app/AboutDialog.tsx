@@ -195,7 +195,7 @@ export function AccountPrivacySections() {
         >
           <p className="m-0">
             AI helps turn speech into text, check spoken answers, run voice
-            conversations, and make optional story art.
+            conversations, and summarize learner profiles.
           </p>
           <p className="m-0 rounded-xl bg-amber-50 px-3 py-2 text-amber-950">
             AI can hear words wrongly or say something wrong. Please check
@@ -240,10 +240,9 @@ export function AccountPrivacySections() {
               selected learner profile.
             </li>
             <li>
-              If a grown-up chooses story art, a cropped photo is sent to
-              Cloudflare Workers AI. The photo is not added to the account.
-              Parrot keeps each learner&apos;s private storybook picture until
-              it is deleted.
+              Accounts that previously made a private story picture may keep
+              that generated picture until its learner or the account is
+              deleted. The original photo was not stored.
             </li>
           </ul>
           <p className="m-0 text-xs text-slate-500">
@@ -259,13 +258,14 @@ export function AccountPrivacySections() {
           <p className="m-0">
             A learner can finish a conversation at any time. In Guardian mode,
             choose a learner to manage their saved details, lesson voice
-            recordings, nursery-rhyme voice clips, and optional story art.
+            recordings, and nursery-rhyme voice clips.
           </p>
           <p className="m-0">
             Delete account removes the account, all learner profiles and their
             saved data, including saved conversation text, private voice clips
-            from all nursery rhymes, lesson voice recordings, and private story
-            art. A small deletion marker stays so old private art cannot return.
+            from all nursery rhymes, lesson voice recordings, and any
+            previously saved private story pictures. A small deletion marker
+            stays so removed private media cannot return.
           </p>
         </AboutSection>
       </section>
@@ -294,10 +294,10 @@ export function AccountPrivacySections() {
           </summary>
           <div className="grid gap-3 border-t-3 border-sky-100 p-3">
             <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
-              Current services include Cloudflare for hosting and story art,
-              LiveKit for live voice transport, OpenAI for live voice, and Groq
-              for speech checks and profile summaries. Some saved lesson and
-              profile audio was made with ElevenLabs before deployment.
+              Current services include Cloudflare for hosting, LiveKit for live
+              voice transport, OpenAI for live voice, and Groq for speech checks
+              and profile summaries. Some saved lesson and profile audio was
+              made with ElevenLabs before deployment.
             </p>
 
             <BuildCard

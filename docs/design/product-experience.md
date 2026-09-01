@@ -63,8 +63,8 @@ learner, show a Cancel path, or require Guardian mode; it lists the account's
 owned profiles for direct selection.
 
 Learner mode exposes no profile editing, AI/data notice, sign-out, account
-deletion, story settings, photo, consent, or deletion controls. Guardian mode
-exposes those management actions but not a duplicate learner activity catalog.
+deletion, consent, or deletion controls. Guardian mode exposes those management
+actions but not a duplicate learner activity catalog.
 
 | Capability                                          | Learner                                      | Guardian                      | Enforcement                                           |
 | --------------------------------------------------- | -------------------------------------------- | ----------------------------- | ----------------------------------------------------- |
@@ -81,9 +81,6 @@ exposes those management actions but not a duplicate learner activity catalog.
 | Save the latest lesson join-in clip                 | Yes, after guardian consent for that learner | Switch to learner             | Current learner's durable recording consent           |
 | Allow, stop, or delete lesson voice recordings      | No                                           | Yes                           | Guardian unlock plus learner-scoped fenced cleanup    |
 | Edit learner profile or redo setup                  | No                                           | Yes                           | Guardian unlock                                       |
-| Choose stored story level                           | No                                           | Yes                           | Guardian unlock                                       |
-| Upload a learner photo or generate/delete story art | No                                           | Yes                           | Guardian unlock plus consent for the active learner   |
-| View already-generated story art                    | Yes                                          | Yes                           | Selected-learner read                                 |
 | Open AI/data notice                                 | No                                           | Yes                           | Guardian UI boundary                                  |
 | Sign out                                            | No                                           | Yes                           | Guardian UI boundary                                  |
 | Delete account and every learner's data             | No                                           | Yes                           | Guardian UI plus account-password confirmation        |
@@ -117,7 +114,6 @@ Canonical guardian routes are:
 - `/guardian/learners/:learnerId` — page-local learner details and setup redo;
 - `/guardian/profile` — retired compatibility route redirected to Manage
   learners;
-- `/guardian/stories` — stored story level and personalized-art management;
 - `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
 
 Initial `/profile/setup` remains available to either mode until onboarding is
@@ -182,30 +178,25 @@ recording, and step state reset safely.
 
 ## Story Time
 
-Guardian story settings offer four progressive learner levels:
+The story shelf offers four progressive learner levels:
 
 - First words
 - Repeating patterns
 - Tiny stories
 - Early A1
 
-The choice is stored on the active learner profile. The learner shelf always
-opens at that learner's stored level and contains no level selector or
-art-management controls.
-Each learner level contains five curated stories. Beneath the active-level
-section, the shelf always publishes two public Long stories with saved
-narration. Long stories are not a learner preference and do not appear among
-the four Guardian setting choices. All stories use the same authenticated shelf
-and reader routes; there is no preview-only story shell. A story card shows its
-cover, title, and one Listen action. Prompt experiments, vocabulary audit data,
-uncontrolled baselines, and teaching diagnostics stay out of the learner
-interface.
+Existing profiles open at their stored starting level. Learners can switch
+among every built-in level directly on the shelf; no Guardian story-settings
+page or art-management controls remain. Each learner level contains curated
+stories, and the same selector includes public Long stories with saved
+narration. All stories use the same authenticated shelf and reader routes;
+there is no preview-only story shell. A story card shows its cover, title, and
+one Listen action. Prompt experiments, vocabulary audit data, uncontrolled
+baselines, and teaching diagnostics stay out of the learner interface.
 
 The reader moves page by page, presents one join-in line, and keeps narration
 controls separate from page navigation. Returning from a story restores the
-active learner's stored-level shelf. Already-generated private art for that
-learner may appear in stories and lessons; sibling art cannot. Upload, consent,
-generation, and deletion remain Guardian-only.
+story's shelf. Stories always render their checked-in catalog artwork.
 
 ## Dub a Rhyme
 
@@ -270,6 +261,6 @@ Built-in lesson JSON contains text and catalog IDs, never image filenames,
 audio filenames, voice IDs, or generation settings. Global catalogs own visual
 assets, and the static audio manifest owns saved speech. Story scripts are
 checked in and validated against their level limits. Profiles, onboarding
-progress, conversations, personalized art, dubbing consent, and saved clips
-remain isolated per learner; authentication, Guardian unlock, rate limits, and
-whole-account deletion remain account- or session-scoped.
+progress, conversations, dubbing consent, and saved clips remain isolated per
+learner; authentication, Guardian unlock, rate limits, and whole-account
+deletion remain account- or session-scoped.

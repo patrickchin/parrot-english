@@ -449,7 +449,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(document.activeElement, password));
     assert.match(
       document.querySelector('[role="dialog"]')?.textContent ?? "",
-      /all learner profiles.*private voice clips.*story art/i,
+      /all learner profiles.*private voice clips.*previously saved private story pictures/i,
     );
 
     await press(password, "Tab", { shiftKey: true });
@@ -1138,7 +1138,7 @@ describe("keyboard accessibility lifecycles", () => {
         TestAuthGate,
         {
           guardianUnlockDestination:
-            "/guardian/stories?section=art#cover",
+            "/guardian/dubbing?section=clips#saved",
           navigate: (path) => navigations.push(path),
         },
         "LOCKED GUARDIAN PAGE",
@@ -1152,7 +1152,7 @@ describe("keyboard accessibility lifecycles", () => {
 
     await waitFor(() =>
       assert.deepEqual(navigations, [
-        "/guardian/stories?section=art#cover",
+        "/guardian/dubbing?section=clips#saved",
       ]),
     );
   });

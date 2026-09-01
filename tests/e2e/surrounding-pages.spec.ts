@@ -473,13 +473,6 @@ const guardianContentPages = [
     path: "/guardian/learners",
   },
   {
-    heading: "Story settings",
-    lastControl: (page: Page) =>
-      page.getByRole("img", { name: "Storybook portrait preview" }),
-    name: "story settings",
-    path: "/guardian/stories",
-  },
-  {
     heading: "Voice dubbing",
     lastControl: (page: Page) =>
       page.getByRole("button", { name: "Delete Mia's saved nursery-rhyme voice clips" }),
@@ -643,7 +636,7 @@ test("account deletion requires the password and returns to sign in only after p
     .click();
   const dialog = page.getByRole("dialog", { name: "Delete account" });
   await expect(dialog).toContainText(
-    "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
+    "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and any previously saved private story pictures from Parrot. A small deletion marker stays so removed private media cannot return.",
   );
   const confirm = dialog.getByRole("button", { name: "Delete account now" });
   await expect(confirm).toBeDisabled();

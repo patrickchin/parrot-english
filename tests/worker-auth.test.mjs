@@ -313,7 +313,7 @@ describe("Worker authentication", () => {
     assert.equal(
       typeof auth.options.user?.deleteUser?.beforeDelete,
       "function",
-      "Account removal must run the personalized-art purge before Better Auth deletes the user row",
+      "Account removal must run legacy private-media cleanup before Better Auth deletes the user row",
     );
   });
 
