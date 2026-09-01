@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "repository": "https://github.com/googlefonts/noto-emoji",
+  "revision": "8998f5dd683424a73e2314a8c1f1e359c19e8742",
+  "license": "Apache-2.0",
+  "licensePath": "svg/LICENSE",
+  "assets": [
+    {
+      "id": "1f431",
+      "upstreamPath": "svg/emoji_u1f431.svg",
+      "publicPath": "/assets/word-games/noto/emoji_u1f431.svg",
+      "sha256": "2e9ef667455ce65692cb3a9c680e9317af8a5d339f321472e3e31fade59f8db6"
+    }
+  ]
+}
