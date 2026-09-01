@@ -422,9 +422,6 @@ async function chooseLearnerAndStart(
 }
 
 async function chooseLearnerFromManager(page: Page, name: string) {
-  await page
-    .getByRole("link", { exact: true, name: /Back to guardian dashboard/i })
-    .click();
   return chooseLearnerAndStart(page, name);
 }
 
@@ -666,7 +663,7 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
     .toBe("learner-mia");
 
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
   await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
   await page.reload();
   await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
@@ -692,9 +689,8 @@ test("active learner detail saves reach learner-mode consumers in the same SPA",
     page.getByRole("status").filter({ hasText: "available automatically" }),
   ).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Save changes" }).click();
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
 
-  await page.getByRole("link", { name: /Back to Guardian dashboard/i }).click();
   await chooseLearnerAndStart(page, "Mia Updated");
   await expect(page).toHaveURL("/");
   await expect(
@@ -1025,7 +1021,9 @@ test("hides an unsaved Guardian profile edit during handoff and restores persist
     await draftPage.bringToFront();
     await expect(draftPage).toHaveURL("/");
     await unlockGuardianFromLearnerMenu(draftPage);
-    await draftPage.getByRole("link", { name: "Manage learners" }).click();
+    await expect(
+      draftPage.getByRole("heading", { name: "Manage learners" }),
+    ).toBeVisible();
     await learnerCard(draftPage, "Mia")
       .getByRole("button", { name: "Edit ⁨Mia⁩'s profile" })
       .click();
@@ -1074,7 +1072,7 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
 
     await profilePage.getByLabel("Name", { exact: true }).fill("Mia Targeted");
     await profilePage.getByRole("button", { name: "Save changes" }).click();
-    await expect(profilePage).toHaveURL("/guardian/learners");
+    await expect(profilePage).toHaveURL("/guardian#learner-profiles");
     await expect(learnerCard(profilePage, "Mia Targeted")).toBeVisible();
 
     await managerPage.bringToFront();
@@ -1082,7 +1080,6 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
     await profilePage.bringToFront();
     await expect(profilePage).toHaveURL("/");
     await unlockGuardianFromLearnerMenu(profilePage);
-    await profilePage.getByRole("link", { name: "Manage learners" }).click();
     await expect(
       profilePage.getByRole("heading", { name: "Manage learners" }),
     ).toBeVisible();
@@ -1373,15 +1370,12 @@ test("automatically reveals a selection-required roster in Guardian mode", async
   );
   await page.goto(requestedUrl);
 
-  await expect(page).toHaveURL(requestedUrl);
+  await expect(page).toHaveURL(/\/guardian\?[^#]+#learner-profiles$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
   await expect(page.getByRole("radio")).toHaveCount(0);
-  await page
-    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
-    .click();
   const chooser = await openLearnerModeChooser(page);
   await expect(chooser.getByRole("radio")).toHaveCount(0);
   await expect(
@@ -1495,9 +1489,6 @@ test("suppresses a held selection response after a newer selection wins", async 
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
-  await page
-    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
-    .click();
   const chooser = await openLearnerModeChooser(page);
   const startNoah = chooser.getByRole("button", {
     exact: true,
@@ -1555,9 +1546,6 @@ test("keeps the chooser modal and non-dismissible while a learner switch is pend
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
-  await page
-    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
-    .click();
   const chooser = await openLearnerModeChooser(page);
   await chooser
     .getByRole("button", {
@@ -1678,7 +1666,6 @@ for (const viewport of requiredViewports) {
     await page.goto(learnerScenarioUrl("/guardian/learners", "multiple"));
 
     const main = page.getByRole("main");
-    const back = page.getByRole("link", { name: "Back to guardian dashboard" });
     const trigger = page.getByRole("button", {
       name: /Profile for ⁨Alex Guardian⁩, guardian mode/,
     });
@@ -1698,7 +1685,6 @@ for (const viewport of requiredViewports) {
       noah.getByRole("button", { name: "Delete ⁨Noah⁩" }),
     ).toBeVisible();
     await expect(add).toBeVisible();
-    await expectContainedHorizontally(back, page);
     await expectContainedHorizontally(trigger, page);
     await expectContainedHorizontally(noah, page);
     await expectContainedHorizontally(add, page);
@@ -1724,7 +1710,6 @@ for (const viewport of requiredViewports) {
     await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     await expect(add).toBeVisible();
 
-    await back.click();
     const switchTrigger = page.getByRole("button", {
       exact: true,
       name: "Switch to learner",
@@ -1901,14 +1886,10 @@ test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian nav
     page.getByRole("heading", { name: "Learner details" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
-  await page
-    .getByRole("link", { exact: true, name: "Back to guardian dashboard" })
-    .click();
-  await expect(page).toHaveURL("/guardian");
 
   await page.goto(learnerScenarioUrl("/guardian/not-a-route", "multiple"));
   await expect(page).toHaveURL("/guardian");

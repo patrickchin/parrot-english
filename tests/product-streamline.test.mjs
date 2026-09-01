@@ -273,39 +273,12 @@ test("home gives children five clear, working learning choices", () => {
   );
 });
 
-test("guardian dashboard presents one learner-management destination", () => {
+test("guardian dashboard keeps its flattened shell localized in Chinese", () => {
   assert.equal(
     typeof GuardianDashboardView,
     "function",
     "Expected a rendered guardian dashboard view",
   );
-  const html = renderInRouter(
-    createElement(GuardianDashboardView, {
-      learnerName: "Mia",
-      onSwitchToLearner() {},
-    }),
-    "/guardian",
-  );
-  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
-    ([, href]) => href,
-  );
-
-  assert.equal((html.match(/>Learner profiles<\/h2>/g) ?? []).length, 1);
-  assert.equal((html.match(/>Manage learners<\/a>/g) ?? []).length, 1);
-  assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
-  assert.match(html, /aria-label="Switch to learner"/);
-  assert.doesNotMatch(
-    html,
-    /is using learner mode|select who uses learner mode/,
-  );
-  assert.doesNotMatch(html, /Managing Mia/);
-  assert.doesNotMatch(
-    html,
-    />Manage learners<\/h2>|Learner details|Manage learner details/,
-  );
-});
-
-test("guardian dashboard localizes all authored navigation in Chinese", () => {
   const html = renderInRouter(
     createElement(
       GuardianLanguageProvider,
@@ -321,15 +294,6 @@ test("guardian dashboard localizes all authored navigation in Chinese", () => {
   assert.match(html, /<h1[^>]*>\s*家长中心\s*<\/h1>/);
   assert.match(html, /aria-label="页面导航"/);
   assert.match(html, /aria-label="切换到学习模式"/);
-  for (const copy of [
-    "孩子资料",
-    "管理孩子",
-    "配音管理",
-    "账户与隐私",
-    "查看技术构建详情和可用的账户操作。",
-  ]) {
-    assert.match(html, new RegExp(copy));
-  }
   for (const english of [
     "Guardian dashboard",
     "Learner profiles",
@@ -341,51 +305,8 @@ test("guardian dashboard localizes all authored navigation in Chinese", () => {
   ]) {
     assert.doesNotMatch(html, new RegExp(english));
   }
-  assert.doesNotMatch(html, /学习与内容/);
+  assert.doesNotMatch(html, /href="\/guardian\/(?:learners|dubbing|account)"/);
 });
-
-test("guardian dashboard presents its remaining destinations as peers", () => {
-  const html = renderInRouter(
-    createElement(GuardianDashboardView, {
-      learnerName: "Mia",
-      onSwitchToLearner() {},
-    }),
-    "/guardian",
-  );
-  assert.doesNotMatch(html, /Learning &amp; content/);
-  assert.doesNotMatch(html, /Story settings|Open story settings/);
-  assert.doesNotMatch(html, /href="\/guardian\/stories"/);
-  assert.doesNotMatch(html, /My Lessons/);
-  assert.doesNotMatch(html, /href="\/guardian\/lessons"|>Manage lessons<\/a>/);
-});
-
-test("guardian dashboard links a separate account and privacy destination", () => {
-  const html = renderInRouter(
-    createElement(GuardianDashboardView, {
-      learnerName: "Mia",
-      onSwitchToLearner() {},
-    }),
-    "/guardian",
-  );
-  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
-    ([, href]) => href,
-  );
-
-  assert.deepEqual(hrefs, [
-    "/guardian/learners",
-    "/guardian/dubbing",
-    "/guardian/account",
-  ]);
-  assert.match(html, /<h2[^>]*>Account &amp; privacy<\/h2>/);
-  assert.match(html, />Open account &amp; privacy<\/a>/);
-  assert.match(
-    html,
-    /View technical build details and available account controls/,
-  );
-  assert.doesNotMatch(html, /profile dropdown/i);
-  assert.match(html, /Switch to learner/);
-});
-
 test("lesson catalog presents one canonical path without artwork experiments", () => {
   const html = renderInRouter(createElement(LessonListView), "/lessons");
 

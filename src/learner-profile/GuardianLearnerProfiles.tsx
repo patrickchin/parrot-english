@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type ReactNode,
 } from "react";
 import { useNavigate } from "react-router";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
@@ -31,6 +32,59 @@ export type LearnerRosterErrorCode =
   | "cleanup-pending"
   | "deletion-uncertain"
   | "delete-failed";
+
+function GuardianLearnerProfilesShell({
+  children,
+  embedded,
+}: {
+  children: ReactNode;
+  embedded: boolean;
+}) {
+  const { messages } = useGuardianLanguage();
+
+  if (embedded) {
+    return (
+      <section
+        aria-labelledby="manage-learners-heading"
+        className="grid min-w-0 scroll-mt-24 gap-6"
+        id="learner-profiles"
+      >
+        <header className="grid min-w-0 gap-2 text-center">
+          <h2
+            className="m-0 text-3xl leading-tight text-brand-navy sm:text-4xl"
+            id="manage-learners-heading"
+          >
+            {messages.learners.roster.title}
+          </h2>
+        </header>
+        {children}
+      </section>
+    );
+  }
+
+  return (
+    <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
+        <HeaderLink
+          aria-label={messages.learners.roster.backToDashboardAria}
+          icon={<ArrowLeft />}
+          to={getGuardianPath()}
+        >
+          {messages.learners.roster.backToDashboard}
+        </HeaderLink>
+      </RouteHeader>
+
+      <section className="mx-auto grid w-full min-w-0 max-w-5xl gap-6">
+        <header className="grid min-w-0 gap-2 text-center">
+          <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
+            {messages.learners.roster.title}
+          </h1>
+        </header>
+        {children}
+      </section>
+    </main>
+  );
+}
 
 export type LearnerRosterStatus =
   | { kind: "deleted"; learnerName: string }
@@ -91,6 +145,7 @@ function requireCreatedRosterProfile(
 }
 
 export function GuardianLearnerProfilesView({
+  embedded = false,
   error,
   isLoading,
   onAdd,
@@ -101,6 +156,7 @@ export function GuardianLearnerProfilesView({
   profiles,
   statusMessage,
 }: {
+  embedded?: boolean;
   error: LearnerRosterErrorCode | null;
   isLoading: boolean;
   onAdd: (name: string) => void;
@@ -123,6 +179,7 @@ export function GuardianLearnerProfilesView({
   const controlsUnavailable = busy || rosterUnavailable;
   const canDeleteAnotherLearner =
     profiles.filter(({ deletionPending }) => !deletionPending).length > 1;
+  const ContentHeading = embedded ? "h3" : "h2";
 
   function addLearner(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -132,102 +189,120 @@ export function GuardianLearnerProfilesView({
   }
 
   return (
-    <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
-      <RouteHeader ariaLabel={messages.common.pageNavigation}>
-        <HeaderLink
-          aria-label={messages.learners.roster.backToDashboardAria}
-          icon={<ArrowLeft />}
-          to={getGuardianPath()}
-        >
-          {messages.learners.roster.backToDashboard}
-        </HeaderLink>
-      </RouteHeader>
+    <GuardianLearnerProfilesShell embedded={embedded}>
+      <p
+        aria-atomic="true"
+        aria-live="polite"
+        className="m-0 min-h-6 min-w-0 text-center text-sm font-extrabold text-brand-blue [overflow-wrap:anywhere]"
+        role="status"
+      >
+        {isLoading
+          ? messages.learners.roster.loading
+          : statusMessage?.kind === "deleted"
+            ? (
+              <>
+                {messages.learners.roster.deletedStatusBefore}
+                <BidiLearnerName learnerName={statusMessage.learnerName} />
+                {messages.learners.roster.deletedStatusAfter}
+              </>
+              )
+            : ""}
+      </p>
 
-      <section className="mx-auto grid w-full min-w-0 max-w-5xl gap-6">
-        <header className="grid min-w-0 gap-2 text-center">
-          <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            {messages.learners.roster.title}
-          </h1>
-        </header>
+      {error ? (
+        <div className="grid justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
+          <p className="m-0 font-extrabold text-red-900" role="alert">
+            {messages.learners.roster.errors[error]}
+          </p>
+          {!profiles.length && !busy ? (
+            <ActionButton
+              onClick={onRetry}
+              size="compact"
+              type="button"
+              variant="surface"
+            >
+              {messages.common.retry}
+            </ActionButton>
+          ) : null}
+        </div>
+      ) : null}
 
-        <p
-          aria-atomic="true"
-          aria-live="polite"
-          className="m-0 min-h-6 min-w-0 text-center text-sm font-extrabold text-brand-blue [overflow-wrap:anywhere]"
-          role="status"
-        >
-          {isLoading
-            ? messages.learners.roster.loading
-            : statusMessage?.kind === "deleted"
-              ? (
-                <>
-                  {messages.learners.roster.deletedStatusBefore}
-                  <BidiLearnerName learnerName={statusMessage.learnerName} />
-                  {messages.learners.roster.deletedStatusAfter}
-                </>
-                )
-              : ""}
-        </p>
-
-        {error ? (
-          <div className="grid justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
-            <p className="m-0 font-extrabold text-red-900" role="alert">
-              {messages.learners.roster.errors[error]}
-            </p>
-            {!profiles.length && !busy ? (
-              <ActionButton
-                onClick={onRetry}
-                size="compact"
-                type="button"
-                variant="surface"
-              >
-                {messages.common.retry}
-              </ActionButton>
-            ) : null}
-          </div>
-        ) : null}
-
-        {profiles.length ? (
-          <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2">
-            {profiles.map((profile) => {
-              const isolatedName = `\u2068${profile.name}\u2069`;
-              const isPending = profile.id === pendingProfileId;
-              const finalLearner =
-                !profile.deletionPending && !canDeleteAnotherLearner;
-              return (
-                <li className="min-w-0" key={profile.id}>
-                  <Card className="grid h-full min-w-0 content-start gap-4 p-5 sm:p-6">
-                    <div className="grid gap-1">
-                      <h2 className="m-0 min-w-0 text-2xl leading-tight text-brand-navy [overflow-wrap:anywhere]">
+      {profiles.length ? (
+        <ul className="m-0 grid list-none gap-4 p-0 md:grid-cols-2">
+          {profiles.map((profile) => {
+            const isolatedName = `\u2068${profile.name}\u2069`;
+            const isPending = profile.id === pendingProfileId;
+            const finalLearner =
+              !profile.deletionPending && !canDeleteAnotherLearner;
+            return (
+              <li className="min-w-0" key={profile.id}>
+                <Card className="grid h-full min-w-0 content-start gap-4 p-5 sm:p-6">
+                  <div className="grid gap-1">
+                    <ContentHeading className="m-0 min-w-0 text-2xl leading-tight text-brand-navy [overflow-wrap:anywhere]">
+                      <BidiLearnerName learnerName={profile.name} />
+                    </ContentHeading>
+                    <p className="m-0 text-sm font-bold text-slate-600">
+                      {profile.age === null
+                        ? messages.learners.roster.ageMissing
+                        : messages.learners.roster.age(profile.age)}{" "}
+                      ·{" "}
+                      {
+                        messages.learners.roster.setupStatuses[
+                          profile.profileStatus
+                        ]
+                      }
+                    </p>
+                    {finalLearner ? (
+                      <p className="m-0 min-w-0 whitespace-normal text-sm font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
+                        {messages.learners.roster.lastLearnerBefore}
                         <BidiLearnerName learnerName={profile.name} />
-                      </h2>
-                      <p className="m-0 text-sm font-bold text-slate-600">
-                        {profile.age === null
-                          ? messages.learners.roster.ageMissing
-                          : messages.learners.roster.age(profile.age)}{" "}
-                        ·{" "}
-                        {
-                          messages.learners.roster.setupStatuses[
-                            profile.profileStatus
-                          ]
-                        }
+                        {messages.learners.roster.lastLearnerAfter}
                       </p>
-                      {finalLearner ? (
-                        <p className="m-0 min-w-0 whitespace-normal text-sm font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
-                          {messages.learners.roster.lastLearnerBefore}
-                          <BidiLearnerName learnerName={profile.name} />
-                          {messages.learners.roster.lastLearnerAfter}
-                        </p>
-                      ) : null}
-                    </div>
+                    ) : null}
+                  </div>
 
-                    <div className="mt-auto grid gap-3 min-[420px]:grid-cols-2">
-                      {profile.deletionPending ? (
+                  <div className="mt-auto grid gap-3 min-[420px]:grid-cols-2">
+                    {profile.deletionPending ? (
+                      <ActionButton
+                        aria-label={messages.learners.roster.finishDeletingAria(
+                          isolatedName,
+                        )}
+                        disabled={controlsUnavailable}
+                        onClick={(event) => {
+                          deleteTriggerRef.current = event.currentTarget;
+                          setProfileToDelete(profile);
+                        }}
+                        size="compact"
+                        type="button"
+                        variant="rose"
+                      >
+                        <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
+                          {isPending
+                            ? messages.learners.roster.deleting
+                            : messages.learners.roster.finishDeleting}
+                          <BidiLearnerName learnerName={profile.name} />
+                          {isPending ? "…" : null}
+                        </span>
+                      </ActionButton>
+                    ) : (
+                      <>
                         <ActionButton
-                          aria-label={messages.learners.roster.finishDeletingAria(
+                          aria-label={messages.learners.roster.editProfileAria(
                             isolatedName,
                           )}
                           disabled={controlsUnavailable}
+                          onClick={() => onManage(profile)}
+                          size="compact"
+                          type="button"
+                          variant="surface"
+                        >
+                          {messages.learners.roster.editProfile}
+                        </ActionButton>
+                        <ActionButton
+                          aria-label={messages.learners.roster.deleteAria(
+                            isolatedName,
+                          )}
+                          disabled={controlsUnavailable || finalLearner}
                           onClick={(event) => {
                             deleteTriggerRef.current = event.currentTarget;
                             setProfileToDelete(profile);
@@ -236,101 +311,64 @@ export function GuardianLearnerProfilesView({
                           type="button"
                           variant="rose"
                         >
-                          <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
-                            {isPending
-                              ? messages.learners.roster.deleting
-                              : messages.learners.roster.finishDeleting}
-                            <BidiLearnerName learnerName={profile.name} />
-                            {isPending ? "…" : null}
-                          </span>
+                          {messages.learners.roster.delete}
                         </ActionButton>
-                      ) : (
-                        <>
-                          <ActionButton
-                            aria-label={messages.learners.roster.editProfileAria(
-                              isolatedName,
-                            )}
-                            disabled={controlsUnavailable}
-                            onClick={() => onManage(profile)}
-                            size="compact"
-                            type="button"
-                            variant="surface"
-                          >
-                            {messages.learners.roster.editProfile}
-                          </ActionButton>
-                          <ActionButton
-                            aria-label={messages.learners.roster.deleteAria(
-                              isolatedName,
-                            )}
-                            disabled={controlsUnavailable || finalLearner}
-                            onClick={(event) => {
-                              deleteTriggerRef.current = event.currentTarget;
-                              setProfileToDelete(profile);
-                            }}
-                            size="compact"
-                            type="button"
-                            variant="rose"
-                          >
-                            {messages.learners.roster.delete}
-                          </ActionButton>
-                        </>
-                      )}
-                    </div>
-                  </Card>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
+                      </>
+                    )}
+                  </div>
+                </Card>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
 
-        <Card className="grid gap-4 p-5 sm:p-6">
-          <div className="grid gap-1">
-            <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              {messages.learners.roster.addTitle}
-            </h2>
-            <p className="m-0 text-sm font-bold text-slate-600">
-              {messages.learners.roster.addDescription}
-            </p>
-          </div>
-          <form
-            className="grid items-end gap-3 sm:grid-cols-[1fr_auto]"
-            onSubmit={addLearner}
-          >
-            <div className="grid gap-2">
-              <label
-                className="font-ui text-sm font-black text-brand-navy"
-                htmlFor="preferred-name"
-              >
-                {messages.learners.roster.preferredName}
-              </label>
-              <input
-                autoComplete="off"
-                className={fieldClassName()}
-                disabled={controlsUnavailable}
-                id="preferred-name"
-                maxLength={120}
-                onChange={(event) =>
-                  setPreferredName(event.currentTarget.value)
-                }
-                required
-                type="text"
-                value={preferredName}
-              />
-            </div>
-            <ActionButton
-              disabled={controlsUnavailable}
-              fullWidth
-              type="submit"
-              variant="navy"
+      <Card className="grid gap-4 p-5 sm:p-6">
+        <div className="grid gap-1">
+          <ContentHeading className="m-0 text-2xl leading-tight text-brand-navy">
+            {messages.learners.roster.addTitle}
+          </ContentHeading>
+          <p className="m-0 text-sm font-bold text-slate-600">
+            {messages.learners.roster.addDescription}
+          </p>
+        </div>
+        <form
+          className="grid items-end gap-3 sm:grid-cols-[1fr_auto]"
+          onSubmit={addLearner}
+        >
+          <div className="grid gap-2">
+            <label
+              className="font-ui text-sm font-black text-brand-navy"
+              htmlFor="preferred-name"
             >
-              {pendingProfileId === ADD_PENDING_PROFILE_ID
-                ? messages.learners.roster.adding
-                : messages.learners.roster.add}
-            </ActionButton>
-          </form>
-        </Card>
-      </section>
-
+              {messages.learners.roster.preferredName}
+            </label>
+            <input
+              autoComplete="off"
+              className={fieldClassName()}
+              disabled={controlsUnavailable}
+              id="preferred-name"
+              maxLength={120}
+              onChange={(event) =>
+                setPreferredName(event.currentTarget.value)
+              }
+              required
+              type="text"
+              value={preferredName}
+            />
+          </div>
+          <ActionButton
+            disabled={controlsUnavailable}
+            fullWidth
+            type="submit"
+            variant="navy"
+          >
+            {pendingProfileId === ADD_PENDING_PROFILE_ID
+              ? messages.learners.roster.adding
+              : messages.learners.roster.add}
+          </ActionButton>
+        </form>
+      </Card>
       {profileToDelete ? (
         <LearnerDeleteDialog
           onClose={() => setProfileToDelete(null)}
@@ -339,11 +377,17 @@ export function GuardianLearnerProfilesView({
           returnFocusRef={deleteTriggerRef}
         />
       ) : null}
-    </main>
+    </GuardianLearnerProfilesShell>
   );
 }
 
-export function GuardianLearnerProfiles() {
+export function GuardianLearnerProfiles({
+  embedded = false,
+  onRosterChanged,
+}: {
+  embedded?: boolean;
+  onRosterChanged?: () => void;
+}) {
   const navigate = useNavigate();
   const { deleteLearner, rosterRevision } = useLearnerSelection();
   const [error, setError] = useState<LearnerRosterErrorCode | null>(null);
@@ -431,15 +475,19 @@ export function GuardianLearnerProfiles() {
       const roster = await loadLearnerProfiles({
         signal: operation.controller.signal,
       });
-      if (operation.isCurrent()) applyRoster(roster);
+      if (!operation.isCurrent()) return false;
+      applyRoster(roster);
+      return true;
     } catch {
       // Keep the last authoritative roster available for a safe retry.
+      return false;
     }
   }
 
   async function addProfile(name: string) {
     const operation = beginOperation();
     const previousActiveProfileId = activeProfileIdRef.current;
+    let rosterChanged = false;
     setError(null);
     deletedStatusRevisionRef.current = null;
     setStatusMessage(null);
@@ -456,10 +504,11 @@ export function GuardianLearnerProfiles() {
         previousActiveProfileId,
       );
       applyRoster(result);
+      rosterChanged = true;
       navigate(getGuardianLearnerPath(created.id));
     } catch (caughtError) {
       if (!operation.isCurrent() || isAbortError(caughtError)) return;
-      await reconcileRosterAfterMutation(operation);
+      rosterChanged = await reconcileRosterAfterMutation(operation);
       if (!operation.isCurrent()) return;
       setError("add-failed");
     } finally {
@@ -467,6 +516,7 @@ export function GuardianLearnerProfiles() {
       if (controllerRef.current === operation.controller) {
         controllerRef.current = null;
       }
+      if (rosterChanged) onRosterChanged?.();
     }
   }
 
@@ -501,6 +551,7 @@ export function GuardianLearnerProfiles() {
 
   return (
     <GuardianLearnerProfilesView
+      embedded={embedded}
       error={error}
       isLoading={isLoading}
       onAdd={(name) => void addProfile(name)}

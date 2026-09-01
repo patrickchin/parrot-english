@@ -191,6 +191,7 @@ const E2E_PROFILE_SCENARIOS = new Set([
   E2E_PROFILE_VIEWPORT_SCENARIO,
 ]);
 const E2E_LEARNER_SCENARIOS = new Set([
+  "held-identity",
   "multiple",
   "selection-required",
   "select-error",
@@ -447,6 +448,7 @@ const E2E_VIEWPORT_EDITOR_STATE = {
 
 type MockLearnerScenario =
   | "create-error"
+  | "held-identity"
   | "multiple"
   | "select-error"
   | "selection-required"
@@ -837,6 +839,11 @@ function createE2eLearnerAccount(
     resolve: (response: Response) => void;
     response: Response;
   } | null = null;
+  const heldLearnerProfileLoads: Array<{
+    resolve: (response: Response) => void;
+    response: Response;
+  }> = [];
+  let holdLearnerProfileLoads = scenario === "held-identity";
   let failNextLearnerDelete = false;
   let failNextLearnerProfileLoad = false;
   let learnerRosterLoadFailuresRemaining = 0;
@@ -1395,7 +1402,13 @@ function createE2eLearnerAccount(
           503,
         );
       }
-      return e2eJson(fullProfileState(learner));
+      const response = e2eJson(fullProfileState(learner));
+      if (holdLearnerProfileLoads) {
+        return new Promise<Response>((resolve) => {
+          heldLearnerProfileLoads.push({ resolve, response });
+        });
+      }
+      return response;
     }
     if (
       url.pathname === "/api/learner-profile/transcribe" &&
@@ -1584,6 +1597,16 @@ function createE2eLearnerAccount(
     },
     failNextLearnerRosterLoad() {
       learnerRosterLoadFailuresRemaining = 2;
+    },
+    releaseHeldLearnerProfileLoads() {
+      if (!holdLearnerProfileLoads && heldLearnerProfileLoads.length === 0) {
+        return false;
+      }
+      holdLearnerProfileLoads = false;
+      for (const pending of heldLearnerProfileLoads.splice(0)) {
+        pending.resolve(pending.response);
+      }
+      return true;
     },
     releaseStaleSelection() {
       if (!heldSelection) return false;
@@ -2865,6 +2888,8 @@ function installE2eProfileFetchMock() {
         failNextLearnerRosterLoad: () =>
           learnerAccount.failNextLearnerRosterLoad(),
         openSession: openLearnerSession,
+        releaseHeldLearnerProfileLoads: () =>
+          learnerAccount.releaseHeldLearnerProfileLoads(),
         releaseStaleSelection: () => learnerAccount.releaseStaleSelection(),
         snapshot: (profileId?: string) => learnerAccount.snapshot(profileId),
       },

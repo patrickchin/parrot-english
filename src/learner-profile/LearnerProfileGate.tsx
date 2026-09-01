@@ -869,6 +869,7 @@ type LearnerProfileGateProps = {
   onRedoCompleted: () => void;
   onRedoLearnerProfileRoute: () => void;
   redoLearnerProfile: boolean;
+  routeFocusManagedByContent?: boolean;
 };
 
 export function LearnerProfileGate({
@@ -894,6 +895,7 @@ export function LearnerProfileGate({
   onRedoCompleted,
   onRedoLearnerProfileRoute,
   redoLearnerProfile,
+  routeFocusManagedByContent = false,
 }: LearnerProfileGateProps) {
   const { messages: selectedMessages } = useGuardianLanguage();
   const messages = guardianRoute ? selectedMessages : englishGuardianMessages;
@@ -2824,6 +2826,32 @@ export function LearnerProfileGate({
   const learnerIdentityBlocked =
     learnerIdentityCheck !== "confirmed" ||
     currentLearnerSelectionSyncStatus === "pending";
+  const previousLearnerIdentityBlockedRef = useRef(learnerIdentityBlocked);
+  useIsomorphicLayoutEffect(() => {
+    const wasBlocked = previousLearnerIdentityBlockedRef.current;
+    previousLearnerIdentityBlockedRef.current = learnerIdentityBlocked;
+    if (
+      !wasBlocked ||
+      learnerIdentityBlocked ||
+      routeFocusManagedByContent
+    ) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const heading = document.querySelector("main h1");
+      if (
+        document.activeElement !== document.body ||
+        !(heading instanceof HTMLElement)
+      ) {
+        return;
+      }
+      heading.dataset.routeFocusTarget = "";
+      heading.tabIndex = -1;
+      heading.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [learnerIdentityBlocked, routeFocusManagedByContent]);
   const blockLearnerInteraction = (event: SyntheticEvent) => {
     if (learnerIdentityCheckRef.current === "confirmed") return;
     event.preventDefault();
@@ -2835,6 +2863,7 @@ export function LearnerProfileGate({
       activeProfileId={data?.mode === "full" ? data.profile.id : null}
       createAndSelectLearner={createAndSelectLearner}
       deleteLearner={deleteLearner}
+      interactionReady={!learnerIdentityBlocked}
       reloadSelectedLearner={reloadSelectedLearner}
       rosterRevision={rosterRevision}
       selectLearner={selectLearner}

@@ -2,7 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 const GUARDIAN_NAME = "Alex Guardian";
 
-type LearnerScenario = "multiple" | "selection-required" | "zero-learners";
+type LearnerScenario =
+  | "held-identity"
+  | "multiple"
+  | "selection-required"
+  | "zero-learners";
 
 function scenarioUrl(
   path: string,
@@ -35,31 +39,7 @@ async function expectActiveLearner(
     .toBe(learnerProfileId);
 }
 
-function dashboardCard(page: Page, heading: string) {
-  const title = page.getByRole("heading", { exact: true, name: heading });
-  return title.locator("xpath=ancestor::*[@aria-labelledby][1]");
-}
-
-async function traverseDashboardAction(
-  page: Page,
-  actionName: string,
-  destination: RegExp,
-  headingName: string,
-  backName: string,
-) {
-  await page.getByRole("link", { exact: true, name: actionName }).click();
-  await expect(page).toHaveURL(destination);
-  await expect(
-    page.getByRole("heading", { exact: true, name: headingName }),
-  ).toBeVisible();
-  await page.getByRole("link", { exact: true, name: backName }).click();
-  await expect(page).toHaveURL("/guardian");
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
-  ).toBeVisible();
-}
-
-test("every Guardian dashboard card associates its copy and traverses through its Back action", async ({
+test("Guardian dashboard exposes all management controls without destination links", async ({
   page,
 }) => {
   await page.goto(scenarioUrl("/guardian"));
@@ -69,82 +49,226 @@ test("every Guardian dashboard card associates its copy and traverses through it
     }),
   ).toBeVisible();
 
-  for (const { action, description, heading } of [
-    {
-      action: "Manage learners",
-      description:
-        "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
-      heading: "Learner profiles",
-    },
-    {
-      action: "Manage voice dubbing",
-      description:
-        "Review and delete private nursery-rhyme voice clips.",
-      heading: "Voice dubbing",
-    },
-    {
-      action: "Open account & privacy",
-      description:
-        "View technical build details and available account controls.",
-      heading: "Account & privacy",
-    },
+  const dashboard = page.getByRole("main");
+  await expect(dashboard.getByRole("heading", { level: 1 })).toHaveText([
+    "Guardian dashboard",
+  ]);
+  for (const heading of [
+    "Manage learners",
+    "Voice dubbing",
+    "Account & privacy",
   ]) {
-    const card = dashboardCard(page, heading);
-    await expect(card, `${heading} card`).toHaveCount(1);
-    await expect(card).toContainText(description);
     await expect(
-      card.getByRole("link", { exact: true, name: action }),
+      dashboard.getByRole("heading", { exact: true, level: 2, name: heading }),
     ).toBeVisible();
   }
+  await expect(
+    dashboard.getByRole("button", { name: "Add learner" }),
+  ).toBeVisible();
+  await expect(
+    dashboard.getByRole("group", { name: "Choose learner settings target" }),
+  ).toBeVisible();
+  await expect(dashboard.getByLabel("Technical build details")).toBeVisible();
+  await expect(
+    dashboard.getByRole("button", { exact: true, name: "Delete account" }),
+  ).toBeVisible();
+  for (const retiredLink of [
+    "Manage learners",
+    "Manage voice dubbing",
+    "Open account & privacy",
+  ]) {
+    await expect(
+      dashboard.getByRole("link", { exact: true, name: retiredLink }),
+    ).toHaveCount(0);
+  }
+  await expectActiveLearner(page);
+});
 
-  const cardColors = await Promise.all(
-    [
-      "Learner profiles",
-      "Voice dubbing",
-      "Account & privacy",
-    ].map((heading) =>
-      dashboardCard(page, heading).evaluate(
-        (element) => getComputedStyle(element).backgroundColor,
-      ),
-    ),
+test("legacy Guardian management routes redirect to dashboard sections", async ({
+  page,
+}) => {
+  for (const { heading, path, section } of [
+    {
+      heading: "Manage learners",
+      path: "/guardian/learners",
+      section: "learner-profiles",
+    },
+    {
+      heading: "Voice dubbing",
+      path: "/guardian/dubbing",
+      section: "voice-dubbing",
+    },
+    {
+      heading: "Account & privacy",
+      path: "/guardian/account",
+      section: "account-privacy",
+    },
+  ]) {
+    await page.goto(scenarioUrl(path));
+    await expect
+      .poll(() => {
+        const url = new URL(page.url());
+        return `${url.pathname}${url.hash}`;
+      })
+      .toBe(`/guardian#${section}`);
+    await expect(
+      page.getByRole("heading", {
+        exact: true,
+        level: 1,
+        name: "Guardian dashboard",
+      }),
+    ).toBeVisible();
+    const sectionHeading = page.getByRole("heading", {
+      exact: true,
+      level: 2,
+      name: heading,
+    });
+    await expect(sectionHeading).toBeVisible();
+    await expect(sectionHeading).toBeInViewport();
+    await expect(sectionHeading).toBeFocused();
+    const redirected = new URL(page.url());
+    expect(redirected.searchParams.get("parrotE2eGuardian")).toBe("guardian");
+    expect(redirected.searchParams.get("parrotE2eLearners")).toBe("multiple");
+  }
+});
+
+test("same-page Guardian navigation moves focus with the visible section", async ({
+  page,
+}) => {
+  await page.goto(
+    scenarioUrl("/guardian/dubbing?learnerProfileId=unknown-learner"),
   );
-  expect(new Set(cardColors).size).toBe(cardColors.length);
+  const manageLearnersLink = page.getByRole("link", {
+    exact: true,
+    name: "Manage learners",
+  });
+  await expect(manageLearnersLink).toBeVisible();
+  await manageLearnersLink.click();
+
+  const manageLearnersHeading = page.getByRole("heading", {
+    exact: true,
+    level: 2,
+    name: "Manage learners",
+  });
+  await expect(page).toHaveURL("/guardian#learner-profiles");
+  await expect(manageLearnersHeading).toBeInViewport();
+  await expect(manageLearnersHeading).toBeFocused();
+
+  await page
+    .getByRole("button", {
+      name: `Profile for ⁨${GUARDIAN_NAME}⁩, guardian mode`,
+    })
+    .click();
+  await page
+    .getByRole("menuitem", { exact: true, name: "Guardian dashboard" })
+    .click();
+
+  const dashboardHeading = page.getByRole("heading", {
+    exact: true,
+    level: 1,
+    name: "Guardian dashboard",
+  });
+  await expect(page).toHaveURL("/guardian");
+  await expect(dashboardHeading).toBeInViewport();
+  await expect(dashboardHeading).toBeFocused();
+});
+
+test("delayed dashboard readiness preserves an open Account menu", async ({
+  page,
+}) => {
+  await page.goto(scenarioUrl("/guardian", "held-identity"));
+  await expect(
+    page.getByRole("heading", { name: "Checking the current learner" }),
+  ).toBeVisible();
+
+  await page
+    .getByRole("button", {
+      name: `Profile for ⁨${GUARDIAN_NAME}⁩, guardian mode`,
+    })
+    .click();
+  const menu = page.getByRole("menu", { name: "Account menu" });
+  const dashboardItem = menu.getByRole("menuitem", {
+    exact: true,
+    name: "Guardian dashboard",
+  });
+  await expect(dashboardItem).toBeFocused();
+
+  expect(
+    await page.evaluate(
+      () =>
+        (
+          window as Window & {
+            __parrotE2eLearners?: {
+              releaseHeldLearnerProfileLoads(): boolean;
+            };
+          }
+        ).__parrotE2eLearners?.releaseHeldLearnerProfileLoads() ?? false,
+    ),
+  ).toBe(true);
 
   await expect(
-    page.getByRole("heading", { name: "Learning & content" }),
-  ).toHaveCount(0);
-  for (const heading of [
-    "Learner profiles",
-    "Voice dubbing",
-    "Account & privacy",
-  ]) {
-    await expect(
-      page.getByRole("heading", { level: 2, name: heading }),
-    ).toBeVisible();
-  }
+    page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
+  ).toBeVisible();
+  await expect(menu).toBeVisible();
+  await expect(dashboardItem).toBeFocused();
+});
 
-  await traverseDashboardAction(
-    page,
-    "Manage learners",
-    /\/guardian\/learners$/,
-    "Manage learners",
-    "Back to guardian dashboard",
+test("a reconciled learner creation refreshes inline dubbing targets", async ({
+  page,
+}) => {
+  await page.goto(scenarioUrl("/guardian"));
+  await expect(
+    page.getByRole("group", { name: "Choose learner settings target" }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const originalFetch = window.fetch;
+    let loseNextCreateResponse = true;
+    window.fetch = async (input, init) => {
+      const request = input instanceof Request ? input : null;
+      const source =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      const url = new URL(source, window.location.href);
+      const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
+      if (
+        loseNextCreateResponse &&
+        url.pathname === "/api/learner-profiles" &&
+        method === "POST"
+      ) {
+        loseNextCreateResponse = false;
+        const response = await originalFetch(input, init);
+        if (response.ok) {
+          return Response.json(
+            {
+              error: "create_response_lost",
+              message: "The learner could not be added.",
+            },
+            { status: 503 },
+          );
+        }
+        return response;
+      }
+      return originalFetch(input, init);
+    };
+  });
+
+  await page.getByLabel("Preferred name").fill("Rose");
+  await page.getByRole("button", { exact: true, name: "Add learner" }).click();
+
+  await expect(
+    page.getByRole("heading", { exact: true, level: 3, name: "Rose" }),
+  ).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveText(
+    "The learner could not be added.",
   );
-  await traverseDashboardAction(
-    page,
-    "Manage voice dubbing",
-    /\/guardian\/dubbing\?learnerProfileId=learner-mia$/,
-    "Voice dubbing",
-    "Back to guardian dashboard",
-  );
-  await traverseDashboardAction(
-    page,
-    "Open account & privacy",
-    /\/guardian\/account$/,
-    "Account & privacy",
-    "Back to Guardian dashboard",
-  );
-  await expectActiveLearner(page);
+  await expect(
+    page
+      .getByRole("group", { name: "Choose learner settings target" })
+      .getByRole("button", { exact: true, name: "⁨Rose⁩" }),
+  ).toBeVisible();
 });
 
 test("direct learner details keep the URL target separate from learner mode and recover invalid IDs", async ({
@@ -161,7 +285,7 @@ test("direct learner details keep the URL target separate from learner mode and 
   );
   await expectActiveLearner(page);
   await page.getByRole("button", { exact: true, name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
 
   await page.goto(scenarioUrl("/guardian/learners/unknown-learner"));
   await expect(
@@ -176,7 +300,7 @@ test("direct learner details keep the URL target separate from learner mode and 
   await expectActiveLearner(page);
 
   await page.goto(scenarioUrl("/guardian/learners/%20"));
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
   await expect(
     page.getByRole("heading", { exact: true, name: "Manage learners" }),
   ).toBeVisible();
@@ -187,7 +311,7 @@ test("the retired Guardian profile route replaces history with Manage learners",
 }) => {
   await page.goto(scenarioUrl("/guardian"));
   await page.goto(scenarioUrl("/guardian/profile?returnTo=%2Fguardian"));
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
   await expect(
     page.getByRole("heading", { exact: true, name: "Manage learners" }),
   ).toBeVisible();
@@ -199,13 +323,14 @@ test("the retired Guardian profile route replaces history with Manage learners",
   ).toBeVisible();
 });
 
-test("learner-targeted routes normalize only a missing target and reject duplicate or unknown targets", async ({
+test("learner-targeted dashboard settings default cleanly and reject duplicate or unknown targets", async ({
   page,
 }) => {
   await page.goto(scenarioUrl("/guardian/dubbing"));
-  await expect(page).toHaveURL(
-    /\/guardian\/dubbing\?.*learnerProfileId=learner-mia/,
-  );
+  await expect.poll(() => new URL(page.url()).hash).toBe("#voice-dubbing");
+  const defaultTarget = new URL(page.url());
+  expect(defaultTarget.pathname).toBe("/guardian");
+  expect(defaultTarget.searchParams.get("learnerProfileId")).toBeNull();
   await expect(
     page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
@@ -301,7 +426,7 @@ test("Guardian wildcard and account gates recover without selecting a learner", 
   await expect(
     page.getByRole("heading", { exact: true, name: "Account & privacy" }),
   ).toBeVisible();
-  await expect(page).toHaveURL(/\/guardian\/account/);
+  await expect.poll(() => new URL(page.url()).hash).toBe("#account-privacy");
 
   await page.goto(scenarioUrl("/guardian/account", "zero-learners"));
   await expect(
@@ -315,10 +440,6 @@ test("Guardian wildcard and account gates recover without selecting a learner", 
     }>;
   });
   expect(roster).toEqual({ activeProfileId: null, profiles: [] });
-  await page
-    .getByRole("link", { exact: true, name: "Back to Guardian dashboard" })
-    .click();
-  await expect(page).toHaveURL("/guardian/learners");
   await expect(
     page.getByRole("heading", { exact: true, name: "Manage learners" }),
   ).toBeVisible();

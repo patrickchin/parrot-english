@@ -1,15 +1,19 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router";
 
-function hasLocalFocusLifecycle(pathname: string) {
-  return pathname.includes("/scenes/") || pathname.includes("/pages/");
+export function hasRouteOwnedFocusLifecycle(pathname: string) {
+  return (
+    pathname === "/guardian" ||
+    pathname.includes("/scenes/") ||
+    pathname.includes("/pages/")
+  );
 }
 
 export function RouteFocusManager() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    if (hasLocalFocusLifecycle(pathname)) return;
+    if (hasRouteOwnedFocusLifecycle(pathname)) return;
 
     const activeElement = document.activeElement;
     if (activeElement !== document.body) return;

@@ -74,6 +74,15 @@ function guardianLearnerUrl(path: string, scenario: string) {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
+async function expectGuardianSection(page: Page, sectionId: string) {
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return `${url.pathname}${url.hash}`;
+    })
+    .toBe(`/guardian#${sectionId}`);
+}
+
 async function chooseLearnerAndStart(
   page: Page,
   name: string,
@@ -165,7 +174,7 @@ test("direct Guardian routes open without an unlock prompt", async ({
 
   await expect(page.getByLabel("Password")).toHaveCount(0);
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page).toHaveURL("/guardian/dubbing");
+  await expectGuardianSection(page, "voice-dubbing");
   await expect(
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
@@ -260,7 +269,7 @@ test("successful switch opens guardian management and announces the mode", async
   ).toHaveText("Guardian mode");
 
   for (const heading of [
-    "Learner profiles",
+    "Manage learners",
     "Voice dubbing",
     "Account & privacy",
   ]) {
@@ -311,10 +320,10 @@ test("automatic Guardian access resumes the current deep link", async ({
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
   const openedUrl = new URL(page.url());
-  expect(openedUrl.pathname).toBe("/guardian/dubbing");
+  expect(openedUrl.pathname).toBe("/guardian");
   expect(openedUrl.searchParams.get("section")).toBe("recordings");
-  expect(openedUrl.searchParams.get("learnerProfileId")).toBe("e2e-learner");
-  expect(openedUrl.hash).toBe("#clips");
+  expect(openedUrl.searchParams.get("learnerProfileId")).toBeNull();
+  expect(openedUrl.hash).toBe("#voice-dubbing");
   expect(await page.evaluate(() => window.history.length)).toBe(
     historyLengthBeforeAccess,
   );
@@ -472,38 +481,55 @@ test("automatic Guardian access opens a deep link without an unlock dialog", asy
 }) => {
   await page.goto("/guardian/dubbing");
 
-  await expect(page).toHaveURL("/guardian/dubbing");
+  await expectGuardianSection(page, "voice-dubbing");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
 });
 
-for (const { path, protectedName, unlockedPath } of [
-  { path: "/guardian", protectedName: "Guardian dashboard" },
-  { path: "/guardian/account", protectedName: "Account & privacy" },
+for (const { path, protectedName, sectionId, unlockedPath } of [
+  {
+    path: "/guardian",
+    protectedName: "Guardian dashboard",
+    sectionId: undefined,
+    unlockedPath: undefined,
+  },
+  {
+    path: "/guardian/account",
+    protectedName: "Account & privacy",
+    sectionId: "account-privacy",
+    unlockedPath: undefined,
+  },
   {
     path: "/guardian/learners/e2e-learner",
     protectedName: "Learner details",
+    sectionId: undefined,
+    unlockedPath: undefined,
   },
   {
     path: "/guardian/profile/setup?parrotE2eProfile=viewport-stability",
     protectedName: "Guardian dashboard",
+    sectionId: undefined,
     unlockedPath: "/guardian",
   },
   {
     path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Flearners%2Fe2e-learner",
     protectedName: "Update my profile",
+    sectionId: undefined,
+    unlockedPath: undefined,
   },
   {
     path: "/guardian/dubbing",
     protectedName: "Voice dubbing",
-    unlockedPath:
-      "/guardian/dubbing?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
+    sectionId: "voice-dubbing",
+    unlockedPath: undefined,
   },
   {
     path: "/profile/setup?redo=1&returnTo=%2Fguardian",
     protectedName: "Update my profile",
+    sectionId: undefined,
+    unlockedPath: undefined,
   },
 ]) {
   test(`automatic Guardian access opens ${path}`, async ({
@@ -512,7 +538,11 @@ for (const { path, protectedName, unlockedPath } of [
     const requestedUrl = guardianUrl(path, "learner");
     await page.goto(requestedUrl);
 
-    await expect(page).toHaveURL(unlockedPath ?? requestedUrl);
+    if (sectionId) {
+      await expectGuardianSection(page, sectionId);
+    } else {
+      await expect(page).toHaveURL(unlockedPath ?? requestedUrl);
+    }
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(
       page.getByRole("heading", { exact: true, name: protectedName }),
@@ -614,9 +644,7 @@ test("an expired guardian session automatically recovers the same deep link", as
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
   await page.clock.fastForward(2_000);
-  await expect(page).toHaveURL(
-    "/guardian/dubbing?learnerProfileId=e2e-learner",
-  );
+  await expectGuardianSection(page, "voice-dubbing");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
@@ -680,15 +708,13 @@ test("successful lock redirects the stale route once and permits a later direct 
   ).toBeVisible();
 
   await page.goto("/guardian/dubbing");
-  await expect(page).toHaveURL("/guardian/dubbing");
+  await expectGuardianSection(page, "voice-dubbing");
   await expect(
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
 
   await page.reload();
-  await expect(page).toHaveURL(
-    "/guardian/dubbing?learnerProfileId=learner-noah",
-  );
+  await expectGuardianSection(page, "voice-dubbing");
   await expect(
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
@@ -727,15 +753,13 @@ test("locking guardian access in one tab returns a sibling tab to learner mode",
       window.history.pushState(null, "", "/guardian/dubbing");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
-    await expect(sibling).toHaveURL("/guardian/dubbing");
+    await expectGuardianSection(sibling, "voice-dubbing");
     await expect(
       sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
     ).toBeVisible();
 
     await sibling.reload();
-    await expect(sibling).toHaveURL(
-      "/guardian/dubbing?learnerProfileId=learner-noah",
-    );
+    await expectGuardianSection(sibling, "voice-dubbing");
     await expect(
       sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
     ).toBeVisible();
@@ -775,15 +799,13 @@ test("a sibling learner switch does not block the next Guardian route from profi
       window.history.pushState(null, "", "/guardian/dubbing");
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
-    await expect(sibling).toHaveURL("/guardian/dubbing");
+    await expectGuardianSection(sibling, "voice-dubbing");
     await expect(
       sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
     ).toBeVisible();
 
     await sibling.reload();
-    await expect(sibling).toHaveURL(
-      "/guardian/dubbing?learnerProfileId=e2e-learner",
-    );
+    await expectGuardianSection(sibling, "voice-dubbing");
     await expect(
       sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
     ).toBeVisible();

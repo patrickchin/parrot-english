@@ -1195,8 +1195,8 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("Account & privacy"));
     assert.deepEqual(navigations, [
       "/guardian",
-      "/guardian/learners",
-      "/guardian/account",
+      "/guardian#learner-profiles",
+      "/guardian#account-privacy",
     ]);
   });
 

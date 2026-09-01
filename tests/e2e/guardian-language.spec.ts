@@ -328,13 +328,14 @@ test("Chinese Guardian dashboard and learner chooser are consistently localized"
     page.getByRole("navigation", { name: "页面导航" }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "家长中心" })).toBeVisible();
-  for (const heading of ["孩子资料", "配音管理", "账户与隐私"]) {
+  for (const heading of ["管理孩子", "配音管理", "账户与隐私"]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
   await expect(page.getByText("学习与内容", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("技术构建详情")).toBeVisible();
   await expect(
     page.getByText("查看技术构建详情和可用的账户操作。", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 
   await page.getByRole("button", { name: "切换到学习模式" }).click();
   const dialog = page.getByRole("dialog", { name: "谁在学习？" });
@@ -361,11 +362,12 @@ test("Chinese Guardian learner roster and profile editor localize without renami
   await expect(
     page.getByRole("navigation", { name: "页面导航" }),
   ).toBeVisible();
-  await expect(page.getByRole("heading", { name: "管理孩子" })).toBeVisible();
-  await expect(page.getByText("Mia", { exact: true })).toBeVisible();
-  await expect(page.getByText("Noah", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("常用名")).toBeVisible();
-  await page.getByRole("button", { name: "编辑 ⁨Mia⁩ 的资料" }).click();
+  const manager = page.getByRole("region", { name: "管理孩子" });
+  await expect(manager.getByRole("heading", { name: "管理孩子" })).toBeVisible();
+  await expect(manager.getByRole("heading", { exact: true, name: "Mia" })).toBeVisible();
+  await expect(manager.getByRole("heading", { exact: true, name: "Noah" })).toBeVisible();
+  await expect(manager.getByLabel("常用名")).toBeVisible();
+  await manager.getByRole("button", { name: "编辑 ⁨Mia⁩ 的资料" }).click();
 
   await expect(page.getByRole("heading", { name: "孩子资料" })).toBeVisible();
   await expect(page.getByText("正在管理 Mia", { exact: true })).toBeVisible();
