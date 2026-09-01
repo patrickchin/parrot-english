@@ -216,7 +216,7 @@ test("word-game library renders nine category choices and a home link", () => {
   assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/illustrated\/animals-cat\.webp"/);
 });
 
-test("word-game category renders ordered tier sections and canonical quiz links", () => {
+test("word-game category renders nine independent numbered quiz links", () => {
   assert.equal(typeof WordGameCategory, "function");
   const category = resolveWordGameCategory("animals");
   assert.ok(category);
@@ -224,12 +224,25 @@ test("word-game category renders ordered tier sections and canonical quiz links"
     createElement(WordGameCategory, { category }),
     "/word-games/animals",
   );
-  const headings = [...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map(([, heading]) => heading);
+  const quizLabels = [...html.matchAll(/aria-label="(Level [1-3] · Quiz [1-3])"/g)]
+    .map(([, label]) => label);
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href);
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
   assert.match(html, /<h1[^>]*>Animals<\/h1>/);
-  assert.deepEqual(headings, ["Simple", "Intermediate", "Advanced"]);
+  assert.equal((html.match(/<h2\b/g) ?? []).length, 0);
+  assert.deepEqual(quizLabels, [
+    "Level 1 · Quiz 1",
+    "Level 1 · Quiz 2",
+    "Level 1 · Quiz 3",
+    "Level 2 · Quiz 1",
+    "Level 2 · Quiz 2",
+    "Level 2 · Quiz 3",
+    "Level 3 · Quiz 1",
+    "Level 3 · Quiz 2",
+    "Level 3 · Quiz 3",
+  ]);
+  assert.doesNotMatch(html, /Simple|Intermediate|Advanced|First look|Mix it up|Quick check/);
   assert.deepEqual(hrefs.filter((href) => href.startsWith("/word-games/animals/")), [
     "/word-games/animals/simple-1",
     "/word-games/animals/simple-2",
@@ -337,10 +350,11 @@ test("authenticated application routes include the core learner activities", () 
   assert.match(wordGameLibrary, /<h1[^>]*>Pick a word game<\/h1>/);
   const wordGameCategory = renderApplicationRoute("/word-games/animals");
   assert.match(wordGameCategory, /<h1[^>]*>Animals<\/h1>/);
-  assert.match(wordGameCategory, /<h2[^>]*>Simple<\/h2>/);
+  assert.match(wordGameCategory, /aria-label="Level 1 · Quiz 1"/);
   assert.match(wordGameCategory, /href="\/word-games\/animals\/advanced-1"/);
   const wordGame = renderApplicationRoute("/word-games/animals/simple-1");
-  assert.match(wordGame, /<h1[^>]*>Simple Animals: First look<\/h1>/);
+  assert.match(wordGame, /<h1[^>]*>Level 1 · Quiz 1<\/h1>/);
+  assert.match(wordGame, />Animals · Level 1<\/p>/);
   assert.match(wordGame, /Which is the cat\?/);
   assert.match(wordGame, /aria-label="Choose cat"/);
   assert.match(wordGame, /aria-valuetext="1 of 6"/);

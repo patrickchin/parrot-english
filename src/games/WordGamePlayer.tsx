@@ -11,6 +11,7 @@ import { ActionButton, ActionLink } from "../shared/ui";
 import {
   buildWordGameRounds,
   getWordGameCategoryRoute,
+  getWordGameQuizDisplayName,
   WORD_GAME_COMPLETE_AUDIO,
   WORD_GAME_CORRECT_AUDIO,
   type WordGameAudioLine,
@@ -66,6 +67,7 @@ export function WordGamePlayer({
   const round = rounds[roundIndex];
   const progress = roundIndex + 1;
   const categoryRoute = getWordGameCategoryRoute(selection.category.id);
+  const displayName = getWordGameQuizDisplayName(selection);
 
   const stopPlayback = useCallback(() => {
     playbackGenerationRef.current += 1;
@@ -221,10 +223,10 @@ export function WordGamePlayer({
       <section className="mx-auto grid w-full max-w-7xl gap-4">
         <header className="grid justify-items-center gap-2 text-center">
           <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl">
-            {selection.quiz.title}
+            {displayName}
           </h1>
           <p className="m-0 font-black text-brand-navy">
-            {selection.category.title} · {selection.tier.title}
+            {selection.category.title} · Level {selection.category.tiers.indexOf(selection.tier) + 1}
           </p>
           {!complete ? (
             <div className="grid w-full max-w-xl gap-1">
