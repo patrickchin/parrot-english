@@ -850,17 +850,33 @@ describe("generated module serialization and generator modes", () => {
     });
     const ledgerBefore = await readFile(fixture.ledgerPath);
     const generated = await readFile(fixture.outputPath, "utf8");
-    const corruptedGenerated = `${generated}\n// corrupted\n`;
+    const generatedLines = generated.split("\n");
+    const expectedLine = '    "id": "alpha-v1",';
+    const oversizedId = "x".repeat(2_000);
+    const currentLine = `    "id": "${oversizedId}",`;
+    assert.equal(generatedLines[3], expectedLine);
+    generatedLines[3] = currentLine;
+    const corruptedGenerated = generatedLines.join("\n");
     await writeFile(fixture.outputPath, corruptedGenerated);
 
+    let rejection;
     await assert.rejects(
       runRhymeCatalogGenerator({
         check: true,
         rootDir: fixture.rootDir,
         runTool: fakeAudioRunner(),
       }),
-      /generated-rhyme-catalog\.ts.*npm run generate:rhyme-catalog/,
+      (error) => {
+        rejection = error;
+        return true;
+      },
     );
+    assert.match(rejection.message, /generated-rhyme-catalog\.ts.*npm run generate:rhyme-catalog/);
+    assert.match(rejection.message, /First generated difference at line 4:/);
+    assert.ok(rejection.message.includes(`expected=${JSON.stringify(expectedLine)}`));
+    assert.ok(rejection.message.includes(`current=${JSON.stringify(currentLine).slice(0, 80)}`));
+    assert.ok(rejection.message.length < 600);
+    assert.doesNotMatch(rejection.message, new RegExp(oversizedId.slice(0, 500)));
     assert.equal(await readFile(fixture.outputPath, "utf8"), corruptedGenerated);
     assert.deepEqual(await readFile(fixture.ledgerPath), ledgerBefore);
   });

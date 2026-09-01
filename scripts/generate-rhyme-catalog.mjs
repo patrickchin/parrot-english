@@ -12,6 +12,8 @@ import {
   serializeGeneratedCatalog,
 } from "./nursery-rhyme/compiler.mjs";
 
+const MAX_DIAGNOSTIC_LINE_LENGTH = 160;
+
 async function readExisting(filePath) {
   try {
     return await readFile(filePath, "utf8");
@@ -30,6 +32,25 @@ async function atomicWrite(filePath, contents) {
   } finally {
     await rm(temporaryPath, { force: true });
   }
+}
+
+function compactLine(line) {
+  if (line === undefined) return "<missing>";
+  const serialized = JSON.stringify(line);
+  if (serialized.length <= MAX_DIAGNOSTIC_LINE_LENGTH) return serialized;
+  return `${serialized.slice(0, MAX_DIAGNOSTIC_LINE_LENGTH - 3)}...`;
+}
+
+function firstGeneratedDifference(expected, current) {
+  const expectedLines = expected.split("\n");
+  const currentLines = current === null ? [] : current.split("\n");
+  const lineCount = Math.max(expectedLines.length, currentLines.length);
+  for (let index = 0; index < lineCount; index += 1) {
+    if (expectedLines[index] !== currentLines[index]) {
+      return `First generated difference at line ${index + 1}: expected=${compactLine(expectedLines[index])} current=${compactLine(currentLines[index])}`;
+    }
+  }
+  return "";
 }
 
 export async function runRhymeCatalogGenerator({ check, rootDir, runTool }) {
@@ -54,10 +75,14 @@ export async function runRhymeCatalogGenerator({ check, rootDir, runTool }) {
   if (check) {
     const stale = [];
     if (currentLedger !== expectedLedger) stale.push(path.relative(rootDir, ledgerPath));
-    if (currentGenerated !== expectedGenerated) stale.push(path.relative(rootDir, outputPath));
+    const generatedIsStale = currentGenerated !== expectedGenerated;
+    if (generatedIsStale) stale.push(path.relative(rootDir, outputPath));
     if (stale.length > 0) {
+      const generatedDiagnostic = generatedIsStale
+        ? ` ${firstGeneratedDifference(expectedGenerated, currentGenerated)}`
+        : "";
       throw new Error(
-        `Nursery rhyme catalog is stale (${stale.join(", ")}). Run npm run generate:rhyme-catalog.`,
+        `Nursery rhyme catalog is stale (${stale.join(", ")}). Run npm run generate:rhyme-catalog.${generatedDiagnostic}`,
       );
     }
     return;
