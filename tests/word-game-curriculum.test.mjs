@@ -177,6 +177,17 @@ const CATEGORY_DESCRIPTION_COPY = {
   },
 };
 
+const TRANSPORT_COPY = {
+  description: "Listen and find the vehicle.",
+  simple: ["Simple vehicle words.", "Simple vehicles", "Six simple vehicle words."],
+  intermediate: [
+    "Intermediate vehicle words.",
+    "Intermediate vehicles",
+    "Six intermediate vehicle words.",
+  ],
+  advanced: ["Advanced vehicle words.", "Advanced vehicles", "Six advanced vehicle words."],
+};
+
 async function readCategories() {
   const filenames = (await readdir(categoryRoot)).sort();
   return Promise.all(filenames.map(async (filename) => {
@@ -264,6 +275,20 @@ describe("production word-game curriculum", () => {
           `${categoryId}/${tier.id} quiz`,
         );
       }
+    }
+  });
+
+  it("uses natural vehicle wording throughout the Transport learner copy", async () => {
+    const category = (await readCategories()).find(({ id }) => id === "transport");
+    assert.equal(category.title, "Transport");
+    assert.equal(category.description, TRANSPORT_COPY.description);
+    for (const tier of category.tiers) {
+      const [tierDescription, quizTitle, quizDescription] = TRANSPORT_COPY[tier.id];
+      assert.deepEqual(
+        [tier.description, tier.quizzes[0].title, tier.quizzes[0].description],
+        [tierDescription, quizTitle, quizDescription],
+        `transport/${tier.id}`,
+      );
     }
   });
 

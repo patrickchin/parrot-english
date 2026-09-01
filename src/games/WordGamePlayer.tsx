@@ -38,9 +38,9 @@ function isBlockedAutoplay(error: unknown) {
 }
 
 function buildRounds(selection: WordGameSelection, playThrough: number) {
-  const e2eRandom = typeof window === "undefined"
-    ? undefined
-    : (window as WordGameE2EWindow).__parrotE2eWordGameRandom?.(playThrough);
+  const e2eRandom = import.meta.env.DEV && typeof window !== "undefined"
+    ? (window as WordGameE2EWindow).__parrotE2eWordGameRandom?.(playThrough)
+    : undefined;
   return buildWordGameRounds(selection, e2eRandom);
 }
 

@@ -3500,7 +3500,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
   },
   {
     "coverItemId": "car",
-    "description": "Listen and find the transport.",
+    "description": "Listen and find the vehicle.",
     "id": "transport",
     "items": [
       {
@@ -3677,11 +3677,11 @@ export const GENERATED_WORD_GAME_CATALOG = [
     "theme": "sky",
     "tiers": [
       {
-        "description": "Simple transport words.",
+        "description": "Simple vehicle words.",
         "id": "simple",
         "quizzes": [
           {
-            "description": "Six simple transport words.",
+            "description": "Six simple vehicle words.",
             "id": "simple-1",
             "questions": [
               {
@@ -3757,17 +3757,17 @@ export const GENERATED_WORD_GAME_CATALOG = [
                 "targetId": "airplane"
               }
             ],
-            "title": "Simple transport"
+            "title": "Simple vehicles"
           }
         ],
         "title": "Simple"
       },
       {
-        "description": "Intermediate transport words.",
+        "description": "Intermediate vehicle words.",
         "id": "intermediate",
         "quizzes": [
           {
-            "description": "Six intermediate transport words.",
+            "description": "Six intermediate vehicle words.",
             "id": "intermediate-1",
             "questions": [
               {
@@ -3843,17 +3843,17 @@ export const GENERATED_WORD_GAME_CATALOG = [
                 "targetId": "scooter"
               }
             ],
-            "title": "Intermediate transport"
+            "title": "Intermediate vehicles"
           }
         ],
         "title": "Intermediate"
       },
       {
-        "description": "Advanced transport words.",
+        "description": "Advanced vehicle words.",
         "id": "advanced",
         "quizzes": [
           {
-            "description": "Six advanced transport words.",
+            "description": "Six advanced vehicle words.",
             "id": "advanced-1",
             "questions": [
               {
@@ -3929,7 +3929,7 @@ export const GENERATED_WORD_GAME_CATALOG = [
                 "targetId": "rocket"
               }
             ],
-            "title": "Advanced transport"
+            "title": "Advanced vehicles"
           }
         ],
         "title": "Advanced"

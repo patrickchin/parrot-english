@@ -3,7 +3,7 @@
   "order": 9,
   "id": "transport",
   "title": "Transport",
-  "description": "Listen and find the transport.",
+  "description": "Listen and find the vehicle.",
   "theme": "sky",
   "coverItemId": "car",
   "items": [
@@ -168,12 +168,12 @@
     {
       "id": "simple",
       "title": "Simple",
-      "description": "Simple transport words.",
+      "description": "Simple vehicle words.",
       "quizzes": [
         {
           "id": "simple-1",
-          "title": "Simple transport",
-          "description": "Six simple transport words.",
+          "title": "Simple vehicles",
+          "description": "Six simple vehicle words.",
           "questions": [
             {
               "id": "find-car",
@@ -254,12 +254,12 @@
     {
       "id": "intermediate",
       "title": "Intermediate",
-      "description": "Intermediate transport words.",
+      "description": "Intermediate vehicle words.",
       "quizzes": [
         {
           "id": "intermediate-1",
-          "title": "Intermediate transport",
-          "description": "Six intermediate transport words.",
+          "title": "Intermediate vehicles",
+          "description": "Six intermediate vehicle words.",
           "questions": [
             {
               "id": "find-car",
@@ -340,12 +340,12 @@
     {
       "id": "advanced",
       "title": "Advanced",
-      "description": "Advanced transport words.",
+      "description": "Advanced vehicle words.",
       "quizzes": [
         {
           "id": "advanced-1",
-          "title": "Advanced transport",
-          "description": "Six advanced transport words.",
+          "title": "Advanced vehicles",
+          "description": "Six advanced vehicle words.",
           "questions": [
             {
               "id": "find-taxi",
