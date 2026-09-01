@@ -134,7 +134,12 @@ async function addSeventhPackage(contentRoot) {
 
 async function runAudioTool(file) {
   return file === "ffprobe"
-    ? { stdout: JSON.stringify({ format: { duration: "1" } }) }
+    ? {
+        stdout: JSON.stringify({
+          frames: [{ nb_samples: "16000" }],
+          streams: [{ sample_rate: "16000" }],
+        }),
+      }
     : { stdout: Buffer.alloc(4) };
 }
 

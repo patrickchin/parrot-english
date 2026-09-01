@@ -198,15 +198,20 @@ function fakeAudioRunner(calls = []) {
   return async (file, args, options) => {
     calls.push({ args, file, options });
     if (file === "ffprobe") {
-      return { stdout: JSON.stringify({ format: { duration: "0.75" } }) };
+      return {
+        stdout: JSON.stringify({
+          frames: [{ nb_samples: "12000" }],
+          streams: [{ sample_rate: "16000" }],
+        }),
+      };
     }
     return { stdout: Buffer.alloc(4) };
   };
 }
 
 function pcmWithPeak(sampleIndex) {
-  const output = Buffer.alloc((sampleIndex + 1) * 4);
-  output.writeFloatLE(1, sampleIndex * 4);
+  const output = Buffer.alloc((sampleIndex + 1) * 2);
+  output.writeInt16LE(32_767, sampleIndex * 2);
   return output;
 }
 
@@ -214,7 +219,12 @@ function timelineAudioRunner(calls = []) {
   return async (file, args, options) => {
     calls.push({ args, file, options });
     if (file === "ffprobe") {
-      return { stdout: JSON.stringify({ format: { duration: "0.75" } }) };
+      return {
+        stdout: JSON.stringify({
+          frames: [{ nb_samples: "12000" }],
+          streams: [{ sample_rate: "16000" }],
+        }),
+      };
     }
     const timelineSeconds = args[args.indexOf("-t") + 1];
     return { stdout: pcmWithPeak(timelineSeconds === "1" ? 0 : 1_000) };
