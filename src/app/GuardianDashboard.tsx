@@ -52,13 +52,13 @@ export function GuardianDashboardView({
         >
           <span
             aria-hidden="true"
-            className="grid size-14 place-items-center rounded-2xl bg-brand-pink/20 text-brand-navy"
+            className="grid size-12 place-items-center rounded-2xl bg-brand-pink/20 text-brand-navy"
           >
-            <UsersRound className="size-8" strokeWidth={2.5} />
+            <UsersRound className="size-7" strokeWidth={2.5} />
           </span>
           <div className="grid min-w-0 gap-2">
             <h2
-              className="m-0 text-3xl leading-tight text-brand-navy"
+              className="m-0 text-2xl leading-tight text-brand-navy"
               id="manage-learners-heading"
             >
               Learner profiles
@@ -76,47 +76,35 @@ export function GuardianDashboardView({
           </ActionLink>
         </Card>
 
-        <section
-          aria-labelledby="learning-content-heading"
-          className="grid gap-4"
+        <Card
+          aria-labelledby="voice-dubbing-heading"
+          className="grid items-center gap-5 !bg-amber-50 p-6 sm:grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[auto_minmax(0,1fr)_auto]"
+          tone="muted"
         >
-          <h2
-            className="m-0 text-3xl leading-tight text-brand-navy"
-            id="learning-content-heading"
+          <span
+            aria-hidden="true"
+            className="grid size-12 place-items-center rounded-2xl bg-amber-100 text-amber-800"
           >
-            Learning &amp; content
-          </h2>
-          <div className="grid gap-4">
-            <Card
-              aria-labelledby="voice-dubbing-heading"
-              className="grid content-start gap-4 !bg-amber-50 p-5 sm:p-6"
-              tone="muted"
+            <Mic className="size-7" strokeWidth={2.5} />
+          </span>
+          <div className="grid min-w-0 gap-2">
+            <h2
+              className="m-0 text-2xl leading-tight text-brand-navy"
+              id="voice-dubbing-heading"
             >
-              <span
-                aria-hidden="true"
-                className="grid size-12 place-items-center rounded-2xl bg-amber-100 text-amber-800"
-              >
-                <Mic className="size-7" strokeWidth={2.5} />
-              </span>
-              <h3
-                className="m-0 text-2xl leading-tight text-brand-navy"
-                id="voice-dubbing-heading"
-              >
-                Voice dubbing
-              </h3>
-              <p className="m-0 font-bold leading-relaxed text-slate-600">
-                Review and delete private nursery-rhyme voice clips.
-              </p>
-              <ActionLink
-                className="mt-auto"
-                fullWidth
-                to={getGuardianDubbingPath()}
-              >
-                Manage voice dubbing
-              </ActionLink>
-            </Card>
+              Voice dubbing
+            </h2>
+            <p className="m-0 font-bold leading-relaxed text-slate-600">
+              Review and delete private nursery-rhyme voice clips.
+            </p>
           </div>
-        </section>
+          <ActionLink
+            className="w-full sm:col-start-2 sm:w-auto sm:justify-self-start md:col-start-auto md:justify-self-end"
+            to={getGuardianDubbingPath()}
+          >
+            Manage voice dubbing
+          </ActionLink>
+        </Card>
 
         <Card
           aria-labelledby="account-privacy-heading"
@@ -137,8 +125,7 @@ export function GuardianDashboardView({
               Account &amp; privacy
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review how AI is used, what Parrot saves, and account deletion
-              controls.
+              View technical build details and available account controls.
             </p>
           </div>
           <ActionLink

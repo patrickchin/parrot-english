@@ -258,12 +258,14 @@ test("successful switch opens guardian management and announces the mode", async
 
   for (const heading of [
     "Learner profiles",
-    "Learning & content",
     "Voice dubbing",
     "Account & privacy",
   ]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
+  await expect(
+    page.getByRole("heading", { name: "Learning & content" }),
+  ).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "My Lessons" })).toHaveCount(
     0,
   );
