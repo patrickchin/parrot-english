@@ -620,192 +620,25 @@ describe("Worker authentication", () => {
     assert.equal(getAssetCalls(), 0);
   });
 
-  it("does not expose Better Auth anonymous deletion without Parrot cleanup", async () => {
-    const authStub = createAuthStub();
+  it("leaves the retired guest-account endpoint unavailable", async () => {
+    let authFactoryCalls = 0;
     const { env, getAssetCalls } = createEnvironment();
-    const worker = createTestWorker({ createAuth: () => authStub.auth });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/auth/delete-anonymous-user", {
-        headers: { origin: "https://example.test" },
-        method: "POST",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 404);
-    assert.equal(authStub.getHandlerCalls(), 0);
-    assert.equal(getAssetCalls(), 0);
-  });
-
-  it("purges guest data before internally deleting the anonymous auth user", async () => {
-    const events = [];
-    const bucket = {};
-    const databaseBinding = {};
-    const auth = {
-      api: {
-        async getSession() {
-          events.push("session");
-          return {
-            session: { id: "guest-session" },
-            user: {
-              id: "guest-user",
-              isAnonymous: true,
-              name: "Guest",
-            },
-          };
-        },
-      },
-      async handler(request) {
-        events.push("delete");
-        assert.equal(
-          new URL(request.url).pathname,
-          "/api/auth/delete-anonymous-user",
-        );
-        assert.equal(request.method, "POST");
-        assert.deepEqual(events, ["session", "purge", "delete"]);
-        return Response.json(
-          { success: true },
-          { headers: { "set-cookie": "guest-session=; Max-Age=0" } },
-        );
-      },
-    };
-    const { env, getAssetCalls } = createEnvironment();
-    env.DB = databaseBinding;
-    env.PERSONALIZED_STORY_ART_BUCKET = bucket;
     const worker = createTestWorker({
-      createAuth: () => auth,
-      async prepareAccountDeletion(input) {
-        events.push("purge");
-        assert.equal(input.bucket, bucket);
-        assert.equal(input.userId, "guest-user");
+      createAuth() {
+        authFactoryCalls += 1;
+        return createAuthStub().auth;
       },
     });
 
-    const response = await worker.fetch(
-      new Request("https://example.test/api/guest-account", {
-        headers: { origin: "https://example.test" },
-        method: "POST",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { success: true });
-    assert.match(response.headers.get("set-cookie") ?? "", /Max-Age=0/);
-    assert.deepEqual(events, ["session", "purge", "delete"]);
-    assert.equal(getAssetCalls(), 0);
-  });
-
-  it("keeps regular accounts out of the guest deletion path", async () => {
-    let purgeCalls = 0;
-    let deleteCalls = 0;
-    const auth = {
-      api: {
-        async getSession() {
-          return {
-            session: { id: "regular-session" },
-            user: { id: "regular-user", isAnonymous: false, name: "Mary" },
-          };
-        },
-      },
-      async handler() {
-        deleteCalls += 1;
-        return Response.json({ success: true });
-      },
-    };
-    const { env, getAssetCalls } = createEnvironment();
-    env.DB = {};
-    env.PERSONALIZED_STORY_ART_BUCKET = {};
-    const worker = createTestWorker({
-      createAuth: () => auth,
-      async prepareAccountDeletion() {
-        purgeCalls += 1;
-      },
-    });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/guest-account", {
-        headers: { origin: "https://example.test" },
-        method: "POST",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 403);
-    assert.equal(purgeCalls, 0);
-    assert.equal(deleteCalls, 0);
-    assert.equal(getAssetCalls(), 0);
-  });
-
-  it("rejects cross-origin guest deletion before cleanup", async () => {
-    let purgeCalls = 0;
-    let deleteCalls = 0;
-    const auth = {
-      api: {
-        async getSession() {
-          return {
-            session: { id: "guest-session" },
-            user: { id: "guest-user", isAnonymous: true, name: "Guest" },
-          };
-        },
-      },
-      async handler() {
-        deleteCalls += 1;
-        return Response.json({ success: true });
-      },
-    };
-    const { env, getAssetCalls } = createEnvironment();
-    env.DB = {};
-    env.PERSONALIZED_STORY_ART_BUCKET = {};
-    const worker = createTestWorker({
-      createAuth: () => auth,
-      async prepareAccountDeletion() {
-        purgeCalls += 1;
-      },
-    });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/guest-account", {
-        headers: { origin: "https://attacker.example" },
-        method: "POST",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 403);
-    assert.equal(purgeCalls, 0);
-    assert.equal(deleteCalls, 0);
-    assert.equal(getAssetCalls(), 0);
-  });
-
-  it("rejects non-POST guest deletion before cleanup", async () => {
-    let sessionCalls = 0;
-    const auth = {
-      api: {
-        async getSession() {
-          sessionCalls += 1;
-          return null;
-        },
-      },
-      async handler() {
-        assert.fail("Guest deletion handler must not receive GET requests.");
-      },
-    };
-    const { env, getAssetCalls } = createEnvironment();
-    const worker = createTestWorker({ createAuth: () => auth });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/guest-account", {
-        headers: { origin: "https://example.test" },
-        method: "GET",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 405);
-    assert.equal(response.headers.get("allow"), "POST");
-    assert.equal(sessionCalls, 0);
+    for (const method of ["GET", "POST"]) {
+      const response = await worker.fetch(
+        new Request("https://example.test/api/guest-account", { method }),
+        env,
+      );
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), { error: "not_found" });
+    }
+    assert.equal(authFactoryCalls, 0);
     assert.equal(getAssetCalls(), 0);
   });
 

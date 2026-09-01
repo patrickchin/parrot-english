@@ -7,7 +7,6 @@ import {
 import type { RateLimitEnv } from "./api-security.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
-import { prepareAccountDeletion } from "./account-deletion.ts";
 import { createDatabase } from "./database.ts";
 import type { Database } from "./database.ts";
 import {
@@ -81,7 +80,6 @@ interface WorkerDependencies {
   handleLessonRecordingRequest: typeof handleLessonRecordingRequest;
   handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
   handleDubRequest: typeof handleDubRequest;
-  prepareAccountDeletion: typeof prepareAccountDeletion;
 }
 
 function isLearnerProfilePath(pathname: string) {
@@ -258,8 +256,6 @@ export function createWorker(
     handlePersonalizedStoryArtRequest;
   const dubRequest = dependencies.handleDubRequest ?? handleDubRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
-  const accountDeletion =
-    dependencies.prepareAccountDeletion ?? prepareAccountDeletion;
 
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
@@ -278,62 +274,10 @@ export function createWorker(
         });
       }
 
-      if (url.pathname === "/api/guest-account") {
-        if (request.method !== "POST") {
-          return Response.json(
-            { error: "method_not_allowed" },
-            {
-              status: 405,
-              headers: { Allow: "POST", "Cache-Control": "no-store" },
-            },
-          );
-        }
-        if (request.headers.get("origin") !== url.origin) {
-          return Response.json(
-            { error: "forbidden" },
-            { status: 403, headers: { "Cache-Control": "no-store" } },
-          );
-        }
-        const auth = authFactory(env);
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json(
-            { error: "unauthorized" },
-            { status: 401, headers: { "Cache-Control": "no-store" } },
-          );
-        }
-        if (session.user.isAnonymous !== true) {
-          return Response.json(
-            { error: "forbidden" },
-            { status: 403, headers: { "Cache-Control": "no-store" } },
-          );
-        }
-        await accountDeletion({
-          bucket: env.PERSONALIZED_STORY_ART_BUCKET,
-          database: createDatabase(env.DB),
-          userId: session.user.id,
-        });
-        const deletionUrl = new URL(request.url);
-        deletionUrl.pathname = "/api/auth/delete-anonymous-user";
-        deletionUrl.search = "";
-        return auth.handler(
-          new Request(deletionUrl, {
-            headers: request.headers,
-            method: "POST",
-          }),
-        );
-      }
-
       if (
         url.pathname === "/api/auth" ||
         url.pathname.startsWith("/api/auth/")
       ) {
-        if (url.pathname === "/api/auth/delete-anonymous-user") {
-          return Response.json(
-            { error: "not_found" },
-            { status: 404, headers: { "Cache-Control": "no-store" } },
-          );
-        }
         return authFactory(env).handler(request);
       }
 
