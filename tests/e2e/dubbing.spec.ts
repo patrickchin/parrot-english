@@ -42,6 +42,11 @@ type MicrophoneSnapshot = {
   stoppedTracks: number;
 };
 
+// The dubbing AudioContext mock advances 20 authored milliseconds per page-clock millisecond.
+const DUB_AUDIO_CLOCK_SCALE = 20;
+// One frame-sized page-clock quantum lets queued focus and cleanup RAF work settle.
+const PAGE_FRAME_SETTLE_MS = 20;
+
 async function expectDubProject(page: Page) {
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
   await expect(
@@ -1608,7 +1613,7 @@ test("starts capture on the authored downbeat and records exactly the line windo
   expect(snapshot.uploads).toEqual([]);
   expect(snapshot.createdObjectUrls).toEqual([]);
 
-  await page.clock.runFor(definition.music.countInBeatMs / 20);
+  await page.clock.runFor(definition.music.countInBeatMs / DUB_AUDIO_CLOCK_SCALE);
   const countInOne = page.getByText("Count-in 1", { exact: true });
   await expect(countInOne).toBeVisible();
   await expectStaticPresentationText(countInOne);
@@ -1618,7 +1623,8 @@ test("starts capture on the authored downbeat and records exactly the line windo
   expect((await dubStoreSnapshot(page)).recorderStartCount).toBe(0);
 
   await page.clock.runFor(
-    (definition.music.countInDurationMs - definition.music.countInBeatMs) / 20,
+    (definition.music.countInDurationMs - definition.music.countInBeatMs) /
+      DUB_AUDIO_CLOCK_SCALE,
   );
   await expect(page.getByRole("button", { name: "Stop recording" })).toBeVisible();
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText(
@@ -1634,7 +1640,7 @@ test("starts capture on the authored downbeat and records exactly the line windo
   snapshot = await dubStoreSnapshot(page);
   expect(snapshot.recorderStartCount).toBe(1);
   expect(snapshot.recorderStartWallMs[0] - countInStartedAt).toBeGreaterThanOrEqual(
-    definition.music.countInDurationMs / 20,
+    definition.music.countInDurationMs / DUB_AUDIO_CLOCK_SCALE,
   );
   const firstClick = snapshot.scheduledBacking.find(
     ({ type }) => type === "sine",
@@ -1649,17 +1655,18 @@ test("starts capture on the authored downbeat and records exactly the line windo
     5,
   );
 
-  await page.clock.runFor(line.durationMs / 20);
+  await page.clock.runFor(line.durationMs / DUB_AUDIO_CLOCK_SCALE);
   await expectSavedTake(page, 1);
   snapshot = await dubStoreSnapshot(page);
   expect(snapshot.recorderStopCount).toBe(1);
-  // One wall-clock millisecond is 20 authored milliseconds in this mock.
+  // One page-clock millisecond is one scale quantum of authored time.
   expect(
     Math.abs(
-      (snapshot.recorderStopWallMs[0] - snapshot.recorderStartWallMs[0]) * 20 -
+      (snapshot.recorderStopWallMs[0] - snapshot.recorderStartWallMs[0]) *
+        DUB_AUDIO_CLOCK_SCALE -
         line.durationMs,
     ),
-  ).toBeLessThanOrEqual(20);
+  ).toBeLessThanOrEqual(DUB_AUDIO_CLOCK_SCALE);
   expect(snapshot.microphoneTrackStops).toBe(1);
   expect(snapshot.audioContextsCreated).toBe(3);
   expect(snapshot.audioContextCloses).toBe(3);
@@ -1680,7 +1687,9 @@ for (const cancelBeat of [2, 1] as const) {
     await page.getByRole("button", { name: "Record again" }).click();
     await expect(page.getByText("Count-in 2", { exact: true })).toBeVisible();
     if (cancelBeat === 1) {
-      await page.clock.runFor(definition.music.countInBeatMs / 20);
+      await page.clock.runFor(
+        definition.music.countInBeatMs / DUB_AUDIO_CLOCK_SCALE,
+      );
       await expect(page.getByText("Count-in 1", { exact: true })).toBeVisible();
     }
     await page.getByRole("button", { name: "Cancel count-in" }).click();
@@ -1714,12 +1723,14 @@ for (const scenario of ["recorder-start-failed", "melody-start-failed"] as const
     await page.getByRole("button", { name: "Record again" }).click();
     if (scenario === "recorder-start-failed") {
       await expect(page.getByText("Count-in 2", { exact: true })).toBeVisible();
-      await page.clock.runFor(definition.music.countInDurationMs / 20);
+      await page.clock.runFor(
+        definition.music.countInDurationMs / DUB_AUDIO_CLOCK_SCALE,
+      );
     }
     await expect(
       page.getByRole("alert").filter({ hasText: "The melody could not start." }),
     ).toBeVisible();
-    await page.clock.runFor(20);
+    await page.clock.runFor(PAGE_FRAME_SETTLE_MS);
     await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
     await expect(page.getByRole("button", { name: "Play my recording" })).toBeVisible();
 
@@ -1801,7 +1812,8 @@ async function expectFirstFullPlaybackWordTransition(page: Page) {
   const went = line.words[3];
   await waitForQueuedPlaybackFrame(page);
   await page.clock.runFor(
-    (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) / 20,
+    (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) /
+      DUB_AUDIO_CLOCK_SCALE,
   );
   await flushPlaybackFrame(page);
   await expect(guide).toBeVisible();
@@ -1812,11 +1824,40 @@ async function expectFirstFullPlaybackWordTransition(page: Page) {
     "ducks",
   );
 
-  await page.clock.runFor((went.atMs - ducks.atMs) / 20);
+  await page.clock.runFor((went.atMs - ducks.atMs) / DUB_AUDIO_CLOCK_SCALE);
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("went");
   await expectStaticPresentationText(activeWord);
 }
+
+test("full playback initializes line 1 before its first presentation frame", async ({ page }) => {
+  const definition = DUB_DEFINITIONS[0];
+  const firstLine = definition.lines[0];
+  const finalLine = definition.lines.at(-1)!;
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+  await expectDubProject(page);
+  await openScene(page, 6);
+  const next = page.getByRole("button", { name: "Next line" });
+  for (let lineNumber = 1; lineNumber < definition.linesPerScene; lineNumber += 1) {
+    await next.click();
+  }
+  await expect(page.getByRole("heading", { level: 1, name: finalLine.text })).toBeVisible();
+  await page.getByRole("button", { name: "Back to full video" }).click();
+  await expectDubProject(page);
+  await installControllablePlaybackFrames(page);
+
+  await page.getByRole("button", { name: "Play full video" }).click();
+  await expect(page.getByRole("button", { name: "Stop full video" })).toBeVisible();
+  await waitForQueuedPlaybackFrame(page);
+
+  const guide = page.getByRole("region", { name: "Karaoke guide" });
+  await expect(guide).toContainText(firstLine.text);
+  await expect(guide).not.toContainText(finalLine.text);
+  await expect(guide.locator('[aria-current="true"]')).toHaveCount(0);
+  const status = page.getByRole("status", { name: "Dub updates" });
+  await expect(status).toHaveText("Playing full video: Scene 1, line 1.");
+  await expect(status).not.toContainText("Scene 6, line 4");
+});
 
 test("project full playback changes its active word at the authored boundary", async ({ page }) => {
   const clockStartedAt = Date.parse("2026-09-01T08:00:00.000Z");
@@ -1863,6 +1904,29 @@ test("listen-only full playback changes its active word without touching private
   expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(true);
 });
 
+test("listen-only playback keeps its guide below the stage and transport visible at 640x360", async ({ page }) => {
+  await page.setViewportSize({ height: 360, width: 640 });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
+  await installControllablePlaybackFrames(page);
+  await page.getByRole("button", { name: "Play full video" }).click();
+
+  const player = page.getByRole("region", { name: "Full video player" });
+  const guide = page.getByRole("region", { name: "Karaoke guide" });
+  const stop = page.getByRole("button", { name: "Stop full video" });
+  await expect(stop).toBeVisible();
+  await waitForQueuedPlaybackFrame(page);
+  const [playerBox, guideBox, stopBox] = await Promise.all([
+    boundingBoxOrThrow(player),
+    boundingBoxOrThrow(guide),
+    boundingBoxOrThrow(stop),
+  ]);
+
+  expect(guideBox.y).toBeGreaterThanOrEqual(playerBox.y + playerBox.height);
+  expect(playerBox.x + playerBox.width).toBeLessThanOrEqual(stopBox.x);
+  await expectFullyInViewport(page, stop);
+  await expectTargetAtLeast48(stop);
+});
+
 test("editor actions keep the complete lyric heading and non-live word semantics", async ({ page }) => {
   const line = DUB_DEFINITIONS[0].lines[0];
   const clockStartedAt = Date.parse("2026-09-01T08:00:00.000Z");
@@ -1889,7 +1953,9 @@ test("editor actions keep the complete lyric heading and non-live word semantics
   await expect(activeWord).toHaveText("Five");
   await expect(heading).toHaveAccessibleName(line.text);
   await expectStaticPresentationText(activeWord);
-  await page.clock.runFor(line.durationMs / 20 + 20);
+  await page.clock.runFor(
+    line.durationMs / DUB_AUDIO_CLOCK_SCALE + PAGE_FRAME_SETTLE_MS,
+  );
   await flushPlaybackFrame(page);
   await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
     "Scene 1, line 1 selected. Recorded.",
@@ -2190,17 +2256,18 @@ test("reduced motion keeps timed words discrete and repeated count-in cleanup id
   const went = line.words[3];
   await waitForQueuedPlaybackFrame(page);
   await page.clock.runFor(
-    (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) / 20,
+    (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) /
+      DUB_AUDIO_CLOCK_SCALE,
   );
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("ducks");
   await expectStaticPresentationText(activeWord);
-  await page.clock.runFor((went.atMs - ducks.atMs) / 20);
+  await page.clock.runFor((went.atMs - ducks.atMs) / DUB_AUDIO_CLOCK_SCALE);
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("went");
   await expectStaticPresentationText(activeWord);
   await page.getByRole("button", { name: "Stop full video" }).click();
-  await page.clock.runFor(20);
+  await page.clock.runFor(PAGE_FRAME_SETTLE_MS);
   await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
 
   await openScene(page, 1);
@@ -2208,7 +2275,7 @@ test("reduced motion keeps timed words discrete and repeated count-in cleanup id
     await page.getByRole("button", { name: "Record again" }).click();
     await expect(page.getByText("Count-in 2", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Cancel count-in" }).click();
-    await page.clock.runFor(20);
+    await page.clock.runFor(PAGE_FRAME_SETTLE_MS);
     await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
   }
   const snapshot = await dubStoreSnapshot(page);
@@ -2299,7 +2366,9 @@ for (const viewport of [
     }
     await expectNoHorizontalOverflow(page);
 
-    await page.clock.runFor(definition.music.countInBeatMs / 20);
+    await page.clock.runFor(
+      definition.music.countInBeatMs / DUB_AUDIO_CLOCK_SCALE,
+    );
     const countInOne = page.getByText("Count-in 1", { exact: true });
     await expect(countInOne).toBeVisible();
     await expectStaticPresentationText(countInOne);
@@ -2308,7 +2377,8 @@ for (const viewport of [
     await expectFullyInViewport(page, cancel);
 
     await page.clock.runFor(
-      (definition.music.countInDurationMs - definition.music.countInBeatMs) / 20,
+      (definition.music.countInDurationMs - definition.music.countInBeatMs) /
+        DUB_AUDIO_CLOCK_SCALE,
     );
     const stop = page.getByRole("button", { name: "Stop recording" });
     const timer = page.getByRole("timer", { name: "Recording duration" });

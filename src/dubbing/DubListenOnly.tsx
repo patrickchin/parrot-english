@@ -45,15 +45,17 @@ export function DubListenOnly({
         <h1 className="m-0 text-2xl leading-tight text-brand-ink short-wide:col-span-2 short-wide:text-xl md:text-4xl short-wide:md:text-xl">
           {definition.title}
         </h1>
-        <section aria-label="Full video player" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
-          <IllustratedDubScene compact definition={definition} line={visualLine} playing={playback === "playing"} />
-        </section>
-        {guidanceLine ? (
-          <section aria-label="Karaoke guide" className="grid gap-1 rounded-2xl bg-white/90 px-3 py-2 text-center text-base font-black leading-snug text-brand-ink shadow-sm short-wide:px-2 short-wide:py-1 short-wide:text-sm">
-            <p className="m-0"><DubTimedWords elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} /></p>
-            <DubMelodyLane definition={definition} elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} />
+        <div className="grid min-w-0 gap-3 short-wide:gap-1">
+          <section aria-label="Full video player" className="grid aspect-video overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card">
+            <IllustratedDubScene compact definition={definition} line={visualLine} playing={playback === "playing"} />
           </section>
-        ) : null}
+          {guidanceLine ? (
+            <section aria-label="Karaoke guide" className="grid gap-1 rounded-2xl bg-white/90 px-3 py-2 text-center text-base font-black leading-snug text-brand-ink shadow-sm short-wide:px-2 short-wide:py-1 short-wide:text-sm">
+              <p className="m-0"><DubTimedWords elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} /></p>
+              <DubMelodyLane definition={definition} elapsedMs={guidance?.elapsedMs ?? null} line={guidanceLine} />
+            </section>
+          ) : null}
+        </div>
         <div className="grid min-w-0 content-start gap-3 short-wide:gap-2">
           <p className="m-0 rounded-2xl bg-white/90 p-3 font-bold leading-snug text-brand-ink shadow-sm">
             You can watch the video now. Your saved voice clips are being

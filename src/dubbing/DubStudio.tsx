@@ -631,6 +631,7 @@ export function DubStudio({
     const lines = scope === "full" ? definition.lines : sceneLines[sceneIndex];
     const unavailableLineIds = new Set<string>();
     playbackControllerRef.current = controller;
+    resetPresentation(lines[0]?.id ?? null);
     dispatch({ type: "OPERATION_STARTED", operation: "playback-loading", playbackScope: scope });
     try {
       const playback = await startDubPlayback({
