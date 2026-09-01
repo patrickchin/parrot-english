@@ -145,8 +145,8 @@ function workflowSteps(url) {
   let stepPropertyIndent;
 
   for (const line of readFileSync(url, "utf8").split(/\r?\n/u)) {
-    const item = line.match(/^(\s*)-\s+(.+?)\s*$/u);
-    const name = item?.[2].match(/^name:\s*(.+?)\s*$/u)?.[1];
+    const item = line.match(/^(\s*)-(?:\s+(.+?))?\s*$/u);
+    const name = item?.[2]?.match(/^name:\s*(.+?)\s*$/u)?.[1];
     if (name && stepIndent === undefined) stepIndent = item[1].length;
     if (item && item[1].length === stepIndent) {
       if (currentStep) steps.push(currentStep);
@@ -257,16 +257,21 @@ test("deployment checks generated rhyme content after FFmpeg and before publishi
   assertRequiredWorkflowStep(steps[checkIndex], "the generated-catalog check");
 });
 
-test("an unnamed following step does not lend its condition to the catalog check", (context) => {
+test("unnamed following steps do not lend their conditions to the catalog check", (context) => {
   const root = mkdtempSync(join(tmpdir(), "parrot-workflow-steps-"));
-  const workflowPath = join(root, "workflow.yml");
   context.after(() => rmSync(root, { force: true, recursive: true }));
-  writeFileSync(workflowPath, `jobs:
+
+  for (const [syntax, step] of Object.entries({
+    inline: "      - uses: actions/cache@v4",
+    standalone: "      -\n        uses: actions/cache@v4",
+  })) {
+    const workflowPath = join(root, `${syntax}.yml`);
+    writeFileSync(workflowPath, `jobs:
   deploy:
     steps:
       - name: Check generated nursery rhyme catalog
         run: npm run check:rhyme-catalog
-      - uses: actions/cache@v4
+${step}
         if: false
         with:
           path: |
@@ -275,11 +280,12 @@ test("an unnamed following step does not lend its condition to the catalog check
           key: fixture
 `);
 
-  const steps = workflowSteps(workflowPath);
-  const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
-  assert.notEqual(checkIndex, -1);
-  assertRequiredWorkflowStep(steps[checkIndex], "the generated-catalog check");
-  assert.equal(steps.length, 2, "Expected only exact-indent workflow steps.");
+    const steps = workflowSteps(workflowPath);
+    const checkIndex = stepRunning(steps, "npm run check:rhyme-catalog");
+    assert.notEqual(checkIndex, -1, syntax);
+    assertRequiredWorkflowStep(steps[checkIndex], `${syntax} generated-catalog check`);
+    assert.equal(steps.length, 2, `Expected exact-indent ${syntax} workflow steps.`);
+  }
 });
 
 test("deployment guard rejects a conditional generated-catalog check", (context) => {
