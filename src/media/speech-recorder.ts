@@ -46,7 +46,9 @@ type MicrophoneAccessOptions = Pick<
 type SpeechRecordingSessionOptions = Pick<
   SpeechRecorderOptions,
   "MediaRecorder" | "getUserMedia" | "mimeType" | "signal"
->;
+> & {
+  constraints?: MediaStreamConstraints;
+};
 
 export function selectRecordingMimeType(
   MediaRecorderClass: SpeechRecorderClass = globalThis.MediaRecorder
@@ -129,6 +131,7 @@ export async function requestMicrophoneAccess({
 
 async function prepareSpeechRecordingInternal({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
+  constraints = MICROPHONE_CONSTRAINTS,
   getUserMedia = (constraints) =>
     navigator.mediaDevices.getUserMedia(constraints),
   mimeType,
@@ -148,7 +151,7 @@ async function prepareSpeechRecordingInternal({
 
   let stream: MediaStream;
   try {
-    stream = await getUserMedia(MICROPHONE_CONSTRAINTS);
+    stream = await getUserMedia(constraints);
   } catch (error) {
     if (signal?.aborted) throw createAbortError();
     throw new MicrophoneAccessError(error);

@@ -148,6 +148,7 @@ function installSynchronizedRecordingHarness({
   const events = [];
   const contexts = [];
   const callbacks = new Map();
+  const microphoneConstraints = [];
   const createTrack = () => ({
     stopCalls: 0,
     stopped: false,
@@ -286,7 +287,8 @@ function installSynchronizedRecordingHarness({
   Object.defineProperty(navigator, "mediaDevices", {
     configurable: true,
     value: {
-      async getUserMedia() {
+      async getUserMedia(constraints) {
+        microphoneConstraints.push(constraints);
         if (rejectMicrophone) throw new Error("microphone denied");
         const nextTrack = tracks.length === 1 && track.stopCalls === 0
           ? track
@@ -301,6 +303,7 @@ function installSynchronizedRecordingHarness({
     callbacks,
     contexts,
     events,
+    microphoneConstraints,
     get mediaStreamSourceCalls() { return mediaStreamSourceCalls; },
     get recorderStarts() { return recorderStarts; },
     track,
@@ -1082,6 +1085,30 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(microphoneRequests, 0);
     assert.equal(objectUrls, 0);
     assert.deepEqual(privateRequests, []);
+  });
+
+  it("requests unprocessed microphone audio for melody-backed lines", async () => {
+    const audio = installSynchronizedRecordingHarness();
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
+        return Response.json(enabledDubStatus());
+      }
+      throw new Error(`Unexpected dub request: ${init.method} ${path}`);
+    };
+
+    const container = await mountDuckDub();
+    await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
+    await click(container.querySelector('[aria-label^="Scene 1,"]'));
+    await click(container.querySelector('[aria-label="Record line"]'));
+    await waitFor(() => assert.ok(container.querySelector('[aria-label="Cancel count-in"]')));
+
+    assert.deepEqual(audio.microphoneConstraints, [{
+      audio: {
+        autoGainControl: { exact: false },
+        echoCancellation: { exact: false },
+        noiseSuppression: { exact: false },
+      },
+    }]);
   });
 
   it("opens the microphone, counts on the score clock, then starts capture on downbeat", async () => {

@@ -450,7 +450,16 @@ export function DubStudio({
         signal: controller.signal,
       });
       backingPrepared = true;
-      session = await prepareSpeechRecording({ signal: controller.signal });
+      session = await prepareSpeechRecording({
+        constraints: {
+          audio: {
+            autoGainControl: { exact: false },
+            echoCancellation: { exact: false },
+            noiseSuppression: { exact: false },
+          },
+        },
+        signal: controller.signal,
+      });
       if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         session.cancel();
         backing.stop();

@@ -847,6 +847,49 @@ describe("duck dub playback", () => {
     assert.equal(context.closeCalls, 1);
   });
 
+  it("starts a recording backing at full level without an attack fade", async () => {
+    const audio = createAudioHarness();
+    const raf = createRaf();
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      cancelAnimationFrame: raf.cancelAnimationFrame,
+      definition: OLD_MACDONALD_DUB,
+      line: OLD_MACDONALD_DUB.lines[2],
+      requestAnimationFrame: raf.requestAnimationFrame,
+    });
+
+    backing.start();
+
+    const context = audio.contexts[0];
+    const downbeatAt = 10 + backing.countInDurationMs / 1_000;
+    const accompaniment = context.oscillators.find((oscillator) =>
+      oscillator.type === "sine"
+        && roundedFrequency(oscillator) === 130.813
+        && oscillator.startTimes[0] === downbeatAt
+        && oscillator.connections.length === 1
+    );
+    const melody = context.oscillators.filter(({ type }) => type === "triangle");
+    const gainEvents = ({ gain }) => gain.events.map(([kind, value, time]) => [
+      kind,
+      value,
+      Number(time.toFixed(2)),
+    ]);
+    assert.ok(accompaniment);
+    assert.deepEqual(gainEvents(accompaniment.connections[0]), [
+      ["set", 0.24, 10.8],
+      ["ramp", 0, 12.4],
+    ]);
+    assert.deepEqual(gainEvents(melody[0].connections[0]), [
+      ["set", 0.78, 10.8],
+      ["ramp", 0, 11.3],
+    ]);
+    assert.deepEqual(gainEvents(melody[1].connections[0]), [
+      ["set", 0, 11.3],
+      ["ramp", 0.78, 11.32],
+      ["ramp", 0, 11.8],
+    ]);
+  });
+
   it("closes a prepared line backing once across stop and abort", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
@@ -1026,6 +1069,18 @@ describe("duck dub playback", () => {
     assert.deepEqual(
       melody.slice(0, 4).map(roundedFrequency),
       [329.628, 293.665, 293.665, 261.626],
+    );
+    assert.deepEqual(
+      melody[0].connections[0].gain.events.map(([kind, value, time]) => [
+        kind,
+        value,
+        Number(time.toFixed(2)),
+      ]),
+      [
+        ["set", 0, 10.12],
+        ["ramp", 0.78, 10.14],
+        ["ramp", 0, 10.62],
+      ],
     );
     assert.deepEqual(
       context.sources.map(({ startTimes }) => Number(startTimes[0].toFixed(2))),
