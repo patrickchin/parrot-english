@@ -153,19 +153,24 @@ describe("learner roster Worker routing", () => {
 
   afterEach(() => state.close());
 
-  it("rejects a locked roster read before initializing a learner", async () => {
+  it("allows an authenticated roster read without Guardian unlock", async () => {
     const response = await createWorker({ createAuth: () => authStub() }).fetch(
       request("GET", "/api/learner-profiles"),
       env,
     );
 
-    assert.equal(response.status, 403);
+    assert.equal(response.status, 200);
     assert.equal(response.headers.get("Cache-Control"), "no-store");
-    assert.deepEqual(await response.json(), { error: "guardian_required" });
+    const payload = await response.json();
+    assert.equal(payload.profiles.length, 1);
+    assert.equal(payload.activeProfileId, payload.profiles[0].id);
     assert.equal(
-      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-        .count,
-      0,
+      state.sqlite
+        .prepare(
+          "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-a").count,
+      1,
     );
   });
 
@@ -186,15 +191,17 @@ describe("learner roster Worker routing", () => {
       }
     }
     assert.equal(
-      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-        .count,
+      state.sqlite
+        .prepare(
+          "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-a").count,
       0,
     );
   });
 
   it("auto-selects an existing sole learner before returning the roster", async () => {
     insertLearner(state, "learner-a");
-    await createGuardianAccessRepository(database).unlock("session-a");
 
     const response = await createWorker({ createAuth: () => authStub() }).fetch(
       request("GET", "/api/learner-profiles"),
@@ -227,8 +234,6 @@ describe("learner roster Worker routing", () => {
   });
 
   it("creates and selects the one unnamed legacy learner before returning a fresh roster", async () => {
-    await createGuardianAccessRepository(database).unlock("session-a");
-
     const response = await createWorker({ createAuth: () => authStub() }).fetch(
       request("GET", "/api/learner-profiles"),
       env,
@@ -261,9 +266,8 @@ describe("learner roster Worker routing", () => {
     );
   });
 
-  it("keeps Guardian roster reads available for every release-flag state", async () => {
+  it("keeps roster reads available for every release-flag state", async () => {
     insertLearner(state, "learner-a");
-    await createGuardianAccessRepository(database).unlock("session-a");
     const worker = createWorker({ createAuth: () => authStub() });
 
     for (const flag of [undefined, "0", "1"]) {
@@ -277,7 +281,7 @@ describe("learner roster Worker routing", () => {
     }
   });
 
-  it("retains a tombstoned learner in the Guardian roster as deletion pending", async () => {
+  it("retains a tombstoned learner in the roster as deletion pending", async () => {
     insertLearner(state, "learner-a", { name: "Mary" });
     insertLearner(state, "learner-b", {
       legacyStorageOwner: false,
@@ -285,7 +289,6 @@ describe("learner roster Worker routing", () => {
     });
     insertDeletionTombstone(state, "learner-a");
     requireLearnerSelection(state);
-    await createGuardianAccessRepository(database).unlock("session-a");
 
     const response = await createWorker({ createAuth: () => authStub() }).fetch(
       request("GET", "/api/learner-profiles"),
@@ -325,7 +328,7 @@ describe("learner roster Worker routing", () => {
     assert.deepEqual(await anonymous.json(), { error: "unauthorized" });
 
     const locked = await createWorker({ createAuth: () => authStub() }).fetch(
-      request("PUT", "/api/learner-profiles/learner-a/active"),
+      request("POST", "/api/learner-profiles", { name: "Mia" }),
       env,
     );
     assert.equal(locked.status, 403);
@@ -814,8 +817,6 @@ describe("learner roster Worker routing", () => {
       legacyStorageOwner: false,
       name: "Leo",
     });
-    await createGuardianAccessRepository(database).unlock("session-a");
-    await createGuardianAccessRepository(database).unlock("session-b");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
 
     const workerA = createWorker({ createAuth: () => authStub() });
@@ -860,7 +861,6 @@ describe("learner roster Worker routing", () => {
   it("persists selection timestamps while switching only the current session", async () => {
     insertSession(state, "session-b");
     insertLearner(state, "learner-a");
-    await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
     const worker = createWorker({ createAuth: () => authStub() });
     await worker.fetch(request("GET", "/api/learner-profiles"), env);
@@ -899,7 +899,6 @@ describe("learner roster Worker routing", () => {
     insertLearner(state, "learner-a");
     insertDeletionTombstone(state, "learner-a");
     requireLearnerSelection(state);
-    await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
 
     const response = await createWorker({ createAuth: () => authStub() }).fetch(
@@ -932,7 +931,6 @@ describe("learner roster Worker routing", () => {
   it("clears the selection-required marker atomically with explicit selection", async () => {
     insertLearner(state, "learner-a");
     requireLearnerSelection(state);
-    await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
 
     const response = await createWorker({ createAuth: () => authStub() }).fetch(
@@ -967,7 +965,6 @@ describe("learner roster Worker routing", () => {
   it("rolls back explicit selection when clearing its marker fails", async () => {
     insertLearner(state, "learner-a");
     requireLearnerSelection(state);
-    await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
     const realD1 = state.d1;
     const failingD1 = Object.create(realD1);
@@ -1015,7 +1012,6 @@ describe("learner roster Worker routing", () => {
          VALUES ('foreign-profile', 'user-b', 1, 'Noah', 'completed', ?, ?)`,
       )
       .run(timestamp, timestamp);
-    await createGuardianAccessRepository(database).unlock("session-a");
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
     const worker = createWorker({ createAuth: () => authStub() });
 

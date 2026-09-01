@@ -1,0 +1,841 @@
+{
+  "schemaVersion": 2,
+  "order": 5,
+  "id": "toys",
+  "title": "Toys",
+  "description": "Listen and find the toys.",
+  "theme": "yellow",
+  "coverItemId": "ball",
+  "items": [
+    {
+      "id": "ball",
+      "label": "ball",
+      "alt": "A ball.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "26bd"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-ball-label",
+        "text": "ball"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-ball-prompt",
+        "text": "Which is the ball?"
+      }
+    },
+    {
+      "id": "toy-car",
+      "label": "toy car",
+      "alt": "A toy car.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f697"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-toy-car-label",
+        "text": "toy car"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-toy-car-prompt",
+        "text": "Which is the toy car?"
+      }
+    },
+    {
+      "id": "doll",
+      "label": "doll",
+      "alt": "A doll.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa86"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-doll-label",
+        "text": "doll"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-doll-prompt",
+        "text": "Which is the doll?"
+      }
+    },
+    {
+      "id": "kite",
+      "label": "kite",
+      "alt": "A kite.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa81"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-kite-label",
+        "text": "kite"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-kite-prompt",
+        "text": "Which is the kite?"
+      }
+    },
+    {
+      "id": "blocks",
+      "label": "blocks",
+      "alt": "Building blocks.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9f1"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-blocks-label",
+        "text": "blocks"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-blocks-prompt",
+        "text": "Which are the blocks?"
+      }
+    },
+    {
+      "id": "teddy-bear",
+      "label": "teddy bear",
+      "alt": "A teddy bear.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9f8"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-teddy-bear-label",
+        "text": "teddy bear"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-teddy-bear-prompt",
+        "text": "Which is the teddy bear?"
+      }
+    },
+    {
+      "id": "toy-train",
+      "label": "toy train",
+      "alt": "A toy train.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f686"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-toy-train-label",
+        "text": "toy train"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-toy-train-prompt",
+        "text": "Which is the toy train?"
+      }
+    },
+    {
+      "id": "drum",
+      "label": "drum",
+      "alt": "A drum.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f941"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-drum-label",
+        "text": "drum"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-drum-prompt",
+        "text": "Which is the drum?"
+      }
+    },
+    {
+      "id": "puzzle",
+      "label": "puzzle",
+      "alt": "A puzzle.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9e9"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-puzzle-label",
+        "text": "puzzle"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-puzzle-prompt",
+        "text": "Which is the puzzle?"
+      }
+    },
+    {
+      "id": "robot",
+      "label": "robot",
+      "alt": "A robot.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f916"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-robot-label",
+        "text": "robot"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-robot-prompt",
+        "text": "Which is the robot?"
+      }
+    },
+    {
+      "id": "yo-yo",
+      "label": "yo-yo",
+      "alt": "A yo-yo.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa80"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-yo-yo-label",
+        "text": "yo-yo"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-yo-yo-prompt",
+        "text": "Which is the yo-yo?"
+      }
+    },
+    {
+      "id": "skateboard",
+      "label": "skateboard",
+      "alt": "A skateboard.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6f9"
+      },
+      "labelAudio": {
+        "id": "word-game-toys-skateboard-label",
+        "text": "skateboard"
+      },
+      "promptAudio": {
+        "id": "word-game-toys-skateboard-prompt",
+        "text": "Which is the skateboard?"
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple toy words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple Toys: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-1-find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "toy-car",
+                "doll",
+                "kite"
+              ]
+            },
+            {
+              "id": "simple-1-find-toy-car",
+              "targetId": "toy-car",
+              "choiceIds": [
+                "toy-car",
+                "doll",
+                "kite",
+                "blocks"
+              ]
+            },
+            {
+              "id": "simple-1-find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "kite",
+                "blocks",
+                "teddy-bear"
+              ]
+            },
+            {
+              "id": "simple-1-find-kite",
+              "targetId": "kite",
+              "choiceIds": [
+                "kite",
+                "blocks",
+                "teddy-bear",
+                "ball"
+              ]
+            },
+            {
+              "id": "simple-1-find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "teddy-bear",
+                "ball",
+                "toy-car"
+              ]
+            },
+            {
+              "id": "simple-1-find-teddy-bear",
+              "targetId": "teddy-bear",
+              "choiceIds": [
+                "teddy-bear",
+                "ball",
+                "toy-car",
+                "doll"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Toys: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "blocks",
+                "ball",
+                "teddy-bear"
+              ]
+            },
+            {
+              "id": "simple-2-find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "ball",
+                "teddy-bear",
+                "toy-car"
+              ]
+            },
+            {
+              "id": "simple-2-find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "teddy-bear",
+                "toy-car",
+                "kite"
+              ]
+            },
+            {
+              "id": "simple-2-find-teddy-bear",
+              "targetId": "teddy-bear",
+              "choiceIds": [
+                "teddy-bear",
+                "toy-car",
+                "kite",
+                "doll"
+              ]
+            },
+            {
+              "id": "simple-2-find-toy-car",
+              "targetId": "toy-car",
+              "choiceIds": [
+                "toy-car",
+                "kite",
+                "doll",
+                "blocks"
+              ]
+            },
+            {
+              "id": "simple-2-find-kite",
+              "targetId": "kite",
+              "choiceIds": [
+                "kite",
+                "doll",
+                "blocks",
+                "ball"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Toys: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "toy-car",
+                "kite",
+                "ball"
+              ]
+            },
+            {
+              "id": "simple-3-find-toy-car",
+              "targetId": "toy-car",
+              "choiceIds": [
+                "toy-car",
+                "kite",
+                "ball",
+                "teddy-bear"
+              ]
+            },
+            {
+              "id": "simple-3-find-kite",
+              "targetId": "kite",
+              "choiceIds": [
+                "kite",
+                "ball",
+                "teddy-bear",
+                "doll"
+              ]
+            },
+            {
+              "id": "simple-3-find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "teddy-bear",
+                "doll",
+                "blocks"
+              ]
+            },
+            {
+              "id": "simple-3-find-teddy-bear",
+              "targetId": "teddy-bear",
+              "choiceIds": [
+                "teddy-bear",
+                "doll",
+                "blocks",
+                "toy-car"
+              ]
+            },
+            {
+              "id": "simple-3-find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "blocks",
+                "toy-car",
+                "kite"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate toy words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate Toys: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-1-find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "doll",
+                "blocks",
+                "toy-train"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "blocks",
+                "toy-train",
+                "drum"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "toy-train",
+                "drum",
+                "puzzle"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "drum",
+                "puzzle",
+                "ball"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "puzzle",
+                "ball",
+                "doll"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "ball",
+                "doll",
+                "blocks"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Toys: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "drum",
+                "ball",
+                "puzzle"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "ball",
+                "puzzle",
+                "doll"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "puzzle",
+                "doll",
+                "toy-train"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "doll",
+                "toy-train",
+                "blocks"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "toy-train",
+                "blocks",
+                "drum"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "blocks",
+                "drum",
+                "ball"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Toys: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "doll",
+                "toy-train",
+                "ball"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-doll",
+              "targetId": "doll",
+              "choiceIds": [
+                "doll",
+                "toy-train",
+                "ball",
+                "puzzle"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "ball",
+                "puzzle",
+                "blocks"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-ball",
+              "targetId": "ball",
+              "choiceIds": [
+                "ball",
+                "puzzle",
+                "blocks",
+                "drum"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "blocks",
+                "drum",
+                "doll"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-blocks",
+              "targetId": "blocks",
+              "choiceIds": [
+                "blocks",
+                "drum",
+                "doll",
+                "toy-train"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced toy words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced Toys: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-1-find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "drum",
+                "puzzle",
+                "robot"
+              ]
+            },
+            {
+              "id": "advanced-1-find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "puzzle",
+                "robot",
+                "yo-yo"
+              ]
+            },
+            {
+              "id": "advanced-1-find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "robot",
+                "yo-yo",
+                "skateboard"
+              ]
+            },
+            {
+              "id": "advanced-1-find-robot",
+              "targetId": "robot",
+              "choiceIds": [
+                "robot",
+                "yo-yo",
+                "skateboard",
+                "toy-train"
+              ]
+            },
+            {
+              "id": "advanced-1-find-yo-yo",
+              "targetId": "yo-yo",
+              "choiceIds": [
+                "yo-yo",
+                "skateboard",
+                "toy-train",
+                "drum"
+              ]
+            },
+            {
+              "id": "advanced-1-find-skateboard",
+              "targetId": "skateboard",
+              "choiceIds": [
+                "skateboard",
+                "toy-train",
+                "drum",
+                "puzzle"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Toys: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "yo-yo",
+                "toy-train",
+                "skateboard"
+              ]
+            },
+            {
+              "id": "advanced-2-find-yo-yo",
+              "targetId": "yo-yo",
+              "choiceIds": [
+                "yo-yo",
+                "toy-train",
+                "skateboard",
+                "drum"
+              ]
+            },
+            {
+              "id": "advanced-2-find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "skateboard",
+                "drum",
+                "robot"
+              ]
+            },
+            {
+              "id": "advanced-2-find-skateboard",
+              "targetId": "skateboard",
+              "choiceIds": [
+                "skateboard",
+                "drum",
+                "robot",
+                "puzzle"
+              ]
+            },
+            {
+              "id": "advanced-2-find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "robot",
+                "puzzle",
+                "yo-yo"
+              ]
+            },
+            {
+              "id": "advanced-2-find-robot",
+              "targetId": "robot",
+              "choiceIds": [
+                "robot",
+                "puzzle",
+                "yo-yo",
+                "toy-train"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Toys: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-yo-yo",
+              "targetId": "yo-yo",
+              "choiceIds": [
+                "yo-yo",
+                "drum",
+                "robot",
+                "toy-train"
+              ]
+            },
+            {
+              "id": "advanced-3-find-drum",
+              "targetId": "drum",
+              "choiceIds": [
+                "drum",
+                "robot",
+                "toy-train",
+                "skateboard"
+              ]
+            },
+            {
+              "id": "advanced-3-find-robot",
+              "targetId": "robot",
+              "choiceIds": [
+                "robot",
+                "toy-train",
+                "skateboard",
+                "puzzle"
+              ]
+            },
+            {
+              "id": "advanced-3-find-toy-train",
+              "targetId": "toy-train",
+              "choiceIds": [
+                "toy-train",
+                "skateboard",
+                "puzzle",
+                "yo-yo"
+              ]
+            },
+            {
+              "id": "advanced-3-find-skateboard",
+              "targetId": "skateboard",
+              "choiceIds": [
+                "skateboard",
+                "puzzle",
+                "yo-yo",
+                "drum"
+              ]
+            },
+            {
+              "id": "advanced-3-find-puzzle",
+              "targetId": "puzzle",
+              "choiceIds": [
+                "puzzle",
+                "yo-yo",
+                "drum",
+                "robot"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

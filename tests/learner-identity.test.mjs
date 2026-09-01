@@ -7,6 +7,11 @@ import {
   resolveOwnedLearnerIdentity,
 } from "../worker/request-identity.ts";
 import * as requestIdentity from "../worker/request-identity.ts";
+import {
+  SHARED_GUEST_LEARNER_ID,
+  SHARED_GUEST_LEARNER_NAME,
+  SHARED_GUEST_USER_ID,
+} from "../lib/shared-guest.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
@@ -137,6 +142,28 @@ describe("request learner identity", () => {
     });
   });
 
+  it("auto-selects seeded Sam for a new shared guest session", async () => {
+    insertSession(state, "shared-guest-session", SHARED_GUEST_USER_ID);
+
+    assert.deepEqual(
+      await resolveLearnerIdentity(
+        database,
+        account("shared-guest-session", SHARED_GUEST_USER_ID, "Guest"),
+      ),
+      {
+        status: "selected",
+        identity: {
+          sessionId: "shared-guest-session",
+          userId: SHARED_GUEST_USER_ID,
+          userName: "Guest",
+          learnerProfileId: SHARED_GUEST_LEARNER_ID,
+          learnerName: SHARED_GUEST_LEARNER_NAME,
+          legacyStorageOwner: true,
+        },
+      },
+    );
+  });
+
   it("resolves an owned target without changing the session learner selection", async () => {
     insertLearner(state, "learner-a", "user-a");
     insertLearner(state, "learner-b", "user-a", {
@@ -252,7 +279,8 @@ describe("request learner identity", () => {
       state.sqlite
         .prepare(
           `SELECT auth_user_id, legacy_storage_owner, name, onboarding_status
-           FROM learner_profile`,
+           FROM learner_profile
+           WHERE auth_user_id = 'user-a'`,
         )
         .all()
         .map((row) => ({ ...row })),
@@ -296,8 +324,11 @@ describe("request learner identity", () => {
       second.identity.learnerProfileId,
     );
     assert.equal(
-      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-        .count,
+      state.sqlite
+        .prepare(
+          "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-a").count,
       1,
     );
     assert.equal(
@@ -323,8 +354,11 @@ describe("request learner identity", () => {
     assert.equal(first.id, second.id);
     assert.equal(first.legacyStorageOwner, true);
     assert.equal(
-      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-        .count,
+      state.sqlite
+        .prepare(
+          "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-a").count,
       1,
     );
   });

@@ -351,7 +351,7 @@ async function leaveLearnerRoute(page: Page) {
   });
   await expect(page).toHaveURL("/guardian");
   await expect(
-    page.getByRole("heading", { name: "Switch to guardian mode" }),
+    page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
 }
 

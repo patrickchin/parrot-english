@@ -1,0 +1,841 @@
+{
+  "schemaVersion": 2,
+  "order": 7,
+  "id": "home",
+  "title": "Home",
+  "description": "Listen and find things at home.",
+  "theme": "mint",
+  "coverItemId": "house",
+  "items": [
+    {
+      "id": "bed",
+      "label": "bed",
+      "alt": "A bed.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6cf"
+      },
+      "labelAudio": {
+        "id": "word-game-home-bed-label",
+        "text": "bed"
+      },
+      "promptAudio": {
+        "id": "word-game-home-bed-prompt",
+        "text": "Which is the bed?"
+      }
+    },
+    {
+      "id": "chair",
+      "label": "chair",
+      "alt": "A chair.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa91"
+      },
+      "labelAudio": {
+        "id": "word-game-home-chair-label",
+        "text": "chair"
+      },
+      "promptAudio": {
+        "id": "word-game-home-chair-prompt",
+        "text": "Which is the chair?"
+      }
+    },
+    {
+      "id": "door",
+      "label": "door",
+      "alt": "A door.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6aa"
+      },
+      "labelAudio": {
+        "id": "word-game-home-door-label",
+        "text": "door"
+      },
+      "promptAudio": {
+        "id": "word-game-home-door-prompt",
+        "text": "Which is the door?"
+      }
+    },
+    {
+      "id": "window",
+      "label": "window",
+      "alt": "A window.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa9f"
+      },
+      "labelAudio": {
+        "id": "word-game-home-window-label",
+        "text": "window"
+      },
+      "promptAudio": {
+        "id": "word-game-home-window-prompt",
+        "text": "Which is the window?"
+      }
+    },
+    {
+      "id": "house",
+      "label": "house",
+      "alt": "A house.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f3e0"
+      },
+      "labelAudio": {
+        "id": "word-game-home-house-label",
+        "text": "house"
+      },
+      "promptAudio": {
+        "id": "word-game-home-house-prompt",
+        "text": "Which is the house?"
+      }
+    },
+    {
+      "id": "key",
+      "label": "key",
+      "alt": "A key.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f511"
+      },
+      "labelAudio": {
+        "id": "word-game-home-key-label",
+        "text": "key"
+      },
+      "promptAudio": {
+        "id": "word-game-home-key-prompt",
+        "text": "Which is the key?"
+      }
+    },
+    {
+      "id": "sofa",
+      "label": "sofa",
+      "alt": "A sofa.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6cb"
+      },
+      "labelAudio": {
+        "id": "word-game-home-sofa-label",
+        "text": "sofa"
+      },
+      "promptAudio": {
+        "id": "word-game-home-sofa-prompt",
+        "text": "Which is the sofa?"
+      }
+    },
+    {
+      "id": "bathtub",
+      "label": "bathtub",
+      "alt": "A bathtub.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6c1"
+      },
+      "labelAudio": {
+        "id": "word-game-home-bathtub-label",
+        "text": "bathtub"
+      },
+      "promptAudio": {
+        "id": "word-game-home-bathtub-prompt",
+        "text": "Which is the bathtub?"
+      }
+    },
+    {
+      "id": "toilet",
+      "label": "toilet",
+      "alt": "A toilet.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6bd"
+      },
+      "labelAudio": {
+        "id": "word-game-home-toilet-label",
+        "text": "toilet"
+      },
+      "promptAudio": {
+        "id": "word-game-home-toilet-prompt",
+        "text": "Which is the toilet?"
+      }
+    },
+    {
+      "id": "shower",
+      "label": "shower",
+      "alt": "A shower.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f6bf"
+      },
+      "labelAudio": {
+        "id": "word-game-home-shower-label",
+        "text": "shower"
+      },
+      "promptAudio": {
+        "id": "word-game-home-shower-prompt",
+        "text": "Which is the shower?"
+      }
+    },
+    {
+      "id": "mirror",
+      "label": "mirror",
+      "alt": "A mirror.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa9e"
+      },
+      "labelAudio": {
+        "id": "word-game-home-mirror-label",
+        "text": "mirror"
+      },
+      "promptAudio": {
+        "id": "word-game-home-mirror-prompt",
+        "text": "Which is the mirror?"
+      }
+    },
+    {
+      "id": "broom",
+      "label": "broom",
+      "alt": "A broom.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9f9"
+      },
+      "labelAudio": {
+        "id": "word-game-home-broom-label",
+        "text": "broom"
+      },
+      "promptAudio": {
+        "id": "word-game-home-broom-prompt",
+        "text": "Which is the broom?"
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple home words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple Home: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-1-find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "chair",
+                "door",
+                "window"
+              ]
+            },
+            {
+              "id": "simple-1-find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "door",
+                "window",
+                "house"
+              ]
+            },
+            {
+              "id": "simple-1-find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "window",
+                "house",
+                "key"
+              ]
+            },
+            {
+              "id": "simple-1-find-window",
+              "targetId": "window",
+              "choiceIds": [
+                "window",
+                "house",
+                "key",
+                "bed"
+              ]
+            },
+            {
+              "id": "simple-1-find-house",
+              "targetId": "house",
+              "choiceIds": [
+                "house",
+                "key",
+                "bed",
+                "chair"
+              ]
+            },
+            {
+              "id": "simple-1-find-key",
+              "targetId": "key",
+              "choiceIds": [
+                "key",
+                "bed",
+                "chair",
+                "door"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Home: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "house",
+                "bed",
+                "key"
+              ]
+            },
+            {
+              "id": "simple-2-find-house",
+              "targetId": "house",
+              "choiceIds": [
+                "house",
+                "bed",
+                "key",
+                "chair"
+              ]
+            },
+            {
+              "id": "simple-2-find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "key",
+                "chair",
+                "window"
+              ]
+            },
+            {
+              "id": "simple-2-find-key",
+              "targetId": "key",
+              "choiceIds": [
+                "key",
+                "chair",
+                "window",
+                "door"
+              ]
+            },
+            {
+              "id": "simple-2-find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "window",
+                "door",
+                "house"
+              ]
+            },
+            {
+              "id": "simple-2-find-window",
+              "targetId": "window",
+              "choiceIds": [
+                "window",
+                "door",
+                "house",
+                "bed"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Home: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-house",
+              "targetId": "house",
+              "choiceIds": [
+                "house",
+                "chair",
+                "window",
+                "bed"
+              ]
+            },
+            {
+              "id": "simple-3-find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "window",
+                "bed",
+                "key"
+              ]
+            },
+            {
+              "id": "simple-3-find-window",
+              "targetId": "window",
+              "choiceIds": [
+                "window",
+                "bed",
+                "key",
+                "door"
+              ]
+            },
+            {
+              "id": "simple-3-find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "key",
+                "door",
+                "house"
+              ]
+            },
+            {
+              "id": "simple-3-find-key",
+              "targetId": "key",
+              "choiceIds": [
+                "key",
+                "door",
+                "house",
+                "chair"
+              ]
+            },
+            {
+              "id": "simple-3-find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "house",
+                "chair",
+                "window"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate home words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate Home: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-1-find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "chair",
+                "door",
+                "sofa"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "door",
+                "sofa",
+                "bathtub"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "sofa",
+                "bathtub",
+                "toilet"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "bathtub",
+                "toilet",
+                "bed"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "toilet",
+                "bed",
+                "chair"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "bed",
+                "chair",
+                "door"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Home: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "bathtub",
+                "bed",
+                "toilet"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "bed",
+                "toilet",
+                "chair"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "toilet",
+                "chair",
+                "sofa"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "chair",
+                "sofa",
+                "door"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "sofa",
+                "door",
+                "bathtub"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "door",
+                "bathtub",
+                "bed"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Home: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "chair",
+                "sofa",
+                "bed"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-chair",
+              "targetId": "chair",
+              "choiceIds": [
+                "chair",
+                "sofa",
+                "bed",
+                "toilet"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "bed",
+                "toilet",
+                "door"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-bed",
+              "targetId": "bed",
+              "choiceIds": [
+                "bed",
+                "toilet",
+                "door",
+                "bathtub"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "door",
+                "bathtub",
+                "chair"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-door",
+              "targetId": "door",
+              "choiceIds": [
+                "door",
+                "bathtub",
+                "chair",
+                "sofa"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced home words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced Home: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-1-find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "bathtub",
+                "toilet",
+                "shower"
+              ]
+            },
+            {
+              "id": "advanced-1-find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "toilet",
+                "shower",
+                "mirror"
+              ]
+            },
+            {
+              "id": "advanced-1-find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "shower",
+                "mirror",
+                "broom"
+              ]
+            },
+            {
+              "id": "advanced-1-find-shower",
+              "targetId": "shower",
+              "choiceIds": [
+                "shower",
+                "mirror",
+                "broom",
+                "sofa"
+              ]
+            },
+            {
+              "id": "advanced-1-find-mirror",
+              "targetId": "mirror",
+              "choiceIds": [
+                "mirror",
+                "broom",
+                "sofa",
+                "bathtub"
+              ]
+            },
+            {
+              "id": "advanced-1-find-broom",
+              "targetId": "broom",
+              "choiceIds": [
+                "broom",
+                "sofa",
+                "bathtub",
+                "toilet"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Home: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "mirror",
+                "sofa",
+                "broom"
+              ]
+            },
+            {
+              "id": "advanced-2-find-mirror",
+              "targetId": "mirror",
+              "choiceIds": [
+                "mirror",
+                "sofa",
+                "broom",
+                "bathtub"
+              ]
+            },
+            {
+              "id": "advanced-2-find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "broom",
+                "bathtub",
+                "shower"
+              ]
+            },
+            {
+              "id": "advanced-2-find-broom",
+              "targetId": "broom",
+              "choiceIds": [
+                "broom",
+                "bathtub",
+                "shower",
+                "toilet"
+              ]
+            },
+            {
+              "id": "advanced-2-find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "shower",
+                "toilet",
+                "mirror"
+              ]
+            },
+            {
+              "id": "advanced-2-find-shower",
+              "targetId": "shower",
+              "choiceIds": [
+                "shower",
+                "toilet",
+                "mirror",
+                "sofa"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Home: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-mirror",
+              "targetId": "mirror",
+              "choiceIds": [
+                "mirror",
+                "bathtub",
+                "shower",
+                "sofa"
+              ]
+            },
+            {
+              "id": "advanced-3-find-bathtub",
+              "targetId": "bathtub",
+              "choiceIds": [
+                "bathtub",
+                "shower",
+                "sofa",
+                "broom"
+              ]
+            },
+            {
+              "id": "advanced-3-find-shower",
+              "targetId": "shower",
+              "choiceIds": [
+                "shower",
+                "sofa",
+                "broom",
+                "toilet"
+              ]
+            },
+            {
+              "id": "advanced-3-find-sofa",
+              "targetId": "sofa",
+              "choiceIds": [
+                "sofa",
+                "broom",
+                "toilet",
+                "mirror"
+              ]
+            },
+            {
+              "id": "advanced-3-find-broom",
+              "targetId": "broom",
+              "choiceIds": [
+                "broom",
+                "toilet",
+                "mirror",
+                "bathtub"
+              ]
+            },
+            {
+              "id": "advanced-3-find-toilet",
+              "targetId": "toilet",
+              "choiceIds": [
+                "toilet",
+                "mirror",
+                "bathtub",
+                "shower"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

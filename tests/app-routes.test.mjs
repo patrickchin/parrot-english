@@ -12,6 +12,9 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 const routes = await vite.ssrLoadModule("/src/app/app-routes.ts").catch(() => ({}));
+const catalog = await vite
+  .ssrLoadModule("/src/games/word-game-catalog.ts")
+  .catch(() => ({}));
 
 after(async () => vite.close());
 
@@ -37,13 +40,13 @@ function getStoryRouteDecision(storyId, pageNumber) {
   return routes.resolveStoryRouteDecision(storyId, pageNumber);
 }
 
-function getWordGameRouteDecision(gameId) {
+function getWordGameRouteDecision(categoryId, quizId, pathname) {
   assert.equal(
     typeof routes.resolveWordGameRouteDecision,
     "function",
     "Expected an executable word-game route decision boundary",
   );
-  return routes.resolveWordGameRouteDecision(gameId);
+  return routes.resolveWordGameRouteDecision(categoryId, quizId, pathname);
 }
 
 describe("app route helpers", () => {
@@ -72,22 +75,42 @@ describe("app route helpers", () => {
     assert.equal("resolveMyLessonRouteDecision" in routes, false);
   });
 
-  it("resolves each catalog word-game route and sends invalid topics to the library", () => {
-    for (const gameId of [
-      "animals",
-      "colors",
-      "body-parts",
-      "food",
-      "toys",
-      "feelings",
-    ]) {
-      const decision = getWordGameRouteDecision(gameId);
-      assert.equal(decision.kind, "game");
-      assert.equal(decision.topic.id, gameId);
+  it("resolves all canonical category and quiz routes and rejects malformed shapes", () => {
+    assert.equal(catalog.WORD_GAME_CATEGORIES.length, 9);
+    for (const category of catalog.WORD_GAME_CATEGORIES) {
+      assert.deepEqual(
+        getWordGameRouteDecision(
+          category.id.toUpperCase(),
+          undefined,
+          `/Word-Games/${category.id.toUpperCase()}`,
+        ),
+        { kind: "category", category },
+      );
+      for (const tier of category.tiers) {
+        for (const quiz of tier.quizzes) {
+          assert.deepEqual(
+            getWordGameRouteDecision(
+              category.id,
+              quiz.id,
+              `/word-games/${category.id}/${quiz.id}`,
+            ),
+            { kind: "game", selection: { category, tier, quiz } },
+          );
+        }
+      }
     }
 
-    for (const gameId of [undefined, "missing", "%2F", ".", "..", "%E0%A4%A"]) {
-      assert.deepEqual(getWordGameRouteDecision(gameId), {
+    for (const [categoryId, quizId, pathname] of [
+      [undefined, undefined, "/word-games"],
+      ["missing", undefined, "/word-games/missing"],
+      ["animals", "missing", "/word-games/animals/missing"],
+      ["%61nimals", undefined, "/word-games/%61nimals"],
+      ["animals", "%73imple-1", "/word-games/animals/%73imple-1"],
+      ["animals", "simple-1", "/word-games/animals/simple-1/extra"],
+      [undefined, undefined, "/word-games/animals/simple-1/extra"],
+      [undefined, undefined, "/word-games/animals/simple-1/extra/more"],
+    ]) {
+      assert.deepEqual(getWordGameRouteDecision(categoryId, quizId, pathname), {
         kind: "redirect",
         replace: true,
         to: "/word-games",
@@ -203,6 +226,27 @@ describe("app route helpers", () => {
     assert.equal(routes.isRedoLearnerProfileRequest("?redo=0"), false);
   });
 
+  it("normalizes post-login destinations to learner routes", () => {
+    assert.equal(routes.getPostLoginDestination("?returnTo=%2Fguardian"), "/");
+    assert.equal(
+      routes.getPostLoginDestination(
+        "?returnTo=%2Flessons%2Fparrot%2Fhello%2Fscenes%2F2%3Fx%3D1%23y",
+      ),
+      "/lessons/parrot/hello/scenes/2?x=1#y",
+    );
+    assert.equal(routes.getPostLoginDestination(""), "/");
+    assert.equal(
+      routes.getPostLoginDestination("?returnTo=https%3A%2F%2Fevil.example"),
+      "/",
+    );
+    assert.equal(
+      routes.getPostLoginDestination(
+        "?returnTo=%2Fguardian%2Fstories%3Fsection%3Dart%23cover",
+      ),
+      "/",
+    );
+  });
+
   it("builds and classifies only canonical guardian routes", () => {
     assert.equal(
       typeof routes.getGuardianAccountPath,
@@ -221,11 +265,7 @@ describe("app route helpers", () => {
       routes.getGuardianLearnerPath("learner/noah"),
       "/guardian/learners/learner%2Fnoah",
     );
-    assert.equal(routes.getGuardianStoriesPath(), "/guardian/stories");
-    assert.equal(
-      routes.getGuardianStoriesPath("learner /Noah"),
-      "/guardian/stories?learnerProfileId=learner+%2FNoah",
-    );
+    assert.equal(routes.getGuardianStoriesPath, undefined);
     assert.equal(
       routes.getProfilePath("/guardian"),
       "/guardian/profile?returnTo=%2Fguardian",
@@ -244,7 +284,6 @@ describe("app route helpers", () => {
       ["/guardian/profile"],
       ["/guardian/profile/setup"],
       ["/guardian/profile/setup", "?redo=1"],
-      ["/guardian/stories"],
       ["/profile"],
       ["/profile/setup", "?redo=1"],
     ]) {
@@ -259,6 +298,7 @@ describe("app route helpers", () => {
       ["/guardianish"],
       ["/guardian/lessons"],
       ["/guardian/lessons/extra"],
+      ["/guardian/stories"],
       ["/guardian/dubbing/extra"],
       ["/guardian/learners/%E0%A4%A"],
       ["/guardian/learners/learner-noah/extra"],
@@ -333,7 +373,7 @@ describe("app route helpers", () => {
     assert.equal(routes.getSafeGuardianReturnTo(""), "/guardian");
     assert.equal(
       routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Fstories"),
-      "/guardian/stories",
+      "/guardian",
     );
     assert.equal(
       routes.getSafeGuardianReturnTo("?returnTo=%2Fguardian%2Faccount"),
@@ -369,7 +409,7 @@ describe("app route helpers", () => {
         "?section=art",
         "#cover",
       ),
-      "/guardian/stories?section=art#cover",
+      "/guardian",
     );
     assert.equal(
       routes.getSafeGuardianUnlockDestination(
@@ -429,7 +469,8 @@ describe("app route helpers", () => {
       ["/profile", "/Profile//", "profile"],
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/word-games", "/Word-Games///", null],
-      ["/word-games/:gameId", "/Word-Games/Animals///", null],
+      ["/word-games/:categoryId", "/Word-Games/Animals///", null],
+      ["/word-games/:categoryId/:quizId", "/Word-Games/Animals/Simple-1///", null],
       ["/progress", "/Progress///", null],
       ["/stories", "/Stories///", null],
       ["/dubs/five-little-ducks", "/Dubs/Five-Little-Ducks///", null],
@@ -859,6 +900,11 @@ describe("app route helpers", () => {
       "/word-games/food",
       "/word-games/toys",
       "/word-games/feelings",
+      "/word-games/home",
+      "/word-games/clothes",
+      "/word-games/transport",
+      "/word-games/animals/simple-1",
+      "/Word-Games/Animals/Advanced-1///",
       "/word-games/%61nimals",
       "/Word-Games/%41nimals///",
     ]) {
@@ -867,15 +913,14 @@ describe("app route helpers", () => {
         returnTo.includes("%") ? null : returnTo,
       );
     }
-    for (const guardianPath of [
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/guardian")),
       "/guardian",
-      "/guardian/stories",
-    ]) {
-      assert.equal(
-        routes.getSafeReturnTo(returnToSearch(guardianPath)),
-        guardianPath,
-      );
-    }
+    );
+    assert.equal(
+      routes.getSafeReturnTo(returnToSearch("/guardian/stories")),
+      null,
+    );
     assert.equal(
       routes.getSafeReturnTo("?returnTo=https%3A%2F%2Fevil.example"),
       null,
@@ -907,7 +952,8 @@ describe("app route helpers", () => {
       "/word-game/extra",
       "/word-games/missing",
       "/word-games/%2F",
-      "/word-games/animals/extra",
+      "/word-games/animals/missing",
+      "/word-games/animals/simple-1/extra",
       "/lessons//parrot/01-peppas-high-ball",
       "/lessons/parrot//",
       "//lessons",

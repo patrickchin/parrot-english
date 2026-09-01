@@ -11,6 +11,7 @@ import {
 import { Link, MemoryRouter, Route, Routes } from "react-router";
 import { after, afterEach, before, describe, it } from "node:test";
 import { createServer } from "vite";
+import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
 import {
   cleanupMountedRoots,
   click,
@@ -37,8 +38,6 @@ let AccountHeader;
 let createAuthGate;
 let AuthGateView;
 let ConversationSurface;
-let GuardianUnlockDialog;
-let GuardianUnlockForm;
 let RouteFocusManager;
 let AccountActionProvider;
 let useProfileAccountAction;
@@ -62,9 +61,6 @@ before(async () => {
   ({ AccountHeader } = await vite.ssrLoadModule("/src/app/AppHeader.tsx"));
   ({ AuthGateView, createAuthGate } = await vite.ssrLoadModule(
     "/src/auth/AuthGate.tsx",
-  ));
-  ({ GuardianUnlockDialog, GuardianUnlockForm } = await vite.ssrLoadModule(
-    "/src/auth/GuardianUnlock.tsx",
   ));
   ({ AccountActionProvider, useProfileAccountAction } =
     await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
@@ -135,7 +131,7 @@ async function press(target, key, options = {}) {
   return event;
 }
 
-function DialogHarness({ kind, onDelete = async () => null, requiresPassword }) {
+function DialogHarness({ kind, onDelete = async () => null }) {
   const [isOpen, setIsOpen] = useState(false);
   return createElement(
     "main",
@@ -149,7 +145,6 @@ function DialogHarness({ kind, onDelete = async () => null, requiresPassword }) 
       ? createElement(AccountDeleteDialog, {
           onClose: () => setIsOpen(false),
           onDelete,
-          requiresPassword,
         })
       : null,
   );
@@ -167,49 +162,10 @@ function guardianApi(overrides = {}) {
   };
 }
 
-function AccessMode() {
-  const { mode } = useGuardianAccess();
-  return createElement(
-    "output",
-    { "aria-label": "Guardian access mode" },
-    mode,
-  );
-}
-
 function AccessCapture({ onAccess }) {
   const access = useGuardianAccess();
   useEffect(() => onAccess(access), [access, onAccess]);
   return null;
-}
-
-function UnlockHarness({ api, dialog = false, onUnlocked = () => {} }) {
-  const [Provider] = useState(() =>
-    createGuardianAccessProvider({ api, schedule: () => () => {} }),
-  );
-  const [isOpen, setIsOpen] = useState(!dialog);
-  const openerRef = useRef(null);
-  return createElement(
-    Provider,
-    { sessionIdentity: "id:guardian" },
-    createElement(AccessMode),
-    dialog &&
-      createElement(
-        "button",
-        { onClick: () => setIsOpen(true), ref: openerRef, type: "button" },
-        "Open guardian mode",
-      ),
-    isOpen &&
-      (dialog
-        ? createElement(GuardianUnlockDialog, {
-            onClose: () => setIsOpen(false),
-            onUnlocked,
-            returnFocusRef: openerRef,
-          })
-        : createElement(GuardianUnlockForm, {
-            onCancel: () => setIsOpen(false),
-            onUnlocked,
-          })),
-  );
 }
 
 function modeBoundaryHarness({ api, guardianAudience }) {
@@ -247,11 +203,13 @@ function accountHeaderProps(overrides = {}) {
     guardianLabel: "Patrick",
     isModePending: false,
     isSigningOut: false,
+    hasActiveLearner: true,
     learnerLabel: "Mia",
     onDeleteAccount: async () => null,
     onOpenAccountPrivacy() {},
     onOpenGuardianDashboard() {},
     onOpenLearnerProfiles() {},
+    onOpenLearnerSwitcher() {},
     onOpenProfile() {},
     onSelectGuardian() {},
     onSelectLearner() {},
@@ -264,6 +222,7 @@ function accountHeaderProps(overrides = {}) {
 
 function authClientForHeader() {
   return {
+    $fetch: async () => ({ error: null }),
     deleteUser: async () => ({ error: null }),
     signIn: { email: async () => ({ error: null }) },
     signOut: async () => ({ error: null }),
@@ -400,7 +359,10 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
     const email = document.querySelector("#auth-email");
-    assert.match(document.body.textContent, /The email or password is incorrect/);
+    assert.match(
+      document.body.textContent,
+      /The email or password is incorrect/,
+    );
 
     await click(button("中文"));
 
@@ -459,11 +421,7 @@ describe("keyboard accessibility lifecycles", () => {
         MemoryRouter,
         { initialEntries: ["/"] },
         createElement(RouteFocusManager),
-        createElement(
-          "button",
-          { ref: accountRef, type: "button" },
-          "Account",
-        ),
+        createElement("button", { ref: accountRef, type: "button" }, "Account"),
         createElement("main", null, createElement("h1", null, "Home")),
       );
     }
@@ -593,7 +551,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(document.activeElement, password));
     assert.match(
       document.querySelector('[role="dialog"]')?.textContent ?? "",
-      /all learner profiles.*private voice clips.*story art/i,
+      /all learner profiles.*private voice clips.*previously saved private story pictures/i,
     );
 
     await input(password, "parent-password");
@@ -634,7 +592,10 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("Delete account now"));
     const alert = await waitFor(() => {
       const candidate = dialog.querySelector('[role="alert"]');
-      assert.match(candidate?.textContent ?? "", /Unable to delete the account/);
+      assert.match(
+        candidate?.textContent ?? "",
+        /Unable to delete the account/,
+      );
       return candidate;
     });
     assert.equal(deletionAttempts, 1);
@@ -677,7 +638,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
     const dialog = document.querySelector('[role="dialog"]');
-    const confirm = button("Delete Bob");
+    const confirm = button("Delete ⁨Bob⁩");
     await click(confirm);
 
     const chinese = button("中文");
@@ -700,18 +661,35 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("learner mode exposes only the locked grown-up gateway beneath the active identity", async () => {
-    await mountStrict(createElement(AccountHeader, accountHeaderProps()));
+  it("learner mode activates Switch learner before the locked grown-up gateway", async () => {
+    const activations = [];
+    let trigger;
+    await mountStrict(
+      createElement(
+        AccountHeader,
+        accountHeaderProps({
+          onOpenLearnerSwitcher() {
+            assert.equal(document.activeElement, trigger);
+            activations.push("switch-learner");
+          },
+        }),
+      ),
+    );
 
-    await click(button("Profile for Mia, learner mode"));
+    trigger = button("Profile for Mia, learner mode");
+    await click(trigger);
     const menu = document.querySelector('[role="menu"]');
     assert.ok(menu);
-    assert.deepEqual(
-      [...menu.querySelectorAll('[role="menuitem"]')].map((item) =>
-        item.textContent.trim(),
-      ),
-      ["Grown-up accessSwitch modes"],
+    const menuItems = [...menu.querySelectorAll('[role="menuitem"]')].map(
+      (item) => item.textContent.trim(),
     );
+    assert.deepEqual(menuItems, [
+      "Switch learner",
+      "Grown-up accessSwitch modes",
+    ]);
+    await click(button("Switch learner"));
+    assert.deepEqual(activations, ["switch-learner"]);
+    assert.equal(document.querySelector('[role="menu"]'), null);
     assert.match(document.body.textContent, /Mia/);
     assert.equal(
       document.querySelector('[aria-label="Choose profile mode"]'),
@@ -782,7 +760,10 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(menu.getAttribute("aria-label"), "Account menu");
     assert.match(menu.textContent, /Grown-up access/);
     assert.match(menu.textContent, /Switch modes/);
-    assert.equal(menu.querySelector('[lang="zh-Hans"]')?.textContent, "家长入口");
+    assert.equal(
+      menu.querySelector('[lang="zh-Hans"]')?.textContent,
+      "家长入口",
+    );
     assert.equal(
       document.querySelector('[role="alert"] [lang="zh-Hans"]')?.textContent,
       "请让家长重试。",
@@ -791,7 +772,10 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("English"));
     assert.equal(document.querySelector('[role="menu"]'), menu);
     assert.equal(menu.querySelector('[lang="zh-Hans"]'), null);
-    assert.equal(document.querySelector('[role="alert"] [lang="zh-Hans"]'), null);
+    assert.equal(
+      document.querySelector('[role="alert"] [lang="zh-Hans"]'),
+      null,
+    );
     assert.match(
       [...document.querySelectorAll('[role="alert"]')].find(
         (alert) => alert.textContent.trim() !== "",
@@ -813,7 +797,10 @@ describe("keyboard accessibility lifecycles", () => {
     );
     await click(button("Patrick的档案，家长模式"));
     const guardianMenu = document.querySelector('[role="menu"]');
-    assert.equal(document.querySelector("aside").getAttribute("aria-label"), "账户");
+    assert.equal(
+      document.querySelector("aside").getAttribute("aria-label"),
+      "账户",
+    );
     assert.equal(guardianMenu.getAttribute("aria-label"), "账户菜单");
     assert.deepEqual(
       [...guardianMenu.children].map((item) => item.textContent.trim()),
@@ -879,7 +866,10 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    assert.equal(document.querySelector("h1")?.textContent, "Account & privacy");
+    assert.equal(
+      document.querySelector("h1")?.textContent,
+      "Account & privacy",
+    );
     assert.match(document.body.textContent, /How Parrot uses AI/);
     assert.match(document.body.textContent, /What this account keeps/);
     assert.match(
@@ -896,7 +886,10 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.match(document.body.textContent, /Technical build details/);
     const deleteAccount = button("Delete account");
-    assert.match(deleteAccount.closest("section")?.textContent ?? "", /Danger zone/);
+    assert.match(
+      deleteAccount.closest("section")?.textContent ?? "",
+      /Danger zone/,
+    );
     assert.equal(
       [...document.querySelectorAll("button")].filter(
         (candidate) => candidate.textContent.trim() === "Delete account",
@@ -927,33 +920,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.match(document.body.textContent, /DASHBOARD DESTINATION/);
   });
 
-  it("lets a guest confirm cleanup-first deletion without an impossible password", async () => {
-    const passwords = [];
-    await mountStrict(
-      createElement(
-        DialogHarness,
-        {
-          kind: "delete",
-          onDelete: async (password) => {
-            passwords.push(password);
-            return null;
-          },
-          requiresPassword: false,
-        },
-      ),
-    );
-
-    await click(button("Open delete"));
-    assert.ok(!document.querySelector("#delete-account-password"));
-    const confirm = button("Delete account now");
-    assert.equal(confirm.disabled, false);
-    await waitFor(() => assert.equal(document.activeElement, confirm));
-
-    await click(confirm);
-    await waitFor(() => assert.deepEqual(passwords, [""]));
-  });
-
-  it("wires a guest account page to passwordless cleanup-first deletion", async () => {
+  it("keeps shared account privacy information while hiding destructive controls", async () => {
     const deletionCalls = [];
     const client = authClientForHeader();
     client.useSession = () => ({
@@ -961,8 +928,7 @@ describe("keyboard accessibility lifecycles", () => {
         session: { id: "guest-session" },
         user: {
           email: "guest@example.test",
-          id: "guest-user",
-          isAnonymous: true,
+          id: SHARED_GUEST_USER_ID,
           name: "Guest",
         },
       },
@@ -998,76 +964,87 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Delete account"));
-    assert.ok(!document.querySelector("#delete-account-password"));
-    await click(button("Delete account now"));
-    await waitFor(() => assert.equal(deletionCalls.length, 1));
-    assert.equal(deletionCalls[0].isAnonymous, true);
-    assert.equal(deletionCalls[0].password, "");
+    assert.equal(
+      document.querySelector("h1")?.textContent,
+      "Account & privacy",
+    );
+    assert.match(document.body.textContent, /How Parrot uses AI/);
+    assert.match(document.body.textContent, /What this account keeps/);
+    assert.match(document.body.textContent, /Technical build details/);
+    assert.doesNotMatch(document.body.textContent, /Danger zone/);
+    assert.equal(
+      [...document.querySelectorAll("button")].some(
+        (candidate) => candidate.textContent.trim() === "Delete account",
+      ),
+      false,
+    );
+    assert.equal(document.querySelector("#delete-account-password"), null);
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    assert.equal(deletionCalls.length, 0);
   });
 
   it("tears down an open Guardian menu for every learner transition", async () => {
     for (const transition of ["expiry", "explicit lock", "guardian_required"]) {
-        let access;
-        let expire = () =>
-          assert.fail("Expected guardian expiry to be scheduled.");
-        let serverMode = "guardian";
-        const expiresAt = "2099-01-01T00:00:00.000Z";
-        const api = guardianApi({
-          async loadGuardianAccess() {
-            return serverMode === "guardian"
-              ? { expiresAt, mode: "guardian" }
-              : { mode: "learner" };
+      let access;
+      let expire = () =>
+        assert.fail("Expected guardian expiry to be scheduled.");
+      let serverMode = "guardian";
+      const expiresAt = "2099-01-01T00:00:00.000Z";
+      const api = guardianApi({
+        async loadGuardianAccess() {
+          return serverMode === "guardian"
+            ? { expiresAt, mode: "guardian" }
+            : { mode: "learner" };
+        },
+        async lockGuardianAccess() {
+          serverMode = "learner";
+          return { mode: "learner" };
+        },
+      });
+      await mountStrict(
+        guardianHeaderHarness({
+          api,
+          onAccess: (nextAccess) => {
+            access = nextAccess;
           },
-          async lockGuardianAccess() {
-            serverMode = "learner";
-            return { mode: "learner" };
+          schedule(callback) {
+            expire = callback;
+            return () => {};
           },
-        });
-        await mountStrict(
-          guardianHeaderHarness({
-            api,
-            onAccess: (nextAccess) => {
-              access = nextAccess;
-            },
-            schedule(callback) {
-              expire = callback;
-              return () => {};
-            },
-          }),
-        );
+        }),
+      );
 
-        await click(
-          await waitFor(() => button("Profile for Patrick, guardian mode")),
-        );
-        assert.ok(document.querySelector('[role="menu"]'));
+      await click(
+        await waitFor(() => button("Profile for Patrick, guardian mode")),
+      );
+      assert.ok(document.querySelector('[role="menu"]'));
 
-        if (transition === "expiry") {
-          await act(async () => expire());
-        } else if (transition === "explicit lock") {
-          await act(async () => access.lock());
-        } else {
-          await act(async () => notifyGuardianAccessRequired());
-        }
+      if (transition === "expiry") {
+        await act(async () => expire());
+      } else if (transition === "explicit lock") {
+        await act(async () => access.lock());
+      } else {
+        await act(async () => notifyGuardianAccessRequired());
+      }
 
-        await waitFor(() => button("Profile for Learner, learner mode"));
-        assert.ok(
-          !document.querySelector('[role="dialog"]'),
-          `Dialog remained exposed after ${transition}`,
-        );
-        assert.ok(
-          !document.querySelector('[role="menu"]'),
-          `Menu remained exposed after ${transition}`,
-        );
-        assert.doesNotMatch(
-          document.body.textContent,
-          /AI and saved data|Delete account now|Sign out again/,
-          `Guardian action remained exposed after ${transition}`,
-        );
+      await waitFor(() => button("Profile for Learner, learner mode"));
+      assert.ok(
+        !document.querySelector('[role="dialog"]'),
+        `Dialog remained exposed after ${transition}`,
+      );
+      assert.ok(
+        !document.querySelector('[role="menu"]'),
+        `Menu remained exposed after ${transition}`,
+      );
+      assert.doesNotMatch(
+        document.body.textContent,
+        /AI and saved data|Delete account now|Sign out again/,
+        `Guardian action remained exposed after ${transition}`,
+      );
 
-        await cleanupMountedRoots();
-        document.body.replaceChildren();
-        window.localStorage.clear();
+      await cleanupMountedRoots();
+      document.body.replaceChildren();
+      window.localStorage.clear();
     }
   });
 
@@ -1331,38 +1308,6 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(registrations.at(-1), second);
   });
 
-  it("keeps a failed direct switch in learner mode", async () => {
-    let attempts = 0;
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          async unlockGuardianAccess() {
-            attempts += 1;
-            throw new Error("Guardian mode could not be opened.");
-          },
-        }),
-      }),
-    );
-    const switchButton = button("Switch to guardian mode");
-    switchButton.focus();
-    await click(switchButton);
-    await waitFor(() =>
-      assert.equal(
-        document.querySelector('[role="alert"]').textContent.trim(),
-        "Guardian access could not be checked. Please try again.",
-      ),
-    );
-
-    assert.equal(attempts, 1);
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    assert.equal(document.activeElement, switchButton);
-    assert.equal(
-      document.querySelector('output[aria-label="Guardian access mode"]')
-        .textContent,
-      "learner",
-    );
-  });
-
   it("shows a direct-switch failure in the account shell", async () => {
     const Provider = createGuardianAccessProvider({
       api: guardianApi({
@@ -1401,187 +1346,6 @@ describe("keyboard accessibility lifecycles", () => {
     assert.ok(button("Profile for Learner, learner mode"));
   });
 
-  it("keeps learner and expired switch responses in the switch form", async () => {
-    for (const { dialog, response } of [
-      { dialog: false, response: { mode: "learner" } },
-      {
-        dialog: true,
-        response: {
-          expiresAt: "2000-01-01T00:00:00.000Z",
-          mode: "guardian",
-        },
-      },
-    ]) {
-      let unlocked = 0;
-      await mountStrict(
-        createElement(UnlockHarness, {
-          api: guardianApi({
-            async unlockGuardianAccess() {
-              return response;
-            },
-          }),
-          dialog,
-          onUnlocked: () => {
-            unlocked += 1;
-          },
-        }),
-      );
-      if (dialog) await click(button("Open guardian mode"));
-      const switchButton = button("Switch to guardian mode");
-      switchButton.focus();
-      await click(switchButton);
-      await waitFor(() =>
-        assert.equal(
-          document.querySelector('[role="alert"]')?.textContent.trim(),
-          "Guardian access could not be checked. Please try again.",
-        ),
-      );
-
-      assert.equal(unlocked, 0);
-      assert.equal(document.activeElement, switchButton);
-      assert.equal(
-        document.querySelector('output[aria-label="Guardian access mode"]')
-          .textContent,
-        "learner",
-      );
-      if (dialog) assert.ok(document.querySelector('[role="dialog"]'));
-
-      await cleanupMountedRoots();
-      document.body.replaceChildren();
-    }
-  });
-
-  it("disables switch controls while pending and submits without credentials", async () => {
-    const attempt = deferred();
-    const passwords = [];
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          unlockGuardianAccess(password) {
-            passwords.push(password);
-            return attempt.promise;
-          },
-        }),
-      }),
-    );
-    const switchButton = button("Switch to guardian mode");
-    switchButton.focus();
-    await act(async () => switchButton.form.requestSubmit());
-
-    await waitFor(() => assert.deepEqual(passwords, [""]));
-    assert.equal(switchButton.form.querySelector("fieldset").disabled, true);
-    assert.match(switchButton.form.textContent, /Switching modes…/);
-    attempt.resolve({
-      expiresAt: "2099-01-01T00:00:00.000Z",
-      mode: "guardian",
-    });
-    await waitFor(() =>
-      assert.equal(
-        document.querySelector('output[aria-label="Guardian access mode"]')
-          .textContent,
-        "guardian",
-      ),
-    );
-  });
-
-  it("renders no password field for a guardian mode switch", async () => {
-    const passwords = [];
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          async unlockGuardianAccess(password) {
-            passwords.push(password);
-            return {
-              expiresAt: "2099-01-01T00:00:00.000Z",
-              mode: "guardian",
-            };
-          },
-        }),
-      }),
-    );
-    const switchButton = button("Switch to guardian mode");
-    assert.equal(document.querySelector('input[name="password"]'), null);
-
-    await act(async () => switchButton.form.requestSubmit());
-
-    assert.deepEqual(passwords, [""]);
-    assert.equal(
-      document.querySelector('output[aria-label="Guardian access mode"]')
-        .textContent,
-      "guardian",
-    );
-  });
-
-  it("announces a deep-link unlock from the stable account shell", async () => {
-    let unlocked = 0;
-    const Provider = createGuardianAccessProvider({
-      api: guardianApi(),
-      schedule: () => () => {},
-    });
-    const TestAuthGate = createAuthGate({
-      client: authClientForHeader(),
-      GuardianAccessBoundary: Provider,
-    });
-    await mountStrict(
-      createElement(
-        TestAuthGate,
-        null,
-        createElement(
-          "main",
-          { "aria-label": "Deep-link guardian unlock" },
-          createElement(GuardianUnlockForm, {
-            onCancel() {},
-            onUnlocked: () => {
-              unlocked += 1;
-            },
-          }),
-        ),
-      ),
-    );
-    await click(button("Switch to guardian mode"));
-    await waitFor(() =>
-      assert.equal(
-        [...document.querySelectorAll('[role="status"]')].filter(
-          (status) =>
-            status.textContent.trim() ===
-            "Guardian mode",
-        ).length,
-        1,
-      ),
-    );
-
-    assert.equal(unlocked, 1);
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    assert.ok(
-      !document
-        .querySelector('main[aria-label="Deep-link guardian unlock"]')
-        .querySelector('[role="status"]'),
-    );
-    assert.ok(button("Profile for Patrick, guardian mode"));
-  });
-
-  it("keeps network failures in learner mode", async () => {
-    await mountStrict(
-      createElement(UnlockHarness, {
-        api: guardianApi({
-          async unlockGuardianAccess() {
-            throw new Error(
-              "check-failed",
-            );
-          },
-        }),
-      }),
-    );
-    await click(button("Switch to guardian mode"));
-    await waitFor(() => assert.ok(document.querySelector('[role="alert"]')));
-
-    assert.equal(
-      document.querySelector('output[aria-label="Guardian access mode"]')
-        .textContent,
-      "learner",
-    );
-  });
-
   it("localizes Guardian access checks but keeps learner checks English", async () => {
     const guardianLoad = deferred();
     await mountStrict(
@@ -1613,22 +1377,37 @@ describe("keyboard accessibility lifecycles", () => {
       document.querySelector("h1")?.textContent.trim(),
       "Checking guardian access…",
     );
-    assert.match(document.body.textContent, /Confirming which profile can use this screen/);
+    assert.match(
+      document.body.textContent,
+      /Confirming which profile can use this screen/,
+    );
     assert.doesNotMatch(document.body.textContent, /正在检查家长访问权限/);
   });
 
-  it("localizes Guardian unlock and adds only a Chinese learner-boundary helper", async () => {
+  it("localizes automatic Guardian recovery without exposing server copy", async () => {
     await mountStrict(
       modeBoundaryHarness({
         guardianAudience: true,
-        api: guardianApi(),
+        api: guardianApi({
+          async unlockGuardianAccess() {
+            throw new Error("SERVER GUARDIAN SENTENCE");
+          },
+        }),
       }),
     );
-    await waitFor(() => button("切换到家长模式"));
-    assert.match(document.body.textContent, /家长工具和学习活动分别保留在不同模式中/);
 
-    await cleanupMountedRoots();
-    document.body.replaceChildren();
+    await waitFor(() =>
+      assert.equal(
+        document.querySelector("h1")?.textContent.trim(),
+        "家长工具未能打开",
+      ),
+    );
+    assert.match(document.body.textContent, /无法检查家长访问权限/);
+    assert.doesNotMatch(document.body.textContent, /SERVER GUARDIAN SENTENCE/);
+    assert.ok(button("重试"));
+  });
+
+  it("keeps the learner boundary English with only its Chinese adult helper", async () => {
     await mountStrict(
       modeBoundaryHarness({
         guardianAudience: false,
@@ -1645,9 +1424,13 @@ describe("keyboard accessibility lifecycles", () => {
       document.querySelector("h1")?.textContent.trim(),
       "Switch to learner mode",
     );
-    assert.match(document.body.textContent, /Learning activities are available in the learner profile/);
+    assert.match(
+      document.body.textContent,
+      /Learning activities are available in the learner profile/,
+    );
     const helper = [...document.querySelectorAll('span[lang="zh-Hans"]')].find(
-      (candidate) => candidate.textContent.trim() === "请家长切换到学习模式后继续。",
+      (candidate) =>
+        candidate.textContent.trim() === "请家长切换到学习模式后继续。",
     );
     assert.ok(helper);
   });
@@ -1669,9 +1452,9 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.ok(button("重试"));
     assert.equal(
-      [...document.querySelectorAll("a")].find(
-        (candidate) => candidate.textContent.trim() === "返回家长中心",
-      )?.getAttribute("href"),
+      [...document.querySelectorAll("a")]
+        .find((candidate) => candidate.textContent.trim() === "返回家长中心")
+        ?.getAttribute("href"),
       "/guardian",
     );
 
@@ -1690,70 +1473,6 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.ok(button("Try again"));
     assert.match(document.body.textContent, /Back to home/);
-  });
-
-  it("focuses the switch action and restores the mode opener on cancel", async () => {
-    await mountStrict(
-      createElement(UnlockHarness, { api: guardianApi(), dialog: true }),
-    );
-    const opener = button("Open guardian mode");
-    opener.focus();
-    await click(opener);
-    const switchButton = button("Switch to guardian mode");
-    assert.equal(
-      document.querySelector('[role="dialog"]').getAttribute("aria-label"),
-      "Switch to guardian mode",
-    );
-    await waitFor(() => assert.equal(document.activeElement, switchButton));
-
-    await click(button("Cancel"));
-    assert.equal(document.querySelector('[role="dialog"]'), null);
-    assert.equal(document.activeElement, opener);
-  });
-
-  it("keeps dialog language control available during a pending unlock", async () => {
-    const attempt = deferred();
-    await mountStrict(
-      createElement(
-        GuardianLanguageProvider,
-        { initialLanguage: "zh-Hans", storage: null },
-        createElement(UnlockHarness, {
-          api: guardianApi({
-            unlockGuardianAccess() {
-              return attempt.promise;
-            },
-          }),
-          dialog: true,
-        }),
-      ),
-    );
-    const opener = button("Open guardian mode");
-    opener.focus();
-    await click(opener);
-    const dialog = document.querySelector('[role="dialog"]');
-    assert.equal(dialog.getAttribute("lang"), "zh-Hans");
-    const switchButton = button("切换到家长模式");
-    await waitFor(() => assert.equal(document.activeElement, switchButton));
-    await act(async () => switchButton.form.requestSubmit());
-    await waitFor(() => assert.match(dialog.textContent, /正在切换模式…/));
-
-    const english = button("English");
-    assert.equal(dialog.contains(english), true);
-    assert.equal(english.closest("fieldset"), null);
-    assert.equal(english.disabled, false);
-    await click(english);
-    assert.equal(document.querySelector('[role="dialog"]'), dialog);
-    assert.equal(dialog.getAttribute("lang"), "en");
-    assert.match(dialog.textContent, /Switching modes…/);
-
-    attempt.reject(new Error("SERVER COPY"));
-    await waitFor(() =>
-      assert.match(dialog.textContent, /Guardian access could not be checked/),
-    );
-    assert.doesNotMatch(dialog.textContent, /SERVER COPY/);
-    await click(button("Cancel"));
-    assert.equal(document.querySelector('[role="dialog"]'), null);
-    assert.equal(document.activeElement, opener);
   });
 
   it("navigates a successful profile-dropdown switch to guardian home", async () => {
@@ -1777,10 +1496,7 @@ describe("keyboard accessibility lifecycles", () => {
 
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.querySelector('[role="menu"]'), null);
-    assert.match(
-      document.body.textContent,
-      /Guardian mode/,
-    );
+    assert.match(document.body.textContent, /Guardian mode/);
   });
 
   it("lets the stable account shell resume a validated Guardian deep link", async () => {
@@ -1797,8 +1513,7 @@ describe("keyboard accessibility lifecycles", () => {
       createElement(
         TestAuthGate,
         {
-          guardianUnlockDestination:
-            "/guardian/stories?section=art#cover",
+          guardianUnlockDestination: "/guardian/dubbing?section=clips#saved",
           navigate: (path) => navigations.push(path),
         },
         "LOCKED GUARDIAN PAGE",
@@ -1811,9 +1526,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("Grown-up accessSwitch modes"));
 
     await waitFor(() =>
-      assert.deepEqual(navigations, [
-        "/guardian/stories?section=art#cover",
-      ]),
+      assert.deepEqual(navigations, ["/guardian/dubbing?section=clips#saved"]),
     );
   });
 
@@ -1865,8 +1578,7 @@ describe("keyboard accessibility lifecycles", () => {
     async function unlock() {
       let guardian = [...document.querySelectorAll("button")].find(
         (candidate) =>
-          candidate.textContent.trim() ===
-          "Grown-up accessSwitch modes",
+          candidate.textContent.trim() === "Grown-up accessSwitch modes",
       );
       if (!guardian) {
         await click(
@@ -1876,10 +1588,7 @@ describe("keyboard accessibility lifecycles", () => {
       }
       await click(guardian);
       await waitFor(() =>
-        assert.equal(
-          liveStatus.textContent.trim(),
-          "Guardian mode",
-        ),
+        assert.equal(liveStatus.textContent.trim(), "Guardian mode"),
       );
     }
 
@@ -1939,7 +1648,8 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("中文"));
 
     assert.equal(
-      document.querySelectorAll('span[role="status"][aria-live="polite"]')
+      document
+        .querySelectorAll('span[role="status"][aria-live="polite"]')
         .item(liveStatuses.length - 1),
       liveStatus,
     );

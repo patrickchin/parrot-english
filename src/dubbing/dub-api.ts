@@ -1,5 +1,10 @@
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 import { DUB_ID, getDubDefinition } from "./rhyme-catalog.ts";
+import {
+  DUB_PEAK_BARS_HEADER,
+  isDubPeakBars,
+  serializeDubPeakBars,
+} from "./dub-waveform.ts";
 
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
@@ -13,7 +18,12 @@ export type DubStatus = {
   consentState: "granted" | "not_granted" | "revoking";
   dubId: string;
   guardianConsentVersion: typeof GUARDIAN_CONSENT_VERSION;
-  lines: Array<{ id: string; recordedAt: string | null; saved: boolean }>;
+  lines: Array<{
+    id: string;
+    peakBars?: readonly number[] | null;
+    recordedAt: string | null;
+    saved: boolean;
+  }>;
   recordingEnabled: boolean;
 };
 
@@ -138,17 +148,30 @@ function isDubStatus(value: unknown, expectedDubId: string): value is DubStatus 
       typeof line.id === "string" &&
       line.id === expectedLineIds[index] &&
       typeof line.saved === "boolean" &&
-      (line.recordedAt === null || typeof line.recordedAt === "string")
+      (line.recordedAt === null || typeof line.recordedAt === "string") &&
+      (
+        !("peakBars" in line)
+        || line.peakBars === null
+        || isDubPeakBars(line.peakBars)
+      )
     )
   );
 }
 
-function isSaveResult(value: unknown): value is { recordedAt: string } {
+function isSaveResult(value: unknown): value is {
+  peakBars?: readonly number[] | null;
+  recordedAt: string;
+} {
   return (
     typeof value === "object" &&
     value !== null &&
     "recordedAt" in value &&
-    typeof value.recordedAt === "string"
+    typeof value.recordedAt === "string" &&
+    (
+      !("peakBars" in value)
+      || value.peakBars === null
+      || isDubPeakBars(value.peakBars)
+    )
   );
 }
 
@@ -242,9 +265,19 @@ export async function loadDubStatus(options: DubRequestOptions = {}) {
 export async function saveDubLine(
   lineId: string,
   blob: Blob,
-  options: DubRequestOptions = {},
+  options: DubRequestOptions & { peakBars?: readonly number[] | null } = {},
 ) {
   const dubId = options.dubId ?? DUB_ID;
+  const serializedPeakBars = options.peakBars == null
+    ? null
+    : serializeDubPeakBars(options.peakBars);
+  if (options.peakBars != null && !serializedPeakBars) {
+    throw new Error(SAVE_FAILURE);
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": blob.type,
+  };
+  if (serializedPeakBars) headers[DUB_PEAK_BARS_HEADER] = serializedPeakBars;
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
@@ -254,9 +287,7 @@ export async function saveDubLine(
     {
       body: blob,
       credentials: "same-origin",
-      headers: {
-        "Content-Type": blob.type,
-      },
+      headers,
       method: "PUT",
       signal: options.signal,
     },

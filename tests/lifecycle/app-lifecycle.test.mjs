@@ -55,6 +55,7 @@ let useLearnerSelection;
 let usePeppaConversation;
 let createAuthGate;
 let createGuardianAccessProvider;
+let notifyGuardianAccessRequired;
 let useGuardianAccess;
 let GuardianDashboard;
 let GuardianLearnerProfiles;
@@ -64,6 +65,7 @@ let RouteFocusManager;
 let useAccountExperience;
 let useClearProfileAccountAction;
 let useProfileAccountAction;
+let dubDefinitions;
 let firstLesson;
 let firstLessonId;
 
@@ -78,8 +80,11 @@ before(async () => {
     useClearProfileAccountAction,
     useProfileAccountAction,
   } = await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
-  ({ createGuardianAccessProvider, useGuardianAccess } =
-    await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
+  ({
+    createGuardianAccessProvider,
+    notifyGuardianAccessRequired,
+    useGuardianAccess,
+  } = await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
   ({ LearnerProfileAcknowledgment } = await vite.ssrLoadModule(
     "/src/learner-profile/LearnerProfileAcknowledgment.tsx",
   ));
@@ -91,10 +96,9 @@ before(async () => {
     LearnerSelectionProvider,
     useLearnerProfile,
     useLearnerSelection,
-  } =
-    await vite
-      .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
-      .catch(() => ({})));
+  } = await vite
+    .ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx")
+    .catch(() => ({})));
   ({ usePeppaConversation } = await vite.ssrLoadModule(
     "/src/conversation/usePeppaConversation.ts",
   ));
@@ -111,6 +115,9 @@ before(async () => {
     .catch(() => ({})));
   ({ GuardianLearnerProfiles } = await vite.ssrLoadModule(
     "/src/learner-profile/GuardianLearnerProfiles.tsx",
+  ));
+  ({ DUB_DEFINITIONS: dubDefinitions } = await vite.ssrLoadModule(
+    "/src/dubbing/rhyme-catalog.ts",
   ));
   const catalog = await vite.ssrLoadModule("/src/lessons/lesson-catalog.ts");
   firstLesson = catalog.LESSONS[0].lesson;
@@ -646,8 +653,7 @@ function SelectionActionHarness({
     createAndSelectLearner,
     deleteLearner,
     selectLearner,
-  } =
-    useLearnerSelection();
+  } = useLearnerSelection();
   const mutateLearner =
     action === "create"
       ? () => createAndSelectLearner(newLearnerName, ["learner-mia"])
@@ -656,7 +662,7 @@ function SelectionActionHarness({
             typeof deleteLearner === "function"
               ? deleteLearner(profileId)
               : Promise.reject(new Error("Learner deletion is unavailable."))
-      : () => selectLearner(profileId);
+        : () => selectLearner(profileId);
   return createElement(
     "section",
     null,
@@ -839,7 +845,10 @@ function AccountTransitionLearnerSelectionHarness({
   );
 }
 
-function installSharedBroadcastChannels({ beforeDelivery, deliver = true } = {}) {
+function installSharedBroadcastChannels({
+  beforeDelivery,
+  deliver = true,
+} = {}) {
   const channels = new Map();
   const messages = [];
   let messagesPosted = 0;
@@ -1068,6 +1077,11 @@ function RouterHistoryControls() {
     ),
     createElement(
       "button",
+      { onClick: () => navigate("/profile"), type: "button" },
+      "Open learner profile",
+    ),
+    createElement(
+      "button",
       {
         onClick: () =>
           navigate("/guardian/profile/setup?redo=1&returnTo=%2Fguardian"),
@@ -1157,39 +1171,45 @@ function modeRoutesInMemory({
           null,
           createElement(Route, {
             element: createElement(
-              "main",
-              null,
-              createElement("h1", null, "Learner home"),
+              LearnerModeBoundary,
+              { onBeforeNavigate },
+              createElement(
+                "main",
+                null,
+                createElement("h1", null, "Learner home"),
+              ),
             ),
             path: "/",
           }),
-          createElement(Route, {
-            element: createElement(GuardianModeBoundary, {
-              onBeforeNavigate,
-            }),
-          },
-          createElement(Route, {
-            element: createElement(
-              "main",
-              null,
-              createElement("h1", null, "Learner profile"),
-              createElement("p", null, "Save changes"),
-              createElement("p", null, "Redo setup questions"),
-            ),
-            path: "/profile",
-          }),
-          createElement(Route, {
-            element: createElement(
-              Fragment,
-              null,
-              createElement(RouteFocusManager),
-              createElement(GuardianDashboard, {
-                learnerName,
+          createElement(
+            Route,
+            {
+              element: createElement(GuardianModeBoundary, {
                 onBeforeNavigate,
               }),
-            ),
-            path: "/guardian",
-          }),
+            },
+            createElement(Route, {
+              element: createElement(
+                "main",
+                null,
+                createElement("h1", null, "Learner profile"),
+                createElement("p", null, "Save changes"),
+                createElement("p", null, "Redo setup questions"),
+              ),
+              path: "/profile",
+            }),
+            createElement(Route, {
+              element: createElement(
+                Fragment,
+                null,
+                createElement(RouteFocusManager),
+                createElement(GuardianDashboard, {
+                  learnerName,
+                  onBeforeNavigate,
+                }),
+              ),
+              path: "/guardian",
+            }),
           ),
           createElement(
             Route,
@@ -1247,7 +1267,11 @@ async function confirmModeSwitch() {
   await click(learnerButton);
 }
 
-function authenticatedApplicationInMemory({ api, initialEntry }) {
+function authenticatedApplicationInMemory({
+  api,
+  initialEntry,
+  onExitLessonRoute = () => {},
+}) {
   const Provider = createGuardianAccessProvider({
     api,
     schedule: () => () => {},
@@ -1266,7 +1290,7 @@ function authenticatedApplicationInMemory({ api, initialEntry }) {
         MemoryRouter,
         { initialEntries: [initialEntry] },
         createElement(AuthenticatedApplication, {
-          onExitLessonRoute() {},
+          onExitLessonRoute,
         }),
         createElement(RouterHistoryControls),
       ),
@@ -1305,20 +1329,57 @@ function RegisteredLearnerNameHarness() {
   );
 }
 
-function LearnerGateAccountExperienceHarness() {
+function LearnerGateAccountExperienceHarness({
+  guardianDashboardRoute = true,
+  guardianRoute = true,
+  guardianAccessOperations = [],
+  onBeforeLearnerSelectionNavigate = () => {},
+} = {}) {
   const [experience, setExperience] = useState(null);
+  const [Provider] = useState(() =>
+    createGuardianAccessProvider({
+      api: {
+        async loadGuardianAccess() {
+          return { mode: "learner" };
+        },
+        async lockGuardianAccess() {
+          guardianAccessOperations.push("lock");
+          throw new Error("Learner switching must not lock Guardian access.");
+        },
+        async unlockGuardianAccess() {
+          return { mode: "guardian" };
+        },
+      },
+      schedule: () => () => {},
+    }),
+  );
 
   function ReadExperience() {
     const accountExperience = useAccountExperience();
+    const guardianAccess = useGuardianAccess();
     return createElement(
-      "output",
-      {
-        "aria-label": "Gate account experience",
-        "data-has-active-learner": String(
-          accountExperience?.hasActiveLearner ?? false,
-        ),
-      },
-      accountExperience?.learnerName ?? "Learner",
+      Fragment,
+      null,
+      createElement(
+        "output",
+        {
+          "aria-label": "Gate account experience",
+          "data-has-active-learner": String(
+            accountExperience?.hasActiveLearner ?? false,
+          ),
+          "data-mode": guardianAccess.mode,
+        },
+        accountExperience?.learnerName ?? "Learner",
+      ),
+      createElement(
+        "button",
+        {
+          disabled: !accountExperience?.onOpenLearnerSwitcher,
+          onClick: accountExperience?.onOpenLearnerSwitcher,
+          type: "button",
+        },
+        "Open learner switcher",
+      ),
     );
   }
 
@@ -1326,23 +1387,36 @@ function LearnerGateAccountExperienceHarness() {
     AccountActionProvider,
     { profileAction: experience, setProfileAction: setExperience },
     createElement(
-      LearnerProfileGate,
-      {
-        completedLearnerProfileFallback: createElement("p", null, "HOME"),
-        guardianDashboardRoute: true,
-        guardianRoute: true,
-        isConversationRoute: false,
-        isLearnerProfileRoute: false,
-        isProfileRoute: false,
-        learnerProfileFallback: createElement("p", null, "SETUP"),
-        onCloseProfileRoute() {},
-        onConversationCompleted() {},
-        onOpenLessons() {},
-        onOpenProfileRoute() {},
-      },
-      createElement("p", null, "GUARDIAN DASHBOARD"),
+      Provider,
+      { sessionIdentity: "user-1" },
+      createElement(
+        Fragment,
+        null,
+        createElement(
+          MemoryRouter,
+          null,
+          createElement(
+            LearnerProfileGate,
+            {
+              completedLearnerProfileFallback: createElement("p", null, "HOME"),
+              guardianDashboardRoute,
+              guardianRoute,
+              isConversationRoute: false,
+              isLearnerProfileRoute: false,
+              isProfileRoute: false,
+              learnerProfileFallback: createElement("p", null, "SETUP"),
+              onBeforeLearnerSelectionNavigate,
+              onCloseProfileRoute() {},
+              onConversationCompleted() {},
+              onOpenLessons() {},
+              onOpenProfileRoute() {},
+            },
+            createElement("p", null, "GUARDIAN DASHBOARD"),
+          ),
+        ),
+        createElement(ReadExperience),
+      ),
     ),
-    createElement(ReadExperience),
   );
 }
 
@@ -1522,7 +1596,7 @@ function createSessionClient(initialState) {
 }
 
 describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
-  it("redirects an authenticated login alias before learner-profile loading", async () => {
+  it("redirects an authenticated login alias to learner home before profile loading", async () => {
     const learnerProfile = deferred();
     const learnerProfileRequestRoutes = [];
     const api = {
@@ -1557,9 +1631,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() =>
-      assert.equal(currentRoute().path, "/guardian/stories?section=art#cover"),
-    );
+    await waitFor(() => assert.equal(currentRoute().path, "/"));
     await waitFor(() => assert.ok(learnerProfileRequestRoutes.length > 0));
     assert.equal(
       learnerProfileRequestRoutes.some((route) => route.startsWith("/login")),
@@ -1567,7 +1639,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       "The login alias must redirect before learner-profile requests begin.",
     );
     learnerProfile.resolve();
-    await waitFor(() => text(/Story settings/));
+    await waitFor(() => text(/Switch to learner mode/));
   });
 
   it("returns unknown Guardian URLs to the Guardian dashboard", async () => {
@@ -2256,7 +2328,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       authenticatedApplicationInMemory({
         api,
-        initialEntry: "/guardian/stories",
+        initialEntry: "/guardian/dubbing",
       }),
     );
 
@@ -2281,28 +2353,142 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
   });
 
-  it("registers the actual name for an incomplete active learner", async () => {
+  it("registers the actual name and switcher for an incomplete active learner", async () => {
+    const operations = [];
+    const roster = {
+      activeProfileId: "learner-bob",
+      profiles: [
+        {
+          createdAt: "2026-09-01T08:00:00.000Z",
+          deletionPending: false,
+          id: "learner-bob",
+          name: "Bob",
+          profileStatus: "in_progress",
+        },
+        {
+          createdAt: "2026-09-01T08:01:00.000Z",
+          deletionPending: false,
+          id: "learner-mary",
+          name: "Mary",
+          profileStatus: "completed",
+        },
+      ],
+    };
     globalThis.fetch = async (path, init = {}) => {
-      assert.equal(path, "/api/learner-profile");
-      assert.equal(init.method, "GET");
-      return json(
-        fullLearnerProfileState({
-          profile: {
-            ...fullLearnerProfileState().profile,
-            id: "learner-ava",
-            name: "Ava",
-          },
-        }),
-      );
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        const isMaryActive = roster.activeProfileId === "learner-mary";
+        return json(
+          fullLearnerProfileState({
+            profile: {
+              ...fullLearnerProfileState().profile,
+              id: isMaryActive ? "learner-mary" : "learner-bob",
+              name: isMaryActive ? "Mary" : "Bob",
+            },
+          }),
+        );
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json(roster);
+      }
+      if (
+        path === "/api/learner-profiles/learner-mary/active" &&
+        init.method === "PUT"
+      ) {
+        operations.push("select:learner-mary");
+        roster.activeProfileId = "learner-mary";
+        return json(roster);
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
 
-    await mountStrict(createElement(LearnerGateAccountExperienceHarness));
+    await mountStrict(
+      createElement(LearnerGateAccountExperienceHarness, {
+        guardianAccessOperations: operations,
+        guardianDashboardRoute: false,
+        guardianRoute: false,
+        onBeforeLearnerSelectionNavigate() {
+          operations.push("before-navigate");
+        },
+      }),
+    );
     await waitFor(() => {
       const experience = output("Gate account experience");
-      assert.equal(experience.textContent, "Ava");
+      assert.equal(experience.textContent, "Bob");
       assert.equal(experience.getAttribute("data-has-active-learner"), "true");
-      text(/GUARDIAN DASHBOARD/);
+      assert.equal(experience.getAttribute("data-mode"), "learner");
     });
+    const opener = button("Open learner switcher");
+    assert.equal(opener.disabled, false);
+    await click(opener);
+    await waitFor(() => text(/Who is learning now\?/));
+    assert.ok(document.querySelector('[role="dialog"]'));
+    await click(button("Cancel"));
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+
+    await click(opener);
+    await waitFor(() => button("Start learner mode as ⁨Mary⁩"));
+    await click(button("Start learner mode as ⁨Mary⁩"));
+    await waitFor(() => {
+      assert.equal(document.querySelector('[role="dialog"]'), null);
+      assert.equal(output("Gate account experience").textContent, "Mary");
+      assert.deepEqual(operations, ["select:learner-mary", "before-navigate"]);
+    });
+  });
+
+  it("closes an old learner switcher when revalidation requires learner selection", async () => {
+    let selectionRequired = false;
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        if (selectionRequired) return json({ mode: "selection-required" });
+        return json(
+          fullLearnerProfileState({
+            profile: {
+              ...fullLearnerProfileState().profile,
+              id: "learner-bob",
+              name: "Bob",
+            },
+          }),
+        );
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        if (selectionRequired) {
+          return json({ activeProfileId: null, profiles: [] });
+        }
+        return json({
+          activeProfileId: "learner-bob",
+          profiles: [
+            {
+              createdAt: "2026-09-01T08:00:00.000Z",
+              deletionPending: false,
+              id: "learner-bob",
+              name: "Bob",
+              profileStatus: "completed",
+            },
+          ],
+        });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      createElement(LearnerGateAccountExperienceHarness, {
+        guardianDashboardRoute: false,
+        guardianRoute: false,
+      }),
+    );
+    await waitFor(() =>
+      assert.equal(output("Gate account experience").textContent, "Bob"),
+    );
+    await click(button("Open learner switcher"));
+    await waitFor(() => button("Start learner mode as ⁨Bob⁩"));
+
+    selectionRequired = true;
+    await act(async () => window.dispatchEvent(new window.Event("focus")));
+
+    assert.equal(document.querySelector('[role="dialog"]'), null);
+    noText(/Start learner mode as ⁨Bob⁩/);
+    await waitFor(() => text(/Who is learning now\?/));
+    text(/Add a learner before switching to learner mode/);
   });
 
   it("redirects bypass-only Guardian pages to learner selection without rendering profile consumers", async () => {
@@ -2333,17 +2519,18 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await mountStrict(
       authenticatedApplicationInMemory({
         api,
-        initialEntry: "/guardian/stories",
+        initialEntry: "/guardian/dubbing",
       }),
     );
     await waitFor(() => {
       assert.equal(currentRoute().path, "/guardian/learners");
       text(/Manage learners/);
     });
-    noText(/Story settings/);
+    noText(/Voice dubbing/);
   });
 
-  it("locked guardian routes render only the mode-switch screen", async () => {
+  it("locked guardian routes switch modes automatically without rendering a prompt", async () => {
+    let unlockCalls = 0;
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2354,6 +2541,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return { mode: "learner" };
           },
           async unlockGuardianAccess() {
+            unlockCalls += 1;
             return {
               expiresAt: "2099-01-01T00:00:00.000Z",
               mode: "guardian",
@@ -2364,8 +2552,47 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => text(/Switch to guardian mode/));
-    noText(/Save changes|Redo setup questions/);
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => text(/Save changes/));
+    noText(/Switch to guardian mode/);
+    assert.equal(currentRoute().path, "/profile");
+  });
+
+  it("keeps an automatic Guardian access failure on the requested route and retries", async () => {
+    let unlockCalls = 0;
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            unlockCalls += 1;
+            if (unlockCalls === 1) {
+              throw new Error(
+                "Guardian access could not be checked. Please try again.",
+              );
+            }
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: "/profile",
+      }),
+    );
+
+    await waitFor(() => text(/Guardian tools did not open/));
+    assert.equal(currentRoute().path, "/profile");
+    noText(/Save changes|Switch to guardian mode/);
+
+    await click(button("Try again"));
+    await waitFor(() => text(/Save changes/));
+    assert.equal(unlockCalls, 2);
     assert.equal(currentRoute().path, "/profile");
   });
 
@@ -2424,7 +2651,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     noText(/Save changes|Redo setup questions|Switch to guardian mode/);
   });
 
-  it("resumes a locked guardian deep link at the same URL and cancels home", async () => {
+  it("resumes a locked guardian deep link automatically at the same URL", async () => {
     const api = {
       async loadGuardianAccess() {
         return { mode: "learner" };
@@ -2441,22 +2668,14 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     };
     await mountStrict(modeRoutesInMemory({ api, initialEntry: "/profile" }));
-    await waitFor(() => text(/Switch to guardian mode/));
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    await click(button("Switch to guardian mode"));
     await waitFor(() => text(/Save changes/));
+    noText(/Switch to guardian mode/);
     assert.equal(currentRoute().path, "/profile");
-
-    await cleanupMountedRoots();
-    document.body.replaceChildren();
-    await mountStrict(modeRoutesInMemory({ api, initialEntry: "/profile" }));
-    await waitFor(() => text(/Switch to guardian mode/));
-    await click(button("Cancel"));
-    await waitFor(() => assert.equal(currentRoute().path, "/"));
   });
 
-  it("replaces expired guardian content with the same-URL unlock screen", async () => {
+  it("restores expired guardian content automatically at the same URL", async () => {
     let expire = () => assert.fail("Expected guardian expiry to be scheduled.");
+    let unlockCalls = 0;
     await mountStrict(
       modeRoutesInMemory({
         api: {
@@ -2470,7 +2689,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return { mode: "learner" };
           },
           async unlockGuardianAccess() {
-            return { mode: "learner" };
+            unlockCalls += 1;
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
           },
         },
         initialEntry: "/profile",
@@ -2483,9 +2706,58 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     await waitFor(() => text(/Save changes/));
     await act(async () => expire());
-    await waitFor(() => text(/Switch to guardian mode/));
-    noText(/Save changes|Redo setup questions/);
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => text(/Save changes/));
+    noText(/Switch to guardian mode/);
     assert.equal(currentRoute().path, "/profile");
+  });
+
+  it("stops automatic recovery after a protected route rejects the refreshed access", async () => {
+    let serverMode = "guardian";
+    let unlockCalls = 0;
+    await mountStrict(
+      modeRoutesInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return serverMode === "guardian"
+              ? {
+                  expiresAt: "2099-01-01T00:00:00.000Z",
+                  mode: "guardian",
+                }
+              : { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            serverMode = "learner";
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            unlockCalls += 1;
+            serverMode = "guardian";
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
+          },
+        },
+        initialEntry: "/profile",
+      }),
+    );
+    await waitFor(() => text(/Save changes/));
+
+    await act(async () => notifyGuardianAccessRequired());
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => text(/Save changes/));
+
+    await act(async () => notifyGuardianAccessRequired());
+    await waitFor(() => text(/Guardian tools did not open/));
+    await flush();
+    await flush();
+    assert.equal(unlockCalls, 1);
+    assert.equal(currentRoute().path, "/profile");
+
+    await click(button("Try again"));
+    await waitFor(() => assert.equal(unlockCalls, 2));
+    await waitFor(() => text(/Save changes/));
   });
 
   it("focuses the guardian dashboard heading after access resolves", async () => {
@@ -2552,9 +2824,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(currentRoute().path, "/lessons");
   });
 
-  it("dashboard awaits lock and exits route work before switching profiles", async () => {
+  it("dashboard awaits lock and allows a later deliberate Guardian route", async () => {
     const lock = deferred();
     const exitRoutes = [];
+    let unlockCalls = 0;
     installModeSwitchRosterFetch();
     await mountStrict(
       modeRoutesInMemory({
@@ -2569,7 +2842,11 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             return lock.promise;
           },
           async unlockGuardianAccess() {
-            return { mode: "learner" };
+            unlockCalls += 1;
+            return {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            };
           },
         },
         initialEntry: "/guardian",
@@ -2586,7 +2863,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     await act(async () => lock.resolve({ mode: "learner" }));
     await waitFor(() => assert.equal(currentRoute().path, "/"));
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
     assert.deepEqual(exitRoutes, ["/guardian"]);
+    assert.equal(unlockCalls, 0);
+    text(/Learner home/);
+
+    await click(button("Open learner profile"));
+    await waitFor(() => assert.equal(currentRoute().path, "/profile"));
+    await waitFor(() => text(/Save changes/));
+    assert.equal(unlockCalls, 1);
   });
 
   it("keeps loading visible until the StrictMode onboarding request resolves", async () => {
@@ -3034,11 +3319,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(
-          globalThis,
-          "crypto",
-          originalCryptoDescriptor,
-        );
+        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
       } else {
         delete globalThis.crypto;
       }
@@ -3137,11 +3418,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = SharedBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(
-          globalThis,
-          "crypto",
-          originalCryptoDescriptor,
-        );
+        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
       } else {
         delete globalThis.crypto;
       }
@@ -3244,9 +3521,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       path: "/api/learner-profiles/learner-bob",
       response: {
         activeProfileId: "learner-mia",
-        profiles: [
-          learnerRosterProfile({ id: "learner-mia", name: "Mary" }),
-        ],
+        profiles: [learnerRosterProfile({ id: "learner-mia", name: "Mary" })],
       },
     },
   ]) {
@@ -3591,10 +3866,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             output(`${creationCase.label} active learner`).textContent,
             "none",
           );
-          assert.deepEqual(
-            fullProfileIds.slice(initialFullProfileReads),
-            [],
-          );
+          assert.deepEqual(fullProfileIds.slice(initialFullProfileReads), []);
           assert.equal(button(creationCase.label).disabled, false);
         }
         assert.equal(rosterReads, 1);
@@ -3667,7 +3939,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
       await waitFor(() =>
         assert.equal(
-          output("Create Rose after reconciliation mutation result").textContent,
+          output("Create Rose after reconciliation mutation result")
+            .textContent,
           "resolved",
         ),
       );
@@ -3896,11 +4169,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = SharedBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(
-          globalThis,
-          "crypto",
-          originalCryptoDescriptor,
-        );
+        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
       } else {
         delete globalThis.crypto;
       }
@@ -3986,9 +4255,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         rosterReads += 1;
         return json({
           activeProfileId: "learner-bob",
-          profiles: [
-            learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
-          ],
+          profiles: [learnerRosterProfile({ id: "learner-bob", name: "Bob" })],
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -4078,11 +4345,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = ImmediateChangeBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(
-          globalThis,
-          "crypto",
-          originalCryptoDescriptor,
-        );
+        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
       } else {
         delete globalThis.crypto;
       }
@@ -4120,9 +4383,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     heldRoster.resolve(
       json({
         activeProfileId: "learner-bob",
-        profiles: [
-          learnerRosterProfile({ id: "learner-bob", name: "Bob" }),
-        ],
+        profiles: [learnerRosterProfile({ id: "learner-bob", name: "Bob" })],
       }),
     );
     await waitFor(() =>
@@ -4217,10 +4478,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       document.querySelector("#profile-name")?.value,
       "Unsaved Mia name",
     );
-    assert.equal(
-      learnerProfileRequests,
-      initialLearnerProfileRequests + 1,
-    );
+    assert.equal(learnerProfileRequests, initialLearnerProfileRequests + 1);
     assert.equal(profileEditorRequests, initialProfileEditorRequests);
   });
 
@@ -4644,7 +4902,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ) {
         operations.push("select");
         selectedProfileId = "learner-noah";
-        return json({ activeProfileId: selectedProfileId, profiles: summaries });
+        return json({
+          activeProfileId: selectedProfileId,
+          profiles: summaries,
+        });
       }
       if (
         path === "/api/learner-profiles/learner-noah" &&
@@ -4674,10 +4935,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         output("Queued learner mutation result").textContent,
         "resolved",
       );
-      assert.equal(
-        output("Queued learner active learner").textContent,
-        "none",
-      );
+      assert.equal(output("Queued learner active learner").textContent, "none");
     });
     assert.deepEqual(operations, ["select", "delete"]);
   });
@@ -4720,7 +4978,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
         rosterReads += 1;
-        return json({ activeProfileId: "learner-mia", profiles: [profiles[0]] });
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: [profiles[0]],
+        });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
     };
@@ -4781,8 +5042,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
             profile: {
               ...completedLearnerProfileState().profile,
               id: currentActiveProfileId,
-              name:
-                currentActiveProfileId === "learner-noah" ? "Noah" : "Mia",
+              name: currentActiveProfileId === "learner-noah" ? "Noah" : "Mia",
             },
           });
         }
@@ -4980,9 +5240,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
       await waitFor(() =>
         assert.equal(
-          output("Pending deletion sibling active learner").closest(
-            "[hidden]",
-          ),
+          output("Pending deletion sibling active learner").closest("[hidden]"),
           null,
         ),
       );
@@ -5027,7 +5285,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
         rosterReads += 1;
-        return json({ activeProfileId: "learner-mia", profiles: rosterProfiles });
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: rosterProfiles,
+        });
       }
       if (
         path === "/api/learner-profiles/learner-noah" &&
@@ -5065,16 +5326,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.ok(source);
     assert.ok(peer);
     await waitFor(() => {
-      assert.ok(
-        source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
-      );
+      assert.ok(source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'));
       assert.ok(peer.querySelector('button[aria-label="Delete ⁨Noah⁩"]'));
     });
     const initialRosterReads = rosterReads;
 
-    await click(
-      source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
-    );
+    await click(source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'));
     const dialog = source.querySelector('[role="dialog"]');
     assert.ok(dialog);
     const confirm = [...dialog.querySelectorAll("button")].find(
@@ -5131,7 +5388,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         });
       }
       if (path === "/api/learner-profiles" && init.method === "GET") {
-        return json({ activeProfileId: "learner-mia", profiles: rosterProfiles });
+        return json({
+          activeProfileId: "learner-mia",
+          profiles: rosterProfiles,
+        });
       }
       if (
         path === "/api/learner-profiles/learner-noah" &&
@@ -5169,13 +5429,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.ok(source);
     assert.ok(peer);
     await waitFor(() =>
-      assert.ok(
-        source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
-      ),
+      assert.ok(source.querySelector('button[aria-label="Delete ⁨Noah⁩"]')),
     );
-    await click(
-      source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'),
-    );
+    await click(source.querySelector('button[aria-label="Delete ⁨Noah⁩"]'));
     const dialog = source.querySelector('[role="dialog"]');
     assert.ok(dialog);
     const confirm = [...dialog.querySelectorAll("button")].find(
@@ -5192,9 +5448,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => {
       assert.equal(peer.closest("[hidden]"), null);
       assert.ok(
-        peer.querySelector(
-          'button[aria-label="Finish deleting ⁨Noah⁩"]',
-        ),
+        peer.querySelector('button[aria-label="Finish deleting ⁨Noah⁩"]'),
       );
       assert.equal(source.querySelector('[role="dialog"]'), dialog);
     });
@@ -5221,11 +5475,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     window.BroadcastChannel = SharedBroadcastChannel;
     t.after(() => {
       if (originalCryptoDescriptor) {
-        Object.defineProperty(
-          globalThis,
-          "crypto",
-          originalCryptoDescriptor,
-        );
+        Object.defineProperty(globalThis, "crypto", originalCryptoDescriptor);
       } else {
         delete globalThis.crypto;
       }
@@ -5284,9 +5534,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       const deleteButton = button("Delete with no authoritative response");
       assert.equal(deleteButton.closest("[inert]"), null);
       assert.equal(
-        output(
-          "Delete with no authoritative response active learner",
-        ).textContent,
+        output("Delete with no authoritative response active learner")
+          .textContent,
         "learner-mia",
       );
     });
@@ -5786,9 +6035,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         rosterReads += 1;
         return json({
           activeProfileId: "learner-1",
-          profiles: [
-            learnerRosterProfile({ id: "learner-1", name: "Mia" }),
-          ],
+          profiles: [learnerRosterProfile({ id: "learner-1", name: "Mia" })],
         });
       }
       throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -6064,6 +6311,80 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       assert.equal(output("Active learner selection").textContent, "none"),
     );
     noText(/Questions are taking a break|Mia/);
+  });
+
+  it("requires learner selection and resumes the validated learner target without locking learner mode", async () => {
+    const operations = [];
+    let activeProfileId = null;
+    const rosterProfiles = [
+      {
+        age: 7,
+        createdAt: "2026-08-29T08:01:00.000Z",
+        deletionPending: false,
+        id: "learner-noah",
+        name: "Mary",
+        profileStatus: "completed",
+      },
+    ];
+    globalThis.fetch = async (path, init = {}) => {
+      if (path === "/api/learner-profile" && init.method === "GET") {
+        return activeProfileId === null
+          ? json({ error: "learner_selection_required" }, 409)
+          : json({
+              ...completedLearnerProfileState(),
+              profile: {
+                ...completedLearnerProfileState().profile,
+                id: activeProfileId,
+                name: "Mary",
+              },
+            });
+      }
+      if (path === "/api/learner-profiles" && init.method === "GET") {
+        return json({ activeProfileId, profiles: rosterProfiles });
+      }
+      if (
+        path === "/api/learner-profiles/learner-noah/active" &&
+        init.method === "PUT"
+      ) {
+        operations.push("select:learner-noah");
+        activeProfileId = "learner-noah";
+        return json({ activeProfileId, profiles: rosterProfiles });
+      }
+      throw new Error(`Unexpected request: ${init.method} ${path}`);
+    };
+
+    await mountStrict(
+      authenticatedApplicationInMemory({
+        api: {
+          async loadGuardianAccess() {
+            return { mode: "learner" };
+          },
+          async lockGuardianAccess() {
+            operations.push("lock");
+            return { mode: "learner" };
+          },
+          async unlockGuardianAccess() {
+            return { mode: "guardian" };
+          },
+        },
+        initialEntry: "/lessons?from=picker#resume",
+        onExitLessonRoute() {
+          operations.push("before-navigate");
+        },
+      }),
+    );
+
+    await waitFor(() => button("Start learner mode as ⁨Mary⁩"));
+    assert.equal(document.querySelectorAll("h1").length, 1);
+    text(/Who is learning now\?/);
+    noText(/Ask a grown-up|Cancel/);
+
+    await click(button("Start learner mode as ⁨Mary⁩"));
+
+    await waitFor(() => {
+      assert.equal(currentRoute().path, "/lessons?from=picker#resume");
+      assert.deepEqual(operations, ["select:learner-noah", "before-navigate"]);
+    });
   });
 
   it("aborts and fences an older roster reload before committing the newer learner", async () => {
@@ -6348,15 +6669,21 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/Learner details/));
     assert.equal(document.querySelector("#profile-name")?.value, "Noah");
     assert.equal(currentRoute().path, "/guardian/learners/learner-noah");
-    assert.equal(requests.some((request) => request.includes("/active")), false);
+    assert.equal(
+      requests.some((request) => request.includes("/active")),
+      false,
+    );
   });
 
-  it("turns an authoritative targeted dubbing 403 into a same-URL unlock boundary", async () => {
+  it("recovers an authoritative targeted dubbing 403 automatically at the same URL", async () => {
     let guardianMode = "guardian";
     let targetedLoads = 0;
+    let unlockCalls = 0;
     const deepLink =
       "/guardian/dubbing?learnerProfileId=learner-noah&from=deep-link";
     globalThis.fetch = async (path, init = {}) => {
+      const requestUrl = new URL(path, "https://example.test");
+      const dubId = requestUrl.pathname.match(/^\/api\/dubs\/([^/]+)$/)?.[1];
       if (path === "/api/learner-profile" && init.method === "GET") {
         return json(completedLearnerProfileState());
       }
@@ -6384,21 +6711,26 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         });
       }
       if (
-        path ===
-          "/api/dubs/five-little-ducks-v2?learnerProfileId=learner-noah" &&
-        (init.method ?? "GET") === "GET"
+        dubId &&
+        requestUrl.searchParams.get("learnerProfileId") === "learner-noah"
       ) {
         targetedLoads += 1;
         if (targetedLoads === 1) {
           guardianMode = "learner";
           return json({ error: "guardian_required" }, 403);
         }
+        const definition = dubDefinitions.find(({ id }) => id === dubId);
+        assert.ok(definition);
         return json({
           complete: false,
           consentState: "not_granted",
-          dubId: "five-little-ducks-v2",
+          dubId,
           guardianConsentVersion: "guardian-voice-r2-v2",
-          lines: [],
+          lines: definition.lines.map(({ id }) => ({
+            id,
+            recordedAt: null,
+            saved: false,
+          })),
           recordingEnabled: false,
         });
       }
@@ -6422,6 +6754,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
           },
           async unlockGuardianAccess(password) {
             assert.equal(password, "");
+            unlockCalls += 1;
             guardianMode = "guardian";
             return {
               expiresAt: "2099-01-01T00:00:00.000Z",
@@ -6433,16 +6766,12 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
 
-    await waitFor(() => text(/Switch to guardian mode/));
+    await waitFor(() => assert.equal(unlockCalls, 1));
+    await waitFor(() => assert.ok(targetedLoads > 1));
+    await waitFor(() => noText(/Your saved dub could not be loaded/));
+    text(/Editing settings for ⁨Noah⁩/);
     assert.equal(currentRoute().path, deepLink);
-    noText(/Your saved dub could not be loaded/);
-    const loadsBeforeUnlock = targetedLoads;
-
-    assert.equal(document.querySelector('input[name="password"]'), null);
-    await click(button("Switch to guardian mode"));
-    await waitFor(() => text(/Editing settings for ⁨Noah⁩/));
-    assert.equal(currentRoute().path, deepLink);
-    assert.ok(targetedLoads > loadsBeforeUnlock);
+    noText(/Switch to guardian mode/);
   });
 
   it("returns structurally matched invalid learner details to Manage learners before the learner-mode boundary", async () => {
@@ -10811,9 +11140,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       await flush();
     });
 
-    await waitFor(() =>
-      text(/The learner profile could not be saved/),
-    );
+    await waitFor(() => text(/The learner profile could not be saved/));
     text(/Learner details/);
     noText(/Leo's saved response/);
   });
@@ -11091,18 +11418,15 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       method: "DELETE",
     });
     assert.equal(response.status, 503);
-    currentRoster = await (
-      await window.fetch("/api/learner-profiles")
-    ).json();
+    currentRoster = await (await window.fetch("/api/learner-profiles")).json();
     assert.equal(
       currentRoster.profiles.find(({ id }) => id === "learner-noah")
         ?.deletionPending,
       true,
     );
-    response = await window.fetch(
-      "/api/learner-profiles/learner-noah/active",
-      { method: "PUT" },
-    );
+    response = await window.fetch("/api/learner-profiles/learner-noah/active", {
+      method: "PUT",
+    });
     assert.equal(response.status, 404);
 
     response = await window.fetch("/api/learner-profiles/learner-noah", {
@@ -11174,10 +11498,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     miaSession.failNextLearnerDelete();
-    response = await miaSession.fetch(
-      "/api/learner-profiles/learner-noah",
-      { method: "DELETE" },
-    );
+    response = await miaSession.fetch("/api/learner-profiles/learner-noah", {
+      method: "DELETE",
+    });
     assert.equal(response.status, 503);
     const pendingForMia = await (
       await miaSession.fetch("/api/learner-profiles")
@@ -11198,10 +11521,9 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
     assert.equal(response.status, 404);
 
-    response = await miaSession.fetch(
-      "/api/learner-profiles/learner-noah",
-      { method: "DELETE" },
-    );
+    response = await miaSession.fetch("/api/learner-profiles/learner-noah", {
+      method: "DELETE",
+    });
     assert.equal(response.status, 200);
     assert.deepEqual(
       (await response.json()).profiles.map(({ id }) => id),
@@ -11210,15 +11532,13 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(noahSession.snapshot().activeProfileId, null);
     assert.equal(miaSession.snapshot().activeProfileId, "learner-mia");
 
-    response = await noahSession.fetch(
-      "/api/learner-profiles/learner-noah",
-      { method: "DELETE" },
-    );
+    response = await noahSession.fetch("/api/learner-profiles/learner-noah", {
+      method: "DELETE",
+    });
     assert.equal(response.status, 404);
-    response = await miaSession.fetch(
-      "/api/learner-profiles/learner-mia",
-      { method: "DELETE" },
-    );
+    response = await miaSession.fetch("/api/learner-profiles/learner-mia", {
+      method: "DELETE",
+    });
     assert.equal(response.status, 409);
     assert.deepEqual(await response.json(), { error: "last_learner" });
   });
@@ -11252,17 +11572,17 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       method: "POST",
     });
     const afterUnlock = {
-      a: (await sessionA.fetch("/api/learner-profiles")).status,
-      b: (await sessionB.fetch("/api/learner-profiles")).status,
-      page: (await window.fetch("/api/learner-profiles")).status,
+      a: (await sessionA.fetch("/api/profile")).status,
+      b: (await sessionB.fetch("/api/profile")).status,
+      page: (await window.fetch("/api/profile")).status,
     };
     const lockB = await sessionB.fetch("/api/guardian-access", {
       method: "DELETE",
     });
     const afterBLock = {
-      a: (await sessionA.fetch("/api/learner-profiles")).status,
-      b: (await sessionB.fetch("/api/learner-profiles")).status,
-      page: (await window.fetch("/api/learner-profiles")).status,
+      a: (await sessionA.fetch("/api/profile")).status,
+      b: (await sessionB.fetch("/api/profile")).status,
+      page: (await window.fetch("/api/profile")).status,
     };
 
     assert.deepEqual(
@@ -11350,9 +11670,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       window,
       "localStorage",
     );
-    const accountKey = Array.from(
-      { length: storage.length },
-      (_, index) => storage.key(index),
+    const accountKey = Array.from({ length: storage.length }, (_, index) =>
+      storage.key(index),
     ).find((key) => {
       if (!key?.startsWith("parrot-e2e-learners:account:")) return false;
       try {
@@ -11399,43 +11718,6 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     };
   }
 
-  it("does not let a delayed mock art mutation resurrect a deleted learner", async () => {
-    window.history.replaceState(
-      null,
-      "",
-      "/?parrotE2eLearners=multiple&parrotE2eGuardian=guardian&parrotE2eSession=task5-stale-art&parrotE2eAccount=task5-stale-art-account",
-    );
-    globalThis.localStorage = window.localStorage;
-    globalThis.sessionStorage = window.sessionStorage;
-    await vite.ssrLoadModule(
-      "/src/testing/e2e-browser-mocks.ts?task5-stale-art-contract",
-    );
-    const session = window.__parrotE2eLearners.openSession(
-      "task5-stale-art-writer",
-    );
-    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
-      "learner-noah",
-    );
-
-    try {
-      const response = await session.fetch(
-        "/api/stories/the-red-ball/personalized-art?learnerProfileId=learner-noah",
-        { method: "POST" },
-      );
-      assert.equal(response.status, 404);
-      assert.deepEqual(await response.json(), { error: "not_found" });
-      const roster = await (
-        await session.fetch("/api/learner-profiles")
-      ).json();
-      assert.deepEqual(
-        roster.profiles.map(({ id }) => id),
-        ["learner-mia"],
-      );
-    } finally {
-      restoreStorage();
-    }
-  });
-
   it("does not let a delayed mock consent read resurrect a deleted learner", async () => {
     window.history.replaceState(
       null,
@@ -11450,9 +11732,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const session = window.__parrotE2eLearners.openSession(
       "task5-stale-consent-reader",
     );
-    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
-      "learner-noah",
-    );
+    const restoreStorage =
+      deleteStoredMockLearnerDuringHandleRefresh("learner-noah");
 
     try {
       const response = await session.fetch(
@@ -11486,9 +11767,8 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     const session = window.__parrotE2eLearners.openSession(
       "task5-stale-upload-mismatch-writer",
     );
-    const restoreStorage = deleteStoredMockLearnerDuringHandleRefresh(
-      "learner-noah",
-    );
+    const restoreStorage =
+      deleteStoredMockLearnerDuringHandleRefresh("learner-noah");
 
     try {
       const response = await session.fetch(
@@ -11554,9 +11834,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         1,
       ),
     );
-    const deletingSession = learners.openSession(
-      "task5-held-upload-deleter",
-    );
+    const deletingSession = learners.openSession("task5-held-upload-deleter");
     response = await deletingSession.fetch(
       "/api/learner-profiles/learner-noah",
       { method: "DELETE" },
@@ -11604,10 +11882,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       },
     );
     await waitFor(() =>
-      assert.equal(
-        learners.snapshot(bob.id).lessonRecording.pendingUploads,
-        1,
-      ),
+      assert.equal(learners.snapshot(bob.id).lessonRecording.pendingUploads, 1),
     );
     response = await deletingSession.fetch(
       `/api/learner-profiles/${encodeURIComponent(bob.id)}`,

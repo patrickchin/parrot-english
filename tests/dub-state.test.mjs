@@ -276,6 +276,18 @@ describe("five little ducks dub domain", () => {
     });
     state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" });
     assert.equal(state.selectedLineIndex, 1);
+    assert.equal(state.saveRecovery, null);
+    assert.equal(state.error, "");
+
+    state = reduceDubState(state, {
+      type: "SAVE_FAILED",
+      message: "Record again.",
+      recovery: "record",
+    });
+    state = reduceDubState(state, { type: "BACK_TO_PROJECT" });
+    assert.equal(state.view, "project");
+    assert.equal(state.saveRecovery, null);
+    assert.equal(state.error, "");
   });
 
   it("preserves retryable save recovery while guide and take audio play", () => {
@@ -308,6 +320,32 @@ describe("five little ducks dub domain", () => {
     assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
   });
 
+  it("preserves retryable recovery until count-in reaches a real recording start", () => {
+    let state = reduceDubState(createInitialDubState(), {
+      type: "LOADED",
+      recordingEnabled: true,
+      savedLineIds: ["line-1"],
+    });
+    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDubState(state, {
+      type: "SAVE_FAILED",
+      message: "Keep this take.",
+      recovery: "save",
+    });
+
+    for (const operation of ["mic-opening", "counting-in"]) {
+      state = reduceDubState(state, { type: "OPERATION_STARTED", operation });
+      assert.equal(state.saveRecovery, "save");
+      assert.equal(state.error, "Keep this take.");
+      assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
+      assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
+    }
+
+    state = reduceDubState(state, { type: "OPERATION_STARTED", operation: "recording" });
+    assert.equal(state.saveRecovery, null);
+    assert.equal(state.error, "");
+  });
+
   it("atomically finishes cancellable playback only after accepted navigation", () => {
     let state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
@@ -334,9 +372,11 @@ describe("five little ducks dub domain", () => {
       savedLineIds: [],
     });
     state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
-    state = reduceDubState(state, { type: "OPERATION_STARTED", operation: "recording" });
-    assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
-    assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
+    for (const operation of ["mic-opening", "counting-in", "recording", "saving"]) {
+      state = reduceDubState(state, { type: "OPERATION_STARTED", operation });
+      assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
+      assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
+    }
   });
 
   it("loads recording-disabled status into listen-only and clears private state", () => {

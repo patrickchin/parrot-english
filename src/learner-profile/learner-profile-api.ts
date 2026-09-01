@@ -559,21 +559,6 @@ export function saveProfileAnswers(
   );
 }
 
-export function saveStoryLevel(
-  storyLevel: LearnerStoryLevelId,
-  options?: LearnerProfileRequestOptions,
-) {
-  return profileRequest(
-    "/api/profile/preferences",
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storyLevel }),
-    },
-    options,
-  );
-}
-
 export function loadLessonRecordingConsent(
   options?: LearnerProfileRequestOptions,
 ) {

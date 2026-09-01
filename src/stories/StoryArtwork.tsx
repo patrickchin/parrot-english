@@ -1,43 +1,39 @@
 import { BookOpen, Sparkles } from "lucide-react";
 import { cx } from "../shared/ui";
-import type { PersonalizedStoryArtwork } from "./personalized-story-art-client";
 import type { StoryArtwork as StoryArtworkData } from "./story-types";
 
 export function StoryArtwork({
   artwork,
   className,
-  personalizedOverride,
   priority = false,
   sizes,
 }: {
   artwork: StoryArtworkData;
   className?: string;
-  personalizedOverride?: PersonalizedStoryArtwork | null;
   priority?: boolean;
   sizes?: string;
 }) {
-  const renderedArtwork = personalizedOverride ?? artwork;
   const srcSet =
-    sizes && !personalizedOverride && renderedArtwork.src
+    sizes && artwork.src
       ? ([384, 768] as const)
           .map(
             (width) =>
-              `${renderedArtwork.src!.replace(/\.webp$/, `-${width}.webp`)} ${width}w`,
+              `${artwork.src!.replace(/\.webp$/, `-${width}.webp`)} ${width}w`,
           )
           .join(", ")
       : undefined;
 
-  if (renderedArtwork.src) {
+  if (artwork.src) {
     return (
       <img
-        alt={renderedArtwork.alt}
+        alt={artwork.alt}
         className={cx("h-full w-full object-cover", className)}
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
         height="1024"
         loading={priority ? "eager" : "lazy"}
         sizes={srcSet ? sizes : undefined}
-        src={renderedArtwork.src}
+        src={artwork.src}
         srcSet={srcSet}
         width="1536"
       />
@@ -48,7 +44,6 @@ export function StoryArtwork({
     ? ""
     : artwork.alt.trim();
   const artworkDescription =
-    personalizedOverride?.alt.trim() ||
     artwork.prompt.trim() ||
     catalogAlt ||
     "Story picture";

@@ -1,22 +1,12 @@
-import {
-  LogOut,
-  Mic,
-  ShieldCheck,
-  Sparkles,
-  UsersRound,
-} from "lucide-react";
+import { LogOut, Mic, ShieldCheck, UsersRound } from "lucide-react";
 import { useRef, useState, type RefObject } from "react";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionLink, Card } from "../shared/ui";
-import {
-  HeaderButton,
-  RouteHeader,
-} from "./AppHeader";
+import { HeaderButton, RouteHeader } from "./AppHeader";
 import {
   getGuardianAccountPath,
   getGuardianDubbingPath,
   getGuardianLearnersPath,
-  getGuardianStoriesPath,
 } from "./app-routes";
 import { LearnerModeSwitchDialog } from "./LearnerModeSwitchDialog";
 
@@ -91,36 +81,7 @@ export function GuardianDashboardView({
           >
             {copy.learningContentTitle}
           </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card
-              aria-labelledby="story-settings-heading"
-              className="grid content-start gap-4 !bg-violet-50 p-5 sm:p-6"
-              tone="muted"
-            >
-              <span
-                aria-hidden="true"
-                className="grid size-12 place-items-center rounded-2xl bg-violet-100 text-violet-800"
-              >
-                <Sparkles className="size-7" strokeWidth={2.5} />
-              </span>
-              <h3
-                className="m-0 text-2xl leading-tight text-brand-navy"
-                id="story-settings-heading"
-              >
-                {copy.storySettingsTitle}
-              </h3>
-              <p className="m-0 font-bold leading-relaxed text-slate-600">
-                {copy.storySettingsDescription}
-              </p>
-              <ActionLink
-                className="mt-auto"
-                fullWidth
-                to={getGuardianStoriesPath()}
-              >
-                {copy.openStorySettings}
-              </ActionLink>
-            </Card>
-
+          <div className="grid gap-4">
             <Card
               aria-labelledby="voice-dubbing-heading"
               className="grid content-start gap-4 !bg-amber-50 p-5 sm:p-6"

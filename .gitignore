@@ -68,6 +68,7 @@ Peppa & Dolly assets-*.zip
 /public/assets/**/*.jpeg
 /public/assets/**/*.jpg
 /public/assets/**/*.png
+!/public/assets/word-games/fluent-3d/*.png
 /public/assets/**/*.webp
 /public/*.avif
 /public/*.gif

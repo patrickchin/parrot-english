@@ -167,11 +167,6 @@ describe("learner-profile infrastructure", () => {
         namespace_id: "104203",
         simple: { limit: 12, period: 60 },
       },
-      {
-        name: "PERSONALIZED_STORY_ART_RATE_LIMITER",
-        namespace_id: "104205",
-        simple: { limit: 2, period: 60 },
-      },
     ]);
   });
 

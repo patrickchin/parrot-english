@@ -2,7 +2,7 @@ import { ChevronLeft, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import {
   useDeleteAccountAction,
-  useIsAnonymousAccount,
+  useIsSharedGuestAccount,
 } from "../auth/account-actions";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, Card } from "../shared/ui";
@@ -15,7 +15,7 @@ export function AccountPrivacyPage() {
   const { messages } = useGuardianLanguage();
   const copy = messages.accountPrivacy;
   const deleteAccount = useDeleteAccountAction();
-  const isAnonymous = useIsAnonymousAccount();
+  const isSharedGuest = useIsSharedGuestAccount();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -40,41 +40,42 @@ export function AccountPrivacyPage() {
 
         <AccountPrivacySections />
 
-        <Card
-          aria-labelledby="danger-zone-title"
-          className="grid gap-4 !border-red-300 !bg-rose-50 p-5 sm:p-6"
-          id="danger-zone"
-          tone="solid"
-        >
-          <div className="grid gap-2">
-            <h2
-              className="m-0 text-2xl font-black leading-tight text-red-800"
-              id="danger-zone-title"
-            >
-              {copy.dangerTitle}
-            </h2>
-            <p className="m-0 font-bold leading-relaxed text-slate-700">
-              {copy.dangerBody}
-            </p>
-          </div>
-          <ActionButton
-            className="justify-self-start"
-            onClick={() => setIsDeleteOpen(true)}
-            ref={deleteButtonRef}
-            type="button"
-            variant="rose"
+        {!isSharedGuest ? (
+          <Card
+            aria-labelledby="danger-zone-title"
+            className="grid gap-4 !border-red-300 !bg-rose-50 p-5 sm:p-6"
+            id="danger-zone"
+            tone="solid"
           >
-            <Trash2 aria-hidden="true" className="size-5" strokeWidth={3} />
-            {copy.deleteAccount}
-          </ActionButton>
-        </Card>
+            <div className="grid gap-2">
+              <h2
+                className="m-0 text-2xl font-black leading-tight text-red-800"
+                id="danger-zone-title"
+              >
+                {copy.dangerTitle}
+              </h2>
+              <p className="m-0 font-bold leading-relaxed text-slate-700">
+                {copy.dangerBody}
+              </p>
+            </div>
+            <ActionButton
+              className="justify-self-start"
+              onClick={() => setIsDeleteOpen(true)}
+              ref={deleteButtonRef}
+              type="button"
+              variant="rose"
+            >
+              <Trash2 aria-hidden="true" className="size-5" strokeWidth={3} />
+              {copy.deleteAccount}
+            </ActionButton>
+          </Card>
+        ) : null}
       </div>
 
-      {isDeleteOpen ? (
+      {!isSharedGuest && isDeleteOpen ? (
         <AccountDeleteDialog
           onClose={() => setIsDeleteOpen(false)}
           onDelete={deleteAccount}
-          requiresPassword={!isAnonymous}
           returnFocusRef={deleteButtonRef}
         />
       ) : null}

@@ -124,6 +124,7 @@ for (const viewport of requiredViewports) {
     await expectInsideViewport(trigger, viewport);
     await expectInsideViewport(panel, viewport);
     await expect(menu.getByRole("menuitem")).toHaveText([
+      "Switch learner",
       "Grown-up accessSwitch modes",
     ]);
     await expect(
@@ -157,18 +158,16 @@ test("account-menu switching has no password or intermediate dialog", async ({
   expect(await horizontalOverflow(page)).toBe(false);
 });
 
-test("direct Guardian switch requires no password", async ({
+test("direct Guardian routes open without an unlock prompt", async ({
   page,
 }) => {
-  await page.goto("/guardian/stories");
-  const main = page.getByRole("main");
-  const switchButton = main.getByRole("button", { name: "Switch to guardian mode" });
+  await page.goto("/guardian/dubbing");
 
-  await expect(main.getByLabel("Password")).toHaveCount(0);
-  await switchButton.click();
-  await expect(page).toHaveURL("/guardian/stories");
+  await expect(page.getByLabel("Password")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL("/guardian/dubbing");
   await expect(
-    page.getByRole("heading", { name: "Story settings" }),
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
 });
 
@@ -228,6 +227,22 @@ test("mode-switch request failure never navigates to guardian content", async ({
   await expect(page).toHaveURL(guardianUrl("/", "unlock-error"));
 });
 
+test("automatic Guardian access failure stays on the requested route", async ({
+  page,
+}) => {
+  const requestedUrl = guardianUrl("/guardian/dubbing", "unlock-error");
+  await page.goto(requestedUrl);
+
+  await expect(
+    page.getByRole("heading", { name: "Guardian tools did not open" }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(requestedUrl);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+  ).toHaveCount(0);
+});
+
 test("successful switch opens guardian management and announces the mode", async ({
   page,
 }) => {
@@ -247,7 +262,6 @@ test("successful switch opens guardian management and announces the mode", async
   for (const heading of [
     "Learner profiles",
     "Learning & content",
-    "Story settings",
     "Voice dubbing",
     "Account & privacy",
   ]) {
@@ -276,10 +290,10 @@ test("successful switch opens guardian management and announces the mode", async
   ).toHaveCount(0);
 });
 
-test("account-menu unlock resumes the current Guardian deep link", async ({
+test("automatic Guardian access resumes the current deep link", async ({
   page,
 }) => {
-  const requestedUrl = "/guardian/stories?section=art#cover";
+  const requestedUrl = "/guardian/dubbing?section=recordings#clips";
   await page.goto("/");
   await expect(
     page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
@@ -288,21 +302,23 @@ test("account-menu unlock resumes the current Guardian deep link", async ({
     window.history.pushState(null, "", destination);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }, requestedUrl);
-  await expect(
-    page.getByRole("heading", { name: "Switch to guardian mode" }),
-  ).toBeVisible();
-  const historyLengthBeforeUnlock = await page.evaluate(
+  const historyLengthBeforeAccess = await page.evaluate(
     () => window.history.length,
   );
-
-  await switchFromMenu(page);
-
-  await expect(page).toHaveURL(requestedUrl);
-  expect(await page.evaluate(() => window.history.length)).toBe(
-    historyLengthBeforeUnlock,
-  );
   await expect(
-    page.getByRole("heading", { name: "Story settings" }),
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+  ).toBeVisible();
+  const openedUrl = new URL(page.url());
+  expect(openedUrl.pathname).toBe("/guardian/dubbing");
+  expect(openedUrl.searchParams.get("section")).toBe("recordings");
+  expect(openedUrl.searchParams.get("learnerProfileId")).toBe("e2e-learner");
+  expect(openedUrl.hash).toBe("#clips");
+  expect(await page.evaluate(() => window.history.length)).toBe(
+    historyLengthBeforeAccess,
+  );
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
 
   await page.goBack();
@@ -449,47 +465,16 @@ for (const viewport of lessonPrivacyViewports) {
   });
 }
 
-test("a locked guardian deep link never flashes protected content", async ({
+test("automatic Guardian access opens a deep link without an unlock dialog", async ({
   page,
 }) => {
-  await page.addInitScript(() => {
-    const inspected = new WeakSet<Node>();
-    const inspect = (node: Node) => {
-      if (inspected.has(node)) return;
-      inspected.add(node);
-      if (
-        node instanceof HTMLHeadingElement &&
-        node.textContent?.trim() === "Story settings"
-      ) {
-        (
-          window as Window & { __protectedHeadingSeen?: boolean }
-        ).__protectedHeadingSeen = true;
-      }
-      node.childNodes.forEach(inspect);
-    };
-    document.addEventListener("DOMContentLoaded", () => {
-      inspect(document.body);
-      new MutationObserver((records) => {
-        records.forEach((record) => record.addedNodes.forEach(inspect));
-      }).observe(document.body, { childList: true, subtree: true });
-    });
-  });
-  await page.goto("/guardian/stories");
+  await page.goto("/guardian/dubbing");
 
+  await expect(page).toHaveURL("/guardian/dubbing");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Switch to guardian mode" }),
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
-  await expect(page).toHaveURL("/guardian/stories");
-  await expect(
-    page.getByRole("heading", { name: "Story settings" }),
-  ).toHaveCount(0);
-  expect(
-    await page.evaluate(
-      () =>
-        (window as Window & { __protectedHeadingSeen?: boolean })
-          .__protectedHeadingSeen ?? false,
-    ),
-  ).toBe(false);
 });
 
 for (const { path, protectedName, unlockedPath } of [
@@ -509,12 +494,6 @@ for (const { path, protectedName, unlockedPath } of [
     protectedName: "Update my profile",
   },
   {
-    path: "/guardian/stories",
-    protectedName: "Story settings",
-    unlockedPath:
-      "/guardian/stories?parrotE2eGuardian=learner&learnerProfileId=e2e-learner",
-  },
-  {
     path: "/guardian/dubbing",
     protectedName: "Voice dubbing",
     unlockedPath:
@@ -525,56 +504,14 @@ for (const { path, protectedName, unlockedPath } of [
     protectedName: "Update my profile",
   },
 ]) {
-  test(`locked ${path} shows only the Guardian unlock gate`, async ({
+  test(`automatic Guardian access opens ${path}`, async ({
     page,
   }) => {
-    await page.addInitScript((expectedProtectedName) => {
-      const inspected = new WeakSet<Node>();
-      const inspect = (node: Node) => {
-        if (inspected.has(node)) return;
-        inspected.add(node);
-        if (
-          node instanceof HTMLHeadingElement &&
-          node.textContent?.trim() === expectedProtectedName
-        ) {
-          (
-            window as Window & { __protectedHeadingSeen?: boolean }
-          ).__protectedHeadingSeen = true;
-        }
-        node.childNodes.forEach(inspect);
-      };
-      document.addEventListener("DOMContentLoaded", () => {
-        inspect(document.body);
-        new MutationObserver((records) => {
-          records.forEach((record) => record.addedNodes.forEach(inspect));
-        }).observe(document.body, { childList: true, subtree: true });
-      });
-    }, protectedName);
-
     const requestedUrl = guardianUrl(path, "learner");
     await page.goto(requestedUrl);
 
-    await expect(
-      page.getByRole("heading", { name: "Switch to guardian mode" }),
-    ).toBeVisible();
-    await expect(page).toHaveURL(requestedUrl);
-    await expect(
-      page.getByRole("heading", { name: protectedName }),
-    ).toHaveCount(0);
-    expect(
-      await page.evaluate(
-        () =>
-          (window as Window & { __protectedHeadingSeen?: boolean })
-            .__protectedHeadingSeen ?? false,
-      ),
-    ).toBe(false);
-
-    await expect(page.getByRole("main").getByLabel("Password")).toHaveCount(0);
-    await page
-      .getByRole("main")
-      .getByRole("button", { name: "Switch to guardian mode" })
-      .click();
     await expect(page).toHaveURL(unlockedPath ?? requestedUrl);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(
       page.getByRole("heading", { exact: true, name: protectedName }),
     ).toBeVisible();
@@ -657,33 +594,31 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
   expect(expiresAtAfterRefresh).toBe(expiresAtBeforeRefresh);
 });
 
-test("an expired guardian session returns the same deep link to the Guardian unlock gate", async ({
+test("an expired guardian session automatically recovers the same deep link", async ({
   page,
 }) => {
   await page.clock.install({
     time: new Date("2026-08-25T08:00:00.000Z"),
   });
-  await page.goto(guardianUrl("/guardian/stories", "expired"));
+  await page.goto(guardianUrl("/guardian/dubbing", "expired"));
   await expect(
-    page.getByRole("heading", { name: "Story settings" }),
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
   await page.evaluate(() => {
-    window.history.pushState(null, "", "/guardian/stories");
+    window.history.pushState(null, "", "/guardian/dubbing");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(
-    page.getByRole("heading", { name: "Story settings" }),
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
   await page.clock.fastForward(2_000);
-  await expect(
-    page.getByRole("heading", { name: "Switch to guardian mode" }),
-  ).toBeVisible();
   await expect(page).toHaveURL(
-    "/guardian/stories?learnerProfileId=e2e-learner",
+    "/guardian/dubbing?learnerProfileId=e2e-learner",
   );
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Story settings" }),
-  ).toHaveCount(0);
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+  ).toBeVisible();
 });
 
 test("failed dashboard lock preserves guardian content and navigation", async ({
@@ -728,7 +663,7 @@ test("failed learner-boundary lock preserves the requested learner route", async
   await expect(page).toHaveURL(url);
 });
 
-test("successful lock returns to learner home before exposing activities", async ({
+test("successful lock redirects the stale route once and permits a later direct Guardian route", async ({
   page,
 }) => {
   await page.goto(guardianLearnerUrl("/guardian", "guardian"));
@@ -741,9 +676,29 @@ test("successful lock returns to learner home before exposing activities", async
   await expect(
     page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
   ).toBeVisible();
+
+  await page.goto("/guardian/dubbing");
+  await expect(page).toHaveURL("/guardian/dubbing");
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(page).toHaveURL(
+    "/guardian/dubbing?learnerProfileId=learner-noah",
+  );
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+  ).toBeVisible();
+
+  const accessMode = await page.evaluate(async () => {
+    const response = await fetch("/api/guardian-access");
+    return ((await response.json()) as { mode: string }).mode;
+  });
+  expect(accessMode).toBe("guardian");
 });
 
-test("locking guardian access in one tab immediately hides guardian UI in a sibling tab", async ({
+test("locking guardian access in one tab returns a sibling tab to learner mode", async ({
   page,
 }) => {
   const url = guardianLearnerUrl("/guardian", "guardian");
@@ -756,15 +711,80 @@ test("locking guardian access in one tab immediately hides guardian UI in a sibl
     await expect(
       sibling.getByRole("heading", { name: "Guardian dashboard" }),
     ).toBeVisible();
+    await expect(sibling.getByRole("dialog")).toHaveCount(0);
 
     await chooseLearnerAndStart(page, "Noah");
 
+    await expect(sibling).toHaveURL("/");
+    await expect(sibling.getByRole("dialog")).toHaveCount(0);
     await expect(
-      sibling.getByRole("heading", { name: "Switch to guardian mode" }),
+      sibling.getByRole("navigation", { name: "Learning activities" }),
+    ).toBeVisible();
+
+    await sibling.evaluate(() => {
+      window.history.pushState(null, "", "/guardian/dubbing");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await expect(sibling).toHaveURL("/guardian/dubbing");
+    await expect(
+      sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+    ).toBeVisible();
+
+    await sibling.reload();
+    await expect(sibling).toHaveURL(
+      "/guardian/dubbing?learnerProfileId=learner-noah",
+    );
+    await expect(
+      sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+    ).toBeVisible();
+  } finally {
+    await sibling.close();
+  }
+});
+
+test("a sibling learner switch does not block the next Guardian route from profile setup", async ({
+  page,
+}) => {
+  const sibling = await page.context().newPage();
+  try {
+    await Promise.all([
+      page.goto(guardianLearnerUrl("/guardian", "guardian")),
+      sibling.goto(
+        guardianUrl(
+          "/profile/setup?parrotE2eProfile=viewport-stability",
+          "guardian",
+        ),
+      ),
+    ]);
+    await expect(
+      page.getByRole("heading", { name: "Guardian dashboard" }),
     ).toBeVisible();
     await expect(
-      sibling.getByRole("heading", { name: "Guardian dashboard" }),
-    ).toHaveCount(0);
+      sibling.getByRole("heading", {
+        name: "Answer 6 questions",
+      }),
+    ).toBeVisible();
+
+    await chooseLearnerAndStart(page, "Noah");
+    await expect(page).toHaveURL("/");
+    await expect(sibling).toHaveURL(/\/profile\/setup/);
+
+    await sibling.evaluate(() => {
+      window.history.pushState(null, "", "/guardian/dubbing");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await expect(sibling).toHaveURL("/guardian/dubbing");
+    await expect(
+      sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+    ).toBeVisible();
+
+    await sibling.reload();
+    await expect(sibling).toHaveURL(
+      "/guardian/dubbing?learnerProfileId=e2e-learner",
+    );
+    await expect(
+      sibling.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+    ).toBeVisible();
   } finally {
     await sibling.close();
   }
@@ -850,6 +870,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
     await page.goto(path);
     const menu = await openLearnerAccountMenu(page);
     await expect(menu.getByRole("menuitem")).toHaveText([
+      "Switch learner",
       "Grown-up accessSwitch modes",
     ]);
     await expect(
@@ -860,19 +881,8 @@ test("learner routes omit adult management actions", async ({ page }) => {
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", {
-        name: /Sign out|Delete account|Generate story art/,
+        name: /Sign out|Delete account/,
       }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("group", { name: "Choose story level" }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("checkbox", {
-        name: /I am 18 or older.*guardian/i,
-      }),
-    ).toHaveCount(0);
-    await expect(
-      page.getByRole("checkbox", { name: "Guardian consent" }),
     ).toHaveCount(0);
     await expectNoLearnerAdultControls(page);
     if (watchDub) {

@@ -11,9 +11,12 @@ focused activities:
 4. **Dub a rhyme** for recording and replaying a private saved performance.
 
 The authenticated home presents only these learner activities. Profile,
-content, consent, privacy, and account management live in password-protected
-guardian mode. Product experiments, comparison renderers, internal content
-metrics, and roadmap placeholders do not appear in learner navigation.
+content, consent, privacy, and account management live behind authenticated
+Guardian-only UI and API boundaries. The current temporary Guardian-entry flow
+is passwordless for a signed-in session; it does not remove authentication,
+ownership checks, or those management boundaries. Product experiments,
+comparison renderers, internal content metrics, and roadmap placeholders do not
+appear in learner navigation.
 
 ## Learner and Guardian Modes
 
@@ -24,42 +27,51 @@ learner mode. The fixed profile control names only the active learner in learner
 mode (or the generic `Learner` label when none is selected) and the Guardian
 account in Guardian mode.
 
-The learner dropdown contains one `Grown-up access` action. It never lists
-sibling names or exposes profile selection, editing, consent, privacy, sign-out,
-or account controls. The Guardian dropdown shows the
+The learner dropdown contains `Switch learner` followed by `Grown-up access`.
+The switch action opens the shared owned-profile chooser; the dropdown itself
+does not list sibling names or expose profile editing, consent, privacy,
+sign-out, or account controls. The Guardian dropdown shows the
 four account actions in a stable order: Guardian dashboard, Manage learners,
 Account & privacy, and Sign out. It does not show a current learner or account
 deletion shortcut. Learner administration stays on Manage learners, while
 account deletion stays inside the Account & privacy page's Danger zone.
 
-Selecting `Grown-up access` requires the same password used to sign in to the
-Guardian account. There is no separate Guardian password or PIN. A successful
-check unlocks Guardian mode for that auth session for at most 15 minutes. The
-fixed expiry survives refresh and another tab sharing the session, but ordinary
-activity never extends it. `Switch to learner` first opens `Who is learning
-now?`, with no learner preselected. The Guardian chooses a learner and confirms
-`Start learner mode as {name}`. The app selects that learner, removes the
-server unlock, then opens the requested learner route. If selection or locking
-fails, the Guardian screen and URL remain in place with an error. Cancel changes
-neither the active learner nor Guardian access. Expiry retains a Guardian deep
-link behind the password gate so a new unlock can resume it without flashing
-protected content.
+Selecting `Grown-up access`, or entering a declared Guardian route directly,
+automatically requests Guardian access for the already-authenticated Better Auth
+session. The current temporary flow has no intermediate password dialog. This
+passwordless handoff is a deliberately weaker temporary boundary; account
+authentication, learner ownership, and Guardian-only server authorization still
+apply. A successful grant lasts for at most 15 minutes. Its fixed expiry
+survives refresh and another tab sharing the session, but ordinary activity
+never extends it. Genuine access failures keep the requested URL behind a
+visible error and Retry action.
+
+`Switch to learner` opens `Who is learning now?`. The chooser presents one
+direct `Start learner mode as {name}` button per owned learner; choosing the
+button is the complete selection action. The app selects that learner, removes
+the server grant, then opens the requested learner route. If selection or
+locking fails, the Guardian screen and URL remain in place with an error. Cancel
+changes neither the active learner nor Guardian access. Expiry retains a
+Guardian deep link behind the automatic access check so a new grant can resume
+it without flashing protected content. In learner mode, `Switch learner` opens
+the same chooser; selecting an owned profile returns to learner home without
+calling the Guardian lock API.
 
 When a session has more than one learner and no valid selection, learner mode
-fails closed with `Ask a grown-up to choose a learner`. It does not guess a
-learner or render the roster. Unlocking Guardian mode opens the requested
-Guardian management surface; it never chooses a sibling. Learner choice happens
-only when the Guardian next uses `Switch to learner`.
+fails closed with the required `Who is learning now?` page. It does not guess a
+learner, show a Cancel path, or require Guardian mode; it lists the account's
+owned profiles for direct selection.
 
 Learner mode exposes no profile editing, AI/data notice, sign-out, account
-deletion, story settings, photo, consent, or deletion controls. Guardian mode
-exposes those management actions but not a duplicate learner activity catalog.
+deletion, consent, or deletion controls. Guardian mode exposes those management
+actions but not a duplicate learner activity catalog.
 
 | Capability                                          | Learner                                      | Guardian                      | Enforcement                                           |
 | --------------------------------------------------- | -------------------------------------------- | ----------------------------- | ----------------------------------------------------- |
 | Complete first-time learner setup                   | Yes, for the selected learner                | Yes                           | Authenticated session plus selected learner           |
-| List, add, edit, or delete learner profiles         | No                                           | Yes                           | Live Guardian unlock; ownership checked by the server |
-| Choose who enters learner mode                      | No                                           | Yes, during Switch to learner | Live Guardian unlock plus owned-learner selection     |
+| List owned learner profiles                         | Yes, in the switch/required picker            | Yes                           | Authenticated account ownership                       |
+| Add, edit, or delete learner profiles               | No                                           | Yes                           | Live Guardian unlock; ownership checked by the server |
+| Choose who enters learner mode                      | Yes, during Switch learner                    | Yes, during Switch to learner | Authenticated owned-learner selection                  |
 | Talk, play lessons, read stories                    | Yes                                          | Switch to learner             | Authenticated session                                 |
 | See whether voice dubbing is available              | Yes                                          | Yes                           | Authenticated, learner-scoped status                  |
 | Record, retake, and replay saved dub lines          | Yes, after guardian consent for that learner | Switch to learner             | Current learner's durable consent grant               |
@@ -69,9 +81,6 @@ exposes those management actions but not a duplicate learner activity catalog.
 | Save the latest lesson join-in clip                 | Yes, after guardian consent for that learner | Switch to learner             | Current learner's durable recording consent           |
 | Allow, stop, or delete lesson voice recordings      | No                                           | Yes                           | Guardian unlock plus learner-scoped fenced cleanup    |
 | Edit learner profile or redo setup                  | No                                           | Yes                           | Guardian unlock                                       |
-| Choose stored story level                           | No                                           | Yes                           | Guardian unlock                                       |
-| Upload a learner photo or generate/delete story art | No                                           | Yes                           | Guardian unlock plus consent for the active learner   |
-| View already-generated story art                    | Yes                                          | Yes                           | Selected-learner read                                 |
 | Open AI/data notice                                 | No                                           | Yes                           | Guardian UI boundary                                  |
 | Sign out                                            | No                                           | Yes                           | Guardian UI boundary                                  |
 | Delete account and every learner's data             | No                                           | Yes                           | Guardian UI plus account-password confirmation        |
@@ -79,13 +88,15 @@ exposes those management actions but not a duplicate learner activity catalog.
 ## Entry and Navigation
 
 Anonymous visitors are sent to `/login` with a validated same-origin `returnTo`
-value. Authenticated learners complete the one-time profile flow at
-`/profile/setup`, then continue to the requested activity or `/`.
+value. After authentication, Guardian return targets normalize to learner home;
+validated learner deep links remain intact. Authenticated learners complete the
+one-time profile flow at `/profile/setup`, then continue to the requested
+activity or `/`.
 
 If the account owns one learner, a new session may select it automatically. If
-it owns multiple learners, a new session without a valid selection stays at the
-learner-safe grown-up prompt until a Guardian chooses one. A missing, stale, or
-foreign selection never falls through to a sibling.
+it owns multiple learners, a new session without a valid selection shows the
+required owned-profile picker. A missing, stale, or foreign selection never
+falls through to a sibling.
 
 Durable learner routes are:
 
@@ -103,7 +114,6 @@ Canonical guardian routes are:
 - `/guardian/learners/:learnerId` — page-local learner details and setup redo;
 - `/guardian/profile` — retired compatibility route redirected to Manage
   learners;
-- `/guardian/stories` — stored story level and personalized-art management;
 - `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
 
 Initial `/profile/setup` remains available to either mode until onboarding is
@@ -168,30 +178,25 @@ recording, and step state reset safely.
 
 ## Story Time
 
-Guardian story settings offer four progressive learner levels:
+The story shelf offers four progressive learner levels:
 
 - First words
 - Repeating patterns
 - Tiny stories
 - Early A1
 
-The choice is stored on the active learner profile. The learner shelf always
-opens at that learner's stored level and contains no level selector or
-art-management controls.
-Each learner level contains five curated stories. Beneath the active-level
-section, the shelf always publishes two public Long stories with saved
-narration. Long stories are not a learner preference and do not appear among
-the four Guardian setting choices. All stories use the same authenticated shelf
-and reader routes; there is no preview-only story shell. A story card shows its
-cover, title, and one Listen action. Prompt experiments, vocabulary audit data,
-uncontrolled baselines, and teaching diagnostics stay out of the learner
-interface.
+Existing profiles open at their stored starting level. Learners can switch
+among every built-in level directly on the shelf; no Guardian story-settings
+page or art-management controls remain. Each learner level contains curated
+stories, and the same selector includes public Long stories with saved
+narration. All stories use the same authenticated shelf and reader routes;
+there is no preview-only story shell. A story card shows its cover, title, and
+one Listen action. Prompt experiments, vocabulary audit data, uncontrolled
+baselines, and teaching diagnostics stay out of the learner interface.
 
 The reader moves page by page, presents one join-in line, and keeps narration
 controls separate from page navigation. Returning from a story restores the
-active learner's stored-level shelf. Already-generated private art for that
-learner may appear in stories and lessons; sibling art cannot. Upload, consent,
-generation, and deletion remain Guardian-only.
+story's shelf. Stories always render their checked-in catalog artwork.
 
 ## Dub a Rhyme
 
@@ -256,6 +261,6 @@ Built-in lesson JSON contains text and catalog IDs, never image filenames,
 audio filenames, voice IDs, or generation settings. Global catalogs own visual
 assets, and the static audio manifest owns saved speech. Story scripts are
 checked in and validated against their level limits. Profiles, onboarding
-progress, conversations, personalized art, dubbing consent, and saved clips
-remain isolated per learner; authentication, Guardian unlock, rate limits, and
-whole-account deletion remain account- or session-scoped.
+progress, conversations, dubbing consent, and saved clips remain isolated per
+learner; authentication, Guardian unlock, rate limits, and whole-account
+deletion remain account- or session-scoped.

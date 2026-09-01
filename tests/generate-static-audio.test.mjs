@@ -1,21 +1,93 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { readFileSync } from "node:fs";
-import { mkdtemp, rm } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import process from "node:process";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { GENERATED_DUB_DEFINITIONS } from "../src/dubbing/generated-rhyme-catalog.ts";
+import { WORD_GAME_MISSING_AUDIO_IDS } from "./fixtures/word-game-missing-audio-ids.mjs";
 
 const execFileAsync = promisify(execFile);
+const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const packageJson = JSON.parse(
   readFileSync(new URL("../package.json", import.meta.url), "utf8"),
 );
 
 function shellChain(script) {
   return typeof script === "string" ? script.split(/\s*&&\s*/u) : [];
+}
+
+async function createWordGameGeneratorRepo() {
+  const tempRoot = await mkdtemp(join(tmpdir(), "parrot-word-game-audio-"));
+  await mkdir(join(tempRoot, "scripts"), { recursive: true });
+  await mkdir(join(tempRoot, "public", "assets", "audio"), { recursive: true });
+  await mkdir(join(tempRoot, "third_party"), { recursive: true });
+  await cp(
+    join(rootDir, "scripts", "generate-static-audio.mjs"),
+    join(tempRoot, "scripts", "generate-static-audio.mjs"),
+  );
+  await cp(join(rootDir, "scripts", "word-game"), join(tempRoot, "scripts", "word-game"), {
+    recursive: true,
+  });
+  await cp(join(rootDir, "content", "word-games"), join(tempRoot, "content", "word-games"), {
+    recursive: true,
+  });
+  await cp(
+    join(rootDir, "public", "assets", "word-games"),
+    join(tempRoot, "public", "assets", "word-games"),
+    { recursive: true },
+  );
+  await cp(
+    join(rootDir, "third_party", "fluentui-emoji-LICENSE"),
+    join(tempRoot, "third_party", "fluentui-emoji-LICENSE"),
+  );
+  await symlink(join(rootDir, "node_modules"), join(tempRoot, "node_modules"), "dir");
+
+  const generatedPromptFiles = new Set(
+    WORD_GAME_MISSING_AUDIO_IDS.map((id) => `${id}.mp3`),
+  );
+  const existingAudioFiles = (await readdir(join(rootDir, "public", "assets", "audio")))
+    .filter((filename) =>
+      (/^word-game-.+-label\.mp3$/u.test(filename)
+        || filename === "word-game-correct.mp3"
+        || filename === "word-game-retry.mp3"
+        || filename === "word-game-complete.mp3")
+      && !generatedPromptFiles.has(filename))
+    .sort();
+  for (const filename of existingAudioFiles) {
+    await cp(
+      join(rootDir, "public", "assets", "audio", filename),
+      join(tempRoot, "public", "assets", "audio", filename),
+    );
+  }
+  assert.equal(existingAudioFiles.length, 109);
+  return { existingAudioFiles, tempRoot };
+}
+
+function generatorEnv(overrides = {}) {
+  const env = { ...process.env, ...overrides };
+  for (const key of [
+    "ELEVENLABS_MODEL_ID",
+    "ELEVENLABS_OUTPUT_FORMAT",
+    "ELEVENLABS_NARRATOR_VOICE_ID",
+    "ELEVENLABS_VOICE_ID",
+    "ELEVEN_LABS_API_KEY",
+  ]) delete env[key];
+  return env;
 }
 
 describe("static audio generator", () => {
@@ -33,15 +105,15 @@ describe("static audio generator", () => {
   it("runs only catalog check mode before every content-sensitive lifecycle command", () => {
     const expectedHooks = {
       prebuild: [
-        "npm run check:rhyme-catalog",
+        "npm run check:content-catalogs",
         "node scripts/prepare-workers-ci-metadata.mjs",
       ],
-      pretest: ["npm run check:rhyme-catalog"],
-      "pretest:browser": ["npm run check:rhyme-catalog"],
-      "predev:vite": ["npm run check:rhyme-catalog"],
-      prestart: ["npm run check:rhyme-catalog"],
-      "pregenerate:audio:elevenlabs": ["npm run check:rhyme-catalog"],
-      "predeploy:worker": ["npm run check:rhyme-catalog"],
+      pretest: ["npm run check:content-catalogs"],
+      "pretest:browser": ["npm run check:content-catalogs"],
+      "predev:vite": ["npm run check:content-catalogs"],
+      prestart: ["npm run check:content-catalogs"],
+      "pregenerate:audio:elevenlabs": ["npm run check:content-catalogs"],
+      "predeploy:worker": ["npm run check:content-catalogs"],
     };
 
     for (const [hook, expectedCommands] of Object.entries(expectedHooks)) {
@@ -69,7 +141,126 @@ describe("static audio generator", () => {
     assert.equal(stdout.trim(), `skipped: ${guide.id} (elevenlabs)`);
   });
 
-  it("chooses ElevenLabs voices from speaker metadata", () => {
+  it("lists only the 107 compiler-planned missing prompt IDs without a key or runtime registry", async () => {
+    const { tempRoot } = await createWordGameGeneratorRepo();
+    await mkdir(join(tempRoot, ".dev.vars"));
+
+    try {
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        ["scripts/generate-static-audio.mjs", "--word-game-content", "--list-missing"],
+        { cwd: tempRoot, env: generatorEnv() },
+      );
+
+      assert.deepEqual(stdout.trim().split("\n"), WORD_GAME_MISSING_AUDIO_IDS);
+      assert.equal((await stat(join(tempRoot, ".dev.vars"))).isDirectory(), true);
+      await assert.rejects(readFile(join(tempRoot, "lib", "static-audio.js"), "utf8"), {
+        code: "ENOENT",
+      });
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("generates exactly the 107 missing compiler-planned lines and skips existing cues", async () => {
+    const { existingAudioFiles, tempRoot } = await createWordGameGeneratorRepo();
+    const outputDir = join(tempRoot, "generated-audio");
+    const fetchLog = join(tempRoot, "fetch-log.ndjson");
+    const fetchHarness = join(tempRoot, "fake-fetch.mjs");
+    await mkdir(outputDir);
+    for (const filename of existingAudioFiles) {
+      await cp(
+        join(tempRoot, "public", "assets", "audio", filename),
+        join(outputDir, filename),
+      );
+    }
+    await writeFile(fetchLog, "");
+    await writeFile(fetchHarness, `
+      import { appendFileSync } from "node:fs";
+      globalThis.fetch = async (url, options) => {
+        appendFileSync(process.env.FETCH_LOG, JSON.stringify({
+          body: JSON.parse(options.body),
+          url: String(url),
+        }) + "\\n");
+        return {
+          status: 200,
+          ok: true,
+          arrayBuffer: async () => Uint8Array.from([73, 68, 51]).buffer,
+          text: async () => "",
+        };
+      };
+    `);
+
+    try {
+      const { stdout } = await execFileAsync(
+        process.execPath,
+        [
+          "--import",
+          fetchHarness,
+          "scripts/generate-static-audio.mjs",
+          "--provider=elevenlabs",
+          "--word-game-content",
+          `--output-dir=${outputDir}`,
+        ],
+        {
+          cwd: tempRoot,
+          env: generatorEnv({
+            ELEVENLABS_API_KEY: "fake-test-key",
+            FETCH_LOG: fetchLog,
+          }),
+        },
+      );
+      const statuses = stdout.trim().split("\n");
+      const requests = (await readFile(fetchLog, "utf8"))
+        .trim()
+        .split("\n")
+        .map((line) => JSON.parse(line));
+
+      assert.equal(statuses.length, 216);
+      assert.equal(statuses.filter((line) => line.startsWith("skipped:")).length, 109);
+      assert.deepEqual(
+        statuses.filter((line) => line.startsWith("generated:"))
+          .map((line) => line.match(/^generated: (.+) \(elevenlabs\)$/u)[1]),
+        WORD_GAME_MISSING_AUDIO_IDS,
+      );
+      assert.equal(requests.length, 107);
+      assert.ok(requests.every(({ body }) => body.model_id === "eleven_v3"));
+      assert.ok(requests.every(({ url }) => url.endsWith("?output_format=mp3_44100_128")));
+      assert.equal((await readdir(outputDir)).length, 216);
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("rejects invalid word-game mode flags and non-curriculum IDs", async () => {
+    const { tempRoot } = await createWordGameGeneratorRepo();
+    const invalidArguments = [
+      ["--list-missing"],
+      ["--word-game-content", "--list-missing", "--force"],
+      ["--word-game-content", "--list-missing", "--only=word-game-animals-cat-label"],
+      ["--word-game-content", "--list-missing", "--output-dir=unused"],
+      ["--word-game-content", "--unknown"],
+      ["--word-game-content", "--only=word-game-missing"],
+    ];
+
+    try {
+      for (const invalid of invalidArguments) {
+        await assert.rejects(
+          execFileAsync(
+            process.execPath,
+            ["scripts/generate-static-audio.mjs", ...invalid],
+            { cwd: tempRoot, env: generatorEnv({ ELEVENLABS_API_KEY: "fake-test-key" }) },
+          ),
+          /Invalid static-audio arguments|Unknown word-game audio ID/u,
+          invalid.join(" "),
+        );
+      }
+    } finally {
+      await rm(tempRoot, { force: true, recursive: true });
+    }
+  });
+
+  it("chooses ElevenLabs voices and language from line metadata", () => {
     const generator = readFileSync(
       new URL("../scripts/generate-static-audio.mjs", import.meta.url),
       "utf8"
@@ -83,6 +274,10 @@ describe("static audio generator", () => {
     assert.match(generator, /5N1BjZ10t6GcJUhZCP40/);
     assert.match(generator, /pFZP5JQG7iQjIQuC4Bku/);
     assert.doesNotMatch(generator, /4NQthjVhIGGVfL3Si000/);
+    assert.match(
+      generator,
+      /language_code:\s*line\.lang\.split\(["']-["']\)\[0\]/,
+    );
     assert.match(generator, /line\.speaker === "narrator"/);
     assert.match(generator, /speed:\s*0\.96/);
     assert.match(generator, /style:\s*0\.35/);

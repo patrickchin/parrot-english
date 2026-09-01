@@ -14,6 +14,7 @@ export type AccountExperience = {
   guardianUnlockDestination?: string | null;
   hasActiveLearner: boolean;
   learnerName: string | null;
+  onOpenLearnerSwitcher: (() => void) | null;
   onOpenProfile: (() => void) | null;
 };
 
@@ -30,7 +31,7 @@ type AccountExperienceSetter = Dispatch<
 type AccountActionContextValue = {
   action: AccountExperience | null;
   deleteAccount: DeleteAccountAction;
-  isAnonymous: boolean;
+  isSharedGuest: boolean;
   sessionIdentity: string | null;
   setAction: AccountExperienceSetter;
 };
@@ -42,14 +43,14 @@ const AccountActionContext = createContext<AccountActionContextValue | null>(
 export function AccountActionProvider({
   children,
   deleteAccount,
-  isAnonymous = false,
+  isSharedGuest = false,
   profileAction = null,
   sessionIdentity = null,
   setProfileAction,
 }: {
   children: ReactNode;
   deleteAccount: DeleteAccountAction;
-  isAnonymous?: boolean;
+  isSharedGuest?: boolean;
   profileAction?: AccountExperience | null;
   sessionIdentity?: string | null;
   setProfileAction: AccountExperienceSetter;
@@ -58,13 +59,13 @@ export function AccountActionProvider({
     () => ({
       action: profileAction,
       deleteAccount,
-      isAnonymous,
+      isSharedGuest,
       sessionIdentity,
       setAction: setProfileAction,
     }),
     [
       deleteAccount,
-      isAnonymous,
+      isSharedGuest,
       profileAction,
       sessionIdentity,
       setProfileAction,
@@ -109,6 +110,6 @@ export function useDeleteAccountAction() {
   return deleteAccount;
 }
 
-export function useIsAnonymousAccount() {
-  return useContext(AccountActionContext)?.isAnonymous ?? false;
+export function useIsSharedGuestAccount() {
+  return useContext(AccountActionContext)?.isSharedGuest ?? false;
 }

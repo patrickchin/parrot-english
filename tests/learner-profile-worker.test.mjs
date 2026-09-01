@@ -5,6 +5,11 @@ import { createDatabase } from "../worker/database.ts";
 import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
 import { createWorker } from "../worker/index.ts";
+import {
+  SHARED_GUEST_LEARNER_ID,
+  SHARED_GUEST_LEARNER_NAME,
+  SHARED_GUEST_USER_ID,
+} from "../lib/shared-guest.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const PROTECTED_REQUESTS = [
@@ -16,7 +21,6 @@ const PROTECTED_REQUESTS = [
   ["POST", "/api/learner-profile/complete"],
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
-  ["PUT", "/api/profile/preferences"],
   ["GET", "/api/lesson-recordings/consent"],
   ["PUT", "/api/profile/lesson-recording-consent"],
 ];
@@ -167,6 +171,44 @@ describe("onboarding Worker routing", () => {
         error: "learner_selection_required",
       });
       assert.equal(handlerCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns completed Sam for a new shared guest session", async () => {
+    const state = createTestD1Database();
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO session (id, expires_at, token, user_id) VALUES (?, ?, ?, ?)",
+        )
+        .run(
+          "shared-guest-session",
+          9_999_999_999_999,
+          "shared-guest-token",
+          SHARED_GUEST_USER_ID,
+        );
+      const authStub = createAuthStub({
+        session: { id: "shared-guest-session" },
+        user: { id: SHARED_GUEST_USER_ID, name: "Guest" },
+      });
+      const worker = createWorker({ createAuth: () => authStub.auth });
+      const { env } = createEnvironment();
+      env.DB = state.d1;
+
+      const response = await worker.fetch(
+        new Request("https://example.test/api/learner-profile"),
+        env,
+      );
+
+      assert.equal(response.status, 200);
+      const payload = await response.json();
+      assert.equal(payload.profile.id, SHARED_GUEST_LEARNER_ID);
+      assert.equal(payload.profile.name, SHARED_GUEST_LEARNER_NAME);
+      assert.equal(payload.profile.profileStatus, "completed");
+      assert.equal(payload.question, null);
+      assert.equal(payload.canBypass, true);
     } finally {
       state.close();
     }
@@ -337,41 +379,6 @@ describe("onboarding persistence and API", () => {
         },
       );
       assert.equal((await sibling.json()).canBypass, false);
-    } finally {
-      state.close();
-    }
-  });
-
-  it("updates only the selected sibling's story level", async () => {
-    const state = createSeededDatabase();
-    try {
-      seedSiblingProfile(state);
-
-      const response = await callLearnerProfile(
-        state.database,
-        "/api/profile/preferences",
-        "PUT",
-        { storyLevel: "tiny-stories" },
-        {
-          learnerProfileId: "learner-b",
-          learnerName: "Leo",
-          legacyStorageOwner: false,
-        },
-      );
-
-      assert.equal(response.status, 200);
-      assert.deepEqual(
-        state.sqlite
-          .prepare(
-            "SELECT id, story_level FROM learner_profile WHERE auth_user_id = ? ORDER BY id",
-          )
-          .all("user-1")
-          .map(({ id, story_level }) => ({ id, story_level })),
-        [
-          { id: "learner-a", story_level: "first-words" },
-          { id: "learner-b", story_level: "tiny-stories" },
-        ],
-      );
     } finally {
       state.close();
     }
@@ -764,53 +771,12 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("returns and updates the learner's selected story level", async () => {
+  it("returns the learner's stored story level", async () => {
     const state = createSeededDatabase();
     try {
       const loaded = await callLearnerProfile(state.database, "/api/profile");
       assert.equal(loaded.status, 200);
       assert.equal((await loaded.json()).profile.storyLevel, "first-words");
-
-      const saved = await callLearnerProfile(
-        state.database,
-        "/api/profile/preferences",
-        "PUT",
-        { storyLevel: "tiny-stories" },
-      );
-      assert.equal(saved.status, 200);
-      assert.equal((await saved.json()).profile.storyLevel, "tiny-stories");
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT story_level FROM learner_profile WHERE auth_user_id = ?")
-          .get("user-1").story_level,
-        "tiny-stories",
-      );
-    } finally {
-      state.close();
-    }
-  });
-
-  it("rejects non-learner story levels and extra preference keys", async () => {
-    const state = createSeededDatabase();
-    try {
-      await callLearnerProfile(state.database, "/api/profile");
-      for (const body of [
-        { storyLevel: "expert" },
-        { storyLevel: "long-stories" },
-        { storyLevel: "first-words", extra: true },
-      ]) {
-        const response = await callLearnerProfile(
-          state.database,
-          "/api/profile/preferences",
-          "PUT",
-          body,
-        );
-        assert.equal(response.status, 400);
-        assert.deepEqual(await response.json(), {
-          error: "invalid_story_level",
-          fieldError: "Choose an available story level.",
-        });
-      }
     } finally {
       state.close();
     }
@@ -840,8 +806,11 @@ describe("onboarding persistence and API", () => {
         /could not be loaded/i,
       );
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-          .count,
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+          )
+          .get("user-1").count,
         0,
       );
     } finally {
@@ -879,8 +848,11 @@ describe("onboarding persistence and API", () => {
       assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), { transcript: "Bluey" });
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-          .count,
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+          )
+          .get("user-1").count,
         0,
       );
     } finally {

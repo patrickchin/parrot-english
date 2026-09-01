@@ -143,6 +143,22 @@ test("desktop home keeps one activity icon and an unobstructed label on each car
   }
 });
 
+test("home preserves the generated word-game cover without cropping it", async ({ page }) => {
+  await page.goto("/");
+
+  const card = page.getByRole("navigation", { name: "Learning activities" })
+    .getByRole("link", { name: "Play word game" });
+  const cover = card.getByRole("img", { name: "A friendly cat." });
+  await expect(cover).toHaveAttribute(
+    "src",
+    "/assets/word-games/fluent-3d/1f431.png",
+  );
+  await expect(cover).toHaveAttribute("height", "512");
+  await expect(cover).toHaveAttribute("width", "512");
+  await expect.poll(() => cover.evaluate((image) => getComputedStyle(image).objectFit))
+    .toBe("contain");
+});
+
 test("home keeps five compact cards in one short-landscape row", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/");

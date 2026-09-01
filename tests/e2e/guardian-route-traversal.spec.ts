@@ -77,11 +77,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
       heading: "Learner profiles",
     },
     {
-      action: "Open story settings",
-      description: "Choose the story level and personalized story options.",
-      heading: "Story settings",
-    },
-    {
       action: "Manage voice dubbing",
       description:
         "Review and delete private nursery-rhyme voice clips.",
@@ -105,7 +100,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
   const cardColors = await Promise.all(
     [
       "Learner profiles",
-      "Story settings",
       "Voice dubbing",
       "Account & privacy",
     ].map((heading) =>
@@ -119,7 +113,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
   const [sectionHeadingSize, cardHeadingSize] = await Promise.all(
     [
       page.getByRole("heading", { name: "Learning & content" }),
-      page.getByRole("heading", { name: "Story settings" }),
+      page.getByRole("heading", { name: "Voice dubbing" }),
     ].map((heading) =>
       heading.evaluate((element) =>
         Number.parseFloat(getComputedStyle(element).fontSize),
@@ -133,13 +127,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
     "Manage learners",
     /\/guardian\/learners$/,
     "Manage learners",
-    "Back to guardian dashboard",
-  );
-  await traverseDashboardAction(
-    page,
-    "Open story settings",
-    /\/guardian\/stories\?learnerProfileId=learner-mia$/,
-    "Story settings",
     "Back to guardian dashboard",
   );
   await traverseDashboardAction(
@@ -211,12 +198,12 @@ test("the retired Guardian profile route replaces history with Manage learners",
   ).toBeVisible();
 });
 
-test("setting routes normalize only a missing target and reject blank duplicate or unknown targets", async ({
+test("learner-targeted routes normalize only a missing target and reject duplicate or unknown targets", async ({
   page,
 }) => {
-  await page.goto(scenarioUrl("/guardian/stories"));
+  await page.goto(scenarioUrl("/guardian/dubbing"));
   await expect(page).toHaveURL(
-    /\/guardian\/stories\?.*learnerProfileId=learner-mia/,
+    /\/guardian\/dubbing\?.*learnerProfileId=learner-mia/,
   );
   await expect(
     page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
@@ -227,7 +214,7 @@ test("setting routes normalize only a missing target and reject blank duplicate 
   ).toBeVisible();
 
   for (const path of [
-    "/guardian/stories?learnerProfileId=learner-mia&learnerProfileId=learner-noah",
+    "/guardian/dubbing?learnerProfileId=learner-mia&learnerProfileId=learner-noah",
     "/guardian/dubbing?learnerProfileId=unknown-learner",
   ]) {
     await page.goto(scenarioUrl(path));
@@ -260,10 +247,11 @@ test("learner routes recover progress, invalid story and lesson details, and wil
 
   await page.goto(scenarioUrl("/profile", "multiple", "learner"));
   await expect(
-    page.getByRole("heading", { exact: true, name: "Switch to guardian mode" }),
+    page.getByRole("heading", { exact: true, name: "Learner details" }),
   ).toBeVisible();
-  await page.getByRole("main").getByRole("button", { name: "Cancel" }).click();
-  await expect(page).toHaveURL("/");
+  await page.evaluate(() => fetch("/api/guardian-access", { method: "DELETE" }));
+  await page.goto(scenarioUrl("/", "multiple", "learner"));
+  await expect(page).toHaveURL(/\/\?.*parrotE2eGuardian=learner/);
   await expect(
     page.getByRole("navigation", { name: "Learning activities" }),
   ).toBeVisible();
@@ -310,20 +298,9 @@ test("Guardian wildcard and account gates recover without selecting a learner", 
     scenarioUrl("/guardian/account", "selection-required", "learner"),
   );
   await expect(
-    page.getByRole("heading", { exact: true, name: "Switch to guardian mode" }),
-  ).toBeVisible();
-  await expect(
     page.getByRole("heading", { exact: true, name: "Account & privacy" }),
-  ).toHaveCount(0);
-  await expect(page.getByRole("main").getByLabel("Password")).toHaveCount(0);
-  await page
-    .getByRole("main")
-    .getByRole("button", { exact: true, name: "Switch to guardian mode" })
-    .click();
+  ).toBeVisible();
   await expect(page).toHaveURL(/\/guardian\/account/);
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Account & privacy" }),
-  ).toBeVisible();
 
   await page.goto(scenarioUrl("/guardian/account", "zero-learners"));
   await expect(

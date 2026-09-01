@@ -21,6 +21,15 @@ const placeholderModule = await vite
 const wordGameListModule = await vite
   .ssrLoadModule("/src/games/WordGameList.tsx")
   .catch(() => ({}));
+const wordGameCategoryModule = await vite
+  .ssrLoadModule("/src/games/WordGameCategory.tsx")
+  .catch(() => ({}));
+const wordGameVisualModule = await vite
+  .ssrLoadModule("/src/games/WordGameVisual.tsx")
+  .catch(() => ({}));
+const wordGameCatalogModule = await vite
+  .ssrLoadModule("/src/games/word-game-catalog.ts")
+  .catch(() => ({}));
 const appModule = await vite
   .ssrLoadModule("/src/app/App.tsx")
   .catch(() => ({}));
@@ -29,6 +38,9 @@ const { LearnerProfileProvider, LearnerSelectionProvider } =
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
 const { WordGameList } = wordGameListModule;
+const { WordGameCategory } = wordGameCategoryModule;
+const { WordGameVisual } = wordGameVisualModule;
+const { resolveWordGameCategory } = wordGameCatalogModule;
 const { ApplicationRoutes } = appModule;
 
 after(async () => {
@@ -111,7 +123,11 @@ test("home menu prioritizes the five learner activities", () => {
   assert.match(html, />Story time</);
   assert.match(html, />Nursery rhymes</);
   assert.match(html, />Word game</);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.match(
+    html,
+    /<img[^>]*alt="A friendly cat\."[^>]*height="512"[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"[^>]*width="512"/,
+  );
   assert.match(
     html,
     /<img[^>]*sizes="\(max-width: 767px\) calc\(\(100vw - 3.25rem\) \/ 2\), \(max-width: 1279px\) calc\(\(100vw - 7rem\) \/ 3\), min\(calc\(\(100vw - 8rem\) \/ 5\), 15rem\)"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp"[^>]*srcSet="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-768\.webp 768w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp 1536w"/,
@@ -151,7 +167,7 @@ test("home menu prioritizes the five learner activities", () => {
   );
 });
 
-test("word-game library renders six topic choices and a home link", () => {
+test("word-game library renders nine category choices and a home link", () => {
   assert.equal(
     typeof WordGameList,
     "function",
@@ -179,6 +195,9 @@ test("word-game library renders six topic choices and a home link", () => {
       "/word-games/food",
       "/word-games/toys",
       "/word-games/feelings",
+      "/word-games/home",
+      "/word-games/clothes",
+      "/word-games/transport",
     ],
   );
   for (const title of [
@@ -188,9 +207,72 @@ test("word-game library renders six topic choices and a home link", () => {
     "Food",
     "Toys",
     "Feelings",
+    "Home",
+    "Clothes",
+    "Transport",
   ]) {
     assert.match(html, new RegExp(`>${title}<`));
   }
+  assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"/);
+});
+
+test("word-game category renders ordered tier sections and canonical quiz links", () => {
+  assert.equal(typeof WordGameCategory, "function");
+  const category = resolveWordGameCategory("animals");
+  assert.ok(category);
+  const html = renderInRouter(
+    createElement(WordGameCategory, { category }),
+    "/word-games/animals",
+  );
+  const headings = [...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map(([, heading]) => heading);
+  const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href);
+
+  assert.equal((html.match(/<h1/g) ?? []).length, 1);
+  assert.match(html, /<h1[^>]*>Animals<\/h1>/);
+  assert.deepEqual(headings, ["Simple", "Intermediate", "Advanced"]);
+  assert.deepEqual(hrefs.filter((href) => href.startsWith("/word-games/animals/")), [
+    "/word-games/animals/simple-1",
+    "/word-games/animals/simple-2",
+    "/word-games/animals/simple-3",
+    "/word-games/animals/intermediate-1",
+    "/word-games/animals/intermediate-2",
+    "/word-games/animals/intermediate-3",
+    "/word-games/animals/advanced-1",
+    "/word-games/animals/advanced-2",
+    "/word-games/animals/advanced-3",
+  ]);
+  assert.match(html, /aria-label="Back to word games"/);
+  for (const alt of [
+    "A friendly cat.", "A friendly bird.", "A friendly duck.",
+    "A friendly cat.", "A friendly bird.", "A friendly cow.",
+    "A friendly pig.", "A friendly horse.", "A friendly elephant.",
+  ]) assert.match(html, new RegExp(`<img[^>]*alt="${alt.replace(".", "\\.")}"`));
+  assert.equal((html.match(/>6 questions</g) ?? []).length, 9);
+});
+
+test("word-game copied artwork is one named composition with decorative image copies", () => {
+  assert.equal(typeof WordGameVisual, "function");
+  const bodyParts = resolveWordGameCategory("body-parts");
+  const animals = resolveWordGameCategory("animals");
+  assert.ok(bodyParts && animals);
+  const ears = bodyParts.items.find(({ id }) => id === "ears");
+  const cat = animals.items.find(({ id }) => id === "cat");
+  assert.ok(ears && cat);
+
+  const pairHtml = renderToStaticMarkup(
+    createElement(WordGameVisual, { item: ears, showLabel: false }),
+  );
+  assert.match(pairHtml, /aria-label="A pair of ears\."/);
+  assert.match(pairHtml, /role="img"/);
+  assert.equal((pairHtml.match(/<img/g) ?? []).length, 2);
+  assert.equal((pairHtml.match(/alt=""/g) ?? []).length, 2);
+  assert.doesNotMatch(pairHtml, /<img[^>]*alt="A pair of ears\."/);
+
+  const catHtml = renderToStaticMarkup(
+    createElement(WordGameVisual, { item: cat, showLabel: false }),
+  );
+  assert.equal((catHtml.match(/<img/g) ?? []).length, 1);
+  assert.match(catHtml, /<img[^>]*alt="A friendly cat\."/);
 });
 
 test("feature placeholder renders supplied copy and a real main-menu link", () => {
@@ -264,16 +346,18 @@ test("authenticated application routes include the core learner activities", () 
   );
   const wordGameLibrary = renderApplicationRoute("/word-games");
   assert.match(wordGameLibrary, /<h1[^>]*>Pick a word game<\/h1>/);
-  const wordGame = renderApplicationRoute("/word-games/animals");
-  assert.match(wordGame, /<h1[^>]*>Animals<\/h1>/);
-  assert.match(wordGame, /Cat\. Which is the cat\?/);
-  assert.doesNotMatch(wordGame, /Start listening/);
+  const wordGameCategory = renderApplicationRoute("/word-games/animals");
+  assert.match(wordGameCategory, /<h1[^>]*>Animals<\/h1>/);
+  assert.match(wordGameCategory, /<h2[^>]*>Simple<\/h2>/);
+  assert.match(wordGameCategory, /href="\/word-games\/animals\/advanced-1"/);
+  const wordGame = renderApplicationRoute("/word-games/animals/simple-1");
+  assert.match(wordGame, /<h1[^>]*>Simple Animals: First look<\/h1>/);
+  assert.match(wordGame, /Which is the cat\?/);
   assert.match(wordGame, /aria-label="Choose cat"/);
-  assert.match(wordGame, /Listen again/);
   assert.match(wordGame, /aria-valuetext="1 of 6"/);
   const encodedWordGame = renderApplicationRoute("/word-games/%61nimals");
   assert.doesNotMatch(encodedWordGame, /<h1[^>]*>Animals<\/h1>/);
-  assert.doesNotMatch(encodedWordGame, /Cat\. Which is the cat\?/);
+  assert.doesNotMatch(encodedWordGame, /Which is the cat\?/);
   const dub = renderApplicationRoute("/dubs/five-little-ducks");
   assert.match(dub, /Five Little Ducks/);
   assert.match(dub, /Loading your private dub…/);

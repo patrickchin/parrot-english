@@ -170,6 +170,7 @@ export function AccountHeader({
   error,
   errorHelper,
   guardianLabel,
+  hasActiveLearner = false,
   isDialogOpen = false,
   isModePending = false,
   isSigningOut,
@@ -177,6 +178,7 @@ export function AccountHeader({
   onOpenAccountPrivacy,
   onOpenGuardianDashboard,
   onOpenLearnerProfiles,
+  onOpenLearnerSwitcher,
   onRetryError,
   onSelectGuardian,
   onSignOut,
@@ -194,6 +196,7 @@ export function AccountHeader({
   onOpenAccountPrivacy: () => void;
   onOpenGuardianDashboard: () => void;
   onOpenLearnerProfiles: () => void;
+  onOpenLearnerSwitcher: (() => void) | null;
   onRetryError?: () => void;
   onSelectGuardian: () => void;
   onSignOut: () => void;
@@ -275,6 +278,12 @@ export function AccountHeader({
     setIsMenuOpen(false);
     accountButtonRef.current?.focus();
     onSignOut();
+  }
+
+  function selectLearnerSwitcher() {
+    setIsMenuOpen(false);
+    accountButtonRef.current?.focus();
+    onOpenLearnerSwitcher?.();
   }
 
   function openMenu(focus: "first" | "last" = "first") {
@@ -474,6 +483,21 @@ export function AccountHeader({
             onKeyDown={handleMenuKeyDown}
             role="menu"
           >
+            {activeMode === "learner" &&
+            hasActiveLearner &&
+            onOpenLearnerSwitcher ? (
+              <MenuButton
+                onClick={selectLearnerSwitcher}
+                role="menuitem"
+                type="button"
+              >
+                <CircleUserRound
+                  aria-hidden="true"
+                  className="size-5 shrink-0"
+                />
+                Switch learner
+              </MenuButton>
+            ) : null}
             {activeMode === "learner" ? (
               <MenuButton
                 disabled={isModePending}

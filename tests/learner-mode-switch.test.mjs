@@ -23,7 +23,7 @@ const vite = await createServer({
   server: { middlewareMode: true },
 });
 
-const { LearnerModeSwitchDialog } = await vite
+const { LearnerModeSelectionPage, LearnerModeSwitchDialog } = await vite
   .ssrLoadModule("/src/app/LearnerModeSwitchDialog.tsx")
   .catch(() => ({}));
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
@@ -109,9 +109,20 @@ function RouteProbe() {
   );
 }
 
-function DialogHarness({ onBeforeNavigate }) {
+function PickerHarness({ destination, onBeforeNavigate, presentation }) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
+  if (presentation === "page") {
+    return createElement(
+      "main",
+      null,
+      createElement(LearnerModeSelectionPage, {
+        destination,
+        onBeforeNavigate,
+      }),
+      createElement(RouteProbe),
+    );
+  }
   return createElement(
     "main",
     null,
@@ -122,7 +133,7 @@ function DialogHarness({ onBeforeNavigate }) {
     ),
     isOpen
       ? createElement(LearnerModeSwitchDialog, {
-          destination: "/",
+          destination,
           onBeforeNavigate,
           onClose: () => setIsOpen(false),
           returnFocusRef: triggerRef,
@@ -133,18 +144,23 @@ function DialogHarness({ onBeforeNavigate }) {
 }
 
 function harness({
+  destination = "/",
   initialLanguage = "en",
   lockAttempt = null,
+  mode = "guardian",
   operations,
+  presentation = "dialog",
   selectError = null,
 }) {
   const Provider = createGuardianAccessProvider({
     api: {
       async loadGuardianAccess() {
-        return {
-          expiresAt: "2099-01-01T00:00:00.000Z",
-          mode: "guardian",
-        };
+        return mode === "guardian"
+          ? {
+              expiresAt: "2099-01-01T00:00:00.000Z",
+              mode: "guardian",
+            }
+          : { mode: "learner" };
       },
       async lockGuardianAccess() {
         operations.push("lock");
@@ -186,8 +202,10 @@ function harness({
         createElement(
           MemoryRouter,
           { initialEntries: ["/guardian"] },
-          createElement(DialogHarness, {
+          createElement(PickerHarness, {
+            destination,
             onBeforeNavigate: () => operations.push("before-navigate"),
+            presentation,
           }),
         ),
       ),
@@ -260,7 +278,9 @@ test("retries a failed protected roster load", async () => {
   const container = await mountStrict(harness({ operations }));
 
   await click(namedButton(container, "Open chooser"));
-  await waitFor(() => assert.match(container.textContent, /Learner profiles could not be loaded/));
+  await waitFor(() =>
+    assert.match(container.textContent, /Learner profiles could not be loaded/),
+  );
   await click(namedButton(container, "Try again"));
 
   await waitFor(() => namedButton(container, "Start learner mode as ⁨Mary⁩"));
@@ -308,6 +328,48 @@ test("a learner button selects, locks, and navigates in one click", async () => 
   ]);
 });
 
+test("the required page selects and resumes a learner deep link without locking learner mode", async () => {
+  assert.equal(
+    typeof LearnerModeSelectionPage,
+    "function",
+    "Expected the required learner-selection page",
+  );
+  const operations = [];
+  installRosterFetch();
+  const container = await mountStrict(
+    harness({
+      destination: "/lessons?from=picker#resume",
+      mode: "learner",
+      operations,
+      presentation: "page",
+    }),
+  );
+
+  await waitFor(() => namedButton(container, "Start learner mode as ⁨Mary⁩"));
+  assert.equal(container.querySelectorAll("h1").length, 1);
+  const heading = container.querySelector("h1");
+  assert.equal(heading?.getAttribute("tabindex"), "-1");
+  await waitFor(() => assert.strictEqual(document.activeElement, heading));
+  const pageNavigation = container.querySelector(
+    'nav[aria-label="Page navigation"]',
+  );
+  assert.ok(pageNavigation, "Expected the shared page navigation landmark.");
+  assert.equal(
+    namedLink(pageNavigation, "Manage learners").getAttribute("href"),
+    "/guardian/learners",
+  );
+  assert.match(container.textContent, /Who is learning now\?/);
+  assert.equal(container.querySelector('[role="dialog"]'), null);
+  assert.doesNotMatch(container.textContent, /Ask a grown-up|Cancel/);
+
+  await click(namedButton(container, "Start learner mode as ⁨Mary⁩"));
+
+  await waitFor(() =>
+    assert.equal(currentRoute(container), "/lessons?from=picker#resume"),
+  );
+  assert.deepEqual(operations, ["select:learner-noah", "before-navigate"]);
+});
+
 test("empty chooser routes the Guardian to Manage learners", async () => {
   const operations = [];
   globalThis.fetch = async (path, init = {}) => {
@@ -320,7 +382,10 @@ test("empty chooser routes the Guardian to Manage learners", async () => {
   await click(namedButton(container, "Open chooser"));
   await waitFor(() => namedLink(container, "Manage learners"));
 
-  assert.equal(namedLink(container, "Manage learners").getAttribute("href"), "/guardian/learners");
+  assert.equal(
+    namedLink(container, "Manage learners").getAttribute("href"),
+    "/guardian/learners",
+  );
   assert.equal(container.querySelector('input[type="radio"]'), null);
   assert.deepEqual(operations, []);
 });
@@ -336,7 +401,10 @@ test("Chinese empty chooser keeps its recovery in the selected language", async 
   await click(namedButton(container, "Open chooser"));
   await waitFor(() => namedLink(container, "管理孩子"));
   assert.match(container.textContent, /切换到学习模式前，请先添加孩子/);
-  assert.equal(namedLink(container, "管理孩子").getAttribute("href"), "/guardian/learners");
+  assert.equal(
+    namedLink(container, "管理孩子").getAttribute("href"),
+    "/guardian/learners",
+  );
   assert.deepEqual(operations, []);
 });
 
@@ -371,7 +439,9 @@ test("Chinese chooser localizes every state and keeps learner names as values", 
   assert.match(dialog?.textContent ?? "", /正在加载孩子资料…/);
 
   firstLoad.resolve();
-  await waitFor(() => assert.match(dialog?.textContent ?? "", /无法加载孩子资料/));
+  await waitFor(() =>
+    assert.match(dialog?.textContent ?? "", /无法加载孩子资料/),
+  );
   failing = false;
   await click(namedButton(container, "重试"));
   await waitFor(() => namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
@@ -398,7 +468,9 @@ test("chooser retranslates a stable selection failure without another roster req
   await waitFor(() => namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
   await click(namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
   const dialog = container.querySelector('[role="dialog"]');
-  await waitFor(() => assert.match(dialog?.textContent ?? "", /无法选择这位孩子/));
+  await waitFor(() =>
+    assert.match(dialog?.textContent ?? "", /无法选择这位孩子/),
+  );
   assert.doesNotMatch(dialog?.textContent ?? "", /SERVER SELECT SENTENCE/);
   const requestsBeforeLanguageChange = requestCount();
 
@@ -427,10 +499,7 @@ test("chooser localizes switching and retranslates a stable lock failure", async
   await waitFor(() =>
     assert.match(dialog?.textContent ?? "", /正在以 ⁨Bob⁩ 身份开始…/),
   );
-  assert.equal(
-    dialog?.querySelector("fieldset")?.disabled,
-    true,
-  );
+  assert.equal(dialog?.querySelector("fieldset")?.disabled, true);
   assert.equal(namedButton(container, "English").disabled, false);
 
   lockAttempt.reject(new Error("SERVER LOCK SENTENCE"));
@@ -440,10 +509,7 @@ test("chooser localizes switching and retranslates a stable lock failure", async
   assert.doesNotMatch(dialog?.textContent ?? "", /SERVER LOCK SENTENCE/);
   const requestsBeforeLanguageChange = requestCount();
   await click(namedButton(container, "English"));
-  assert.match(
-    dialog?.textContent ?? "",
-    /Could not lock guardian mode/,
-  );
+  assert.match(dialog?.textContent ?? "", /Could not lock guardian mode/);
   assert.equal(requestCount(), requestsBeforeLanguageChange);
   assert.deepEqual(operations, ["select:learner-bob", "lock"]);
 });

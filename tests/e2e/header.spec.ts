@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
+
 interface HeaderRoute {
   mode?: "guardian" | "learner";
   name: string;
@@ -47,8 +49,8 @@ const routes: HeaderRoute[] = [
   },
   {
     name: "word game player",
-    path: "/word-games/animals",
-    control: { name: "Back to games", role: "link" },
+    path: "/word-games/animals/simple-1",
+    control: { name: "Back to Animals", role: "link" },
   },
   {
     name: "story reader",
@@ -356,14 +358,14 @@ for (const mode of ["sign-in", "sign-up"] as const) {
   }
 }
 
-test("Continue as guest creates one protected session and enters the app", async ({
+test("Continue as guest normalizes a Guardian return target to learner home", async ({
   page,
 }) => {
   const timestamp = "2026-08-31T00:00:00.000Z";
   const authenticatedSession = {
     session: {
       id: "e2e-guest-session",
-      userId: "e2e-guest-user",
+      userId: SHARED_GUEST_USER_ID,
       token: "e2e-guest-token",
       expiresAt: "2099-01-01T00:00:00.000Z",
       createdAt: timestamp,
@@ -372,11 +374,10 @@ test("Continue as guest creates one protected session and enters the app", async
       userAgent: "Playwright",
     },
     user: {
-      id: "e2e-guest-user",
+      id: SHARED_GUEST_USER_ID,
       name: "Guest",
       email: "temporary@example.test",
       emailVerified: false,
-      isAnonymous: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
@@ -391,7 +392,7 @@ test("Continue as guest creates one protected session and enters the app", async
       status: 200,
     });
   });
-  await page.route("**/api/auth/sign-in/anonymous", async (route) => {
+  await page.route("**/api/auth/sign-in/shared-guest", async (route) => {
     guestRequests += 1;
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-captcha-response"]).toBe(
@@ -408,7 +409,7 @@ test("Continue as guest creates one protected session and enters the app", async
     });
   });
 
-  await page.goto("/login");
+  await page.goto("/login?returnTo=%2Fguardian");
   const guest = page.getByRole("button", { name: "Continue as guest" });
   await expect(guest).toBeEnabled();
   await guest.click();
@@ -418,6 +419,23 @@ test("Continue as guest creates one protected session and enters the app", async
   await expect(
     page.getByRole("complementary", { name: "Account" }),
   ).toBeVisible();
+
+  await page.goto(guardianPath("/guardian/account"));
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Account & privacy" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "How Parrot uses AI" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Technical build details" }),
+  ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Danger zone" })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("button", { exact: true, name: "Delete account" }),
+  ).toHaveCount(0);
 });
 
 for (const route of routes) {
@@ -1053,11 +1071,38 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   await expect(accountMenu).toHaveAttribute("aria-expanded", "true");
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
+    "Switch learner",
     "Grown-up accessSwitch modes",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
   ).toHaveCount(0);
+});
+
+test("the learner menu switches to a sibling and returns to learner home", async ({
+  page,
+}) => {
+  await page.goto(
+    "/lessons?parrotE2eGuardian=learner&parrotE2eLearners=multiple",
+  );
+
+  await page
+    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .click();
+  await page.getByRole("menuitem", { name: "Switch learner" }).click();
+
+  const chooser = page.getByRole("dialog", { name: "Who is learning now?" });
+  await chooser
+    .getByRole("button", { name: "Start learner mode as Noah" })
+    .click();
+
+  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("navigation", { name: "Learning activities" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Profile for Noah, learner mode" }),
+  ).toBeVisible();
 });
 
 test("Guardian menu opens the protected Account & privacy page with deletion only in its Danger zone", async ({

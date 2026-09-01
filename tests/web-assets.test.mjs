@@ -41,6 +41,8 @@ const rhymeScorePattern = new RegExp(
 const rhymeGuidePattern = new RegExp(
   `^nursery-rhymes/${safeSlug}/guides/${safeSlug}\\.mp3$`,
 );
+const wordGameFluentPattern =
+  /^word-games\/fluent-3d\/[a-f0-9]+(?:_[a-f0-9]+)*\.png$/;
 
 function isSupportedAsset(filePath) {
   if (filePath.startsWith("nursery-rhymes/")) {
@@ -48,7 +50,7 @@ function isSupportedAsset(filePath) {
       || rhymeScorePattern.test(filePath)
       || rhymeGuidePattern.test(filePath);
   }
-  return webAssetExtensions.has(extname(filePath));
+  return wordGameFluentPattern.test(filePath) || webAssetExtensions.has(extname(filePath));
 }
 
 async function listAssetFiles(dir) {
@@ -118,8 +120,9 @@ describe("web asset formats", () => {
   it("keeps static runtime imagery in R2 instead of the deployment bundle", async () => {
     const files = await listAssetFiles(publicDir);
     const bundledImages = files
-      .map((filePath) => relative(publicDir, filePath))
-      .filter((filePath) => staticImageExtensions.has(extname(filePath)));
+      .filter((filePath) => staticImageExtensions.has(extname(filePath)))
+      .filter((filePath) => !wordGameFluentPattern.test(relative(publicAssetsDir, filePath)))
+      .map((filePath) => relative(publicDir, filePath));
 
     assert.deepEqual(bundledImages, []);
   });

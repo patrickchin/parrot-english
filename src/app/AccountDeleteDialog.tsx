@@ -8,12 +8,10 @@ import { useDialogFocus } from "./useDialogFocus";
 export function AccountDeleteDialog({
   onClose,
   onDelete,
-  requiresPassword = true,
   returnFocusRef,
 }: {
   onClose: () => void;
   onDelete: (password: string) => Promise<AccountDeleteErrorCode>;
-  requiresPassword?: boolean;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const { language, messages } = useGuardianLanguage();
@@ -23,20 +21,19 @@ export function AccountDeleteDialog({
   const [password, setPassword] = useState("");
   const isDeletingRef = useRef(false);
   const passwordRef = useRef<HTMLInputElement>(null);
-  const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
 
   useDialogFocus({
     canClose: () => !isDeletingRef.current,
     dialogRef,
-    initialFocusRef: requiresPassword ? passwordRef : confirmButtonRef,
+    initialFocusRef: passwordRef,
     onClose,
     returnFocusRef,
   });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if ((requiresPassword && !password) || isDeletingRef.current) return;
+    if (!password || isDeletingRef.current) return;
 
     isDeletingRef.current = true;
     setIsDeleting(true);
@@ -94,28 +91,26 @@ export function AccountDeleteDialog({
             className="m-0 grid min-w-0 gap-5 border-0 p-0 disabled:opacity-75"
             disabled={isDeleting}
           >
-            {requiresPassword ? (
-              <label
-                className="grid gap-2 font-black text-brand-ink"
-                htmlFor="delete-account-password"
-              >
-                <span>{copy.password}</span>
-                <input
-                  autoComplete="current-password"
-                  className={fieldClassName({ tone: "tinted" })}
-                  id="delete-account-password"
-                  name="password"
-                  onChange={(event) => {
-                    setPassword(event.target.value);
-                    setError(null);
-                  }}
-                  ref={passwordRef}
-                  required
-                  type="password"
-                  value={password}
-                />
-              </label>
-            ) : null}
+            <label
+              className="grid gap-2 font-black text-brand-ink"
+              htmlFor="delete-account-password"
+            >
+              <span>{copy.password}</span>
+              <input
+                autoComplete="current-password"
+                className={fieldClassName({ tone: "tinted" })}
+                id="delete-account-password"
+                name="password"
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setError(null);
+                }}
+                ref={passwordRef}
+                required
+                type="password"
+                value={password}
+              />
+            </label>
 
             {error ? (
               <p
@@ -130,12 +125,7 @@ export function AccountDeleteDialog({
               <ActionButton onClick={onClose} type="button" variant="surface">
                 {copy.cancel}
               </ActionButton>
-              <ActionButton
-                disabled={requiresPassword && !password}
-                ref={confirmButtonRef}
-                type="submit"
-                variant="rose"
-              >
+              <ActionButton disabled={!password} type="submit" variant="rose">
                 {isDeleting ? copy.deleting : copy.confirm}
               </ActionButton>
             </div>

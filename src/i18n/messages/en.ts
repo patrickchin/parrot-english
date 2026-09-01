@@ -47,11 +47,9 @@ export const englishGuardianMessages = {
       "name-required": "Enter your name.",
       "invalid-email": "Enter a valid email address.",
       "password-too-short": "Password must be at least 8 characters.",
-      "email-registered":
-        "This email is already registered. Sign in instead.",
+      "email-registered": "This email is already registered. Sign in instead.",
       "invalid-credentials": "The email or password is incorrect.",
-      "security-check-required":
-        "Complete the security check, then try again.",
+      "security-check-required": "Complete the security check, then try again.",
       "security-check-rejected":
         "The security check expired or was rejected. Please try again.",
       "sign-in-failed": "Unable to sign you in. Please try again.",
@@ -80,10 +78,6 @@ export const englishGuardianMessages = {
       "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
     manageLearners: "Manage learners",
     learningContentTitle: "Learning & content",
-    storySettingsTitle: "Story settings",
-    storySettingsDescription:
-      "Choose the story level and personalized story options.",
-    openStorySettings: "Open story settings",
     voiceDubbingTitle: "Voice dubbing",
     voiceDubbingDescription:
       "Review and delete private nursery-rhyme voice clips.",
@@ -92,91 +86,6 @@ export const englishGuardianMessages = {
     accountPrivacyDescription:
       "Review how AI is used, what Parrot saves, and account deletion controls.",
     openAccountPrivacy: "Open account & privacy",
-  },
-  storySettings: {
-    backToDashboard: "Back to guardian dashboard",
-    title: "Story settings",
-    chooseLevel: "Choose story level",
-    levelSummary: "Selected story level details",
-    shelfBefore: "This shelf opens first for ",
-    shelfAfter: ". Every story shelf is still available.",
-    cefrLabel: "CEFR",
-    loading: "Loading story settings…",
-    saving: "Saving story level…",
-    saved: (level: string) => `Story level saved: ${level}.`,
-    levels: {
-      "first-words": {
-        label: "Level 1 · Words & pictures",
-        cefrReference: "Entry Pre-A1",
-        description: "A few familiar words on each page.",
-      },
-      "repeating-patterns": {
-        label: "Level 2 · Repeating stories",
-        cefrReference: "Supported Pre-A1",
-        description: "Short sentences repeat so you can join in.",
-      },
-      "tiny-stories": {
-        label: "Level 3 · Short stories",
-        cefrReference: "Secure Pre-A1",
-        description: "Short sentences tell a whole story.",
-      },
-      "early-a1": {
-        label: "Level 4 · Longer stories",
-        cefrReference: "Pre-A1 to A1 bridge",
-        description: "More words and pages build a fuller story.",
-      },
-    },
-    errors: {
-      "load-failed": "Story settings could not be loaded.",
-      "save-level-failed": "Story level could not be saved.",
-    },
-  },
-  personalizedArt: {
-    sectionLabel: "Personalized story art",
-    aiPrivate: "AI · Private",
-    headingBeforeStory: "Make page one of ",
-    headingAfterStory: " look like ",
-    descriptionBeforeName:
-      "This is optional. A cropped copy goes to Cloudflare Workers AI. Parrot adds only ",
-    descriptionAfterName:
-      "'s private storybook-style picture to this account, and you can delete it anytime.",
-    uploadBeforeName: "Upload ",
-    uploadAfterName: "'s photo",
-    selectedFile: (fileName: string) => `Selected: ${fileName}`,
-    photoSelected: "Photo selected.",
-    noPhoto: "No photo chosen yet.",
-    consentBeforeName: "I am 18 or older. I confirm I am ",
-    consentAfterName:
-      "'s guardian or have permission to use this photo, and I agree to send a cropped copy to Cloudflare Workers AI to make the illustration.",
-    creating: "Creating story art…",
-    generate: "Generate story art",
-    regenerate: "Regenerate story art",
-    delete: "Delete story art",
-    cleanupLabel: "Private art cleanup",
-    cleanupTitleBeforeName: "Remove ",
-    cleanupTitleAfterName: "'s stored story art",
-    cleanupDescriptionBeforeName:
-      "New generation is unavailable, but ",
-    cleanupDescriptionAfterName:
-      "'s private story art can still be deleted. If an earlier purge failed, this retries it.",
-    deleteStored: "Delete stored story art",
-    deletingStored: "Deleting stored story art…",
-    preview: "Preview",
-    previewLabel: "Storybook portrait preview",
-    previewBeforeName: "",
-    previewAfterName:
-      "'s private storybook-style portrait will appear here.",
-    generatedAlt: (name: string, storyTitle: string) =>
-      `Personalized story art for ${name} in ${storyTitle}`,
-    errors: {
-      "load-failed": "Personalized story art could not be loaded.",
-      "generate-failed": "Story art could not be generated.",
-      "delete-failed": "Story art could not be deleted.",
-    },
-    statuses: {
-      ready: "Story art ready",
-      removed: "Personalized story art removed.",
-    },
   },
   dubbingSettings: {
     backToDashboard: "Back to guardian dashboard",
@@ -216,7 +125,7 @@ export const englishGuardianMessages = {
     aiDataTitle: "AI and saved data",
     aiUseTitle: "How Parrot uses AI",
     aiUseBody:
-      "AI helps turn speech into text, check spoken answers, run voice conversations, and make optional story art.",
+      "AI helps turn speech into text, check spoken answers, run voice conversations, and summarize learner profiles.",
     aiWarning:
       "AI can hear words wrongly or say something wrong. Please check speech feedback and stay nearby during voice chats.",
     accountKeepsTitle: "What this account keeps",
@@ -233,19 +142,19 @@ export const englishGuardianMessages = {
     keepsLessonProfiles:
       "Saved lesson recordings are managed independently for each selected learner profile.",
     keepsStoryArt:
-      "If a grown-up chooses story art, a cropped photo is sent to Cloudflare Workers AI. The photo is not added to the account. Parrot keeps each learner’s private storybook picture until it is deleted.",
+      "Accounts that previously made a private story picture may keep that generated picture until its learner or the account is deleted. The original photo was not stored.",
     outsideServices:
       "Outside AI and voice services process some inputs under their own retention rules.",
     actionsTitle: "What you can do",
     actionsBody:
-      "A learner can finish a conversation at any time. In Guardian mode, choose a learner to manage their saved details, lesson voice recordings, nursery-rhyme voice clips, and optional story art.",
+      "A learner can finish a conversation at any time. In Guardian mode, choose a learner to manage their saved details, lesson voice recordings, and nursery-rhyme voice clips.",
     deletionBody:
-      "Delete account removes the account, all learner profiles and their saved data, including saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and private story art. A small deletion marker stays so old private art cannot return.",
+      "Delete account removes the account, all learner profiles and their saved data, including saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and any previously saved private story pictures. A small deletion marker stays so removed private media cannot return.",
     technicalLabel: "Technical build details",
     technicalTitle: "Technical build details",
     technicalSubtitle: "Versions and AI services for troubleshooting",
     technicalBody:
-      "Current services include Cloudflare for hosting and story art, LiveKit for live voice transport, OpenAI for live voice, and Groq for speech checks and profile summaries. Some saved lesson and profile audio was made with ElevenLabs before deployment.",
+      "Current services include Cloudflare for hosting, LiveKit for live voice transport, OpenAI for live voice, and Groq for speech checks and profile summaries. Some saved lesson and profile audio was made with ElevenLabs before deployment.",
     webApp: "Web app",
     worker: "Cloudflare Worker",
     agent: "Conversation agent",
@@ -272,14 +181,14 @@ export const englishGuardianMessages = {
       cannotUndo: "Cannot be undone",
       title: "Delete account",
       description:
-        "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and private story art from Parrot. A small deletion marker stays so old private art cannot return.",
+        "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and any previously saved private story pictures from Parrot. A small deletion marker stays so removed private media cannot return.",
       password: "Password",
       cancel: "Cancel",
       deleting: "Deleting account…",
       confirm: "Delete account now",
       errors: {
         "account-delete-failed":
-          "Unable to delete the account. The account and private story art were kept. Please try again.",
+          "Unable to delete the account. The account and private media were kept. Please try again.",
       },
     },
   },
@@ -289,6 +198,7 @@ export const englishGuardianMessages = {
     loadingTitle: "Loading…",
     loadingDescription: "Getting your activity ready.",
     backToDashboard: "Back to Guardian dashboard",
+    openFailedTitle: "Guardian tools did not open",
   },
   learnerSwitch: {
     title: "Who is learning now?",
@@ -300,8 +210,7 @@ export const englishGuardianMessages = {
     manageLearners: "Manage learners",
     startAs: (name: string) => `Start learner mode as ⁨${name}⁩`,
     starting: (name: string) => `Starting ⁨${name}⁩…`,
-    startingStatus: (name: string) =>
-      `Starting learner mode as ⁨${name}⁩…`,
+    startingStatus: (name: string) => `Starting learner mode as ⁨${name}⁩…`,
     errors: {
       "select-failed": "Could not select this learner. Try again.",
       "lock-failed":
@@ -362,8 +271,7 @@ export const englishGuardianMessages = {
         "last-learner": "Add another learner before deleting this learner.",
         "learner-busy":
           "Finish this learner's current conversation, then try again.",
-        "cleanup-pending":
-          "Learner cleanup is still in progress. Try again.",
+        "cleanup-pending": "Learner cleanup is still in progress. Try again.",
         "deletion-uncertain":
           "We couldn't confirm whether this learner was deleted. Refresh learner profiles before trying again.",
         "delete-failed": "The learner was not deleted. Try again.",
@@ -438,8 +346,7 @@ export const englishGuardianMessages = {
         "private-details":
           "Do not share your school, home address, phone, email, or password.",
         "preferred-name": "Please use only your first name or nickname.",
-        "age-whole-number":
-          "Please tell me your age using a whole number.",
+        "age-whole-number": "Please tell me your age using a whole number.",
         "check-answer": "Please check this answer and try again.",
       },
     },

@@ -48,8 +48,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes ffmpeg
 
-      - name: Check generated nursery rhyme catalog
-        run: npm run check:rhyme-catalog
+      - name: Check generated content catalogs
+        run: npm run check:content-catalogs
 
       - name: Verify Cloudflare credentials
         run: |

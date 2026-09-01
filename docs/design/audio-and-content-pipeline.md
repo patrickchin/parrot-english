@@ -14,7 +14,7 @@ story's shelf identity, cover, reader pages, and completion line. Each page
 carries its artwork and saved narration/join-in audio IDs. Language targets,
 word-count review, and prompt experiments happen before a story is checked in;
 they are not runtime catalog fields. Artwork production prompts stay with their
-artwork because personalized-art generation consumes them, but they are never
+artwork as production provenance and fallback descriptions, but they are never
 rendered as extra child-facing reading text.
 
 The Five Little Ducks dubbing activity is a separate media path built around

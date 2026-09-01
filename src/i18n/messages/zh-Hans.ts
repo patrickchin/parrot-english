@@ -74,9 +74,6 @@ export const chineseGuardianMessages = {
       "添加、编辑或删除孩子资料。切换到学习模式时，你需要选择一位孩子。",
     manageLearners: "管理孩子",
     learningContentTitle: "学习与内容",
-    storySettingsTitle: "故事设置",
-    storySettingsDescription: "选择故事级别和个性化故事选项。",
-    openStorySettings: "打开故事设置",
     voiceDubbingTitle: "配音管理",
     voiceDubbingDescription: "查看和删除私密的童谣配音片段。",
     manageVoiceDubbing: "管理配音",
@@ -84,89 +81,6 @@ export const chineseGuardianMessages = {
     accountPrivacyDescription:
       "查看 AI 的使用方式、Parrot 保存的内容以及账户删除选项。",
     openAccountPrivacy: "打开账户与隐私",
-  },
-  storySettings: {
-    backToDashboard: "返回家长中心",
-    title: "故事设置",
-    chooseLevel: "选择故事级别",
-    levelSummary: "所选故事级别详情",
-    shelfBefore: "这个书架会优先为 ",
-    shelfAfter: " 打开，其他故事书架仍然都可以使用。",
-    cefrLabel: "CEFR",
-    loading: "正在加载故事设置…",
-    saving: "正在保存故事级别…",
-    saved: (level: string) => `故事级别已保存：${level}。`,
-    levels: {
-      "first-words": {
-        label: "级别 1 · 单词与图片",
-        cefrReference: "Entry Pre-A1",
-        description: "每页只有几个熟悉的单词。",
-      },
-      "repeating-patterns": {
-        label: "级别 2 · 重复句型故事",
-        cefrReference: "Supported Pre-A1",
-        description: "短句会重复，方便孩子跟着说。",
-      },
-      "tiny-stories": {
-        label: "级别 3 · 短故事",
-        cefrReference: "Secure Pre-A1",
-        description: "用简短句子讲完一个完整故事。",
-      },
-      "early-a1": {
-        label: "级别 4 · 较长故事",
-        cefrReference: "Pre-A1 to A1 bridge",
-        description: "更多单词和页面组成更完整的故事。",
-      },
-    },
-    errors: {
-      "load-failed": "无法加载故事设置。请重试。",
-      "save-level-failed": "无法保存故事级别。请重试。",
-    },
-  },
-  personalizedArt: {
-    sectionLabel: "个性化故事图片",
-    aiPrivate: "AI · 私密",
-    headingBeforeStory: "让 ",
-    headingAfterStory: " 的第一页看起来像 ",
-    descriptionBeforeName:
-      "此功能为可选项。裁剪后的副本会发送到 Cloudflare Workers AI。Parrot 只会把 ",
-    descriptionAfterName:
-      " 的私密故事书风格图片添加到此账户，你可以随时删除。",
-    uploadBeforeName: "上传 ",
-    uploadAfterName: " 的照片",
-    selectedFile: (fileName: string) => `已选择：${fileName}`,
-    photoSelected: "已选择照片。",
-    noPhoto: "尚未选择照片。",
-    consentBeforeName: "我已年满 18 岁。我确认自己是 ",
-    consentAfterName:
-      " 的家长或已获准使用这张照片，并同意把裁剪后的副本发送到 Cloudflare Workers AI 来生成插图。",
-    creating: "正在创建故事图片…",
-    generate: "生成故事图片",
-    regenerate: "重新生成故事图片",
-    delete: "删除故事图片",
-    cleanupLabel: "私密图片清理",
-    cleanupTitleBeforeName: "删除 ",
-    cleanupTitleAfterName: " 已保存的故事图片",
-    cleanupDescriptionBeforeName: "现在无法生成新图片，但仍可删除 ",
-    cleanupDescriptionAfterName:
-      " 的私密故事图片。如果之前的清理失败，此操作会重试。",
-    deleteStored: "删除已保存的故事图片",
-    deletingStored: "正在删除已保存的故事图片…",
-    preview: "预览",
-    previewLabel: "故事书肖像预览",
-    previewBeforeName: "",
-    previewAfterName: " 的私密故事书风格肖像会显示在这里。",
-    generatedAlt: (name: string, storyTitle: string) =>
-      `${name} 在 ${storyTitle} 中的个性化故事图片`,
-    errors: {
-      "load-failed": "无法加载个性化故事图片。请重试。",
-      "generate-failed": "无法生成故事图片。请重试。",
-      "delete-failed": "无法删除故事图片。请重试。",
-    },
-    statuses: {
-      ready: "故事图片已准备好。",
-      removed: "个性化故事图片已删除。",
-    },
   },
   dubbingSettings: {
     backToDashboard: "返回家长中心",
@@ -178,8 +92,7 @@ export const chineseGuardianMessages = {
     savedCountAfterName: " 可以在所有童谣中录制和替换台词。",
     privacyBeforeName: "已保存的配音片段仅属于 ",
     privacyAfterName: " 的私密档案。新录音会替换同一童谣台词的旧片段。",
-    deleteAllGuidance:
-      "此家长页面只会删除全部已保存片段，不提供逐句删除。",
+    deleteAllGuidance: "此家长页面只会删除全部已保存片段，不提供逐句删除。",
     deleteBeforeName: "删除 ",
     deleteAfterName: " 已保存的童谣配音片段",
     deleting: "正在删除配音片段…",
@@ -203,7 +116,7 @@ export const chineseGuardianMessages = {
     aiDataTitle: "AI 与已保存的数据",
     aiUseTitle: "Parrot 如何使用 AI",
     aiUseBody:
-      "AI 可帮助把语音转成文字、检查口语回答、进行语音对话，并生成可选的故事图片。",
+      "AI 可帮助把语音转成文字、检查口语回答、进行语音对话，并汇总孩子资料。",
     aiWarning:
       "AI 可能听错或说错。请检查语音反馈，并在语音对话时陪在孩子身边。",
     accountKeepsTitle: "此账户保存什么",
@@ -219,19 +132,18 @@ export const chineseGuardianMessages = {
       "课程会为每个跟读时刻保存一个私密语音片段。新录音会替换该时刻的旧录音。Parrot 目前不会为这些片段评分或转写。停止课程录音或删除账户会移除它们。",
     keepsLessonProfiles: "每位孩子已保存的课程录音都单独管理。",
     keepsStoryArt:
-      "如果家长选择故事图片，裁剪后的照片会发送到 Cloudflare Workers AI。照片不会添加到账户中。Parrot 会保留每位孩子的私密故事书图片，直到家长将其删除。",
-    outsideServices:
-      "外部 AI 和语音服务会按照各自的数据保留规则处理部分输入。",
+      "以前创建过私密故事图片的账户，可能会继续保存已生成的图片，直到对应孩子资料或账户被删除。原始照片不会被保存。",
+    outsideServices: "外部 AI 和语音服务会按照各自的数据保留规则处理部分输入。",
     actionsTitle: "你可以做什么",
     actionsBody:
-      "孩子可以随时结束对话。在家长模式中，选择一位孩子即可管理其已保存的资料、课程语音录音、童谣配音片段和可选故事图片。",
+      "孩子可以随时结束对话。在家长模式中，选择一位孩子即可管理其已保存的资料、课程语音录音和童谣配音片段。",
     deletionBody:
-      "删除账户会移除账户、所有孩子资料及其已保存的数据，包括对话文字、所有童谣的私密配音片段、课程语音录音和私密故事图片。系统会保留一个小型删除标记，防止旧的私密图片再次出现。",
+      "删除账户会移除账户、所有孩子资料及其已保存的数据，包括对话文字、所有童谣的私密配音片段、课程语音录音和以前保存的私密故事图片。系统会保留一个小型删除标记，防止已删除的私密媒体再次出现。",
     technicalLabel: "技术构建详情",
     technicalTitle: "技术构建详情",
     technicalSubtitle: "用于故障排查的版本和 AI 服务",
     technicalBody:
-      "当前服务包括用于托管和故事图片的 Cloudflare、用于实时语音传输的 LiveKit、用于实时语音的 OpenAI，以及用于口语检查和资料摘要的 Groq。部分已保存的课程和资料音频是在部署前由 ElevenLabs 生成的。",
+      "当前服务包括用于托管的 Cloudflare、用于实时语音传输的 LiveKit、用于实时语音的 OpenAI，以及用于口语检查和资料摘要的 Groq。部分已保存的课程和资料音频是在部署前由 ElevenLabs 生成的。",
     webApp: "网页应用",
     worker: "Cloudflare Worker",
     agent: "对话代理",
@@ -247,8 +159,7 @@ export const chineseGuardianMessages = {
     agentMissing: "对话代理尚未报告。开始对话时，它会报告自己的构建信息。",
     matchesWeb: "与网页提交一致",
     differsFromWeb: "与网页应用的提交不同",
-    workerDeployment: (deploymentId: string) =>
-      `Worker 部署 ${deploymentId}`,
+    workerDeployment: (deploymentId: string) => `Worker 部署 ${deploymentId}`,
     missingValue: "暂无",
     dangerTitle: "危险操作区",
     dangerBody: "永久删除此账户及其已保存的孩子数据。",
@@ -257,14 +168,13 @@ export const chineseGuardianMessages = {
       cannotUndo: "此操作无法撤销",
       title: "删除账户",
       description:
-        "这将从 Parrot 中删除你的账户、所有孩子资料、已保存的对话文字、所有童谣的私密配音片段、课程语音录音和私密故事图片。系统会保留一个小型删除标记，防止旧的私密图片再次出现。",
+        "这将从 Parrot 中删除你的账户、所有孩子资料、已保存的对话文字、所有童谣的私密配音片段、课程语音录音和以前保存的私密故事图片。系统会保留一个小型删除标记，防止已删除的私密媒体再次出现。",
       password: "密码",
       cancel: "取消",
       deleting: "正在删除账户…",
       confirm: "立即删除账户",
       errors: {
-        "account-delete-failed":
-          "无法删除账户。账户和私密故事图片已保留，请重试。",
+        "account-delete-failed": "无法删除账户。账户和私密媒体已保留，请重试。",
       },
     },
   },
@@ -274,6 +184,7 @@ export const chineseGuardianMessages = {
     loadingTitle: "正在加载…",
     loadingDescription: "正在准备家长页面。",
     backToDashboard: "返回家长中心",
+    openFailedTitle: "家长工具未能打开",
   },
   learnerSwitch: {
     title: "谁在学习？",
@@ -285,8 +196,7 @@ export const chineseGuardianMessages = {
     manageLearners: "管理孩子",
     startAs: (name: string) => `以 ⁨${name}⁩ 身份开始学习模式`,
     starting: (name: string) => `正在以 ⁨${name}⁩ 身份开始…`,
-    startingStatus: (name: string) =>
-      `正在以 ⁨${name}⁩ 身份启动学习模式…`,
+    startingStatus: (name: string) => `正在以 ⁨${name}⁩ 身份启动学习模式…`,
     errors: {
       "select-failed": "无法选择这位孩子。请重试。",
       "lock-failed": "无法锁定家长模式。交还设备前请重试。",
@@ -344,7 +254,8 @@ export const chineseGuardianMessages = {
         "last-learner": "请先添加另一位孩子，再删除这位孩子。",
         "learner-busy": "请先结束这位孩子当前的对话，然后重试。",
         "cleanup-pending": "孩子资料清理仍在进行中。请重试。",
-        "deletion-uncertain": "无法确认这位孩子是否已删除。请刷新孩子资料后重试。",
+        "deletion-uncertain":
+          "无法确认这位孩子是否已删除。请刷新孩子资料后重试。",
         "delete-failed": "未能删除这位孩子。请重试。",
       },
     },
@@ -393,7 +304,8 @@ export const chineseGuardianMessages = {
       finishDeletingRecordings: "继续删除课程录音",
       deleteRecordingsConfirm: "删除所有已保存的课程语音录音？此操作无法撤销。",
       redoTitle: "重新完成孩子设置",
-      redoDescription: "再次回答佩奇的设置问题。普通对话请返回主页并选择“和佩奇对话”。",
+      redoDescription:
+        "再次回答佩奇的设置问题。普通对话请返回主页并选择“和佩奇对话”。",
       redoAction: "重新回答设置问题",
       peppaAlt: "佩奇微笑",
       saveChanges: "保存更改",
@@ -486,7 +398,8 @@ export const chineseGuardianMessages = {
     guardianAccessErrorHelper: "请让家长重试。",
     switchToLearnerHelper: "请家长切换到学习模式后继续。",
     chooseLearnerTitleHelper: "请家长先选择一位孩子",
-    chooseLearnerBodyHelper: "家长可以进入家长模式，选择正在学习的孩子后再返回。",
+    chooseLearnerBodyHelper:
+      "家长可以进入家长模式，选择正在学习的孩子后再返回。",
     savedAnswersHelper: "我们会保存你的回答，家长可以修改你的姓名和年龄。",
     recordingPermissionHelper: "请让家长开启麦克风权限，然后重试。",
     recordingCautionHelper: "录音前请先征得家长同意。",

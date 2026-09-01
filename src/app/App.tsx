@@ -65,6 +65,7 @@ import {
   getLessonScenePath,
   getLoginPath,
   getLearnerProfilePath,
+  getPostLoginDestination,
   getProfilePath,
   getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
@@ -94,6 +95,7 @@ import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
 import { WordGameList } from "../games/WordGameList";
+import { WordGameCategory } from "../games/WordGameCategory";
 import { WordGamePlayer } from "../games/WordGamePlayer";
 import { LearnerProfileGate } from "../learner-profile/LearnerProfileGate";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
@@ -134,7 +136,6 @@ import {
   saveLessonRecording,
 } from "../lessons/lesson-recording-api";
 import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
-import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
@@ -163,11 +164,12 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian/learners/:learnerId",
   "/guardian/profile",
   "/guardian/profile/setup",
-  "/guardian/stories",
   "/talk-to-peppa",
   "/word-game",
   "/word-games",
-  "/word-games/:gameId",
+  "/word-games/:categoryId",
+  "/word-games/:categoryId/:quizId",
+  "/word-games/*",
   "/lessons",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
@@ -194,13 +196,6 @@ const StoryList = import.meta.env.SSR
       import("../stories/StoryList").then(({ StoryList }) => ({
         default: StoryList,
       })),
-    );
-const GuardianStorySettings = import.meta.env.SSR
-  ? (await import("../stories/GuardianStorySettings")).GuardianStorySettings
-  : lazy(() =>
-      import("../stories/GuardianStorySettings").then(
-        ({ GuardianStorySettings }) => ({ default: GuardianStorySettings }),
-      ),
     );
 const GuardianDubbingSettings = import.meta.env.SSR
   ? (await import("../dubbing/GuardianDubbingSettings")).GuardianDubbingSettings
@@ -1134,7 +1129,6 @@ function StoryRouteDecisionView({
   decision: StoryRouteDecision;
 }) {
   const navigate = useNavigate();
-  const personalizedStoryArt = usePersonalizedStoryArt();
 
   if (decision.kind === "redirect") {
     return <Navigate replace={decision.replace} to={decision.to} />;
@@ -1147,7 +1141,6 @@ function StoryRouteDecisionView({
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }
       pageIndex={decision.pageIndex}
-      personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
     />
   );
@@ -1180,15 +1173,28 @@ function WordGameRouteDecisionView({
     return <Navigate replace={decision.replace} to={decision.to} />;
   }
 
-  return <WordGamePlayer key={decision.topic.id} topic={decision.topic} />;
+  if (decision.kind === "category") {
+    return <WordGameCategory category={decision.category} />;
+  }
+
+  return (
+    <WordGamePlayer
+      key={`${decision.selection.category.id}/${decision.selection.quiz.id}`}
+      selection={decision.selection}
+    />
+  );
 }
 
 function WordGameRoute() {
   const location = useLocation();
-  const { gameId } = useParams();
+  const { categoryId, quizId } = useParams();
   return (
     <WordGameRouteDecisionView
-      decision={resolveWordGameRouteDecision(gameId, location.pathname)}
+      decision={resolveWordGameRouteDecision(
+        categoryId,
+        quizId,
+        location.pathname,
+      )}
     />
   );
 }
@@ -1258,7 +1264,6 @@ export function ApplicationRoutes({
           element={<GuardianLearnerDetails />}
           path="/guardian/learners/:learnerId"
         />
-        <Route element={<GuardianStorySettings />} path="/guardian/stories" />
         <Route
           element={<GuardianDubbingSettings />}
           path={getGuardianDubbingPath()}
@@ -1266,7 +1271,9 @@ export function ApplicationRoutes({
         <Route element={<HomeMenu />} path="/" />
         <Route element={<Navigate replace to="/word-games" />} path="/word-game" />
         <Route element={<WordGameList />} path="/word-games" />
-        <Route element={<WordGameRoute />} path="/word-games/:gameId" />
+        <Route element={<WordGameRoute />} path="/word-games/:categoryId/:quizId" />
+        <Route element={<WordGameRoute />} path="/word-games/:categoryId" />
+        <Route element={<WordGameRoute />} path="/word-games/*" />
         <Route
           element={
             <FeaturePlaceholder
@@ -1354,7 +1361,11 @@ export function AuthenticatedApplication({
   const location = useLocation();
   const navigate = useNavigate();
   const accountExperience = useAccountExperience();
-  const { mode: guardianAccessMode } = useGuardianAccess();
+  const {
+    acknowledgeLearnerSwitch,
+    blockedByLearnerSwitch,
+    mode: guardianAccessMode,
+  } = useGuardianAccess();
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
   const isLearnerProfileRoute = gateRoute === "learner-profile";
@@ -1364,6 +1375,7 @@ export function AuthenticatedApplication({
     location.pathname,
   );
   const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const learnerProfileRoute = isLearnerProfileRoute && !guardianRoute;
   const guardianBoundaryRoute = guardianRoute || guardianLearnerChildRoute;
   const guardianDashboardRoute =
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
@@ -1383,12 +1395,28 @@ export function AuthenticatedApplication({
     isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
   const safeReturnTo = guardianRoute
     ? getSafeGuardianReturnTo(location.search)
-    : (getSafeReturnTo(location.search) ?? "/");
+    : onLoginRoute
+      ? getPostLoginDestination(location.search)
+      : (getSafeReturnTo(location.search) ?? "/");
   const requestedProtectedTarget = getRequestedProtectedTarget(
     location.pathname,
     location.search,
     location.hash,
   );
+  useEffect(() => {
+    if (
+      learnerProfileRoute &&
+      guardianAccessMode === "learner" &&
+      blockedByLearnerSwitch
+    ) {
+      acknowledgeLearnerSwitch();
+    }
+  }, [
+    acknowledgeLearnerSwitch,
+    blockedByLearnerSwitch,
+    guardianAccessMode,
+    learnerProfileRoute,
+  ]);
   const openProfileRoute = useCallback(() => {
     onExitLessonRoute();
     navigate(getProfilePath(requestedProtectedTarget));
@@ -1435,6 +1463,7 @@ export function AuthenticatedApplication({
       isLearnerProfileRoute={isLearnerProfileRoute}
       isProfileRoute={isProfileRoute}
       learnerManagerRoute={learnerManagerRoute}
+      learnerSelectionDestination={requestedProtectedTarget}
       learnerProfileFallback={
         <Navigate
           replace
@@ -1444,6 +1473,7 @@ export function AuthenticatedApplication({
       onCloseProfileRoute={() => navigate(safeReturnTo, { replace: true })}
       onCloseGuardianRoute={() => navigate(safeReturnTo, { replace: true })}
       onConversationCompleted={() => navigate("/", { replace: true })}
+      onBeforeLearnerSelectionNavigate={onExitLessonRoute}
       onOpenLessons={() => navigate("/lessons", { replace: true })}
       onOpenProfileRoute={openProfileRoute}
       onRedoCompleted={() => navigate(safeReturnTo, { replace: true })}
@@ -1460,7 +1490,7 @@ export function AuthenticatedApplication({
     return applicationRoutes;
   }
 
-  if (isLearnerProfileRoute && !guardianRoute) {
+  if (learnerProfileRoute) {
     return routeContent;
   }
 

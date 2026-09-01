@@ -12,6 +12,7 @@ import {
   type SetStateAction,
 } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
 import { AccountHeader } from "../app/AppHeader";
 import {
   getGuardianAccountPath,
@@ -34,7 +35,10 @@ import {
 import { authClient } from "./auth-client";
 import { TurnstileWidget } from "./Turnstile";
 import { GuardianAccessProvider, useGuardianAccess } from "./GuardianAccess";
-import { isGuardianGuidanceSurface, useGuardianLanguage } from "../i18n/guardian-language";
+import {
+  isGuardianGuidanceSurface,
+  useGuardianLanguage,
+} from "../i18n/guardian-language";
 import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   ActionButton,
@@ -56,9 +60,15 @@ type CaptchaFetchOptions = {
 };
 
 export interface AuthActionClient {
+  $fetch(
+    path: "/sign-in/shared-guest",
+    options: {
+      headers: { "x-captcha-response": string };
+      method: "POST";
+    },
+  ): Promise<AuthActionResult>;
   deleteUser(fields: { password: string }): Promise<AuthActionResult>;
   signIn: {
-    anonymous(fields: CaptchaFetchOptions): Promise<AuthActionResult>;
     email(fields: {
       email: string;
       password: string;
@@ -66,11 +76,13 @@ export interface AuthActionClient {
   };
   signOut(): Promise<AuthActionResult>;
   signUp: {
-    email(fields: {
-      name: string;
-      email: string;
-      password: string;
-    } & CaptchaFetchOptions): Promise<AuthActionResult>;
+    email(
+      fields: {
+        name: string;
+        email: string;
+        password: string;
+      } & CaptchaFetchOptions,
+    ): Promise<AuthActionResult>;
   };
 }
 
@@ -90,15 +102,10 @@ interface SignInGuestSessionOptions {
 
 interface SignOutSessionOptions {
   client: AuthActionClient;
-  deleteGuestAccountAction?: typeof deleteGuestAccount;
-  isAnonymous?: boolean;
-  refetch?: () => Promise<unknown>;
 }
 
 interface DeleteAccountSessionOptions {
   client: AuthActionClient;
-  deleteGuestAccountAction?: typeof deleteGuestAccount;
-  isAnonymous?: boolean;
   password: string;
   refetch: () => Promise<unknown>;
 }
@@ -106,18 +113,6 @@ interface DeleteAccountSessionOptions {
 const SIGN_OUT_ERROR = "sign-out-failed" as const;
 const DELETE_ACCOUNT_ERROR = "account-delete-failed" as const;
 const TURNSTILE_REQUIRED_ERROR = "security-check-required" as const;
-
-type AuthFetch = (
-  input: RequestInfo | URL,
-  init?: RequestInit,
-) => Promise<Response>;
-
-export async function deleteGuestAccount(
-  request: AuthFetch = fetch,
-): Promise<AuthActionResult> {
-  const response = await request("/api/guest-account", { method: "POST" });
-  return { error: response.ok ? null : { status: response.status } };
-}
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
@@ -202,10 +197,9 @@ export async function signInGuestSession({
   if (!turnstileToken) return TURNSTILE_REQUIRED_ERROR;
 
   try {
-    const result = await client.signIn.anonymous({
-      fetchOptions: {
-        headers: { "x-captcha-response": turnstileToken },
-      },
+    const result = await client.$fetch("/sign-in/shared-guest", {
+      headers: { "x-captcha-response": turnstileToken },
+      method: "POST",
     });
     if (result.error) return getAuthErrorCode(result.error);
     await refetch();
@@ -217,17 +211,10 @@ export async function signInGuestSession({
 
 export async function signOutSession({
   client,
-  deleteGuestAccountAction = deleteGuestAccount,
-  isAnonymous = false,
-  refetch,
 }: SignOutSessionOptions): Promise<AuthErrorCode | null> {
   try {
-    const result = isAnonymous
-      ? await deleteGuestAccountAction()
-      : await client.signOut();
+    const result = await client.signOut();
     if (result.error) return SIGN_OUT_ERROR;
-    if (isAnonymous) await refetch?.();
-
     return null;
   } catch {
     return SIGN_OUT_ERROR;
@@ -236,15 +223,11 @@ export async function signOutSession({
 
 export async function deleteAccountSession({
   client,
-  deleteGuestAccountAction = deleteGuestAccount,
-  isAnonymous = false,
   password,
   refetch,
 }: DeleteAccountSessionOptions): Promise<AccountDeleteErrorCode> {
   try {
-    const result = isAnonymous
-      ? await deleteGuestAccountAction()
-      : await client.deleteUser({ password });
+    const result = await client.deleteUser({ password });
     if (result.error) return DELETE_ACCOUNT_ERROR;
 
     await refetch();
@@ -261,7 +244,6 @@ interface AuthSession {
   user: {
     email: string;
     id?: string | null;
-    isAnonymous?: boolean | null;
     name?: string | null;
   };
 }
@@ -284,6 +266,7 @@ interface AuthGateViewProps {
   onGuestSignIn: () => void;
   onModeChange: (mode: AuthMode) => void;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
+  onOpenLearnerSwitcher: (() => void) | null;
   onRetry: () => void;
   onSignOut: () => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
@@ -316,6 +299,7 @@ function AccountExperienceHeader({
   isSigningOut,
   learnerName,
   onNavigate,
+  onOpenLearnerSwitcher,
   onSignOut,
   signOutError,
   userEmail,
@@ -327,6 +311,7 @@ function AccountExperienceHeader({
   isSigningOut: boolean;
   learnerName: string | null;
   onNavigate: (path: string, options?: { replace?: boolean }) => void;
+  onOpenLearnerSwitcher: (() => void) | null;
   onSignOut: () => void;
   signOutError: AuthErrorCode | "";
   userEmail: string;
@@ -397,6 +382,7 @@ function AccountExperienceHeader({
         onOpenAccountPrivacy={() => onNavigate(getGuardianAccountPath())}
         onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
         onOpenLearnerProfiles={() => onNavigate(getGuardianLearnersPath())}
+        onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onRetryError={
           access.error
             ? access.retry
@@ -443,6 +429,7 @@ export function AuthGateView({
   onGuestSignIn,
   onModeChange,
   onNavigate,
+  onOpenLearnerSwitcher,
   onRetry,
   onSignOut,
   onSubmit,
@@ -720,6 +707,7 @@ export function AuthGateView({
         isSigningOut={isSigningOut}
         learnerName={learnerName}
         onNavigate={onNavigate}
+        onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onSignOut={onSignOut}
         signOutError={signOutError}
         userEmail={session.user.email}
@@ -824,7 +812,12 @@ export function createAuthGate({
     navigate = navigateInBrowser,
     signedOutFallback,
   }: AuthGateProps) {
-    const { data: sessionData, isPending, error, refetch } = client.useSession();
+    const {
+      data: sessionData,
+      isPending,
+      error,
+      refetch,
+    } = client.useSession();
     const session = sessionData?.user ? sessionData : null;
     const [mode, setMode] = stateHook<AuthMode>("sign-in");
     const [fields, setFields] = stateHook<AuthFields>(EMPTY_FIELDS);
@@ -841,6 +834,7 @@ export function createAuthGate({
     const signOutAttemptRef = useRef<{ owner: string } | null>(null);
     const guestSignInAttemptRef = useRef(false);
     const sessionIdentity = getSessionIdentity(session);
+    const isSharedGuest = session?.user.id === SHARED_GUEST_USER_ID;
     const currentSessionIdentityRef = useRef(sessionIdentity);
     currentSessionIdentityRef.current = sessionIdentity;
     const profileAction =
@@ -958,8 +952,6 @@ export function createAuthGate({
       try {
         nextError = await signOutAction({
           client,
-          isAnonymous: session?.user?.isAnonymous === true,
-          refetch,
         });
       } catch {
         nextError = SIGN_OUT_ERROR;
@@ -977,7 +969,6 @@ export function createAuthGate({
     async function handleDeleteAccount(password: string) {
       return deleteAccountAction({
         client,
-        isAnonymous: session?.user?.isAnonymous === true,
         password,
         refetch,
       });
@@ -986,7 +977,7 @@ export function createAuthGate({
     return (
       <AccountActionProvider
         deleteAccount={handleDeleteAccount}
-        isAnonymous={session?.user?.isAnonymous === true}
+        isSharedGuest={isSharedGuest}
         profileAction={profileAction}
         sessionIdentity={sessionIdentity}
         setProfileAction={setProfileAction}
@@ -1016,6 +1007,7 @@ export function createAuthGate({
             onGuestSignIn={() => void handleGuestSignIn()}
             onModeChange={selectMode}
             onNavigate={navigate}
+            onOpenLearnerSwitcher={profileAction?.onOpenLearnerSwitcher ?? null}
             onRetry={() => void handleRetry()}
             onSignOut={handleSignOut}
             onSubmit={handleSubmit}

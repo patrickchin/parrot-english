@@ -1,13 +1,12 @@
 import {
-  checkPersonalizedStoryArtRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
 } from "./api-security.ts";
 import type { RateLimitEnv } from "./api-security.ts";
+import { SHARED_GUEST_USER_ID } from "../lib/shared-guest.ts";
 import { createAuth } from "./auth.ts";
 import type { AuthEnv } from "./auth.ts";
-import { prepareAccountDeletion } from "./account-deletion.ts";
 import { createDatabase } from "./database.ts";
 import type { Database } from "./database.ts";
 import {
@@ -33,10 +32,6 @@ import {
   handleLessonRecordingRequest,
   type LessonRecordingEnv,
 } from "./lesson-recordings.ts";
-import {
-  handlePersonalizedStoryArtRequest,
-  type PersonalizedStoryArtEnv,
-} from "./personalized-story-art.ts";
 import { handleDubRequest, type DubEnv } from "./dubs.ts";
 import { isEncodedDubRouteAlias } from "./dub-route.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
@@ -60,7 +55,6 @@ interface Env
     ConversationEnv,
     LearnerProfilesEnv,
     LessonRecordingEnv,
-    PersonalizedStoryArtEnv,
     DubEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
@@ -72,24 +66,27 @@ interface WorkerDependencies {
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
-  checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleLearnerProfilesRequest: typeof handleLearnerProfilesRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleLessonRecordingRequest: typeof handleLessonRecordingRequest;
-  handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
   handleDubRequest: typeof handleDubRequest;
-  prepareAccountDeletion: typeof prepareAccountDeletion;
 }
+
+const SHARED_GUEST_BLOCKED_AUTH_PATHS = new Set([
+  "/api/auth/list-sessions",
+  "/api/auth/revoke-session",
+  "/api/auth/revoke-sessions",
+  "/api/auth/revoke-other-sessions",
+]);
 
 function isLearnerProfilePath(pathname: string) {
   return (
     pathname === "/api/learner-profile" ||
     pathname.startsWith("/api/learner-profile/") ||
     pathname === "/api/profile" ||
-    pathname === "/api/profile/preferences" ||
     pathname === "/api/profile/lesson-recording-consent"
   );
 }
@@ -114,10 +111,6 @@ function isLessonRecordingPath(pathname: string) {
     pathname === "/api/lesson-recordings" ||
     pathname.startsWith("/api/lesson-recordings/")
   );
-}
-
-function isPersonalizedStoryArtPath(pathname: string) {
-  return /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname);
 }
 
 function isDubPath(pathname: string) {
@@ -238,9 +231,6 @@ export function createWorker(
   const learnerProfileEnrichmentRateLimit =
     dependencies.checkLearnerProfileEnrichmentRateLimit ??
     checkLearnerProfileEnrichmentRateLimit;
-  const personalizedStoryArtRateLimit =
-    dependencies.checkPersonalizedStoryArtRateLimit ??
-    checkPersonalizedStoryArtRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const guardianAccessRequest =
@@ -253,13 +243,8 @@ export function createWorker(
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const lessonRecordingRequest =
     dependencies.handleLessonRecordingRequest ?? handleLessonRecordingRequest;
-  const personalizedStoryArtRequest =
-    dependencies.handlePersonalizedStoryArtRequest ??
-    handlePersonalizedStoryArtRequest;
   const dubRequest = dependencies.handleDubRequest ?? handleDubRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
-  const accountDeletion =
-    dependencies.prepareAccountDeletion ?? prepareAccountDeletion;
 
   return {
     async fetch(request: Request, env: Env): Promise<Response> {
@@ -278,63 +263,23 @@ export function createWorker(
         });
       }
 
-      if (url.pathname === "/api/guest-account") {
-        if (request.method !== "POST") {
-          return Response.json(
-            { error: "method_not_allowed" },
-            {
-              status: 405,
-              headers: { Allow: "POST", "Cache-Control": "no-store" },
-            },
-          );
-        }
-        if (request.headers.get("origin") !== url.origin) {
-          return Response.json(
-            { error: "forbidden" },
-            { status: 403, headers: { "Cache-Control": "no-store" } },
-          );
-        }
-        const auth = authFactory(env);
-        const session = await auth.api.getSession({ headers: request.headers });
-        if (!session) {
-          return Response.json(
-            { error: "unauthorized" },
-            { status: 401, headers: { "Cache-Control": "no-store" } },
-          );
-        }
-        if (session.user.isAnonymous !== true) {
-          return Response.json(
-            { error: "forbidden" },
-            { status: 403, headers: { "Cache-Control": "no-store" } },
-          );
-        }
-        await accountDeletion({
-          bucket: env.PERSONALIZED_STORY_ART_BUCKET,
-          database: createDatabase(env.DB),
-          userId: session.user.id,
-        });
-        const deletionUrl = new URL(request.url);
-        deletionUrl.pathname = "/api/auth/delete-anonymous-user";
-        deletionUrl.search = "";
-        return auth.handler(
-          new Request(deletionUrl, {
-            headers: request.headers,
-            method: "POST",
-          }),
-        );
-      }
-
       if (
         url.pathname === "/api/auth" ||
         url.pathname.startsWith("/api/auth/")
       ) {
-        if (url.pathname === "/api/auth/delete-anonymous-user") {
-          return Response.json(
-            { error: "not_found" },
-            { status: 404, headers: { "Cache-Control": "no-store" } },
-          );
+        const auth = authFactory(env);
+        if (SHARED_GUEST_BLOCKED_AUTH_PATHS.has(url.pathname)) {
+          const session = await auth.api.getSession({
+            headers: request.headers,
+          });
+          if (session?.user.id === SHARED_GUEST_USER_ID) {
+            return Response.json(
+              { error: "forbidden" },
+              { status: 403, headers: { "Cache-Control": "no-store" } },
+            );
+          }
         }
-        return authFactory(env).handler(request);
+        return auth.handler(request);
       }
 
       if (isLearnerProfilesPath(url.pathname)) {
@@ -564,48 +509,6 @@ export function createWorker(
           return learnerSelectionRequired();
         }
         return conversationRequest({
-          database,
-          env,
-          identity: learner.identity,
-          request,
-        });
-      }
-
-      if (isPersonalizedStoryArtPath(url.pathname)) {
-        const session = await authFactory(env).api.getSession({
-          headers: request.headers,
-        });
-        if (!session) {
-          return Response.json({ error: "unauthorized" }, { status: 401 });
-        }
-        const accountIdentity: AccountIdentity = {
-          sessionId: session.session.id,
-          userId: session.user.id,
-          userName: session.user.name?.trim() || null,
-        };
-        const database = createDatabase(env.DB);
-        const explicitLearner = await resolveExplicitLearnerTarget({
-          account: accountIdentity,
-          database,
-          request,
-          url,
-        });
-        if (explicitLearner instanceof Response) return explicitLearner;
-        const learner = explicitLearner
-          ? { status: "selected" as const, identity: explicitLearner }
-          : await resolveLearnerIdentity(database, accountIdentity);
-        if (learner.status === "selection_required") {
-          return learnerSelectionRequired();
-        }
-        if (request.method === "POST") {
-          const rateLimited = await personalizedStoryArtRateLimit(
-            request,
-            env,
-            accountIdentity.userId,
-          );
-          if (rateLimited) return rateLimited;
-        }
-        return personalizedStoryArtRequest({
           database,
           env,
           identity: learner.identity,

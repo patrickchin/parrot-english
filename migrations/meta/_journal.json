@@ -134,6 +134,13 @@
       "when": 1788165744688,
       "tag": "0018_remove-learner-lessons",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1788264028486,
+      "tag": "0019_shared_guest_account",
+      "breakpoints": true
     }
   ]
 }

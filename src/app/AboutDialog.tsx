@@ -210,9 +210,7 @@ export function AccountPrivacySections() {
           icon={<Sparkles className="size-5" strokeWidth={2.5} />}
           title={copy.aiUseTitle}
         >
-          <p className="m-0">
-            {copy.aiUseBody}
-          </p>
+          <p className="m-0">{copy.aiUseBody}</p>
           <p className="m-0 rounded-xl bg-amber-50 px-3 py-2 text-amber-950">
             {copy.aiWarning}
           </p>
@@ -223,163 +221,143 @@ export function AccountPrivacySections() {
           title={copy.accountKeepsTitle}
         >
           <ul className="m-0 grid list-disc gap-2 pl-5">
-            <li>
-              {copy.keepsProfiles}
-            </li>
-            <li>
-              {copy.keepsTarget}
-            </li>
-            <li>
-              {copy.keepsActivityAudio}
-            </li>
-            <li>
-              {copy.keepsDubbing}
-            </li>
-            <li>
-              {copy.keepsLessons}
-            </li>
-            <li>
-              {copy.keepsLessonProfiles}
-            </li>
-            <li>
-              {copy.keepsStoryArt}
-            </li>
+            <li>{copy.keepsProfiles}</li>
+            <li>{copy.keepsTarget}</li>
+            <li>{copy.keepsActivityAudio}</li>
+            <li>{copy.keepsDubbing}</li>
+            <li>{copy.keepsLessons}</li>
+            <li>{copy.keepsLessonProfiles}</li>
+            <li>{copy.keepsStoryArt}</li>
           </ul>
-          <p className="m-0 text-xs text-slate-500">
-            {copy.outsideServices}
-          </p>
+          <p className="m-0 text-xs text-slate-500">{copy.outsideServices}</p>
         </AboutSection>
 
         <AboutSection
           icon={<Settings2 className="size-5" strokeWidth={2.5} />}
           title={copy.actionsTitle}
         >
-          <p className="m-0">
-            {copy.actionsBody}
-          </p>
-          <p className="m-0">
-            {copy.deletionBody}
-          </p>
+          <p className="m-0">{copy.actionsBody}</p>
+          <p className="m-0">{copy.deletionBody}</p>
         </AboutSection>
       </section>
 
       <details className="group rounded-2xl border-3 border-sky-200 bg-white">
-          <summary
-            aria-label={copy.technicalLabel}
-            className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2 font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
-          >
-            <div>
-              <h2
-                className="m-0 text-base font-black leading-tight"
-                id="technical-build-title"
-              >
-                {copy.technicalTitle}
-              </h2>
-              <span className="mt-0.5 block text-xs font-bold text-slate-500">
-                {copy.technicalSubtitle}
-              </span>
-            </div>
-            <ChevronDown
-              aria-hidden="true"
-              className="size-5 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
-              strokeWidth={3}
-            />
-          </summary>
-          <div className="grid gap-3 border-t-3 border-sky-100 p-3">
-            <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
-              {copy.technicalBody}
-            </p>
-
-            <BuildCard
-              commitSha={WEB_BUILD.commitSha}
-              kind="web"
-              title={copy.webApp}
-              version={WEB_BUILD.version}
-            />
-
-            {buildInfo ? (
-              <BuildCard
-                commitSha={buildInfo.backend.commitSha}
-                fields={[
-                  {
-                    label: copy.deployment,
-                    value: buildInfo.backend.deploymentId,
-                  },
-                  {
-                    label: copy.uploaded,
-                    value: displayDate(
-                      buildInfo.backend.deployedAt,
-                      copy.missingValue,
-                    ),
-                  },
-                ]}
-                kind="backend"
-                title={copy.worker}
-                version={buildInfo.backend.version}
-              />
-            ) : (
-              <Card className="p-3" elevation="soft" tone="inset">
-                <h3 className="m-0 text-base font-black text-brand-navy">
-                  {copy.worker}
-                </h3>
-                <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
-                  {buildInfoState.phase === "failed"
-                    ? copy.technicalFailed
-                    : copy.loadingTechnical}
-                </p>
-              </Card>
-            )}
-
-            {agent ? (
-              <BuildCard
-                commitSha={agent.commitSha}
-                fields={[
-                  {
-                    label: copy.lastReported,
-                    value: displayDate(agent.reportedAt, copy.missingValue),
-                  },
-                  ...(agentModels?.realtime
-                    ? [
-                        {
-                          label: copy.realtimeModel,
-                          value: agentModels.realtime,
-                        },
-                      ]
-                    : []),
-                  ...(agentModels?.transcription
-                    ? [
-                        {
-                          label: copy.transcriptionModel,
-                          value: agentModels.transcription,
-                        },
-                      ]
-                    : []),
-                ]}
-                kind="agent"
-                title={copy.agent}
-                version={agent.version}
-              />
-            ) : (
-              <Card className="p-3" elevation="soft" tone="inset">
-                <h3 className="m-0 text-base font-black text-brand-navy">
-                  {copy.agent}
-                </h3>
-                <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
-                  {buildInfoState.phase === "failed"
-                    ? copy.technicalFailed
-                    : buildInfo
-                      ? copy.agentMissing
-                      : copy.loadingTechnical}
-                </p>
-              </Card>
-            )}
-
-            {buildInfo ? (
-              <p className="m-0 px-1 text-xs font-bold leading-snug text-slate-500">
-                {copy.workerDeployment(buildInfo.backend.deploymentId)}
-              </p>
-            ) : null}
+        <summary
+          aria-label={copy.technicalLabel}
+          className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2 font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
+        >
+          <div>
+            <h2
+              className="m-0 text-base font-black leading-tight"
+              id="technical-build-title"
+            >
+              {copy.technicalTitle}
+            </h2>
+            <span className="mt-0.5 block text-xs font-bold text-slate-500">
+              {copy.technicalSubtitle}
+            </span>
           </div>
+          <ChevronDown
+            aria-hidden="true"
+            className="size-5 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+            strokeWidth={3}
+          />
+        </summary>
+        <div className="grid gap-3 border-t-3 border-sky-100 p-3">
+          <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
+            {copy.technicalBody}
+          </p>
+
+          <BuildCard
+            commitSha={WEB_BUILD.commitSha}
+            kind="web"
+            title={copy.webApp}
+            version={WEB_BUILD.version}
+          />
+
+          {buildInfo ? (
+            <BuildCard
+              commitSha={buildInfo.backend.commitSha}
+              fields={[
+                {
+                  label: copy.deployment,
+                  value: buildInfo.backend.deploymentId,
+                },
+                {
+                  label: copy.uploaded,
+                  value: displayDate(
+                    buildInfo.backend.deployedAt,
+                    copy.missingValue,
+                  ),
+                },
+              ]}
+              kind="backend"
+              title={copy.worker}
+              version={buildInfo.backend.version}
+            />
+          ) : (
+            <Card className="p-3" elevation="soft" tone="inset">
+              <h3 className="m-0 text-base font-black text-brand-navy">
+                {copy.worker}
+              </h3>
+              <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
+                {buildInfoState.phase === "failed"
+                  ? copy.technicalFailed
+                  : copy.loadingTechnical}
+              </p>
+            </Card>
+          )}
+
+          {agent ? (
+            <BuildCard
+              commitSha={agent.commitSha}
+              fields={[
+                {
+                  label: copy.lastReported,
+                  value: displayDate(agent.reportedAt, copy.missingValue),
+                },
+                ...(agentModels?.realtime
+                  ? [
+                      {
+                        label: copy.realtimeModel,
+                        value: agentModels.realtime,
+                      },
+                    ]
+                  : []),
+                ...(agentModels?.transcription
+                  ? [
+                      {
+                        label: copy.transcriptionModel,
+                        value: agentModels.transcription,
+                      },
+                    ]
+                  : []),
+              ]}
+              kind="agent"
+              title={copy.agent}
+              version={agent.version}
+            />
+          ) : (
+            <Card className="p-3" elevation="soft" tone="inset">
+              <h3 className="m-0 text-base font-black text-brand-navy">
+                {copy.agent}
+              </h3>
+              <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
+                {buildInfoState.phase === "failed"
+                  ? copy.technicalFailed
+                  : buildInfo
+                    ? copy.agentMissing
+                    : copy.loadingTechnical}
+              </p>
+            </Card>
+          )}
+
+          {buildInfo ? (
+            <p className="m-0 px-1 text-xs font-bold leading-snug text-slate-500">
+              {copy.workerDeployment(buildInfo.backend.deploymentId)}
+            </p>
+          ) : null}
+        </div>
       </details>
     </div>
   );

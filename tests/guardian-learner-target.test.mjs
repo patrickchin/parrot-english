@@ -1,11 +1,7 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { createElement } from "react";
-import {
-  MemoryRouter,
-  useLocation,
-  useNavigationType,
-} from "react-router";
+import { MemoryRouter, useLocation, useNavigationType } from "react-router";
 import test from "node:test";
 import { createServer } from "vite";
 import {
@@ -124,10 +120,7 @@ function TargetHarness() {
   );
 }
 
-function harness(
-  initialEntry = "/guardian/stories",
-  initialLanguage = "en",
-) {
+function harness(initialEntry = "/guardian/dubbing", initialLanguage = "en") {
   return createElement(
     GuardianLanguageProvider,
     { initialLanguage, storage: null },
@@ -200,10 +193,7 @@ test("localizes loading, retry, chooser context, and selected target in Chinese"
     return json(roster());
   };
   const container = await mountStrict(
-    harness(
-      "/guardian/stories?learnerProfileId=learner-noah",
-      "zh-Hans",
-    ),
+    harness("/guardian/dubbing?learnerProfileId=learner-noah", "zh-Hans"),
   );
 
   assert.match(container.textContent, /正在加载孩子设置…/);
@@ -219,7 +209,10 @@ test("localizes loading, retry, chooser context, and selected target in Chinese"
     "选择要设置的孩子",
   );
   assert.match(container.textContent, /学习模式/);
-  assert.match(container.textContent, /正在编辑 ⁨Noah the Space Explorer⁩ 的设置/);
+  assert.match(
+    container.textContent,
+    /正在编辑 ⁨Noah the Space Explorer⁩ 的设置/,
+  );
   assert.equal(
     namedButton(container, noah.name).getAttribute("aria-pressed"),
     "true",
@@ -228,9 +221,7 @@ test("localizes loading, retry, chooser context, and selected target in Chinese"
 
 test("localizes the no-learners recovery in Chinese", async () => {
   installRosterFetch(roster(null, []));
-  const container = await mountStrict(
-    harness("/guardian/stories", "zh-Hans"),
-  );
+  const container = await mountStrict(harness("/guardian/dubbing", "zh-Hans"));
 
   await waitFor(() => assert.match(container.textContent, /还没有孩子资料/));
   const link = [...container.querySelectorAll("a")].find(
@@ -254,11 +245,14 @@ test("offers an Add learner recovery when the roster is empty", async () => {
 test("resolves one valid URL target and keeps every learner name visible", async () => {
   installRosterFetch();
   const container = await mountStrict(
-    harness("/guardian/stories?learnerProfileId=learner-noah"),
+    harness("/guardian/dubbing?learnerProfileId=learner-noah"),
   );
 
   await waitFor(() => assert.equal(resolvedTarget(container), noah.id));
-  assert.equal(namedButton(container, mia.name).getAttribute("aria-pressed"), "false");
+  assert.equal(
+    namedButton(container, mia.name).getAttribute("aria-pressed"),
+    "false",
+  );
   assert.equal(
     namedButton(container, noah.name).getAttribute("aria-pressed"),
     "true",
@@ -272,19 +266,19 @@ test("resolves one valid URL target and keeps every learner name visible", async
 test("normalizes a missing target to the owned active learner with replace", async () => {
   installRosterFetch();
   const container = await mountStrict(
-    harness("/guardian/stories?filter=saved&filter=new#levels"),
+    harness("/guardian/dubbing?filter=saved&filter=new#clips"),
   );
 
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
   assert.equal(
     routerState(container),
-    "REPLACE ?filter=saved&filter=new&learnerProfileId=learner-mia#levels",
+    "REPLACE ?filter=saved&filter=new&learnerProfileId=learner-mia#clips",
   );
 });
 
 test("normalizes a missing target to the first learner when none is active", async () => {
   installRosterFetch(roster(null));
-  const container = await mountStrict(harness("/guardian/stories?sort=name"));
+  const container = await mountStrict(harness("/guardian/dubbing?sort=name"));
 
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
   assert.equal(
@@ -295,9 +289,7 @@ test("normalizes a missing target to the first learner when none is active", asy
 
 test("defaults to the live learner when the active learner is pending deletion", async () => {
   installRosterFetch(roster(pendingSam.id, [pendingSam, bob]));
-  const container = await mountStrict(
-    harness("/guardian/stories?sort=name"),
-  );
+  const container = await mountStrict(harness("/guardian/dubbing?sort=name"));
 
   await waitFor(() => assert.equal(resolvedTarget(container), bob.id));
   assert.equal(
@@ -319,7 +311,7 @@ test("defaults to the live learner when the active learner is pending deletion",
 test("does not resolve an explicit learner target that is pending deletion", async () => {
   installRosterFetch(roster(pendingSam.id, [pendingSam, bob]));
   const container = await mountStrict(
-    harness(`/guardian/stories?learnerProfileId=${pendingSam.id}`),
+    harness(`/guardian/dubbing?learnerProfileId=${pendingSam.id}`),
   );
 
   await waitFor(() =>
@@ -341,9 +333,9 @@ test("uses the existing no-target recovery when every learner is pending deletio
   await waitFor(() => assert.match(container.textContent, /No learners yet/));
   assert.equal(resolvedTarget(container), "unresolved");
   assert.equal(
-    [...container.querySelectorAll("a")].find(
-      (candidate) => candidate.textContent.trim() === "Add learner",
-    )?.getAttribute("href"),
+    [...container.querySelectorAll("a")]
+      .find((candidate) => candidate.textContent.trim() === "Add learner")
+      ?.getAttribute("href"),
     "/guardian/learners",
   );
 });
@@ -356,10 +348,13 @@ for (const [label, search] of [
 ]) {
   test(`does not silently fall back from a present ${label} target`, async () => {
     installRosterFetch();
-    const container = await mountStrict(harness(`/guardian/stories?${search}`));
+    const container = await mountStrict(harness(`/guardian/dubbing?${search}`));
 
     await waitFor(() =>
-      assert.match(container.textContent, /learner target.*could not be found/i),
+      assert.match(
+        container.textContent,
+        /learner target.*could not be found/i,
+      ),
     );
     const link = [...container.querySelectorAll("a")].find(
       (candidate) => candidate.textContent.trim() === "Manage learners",
@@ -373,7 +368,7 @@ for (const [label, search] of [
 test("selects an editing target without changing the Learner mode badge", async () => {
   installRosterFetch();
   const container = await mountStrict(
-    harness("/guardian/stories?view=art&learnerProfileId=learner-mia"),
+    harness("/guardian/dubbing?view=clips&learnerProfileId=learner-mia"),
   );
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
 
@@ -382,15 +377,21 @@ test("selects an editing target without changing the Learner mode badge", async 
   await waitFor(() => assert.equal(resolvedTarget(container), noah.id));
   assert.equal(
     routerState(container),
-    "PUSH ?view=art&learnerProfileId=learner-noah",
+    "PUSH ?view=clips&learnerProfileId=learner-noah",
   );
-  assert.equal(namedButton(container, noah.name).getAttribute("aria-pressed"), "true");
+  assert.equal(
+    namedButton(container, noah.name).getAttribute("aria-pressed"),
+    "true",
+  );
   const learnerModeBadge = [...container.querySelectorAll("span")].find(
     (candidate) => candidate.textContent.trim() === "Learner mode",
   );
   assert.ok(learnerModeBadge);
   assert.equal(learnerModeBadge.closest("button"), null);
-  assert.equal(learnerModeBadge.parentElement?.textContent.includes(mia.name), true);
+  assert.equal(
+    learnerModeBadge.parentElement?.textContent.includes(mia.name),
+    true,
+  );
   assert.match(
     container.textContent,
     /Editing settings for ⁨Noah the Space Explorer⁩/,

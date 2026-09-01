@@ -46,7 +46,9 @@ type MicrophoneAccessOptions = Pick<
 type SpeechRecordingSessionOptions = Pick<
   SpeechRecorderOptions,
   "MediaRecorder" | "getUserMedia" | "mimeType" | "signal"
->;
+> & {
+  constraints?: MediaStreamConstraints;
+};
 
 export function selectRecordingMimeType(
   MediaRecorderClass: SpeechRecorderClass = globalThis.MediaRecorder
@@ -67,6 +69,10 @@ export type SpeechRecordingSession = {
   cancel: () => void;
   stream: MediaStream;
   stop: () => Promise<Blob>;
+};
+
+export type PreparedSpeechRecordingSession = SpeechRecordingSession & {
+  start(): void;
 };
 
 export class RecordingUnsupportedError extends Error {
@@ -123,13 +129,16 @@ export async function requestMicrophoneAccess({
   }
 }
 
-export async function startSpeechRecording({
+async function prepareSpeechRecordingInternal({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
+  constraints = MICROPHONE_CONSTRAINTS,
   getUserMedia = (constraints) =>
     navigator.mediaDevices.getUserMedia(constraints),
   mimeType,
   signal,
-}: SpeechRecordingSessionOptions = {}): Promise<SpeechRecordingSession> {
+}: SpeechRecordingSessionOptions = {},
+  startImmediately = false
+): Promise<PreparedSpeechRecordingSession> {
   if (signal?.aborted) {
     throw createAbortError();
   }
@@ -142,7 +151,7 @@ export async function startSpeechRecording({
 
   let stream: MediaStream;
   try {
-    stream = await getUserMedia(MICROPHONE_CONSTRAINTS);
+    stream = await getUserMedia(constraints);
   } catch (error) {
     if (signal?.aborted) throw createAbortError();
     throw new MicrophoneAccessError(error);
@@ -158,6 +167,7 @@ export async function startSpeechRecording({
   let cancelled = false;
   let settled = false;
   let stopRequested = false;
+  let startRequested = false;
   let resolveResult: (blob: Blob) => void;
   let rejectResult: (error: unknown) => void;
   const result = new Promise<Blob>((resolve, reject) => {
@@ -218,16 +228,21 @@ export async function startSpeechRecording({
   recorder.onstop = finish;
   signal?.addEventListener("abort", cancelRecording, { once: true });
 
-  try {
-    recorder.start();
-  } catch (error) {
-    fail(error);
-    throw error;
-  }
-
-  return {
+  const session = {
     cancel: cancelRecording,
     stream,
+    start() {
+      if (startRequested || settled) {
+        throw new Error("Recording session is already started or not startable.");
+      }
+      startRequested = true;
+      try {
+        recorder.start();
+      } catch (error) {
+        fail(error);
+        throw error;
+      }
+    },
     stop() {
       if (!settled && !stopRequested) {
         stopRequested = true;
@@ -237,6 +252,21 @@ export async function startSpeechRecording({
       return result;
     },
   };
+
+  if (startImmediately) session.start();
+  return session;
+}
+
+export function prepareSpeechRecording(
+  options: SpeechRecordingSessionOptions = {}
+): Promise<PreparedSpeechRecordingSession> {
+  return prepareSpeechRecordingInternal(options);
+}
+
+export function startSpeechRecording(
+  options: SpeechRecordingSessionOptions = {}
+): Promise<SpeechRecordingSession> {
+  return prepareSpeechRecordingInternal(options, true);
 }
 
 export async function recordSpeechClip({

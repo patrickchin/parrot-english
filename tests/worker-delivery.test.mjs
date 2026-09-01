@@ -71,7 +71,7 @@ describe("Worker app delivery", () => {
     assert.equal(getCalls(), 1);
   });
 
-  it("returns the retired lesson API as an unmatched API route", async () => {
+  it("returns retired feature APIs as unmatched API routes", async () => {
     const { env } = createEnvironment(() => new Response("asset"));
     const worker = createWorker({
       createAuth: () => ({
@@ -83,12 +83,22 @@ describe("Worker app delivery", () => {
       }),
     });
 
-    const response = await worker.fetch(
-      new Request("https://example.test/api/lessons/my"),
-      env,
-    );
-    assert.equal(response.status, 404);
-    assert.deepEqual(await response.json(), { error: "not_found" });
+    for (const [method, pathname] of [
+      ["GET", "/api/lessons/my"],
+      ["PUT", "/api/profile/preferences"],
+      ["GET", "/api/stories/the-red-ball/personalized-art"],
+      ["POST", "/api/stories/the-red-ball/personalized-art"],
+      ["DELETE", "/api/stories/the-red-ball/personalized-art"],
+      ["GET", "/api/stories/the-red-ball/personalized-art/asset"],
+    ]) {
+      const response = await worker.fetch(
+        new Request(`https://example.test${pathname}`, { method }),
+        env,
+      );
+      const label = `${method} ${pathname}`;
+      assert.equal(response.status, 404, label);
+      assert.deepEqual(await response.json(), { error: "not_found" }, label);
+    }
   });
 
   it("turns SPA-shell fallbacks for static-looking paths into uncached 404s", async () => {

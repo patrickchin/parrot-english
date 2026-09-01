@@ -9,6 +9,7 @@ export type DubOperation =
   | "idle"
   | "guide-playing"
   | "mic-opening"
+  | "counting-in"
   | "recording"
   | "saving"
   | "take-playing"
@@ -33,6 +34,7 @@ export type DubSceneStatus =
   | { kind: "needs-retake"; recorded: number };
 export type DubEvent =
   | { type: "LOADED"; recordingEnabled: boolean; savedLineIds: string[] }
+  | { type: "EDIT_LINE"; lineId: string }
   | { type: "OPEN_SCENE"; sceneIndex: number }
   | { type: "SELECT_LINE"; lineId: string }
   | { type: "BACK_TO_PROJECT" }
@@ -46,6 +48,7 @@ export type DubEvent =
 
 const DUB_UNSAFE_OPERATIONS = new Set<DubOperation>([
   "mic-opening",
+  "counting-in",
   "recording",
   "saving",
 ]);
@@ -144,6 +147,7 @@ function selectScene(
     error: "",
     operation: "idle",
     playbackScope: null,
+    saveRecovery: null,
     selectedLineIndex,
     selectedSceneIndex: sceneIndex,
     view: "scene",
@@ -216,21 +220,37 @@ export function reduceDubState(
       ? selectScene(state, event.sceneIndex, definition)
       : state;
   }
-  if (event.type === "SELECT_LINE") {
-    if (!canChangeSelection(state) || state.view !== "scene") return state;
-    const selectedLineIndex = getLineIndex(event.lineId, definition);
-    if (
-      selectedLineIndex < 0
-      || getSceneIndexForLine(selectedLineIndex, definition) !== state.selectedSceneIndex
-    ) {
+  if (event.type === "EDIT_LINE") {
+    if (!canChangeSelection(state) || (state.view !== "project" && state.view !== "scene")) {
       return state;
     }
+    const selectedLineIndex = getLineIndex(event.lineId, definition);
+    if (selectedLineIndex < 0) return state;
     return {
       ...state,
       error: "",
       operation: "idle",
       playbackScope: null,
+      saveRecovery: null,
       selectedLineIndex,
+      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
+      view: "scene",
+    };
+  }
+  if (event.type === "SELECT_LINE") {
+    if (!canChangeSelection(state) || (state.view !== "project" && state.view !== "scene")) {
+      return state;
+    }
+    const selectedLineIndex = getLineIndex(event.lineId, definition);
+    if (selectedLineIndex < 0) return state;
+    return {
+      ...state,
+      error: "",
+      operation: "idle",
+      playbackScope: null,
+      saveRecovery: null,
+      selectedLineIndex,
+      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
     };
   }
   if (event.type === "BACK_TO_PROJECT") {
@@ -240,18 +260,24 @@ export function reduceDubState(
       error: "",
       operation: "idle",
       playbackScope: null,
+      saveRecovery: null,
       view: "project",
     };
   }
   if (event.type === "OPERATION_STARTED") {
     const preserveRecoveryError = state.saveRecovery !== null
-      && (event.operation === "guide-playing" || event.operation === "take-playing");
+      && (
+        event.operation === "guide-playing"
+        || event.operation === "mic-opening"
+        || event.operation === "counting-in"
+        || event.operation === "take-playing"
+      );
     return {
       ...state,
       error: preserveRecoveryError ? state.error : "",
       operation: event.operation,
       playbackScope: event.playbackScope ?? null,
-      saveRecovery: event.operation === "mic-opening" ? null : state.saveRecovery,
+      saveRecovery: event.operation === "recording" ? null : state.saveRecovery,
     };
   }
   if (event.type === "OPERATION_FINISHED") {

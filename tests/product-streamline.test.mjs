@@ -252,9 +252,14 @@ test("home gives children five clear, working learning choices", () => {
   assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
   assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
   assert.doesNotMatch(html, /Tap a picture\.|>Parrot English<\/p>/i);
-  assert.equal((html.match(/<img alt=""/g) ?? []).length, 5);
+  assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
+  assert.match(
+    html,
+    /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/fluent-3d\/1f431\.png"/,
+  );
   assert.match(html, /Nursery rhymes/);
   assert.match(html, /Word game/);
+  assert.match(html, /src="\/assets\/word-games\/fluent-3d\/1f431\.png"/);
   assert.doesNotMatch(
     html,
     /World Explorer|Pixel Lesson Lab|Create a Lesson|Progress|coming soon|experiment/i,
@@ -348,11 +353,12 @@ test("guardian dashboard shows only the remaining learning and content cards", (
       .filter((heading) => heading !== "Learning &amp; content"),
     [
       "Learner profiles",
-      "Story settings",
       "Voice dubbing",
       "Account &amp; privacy",
     ],
   );
+  assert.doesNotMatch(html, /Story settings|Open story settings/);
+  assert.doesNotMatch(html, /href="\/guardian\/stories"/);
   assert.doesNotMatch(html, /My Lessons/);
   assert.doesNotMatch(html, /href="\/guardian\/lessons"|>Manage lessons<\/a>/);
 });
@@ -371,7 +377,6 @@ test("guardian dashboard links a separate account and privacy destination", () =
 
   assert.deepEqual(hrefs, [
     "/guardian/learners",
-    "/guardian/stories",
     "/guardian/dubbing",
     "/guardian/account",
   ]);

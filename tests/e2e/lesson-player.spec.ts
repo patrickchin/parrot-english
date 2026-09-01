@@ -460,16 +460,16 @@ test("decoded artwork does not steal focus from an open account menu", async ({
   await page
     .getByRole("button", { name: /^Profile for .+, learner mode$/ })
     .click();
-  const grownUpAccess = page.getByRole("menuitem", {
-    name: /Grown-up access/,
+  const switchLearner = page.getByRole("menuitem", {
+    name: "Switch learner",
   });
-  await expect(grownUpAccess).toBeFocused();
+  await expect(switchLearner).toBeFocused();
 
   releaseArtwork();
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
-  await expect(grownUpAccess).toBeFocused();
+  await expect(switchLearner).toBeFocused();
 });
 
 // Catches watching unrelated preloaded artwork when focusing the current start action.

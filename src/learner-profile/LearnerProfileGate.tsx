@@ -80,6 +80,10 @@ import {
 } from "../conversation/usePeppaConversation";
 import { ActionButton, TextButton } from "../shared/ui";
 import {
+  LearnerModeSelectionPage,
+  LearnerModeSwitchDialog,
+} from "../app/LearnerModeSwitchDialog";
+import {
   LearnerProfileProvider,
   LearnerSelectionProvider,
 } from "./LearnerProfileContext";
@@ -189,11 +193,7 @@ type AcknowledgmentView = {
 };
 
 type GuardianSelectionRosterPhase =
-  | "idle"
-  | "loading"
-  | "available"
-  | "empty"
-  | "error";
+  "idle" | "loading" | "available" | "empty" | "error";
 
 type LearnerProfileGateViewProps = {
   acknowledgment: AcknowledgmentView | null;
@@ -209,6 +209,7 @@ type LearnerProfileGateViewProps = {
   isConversationRoute: boolean;
   isLearnerProfileRoute: boolean;
   learnerManagerRoute?: boolean;
+  learnerSelectionFallback?: ReactNode;
   isProfileFormRedo: boolean;
   isProfileLoading: boolean;
   isProfileRoute: boolean;
@@ -274,8 +275,8 @@ export function LearnerProfileSetupView({
         ) : (
           <>
             We save your answers.{" "}
-            <span className="whitespace-nowrap">A grown-up</span> can change your{" "}
-            <span className="whitespace-nowrap">name and age.</span>
+            <span className="whitespace-nowrap">A grown-up</span> can change
+            your <span className="whitespace-nowrap">name and age.</span>
             <span className="mt-1 block">
               <AdultBoundaryHelper message="savedAnswersHelper" />
             </span>
@@ -310,6 +311,7 @@ export function LearnerProfileGateView({
   isConversationRoute,
   isLearnerProfileRoute,
   learnerManagerRoute = false,
+  learnerSelectionFallback,
   isProfileFormRedo,
   isProfileLoading,
   isProfileRoute,
@@ -456,21 +458,7 @@ export function LearnerProfileGateView({
         }
         return <>{guardianSelectionFallback ?? learnerProfileFallback}</>;
       }
-      return (
-        <LearnerProfileScreen>
-          <LearnerProfileStatusCard role="status">
-            <h1 className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl">
-              Ask a grown-up to choose a learner
-            </h1>
-            <AdultBoundaryHelper message="chooseLearnerTitleHelper" />
-            <p className="m-0 font-bold leading-relaxed text-slate-600">
-              A grown-up can open Guardian mode, then choose who is learning
-              when switching back.
-            </p>
-            <AdultBoundaryHelper message="chooseLearnerBodyHelper" />
-          </LearnerProfileStatusCard>
-        </LearnerProfileScreen>
-      );
+      return <>{learnerSelectionFallback ?? learnerProfileFallback}</>;
     }
     if (guardianDashboardRoute) {
       if (
@@ -515,11 +503,7 @@ export function LearnerProfileGateView({
     return <>{learnerProfileFallback}</>;
   }
 
-  if (
-    canAccessCurrentRoute &&
-    isLearnerProfileRoute &&
-    !redoLearnerProfile
-  ) {
+  if (canAccessCurrentRoute && isLearnerProfileRoute && !redoLearnerProfile) {
     return <>{completedLearnerProfileFallback}</>;
   }
 
@@ -874,10 +858,12 @@ type LearnerProfileGateProps = {
   isLearnerProfileRoute: boolean;
   isProfileRoute: boolean;
   learnerManagerRoute?: boolean;
+  learnerSelectionDestination: string;
   learnerProfileFallback: ReactNode;
   onCloseGuardianRoute?: () => void;
   onCloseProfileRoute: () => void;
   onConversationCompleted: () => void;
+  onBeforeLearnerSelectionNavigate?: () => void;
   onOpenLessons: () => void;
   onOpenProfileRoute: () => void;
   onRedoCompleted: () => void;
@@ -897,10 +883,12 @@ export function LearnerProfileGate({
   isLearnerProfileRoute,
   isProfileRoute,
   learnerManagerRoute = false,
+  learnerSelectionDestination,
   learnerProfileFallback,
   onCloseGuardianRoute,
   onCloseProfileRoute,
   onConversationCompleted,
+  onBeforeLearnerSelectionNavigate,
   onOpenLessons,
   onOpenProfileRoute,
   onRedoCompleted,
@@ -908,9 +896,7 @@ export function LearnerProfileGate({
   redoLearnerProfile,
 }: LearnerProfileGateProps) {
   const { messages: selectedMessages } = useGuardianLanguage();
-  const messages = guardianRoute
-    ? selectedMessages
-    : englishGuardianMessages;
+  const messages = guardianRoute ? selectedMessages : englishGuardianMessages;
   const clearProfileAccountAction = useClearProfileAccountAction();
   const sessionIdentity = useAccountSessionIdentity();
   const learnerSelectionChannel = useMemo(
@@ -924,6 +910,10 @@ export function LearnerProfileGate({
   const [guardianSelectionRosterPhase, setGuardianSelectionRosterPhase] =
     useState<GuardianSelectionRosterPhase>("idle");
   const [isLoading, setIsLoading] = useState(true);
+  const [learnerSwitcherOwner, setLearnerSwitcherOwner] = useState<{
+    profileId: string;
+    sessionIdentity: string | null;
+  } | null>(null);
   const [loadError, setLoadError] = useState("");
   const [learnerIdentityCheck, setLearnerIdentityCheck] =
     useState<LearnerIdentityCheck>(
@@ -1451,6 +1441,7 @@ export function LearnerProfileGate({
     updateLearnerIdentityCheck("confirmed");
     nextOperation();
     clearProfileAccountAction();
+    setLearnerSwitcherOwner(null);
     conversationProps.resetConversation();
     learnerLoadControllerRef.current?.abort();
     learnerLoadControllerRef.current = null;
@@ -1635,10 +1626,7 @@ export function LearnerProfileGate({
       currentLearnerSelectionSyncStatus === "unavailable" ||
       learnerIdentityCheckRef.current === "failed";
     const revalidateWhenVisible = () => {
-      if (
-        document.visibilityState === "visible" &&
-        needsLifecycleRecovery()
-      ) {
+      if (document.visibilityState === "visible" && needsLifecycleRecovery()) {
         revalidateActiveLearner(false);
       }
     };
@@ -1668,30 +1656,33 @@ export function LearnerProfileGate({
     setLearnerSelectionSyncStatus("pending");
     let channel: BroadcastChannel | null = null;
     let disposed = false;
-    void learnerSelectionChannel.then((name) => {
-      if (disposed) return;
-      if (
-        name === null ||
-        typeof globalThis.BroadcastChannel === "undefined"
-      ) {
-        setLearnerSelectionSyncStatus("unavailable");
-        return;
-      }
-      try {
-        channel = new globalThis.BroadcastChannel(name);
-        channel.onmessage = (event) => {
-          if (event.data === LEARNER_SELECTION_CHANGED_MESSAGE) {
-            revalidateAnnouncedLearnerChange();
-          }
-        };
-        learnerSelectionChannelRef.current = channel;
-        setLearnerSelectionSyncStatus("ready");
-      } catch {
-        setLearnerSelectionSyncStatus("unavailable");
-      }
-    }, () => {
-      if (!disposed) setLearnerSelectionSyncStatus("unavailable");
-    });
+    void learnerSelectionChannel.then(
+      (name) => {
+        if (disposed) return;
+        if (
+          name === null ||
+          typeof globalThis.BroadcastChannel === "undefined"
+        ) {
+          setLearnerSelectionSyncStatus("unavailable");
+          return;
+        }
+        try {
+          channel = new globalThis.BroadcastChannel(name);
+          channel.onmessage = (event) => {
+            if (event.data === LEARNER_SELECTION_CHANGED_MESSAGE) {
+              revalidateAnnouncedLearnerChange();
+            }
+          };
+          learnerSelectionChannelRef.current = channel;
+          setLearnerSelectionSyncStatus("ready");
+        } catch {
+          setLearnerSelectionSyncStatus("unavailable");
+        }
+      },
+      () => {
+        if (!disposed) setLearnerSelectionSyncStatus("unavailable");
+      },
+    );
     return () => {
       disposed = true;
       if (learnerSelectionChannelRef.current === channel) {
@@ -2627,6 +2618,18 @@ export function LearnerProfileGate({
   const canEditProfile = Boolean(fullData && guardianRoute);
   const hasActiveLearner = fullData !== null;
   const activeLearnerName = fullData?.profile.name ?? null;
+  const learnerSwitcherProfileId =
+    guardianAccessMode === "learner" &&
+    learnerIdentityCheck === "confirmed" &&
+    data?.mode === "full"
+      ? data.profile.id
+      : null;
+  const isLearnerSwitcherOpen = Boolean(
+    learnerSwitcherProfileId !== null &&
+    learnerSwitcherOwner !== null &&
+    learnerSwitcherOwner.profileId === learnerSwitcherProfileId &&
+    learnerSwitcherOwner.sessionIdentity === sessionIdentity,
+  );
   const onOpenProfileRouteRef = useRef(onOpenProfileRoute);
   onOpenProfileRouteRef.current = onOpenProfileRoute;
   const openProfileFromAccount = useCallback(
@@ -2652,6 +2655,30 @@ export function LearnerProfileGate({
     profileState,
   ]);
 
+  const openLearnerSwitcher = useCallback(() => {
+    if (learnerSwitcherProfileId === null) return;
+    setLearnerSwitcherOwner({
+      profileId: learnerSwitcherProfileId,
+      sessionIdentity,
+    });
+  }, [learnerSwitcherProfileId, sessionIdentity]);
+  const closeLearnerSwitcher = useCallback(
+    () => setLearnerSwitcherOwner(null),
+    [],
+  );
+  useIsomorphicLayoutEffect(() => {
+    setLearnerSwitcherOwner(null);
+  }, [
+    guardianAccessMode,
+    learnerIdentityCheck,
+    learnerSwitcherProfileId,
+    sessionIdentity,
+  ]);
+  const handleLearnerSwitcherNavigate = useCallback(() => {
+    closeLearnerSwitcher();
+    onBeforeLearnerSelectionNavigate?.();
+  }, [closeLearnerSwitcher, onBeforeLearnerSelectionNavigate]);
+
   const profileAction = useMemo(() => {
     if (learnerIdentityCheck !== "confirmed") return null;
     if (data?.mode === "selection-required") {
@@ -2660,6 +2687,7 @@ export function LearnerProfileGate({
         guardianUnlockDestination: guardianUnlockDestination ?? null,
         hasActiveLearner: false,
         learnerName: null,
+        onOpenLearnerSwitcher: null,
         onOpenProfile: null,
       };
     }
@@ -2668,6 +2696,7 @@ export function LearnerProfileGate({
           error: "",
           hasActiveLearner: true,
           learnerName: activeLearnerName,
+          onOpenLearnerSwitcher: openLearnerSwitcher,
           onOpenProfile:
             canEditProfile && !isProfileRoute ? openProfileFromAccount : null,
         }
@@ -2680,6 +2709,7 @@ export function LearnerProfileGate({
     hasActiveLearner,
     isProfileRoute,
     learnerIdentityCheck,
+    openLearnerSwitcher,
     openProfileFromAccount,
   ]);
   useProfileAccountAction(profileAction);
@@ -2822,10 +2852,7 @@ export function LearnerProfileGate({
             </p>
             {learnerIdentityCheck === "failed" ? (
               <div className="mt-2 flex justify-end">
-                <ActionButton
-                  onClick={retryLearnerIdentity}
-                  type="button"
-                >
+                <ActionButton onClick={retryLearnerIdentity} type="button">
                   {messages.common.retry}
                 </ActionButton>
               </div>
@@ -2861,6 +2888,12 @@ export function LearnerProfileGate({
           isConversationRoute={isConversationRoute}
           isLearnerProfileRoute={isLearnerProfileRoute}
           learnerManagerRoute={learnerManagerRoute}
+          learnerSelectionFallback={
+            <LearnerModeSelectionPage
+              destination={learnerSelectionDestination}
+              onBeforeNavigate={onBeforeLearnerSelectionNavigate}
+            />
+          }
           isProfileFormRedo={isFormRedoRoute}
           isProfileLoading={isProfileLoading}
           isProfileRoute={isProfileRoute}
@@ -2914,6 +2947,13 @@ export function LearnerProfileGate({
           {protectedChildren}
         </LearnerProfileGateView>
       </div>
+      {isLearnerSwitcherOpen ? (
+        <LearnerModeSwitchDialog
+          destination="/"
+          onBeforeNavigate={handleLearnerSwitcherNavigate}
+          onClose={closeLearnerSwitcher}
+        />
+      ) : null}
     </LearnerSelectionProvider>
   );
 }

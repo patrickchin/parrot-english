@@ -1,23 +1,23 @@
-import type { WordGameItem, WordGameTopic } from "./word-game-catalog";
+import type { WordGameCategory, WordGameItem } from "./word-game-catalog";
 import { cx } from "../shared/ui";
 
 export function WordGameVisual({
   className,
   item: suppliedItem,
   showLabel = true,
-  topic,
+  category,
 }: ({
   className?: string;
-  topic: WordGameTopic;
+  category: WordGameCategory;
   item?: never;
   showLabel?: boolean;
 } | {
   className?: string;
   item: WordGameItem;
   showLabel?: boolean;
-  topic?: never;
+  category?: never;
 })) {
-  const item = suppliedItem ?? topic.items[0];
+  const item = suppliedItem ?? category.coverItem;
 
   if (item.visual.kind === "swatch") {
     return (
@@ -32,6 +32,34 @@ export function WordGameVisual({
             {item.label}
           </span>
         ) : null}
+      </div>
+    );
+  }
+
+  if (item.visual.copies === 2) {
+    const imageSource = item.visual.src;
+    return (
+      <div
+        aria-label={item.alt}
+        className={cx(
+          "grid aspect-square w-full grid-cols-2 place-items-center overflow-hidden rounded-2xl",
+          className,
+        )}
+        role="img"
+      >
+        {[0, 1].map((copy) => (
+          <img
+            alt=""
+            aria-hidden="true"
+            className="w-full min-w-0 object-contain"
+            decoding="async"
+            height={512}
+            key={copy}
+            loading="lazy"
+            src={imageSource}
+            width={512}
+          />
+        ))}
       </div>
     );
   }

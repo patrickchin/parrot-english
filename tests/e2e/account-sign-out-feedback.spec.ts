@@ -190,12 +190,12 @@ for (const viewport of viewports) {
       backBox,
       languageBox,
     ] = await Promise.all([
-        account.boundingBox(),
-        retry.boundingBox(),
-        heading.boundingBox(),
-        page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
-        language.boundingBox(),
-      ]);
+      account.boundingBox(),
+      retry.boundingBox(),
+      heading.boundingBox(),
+      page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
+      language.boundingBox(),
+    ]);
     expect(failureAccountBox).not.toBeNull();
     expect(retryBox).not.toBeNull();
     if (viewport.width < 1360) {
@@ -399,10 +399,13 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   await waitForVisualAssets(page);
 
   const heading = page.getByRole("heading", { name: "Guardian dashboard" });
-  const storySettings = page.getByRole("heading", { name: "Story settings" });
-  const [headingBefore, storySettingsBefore] = await Promise.all([
+  const voiceDubbing = page.getByRole("heading", {
+    exact: true,
+    name: "Voice dubbing",
+  });
+  const [headingBefore, voiceDubbingBefore] = await Promise.all([
     heading.boundingBox(),
-    storySettings.boundingBox(),
+    voiceDubbing.boundingBox(),
   ]);
   const account = page.getByRole("button", {
     name: "Profile for Alex Guardian, guardian mode",
@@ -418,7 +421,7 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   await expect(pending).toBeVisible();
   await expect(pendingAccount).toBeFocused();
   expect(await heading.boundingBox()).toEqual(headingBefore);
-  expect(await storySettings.boundingBox()).toEqual(storySettingsBefore);
+  expect(await voiceDubbing.boundingBox()).toEqual(voiceDubbingBefore);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
@@ -439,21 +442,21 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   const [
     retryBox,
     headingAfter,
-    storySettingsAfter,
+    voiceDubbingAfter,
     languageBox,
     routeBox,
     accountBox,
   ] = await Promise.all([
     retry.boundingBox(),
     heading.boundingBox(),
-    storySettings.boundingBox(),
+    voiceDubbing.boundingBox(),
     language.boundingBox(),
     routeControl.boundingBox(),
     account.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
   expect(headingAfter!.y - headingBefore!.y).toBe(48);
-  expect(storySettingsAfter!.y - storySettingsBefore!.y).toBe(48);
+  expect(voiceDubbingAfter!.y - voiceDubbingBefore!.y).toBe(48);
   expect(retryBox!.y).toBeGreaterThanOrEqual(
     accountBox!.y + accountBox!.height,
   );
@@ -490,15 +493,16 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
     exact: true,
     name: "Sign out again",
   });
-  const [retryBox, languageBox, routeBox, accountBox, headingBox] = await Promise.all([
-    retry.boundingBox(),
-    page
-      .getByRole("group", { name: /Guardian guidance language|家长指导语言/ })
-      .boundingBox(),
-    page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
-    account.boundingBox(),
-    heading.boundingBox(),
-  ]);
+  const [retryBox, languageBox, routeBox, accountBox, headingBox] =
+    await Promise.all([
+      retry.boundingBox(),
+      page
+        .getByRole("group", { name: /Guardian guidance language|家长指导语言/ })
+        .boundingBox(),
+      page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
+      account.boundingBox(),
+      heading.boundingBox(),
+    ]);
   expect(retryBox).not.toBeNull();
   expect(languageBox).not.toBeNull();
   expect(routeBox).not.toBeNull();
@@ -510,7 +514,9 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
   expect(boxesOverlap(retryBox!, languageBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, routeBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, accountBox!)).toBe(false);
-  expect(headingBox!.y - (retryBox!.y + retryBox!.height)).toBeGreaterThanOrEqual(8);
+  expect(
+    headingBox!.y - (retryBox!.y + retryBox!.height),
+  ).toBeGreaterThanOrEqual(8);
   await page.keyboard.press("Tab");
   await expect(retry).toBeFocused();
   const retryPaint = await focusedPaintBox(retry);
@@ -535,7 +541,9 @@ test("learner lesson HUD excludes sign-out recovery controls", async ({
   const speech = page
     .getByRole("region", { name: "Join in" })
     .filter({ hasText: "It is up high!" });
-  await expect(speech.getByText("It is up high!", { exact: true })).toBeVisible();
+  await expect(
+    speech.getByText("It is up high!", { exact: true }),
+  ).toBeVisible();
   await expect(speech.getByRole("status")).toHaveCount(0);
   await waitForVisualAssets(page);
   await applyTextSpacing(page);

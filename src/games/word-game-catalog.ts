@@ -1,164 +1,100 @@
+import { GENERATED_WORD_GAME_CATALOG } from "./generated-word-game-catalog.ts";
+
 export type WordGameAudioLine = Readonly<{
   id: string;
   source: string;
   text: string;
 }>;
 
+export type WordGameVisual =
+  | Readonly<{ kind: "image"; src: string; copies?: 2 }>
+  | Readonly<{ kind: "swatch"; color: string }>;
+
 export type WordGameItem = Readonly<{
   id: string;
   label: string;
-  prompt: string;
-  teachingLabel: string;
-  successSentence: string;
   alt: string;
-  visual:
-    | Readonly<{ kind: "image"; src: string }>
-    | Readonly<{ kind: "swatch"; color: string }>;
-  audio: Readonly<{
-    prompt: WordGameAudioLine;
-    label: WordGameAudioLine;
-    correct: WordGameAudioLine;
-  }>;
+  visual: WordGameVisual;
+  labelAudio: WordGameAudioLine;
+  promptAudio: WordGameAudioLine;
 }>;
 
-export type WordGameTopic = Readonly<{
+export type WordGameQuestion = Readonly<{
+  id: string;
+  targetId: string;
+  choiceIds: readonly [string, string, string, string];
+}>;
+
+export type WordGameQuiz = Readonly<{
+  id: string;
+  title: string;
+  description: string;
+  questions: readonly WordGameQuestion[];
+  coverItem: WordGameItem;
+}>;
+
+export type WordGameTier = Readonly<{
+  id: string;
+  title: string;
+  description: string;
+  quizzes: readonly WordGameQuiz[];
+}>;
+
+export type WordGameCategory = Readonly<{
+  schemaVersion: number;
+  order: number;
   id: string;
   title: string;
   description: string;
   theme: string;
   items: readonly WordGameItem[];
+  tiers: readonly WordGameTier[];
+  coverItem: WordGameItem;
+}>;
+
+export type WordGameCategoryDefinition = Readonly<{
+  schemaVersion: number;
+  order: number;
+  id: string;
+  title: string;
+  description: string;
+  theme: string;
+  coverItemId: string;
+  items: readonly WordGameItem[];
+  tiers: readonly Readonly<{
+    id: string;
+    title: string;
+    description: string;
+    quizzes: readonly Readonly<{
+      id: string;
+      title: string;
+      description: string;
+      questions: readonly WordGameQuestion[];
+    }>[];
+  }>[];
+}>;
+
+export type WordGameCatalogDefinition = Readonly<{
+  categories: readonly WordGameCategoryDefinition[];
+  player: Readonly<{
+    schemaVersion: number;
+    successAudio: WordGameAudioLine;
+    retryAudio: WordGameAudioLine;
+    completeAudio: WordGameAudioLine;
+  }>;
+}>;
+
+export type WordGameSelection = Readonly<{
+  category: WordGameCategory;
+  tier: WordGameTier;
+  quiz: WordGameQuiz;
 }>;
 
 export type WordGameRound = Readonly<{
+  question: WordGameQuestion;
   target: WordGameItem;
   choices: readonly WordGameItem[];
 }>;
-
-type ItemDefinition = Readonly<{
-  id: string;
-  label: string;
-  prompt: string;
-  teachingLabel: string;
-  successSentence: string;
-  alt: string;
-  color?: string;
-}>;
-
-const MEDIA_BASE = "https://media.parrotbook.com/assets/v8/word-games";
-
-function audioLine(id: string, text: string): WordGameAudioLine {
-  return { id, source: `/assets/audio/${id}.mp3`, text };
-}
-
-export const WORD_GAME_RETRY_AUDIO = deepFreeze(
-  audioLine("word-game-retry", "Listen and try again."),
-);
-
-export const WORD_GAME_COMPLETE_AUDIO = deepFreeze(
-  audioLine(
-    "word-game-complete",
-    "Great listening! You finished the game.",
-  ),
-);
-
-function topic(
-  id: string,
-  title: string,
-  description: string,
-  theme: string,
-  definitions: readonly ItemDefinition[],
-): WordGameTopic {
-  return {
-    id,
-    title,
-    description,
-    theme,
-    items: definitions.map((definition) => {
-      const audioId = `word-game-${id}-${definition.id}`;
-      return {
-        ...definition,
-        visual: definition.color
-          ? { kind: "swatch", color: definition.color }
-          : { kind: "image", src: `${MEDIA_BASE}/${id}/${definition.id}.webp` },
-        audio: {
-          prompt: audioLine(`${audioId}-prompt`, definition.prompt),
-          label: audioLine(`${audioId}-label`, definition.teachingLabel),
-          correct: audioLine(`${audioId}-correct`, definition.successSentence),
-        },
-      };
-    }),
-  };
-}
-
-export const WORD_GAME_TOPICS: readonly WordGameTopic[] = deepFreeze([
-  topic("animals", "Animals", "Listen and find the animals.", "sky", [
-    { id: "cat", label: "cat", prompt: "Cat. Which is the cat?", teachingLabel: "This is a cat.", successSentence: "Yes, this is a cat.", alt: "A friendly cat." },
-    { id: "dog", label: "dog", prompt: "Dog. Which is the dog?", teachingLabel: "This is a dog.", successSentence: "Yes, this is a dog.", alt: "A friendly dog." },
-    { id: "bird", label: "bird", prompt: "Bird. Which is the bird?", teachingLabel: "This is a bird.", successSentence: "Yes, this is a bird.", alt: "A friendly bird." },
-    { id: "fish", label: "fish", prompt: "Fish. Which is the fish?", teachingLabel: "This is a fish.", successSentence: "Yes, this is a fish.", alt: "A friendly fish." },
-    { id: "duck", label: "duck", prompt: "Duck. Which is the duck?", teachingLabel: "This is a duck.", successSentence: "Yes, this is a duck.", alt: "A friendly duck." },
-    { id: "frog", label: "frog", prompt: "Frog. Which is the frog?", teachingLabel: "This is a frog.", successSentence: "Yes, this is a frog.", alt: "A friendly frog." },
-  ]),
-  topic("colors", "Colors", "Listen and find the colors.", "rainbow", [
-    { id: "red", label: "red", prompt: "Red. Where is red?", teachingLabel: "This is red.", successSentence: "Yes, this is red.", alt: "The color red.", color: "#ef4444" },
-    { id: "blue", label: "blue", prompt: "Blue. Where is blue?", teachingLabel: "This is blue.", successSentence: "Yes, this is blue.", alt: "The color blue.", color: "#3b82f6" },
-    { id: "yellow", label: "yellow", prompt: "Yellow. Where is yellow?", teachingLabel: "This is yellow.", successSentence: "Yes, this is yellow.", alt: "The color yellow.", color: "#eab308" },
-    { id: "green", label: "green", prompt: "Green. Where is green?", teachingLabel: "This is green.", successSentence: "Yes, this is green.", alt: "The color green.", color: "#22c55e" },
-    { id: "orange", label: "orange", prompt: "Orange. Where is orange?", teachingLabel: "This is orange.", successSentence: "Yes, this is orange.", alt: "The color orange.", color: "#f97316" },
-    { id: "purple", label: "purple", prompt: "Purple. Where is purple?", teachingLabel: "This is purple.", successSentence: "Yes, this is purple.", alt: "The color purple.", color: "#a855f7" },
-  ]),
-  topic("body-parts", "Body Parts", "Listen and find the body parts.", "rose", [
-    { id: "eyes", label: "eyes", prompt: "Eyes. Where are the eyes?", teachingLabel: "These are the eyes.", successSentence: "Yes, these are the eyes.", alt: "A pair of eyes." },
-    { id: "ears", label: "ears", prompt: "Ears. Where are the ears?", teachingLabel: "These are the ears.", successSentence: "Yes, these are the ears.", alt: "A pair of ears." },
-    { id: "nose", label: "nose", prompt: "Nose. Which is the nose?", teachingLabel: "This is a nose.", successSentence: "Yes, this is a nose.", alt: "A nose." },
-    { id: "mouth", label: "mouth", prompt: "Mouth. Which is the mouth?", teachingLabel: "This is a mouth.", successSentence: "Yes, this is a mouth.", alt: "A mouth." },
-    { id: "hand", label: "hand", prompt: "Hand. Which is the hand?", teachingLabel: "This is a hand.", successSentence: "Yes, this is a hand.", alt: "A hand." },
-    { id: "foot", label: "foot", prompt: "Foot. Which is the foot?", teachingLabel: "This is a foot.", successSentence: "Yes, this is a foot.", alt: "A foot." },
-  ]),
-  topic("food", "Food", "Listen and find the food.", "orange", [
-    { id: "apple", label: "apple", prompt: "Apple. Which is the apple?", teachingLabel: "This is an apple.", successSentence: "Yes, this is an apple.", alt: "An apple." },
-    { id: "banana", label: "banana", prompt: "Banana. Which is the banana?", teachingLabel: "This is a banana.", successSentence: "Yes, this is a banana.", alt: "A banana." },
-    { id: "carrot", label: "carrot", prompt: "Carrot. Which is the carrot?", teachingLabel: "This is a carrot.", successSentence: "Yes, this is a carrot.", alt: "A carrot." },
-    { id: "orange", label: "orange", prompt: "Orange. Which is the orange?", teachingLabel: "This is an orange.", successSentence: "Yes, this is an orange.", alt: "An orange." },
-    { id: "bread", label: "bread", prompt: "Bread. Which is the bread?", teachingLabel: "This is bread.", successSentence: "Yes, this is bread.", alt: "Bread." },
-    { id: "cheese", label: "cheese", prompt: "Cheese. Which is the cheese?", teachingLabel: "This is cheese.", successSentence: "Yes, this is cheese.", alt: "Cheese." },
-  ]),
-  topic("toys", "Toys", "Listen and find the toys.", "yellow", [
-    { id: "ball", label: "ball", prompt: "Ball. Which is the ball?", teachingLabel: "This is a ball.", successSentence: "Yes, this is a ball.", alt: "A ball." },
-    { id: "toy-car", label: "toy car", prompt: "Toy car. Which is the toy car?", teachingLabel: "This is a toy car.", successSentence: "Yes, this is a toy car.", alt: "A toy car." },
-    { id: "doll", label: "doll", prompt: "Doll. Which is the doll?", teachingLabel: "This is a doll.", successSentence: "Yes, this is a doll.", alt: "A doll." },
-    { id: "kite", label: "kite", prompt: "Kite. Which is the kite?", teachingLabel: "This is a kite.", successSentence: "Yes, this is a kite.", alt: "A kite." },
-    { id: "blocks", label: "blocks", prompt: "Blocks. Where are the blocks?", teachingLabel: "These are blocks.", successSentence: "Yes, these are blocks.", alt: "Building blocks." },
-    { id: "teddy-bear", label: "teddy bear", prompt: "Teddy bear. Which is the teddy bear?", teachingLabel: "This is a teddy bear.", successSentence: "Yes, this is a teddy bear.", alt: "A teddy bear." },
-  ]),
-  topic("feelings", "Feelings", "Listen and find the feelings.", "purple", [
-    { id: "happy", label: "happy", prompt: "Happy. Which face is happy?", teachingLabel: "This face is happy.", successSentence: "Yes, this face is happy.", alt: "A happy face." },
-    { id: "sad", label: "sad", prompt: "Sad. Which face is sad?", teachingLabel: "This face is sad.", successSentence: "Yes, this face is sad.", alt: "A sad face." },
-    { id: "angry", label: "angry", prompt: "Angry. Which face is angry?", teachingLabel: "This face is angry.", successSentence: "Yes, this face is angry.", alt: "An angry face." },
-    { id: "sleepy", label: "sleepy", prompt: "Sleepy. Which face is sleepy?", teachingLabel: "This face is sleepy.", successSentence: "Yes, this face is sleepy.", alt: "A sleepy face." },
-    { id: "surprised", label: "surprised", prompt: "Surprised. Which face is surprised?", teachingLabel: "This face is surprised.", successSentence: "Yes, this face is surprised.", alt: "A surprised face." },
-    { id: "silly", label: "silly", prompt: "Silly. Which face is silly?", teachingLabel: "This face is silly.", successSentence: "Yes, this face is silly.", alt: "A silly face." },
-  ]),
-]);
-
-export function resolveWordGameTopic(topicId: string | undefined): WordGameTopic | null {
-  return WORD_GAME_TOPICS.find(({ id }) => id === topicId) ?? null;
-}
-
-export function getWordGameRoute(topicId: string): string {
-  return `/word-games/${topicId}`;
-}
-
-export function buildWordGameRounds(topic: WordGameTopic): readonly WordGameRound[] {
-  return topic.items.map((target, index) => {
-    const candidates = [target, topic.items[(index + 1) % 6], topic.items[(index + 2) % 6]];
-    const correctPosition = index % 3;
-    return deepFreeze({
-      target,
-      choices: candidates.map((_, position) => candidates[(position - correctPosition + 3) % 3]),
-    });
-  });
-}
 
 function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object" && !Object.isFrozen(value)) {
@@ -166,4 +102,173 @@ function deepFreeze<T>(value: T): T {
     for (const child of Object.values(value)) deepFreeze(child);
   }
   return value;
+}
+
+export function createWordGameCatalog(
+  definition: WordGameCatalogDefinition,
+) {
+  const categoryItemLookups = new Map<string, ReadonlyMap<string, WordGameItem>>();
+  const categories: readonly WordGameCategory[] = deepFreeze(
+    definition.categories.map((categoryDefinition) => {
+      const items: WordGameItem[] = categoryDefinition.items.map((item) => ({
+        id: item.id,
+        label: item.label,
+        alt: item.alt,
+        visual: { ...item.visual },
+        labelAudio: { ...item.labelAudio },
+        promptAudio: { ...item.promptAudio },
+      }));
+      const itemsById = new Map(items.map((item) => [item.id, item]));
+      categoryItemLookups.set(categoryDefinition.id, itemsById);
+      const coverItem = itemsById.get(categoryDefinition.coverItemId);
+      if (!coverItem) {
+        throw new Error(
+          `Missing word-game cover item: ${categoryDefinition.coverItemId}`,
+        );
+      }
+
+      return {
+        schemaVersion: categoryDefinition.schemaVersion,
+        order: categoryDefinition.order,
+        id: categoryDefinition.id,
+        title: categoryDefinition.title,
+        description: categoryDefinition.description,
+        theme: categoryDefinition.theme,
+        items,
+        tiers: categoryDefinition.tiers.map((tier) => ({
+          id: tier.id,
+          title: tier.title,
+          description: tier.description,
+          quizzes: tier.quizzes.map((quiz) => ({
+            id: quiz.id,
+            title: quiz.title,
+            description: quiz.description,
+            questions: quiz.questions.map((question) => ({
+              id: question.id,
+              targetId: question.targetId,
+              choiceIds: [...question.choiceIds] as [
+                string,
+                string,
+                string,
+                string,
+              ],
+            })),
+            coverItem: (() => {
+              const item = itemsById.get(quiz.questions[0].targetId);
+              if (!item) {
+                throw new Error(`Missing word-game quiz cover item: ${quiz.id}`);
+              }
+              return item;
+            })(),
+          })),
+        })),
+        coverItem,
+      };
+    }),
+  );
+  const categoriesById = new Map(
+    categories.map((category) => [category.id, category]),
+  );
+  const quizzesByCategoryAndId = new Map<string, WordGameSelection>();
+  for (const category of categories) {
+    for (const tier of category.tiers) {
+      for (const quiz of tier.quizzes) {
+        quizzesByCategoryAndId.set(
+          `${category.id}\0${quiz.id}`,
+          Object.freeze({ category, tier, quiz }),
+        );
+      }
+    }
+  }
+
+  return Object.freeze({
+    categories,
+    player: deepFreeze({
+      schemaVersion: definition.player.schemaVersion,
+      successAudio: { ...definition.player.successAudio },
+      retryAudio: { ...definition.player.retryAudio },
+      completeAudio: { ...definition.player.completeAudio },
+    }),
+    resolveCategory(categoryId: string | undefined): WordGameCategory | null {
+      return categoryId ? (categoriesById.get(categoryId) ?? null) : null;
+    },
+    resolveQuiz(
+      categoryId: string | undefined,
+      quizId: string | undefined,
+    ): WordGameSelection | null {
+      return categoryId && quizId
+        ? (quizzesByCategoryAndId.get(`${categoryId}\0${quizId}`) ?? null)
+        : null;
+    },
+    buildRounds(
+      selection: WordGameSelection,
+      random: () => number = Math.random,
+    ): readonly WordGameRound[] {
+      const itemsById = categoryItemLookups.get(selection.category.id);
+      if (!itemsById) {
+        throw new Error(`Missing word-game category items: ${selection.category.id}`);
+      }
+
+      return deepFreeze(selection.quiz.questions.map((question) => {
+        const target = itemsById.get(question.targetId);
+        const choices = question.choiceIds.map((itemId) => itemsById.get(itemId));
+        if (!target || choices.some((choice) => !choice)) {
+          throw new Error(`Missing word-game item for question: ${question.id}`);
+        }
+        return {
+          question,
+          target,
+          choices: shuffled(choices as WordGameItem[], random),
+        };
+      }));
+    },
+  });
+}
+
+const WORD_GAME_CATALOG = createWordGameCatalog(GENERATED_WORD_GAME_CATALOG);
+
+export const WORD_GAME_CATEGORIES = WORD_GAME_CATALOG.categories;
+export const WORD_GAME_CORRECT_AUDIO = WORD_GAME_CATALOG.player.successAudio;
+export const WORD_GAME_RETRY_AUDIO = WORD_GAME_CATALOG.player.retryAudio;
+export const WORD_GAME_COMPLETE_AUDIO = WORD_GAME_CATALOG.player.completeAudio;
+
+export function resolveWordGameCategory(
+  categoryId: string | undefined,
+): WordGameCategory | null {
+  return WORD_GAME_CATALOG.resolveCategory(categoryId);
+}
+
+export function resolveWordGameQuiz(
+  categoryId: string | undefined,
+  quizId: string | undefined,
+): WordGameSelection | null {
+  return WORD_GAME_CATALOG.resolveQuiz(categoryId, quizId);
+}
+
+export function getWordGameCategoryRoute(categoryId: string): string {
+  return `/word-games/${categoryId}`;
+}
+
+export function getWordGameQuizRoute(categoryId: string, quizId: string): string {
+  return `${getWordGameCategoryRoute(categoryId)}/${quizId}`;
+}
+
+function shuffled<T>(values: readonly T[], random: () => number): readonly T[] {
+  const result = [...values];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const sample = random();
+    if (!(sample >= 0 && sample < 1)) {
+      throw new TypeError("random must return a value in [0, 1)");
+    }
+    const swapIndex = Math.floor(sample * (index + 1));
+    [result[index], result[swapIndex]] = [result[swapIndex], result[index]];
+  }
+  return Object.freeze(result);
+}
+
+export function buildWordGameRounds(
+  selection: WordGameSelection,
+  random: () => number = Math.random,
+): readonly WordGameRound[] {
+  return WORD_GAME_CATALOG.buildRounds(selection, random);
 }

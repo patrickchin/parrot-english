@@ -12,6 +12,23 @@ const revokedObjectUrls: string[] = [];
 let audioContextDoubleCloses = 0;
 let wordGameAutoplayBlocked = false;
 const backingStarts: Array<{ at: number; frequencyHz: number }> = [];
+const dubMediaMetrics = {
+  audioContextCloses: 0,
+  audioContextsCreated: 0,
+  microphoneConstraints: [] as MediaStreamConstraints[],
+  microphoneRequests: 0,
+  microphoneTrackStops: 0,
+  recorderStarts: [] as number[],
+  recorderStops: [] as number[],
+  recordedStreamTrackKinds: [] as string[][],
+  scheduledVoiceStarts: 0,
+  scheduledBacking: [] as Array<{
+    at: number;
+    frequencyHz: number;
+    type: OscillatorType;
+  }>,
+};
+let failedDubMelodyStart = false;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
@@ -23,6 +40,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "delete-held",
   "empty",
   "load-held",
+  "melody-start-failed",
   "multiple-source-failed",
   "not-granted",
   "partial",
@@ -31,6 +49,7 @@ const E2E_DUB_SCENARIOS = new Set([
   "reset-delete-failed",
   "reset-delete-lost-response",
   "reset-interrupted",
+  "recorder-start-failed",
   "revoking",
   "upload-failed",
   "upload-retry-held",
@@ -40,18 +59,38 @@ const E2E_DUB_SCENARIOS = new Set([
 const DEFAULT_E2E_DUB_ID = "five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
 const E2E_DUB_CONSENT_VERSION = "guardian-voice-r2-v2";
+const E2E_DUB_PEAK_BARS = Array.from(
+  { length: 32 },
+  (_, index) => Math.round(index / 31 * 255) / 255,
+);
 const E2E_DUB_SCENARIO_KEY = "parrot-e2e-dub:active-scenario";
 const E2E_MICROPHONE_SCENARIOS = new Set(["delayed", "denied", "unsupported"]);
 const E2E_LESSON_SCENARIO = new URL(window.location.href).searchParams.get(
   "parrotE2eLesson",
 );
+if (
+  new URL(window.location.href).searchParams.get("parrotE2eWordGameRandom") ===
+  "reshuffle"
+) {
+  Object.defineProperty(window, "__parrotE2eWordGameRandom", {
+    configurable: true,
+    value: (playThrough: number) => () =>
+      playThrough % 2 === 0 ? 0 : 1 - Number.EPSILON,
+  });
+}
 type E2ELessonCue = {
   audioId?: string;
   endedAt: number | null;
   kind: "device" | "static";
+  source?: string;
   startedAt: number;
   text: string;
   volume: number;
+};
+type E2EPlaybackLine = {
+  audioId?: string;
+  audioSrc: string;
+  text: string;
 };
 type E2ELessonUpload = {
   attempt: number;
@@ -113,6 +152,7 @@ const lessonMediaMetrics = {
   uploads: [] as E2ELessonUpload[],
 };
 const pendingLessonPlayback: PendingLessonPlayback[] = [];
+const pendingE2EPlaybackLines = new Map<string, E2EPlaybackLine[]>();
 const pendingLessonUploads: PendingLessonUpload[] = [];
 let scopedLessonRecordingMedia: ScopedLessonRecordingMedia | null = null;
 const E2E_PROFILE_ACKNOWLEDGMENT_SCENARIO = "acknowledgment";
@@ -161,7 +201,6 @@ const E2E_LEARNER_SCENARIOS = new Set([
 const E2E_LEARNER_SCENARIO_KEY = "parrot-e2e-learners:active-scenario";
 const E2E_LEARNER_SESSION_KEY = "parrot-e2e-learners:active-session";
 const E2E_LEARNER_ACCOUNT_KEY_PREFIX = "parrot-e2e-learners:account";
-const E2E_STORY_ART_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 const DEFAULT_E2E_DUB_DEFINITION =
   DUB_DEFINITIONS.find(({ id }) => id === DEFAULT_E2E_DUB_ID) ??
   DUB_DEFINITIONS[0];
@@ -169,6 +208,16 @@ const DEFAULT_E2E_DUB_DEFINITION =
 function normalizeE2ePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/u, "");
   return normalized === "" ? "/" : normalized.toLowerCase();
+}
+
+function isActiveE2eDubRoute() {
+  const pathname = normalizeE2ePathname(new URL(window.location.href).pathname);
+  return Boolean(
+    getE2eDubScenario() &&
+      DUB_DEFINITIONS.some(
+        ({ route }) => normalizeE2ePathname(route) === pathname,
+      ),
+  );
 }
 
 function getActiveE2eDubDefinition() {
@@ -415,7 +464,6 @@ const TARGETABLE_LEARNER_PROFILE_PATHS = new Set([
   "/api/learner-profile/transcribe",
   "/api/profile",
   "/api/profile/lesson-recording-consent",
-  "/api/profile/preferences",
 ]);
 
 function isTargetableLearnerPath(pathname: string) {
@@ -424,8 +472,7 @@ function isTargetableLearnerPath(pathname: string) {
     pathname === "/api/lesson-recordings/consent" ||
     lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
     matchE2eDubDefinitionApiPath(pathname) !== null ||
-    matchActiveE2eDubLinePath(pathname) !== null ||
-    /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname)
+    matchActiveE2eDubLinePath(pathname) !== null
   );
 }
 
@@ -441,7 +488,6 @@ function singletonUnsupportedTargetMethodResponse(url: URL, method: string) {
   const pathname = url.pathname;
   const dubRoute = matchE2eDubDefinitionApiPath(pathname);
   let allowedMethods: readonly string[] | null = null;
-  let notFoundForUnsupportedMethod = false;
 
   if (pathname === "/api/learner-profile") allowedMethods = ["GET"];
   else if (pathname === "/api/learner-profile/answer") {
@@ -455,10 +501,7 @@ function singletonUnsupportedTargetMethodResponse(url: URL, method: string) {
     allowedMethods = ["POST"];
   } else if (pathname === "/api/profile") {
     allowedMethods = ["GET", "PUT"];
-  } else if (
-    pathname === "/api/profile/lesson-recording-consent" ||
-    pathname === "/api/profile/preferences"
-  ) {
+  } else if (pathname === "/api/profile/lesson-recording-consent") {
     allowedMethods = ["PUT"];
   } else if (pathname === "/api/lesson-recordings/consent") {
     allowedMethods = ["GET"];
@@ -472,24 +515,12 @@ function singletonUnsupportedTargetMethodResponse(url: URL, method: string) {
     allowedMethods = ["GET"];
   } else if (matchActiveE2eDubLinePath(pathname) !== null) {
     allowedMethods = ["PUT"];
-  } else if (
-    /^\/api\/stories\/[^/]+\/personalized-art\/asset$/.test(pathname)
-  ) {
-    allowedMethods = ["GET"];
-    notFoundForUnsupportedMethod = true;
-  } else if (/^\/api\/stories\/[^/]+\/personalized-art$/.test(pathname)) {
-    allowedMethods = ["GET", "POST", "DELETE"];
-    notFoundForUnsupportedMethod = true;
   }
 
   if (allowedMethods === null || allowedMethods.includes(method)) return null;
-  const status = notFoundForUnsupportedMethod ? 404 : 405;
-  const error = notFoundForUnsupportedMethod
-    ? "not_found"
-    : "method_not_allowed";
   return pathname.startsWith("/api/dubs/")
-    ? e2eDubJson({ error }, status)
-    : e2eJson({ error }, status);
+    ? e2eDubJson({ error: "method_not_allowed" }, 405)
+    : e2eJson({ error: "method_not_allowed" }, 405);
 }
 
 function parseExplicitLearnerTarget(url: URL) {
@@ -529,11 +560,6 @@ type MockLearnerProfile = {
     "early-a1" | "first-words" | "repeating-patterns" | "tiny-stories";
 };
 
-type MockStoryArtState = {
-  hasStoredArt: boolean;
-  updatedAt: string | null;
-};
-
 type MockDubState = {
   consentState: "granted" | "not_granted" | "revoking";
   savedLineIds: string[];
@@ -547,7 +573,6 @@ type MockLessonRecordingState = {
 };
 
 type MockLearnerState = {
-  art: Map<string, MockStoryArtState>;
   conversationIds: Set<string>;
   createdAt: string;
   deletionPending: boolean;
@@ -561,11 +586,7 @@ type MockAccountState = {
   learners: Map<string, MockLearnerState>;
 };
 
-type StoredMockLearnerState = Omit<
-  MockLearnerState,
-  "art" | "conversationIds"
-> & {
-  art: Array<[string, MockStoryArtState]>;
+type StoredMockLearnerState = Omit<MockLearnerState, "conversationIds"> & {
   conversationIds: string[];
 };
 
@@ -668,7 +689,6 @@ function createMockLearner(
   completed = true,
 ): MockLearnerState {
   return {
-    art: new Map(),
     conversationIds: new Set(),
     createdAt,
     deletionPending: false,
@@ -713,7 +733,6 @@ function storeMockAccountState(
       id,
       {
         ...learner,
-        art: [...learner.art],
         conversationIds: [...learner.conversationIds],
       },
     ]),
@@ -727,27 +746,35 @@ function restoreMockAccountState(
   return {
     activeProfileId,
     learners: new Map(
-      state.learners.map(([id, learner]) => [
-        id,
-        {
-          ...learner,
-          art: new Map(learner.art),
-          conversationIds: new Set(learner.conversationIds),
-          deletionPending: learner.deletionPending === true,
-          lessonRecording: {
-            cleanupPending: learner.lessonRecording?.cleanupPending === true,
-            consent: learner.lessonRecording?.consent === true,
-            consentRequests: Number.isSafeInteger(
-              learner.lessonRecording?.consentRequests,
-            )
-              ? learner.lessonRecording.consentRequests
-              : 0,
-            uploads: Array.isArray(learner.lessonRecording?.uploads)
-              ? learner.lessonRecording.uploads
-              : [],
+      state.learners.map(([id, learner]) => {
+        const {
+          art: retiredArt,
+          conversationIds,
+          lessonRecording,
+          ...rest
+        } = learner as StoredMockLearnerState & { art?: unknown };
+        void retiredArt;
+        return [
+          id,
+          {
+            ...rest,
+            conversationIds: new Set(conversationIds),
+            deletionPending: learner.deletionPending === true,
+            lessonRecording: {
+              cleanupPending: lessonRecording?.cleanupPending === true,
+              consent: lessonRecording?.consent === true,
+              consentRequests: Number.isSafeInteger(
+                lessonRecording?.consentRequests,
+              )
+                ? lessonRecording.consentRequests
+                : 0,
+              uploads: Array.isArray(lessonRecording?.uploads)
+                ? lessonRecording.uploads
+                : [],
+            },
           },
-        },
-      ]),
+        ];
+      }),
     ),
   };
 }
@@ -990,6 +1017,9 @@ function createE2eLearnerAccount(
       guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
       lines: lineIds.map((id) => ({
         id,
+        peakBars: learner.dub.consentState === "granted" && saved.has(id)
+          ? E2E_DUB_PEAK_BARS
+          : null,
         recordedAt: saved.has(id) ? E2E_DUB_RECORDED_AT : null,
         saved: learner.dub.consentState === "granted" && saved.has(id),
       })),
@@ -1066,87 +1096,13 @@ function createE2eLearnerAccount(
         learner.dub.savedLineIds.push(lineId);
       }
       persist();
-      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
+      return e2eDubJson({
+        lineId,
+        peakBars: E2E_DUB_PEAK_BARS,
+        recordedAt: E2E_DUB_RECORDED_AT,
+      }, 201);
     }
     return e2eDubJson({ error: "method_not_allowed" }, 405);
-  }
-
-  async function handleArt(
-    url: URL,
-    method: string,
-    explicitLearner: MockLearnerState | null,
-    explicitProfileId: string | null,
-  ): Promise<Response | null> {
-    const match = url.pathname.match(
-      /^\/api\/stories\/([^/]+)\/personalized-art(\/asset)?$/,
-    );
-    if (!match) return null;
-    const resolvedLearner = requestLearner(explicitLearner);
-    if (resolvedLearner instanceof Response) return resolvedLearner;
-    const learner = resolvedLearner;
-    const storyId = decodeURIComponent(match[1]!);
-    const art = learner.art.get(storyId) ?? {
-      hasStoredArt: false,
-      updatedAt: null,
-    };
-    if (match[2]) {
-      return art.hasStoredArt
-        ? new Response(new Uint8Array([137, 80, 78, 71]), {
-            headers: { "Content-Type": "image/png" },
-          })
-        : new Response(null, { status: 404 });
-    }
-    if (method === "GET") {
-      return e2eJson({
-        enabled: true,
-        guardianConsentVersion: E2E_STORY_ART_CONSENT_VERSION,
-        hasStoredArt: art.hasStoredArt,
-        stories: art.hasStoredArt
-          ? {
-              [storyId]: {
-                pages: {
-                  "my-red-ball": {
-                    alt: `${learner.profile.name} holding a bright red ball`,
-                    src: `/api/stories/${encodeURIComponent(storyId)}/personalized-art/asset?${new URLSearchParams(
-                      {
-                        v: "1786276800000",
-                        ...(explicitLearner
-                          ? { learnerProfileId: explicitLearner.profile.id }
-                          : {}),
-                      },
-                    )}`,
-                  },
-                },
-              },
-            }
-          : {},
-        updatedAt: art.updatedAt,
-      });
-    }
-    if (method === "POST") {
-      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
-      if (commitLearner instanceof Response) return commitLearner;
-      commitLearner.art.set(storyId, {
-        hasStoredArt: true,
-        updatedAt: E2E_DUB_RECORDED_AT,
-      });
-      persist();
-      const created: Response | null = await handleArt(
-        url,
-        "GET",
-        commitLearner,
-        explicitProfileId,
-      );
-      return e2eJson(await created!.json(), 201);
-    }
-    if (method === "DELETE") {
-      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
-      if (commitLearner instanceof Response) return commitLearner;
-      commitLearner.art.delete(storyId);
-      persist();
-      return new Response(null, { status: 204 });
-    }
-    return e2eJson({ error: "method_not_allowed" }, 405);
   }
 
   function lessonRecordingScope(
@@ -1281,13 +1237,6 @@ function createE2eLearnerAccount(
       explicitProfileId,
     );
     if (dub) return dub;
-    const art = await handleArt(
-      url,
-      method,
-      currentExplicitLearner,
-      explicitProfileId,
-    );
-    if (art) return art;
     const lessonRecording = await handleLessonRecording(
       input,
       init,
@@ -1428,7 +1377,6 @@ function createE2eLearnerAccount(
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
       url.pathname === "/api/profile" ||
-      url.pathname === "/api/profile/preferences" ||
       url.pathname.startsWith("/api/conversations");
     if (learnerOwnedPath && resolvedLearner instanceof Response) {
       return resolvedLearner;
@@ -1550,18 +1498,6 @@ function createE2eLearnerAccount(
       }
       if (typeof answers.description === "string") {
         learner.profile.description = answers.description.trim() || null;
-      }
-      persist();
-      return e2eJson(profileEditorState(learner));
-    }
-    if (url.pathname === "/api/profile/preferences" && method === "PUT") {
-      const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
-      if (commitLearner instanceof Response) return commitLearner;
-      learner = commitLearner;
-      if (typeof body.storyLevel === "string") {
-        learner.profile.storyLevel =
-          body.storyLevel as MockLearnerProfile["storyLevel"];
       }
       persist();
       return e2eJson(profileEditorState(learner));
@@ -1916,7 +1852,9 @@ function initialE2eDubLineIds(scenario: string, lineIds: readonly string[]) {
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
     scenario === "multiple-source-failed" ||
+    scenario === "melody-start-failed" ||
     scenario === "playback-setup-failed" ||
+    scenario === "recorder-start-failed" ||
     scenario === "reset-delete-failed" ||
     scenario === "reset-delete-lost-response" ||
     scenario === "reset-interrupted"
@@ -2129,6 +2067,10 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
             guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
             lines: requestedLineIds.map((id) => ({
               id,
+              peakBars:
+                consentState === "granted" && requestedSaved.has(id)
+                  ? E2E_DUB_PEAK_BARS
+                  : null,
               recordedAt:
                 consentState === "granted" && requestedSaved.has(id)
                   ? E2E_DUB_RECORDED_AT
@@ -2254,17 +2196,39 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
       }
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
-      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
+      return e2eDubJson({
+        lineId,
+        peakBars: E2E_DUB_PEAK_BARS,
+        recordedAt: E2E_DUB_RECORDED_AT,
+      }, 201);
     },
     snapshot() {
       return {
+        audioContextCloses: dubMediaMetrics.audioContextCloses,
+        audioContextsCreated: dubMediaMetrics.audioContextsCreated,
         audioContextDoubleCloses,
         backingStarts: backingStarts.map((start) => ({ ...start })),
         createdObjectUrls: [...createdObjectUrls],
         guideFetches: [...guideFetches],
+        microphoneConstraints: structuredClone(
+          dubMediaMetrics.microphoneConstraints,
+        ),
+        microphoneRequests: dubMediaMetrics.microphoneRequests,
+        microphoneTrackStops: dubMediaMetrics.microphoneTrackStops,
         playedAudioSources: [...playedAudioSources],
         privateFetches: [...privateFetches],
+        recorderStartCount: dubMediaMetrics.recorderStarts.length,
+        recorderStartWallMs: [...dubMediaMetrics.recorderStarts],
+        recorderStopCount: dubMediaMetrics.recorderStops.length,
+        recorderStopWallMs: [...dubMediaMetrics.recorderStops],
+        recordedStreamTrackKinds: dubMediaMetrics.recordedStreamTrackKinds.map(
+          (kinds) => [...kinds],
+        ),
         revokedObjectUrls: [...revokedObjectUrls],
+        scheduledVoiceStarts: dubMediaMetrics.scheduledVoiceStarts,
+        scheduledBacking: dubMediaMetrics.scheduledBacking.map((start) => ({
+          ...start,
+        })),
         uploads: [...uploads],
       };
     },
@@ -2292,7 +2256,11 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
       persist();
       pending.resolve(
         e2eDubJson(
-          { lineId: pending.lineId, recordedAt: E2E_DUB_RECORDED_AT },
+          {
+            lineId: pending.lineId,
+            peakBars: E2E_DUB_PEAK_BARS,
+            recordedAt: E2E_DUB_RECORDED_AT,
+          },
           201,
         ),
       );
@@ -2401,10 +2369,7 @@ function requiresGuardianAccess(
 ) {
   if (hasLearnerTarget) return true;
   if (url.pathname === "/api/learner-profiles") {
-    return method === "GET" || method === "POST";
-  }
-  if (/^\/api\/learner-profiles\/[^/]+\/active$/.test(url.pathname)) {
-    return method === "PUT";
+    return method === "POST";
   }
   if (/^\/api\/learner-profiles\/[^/]+$/.test(url.pathname)) {
     return method === "DELETE";
@@ -2412,7 +2377,6 @@ function requiresGuardianAccess(
   if (url.pathname === "/api/profile") {
     return method === "GET" || method === "PUT";
   }
-  if (url.pathname === "/api/profile/preferences") return method === "PUT";
   if (url.pathname === "/api/profile/lesson-recording-consent") {
     return method === "PUT";
   }
@@ -2422,10 +2386,7 @@ function requiresGuardianAccess(
   if (/^\/api\/dubs\/[^/]+$/.test(url.pathname)) {
     return method === "DELETE";
   }
-  return (
-    /^\/api\/stories\/[^/]+\/personalized-art$/.test(url.pathname) &&
-    (method === "POST" || method === "DELETE")
-  );
+  return false;
 }
 
 async function guardianResponse(
@@ -2811,17 +2772,6 @@ function installE2eProfileFetchMock() {
     string,
     ReturnType<typeof createE2eLearnerAccount>
   >();
-  let fallbackStoryLevel = E2E_VIEWPORT_EDITOR_STATE.profile.storyLevel;
-
-  function fallbackProfileState() {
-    return {
-      ...E2E_VIEWPORT_EDITOR_STATE,
-      profile: {
-        ...E2E_VIEWPORT_EDITOR_STATE.profile,
-        storyLevel: fallbackStoryLevel,
-      },
-    };
-  }
   scopedLessonRecordingMedia = learnerAccount
     ? {
         rejectNextUpload: () => learnerAccount.rejectNextLessonUpload(),
@@ -3017,20 +2967,7 @@ function installE2eProfileFetchMock() {
       url.pathname === "/api/profile" &&
       method === "GET"
     ) {
-      return e2eJson(fallbackProfileState());
-    }
-    if (
-      !learnerAccount &&
-      fallbackTarget === E2E_VIEWPORT_EDITOR_STATE.profile.id &&
-      url.origin === window.location.origin &&
-      url.pathname === "/api/profile/preferences" &&
-      method === "PUT"
-    ) {
-      const body = (await (request ?? new Request(url.href, init))
-        .clone()
-        .json()) as { storyLevel?: typeof fallbackStoryLevel };
-      if (body.storyLevel) fallbackStoryLevel = body.storyLevel;
-      return e2eJson(fallbackProfileState());
+      return e2eJson(E2E_VIEWPORT_EDITOR_STATE);
     }
     if (
       !learnerAccount &&
@@ -3118,7 +3055,16 @@ function getMockAudioDelayMs(src: string) {
 
 function getWordGameAudioId(src: string) {
   const pathname = new URL(src, window.location.origin).pathname;
-  return pathname.match(/^\/assets\/audio\/(word-game-[a-z0-9-]+)\.mp3$/)?.[1] ?? null;
+  return pathname.match(
+    /^\/assets\/audio\/(word-game-[a-z0-9-]+|narrator-feedback-success)\.mp3$/,
+  )?.[1] ?? null;
+}
+
+function takeE2EPlaybackLine(audioSrc: string) {
+  const lines = pendingE2EPlaybackLines.get(audioSrc);
+  const line = lines?.shift();
+  if (lines?.length === 0) pendingE2EPlaybackLines.delete(audioSrc);
+  return line;
 }
 
 class MockAudioElement {
@@ -3179,7 +3125,9 @@ class MockAudioElement {
       return;
     }
     const lessonScenario = getE2eLessonScenario();
+    const playbackLine = takeE2EPlaybackLine(this.src);
     const wordGameAudioId = getWordGameAudioId(this.src);
+    const cueAudioId = playbackLine?.audioId ?? wordGameAudioId;
     if (
       lessonScenario === "autoplay-blocked" &&
       wordGameAudioId &&
@@ -3201,11 +3149,12 @@ class MockAudioElement {
           lessonScenario === "held-preflight"));
     const cue: E2ELessonCue | null = this.lessonCue
       ? {
-          ...(wordGameAudioId ? { audioId: wordGameAudioId } : {}),
+          ...(cueAudioId ? { audioId: cueAudioId } : {}),
           endedAt: null,
           kind: "static" as const,
           startedAt: performance.now(),
-          text: this.src,
+          source: playbackLine?.audioSrc ?? this.src,
+          text: playbackLine?.text ?? this.src,
           volume: this.volume,
         }
       : null;
@@ -3287,17 +3236,30 @@ class MockMediaRecorder {
   onstop: RecorderHandler<Event> = null;
   state: RecordingState = "inactive";
   readonly lessonRecorderId: number;
+  readonly dubRecorder: boolean;
 
   constructor(
     readonly stream: MediaStream,
     readonly options?: MediaRecorderOptions,
   ) {
+    this.dubRecorder = isActiveE2eDubRoute();
+    if (this.dubRecorder) {
+      dubMediaMetrics.recordedStreamTrackKinds.push(
+        stream.getTracks().map(({ kind }) => kind),
+      );
+    }
     this.lessonRecorderId = getE2eLessonScenario()
       ? ++lessonMediaMetrics.nextRecorderId
       : 0;
   }
 
   start() {
+    if (this.dubRecorder) {
+      dubMediaMetrics.recorderStarts.push(performance.now());
+      if (getE2eDubScenario() === "recorder-start-failed") {
+        throw new DOMException("Mock dub recorder start failed.", "NotSupportedError");
+      }
+    }
     this.state = "recording";
     if (this.lessonRecorderId) {
       lessonMediaMetrics.recorderStarts.push({
@@ -3329,6 +3291,9 @@ class MockMediaRecorder {
     if (this.state === "inactive") return;
 
     this.state = "inactive";
+    if (this.dubRecorder) {
+      dubMediaMetrics.recorderStops.push(performance.now());
+    }
     if (this.lessonRecorderId) {
       lessonMediaMetrics.recorderStops.push({
         id: this.lessonRecorderId,
@@ -3383,12 +3348,30 @@ class MockScheduledAudioNode extends MockAudioNode {
   constructor(
     private readonly kind: "voice" | "oscillator",
     private readonly audioNow: () => number,
+    private readonly onStart: () => void = () => {},
   ) {
     super();
   }
   start(when = 0) {
-    if (this.kind === "oscillator" && getE2eDubScenario()) {
+    this.onStart();
+    if (this.kind === "voice" && isActiveE2eDubRoute()) {
+      dubMediaMetrics.scheduledVoiceStarts += 1;
+    }
+    if (this.kind === "oscillator" && isActiveE2eDubRoute()) {
       backingStarts.push({ at: when, frequencyHz: this.frequency.value });
+      dubMediaMetrics.scheduledBacking.push({
+        at: when,
+        frequencyHz: this.frequency.value,
+        type: this.type,
+      });
+      if (
+        this.type === "triangle" &&
+        getE2eDubScenario() === "melody-start-failed" &&
+        !failedDubMelodyStart
+      ) {
+        failedDubMelodyStart = true;
+        throw new DOMException("Mock dub melody start failed.", "InvalidStateError");
+      }
     }
   }
   stop(when = 0) {
@@ -3414,23 +3397,47 @@ class MockAudioContext {
   readonly destination = new MockAudioNode();
   private readonly startedAt = performance.now();
   private closed = false;
+  private readonly dubContext = isActiveE2eDubRoute();
+  private heldDubPlaybackAt: number | null = null;
+
+  constructor() {
+    if (this.dubContext) dubMediaMetrics.audioContextsCreated += 1;
+  }
 
   get currentTime() {
+    return this.heldDubPlaybackAt ?? this.scaledCurrentTime();
+  }
+
+  private scaledCurrentTime() {
     return ((performance.now() - this.startedAt) / 1_000) * 20;
+  }
+
+  private holdDubPlayback() {
+    if (
+      !this.dubContext ||
+      !hasHeldE2eDubPlayback() ||
+      this.heldDubPlaybackAt !== null
+    ) return;
+    this.heldDubPlaybackAt = this.scaledCurrentTime();
   }
 
   async close() {
     if (this.closed) {
-      audioContextDoubleCloses += 1;
+      if (this.dubContext) audioContextDoubleCloses += 1;
       throw new DOMException(
         "Cannot close a closed AudioContext.",
         "InvalidStateError",
       );
     }
     this.closed = true;
+    if (this.dubContext) dubMediaMetrics.audioContextCloses += 1;
   }
   createBufferSource() {
-    return new MockScheduledAudioNode("voice", () => this.currentTime);
+    return new MockScheduledAudioNode(
+      "voice",
+      () => this.currentTime,
+      () => this.holdDubPlayback(),
+    );
   }
   createAnalyser() {
     return new MockAnalyserNode();
@@ -3486,6 +3493,7 @@ function createMockStream(onStop?: () => void) {
 }
 
 type PendingMicrophoneRequest = {
+  onStop?: () => void;
   reject: (reason?: unknown) => void;
   resolve: (stream: MediaStream) => void;
 };
@@ -3513,6 +3521,7 @@ const e2eLessonMicrophone = {
     request.resolve(
       createMockStream(() => {
         this.stoppedTracks += 1;
+        request.onStop?.();
       }),
     );
     return true;
@@ -3747,6 +3756,15 @@ Object.defineProperty(window, "__parrotE2eLessonMedia", {
   value: e2eLessonMedia,
 });
 
+Object.defineProperty(window, "__parrotE2ePlaybackLine", {
+  configurable: true,
+  value: (line: E2EPlaybackLine) => {
+    const lines = pendingE2EPlaybackLines.get(line.audioSrc) ?? [];
+    lines.push({ ...line });
+    pendingE2EPlaybackLines.set(line.audioSrc, lines);
+  },
+});
+
 if (getE2eLessonScenario()) {
   Object.defineProperty(window, "SpeechSynthesisUtterance", {
     configurable: true,
@@ -3791,7 +3809,7 @@ Object.defineProperty(window, "MediaRecorder", {
 Object.defineProperty(navigator, "mediaDevices", {
   configurable: true,
   value: {
-    getUserMedia: async () => {
+    getUserMedia: async (constraints: MediaStreamConstraints) => {
       const lessonScenario = getE2eLessonScenario();
       if (lessonScenario) {
         lessonMediaMetrics.getUserMediaCalls += 1;
@@ -3817,21 +3835,52 @@ Object.defineProperty(navigator, "mediaDevices", {
         }
       }
       if (getE2eMicrophoneScenario() === "denied") {
+        if (isActiveE2eDubRoute()) {
+          dubMediaMetrics.microphoneRequests += 1;
+          dubMediaMetrics.microphoneConstraints.push(
+            structuredClone(constraints),
+          );
+        }
         throw new DOMException("Permission denied", "NotAllowedError");
       }
       if (getE2eMicrophoneScenario() === "delayed") {
+        const dubRequest = isActiveE2eDubRoute();
+        if (dubRequest) {
+          dubMediaMetrics.microphoneRequests += 1;
+          dubMediaMetrics.microphoneConstraints.push(
+            structuredClone(constraints),
+          );
+        }
         e2eLessonMicrophone.requests += 1;
         return new Promise<MediaStream>((resolve, reject) => {
-          pendingMicrophoneRequests.push({ reject, resolve });
+          pendingMicrophoneRequests.push({
+            ...(dubRequest
+              ? {
+                  onStop: () => {
+                    dubMediaMetrics.microphoneTrackStops += 1;
+                  },
+                }
+              : {}),
+            reject,
+            resolve,
+          });
           e2eLessonMicrophone.pending = pendingMicrophoneRequests.length;
         });
+      }
+      if (isActiveE2eDubRoute()) {
+        dubMediaMetrics.microphoneRequests += 1;
+        dubMediaMetrics.microphoneConstraints.push(structuredClone(constraints));
       }
       return createMockStream(
         lessonScenario
           ? () => {
               lessonMediaMetrics.stoppedTracks += 1;
             }
-          : undefined,
+          : isActiveE2eDubRoute()
+            ? () => {
+                dubMediaMetrics.microphoneTrackStops += 1;
+              }
+            : undefined,
       );
     },
   },

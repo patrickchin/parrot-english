@@ -1,0 +1,843 @@
+{
+  "schemaVersion": 2,
+  "order": 8,
+  "id": "clothes",
+  "title": "Clothes",
+  "description": "Listen and find the clothes.",
+  "theme": "rose",
+  "coverItemId": "shirt",
+  "items": [
+    {
+      "id": "shirt",
+      "label": "shirt",
+      "alt": "A shirt.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f455"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-shirt-label",
+        "text": "shirt"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-shirt-prompt",
+        "text": "Which is the shirt?"
+      }
+    },
+    {
+      "id": "shoes",
+      "label": "shoes",
+      "alt": "A pair of shoes.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f45f",
+        "copies": 2
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-shoes-label",
+        "text": "shoes"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-shoes-prompt",
+        "text": "Which are the shoes?"
+      }
+    },
+    {
+      "id": "hat",
+      "label": "hat",
+      "alt": "A hat.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9e2"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-hat-label",
+        "text": "hat"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-hat-prompt",
+        "text": "Which is the hat?"
+      }
+    },
+    {
+      "id": "socks",
+      "label": "socks",
+      "alt": "A pair of socks.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9e6"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-socks-label",
+        "text": "socks"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-socks-prompt",
+        "text": "Which are the socks?"
+      }
+    },
+    {
+      "id": "coat",
+      "label": "coat",
+      "alt": "A coat.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9e5"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-coat-label",
+        "text": "coat"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-coat-prompt",
+        "text": "Which is the coat?"
+      }
+    },
+    {
+      "id": "pants",
+      "label": "pants",
+      "alt": "A pair of pants.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f456"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-pants-label",
+        "text": "pants"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-pants-prompt",
+        "text": "Which are the pants?"
+      }
+    },
+    {
+      "id": "dress",
+      "label": "dress",
+      "alt": "A dress.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f457"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-dress-label",
+        "text": "dress"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-dress-prompt",
+        "text": "Which is the dress?"
+      }
+    },
+    {
+      "id": "shorts",
+      "label": "shorts",
+      "alt": "A pair of shorts.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa73"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-shorts-label",
+        "text": "shorts"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-shorts-prompt",
+        "text": "Which are the shorts?"
+      }
+    },
+    {
+      "id": "scarf",
+      "label": "scarf",
+      "alt": "A scarf.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9e3"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-scarf-label",
+        "text": "scarf"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-scarf-prompt",
+        "text": "Which is the scarf?"
+      }
+    },
+    {
+      "id": "boots",
+      "label": "boots",
+      "alt": "A pair of boots.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f462",
+        "copies": 2
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-boots-label",
+        "text": "boots"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-boots-prompt",
+        "text": "Which are the boots?"
+      }
+    },
+    {
+      "id": "gloves",
+      "label": "gloves",
+      "alt": "A pair of gloves.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1f9e4"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-gloves-label",
+        "text": "gloves"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-gloves-prompt",
+        "text": "Which are the gloves?"
+      }
+    },
+    {
+      "id": "swimsuit",
+      "label": "swimsuit",
+      "alt": "A swimsuit.",
+      "visual": {
+        "kind": "fluent-3d",
+        "assetId": "1fa71"
+      },
+      "labelAudio": {
+        "id": "word-game-clothes-swimsuit-label",
+        "text": "swimsuit"
+      },
+      "promptAudio": {
+        "id": "word-game-clothes-swimsuit-prompt",
+        "text": "Which is the swimsuit?"
+      }
+    }
+  ],
+  "tiers": [
+    {
+      "id": "simple",
+      "title": "Simple",
+      "description": "Simple clothes words.",
+      "quizzes": [
+        {
+          "id": "simple-1",
+          "title": "Simple Clothes: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-1-find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "shoes",
+                "hat",
+                "socks"
+              ]
+            },
+            {
+              "id": "simple-1-find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "hat",
+                "socks",
+                "coat"
+              ]
+            },
+            {
+              "id": "simple-1-find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "socks",
+                "coat",
+                "pants"
+              ]
+            },
+            {
+              "id": "simple-1-find-socks",
+              "targetId": "socks",
+              "choiceIds": [
+                "socks",
+                "coat",
+                "pants",
+                "shirt"
+              ]
+            },
+            {
+              "id": "simple-1-find-coat",
+              "targetId": "coat",
+              "choiceIds": [
+                "coat",
+                "pants",
+                "shirt",
+                "shoes"
+              ]
+            },
+            {
+              "id": "simple-1-find-pants",
+              "targetId": "pants",
+              "choiceIds": [
+                "pants",
+                "shirt",
+                "shoes",
+                "hat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-2",
+          "title": "Simple Clothes: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-2-find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "coat",
+                "shirt",
+                "pants"
+              ]
+            },
+            {
+              "id": "simple-2-find-coat",
+              "targetId": "coat",
+              "choiceIds": [
+                "coat",
+                "shirt",
+                "pants",
+                "shoes"
+              ]
+            },
+            {
+              "id": "simple-2-find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "pants",
+                "shoes",
+                "socks"
+              ]
+            },
+            {
+              "id": "simple-2-find-pants",
+              "targetId": "pants",
+              "choiceIds": [
+                "pants",
+                "shoes",
+                "socks",
+                "hat"
+              ]
+            },
+            {
+              "id": "simple-2-find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "socks",
+                "hat",
+                "coat"
+              ]
+            },
+            {
+              "id": "simple-2-find-socks",
+              "targetId": "socks",
+              "choiceIds": [
+                "socks",
+                "hat",
+                "coat",
+                "shirt"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "simple-3",
+          "title": "Simple Clothes: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "simple-3-find-coat",
+              "targetId": "coat",
+              "choiceIds": [
+                "coat",
+                "shoes",
+                "socks",
+                "shirt"
+              ]
+            },
+            {
+              "id": "simple-3-find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "socks",
+                "shirt",
+                "pants"
+              ]
+            },
+            {
+              "id": "simple-3-find-socks",
+              "targetId": "socks",
+              "choiceIds": [
+                "socks",
+                "shirt",
+                "pants",
+                "hat"
+              ]
+            },
+            {
+              "id": "simple-3-find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "pants",
+                "hat",
+                "coat"
+              ]
+            },
+            {
+              "id": "simple-3-find-pants",
+              "targetId": "pants",
+              "choiceIds": [
+                "pants",
+                "hat",
+                "coat",
+                "shoes"
+              ]
+            },
+            {
+              "id": "simple-3-find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "coat",
+                "shoes",
+                "socks"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "intermediate",
+      "title": "Intermediate",
+      "description": "Intermediate clothes words.",
+      "quizzes": [
+        {
+          "id": "intermediate-1",
+          "title": "Intermediate Clothes: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-1-find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "shoes",
+                "hat",
+                "dress"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "hat",
+                "dress",
+                "shorts"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "dress",
+                "shorts",
+                "scarf"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "shorts",
+                "scarf",
+                "shirt"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "scarf",
+                "shirt",
+                "shoes"
+              ]
+            },
+            {
+              "id": "intermediate-1-find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "shirt",
+                "shoes",
+                "hat"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-2",
+          "title": "Intermediate Clothes: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-2-find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "shorts",
+                "shirt",
+                "scarf"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "shirt",
+                "scarf",
+                "shoes"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "scarf",
+                "shoes",
+                "dress"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "shoes",
+                "dress",
+                "hat"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "dress",
+                "hat",
+                "shorts"
+              ]
+            },
+            {
+              "id": "intermediate-2-find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "hat",
+                "shorts",
+                "shirt"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "intermediate-3",
+          "title": "Intermediate Clothes: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "intermediate-3-find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "shoes",
+                "dress",
+                "shirt"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-shoes",
+              "targetId": "shoes",
+              "choiceIds": [
+                "shoes",
+                "dress",
+                "shirt",
+                "scarf"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "shirt",
+                "scarf",
+                "hat"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-shirt",
+              "targetId": "shirt",
+              "choiceIds": [
+                "shirt",
+                "scarf",
+                "hat",
+                "shorts"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "hat",
+                "shorts",
+                "shoes"
+              ]
+            },
+            {
+              "id": "intermediate-3-find-hat",
+              "targetId": "hat",
+              "choiceIds": [
+                "hat",
+                "shorts",
+                "shoes",
+                "dress"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "title": "Advanced",
+      "description": "Advanced clothes words.",
+      "quizzes": [
+        {
+          "id": "advanced-1",
+          "title": "Advanced Clothes: First look",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-1-find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "shorts",
+                "scarf",
+                "boots"
+              ]
+            },
+            {
+              "id": "advanced-1-find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "scarf",
+                "boots",
+                "gloves"
+              ]
+            },
+            {
+              "id": "advanced-1-find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "boots",
+                "gloves",
+                "swimsuit"
+              ]
+            },
+            {
+              "id": "advanced-1-find-boots",
+              "targetId": "boots",
+              "choiceIds": [
+                "boots",
+                "gloves",
+                "swimsuit",
+                "dress"
+              ]
+            },
+            {
+              "id": "advanced-1-find-gloves",
+              "targetId": "gloves",
+              "choiceIds": [
+                "gloves",
+                "swimsuit",
+                "dress",
+                "shorts"
+              ]
+            },
+            {
+              "id": "advanced-1-find-swimsuit",
+              "targetId": "swimsuit",
+              "choiceIds": [
+                "swimsuit",
+                "dress",
+                "shorts",
+                "scarf"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-2",
+          "title": "Advanced Clothes: Mix it up",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-2-find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "gloves",
+                "dress",
+                "swimsuit"
+              ]
+            },
+            {
+              "id": "advanced-2-find-gloves",
+              "targetId": "gloves",
+              "choiceIds": [
+                "gloves",
+                "dress",
+                "swimsuit",
+                "shorts"
+              ]
+            },
+            {
+              "id": "advanced-2-find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "swimsuit",
+                "shorts",
+                "boots"
+              ]
+            },
+            {
+              "id": "advanced-2-find-swimsuit",
+              "targetId": "swimsuit",
+              "choiceIds": [
+                "swimsuit",
+                "shorts",
+                "boots",
+                "scarf"
+              ]
+            },
+            {
+              "id": "advanced-2-find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "boots",
+                "scarf",
+                "gloves"
+              ]
+            },
+            {
+              "id": "advanced-2-find-boots",
+              "targetId": "boots",
+              "choiceIds": [
+                "boots",
+                "scarf",
+                "gloves",
+                "dress"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "advanced-3",
+          "title": "Advanced Clothes: Quick check",
+          "description": "6 questions",
+          "questions": [
+            {
+              "id": "advanced-3-find-gloves",
+              "targetId": "gloves",
+              "choiceIds": [
+                "gloves",
+                "shorts",
+                "boots",
+                "dress"
+              ]
+            },
+            {
+              "id": "advanced-3-find-shorts",
+              "targetId": "shorts",
+              "choiceIds": [
+                "shorts",
+                "boots",
+                "dress",
+                "swimsuit"
+              ]
+            },
+            {
+              "id": "advanced-3-find-boots",
+              "targetId": "boots",
+              "choiceIds": [
+                "boots",
+                "dress",
+                "swimsuit",
+                "scarf"
+              ]
+            },
+            {
+              "id": "advanced-3-find-dress",
+              "targetId": "dress",
+              "choiceIds": [
+                "dress",
+                "swimsuit",
+                "scarf",
+                "gloves"
+              ]
+            },
+            {
+              "id": "advanced-3-find-swimsuit",
+              "targetId": "swimsuit",
+              "choiceIds": [
+                "swimsuit",
+                "scarf",
+                "gloves",
+                "shorts"
+              ]
+            },
+            {
+              "id": "advanced-3-find-scarf",
+              "targetId": "scarf",
+              "choiceIds": [
+                "scarf",
+                "gloves",
+                "shorts",
+                "boots"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

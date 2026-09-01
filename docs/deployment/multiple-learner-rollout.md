@@ -1,5 +1,9 @@
 # Multiple Learner Rollout
 
+> Personalized story generation and serving are retired. References below to
+> its shipped tables or migrations are historical rollout and legacy
+> deletion-cleanup requirements, not active product routes.
+
 ## Purpose and Safety Floor
 
 Multiple learner profiles must ship as two production releases. Cloudflare D1
@@ -27,18 +31,20 @@ The required order is:
 1. Prepare and review, but do not merge, a follow-up main PR that removes exactly
    `migrations/0013_multi_learner_enable.sql` and sets
    `MULTI_LEARNER_PROFILES_ENABLED=0`, while retaining 0012, 0014, 0015, and
-   the guarded personalized-art and learner-deletion protocols.
+   the legacy private-media deletion closure and learner-deletion protocols.
 2. Activate and verify an externally approved hold on account deletion and
    relevant traffic before merging the compatibility PR.
 3. Merge that PR while the hold remains active. Capture its main merge SHA and
    follow the automatic main-push workflow as the compatibility deployment.
-4. Verify the previous Worker has no in-flight personalized-art requests, then
-   wait the full five-minute art-generation lease window without releasing the
-   hold.
+4. For the first production deployment that retires personalized story art,
+   verify the previous Worker has no in-flight personalized-art requests, then
+   wait the full five-minute legacy generation-lease window without releasing
+   the hold.
 5. Verify `/api/build-info`, migration state, and singleton smoke checks, then
    record that exact SHA in `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`.
 6. Release the external hold in a controlled step only after the compatible
-   Worker and drain evidence are complete.
+   Worker verification and, when applicable, retirement-drain evidence are
+   complete.
 7. Merge a descendant main PR that restores exactly 0013 and
    `MULTI_LEARNER_PROFILES_ENABLED=1`; its automatic main-push workflow is the
    enable deployment.
@@ -70,14 +76,18 @@ configuration.
 - Better Auth identifies the Guardian account.
 - Each auth session has at most one selected learner; different sessions may
   select different learners.
-- Only a live session-specific Guardian unlock may list, create, select, or
-  delete profiles. Guardian unlock uses the same account password used to sign
-  in; there is no separate Guardian password or PIN.
+- Any authenticated session may list its own profiles and select one it owns.
+  Only a live session-specific Guardian grant may create or delete profiles or
+  edit Guardian settings. The current temporary entry flow grants an
+  authenticated session access without another password check; this weaker
+  passwordless handoff does not remove authentication, ownership enforcement,
+  or Guardian-only endpoint checks and is not the intended permanent boundary.
 - Learner APIs resolve the selection on the server and never trust a
   browser-supplied profile ID.
-- Profiles, onboarding, conversations, personalized art, dubbing consent, and
-  voice clips are learner-scoped.
-- Authentication, Guardian unlock, rate limits, the deletion tombstone, and
+- Profiles, onboarding, conversations, dubbing consent, and voice clips are
+  learner-scoped. Retained legacy private-media cleanup records remain tied to
+  their original learner.
+- Authentication, Guardian grants, rate limits, the deletion tombstone, and
   whole-account deletion remain account- or session-scoped.
 - The marked legacy learner retains existing data and exact historical R2
   keys. New learners use profile-prefixed R2 namespaces.
@@ -106,7 +116,7 @@ configuration.
 4. Preserve the command summaries, workflow run URL, deployed commit SHA,
    `/api/build-info` response, D1 migration listing, smoke-test results, and any
    rollback decision in the release record. Do not include passwords, learner
-   names, profile IDs, R2 keys, photos, recordings, prompts, or response bodies
+   names, profile IDs, R2 keys, recordings, prompts, or response bodies
    containing private content.
 
 ## Release 1: Compatibility Worker, `0012`, `0014`, and `0015`
@@ -137,9 +147,8 @@ The commit must contain the compatibility Worker as well as `0012`. It must:
 - recognize null-profile compatibility rows only for the marked legacy
   learner;
 - retain the old singleton tables and unique indexes;
-- prevent personalized-art candidate tracking after an account-deletion
-  tombstone, create candidate objects conditionally, persist candidate keys in
-  the deletion closure, and fence those keys before user deletion can cascade;
+- preserve the shipped private-media deletion closure and fence its retained
+  legacy keys before user deletion can cascade;
 - keep profile creation, selection, and deletion mutations disabled.
 
 `0014_personalized_art_deletion_closure.sql` is intentionally a new migration;
@@ -156,7 +165,8 @@ control that holds account deletion and relevant traffic. No such control is
 checked into this repository. Verify through the approved operational path
 that the hold is effective, and record that evidence without private account
 or learner data. Keep the hold active throughout migration application, Worker
-deployment, old-revision drain, and every compatibility verification below.
+deployment, the one-time retirement drain when applicable, and every
+compatibility verification below.
 
 Do not merge the PR if the hold is absent or unverified. Its main push starts
 the workflow automatically, and the old Worker can otherwise accept an account
@@ -182,12 +192,15 @@ pending D1 migrations, and deploys the Worker. For this release the guard is a
 no-op because `0013` is absent. Do not substitute a rebuilt or cherry-picked
 commit after capturing the merge SHA.
 
-After the new Worker is active, verify the previous revision has no in-flight
-personalized-art generation requests, then wait the full five-minute art-
-generation lease window while the external hold remains active. The previous
-revision used unguarded tracking and unconditional candidate writes; skipping
-this drain can let one old request bypass the new candidate fence. Do not
-record the compatibility SHA or proceed without evidence for this drain.
+On the first production deployment that removes personalized story-art
+generation, verify the previous revision has no in-flight personalized-art
+generation requests, then wait the full five-minute legacy generation-lease
+window while the external hold remains active. The previous revision used
+unguarded tracking and unconditional candidate writes; skipping this drain can
+let one old request write private derived media after deletion cleanup has
+finished. Do not record the compatibility SHA or proceed without evidence for
+this drain. Later deployments need not repeat it once no traffic-capable
+revision contains the retired generation route.
 
 ### 4. Verify the deployed compatibility commit
 
@@ -216,19 +229,18 @@ or learner names into the release log.
 
 Use a nonproduction test account that had data before `0012`:
 
-1. Sign in and unlock Guardian mode with the account password.
+1. Sign in and open Guardian mode through the current automatic, passwordless
+   session grant. Confirm a genuine grant failure stays visible with Retry.
 2. Confirm the existing learner profile and onboarding status are unchanged.
 3. Edit and reload the learner profile.
 4. Load and play a built-in lesson.
 5. Start and finish a conversation path that is enabled in the environment.
-6. Load existing personalized story art and confirm its exact stored object is
-   still served through the authenticated asset route.
-7. Check Five Little Ducks status and replay an existing saved line after
+6. Check Five Little Ducks status and replay an existing saved line after
    consent. Open Old MacDonald and confirm the same existing consent authorizes
    its status route. Do not re-record production learner audio for a smoke test.
-8. Confirm the Guardian dashboard and profile Back/Cancel/Save routes return
+7. Confirm the Guardian dashboard and profile Back/Cancel/Save routes return
    to Guardian pages without locking the session.
-9. Confirm profile creation, selection, and deletion mutation endpoints are
+8. Confirm profile creation, selection, and deletion mutation endpoints are
    still disabled while the flag is `"0"`.
 
 Stop here if any legacy data is missing, a learner route exposes Guardian
@@ -252,10 +264,11 @@ Do not replace it with the later enable commit.
 ### 7. Release the external hold
 
 Release the externally approved hold in a controlled operational step only
-after the compatible Worker SHA, migration state, completed old-revision drain,
-singleton smoke checks, and recorded rollback-floor variable have all been
-verified. Confirm ordinary traffic resumes through the compatible Worker. Do
-not exercise a real account deletion merely to test the release.
+after the compatible Worker SHA, migration state, singleton smoke checks, and
+recorded rollback-floor variable have all been verified, together with the
+one-time old-revision drain when deploying the retirement. Confirm ordinary
+traffic resumes through the compatible Worker. Do not exercise a real account
+deletion merely to test the release.
 
 ## Release 2: Enable Worker and `0013`
 
@@ -319,21 +332,24 @@ npx wrangler d1 migrations list parrot-english --remote
 
 Use controlled test profiles to verify:
 
-1. `/guardian/learners` requires a fresh Guardian unlock.
+1. Direct `/guardian/learners` entry automatically obtains a fresh 15-minute
+   Guardian grant for the authenticated session without a password prompt;
+   genuine access failure remains on the route with Retry.
 2. The roster lists only profiles owned by that account in stable creation
    order.
 3. Adding a preferred name creates an incomplete learner and opens its details
    flow without changing the session's learner-mode selection.
 4. Manage learners contains only Add, Edit, and Delete. `Switch to learner`
-   opens `Who is learning now?` with no preselected radio; confirming a named
-   learner persists through reload, while a second signed-in session can keep a
-   different active learner.
+   and the learner account menu open the shared `Who is learning now?` chooser
+   with one direct learner button per owned profile; choosing that button is the
+   complete selection action and persists through reload, while a second
+   signed-in session can keep a different active learner.
 5. Missing, stale, and foreign selections fail closed. A multi-learner session
-   with no selection shows only `Ask a grown-up to choose a learner` in learner
-   mode and exposes the roster only after Guardian unlock.
-6. Profile details, onboarding, conversations, story level, personalized art,
-   each learner's cross-rhyme dubbing consent, and voice clips for both rhyme
-   routes remain isolated between two sibling learners.
+   with no selection immediately shows the required owned-profile picker in
+   learner mode with no Cancel path or Guardian grant.
+6. Profile details, onboarding, conversations, story level, each learner's
+   cross-rhyme dubbing consent, and voice clips for both rhyme routes remain
+   isolated between two sibling learners.
 7. Delete one disposable inactive learner with the Guardian-only confirmation,
    then refresh and confirm it stays removed. Reject deletion of the final
    usable learner with `409 last_learner`.
@@ -344,21 +360,22 @@ Use controlled test profiles to verify:
    settings targets, then finish deletion with the same-ID retry.
 9. A conversation remains bound to the learner that created it after the
    session selects a sibling.
-10. The migrated legacy learner still reads its existing art key and legacy
-    dub namespace; deleting that disposable legacy test learner closes the
-    account-root compatibility paths without sweeping a sibling's prefixed
-    namespace.
-11. Learner mode contains no sibling name, Guardian dashboard, roster, editing,
-    authoring, consent, privacy, sign-out, or deletion control. Neither Five
+10. The migrated legacy learner still reads its legacy dub namespace; deleting
+    that disposable legacy test learner closes retained account-root private-
+    media cleanup paths without sweeping a sibling's prefixed namespace.
+11. Outside the owned-profile chooser, learner mode contains no sibling name,
+    Guardian dashboard, roster, editing, authoring, consent, privacy, sign-out,
+    or deletion control. Neither Five
     Little Ducks nor Old MacDonald contains a grown-up checkbox; missing shared
     consent shows only the learner-safe grown-up gateway. Grant once in Guardian
     dubbing settings, confirm both routes authorize status and audio, and save
     one disposable clip in each. Revoke once and confirm both routes fail closed
     during shared cleanup; if cleanup is interrupted, finish it through the one
     retry action, then regrant and confirm both statuses contain no saved clips.
-12. Every Guardian page exposes a dashboard recovery path, invalid Guardian
-    return targets fall back to `/guardian`, and mode-aware wildcard routing
-    returns to the correct home.
+12. Every Guardian page exposes a dashboard recovery path, invalid internal
+    Guardian return targets fall back to `/guardian`, post-login Guardian
+    targets normalize to learner home, and mode-aware wildcard routing returns
+    to the correct home.
 
 Do not exercise whole-account deletion against a production account as a smoke
 test. Its every-learner R2 sweep and upload fences are covered by the automated
@@ -368,7 +385,7 @@ account-deletion suite.
 
 Cloudflare Worker observability is enabled in `wrangler.jsonc`. Establish the
 normal request/error baseline before each release, watch the deployment in real
-time, and continue monitoring through at least the 15-minute Guardian-unlock
+time, and continue monitoring through at least the 15-minute Guardian-grant
 window and a representative new-session window. The current implementation does
 not define bespoke multi-learner counters, so the minimum evidence is platform
 request/log data, controlled smoke-test observations, and the read-only
@@ -379,12 +396,12 @@ Watch these signals without logging learner content:
 - `/api/build-info` commit SHA and deployment metadata;
 - D1 migration state and migration-step failures;
 - latency and status distribution for `/api/learner-profiles`,
-  `/api/learner-profile`, `/api/conversations`, personalized story-art routes,
-  status, audio, and upload paths under both
+  `/api/learner-profile`, `/api/conversations`, and status, audio, and upload
+  paths under both
   `/api/dubs/five-little-ducks-v2` and `/api/dubs/old-macdonald-v1`, plus their
   shared consent and reset operations;
 - unexpected increases in `5xx`, database constraint failures, invalid stored
-  roster responses, R2 generation/deletion failures, and client retry loops;
+  roster responses, R2 deletion failures, and client retry loops;
 - `403 guardian_required` outside an expected locked-session attempt;
 - `409 learner_selection_required`, which is expected for a fresh
   multi-learner session but suspicious if it rises for already-selected or
@@ -396,8 +413,7 @@ Watch these signals without logging learner content:
 
 Use aggregate counts, status codes, latency buckets, deployment IDs, and opaque
 request IDs only. Do not log account passwords, learner or sibling names,
-profile answers, source/generated images, audio bytes, prompts, consent bodies,
-or R2 object keys.
+profile answers, private media, prompts, consent bodies, or R2 object keys.
 
 Useful read-only post-enable D1 checks include an invalid-selection count and
 unmapped-child counts. They must all be zero:
@@ -415,9 +431,7 @@ WHERE session.id IS NULL OR learner_profile.id IS NULL;
 
 SELECT
   (SELECT count(*) FROM conversation_session WHERE learner_profile_id IS NULL)
-    AS conversations_without_learner,
-  (SELECT count(*) FROM personalized_story_art WHERE learner_profile_id IS NULL)
-    AS art_without_learner;
+    AS conversations_without_learner;
 ```
 
 Run production queries only through the approved read-only operational path.
