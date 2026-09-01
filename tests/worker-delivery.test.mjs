@@ -97,6 +97,7 @@ describe("Worker app delivery", () => {
     for (const pathname of [
       "/assets",
       "/assets/missing.js",
+      "/assets/nursery-rhymes/missing/rhyme.json",
       "/.well-known/assetlinks.json",
       "/favicon.ico",
       "/robots.txt",

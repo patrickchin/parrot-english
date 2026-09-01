@@ -62,6 +62,10 @@ export type DubDefinition = Readonly<{
   title: string;
 }>;
 
+type GeneratedDubDefinition = Omit<DubDefinition, "lineArtwork"> & Readonly<{
+  lineArtwork: readonly DubArtwork[] | null;
+}>;
+
 function cloneAndFreeze<T>(value: T): T {
   if (Array.isArray(value)) {
     return Object.freeze(value.map(cloneAndFreeze)) as T;
@@ -75,7 +79,7 @@ function cloneAndFreeze<T>(value: T): T {
 }
 
 function normalizeDefinition(
-  generated: (typeof GENERATED_DUB_DEFINITIONS)[number],
+  generated: GeneratedDubDefinition,
 ): DubDefinition {
   const { lineArtwork, ...definition } = generated;
   return cloneAndFreeze({
@@ -84,8 +88,14 @@ function normalizeDefinition(
   }) as unknown as DubDefinition;
 }
 
-export const DUB_DEFINITIONS: readonly DubDefinition[] = Object.freeze(
-  GENERATED_DUB_DEFINITIONS.map(normalizeDefinition),
+export function normalizeGeneratedDubDefinitions(
+  input: readonly GeneratedDubDefinition[],
+): readonly DubDefinition[] {
+  return Object.freeze(input.map(normalizeDefinition));
+}
+
+export const DUB_DEFINITIONS = normalizeGeneratedDubDefinitions(
+  GENERATED_DUB_DEFINITIONS,
 );
 
 export const FIVE_LITTLE_DUCKS_DUB = DUB_DEFINITIONS[0];

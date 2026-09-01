@@ -31,6 +31,11 @@ export type DubStorageKeys = {
   retiredLegacyObjectKey(lineId: string): string | null;
 };
 
+type DubStorageClosure = {
+  markerKeys: string[];
+  slotKeys: string[];
+};
+
 export function objectPrefix(userId: string, dubId: string = DUB_ID) {
   // ponytail: shared private bucket; split when voice and art retention policies differ.
   return `personalized-story-art/${encodeURIComponent(userId)}/learner-dubs/${dubId}/`;
@@ -80,8 +85,17 @@ export function createDubStorageKeys(
   };
 }
 
-export function dubStorageClosureKeys(storage: DubStorageKeys) {
-  const definition = DUB_DEFINITIONS.find(({ id }) =>
+export function dubStorageClosureKeys(storage: DubStorageKeys): DubStorageClosure;
+export function dubStorageClosureKeys(
+  storage: DubStorageKeys,
+  definitions: typeof DUB_DEFINITIONS,
+): DubStorageClosure;
+export function dubStorageClosureKeys(
+  storage: DubStorageKeys,
+  definitions: typeof DUB_DEFINITIONS | number = DUB_DEFINITIONS,
+): DubStorageClosure {
+  const catalog = typeof definitions === "number" ? DUB_DEFINITIONS : definitions;
+  const definition = catalog.find(({ id }) =>
     storage.objectPrefix.endsWith(`/learner-dubs/${id}/`)
   );
   if (!definition) {

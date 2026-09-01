@@ -3,12 +3,16 @@ import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { InteractiveCardLink } from "../shared/ui";
 import { retryOriginalImage } from "../shared/responsive-image";
 import { dubArtworkSrcSet } from "./dub-artwork";
-import { DUB_DEFINITIONS } from "./rhyme-catalog";
+import { DUB_DEFINITIONS, type DubDefinition } from "./rhyme-catalog";
 
 const RHYME_CARD_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 1.5rem), (max-width: 1023px) calc((100vw - 3rem) / 2), min(calc((100vw - 10rem) / 3), 25rem)";
 
-export function NurseryRhymeList() {
+export function NurseryRhymeList({
+  definitions = DUB_DEFINITIONS,
+}: {
+  definitions?: readonly DubDefinition[];
+} = {}) {
   return (
     <>
       <RouteHeader>
@@ -25,7 +29,7 @@ export function NurseryRhymeList() {
             </p>
           </header>
           <nav aria-label="Nursery rhymes" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 sm:gap-5">
-            {DUB_DEFINITIONS.map((definition) => {
+            {definitions.map((definition) => {
               const image = definition.sceneArtwork[0];
               return (
                 <InteractiveCardLink className="grid min-h-full min-w-0 grid-rows-[auto_1fr] overflow-hidden text-left" key={definition.id} to={definition.route}>
