@@ -1769,10 +1769,22 @@ async function installControllablePlaybackFrames(page: Page) {
         queued.forEach((callback) => callback(performance.now()));
       },
     });
+    Object.defineProperty(window, "__hasPlaybackAnimationFrame", {
+      configurable: true,
+      value: () => callbacks.size > 0,
+    });
   });
 }
 
 const FULL_PLAYBACK_START_LEAD_MS = 120;
+
+async function waitForQueuedPlaybackFrame(page: Page) {
+  await page.waitForFunction(() => (
+    (window as typeof window & {
+      __hasPlaybackAnimationFrame(): boolean;
+    }).__hasPlaybackAnimationFrame()
+  ));
+}
 
 async function flushPlaybackFrame(page: Page) {
   await page.evaluate(() => {
@@ -1787,6 +1799,7 @@ async function expectFirstFullPlaybackWordTransition(page: Page) {
   const guide = page.getByRole("region", { name: "Karaoke guide" });
   const ducks = line.words[2];
   const went = line.words[3];
+  await waitForQueuedPlaybackFrame(page);
   await page.clock.runFor(
     (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) / 20,
   );
@@ -1870,16 +1883,22 @@ test("editor actions keep the complete lyric heading and non-live word semantics
   await installControllablePlaybackFrames(page);
 
   await page.getByRole("button", { name: "Hear line" }).click();
+  await waitForQueuedPlaybackFrame(page);
   await flushPlaybackFrame(page);
   const activeWord = heading.locator('[aria-current="true"]');
   await expect(activeWord).toHaveText("Five");
   await expect(heading).toHaveAccessibleName(line.text);
   await expectStaticPresentationText(activeWord);
   await page.clock.runFor(line.durationMs / 20 + 20);
+  await flushPlaybackFrame(page);
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText(
+    "Scene 1, line 1 selected. Recorded.",
+  );
   await expect(page.getByRole("button", { name: "Hear line" })).toBeFocused();
 
   await page.getByRole("button", { name: "Play my recording" }).click();
   await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
+  await waitForQueuedPlaybackFrame(page);
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("Five");
   await expectStaticPresentationText(activeWord);
@@ -2168,6 +2187,7 @@ test("reduced motion keeps timed words discrete and repeated count-in cleanup id
   const line = definition.lines[0];
   const ducks = line.words[2];
   const went = line.words[3];
+  await waitForQueuedPlaybackFrame(page);
   await page.clock.runFor(
     (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) / 20,
   );
