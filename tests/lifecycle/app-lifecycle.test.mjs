@@ -2856,7 +2856,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         },
       }),
     );
-    await waitFor(() => text(/Guardian dashboard/));
+    await waitFor(() => assert.equal(
+      document.querySelector("main h1")?.textContent,
+      "Guardian dashboard",
+    ));
     await click(button("Switch to learner"));
     await confirmModeSwitch();
     assert.equal(currentRoute().path, "/guardian");
