@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 
+import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
+
 interface HeaderRoute {
   mode?: "guardian" | "learner";
   name: string;
@@ -357,7 +359,7 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
   const authenticatedSession = {
     session: {
       id: "e2e-guest-session",
-      userId: "e2e-guest-user",
+      userId: SHARED_GUEST_USER_ID,
       token: "e2e-guest-token",
       expiresAt: "2099-01-01T00:00:00.000Z",
       createdAt: timestamp,
@@ -366,11 +368,10 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
       userAgent: "Playwright",
     },
     user: {
-      id: "e2e-guest-user",
+      id: SHARED_GUEST_USER_ID,
       name: "Guest",
       email: "temporary@example.test",
       emailVerified: false,
-      isAnonymous: true,
       createdAt: timestamp,
       updatedAt: timestamp,
     },
@@ -385,7 +386,7 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
       status: 200,
     });
   });
-  await page.route("**/api/auth/sign-in/anonymous", async (route) => {
+  await page.route("**/api/auth/sign-in/shared-guest", async (route) => {
     guestRequests += 1;
     expect(route.request().method()).toBe("POST");
     expect(route.request().headers()["x-captcha-response"]).toBe(
@@ -412,6 +413,23 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
   await expect(
     page.getByRole("complementary", { name: "Account" }),
   ).toBeVisible();
+
+  await page.goto(guardianPath("/guardian/account"));
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Account & privacy" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "How Parrot uses AI" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Technical build details" }),
+  ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Danger zone" })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole("button", { exact: true, name: "Delete account" }),
+  ).toHaveCount(0);
 });
 
 for (const route of routes) {

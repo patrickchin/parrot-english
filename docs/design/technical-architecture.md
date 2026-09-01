@@ -158,6 +158,11 @@ deletion cascades to both. The selection row also carries the account user ID
 and selected profile ID, and the resolver re-proves ownership on every learner
 request.
 
+The Better Auth `shared-guest` plugin loads the seeded shared user and creates
+a normal session for it. Existing user ownership makes all account and learner
+data shared for that identity, while the active learner selection remains
+scoped to each session.
+
 `learner_profile_deletion_tombstone` stores a durable, account-bound cleanup
 closure for individual deletion, while `learner_selection_required` prevents
 single-profile fallback from silently selecting a sibling in sessions that

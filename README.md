@@ -152,11 +152,11 @@ acknowledgments; the browser never receives either provider key.
 
 Email/password authentication currently has no email verification, password
 reset, social sign-in, or Resend integration. Signed-out visitors can also
-start an anonymous guest session. Turnstile protects guest login and account
-creation; returning-user sign-in does not require a challenge. Guest sessions
-currently have the same feature and token usage access as other authenticated
-sessions. Signing out of a guest session removes that temporary account and its
-saved data because it cannot be signed back into later.
+continue as a guest. Turnstile creates a separate normal Better Auth session
+for one durable shared guest identity; returning-user sign-in does not require
+a challenge. All account and learner data saved through that identity is shared
+between guest users. Signing out revokes only the current session, and the
+shared identity cannot be deleted.
 
 ### Production Authentication Setup
 
