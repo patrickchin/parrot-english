@@ -122,7 +122,7 @@ test("Chinese preference keeps representative learner destinations English and l
   await page.addInitScript(() =>
     localStorage.setItem("parrot:guardian-language", "zh-Hans"),
   );
-  await page.goto("/");
+  await page.goto("/?parrotE2eLesson=held-story");
   await expect(languageGroup(page)).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.getByRole("link", { name: "Play a lesson" }).click();
@@ -138,6 +138,8 @@ test("Chinese preference keeps representative learner destinations English and l
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
   await expect(languageGroup(page)).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  const peppaDialogue = page.getByRole("status", { name: "Peppa is speaking" });
+  await expect(peppaDialogue).toContainText("Look! My ball!");
   await expect(page.getByRole("region", { name: "Lesson progress" })).toContainText(
     "Scene 1 of 5",
   );
@@ -146,6 +148,29 @@ test("Chinese preference keeps representative learner destinations English and l
     /Playing|Listen|Scene/,
   );
   await expectUnchangedNavigation(page, lessonSnapshot);
+
+  const failedActiveSound = await page.evaluate(() => {
+    const controller = (
+      window as Window & {
+        __parrotE2eLessonMedia?: { failNextCue(): boolean };
+      }
+    ).__parrotE2eLessonMedia;
+    if (!controller) throw new Error("Lesson media controller is missing.");
+    return controller.failNextCue();
+  });
+  expect(failedActiveSound).toBe(true);
+  const soundError = page.getByRole("alert").filter({
+    hasText: "The sound stopped. Try it again or skip this sound.",
+  });
+  await expect(soundError).toBeVisible();
+  await expect(page.getByRole("button", { name: "Try sound" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Skip sound" })).toBeVisible();
+  await expect(page.getByRole("main").locator('[lang="zh-Hans"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Try sound" }).click();
+  await expect(soundError).toHaveCount(0);
+  await expect(peppaDialogue).toContainText("Look! My ball!");
+  await expect(languageGroup(page)).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
   const destinations = [
     ["/", "Parrot English"],
