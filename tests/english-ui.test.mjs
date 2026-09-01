@@ -73,7 +73,19 @@ describe("English-only shipped UI", () => {
       const source = readFileSync(file, "utf8");
       if (hanCatalogFiles.has(path)) {
         if (path.endsWith("/zh-Hans.ts")) assert.match(source, han, path);
-        else assert.doesNotMatch(source.replaceAll("中文", ""), han, path);
+        else {
+          const nativeOptionMatches = source.match(/chineseOption:\s*"中文"/gu) ?? [];
+          assert.equal(
+            nativeOptionMatches.length,
+            1,
+            `${path} must contain exactly one Chinese native option label`,
+          );
+          assert.doesNotMatch(
+            source.replace(nativeOptionMatches[0], 'chineseOption: ""'),
+            han,
+            path,
+          );
+        }
       } else if (!questionnaireExceptions.has(path)) {
         assert.doesNotMatch(source, han, path);
       }

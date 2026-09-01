@@ -356,6 +356,7 @@ export const chineseGuardianMessages = {
       descriptionAfter:
         " 的孩子资料和私密学习数据。家长账户和其他孩子资料不受影响。",
       alertBefore: "无法删除 ",
+      alertAfter: "。",
       cancel: "取消",
       deleteBefore: "删除 ",
       deletingBefore: "正在删除 ",

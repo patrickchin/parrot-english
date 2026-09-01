@@ -105,7 +105,8 @@ export function LearnerDeleteDialog({
                 role="alert"
               >
                 {messages.learners.deleteDialog.alertBefore}
-                <BidiLearnerName learnerName={profile.name} />. {" "}
+                <BidiLearnerName learnerName={profile.name} />
+                {messages.learners.deleteDialog.alertAfter}
                 {messages.learners.roster.errors[error]}
               </p>
             ) : null}

@@ -377,6 +377,7 @@ export const englishGuardianMessages = {
       descriptionAfter:
         "'s learner profile and private learner data. Your Guardian account and other learners remain.",
       alertBefore: "Could not delete ",
+      alertAfter: ". ",
       cancel: "Cancel",
       deleteBefore: "Delete ",
       deletingBefore: "Deleting ",

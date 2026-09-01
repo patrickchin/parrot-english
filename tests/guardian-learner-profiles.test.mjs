@@ -518,9 +518,9 @@ test("retranslates a failed delete dialog without changing its learner or focus"
   assert.equal(document.activeElement, chinese);
   assert.equal(dialog.querySelector("bdi")?.textContent, "Bob");
   assert.equal(deletionCalls, 1);
-  assert.match(
-    dialog.querySelector('[role="alert"]')?.textContent ?? "",
-    /请先结束这位孩子当前的对话/,
+  assert.equal(
+    dialog.querySelector('[role="alert"]')?.textContent,
+    "无法删除 Bob。请先结束这位孩子当前的对话，然后重试。",
   );
   assert.equal(chinese.closest("fieldset"), null);
 });
