@@ -1464,8 +1464,10 @@ describe("account deletion personalized-art lifecycle", () => {
       state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
       assert.equal(
         state.sqlite
-          .prepare("SELECT count(*) AS count FROM learner_profile")
-          .get().count,
+          .prepare(
+            "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+          )
+          .get(USER_ID).count,
         0,
       );
       releaseSnapshot.resolve();

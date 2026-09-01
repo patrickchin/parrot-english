@@ -5,6 +5,11 @@ import { createDatabase } from "../worker/database.ts";
 import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
 import { createWorker } from "../worker/index.ts";
+import {
+  SHARED_GUEST_LEARNER_ID,
+  SHARED_GUEST_LEARNER_NAME,
+  SHARED_GUEST_USER_ID,
+} from "../lib/shared-guest.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const PROTECTED_REQUESTS = [
@@ -167,6 +172,44 @@ describe("onboarding Worker routing", () => {
         error: "learner_selection_required",
       });
       assert.equal(handlerCalls, 0);
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns completed Sam for a new shared guest session", async () => {
+    const state = createTestD1Database();
+    try {
+      state.sqlite
+        .prepare(
+          "INSERT INTO session (id, expires_at, token, user_id) VALUES (?, ?, ?, ?)",
+        )
+        .run(
+          "shared-guest-session",
+          9_999_999_999_999,
+          "shared-guest-token",
+          SHARED_GUEST_USER_ID,
+        );
+      const authStub = createAuthStub({
+        session: { id: "shared-guest-session" },
+        user: { id: SHARED_GUEST_USER_ID, name: "Guest" },
+      });
+      const worker = createWorker({ createAuth: () => authStub.auth });
+      const { env } = createEnvironment();
+      env.DB = state.d1;
+
+      const response = await worker.fetch(
+        new Request("https://example.test/api/learner-profile"),
+        env,
+      );
+
+      assert.equal(response.status, 200);
+      const payload = await response.json();
+      assert.equal(payload.profile.id, SHARED_GUEST_LEARNER_ID);
+      assert.equal(payload.profile.name, SHARED_GUEST_LEARNER_NAME);
+      assert.equal(payload.profile.profileStatus, "completed");
+      assert.equal(payload.question, null);
+      assert.equal(payload.canBypass, true);
     } finally {
       state.close();
     }
@@ -840,8 +883,11 @@ describe("onboarding persistence and API", () => {
         /could not be loaded/i,
       );
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-          .count,
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+          )
+          .get("user-1").count,
         0,
       );
     } finally {
@@ -879,8 +925,11 @@ describe("onboarding persistence and API", () => {
       assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), { transcript: "Bluey" });
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-          .count,
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+          )
+          .get("user-1").count,
         0,
       );
     } finally {
