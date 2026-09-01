@@ -128,6 +128,229 @@ function textOf(element) {
   return element.textContent?.trim() ?? "";
 }
 
+const SUPPORTED_ELEMENTS = Object.freeze({
+  "score-partwise": {
+    attributes: { version: true },
+    children: { "part-list": [1, 1], part: [1, Infinity] },
+  },
+  "part-list": { children: { "score-part": [1, Infinity] } },
+  "score-part": {
+    attributes: { id: true },
+    children: { "part-name": [1, 1] },
+  },
+  "part-name": { scalar: true },
+  part: {
+    attributes: { id: true },
+    children: { measure: [1, Infinity] },
+  },
+  measure: {
+    attributes: { number: true },
+    children: {
+      attributes: [0, 1],
+      bookmark: [0, Infinity],
+      direction: [0, Infinity],
+      note: [0, Infinity],
+    },
+  },
+  attributes: {
+    children: { divisions: [0, 1], time: [0, 1] },
+    minimumChildren: 1,
+  },
+  divisions: { scalar: true },
+  time: { children: { beats: [1, 1], "beat-type": [1, 1] } },
+  beats: { scalar: true },
+  "beat-type": { scalar: true },
+  direction: {
+    children: { "direction-type": [0, 1], sound: [0, 1] },
+    minimumChildren: 1,
+  },
+  "direction-type": { children: { metronome: [1, 1] } },
+  metronome: {
+    children: {
+      "beat-unit": [1, 1],
+      "beat-unit-dot": [0, Infinity],
+      "per-minute": [1, 1],
+    },
+  },
+  "beat-unit": { scalar: true },
+  "beat-unit-dot": { empty: true },
+  "per-minute": { scalar: true },
+  sound: { attributes: { tempo: true }, empty: true },
+  bookmark: { attributes: { id: true }, empty: true },
+  note: {
+    children: {
+      chord: [0, 1],
+      duration: [1, 1],
+      lyric: [0, 1],
+      notations: [0, 1],
+      pitch: [0, 1],
+      rest: [0, 1],
+      tie: [0, 2],
+      voice: [0, 1],
+    },
+  },
+  chord: { empty: true },
+  pitch: {
+    children: { alter: [0, 1], octave: [1, 1], step: [1, 1] },
+  },
+  step: { scalar: true },
+  alter: { scalar: true },
+  octave: { scalar: true },
+  rest: { empty: true },
+  tie: { attributes: { type: true }, empty: true },
+  duration: { scalar: true },
+  voice: { scalar: true },
+  notations: { children: { tied: [1, 2] } },
+  tied: { attributes: { type: true }, empty: true },
+  lyric: {
+    attributes: { number: false },
+    children: {
+      "end-line": [0, 1],
+      extend: [0, 1],
+      syllabic: [0, 1],
+      text: [0, 1],
+    },
+    minimumChildren: 1,
+  },
+  syllabic: { scalar: true },
+  text: { scalar: true },
+  extend: { empty: true },
+  "end-line": { empty: true },
+});
+
+function supportedElementPath(element) {
+  const segments = [];
+  for (let current = element; current; current = current.parentElement) {
+    const siblings = current.parentElement
+      ? directChildren(current.parentElement, current.tagName)
+      : [current];
+    const index = siblings.indexOf(current);
+    segments.unshift(
+      siblings.length > 1 ? `${current.tagName}[${index + 1}]` : current.tagName,
+    );
+  }
+  return `/${segments.join("/")}`;
+}
+
+function hasDirectNonWhitespaceText(element) {
+  return [...element.childNodes].some(
+    (node) => (node.nodeType === 3 || node.nodeType === 4) && node.textContent.trim(),
+  );
+}
+
+function unsupportedElementTree(element) {
+  return [element, ...element.querySelectorAll("*")]
+    .slice(0, 4)
+    .map(({ tagName }) => `<${tagName}>`)
+    .join(" -> ");
+}
+
+function cardinalityMessage(tagName, minimum, maximum, count) {
+  if (minimum === 1 && maximum === 1) {
+    return `must contain exactly one <${tagName}>; found ${count}`;
+  }
+  if (count < minimum) {
+    return `must contain at least ${minimum} <${tagName}> element${minimum === 1 ? "" : "s"}`;
+  }
+  if (maximum === 1) {
+    return `contains multiple <${tagName}> elements; at most one is supported`;
+  }
+  return `must contain at most ${maximum} <${tagName}> elements; found ${count}`;
+}
+
+function validateSupportedElement(element, sourcePath) {
+  const rule = SUPPORTED_ELEMENTS[element.tagName];
+  const elementPath = supportedElementPath(element);
+  if (!rule) {
+    throw scoreError(
+      sourcePath,
+      `${elementPath}: unsupported MusicXML element <${element.tagName}>.`,
+    );
+  }
+
+  const allowedAttributes = rule.attributes ?? {};
+  for (const attributeName of element.getAttributeNames()) {
+    if (!Object.hasOwn(allowedAttributes, attributeName)) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> has unsupported attribute ${attributeName}.`,
+      );
+    }
+  }
+  for (const [attributeName, required] of Object.entries(allowedAttributes)) {
+    if (required && !element.hasAttribute(attributeName)) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> requires attribute ${attributeName}.`,
+      );
+    }
+  }
+
+  const children = directChildren(element);
+  if (rule.scalar) {
+    if (children.length > 0) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> must be a scalar text leaf; unsupported descendant ${unsupportedElementTree(children[0])}.`,
+      );
+    }
+  } else if (rule.empty) {
+    if (children.length > 0 || textOf(element)) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> must be empty${
+          children.length > 0 ? `; unsupported descendant ${unsupportedElementTree(children[0])}` : ""
+        }.`,
+      );
+    }
+  } else {
+    if (hasDirectNonWhitespaceText(element)) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> may contain only supported child elements.`,
+      );
+    }
+    const allowedChildren = rule.children ?? {};
+    const unsupported = children.find(
+      (child) => !Object.hasOwn(allowedChildren, child.tagName),
+    );
+    if (unsupported) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> has unsupported direct child ${unsupportedElementTree(unsupported)}.`,
+      );
+    }
+    if (rule.minimumChildren && children.length < rule.minimumChildren) {
+      throw scoreError(
+        sourcePath,
+        `${elementPath}: <${element.tagName}> must contain at least ${rule.minimumChildren} supported child element.`,
+      );
+    }
+    for (const [tagName, [minimum, maximum]] of Object.entries(allowedChildren)) {
+      const count = directChildren(element, tagName).length;
+      if (count < minimum || count > maximum) {
+        throw scoreError(
+          sourcePath,
+          `${elementPath}: <${element.tagName}> ${cardinalityMessage(
+            tagName,
+            minimum,
+            maximum,
+            count,
+          )}.`,
+        );
+      }
+    }
+  }
+
+  if (element.tagName === "part-name" && !textOf(element)) {
+    throw scoreError(sourcePath, `${elementPath}: <part-name> must contain text.`);
+  }
+  if (element.tagName === "beats" || element.tagName === "beat-type") {
+    parsePositiveInteger(textOf(element), sourcePath, elementPath);
+  }
+  for (const child of children) validateSupportedElement(child, sourcePath);
+}
+
 function parsePositiveInteger(value, sourcePath, field) {
   if (!/^[1-9]\d*$/.test(value)) {
     throw scoreError(sourcePath, `${field} must be a positive integer.`);
@@ -260,6 +483,7 @@ function parseDocument(xml, sourcePath, window) {
   if (root.getAttribute("version") !== "4.0") {
     throw scoreError(sourcePath, "MusicXML score-partwise version must be 4.0.");
   }
+  validateSupportedElement(root, sourcePath);
   return root;
 }
 

@@ -227,7 +227,165 @@ describe("secure MusicXML parsing", () => {
   });
 });
 
+describe("strict supported MusicXML structure", () => {
+  function mutation(find, replacement) {
+    const xml = scoreXml();
+    assert.equal(xml.split(find).length, 2, `Expected one ${find} mutation site`);
+    return xml.replace(find, replacement);
+  }
+
+  function assertStructuralRejection(xml, context) {
+    assert.throws(
+      () => compile(xml),
+      (error) => {
+        assert.match(error.message, /score\.musicxml/i);
+        assert.match(error.message, context);
+        return true;
+      },
+    );
+  }
+
+  for (const [site, xml, context] of [
+    [
+      "root",
+      mutation(
+        '<score-partwise version="4.0">',
+        '<score-partwise version="4.0" surprise="yes">',
+      ),
+      /score-partwise.*surprise|surprise.*score-partwise/i,
+    ],
+    [
+      "score-part container",
+      mutation('<score-part id="P1">', '<score-part id="P1" surprise="yes">'),
+      /score-part.*surprise|surprise.*score-part/i,
+    ],
+    [
+      "time container",
+      mutation(
+        "<divisions>2</divisions>",
+        '<divisions>2</divisions><time surprise="yes"><beats>4</beats><beat-type>4</beat-type></time>',
+      ),
+      /time.*surprise|surprise.*time/i,
+    ],
+    [
+      "step leaf",
+      mutation("<step>C</step>", '<step surprise="yes">C</step>'),
+      /step.*surprise|surprise.*step/i,
+    ],
+    [
+      "namespaced lyric text attribute",
+      mutation("<text>Hello</text>", '<text xml:lang="en">Hello</text>'),
+      /text.*xml:lang|xml:lang.*text|namespaced.*attribute/i,
+    ],
+  ]) {
+    it(`rejects an unknown attribute on the ${site}`, () => {
+      assertStructuralRejection(xml, context);
+    });
+  }
+
+  for (const [site, xml, context] of [
+    [
+      "score-part container",
+      mutation("<part-name>P1</part-name>", "<part-name>P1</part-name><surprise/>"),
+      /score-part.*surprise|surprise.*score-part/i,
+    ],
+    [
+      "time container",
+      mutation(
+        "<divisions>2</divisions>",
+        "<divisions>2</divisions><time><beats>4</beats><beat-type>4</beat-type><surprise/></time>",
+      ),
+      /time.*surprise|surprise.*time/i,
+    ],
+    [
+      "step leaf",
+      mutation("<step>C</step>", "<step>C<surprise/></step>"),
+      /step.*surprise|surprise.*step|step.*leaf/i,
+    ],
+    [
+      "duration leaf",
+      mutation("<duration>4</duration>", "<duration>4<surprise/></duration>"),
+      /duration.*surprise|surprise.*duration|duration.*leaf/i,
+    ],
+    [
+      "lyric text leaf",
+      mutation("<text>Hello</text>", "<text>Hello<surprise/></text>"),
+      /text.*surprise|surprise.*text|text.*leaf/i,
+    ],
+    [
+      "namespaced step leaf",
+      mutation(
+        "<step>C</step>",
+        '<step>C<bad:surprise xmlns:bad="urn:bad"/></step>',
+      ),
+      /step.*bad:surprise|bad:surprise.*step|namespaced.*element/i,
+    ],
+  ]) {
+    it(`rejects an unsupported descendant under the ${site}`, () => {
+      assertStructuralRejection(xml, context);
+    });
+  }
+
+  for (const [caseName, xml, context] of [
+    [
+      "missing score-part name",
+      mutation("<part-name>P1</part-name>", ""),
+      /score-part.*part-name|part-name.*score-part/i,
+    ],
+    [
+      "duplicate score-part name",
+      mutation(
+        "<part-name>P1</part-name>",
+        "<part-name>P1</part-name><part-name>Duplicate</part-name>",
+      ),
+      /score-part.*part-name|part-name.*score-part/i,
+    ],
+    [
+      "missing time beat-type",
+      mutation(
+        "<divisions>2</divisions>",
+        "<divisions>2</divisions><time><beats>4</beats></time>",
+      ),
+      /time.*beat-type|beat-type.*time/i,
+    ],
+    [
+      "duplicate time beats",
+      mutation(
+        "<divisions>2</divisions>",
+        "<divisions>2</divisions><time><beats>4</beats><beats>3</beats><beat-type>4</beat-type></time>",
+      ),
+      /time.*beats|beats.*time/i,
+    ],
+  ]) {
+    it(`rejects ${caseName}`, () => {
+      assertStructuralRejection(xml, context);
+    });
+  }
+});
+
 describe("rational score timing", () => {
+  it("accepts one simple time signature without changing the score clock", () => {
+    const xml = scoreXml({
+      parts: [
+        part("P1", [
+          measure(
+            1,
+            attributes(2, "<time><beats>4</beats><beat-type>4</beat-type></time>")
+              + tempo()
+              + rest(4)
+              + '<bookmark id="line-1"/>'
+              + lineNote("Hello"),
+          ),
+        ]),
+      ],
+    });
+
+    const compiled = compile(xml);
+
+    assert.equal(compiled.countInDurationMs, 1_000);
+    assert.equal(compiled.lines[0].durationMs, 500);
+  });
+
   it("rounds thirds from absolute boundaries while changing divisions only at a measure boundary", () => {
     const xml = scoreXml({
       parts: [
