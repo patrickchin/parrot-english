@@ -17,7 +17,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-shirt-label",
-        "text": "This is a shirt."
+        "text": "shirt"
       },
       "promptAudio": {
         "id": "word-game-clothes-shirt-prompt",
@@ -34,11 +34,11 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-shoes-label",
-        "text": "These are shoes."
+        "text": "shoes"
       },
       "promptAudio": {
         "id": "word-game-clothes-shoes-prompt",
-      "text": "Which are the shoes?"
+        "text": "Which are the shoes?"
       }
     },
     {
@@ -51,7 +51,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-hat-label",
-        "text": "This is a hat."
+        "text": "hat"
       },
       "promptAudio": {
         "id": "word-game-clothes-hat-prompt",
@@ -68,11 +68,11 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-socks-label",
-        "text": "These are socks."
+        "text": "socks"
       },
       "promptAudio": {
         "id": "word-game-clothes-socks-prompt",
-      "text": "Which are the socks?"
+        "text": "Which are the socks?"
       }
     },
     {
@@ -85,7 +85,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-coat-label",
-        "text": "This is a coat."
+        "text": "coat"
       },
       "promptAudio": {
         "id": "word-game-clothes-coat-prompt",
@@ -102,11 +102,11 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-pants-label",
-        "text": "These are pants."
+        "text": "pants"
       },
       "promptAudio": {
         "id": "word-game-clothes-pants-prompt",
-      "text": "Which are the pants?"
+        "text": "Which are the pants?"
       }
     },
     {
@@ -119,7 +119,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-dress-label",
-        "text": "This is a dress."
+        "text": "dress"
       },
       "promptAudio": {
         "id": "word-game-clothes-dress-prompt",
@@ -136,11 +136,11 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-shorts-label",
-        "text": "These are shorts."
+        "text": "shorts"
       },
       "promptAudio": {
         "id": "word-game-clothes-shorts-prompt",
-      "text": "Which are the shorts?"
+        "text": "Which are the shorts?"
       }
     },
     {
@@ -153,7 +153,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-scarf-label",
-        "text": "This is a scarf."
+        "text": "scarf"
       },
       "promptAudio": {
         "id": "word-game-clothes-scarf-prompt",
@@ -170,7 +170,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-boots-label",
-        "text": "These are boots."
+        "text": "boots"
       },
       "promptAudio": {
         "id": "word-game-clothes-boots-prompt",
@@ -187,11 +187,11 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-gloves-label",
-        "text": "These are gloves."
+        "text": "gloves"
       },
       "promptAudio": {
         "id": "word-game-clothes-gloves-prompt",
-      "text": "Which are the gloves?"
+        "text": "Which are the gloves?"
       }
     },
     {
@@ -204,7 +204,7 @@
       },
       "labelAudio": {
         "id": "word-game-clothes-swimsuit-label",
-        "text": "This is a swimsuit."
+        "text": "swimsuit"
       },
       "promptAudio": {
         "id": "word-game-clothes-swimsuit-prompt",

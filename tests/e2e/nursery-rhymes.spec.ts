@@ -115,49 +115,38 @@ test("every new rhyme opens its own recording workspace", async ({ page }) => {
   }
 });
 
-test("empty nursery projects show one initial status instead of repeating it per scene", async ({
+test("empty nursery projects show project progress and every line status", async ({
   page,
 }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  const sceneSelection = page.getByRole("complementary", {
-    name: "Scene selection",
+  const lyrics = page.getByRole("complementary", {
+    name: "Lyrics and recordings",
   });
 
   await expect(
     page.getByRole("progressbar", { name: "Project recording progress" }),
   ).toHaveText("Ready to start");
   await expect(
-    sceneSelection.getByRole("heading", { name: "Choose a scene" }),
-  ).toHaveCount(0);
-  await expect(
-    sceneSelection.getByText("Ready to start", { exact: true }),
-  ).toHaveCount(0);
-  await expect(
-    sceneSelection.getByRole("button", {
-      name: "Scene 1, Five little ducks, Ready to start",
+    lyrics.getByRole("button", {
+      name: /^Edit line \d+: .* Not recorded$/,
     }),
-  ).toBeVisible();
+  ).toHaveCount(24);
+  await expect(
+    lyrics.getByText("Ready to start", { exact: true }),
+  ).toHaveCount(0);
 });
 
-for (const project of [
-  {
-    route: "/dubs/row-row-row-your-boat",
-    sceneTitle: "Row the boat",
-  },
-  {
-    route: "/dubs/humpty-dumpty",
-    sceneTitle: "Humpty Dumpty",
-  },
+for (const route of [
+  "/dubs/row-row-row-your-boat",
+  "/dubs/humpty-dumpty",
 ] as const) {
-  test(`${project.route} uses one scene with a different image for each line`, async ({ page }) => {
-    await page.goto(`${project.route}?parrotE2eDub=empty`);
-    const scenes = page.getByRole("navigation", { name: "Scenes" });
-    await expect(scenes.getByRole("button")).toHaveCount(1);
-    await scenes.getByRole("button", {
-      name: `Scene 1, ${project.sceneTitle}, Ready to start`,
+  test(`${route} selects a different image for each lyric`, async ({ page }) => {
+    await page.goto(`${route}?parrotE2eDub=empty`);
+    await page.getByRole("button", {
+      name: /^Edit line 1: .* Not recorded$/,
     }).click();
 
-    const video = page.getByRole("region", { name: "Scene video" });
+    const video = page.getByRole("region", { name: "Full video player" });
     const sources: string[] = [];
     for (let line = 1; line <= 4; line += 1) {
       await expect(page.getByText(`Line ${line} of 4`, { exact: true })).toBeVisible();
@@ -175,14 +164,10 @@ for (const project of [
     }
     expect(new Set(sources).size).toBe(4);
 
-    await page.getByRole("button", { name: "Back to full video" }).click();
-    const [sceneBox, scenesBox] = await Promise.all([
-      scenes.getByRole("button").boundingBox(),
-      scenes.boundingBox(),
-    ]);
-    expect(sceneBox).not.toBeNull();
-    expect(scenesBox).not.toBeNull();
-    expect(Math.abs(sceneBox!.width - scenesBox!.width)).toBeLessThanOrEqual(2);
+    await page.getByRole("button", { name: "Back to all lyrics" }).click();
+    await expect(
+      page.getByRole("complementary", { name: "Lyrics and recordings" }),
+    ).toBeVisible();
   });
 }
 

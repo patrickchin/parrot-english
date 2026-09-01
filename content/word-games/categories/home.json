@@ -17,7 +17,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-bed-label",
-        "text": "This is a bed."
+        "text": "bed"
       },
       "promptAudio": {
         "id": "word-game-home-bed-prompt",
@@ -34,7 +34,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-chair-label",
-        "text": "This is a chair."
+        "text": "chair"
       },
       "promptAudio": {
         "id": "word-game-home-chair-prompt",
@@ -51,7 +51,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-door-label",
-        "text": "This is a door."
+        "text": "door"
       },
       "promptAudio": {
         "id": "word-game-home-door-prompt",
@@ -68,7 +68,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-window-label",
-        "text": "This is a window."
+        "text": "window"
       },
       "promptAudio": {
         "id": "word-game-home-window-prompt",
@@ -85,7 +85,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-house-label",
-        "text": "This is a house."
+        "text": "house"
       },
       "promptAudio": {
         "id": "word-game-home-house-prompt",
@@ -102,7 +102,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-key-label",
-        "text": "This is a key."
+        "text": "key"
       },
       "promptAudio": {
         "id": "word-game-home-key-prompt",
@@ -119,7 +119,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-sofa-label",
-        "text": "This is a sofa."
+        "text": "sofa"
       },
       "promptAudio": {
         "id": "word-game-home-sofa-prompt",
@@ -136,7 +136,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-bathtub-label",
-        "text": "This is a bathtub."
+        "text": "bathtub"
       },
       "promptAudio": {
         "id": "word-game-home-bathtub-prompt",
@@ -153,7 +153,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-toilet-label",
-        "text": "This is a toilet."
+        "text": "toilet"
       },
       "promptAudio": {
         "id": "word-game-home-toilet-prompt",
@@ -170,7 +170,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-shower-label",
-        "text": "This is a shower."
+        "text": "shower"
       },
       "promptAudio": {
         "id": "word-game-home-shower-prompt",
@@ -187,7 +187,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-mirror-label",
-        "text": "This is a mirror."
+        "text": "mirror"
       },
       "promptAudio": {
         "id": "word-game-home-mirror-prompt",
@@ -204,7 +204,7 @@
       },
       "labelAudio": {
         "id": "word-game-home-broom-label",
-        "text": "This is a broom."
+        "text": "broom"
       },
       "promptAudio": {
         "id": "word-game-home-broom-prompt",

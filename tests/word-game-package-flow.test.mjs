@@ -63,7 +63,11 @@ async function createPackageRoot(context) {
     ...[...animals.items, ...fixtureCategory.items].flatMap(({ labelAudio, promptAudio }) =>
       [labelAudio, promptAudio].map((audio) =>
         cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${audio.id}.mp3`)))),
-    ...["narrator-feedback-success", "word-game-retry", "word-game-complete"].map((id) =>
+    ...[
+      fixturePlayer.successAudio.id,
+      fixturePlayer.retryAudio.id,
+      fixturePlayer.completeAudio.id,
+    ].map((id) =>
       cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${id}.mp3`))),
   ]);
 

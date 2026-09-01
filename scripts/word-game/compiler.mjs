@@ -183,7 +183,7 @@ function registerAudio(audioById, audio, sourcePath) {
     if (priorText !== audio.text) {
       throw new Error(`${sourcePath}: audio id ${audio.id} is reused with different text`);
     }
-    throw new Error(`${sourcePath}: duplicate global audio id ${audio.id}`);
+    return;
   }
   audioById.set(audio.id, audio.text);
 }

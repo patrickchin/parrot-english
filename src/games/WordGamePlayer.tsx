@@ -12,8 +12,7 @@ import {
   buildWordGameRounds,
   getWordGameCategoryRoute,
   WORD_GAME_COMPLETE_AUDIO,
-  WORD_GAME_RETRY_AUDIO,
-  WORD_GAME_SUCCESS_AUDIO,
+  WORD_GAME_CORRECT_AUDIO,
   type WordGameAudioLine,
   type WordGameSelection,
 } from "./word-game-catalog";
@@ -152,17 +151,18 @@ export function WordGamePlayer({
     const correct = choice.id === round.target.id;
     setSelectedId(choice.id);
     setAnsweredCorrectly(correct);
-    setFeedback(
-      correct
-        ? `${WORD_GAME_SUCCESS_AUDIO.text} ${round.target.labelAudio.text}`
-        : `${choice.labelAudio.text} ${WORD_GAME_RETRY_AUDIO.text}`,
+    setFeedback(correct ? WORD_GAME_CORRECT_AUDIO.text : choice.labelAudio.text);
+    if (!correct) {
+      playLine(choice.labelAudio);
+      return;
+    }
+    startPlayback(
+      (signal) => playAudioSequence({
+        lines: [playable(round.target.labelAudio), playable(WORD_GAME_CORRECT_AUDIO)],
+        signal,
+      }),
+      { onSettled: advanceGame },
     );
-    startPlayback((signal) => playAudioSequence({
-      lines: correct
-        ? [playable(WORD_GAME_SUCCESS_AUDIO), playable(round.target.labelAudio)]
-        : [playable(choice.labelAudio), playable(WORD_GAME_RETRY_AUDIO)],
-      signal,
-    }), correct ? { onSettled: advanceGame } : undefined);
   }
 
   function playAgain() {
@@ -252,7 +252,7 @@ export function WordGamePlayer({
             className="grid gap-4 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card sm:p-6"
             role="region"
           >
-            <div className="grid justify-items-center gap-2 text-center">
+            <div className="flex items-center justify-center gap-2 text-center">
               <h2
                 className="m-0 text-2xl leading-tight text-brand-ink sm:text-3xl"
                 ref={questionHeadingRef}
@@ -261,13 +261,14 @@ export function WordGamePlayer({
                 {round.target.promptAudio.text}
               </h2>
               <ActionButton
+                aria-label="Listen again"
+                className="shrink-0"
                 disabled={answeredCorrectly}
                 onClick={() => playLine(round.target.promptAudio)}
                 size="compact"
                 type="button"
               >
                 <Volume2 aria-hidden="true" className="size-5" />
-                Listen again
               </ActionButton>
             </div>
 

@@ -17,7 +17,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-apple-label",
-        "text": "This is an apple."
+        "text": "apple"
       },
       "promptAudio": {
         "id": "word-game-food-apple-prompt",
@@ -34,7 +34,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-banana-label",
-        "text": "This is a banana."
+        "text": "banana"
       },
       "promptAudio": {
         "id": "word-game-food-banana-prompt",
@@ -51,7 +51,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-carrot-label",
-        "text": "This is a carrot."
+        "text": "carrot"
       },
       "promptAudio": {
         "id": "word-game-food-carrot-prompt",
@@ -67,8 +67,8 @@
         "assetId": "1f34a"
       },
       "labelAudio": {
-        "id": "word-game-food-orange-label",
-        "text": "This is an orange."
+        "id": "word-game-shared-orange-label",
+        "text": "orange"
       },
       "promptAudio": {
         "id": "word-game-food-orange-prompt",
@@ -85,7 +85,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-bread-label",
-        "text": "This is bread."
+        "text": "bread"
       },
       "promptAudio": {
         "id": "word-game-food-bread-prompt",
@@ -102,7 +102,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-cheese-label",
-        "text": "This is cheese."
+        "text": "cheese"
       },
       "promptAudio": {
         "id": "word-game-food-cheese-prompt",
@@ -119,7 +119,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-rice-label",
-        "text": "This is rice."
+        "text": "rice"
       },
       "promptAudio": {
         "id": "word-game-food-rice-prompt",
@@ -136,7 +136,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-egg-label",
-        "text": "This is an egg."
+        "text": "egg"
       },
       "promptAudio": {
         "id": "word-game-food-egg-prompt",
@@ -153,7 +153,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-milk-label",
-        "text": "This is milk."
+        "text": "milk"
       },
       "promptAudio": {
         "id": "word-game-food-milk-prompt",
@@ -170,7 +170,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-tomato-label",
-        "text": "This is a tomato."
+        "text": "tomato"
       },
       "promptAudio": {
         "id": "word-game-food-tomato-prompt",
@@ -187,7 +187,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-potato-label",
-        "text": "This is a potato."
+        "text": "potato"
       },
       "promptAudio": {
         "id": "word-game-food-potato-prompt",
@@ -204,7 +204,7 @@
       },
       "labelAudio": {
         "id": "word-game-food-sandwich-label",
-        "text": "This is a sandwich."
+        "text": "sandwich"
       },
       "promptAudio": {
         "id": "word-game-food-sandwich-prompt",

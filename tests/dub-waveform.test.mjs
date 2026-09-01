@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 const waveform = await import("../src/dubbing/dub-waveform.ts").catch(() => ({}));
 const { DUB_DEFINITIONS = [] } = await import("../src/dubbing/rhyme-catalog.ts").catch(() => ({}));
 const getNormalizedPeakBars = waveform.getNormalizedPeakBars ?? (() => null);
+const getDubRecordingPeakBars = waveform.getDubRecordingPeakBars ?? (() => null);
 
 describe("dub take waveform peaks", () => {
   it("reduces signed PCM samples into normalized peak bars", () => {
@@ -22,6 +23,45 @@ describe("dub take waveform peaks", () => {
     assert.deepEqual(
       getNormalizedPeakBars([-0.2, 0.4, -1, 0.5], 4, 8),
       [0.4, 1, 0, 0],
+    );
+  });
+
+  it("decodes one recording into the persisted 32-bar timeline", async () => {
+    let closes = 0;
+    class AudioContextDouble {
+      close() {
+        closes += 1;
+        return Promise.resolve();
+      }
+      decodeAudioData() {
+        return Promise.resolve({
+          getChannelData: () => Float32Array.from([0, 0.25, -1, 0.5]),
+          sampleRate: 32,
+        });
+      }
+    }
+
+    const bars = await getDubRecordingPeakBars(
+      new Blob(["take"], { type: "audio/webm" }),
+      1_000,
+      AudioContextDouble,
+    );
+
+    assert.equal(bars.length, 32);
+    assert.deepEqual(bars.slice(0, 4), [0, 0.25, 1, 0.5]);
+    assert.equal(bars.slice(4).every((bar) => bar === 0), true);
+    assert.equal(closes, 1);
+  });
+
+  it("keeps waveform extraction optional when decoding fails", async () => {
+    class AudioContextDouble {
+      close() { return Promise.resolve(); }
+      decodeAudioData() { return Promise.reject(new Error("decode failed")); }
+    }
+
+    assert.equal(
+      await getDubRecordingPeakBars(new Blob(["take"]), 4_000, AudioContextDouble),
+      null,
     );
   });
 

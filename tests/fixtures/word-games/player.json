@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "successAudio": {
-    "id": "narrator-feedback-success",
-    "text": "Great job!"
+    "id": "word-game-correct",
+    "text": "Correct!"
   },
   "retryAudio": {
     "id": "word-game-retry",

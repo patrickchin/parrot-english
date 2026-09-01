@@ -12,7 +12,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "cat",
           "labelAudio": {
             "id": "word-game-animals-cat-label",
-            "text": "This is a cat.",
+            "text": "cat",
             "source": "/assets/audio/word-game-animals-cat-label.mp3"
           },
           "promptAudio": {
@@ -31,7 +31,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "dog",
           "labelAudio": {
             "id": "word-game-animals-dog-label",
-            "text": "This is a dog.",
+            "text": "dog",
             "source": "/assets/audio/word-game-animals-dog-label.mp3"
           },
           "promptAudio": {
@@ -50,7 +50,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bird",
           "labelAudio": {
             "id": "word-game-animals-bird-label",
-            "text": "This is a bird.",
+            "text": "bird",
             "source": "/assets/audio/word-game-animals-bird-label.mp3"
           },
           "promptAudio": {
@@ -69,7 +69,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "fish",
           "labelAudio": {
             "id": "word-game-animals-fish-label",
-            "text": "This is a fish.",
+            "text": "fish",
             "source": "/assets/audio/word-game-animals-fish-label.mp3"
           },
           "promptAudio": {
@@ -88,7 +88,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "duck",
           "labelAudio": {
             "id": "word-game-animals-duck-label",
-            "text": "This is a duck.",
+            "text": "duck",
             "source": "/assets/audio/word-game-animals-duck-label.mp3"
           },
           "promptAudio": {
@@ -107,7 +107,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "frog",
           "labelAudio": {
             "id": "word-game-animals-frog-label",
-            "text": "This is a frog.",
+            "text": "frog",
             "source": "/assets/audio/word-game-animals-frog-label.mp3"
           },
           "promptAudio": {
@@ -126,7 +126,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "pig",
           "labelAudio": {
             "id": "word-game-animals-pig-label",
-            "text": "This is a pig.",
+            "text": "pig",
             "source": "/assets/audio/word-game-animals-pig-label.mp3"
           },
           "promptAudio": {
@@ -145,7 +145,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "cow",
           "labelAudio": {
             "id": "word-game-animals-cow-label",
-            "text": "This is a cow.",
+            "text": "cow",
             "source": "/assets/audio/word-game-animals-cow-label.mp3"
           },
           "promptAudio": {
@@ -164,7 +164,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "horse",
           "labelAudio": {
             "id": "word-game-animals-horse-label",
-            "text": "This is a horse.",
+            "text": "horse",
             "source": "/assets/audio/word-game-animals-horse-label.mp3"
           },
           "promptAudio": {
@@ -183,7 +183,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "alligator",
           "labelAudio": {
             "id": "word-game-animals-alligator-label",
-            "text": "This is an alligator.",
+            "text": "alligator",
             "source": "/assets/audio/word-game-animals-alligator-label.mp3"
           },
           "promptAudio": {
@@ -202,7 +202,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "elephant",
           "labelAudio": {
             "id": "word-game-animals-elephant-label",
-            "text": "This is an elephant.",
+            "text": "elephant",
             "source": "/assets/audio/word-game-animals-elephant-label.mp3"
           },
           "promptAudio": {
@@ -221,7 +221,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "giraffe",
           "labelAudio": {
             "id": "word-game-animals-giraffe-label",
-            "text": "This is a giraffe.",
+            "text": "giraffe",
             "source": "/assets/audio/word-game-animals-giraffe-label.mp3"
           },
           "promptAudio": {
@@ -877,7 +877,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "red",
           "labelAudio": {
             "id": "word-game-colors-red-label",
-            "text": "This is red.",
+            "text": "red",
             "source": "/assets/audio/word-game-colors-red-label.mp3"
           },
           "promptAudio": {
@@ -896,7 +896,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "blue",
           "labelAudio": {
             "id": "word-game-colors-blue-label",
-            "text": "This is blue.",
+            "text": "blue",
             "source": "/assets/audio/word-game-colors-blue-label.mp3"
           },
           "promptAudio": {
@@ -915,7 +915,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "yellow",
           "labelAudio": {
             "id": "word-game-colors-yellow-label",
-            "text": "This is yellow.",
+            "text": "yellow",
             "source": "/assets/audio/word-game-colors-yellow-label.mp3"
           },
           "promptAudio": {
@@ -934,7 +934,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "green",
           "labelAudio": {
             "id": "word-game-colors-green-label",
-            "text": "This is green.",
+            "text": "green",
             "source": "/assets/audio/word-game-colors-green-label.mp3"
           },
           "promptAudio": {
@@ -952,9 +952,9 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "id": "orange",
           "label": "orange",
           "labelAudio": {
-            "id": "word-game-colors-orange-label",
-            "text": "This is orange.",
-            "source": "/assets/audio/word-game-colors-orange-label.mp3"
+            "id": "word-game-shared-orange-label",
+            "text": "orange",
+            "source": "/assets/audio/word-game-shared-orange-label.mp3"
           },
           "promptAudio": {
             "id": "word-game-colors-orange-prompt",
@@ -972,7 +972,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "purple",
           "labelAudio": {
             "id": "word-game-colors-purple-label",
-            "text": "This is purple.",
+            "text": "purple",
             "source": "/assets/audio/word-game-colors-purple-label.mp3"
           },
           "promptAudio": {
@@ -991,7 +991,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "black",
           "labelAudio": {
             "id": "word-game-colors-black-label",
-            "text": "This is black.",
+            "text": "black",
             "source": "/assets/audio/word-game-colors-black-label.mp3"
           },
           "promptAudio": {
@@ -1010,7 +1010,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "white",
           "labelAudio": {
             "id": "word-game-colors-white-label",
-            "text": "This is white.",
+            "text": "white",
             "source": "/assets/audio/word-game-colors-white-label.mp3"
           },
           "promptAudio": {
@@ -1029,7 +1029,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "pink",
           "labelAudio": {
             "id": "word-game-colors-pink-label",
-            "text": "This is pink.",
+            "text": "pink",
             "source": "/assets/audio/word-game-colors-pink-label.mp3"
           },
           "promptAudio": {
@@ -1048,7 +1048,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "brown",
           "labelAudio": {
             "id": "word-game-colors-brown-label",
-            "text": "This is brown.",
+            "text": "brown",
             "source": "/assets/audio/word-game-colors-brown-label.mp3"
           },
           "promptAudio": {
@@ -1067,7 +1067,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "gray",
           "labelAudio": {
             "id": "word-game-colors-gray-label",
-            "text": "This is gray.",
+            "text": "gray",
             "source": "/assets/audio/word-game-colors-gray-label.mp3"
           },
           "promptAudio": {
@@ -1723,7 +1723,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "eyes",
           "labelAudio": {
             "id": "word-game-body-parts-eyes-label",
-            "text": "These are the eyes.",
+            "text": "eyes",
             "source": "/assets/audio/word-game-body-parts-eyes-label.mp3"
           },
           "promptAudio": {
@@ -1742,7 +1742,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "ears",
           "labelAudio": {
             "id": "word-game-body-parts-ears-label",
-            "text": "These are the ears.",
+            "text": "ears",
             "source": "/assets/audio/word-game-body-parts-ears-label.mp3"
           },
           "promptAudio": {
@@ -1761,7 +1761,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "nose",
           "labelAudio": {
             "id": "word-game-body-parts-nose-label",
-            "text": "This is a nose.",
+            "text": "nose",
             "source": "/assets/audio/word-game-body-parts-nose-label.mp3"
           },
           "promptAudio": {
@@ -1780,7 +1780,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "mouth",
           "labelAudio": {
             "id": "word-game-body-parts-mouth-label",
-            "text": "This is a mouth.",
+            "text": "mouth",
             "source": "/assets/audio/word-game-body-parts-mouth-label.mp3"
           },
           "promptAudio": {
@@ -1799,7 +1799,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "hand",
           "labelAudio": {
             "id": "word-game-body-parts-hand-label",
-            "text": "This is a hand.",
+            "text": "hand",
             "source": "/assets/audio/word-game-body-parts-hand-label.mp3"
           },
           "promptAudio": {
@@ -1818,7 +1818,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "foot",
           "labelAudio": {
             "id": "word-game-body-parts-foot-label",
-            "text": "This is a foot.",
+            "text": "foot",
             "source": "/assets/audio/word-game-body-parts-foot-label.mp3"
           },
           "promptAudio": {
@@ -1837,7 +1837,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "arm",
           "labelAudio": {
             "id": "word-game-body-parts-arm-label",
-            "text": "This is an arm.",
+            "text": "arm",
             "source": "/assets/audio/word-game-body-parts-arm-label.mp3"
           },
           "promptAudio": {
@@ -1856,7 +1856,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "leg",
           "labelAudio": {
             "id": "word-game-body-parts-leg-label",
-            "text": "This is a leg.",
+            "text": "leg",
             "source": "/assets/audio/word-game-body-parts-leg-label.mp3"
           },
           "promptAudio": {
@@ -1875,7 +1875,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "tooth",
           "labelAudio": {
             "id": "word-game-body-parts-tooth-label",
-            "text": "This is a tooth.",
+            "text": "tooth",
             "source": "/assets/audio/word-game-body-parts-tooth-label.mp3"
           },
           "promptAudio": {
@@ -1894,7 +1894,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "tongue",
           "labelAudio": {
             "id": "word-game-body-parts-tongue-label",
-            "text": "This is a tongue.",
+            "text": "tongue",
             "source": "/assets/audio/word-game-body-parts-tongue-label.mp3"
           },
           "promptAudio": {
@@ -1913,7 +1913,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "brain",
           "labelAudio": {
             "id": "word-game-body-parts-brain-label",
-            "text": "This is a brain.",
+            "text": "brain",
             "source": "/assets/audio/word-game-body-parts-brain-label.mp3"
           },
           "promptAudio": {
@@ -1932,7 +1932,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "heart",
           "labelAudio": {
             "id": "word-game-body-parts-heart-label",
-            "text": "This is a heart.",
+            "text": "heart",
             "source": "/assets/audio/word-game-body-parts-heart-label.mp3"
           },
           "promptAudio": {
@@ -2588,7 +2588,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "apple",
           "labelAudio": {
             "id": "word-game-food-apple-label",
-            "text": "This is an apple.",
+            "text": "apple",
             "source": "/assets/audio/word-game-food-apple-label.mp3"
           },
           "promptAudio": {
@@ -2607,7 +2607,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "banana",
           "labelAudio": {
             "id": "word-game-food-banana-label",
-            "text": "This is a banana.",
+            "text": "banana",
             "source": "/assets/audio/word-game-food-banana-label.mp3"
           },
           "promptAudio": {
@@ -2626,7 +2626,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "carrot",
           "labelAudio": {
             "id": "word-game-food-carrot-label",
-            "text": "This is a carrot.",
+            "text": "carrot",
             "source": "/assets/audio/word-game-food-carrot-label.mp3"
           },
           "promptAudio": {
@@ -2644,9 +2644,9 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "id": "orange",
           "label": "orange",
           "labelAudio": {
-            "id": "word-game-food-orange-label",
-            "text": "This is an orange.",
-            "source": "/assets/audio/word-game-food-orange-label.mp3"
+            "id": "word-game-shared-orange-label",
+            "text": "orange",
+            "source": "/assets/audio/word-game-shared-orange-label.mp3"
           },
           "promptAudio": {
             "id": "word-game-food-orange-prompt",
@@ -2664,7 +2664,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bread",
           "labelAudio": {
             "id": "word-game-food-bread-label",
-            "text": "This is bread.",
+            "text": "bread",
             "source": "/assets/audio/word-game-food-bread-label.mp3"
           },
           "promptAudio": {
@@ -2683,7 +2683,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "cheese",
           "labelAudio": {
             "id": "word-game-food-cheese-label",
-            "text": "This is cheese.",
+            "text": "cheese",
             "source": "/assets/audio/word-game-food-cheese-label.mp3"
           },
           "promptAudio": {
@@ -2702,7 +2702,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "rice",
           "labelAudio": {
             "id": "word-game-food-rice-label",
-            "text": "This is rice.",
+            "text": "rice",
             "source": "/assets/audio/word-game-food-rice-label.mp3"
           },
           "promptAudio": {
@@ -2721,7 +2721,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "egg",
           "labelAudio": {
             "id": "word-game-food-egg-label",
-            "text": "This is an egg.",
+            "text": "egg",
             "source": "/assets/audio/word-game-food-egg-label.mp3"
           },
           "promptAudio": {
@@ -2740,7 +2740,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "milk",
           "labelAudio": {
             "id": "word-game-food-milk-label",
-            "text": "This is milk.",
+            "text": "milk",
             "source": "/assets/audio/word-game-food-milk-label.mp3"
           },
           "promptAudio": {
@@ -2759,7 +2759,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "tomato",
           "labelAudio": {
             "id": "word-game-food-tomato-label",
-            "text": "This is a tomato.",
+            "text": "tomato",
             "source": "/assets/audio/word-game-food-tomato-label.mp3"
           },
           "promptAudio": {
@@ -2778,7 +2778,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "potato",
           "labelAudio": {
             "id": "word-game-food-potato-label",
-            "text": "This is a potato.",
+            "text": "potato",
             "source": "/assets/audio/word-game-food-potato-label.mp3"
           },
           "promptAudio": {
@@ -2797,7 +2797,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "sandwich",
           "labelAudio": {
             "id": "word-game-food-sandwich-label",
-            "text": "This is a sandwich.",
+            "text": "sandwich",
             "source": "/assets/audio/word-game-food-sandwich-label.mp3"
           },
           "promptAudio": {
@@ -3453,7 +3453,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "ball",
           "labelAudio": {
             "id": "word-game-toys-ball-label",
-            "text": "This is a ball.",
+            "text": "ball",
             "source": "/assets/audio/word-game-toys-ball-label.mp3"
           },
           "promptAudio": {
@@ -3472,7 +3472,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "toy car",
           "labelAudio": {
             "id": "word-game-toys-toy-car-label",
-            "text": "This is a toy car.",
+            "text": "toy car",
             "source": "/assets/audio/word-game-toys-toy-car-label.mp3"
           },
           "promptAudio": {
@@ -3491,7 +3491,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "doll",
           "labelAudio": {
             "id": "word-game-toys-doll-label",
-            "text": "This is a doll.",
+            "text": "doll",
             "source": "/assets/audio/word-game-toys-doll-label.mp3"
           },
           "promptAudio": {
@@ -3510,7 +3510,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "kite",
           "labelAudio": {
             "id": "word-game-toys-kite-label",
-            "text": "This is a kite.",
+            "text": "kite",
             "source": "/assets/audio/word-game-toys-kite-label.mp3"
           },
           "promptAudio": {
@@ -3529,7 +3529,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "blocks",
           "labelAudio": {
             "id": "word-game-toys-blocks-label",
-            "text": "These are blocks.",
+            "text": "blocks",
             "source": "/assets/audio/word-game-toys-blocks-label.mp3"
           },
           "promptAudio": {
@@ -3548,7 +3548,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "teddy bear",
           "labelAudio": {
             "id": "word-game-toys-teddy-bear-label",
-            "text": "This is a teddy bear.",
+            "text": "teddy bear",
             "source": "/assets/audio/word-game-toys-teddy-bear-label.mp3"
           },
           "promptAudio": {
@@ -3567,7 +3567,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "toy train",
           "labelAudio": {
             "id": "word-game-toys-toy-train-label",
-            "text": "This is a toy train.",
+            "text": "toy train",
             "source": "/assets/audio/word-game-toys-toy-train-label.mp3"
           },
           "promptAudio": {
@@ -3586,7 +3586,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "drum",
           "labelAudio": {
             "id": "word-game-toys-drum-label",
-            "text": "This is a drum.",
+            "text": "drum",
             "source": "/assets/audio/word-game-toys-drum-label.mp3"
           },
           "promptAudio": {
@@ -3605,7 +3605,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "puzzle",
           "labelAudio": {
             "id": "word-game-toys-puzzle-label",
-            "text": "This is a puzzle.",
+            "text": "puzzle",
             "source": "/assets/audio/word-game-toys-puzzle-label.mp3"
           },
           "promptAudio": {
@@ -3624,7 +3624,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "robot",
           "labelAudio": {
             "id": "word-game-toys-robot-label",
-            "text": "This is a robot.",
+            "text": "robot",
             "source": "/assets/audio/word-game-toys-robot-label.mp3"
           },
           "promptAudio": {
@@ -3643,7 +3643,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "yo-yo",
           "labelAudio": {
             "id": "word-game-toys-yo-yo-label",
-            "text": "This is a yo-yo.",
+            "text": "yo-yo",
             "source": "/assets/audio/word-game-toys-yo-yo-label.mp3"
           },
           "promptAudio": {
@@ -3662,7 +3662,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "skateboard",
           "labelAudio": {
             "id": "word-game-toys-skateboard-label",
-            "text": "This is a skateboard.",
+            "text": "skateboard",
             "source": "/assets/audio/word-game-toys-skateboard-label.mp3"
           },
           "promptAudio": {
@@ -4318,7 +4318,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "happy",
           "labelAudio": {
             "id": "word-game-feelings-happy-label",
-            "text": "This face is happy.",
+            "text": "happy",
             "source": "/assets/audio/word-game-feelings-happy-label.mp3"
           },
           "promptAudio": {
@@ -4337,7 +4337,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "sad",
           "labelAudio": {
             "id": "word-game-feelings-sad-label",
-            "text": "This face is sad.",
+            "text": "sad",
             "source": "/assets/audio/word-game-feelings-sad-label.mp3"
           },
           "promptAudio": {
@@ -4356,7 +4356,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "angry",
           "labelAudio": {
             "id": "word-game-feelings-angry-label",
-            "text": "This face is angry.",
+            "text": "angry",
             "source": "/assets/audio/word-game-feelings-angry-label.mp3"
           },
           "promptAudio": {
@@ -4375,7 +4375,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "sleepy",
           "labelAudio": {
             "id": "word-game-feelings-sleepy-label",
-            "text": "This face is sleepy.",
+            "text": "sleepy",
             "source": "/assets/audio/word-game-feelings-sleepy-label.mp3"
           },
           "promptAudio": {
@@ -4394,7 +4394,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "surprised",
           "labelAudio": {
             "id": "word-game-feelings-surprised-label",
-            "text": "This face is surprised.",
+            "text": "surprised",
             "source": "/assets/audio/word-game-feelings-surprised-label.mp3"
           },
           "promptAudio": {
@@ -4413,7 +4413,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "silly",
           "labelAudio": {
             "id": "word-game-feelings-silly-label",
-            "text": "This face is silly.",
+            "text": "silly",
             "source": "/assets/audio/word-game-feelings-silly-label.mp3"
           },
           "promptAudio": {
@@ -4432,7 +4432,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "scared",
           "labelAudio": {
             "id": "word-game-feelings-scared-label",
-            "text": "This face is scared.",
+            "text": "scared",
             "source": "/assets/audio/word-game-feelings-scared-label.mp3"
           },
           "promptAudio": {
@@ -4451,7 +4451,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "excited",
           "labelAudio": {
             "id": "word-game-feelings-excited-label",
-            "text": "This face is excited.",
+            "text": "excited",
             "source": "/assets/audio/word-game-feelings-excited-label.mp3"
           },
           "promptAudio": {
@@ -4470,7 +4470,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "calm",
           "labelAudio": {
             "id": "word-game-feelings-calm-label",
-            "text": "This face is calm.",
+            "text": "calm",
             "source": "/assets/audio/word-game-feelings-calm-label.mp3"
           },
           "promptAudio": {
@@ -4489,7 +4489,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "worried",
           "labelAudio": {
             "id": "word-game-feelings-worried-label",
-            "text": "This face is worried.",
+            "text": "worried",
             "source": "/assets/audio/word-game-feelings-worried-label.mp3"
           },
           "promptAudio": {
@@ -4508,7 +4508,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "confused",
           "labelAudio": {
             "id": "word-game-feelings-confused-label",
-            "text": "This face is confused.",
+            "text": "confused",
             "source": "/assets/audio/word-game-feelings-confused-label.mp3"
           },
           "promptAudio": {
@@ -4527,7 +4527,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bored",
           "labelAudio": {
             "id": "word-game-feelings-bored-label",
-            "text": "This face is bored.",
+            "text": "bored",
             "source": "/assets/audio/word-game-feelings-bored-label.mp3"
           },
           "promptAudio": {
@@ -5183,7 +5183,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bed",
           "labelAudio": {
             "id": "word-game-home-bed-label",
-            "text": "This is a bed.",
+            "text": "bed",
             "source": "/assets/audio/word-game-home-bed-label.mp3"
           },
           "promptAudio": {
@@ -5202,7 +5202,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "chair",
           "labelAudio": {
             "id": "word-game-home-chair-label",
-            "text": "This is a chair.",
+            "text": "chair",
             "source": "/assets/audio/word-game-home-chair-label.mp3"
           },
           "promptAudio": {
@@ -5221,7 +5221,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "door",
           "labelAudio": {
             "id": "word-game-home-door-label",
-            "text": "This is a door.",
+            "text": "door",
             "source": "/assets/audio/word-game-home-door-label.mp3"
           },
           "promptAudio": {
@@ -5240,7 +5240,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "window",
           "labelAudio": {
             "id": "word-game-home-window-label",
-            "text": "This is a window.",
+            "text": "window",
             "source": "/assets/audio/word-game-home-window-label.mp3"
           },
           "promptAudio": {
@@ -5259,7 +5259,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "house",
           "labelAudio": {
             "id": "word-game-home-house-label",
-            "text": "This is a house.",
+            "text": "house",
             "source": "/assets/audio/word-game-home-house-label.mp3"
           },
           "promptAudio": {
@@ -5278,7 +5278,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "key",
           "labelAudio": {
             "id": "word-game-home-key-label",
-            "text": "This is a key.",
+            "text": "key",
             "source": "/assets/audio/word-game-home-key-label.mp3"
           },
           "promptAudio": {
@@ -5297,7 +5297,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "sofa",
           "labelAudio": {
             "id": "word-game-home-sofa-label",
-            "text": "This is a sofa.",
+            "text": "sofa",
             "source": "/assets/audio/word-game-home-sofa-label.mp3"
           },
           "promptAudio": {
@@ -5316,7 +5316,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bathtub",
           "labelAudio": {
             "id": "word-game-home-bathtub-label",
-            "text": "This is a bathtub.",
+            "text": "bathtub",
             "source": "/assets/audio/word-game-home-bathtub-label.mp3"
           },
           "promptAudio": {
@@ -5335,7 +5335,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "toilet",
           "labelAudio": {
             "id": "word-game-home-toilet-label",
-            "text": "This is a toilet.",
+            "text": "toilet",
             "source": "/assets/audio/word-game-home-toilet-label.mp3"
           },
           "promptAudio": {
@@ -5354,7 +5354,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "shower",
           "labelAudio": {
             "id": "word-game-home-shower-label",
-            "text": "This is a shower.",
+            "text": "shower",
             "source": "/assets/audio/word-game-home-shower-label.mp3"
           },
           "promptAudio": {
@@ -5373,7 +5373,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "mirror",
           "labelAudio": {
             "id": "word-game-home-mirror-label",
-            "text": "This is a mirror.",
+            "text": "mirror",
             "source": "/assets/audio/word-game-home-mirror-label.mp3"
           },
           "promptAudio": {
@@ -5392,7 +5392,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "broom",
           "labelAudio": {
             "id": "word-game-home-broom-label",
-            "text": "This is a broom.",
+            "text": "broom",
             "source": "/assets/audio/word-game-home-broom-label.mp3"
           },
           "promptAudio": {
@@ -6048,7 +6048,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "shirt",
           "labelAudio": {
             "id": "word-game-clothes-shirt-label",
-            "text": "This is a shirt.",
+            "text": "shirt",
             "source": "/assets/audio/word-game-clothes-shirt-label.mp3"
           },
           "promptAudio": {
@@ -6067,7 +6067,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "shoes",
           "labelAudio": {
             "id": "word-game-clothes-shoes-label",
-            "text": "These are shoes.",
+            "text": "shoes",
             "source": "/assets/audio/word-game-clothes-shoes-label.mp3"
           },
           "promptAudio": {
@@ -6086,7 +6086,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "hat",
           "labelAudio": {
             "id": "word-game-clothes-hat-label",
-            "text": "This is a hat.",
+            "text": "hat",
             "source": "/assets/audio/word-game-clothes-hat-label.mp3"
           },
           "promptAudio": {
@@ -6105,7 +6105,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "socks",
           "labelAudio": {
             "id": "word-game-clothes-socks-label",
-            "text": "These are socks.",
+            "text": "socks",
             "source": "/assets/audio/word-game-clothes-socks-label.mp3"
           },
           "promptAudio": {
@@ -6124,7 +6124,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "coat",
           "labelAudio": {
             "id": "word-game-clothes-coat-label",
-            "text": "This is a coat.",
+            "text": "coat",
             "source": "/assets/audio/word-game-clothes-coat-label.mp3"
           },
           "promptAudio": {
@@ -6143,7 +6143,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "pants",
           "labelAudio": {
             "id": "word-game-clothes-pants-label",
-            "text": "These are pants.",
+            "text": "pants",
             "source": "/assets/audio/word-game-clothes-pants-label.mp3"
           },
           "promptAudio": {
@@ -6162,7 +6162,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "dress",
           "labelAudio": {
             "id": "word-game-clothes-dress-label",
-            "text": "This is a dress.",
+            "text": "dress",
             "source": "/assets/audio/word-game-clothes-dress-label.mp3"
           },
           "promptAudio": {
@@ -6181,7 +6181,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "shorts",
           "labelAudio": {
             "id": "word-game-clothes-shorts-label",
-            "text": "These are shorts.",
+            "text": "shorts",
             "source": "/assets/audio/word-game-clothes-shorts-label.mp3"
           },
           "promptAudio": {
@@ -6200,7 +6200,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "scarf",
           "labelAudio": {
             "id": "word-game-clothes-scarf-label",
-            "text": "This is a scarf.",
+            "text": "scarf",
             "source": "/assets/audio/word-game-clothes-scarf-label.mp3"
           },
           "promptAudio": {
@@ -6219,7 +6219,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "boots",
           "labelAudio": {
             "id": "word-game-clothes-boots-label",
-            "text": "These are boots.",
+            "text": "boots",
             "source": "/assets/audio/word-game-clothes-boots-label.mp3"
           },
           "promptAudio": {
@@ -6238,7 +6238,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "gloves",
           "labelAudio": {
             "id": "word-game-clothes-gloves-label",
-            "text": "These are gloves.",
+            "text": "gloves",
             "source": "/assets/audio/word-game-clothes-gloves-label.mp3"
           },
           "promptAudio": {
@@ -6257,7 +6257,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "swimsuit",
           "labelAudio": {
             "id": "word-game-clothes-swimsuit-label",
-            "text": "This is a swimsuit.",
+            "text": "swimsuit",
             "source": "/assets/audio/word-game-clothes-swimsuit-label.mp3"
           },
           "promptAudio": {
@@ -6913,7 +6913,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "car",
           "labelAudio": {
             "id": "word-game-transport-car-label",
-            "text": "This is a car.",
+            "text": "car",
             "source": "/assets/audio/word-game-transport-car-label.mp3"
           },
           "promptAudio": {
@@ -6932,7 +6932,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bus",
           "labelAudio": {
             "id": "word-game-transport-bus-label",
-            "text": "This is a bus.",
+            "text": "bus",
             "source": "/assets/audio/word-game-transport-bus-label.mp3"
           },
           "promptAudio": {
@@ -6951,7 +6951,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "bicycle",
           "labelAudio": {
             "id": "word-game-transport-bicycle-label",
-            "text": "This is a bicycle.",
+            "text": "bicycle",
             "source": "/assets/audio/word-game-transport-bicycle-label.mp3"
           },
           "promptAudio": {
@@ -6970,7 +6970,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "train",
           "labelAudio": {
             "id": "word-game-transport-train-label",
-            "text": "This is a train.",
+            "text": "train",
             "source": "/assets/audio/word-game-transport-train-label.mp3"
           },
           "promptAudio": {
@@ -6989,7 +6989,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "boat",
           "labelAudio": {
             "id": "word-game-transport-boat-label",
-            "text": "This is a boat.",
+            "text": "boat",
             "source": "/assets/audio/word-game-transport-boat-label.mp3"
           },
           "promptAudio": {
@@ -7008,7 +7008,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "airplane",
           "labelAudio": {
             "id": "word-game-transport-airplane-label",
-            "text": "This is an airplane.",
+            "text": "airplane",
             "source": "/assets/audio/word-game-transport-airplane-label.mp3"
           },
           "promptAudio": {
@@ -7027,7 +7027,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "taxi",
           "labelAudio": {
             "id": "word-game-transport-taxi-label",
-            "text": "This is a taxi.",
+            "text": "taxi",
             "source": "/assets/audio/word-game-transport-taxi-label.mp3"
           },
           "promptAudio": {
@@ -7046,7 +7046,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "truck",
           "labelAudio": {
             "id": "word-game-transport-truck-label",
-            "text": "This is a truck.",
+            "text": "truck",
             "source": "/assets/audio/word-game-transport-truck-label.mp3"
           },
           "promptAudio": {
@@ -7065,7 +7065,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "scooter",
           "labelAudio": {
             "id": "word-game-transport-scooter-label",
-            "text": "This is a scooter.",
+            "text": "scooter",
             "source": "/assets/audio/word-game-transport-scooter-label.mp3"
           },
           "promptAudio": {
@@ -7084,7 +7084,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "helicopter",
           "labelAudio": {
             "id": "word-game-transport-helicopter-label",
-            "text": "This is a helicopter.",
+            "text": "helicopter",
             "source": "/assets/audio/word-game-transport-helicopter-label.mp3"
           },
           "promptAudio": {
@@ -7103,7 +7103,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "motorcycle",
           "labelAudio": {
             "id": "word-game-transport-motorcycle-label",
-            "text": "This is a motorcycle.",
+            "text": "motorcycle",
             "source": "/assets/audio/word-game-transport-motorcycle-label.mp3"
           },
           "promptAudio": {
@@ -7122,7 +7122,7 @@ export const GENERATED_WORD_GAME_CATALOG = {
           "label": "rocket",
           "labelAudio": {
             "id": "word-game-transport-rocket-label",
-            "text": "This is a rocket.",
+            "text": "rocket",
             "source": "/assets/audio/word-game-transport-rocket-label.mp3"
           },
           "promptAudio": {
@@ -7781,9 +7781,9 @@ export const GENERATED_WORD_GAME_CATALOG = {
     },
     "schemaVersion": 1,
     "successAudio": {
-      "id": "narrator-feedback-success",
-      "text": "Great job!",
-      "source": "/assets/audio/narrator-feedback-success.mp3"
+      "id": "word-game-correct",
+      "text": "Correct!",
+      "source": "/assets/audio/word-game-correct.mp3"
     }
   }
 } as const;

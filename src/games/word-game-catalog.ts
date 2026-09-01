@@ -228,7 +228,7 @@ export function createWordGameCatalog(
 const WORD_GAME_CATALOG = createWordGameCatalog(GENERATED_WORD_GAME_CATALOG);
 
 export const WORD_GAME_CATEGORIES = WORD_GAME_CATALOG.categories;
-export const WORD_GAME_SUCCESS_AUDIO = WORD_GAME_CATALOG.player.successAudio;
+export const WORD_GAME_CORRECT_AUDIO = WORD_GAME_CATALOG.player.successAudio;
 export const WORD_GAME_RETRY_AUDIO = WORD_GAME_CATALOG.player.retryAudio;
 export const WORD_GAME_COMPLETE_AUDIO = WORD_GAME_CATALOG.player.completeAudio;
 

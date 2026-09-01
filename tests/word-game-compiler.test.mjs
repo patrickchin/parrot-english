@@ -112,7 +112,7 @@ async function repositoryFixture(t, { categories, manifest } = {}) {
       ...authoredCategories.flatMap(({ value }) => value.items.flatMap(
         ({ labelAudio, promptAudio }) => [labelAudio.id, promptAudio.id],
       )),
-      "narrator-feedback-success",
+      "word-game-correct",
       "word-game-retry",
       "word-game-complete",
     ],
@@ -162,9 +162,9 @@ describe("word-game package compilation", () => {
     assert.deepEqual(compiled.player, {
       schemaVersion: 1,
       successAudio: {
-        id: "narrator-feedback-success",
-        source: "/assets/audio/narrator-feedback-success.mp3",
-        text: "Great job!",
+        id: "word-game-correct",
+        source: "/assets/audio/word-game-correct.mp3",
+        text: "Correct!",
       },
       retryAudio: {
         id: "word-game-retry",
@@ -490,6 +490,29 @@ describe("word-game package compilation", () => {
     await assert.rejects(compileWordGamePackages(wrongSize.paths), /must be 256×256/i);
   });
 
+  it("reuses a global audio ID only when its text and saved source match", async (t) => {
+    const fixture = await repositoryFixture(t);
+    const sharedId = "word-game-shared-animal-label";
+    fixture.category.items[0].labelAudio.id = sharedId;
+    fixture.category.items[1].labelAudio.id = sharedId;
+    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+
+    await assert.rejects(
+      compileWordGamePackages(fixture.paths),
+      /audio id word-game-shared-animal-label is reused with different text/i,
+    );
+
+    fixture.category.items[1].labelAudio.text = fixture.category.items[0].labelAudio.text;
+    await writeJson(path.join(fixture.paths.categoryRoot, "animals.json"), fixture.category);
+    await copyFile(
+      path.join(fixtureRoot, "tiny.mp3"),
+      path.join(fixture.paths.audioRoot, `${sharedId}.mp3`),
+    );
+
+    const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
+    assert.equal(plan.lines.filter(({ id }) => id === sharedId).length, 1);
+  });
+
   it("plans sorted missing audio while retaining every non-audio validation", async (t) => {
     const fixture = await repositoryFixture(t);
     await Promise.all([
@@ -505,7 +528,6 @@ describe("word-game package compilation", () => {
     ]);
     assert.ok(plan.missingFiles.every((filePath) => !filePath.includes("\\")));
     assert.deepEqual(plan.lines.map(({ id }) => id), [
-      "narrator-feedback-success",
       "word-game-animals-bird-label",
       "word-game-animals-bird-prompt",
       "word-game-animals-cat-label",
@@ -519,9 +541,10 @@ describe("word-game package compilation", () => {
       "word-game-animals-frog-label",
       "word-game-animals-frog-prompt",
       "word-game-complete",
+      "word-game-correct",
       "word-game-retry",
     ]);
-    assert.deepEqual(plan.lines[3], {
+    assert.deepEqual(plan.lines[2], {
       id: "word-game-animals-cat-label",
       lang: "en-US",
       speaker: "narrator",
@@ -613,7 +636,6 @@ describe("word-game package compilation", () => {
     const plan = await planWordGameAudio({ rootDir: fixture.rootDir });
 
     assert.deepEqual(plan.lines.map(({ id }) => id), [
-      "narrator-feedback-success",
       "word-game-animals-bird-label",
       "word-game-animals-bird-prompt",
       "word-game-animals-cat-label",
@@ -627,6 +649,7 @@ describe("word-game package compilation", () => {
       "word-game-animals-frog-label",
       "word-game-animals-frog-prompt",
       "word-game-complete",
+      "word-game-correct",
       "word-game-retry",
     ]);
     assert.deepEqual(

@@ -64,45 +64,6 @@ const TARGETS = {
   },
 };
 
-const EXISTING_AUDIO_TEXT = {
-  "word-game-animals-cat-label": "This is a cat.",
-  "word-game-animals-dog-label": "This is a dog.",
-  "word-game-animals-bird-label": "This is a bird.",
-  "word-game-animals-fish-label": "This is a fish.",
-  "word-game-animals-duck-label": "This is a duck.",
-  "word-game-animals-frog-label": "This is a frog.",
-  "word-game-colors-red-label": "This is red.",
-  "word-game-colors-blue-label": "This is blue.",
-  "word-game-colors-yellow-label": "This is yellow.",
-  "word-game-colors-green-label": "This is green.",
-  "word-game-colors-orange-label": "This is orange.",
-  "word-game-colors-purple-label": "This is purple.",
-  "word-game-body-parts-eyes-label": "These are the eyes.",
-  "word-game-body-parts-ears-label": "These are the ears.",
-  "word-game-body-parts-nose-label": "This is a nose.",
-  "word-game-body-parts-mouth-label": "This is a mouth.",
-  "word-game-body-parts-hand-label": "This is a hand.",
-  "word-game-body-parts-foot-label": "This is a foot.",
-  "word-game-food-apple-label": "This is an apple.",
-  "word-game-food-banana-label": "This is a banana.",
-  "word-game-food-carrot-label": "This is a carrot.",
-  "word-game-food-orange-label": "This is an orange.",
-  "word-game-food-bread-label": "This is bread.",
-  "word-game-food-cheese-label": "This is cheese.",
-  "word-game-toys-ball-label": "This is a ball.",
-  "word-game-toys-toy-car-label": "This is a toy car.",
-  "word-game-toys-doll-label": "This is a doll.",
-  "word-game-toys-kite-label": "This is a kite.",
-  "word-game-toys-blocks-label": "These are blocks.",
-  "word-game-toys-teddy-bear-label": "This is a teddy bear.",
-  "word-game-feelings-happy-label": "This face is happy.",
-  "word-game-feelings-sad-label": "This face is sad.",
-  "word-game-feelings-angry-label": "This face is angry.",
-  "word-game-feelings-sleepy-label": "This face is sleepy.",
-  "word-game-feelings-surprised-label": "This face is surprised.",
-  "word-game-feelings-silly-label": "This face is silly.",
-};
-
 const SWATCHES = {
   red: "#ef4444",
   blue: "#3b82f6",
@@ -117,7 +78,7 @@ const SWATCHES = {
   gray: "#6b7280",
 };
 
-const NOTO_ASSET_IDS = {
+const FLUENT_ASSET_IDS = {
   animals: {
     cat: "1f431", dog: "1f415", bird: "1f426", fish: "1f41f", duck: "1f986",
     frog: "1f438", pig: "1f437", cow: "1f404", horse: "1f40e", alligator: "1f40a",
@@ -213,11 +174,10 @@ describe("production word-game curriculum", () => {
     }
   });
 
-  it("preserves the 36 reusable audio identities and teaching texts", async () => {
+  it("uses each bare vocabulary label as its saved audio text", async () => {
     const items = (await readCategories()).flatMap(({ items: categoryItems }) => categoryItems);
-    const audioTextById = Object.fromEntries(items.map(({ labelAudio }) => [labelAudio.id, labelAudio.text]));
-    for (const [id, text] of Object.entries(EXISTING_AUDIO_TEXT)) {
-      assert.equal(audioTextById[id], text, id);
+    for (const item of items) {
+      assert.equal(item.labelAudio.text, item.label, item.labelAudio.id);
     }
   });
 
@@ -239,6 +199,21 @@ describe("production word-game curriculum", () => {
     }
   });
 
+  it("reuses one saved cue for the repeated orange label", async () => {
+    const categories = await readCategories();
+    const colors = categories.find(({ id }) => id === "colors");
+    const food = categories.find(({ id }) => id === "food");
+
+    assert.equal(
+      colors.items.find(({ id }) => id === "orange").labelAudio.id,
+      "word-game-shared-orange-label",
+    );
+    assert.equal(
+      food.items.find(({ id }) => id === "orange").labelAudio.id,
+      "word-game-shared-orange-label",
+    );
+  });
+
   it("uses native six-digit swatches for every color item", async () => {
     const colors = (await readCategories()).find(({ id }) => id === "colors");
     assert.deepEqual(
@@ -252,7 +227,7 @@ describe("production word-game curriculum", () => {
     for (const category of categories.filter(({ id }) => id !== "colors")) {
       assert.deepEqual(
         Object.fromEntries(category.items.map(({ id, visual }) => [id, visual.assetId])),
-        NOTO_ASSET_IDS[category.id],
+        FLUENT_ASSET_IDS[category.id],
         category.id,
       );
     }
@@ -266,10 +241,12 @@ describe("production word-game curriculum", () => {
 
   it("passes compiler cross-checks with all item and player cues", async () => {
     const plan = await planWordGameAudio({ rootDir });
-    assert.equal(plan.lines.length, 217);
-    assert.equal(new Set(plan.lines.map(({ id }) => id)).size, 217);
+    assert.equal(plan.lines.length, 216);
+    assert.equal(new Set(plan.lines.map(({ id }) => id)).size, 216);
     const itemLines = plan.lines.filter(({ id }) => /^word-game-.+-(?:label|prompt)$/u.test(id));
-    assert.equal(itemLines.length, 214);
+    assert.equal(itemLines.length, 213);
+    assert.equal(itemLines.filter(({ id }) => id.endsWith("-label")).length, 106);
+    assert.equal(itemLines.filter(({ id }) => id.endsWith("-prompt")).length, 107);
     assert.ok(itemLines.every((line) =>
       line.lang === "en-US"
       && line.speaker === "narrator"
@@ -279,7 +256,7 @@ describe("production word-game curriculum", () => {
     assert.deepEqual(plan.missingFiles, []);
     const plannedIds = new Set(plan.lines.map(({ id }) => id));
     assert.ok(WORD_GAME_MISSING_AUDIO_IDS.every((id) => plannedIds.has(id)));
-    for (const id of ["narrator-feedback-success", "word-game-retry", "word-game-complete"]) {
+    for (const id of ["word-game-correct", "word-game-retry", "word-game-complete"]) {
       assert.ok(plannedIds.has(id), id);
     }
   });

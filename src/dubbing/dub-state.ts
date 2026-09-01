@@ -34,6 +34,7 @@ export type DubSceneStatus =
   | { kind: "needs-retake"; recorded: number };
 export type DubEvent =
   | { type: "LOADED"; recordingEnabled: boolean; savedLineIds: string[] }
+  | { type: "EDIT_LINE"; lineId: string }
   | { type: "OPEN_SCENE"; sceneIndex: number }
   | { type: "SELECT_LINE"; lineId: string }
   | { type: "BACK_TO_PROJECT" }
@@ -146,6 +147,7 @@ function selectScene(
     error: "",
     operation: "idle",
     playbackScope: null,
+    saveRecovery: null,
     selectedLineIndex,
     selectedSceneIndex: sceneIndex,
     view: "scene",
@@ -218,21 +220,37 @@ export function reduceDubState(
       ? selectScene(state, event.sceneIndex, definition)
       : state;
   }
-  if (event.type === "SELECT_LINE") {
-    if (!canChangeSelection(state) || state.view !== "scene") return state;
-    const selectedLineIndex = getLineIndex(event.lineId, definition);
-    if (
-      selectedLineIndex < 0
-      || getSceneIndexForLine(selectedLineIndex, definition) !== state.selectedSceneIndex
-    ) {
+  if (event.type === "EDIT_LINE") {
+    if (!canChangeSelection(state) || (state.view !== "project" && state.view !== "scene")) {
       return state;
     }
+    const selectedLineIndex = getLineIndex(event.lineId, definition);
+    if (selectedLineIndex < 0) return state;
     return {
       ...state,
       error: "",
       operation: "idle",
       playbackScope: null,
+      saveRecovery: null,
       selectedLineIndex,
+      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
+      view: "scene",
+    };
+  }
+  if (event.type === "SELECT_LINE") {
+    if (!canChangeSelection(state) || (state.view !== "project" && state.view !== "scene")) {
+      return state;
+    }
+    const selectedLineIndex = getLineIndex(event.lineId, definition);
+    if (selectedLineIndex < 0) return state;
+    return {
+      ...state,
+      error: "",
+      operation: "idle",
+      playbackScope: null,
+      saveRecovery: null,
+      selectedLineIndex,
+      selectedSceneIndex: getSceneIndexForLine(selectedLineIndex, definition),
     };
   }
   if (event.type === "BACK_TO_PROJECT") {
@@ -242,6 +260,7 @@ export function reduceDubState(
       error: "",
       operation: "idle",
       playbackScope: null,
+      saveRecovery: null,
       view: "project",
     };
   }

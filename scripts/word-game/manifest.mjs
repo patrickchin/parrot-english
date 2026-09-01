@@ -102,7 +102,7 @@ const player = z
     completeAudio: audio.extend({ id: z.literal("word-game-complete") }).strict(),
     retryAudio: audio.extend({ id: z.literal("word-game-retry") }).strict(),
     schemaVersion: z.literal(1, "must equal 1"),
-    successAudio: audio.extend({ id: z.literal("narrator-feedback-success") }).strict(),
+    successAudio: audio.extend({ id: z.literal("word-game-correct") }).strict(),
   })
   .strict();
 
@@ -177,15 +177,24 @@ function validateFixedCategoryShape(manifest, sourcePath) {
 
   const audioPrefix = `word-game-${manifest.id}-`;
   for (const [itemIndex, currentItem] of manifest.items.entries()) {
-    for (const [field, suffix] of [["labelAudio", "label"], ["promptAudio", "prompt"]]) {
-      const expectedId = `${audioPrefix}${currentItem.id}-${suffix}`;
-      if (currentItem[field].id !== expectedId) {
-        fixedShapeError(
-          sourcePath,
-          `items[${itemIndex}].${field}.id`,
-          `must equal ${expectedId}`,
-        );
-      }
+    const expectedLabelId = `${audioPrefix}${currentItem.id}-label`;
+    if (
+      currentItem.labelAudio.id !== expectedLabelId
+      && !currentItem.labelAudio.id.startsWith("word-game-shared-")
+    ) {
+      fixedShapeError(
+        sourcePath,
+        `items[${itemIndex}].labelAudio.id`,
+        `must equal ${expectedLabelId} or begin with word-game-shared-`,
+      );
+    }
+    const expectedPromptId = `${audioPrefix}${currentItem.id}-prompt`;
+    if (currentItem.promptAudio.id !== expectedPromptId) {
+      fixedShapeError(
+        sourcePath,
+        `items[${itemIndex}].promptAudio.id`,
+        `must equal ${expectedPromptId}`,
+      );
     }
   }
 }

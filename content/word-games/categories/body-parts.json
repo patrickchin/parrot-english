@@ -17,7 +17,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-eyes-label",
-        "text": "These are the eyes."
+        "text": "eyes"
       },
       "promptAudio": {
         "id": "word-game-body-parts-eyes-prompt",
@@ -34,7 +34,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-ears-label",
-        "text": "These are the ears."
+        "text": "ears"
       },
       "promptAudio": {
         "id": "word-game-body-parts-ears-prompt",
@@ -51,7 +51,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-nose-label",
-        "text": "This is a nose."
+        "text": "nose"
       },
       "promptAudio": {
         "id": "word-game-body-parts-nose-prompt",
@@ -68,7 +68,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-mouth-label",
-        "text": "This is a mouth."
+        "text": "mouth"
       },
       "promptAudio": {
         "id": "word-game-body-parts-mouth-prompt",
@@ -85,7 +85,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-hand-label",
-        "text": "This is a hand."
+        "text": "hand"
       },
       "promptAudio": {
         "id": "word-game-body-parts-hand-prompt",
@@ -102,7 +102,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-foot-label",
-        "text": "This is a foot."
+        "text": "foot"
       },
       "promptAudio": {
         "id": "word-game-body-parts-foot-prompt",
@@ -119,7 +119,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-arm-label",
-        "text": "This is an arm."
+        "text": "arm"
       },
       "promptAudio": {
         "id": "word-game-body-parts-arm-prompt",
@@ -136,7 +136,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-leg-label",
-        "text": "This is a leg."
+        "text": "leg"
       },
       "promptAudio": {
         "id": "word-game-body-parts-leg-prompt",
@@ -153,7 +153,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-tooth-label",
-        "text": "This is a tooth."
+        "text": "tooth"
       },
       "promptAudio": {
         "id": "word-game-body-parts-tooth-prompt",
@@ -170,7 +170,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-tongue-label",
-        "text": "This is a tongue."
+        "text": "tongue"
       },
       "promptAudio": {
         "id": "word-game-body-parts-tongue-prompt",
@@ -187,7 +187,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-brain-label",
-        "text": "This is a brain."
+        "text": "brain"
       },
       "promptAudio": {
         "id": "word-game-body-parts-brain-prompt",
@@ -204,7 +204,7 @@
       },
       "labelAudio": {
         "id": "word-game-body-parts-heart-label",
-        "text": "This is a heart."
+        "text": "heart"
       },
       "promptAudio": {
         "id": "word-game-body-parts-heart-prompt",

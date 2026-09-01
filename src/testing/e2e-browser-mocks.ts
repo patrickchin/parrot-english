@@ -21,6 +21,7 @@ const dubMediaMetrics = {
   recorderStarts: [] as number[],
   recorderStops: [] as number[],
   recordedStreamTrackKinds: [] as string[][],
+  scheduledVoiceStarts: 0,
   scheduledBacking: [] as Array<{
     at: number;
     frequencyHz: number;
@@ -58,6 +59,10 @@ const E2E_DUB_SCENARIOS = new Set([
 const DEFAULT_E2E_DUB_ID = "five-little-ducks-v2";
 const E2E_DUB_RECORDED_AT = "2026-08-25T10:00:00.000Z";
 const E2E_DUB_CONSENT_VERSION = "guardian-voice-r2-v2";
+const E2E_DUB_PEAK_BARS = Array.from(
+  { length: 32 },
+  (_, index) => Math.round(index / 31 * 255) / 255,
+);
 const E2E_DUB_SCENARIO_KEY = "parrot-e2e-dub:active-scenario";
 const E2E_MICROPHONE_SCENARIOS = new Set(["delayed", "denied", "unsupported"]);
 const E2E_LESSON_SCENARIO = new URL(window.location.href).searchParams.get(
@@ -1012,6 +1017,9 @@ function createE2eLearnerAccount(
       guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
       lines: lineIds.map((id) => ({
         id,
+        peakBars: learner.dub.consentState === "granted" && saved.has(id)
+          ? E2E_DUB_PEAK_BARS
+          : null,
         recordedAt: saved.has(id) ? E2E_DUB_RECORDED_AT : null,
         saved: learner.dub.consentState === "granted" && saved.has(id),
       })),
@@ -1088,7 +1096,11 @@ function createE2eLearnerAccount(
         learner.dub.savedLineIds.push(lineId);
       }
       persist();
-      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
+      return e2eDubJson({
+        lineId,
+        peakBars: E2E_DUB_PEAK_BARS,
+        recordedAt: E2E_DUB_RECORDED_AT,
+      }, 201);
     }
     return e2eDubJson({ error: "method_not_allowed" }, 405);
   }
@@ -2055,6 +2067,10 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
             guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
             lines: requestedLineIds.map((id) => ({
               id,
+              peakBars:
+                consentState === "granted" && requestedSaved.has(id)
+                  ? E2E_DUB_PEAK_BARS
+                  : null,
               recordedAt:
                 consentState === "granted" && requestedSaved.has(id)
                   ? E2E_DUB_RECORDED_AT
@@ -2180,7 +2196,11 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
       }
       clips.set(lineId, new Blob([bytes], { type: clip.type }));
       persist();
-      return e2eDubJson({ lineId, recordedAt: E2E_DUB_RECORDED_AT }, 201);
+      return e2eDubJson({
+        lineId,
+        peakBars: E2E_DUB_PEAK_BARS,
+        recordedAt: E2E_DUB_RECORDED_AT,
+      }, 201);
     },
     snapshot() {
       return {
@@ -2205,6 +2225,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
           (kinds) => [...kinds],
         ),
         revokedObjectUrls: [...revokedObjectUrls],
+        scheduledVoiceStarts: dubMediaMetrics.scheduledVoiceStarts,
         scheduledBacking: dubMediaMetrics.scheduledBacking.map((start) => ({
           ...start,
         })),
@@ -2235,7 +2256,11 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
       persist();
       pending.resolve(
         e2eDubJson(
-          { lineId: pending.lineId, recordedAt: E2E_DUB_RECORDED_AT },
+          {
+            lineId: pending.lineId,
+            peakBars: E2E_DUB_PEAK_BARS,
+            recordedAt: E2E_DUB_RECORDED_AT,
+          },
           201,
         ),
       );
@@ -3323,10 +3348,15 @@ class MockScheduledAudioNode extends MockAudioNode {
   constructor(
     private readonly kind: "voice" | "oscillator",
     private readonly audioNow: () => number,
+    private readonly onStart: () => void = () => {},
   ) {
     super();
   }
   start(when = 0) {
+    this.onStart();
+    if (this.kind === "voice" && isActiveE2eDubRoute()) {
+      dubMediaMetrics.scheduledVoiceStarts += 1;
+    }
     if (this.kind === "oscillator" && isActiveE2eDubRoute()) {
       backingStarts.push({ at: when, frequencyHz: this.frequency.value });
       dubMediaMetrics.scheduledBacking.push({
@@ -3368,13 +3398,27 @@ class MockAudioContext {
   private readonly startedAt = performance.now();
   private closed = false;
   private readonly dubContext = isActiveE2eDubRoute();
+  private heldDubPlaybackAt: number | null = null;
 
   constructor() {
     if (this.dubContext) dubMediaMetrics.audioContextsCreated += 1;
   }
 
   get currentTime() {
+    return this.heldDubPlaybackAt ?? this.scaledCurrentTime();
+  }
+
+  private scaledCurrentTime() {
     return ((performance.now() - this.startedAt) / 1_000) * 20;
+  }
+
+  private holdDubPlayback() {
+    if (
+      !this.dubContext ||
+      !hasHeldE2eDubPlayback() ||
+      this.heldDubPlaybackAt !== null
+    ) return;
+    this.heldDubPlaybackAt = this.scaledCurrentTime();
   }
 
   async close() {
@@ -3389,7 +3433,11 @@ class MockAudioContext {
     if (this.dubContext) dubMediaMetrics.audioContextCloses += 1;
   }
   createBufferSource() {
-    return new MockScheduledAudioNode("voice", () => this.currentTime);
+    return new MockScheduledAudioNode(
+      "voice",
+      () => this.currentTime,
+      () => this.holdDubPlayback(),
+    );
   }
   createAnalyser() {
     return new MockAnalyserNode();

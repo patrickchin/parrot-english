@@ -86,7 +86,7 @@ function validCategory() {
 function validPlayerManifest() {
   return {
     schemaVersion: 1,
-    successAudio: { id: "narrator-feedback-success", text: "Great job!" },
+    successAudio: { id: "word-game-correct", text: "Correct!" },
     retryAudio: { id: "word-game-retry", text: "Listen and try again." },
     completeAudio: {
       id: "word-game-complete",
@@ -167,6 +167,16 @@ describe("word-game manifests", () => {
         playerSourcePath,
       ),
       errorAt(playerSourcePath, "surprise"),
+    );
+  });
+
+  it("accepts a shared saved-audio identity for repeated vocabulary", () => {
+    const category = validCategory();
+    category.items[0].labelAudio.id = "word-game-shared-animal-1-label";
+
+    assert.equal(
+      parseWordGameManifest(category, categorySourcePath).items[0].labelAudio.id,
+      "word-game-shared-animal-1-label",
     );
   });
 

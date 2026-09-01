@@ -17,7 +17,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-cat-label",
-        "text": "This is a cat."
+        "text": "cat"
       },
       "promptAudio": {
         "id": "word-game-animals-cat-prompt",
@@ -34,7 +34,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-dog-label",
-        "text": "This is a dog."
+        "text": "dog"
       },
       "promptAudio": {
         "id": "word-game-animals-dog-prompt",
@@ -51,7 +51,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-bird-label",
-        "text": "This is a bird."
+        "text": "bird"
       },
       "promptAudio": {
         "id": "word-game-animals-bird-prompt",
@@ -68,7 +68,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-fish-label",
-        "text": "This is a fish."
+        "text": "fish"
       },
       "promptAudio": {
         "id": "word-game-animals-fish-prompt",
@@ -85,7 +85,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-duck-label",
-        "text": "This is a duck."
+        "text": "duck"
       },
       "promptAudio": {
         "id": "word-game-animals-duck-prompt",
@@ -102,7 +102,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-frog-label",
-        "text": "This is a frog."
+        "text": "frog"
       },
       "promptAudio": {
         "id": "word-game-animals-frog-prompt",
@@ -119,7 +119,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-pig-label",
-        "text": "This is a pig."
+        "text": "pig"
       },
       "promptAudio": {
         "id": "word-game-animals-pig-prompt",
@@ -136,7 +136,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-cow-label",
-        "text": "This is a cow."
+        "text": "cow"
       },
       "promptAudio": {
         "id": "word-game-animals-cow-prompt",
@@ -153,7 +153,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-horse-label",
-        "text": "This is a horse."
+        "text": "horse"
       },
       "promptAudio": {
         "id": "word-game-animals-horse-prompt",
@@ -170,7 +170,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-alligator-label",
-        "text": "This is an alligator."
+        "text": "alligator"
       },
       "promptAudio": {
         "id": "word-game-animals-alligator-prompt",
@@ -187,7 +187,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-elephant-label",
-        "text": "This is an elephant."
+        "text": "elephant"
       },
       "promptAudio": {
         "id": "word-game-animals-elephant-prompt",
@@ -204,7 +204,7 @@
       },
       "labelAudio": {
         "id": "word-game-animals-giraffe-label",
-        "text": "This is a giraffe."
+        "text": "giraffe"
       },
       "promptAudio": {
         "id": "word-game-animals-giraffe-prompt",

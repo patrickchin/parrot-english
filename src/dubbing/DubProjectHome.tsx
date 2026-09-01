@@ -1,124 +1,81 @@
-import { Play, Square } from "lucide-react";
-import type { RefObject } from "react";
+import { Mic, Play, Square } from "lucide-react";
+import type { ReactNode, RefObject } from "react";
 import { ActionButton } from "../shared/ui";
-import { retryOriginalImage } from "../shared/responsive-image";
-import {
-  getFirstActionableDubSceneIndex,
-  getDubSceneStatus,
-  type DubSceneStatus,
-  type DubState,
-} from "./dub-state";
-import { IllustratedDubScene } from "./IllustratedDubScene";
+import type { DubState } from "./dub-state";
 import {
   DubMelodyLane,
   DubTimedWords,
   type DubGuidancePosition,
 } from "./DubKaraokeGuide";
-import { dubArtworkSrcSet } from "./dub-artwork";
+import { DubWaveform } from "./DubTakeWaveform";
+import { EMPTY_DUB_PEAK_BARS } from "./dub-waveform";
+import { IllustratedDubScene } from "./IllustratedDubScene";
 import {
   FIVE_LITTLE_DUCKS_DUB,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog";
 
-const DUB_THUMBNAIL_IMAGE_SIZES =
-  "(min-width: 560px) and (max-height: 620px) 1px, (max-width: 1023px) calc((100vw - 3.75rem) / 2), 12rem";
-
 export type DubProjectHomeProps = {
   activeLine: DubLine;
   definition?: DubDefinition;
+  editor?: ReactNode;
   error?: string;
+  guidance?: DubGuidancePosition | null;
+  lineButtonRef?: RefObject<HTMLButtonElement | null>;
   locked: boolean;
   needsRetake: DubState["needsRetake"];
-  onOpenScene(sceneIndex: number): void;
+  onEditLine(lineId: string): void;
+  onPlayLine(lineId: string): void;
   onTogglePlayback(): void;
   playback: "idle" | "loading" | "playing";
   playbackButtonRef?: RefObject<HTMLButtonElement | null>;
+  playbackLocked?: boolean;
+  playingLineId?: string | null;
+  recordingPeakBars?: Readonly<Record<string, readonly number[]>>;
   saved: Readonly<Record<string, string>>;
   visualLine?: DubLine;
-  guidance?: DubGuidancePosition | null;
 };
 
-function getSceneLines(definition: DubDefinition) {
-  return Array.from(
-    { length: definition.lines.length / definition.linesPerScene },
-    (_, index) => definition.lines.slice(
-      index * definition.linesPerScene,
-      (index + 1) * definition.linesPerScene,
-    ),
-  );
-}
-
-function sceneStatusCopy(status: DubSceneStatus, linesPerScene: number) {
-  if (status.kind === "not-started") {
-    return { accessible: "Ready to start", visible: "Ready to start" };
-  }
-  if (status.kind === "in-progress") {
-    const progress = `${status.recorded} of ${linesPerScene} lines ready`;
-    return { accessible: progress, visible: progress };
-  }
-  if (status.kind === "done") {
-    return { accessible: "Scene ready", visible: "Scene ready" };
-  }
-  return { accessible: "Needs a new take", visible: "Needs a new take" };
+function lineStatus(
+  lineId: string,
+  saved: Readonly<Record<string, string>>,
+  needsRetake: DubState["needsRetake"],
+) {
+  if (Object.hasOwn(needsRetake, lineId)) return "Record again";
+  if (Object.hasOwn(saved, lineId)) return "Recorded";
+  return "Not recorded";
 }
 
 export function DubProjectHome({
   activeLine,
   definition = FIVE_LITTLE_DUCKS_DUB,
+  editor,
   error = "",
+  guidance = null,
+  lineButtonRef,
   locked,
   needsRetake,
-  onOpenScene,
+  onEditLine,
+  onPlayLine,
   onTogglePlayback,
   playback,
   playbackButtonRef,
+  playbackLocked = locked,
+  playingLineId = null,
+  recordingPeakBars = {},
   saved,
   visualLine = activeLine,
-  guidance = null,
 }: DubProjectHomeProps) {
-  const retakeCount = Object.keys(needsRetake).length;
-  const sceneLines = getSceneLines(definition);
   const ready = definition.lines.filter(
     ({ id }) => Object.hasOwn(saved, id) && !Object.hasOwn(needsRetake, id),
   ).length;
-  const sceneStatuses = sceneLines.map((_, sceneIndex) =>
-    getDubSceneStatus({ needsRetake, saved }, sceneIndex, definition),
-  );
-  const recommendedSceneIndex = getFirstActionableDubSceneIndex(
-    { needsRetake, saved },
-    definition,
-  );
-  const recommendedStatus = recommendedSceneIndex === null
-    ? null
-    : sceneStatuses[recommendedSceneIndex];
+  const retakeCount = Object.keys(needsRetake).length;
   const progressText = ready === 0 && retakeCount === 0
     ? "Ready to start"
     : ready === definition.lines.length
       ? `All ${definition.lines.length} lines ready`
       : `${ready} of ${definition.lines.length} lines ready`;
-  const recommendedText = recommendedSceneIndex === null
-    ? ""
-    : ready === 0 && retakeCount === 0
-      ? "Start with Scene 1"
-      : recommendedStatus?.kind === "needs-retake"
-        ? `Fix Scene ${recommendedSceneIndex + 1}`
-        : `Continue with Scene ${recommendedSceneIndex + 1}`;
-  const allComplete = recommendedSceneIndex === null;
-  const activeLineIndex = Math.max(
-    0,
-    definition.lines.findIndex(({ id }) => id === activeLine.id),
-  );
-  const activeSceneIndex = Math.max(
-    0,
-    Math.floor(activeLineIndex / definition.linesPerScene),
-  );
-  const activeSceneComplete = sceneStatuses[activeSceneIndex]?.kind === "done";
-  const completionText = allComplete
-    ? "Your video is ready — great singing!"
-    : activeSceneComplete
-      ? `Scene ${activeSceneIndex + 1} is ready — great singing!`
-      : "";
   const playbackLabel = playback === "playing"
     ? "Stop full video"
     : playback === "loading"
@@ -130,7 +87,7 @@ export function DubProjectHome({
 
   return (
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16">
-      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:max-w-[38rem] short-wide:gap-2">
+      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:h-full short-wide:max-w-none short-wide:gap-2">
         <header className="grid min-w-0 items-start gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-center">
           <h1 className="m-0 min-w-0 text-xl leading-tight text-brand-ink short-wide:text-lg md:text-4xl short-wide:md:text-lg">{definition.title}</h1>
           <p
@@ -146,17 +103,17 @@ export function DubProjectHome({
           </p>
         </header>
 
-        <div className="grid min-w-0 items-start gap-4 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)]">
-          <div className="grid min-w-0 gap-3 short-wide:gap-1">
+        <div className="grid min-w-0 items-start gap-4 short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+          <div className="grid min-w-0 content-start gap-3 short-wide:min-h-0 short-wide:gap-1">
             <section
               aria-label="Full video player"
-              className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card"
+              className="grid aspect-video min-h-0 w-full overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short-wide:max-h-full short-wide:rounded-2xl"
             >
               <IllustratedDubScene
                 compact
                 definition={definition}
                 line={visualLine}
-                playing={playback === "playing"}
+                playing={playback === "playing" || playingLineId !== null}
               />
             </section>
             {guidanceLine ? (
@@ -168,7 +125,7 @@ export function DubProjectHome({
             <ActionButton
               aria-label={playbackLabel}
               className="h-12 min-h-12 min-w-28 justify-self-start gap-2 border-2 bg-brand-navy/95 px-4 text-base short-wide:px-3 short-wide:text-sm"
-              disabled={playback === "loading" || locked}
+              disabled={playback === "loading" || playbackLocked}
               onClick={onTogglePlayback}
               ref={playbackButtonRef}
               size="none"
@@ -179,80 +136,65 @@ export function DubProjectHome({
             </ActionButton>
           </div>
 
-          <aside aria-label="Scene selection" className="grid min-w-0 content-start gap-3 rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:gap-1.5 short-wide:rounded-2xl short-wide:p-2 md:p-4 short-wide:md:p-2">
-            {completionText ? <p className="m-0 text-center font-black text-brand-ink">{completionText}</p> : null}
-            {recommendedSceneIndex !== null ? (
-              <ActionButton
-                disabled={locked}
-                fullWidth
-                onClick={() => onOpenScene(recommendedSceneIndex)}
-                className="short-wide:h-12 short-wide:min-h-12 short-wide:px-2 short-wide:py-1 short-wide:text-sm short-wide:md:h-12 short-wide:md:text-sm"
-                shape="rounded"
-                size="large"
-                variant="brand"
-              >
-                {recommendedText}
-              </ActionButton>
-            ) : null}
-            <nav
-              aria-label="Scenes"
-              className={`grid min-w-0 gap-3 short-wide:gap-1.5 ${sceneLines.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
-            >
-            {sceneLines.map((_, sceneIndex) => {
-              const status = sceneStatuses[sceneIndex];
-              const { accessible: statusLabel, visible: statusText } = sceneStatusCopy(
-                status,
-                definition.linesPerScene,
-              );
-              const statusIcon = status.kind === "done"
-                ? "✓"
-                : status.kind === "needs-retake"
-                  ? "!"
-                  : status.kind === "in-progress"
-                    ? "◐"
-                    : "○";
-              const selected = sceneIndex === activeSceneIndex;
-              const artwork = definition.sceneArtwork[sceneIndex];
-              const title = definition.sceneTitles[sceneIndex];
-              const hideInitialStatus = ready === 0
-                && retakeCount === 0
-                && status.kind === "not-started";
-              return (
-                <ActionButton
-                  aria-current={selected ? "step" : undefined}
-                  aria-label={`Scene ${sceneIndex + 1}, ${title}, ${statusLabel}`}
-                  className="relative min-h-36 min-w-0 flex-col items-stretch gap-2 overflow-hidden rounded-2xl p-2 text-left short-wide:min-h-12 short-wide:gap-0.5 short-wide:rounded-xl short-wide:p-1"
-                  disabled={locked}
-                  key={sceneIndex}
-                  onClick={() => onOpenScene(sceneIndex)}
-                  shape="rounded"
-                  size="none"
-                  variant={selected ? "navy" : "surface"}
-                >
-                  <img
-                    alt=""
-                    className="aspect-video w-full rounded-xl object-cover short-wide:hidden"
-                    decoding="async"
-                    height={artwork.height}
-                    loading="lazy"
-                    onError={({ currentTarget }) => retryOriginalImage(currentTarget)}
-                    sizes={DUB_THUMBNAIL_IMAGE_SIZES}
-                    src={artwork.src}
-                    srcSet={dubArtworkSrcSet(artwork.src)}
-                    width={artwork.width}
-                  />
-                  <span className="grid min-w-0 gap-0.5 px-1 short-wide:grid-cols-[auto_minmax(0,1fr)] short-wide:items-center short-wide:gap-x-1 short-wide:gap-y-px short-wide:px-0">
-                    <span className="text-xs font-black uppercase tracking-wide opacity-75 short-wide:leading-3">Scene {sceneIndex + 1}</span>
-                    <strong className="line-clamp-2 text-base leading-tight short-wide:text-xs short-wide:leading-3">{title}</strong>
-                    {hideInitialStatus ? null : (
-                      <span className="text-sm font-black short-wide:col-span-2 short-wide:text-xs short-wide:leading-3" data-status-icon={status.kind}>{statusIcon} {statusText}</span>
-                    )}
-                  </span>
-                </ActionButton>
-              );
-            })}
-            </nav>
-          </aside>
+          {editor ?? (
+            <aside aria-label="Lyrics and recordings" className="grid min-w-0 content-start gap-2 self-start rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:max-h-full short-wide:min-h-0 short-wide:overflow-y-auto short-wide:rounded-2xl short-wide:p-2 md:max-h-[calc(100dvh-10rem)] md:overflow-y-auto md:p-4 short-wide:md:max-h-full short-wide:md:p-2">
+              <h2 className="m-0 text-lg font-black text-brand-ink short-wide:text-base">Lyrics</h2>
+              <ol className="m-0 grid list-none gap-2 p-0">
+                {definition.lines.map((line, index) => {
+                  const status = lineStatus(line.id, saved, needsRetake);
+                  const selected = line.id === activeLine.id;
+                  const playable = status === "Recorded";
+                  const playing = playingLineId === line.id;
+                  const recordedBars = recordingPeakBars[line.id];
+                  return (
+                    <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_3.25rem] gap-1 rounded-2xl bg-white/80 p-1 shadow-sm" key={line.id}>
+                      <ActionButton
+                        aria-current={selected ? "step" : undefined}
+                        aria-label={`Edit line ${index + 1}: ${line.text} ${status}`}
+                        className="!grid min-h-20 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 rounded-xl p-2 text-left"
+                        disabled={locked}
+                        onClick={() => onEditLine(line.id)}
+                        ref={selected ? lineButtonRef : undefined}
+                        shape="rounded"
+                        size="none"
+                        variant={selected ? "navy" : "surface"}
+                      >
+                        <span className="text-xs font-black opacity-75">{index + 1}</span>
+                        <strong className="min-w-0 text-sm leading-tight md:text-base short-wide:md:text-sm">{line.text}</strong>
+                        <span className="col-span-2 grid">
+                          <DubWaveform
+                            accessibleName={`${recordedBars ? "Your" : "No"} recording waveform for line ${index + 1}`}
+                            bars={recordedBars ?? EMPTY_DUB_PEAK_BARS}
+                            className={recordedBars ? "text-brand-blue" : "text-slate-300"}
+                            narrow
+                          />
+                        </span>
+                        <span className="col-span-2 text-xs font-black">{status}</span>
+                      </ActionButton>
+                      <ActionButton
+                        aria-label={`${playing ? "Stop" : "Play"} line ${index + 1} recording`}
+                        className="h-full min-h-12 min-w-12 rounded-xl p-0"
+                        disabled={locked || !playable}
+                        onClick={() => onPlayLine(line.id)}
+                        shape="rounded"
+                        size="none"
+                        variant={playing ? "navy" : "surface"}
+                      >
+                        {playing ? <Square aria-hidden="true" /> : <Play aria-hidden="true" />}
+                      </ActionButton>
+                    </li>
+                  );
+                })}
+              </ol>
+              {ready === definition.lines.length ? (
+                <p className="m-0 text-center font-black text-brand-ink">Your video is ready — great singing!</p>
+              ) : (
+                <p className="m-0 flex items-center justify-center gap-2 text-center text-sm font-black text-brand-navy">
+                  <Mic aria-hidden="true" /> Choose a line to record.
+                </p>
+              )}
+            </aside>
+          )}
         </div>
 
         {error ? (
@@ -260,7 +202,6 @@ export function DubProjectHome({
             {error}
           </p>
         ) : null}
-
       </section>
     </main>
   );

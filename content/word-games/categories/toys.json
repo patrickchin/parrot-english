@@ -17,7 +17,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-ball-label",
-        "text": "This is a ball."
+        "text": "ball"
       },
       "promptAudio": {
         "id": "word-game-toys-ball-prompt",
@@ -34,7 +34,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-toy-car-label",
-        "text": "This is a toy car."
+        "text": "toy car"
       },
       "promptAudio": {
         "id": "word-game-toys-toy-car-prompt",
@@ -51,7 +51,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-doll-label",
-        "text": "This is a doll."
+        "text": "doll"
       },
       "promptAudio": {
         "id": "word-game-toys-doll-prompt",
@@ -68,7 +68,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-kite-label",
-        "text": "This is a kite."
+        "text": "kite"
       },
       "promptAudio": {
         "id": "word-game-toys-kite-prompt",
@@ -85,11 +85,11 @@
       },
       "labelAudio": {
         "id": "word-game-toys-blocks-label",
-        "text": "These are blocks."
+        "text": "blocks"
       },
       "promptAudio": {
         "id": "word-game-toys-blocks-prompt",
-      "text": "Which are the blocks?"
+        "text": "Which are the blocks?"
       }
     },
     {
@@ -102,7 +102,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-teddy-bear-label",
-        "text": "This is a teddy bear."
+        "text": "teddy bear"
       },
       "promptAudio": {
         "id": "word-game-toys-teddy-bear-prompt",
@@ -119,7 +119,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-toy-train-label",
-        "text": "This is a toy train."
+        "text": "toy train"
       },
       "promptAudio": {
         "id": "word-game-toys-toy-train-prompt",
@@ -136,7 +136,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-drum-label",
-        "text": "This is a drum."
+        "text": "drum"
       },
       "promptAudio": {
         "id": "word-game-toys-drum-prompt",
@@ -153,7 +153,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-puzzle-label",
-        "text": "This is a puzzle."
+        "text": "puzzle"
       },
       "promptAudio": {
         "id": "word-game-toys-puzzle-prompt",
@@ -170,7 +170,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-robot-label",
-        "text": "This is a robot."
+        "text": "robot"
       },
       "promptAudio": {
         "id": "word-game-toys-robot-prompt",
@@ -187,7 +187,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-yo-yo-label",
-        "text": "This is a yo-yo."
+        "text": "yo-yo"
       },
       "promptAudio": {
         "id": "word-game-toys-yo-yo-prompt",
@@ -204,7 +204,7 @@
       },
       "labelAudio": {
         "id": "word-game-toys-skateboard-label",
-        "text": "This is a skateboard."
+        "text": "skateboard"
       },
       "promptAudio": {
         "id": "word-game-toys-skateboard-prompt",
