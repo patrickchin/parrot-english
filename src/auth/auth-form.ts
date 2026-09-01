@@ -6,53 +6,60 @@ export interface AuthFields {
   password: string;
 }
 
+export type AuthErrorCode =
+  | "name-required"
+  | "invalid-email"
+  | "password-too-short"
+  | "email-registered"
+  | "invalid-credentials"
+  | "security-check-required"
+  | "security-check-rejected"
+  | "sign-in-failed"
+  | "sign-out-failed";
+
 const EMAIL_PATTERN = /^\S+@\S+\.\S+$/;
 
 export function validateAuthForm(
   mode: AuthMode,
   fields: AuthFields,
-): string | null {
+): AuthErrorCode | null {
   if (mode === "sign-up" && !fields.name.trim()) {
-    return "Enter your name.";
+    return "name-required";
   }
 
   if (!EMAIL_PATTERN.test(fields.email.trim())) {
-    return "Enter a valid email address.";
+    return "invalid-email";
   }
 
   if (fields.password.length < 8) {
-    return "Password must be at least 8 characters.";
+    return "password-too-short";
   }
 
   return null;
 }
 
-const AUTH_ERROR_MESSAGES: Record<string, string> = {
-  USER_ALREADY_EXISTS: "This email is already registered. Sign in instead.",
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL:
-    "This email is already registered. Sign in instead.",
-  INVALID_EMAIL_OR_PASSWORD: "The email or password is incorrect.",
-  INVALID_EMAIL: "Enter a valid email address.",
-  PASSWORD_TOO_SHORT: "Password must be at least 8 characters.",
-  MISSING_RESPONSE:
-    "The security check expired or was rejected. Please try again.",
-  VERIFICATION_FAILED:
-    "The security check expired or was rejected. Please try again.",
-  UNKNOWN_ERROR:
-    "The security check expired or was rejected. Please try again.",
+const AUTH_ERROR_CODES: Record<string, AuthErrorCode> = {
+  USER_ALREADY_EXISTS: "email-registered",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "email-registered",
+  INVALID_EMAIL_OR_PASSWORD: "invalid-credentials",
+  INVALID_EMAIL: "invalid-email",
+  PASSWORD_TOO_SHORT: "password-too-short",
+  MISSING_RESPONSE: "security-check-rejected",
+  VERIFICATION_FAILED: "security-check-rejected",
+  UNKNOWN_ERROR: "security-check-rejected",
 };
 
-export function getAuthErrorMessage(error: unknown): string {
+export function getAuthErrorCode(error: unknown): AuthErrorCode {
   if (
     typeof error === "object" &&
     error !== null &&
     "code" in error &&
     typeof error.code === "string"
   ) {
-    return Object.hasOwn(AUTH_ERROR_MESSAGES, error.code)
-      ? AUTH_ERROR_MESSAGES[error.code]
-      : "Unable to sign you in. Please try again.";
+    return Object.hasOwn(AUTH_ERROR_CODES, error.code)
+      ? AUTH_ERROR_CODES[error.code]!
+      : "sign-in-failed";
   }
 
-  return "Unable to sign you in. Please try again.";
+  return "sign-in-failed";
 }

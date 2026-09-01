@@ -31,13 +31,26 @@ const { GuardianLearnerProfiles, GuardianLearnerProfilesView } = managerModule;
 const { LearnerDeleteDialog } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerDeleteDialog.tsx",
 );
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
+const { GuardianLanguageControl } = await vite.ssrLoadModule(
+  "/src/i18n/GuardianLanguageControl.tsx",
+);
+const { AccountActionProvider } = await vite.ssrLoadModule(
+  "/src/auth/account-actions.tsx",
+);
+const { LearnerProfileGate } = await vite.ssrLoadModule(
+  "/src/learner-profile/LearnerProfileGate.tsx",
+);
 const detailsModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerDetails.tsx")
   .catch(() => ({}));
 const { GuardianLearnerDetails } = detailsModule;
-const { LearnerSelectionProvider } = await vite.ssrLoadModule(
-  "/src/learner-profile/LearnerProfileContext.tsx",
-);
+const { LearnerSelectionProvider, useLearnerSelection } =
+  await vite.ssrLoadModule(
+    "/src/learner-profile/LearnerProfileContext.tsx",
+  );
 const mia = {
   age: 6,
   createdAt: "2026-08-25T08:00:00.000Z",
@@ -168,31 +181,38 @@ function renderView(overrides = {}) {
     "function",
     "Expected a rendered Guardian learner manager view",
   );
+  const { language = "en", ...viewOverrides } = overrides;
   return renderToStaticMarkup(
     createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/learners"] },
-      createElement(GuardianLearnerProfilesView, {
-        error: "",
-        isLoading: false,
-        onAdd() {},
-        onDelete() {},
-        onManage() {},
-        onRetry() {},
-        pendingProfileId: null,
-        profiles: [mia, noah],
-        statusMessage: "",
-        ...overrides,
-      }),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/learners"] },
+        createElement(GuardianLearnerProfilesView, {
+          error: null,
+          isLoading: false,
+          onAdd() {},
+          onDelete: async () => null,
+          onManage() {},
+          onRetry() {},
+          pendingProfileId: null,
+          profiles: [mia, noah],
+          statusMessage: null,
+          ...viewOverrides,
+        }),
+      ),
     ),
   );
 }
 
 function button(container, accessibleName) {
+  const normalize = (value) => value.replace(/[⁨⁩]/g, "");
   const match = [...container.querySelectorAll("button")].find(
     (candidate) =>
-      candidate.getAttribute("aria-label") === accessibleName ||
-      candidate.textContent.trim() === accessibleName,
+      normalize(candidate.getAttribute("aria-label") ?? "") ===
+        normalize(accessibleName) ||
+      normalize(candidate.textContent.trim()) === normalize(accessibleName),
   );
   assert.ok(match, `Expected button named "${accessibleName}".`);
   return match;
@@ -254,8 +274,76 @@ function managerHarness({
   );
 }
 
+function learnerGateHarness({
+  children = createElement("p", null, "SAFE CONTENT"),
+  guardianAccessMode,
+  guardianRoute,
+  isProfileRoute = false,
+  learnerManagerRoute = true,
+}) {
+  return createElement(
+    AccountActionProvider,
+    {
+      profileAction: null,
+      sessionIdentity: null,
+      setProfileAction() {},
+    },
+    createElement(
+      LearnerProfileGate,
+      {
+        completedLearnerProfileFallback: createElement("p", null, "HOME"),
+        guardianAccessMode,
+        guardianRoute,
+        isConversationRoute: false,
+        isLearnerProfileRoute: false,
+        isProfileRoute,
+        learnerManagerRoute,
+        learnerSelectionDestination: "/",
+        learnerProfileFallback: createElement("p", null, "SETUP"),
+        onCloseProfileRoute() {},
+        onConversationCompleted() {},
+        onOpenLessons() {},
+        onOpenProfileRoute() {},
+        onRedoCompleted() {},
+        onRedoLearnerProfileRoute() {},
+        redoLearnerProfile: false,
+      },
+      children,
+    ),
+  );
+}
+
+function RealGateLearnerManager() {
+  const { selectLearner } = useLearnerSelection();
+  return createElement(
+    "div",
+    null,
+    createElement(GuardianLearnerProfiles),
+    createElement(
+      "button",
+      {
+        onClick: () => void selectLearner(mia.id),
+        type: "button",
+      },
+      "Select current learner again",
+    ),
+  );
+}
+
+function completedGateState() {
+  return {
+    canBypass: true,
+    mode: "full",
+    profile: fullProfile(mia),
+    progress: { answered: 2, current: 2, total: 2 },
+    question: null,
+    questionnaire: { version: 2 },
+  };
+}
+
 function detailsHarness({
   activeProfileId = mia.id,
+  language = "en",
   learnerId = noah.id,
   reloadSelectedLearner = async () => fullProfile(mia),
 } = {}) {
@@ -265,33 +353,37 @@ function detailsHarness({
     "Expected an explicit Guardian learner details container",
   );
   return createElement(
-    LearnerSelectionProvider,
-    {
-      activeProfileId,
-      async createAndSelectLearner() {
-        throw new Error("Explicit learner details must not create a learner.");
-      },
-      reloadSelectedLearner,
-      async selectLearner() {
-        throw new Error("Explicit learner details must not select a learner.");
-      },
-    },
+    GuardianLanguageProvider,
+    { initialLanguage: language, storage: null },
     createElement(
-      MemoryRouter,
-      { initialEntries: [`/guardian/learners/${learnerId}`] },
+      LearnerSelectionProvider,
+      {
+        activeProfileId,
+        async createAndSelectLearner() {
+          throw new Error("Explicit learner details must not create a learner.");
+        },
+        reloadSelectedLearner,
+        async selectLearner() {
+          throw new Error("Explicit learner details must not select a learner.");
+        },
+      },
       createElement(
-        Routes,
-        null,
-        createElement(Route, {
-          element: createElement(GuardianLearnerDetails),
-          path: "/guardian/learners/:learnerId",
-        }),
-        createElement(Route, {
-          element: createElement("p", null, "MANAGE LEARNERS"),
-          path: "/guardian/learners",
-        }),
+        MemoryRouter,
+        { initialEntries: [`/guardian/learners/${learnerId}`] },
+        createElement(
+          Routes,
+          null,
+          createElement(Route, {
+            element: createElement(GuardianLearnerDetails),
+            path: "/guardian/learners/:learnerId",
+          }),
+          createElement(Route, {
+            element: createElement("p", null, "MANAGE LEARNERS"),
+            path: "/guardian/learners",
+          }),
+        ),
+        createElement(LocationProbe),
       ),
-      createElement(LocationProbe),
     ),
   );
 }
@@ -308,16 +400,136 @@ test("learner manager exposes administrative profile controls only", () => {
   assert.match(html, /Age 6/);
   assert.match(html, /Setup complete/);
   assert.match(html, /Setup not started/);
-  assert.match(html, /aria-label="Edit Mia&#x27;s profile"/);
-  assert.match(html, /aria-label="Delete Mia"/);
-  assert.match(html, /aria-label="Edit Noah&#x27;s profile"/);
-  assert.match(html, /aria-label="Delete Noah"/);
+  assert.match(html, /aria-label="Edit ⁨Mia⁩&#x27;s profile"/);
+  assert.match(html, /aria-label="Delete ⁨Mia⁩"/);
+  assert.match(html, /aria-label="Edit ⁨Noah⁩&#x27;s profile"/);
+  assert.match(html, /aria-label="Delete ⁨Noah⁩"/);
   assert.match(
     html,
     /<label[^>]*for="preferred-name"[^>]*>Preferred name<\/label>/,
   );
   assert.match(html, /<input[^>]*id="preferred-name"/);
   assert.equal((html.match(/role="status"/g) ?? []).length, 1);
+});
+
+test("localizes the complete Guardian roster from semantic state", () => {
+  const bob = {
+    ...mia,
+    age: 7,
+    id: "learner-bob",
+    name: "Bob",
+    profileStatus: "completed",
+  };
+  const mary = {
+    ...noah,
+    id: "learner-mary",
+    name: "Mary",
+    profileStatus: "in_progress",
+  };
+  const rose = {
+    ...noah,
+    id: "learner-rose",
+    name: "Rose",
+  };
+  const html = renderView({
+    language: "zh-Hans",
+    profiles: [bob, mary, rose],
+  });
+
+  assert.match(html, /aria-label="页面导航"/);
+  assert.match(html, /<h1[^>]*>管理孩子<\/h1>/);
+  assert.match(html, /7 岁/);
+  assert.match(html, /年龄未填写/);
+  assert.match(html, /设置已完成/);
+  assert.match(html, /设置进行中/);
+  assert.match(html, /尚未开始设置/);
+  assert.match(html, /aria-label="编辑 ⁨Bob⁩ 的资料"/);
+  assert.match(html, /aria-label="删除 ⁨Bob⁩"/);
+  assert.match(html, /添加孩子/);
+  assert.match(html, /<label[^>]*for="preferred-name"[^>]*>常用名<\/label>/);
+
+  const loading = renderView({ isLoading: true, language: "zh-Hans" });
+  assert.match(loading, /正在加载孩子资料…/);
+  const failed = renderView({
+    error: "load-failed",
+    language: "zh-Hans",
+    profiles: [],
+  });
+  assert.match(failed, /无法加载孩子资料/);
+  assert.match(failed, />重试<\/button>/);
+  const adding = renderView({
+    language: "zh-Hans",
+    pendingProfileId: "__new-learner__",
+  });
+  assert.match(adding, /正在添加孩子…/);
+});
+
+test("localizes every roster deletion state without exposing supplied server text", () => {
+  const errors = [
+    ["last-learner", /请先添加另一位孩子/],
+    ["learner-busy", /请先结束这位孩子当前的对话/],
+    ["cleanup-pending", /清理仍在进行中/],
+    ["deletion-uncertain", /无法确认.*是否已删除/],
+    ["delete-failed", /未能删除/],
+    ["add-failed", /无法添加孩子/],
+  ];
+  for (const [error, expected] of errors) {
+    const html = renderView({ error, language: "zh-Hans" });
+    assert.match(html, expected);
+    assert.doesNotMatch(html, /SERVER/);
+  }
+  const deleted = renderView({
+    language: "zh-Hans",
+    statusMessage: { kind: "deleted", learnerName: "Bob" },
+  });
+  assert.match(deleted, /<bdi[^>]*dir="auto"[^>]*>Bob<\/bdi> 已删除/);
+});
+
+test("retranslates a failed delete dialog without changing its learner or focus", async () => {
+  let deletionCalls = 0;
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "en", storage: null },
+      createElement(LearnerDeleteDialog, {
+        onClose() {},
+        async onDelete() {
+          deletionCalls += 1;
+          return "learner-busy";
+        },
+        profile: { ...mia, id: "learner-bob", name: "Bob" },
+      }),
+    ),
+  );
+
+  const dialog = container.querySelector('[role="dialog"]');
+  assert.equal(dialog?.getAttribute("lang"), "en");
+  assert.match(dialog?.textContent ?? "", /Cannot be undone/);
+  await click(button(dialog, "Delete Bob"));
+  await waitFor(() =>
+    assert.match(
+      dialog.querySelector('[role="alert"]')?.textContent ?? "",
+      /current conversation/,
+    ),
+  );
+  assert.equal(
+    dialog.querySelector('[role="alert"]')?.textContent,
+    "Could not delete Bob. Finish this learner's current conversation, then try again.",
+  );
+
+  const chinese = button(dialog, "中文");
+  chinese.focus();
+  await click(chinese);
+  assert.equal(container.querySelector('[role="dialog"]'), dialog);
+  assert.equal(dialog.getAttribute("lang"), "zh-Hans");
+  assert.equal(document.activeElement, chinese);
+  assert.equal(dialog.querySelector("bdi")?.textContent, "Bob");
+  assert.equal(deletionCalls, 1);
+  assert.equal(
+    dialog.querySelector('[role="alert"]')?.textContent,
+    "无法删除 Bob。请先结束这位孩子当前的对话，然后重试。",
+  );
+  assert.equal(chinese.closest("fieldset"), null);
 });
 
 test("turns a malformed roster success into a retryable manager error", async () => {
@@ -418,6 +630,224 @@ test("deletes through learner context and applies the authoritative roster", asy
         (heading) => heading.textContent === noah.name,
       ),
       false,
+    );
+  });
+});
+
+test("keeps a deleted status through real Gate mutation revisions only", async () => {
+  const remaining = roster(mia.id, [mia]);
+  const heldRefresh = deferred();
+  let deleteRequests = 0;
+  let learnerReads = 0;
+  let postDeleteRosterReads = 0;
+  let selectionRequests = 0;
+  let deletionSettled = false;
+  globalThis.fetch = async (input, init = {}) => {
+    const path = String(input);
+    if (path === "/api/learner-profile" && init.method === "GET") {
+      learnerReads += 1;
+      return Response.json(completedGateState());
+    }
+    if (path === "/api/learner-profiles" && init.method === "GET") {
+      if (!deletionSettled) return Response.json(roster());
+      postDeleteRosterReads += 1;
+      return postDeleteRosterReads === 1
+        ? heldRefresh.promise
+        : Response.json(remaining);
+    }
+    if (
+      path === "/api/learner-profiles/learner-noah" &&
+      init.method === "DELETE"
+    ) {
+      deleteRequests += 1;
+      deletionSettled = true;
+      return Response.json(remaining);
+    }
+    if (
+      path === "/api/learner-profiles/learner-mia/active" &&
+      init.method === "PUT"
+    ) {
+      selectionRequests += 1;
+      return Response.json(remaining);
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "en", storage: null },
+      createElement(
+        "div",
+        null,
+        createElement(GuardianLanguageControl),
+        createElement(
+          MemoryRouter,
+          { initialEntries: ["/guardian/learners"] },
+          learnerGateHarness({
+            children: createElement(RealGateLearnerManager),
+            guardianAccessMode: "guardian",
+            guardianRoute: true,
+          }),
+        ),
+      ),
+    ),
+  );
+
+  await waitFor(() =>
+    assert.equal(button(container, "Delete Noah").closest("[inert]"), null),
+  );
+  await click(button(container, "Delete Noah"));
+  await click(button(container.querySelector('[role="dialog"]'), "Delete Noah"));
+  await waitFor(() => {
+    assert.equal(deleteRequests, 1);
+    assert.equal(postDeleteRosterReads, 1);
+  });
+  await act(async () => heldRefresh.resolve(Response.json(remaining)));
+  await waitFor(() => {
+    assert.equal(container.querySelector('[role="dialog"]'), null);
+    assert.equal(
+      container.querySelector('main [role="status"]')?.textContent.trim(),
+      "Noah was deleted.",
+    );
+  });
+
+  await click(button(container, "中文"));
+  assert.equal(
+    container.querySelector('main [role="status"]')?.textContent.trim(),
+    "Noah 已删除。",
+  );
+
+  await click(button(container, "Select current learner again"));
+  await waitFor(() => {
+    assert.equal(deleteRequests, 1);
+    assert.equal(selectionRequests, 1);
+    assert.equal(postDeleteRosterReads, 2);
+    assert.ok(learnerReads >= 2);
+    assert.equal(
+      container.querySelector('main [role="status"]')?.textContent.trim(),
+      "",
+    );
+  });
+});
+
+test("retranslates stable Guardian learner identity checking and recovery", async () => {
+  const heldRoster = deferred();
+  let learnerReads = 0;
+  let rosterReads = 0;
+  globalThis.fetch = async (input, init = {}) => {
+    const path = String(input);
+    if (path === "/api/learner-profile" && init.method === "GET") {
+      learnerReads += 1;
+      return Response.json(completedGateState());
+    }
+    if (path === "/api/learner-profiles" && init.method === "GET") {
+      rosterReads += 1;
+      return rosterReads === 1
+        ? heldRoster.promise
+        : Response.json(roster(mia.id, [mia]));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "en", storage: null },
+      createElement(
+        "div",
+        null,
+        createElement(GuardianLanguageControl),
+        learnerGateHarness({
+          guardianAccessMode: "guardian",
+          guardianRoute: true,
+        }),
+      ),
+    ),
+  );
+  await waitFor(() => assert.match(container.textContent, /SAFE CONTENT/));
+  await click(button(container, "中文"));
+
+  await act(async () => window.dispatchEvent(new window.Event("focus")));
+  await waitFor(() => {
+    assert.equal(rosterReads, 1);
+    assert.match(container.textContent, /正在检查当前孩子/);
+    assert.doesNotMatch(container.textContent, /Checking the current learner/);
+  });
+
+  await act(async () =>
+    heldRoster.resolve(
+      Response.json({ message: "SERVER IDENTITY SENTENCE" }, { status: 503 }),
+    ),
+  );
+  await waitFor(() => {
+    assert.match(container.textContent, /无法确认当前孩子/);
+    assert.match(container.textContent, /请重试.*正确的孩子/);
+    button(container, "重试");
+    assert.doesNotMatch(container.textContent, /SERVER IDENTITY SENTENCE/);
+  });
+
+  await click(button(container, "English"));
+  assert.match(container.textContent, /couldn't verify the current learner/i);
+  assert.doesNotMatch(container.textContent, /无法确认当前孩子/);
+  assert.equal(rosterReads, 1);
+
+  await click(button(container, "Try again"));
+  await waitFor(() => {
+    assert.equal(rosterReads, 2);
+    assert.ok(learnerReads >= 2);
+    assert.match(container.textContent, /SAFE CONTENT/);
+    assert.doesNotMatch(container.textContent, /verify the current learner/i);
+  });
+});
+
+test("keeps learner-route identity recovery English under a Chinese preference", async () => {
+  const heldLearner = deferred();
+  let holdNextLearnerRead = false;
+  globalThis.fetch = async (input, init = {}) => {
+    const path = String(input);
+    if (path === "/api/learner-profile" && init.method === "GET") {
+      if (holdNextLearnerRead) return heldLearner.promise;
+      return Response.json(completedGateState());
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(
+        "div",
+        null,
+        createElement(GuardianLanguageControl),
+        learnerGateHarness({
+          guardianAccessMode: "learner",
+          guardianRoute: false,
+        }),
+      ),
+    ),
+  );
+  await waitFor(() => assert.match(container.textContent, /SAFE CONTENT/));
+  holdNextLearnerRead = true;
+
+  await act(async () => window.dispatchEvent(new window.Event("focus")));
+  await waitFor(() => {
+    assert.match(container.textContent, /Checking the current learner/);
+    assert.doesNotMatch(container.textContent, /正在检查当前孩子/);
+  });
+
+  await act(async () =>
+    heldLearner.resolve(
+      Response.json({ message: "SERVER LEARNER SENTENCE" }, { status: 503 }),
+    ),
+  );
+  await waitFor(() => {
+    assert.match(container.textContent, /couldn't verify the current learner/i);
+    button(container, "Try again");
+    assert.doesNotMatch(
+      container.textContent,
+      /无法确认当前孩子|SERVER LEARNER SENTENCE/,
     );
   });
 });
@@ -556,10 +986,13 @@ test("final learner deletion is disabled and a pending learner can only finish d
     ],
   });
   assert.match(html, /Finish deleting <bdi[^>]*dir="auto"[^>]*>Mia<\/bdi>/);
-  assert.doesNotMatch(html, /aria-label="Edit Mia&#x27;s profile"/);
+  assert.doesNotMatch(html, /aria-label="Edit ⁨Mia⁩&#x27;s profile"/);
 
   const finalLearnerHtml = renderView({ profiles: [{ ...mia, deletionPending: false }] });
-  assert.match(finalLearnerHtml, /aria-label="Delete Mia"[^>]*disabled=""/);
+  assert.match(
+    finalLearnerHtml,
+    /aria-label="Delete ⁨Mia⁩"[^>]*disabled=""/,
+  );
   assert.match(
     finalLearnerHtml,
     /Add another learner before deleting <bdi[^>]*dir="auto"[^>]*>Mia<\/bdi>\./,
@@ -612,8 +1045,8 @@ test("isolates the learner name in deletion error copy", async () => {
   const container = await mountStrict(
     createElement(LearnerDeleteDialog, {
       onClose() {},
-      onDelete() {
-        throw new Error("The deletion could not finish.");
+      async onDelete() {
+        return "delete-failed";
       },
       profile: { ...mia, name },
     }),
@@ -826,6 +1259,106 @@ test("loads and saves inactive learner details by ID without changing learner mo
     requests.some(({ path }) => path.includes("/active")),
     false,
   );
+});
+
+test("pending learner detail loads keep the localized manager destination", async () => {
+  globalThis.fetch = async () => new Promise(() => {});
+
+  const english = await mountStrict(detailsHarness());
+  const chinese = await mountStrict(detailsHarness({ language: "zh-Hans" }));
+
+  await waitFor(() => {
+    assert.match(english.textContent, /Loading learner details/);
+    const englishBack = [...english.querySelectorAll("a")].find(
+      (link) => link.textContent === "Back to Manage learners",
+    );
+    assert.equal(englishBack?.getAttribute("href"), "/guardian/learners");
+    assert.doesNotMatch(english.textContent, /Back to home/);
+
+    assert.match(chinese.textContent, /正在加载孩子资料/);
+    const chineseBack = [...chinese.querySelectorAll("a")].find(
+      (link) => link.textContent === "返回管理孩子",
+    );
+    assert.equal(chineseBack?.getAttribute("href"), "/guardian/learners");
+    assert.doesNotMatch(chinese.textContent, /Back to home/);
+  });
+});
+
+test("Chinese explicit learner details localize a null learner fallback", async () => {
+  const unnamed = { ...noah, name: null };
+  globalThis.fetch = async (request, init = {}) => {
+    const path = String(request);
+    if (
+      path === "/api/profile?learnerProfileId=learner-noah" &&
+      init.method === "GET"
+    ) {
+      return Response.json(profileEditorState(unnamed));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(detailsHarness({ language: "zh-Hans" }));
+  await waitFor(() =>
+    assert.equal(container.querySelector("#profile-name")?.value, ""),
+  );
+
+  assert.match(container.textContent, /正在管理 这位孩子/);
+  assert.match(container.textContent, /关于 这位孩子/);
+  assert.doesNotMatch(container.textContent, /正在管理 Learner/);
+});
+
+test("Chinese Guardian profile editing localizes a blank learner fallback", async () => {
+  const unnamed = { ...mia, name: "   " };
+  globalThis.fetch = async (input, init = {}) => {
+    const path = String(input);
+    if (path === "/api/learner-profile" && init.method === "GET") {
+      return Response.json({
+        ...completedGateState(),
+        profile: fullProfile(unnamed),
+      });
+    }
+    if (path === "/api/profile" && init.method === "GET") {
+      return Response.json(profileEditorState(unnamed));
+    }
+    throw new Error(`Unexpected request: ${init.method} ${path}`);
+  };
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      learnerGateHarness({
+        guardianAccessMode: "guardian",
+        guardianRoute: true,
+        isProfileRoute: true,
+        learnerManagerRoute: false,
+      }),
+    ),
+  );
+  await waitFor(() =>
+    assert.equal(container.querySelector("#profile-name")?.value, "   "),
+  );
+
+  assert.match(container.textContent, /正在管理 这位孩子/);
+  assert.match(container.textContent, /关于 这位孩子/);
+  assert.doesNotMatch(container.textContent, /正在管理 Learner/);
+});
+
+test("localizes learner detail loading recovery from stable errors", async () => {
+  globalThis.fetch = async () => {
+    throw new Error("SERVER SENTENCE MUST STAY PRIVATE");
+  };
+  const container = await mountStrict(
+    detailsHarness({ language: "zh-Hans", learnerId: "learner-bob" }),
+  );
+
+  await waitFor(() => {
+    assert.match(container.textContent, /孩子资料暂时无法使用/);
+    assert.match(container.textContent, /无法加载孩子资料/);
+    button(container, "重试");
+    assert.match(container.textContent, /返回管理孩子/);
+    assert.doesNotMatch(container.textContent, /SERVER SENTENCE/);
+  });
 });
 
 test("targets recording deletion at an explicit learner without selecting them", async () => {

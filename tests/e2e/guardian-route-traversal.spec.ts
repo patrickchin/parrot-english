@@ -65,7 +65,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
   await page.goto(scenarioUrl("/guardian"));
   await expect(
     page.getByRole("button", {
-      name: `Profile for ${GUARDIAN_NAME}, guardian mode`,
+      name: `Profile for ⁨${GUARDIAN_NAME}⁩, guardian mode`,
     }),
   ).toBeVisible();
 
@@ -207,11 +207,11 @@ test("learner-targeted routes normalize only a missing target and reject duplica
     /\/guardian\/dubbing\?.*learnerProfileId=learner-mia/,
   );
   await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
 
   for (const path of [
@@ -329,7 +329,7 @@ test("Guardian menu follows its exact native Tab order and restores focus on Esc
 }) => {
   await page.goto(scenarioUrl("/guardian"));
   const trigger = page.getByRole("button", {
-    name: `Profile for ${GUARDIAN_NAME}, guardian mode`,
+    name: `Profile for ⁨${GUARDIAN_NAME}⁩, guardian mode`,
   });
   await trigger.focus();
   await page.keyboard.press("Enter");

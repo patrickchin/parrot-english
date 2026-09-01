@@ -18,10 +18,34 @@ const { HomeMenu } = await vite.ssrLoadModule("/src/app/HomeMenu.tsx");
 const { GuardianDashboardView } = await vite
   .ssrLoadModule("/src/app/GuardianDashboard.tsx")
   .catch(() => ({}));
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 const { LessonListView } = await vite.ssrLoadModule(
   "/src/lessons/LessonList.tsx",
 );
+const {
+  LessonCompletion,
+  LessonErrorBanner,
+  LessonHud,
+  LessonIntroduction,
+  LessonJoinInPrompt,
+  LessonPlaybackControls,
+  LessonSpeech,
+} = await vite.ssrLoadModule("/src/lessons/LessonPlayerUi.tsx");
 const { StoryList } = await vite.ssrLoadModule("/src/stories/StoryList.tsx");
+const { StoryReader } = await vite.ssrLoadModule(
+  "/src/stories/StoryReader.tsx",
+);
+const { WordGameList } = await vite.ssrLoadModule(
+  "/src/games/WordGameList.tsx",
+);
+const { WordGamePlayer } = await vite.ssrLoadModule(
+  "/src/games/WordGamePlayer.tsx",
+);
+const { resolveWordGameQuiz } = await vite.ssrLoadModule(
+  "/src/games/word-game-catalog.ts",
+);
 const { LearnerProfileProvider } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileContext.tsx",
 );
@@ -39,6 +63,183 @@ function renderInRouter(element, initialEntry = "/") {
   );
 }
 
+function renderLearnerWithChinesePreference(element, initialEntry = "/") {
+  return renderInRouter(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      element,
+    ),
+    initialEntry,
+  );
+}
+
+function assertEnglishOnly(html, expectedCopy) {
+  for (const copy of expectedCopy) assert.match(html, new RegExp(copy));
+  assert.doesNotMatch(html, /[\p{Script=Han}]/u);
+}
+
+test("representative learner catalogs remain English under a Chinese preference", () => {
+  const home = renderLearnerWithChinesePreference(createElement(HomeMenu));
+  assert.match(home, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
+  assert.match(home, /Lessons/);
+  assert.match(home, /Talk to Peppa/);
+  assert.match(home, /Story time/);
+  assert.doesNotMatch(home, /[\p{Script=Han}]/u);
+
+  const lessons = renderLearnerWithChinesePreference(
+    createElement(LessonListView),
+    "/lessons",
+  );
+  assert.match(lessons, /Pick a lesson/);
+  assert.match(lessons, /aria-label="Back to home"/);
+  assert.doesNotMatch(lessons, /[\p{Script=Han}]/u);
+});
+
+test("lesson player states remain English under a Chinese preference", () => {
+  const html = renderLearnerWithChinesePreference(
+    createElement(
+      "main",
+      null,
+      createElement(LessonHud, {
+        currentScene: 1,
+        sceneCount: 5,
+        title: "Peppa's High Ball",
+      }),
+      createElement(LessonIntroduction, {
+        lessonTitle: "Peppa's High Ball",
+        onStart() {},
+        sceneCount: 5,
+      }),
+      createElement(LessonSpeech, {
+        characterCount: 1,
+        characterIndex: 0,
+        speech: {
+          kind: "character",
+          speaker: "peppa",
+          text: "My red ball is high in the tree!",
+        },
+      }),
+      createElement(LessonJoinInPrompt, {
+        dialogue: "The ball is high!",
+        recording: true,
+      }),
+      createElement(LessonPlaybackControls, {
+        atFinalScene: false,
+        atFirstScene: true,
+        isPaused: false,
+        onNext() {},
+        onPauseResume() {},
+        onPrevious() {},
+      }),
+      createElement(LessonErrorBanner, {
+        error: "The sound did not play. You can try it again or skip it.",
+        onRetry() {},
+        onSkip() {},
+      }),
+      createElement(LessonCompletion, {
+        lessonTitle: "Peppa's High Ball",
+        onBack() {},
+        onReplay() {},
+        onRetrySaving() {},
+        saveState: "failed",
+      }),
+    ),
+    "/lessons/parrot/01-peppas-high-ball/scenes/1",
+  );
+
+  assertEnglishOnly(html, [
+    "Scene 1 of 5",
+    "Let&#x27;s go",
+    "My red ball is high in the tree!",
+    "The ball is high!",
+    "Your microphone is joining in too",
+    'aria-label="Pause lesson"',
+    "The sound did not play",
+    "Try sound",
+    "Skip sound",
+    "Some voices have not saved yet",
+    "Try saving again",
+  ]);
+});
+
+test("story shelf and reader remain English under a Chinese preference", () => {
+  const profile = {
+    age: 6,
+    answers: {
+      legacyAnswers: null,
+      questionnaireVersion: 2,
+      responses: {},
+      schemaVersion: 2,
+    },
+    completedAt: "2026-08-25T08:00:00.000Z",
+    currentQuestionKey: null,
+    description: "Likes animals",
+    name: "Sam",
+    profileStatus: "completed",
+    questionnaireVersion: 2,
+    storyLevel: "tiny-stories",
+  };
+  const shelf = renderLearnerWithChinesePreference(
+    createElement(
+      LearnerProfileProvider,
+      { profile, replaceProfile() {} },
+      createElement(StoryList),
+    ),
+    "/stories",
+  );
+  assertEnglishOnly(shelf, [
+    "Pick a story",
+    "Choose a story level",
+    "Recommended for [\\s\\S]*Sam",
+    "Listen to story:",
+  ]);
+
+  const story = STORIES.find(({ id }) => id === "the-red-ball");
+  assert.ok(story);
+  const reader = renderLearnerWithChinesePreference(
+    createElement(StoryReader, {
+      backToStories: "/stories",
+      onNavigatePage() {},
+      pageIndex: 0,
+      story,
+    }),
+    "/stories/the-red-ball/pages/1",
+  );
+  assertEnglishOnly(reader, [
+    "The Red Ball",
+    "Page 1 of",
+    "Listen to this page",
+    "Keep playing to the end",
+    "Back to stories",
+  ]);
+});
+
+test("word-game list and player remain English under a Chinese preference", () => {
+  const list = renderLearnerWithChinesePreference(
+    createElement(WordGameList),
+    "/word-games",
+  );
+  assertEnglishOnly(list, ["Pick a word game", "Word games", "Animals"]);
+
+  const selection = resolveWordGameQuiz("animals", "simple-1");
+  assert.ok(selection);
+  const player = renderLearnerWithChinesePreference(
+    createElement(WordGamePlayer, { selection }),
+    "/word-games/animals/simple-1",
+  );
+  assertEnglishOnly(player, [
+    "Animals",
+    "Level 1 · Quiz 1",
+    "Animals · Level 1",
+    "Game progress",
+    "1 of 6",
+    "Which is the cat?",
+    "Listen again",
+    "Back to Animals",
+  ]);
+});
+
 test("home gives children five clear, working learning choices", () => {
   const html = renderInRouter(createElement(HomeMenu));
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(
@@ -52,7 +253,10 @@ test("home gives children five clear, working learning choices", () => {
     "/dubs",
     "/word-games",
   ]);
-  assert.doesNotMatch(html, /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/);
+  assert.doesNotMatch(
+    html,
+    /href="\/dubs\/(?:five-little-ducks|old-macdonald)"/,
+  );
   assert.match(html, /<h1[^>]*>\s*Parrot English\s*<\/h1>/);
   assert.doesNotMatch(html, /Tap a picture\.|>Parrot English<\/p>/i);
   assert.equal((html.match(/<img alt=""/g) ?? []).length, 4);
@@ -90,9 +294,54 @@ test("guardian dashboard presents one learner-management destination", () => {
   assert.equal((html.match(/>Manage learners<\/a>/g) ?? []).length, 1);
   assert.equal(hrefs.filter((href) => href === "/guardian/learners").length, 1);
   assert.match(html, /aria-label="Switch to learner"/);
-  assert.doesNotMatch(html, /is using learner mode|select who uses learner mode/);
+  assert.doesNotMatch(
+    html,
+    /is using learner mode|select who uses learner mode/,
+  );
   assert.doesNotMatch(html, /Managing Mia/);
-  assert.doesNotMatch(html, />Manage learners<\/h2>|Learner details|Manage learner details/);
+  assert.doesNotMatch(
+    html,
+    />Manage learners<\/h2>|Learner details|Manage learner details/,
+  );
+});
+
+test("guardian dashboard localizes all authored navigation in Chinese", () => {
+  const html = renderInRouter(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(GuardianDashboardView, {
+        onSwitchToLearner() {},
+      }),
+    ),
+    "/guardian",
+  );
+
+  assert.equal((html.match(/<h1/g) ?? []).length, 1);
+  assert.match(html, /<h1[^>]*>\s*家长中心\s*<\/h1>/);
+  assert.match(html, /aria-label="页面导航"/);
+  assert.match(html, /aria-label="切换到学习模式"/);
+  for (const copy of [
+    "孩子资料",
+    "管理孩子",
+    "配音管理",
+    "账户与隐私",
+    "查看技术构建详情和可用的账户操作。",
+  ]) {
+    assert.match(html, new RegExp(copy));
+  }
+  for (const english of [
+    "Guardian dashboard",
+    "Learner profiles",
+    "Manage learners",
+    "Learning &amp; content",
+    "Story settings",
+    "Voice dubbing",
+    "Account &amp; privacy",
+  ]) {
+    assert.doesNotMatch(html, new RegExp(english));
+  }
+  assert.doesNotMatch(html, /学习与内容/);
 });
 
 test("guardian dashboard presents its remaining destinations as peers", () => {
@@ -138,10 +387,7 @@ test("guardian dashboard links a separate account and privacy destination", () =
 });
 
 test("lesson catalog presents one canonical path without artwork experiments", () => {
-  const html = renderInRouter(
-    createElement(LessonListView),
-    "/lessons",
-  );
+  const html = renderInRouter(createElement(LessonListView), "/lessons");
 
   assert.match(html, /Pick a lesson/);
   assert.doesNotMatch(
@@ -179,9 +425,9 @@ test("story shelf presents one curated shelf at a time without research controls
     ),
     "/stories",
   );
-  const storyHrefs = [...html.matchAll(/<a[^>]*href="(\/stories\/[^"#?]+\/pages\/1)"/g)].map(
-    ([, href]) => href,
-  );
+  const storyHrefs = [
+    ...html.matchAll(/<a[^>]*href="(\/stories\/[^"#?]+\/pages\/1)"/g),
+  ].map(([, href]) => href);
   const shelfHeadings = [...html.matchAll(/<h2[^>]*>([^<]+)<\/h2>/g)].map(
     ([, heading]) => heading,
   );
@@ -203,8 +449,8 @@ test("story shelf presents one curated shelf at a time without research controls
     ],
   );
   assert.deepEqual(
-    STORY_LEVELS.map(({ id }) =>
-      STORIES.filter(({ level }) => level === id).length,
+    STORY_LEVELS.map(
+      ({ id }) => STORIES.filter(({ level }) => level === id).length,
     ),
     [3, 4, 6, 5, 5, 2],
   );

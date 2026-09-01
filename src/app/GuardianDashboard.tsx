@@ -1,15 +1,8 @@
-import {
-  LogOut,
-  Mic,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+import { LogOut, Mic, ShieldCheck, UsersRound } from "lucide-react";
 import { useRef, useState, type RefObject } from "react";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionLink, Card } from "../shared/ui";
-import {
-  HeaderButton,
-  RouteHeader,
-} from "./AppHeader";
+import { HeaderButton, RouteHeader } from "./AppHeader";
 import {
   getGuardianAccountPath,
   getGuardianDubbingPath,
@@ -24,24 +17,27 @@ export function GuardianDashboardView({
   onSwitchToLearner: () => void;
   switchTriggerRef?: RefObject<HTMLButtonElement | null>;
 }) {
+  const { messages } = useGuardianLanguage();
+  const copy = messages.guardianDashboard;
+
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
-      <RouteHeader>
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
         <HeaderButton
-          aria-label="Switch to learner"
+          aria-label={copy.switchToLearner}
           icon={<LogOut />}
           onClick={onSwitchToLearner}
           ref={switchTriggerRef}
           type="button"
         >
-          Switch to learner
+          {copy.switchToLearner}
         </HeaderButton>
       </RouteHeader>
 
       <section className="mx-auto grid w-full max-w-5xl gap-8">
         <header className="grid gap-2 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            Guardian dashboard
+            {copy.title}
           </h1>
         </header>
 
@@ -61,18 +57,17 @@ export function GuardianDashboardView({
               className="m-0 text-2xl leading-tight text-brand-navy"
               id="manage-learners-heading"
             >
-              Learner profiles
+              {copy.learnerProfilesTitle}
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Add, edit, or delete learner profiles. You’ll choose a learner
-              when switching to learner mode.
+              {copy.learnerProfilesDescription}
             </p>
           </div>
           <ActionLink
             className="w-full sm:col-start-2 sm:w-auto sm:justify-self-start md:col-start-auto md:justify-self-end"
             to={getGuardianLearnersPath()}
           >
-            Manage learners
+            {copy.manageLearners}
           </ActionLink>
         </Card>
 
@@ -92,17 +87,17 @@ export function GuardianDashboardView({
               className="m-0 text-2xl leading-tight text-brand-navy"
               id="voice-dubbing-heading"
             >
-              Voice dubbing
+              {copy.voiceDubbingTitle}
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              Review and delete private nursery-rhyme voice clips.
+              {copy.voiceDubbingDescription}
             </p>
           </div>
           <ActionLink
             className="w-full sm:col-start-2 sm:w-auto sm:justify-self-start md:col-start-auto md:justify-self-end"
             to={getGuardianDubbingPath()}
           >
-            Manage voice dubbing
+            {copy.manageVoiceDubbing}
           </ActionLink>
         </Card>
 
@@ -122,10 +117,10 @@ export function GuardianDashboardView({
               className="m-0 text-2xl leading-tight text-brand-navy"
               id="account-privacy-heading"
             >
-              Account &amp; privacy
+              {copy.accountPrivacyTitle}
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-600">
-              View technical build details and available account controls.
+              {copy.accountPrivacyDescription}
             </p>
           </div>
           <ActionLink
@@ -133,7 +128,7 @@ export function GuardianDashboardView({
             to={getGuardianAccountPath()}
             variant="navy"
           >
-            Open account &amp; privacy
+            {copy.openAccountPrivacy}
           </ActionLink>
         </Card>
       </section>

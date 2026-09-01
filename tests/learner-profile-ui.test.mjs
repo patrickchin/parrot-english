@@ -29,11 +29,15 @@ const profileModule = await vite.ssrLoadModule(
   "/src/learner-profile/ProfileEditor.tsx",
 );
 const { ProfileEditorView } = profileModule;
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 const gateModule = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileGate.tsx",
 );
 const {
   LearnerProfileGateView,
+  LearnerProfileSetupView,
   answerForQuestion,
   createProfileOperationBoundary,
   createProfileOperationOwnership,
@@ -76,6 +80,7 @@ function question(overrides = {}) {
 
 function questionProps(overrides = {}) {
   return {
+    audience: "learner",
     fieldError: "",
     mode: "learner-profile",
     onReplay() {},
@@ -100,6 +105,14 @@ function renderQuestion(overrides = {}) {
   );
 }
 
+function withGuardianLanguage(language, child) {
+  return createElement(
+    GuardianLanguageProvider,
+    { initialLanguage: language, storage: null },
+    child,
+  );
+}
+
 describe("one-question prose onboarding view", () => {
   it("renders one editable prose answer without array controls", () => {
     const html = renderQuestion({ value: "I am six" });
@@ -107,7 +120,7 @@ describe("one-question prose onboarding view", () => {
     assert.equal((html.match(/<h1/g) ?? []).length, 1);
     assert.match(html, /How old are you\?/);
     assert.match(html, /你几岁了？/);
-    assert.match(html, /<p[^>]*lang="zh-CN"[^>]*>你几岁了？<\/p>/);
+    assert.match(html, /<p[^>]*lang="zh-Hans"[^>]*>你几岁了？<\/p>/);
     assert.match(html, /Question 2 of 6/);
     assert.match(html, /<textarea/);
     assert.match(html, /maxlength="120"/i);
@@ -198,7 +211,8 @@ describe("one-question prose onboarding view", () => {
 
   it("shows field errors and only offers per-question skip when optional", () => {
     const failed = renderQuestion({
-      fieldError: "Please tell me your age using a whole number.",
+      fieldError: "age-whole-number",
+      fieldErrorIsAnswer: true,
     });
     assert.match(failed, /role="alert"/);
     assert.match(failed, /Please tell me your age/);
@@ -219,7 +233,7 @@ describe("one-question prose onboarding view", () => {
 
   it("associates answer validation errors with the answer field without mislabelling media errors", () => {
     const validation = renderQuestion({
-      fieldError: "Please tell me your age using a whole number.",
+      fieldError: "age-whole-number",
       fieldErrorIsAnswer: true,
       mode: "profile",
     });
@@ -233,13 +247,12 @@ describe("one-question prose onboarding view", () => {
     );
 
     const media = renderQuestion({
-      fieldError: "Sound did not play.",
+      fieldError: "check-answer",
       fieldErrorIsAnswer: false,
       mode: "profile",
     });
     assert.doesNotMatch(media, /aria-invalid|aria-describedby/);
   });
-
 });
 
 describe("onboarding prompt and transcription helpers", () => {
@@ -342,6 +355,7 @@ describe("Peppa acknowledgment", () => {
     const html = renderToStaticMarkup(
       createElement(LearnerProfileAcknowledgment, {
         acknowledgment: { text: "Dinosaurs are very stompy!", audio: null },
+        audience: "learner",
         operationId: 1,
         onNext() {},
       }),
@@ -351,6 +365,41 @@ describe("Peppa acknowledgment", () => {
     assert.match(html, />Next</);
     assert.doesNotMatch(html, /PEPPA SAYS/);
     assert.doesNotMatch(html, /<textarea/);
+  });
+
+  it("localizes only Guardian acknowledgment chrome and preserves learning text", () => {
+    const guardian = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileAcknowledgment, {
+          acknowledgment: { text: "Bob is a lovely name!", audio: null },
+          audience: "guardian",
+          operationId: 2,
+          onNext() {},
+        }),
+      ),
+    );
+    assert.match(
+      guardian,
+      /<h1[^>]*lang="en"[^>]*>Bob is a lovely name!<\/h1>/,
+    );
+    assert.match(guardian, /alt="Peppa 微笑"/);
+    assert.doesNotMatch(guardian, /佩奇/);
+    assert.match(guardian, />下一步<\/button>/);
+
+    const learner = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileAcknowledgment, {
+          acknowledgment: { text: "Bob is a lovely name!", audio: null },
+          audience: "learner",
+          operationId: 3,
+          onNext() {},
+        }),
+      ),
+    );
+    assert.match(learner, />Next<\/button>/);
+    assert.doesNotMatch(learner, /下一步/);
   });
 
   it("plays the saved source directly and aborts pending playback on cleanup", async () => {
@@ -480,6 +529,86 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
+  it("localizes Guardian profile editing while learner chrome stays English", () => {
+    const props = {
+      drafts: {
+        age: "7",
+        description: "Bob likes parrots.",
+        favoriteAnimals: "Parrots",
+        name: "Bob",
+      },
+      fieldErrors: {
+        age: "age-whole-number",
+        favoriteAnimals: "private-details",
+      },
+      isSaving: false,
+      learnerName: "Bob",
+      lessonRecordingCleanupPending: false,
+      lessonRecordingConsent: true,
+      onCancel() {},
+      onClose() {},
+      onLessonRecordingConsentChange() {},
+      onRedoLearnerProfile() {},
+      onSave() {},
+      onValueChange() {},
+      pageError: "save-failed",
+      questions: [
+        question({ answerKey: "name" }),
+        question(),
+        question({
+          answerKey: "favoriteAnimals",
+          promptEn: "What animals do you like?",
+          promptZh: "你喜欢什么动物？",
+        }),
+      ],
+    };
+    const guardian = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(ProfileEditorView, { ...props, audience: "guardian" }),
+      ),
+    );
+    assert.match(guardian, /aria-label="页面导航"/);
+    assert.match(textFromMarkup(guardian), /正在管理 Bob/);
+    assert.match(guardian, /<h1[^>]*>孩子资料<\/h1>/);
+    assert.match(guardian, />姓名</);
+    assert.match(guardian, />年龄</);
+    assert.match(textFromMarkup(guardian), /关于 Bob/);
+    assert.match(guardian, /placeholder="添加简短介绍"/);
+    assert.match(
+      guardian,
+      /<span[^>]*lang="en"[^>]*>What animals do you like\?<\/span>/,
+    );
+    assert.match(
+      guardian,
+      /<span[^>]*lang="zh-Hans"[^>]*>你喜欢什么动物？<\/span>/,
+    );
+    assert.match(guardian, /课程语音录音/);
+    assert.match(guardian, /删除已保存的课程录音/);
+    assert.match(guardian, /重新完成孩子设置/);
+    assert.match(guardian, /保存更改/);
+    assert.match(guardian, /请输入整数年龄/);
+    assert.match(guardian, /不要填写学校、住址、电话、电子邮箱或密码/);
+    assert.match(guardian, /无法保存孩子资料/);
+    assert.match(guardian, /alt="Peppa 微笑"/);
+    assert.match(guardian, /再次回答 Peppa 的设置问题/);
+    assert.match(guardian, /和 Peppa 对话/);
+    assert.doesNotMatch(guardian, /佩奇/);
+    assert.doesNotMatch(guardian, /SERVER/);
+
+    const learner = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(ProfileEditorView, { ...props, audience: "learner" }),
+      ),
+    );
+    assert.match(learner, /<h1[^>]*>Learner details<\/h1>/);
+    assert.match(learner, /Please tell me your age using a whole number\./);
+    assert.match(learner, /We save your answers/);
+    assert.match(learner, /我们会保存你的回答/);
+    assert.doesNotMatch(learner, /孩子资料|无法保存孩子资料/);
+  });
+
   it("renders a durable pending-deletion state with an explicit retry action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
@@ -499,10 +628,7 @@ describe("profile summary editor", () => {
       }),
     );
 
-    assert.match(
-      html,
-      /Saved lesson recordings are still being deleted\./,
-    );
+    assert.match(html, /Saved lesson recordings are still being deleted\./);
     assert.match(html, />Finish deleting lesson recordings<\/button>/);
     assert.doesNotMatch(html, />Allow lesson voice recordings<\/button>/);
   });
@@ -561,7 +687,10 @@ describe("profile summary editor", () => {
       /<textarea[^>]*id="profile-description"[^>]*maxlength="2000"[^>]*>Mia is thirty and loves pandas and fast red cars\.<\/textarea>/i,
     );
     assert.match(textFromMarkup(html), /What animals do you like\?/);
-    assert.match(html, /<span[^>]*lang="zh-CN"[^>]*>你喜欢什么动物？<\/span>/);
+    assert.match(
+      html,
+      /<span[^>]*lang="zh-Hans"[^>]*>你喜欢什么动物？<\/span>/,
+    );
     assert.match(
       html,
       /<textarea[^>]*id="profile-favoriteAnimals"[^>]*maxlength="300"[^>]*>pandas<\/textarea>/i,
@@ -903,7 +1032,6 @@ describe("profile summary editor", () => {
       { navigationCalls, refreshCalls, stateWrites },
       { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
     );
-
   });
 
   it("tears down active profile resources when the gate unmounts", () => {
@@ -996,47 +1124,186 @@ function fullState(overrides = {}) {
   };
 }
 
-function renderGate(overrides = {}) {
+function renderGate(overrides = {}, language = "en") {
   return renderToStaticMarkup(
     createElement(
-      LearnerProfileGateView,
-      {
-        acknowledgment: null,
-        completedLearnerProfileFallback: createElement(
-          "div",
-          { "data-completed-redirect": true },
-          "COMPLETED REDIRECT",
-        ),
-        data: null,
-        isLearnerProfileRoute: true,
-        isProfileLoading: false,
-        isProfileRoute: false,
-        isLoading: false,
-        loadError: "",
-        onAcknowledgmentNext() {},
-        onCloseProfileRoute() {},
-        onRetry() {},
-        onRetryProfile() {},
-        onSkip() {},
-        onStart() {},
-        learnerProfileFallback: createElement(
-          "div",
-          { "data-learner-profile-redirect": true },
-          "LEARNER_PROFILE REDIRECT",
-        ),
-        profileEditor: null,
-        profileLoadError: "",
-        questionProps: null,
-        redoLearnerProfile: false,
-        started: false,
-        ...overrides,
-      },
-      createElement("div", { "data-lesson": true }, "LESSON CONTENT"),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        LearnerProfileGateView,
+        {
+          acknowledgment: null,
+          completedLearnerProfileFallback: createElement(
+            "div",
+            { "data-completed-redirect": true },
+            "COMPLETED REDIRECT",
+          ),
+          data: null,
+          isLearnerProfileRoute: true,
+          isProfileLoading: false,
+          isProfileRoute: false,
+          isLoading: false,
+          loadError: "",
+          onAcknowledgmentNext() {},
+          onCloseProfileRoute() {},
+          onRetry() {},
+          onRetryProfile() {},
+          onSkip() {},
+          onStart() {},
+          learnerProfileFallback: createElement(
+            "div",
+            { "data-learner-profile-redirect": true },
+            "LEARNER_PROFILE REDIRECT",
+          ),
+          profileEditor: null,
+          profileLoadError: "",
+          questionProps: null,
+          redoLearnerProfile: false,
+          started: false,
+          ...overrides,
+        },
+        createElement("div", { "data-lesson": true }, "LESSON CONTENT"),
+      ),
     ),
   );
 }
 
 describe("onboarding and profile gate", () => {
+  it("localizes Guardian setup chrome without translating learner content", () => {
+    const setup = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileSetupView, {
+          answeredQuestionCount: 0,
+          audience: "guardian",
+          onSkip() {},
+          onStart() {},
+          questionCount: 6,
+        }),
+      ),
+    );
+    assert.match(setup, /回答 6 个问题/);
+    assert.match(setup, /开始回答/);
+    assert.match(setup, /暂时跳过/);
+    assert.match(setup, /alt="Peppa 挥手问好"/);
+    assert.doesNotMatch(setup, /佩奇/);
+
+    const questionHtml = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileQuestionView, {
+          ...questionProps({
+            fieldError: "answer-required",
+            fieldErrorIsAnswer: true,
+            question: question({
+              answerKey: "name",
+              promptEn: "What is your name?",
+              promptZh: "你叫什么名字？",
+            }),
+          }),
+          audience: "guardian",
+        }),
+      ),
+    );
+    assert.match(questionHtml, /问题 2\/6/);
+    assert.match(questionHtml, /aria-label="重播问题"/);
+    assert.match(
+      questionHtml,
+      /<h1[^>]*lang="en"[^>]*>What is your name\?<\/h1>/,
+    );
+    assert.match(
+      questionHtml,
+      /<p[^>]*lang="zh-Hans"[^>]*>你叫什么名字？<\/p>/,
+    );
+    assert.match(questionHtml, /<textarea[^>]*lang="en"/);
+    assert.match(questionHtml, /请输入答案/);
+    assert.match(questionHtml, /alt="你的英语主持人 Peppa"/);
+    assert.doesNotMatch(questionHtml, /佩奇/);
+    assert.match(questionHtml, />下一步<\/button>/);
+
+    const learner = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileQuestionView, {
+          ...questionProps({
+            fieldError: "answer-required",
+            fieldErrorIsAnswer: true,
+          }),
+          audience: "learner",
+        }),
+      ),
+    );
+    assert.match(learner, /Question 2 of 6/);
+    assert.match(learner, /Please enter an answer\./);
+    assert.doesNotMatch(learner, /问题 2\/6|请输入答案/);
+
+    const guardianFailure = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileQuestionView, {
+          ...questionProps({ fieldError: "voice-failed" }),
+          audience: "guardian",
+        }),
+      ),
+    );
+    assert.match(guardianFailure, /语音回答未完成。你仍然可以输入回答。/);
+    assert.doesNotMatch(guardianFailure, /Voice answer could not finish/);
+
+    const learnerFailure = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileQuestionView, {
+          ...questionProps({ fieldError: "voice-failed" }),
+          audience: "learner",
+        }),
+      ),
+    );
+    assert.match(
+      learnerFailure,
+      /Voice answer could not finish. You can still type your answer./,
+    );
+    assert.doesNotMatch(learnerFailure, /语音回答未完成/);
+  });
+
+  it("adds only the approved adult helpers to learner onboarding in Chinese", () => {
+    const setup = renderToStaticMarkup(
+      withGuardianLanguage(
+        "zh-Hans",
+        createElement(LearnerProfileSetupView, {
+          answeredQuestionCount: 0,
+          audience: "learner",
+          onSkip() {},
+          onStart() {},
+          questionCount: 6,
+        }),
+      ),
+    );
+    assert.match(setup, /We save your answers/);
+    assert.match(
+      setup,
+      /<span[^>]*lang="zh-Hans"[^>]*>我们会保存你的回答，家长可以修改你的姓名和年龄。<\/span>/,
+    );
+    assert.match(setup, />Start questions</);
+    assert.match(setup, />Skip for now</);
+    assert.doesNotMatch(setup, /开始回答|暂时跳过/);
+
+    const recoverableFailure = renderGate(
+      {
+        data: fullState(),
+        isLearnerProfileRoute: false,
+        isLoading: false,
+        loadError: "load-failed",
+      },
+      "zh-Hans",
+    );
+    assert.match(
+      recoverableFailure,
+      /Your questions could not be loaded. Please try again./,
+    );
+    assert.match(recoverableFailure, />Try again</);
+    assert.doesNotMatch(recoverableFailure, /[\p{Script=Han}]/u);
+  });
+
   it("keeps selection-required learner mode free of profile and sibling content", () => {
     const html = renderGate({
       data: { mode: "selection-required" },
@@ -1133,6 +1400,33 @@ describe("onboarding and profile gate", () => {
 
     assert.match(dashboard, /LESSON CONTENT/);
     assert.doesNotMatch(dashboard, /GUARDIAN MANAGER REDIRECT/);
+  });
+
+  it("localizes Guardian dashboard roster loading without changing learner-route English", () => {
+    const guardianDashboard = renderGate(
+      {
+        data: { mode: "selection-required" },
+        guardianDashboardRoute: true,
+        guardianRoute: true,
+        guardianSelectionRosterPhase: "loading",
+        isLearnerProfileRoute: false,
+      },
+      "zh-Hans",
+    );
+    assert.match(guardianDashboard, /正在加载孩子资料…/);
+    assert.doesNotMatch(guardianDashboard, /Loading learner profiles…/);
+
+    const learnerRoute = renderGate(
+      {
+        data: { mode: "selection-required" },
+        guardianAccessMode: "guardian",
+        guardianSelectionRosterPhase: "loading",
+        isLearnerProfileRoute: false,
+      },
+      "zh-Hans",
+    );
+    assert.match(learnerRoute, /Loading learner profiles…/);
+    assert.doesNotMatch(learnerRoute, /正在加载孩子资料…/);
   });
 
   it("keeps zero-profile Guardian onboarding in Manage learners", () => {
@@ -1236,8 +1530,9 @@ describe("onboarding and profile gate", () => {
       profileLoadError: "Profile service is unavailable.",
     });
     assert.match(failed, /role="alert"/);
-    assert.match(failed, /Profile service is unavailable\./);
-    assert.match(failed, />Retry</);
+    assert.match(failed, /The learner profile could not be loaded\./);
+    assert.doesNotMatch(failed, /Profile service is unavailable\./);
+    assert.match(failed, />Try again</);
     assert.match(failed, />Back</);
     assert.doesNotMatch(failed, /Back to home/);
     assert.doesNotMatch(failed, /LESSON CONTENT/);
@@ -1246,7 +1541,7 @@ describe("onboarding and profile gate", () => {
   it("hides lessons behind loading, errors, and explicit Start", () => {
     assert.doesNotMatch(renderGate({ isLoading: true }), /LESSON CONTENT/);
     const failed = renderGate({ loadError: "Questions are unavailable." });
-    assert.match(failed, />Retry</);
+    assert.match(failed, />Try again</);
     assert.match(failed, />Skip for now</);
     assert.doesNotMatch(failed, /LESSON CONTENT/);
 
@@ -1274,9 +1569,10 @@ describe("onboarding and profile gate", () => {
       loadError: "Learner questions are unavailable.",
     });
 
-    assert.match(html, /Learner questions are unavailable\./);
+    assert.match(html, /Your questions could not be loaded\./);
+    assert.doesNotMatch(html, /Learner questions are unavailable\./);
     assert.match(html, />Back</);
-    assert.match(html, />Retry</);
+    assert.match(html, />Try again</);
     assert.doesNotMatch(html, /Skip for now|Skip question/);
   });
 
@@ -1511,5 +1807,4 @@ describe("onboarding and profile gate", () => {
     assert.equal(receivedSignal, controller.signal);
     assert.equal(result, completed);
   });
-
 });

@@ -1,9 +1,9 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
+import type { AccountDeleteErrorCode } from "../auth/account-actions";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, fieldClassName } from "../shared/ui";
 import { useDialogFocus } from "./useDialogFocus";
-
-const DELETE_ACCOUNT_ERROR_MESSAGE =
-  "Unable to delete the account. The account and private media were kept. Please try again.";
 
 export function AccountDeleteDialog({
   onClose,
@@ -11,10 +11,12 @@ export function AccountDeleteDialog({
   returnFocusRef,
 }: {
   onClose: () => void;
-  onDelete: (password: string) => Promise<string | null>;
+  onDelete: (password: string) => Promise<AccountDeleteErrorCode>;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
-  const [error, setError] = useState("");
+  const { language, messages } = useGuardianLanguage();
+  const copy = messages.accountPrivacy.deleteDialog;
+  const [error, setError] = useState<AccountDeleteErrorCode>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [password, setPassword] = useState("");
   const isDeletingRef = useRef(false);
@@ -35,13 +37,13 @@ export function AccountDeleteDialog({
 
     isDeletingRef.current = true;
     setIsDeleting(true);
-    setError("");
+    setError(null);
 
     try {
       const nextError = await onDelete(password);
-      setError(nextError ?? "");
+      setError(nextError);
     } catch {
-      setError(DELETE_ACCOUNT_ERROR_MESSAGE);
+      setError("account-delete-failed");
     } finally {
       isDeletingRef.current = false;
       setIsDeleting(false);
@@ -65,25 +67,23 @@ export function AccountDeleteDialog({
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
+        lang={language}
       >
+        <GuardianLanguageControl placement="dialog" />
         <header className="grid gap-2">
           <p className="m-0 text-xs font-black uppercase tracking-widest text-red-700">
-            Cannot be undone
+            {copy.cannotUndo}
           </p>
           <h2
             className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
             id="delete-account-title"
           >
-            Delete account
+            {copy.title}
           </h2>
         </header>
 
         <p className="m-0 font-bold leading-relaxed text-slate-700">
-          This removes your account, all learner profiles, saved conversation
-          text, private voice clips from all nursery rhymes,
-          lesson voice recordings, and any previously saved private story
-          pictures from Parrot. A small deletion marker stays so removed
-          private media cannot return.
+          {copy.description}
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>
@@ -95,7 +95,7 @@ export function AccountDeleteDialog({
               className="grid gap-2 font-black text-brand-ink"
               htmlFor="delete-account-password"
             >
-              <span>Password</span>
+              <span>{copy.password}</span>
               <input
                 autoComplete="current-password"
                 className={fieldClassName({ tone: "tinted" })}
@@ -103,7 +103,7 @@ export function AccountDeleteDialog({
                 name="password"
                 onChange={(event) => {
                   setPassword(event.target.value);
-                  setError("");
+                  setError(null);
                 }}
                 ref={passwordRef}
                 required
@@ -117,16 +117,16 @@ export function AccountDeleteDialog({
                 className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
                 role="alert"
               >
-                {error}
+                {copy.errors[error]}
               </p>
             ) : null}
 
             <div className="grid gap-3 sm:grid-cols-2">
               <ActionButton onClick={onClose} type="button" variant="surface">
-                Cancel
+                {copy.cancel}
               </ActionButton>
               <ActionButton disabled={!password} type="submit" variant="rose">
-                {isDeleting ? "Deleting account…" : "Delete account now"}
+                {isDeleting ? copy.deleting : copy.confirm}
               </ActionButton>
             </div>
           </fieldset>

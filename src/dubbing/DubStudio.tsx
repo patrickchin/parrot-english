@@ -11,6 +11,7 @@ import {
 } from "react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getNurseryRhymesPath } from "../app/app-routes";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
 import { isAbortError } from "../media/audio-playback";
 import {
   MicrophoneAccessError,
@@ -59,6 +60,8 @@ type TakePreview = {
 type DubPresentation = DubGuidancePosition & Readonly<{
   countInBeat: number | null;
 }>;
+
+type RecordingErrorKind = "permission" | null;
 
 function getSceneLines(definition: DubDefinition) {
   return Array.from(
@@ -185,6 +188,7 @@ export function DubStudio({
   );
   const [loadError, setLoadError] = useState("");
   const [loadSequence, setLoadSequence] = useState(0);
+  const [recordingErrorKind, setRecordingErrorKind] = useState<RecordingErrorKind>(null);
   const [presentation, setPresentation] = useState<DubPresentation>(() => ({
     countInBeat: null,
     elapsedMs: null,
@@ -259,6 +263,7 @@ export function DubStudio({
 
   const cancelMedia = useCallback((discardTake: boolean) => {
     mediaGenerationRef.current += 1;
+    if (mountedRef.current) setRecordingErrorKind(null);
     guideControllerRef.current?.abort();
     guideControllerRef.current = null;
     takeControllerRef.current?.abort();
@@ -514,6 +519,11 @@ export function DubStudio({
       session?.cancel();
       if (recordingBackingRef.current === backing) recordingBackingRef.current = null;
       backing?.stop();
+      const nextRecordingErrorKind: RecordingErrorKind =
+        backingPrepared && !session && error instanceof MicrophoneAccessError
+          ? "permission"
+          : null;
+      setRecordingErrorKind(nextRecordingErrorKind);
       resetPresentation(line.id);
       dispatch({ type: "OPERATION_FINISHED" });
       if (captureStarted || state.saveRecovery === null) {
@@ -863,6 +873,9 @@ export function DubStudio({
       activeLine={selectedLine}
       definition={definition}
       error={state.error}
+      errorHelper={recordingErrorKind === "permission" ? (
+        <AdultBoundaryHelper message="recordingPermissionHelper" placement="compact" />
+      ) : null}
       hasSavedTake={Object.hasOwn(state.saved, selectedLine.id)}
       locked={locked}
       onBack={handleBack}

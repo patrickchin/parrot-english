@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import { TextEncoder } from "node:util";
 import { createDatabase } from "../worker/database.ts";
@@ -1733,4 +1734,50 @@ describe("account deletion legacy private-media cleanup", () => {
       state.close();
     }
   });
+});
+
+it("account deletion exposes one stable failure code across client and guest actions", async () => {
+  const { createServer } = await import("vite");
+  const vite = await createServer({
+    appType: "custom",
+    logLevel: "silent",
+    root: fileURLToPath(new URL("..", import.meta.url)),
+    server: { middlewareMode: true },
+  });
+  try {
+    const { deleteAccountSession } = await vite.ssrLoadModule(
+      "/src/auth/AuthGate.tsx",
+    );
+    const passwords = [];
+    const client = {
+      async deleteUser(fields) {
+        passwords.push(fields.password);
+        return { error: { status: 500 } };
+      },
+    };
+    assert.equal(
+      await deleteAccountSession({
+        client,
+        password: "guardian-password",
+        refetch: async () => assert.fail("A failed deletion must not refetch."),
+      }),
+      "account-delete-failed",
+    );
+    assert.deepEqual(passwords, ["guardian-password"]);
+
+    assert.equal(
+      await deleteAccountSession({
+        client,
+        deleteGuestAccountAction: async () => {
+          throw new Error("SERVER DELETE SENTENCE");
+        },
+        isAnonymous: true,
+        password: "",
+        refetch: async () => assert.fail("A failed deletion must not refetch."),
+      }),
+      "account-delete-failed",
+    );
+  } finally {
+    await vite.close();
+  }
 });

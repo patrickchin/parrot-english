@@ -18,6 +18,9 @@ import {
 } from "react";
 import type { LinkProps } from "react-router";
 import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages, type GuardianMessages } from "../i18n/messages/en";
 
 function HeaderLabel({ children }: { children: ReactNode }) {
   return <span className="hidden wide:inline">{children}</span>;
@@ -26,11 +29,15 @@ function HeaderLabel({ children }: { children: ReactNode }) {
 function AccountError({
   className,
   error,
+  helper,
   onRetry,
+  retryLabel = englishGuardianMessages.common.retry,
 }: {
   className?: string;
   error: string;
+  helper?: keyof GuardianMessages["learnerBoundary"];
   onRetry?: () => void;
+  retryLabel?: string;
 }) {
   return (
     <div
@@ -39,7 +46,10 @@ function AccountError({
         className,
       )}
     >
-      <span role="alert">{error}</span>
+      <span className="grid gap-1" role="alert">
+        <span>{error}</span>
+        {helper ? <AdultBoundaryHelper message={helper} placement="compact" /> : null}
+      </span>
       {onRetry ? (
         <ActionButton
           onClick={onRetry}
@@ -47,18 +57,24 @@ function AccountError({
           type="button"
           variant="surface"
         >
-          Try again
+          {retryLabel}
         </ActionButton>
       ) : null}
     </div>
   );
 }
 
-export function RouteHeader({ children }: { children: ReactNode }) {
+export function RouteHeader({
+  ariaLabel = "Page navigation",
+  children,
+}: {
+  ariaLabel?: string;
+  children: ReactNode;
+}) {
   return (
     <nav
-      aria-label="Page navigation"
-      className="absolute left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7"
+      aria-label={ariaLabel}
+      className="absolute left-38 top-3.5 z-20 flex gap-2.5 short:top-2.5 md:top-6 wide:left-41"
     >
       {children}
     </nav>
@@ -79,17 +95,29 @@ export function BidiLearnerName({
   );
 }
 
+export function isolateBidiText(value: string) {
+  return `\u2068${value}\u2069`;
+}
+
 export function GuardianLearnerContextLabel({
+  audience,
   learnerName,
 }: {
+  audience: "guardian" | "learner";
   learnerName: string;
 }) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages =
+    audience === "guardian" ? selectedMessages : englishGuardianMessages;
+  const isolatedName = isolateBidiText(learnerName);
   return (
     <p
+      aria-label={messages.learners.profile.managing(isolatedName)}
       className="m-0 min-w-0 max-w-full text-xs font-black uppercase tracking-[0.18em] text-brand-blue [overflow-wrap:anywhere] sm:text-sm"
-      dir="ltr"
     >
-      Managing <BidiLearnerName learnerName={learnerName} />
+      {messages.learners.profile.managingBefore}
+      <BidiLearnerName learnerName={learnerName} />
+      {messages.learners.profile.managingAfter}
     </p>
   );
 }
@@ -144,6 +172,7 @@ export function HeaderLink({
 export function AccountHeader({
   activeMode,
   error,
+  errorHelper,
   guardianLabel,
   hasActiveLearner = false,
   isDialogOpen = false,
@@ -161,6 +190,7 @@ export function AccountHeader({
 }: {
   activeMode: "guardian" | "learner";
   error: string;
+  errorHelper?: keyof GuardianMessages["learnerBoundary"];
   guardianLabel: string;
   hasActiveLearner?: boolean;
   isDialogOpen?: boolean;
@@ -177,6 +207,9 @@ export function AccountHeader({
   signOutError: string;
   userEmail: string;
 }) {
+  const { language, messages: selectedMessages } = useGuardianLanguage();
+  const messages =
+    activeMode === "guardian" ? selectedMessages : englishGuardianMessages;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
@@ -187,8 +220,17 @@ export function AccountHeader({
   const managedLearnerLabel = learnerLabel.trim() || "Learner";
   const activeLabel =
     activeMode === "guardian" ? guardianLabel : managedLearnerLabel;
-  const activeModeLabel = activeMode === "guardian" ? "Guardian" : "Learner";
-  const profileLabel = `Profile for ${activeLabel}, ${activeMode} mode`;
+  const isolatedActiveLabel = isolateBidiText(activeLabel);
+  const activeModeLabel =
+    activeMode === "guardian" ? messages.account.guardian : "Learner";
+  const profileLabel = messages.account.profileLabel(
+    isolatedActiveLabel,
+    activeMode === "guardian"
+      ? language === "en"
+        ? "guardian"
+        : messages.account.guardian
+      : "learner",
+  );
   const showSignOutRecovery =
     activeMode === "guardian" && Boolean(signOutError) && !isSigningOut;
 
@@ -289,7 +331,7 @@ export function AccountHeader({
 
   return (
     <aside
-      aria-label="Account"
+      aria-label={messages.account.label}
       className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7"
       ref={accountRef}
     >
@@ -297,14 +339,15 @@ export function AccountHeader({
         className={cx(
           "relative inline-flex max-w-full flex-row-reverse items-start gap-4",
           isSigningOut && "w-[10.25rem] short:w-[9.5rem] md:w-[11.25rem]",
-          showSignOutRecovery &&
-            "w-[12.25rem] !gap-2 min-[360px]:w-[13.375rem] min-[360px]:!gap-3 md:w-[13.875rem] wide:w-auto",
+          showSignOutRecovery && "wide:gap-3",
         )}
       >
         <ActionButton
           aria-disabled={isSigningOut || undefined}
           aria-label={
-            isSigningOut ? `Signing out… ${profileLabel}` : profileLabel
+            isSigningOut
+              ? messages.account.signingOutProfileLabel(profileLabel)
+              : profileLabel
           }
           aria-controls={menuId}
           aria-expanded={isMenuOpen}
@@ -322,7 +365,7 @@ export function AccountHeader({
           onKeyDown={handleAccountKeyDown}
           ref={accountButtonRef}
           size="header"
-          title={isSigningOut ? undefined : "Account"}
+          title={isSigningOut ? undefined : messages.account.label}
           type="button"
           variant="navy"
         >
@@ -358,7 +401,7 @@ export function AccountHeader({
         {showSignOutRecovery ? (
           <ActionButton
             aria-describedby={signOutAlertId}
-            className="!min-w-0 flex-1 !gap-0.5 !px-0.5 !py-0 text-center leading-tight short:!min-h-12 min-[360px]:whitespace-nowrap wide:flex-none wide:!gap-1 wide:!px-3"
+            className="absolute right-0 top-full mt-2 w-[12.25rem] !gap-0.5 !px-0.5 !py-0 text-center leading-tight short:!min-h-12 min-[360px]:whitespace-nowrap wide:static wide:mt-0 wide:w-auto wide:flex-none wide:!gap-1 wide:!px-3"
             onClick={selectSignOut}
             size="compact"
             type="button"
@@ -369,7 +412,7 @@ export function AccountHeader({
               className="size-4 shrink-0 text-brand-yellow"
               strokeWidth={3}
             />
-            <span>Sign out again</span>
+            <span>{messages.account.signOutAgain}</span>
           </ActionButton>
         ) : null}
         <span
@@ -389,7 +432,7 @@ export function AccountHeader({
                 className="size-5 shrink-0 animate-spin motion-reduce:animate-none"
                 strokeWidth={3}
               />
-              <span>Signing out…</span>
+              <span>{messages.account.signingOut}</span>
             </>
           ) : (
             ""
@@ -420,9 +463,16 @@ export function AccountHeader({
               </p>
             </div>
           ) : null}
-          {error ? <AccountError error={error} onRetry={onRetryError} /> : null}
+          {error ? (
+            <AccountError
+              error={error}
+              helper={errorHelper}
+              onRetry={onRetryError}
+              retryLabel={messages.common.retry}
+            />
+          ) : null}
           <div
-            aria-label="Account menu"
+            aria-label={messages.account.menuLabel}
             className="grid gap-1 [&>button]:scroll-my-2"
             id={menuId}
             onBlur={(event) => {
@@ -462,7 +512,13 @@ export function AccountHeader({
               >
                 <ShieldCheck aria-hidden="true" className="size-5 shrink-0" />
                 <span className="grid gap-1">
-                  <span>Grown-up access</span>
+                  <span className="grid gap-1">
+                    <span>Grown-up access</span>
+                    <AdultBoundaryHelper
+                      message="grownUpAccessHelper"
+                      placement="compact"
+                    />
+                  </span>
                   <span className="text-xs font-bold">
                     {isModePending ? "Switching modes…" : "Switch modes"}
                   </span>
@@ -476,21 +532,21 @@ export function AccountHeader({
                   role="menuitem"
                   type="button"
                 >
-                  Guardian dashboard
+                  {messages.account.guardianDashboard}
                 </MenuButton>
                 <MenuButton
                   onClick={() => selectAction(onOpenLearnerProfiles)}
                   role="menuitem"
                   type="button"
                 >
-                  Manage learners
+                  {messages.account.manageLearners}
                 </MenuButton>
                 <MenuButton
                   onClick={() => selectAction(onOpenAccountPrivacy)}
                   role="menuitem"
                   type="button"
                 >
-                  Account &amp; privacy
+                  {messages.account.accountPrivacy}
                 </MenuButton>
                 <MenuButton
                   disabled={isSigningOut}
@@ -498,7 +554,9 @@ export function AccountHeader({
                   role="menuitem"
                   type="button"
                 >
-                  {isSigningOut ? "Signing out…" : "Sign out"}
+                  {isSigningOut
+                    ? messages.account.signingOut
+                    : messages.account.signOut}
                 </MenuButton>
               </>
             ) : null}
@@ -509,7 +567,9 @@ export function AccountHeader({
         <AccountError
           className="absolute right-0 top-full mt-2 w-64 sm:w-80"
           error={error}
+          helper={errorHelper}
           onRetry={onRetryError}
+          retryLabel={messages.common.retry}
         />
       ) : null}
     </aside>

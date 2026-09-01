@@ -24,6 +24,43 @@ function jsonFetch(payload = { ok: true }, status = 200) {
 }
 
 describe("learnerProfile browser API", () => {
+  it("normalizes every worker field sentence to a stable presentation code", () => {
+    assert.equal(
+      typeof learnerProfileApi.getLearnerProfileFieldErrorCode,
+      "function",
+      "Expected the browser API boundary to normalize worker field errors",
+    );
+    const cases = [
+      ["This question is no longer available.", "question-unavailable"],
+      ["Please enter a description.", "description-required"],
+      ["Please enter an answer.", "answer-required"],
+      ["Please answer this question.", "answer-required"],
+      [
+        "Do not share your school, home address, phone, email, or password.",
+        "private-details",
+      ],
+      ["Please use only your first name or nickname.", "preferred-name"],
+      [
+        "Please tell me the name you would like us to use.",
+        "preferred-name",
+      ],
+      [
+        "Please tell me your age using a whole number.",
+        "age-whole-number",
+      ],
+      ["Please check this answer and try again.", "check-answer"],
+      ["Please use 300 characters or fewer.", "too-long"],
+      ["SERVER VALIDATION SENTENCE", "check-answer"],
+    ];
+
+    for (const [message, expected] of cases) {
+      assert.equal(
+        learnerProfileApi.getLearnerProfileFieldErrorCode(message),
+        expected,
+      );
+    }
+  });
+
   it("loads learnerProfile and profile state from same-origin routes", async () => {
     const learnerProfile = jsonFetch({ profile: { name: "Mia" } });
     assert.deepEqual(

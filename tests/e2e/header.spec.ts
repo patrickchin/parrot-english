@@ -226,6 +226,12 @@ function boxesOverlap(first: Rect, second: Rect) {
   );
 }
 
+async function expectNoOverlap(first: Locator, second: Locator) {
+  expect(boxesOverlap(await visibleBox(first), await visibleBox(second))).toBe(
+    false,
+  );
+}
+
 function expectBoxInside(inner: Rect, outer: Rect) {
   expect(inner.x).toBeGreaterThanOrEqual(outer.x);
   expect(inner.y).toBeGreaterThanOrEqual(outer.y);
@@ -467,7 +473,7 @@ for (const route of routes) {
       });
       const accountMenu = page.getByRole("button", {
         name: new RegExp(
-          `Profile for ${mode === "guardian" ? "Alex Guardian" : "Mia"}, ${mode} mode`,
+          `Profile for ⁨${mode === "guardian" ? "Alex Guardian" : "Mia"}⁩, ${mode} mode`,
         ),
       });
       const accountBox = await expectInsideViewport(account, viewport);
@@ -501,6 +507,68 @@ for (const route of routes) {
     });
   }
 }
+
+for (const viewport of mobileViewports) {
+  test(`guardian language, route, and account controls remain separate on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(guardianPath("/guardian/account"));
+
+    const language = page.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    });
+    const english = page.getByRole("button", { exact: true, name: "English" });
+    const chinese = page.getByRole("button", { exact: true, name: "中文" });
+    const routeControl = page.getByRole("link", {
+      exact: true,
+      name: /Back to Guardian dashboard|返回家长中心/,
+    });
+    const account = page.getByRole("button", {
+      name: /Profile for .+, guardian mode|.+的档案，家长模式/,
+    });
+
+    for (const option of [english, chinese]) {
+      await option.click();
+      await expect(option).toBeFocused();
+      await expectInsideViewport(language, viewport);
+      await expectInsideViewport(routeControl, viewport);
+      await expectInsideViewport(account, viewport);
+      await expectNoOverlap(language, routeControl);
+      await expectNoOverlap(language, account);
+      await expectNoOverlap(routeControl, account);
+      await focusWithKeyboard(page, option);
+      await focusWithKeyboard(page, routeControl);
+      await focusWithKeyboard(page, account);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        )
+        .toBe(true);
+    }
+  });
+}
+
+test("wide language and route controls have separate shared header slots", async ({
+  page,
+}) => {
+  const viewport = { height: 900, name: "wide", width: 1360 };
+  await page.setViewportSize(viewport);
+  await page.goto(guardianPath("/guardian/account"));
+
+  const language = page.getByRole("group", {
+    name: "Guardian guidance language",
+  });
+  const routeControl = page.getByRole("link", {
+    exact: true,
+    name: "Back to Guardian dashboard",
+  });
+  await expectInsideViewport(language, viewport);
+  await expectInsideViewport(routeControl, viewport);
+  await expectNoOverlap(language, routeControl);
+});
 
 test("arbitrary guardian identity cannot cover the compact Back action", async ({
   page,
@@ -587,12 +655,12 @@ test("guardian profile keeps its identity in the account trigger at every header
   await page.goto(guardianPath("/guardian"));
 
   const account = page.getByRole("button", {
-    name: `Profile for ${longAccountName}, guardian mode`,
+    name: `Profile for ⁨${longAccountName}⁩, guardian mode`,
   });
   const closedBox = await visibleBox(account);
   expect(closedBox.width).toBe(closedBox.height);
   await expect(account).toHaveAccessibleName(
-    `Profile for ${longAccountName}, guardian mode`,
+    `Profile for ⁨${longAccountName}⁩, guardian mode`,
   );
   const compactName = account.getByText(longAccountName, { exact: true });
   await expect(compactName).toHaveAttribute("dir", "auto");
@@ -615,7 +683,7 @@ test("guardian profile keeps its identity in the account trigger at every header
   await page.setViewportSize({ height: 900, width: 1360 });
   await page.goto(guardianPath("/guardian"));
   const wideAccount = page.getByRole("button", {
-    name: `Profile for ${longAccountName}, guardian mode`,
+    name: `Profile for ⁨${longAccountName}⁩, guardian mode`,
   });
   await expect(wideAccount).toContainText(longAccountName);
   await expect(wideAccount).toContainText("Guardian");
@@ -628,7 +696,7 @@ test("guardian profile keeps its identity in the account trigger at every header
   await page.goto(guardianPath("/guardian"));
   await expect(
     page.getByRole("button", {
-      name: `Profile for ${longAccountEmail}, guardian mode`,
+      name: `Profile for ⁨${longAccountEmail}⁩, guardian mode`,
     }),
   ).toBeVisible();
 });
@@ -679,12 +747,14 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBeFocused();
 
     const account = page.getByRole("button", {
-      name: /^Profile for .+, guardian mode$/,
+      exact: true,
+      name: `Profile for ⁨${currentCase.identity.name}⁩, guardian mode`,
     });
     await expect(account).toHaveAccessibleName(
-      `Profile for ${currentCase.identity.name}, guardian mode`,
+      `Profile for ⁨${currentCase.identity.name}⁩, guardian mode`,
     );
     const name = account.getByText(currentCase.identity.name, { exact: true });
+    expect(await name.evaluate((element) => element.tagName)).toBe("BDI");
     await expect(name).toHaveAttribute("dir", "auto");
     expect(
       await name.evaluate((element) => getComputedStyle(element).direction),
@@ -770,7 +840,7 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   await expect(retry).toHaveAttribute("aria-describedby", alertId!);
   const accountBox = await expectInsideViewport(account, viewport);
   const retryBox = await expectInsideViewport(retry, viewport);
-  expect(retryBox.x + retryBox.width).toBeLessThanOrEqual(accountBox.x);
+  expect(retryBox.y).toBeGreaterThanOrEqual(accountBox.y + accountBox.height);
   expect(retryBox.height).toBeGreaterThanOrEqual(44);
   expect(retryBox.width).toBeGreaterThanOrEqual(44);
   expect(
@@ -881,10 +951,12 @@ for (const viewport of [
       `,
     });
 
-    const heading = page.getByRole("heading", { name: "Guardian dashboard" });
+    const language = page.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    });
     const back = page.getByRole("button", { name: "Switch to learner" });
     const account = page.getByRole("button", {
-      name: "Profile for Alex Guardian, guardian mode",
+      name: "Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     await account.click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -894,7 +966,7 @@ for (const viewport of [
       name: "Sign out again",
     });
     const retryBox = await expectInsideViewport(retry, viewport);
-    expect(boxesOverlap(retryBox, await visibleBox(heading))).toBe(false);
+    expect(boxesOverlap(retryBox, await visibleBox(language))).toBe(false);
     expect(boxesOverlap(retryBox, await visibleBox(back))).toBe(false);
     expect(boxesOverlap(retryBox, await visibleBox(account))).toBe(false);
     const sizing = await retry.evaluate((control) => ({
@@ -914,7 +986,6 @@ for (const viewport of [
       x: 0,
       y: 0,
     });
-    expect(boxesOverlap(retryPaint, await visibleBox(heading))).toBe(false);
     expect(boxesOverlap(retryPaint, await visibleBox(back))).toBe(false);
     expect(boxesOverlap(retryPaint, await visibleBox(account))).toBe(false);
     expect(
@@ -940,7 +1011,7 @@ for (const key of ["Enter", "Space"]) {
     await page.goto(guardianPath("/guardian"));
 
     const account = page.getByRole("button", {
-      name: "Profile for Alex Guardian, guardian mode",
+      name: "Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     await account.click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -959,7 +1030,7 @@ for (const key of ["Enter", "Space"]) {
 
     const pendingAccount = page.getByRole("button", {
       exact: true,
-      name: "Signing out… Profile for Alex Guardian, guardian mode",
+      name: "Signing out… Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     await expect(pendingAccount).toBeFocused();
     await expect(
@@ -991,12 +1062,12 @@ test("wide pending sign out keeps its established 180px frame", async ({
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Profile for Alex Guardian, guardian mode",
+    name: "Signing out… Profile for ⁨Alex Guardian⁩, guardian mode",
   });
   expect((await visibleBox(pendingAccount)).width).toBe(180);
 
@@ -1012,7 +1083,7 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   await page.goto("/lessons");
 
   const accountMenu = page.getByRole("button", {
-    name: "Profile for Mia, learner mode",
+    name: "Profile for ⁨Mia⁩, learner mode",
   });
   await expect(accountMenu).toHaveAttribute("aria-expanded", "false");
 
@@ -1037,13 +1108,13 @@ test("the learner menu switches to a sibling and returns to learner home", async
   );
 
   await page
-    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .getByRole("button", { name: "Profile for ⁨Mia⁩, learner mode" })
     .click();
   await page.getByRole("menuitem", { name: "Switch learner" }).click();
 
   const chooser = page.getByRole("dialog", { name: "Who is learning now?" });
   await chooser
-    .getByRole("button", { name: "Start learner mode as Noah" })
+    .getByRole("button", { name: "Start learner mode as ⁨Noah⁩" })
     .click();
 
   await expect(page).toHaveURL("/");
@@ -1051,7 +1122,7 @@ test("the learner menu switches to a sibling and returns to learner home", async
     page.getByRole("navigation", { name: "Learning activities" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Profile for Noah, learner mode" }),
+    page.getByRole("button", { name: "Profile for ⁨Noah⁩, learner mode" }),
   ).toBeVisible();
 });
 
@@ -1060,7 +1131,7 @@ test("Guardian menu opens the protected Account & privacy page with deletion onl
 }) => {
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
 
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1121,7 +1192,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
     await page.setViewportSize(viewport);
     await page.goto(guardianPath("/guardian"));
     await page
-      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
       .click();
 
     const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1190,7 +1261,7 @@ test("switching to guardian mode reaches learner details through Manage learners
 }) => {
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .getByRole("button", { name: "Profile for ⁨Mia⁩, learner mode" })
     .click();
   await page.getByRole("menuitem", { name: /Grown-up access/ }).click();
 
@@ -1200,7 +1271,7 @@ test("switching to guardian mode reaches learner details through Manage learners
     .getByRole("link", { exact: true, name: "Manage learners" })
     .click();
   await page
-    .getByRole("button", { exact: true, name: "Edit Mia's profile" })
+    .getByRole("button", { exact: true, name: "Edit ⁨Mia⁩'s profile" })
     .click();
 
   await expect(page).toHaveURL("/guardian/learners/e2e-learner");
@@ -1237,7 +1308,7 @@ test("forced colors keeps account exit actions visibly focused", async ({
   ).toBeFocused();
 
   const trigger = page.getByRole("button", {
-    name: "Profile for Alex Guardian, guardian mode",
+    name: "Profile for ⁨Alex Guardian⁩, guardian mode",
   });
   await trigger.press("ArrowDown");
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1271,7 +1342,7 @@ test("Account & privacy keeps optional technical details without retired guidanc
   await page.setViewportSize(viewport);
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
@@ -1316,9 +1387,7 @@ test("Account & privacy keeps optional technical details without retired guidanc
     accountPage.getByText("Worker deployment e2e-deployment"),
   ).toBeVisible();
   await expect(accountPage.getByText("Lesson script LLM")).toHaveCount(0);
-  await expect(
-    accountPage.getByText("openai/gpt-5.6-luna"),
-  ).toHaveCount(0);
+  await expect(accountPage.getByText("openai/gpt-5.6-luna")).toHaveCount(0);
   await expect(accountPage.getByText("Realtime voice model")).toBeVisible();
   await expect(accountPage.getByText("gpt-realtime-2.1-mini")).toBeVisible();
   await expect(accountPage.getByText("Input transcription")).toBeVisible();
@@ -1342,7 +1411,7 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
   });
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
@@ -1403,7 +1472,7 @@ test("account menu stays visible after scrolling a short lesson list", async ({
     .toBeGreaterThan(0);
 
   const accountMenu = page.getByRole("button", {
-    name: "Profile for Mia, learner mode",
+    name: "Profile for ⁨Mia⁩, learner mode",
   });
   await expectInsideViewport(accountMenu, viewport);
 });
@@ -1416,7 +1485,7 @@ test("desktop header controls share one rendered chrome and focus outline", asyn
 
   const controls = [
     page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
+      name: "Profile for ⁨Mia⁩, learner mode",
     }),
     page.getByRole("button", { name: "Back to lesson list" }),
   ];
@@ -1437,12 +1506,10 @@ test("desktop header controls share one rendered chrome and focus outline", asyn
   expect(outlines[0]).toEqual(outlines[1]);
 });
 
-test("shared route-header icons render at one stroke weight", async ({ page }) => {
-  const routes = [
-    "/stories",
-    "/dubs",
-    guardianPath("/guardian/account"),
-  ];
+test("shared route-header icons render at one stroke weight", async ({
+  page,
+}) => {
+  const routes = ["/stories", "/dubs", guardianPath("/guardian/account")];
   const strokeWidths = [];
 
   for (const path of routes) {

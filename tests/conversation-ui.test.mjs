@@ -15,6 +15,9 @@ const vite = await createServer({
 const { ConversationSurface } = await vite.ssrLoadModule(
   "/src/conversation/ConversationSurface.tsx",
 );
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 after(async () => {
   await vite.close();
 });
@@ -49,13 +52,35 @@ function props(overrides = {}) {
   };
 }
 
-function render(overrides = {}) {
+function render(overrides = {}, language = "en") {
   return renderToStaticMarkup(
-    createElement(ConversationSurface, props(overrides)),
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(ConversationSurface, props(overrides)),
+    ),
   );
 }
 
 describe("accessible realtime conversation surface", () => {
+  it("keeps headings, controls, statuses, and recoverable errors English", () => {
+    for (const overrides of [
+      {},
+      { microphoneEnabled: false, status: "connecting", turnReady: false },
+      { microphoneEnabled: false, status: "reconnecting" },
+      {
+        error: "Peppa cannot talk now. Tap Try again.",
+        microphoneEnabled: false,
+        status: "error",
+      },
+    ]) {
+      const html = render(overrides, "zh-Hans");
+      assert.match(html, /Chat with Peppa/);
+      assert.match(html, /aria-label="Back"/);
+      assert.doesNotMatch(html, /[\p{Script=Han}]/u);
+    }
+  });
+
   it("starts with one child action without grown-up chat controls", () => {
     const html = render();
     const document = new Window().document;

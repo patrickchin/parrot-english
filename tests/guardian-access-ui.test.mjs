@@ -312,7 +312,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     await mountProvider(Provider, "id:user-1", (state) => states.push(state));
     await waitFor(() => {
       assert.equal(states.at(-1).mode, "learner");
-      assert.equal(states.at(-1).error, "Please check the connection.");
+      assert.equal(states.at(-1).error, "check-failed");
     });
 
     await act(async () => states.at(-1).retry());
@@ -384,9 +384,9 @@ describe("guardian access provider", { concurrency: false }, () => {
     await act(async () => {
       result = await states.at(-1).unlock("wrong");
     });
-    assert.equal(result, "Password did not match.");
+    assert.equal(result, "check-failed");
     assert.equal(states.at(-1).mode, "learner");
-    assert.equal(states.at(-1).error, "");
+    assert.equal(states.at(-1).error, null);
     assert.deepEqual(api.unlockCalls, ["secret", "wrong"]);
   });
 
@@ -425,7 +425,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       result = await states.at(-1).unlock("secret");
     });
 
-    assert.equal(result, "Connection lost after unlocking.");
+    assert.equal(result, "check-failed");
     assert.equal(states.at(-1).mode, "learner");
     assert.equal(server.mode, "learner");
     assert.deepEqual(server.commits, ["unlock", "lock"]);
@@ -485,7 +485,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       result = await states.at(-1).unlock("first");
     });
     const marker = window.localStorage.getItem(storageKey);
-    assert.equal(result, "Unlock response was lost.");
+    assert.equal(result, "check-failed");
     assert.equal(states.at(-1).mode, "learner");
     assert.ok(marker);
     assert.equal(server.mode, "guardian");
@@ -535,7 +535,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       result = await states.at(-1).unlock("wrong");
     });
 
-    assert.equal(result, "Password did not match.");
+    assert.equal(result, "check-failed");
     assert.equal(states.at(-1).mode, "learner");
     assert.equal(api.lockCalls, 0);
     assert.equal(window.localStorage.getItem(storageKey), null);
@@ -597,7 +597,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     firstUnlock.resolve();
     await act(async () => Promise.all([firstPromise, secondPromise]));
 
-    assert.equal(firstResult, "Guardian access changed. Please try again.");
+    assert.equal(firstResult, "access-changed");
     assert.equal(secondResult, null);
     assert.equal(states.at(-1).mode, "guardian");
     assert.equal(server.mode, "guardian");
@@ -669,8 +669,8 @@ describe("guardian access provider", { concurrency: false }, () => {
     firstResponse.resolve();
     await act(async () => Promise.all([firstPromise, secondPromise]));
 
-    assert.equal(firstResult, "Guardian access changed. Please try again.");
-    assert.equal(secondResult, "Password did not match.");
+    assert.equal(firstResult, "access-changed");
+    assert.equal(secondResult, "check-failed");
     assert.equal(states.at(-1).mode, "learner");
     assert.equal(server.mode, "learner");
     assert.deepEqual(server.commits, ["unlock", "lock"]);
@@ -748,7 +748,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     firstResponse.resolve();
     await act(async () => Promise.all([firstPromise, secondPromise]));
 
-    assert.equal(firstResult, "Guardian access changed. Please try again.");
+    assert.equal(firstResult, "access-changed");
     assert.equal(secondResult, null);
     assert.equal(states.at(-1).mode, "guardian");
     assert.equal(server.mode, "guardian");
@@ -791,7 +791,7 @@ describe("guardian access provider", { concurrency: false }, () => {
       });
       assert.equal(
         result,
-        "Guardian access could not be checked. Please try again.",
+        "check-failed",
       );
       assert.equal(states.at(-1).mode, "learner");
       assert.equal(api.lockCalls, expectedLockCalls);
@@ -866,7 +866,7 @@ describe("guardian access provider", { concurrency: false }, () => {
 
       assert.equal(
         result,
-        "Guardian access could not be checked. Please try again.",
+        "check-failed",
       );
       assert.equal(fastStates.at(-1).mode, "learner");
       assert.equal(server.mode, "learner");
@@ -911,7 +911,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     });
     assert.equal(
       result,
-      "Could not lock guardian mode. Try again before handing over the device.",
+      "lock-failed",
     );
     assert.equal(states.at(-1).mode, "guardian");
     assert.equal(states.at(-1).error, result);
@@ -950,7 +950,7 @@ describe("guardian access provider", { concurrency: false }, () => {
 
     assert.equal(
       result,
-      "Could not lock guardian mode. Try again before handing over the device.",
+      "lock-failed",
     );
     assert.equal(states.at(-1).mode, "guardian");
     assert.equal(states.at(-1).error, result);
@@ -1736,7 +1736,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     unlockCommit.resolve();
     await act(async () => unlockPromise);
 
-    assert.equal(unlockResult, "Guardian access changed. Please try again.");
+    assert.equal(unlockResult, "access-changed");
     assert.equal(states.at(-1).mode, "learner");
     assert.equal(window.localStorage.getItem(storageKey), "new-lock");
     assert.equal(server.mode, "learner");

@@ -225,7 +225,24 @@ test("pull requests run one complete verification job including lifecycle tests"
   assert.match(workflow, /node-version: ["']22["']/);
   assert.match(workflow, /cache: npm/);
   assert.match(workflow, /run: npm ci/);
-  assert.match(workflow, /timeout-minutes: 20/);
+  const verifyJobs = workflow.match(
+    /^ {2}verify:\r?\n(?:(?!^ {2}\S)[\s\S])*/gmu,
+  ) ?? [];
+  assert.equal(verifyJobs.length, 1, "Expected exactly one verify job.");
+  const timeoutValues = [
+    ...verifyJobs[0].matchAll(/^ {4}timeout-minutes:\s*(\d+)\s*$/gmu),
+  ].map((match) => match[1]);
+  assert.equal(
+    timeoutValues.length,
+    1,
+    "Expected exactly one timeout for the verify job.",
+  );
+  assert.match(timeoutValues[0], /^\d+$/u);
+  const timeoutMinutes = Number(timeoutValues[0]);
+  assert.ok(
+    timeoutMinutes >= 30,
+    "Expected pull-request verification to allow at least 30 minutes.",
+  );
   assert.match(workflow, /name: Run tests including mounted lifecycle/);
   assert.match(workflow, /run: npm test/);
   assert.match(workflow, /run: npm run lint/);

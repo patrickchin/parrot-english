@@ -358,7 +358,7 @@ test("shared menu items do not move when hovered", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto(guardianPath("/lessons"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   const manageLearners = page.getByRole("menuitem", {
     name: "Manage learners",
@@ -376,7 +376,7 @@ test("shared menu items do not move when hovered", async ({ page }) => {
 test("secondary actions keep a visible frame on light cards", async ({ page }) => {
   await page.goto(guardianPath("/guardian/learners"));
   await expectVisibleSurfaceFrame(
-    page.getByRole("button", { name: "Edit Mia's profile" }),
+    page.getByRole("button", { name: "Edit ⁨Mia⁩'s profile" }),
   );
 
   await page.route("**/api/auth/get-session", async (route) => {
@@ -426,7 +426,7 @@ for (const viewport of viewports) {
     await preparePage(page, viewport);
     await page.goto(guardianPath("/lessons"));
     await page
-      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
       .click();
 
     await expectPointerStateContrast({
@@ -468,7 +468,7 @@ for (const viewport of viewports) {
     await page.goto(guardianPath("/lessons"));
 
     await page
-      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
       .click();
     await page.getByRole("menuitem", { name: "Account & privacy" }).click();
     await page

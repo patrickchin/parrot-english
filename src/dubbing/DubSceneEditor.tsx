@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, ChevronLeft, LoaderCircle, Mic, Play, Square } from "lucide-react";
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { ActionButton, TextButton } from "../shared/ui";
 import { DubTimedWords, type DubGuidancePosition } from "./DubKaraokeGuide";
 import type { DubOperation } from "./dub-state";
@@ -14,6 +14,7 @@ export type DubSceneEditorProps = {
   activeLine: DubLine;
   definition?: DubDefinition;
   error: string;
+  errorHelper?: ReactNode;
   hasSavedTake: boolean;
   locked: boolean;
   onBack(): void;
@@ -45,6 +46,7 @@ export function DubSceneEditor({
   activeLine,
   definition = FIVE_LITTLE_DUCKS_DUB,
   error,
+  errorHelper,
   hasSavedTake,
   locked,
   onBack,
@@ -244,6 +246,9 @@ export function DubSceneEditor({
                 role={feedbackError ? "alert" : undefined}
               >
                 {feedbackLabel}
+                {feedbackError && errorHelper ? (
+                  <span className="mt-0.5 block">{errorHelper}</span>
+                ) : null}
               </p>
             </div>
           ) : null}

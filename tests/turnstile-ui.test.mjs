@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { act, createElement } from "react";
+import { act, createElement, Fragment } from "react";
 import { createServer } from "vite";
 import {
   cleanupMountedRoots,
@@ -19,6 +19,12 @@ const vite = await createServer({
 });
 const { TurnstileWidget } = await vite.ssrLoadModule(
   "/src/auth/Turnstile.tsx"
+);
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
+const { GuardianLanguageControl } = await vite.ssrLoadModule(
+  "/src/i18n/GuardianLanguageControl.tsx",
 );
 
 test.afterEach(async () => {
@@ -159,4 +165,41 @@ test("Turnstile uses its flexible challenge when the card is wide enough", async
   } finally {
     restoreWidth();
   }
+});
+
+test("Turnstile status retranslates without remounting the vendor widget", async () => {
+  let renderCalls = 0;
+  const api = {
+    remove() {},
+    render() {
+      renderCalls += 1;
+      return "stable-widget";
+    },
+  };
+
+  await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(
+        Fragment,
+        null,
+        createElement(GuardianLanguageControl),
+        createElement(TurnstileWidget, {
+          load: async () => api,
+          onTokenChange() {},
+          siteKey: "public-site-key",
+        }),
+      ),
+    ),
+  );
+  await waitFor(() => assert.match(document.body.textContent, /正在进行安全验证/));
+  const callsBeforeLanguageChange = renderCalls;
+
+  await act(async () => {
+    document.querySelector('button[lang="en"]')?.click();
+  });
+
+  await waitFor(() => assert.match(document.body.textContent, /Security check in progress/));
+  assert.equal(renderCalls, callsBeforeLanguageChange);
 });

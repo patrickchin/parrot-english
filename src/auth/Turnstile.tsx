@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleCheckBig, LoaderCircle, TriangleAlert } from "lucide-react";
 import { AUTH_TURNSTILE_ACTION } from "../../lib/auth-captcha";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import { cx } from "../shared/ui";
 
 const TURNSTILE_SCRIPT_URL =
@@ -67,14 +69,20 @@ export function loadTurnstile(): Promise<TurnstileApi> {
 }
 
 export function TurnstileWidget({
+  guardianAudience = true,
   load = loadTurnstile,
   onTokenChange,
   siteKey,
 }: {
+  guardianAudience?: boolean;
   load?: () => Promise<TurnstileApi>;
   onTokenChange: (token: string | null) => void;
   siteKey: string;
 }) {
+  const { messages: selectedMessages } = useGuardianLanguage();
+  const messages = guardianAudience
+    ? selectedMessages
+    : englishGuardianMessages;
   const containerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<
     "checking" | "complete" | "error" | "unavailable"
@@ -132,17 +140,17 @@ export function TurnstileWidget({
 
   const message =
     status === "complete"
-      ? "Security check complete. Guest access is ready."
+      ? messages.auth.securityComplete
       : status === "checking"
-        ? "Security check in progress. Please wait—guest access will unlock automatically."
+        ? messages.auth.securityChecking
         : status === "unavailable"
-          ? "Guest access and sign-up are temporarily unavailable."
-          : "The security check could not load. Refresh and try again.";
+          ? messages.auth.securityUnavailable
+          : messages.auth.securityLoadFailed;
 
   return (
     <div
       aria-busy={status === "checking" || undefined}
-      aria-label="Security check"
+      aria-label={messages.auth.securityCheck}
       className={cx(
         "grid min-w-0 max-w-full justify-items-stretch gap-2 overflow-hidden rounded-2xl border-3 px-3 py-3 shadow-sm transition-colors",
         status === "checking" && "border-amber-400 bg-amber-50 text-amber-950",

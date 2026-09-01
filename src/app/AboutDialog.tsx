@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { Card, cx } from "../shared/ui";
 
 type BackendBuild = {
@@ -27,6 +28,11 @@ type BuildInfo = {
   components: ComponentBuild[];
 };
 
+export type BuildInfoState =
+  | { phase: "loading" }
+  | { phase: "failed" }
+  | { info: BuildInfo; phase: "ready" };
+
 type BuildField = {
   label: string;
   value: string;
@@ -37,8 +43,8 @@ const WEB_BUILD = {
   version: import.meta.env.VITE_PARROT_APP_VERSION,
 };
 
-function displayDate(value: string | null) {
-  if (!value) return "Not available";
+function displayDate(value: string | null, missingValue: string) {
+  if (!value) return missingValue;
   const date = new Date(value);
   return Number.isNaN(date.valueOf()) ? value : date.toLocaleString();
 }
@@ -48,6 +54,7 @@ function isComparableCommit(value: string) {
 }
 
 function BuildMatch({ commitSha }: { commitSha: string }) {
+  const { messages } = useGuardianLanguage();
   if (
     !isComparableCommit(WEB_BUILD.commitSha) ||
     !isComparableCommit(commitSha)
@@ -65,7 +72,9 @@ function BuildMatch({ commitSha }: { commitSha: string }) {
       )}
       role={matches ? "status" : "alert"}
     >
-      {matches ? "Matches the web commit" : "Different commit from the web app"}
+      {matches
+        ? messages.accountPrivacy.matchesWeb
+        : messages.accountPrivacy.differsFromWeb}
     </p>
   );
 }
@@ -73,14 +82,17 @@ function BuildMatch({ commitSha }: { commitSha: string }) {
 function BuildCard({
   commitSha,
   fields = [],
+  kind,
   title,
   version,
 }: {
   commitSha: string;
   fields?: BuildField[];
+  kind: "web" | "backend" | "agent";
   title: string;
   version: string;
 }) {
+  const { messages } = useGuardianLanguage();
   return (
     <Card className="grid gap-3 p-3" elevation="soft" tone="inset">
       <div className="flex items-center justify-between gap-3">
@@ -92,7 +104,9 @@ function BuildCard({
         </span>
       </div>
       <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 text-sm leading-tight">
-        <dt className="font-black text-slate-500">Git commit</dt>
+        <dt className="font-black text-slate-500">
+          {messages.accountPrivacy.gitCommit}
+        </dt>
         <dd className="m-0 break-all text-right font-mono font-bold text-slate-900">
           {commitSha}
         </dd>
@@ -105,7 +119,7 @@ function BuildCard({
           </div>
         ))}
       </dl>
-      {title === "Web app" ? null : <BuildMatch commitSha={commitSha} />}
+      {kind === "web" ? null : <BuildMatch commitSha={commitSha} />}
     </Card>
   );
 }
@@ -123,17 +137,20 @@ async function loadBuildInfo(signal: AbortSignal) {
 }
 
 export function AccountPrivacySections() {
-  const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
-  const [error, setError] = useState("");
+  const { messages } = useGuardianLanguage();
+  const copy = messages.accountPrivacy;
+  const [buildInfoState, setBuildInfoState] = useState<BuildInfoState>({
+    phase: "loading",
+  });
 
   useEffect(() => {
     const controller = new AbortController();
     void loadBuildInfo(controller.signal)
-      .then(setBuildInfo)
+      .then((info) => setBuildInfoState({ info, phase: "ready" }))
       .catch((reason: unknown) => {
         if (reason instanceof DOMException && reason.name === "AbortError")
           return;
-        setError("Technical details could not load. Please try again later.");
+        setBuildInfoState({ phase: "failed" });
       });
 
     return () => {
@@ -141,6 +158,8 @@ export function AccountPrivacySections() {
     };
   }, []);
 
+  const buildInfo =
+    buildInfoState.phase === "ready" ? buildInfoState.info : null;
   const agent = buildInfo?.components.find(
     ({ component }) => component === "conversation-agent",
   );
@@ -149,7 +168,7 @@ export function AccountPrivacySections() {
   return (
     <details className="group rounded-2xl border-3 border-sky-200 bg-white">
       <summary
-        aria-label="Technical build details"
+        aria-label={copy.technicalLabel}
         className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2 font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
       >
         <div>
@@ -157,10 +176,10 @@ export function AccountPrivacySections() {
             className="m-0 text-base font-black leading-tight"
             id="technical-build-title"
           >
-            Technical build details
+            {copy.technicalTitle}
           </h2>
           <span className="mt-0.5 block text-xs font-bold text-slate-500">
-            Versions and AI services for troubleshooting
+            {copy.technicalSubtitle}
           </span>
         </div>
         <ChevronDown
@@ -171,15 +190,12 @@ export function AccountPrivacySections() {
       </summary>
       <div className="grid gap-3 border-t-3 border-sky-100 p-3">
         <p className="m-0 px-1 text-sm font-bold leading-relaxed text-slate-600">
-          Current services include Cloudflare for hosting, LiveKit for live
-          voice transport, OpenAI for live voice, and Groq for speech checks and
-          profile summaries. Some saved lesson and profile audio was made with
-          ElevenLabs before deployment.
+          {copy.technicalBody}
         </p>
-
         <BuildCard
           commitSha={WEB_BUILD.commitSha}
-          title="Web app"
+          kind="web"
+          title={copy.webApp}
           version={WEB_BUILD.version}
         />
 
@@ -188,24 +204,30 @@ export function AccountPrivacySections() {
             commitSha={buildInfo.backend.commitSha}
             fields={[
               {
-                label: "Deployment",
+                label: copy.deployment,
                 value: buildInfo.backend.deploymentId,
               },
               {
-                label: "Uploaded",
-                value: displayDate(buildInfo.backend.deployedAt),
+                label: copy.uploaded,
+                value: displayDate(
+                  buildInfo.backend.deployedAt,
+                  copy.missingValue,
+                ),
               },
             ]}
-            title="Cloudflare Worker"
+            kind="backend"
+            title={copy.worker}
             version={buildInfo.backend.version}
           />
         ) : (
           <Card className="p-3" elevation="soft" tone="inset">
             <h3 className="m-0 text-base font-black text-brand-navy">
-              Cloudflare Worker
+              {copy.worker}
             </h3>
             <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
-              {error || "Loading technical details…"}
+              {buildInfoState.phase === "failed"
+                ? copy.technicalFailed
+                : copy.loadingTechnical}
             </p>
           </Card>
         )}
@@ -215,13 +237,13 @@ export function AccountPrivacySections() {
             commitSha={agent.commitSha}
             fields={[
               {
-                label: "Last reported",
-                value: displayDate(agent.reportedAt),
+                label: copy.lastReported,
+                value: displayDate(agent.reportedAt, copy.missingValue),
               },
               ...(agentModels?.realtime
                 ? [
                     {
-                      label: "Realtime voice model",
+                      label: copy.realtimeModel,
                       value: agentModels.realtime,
                     },
                   ]
@@ -229,32 +251,34 @@ export function AccountPrivacySections() {
               ...(agentModels?.transcription
                 ? [
                     {
-                      label: "Input transcription",
+                      label: copy.transcriptionModel,
                       value: agentModels.transcription,
                     },
                   ]
                 : []),
             ]}
-            title="Conversation agent"
+            kind="agent"
+            title={copy.agent}
             version={agent.version}
           />
         ) : (
           <Card className="p-3" elevation="soft" tone="inset">
             <h3 className="m-0 text-base font-black text-brand-navy">
-              Conversation agent
+              {copy.agent}
             </h3>
             <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
-              {error ||
-                (buildInfo
-                  ? "Not reported yet. It reports its build when it starts a conversation."
-                  : "Loading technical details…")}
+              {buildInfoState.phase === "failed"
+                ? copy.technicalFailed
+                : buildInfo
+                  ? copy.agentMissing
+                  : copy.loadingTechnical}
             </p>
           </Card>
         )}
 
         {buildInfo ? (
           <p className="m-0 px-1 text-xs font-bold leading-snug text-slate-500">
-            Worker deployment {buildInfo.backend.deploymentId}
+            {copy.workerDeployment(buildInfo.backend.deploymentId)}
           </p>
         ) : null}
       </div>

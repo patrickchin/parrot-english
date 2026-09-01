@@ -8,6 +8,9 @@ import {
 } from "react";
 import { useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
+import { useGuardianLanguage } from "../i18n/guardian-language";
+import { englishGuardianMessages } from "../i18n/messages/en";
 import { useLearnerSelection } from "../learner-profile/LearnerProfileContext";
 import {
   LearnerProfileCard,
@@ -23,16 +26,12 @@ import { HeaderLink, RouteHeader } from "./AppHeader";
 import { getGuardianLearnersPath } from "./app-routes";
 import { useDialogFocus } from "./useDialogFocus";
 
+type LearnerSwitchFailure = "select-failed" | "lock-failed" | null;
+
 type RosterState =
   | { phase: "loading" }
-  | { error: string; phase: "error" }
+  | { phase: "error" }
   | { phase: "ready"; roster: LearnerProfileRoster };
-
-function errorMessage(error: unknown) {
-  return error instanceof Error && error.message
-    ? error.message
-    : "Learner profiles could not be loaded.";
-}
 
 function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
@@ -57,7 +56,7 @@ function useLearnerModePicker({
   const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(
     null,
   );
-  const [error, setError] = useState("");
+  const [failure, setFailure] = useState<LearnerSwitchFailure>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const lastLearnerButtonRef = useRef<HTMLButtonElement>(null);
   const isSwitchingRef = useRef(false);
@@ -71,9 +70,9 @@ function useLearnerModePicker({
           setRosterState({ phase: "ready", roster });
         }
       },
-      (nextError) => {
-        if (!controller.signal.aborted && !isAbortError(nextError)) {
-          setRosterState({ error: errorMessage(nextError), phase: "error" });
+      (error) => {
+        if (!controller.signal.aborted && !isAbortError(error)) {
+          setRosterState({ phase: "error" });
         }
       },
     );
@@ -81,8 +80,8 @@ function useLearnerModePicker({
   }, [reloadKey]);
 
   useEffect(() => {
-    if (!isSwitching && error) lastLearnerButtonRef.current?.focus();
-  }, [error, isSwitching]);
+    if (!isSwitching && failure) lastLearnerButtonRef.current?.focus();
+  }, [failure, isSwitching]);
 
   async function switchToLearner(
     profileId: string,
@@ -94,20 +93,20 @@ function useLearnerModePicker({
     isSwitchingRef.current = true;
     setIsSwitching(true);
     setSwitchingProfileId(profileId);
-    setError("");
+    setFailure(null);
     try {
       await selectLearner(profileId);
       if (mode === "guardian") {
         const lockError = await lock();
         if (lockError) {
-          setError(lockError);
+          setFailure("lock-failed");
           return;
         }
       }
       onBeforeNavigate?.();
       navigate(destination);
-    } catch (nextError) {
-      setError(errorMessage(nextError));
+    } catch {
+      setFailure("select-failed");
     } finally {
       isSwitchingRef.current = false;
       setIsSwitching(false);
@@ -117,8 +116,8 @@ function useLearnerModePicker({
 
   const selectableProfiles =
     rosterState.phase === "ready"
-      ? rosterState.roster.profiles.filter(({ deletionPending }) =>
-          !deletionPending
+      ? rosterState.roster.profiles.filter(
+          ({ deletionPending }) => !deletionPending,
         )
       : [];
   const switchingProfile = selectableProfiles.find(
@@ -126,7 +125,7 @@ function useLearnerModePicker({
   );
 
   return {
-    error,
+    failure,
     isSwitching,
     isSwitchingRef,
     reload: () => setReloadKey((key) => key + 1),
@@ -141,25 +140,33 @@ function useLearnerModePicker({
 type LearnerModePicker = ReturnType<typeof useLearnerModePicker>;
 
 function LearnerModePickerContent({
+  audience,
   heading,
   onClose,
   picker,
 }: {
+  audience: "guardian" | "learner";
   heading: ReactNode;
   onClose?: () => void;
   picker: LearnerModePicker;
 }) {
+  const guardian = useGuardianLanguage();
+  const messages =
+    audience === "guardian" ? guardian.messages : englishGuardianMessages;
+
   return (
     <>
       <header className="grid gap-2">
         {heading}
         <p className="m-0 font-bold leading-relaxed text-slate-700">
-          Choose who will use learner mode.
+          {messages.learnerSwitch.description}
         </p>
       </header>
 
       {picker.rosterState.phase === "loading" ? (
-        <p className="m-0 font-bold text-slate-700">Loading learners…</p>
+        <p className="m-0 font-bold text-slate-700">
+          {messages.learnerSwitch.loading}
+        </p>
       ) : null}
 
       {picker.rosterState.phase === "error" ? (
@@ -168,14 +175,10 @@ function LearnerModePickerContent({
             className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
             role="alert"
           >
-            {picker.rosterState.error}
+            {messages.learnerSwitch.loadFailed}
           </p>
-          <ActionButton
-            onClick={picker.reload}
-            type="button"
-            variant="surface"
-          >
-            Try again
+          <ActionButton onClick={picker.reload} type="button" variant="surface">
+            {messages.common.retry}
           </ActionButton>
         </div>
       ) : null}
@@ -186,18 +189,20 @@ function LearnerModePickerContent({
             className="m-0 grid min-w-0 gap-3 border-0 p-0 disabled:opacity-75"
             disabled={picker.isSwitching}
           >
-            <legend className="sr-only">Learner profiles</legend>
+            <legend className="sr-only">
+              {messages.learnerSwitch.profilesLabel}
+            </legend>
             {picker.selectableProfiles.length === 0 ? (
               <div className="grid justify-items-start gap-3">
                 <p className="m-0 font-bold leading-relaxed text-slate-700">
-                  Add a learner before switching to learner mode.
+                  {messages.learnerSwitch.empty}
                 </p>
                 <ActionLink
                   size="compact"
                   to={getGuardianLearnersPath()}
                   variant="surface"
                 >
-                  Manage learners
+                  {messages.learnerSwitch.manageLearners}
                 </ActionLink>
               </div>
             ) : (
@@ -205,7 +210,7 @@ function LearnerModePickerContent({
                 {picker.selectableProfiles.map((profile) => (
                   <ActionButton
                     align="start"
-                    aria-label={`Start learner mode as ${profile.name}`}
+                    aria-label={messages.learnerSwitch.startAs(profile.name)}
                     fullWidth
                     key={profile.id}
                     onClick={(event) => {
@@ -223,7 +228,7 @@ function LearnerModePickerContent({
                       dir="auto"
                     >
                       {picker.switchingProfileId === profile.id
-                        ? `Starting ${profile.name}…`
+                        ? messages.learnerSwitch.starting(profile.name)
                         : profile.name}
                     </span>
                   </ActionButton>
@@ -231,12 +236,12 @@ function LearnerModePickerContent({
               </div>
             )}
 
-            {picker.error ? (
+            {picker.failure ? (
               <p
                 className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
                 role="alert"
               >
-                {picker.error}
+                {messages.learnerSwitch.errors[picker.failure]}
               </p>
             ) : null}
 
@@ -247,18 +252,16 @@ function LearnerModePickerContent({
               role="status"
             >
               {picker.isSwitching && picker.switchingProfile
-                ? `Starting learner mode as ${picker.switchingProfile.name}…`
+                ? messages.learnerSwitch.startingStatus(
+                    picker.switchingProfile.name,
+                  )
                 : ""}
             </p>
 
             {onClose ? (
               <div className="grid gap-3">
-                <ActionButton
-                  onClick={onClose}
-                  type="button"
-                  variant="surface"
-                >
-                  Cancel
+                <ActionButton onClick={onClose} type="button" variant="surface">
+                  {messages.common.cancel}
                 </ActionButton>
               </div>
             ) : null}
@@ -271,16 +274,17 @@ function LearnerModePickerContent({
 
 export function LearnerModeSelectionPage(props: LearnerModePickerProps) {
   const picker = useLearnerModePicker(props);
+  const messages = englishGuardianMessages;
 
   return (
     <LearnerProfileScreen>
       <RouteHeader>
         <HeaderLink
-          aria-label="Manage learners"
+          aria-label={messages.learnerSwitch.manageLearners}
           icon={<UsersRound />}
           to={getGuardianLearnersPath()}
         >
-          Manage learners
+          {messages.learnerSwitch.manageLearners}
         </HeaderLink>
       </RouteHeader>
       <LearnerProfileCard
@@ -290,13 +294,14 @@ export function LearnerModeSelectionPage(props: LearnerModePickerProps) {
         width="narrow"
       >
         <LearnerModePickerContent
+          audience="learner"
           heading={
             <LearnerProfileStepHeading
               className="m-0 text-3xl leading-none text-brand-ink sm:text-5xl"
               id="learner-mode-switch-title"
               stepKey="learner-selection"
             >
-              Who is learning now?
+              {messages.learnerSwitch.title}
             </LearnerProfileStepHeading>
           }
           picker={picker}
@@ -316,6 +321,7 @@ export function LearnerModeSwitchDialog({
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const picker = useLearnerModePicker({ destination, onBeforeNavigate });
+  const { language, messages } = useGuardianLanguage();
   const dialogRef = useRef<HTMLElement>(null);
 
   useDialogFocus({
@@ -343,17 +349,20 @@ export function LearnerModeSwitchDialog({
         aria-labelledby="learner-mode-switch-title"
         aria-modal="true"
         className="grid w-full max-w-lg gap-5 rounded-3xl border-4 border-white bg-sky-50 p-5 text-left text-slate-900 shadow-control-navy sm:p-7"
+        lang={language}
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
       >
+        <GuardianLanguageControl placement="dialog" />
         <LearnerModePickerContent
+          audience="guardian"
           heading={
             <h2
               className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
               id="learner-mode-switch-title"
             >
-              Who is learning now?
+              {messages.learnerSwitch.title}
             </h2>
           }
           onClose={onClose}

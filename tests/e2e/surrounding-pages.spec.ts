@@ -233,7 +233,7 @@ for (const viewport of [
       0,
     );
     await expect(
-      page.getByRole("button", { name: "Profile for Mia, learner mode" }),
+      page.getByRole("button", { name: "Profile for ⁨Mia⁩, learner mode" }),
     ).toBeVisible();
   });
 }
@@ -537,11 +537,11 @@ test("guardian learner details opens from and returns to Manage learners", async
 }) => {
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Manage learners" }).click();
   await page
-    .getByRole("button", { exact: true, name: "Edit Mia's profile" })
+    .getByRole("button", { exact: true, name: "Edit ⁨Mia⁩'s profile" })
     .click();
   await expect(page).toHaveURL("/guardian/learners/e2e-learner");
   await page.getByRole("button", { name: "Back" }).click();
@@ -579,7 +579,7 @@ test("account menu separates account navigation from sign-out", async ({
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
@@ -626,7 +626,7 @@ test("account deletion requires the password and returns to sign in only after p
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
   await expect(page).toHaveURL("/guardian/account");

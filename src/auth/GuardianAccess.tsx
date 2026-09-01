@@ -21,16 +21,18 @@ import {
 export { notifyGuardianAccessRequired } from "./guardian-access-api";
 
 export type GuardianMode = "loading" | "learner" | "guardian";
+export type GuardianAccessErrorCode =
+  "check-failed" | "lock-failed" | "access-changed";
 
 export type GuardianAccessContextValue = {
   acknowledgeLearnerSwitch: () => void;
   blockedByLearnerSwitch: boolean;
   mode: GuardianMode;
   expiresAt: string | null;
-  error: string;
+  error: GuardianAccessErrorCode | null;
   retry: () => void;
-  unlock: (password: string) => Promise<string | null>;
-  lock: () => Promise<string | null>;
+  unlock: (password: string) => Promise<GuardianAccessErrorCode | null>;
+  lock: () => Promise<GuardianAccessErrorCode | null>;
 };
 
 type GuardianAccessApi = {
@@ -48,7 +50,7 @@ type GuardianAccessApi = {
 
 type AccessSnapshot = {
   blockedByLearnerSwitch: boolean;
-  error: string;
+  error: GuardianAccessErrorCode | null;
   expiresAt: string | null;
   identity: string | null;
   mode: GuardianMode;
@@ -59,10 +61,9 @@ type Schedule = (callback: () => void, delay: number) => () => void;
 const GuardianAccessContext = createContext<GuardianAccessContextValue | null>(
   null,
 );
-const FALLBACK_ERROR = "Guardian access could not be checked. Please try again.";
-const LOCK_ERROR =
-  "Could not lock guardian mode. Try again before handing over the device.";
-const STALE_OPERATION_ERROR = "Guardian access changed. Please try again.";
+const FALLBACK_ERROR = "check-failed" as const;
+const LOCK_ERROR = "lock-failed" as const;
+const STALE_OPERATION_ERROR = "access-changed" as const;
 const GUARDIAN_ACCESS_LOCK_CHANNEL = "parrot-guardian-access-lock";
 
 async function guardianAccessLockScopeName(identity: string) {
@@ -143,15 +144,11 @@ function retainGuardianAccessLockMarker(storageKey: string | null) {
 function initialSnapshot(identity: string | null): AccessSnapshot {
   return {
     blockedByLearnerSwitch: false,
-    error: "",
+    error: null,
     expiresAt: null,
     identity,
     mode: identity === null ? "learner" : "loading",
   };
-}
-
-function messageFor(error: unknown) {
-  return error instanceof Error && error.message ? error.message : FALLBACK_ERROR;
 }
 
 function isDefinitiveGuardianPasswordFailure(error: unknown) {
@@ -294,7 +291,7 @@ export function createGuardianAccessProvider({
         }
         setSnapshot({
           blockedByLearnerSwitch: false,
-          error: "",
+          error: null,
           expiresAt: state.expiresAt,
           identity,
           mode: "guardian",
@@ -312,7 +309,7 @@ export function createGuardianAccessProvider({
         setSnapshot((current) =>
           current.identity === identity &&
           current.mode === "loading" &&
-          current.error === "" &&
+          current.error === null &&
           current.expiresAt === null
             ? current
             : {
@@ -383,13 +380,13 @@ export function createGuardianAccessProvider({
             }
             return {
               blockedByLearnerSwitch: false,
-              error: "",
+              error: null,
               expiresAt: state.expiresAt,
               identity,
               mode: "guardian",
             };
           });
-        } catch (error) {
+        } catch {
           if (!isCurrent(identity, generation) || controller.signal.aborted) {
             return;
           }
@@ -397,7 +394,7 @@ export function createGuardianAccessProvider({
             blockedByLearnerSwitch:
               current.identity === identity &&
               current.blockedByLearnerSwitch,
-            error: messageFor(error),
+            error: FALLBACK_ERROR,
             expiresAt: null,
             identity,
             mode: "learner",
@@ -776,7 +773,6 @@ export function createGuardianAccessProvider({
               }
               return STALE_OPERATION_ERROR;
             }
-            const message = messageFor(error);
             if (!isDefinitiveGuardianPasswordFailure(error)) {
               await compensateGuardianUnlock(
                 identity,
@@ -794,12 +790,12 @@ export function createGuardianAccessProvider({
             settledIntentRef.current = version;
             setSnapshot({
               blockedByLearnerSwitch: false,
-              error: "",
+              error: null,
               expiresAt: null,
               identity,
               mode: "learner",
             });
-            return message;
+            return FALLBACK_ERROR;
           } finally {
             if (controllerRef.current === controller) {
               controllerRef.current = null;
@@ -826,7 +822,7 @@ export function createGuardianAccessProvider({
       const generation = generationRef.current;
       const version = beginIntent(identity, "learner", true);
       setSnapshot((current) =>
-        current.identity === identity ? { ...current, error: "" } : current,
+        current.identity === identity ? { ...current, error: null } : current,
       );
       return enqueue(async () => {
         if (!isCurrent(identity, generation)) return STALE_OPERATION_ERROR;

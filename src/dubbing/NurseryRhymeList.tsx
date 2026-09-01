@@ -1,5 +1,6 @@
 import { ChevronLeft } from "lucide-react";
 import { HeaderLink, RouteHeader } from "../app/AppHeader";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
 import { InteractiveCardLink } from "../shared/ui";
 import { retryOriginalImage } from "../shared/responsive-image";
 import { dubArtworkSrcSet } from "./dub-artwork";
@@ -25,7 +26,8 @@ export function NurseryRhymeList({
           <header className="grid gap-2 text-center">
             <h1 className="m-0 text-4xl leading-none text-brand-ink sm:text-5xl md:text-6xl" id="nursery-rhymes-title">Nursery rhymes</h1>
             <p className="m-0 text-base font-bold leading-snug text-brand-navy sm:text-lg">
-              Ask a grown-up before recording.
+              <span lang="en">Ask a grown-up before recording.</span>
+              <AdultBoundaryHelper message="recordingCautionHelper" />
             </p>
           </header>
           <nav aria-label="Nursery rhymes" className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 sm:gap-5">

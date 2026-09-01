@@ -29,6 +29,12 @@ const { GuardianDubbingSettings, GuardianDubbingSettingsView } = await vite
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
   "/src/auth/GuardianAccess.tsx",
 );
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
+const { GuardianLanguageControl } = await vite.ssrLoadModule(
+  "/src/i18n/GuardianLanguageControl.tsx",
+);
 
 function learnerRoster() {
   return {
@@ -80,7 +86,7 @@ after(async () => {
   restoreDom();
 });
 
-function renderView(overrides = {}) {
+function renderView(overrides = {}, language = "en") {
   assert.equal(
     typeof GuardianDubbingSettingsView,
     "function",
@@ -88,24 +94,25 @@ function renderView(overrides = {}) {
   );
   return renderToStaticMarkup(
     createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/dubbing"] },
-      createElement(GuardianDubbingSettingsView, {
-        canRetryStatus: false,
-        cleanupRequired: false,
-        consentState: "not_granted",
-        error: "",
-        hasAccepted: false,
-        isLoading: false,
-        mutation: null,
-        onAcceptedChange() {},
-        onDelete() {},
-        onGrant() {},
-        onRetry() {},
-        savedCount: 0,
-        target: readyTarget(),
-        ...overrides,
-      }),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/dubbing"] },
+        createElement(GuardianDubbingSettingsView, {
+          canRetryStatus: false,
+          consentState: "not_granted",
+          error: null,
+          mutation: null,
+          onDelete() {},
+          onRetry() {},
+          phase: "available",
+          savedCount: 0,
+          status: null,
+          target: readyTarget(),
+          ...overrides,
+        }),
+      ),
     ),
   );
 }
@@ -121,7 +128,7 @@ function textFromMarkup(markup) {
 test("guardian settings manages stored clips without a recording permission gate", () => {
   const disabled = renderView({ consentState: "not_granted" });
   const disabledText = textFromMarkup(disabled);
-  assert.match(disabledText, /Editing settings for Mia/);
+  assert.match(disabledText, /Editing settings for ⁨Mia⁩/);
   assert.match(disabledText, /Noah/);
   assert.doesNotMatch(disabled, /Allow voice dubbing|type="checkbox"/);
   assert.doesNotMatch(disabledText, /consent|permission/i);
@@ -143,7 +150,10 @@ test("guardian settings manages stored clips without a recording permission gate
   );
   assert.doesNotMatch(enabled, /type="checkbox"/);
 
-  const revoking = renderView({ consentState: "revoking" });
+  const revoking = renderView({
+    consentState: "revoking",
+    phase: "cleanup-required",
+  });
   assert.match(
     textFromMarkup(revoking),
     /stays unavailable in every nursery rhyme.*every saved clip/,
@@ -160,20 +170,91 @@ test("guardian settings manages stored clips without a recording permission gate
 });
 
 test("guardian settings exposes progress and recovery states accessibly", () => {
-  const loading = renderView({ isLoading: true });
+  const loading = renderView({ phase: "loading" });
   assert.match(loading, /role="status"/);
   assert.match(loading, /Loading voice dubbing settings…/);
 
   const failed = renderView({
     canRetryStatus: true,
-    error: "Voice dubbing could not be loaded.",
+    error: "load-failed",
   });
   assert.match(failed, /role="alert"/);
-  assert.match(failed, /Voice dubbing could not be loaded/);
+  assert.match(failed, /Voice dubbing settings could not be loaded/);
   assert.match(failed, /Try again/);
 
   const deleting = renderView({ consentState: "granted", mutation: "delete" });
   assert.match(deleting, /Removing voice clips…/);
+});
+
+test("Chinese dubbing settings localizes private-data management and stable states", () => {
+  const available = renderView(
+    {
+      consentState: "granted",
+      savedCount: 4,
+      status: "removed",
+    },
+    "zh-Hans",
+  );
+  const container = document.createElement("div");
+  container.innerHTML = available;
+  const text = textFromMarkup(available);
+  assert.equal(container.querySelectorAll("h1").length, 1);
+  assert.equal(container.querySelector("h1")?.textContent, "配音管理");
+  assert.equal(
+    container.querySelector("nav")?.getAttribute("aria-label"),
+    "页面导航",
+  );
+  assert.match(text, /返回家长中心/);
+  assert.match(text, /正在编辑 ⁨Mia⁩ 的设置/);
+  assert.match(text, new RegExp(`已保存 4/${DUB_LINE_COUNT} 个片段`));
+  assert.match(text, /私密/);
+  assert.match(text, /只会删除全部已保存片段/);
+  assert.match(text, /删除 Mia 已保存的童谣配音片段/);
+  assert.match(text, /Mia 的童谣配音片段已删除/);
+
+  const empty = renderView({ consentState: "not_granted" }, "zh-Hans");
+  assert.match(textFromMarkup(empty), /没有已保存的配音片段/);
+
+  const loading = renderView({ phase: "loading" }, "zh-Hans");
+  assert.match(loading, /正在加载配音设置…/);
+
+  const deleting = renderView(
+    { consentState: "granted", mutation: "delete" },
+    "zh-Hans",
+  );
+  assert.match(deleting, /正在删除配音片段…/);
+
+  const cleanup = renderView(
+    { consentState: "revoking", phase: "cleanup-required" },
+    "zh-Hans",
+  );
+  assert.match(cleanup, /需要完成配音片段删除/);
+  assert.match(cleanup, /继续删除童谣配音片段/);
+
+  for (const [code, expected] of [
+    ["load-failed", /无法加载配音设置/],
+    ["change-failed", /无法更改配音设置/],
+  ]) {
+    const failed = renderView({ error: code }, "zh-Hans");
+    assert.match(failed, expected);
+    assert.doesNotMatch(failed, new RegExp(code));
+  }
+});
+
+test("Chinese dubbing settings localizes a blank learner fallback", () => {
+  const available = renderView(
+    {
+      consentState: "granted",
+      savedCount: 4,
+      target: readyTarget("learner-mia", "   "),
+    },
+    "zh-Hans",
+  );
+  const text = textFromMarkup(available);
+
+  assert.match(text, /这位孩子 可以在所有童谣中录制和替换台词/);
+  assert.match(text, /删除 这位孩子 已保存的童谣配音片段/);
+  assert.doesNotMatch(text, /Learner/);
 });
 
 const DUB_LINE_COUNT = DUB_DEFINITIONS.reduce(
@@ -263,6 +344,45 @@ function button(container, label) {
   assert.ok(match, `Expected button named "${label}".`);
   return match;
 }
+
+test("a visible dubbing load failure retranslates without another status request", async () => {
+  let statusRequests = 0;
+  installDubbingFetch(async () => {
+    statusRequests += 1;
+    return Response.json(
+      { error: "unavailable", message: "SERVER DUB SENTENCE" },
+      { status: 503 },
+    );
+  });
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(GuardianLanguageControl),
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/dubbing"] },
+        createElement(
+          GuardianProvider,
+          { lockGuardianAccess: async () => ({ mode: "learner" }) },
+          createElement(GuardianDubbingSettings),
+        ),
+      ),
+    ),
+  );
+  const alert = await waitFor(() => {
+    const candidate = container.querySelector('[role="alert"]');
+    assert.match(candidate?.textContent ?? "", /无法加载配音设置/);
+    return candidate;
+  });
+  assert.doesNotMatch(alert.textContent, /SERVER DUB SENTENCE/);
+  const settledRequestCount = statusRequests;
+
+  await click(button(container, "English"));
+  assert.equal(container.querySelector('[role="alert"]'), alert);
+  assert.match(alert.textContent, /Voice dubbing settings could not be loaded/);
+  assert.equal(statusRequests, settledRequestCount);
+});
 
 test("loads and totals saved clips from every voice-dubbing rhyme", async () => {
   const statusRequests = [];
@@ -364,7 +484,7 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
   assert.equal(deleteCalls, 1);
   assert.match(
     container.querySelector('[role="alert"]')?.textContent ?? "",
-    /Your saved nursery-rhyme voice clips were not deleted/,
+    /Voice dubbing settings could not be changed/,
   );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
   await waitFor(() =>
@@ -373,6 +493,92 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
       "Voice clip removal needs to finish",
     ),
   );
+});
+
+test("a failed delete stays primary when its authoritative refresh also fails", async () => {
+  let statusFails = false;
+  installDubbingFetch(async (input, init = {}) => {
+    if (init.method === "DELETE") {
+      statusFails = true;
+      return new Response(null, { status: 500 });
+    }
+    return statusFails
+      ? Response.json({ error: "unavailable" }, { status: 503 })
+      : Response.json(dubStatus("granted", 4, dubIdFromPath(input)));
+  });
+
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(GuardianLanguageControl),
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/dubbing"] },
+        createElement(
+          GuardianProvider,
+          { lockGuardianAccess: async () => ({ mode: "learner" }) },
+          createElement(GuardianDubbingSettings),
+        ),
+      ),
+    ),
+  );
+  await waitFor(() => button(container, "删除 Mia 已保存的童谣配音片段"));
+  await click(button(container, "删除 Mia 已保存的童谣配音片段"));
+
+  const alert = await waitFor(() => {
+    const candidate = container.querySelector('[role="alert"]');
+    assert.match(candidate?.textContent ?? "", /无法更改配音设置/);
+    assert.doesNotMatch(candidate?.textContent ?? "", /无法加载配音设置/);
+    return candidate;
+  });
+
+  await click(button(container, "English"));
+  assert.equal(container.querySelector('[role="alert"]'), alert);
+  assert.match(alert.textContent, /Voice dubbing settings could not be changed/);
+  assert.doesNotMatch(alert.textContent, /could not be loaded/);
+
+  statusFails = false;
+  await click(button(container, "Try again"));
+  await waitFor(() => {
+    assert.match(container.textContent, /Voice dubbing is available/);
+    assert.equal(container.querySelector('[role="alert"]'), null);
+  });
+});
+
+test("a successful delete with a failed refresh remains a load failure", async () => {
+  let statusFails = false;
+  installDubbingFetch(async (input, init = {}) => {
+    if (init.method === "DELETE") {
+      statusFails = true;
+      return new Response(null, { status: 204 });
+    }
+    return statusFails
+      ? Response.json({ error: "unavailable" }, { status: 503 })
+      : Response.json(dubStatus("granted", 4, dubIdFromPath(input)));
+  });
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/dubbing"] },
+      createElement(
+        GuardianProvider,
+        { lockGuardianAccess: async () => ({ mode: "learner" }) },
+        createElement(GuardianDubbingSettings),
+      ),
+    ),
+  );
+  await waitFor(() =>
+    button(container, "Delete Mia's saved nursery-rhyme voice clips"),
+  );
+  await click(button(container, "Delete Mia's saved nursery-rhyme voice clips"));
+
+  await waitFor(() => {
+    const alert = container.querySelector('[role="alert"]');
+    assert.match(alert?.textContent ?? "", /could not be loaded/);
+    assert.doesNotMatch(alert?.textContent ?? "", /could not be changed/);
+  });
 });
 
 test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
@@ -424,7 +630,7 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Your saved nursery-rhyme voice clips were not deleted/,
+      /Voice dubbing settings could not be changed/,
     ),
   );
   assert.ok(
@@ -536,7 +742,7 @@ test("loads Noah's dubbing through explicit target requests only", async () => {
   );
 
   await waitFor(() =>
-    assert.match(container.textContent, /Editing settings for Noah/),
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/),
   );
   await waitFor(() =>
     assert.match(container.textContent, /Voice dubbing is available/),
@@ -620,7 +826,7 @@ test("keeps the dubbing shell and learner selector mounted while a new target lo
         ?.closest('[aria-busy="true"]') !== null,
       true,
     );
-    assert.match(container.textContent, /Editing settings for Noah/);
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/);
     assert.doesNotMatch(container.textContent, /Delete Mia's saved nursery-rhyme voice clips/);
   } finally {
     await act(async () => {

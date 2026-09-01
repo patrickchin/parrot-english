@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  getAuthErrorMessage,
+  getAuthErrorCode,
   validateAuthForm,
 } from "../src/auth/auth-form.ts";
 
@@ -15,7 +15,7 @@ const validFields = {
 test("sign-up requires a non-empty trimmed name", () => {
   assert.equal(
     validateAuthForm("sign-up", { ...validFields, name: " \t " }),
-    "Enter your name.",
+    "name-required",
   );
 });
 
@@ -30,7 +30,7 @@ test("email must use a simple local@domain.tld shape", () => {
   for (const email of ["", "name", "name@example", "name @example.com"]) {
     assert.equal(
       validateAuthForm("sign-in", { ...validFields, email }),
-      "Enter a valid email address.",
+      "invalid-email",
       email,
     );
   }
@@ -49,7 +49,7 @@ test("email is trimmed before validation", () => {
 test("password must contain at least eight characters", () => {
   assert.equal(
     validateAuthForm("sign-in", { ...validFields, password: "1234567" }),
-    "Password must be at least 8 characters.",
+    "password-too-short",
   );
   assert.equal(
     validateAuthForm("sign-in", { ...validFields, password: "12345678" }),
@@ -60,7 +60,7 @@ test("password must contain at least eight characters", () => {
 test("sign-up validation order is name, email, then password", () => {
   assert.equal(
     validateAuthForm("sign-up", { name: "", email: "bad", password: "" }),
-    "Enter your name.",
+    "name-required",
   );
   assert.equal(
     validateAuthForm("sign-up", {
@@ -68,7 +68,7 @@ test("sign-up validation order is name, email, then password", () => {
       email: "bad",
       password: "",
     }),
-    "Enter a valid email address.",
+    "invalid-email",
   );
   assert.equal(
     validateAuthForm("sign-up", {
@@ -76,7 +76,7 @@ test("sign-up validation order is name, email, then password", () => {
       email: "xiaoming@example.com",
       password: "",
     }),
-    "Password must be at least 8 characters.",
+    "password-too-short",
   );
 });
 
@@ -90,8 +90,8 @@ test("existing-user error codes direct the user to sign in", () => {
     "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
   ]) {
     assert.equal(
-      getAuthErrorMessage({ code }),
-      "This email is already registered. Sign in instead.",
+      getAuthErrorCode({ code }),
+      "email-registered",
       code,
     );
   }
@@ -99,35 +99,35 @@ test("existing-user error codes direct the user to sign in", () => {
 
 test("invalid-credential error code uses the credential message", () => {
   assert.equal(
-    getAuthErrorMessage({ code: "INVALID_EMAIL_OR_PASSWORD" }),
-    "The email or password is incorrect.",
+    getAuthErrorCode({ code: "INVALID_EMAIL_OR_PASSWORD" }),
+    "invalid-credentials",
   );
 });
 
 test("invalid-email error code uses the email validation message", () => {
   assert.equal(
-    getAuthErrorMessage({ code: "INVALID_EMAIL" }),
-    "Enter a valid email address.",
+    getAuthErrorCode({ code: "INVALID_EMAIL" }),
+    "invalid-email",
   );
 });
 
 test("short-password error code uses the password validation message", () => {
   assert.equal(
-    getAuthErrorMessage({ code: "PASSWORD_TOO_SHORT" }),
-    "Password must be at least 8 characters.",
+    getAuthErrorCode({ code: "PASSWORD_TOO_SHORT" }),
+    "password-too-short",
   );
 });
 
 test("Turnstile errors ask the user to repeat the security check", () => {
   for (const code of ["MISSING_RESPONSE", "VERIFICATION_FAILED", "UNKNOWN_ERROR"]) {
     assert.equal(
-      getAuthErrorMessage({ code }),
-      "The security check expired or was rejected. Please try again.",
+      getAuthErrorCode({ code }),
+      "security-check-rejected",
     );
   }
 });
 
-test("missing and unknown errors use a safe fallback", () => {
+test("missing and unknown errors use a stable safe fallback code", () => {
   for (const error of [
     undefined,
     null,
@@ -136,8 +136,8 @@ test("missing and unknown errors use a safe fallback", () => {
     "INVALID_EMAIL",
   ]) {
     assert.equal(
-      getAuthErrorMessage(error),
-      "Unable to sign you in. Please try again.",
+      getAuthErrorCode(error),
+      "sign-in-failed",
     );
   }
 });
@@ -148,9 +148,16 @@ test("prototype property names are treated as unknown error codes", () => {
 
     assert.equal(Object.hasOwn(error, "code"), true);
     assert.equal(
-      getAuthErrorMessage(error),
-      "Unable to sign you in. Please try again.",
+      getAuthErrorCode(error),
+      "sign-in-failed",
       code,
     );
   }
+});
+
+test("server-supplied messages never become auth presentation copy", () => {
+  assert.equal(
+    getAuthErrorCode({ code: "UNRECOGNIZED", message: "SERVER COPY" }),
+    "sign-in-failed",
+  );
 });

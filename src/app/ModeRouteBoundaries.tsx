@@ -1,6 +1,17 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
-import { useGuardianAccess } from "../auth/GuardianAccess";
+import {
+  useGuardianAccess,
+  type GuardianAccessErrorCode,
+} from "../auth/GuardianAccess";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, ActionLink, Card } from "../shared/ui";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { getGuardianPath } from "./app-routes";
@@ -15,34 +26,49 @@ function BoundaryContent({ children }: { children?: ReactNode }) {
   return children ?? <Outlet />;
 }
 
-function AccessCheck() {
+function AccessCheck({ guardianAudience }: { guardianAudience: boolean }) {
+  const { messages } = useGuardianLanguage();
   return (
     <FeaturePlaceholder
+      actionLabel={
+        guardianAudience ? messages.modeBoundary.backToDashboard : undefined
+      }
+      actionTo={guardianAudience ? getGuardianPath() : "/"}
       busy
-      description="Confirming which profile can use this screen."
-      title="Checking guardian access…"
+      description={
+        guardianAudience
+          ? messages.modeBoundary.checkingDescription
+          : "Confirming which profile can use this screen."
+      }
+      title={
+        guardianAudience
+          ? messages.modeBoundary.checkingTitle
+          : "Checking guardian access…"
+      }
     />
   );
 }
 
-const RETRY_GUARDIAN_ACCESS_MESSAGE =
-  "Guardian access could not be confirmed. Please try again.";
-
-function AutomaticGuardianAccess({ autoStart = true }: { autoStart?: boolean }) {
+function AutomaticGuardianAccess({
+  autoStart = true,
+}: {
+  autoStart?: boolean;
+}) {
+  const { messages } = useGuardianLanguage();
   const { unlock } = useGuardianAccess();
-  const [error, setError] = useState(
-    autoStart ? "" : RETRY_GUARDIAN_ACCESS_MESSAGE,
+  const [error, setError] = useState<GuardianAccessErrorCode | null>(
+    autoStart ? null : "check-failed",
   );
   const isPendingRef = useRef(false);
 
   const switchMode = useCallback(async () => {
     if (isPendingRef.current) return;
     isPendingRef.current = true;
-    setError("");
+    setError(null);
     try {
-      setError((await unlock("")) ?? "");
+      setError((await unlock("")) ?? null);
     } catch {
-      setError("Guardian access could not be checked. Please try again.");
+      setError("check-failed");
     } finally {
       isPendingRef.current = false;
     }
@@ -56,12 +82,15 @@ function AutomaticGuardianAccess({ autoStart = true }: { autoStart?: boolean }) 
 
   return error ? (
     <FeaturePlaceholder
-      description={error}
+      actionLabel={messages.modeBoundary.backToDashboard}
+      actionTo={getGuardianPath()}
+      description={messages.guardianAccess.errors[error]}
       onRetry={() => void switchMode()}
-      title="Guardian tools did not open"
+      retryLabel={messages.common.retry}
+      title={messages.modeBoundary.openFailedTitle}
     />
   ) : (
-    <AccessCheck />
+    <AccessCheck guardianAudience={true} />
   );
 }
 
@@ -76,12 +105,10 @@ function LearnerSwitchRedirect() {
     return () => window.clearTimeout(timeout);
   }, [navigate]);
 
-  return <AccessCheck />;
+  return <AccessCheck guardianAudience={true} />;
 }
 
-export function GuardianModeBoundary({
-  children,
-}: ModeBoundaryProps) {
+export function GuardianModeBoundary({ children }: ModeBoundaryProps) {
   const { blockedByLearnerSwitch, mode } = useGuardianAccess();
   const location = useLocation();
   const routeKey = `${location.pathname}${location.search}`;
@@ -93,7 +120,7 @@ export function GuardianModeBoundary({
     routeAttemptRef.current = { key: routeKey, state: "idle" };
   }
 
-  if (mode === "loading") return <AccessCheck />;
+  if (mode === "loading") return <AccessCheck guardianAudience={true} />;
   if (mode === "learner") {
     if (blockedByLearnerSwitch) return <LearnerSwitchRedirect />;
     if (routeAttemptRef.current.state === "spent") {
@@ -124,7 +151,7 @@ export function LearnerModeBoundary({
     }
   }, [acknowledgeLearnerSwitch, blockedByLearnerSwitch, mode]);
 
-  if (mode === "loading") return <AccessCheck />;
+  if (mode === "loading") return <AccessCheck guardianAudience={false} />;
   if (mode === "learner") return <BoundaryContent>{children}</BoundaryContent>;
 
   return (
@@ -136,6 +163,7 @@ export function LearnerModeBoundary({
         <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
           Learning activities are available in the learner profile.
         </p>
+        <AdultBoundaryHelper message="switchToLearnerHelper" />
         <ActionButton
           onClick={() => setIsSwitchDialogOpen(true)}
           ref={switchTriggerRef}
@@ -143,7 +171,9 @@ export function LearnerModeBoundary({
         >
           Switch to learner mode
         </ActionButton>
-        <ActionLink to={getGuardianPath()}>Back to Guardian dashboard</ActionLink>
+        <ActionLink to={getGuardianPath()}>
+          Back to Guardian dashboard
+        </ActionLink>
       </Card>
       {isSwitchDialogOpen ? (
         <LearnerModeSwitchDialog

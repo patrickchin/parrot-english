@@ -1,7 +1,10 @@
 import { useRef, useState, type FormEvent, type RefObject } from "react";
 import { BidiLearnerName } from "../app/AppHeader";
 import { useDialogFocus } from "../app/useDialogFocus";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton } from "../shared/ui";
+import type { LearnerRosterErrorCode } from "./GuardianLearnerProfiles";
 import type { GuardianLearnerProfileSummary } from "./learner-profile-api";
 
 export function LearnerDeleteDialog({
@@ -11,11 +14,14 @@ export function LearnerDeleteDialog({
   returnFocusRef,
 }: {
   onClose: () => void;
-  onDelete: (profile: GuardianLearnerProfileSummary) => void | Promise<void>;
+  onDelete: (
+    profile: GuardianLearnerProfileSummary,
+  ) => Promise<LearnerRosterErrorCode | null>;
   profile: GuardianLearnerProfileSummary;
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
-  const [error, setError] = useState("");
+  const { language, messages } = useGuardianLanguage();
+  const [error, setError] = useState<LearnerRosterErrorCode | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const isDeletingRef = useRef(false);
   const dialogRef = useRef<HTMLElement>(null);
@@ -35,16 +41,13 @@ export function LearnerDeleteDialog({
 
     isDeletingRef.current = true;
     setIsDeleting(true);
-    setError("");
+    setError(null);
     try {
-      await onDelete(profile);
-      onClose();
-    } catch (caughtError) {
-      setError(
-        caughtError instanceof Error && caughtError.message
-          ? caughtError.message
-          : "Please try again.",
-      );
+      const nextError = await onDelete(profile);
+      if (nextError === null) onClose();
+      else setError(nextError);
+    } catch {
+      setError("delete-failed");
     } finally {
       isDeletingRef.current = false;
       setIsDeleting(false);
@@ -68,23 +71,27 @@ export function LearnerDeleteDialog({
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
+        lang={language}
       >
+        <GuardianLanguageControl placement="dialog" />
         <header className="grid min-w-0 gap-2">
           <p className="m-0 text-xs font-black uppercase tracking-widest text-red-700">
-            Cannot be undone
+            {messages.learners.deleteDialog.cannotUndo}
           </p>
           <h2
             className="m-0 min-w-0 whitespace-normal text-2xl font-black leading-tight text-brand-navy [overflow-wrap:anywhere] sm:text-3xl"
             id="delete-learner-title"
           >
-            Delete <BidiLearnerName learnerName={profile.name} />?
+            {messages.learners.deleteDialog.titleBefore}
+            <BidiLearnerName learnerName={profile.name} />
+            {messages.learners.deleteDialog.titleAfter}
           </h2>
         </header>
 
         <p className="m-0 min-w-0 whitespace-normal font-bold leading-relaxed text-slate-700 [overflow-wrap:anywhere]">
-          This removes <BidiLearnerName learnerName={profile.name} />'s learner
-          profile and private learner data. Your Guardian account and other
-          learners remain.
+          {messages.learners.deleteDialog.descriptionBefore}
+          <BidiLearnerName learnerName={profile.name} />
+          {messages.learners.deleteDialog.descriptionAfter}
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>
@@ -97,8 +104,10 @@ export function LearnerDeleteDialog({
                 className="m-0 min-w-0 whitespace-normal rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900 [overflow-wrap:anywhere]"
                 role="alert"
               >
-                Could not delete <BidiLearnerName learnerName={profile.name} />.{" "}
-                {error}
+                {messages.learners.deleteDialog.alertBefore}
+                <BidiLearnerName learnerName={profile.name} />
+                {messages.learners.deleteDialog.alertAfter}
+                {messages.learners.roster.errors[error]}
               </p>
             ) : null}
 
@@ -109,15 +118,20 @@ export function LearnerDeleteDialog({
                 type="button"
                 variant="surface"
               >
-                Cancel
+                {messages.learners.deleteDialog.cancel}
               </ActionButton>
               <ActionButton
+                aria-label={messages.learners.roster.deleteAria(
+                  `\u2068${profile.name}\u2069`,
+                )}
                 className="min-w-0 whitespace-normal [overflow-wrap:anywhere]"
                 type="submit"
                 variant="rose"
               >
                 <span className="min-w-0 whitespace-normal [overflow-wrap:anywhere]">
-                  {isDeleting ? "Deleting " : "Delete "}
+                  {isDeleting
+                    ? messages.learners.deleteDialog.deletingBefore
+                    : messages.learners.deleteDialog.deleteBefore}
                   <BidiLearnerName learnerName={profile.name} />
                   {isDeleting ? "…" : null}
                 </span>
