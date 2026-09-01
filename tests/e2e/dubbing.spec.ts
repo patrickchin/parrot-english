@@ -89,7 +89,7 @@ async function expectStaticPresentationText(target: Locator) {
       ) !== null,
       hasTabIndexAttribute: element.hasAttribute("tabindex"),
       nativeFocusTarget: element.matches(
-        'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, object, embed, audio[controls], video[controls]',
+        'a[href], area[href], audio[controls], button, details, embed, iframe, img[usemap], input:not([type="hidden" i]), label, object, select, summary, textarea, video[controls]',
       ),
     };
   });
