@@ -405,6 +405,23 @@ describe("duck dubbing storyboard presentation", () => {
       atMs: 0,
       durationMs: 10,
     }] }), 100), [{ kind: "text", text: line.text }]);
+    for (const words of [
+      [
+        { startOffset: 2, endOffset: 8, atMs: 100, durationMs: 400 },
+        { startOffset: 10, endOffset: 15, atMs: 300, durationMs: 200 },
+      ],
+      [
+        { startOffset: 2, endOffset: 8, atMs: 400, durationMs: 100 },
+        { startOffset: 10, endOffset: 15, atMs: 100, durationMs: 100 },
+      ],
+      [
+        { startOffset: 2, endOffset: 8, atMs: 900, durationMs: 200 },
+      ],
+    ]) {
+      assert.deepEqual(getDubTimedWordSegments(karaokeLine({ words }), 300), [
+        { kind: "text", text: line.text },
+      ]);
+    }
   });
 
   it("renders timed words as an unchanged, quiet heading", async () => {

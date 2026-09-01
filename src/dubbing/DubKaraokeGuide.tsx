@@ -29,18 +29,24 @@ export type DubGuidancePosition = Readonly<{
 }>;
 
 function isValidWordCue(line: DubLine) {
-  let previousEnd = 0;
-  return line.words.length > 0 && line.words.every((word) => {
+  let previousEndOffset = 0;
+  let previousEndMs = 0;
+  return Number.isFinite(line.durationMs) && line.durationMs > 0 && line.words.length > 0 && line.words.every((word) => {
+    const endMs = word.atMs + word.durationMs;
     const valid = Number.isInteger(word.startOffset)
       && Number.isInteger(word.endOffset)
-      && word.startOffset >= previousEnd
+      && word.startOffset >= previousEndOffset
       && word.endOffset > word.startOffset
       && word.endOffset <= line.text.length
       && Number.isFinite(word.atMs)
       && Number.isFinite(word.durationMs)
       && word.atMs >= 0
-      && word.durationMs > 0;
-    previousEnd = word.endOffset;
+      && word.durationMs > 0
+      && Number.isFinite(endMs)
+      && word.atMs >= previousEndMs
+      && endMs <= line.durationMs;
+    previousEndOffset = word.endOffset;
+    previousEndMs = endMs;
     return valid;
   });
 }
