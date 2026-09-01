@@ -85,6 +85,189 @@ export const chineseGuardianMessages = {
       "查看 AI 的使用方式、Parrot 保存的内容以及账户删除选项。",
     openAccountPrivacy: "打开账户与隐私",
   },
+  storySettings: {
+    backToDashboard: "返回家长中心",
+    title: "故事设置",
+    chooseLevel: "选择故事级别",
+    levelSummary: "所选故事级别详情",
+    shelfBefore: "这个书架会优先为 ",
+    shelfAfter: " 打开，其他故事书架仍然都可以使用。",
+    cefrLabel: "CEFR",
+    loading: "正在加载故事设置…",
+    saving: "正在保存故事级别…",
+    saved: (level: string) => `故事级别已保存：${level}。`,
+    levels: {
+      "first-words": {
+        label: "级别 1 · 单词与图片",
+        cefrReference: "Entry Pre-A1",
+        description: "每页只有几个熟悉的单词。",
+      },
+      "repeating-patterns": {
+        label: "级别 2 · 重复句型故事",
+        cefrReference: "Supported Pre-A1",
+        description: "短句会重复，方便孩子跟着说。",
+      },
+      "tiny-stories": {
+        label: "级别 3 · 短故事",
+        cefrReference: "Secure Pre-A1",
+        description: "用简短句子讲完一个完整故事。",
+      },
+      "early-a1": {
+        label: "级别 4 · 较长故事",
+        cefrReference: "Pre-A1 to A1 bridge",
+        description: "更多单词和页面组成更完整的故事。",
+      },
+    },
+    errors: {
+      "load-failed": "无法加载故事设置。请重试。",
+      "save-level-failed": "无法保存故事级别。请重试。",
+    },
+  },
+  personalizedArt: {
+    sectionLabel: "个性化故事图片",
+    aiPrivate: "AI · 私密",
+    headingBeforeStory: "让 ",
+    headingAfterStory: " 的第一页看起来像 ",
+    descriptionBeforeName:
+      "此功能为可选项。裁剪后的副本会发送到 Cloudflare Workers AI。Parrot 只会把 ",
+    descriptionAfterName:
+      " 的私密故事书风格图片添加到此账户，你可以随时删除。",
+    uploadBeforeName: "上传 ",
+    uploadAfterName: " 的照片",
+    selectedFile: (fileName: string) => `已选择：${fileName}`,
+    photoSelected: "已选择照片。",
+    noPhoto: "尚未选择照片。",
+    consentBeforeName: "我已年满 18 岁。我确认自己是 ",
+    consentAfterName:
+      " 的家长或已获准使用这张照片，并同意把裁剪后的副本发送到 Cloudflare Workers AI 来生成插图。",
+    creating: "正在创建故事图片…",
+    generate: "生成故事图片",
+    regenerate: "重新生成故事图片",
+    delete: "删除故事图片",
+    cleanupLabel: "私密图片清理",
+    cleanupTitleBeforeName: "删除 ",
+    cleanupTitleAfterName: " 已保存的故事图片",
+    cleanupDescriptionBeforeName: "现在无法生成新图片，但仍可删除 ",
+    cleanupDescriptionAfterName:
+      " 的私密故事图片。如果之前的清理失败，此操作会重试。",
+    deleteStored: "删除已保存的故事图片",
+    deletingStored: "正在删除已保存的故事图片…",
+    preview: "预览",
+    previewLabel: "故事书肖像预览",
+    previewBeforeName: "",
+    previewAfterName: " 的私密故事书风格肖像会显示在这里。",
+    generatedAlt: (name: string, storyTitle: string) =>
+      `${name} 在 ${storyTitle} 中的个性化故事图片`,
+    errors: {
+      "load-failed": "无法加载个性化故事图片。请重试。",
+      "generate-failed": "无法生成故事图片。请重试。",
+      "delete-failed": "无法删除故事图片。请重试。",
+    },
+    statuses: {
+      ready: "故事图片已准备好。",
+      removed: "个性化故事图片已删除。",
+    },
+  },
+  dubbingSettings: {
+    backToDashboard: "返回家长中心",
+    title: "配音管理",
+    loading: "正在加载配音设置…",
+    availableTitle: "可以使用配音",
+    savedCount: (saved: number, total: number) =>
+      `已保存 ${saved}/${total} 个片段；`,
+    savedCountAfterName: " 可以在所有童谣中录制和替换台词。",
+    privacyBeforeName: "已保存的配音片段仅属于 ",
+    privacyAfterName: " 的私密档案。新录音会替换同一童谣台词的旧片段。",
+    deleteAllGuidance:
+      "此家长页面只会删除全部已保存片段，不提供逐句删除。",
+    deleteBeforeName: "删除 ",
+    deleteAfterName: " 已保存的童谣配音片段",
+    deleting: "正在删除配音片段…",
+    emptyTitle: "没有已保存的配音片段",
+    emptyBeforeName: "",
+    emptyAfterName: " 没有已保存的童谣配音片段。",
+    cleanupTitle: "需要完成配音片段删除",
+    cleanupBeforeName: "在所有已保存片段删除完毕前，",
+    cleanupAfterName: " 无法在任何童谣中使用配音。",
+    finishCleanup: "继续删除童谣配音片段",
+    removedBeforeName: "",
+    removedAfterName: " 的童谣配音片段已删除。",
+    errors: {
+      "load-failed": "无法加载配音设置。请重试。",
+      "change-failed": "无法更改配音设置。请重试。",
+    },
+  },
+  accountPrivacy: {
+    backToDashboard: "返回家长中心",
+    title: "账户与隐私",
+    aiDataTitle: "AI 与已保存的数据",
+    aiUseTitle: "Parrot 如何使用 AI",
+    aiUseBody:
+      "AI 可帮助把语音转成文字、检查口语回答、进行语音对话，并生成可选的故事图片。",
+    aiWarning:
+      "AI 可能听错或说错。请检查语音反馈，并在语音对话时陪在孩子身边。",
+    accountKeepsTitle: "此账户保存什么",
+    keepsProfiles:
+      "Parrot 会保存所有孩子资料及其已保存的数据，包括文字形式的对话内容。提前结束的对话也可能保存了文字。",
+    keepsTarget:
+      "在家长设置中选择孩子，只会更改你正在管理哪位孩子的数据。学习模式只会通过“切换到学习模式”更改，并由你选择谁来使用本次会话。",
+    keepsActivityAudio:
+      "语音服务会在“和佩奇聊天”、孩子设置及口语检查期间处理音频，但 Parrot 不会把这些活动的音频保存到账户中。",
+    keepsDubbing:
+      "童谣配音会保存这位孩子的私密配音片段。新录音会替换同一句的旧片段，家长可以删除全部已保存片段。",
+    keepsLessons:
+      "课程会为每个跟读时刻保存一个私密语音片段。新录音会替换该时刻的旧录音。Parrot 目前不会为这些片段评分或转写。停止课程录音或删除账户会移除它们。",
+    keepsLessonProfiles: "每位孩子已保存的课程录音都单独管理。",
+    keepsStoryArt:
+      "如果家长选择故事图片，裁剪后的照片会发送到 Cloudflare Workers AI。照片不会添加到账户中。Parrot 会保留每位孩子的私密故事书图片，直到家长将其删除。",
+    outsideServices:
+      "外部 AI 和语音服务会按照各自的数据保留规则处理部分输入。",
+    actionsTitle: "你可以做什么",
+    actionsBody:
+      "孩子可以随时结束对话。在家长模式中，选择一位孩子即可管理其已保存的资料、课程语音录音、童谣配音片段和可选故事图片。",
+    deletionBody:
+      "删除账户会移除账户、所有孩子资料及其已保存的数据，包括对话文字、所有童谣的私密配音片段、课程语音录音和私密故事图片。系统会保留一个小型删除标记，防止旧的私密图片再次出现。",
+    technicalLabel: "技术构建详情",
+    technicalTitle: "技术构建详情",
+    technicalSubtitle: "用于故障排查的版本和 AI 服务",
+    technicalBody:
+      "当前服务包括用于托管和故事图片的 Cloudflare、用于实时语音传输的 LiveKit、用于实时语音的 OpenAI，以及用于口语检查和资料摘要的 Groq。部分已保存的课程和资料音频是在部署前由 ElevenLabs 生成的。",
+    webApp: "网页应用",
+    worker: "Cloudflare Worker",
+    agent: "对话代理",
+    gitCommit: "Git 提交",
+    deployment: "部署",
+    uploaded: "上传时间",
+    lastReported: "最近报告",
+    realtimeModel: "实时语音模型",
+    transcriptionModel: "输入转写模型",
+    loadingTechnical: "正在加载技术详情…",
+    technicalFailed:
+      "无法加载技术详情。上方有关 AI 和已保存数据的说明仍可查看。",
+    agentMissing: "对话代理尚未报告。开始对话时，它会报告自己的构建信息。",
+    matchesWeb: "与网页提交一致",
+    differsFromWeb: "与网页应用的提交不同",
+    workerDeployment: (deploymentId: string) =>
+      `Worker 部署 ${deploymentId}`,
+    missingValue: "暂无",
+    dangerTitle: "危险操作区",
+    dangerBody: "永久删除此账户及其已保存的孩子数据。",
+    deleteAccount: "删除账户",
+    deleteDialog: {
+      cannotUndo: "此操作无法撤销",
+      title: "删除账户",
+      description:
+        "这将从 Parrot 中删除你的账户、所有孩子资料、已保存的对话文字、所有童谣的私密配音片段、课程语音录音和私密故事图片。系统会保留一个小型删除标记，防止旧的私密图片再次出现。",
+      password: "密码",
+      cancel: "取消",
+      deleting: "正在删除账户…",
+      confirm: "立即删除账户",
+      errors: {
+        "account-delete-failed":
+          "无法删除账户。账户和私密故事图片已保留，请重试。",
+      },
+    },
+  },
   modeBoundary: {
     checkingTitle: "正在检查家长访问权限…",
     checkingDescription: "正在确认哪个档案可以使用此页面。",

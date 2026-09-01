@@ -4,6 +4,7 @@ import {
   useDeleteAccountAction,
   useIsAnonymousAccount,
 } from "../auth/account-actions";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, Card } from "../shared/ui";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 import { AccountPrivacySections } from "./AboutDialog";
@@ -11,6 +12,8 @@ import { HeaderLink, RouteHeader } from "./AppHeader";
 import { getGuardianPath } from "./app-routes";
 
 export function AccountPrivacyPage() {
+  const { messages } = useGuardianLanguage();
+  const copy = messages.accountPrivacy;
   const deleteAccount = useDeleteAccountAction();
   const isAnonymous = useIsAnonymousAccount();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -18,20 +21,20 @@ export function AccountPrivacyPage() {
 
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 font-ui sm:px-6 md:px-10 md:pt-32">
-      <RouteHeader>
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
         <HeaderLink
-          aria-label="Back to Guardian dashboard"
+          aria-label={copy.backToDashboard}
           icon={<ChevronLeft />}
           to={getGuardianPath()}
         >
-          Back to Guardian dashboard
+          {copy.backToDashboard}
         </HeaderLink>
       </RouteHeader>
 
       <div className="mx-auto grid w-full max-w-3xl gap-6">
         <header className="grid gap-2 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            Account &amp; privacy
+            {copy.title}
           </h1>
         </header>
 
@@ -48,10 +51,10 @@ export function AccountPrivacyPage() {
               className="m-0 text-2xl font-black leading-tight text-red-800"
               id="danger-zone-title"
             >
-              Danger zone
+              {copy.dangerTitle}
             </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-700">
-              Permanently remove this account and its saved learner data.
+              {copy.dangerBody}
             </p>
           </div>
           <ActionButton
@@ -62,7 +65,7 @@ export function AccountPrivacyPage() {
             variant="rose"
           >
             <Trash2 aria-hidden="true" className="size-5" strokeWidth={3} />
-            Delete account
+            {copy.deleteAccount}
           </ActionButton>
         </Card>
       </div>

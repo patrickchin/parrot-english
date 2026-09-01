@@ -17,9 +17,11 @@ export type AccountExperience = {
   onOpenProfile: (() => void) | null;
 };
 
+export type AccountDeleteErrorCode = "account-delete-failed" | null;
+
 export type DeleteAccountAction = (
   password: string,
-) => Promise<string | null>;
+) => Promise<AccountDeleteErrorCode>;
 
 type AccountExperienceSetter = Dispatch<
   SetStateAction<AccountExperience | null>

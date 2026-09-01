@@ -29,6 +29,12 @@ const { GuardianDubbingSettings, GuardianDubbingSettingsView } = await vite
 const { createGuardianAccessProvider } = await vite.ssrLoadModule(
   "/src/auth/GuardianAccess.tsx",
 );
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
+const { GuardianLanguageControl } = await vite.ssrLoadModule(
+  "/src/i18n/GuardianLanguageControl.tsx",
+);
 
 function learnerRoster() {
   return {
@@ -80,7 +86,7 @@ after(async () => {
   restoreDom();
 });
 
-function renderView(overrides = {}) {
+function renderView(overrides = {}, language = "en") {
   assert.equal(
     typeof GuardianDubbingSettingsView,
     "function",
@@ -88,24 +94,25 @@ function renderView(overrides = {}) {
   );
   return renderToStaticMarkup(
     createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/dubbing"] },
-      createElement(GuardianDubbingSettingsView, {
-        canRetryStatus: false,
-        cleanupRequired: false,
-        consentState: "not_granted",
-        error: "",
-        hasAccepted: false,
-        isLoading: false,
-        mutation: null,
-        onAcceptedChange() {},
-        onDelete() {},
-        onGrant() {},
-        onRetry() {},
-        savedCount: 0,
-        target: readyTarget(),
-        ...overrides,
-      }),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/dubbing"] },
+        createElement(GuardianDubbingSettingsView, {
+          canRetryStatus: false,
+          consentState: "not_granted",
+          error: null,
+          mutation: null,
+          onDelete() {},
+          onRetry() {},
+          phase: "available",
+          savedCount: 0,
+          status: null,
+          target: readyTarget(),
+          ...overrides,
+        }),
+      ),
     ),
   );
 }
@@ -143,7 +150,10 @@ test("guardian settings manages stored clips without a recording permission gate
   );
   assert.doesNotMatch(enabled, /type="checkbox"/);
 
-  const revoking = renderView({ consentState: "revoking" });
+  const revoking = renderView({
+    consentState: "revoking",
+    phase: "cleanup-required",
+  });
   assert.match(
     textFromMarkup(revoking),
     /stays unavailable in every nursery rhyme.*every saved clip/,
@@ -160,20 +170,75 @@ test("guardian settings manages stored clips without a recording permission gate
 });
 
 test("guardian settings exposes progress and recovery states accessibly", () => {
-  const loading = renderView({ isLoading: true });
+  const loading = renderView({ phase: "loading" });
   assert.match(loading, /role="status"/);
   assert.match(loading, /Loading voice dubbing settings…/);
 
   const failed = renderView({
     canRetryStatus: true,
-    error: "Voice dubbing could not be loaded.",
+    error: "load-failed",
   });
   assert.match(failed, /role="alert"/);
-  assert.match(failed, /Voice dubbing could not be loaded/);
+  assert.match(failed, /Voice dubbing settings could not be loaded/);
   assert.match(failed, /Try again/);
 
   const deleting = renderView({ consentState: "granted", mutation: "delete" });
   assert.match(deleting, /Removing voice clips…/);
+});
+
+test("Chinese dubbing settings localizes private-data management and stable states", () => {
+  const available = renderView(
+    {
+      consentState: "granted",
+      savedCount: 4,
+      status: "removed",
+    },
+    "zh-Hans",
+  );
+  const container = document.createElement("div");
+  container.innerHTML = available;
+  const text = textFromMarkup(available);
+  assert.equal(container.querySelectorAll("h1").length, 1);
+  assert.equal(container.querySelector("h1")?.textContent, "配音管理");
+  assert.equal(
+    container.querySelector("nav")?.getAttribute("aria-label"),
+    "页面导航",
+  );
+  assert.match(text, /返回家长中心/);
+  assert.match(text, /正在编辑 ⁨Mia⁩ 的设置/);
+  assert.match(text, new RegExp(`已保存 4/${DUB_LINE_COUNT} 个片段`));
+  assert.match(text, /私密/);
+  assert.match(text, /只会删除全部已保存片段/);
+  assert.match(text, /删除 Mia 已保存的童谣配音片段/);
+  assert.match(text, /Mia 的童谣配音片段已删除/);
+
+  const empty = renderView({ consentState: "not_granted" }, "zh-Hans");
+  assert.match(textFromMarkup(empty), /没有已保存的配音片段/);
+
+  const loading = renderView({ phase: "loading" }, "zh-Hans");
+  assert.match(loading, /正在加载配音设置…/);
+
+  const deleting = renderView(
+    { consentState: "granted", mutation: "delete" },
+    "zh-Hans",
+  );
+  assert.match(deleting, /正在删除配音片段…/);
+
+  const cleanup = renderView(
+    { consentState: "revoking", phase: "cleanup-required" },
+    "zh-Hans",
+  );
+  assert.match(cleanup, /需要完成配音片段删除/);
+  assert.match(cleanup, /继续删除童谣配音片段/);
+
+  for (const [code, expected] of [
+    ["load-failed", /无法加载配音设置/],
+    ["change-failed", /无法更改配音设置/],
+  ]) {
+    const failed = renderView({ error: code }, "zh-Hans");
+    assert.match(failed, expected);
+    assert.doesNotMatch(failed, new RegExp(code));
+  }
 });
 
 const DUB_LINE_COUNT = DUB_DEFINITIONS.reduce(
@@ -263,6 +328,45 @@ function button(container, label) {
   assert.ok(match, `Expected button named "${label}".`);
   return match;
 }
+
+test("a visible dubbing load failure retranslates without another status request", async () => {
+  let statusRequests = 0;
+  installDubbingFetch(async () => {
+    statusRequests += 1;
+    return Response.json(
+      { error: "unavailable", message: "SERVER DUB SENTENCE" },
+      { status: 503 },
+    );
+  });
+  const container = await mountStrict(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(GuardianLanguageControl),
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/dubbing"] },
+        createElement(
+          GuardianProvider,
+          { lockGuardianAccess: async () => ({ mode: "learner" }) },
+          createElement(GuardianDubbingSettings),
+        ),
+      ),
+    ),
+  );
+  const alert = await waitFor(() => {
+    const candidate = container.querySelector('[role="alert"]');
+    assert.match(candidate?.textContent ?? "", /无法加载配音设置/);
+    return candidate;
+  });
+  assert.doesNotMatch(alert.textContent, /SERVER DUB SENTENCE/);
+  const settledRequestCount = statusRequests;
+
+  await click(button(container, "English"));
+  assert.equal(container.querySelector('[role="alert"]'), alert);
+  assert.match(alert.textContent, /Voice dubbing settings could not be loaded/);
+  assert.equal(statusRequests, settledRequestCount);
+});
 
 test("loads and totals saved clips from every voice-dubbing rhyme", async () => {
   const statusRequests = [];
@@ -364,7 +468,7 @@ test("failed cleanup reloads revoking status and offers a retry", async () => {
   assert.equal(deleteCalls, 1);
   assert.match(
     container.querySelector('[role="alert"]')?.textContent ?? "",
-    /Your saved nursery-rhyme voice clips were not deleted/,
+    /Voice dubbing settings could not be changed/,
   );
   assert.doesNotMatch(container.textContent, /Allow voice dubbing/);
   await waitFor(() =>
@@ -424,7 +528,7 @@ test("an interrupted legacy reset exposes guardian cleanup and reconciles afterw
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Your saved nursery-rhyme voice clips were not deleted/,
+      /Voice dubbing settings could not be changed/,
     ),
   );
   assert.ok(

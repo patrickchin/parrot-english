@@ -1101,7 +1101,7 @@ test("account deletion sends the password, fails closed, and refetches only afte
   });
   assert.equal(
     failure,
-    "Unable to delete the account. The account and private story art were kept. Please try again.",
+    "account-delete-failed",
   );
   assert.equal(refetchCalls, 0);
 

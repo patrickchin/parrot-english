@@ -100,6 +100,11 @@ test("the account panel describes saved dubbing data across every rhyme", () => 
     new URL("../src/app/AboutDialog.tsx", import.meta.url),
     "utf8",
   );
+  const englishMessages = readFileSync(
+    new URL("../src/i18n/messages/en.ts", import.meta.url),
+    "utf8",
+  );
 
-  assert.match(about, /Voice-dubbing rhymes/i);
+  assert.match(about, /copy\.keepsDubbing/);
+  assert.match(englishMessages, /Voice-dubbing rhymes/i);
 });

@@ -2121,7 +2121,7 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   });
   await page.reload();
   const portrait = page.getByRole("img", {
-    name: "Noah holding a bright red ball",
+    name: "Personalized story art for Noah in The Red Ball",
   });
   await expect(portrait).toBeVisible();
   await expect(portrait).toHaveAttribute(

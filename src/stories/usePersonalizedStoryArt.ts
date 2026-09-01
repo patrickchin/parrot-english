@@ -22,14 +22,12 @@ function emptyMetadata(): PersonalizedStoryArtMetadata {
   return { stories: {} };
 }
 
-function getErrorMessage(caughtError: unknown) {
-  if (caughtError instanceof PersonalizedStoryArtApiError) {
-    return caughtError.message;
-  }
-  return caughtError instanceof Error
-    ? caughtError.message
-    : "The portrait could not be updated right now.";
-}
+export type PersonalizedArtErrorCode =
+  | "load-failed"
+  | "generate-failed"
+  | "delete-failed"
+  | null;
+export type PersonalizedArtStatusCode = "ready" | "removed" | null;
 
 type StoryArtOperation = {
   controller: AbortController;
@@ -44,13 +42,13 @@ export function usePersonalizedStoryArt(
 ) {
   const [consentChecked, setConsentChecked] = useState(false);
   const [featureEnabled, setFeatureEnabled] = useState(enabled);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<PersonalizedArtErrorCode>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [metadata, setMetadata] = useState<PersonalizedStoryArtMetadata>(
     emptyMetadata,
   );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [status, setStatus] = useState<PersonalizedArtStatusCode>(null);
   const mountedRef = useRef(false);
   const operationEpochRef = useRef(0);
   const operationRef = useRef<StoryArtOperation | null>(null);
@@ -98,7 +96,7 @@ export function usePersonalizedStoryArt(
       if (!isCurrentOperation(operation)) return;
       setFeatureEnabled(result.enabled !== false);
       setMetadata(result);
-      setError("");
+      setError(null);
     } catch (caughtError) {
       if (!isCurrentOperation(operation) || isAbortError(caughtError)) return;
       if (
@@ -107,11 +105,11 @@ export function usePersonalizedStoryArt(
       ) {
         setFeatureEnabled(false);
         setMetadata(emptyMetadata());
-        setError("");
+        setError(null);
         return;
       }
       setFeatureEnabled(true);
-      setError(getErrorMessage(caughtError));
+      setError("load-failed");
     } finally {
       finishOperation(operation);
     }
@@ -130,11 +128,11 @@ export function usePersonalizedStoryArt(
     operationRef.current = null;
     setConsentChecked(false);
     setFeatureEnabled(enabled);
-    setError("");
+    setError(null);
     setIsGenerating(false);
     setMetadata(emptyMetadata());
     setSelectedFile(null);
-    setStatusMessage("");
+    setStatus(null);
     void refresh();
     return () => {
       mountedRef.current = false;
@@ -171,11 +169,11 @@ export function usePersonalizedStoryArt(
       if (!isCurrentOperation(operation)) return;
       setMetadata(nextMetadata);
       setSelectedFile(null);
-      setError("");
-      setStatusMessage("Story art ready");
+      setError(null);
+      setStatus("ready");
     } catch (caughtError) {
       if (!isCurrentOperation(operation) || isAbortError(caughtError)) return;
-      setError(getErrorMessage(caughtError));
+      setError("generate-failed");
     } finally {
       if (isCurrentOperation(operation)) setIsGenerating(false);
       finishOperation(operation);
@@ -218,11 +216,11 @@ export function usePersonalizedStoryArt(
           updatedAt: new Date().toISOString(),
         };
       });
-      setError("");
-      setStatusMessage("Personalized story art removed.");
+      setError(null);
+      setStatus("removed");
     } catch (caughtError) {
       if (!isCurrentOperation(operation) || isAbortError(caughtError)) return;
-      setError(getErrorMessage(caughtError));
+      setError("delete-failed");
     } finally {
       if (isCurrentOperation(operation)) setIsGenerating(false);
       finishOperation(operation);
@@ -236,12 +234,12 @@ export function usePersonalizedStoryArt(
 
   const chooseFile = useCallback((file: File | null) => {
     setSelectedFile(file);
-    setStatusMessage("");
+    setStatus(null);
   }, []);
 
   const chooseConsent = useCallback((checked: boolean) => {
     setConsentChecked(checked);
-    setStatusMessage("");
+    setStatus(null);
   }, []);
 
   return {
@@ -260,7 +258,7 @@ export function usePersonalizedStoryArt(
     selectedFileName: selectedFile?.name ?? "",
     setConsentChecked: chooseConsent,
     setSelectedFile: chooseFile,
-    statusMessage,
+    status,
     storyId: PERSONALIZED_STORY_ID,
     storyPageId: PERSONALIZED_STORY_PAGE_ID,
     storyTitle: PERSONALIZED_STORY_TITLE,

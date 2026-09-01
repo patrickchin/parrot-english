@@ -253,10 +253,31 @@ test("storytelling shelf offers guardian-consented story-art opt-in on a 280px p
     panel.getByRole("button", { name: "Delete story art" }),
   ).toBeVisible();
   await expectInsideViewportHorizontally(
-    panel.getByRole("img", { name: personalizedStoryAlt }),
+    panel.getByRole("img", {
+      name: "Personalized story art for Mia in The Red Ball",
+    }),
     page,
   );
   await expectNoHorizontalOverflow(page);
+});
+
+test("Chinese Guardian story art keeps learner and story data unchanged", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await mockPersonalizedStoryArtApis(page);
+  await page.goto(guardianPath("/guardian/stories"));
+
+  await expect(page.getByRole("navigation", { name: "页面导航" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "故事设置" })).toBeVisible();
+  const panel = page.getByRole("region", { name: "个性化故事图片" });
+  await expect(panel.getByText("AI · 私密", { exact: true })).toBeVisible();
+  await expect(panel.getByLabel("上传 Mia 的照片")).toBeVisible();
+  await expect(panel.getByRole("button", { name: "生成故事图片" })).toBeVisible();
+  await expect(panel.locator('[lang="en"]', { hasText: "The Red Ball" })).toBeVisible();
+  await expect(panel.getByText("Mia", { exact: true }).first()).toBeVisible();
 });
 
 test("disabled generation keeps one cleanup path and confirms deletion", async ({
@@ -325,7 +346,7 @@ test("failed cleanup keeps its keyboard action focused for retry", async ({
   ).toBeFocused();
 
   await expect(panel.getByRole("alert")).toHaveText(
-    "The stored story art could not be deleted.",
+    "Story art could not be deleted.",
   );
   await expect(remove).toBeFocused();
   await expect(remove).not.toHaveAttribute("aria-disabled", "true");

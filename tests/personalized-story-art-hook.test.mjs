@@ -141,7 +141,7 @@ function ArtHookProbe({ learnerProfileId, onArt }) {
     createElement(
       "output",
       { "aria-label": "Art status" },
-      art.statusMessage || "none",
+      art.status || "none",
     ),
     createElement(
       "output",
@@ -245,7 +245,7 @@ test("a delete replacement aborts pending loads and rejects their late state", a
     await deletion.promise;
   });
   await waitFor(() => assert.equal(output(container, "Art busy"), "no"));
-  assert.equal(output(container, "Art status"), "Personalized story art removed.");
+  assert.equal(output(container, "Art status"), "removed");
 });
 
 test("a delete replacement keeps late generated art from committing", async () => {
@@ -294,7 +294,7 @@ test("a delete replacement keeps late generated art from committing", async () =
   });
   await waitFor(() => assert.equal(output(container, "Art busy"), "no"));
   assert.equal(output(container, "Artwork"), "none");
-  assert.equal(output(container, "Art status"), "Personalized story art removed.");
+  assert.equal(output(container, "Art status"), "removed");
 });
 
 test("a generate replacement keeps a late delete from clearing art or loading", async () => {
@@ -343,7 +343,7 @@ test("a generate replacement keeps a late delete from clearing art or loading", 
   });
   await waitFor(() => assert.equal(output(container, "Art busy"), "no"));
   assert.equal(output(container, "Artwork"), "new generated art");
-  assert.equal(output(container, "Art status"), "Story art ready");
+  assert.equal(output(container, "Art status"), "ready");
 });
 
 test("a target switch during normalization aborts old learner art and clears its file state", async () => {
@@ -439,7 +439,7 @@ test("a target switch clears old metadata and status before the next learner loa
   await waitFor(() => assert.equal(output(container, "Artwork"), "learner A art"));
   await prepareGeneration(() => art);
   await act(() => void art.generate());
-  await waitFor(() => assert.equal(output(container, "Art status"), "Story art ready"));
+  await waitFor(() => assert.equal(output(container, "Art status"), "ready"));
 
   await click(
     [...container.querySelectorAll("button")].find(
@@ -526,12 +526,62 @@ test("a target switch fences the old learner error and resets feature state for 
     await nextLearnerLoad.promise;
   });
   await waitFor(() =>
-    assert.equal(output(container, "Art error"), "Noah artwork is unavailable."),
+    assert.equal(output(container, "Art error"), "load-failed"),
   );
   assert.equal(output(container, "Artwork"), "none");
   assert.equal(output(container, "Art feature"), "yes");
   assert.equal(output(container, "Art status"), "none");
   assert.equal(output(container, "Art busy"), "no");
+});
+
+test("normalizes load, browser generation, and delete failures to stable art codes", async () => {
+  let phase = "load-failure";
+  decodeImage = async () => {
+    throw new Error("BROWSER BITMAP DECODE SENTENCE");
+  };
+  globalThis.fetch = async (_path, init = {}) => {
+    if ((init.method ?? "GET") === "GET") {
+      return phase === "load-failure"
+        ? Response.json(
+            { error: "unavailable", message: "SERVER LOAD SENTENCE" },
+            { status: 503 },
+          )
+        : Response.json(metadata("current art", 1));
+    }
+    if (init.method === "DELETE") {
+      return Response.json(
+        { error: "delete_failed", message: "SERVER DELETE SENTENCE" },
+        { status: 500 },
+      );
+    }
+    throw new Error(`Unexpected art request: ${init.method}`);
+  };
+  let art;
+  const first = await mountStrict(
+    createElement(ArtHookProbe, { onArt: (nextArt) => (art = nextArt) }),
+  );
+  await waitFor(() => assert.equal(output(first, "Art error"), "load-failed"));
+  assert.doesNotMatch(first.textContent, /SERVER LOAD SENTENCE/);
+
+  await cleanupMountedRoots();
+  document.body.replaceChildren();
+  phase = "ready";
+  const second = await mountStrict(
+    createElement(ArtHookProbe, { onArt: (nextArt) => (art = nextArt) }),
+  );
+  await waitFor(() => assert.equal(output(second, "Artwork"), "current art"));
+  await prepareGeneration(() => art);
+  await act(() => void art.generate());
+  await waitFor(() =>
+    assert.equal(output(second, "Art error"), "generate-failed"),
+  );
+  assert.doesNotMatch(second.textContent, /BROWSER BITMAP DECODE SENTENCE/);
+
+  await act(() => void art.remove());
+  await waitFor(() =>
+    assert.equal(output(second, "Art error"), "delete-failed"),
+  );
+  assert.doesNotMatch(second.textContent, /SERVER DELETE SENTENCE/);
 });
 
 test("uses a hermetic Vite module-transform server", () => {

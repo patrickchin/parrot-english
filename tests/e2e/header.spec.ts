@@ -485,7 +485,7 @@ for (const viewport of mobileViewports) {
     const chinese = page.getByRole("button", { exact: true, name: "中文" });
     const routeControl = page.getByRole("link", {
       exact: true,
-      name: "Back to Guardian dashboard",
+      name: /Back to Guardian dashboard|返回家长中心/,
     });
     const account = page.getByRole("button", {
       name: /Profile for .+, guardian mode|.+的档案，家长模式/,
@@ -1295,7 +1295,7 @@ test("Account & privacy explains caregiver facts before optional technical detai
   ).toBeVisible();
   await expect(
     accountPage.getByText(
-      /^Voice-dubbing rhymes save that learner's private voice clips/i,
+      /^Voice-dubbing rhymes save that learner’s private voice clips/i,
     ),
   ).toBeVisible();
   await expect(
@@ -1305,7 +1305,7 @@ test("Account & privacy explains caregiver facts before optional technical detai
   ).toHaveCount(0);
   await expect(
     accountPage.getByText(
-      "Choosing a learner in Guardian settings changes only which learner's data you manage. Learner mode changes only through Switch to learner, where you choose who will use the session.",
+      "Choosing a learner in Guardian settings changes only which learner’s data you manage. Learner mode changes only through Switch to learner, where you choose who will use the session.",
       { exact: true },
     ),
   ).toBeVisible();

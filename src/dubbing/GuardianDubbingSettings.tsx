@@ -9,6 +9,7 @@ import {
 } from "react";
 import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { getGuardianPath } from "../app/app-routes";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import {
   GuardianLearnerTarget,
   useGuardianLearnerTarget,
@@ -24,6 +25,15 @@ import {
 import { DUB_DEFINITIONS } from "./rhyme-catalog";
 
 type Mutation = "delete";
+export type GuardianDubbingErrorCode =
+  | "load-failed"
+  | "change-failed"
+  | null;
+export type GuardianDubbingPhase =
+  | "loading"
+  | "available"
+  | "cleanup-required";
+type GuardianDubbingStatusCode = "removed" | null;
 type GuardianDubbingStatus = {
   consentState: DubStatus["consentState"];
   savedCount: number;
@@ -35,16 +45,16 @@ const DUB_LINE_COUNT = DUB_DEFINITIONS.reduce(
 );
 
 type GuardianDubbingSettingsViewProps = {
-  cleanupRequired: boolean;
   consentState: DubStatus["consentState"] | null;
   canRetryStatus: boolean;
-  error: string;
-  isLoading: boolean;
+  error: GuardianDubbingErrorCode;
   mutation: Mutation | null;
   onDelete: () => void;
   onRetry: () => void;
+  phase: GuardianDubbingPhase;
   savedCount: number;
   stateHeadingRef?: Ref<HTMLHeadingElement>;
+  status: GuardianDubbingStatusCode;
   target: GuardianLearnerTargetState;
 };
 
@@ -55,22 +65,24 @@ function GuardianDubbingSettingsShell({
   children: ReactNode;
   target: GuardianLearnerTargetState;
 }) {
+  const { messages } = useGuardianLanguage();
+  const copy = messages.dubbingSettings;
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
-      <RouteHeader>
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
         <HeaderLink
-          aria-label="Back to guardian dashboard"
+          aria-label={copy.backToDashboard}
           icon={<ArrowLeft />}
           to={getGuardianPath()}
         >
-          Back to guardian dashboard
+          {copy.backToDashboard}
         </HeaderLink>
       </RouteHeader>
 
       <section className="mx-auto grid w-full max-w-3xl gap-6">
         <header className="grid gap-4 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            Voice dubbing
+            {copy.title}
           </h1>
           <GuardianLearnerTarget state={target} />
         </header>
@@ -82,40 +94,42 @@ function GuardianDubbingSettingsShell({
 }
 
 function GuardianDubbingSettingsContent({
-  cleanupRequired,
   consentState,
   canRetryStatus,
   error,
-  isLoading,
   mutation,
   onDelete,
   onRetry,
+  phase,
   savedCount,
   stateHeadingRef,
+  status,
   target,
 }: GuardianDubbingSettingsViewProps) {
+  const { messages } = useGuardianLanguage();
+  const copy = messages.dubbingSettings;
   const managedLearnerName = target.learnerName?.trim() || "Learner";
-  const busy = isLoading || mutation !== null;
+  const busy = phase === "loading" || mutation !== null;
 
   return (
     <div
-      aria-busy={isLoading || undefined}
+      aria-busy={phase === "loading" || undefined}
       className="grid min-h-64 content-start gap-6"
     >
-      {isLoading ? (
+      {phase === "loading" ? (
         <p
           aria-live="polite"
           className="m-0 text-center font-extrabold text-brand-blue"
           role="status"
         >
-          Loading voice dubbing settings…
+          {copy.loading}
         </p>
       ) : null}
 
       {error ? (
         <div className="grid justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
           <p className="m-0 font-extrabold text-red-900" role="alert">
-            {error}
+            {copy.errors[error]}
           </p>
           {canRetryStatus && !busy ? (
             <ActionButton
@@ -124,7 +138,7 @@ function GuardianDubbingSettingsContent({
               type="button"
               variant="surface"
             >
-              Try again
+              {messages.common.retry}
             </ActionButton>
           ) : null}
         </div>
@@ -138,15 +152,22 @@ function GuardianDubbingSettingsContent({
               ref={stateHeadingRef}
               tabIndex={-1}
             >
-              Voice dubbing is available
+              {copy.availableTitle}
             </h2>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-              dir="ltr"
             >
-              {savedCount} of {DUB_LINE_COUNT} clips saved;{" "}
-              <BidiLearnerName learnerName={managedLearnerName} /> can record
-              and replace lines across every nursery rhyme.
+              {copy.savedCount(savedCount, DUB_LINE_COUNT)}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              {copy.savedCountAfterName}
+            </p>
+            <p className="m-0 min-w-0 text-sm font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
+              {copy.privacyBeforeName}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              {copy.privacyAfterName}
+            </p>
+            <p className="m-0 min-w-0 text-sm font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]">
+              {copy.deleteAllGuidance}
             </p>
           </div>
           <div className="grid gap-3">
@@ -159,14 +180,14 @@ function GuardianDubbingSettingsContent({
             >
               <span
                 className="min-w-0 py-2 leading-tight [overflow-wrap:anywhere]"
-                dir="ltr"
               >
                 {mutation === "delete" ? (
-                  "Removing voice clips…"
+                  copy.deleting
                 ) : (
                   <>
-                    Delete <BidiLearnerName learnerName={managedLearnerName} />
-                    &apos;s saved nursery-rhyme voice clips
+                    {copy.deleteBeforeName}
+                    <BidiLearnerName learnerName={managedLearnerName} />
+                    {copy.deleteAfterName}
                   </>
                 )}
               </span>
@@ -175,7 +196,24 @@ function GuardianDubbingSettingsContent({
         </Card>
       ) : null}
 
-      {consentState === "revoking" || cleanupRequired ? (
+      {phase === "available" && consentState === "not_granted" ? (
+        <Card className="grid gap-2 p-5 text-center sm:p-7">
+          <h2
+            className="m-0 text-2xl leading-tight text-brand-navy"
+            ref={stateHeadingRef}
+            tabIndex={-1}
+          >
+            {copy.emptyTitle}
+          </h2>
+          <p className="m-0 font-bold leading-relaxed text-slate-600">
+            {copy.emptyBeforeName}
+            <BidiLearnerName learnerName={managedLearnerName} />
+            {copy.emptyAfterName}
+          </p>
+        </Card>
+      ) : null}
+
+      {consentState === "revoking" || phase === "cleanup-required" ? (
         <Card className="grid gap-5 p-5 text-center sm:p-7">
           <div className="grid gap-2">
             <h2
@@ -183,15 +221,14 @@ function GuardianDubbingSettingsContent({
               ref={stateHeadingRef}
               tabIndex={-1}
             >
-              Voice clip removal needs to finish
+              {copy.cleanupTitle}
             </h2>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
-              dir="ltr"
             >
+              {copy.cleanupBeforeName}
               <BidiLearnerName learnerName={managedLearnerName} />
-              &apos;s voice dubbing stays unavailable in every nursery rhyme until
-              every saved clip has been removed.
+              {copy.cleanupAfterName}
             </p>
           </div>
           <ActionButton
@@ -202,10 +239,23 @@ function GuardianDubbingSettingsContent({
             variant="dangerSurface"
           >
             {mutation === "delete"
-              ? "Removing voice clips…"
-              : "Finish removing nursery-rhyme clips"}
+              ? copy.deleting
+              : copy.finishCleanup}
           </ActionButton>
         </Card>
+      ) : null}
+
+      {status ? (
+        <p
+          aria-atomic="true"
+          aria-live="polite"
+          className="m-0 text-center text-sm font-extrabold text-emerald-900"
+          role="status"
+        >
+          {copy.removedBeforeName}
+          <BidiLearnerName learnerName={managedLearnerName} />
+          {copy.removedAfterName}
+        </p>
       ) : null}
     </div>
   );
@@ -221,10 +271,6 @@ export function GuardianDubbingSettingsView(
   );
 }
 
-function messageFor(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
-
 function TargetedGuardianDubbingSettings({
   learnerProfileId,
   target,
@@ -232,13 +278,16 @@ function TargetedGuardianDubbingSettings({
   learnerProfileId: string;
   target: GuardianLearnerTargetState;
 }) {
-  const [cleanupRequired, setCleanupRequired] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
   const [status, setStatus] = useState<GuardianDubbingStatus | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [phase, setPhase] = useState<GuardianDubbingPhase>("loading");
   const [mutation, setMutation] = useState<Mutation | null>(null);
-  const [operationError, setOperationError] = useState("");
-  const [statusError, setStatusError] = useState("");
+  const [announcement, setAnnouncement] =
+    useState<GuardianDubbingStatusCode>(null);
+  const [operationError, setOperationError] =
+    useState<GuardianDubbingErrorCode>(null);
+  const [statusError, setStatusError] =
+    useState<GuardianDubbingErrorCode>(null);
   const loadControllerRef = useRef<AbortController | null>(null);
   const loadGenerationRef = useRef(0);
   const lastFocusedRequestRef = useRef(0);
@@ -251,18 +300,20 @@ function TargetedGuardianDubbingSettings({
     async ({
       invalidateOnFailure = false,
       preserveOperationError = false,
+      clearOperationErrorOnSuccess = false,
     }: {
       invalidateOnFailure?: boolean;
       preserveOperationError?: boolean;
+      clearOperationErrorOnSuccess?: boolean;
     } = {}) => {
       loadControllerRef.current?.abort();
       const controller = new AbortController();
       const generation = loadGenerationRef.current + 1;
       loadControllerRef.current = controller;
       loadGenerationRef.current = generation;
-      setIsLoading(true);
-      setStatusError("");
-      if (!preserveOperationError) setOperationError("");
+      setPhase("loading");
+      setStatusError(null);
+      if (!preserveOperationError) setOperationError(null);
 
       try {
         const statuses = await Promise.all(
@@ -290,15 +341,17 @@ function TargetedGuardianDubbingSettings({
               )
             ? "granted"
             : "not_granted";
-        setStatus({
+        const nextStatus: GuardianDubbingStatus = {
           consentState,
           savedCount: statuses.reduce(
             (total, candidate) =>
               total + candidate.lines.filter(({ saved }) => saved).length,
             0,
           ),
-        });
-        setCleanupRequired(false);
+        };
+        setStatus(nextStatus);
+        setPhase(consentState === "revoking" ? "cleanup-required" : "available");
+        if (clearOperationErrorOnSuccess) setOperationError(null);
         return true;
       } catch (error) {
         if (
@@ -310,21 +363,16 @@ function TargetedGuardianDubbingSettings({
         }
         if (error instanceof DubResetInProgressError) {
           setStatus(null);
-          setCleanupRequired(true);
+          setPhase("cleanup-required");
           return false;
         }
         if (invalidateOnFailure) {
           setStatus(null);
-          setCleanupRequired(false);
         }
-        setStatusError(
-          messageFor(error, "Voice dubbing settings could not be loaded."),
-        );
+        setPhase("available");
+        setStatusError("load-failed");
         return false;
       } finally {
-        if (mountedRef.current && generation === loadGenerationRef.current) {
-          setIsLoading(false);
-        }
         if (loadControllerRef.current === controller) {
           loadControllerRef.current = null;
         }
@@ -348,36 +396,35 @@ function TargetedGuardianDubbingSettings({
     if (focusRequest === lastFocusedRequestRef.current) return;
     lastFocusedRequestRef.current = focusRequest;
     stateHeadingRef.current?.focus();
-  }, [cleanupRequired, focusRequest, status?.consentState]);
+  }, [focusRequest, phase, status?.consentState]);
 
   async function mutate(
     kind: Mutation,
     operation: (options: { signal: AbortSignal }) => Promise<void>,
   ) {
-    if (mutationRef.current !== null || isLoading) return;
+    if (mutationRef.current !== null || phase === "loading") return;
     mutationRef.current = kind;
     setMutation(kind);
-    setOperationError("");
+    setOperationError(null);
+    setAnnouncement(null);
     const controller = new AbortController();
     mutationControllerRef.current = controller;
-    let failure = "";
+    let failure: GuardianDubbingErrorCode = null;
     try {
       await operation({ signal: controller.signal });
-    } catch (error) {
+    } catch {
       if (!controller.signal.aborted) {
-        failure = messageFor(
-          error,
-          "Voice dubbing settings could not be changed.",
-        );
+        failure = "change-failed";
       }
     }
 
     if (mountedRef.current && !controller.signal.aborted) {
-      if (failure) setOperationError(failure);
-      await refresh({
+      if (failure !== null) setOperationError(failure);
+      const refreshed = await refresh({
         invalidateOnFailure: true,
-        preserveOperationError: Boolean(failure),
+        preserveOperationError: failure !== null,
       });
+      if (failure === null && refreshed) setAnnouncement("removed");
       setFocusRequest((request) => request + 1);
     }
 
@@ -392,7 +439,7 @@ function TargetedGuardianDubbingSettings({
 
   function remove() {
     if (
-      !cleanupRequired &&
+      phase !== "cleanup-required" &&
       status?.consentState !== "granted" &&
       status?.consentState !== "revoking"
     ) {
@@ -405,16 +452,21 @@ function TargetedGuardianDubbingSettings({
 
   return (
     <GuardianDubbingSettingsContent
-      canRetryStatus={Boolean(statusError)}
-      cleanupRequired={cleanupRequired}
+      canRetryStatus={statusError !== null}
       consentState={status?.consentState ?? null}
       error={statusError || operationError}
-      isLoading={isLoading}
       mutation={mutation}
       onDelete={remove}
-      onRetry={() => void refresh({ preserveOperationError: true })}
+      onRetry={() =>
+        void refresh({
+          clearOperationErrorOnSuccess: true,
+          preserveOperationError: true,
+        })
+      }
+      phase={phase}
       savedCount={status?.savedCount ?? 0}
       stateHeadingRef={stateHeadingRef}
+      status={announcement}
       target={target}
     />
   );

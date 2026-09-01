@@ -12,30 +12,30 @@ import {
   saveStoryLevel,
   type ProfileState,
 } from "../learner-profile/learner-profile-api";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { isAbortError } from "../media/audio-playback";
 import { Card, SegmentedButton, SegmentedControl } from "../shared/ui";
 import { PersonalizedStoryArtPanel } from "./PersonalizedStoryArtPanel";
 import {
-  getStoryLevel,
   LEARNER_STORY_LEVEL_IDS,
   type LearnerStoryLevelId,
 } from "./story-catalog";
 import { usePersonalizedStoryArt } from "./usePersonalizedStoryArt";
 
 type PersonalizedStoryArtState = ReturnType<typeof usePersonalizedStoryArt>;
-const LEARNER_STORY_LEVELS = LEARNER_STORY_LEVEL_IDS.map((levelId) => ({
-  ...getStoryLevel(levelId),
-  id: levelId,
-}));
+export type GuardianStoryErrorCode =
+  | "load-failed"
+  | "save-level-failed"
+  | null;
 
 type GuardianStorySettingsViewProps = {
   art?: PersonalizedStoryArtState;
-  error: string;
+  error: GuardianStoryErrorCode;
   isLoading?: boolean;
   isSaving: boolean;
   onSelectLevel: (level: LearnerStoryLevelId) => void;
+  savedLevel: LearnerStoryLevelId | null;
   selectedLevel?: LearnerStoryLevelId;
-  statusMessage: string;
   target: GuardianLearnerTargetState;
 };
 
@@ -45,10 +45,12 @@ function GuardianStorySettingsContent({
   isLoading = false,
   isSaving,
   onSelectLevel,
+  savedLevel,
   selectedLevel,
-  statusMessage,
   target,
 }: GuardianStorySettingsViewProps) {
+  const { messages } = useGuardianLanguage();
+  const copy = messages.storySettings;
   const managedLearnerName = target.learnerName?.trim() || "Learner";
   const targetReady =
     target.phase === "ready" &&
@@ -58,7 +60,10 @@ function GuardianStorySettingsContent({
     isLoading || isSaving || selectedLevel === undefined;
   const showArt =
     art &&
-    (art.featureEnabled || art.metadata.hasStoredArt || art.statusMessage);
+    (art.featureEnabled || art.metadata.hasStoredArt || art.status);
+  const selectedLevelCopy = selectedLevel
+    ? copy.levels[selectedLevel]
+    : null;
 
   return (
     <>
@@ -67,7 +72,7 @@ function GuardianStorySettingsContent({
           className="m-0 rounded-2xl bg-rose-100 px-4 py-3 text-center font-extrabold text-red-900"
           role="alert"
         >
-          {error}
+          {copy.errors[error]}
         </p>
       ) : null}
 
@@ -75,40 +80,54 @@ function GuardianStorySettingsContent({
         <Card className="grid gap-4 p-5 sm:p-6">
           <div className="grid gap-1 text-center">
             <h2 className="m-0 text-2xl leading-tight text-brand-navy">
-              Choose story level
+              {copy.chooseLevel}
             </h2>
             <p
               className="m-0 min-w-0 text-sm font-bold text-slate-600 [overflow-wrap:anywhere]"
-              dir="ltr"
             >
-              This shelf opens first for{" "}
-              <BidiLearnerName learnerName={managedLearnerName} />. Every story
-              shelf is still available.
+              {copy.shelfBefore}
+              <BidiLearnerName learnerName={managedLearnerName} />
+              {copy.shelfAfter}
             </p>
           </div>
 
           <SegmentedControl
-            aria-label="Choose story level"
+            aria-label={copy.chooseLevel}
             className="grid grid-cols-2 lg:grid-cols-4"
             role="tablist"
           >
-            {LEARNER_STORY_LEVELS.map((level) => (
+            {LEARNER_STORY_LEVEL_IDS.map((levelId) => (
               <SegmentedButton
                 aria-controls="guardian-story-level-status"
                 aria-disabled={levelUnavailable ? true : undefined}
                 className="min-h-14 justify-center px-2 text-center text-xs leading-tight min-[360px]:px-3 min-[360px]:text-sm"
-                key={level.id}
+                key={levelId}
                 onClick={
-                  levelUnavailable ? undefined : () => onSelectLevel(level.id)
+                  levelUnavailable ? undefined : () => onSelectLevel(levelId)
                 }
                 role="tab"
-                selected={level.id === selectedLevel}
+                selected={levelId === selectedLevel}
                 type="button"
               >
-                <span>{level.label}</span>
+                <span>{copy.levels[levelId].label}</span>
               </SegmentedButton>
             ))}
           </SegmentedControl>
+
+          {selectedLevelCopy ? (
+            <div
+              aria-label={copy.levelSummary}
+              className="grid gap-1 rounded-2xl bg-sky-50 px-4 py-3 text-center"
+              role="group"
+            >
+              <p className="m-0 text-xs font-black text-brand-blue">
+                {copy.cefrLabel}: {selectedLevelCopy.cefrReference}
+              </p>
+              <p className="m-0 text-sm font-bold text-slate-700">
+                {selectedLevelCopy.description}
+              </p>
+            </div>
+          ) : null}
 
           <p
             aria-atomic="true"
@@ -118,10 +137,12 @@ function GuardianStorySettingsContent({
             role="status"
           >
             {isLoading
-              ? "Loading story settings…"
+              ? copy.loading
               : isSaving
-                ? "Saving story level…"
-                : statusMessage}
+                ? copy.saving
+                : savedLevel
+                  ? copy.saved(copy.levels[savedLevel].label)
+                  : ""}
           </p>
         </Card>
       ) : null}
@@ -143,7 +164,7 @@ function GuardianStorySettingsContent({
           onGenerate={() => void art.generate()}
           onRemove={() => void art.remove()}
           personalizedArtwork={art.personalizedArtwork}
-          statusMessage={art.statusMessage}
+          status={art.status}
           storyTitle={art.storyTitle}
         />
       ) : null}
@@ -158,22 +179,24 @@ function GuardianStorySettingsShell({
   children: ReactNode;
   target: GuardianLearnerTargetState;
 }) {
+  const { messages } = useGuardianLanguage();
+  const copy = messages.storySettings;
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
-      <RouteHeader>
+      <RouteHeader ariaLabel={messages.common.pageNavigation}>
         <HeaderLink
-          aria-label="Back to guardian dashboard"
+          aria-label={copy.backToDashboard}
           icon={<ArrowLeft />}
           to="/guardian"
         >
-          Back to guardian dashboard
+          {copy.backToDashboard}
         </HeaderLink>
       </RouteHeader>
 
       <section className="mx-auto grid w-full max-w-5xl gap-6">
         <header className="grid gap-4 text-center">
           <h1 className="m-0 text-4xl leading-none tracking-tight text-brand-ink sm:text-6xl">
-            Story settings
+            {copy.title}
           </h1>
           <GuardianLearnerTarget state={target} />
         </header>
@@ -200,11 +223,13 @@ function TargetedGuardianStorySettings({
 }) {
   const art = usePersonalizedStoryArt({ learnerProfileId });
   const { activeProfileId, reloadSelectedLearner } = useLearnerSelection();
-  const [error, setError] = useState("");
+  const [error, setError] = useState<GuardianStoryErrorCode>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [profileState, setProfileState] = useState<ProfileState | null>(null);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [savedLevel, setSavedLevel] = useState<LearnerStoryLevelId | null>(
+    null,
+  );
   const loadControllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(false);
   const saveControllerRef = useRef<AbortController | null>(null);
@@ -215,7 +240,7 @@ function TargetedGuardianStorySettings({
     const controller = new AbortController();
     loadControllerRef.current = controller;
     setIsLoading(true);
-    setError("");
+    setError(null);
     setProfileState(null);
     void loadProfile({ learnerProfileId, signal: controller.signal })
       .then((loaded) => {
@@ -233,11 +258,7 @@ function TargetedGuardianStorySettings({
         ) {
           return;
         }
-        setError(
-          caughtError instanceof Error
-            ? caughtError.message
-            : "Story settings could not be loaded.",
-        );
+        setError("load-failed");
       })
       .finally(() => {
         if (!controller.signal.aborted && mountedRef.current) {
@@ -269,8 +290,8 @@ function TargetedGuardianStorySettings({
     saveControllerRef.current?.abort();
     saveControllerRef.current = controller;
     savingRef.current = true;
-    setError("");
-    setStatusMessage("");
+    setError(null);
+    setSavedLevel(null);
     setIsSaving(true);
     try {
       const result = await saveStoryLevel(level, {
@@ -286,7 +307,7 @@ function TargetedGuardianStorySettings({
         await reloadSelectedLearner(learnerProfileId);
         if (controller.signal.aborted || !mountedRef.current) return;
       }
-      setStatusMessage(`Story level saved: ${getStoryLevel(level).label}.`);
+      setSavedLevel(level);
     } catch (caughtError) {
       if (
         controller.signal.aborted ||
@@ -295,11 +316,7 @@ function TargetedGuardianStorySettings({
       ) {
         return;
       }
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Story settings could not be saved.",
-      );
+      setError("save-level-failed");
     } finally {
       if (!controller.signal.aborted && mountedRef.current) {
         savingRef.current = false;
@@ -318,8 +335,8 @@ function TargetedGuardianStorySettings({
       isLoading={isLoading}
       isSaving={isSaving}
       onSelectLevel={(level) => void selectLevel(level)}
+      savedLevel={savedLevel}
       selectedLevel={profileState?.profile.storyLevel}
-      statusMessage={statusMessage}
       target={target}
     />
   );

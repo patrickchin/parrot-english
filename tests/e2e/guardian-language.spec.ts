@@ -208,6 +208,30 @@ test("Chinese Guardian learner roster and profile editor localize without renami
   await expect(page.getByRole("region", { name: "课程语音录音" })).toBeVisible();
 });
 
+test("Chinese account privacy and deletion dialog keep technical data and focus safety", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto("/guardian/account?parrotE2eGuardian=guardian");
+
+  await expect(page.getByRole("navigation", { name: "页面导航" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "账户与隐私" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "AI 与已保存的数据" })).toBeVisible();
+  await expect(page.getByText("Cloudflare Workers AI", { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "危险操作区" })).toBeVisible();
+
+  const opener = page.getByRole("button", { name: "删除账户" });
+  await opener.click();
+  const dialog = page.getByRole("dialog", { name: "删除账户" });
+  await expect(dialog).toHaveAttribute("lang", "zh-Hans");
+  await expect(dialog.getByRole("group", { name: "家长指导语言" })).toBeVisible();
+  await expect(dialog.getByLabel("密码")).toBeFocused();
+  await expect(dialog.getByRole("button", { name: "取消" })).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "立即删除账户" })).toBeDisabled();
+});
+
 test("Guardian redo setup localizes controls while learning content stays English", async ({ page }) => {
   await page.addInitScript(() =>
     localStorage.setItem("parrot:guardian-language", "zh-Hans"),

@@ -366,6 +366,28 @@ test("Guardian dubbing settings can load independent status for every rhyme ID",
   }
 });
 
+test("Chinese Guardian dubbing management does not localize the learner studio", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto(
+    "/guardian/dubbing?parrotE2eDub=complete&parrotE2eGuardian=guardian",
+  );
+  await expect(page.getByRole("navigation", { name: "页面导航" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "配音管理" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "可以使用配音" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "删除 Mia 已保存的童谣配音片段" }),
+  ).toBeVisible();
+
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.getByRole("heading", { name: "Five Little Ducks" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+});
+
 test("shared-consent deletion clears saved clips for both rhyme routes", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
   await expectDubProject(page);
@@ -522,7 +544,7 @@ test("keeps a failed cleanup revoking until the guardian retries", async ({
     .click();
   await expect(
     page.getByRole("alert").filter({
-      hasText: "Your saved nursery-rhyme voice clips were not deleted.",
+      hasText: "Voice dubbing settings could not be changed.",
     }),
   ).toBeVisible();
 
@@ -596,7 +618,7 @@ test("reconciles a lost cleanup response from durable status", async ({
     .click();
   await expect(
     page.getByRole("alert").filter({
-      hasText: "Your saved nursery-rhyme voice clips were not deleted.",
+      hasText: "Voice dubbing settings could not be changed.",
     }),
   ).toBeVisible();
 
@@ -1679,8 +1701,7 @@ test("a failed Guardian delete stays actionable only in Guardian mode", async ({
 
   await expect(
     page.getByRole("alert").filter({
-      hasText:
-        "Your saved nursery-rhyme voice clips were not deleted.",
+      hasText: "Voice dubbing settings could not be changed.",
     }),
   ).toBeVisible();
   await expect(

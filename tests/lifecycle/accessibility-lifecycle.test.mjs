@@ -590,28 +590,70 @@ describe("keyboard accessibility lifecycles", () => {
     await click(opener);
     const password = document.querySelector("#delete-account-password");
     assert.ok(password);
-    const cancel = button("Cancel");
     await waitFor(() => assert.equal(document.activeElement, password));
     assert.match(
       document.querySelector('[role="dialog"]')?.textContent ?? "",
       /all learner profiles.*private voice clips.*story art/i,
     );
 
-    await press(password, "Tab", { shiftKey: true });
-    assert.equal(document.activeElement, cancel);
-    await press(cancel, "Tab");
-    assert.equal(document.activeElement, password);
-
     await input(password, "parent-password");
     const confirm = button("Delete account now");
     assert.equal(confirm.disabled, false);
+    const english = button("English");
+    english.focus();
+    await press(english, "Tab", { shiftKey: true });
+    assert.equal(document.activeElement, confirm);
     confirm.focus();
     await press(confirm, "Tab");
-    assert.equal(document.activeElement, password);
+    assert.equal(document.activeElement, english);
 
     await press(password, "Escape");
     assert.equal(document.querySelector('[role="dialog"]'), null);
     assert.equal(document.activeElement, opener);
+  });
+
+  it("retranslates an account-delete failure without resetting dialog state", async () => {
+    let deletionAttempts = 0;
+    await mountStrict(
+      createElement(
+        GuardianLanguageProvider,
+        { initialLanguage: "en", storage: null },
+        createElement(DialogHarness, {
+          kind: "delete",
+          onDelete: async () => {
+            deletionAttempts += 1;
+            return "account-delete-failed";
+          },
+        }),
+      ),
+    );
+    await click(button("Open delete"));
+    const dialog = document.querySelector('[role="dialog"]');
+    const password = document.querySelector("#delete-account-password");
+    await input(password, "parent-password");
+    await click(button("Delete account now"));
+    const alert = await waitFor(() => {
+      const candidate = dialog.querySelector('[role="alert"]');
+      assert.match(candidate?.textContent ?? "", /Unable to delete the account/);
+      return candidate;
+    });
+    assert.equal(deletionAttempts, 1);
+    assert.equal(dialog.getAttribute("lang"), "en");
+
+    const chinese = button("中文");
+    assert.equal(dialog.contains(chinese), true);
+    assert.equal(chinese.closest("fieldset"), null);
+    assert.equal(chinese.disabled, false);
+    chinese.focus();
+    await click(chinese);
+
+    assert.equal(document.querySelector('[role="dialog"]'), dialog);
+    assert.equal(dialog.querySelector('[role="alert"]'), alert);
+    assert.equal(password.value, "parent-password");
+    assert.equal(dialog.getAttribute("lang"), "zh-Hans");
+    assert.equal(document.activeElement, chinese);
+    assert.match(alert.textContent, /无法删除账户/);
+    assert.equal(deletionAttempts, 1);
   });
 
   it("keeps the learner-delete language control trapped and enabled while pending", async () => {

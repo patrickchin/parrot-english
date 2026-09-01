@@ -35,6 +35,12 @@ const {
   LearnerSelectionProvider,
   useLearnerProfile,
 } = contextModule;
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
+const { GuardianLanguageControl } = await vite.ssrLoadModule(
+  "/src/i18n/GuardianLanguageControl.tsx",
+);
 
 test.afterEach(async () => {
   await cleanupMountedRoots();
@@ -119,7 +125,7 @@ function textFromMarkup(markup) {
 function artState(overrides = {}) {
   return {
     consentChecked: false,
-    error: "",
+    error: null,
     featureEnabled: true,
     generateDisabled: true,
     hasSelectedPhoto: false,
@@ -127,7 +133,7 @@ function artState(overrides = {}) {
     metadata: { stories: {} },
     personalizedArtwork: null,
     selectedFileName: "",
-    statusMessage: "",
+    status: null,
     storyTitle: "The Red Ball",
     setConsentChecked() {},
     setSelectedFile() {},
@@ -137,7 +143,7 @@ function artState(overrides = {}) {
   };
 }
 
-function renderView(overrides = {}) {
+function renderView(overrides = {}, language = "en") {
   assert.equal(
     typeof GuardianStorySettingsView,
     "function",
@@ -145,18 +151,22 @@ function renderView(overrides = {}) {
   );
   return renderToStaticMarkup(
     createElement(
-      MemoryRouter,
-      { initialEntries: ["/guardian/stories"] },
-      createElement(GuardianStorySettingsView, {
-        art: artState(),
-        error: "",
-        isSaving: false,
-        onSelectLevel() {},
-        selectedLevel: "first-words",
-        statusMessage: "",
-        target: readyTarget(),
-        ...overrides,
-      }),
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(
+        MemoryRouter,
+        { initialEntries: ["/guardian/stories"] },
+        createElement(GuardianStorySettingsView, {
+          art: artState(),
+          error: null,
+          isSaving: false,
+          onSelectLevel() {},
+          savedLevel: null,
+          selectedLevel: "first-words",
+          target: readyTarget(),
+          ...overrides,
+        }),
+      ),
     ),
   );
 }
@@ -210,6 +220,11 @@ function SettingsProfileProvider({
 }
 
 function settingsHarness(storyLevel = "first-words", selection = {}) {
+  const {
+    language = "en",
+    withLanguageControl = false,
+    ...selectionProps
+  } = selection;
   assert.equal(
     typeof GuardianStorySettings,
     "function",
@@ -221,15 +236,20 @@ function settingsHarness(storyLevel = "first-words", selection = {}) {
     "Expected the loaded-profile context provider",
   );
   return createElement(
-    SettingsProfileProvider,
-    { storyLevel, ...selection },
+    GuardianLanguageProvider,
+    { initialLanguage: language, storage: null },
+    withLanguageControl ? createElement(GuardianLanguageControl) : null,
     createElement(
-      MemoryRouter,
-      {
-        initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
-      },
-      createElement(GuardianStorySettings, { learnerName: "Mia" }),
-      createElement(ProfileProbe),
+      SettingsProfileProvider,
+      { storyLevel, ...selectionProps },
+      createElement(
+        MemoryRouter,
+        {
+          initialEntries: ["/guardian/stories?learnerProfileId=learner-mia"],
+        },
+        createElement(GuardianStorySettings, { learnerName: "Mia" }),
+        createElement(ProfileProbe),
+      ),
     ),
   );
 }
@@ -334,6 +354,76 @@ test("guardian story settings preserves private-art cleanup states", () => {
   );
 });
 
+test("Chinese guardian story settings localizes guidance while preserving story and CEFR data", () => {
+  const html = renderView({}, "zh-Hans");
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  const text = textFromMarkup(html);
+
+  assert.equal(container.querySelectorAll("h1").length, 1);
+  assert.equal(container.querySelector("h1")?.textContent, "故事设置");
+  assert.equal(
+    container.querySelector("nav")?.getAttribute("aria-label"),
+    "页面导航",
+  );
+  assert.match(text, /返回家长中心/);
+  assert.match(text, /正在编辑 ⁨Mia⁩ 的设置/);
+  assert.equal(
+    container.querySelector('[role="group"]')?.getAttribute("aria-label"),
+    "选择要设置的孩子",
+  );
+  assert.match(text, /选择故事级别/);
+  assert.match(text, /级别 1 · 单词与图片/);
+  assert.match(text, /每页只有几个熟悉的单词/);
+  assert.match(text, /CEFR/);
+  assert.match(text, /Entry Pre-A1/);
+  assert.match(html, /aria-label="个性化故事图片"/);
+  assert.match(text, /私密/);
+  const title = [...container.querySelectorAll('[lang="en"]')].find(
+    (node) => node.textContent === "The Red Ball",
+  );
+  assert.ok(title, "Expected the English story title to retain lang=en.");
+});
+
+test("a visible story save failure retranslates without another save request", async () => {
+  let preferenceRequests = 0;
+  installArtFetch(() => {
+    preferenceRequests += 1;
+    return Response.json(
+      { error: "save_failed", message: "SERVER STORY ERROR" },
+      { status: 500 },
+    );
+  });
+  const container = await mountStrict(
+    settingsHarness("first-words", {
+      language: "zh-Hans",
+      withLanguageControl: true,
+    }),
+  );
+  await waitFor(() =>
+    assert.equal(container.querySelectorAll('[role="tab"]').length, 4),
+  );
+  const nextLevel = container.querySelectorAll('[role="tab"]')[2];
+  nextLevel.focus();
+  await click(nextLevel);
+  const alert = await waitFor(() => {
+    const candidate = container.querySelector('[role="alert"]');
+    assert.match(candidate?.textContent ?? "", /无法保存故事级别/);
+    return candidate;
+  });
+  assert.doesNotMatch(alert.textContent, /SERVER STORY ERROR/);
+  assert.equal(preferenceRequests, 1);
+
+  const english = [...container.querySelectorAll("button")].find(
+    (candidate) => candidate.textContent === "English",
+  );
+  assert.ok(english);
+  await click(english);
+  assert.equal(container.querySelector('[role="alert"]'), alert);
+  assert.match(alert.textContent, /Story level could not be saved/);
+  assert.equal(preferenceRequests, 1);
+});
+
 test("saves a level before replacing the loaded profile and announces success without moving focus", async () => {
   const preference = deferred();
   const preferenceBodies = installArtFetch(() => preference.promise);
@@ -423,7 +513,7 @@ test("rejects a story-level response for a different learner without announcing 
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="alert"]')?.textContent ?? "",
-      /selected learner profile could not be saved/i,
+      /Story level could not be saved/i,
     ),
   );
   assert.equal(
@@ -671,7 +761,7 @@ test("keeps story controls unavailable when the targeted profile fails to load",
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="alert"]')?.textContent ?? "",
-      /Profile unavailable/i,
+      /Story settings could not be loaded/i,
     ),
   );
 
@@ -825,7 +915,7 @@ for (const [status, message] of [
     await waitFor(() =>
       assert.match(
         container.querySelector('[role="alert"]')?.textContent ?? "",
-        new RegExp(message.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+        /Story level could not be saved\./,
       ),
     );
 

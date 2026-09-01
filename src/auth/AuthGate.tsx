@@ -29,6 +29,7 @@ import {
 import {
   AccountActionProvider,
   type AccountExperience,
+  type AccountDeleteErrorCode,
 } from "./account-actions";
 import { authClient } from "./auth-client";
 import { TurnstileWidget } from "./Turnstile";
@@ -103,8 +104,7 @@ interface DeleteAccountSessionOptions {
 }
 
 const SIGN_OUT_ERROR = "sign-out-failed" as const;
-const DELETE_ACCOUNT_ERROR_MESSAGE =
-  "Unable to delete the account. The account and private story art were kept. Please try again.";
+const DELETE_ACCOUNT_ERROR = "account-delete-failed" as const;
 const TURNSTILE_REQUIRED_ERROR = "security-check-required" as const;
 
 type AuthFetch = (
@@ -240,17 +240,17 @@ export async function deleteAccountSession({
   isAnonymous = false,
   password,
   refetch,
-}: DeleteAccountSessionOptions): Promise<string | null> {
+}: DeleteAccountSessionOptions): Promise<AccountDeleteErrorCode> {
   try {
     const result = isAnonymous
       ? await deleteGuestAccountAction()
       : await client.deleteUser({ password });
-    if (result.error) return DELETE_ACCOUNT_ERROR_MESSAGE;
+    if (result.error) return DELETE_ACCOUNT_ERROR;
 
     await refetch();
     return null;
   } catch {
-    return DELETE_ACCOUNT_ERROR_MESSAGE;
+    return DELETE_ACCOUNT_ERROR;
   }
 }
 

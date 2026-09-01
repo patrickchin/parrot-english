@@ -30,6 +30,9 @@ const lessonPlayerUiModule = await vite
 const panelModule = await vite
   .ssrLoadModule("/src/stories/PersonalizedStoryArtPanel.tsx")
   .catch(() => ({}));
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 
 const { StoryArtwork } = storyUiModule;
 const { StoryReader } = storyReaderModule;
@@ -81,14 +84,21 @@ function renderLessonUserPrompt(props) {
   return renderToStaticMarkup(createElement(LessonUserPrompt, props));
 }
 
-function renderSetupPanel(props) {
+function renderSetupPanel(props, language = "en") {
   assert.equal(
     typeof PersonalizedStoryArtPanel,
     "function",
     "Expected PersonalizedStoryArtPanel in src/stories/PersonalizedStoryArtPanel.tsx",
   );
   return renderToStaticMarkup(
-    createElement(PersonalizedStoryArtPanel, { learnerName: "Mia", ...props }),
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: language, storage: null },
+      createElement(PersonalizedStoryArtPanel, {
+        learnerName: "Mia",
+        ...props,
+      }),
+    ),
   );
 }
 
@@ -267,7 +277,8 @@ describe("personalized story art UI", () => {
       storyTitle: "The Red Ball",
     });
     assert.match(removable, /Delete story art/);
-    assert.match(removable, /You holding a bright red ball/);
+    assert.match(removable, /Regenerate story art/);
+    assert.match(removable, /Personalized story art for Mia in The Red Ball/);
   });
 
   it("keeps private-art cleanup available and confirms it when generation is disabled", () => {
@@ -301,7 +312,7 @@ describe("personalized story art UI", () => {
       onGenerate() {},
       onRemove() {},
       personalizedArtwork: null,
-      statusMessage: "Personalized story art removed.",
+      status: "removed",
       storyTitle: "The Red Ball",
     });
 
@@ -310,5 +321,93 @@ describe("personalized story art UI", () => {
       textFromMarkup(completed),
       /Delete stored story art|Upload .* photo|Generate story art/,
     );
+  });
+
+  it("localizes private-art guidance, controls, statuses, and stable failures in Chinese", () => {
+    const base = {
+      consentChecked: false,
+      fileName: "mary.png",
+      hasSelectedPhoto: true,
+      isGenerating: false,
+      learnerName: "Mary",
+      onConsentChange() {},
+      onFileChange() {},
+      onGenerate() {},
+      onRemove() {},
+      personalizedArtwork: null,
+      storyTitle: "The Red Ball",
+    };
+    const html = renderSetupPanel(base, "zh-Hans");
+    const text = textFromMarkup(html);
+
+    assert.match(html, /<section aria-label="个性化故事图片"/);
+    assert.match(text, /AI · 私密/);
+    assert.match(text, /让 The Red Ball 的第一页看起来像 Mary/);
+    assert.match(text, /上传 Mary 的照片/);
+    assert.match(text, /已选择：mary\.png/);
+    assert.match(text, /我已年满 18 岁/);
+    assert.match(text, /Cloudflare Workers AI/);
+    assert.match(text, /生成故事图片/);
+    assert.match(html, /lang="en"[^>]*>The Red Ball</);
+    assert.match(html, /<bdi[^>]*dir="auto"[^>]*>Mary<\/bdi>/);
+
+    const ready = renderSetupPanel(
+      {
+        ...base,
+        consentChecked: true,
+        error: "generate-failed",
+        personalizedArtwork: {
+          alt: "SERVER ALT",
+          src: "/api/stories/the-red-ball/personalized-art/asset",
+        },
+        status: "ready",
+      },
+      "zh-Hans",
+    );
+    assert.match(ready, /重新生成故事图片/);
+    assert.match(ready, /删除故事图片/);
+    assert.match(ready, /故事图片已准备好/);
+    assert.match(ready, /无法生成故事图片/);
+    assert.doesNotMatch(ready, /SERVER ALT/);
+
+    const pending = renderSetupPanel(
+      { ...base, isGenerating: true },
+      "zh-Hans",
+    );
+    assert.match(pending, /正在创建故事图片…/);
+
+    for (const [code, expected] of [
+      ["load-failed", /无法加载个性化故事图片/],
+      ["generate-failed", /无法生成故事图片/],
+      ["delete-failed", /无法删除故事图片/],
+    ]) {
+      const failed = renderSetupPanel({ ...base, error: code }, "zh-Hans");
+      assert.match(failed, expected);
+      assert.doesNotMatch(failed, new RegExp(code));
+    }
+
+    const cleanup = renderSetupPanel(
+      {
+        ...base,
+        featureEnabled: false,
+        hasStoredArt: true,
+        isGenerating: true,
+      },
+      "zh-Hans",
+    );
+    assert.match(cleanup, /私密图片清理/);
+    assert.match(textFromMarkup(cleanup), /删除 Mary 已保存的故事图片/);
+    assert.match(cleanup, /正在删除已保存的故事图片…/);
+
+    const removed = renderSetupPanel(
+      {
+        ...base,
+        featureEnabled: false,
+        hasStoredArt: false,
+        status: "removed",
+      },
+      "zh-Hans",
+    );
+    assert.match(removed, /个性化故事图片已删除/);
   });
 });
