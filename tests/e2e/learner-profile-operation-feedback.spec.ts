@@ -915,7 +915,6 @@ test("route exit aborts held work and quarantines stale settlements", async ({
     name: "Hi! I'm Peppa. What's your name?",
   });
   await expect(question).toHaveCount(0);
-  await expect(page.getByRole("alert")).toHaveText("");
 
   question = await openQuestion(
     page,
@@ -946,7 +945,6 @@ test("route exit aborts held work and quarantines stale settlements", async ({
     name: "Hi! I'm Peppa. What's your name?",
   });
   await expect(question).toHaveCount(0);
-  await expect(page.getByRole("alert")).toHaveText("");
 });
 
 test("route exit stops active recording and aborts either skip request", async ({

@@ -392,33 +392,6 @@ test("secondary actions keep a visible frame on light cards", async ({ page }) =
   );
 });
 
-test("guardian dashboard cards share one rendered frame and elevation", async ({
-  page,
-}) => {
-  await page.goto(guardianPath("/guardian"));
-  const cards = [
-    "Learner profiles",
-    "Voice dubbing",
-    "Account & privacy",
-  ].map((name) => page.getByRole("region", { name }));
-  const chrome = await Promise.all(
-    cards.map(async (card) => {
-      await expect(card).toBeVisible();
-      return card.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return {
-          borderColor: style.borderTopColor,
-          borderStyle: style.borderTopStyle,
-          borderWidth: style.borderTopWidth,
-          boxShadow: style.boxShadow,
-        };
-      });
-    }),
-  );
-
-  expect(new Set(chrome.map((value) => JSON.stringify(value))).size).toBe(1);
-});
-
 for (const viewport of viewports) {
   test(`account menu actions keep rendered contrast on a ${viewport.name}`, async ({
     page,
@@ -448,15 +421,15 @@ for (const viewport of viewports) {
   }) => {
     await preparePage(page, viewport);
 
-    await page.goto(guardianPath("/guardian"));
-    const voiceDubbing = page.getByRole("link", {
-      name: "Manage voice dubbing",
+    await page.goto(guardianPath("/lessons"));
+    const guardianDashboard = page.getByRole("link", {
+      name: "Back to Guardian dashboard",
     });
-    await voiceDubbing.scrollIntoViewIfNeeded();
+    await guardianDashboard.scrollIntoViewIfNeeded();
     await expectPointerStateContrast({
-      interaction: voiceDubbing,
+      interaction: guardianDashboard,
       minimum: 4.5,
-      name: "Manage voice dubbing link",
+      name: "Back to Guardian dashboard link",
       page,
     });
   });

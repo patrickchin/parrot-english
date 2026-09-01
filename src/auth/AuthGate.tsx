@@ -15,8 +15,6 @@ import { useLocation, useNavigate } from "react-router";
 import { SHARED_GUEST_USER_ID } from "../../lib/shared-guest.ts";
 import { AccountHeader } from "../app/AppHeader";
 import {
-  getGuardianAccountPath,
-  getGuardianLearnersPath,
   getGuardianPath,
   getSafeGuardianUnlockDestination,
 } from "../app/app-routes";
@@ -381,9 +379,13 @@ function AccountExperienceHeader({
         isModePending={isSwitchingMode}
         isSigningOut={activeMode === "guardian" && isSigningOut}
         learnerLabel={learnerName?.trim() || "Learner"}
-        onOpenAccountPrivacy={() => onNavigate(getGuardianAccountPath())}
+        onOpenAccountPrivacy={() =>
+          onNavigate(`${getGuardianPath()}#account-privacy`)
+        }
         onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
-        onOpenLearnerProfiles={() => onNavigate(getGuardianLearnersPath())}
+        onOpenLearnerProfiles={() =>
+          onNavigate(`${getGuardianPath()}#learner-profiles`)
+        }
         onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onRetryError={
           access.error

@@ -82,23 +82,26 @@ function BuildMatch({ commitSha }: { commitSha: string }) {
 function BuildCard({
   commitSha,
   fields = [],
+  headingLevel = 3,
   kind,
   title,
   version,
 }: {
   commitSha: string;
   fields?: BuildField[];
+  headingLevel?: 3 | 4;
   kind: "web" | "backend" | "agent";
   title: string;
   version: string;
 }) {
   const { messages } = useGuardianLanguage();
+  const Heading = headingLevel === 4 ? "h4" : "h3";
   return (
     <Card className="grid gap-3 p-3" elevation="soft" tone="inset">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="m-0 text-base font-black leading-tight text-brand-navy">
+        <Heading className="m-0 text-base font-black leading-tight text-brand-navy">
           {title}
-        </h3>
+        </Heading>
         <span className="shrink-0 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-black leading-none text-brand-blue">
           v{version}
         </span>
@@ -136,7 +139,11 @@ async function loadBuildInfo(signal: AbortSignal) {
   return (await response.json()) as BuildInfo;
 }
 
-export function AccountPrivacySections() {
+export function AccountPrivacySections({
+  headingLevel = 2,
+}: {
+  headingLevel?: 2 | 3;
+}) {
   const { messages } = useGuardianLanguage();
   const copy = messages.accountPrivacy;
   const [buildInfoState, setBuildInfoState] = useState<BuildInfoState>({
@@ -164,6 +171,9 @@ export function AccountPrivacySections() {
     ({ component }) => component === "conversation-agent",
   );
   const agentModels = agent?.details?.models;
+  const Heading = headingLevel === 3 ? "h3" : "h2";
+  const BuildHeading = headingLevel === 3 ? "h4" : "h3";
+  const buildHeadingLevel = headingLevel === 3 ? 4 : 3;
 
   return (
     <details className="group rounded-2xl border-3 border-sky-200 bg-white">
@@ -172,12 +182,12 @@ export function AccountPrivacySections() {
         className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-4 py-2 font-black text-brand-navy focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-brand-ink [&::-webkit-details-marker]:hidden"
       >
         <div>
-          <h2
+          <Heading
             className="m-0 text-base font-black leading-tight"
             id="technical-build-title"
           >
             {copy.technicalTitle}
-          </h2>
+          </Heading>
           <span className="mt-0.5 block text-xs font-bold text-slate-500">
             {copy.technicalSubtitle}
           </span>
@@ -194,6 +204,7 @@ export function AccountPrivacySections() {
         </p>
         <BuildCard
           commitSha={WEB_BUILD.commitSha}
+          headingLevel={buildHeadingLevel}
           kind="web"
           title={copy.webApp}
           version={WEB_BUILD.version}
@@ -215,15 +226,16 @@ export function AccountPrivacySections() {
                 ),
               },
             ]}
+            headingLevel={buildHeadingLevel}
             kind="backend"
             title={copy.worker}
             version={buildInfo.backend.version}
           />
         ) : (
           <Card className="p-3" elevation="soft" tone="inset">
-            <h3 className="m-0 text-base font-black text-brand-navy">
+            <BuildHeading className="m-0 text-base font-black text-brand-navy">
               {copy.worker}
-            </h3>
+            </BuildHeading>
             <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
               {buildInfoState.phase === "failed"
                 ? copy.technicalFailed
@@ -257,15 +269,16 @@ export function AccountPrivacySections() {
                   ]
                 : []),
             ]}
+            headingLevel={buildHeadingLevel}
             kind="agent"
             title={copy.agent}
             version={agent.version}
           />
         ) : (
           <Card className="p-3" elevation="soft" tone="inset">
-            <h3 className="m-0 text-base font-black text-brand-navy">
+            <BuildHeading className="m-0 text-base font-black text-brand-navy">
               {copy.agent}
-            </h3>
+            </BuildHeading>
             <p className="m-0 mt-2 text-sm font-bold leading-snug text-slate-600">
               {buildInfoState.phase === "failed"
                 ? copy.technicalFailed

@@ -89,8 +89,10 @@ import { AuthGate } from "../auth/AuthGate";
 import { useAccountExperience } from "../auth/account-actions";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { HeaderButton, RouteHeader } from "./AppHeader";
-import { AccountPrivacyPage } from "./AccountPrivacyPage";
-import { RouteFocusManager } from "./RouteFocusManager";
+import {
+  hasRouteOwnedFocusLifecycle,
+  RouteFocusManager,
+} from "./RouteFocusManager";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
@@ -137,7 +139,6 @@ import {
 } from "../lessons/lesson-recording-api";
 import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
 import { GuardianDashboard } from "./GuardianDashboard";
-import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 import {
@@ -196,15 +197,6 @@ const StoryList = import.meta.env.SSR
       import("../stories/StoryList").then(({ StoryList }) => ({
         default: StoryList,
       })),
-    );
-const GuardianDubbingSettings = import.meta.env.SSR
-  ? (await import("../dubbing/GuardianDubbingSettings")).GuardianDubbingSettings
-  : lazy(() =>
-      import("../dubbing/GuardianDubbingSettings").then(
-        ({ GuardianDubbingSettings }) => ({
-          default: GuardianDubbingSettings,
-        }),
-      ),
     );
 const StoryReader = import.meta.env.SSR
   ? (await import("../stories/StoryReader")).StoryReader
@@ -1199,6 +1191,20 @@ function WordGameRoute() {
   );
 }
 
+function GuardianDashboardSectionRedirect({
+  sectionId,
+}: {
+  sectionId: string;
+}) {
+  const { search } = useLocation();
+  return (
+    <Navigate
+      replace
+      to={{ hash: `#${sectionId}`, pathname: getGuardianPath(), search }}
+    />
+  );
+}
+
 export function ApplicationRoutes({
   learnerName = "Learner",
   loginTarget,
@@ -1253,11 +1259,15 @@ export function ApplicationRoutes({
           path={getGuardianPath()}
         />
         <Route
-          element={<AccountPrivacyPage />}
+          element={
+            <GuardianDashboardSectionRedirect sectionId="account-privacy" />
+          }
           path={getGuardianAccountPath()}
         />
         <Route
-          element={<GuardianLearnerProfiles />}
+          element={
+            <GuardianDashboardSectionRedirect sectionId="learner-profiles" />
+          }
           path={getGuardianLearnersPath()}
         />
         <Route
@@ -1265,7 +1275,9 @@ export function ApplicationRoutes({
           path="/guardian/learners/:learnerId"
         />
         <Route
-          element={<GuardianDubbingSettings />}
+          element={
+            <GuardianDashboardSectionRedirect sectionId="voice-dubbing" />
+          }
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
@@ -1381,6 +1393,7 @@ export function AuthenticatedApplication({
     matchPath({ end: true, path: getGuardianPath() }, location.pathname) !==
     null;
   const learnerManagerRoute =
+    guardianDashboardRoute ||
     matchPath(
       { end: true, path: getGuardianAccountPath() },
       location.pathname,
@@ -1481,6 +1494,9 @@ export function AuthenticatedApplication({
         navigate(getRedoLearnerProfilePath(getProfilePath(safeReturnTo)))
       }
       redoLearnerProfile={redoLearnerProfile}
+      routeFocusManagedByContent={hasRouteOwnedFocusLifecycle(
+        location.pathname,
+      )}
     >
       {gatedRoutes}
     </LearnerProfileGate>

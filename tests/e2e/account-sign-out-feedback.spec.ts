@@ -63,6 +63,12 @@ async function waitForVisualAssets(page: Page) {
   });
 }
 
+function signOutAlert(page: Page) {
+  return page.getByRole("alert").filter({
+    hasText: "Sign out did not finish.",
+  });
+}
+
 const viewports = [
   { height: 568, width: 280 },
   { height: 844, width: 390 },
@@ -169,7 +175,7 @@ for (const viewport of viewports) {
     expect(requestCount).toBe(1);
 
     releaseRequest();
-    const alert = page.getByRole("alert");
+    const alert = signOutAlert(page);
     await expect(alert).toHaveText("Sign out did not finish.");
     await expect(account).not.toHaveAttribute("aria-disabled", "true");
     await expect(status).toHaveText("");
@@ -305,7 +311,7 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   expect(focusStyle.outlineWidth).toBeGreaterThanOrEqual(2);
 
   releaseRequest();
-  await expect(page.getByRole("alert")).toHaveText("Sign out did not finish.");
+  await expect(signOutAlert(page)).toHaveText("Sign out did not finish.");
   await expect(account).toBeFocused();
   const retry = page.getByRole("button", {
     exact: true,
@@ -427,7 +433,7 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   ).toBeLessThanOrEqual(640);
 
   releaseRequest();
-  await expect(page.getByRole("alert")).toHaveText("Sign out did not finish.");
+  await expect(signOutAlert(page)).toHaveText("Sign out did not finish.");
   await expect(account).toBeFocused();
   const retry = page.getByRole("button", {
     exact: true,
@@ -487,7 +493,7 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
   });
   await account.click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
-  await expect(page.getByRole("alert")).toHaveText("Sign out did not finish.");
+  await expect(signOutAlert(page)).toHaveText("Sign out did not finish.");
   await expect(account).toBeFocused();
   const retry = page.getByRole("button", {
     exact: true,

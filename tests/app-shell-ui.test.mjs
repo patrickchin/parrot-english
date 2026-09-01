@@ -35,6 +35,9 @@ const appModule = await vite
   .catch(() => ({}));
 const { LearnerProfileProvider, LearnerSelectionProvider } =
   await vite.ssrLoadModule("/src/learner-profile/LearnerProfileContext.tsx");
+const { AccountActionProvider } = await vite.ssrLoadModule(
+  "/src/auth/account-actions.tsx",
+);
 const { HomeMenu } = homeModule;
 const { FeaturePlaceholder } = placeholderModule;
 const { WordGameList } = wordGameListModule;
@@ -61,37 +64,46 @@ function renderApplicationRoute(initialEntry) {
   );
   return renderInRouter(
     createElement(
-      LearnerSelectionProvider,
+      AccountActionProvider,
       {
-        activeProfileId: "learner-mia",
-        async reloadSelectedLearner() {},
+        async deleteAccount() {
+          return null;
+        },
+        setProfileAction() {},
       },
       createElement(
-        LearnerProfileProvider,
+        LearnerSelectionProvider,
         {
-          profile: {
-            id: "learner-mia",
-            age: 6,
-            answers: {
-              legacyAnswers: null,
-              questionnaireVersion: 2,
-              responses: {},
-              schemaVersion: 2,
-            },
-            completedAt: "2026-08-25T08:00:00.000Z",
-            currentQuestionKey: null,
-            description: "Likes animals",
-            name: "Mia",
-            profileStatus: "completed",
-            questionnaireVersion: 2,
-            storyLevel: "first-words",
-          },
-          replaceProfile() {},
+          activeProfileId: "learner-mia",
+          async reloadSelectedLearner() {},
         },
-        createElement(ApplicationRoutes, {
-          learnerName: "Mia",
-          loginTarget: "/",
-        }),
+        createElement(
+          LearnerProfileProvider,
+          {
+            profile: {
+              id: "learner-mia",
+              age: 6,
+              answers: {
+                legacyAnswers: null,
+                questionnaireVersion: 2,
+                responses: {},
+                schemaVersion: 2,
+              },
+              completedAt: "2026-08-25T08:00:00.000Z",
+              currentQuestionKey: null,
+              description: "Likes animals",
+              name: "Mia",
+              profileStatus: "completed",
+              questionnaireVersion: 2,
+              storyLevel: "first-words",
+            },
+            replaceProfile() {},
+          },
+          createElement(ApplicationRoutes, {
+            learnerName: "Mia",
+            loginTarget: "/",
+          }),
+        ),
       ),
     ),
     initialEntry,
@@ -382,10 +394,13 @@ test("authenticated application routes include the core learner activities", () 
   assert.doesNotMatch(retiredProgress, /Progress|coming soon/i);
 });
 
-test("guardian learner route renders the concrete roster manager", () => {
-  const html = renderApplicationRoute("/guardian/learners");
+test("guardian dashboard renders the concrete management sections", () => {
+  const html = renderApplicationRoute("/guardian");
 
-  assert.match(html, /<h1[^>]*>Manage learners<\/h1>/);
+  assert.match(html, /<h1[^>]*>Guardian dashboard<\/h1>/);
+  assert.match(html, /<h2[^>]*>Manage learners<\/h2>/);
+  assert.match(html, /<h2[^>]*>Voice dubbing<\/h2>/);
+  assert.match(html, /<h2[^>]*>Account &amp; privacy<\/h2>/);
   assert.doesNotMatch(html, /Learning activities/);
 });
 

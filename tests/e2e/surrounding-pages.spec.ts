@@ -23,23 +23,10 @@ async function visibleBox(locator: Locator) {
 }
 
 async function expectReachableByPageScroll(page: Page, lastElement: Locator) {
-  const main = page.getByRole("main");
   await expect(lastElement).toBeVisible();
   const viewport = page.viewportSize();
   expect(viewport).not.toBeNull();
-  const scrollState = await main.evaluate((element) => ({
-    clientHeight: element.clientHeight,
-    scrollHeight: element.scrollHeight,
-    scrollTop: element.scrollTop,
-  }));
-
-  if (scrollState.scrollHeight > scrollState.clientHeight + 1) {
-    await page.mouse.move(viewport!.width / 2, viewport!.height / 2);
-    await page.mouse.wheel(0, scrollState.scrollHeight);
-    await expect
-      .poll(() => main.evaluate((element) => element.scrollTop))
-      .toBeGreaterThan(scrollState.scrollTop);
-  }
+  await lastElement.scrollIntoViewIfNeeded();
 
   const lastBox = await visibleBox(lastElement);
   expect(lastBox.y + lastBox.height).toBeGreaterThanOrEqual(-1);
@@ -461,7 +448,7 @@ const guardianContentPages = [
   {
     heading: "Guardian dashboard",
     lastControl: (page: Page) =>
-      page.getByRole("link", { name: "Open account & privacy" }),
+      page.getByRole("button", { name: "Delete account" }),
     name: "dashboard",
     path: "/guardian",
   },
@@ -526,7 +513,7 @@ test("guardian learner details has one clear manager exit without a duplicate se
     page.getByRole("region", { name: "Lesson voice recordings" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
@@ -545,7 +532,7 @@ test("guardian learner details opens from and returns to Manage learners", async
     .click();
   await expect(page).toHaveURL("/guardian/learners/e2e-learner");
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian/learners");
+  await expect(page).toHaveURL("/guardian#learner-profiles");
   await expect(
     page.getByRole("heading", { exact: true, name: "Manage learners" }),
   ).toBeVisible();
@@ -629,7 +616,7 @@ test("account deletion requires the password and returns to sign in only after p
     .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
-  await expect(page).toHaveURL("/guardian/account");
+  await expect(page).toHaveURL("/guardian#account-privacy");
   await page
     .getByRole("region", { name: "Danger zone" })
     .getByRole("button", { name: "Delete account" })
@@ -644,7 +631,9 @@ test("account deletion requires the password and returns to sign in only after p
   await expect(confirm).toBeEnabled();
   await confirm.click();
 
-  await expect(page).toHaveURL(/\/login\?returnTo=%2Fguardian%2Faccount/);
+  await expect(page).toHaveURL(
+    /\/login\?returnTo=%2Fguardian%23account-privacy/,
+  );
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeFocused();

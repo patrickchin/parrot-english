@@ -48,6 +48,7 @@ type GuardianDubbingSettingsViewProps = {
   consentState: DubStatus["consentState"] | null;
   canRetryStatus: boolean;
   error: GuardianDubbingErrorCode;
+  headingLevel?: 2 | 3;
   mutation: Mutation | null;
   onDelete: () => void;
   onRetry: () => void;
@@ -60,13 +61,39 @@ type GuardianDubbingSettingsViewProps = {
 
 function GuardianDubbingSettingsShell({
   children,
+  embedded = false,
   target,
 }: {
   children: ReactNode;
+  embedded?: boolean;
   target: GuardianLearnerTargetState;
 }) {
   const { messages } = useGuardianLanguage();
   const copy = messages.dubbingSettings;
+  if (embedded) {
+    return (
+      <section
+        aria-labelledby="voice-dubbing-heading"
+        className="mx-auto grid w-full max-w-3xl scroll-mt-24 gap-6"
+        id="voice-dubbing"
+      >
+        <header className="grid gap-4 text-center">
+          <h2
+            className="m-0 text-3xl leading-tight text-brand-navy sm:text-4xl"
+            id="voice-dubbing-heading"
+          >
+            {copy.title}
+          </h2>
+          <GuardianLearnerTarget
+            manageLearnersTo="#learner-profiles"
+            state={target}
+          />
+        </header>
+
+        {children}
+      </section>
+    );
+  }
   return (
     <main className="h-dvh w-full overflow-x-hidden overflow-y-auto bg-placeholder px-4 pb-12 pt-28 sm:px-6 md:px-10 md:pt-32">
       <RouteHeader ariaLabel={messages.common.pageNavigation}>
@@ -97,6 +124,7 @@ function GuardianDubbingSettingsContent({
   consentState,
   canRetryStatus,
   error,
+  headingLevel = 2,
   mutation,
   onDelete,
   onRetry,
@@ -112,6 +140,7 @@ function GuardianDubbingSettingsContent({
     ? target.learnerName
     : messages.learners.profile.aboutFallback;
   const busy = phase === "loading" || mutation !== null;
+  const StateHeading = headingLevel === 3 ? "h3" : "h2";
 
   return (
     <div
@@ -149,13 +178,13 @@ function GuardianDubbingSettingsContent({
       {consentState === "granted" ? (
         <Card className="grid gap-5 p-5 sm:p-7">
           <div className="grid gap-2 text-center">
-            <h2
+            <StateHeading
               className="m-0 text-2xl leading-tight text-brand-navy"
               ref={stateHeadingRef}
               tabIndex={-1}
             >
               {copy.availableTitle}
-            </h2>
+            </StateHeading>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
             >
@@ -200,13 +229,13 @@ function GuardianDubbingSettingsContent({
 
       {phase === "available" && consentState === "not_granted" ? (
         <Card className="grid gap-2 p-5 text-center sm:p-7">
-          <h2
+          <StateHeading
             className="m-0 text-2xl leading-tight text-brand-navy"
             ref={stateHeadingRef}
             tabIndex={-1}
           >
             {copy.emptyTitle}
-          </h2>
+          </StateHeading>
           <p className="m-0 font-bold leading-relaxed text-slate-600">
             {copy.emptyBeforeName}
             <BidiLearnerName learnerName={managedLearnerName} />
@@ -218,13 +247,13 @@ function GuardianDubbingSettingsContent({
       {consentState === "revoking" || phase === "cleanup-required" ? (
         <Card className="grid gap-5 p-5 text-center sm:p-7">
           <div className="grid gap-2">
-            <h2
+            <StateHeading
               className="m-0 text-2xl leading-tight text-brand-navy"
               ref={stateHeadingRef}
               tabIndex={-1}
             >
               {copy.cleanupTitle}
-            </h2>
+            </StateHeading>
             <p
               className="m-0 min-w-0 font-bold leading-relaxed text-slate-600 [overflow-wrap:anywhere]"
             >
@@ -274,9 +303,11 @@ export function GuardianDubbingSettingsView(
 }
 
 function TargetedGuardianDubbingSettings({
+  headingLevel = 2,
   learnerProfileId,
   target,
 }: {
+  headingLevel?: 2 | 3;
   learnerProfileId: string;
   target: GuardianLearnerTargetState;
 }) {
@@ -457,6 +488,7 @@ function TargetedGuardianDubbingSettings({
       canRetryStatus={statusError !== null}
       consentState={status?.consentState ?? null}
       error={operationError || statusError}
+      headingLevel={headingLevel}
       mutation={mutation}
       onDelete={remove}
       onRetry={() =>
@@ -474,8 +506,17 @@ function TargetedGuardianDubbingSettings({
   );
 }
 
-export function GuardianDubbingSettings() {
-  const target = useGuardianLearnerTarget();
+export function GuardianDubbingSettings({
+  embedded = false,
+  rosterRevision = 0,
+}: {
+  embedded?: boolean;
+  rosterRevision?: number;
+}) {
+  const target = useGuardianLearnerTarget({
+    normalizeMissingTarget: !embedded,
+    rosterRevision,
+  });
   const learnerProfileId =
     target.phase === "ready" &&
     target.learnerProfileId !== null &&
@@ -484,9 +525,10 @@ export function GuardianDubbingSettings() {
       : null;
 
   return (
-    <GuardianDubbingSettingsShell target={target}>
+    <GuardianDubbingSettingsShell embedded={embedded} target={target}>
       {learnerProfileId !== null ? (
         <TargetedGuardianDubbingSettings
+          headingLevel={embedded ? 3 : 2}
           key={learnerProfileId}
           learnerProfileId={learnerProfileId}
           target={target}

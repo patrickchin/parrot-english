@@ -34,10 +34,16 @@ function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
 }
 
-export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
+export function useGuardianLearnerTarget({
+  normalizeMissingTarget = true,
+  rosterRevision = 0,
+}: {
+  normalizeMissingTarget?: boolean;
+  rosterRevision?: number;
+} = {}): GuardianLearnerTargetState {
   const location = useLocation();
   const navigate = useNavigate();
-  const [reloadKey, setReloadKey] = useState(0);
+  const [retryKey, setRetryKey] = useState(0);
   const [rosterState, setRosterState] = useState<RosterState>({
     phase: "loading",
   });
@@ -58,7 +64,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
       },
     );
     return () => controller.abort();
-  }, [reloadKey]);
+  }, [retryKey, rosterRevision]);
 
   const resolution = useMemo(() => {
     if (rosterState.phase !== "ready") return null;
@@ -86,12 +92,12 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
     }
     return {
       activeProfileId,
-      needsNormalization: values.length === 0,
+      needsNormalization: normalizeMissingTarget && values.length === 0,
       phase: "ready" as const,
       profiles,
       selectedProfile,
     };
-  }, [location.search, rosterState]);
+  }, [location.search, normalizeMissingTarget, rosterState]);
 
   useEffect(() => {
     if (resolution?.phase !== "ready" || !resolution.needsNormalization) {
@@ -130,7 +136,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
       learnerProfileId: null,
       phase: "loading",
       profiles: [],
-      retry: () => setReloadKey((key) => key + 1),
+      retry: () => setRetryKey((key) => key + 1),
       select,
     };
   }
@@ -142,7 +148,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
       learnerProfileId: null,
       phase: "error",
       profiles: [],
-      retry: () => setReloadKey((key) => key + 1),
+      retry: () => setRetryKey((key) => key + 1),
       select,
     };
   }
@@ -161,14 +167,16 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
         : null,
     phase: readyResolution.phase,
     profiles: readyResolution.profiles,
-    retry: () => setReloadKey((key) => key + 1),
+    retry: () => setRetryKey((key) => key + 1),
     select,
   };
 }
 
 export function GuardianLearnerTarget({
+  manageLearnersTo = "/guardian/learners",
   state,
 }: {
+  manageLearnersTo?: string;
   state: GuardianLearnerTargetState;
 }) {
   const { messages } = useGuardianLanguage();
@@ -209,7 +217,7 @@ export function GuardianLearnerTarget({
         <p className="m-0 font-extrabold text-brand-navy">
           {messages.learnerTarget.noLearners}
         </p>
-        <ActionLink size="compact" to="/guardian/learners">
+        <ActionLink size="compact" to={manageLearnersTo}>
           {messages.learnerTarget.addLearner}
         </ActionLink>
       </section>
@@ -222,7 +230,7 @@ export function GuardianLearnerTarget({
         <p className="m-0 font-extrabold text-red-900" role="alert">
           {messages.learnerTarget.invalidTarget}
         </p>
-        <ActionLink size="compact" to="/guardian/learners" variant="surface">
+        <ActionLink size="compact" to={manageLearnersTo} variant="surface">
           {messages.learnerTarget.manageLearners}
         </ActionLink>
       </section>
