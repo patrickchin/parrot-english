@@ -21,6 +21,7 @@ const dubMediaMetrics = {
   recorderStarts: [] as number[],
   recorderStops: [] as number[],
   recordedStreamTrackKinds: [] as string[][],
+  scheduledVoiceStarts: 0,
   scheduledBacking: [] as Array<{
     at: number;
     frequencyHz: number;
@@ -2217,6 +2218,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
           (kinds) => [...kinds],
         ),
         revokedObjectUrls: [...revokedObjectUrls],
+        scheduledVoiceStarts: dubMediaMetrics.scheduledVoiceStarts,
         scheduledBacking: dubMediaMetrics.scheduledBacking.map((start) => ({
           ...start,
         })),
@@ -3333,6 +3335,9 @@ class MockScheduledAudioNode extends MockAudioNode {
     super();
   }
   start(when = 0) {
+    if (this.kind === "voice" && isActiveE2eDubRoute()) {
+      dubMediaMetrics.scheduledVoiceStarts += 1;
+    }
     if (this.kind === "oscillator" && isActiveE2eDubRoute()) {
       backingStarts.push({ at: when, frequencyHz: this.frequency.value });
       dubMediaMetrics.scheduledBacking.push({

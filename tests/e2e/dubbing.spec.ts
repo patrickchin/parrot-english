@@ -16,6 +16,7 @@ type DubStoreSnapshot = {
   recorderStopCount: number;
   recorderStopWallMs: number[];
   recordedStreamTrackKinds: string[][];
+  scheduledVoiceStarts: number;
   scheduledBacking: Array<{
     at: number;
     frequencyHz: number;
@@ -766,18 +767,15 @@ test("selecting a lyric seeks the stable player and opens only its line editor",
 });
 
 test("a lyric Play button seeks and plays only the learner's line", async ({ page }) => {
-  await page.goto(
-    "/dubs/five-little-ducks?parrotE2eDub=complete&parrotE2eDubPlayback=held",
-  );
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
 
   const lyrics = page.getByRole("complementary", {
     name: "Lyrics and recordings",
   });
+  await expect(lyrics).toBeVisible();
+  const baseline = await dubStoreSnapshot(page);
   await lyrics.getByRole("button", { name: "Play line 5 recording" }).click();
 
-  await expect(
-    lyrics.getByRole("button", { name: "Stop line 5 recording" }),
-  ).toBeVisible();
   await expect(page.getByRole("region", { name: "Full video player" }).getByRole("img", {
     name: "Four yellow ducklings return across a flower-lined footbridge in the afternoon.",
   })).toBeVisible();
@@ -785,6 +783,12 @@ test("a lyric Play button seeks and plays only the learner's line", async ({ pag
     "/api/dubs/five-little-ducks-v2/lines/line-5/audio",
   ]);
   await expect.poll(async () => (await dubStoreSnapshot(page)).guideFetches).toEqual([]);
+  await expect.poll(
+    async () => (await dubStoreSnapshot(page)).scheduledVoiceStarts,
+  ).toBe(baseline.scheduledVoiceStarts + 1);
+  await expect(
+    lyrics.getByRole("button", { name: "Play line 5 recording" }),
+  ).toBeVisible();
 });
 
 test("failed lyric playback returns focus to the line that needs recording again", async ({
