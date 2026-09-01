@@ -153,3 +153,60 @@ test("guardian document language changes immediately while learner document lang
   );
   await expectUnchangedNavigation(page, learnerSnapshot);
 });
+
+test("Chinese Guardian dashboard and learner chooser are consistently localized", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto(
+    "/guardian?parrotE2eGuardian=guardian&parrotE2eLearners=multiple",
+  );
+
+  await expect(page.getByRole("navigation", { name: "页面导航" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "家长中心" })).toBeVisible();
+  for (const heading of [
+    "孩子资料",
+    "学习与内容",
+    "故事设置",
+    "配音管理",
+    "账户与隐私",
+  ]) {
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
+  }
+
+  await page.getByRole("button", { name: "切换到学习模式" }).click();
+  const dialog = page.getByRole("dialog", { name: "谁在学习？" });
+  await expect(dialog).toHaveAttribute("lang", "zh-Hans");
+  await expect(
+    dialog.getByRole("group", { name: "家长指导语言" }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "以 ⁨Noah⁩ 身份开始学习模式" }),
+  ).toBeVisible();
+  await expect(dialog.getByText("Noah", { exact: true })).toBeVisible();
+});
+
+test("learner document stays English while its adult chooser is fully Chinese", async ({ page }) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
+  );
+  await page.goto(
+    "/lessons?parrotE2eGuardian=guardian&parrotE2eLearners=multiple",
+  );
+
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(
+    page.getByRole("heading", { name: "Switch to learner mode" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("请家长切换到学习模式后继续。"),
+  ).toHaveAttribute("lang", "zh-Hans");
+  await page.getByRole("button", { name: "Switch to learner mode" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "谁在学习？" });
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(dialog).toHaveAttribute("lang", "zh-Hans");
+  await expect(dialog).toContainText("请选择谁来使用学习模式。");
+  await expect(dialog.getByRole("button", { name: "取消" })).toBeVisible();
+  await expect(dialog.getByText("Who is learning now?")).toHaveCount(0);
+});

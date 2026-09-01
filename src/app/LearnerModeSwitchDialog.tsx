@@ -6,7 +6,7 @@ import {
 } from "react";
 import { useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
-import type { GuardianAccessErrorCode } from "../auth/GuardianAccess";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { useLearnerSelection } from "../learner-profile/LearnerProfileContext";
 import {
@@ -17,16 +17,13 @@ import { ActionButton, ActionLink } from "../shared/ui";
 import { getGuardianLearnersPath } from "./app-routes";
 import { useDialogFocus } from "./useDialogFocus";
 
+type LearnerRosterFailure = "load-failed" | null;
+type LearnerSwitchFailure = "select-failed" | "lock-failed" | null;
+
 type RosterState =
   | { phase: "loading" }
-  | { error: string; phase: "error" }
+  | { failure: LearnerRosterFailure; phase: "error" }
   | { phase: "ready"; roster: LearnerProfileRoster };
-
-function errorMessage(error: unknown) {
-  return error instanceof Error && error.message
-    ? error.message
-    : "Learner profiles could not be loaded.";
-}
 
 function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
@@ -44,7 +41,7 @@ export function LearnerModeSwitchDialog({
   returnFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const { lock } = useGuardianAccess();
-  const { messages } = useGuardianLanguage();
+  const { language, messages } = useGuardianLanguage();
   const { selectLearner } = useLearnerSelection();
   const navigate = useNavigate();
   const [reloadKey, setReloadKey] = useState(0);
@@ -54,9 +51,7 @@ export function LearnerModeSwitchDialog({
   const [switchingProfileId, setSwitchingProfileId] = useState<string | null>(
     null,
   );
-  const [error, setError] = useState("");
-  const [accessError, setAccessError] =
-    useState<GuardianAccessErrorCode | null>(null);
+  const [failure, setFailure] = useState<LearnerSwitchFailure>(null);
   const [isSwitching, setIsSwitching] = useState(false);
   const dialogRef = useRef<HTMLElement>(null);
   const lastLearnerButtonRef = useRef<HTMLButtonElement>(null);
@@ -81,7 +76,7 @@ export function LearnerModeSwitchDialog({
       },
       (nextError) => {
         if (!controller.signal.aborted && !isAbortError(nextError)) {
-          setRosterState({ error: errorMessage(nextError), phase: "error" });
+          setRosterState({ failure: "load-failed", phase: "error" });
         }
       },
     );
@@ -89,10 +84,10 @@ export function LearnerModeSwitchDialog({
   }, [reloadKey]);
 
   useEffect(() => {
-    if (!isSwitching && (error || accessError)) {
+    if (!isSwitching && failure) {
       lastLearnerButtonRef.current?.focus();
     }
-  }, [accessError, error, isSwitching]);
+  }, [failure, isSwitching]);
 
   async function switchToLearner(
     profileId: string,
@@ -104,19 +99,18 @@ export function LearnerModeSwitchDialog({
     isSwitchingRef.current = true;
     setIsSwitching(true);
     setSwitchingProfileId(profileId);
-    setError("");
-    setAccessError(null);
+    setFailure(null);
     try {
       await selectLearner(profileId);
       const lockError = await lock();
       if (lockError) {
-        setAccessError(lockError);
+        setFailure("lock-failed");
         return;
       }
       onBeforeNavigate?.();
       navigate(destination);
-    } catch (nextError) {
-      setError(errorMessage(nextError));
+    } catch {
+      setFailure("select-failed");
     } finally {
       isSwitchingRef.current = false;
       setIsSwitching(false);
@@ -151,21 +145,25 @@ export function LearnerModeSwitchDialog({
         ref={dialogRef}
         role="dialog"
         tabIndex={-1}
+        lang={language}
       >
+        <GuardianLanguageControl placement="dialog" />
         <header className="grid gap-2">
           <h2
             className="m-0 text-2xl font-black leading-tight text-brand-navy sm:text-3xl"
             id="learner-mode-switch-title"
           >
-            Who is learning now?
+            {messages.learnerSwitch.title}
           </h2>
           <p className="m-0 font-bold leading-relaxed text-slate-700">
-            Choose who will use learner mode.
+            {messages.learnerSwitch.description}
           </p>
         </header>
 
         {rosterState.phase === "loading" ? (
-          <p className="m-0 font-bold text-slate-700">Loading learners…</p>
+          <p className="m-0 font-bold text-slate-700">
+            {messages.learnerSwitch.loading}
+          </p>
         ) : null}
 
         {rosterState.phase === "error" ? (
@@ -174,14 +172,14 @@ export function LearnerModeSwitchDialog({
               className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
               role="alert"
             >
-              {rosterState.error}
+              {messages.learnerSwitch.loadFailed}
             </p>
             <ActionButton
               onClick={() => setReloadKey((key) => key + 1)}
               type="button"
               variant="surface"
             >
-              Try again
+              {messages.common.retry}
             </ActionButton>
           </div>
         ) : null}
@@ -192,18 +190,20 @@ export function LearnerModeSwitchDialog({
               className="m-0 grid min-w-0 gap-3 border-0 p-0 disabled:opacity-75"
               disabled={isSwitching}
             >
-              <legend className="sr-only">Learner profiles</legend>
+              <legend className="sr-only">
+                {messages.learnerSwitch.profilesLabel}
+              </legend>
               {selectableProfiles.length === 0 ? (
                 <div className="grid justify-items-start gap-3">
                   <p className="m-0 font-bold leading-relaxed text-slate-700">
-                    Add a learner before switching to learner mode.
+                    {messages.learnerSwitch.empty}
                   </p>
                   <ActionLink
                     size="compact"
                     to={getGuardianLearnersPath()}
                     variant="surface"
                   >
-                    Manage learners
+                    {messages.learnerSwitch.manageLearners}
                   </ActionLink>
                 </div>
               ) : (
@@ -211,7 +211,7 @@ export function LearnerModeSwitchDialog({
                   {selectableProfiles.map((profile) => (
                     <ActionButton
                       align="start"
-                      aria-label={`Start learner mode as ${profile.name}`}
+                      aria-label={messages.learnerSwitch.startAs(profile.name)}
                       fullWidth
                       key={profile.id}
                       onClick={(event) => {
@@ -226,7 +226,7 @@ export function LearnerModeSwitchDialog({
                         dir="auto"
                       >
                         {switchingProfileId === profile.id
-                          ? `Starting ${profile.name}…`
+                          ? messages.learnerSwitch.starting(profile.name)
                           : profile.name}
                       </span>
                     </ActionButton>
@@ -234,14 +234,12 @@ export function LearnerModeSwitchDialog({
                 </div>
               )}
 
-              {error || accessError ? (
+              {failure ? (
                 <p
                   className="m-0 rounded-xl bg-rose-100 px-3 py-2.5 font-extrabold leading-snug text-red-900"
                   role="alert"
                 >
-                  {accessError
-                    ? messages.guardianAccess.errors[accessError]
-                    : error}
+                  {messages.learnerSwitch.errors[failure]}
                 </p>
               ) : null}
 
@@ -252,7 +250,9 @@ export function LearnerModeSwitchDialog({
                 role="status"
               >
                 {isSwitching && switchingProfile
-                  ? `Starting learner mode as ${switchingProfile.name}…`
+                  ? messages.learnerSwitch.startingStatus(
+                      switchingProfile.name,
+                    )
                   : ""}
               </p>
 
@@ -262,7 +262,7 @@ export function LearnerModeSwitchDialog({
                   type="button"
                   variant="surface"
                 >
-                  Cancel
+                  {messages.common.cancel}
                 </ActionButton>
               </div>
             </fieldset>

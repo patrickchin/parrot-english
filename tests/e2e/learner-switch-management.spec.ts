@@ -134,7 +134,7 @@ test("deleting the active learner never chooses its sibling automatically", asyn
   await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   const chooser = await openLearnerChooser(page);
   const start = chooser.dialog.getByRole("button", {
-    name: "Start learner mode as Noah",
+    name: "Start learner mode as ⁨Noah⁩",
   });
   await expect(start).toBeEnabled();
   await start.click();
@@ -178,7 +178,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
   await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   const chooser = await openLearnerChooser(page);
   await expect(
-    chooser.dialog.getByRole("button", { name: "Start learner mode as Mia" }),
+    chooser.dialog.getByRole("button", { name: "Start learner mode as ⁨Mia⁩" }),
   ).toBeVisible();
   await expect(chooser.dialog.getByText("Noah", { exact: true })).toHaveCount(0);
   await chooser.dialog.getByRole("button", { name: "Cancel" }).click();
@@ -196,7 +196,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
   const refreshedChooser = await openLearnerChooser(page);
   await expect(
     refreshedChooser.dialog.getByRole("button", {
-      name: "Start learner mode as Mia",
+      name: "Start learner mode as ⁨Mia⁩",
     }),
   ).toBeVisible();
   await expect(
@@ -219,7 +219,7 @@ test("chooser cancellation and Escape restore focus without changing learner sta
   const before = await readLearnerState(page);
   const first = await openLearnerChooser(page);
   await expect(
-    first.dialog.getByRole("button", { name: "Start learner mode as Mia" }),
+    first.dialog.getByRole("button", { name: "Start learner mode as ⁨Mia⁩" }),
   ).toBeVisible();
   await first.dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(first.trigger).toBeFocused();
@@ -252,7 +252,7 @@ test("a chooser roster failure stays in Guardian mode and retries safely", async
   await expect(page).toHaveURL(/\/guardian/);
   await dialog.getByRole("button", { name: "Try again" }).click();
   await expect(
-    dialog.getByRole("button", { name: "Start learner mode as Mia" }),
+    dialog.getByRole("button", { name: "Start learner mode as ⁨Mia⁩" }),
   ).toBeVisible();
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(trigger).toBeFocused();
@@ -269,7 +269,7 @@ test("a Guardian learner deep link opens the chooser inside learner selection st
   const dialog = page.getByRole("dialog", { name: "Who is learning now?" });
   await expect(dialog).toBeVisible();
   await dialog
-    .getByRole("button", { name: "Start learner mode as Noah" })
+    .getByRole("button", { name: "Start learner mode as ⁨Noah⁩" })
     .click();
   await expect.poll(() => new URL(page.url()).pathname).toBe("/lessons");
   await expect(

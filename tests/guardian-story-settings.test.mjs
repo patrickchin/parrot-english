@@ -294,7 +294,7 @@ test("guardian story settings owns level and art management", () => {
   container.innerHTML = html;
   const levelTabs = [...container.querySelectorAll('[role="tab"]')];
 
-  assert.match(renderedText, /Editing settings for Mia/);
+  assert.match(renderedText, /Editing settings for ⁨Mia⁩/);
   assert.match(renderedText, /Noah/);
   assert.match(html, /<h1[^>]*>Story settings<\/h1>/);
   assert.match(html, /Choose story level/);
@@ -521,7 +521,7 @@ test("aborts and ignores an old learner's level save after a keyed learner chang
   });
 
   await waitFor(() =>
-    assert.match(container.textContent, /Editing settings for Noah/),
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/),
   );
   assert.equal(
     levelButton(container, "Level 4 · Longer stories").getAttribute(
@@ -593,7 +593,7 @@ test("keeps the story settings shell connected while a new learner profile loads
   act(() => noahTarget.click());
 
   try {
-    assert.match(container.textContent, /Editing settings for Noah/);
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/);
     assert.equal(container.querySelector("main") === main, true);
     assert.equal(document.activeElement === noahTarget, true);
     assert.equal(container.contains(noahTarget), true);
@@ -774,7 +774,7 @@ test("loads and saves Noah's story settings and art through explicit target requ
   );
 
   await waitFor(() =>
-    assert.match(container.textContent, /Editing settings for Noah/),
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/),
   );
   assert.equal(
     levelButton(container, "Level 4 · Longer stories").getAttribute(

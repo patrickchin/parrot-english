@@ -47,6 +47,9 @@ let notifyGuardianAccessRequired;
 let useGuardianAccess;
 let GuardianLanguageProvider;
 let GuardianLanguageControl;
+let FeaturePlaceholder;
+let GuardianModeBoundary;
+let LearnerModeBoundary;
 
 before(async () => {
   ({ AccountPrivacyPage } = await vite
@@ -80,6 +83,12 @@ before(async () => {
   ));
   ({ RouteFocusManager } = await vite.ssrLoadModule(
     "/src/app/RouteFocusManager.tsx",
+  ));
+  ({ FeaturePlaceholder } = await vite.ssrLoadModule(
+    "/src/app/FeaturePlaceholder.tsx",
+  ));
+  ({ GuardianModeBoundary, LearnerModeBoundary } = await vite.ssrLoadModule(
+    "/src/app/ModeRouteBoundaries.tsx",
   ));
 });
 
@@ -196,6 +205,29 @@ function UnlockHarness({ api, dialog = false, onUnlocked = () => {} }) {
             onCancel: () => setIsOpen(false),
             onUnlocked,
           })),
+  );
+}
+
+function modeBoundaryHarness({ api, guardianAudience }) {
+  const Provider = createGuardianAccessProvider({
+    api,
+    schedule: () => () => {},
+  });
+  const Boundary = guardianAudience
+    ? GuardianModeBoundary
+    : LearnerModeBoundary;
+  return createElement(
+    GuardianLanguageProvider,
+    { initialLanguage: "zh-Hans", storage: null },
+    createElement(
+      Provider,
+      { sessionIdentity: "id:guardian" },
+      createElement(
+        MemoryRouter,
+        { initialEntries: [guardianAudience ? "/guardian" : "/lessons"] },
+        createElement(Boundary, null, "PROTECTED CONTENT"),
+      ),
+    ),
   );
 }
 
@@ -1458,6 +1490,116 @@ describe("keyboard accessibility lifecycles", () => {
         .textContent,
       "learner",
     );
+  });
+
+  it("localizes Guardian access checks but keeps learner checks English", async () => {
+    const guardianLoad = deferred();
+    await mountStrict(
+      modeBoundaryHarness({
+        guardianAudience: true,
+        api: guardianApi({
+          loadGuardianAccess: () => guardianLoad.promise,
+        }),
+      }),
+    );
+    assert.equal(
+      document.querySelector("h1")?.textContent.trim(),
+      "正在检查家长访问权限…",
+    );
+    assert.match(document.body.textContent, /正在确认哪个档案可以使用此页面/);
+
+    await cleanupMountedRoots();
+    document.body.replaceChildren();
+    const learnerLoad = deferred();
+    await mountStrict(
+      modeBoundaryHarness({
+        guardianAudience: false,
+        api: guardianApi({
+          loadGuardianAccess: () => learnerLoad.promise,
+        }),
+      }),
+    );
+    assert.equal(
+      document.querySelector("h1")?.textContent.trim(),
+      "Checking guardian access…",
+    );
+    assert.match(document.body.textContent, /Confirming which profile can use this screen/);
+    assert.doesNotMatch(document.body.textContent, /正在检查家长访问权限/);
+  });
+
+  it("localizes Guardian unlock and adds only a Chinese learner-boundary helper", async () => {
+    await mountStrict(
+      modeBoundaryHarness({
+        guardianAudience: true,
+        api: guardianApi(),
+      }),
+    );
+    await waitFor(() => button("切换到家长模式"));
+    assert.match(document.body.textContent, /家长工具和学习活动分别保留在不同模式中/);
+
+    await cleanupMountedRoots();
+    document.body.replaceChildren();
+    await mountStrict(
+      modeBoundaryHarness({
+        guardianAudience: false,
+        api: guardianApi({
+          loadGuardianAccess: async () => ({
+            expiresAt: "2099-01-01T00:00:00.000Z",
+            mode: "guardian",
+          }),
+        }),
+      }),
+    );
+    await waitFor(() => button("Switch to learner mode"));
+    assert.equal(
+      document.querySelector("h1")?.textContent.trim(),
+      "Switch to learner mode",
+    );
+    assert.match(document.body.textContent, /Learning activities are available in the learner profile/);
+    const helper = [...document.querySelectorAll('span[lang="zh-Hans"]')].find(
+      (candidate) => candidate.textContent.trim() === "请家长切换到学习模式后继续。",
+    );
+    assert.ok(helper);
+  });
+
+  it("keeps FeaturePlaceholder English defaults and accepts localized recovery labels", async () => {
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(FeaturePlaceholder, {
+          actionTo: "/guardian",
+          description: "无法加载。",
+          onRetry() {},
+          retryLabel: "重试",
+          actionLabel: "返回家长中心",
+          title: "暂时无法打开",
+        }),
+      ),
+    );
+    assert.ok(button("重试"));
+    assert.equal(
+      [...document.querySelectorAll("a")].find(
+        (candidate) => candidate.textContent.trim() === "返回家长中心",
+      )?.getAttribute("href"),
+      "/guardian",
+    );
+
+    await cleanupMountedRoots();
+    document.body.replaceChildren();
+    await mountStrict(
+      createElement(
+        MemoryRouter,
+        null,
+        createElement(FeaturePlaceholder, {
+          description: "Learner recovery.",
+          onRetry() {},
+          title: "Learner placeholder",
+        }),
+      ),
+    );
+    assert.ok(button("Try again"));
+    assert.match(document.body.textContent, /Back to home/);
   });
 
   it("focuses the switch action and restores the mode opener on cancel", async () => {

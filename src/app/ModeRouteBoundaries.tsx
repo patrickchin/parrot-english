@@ -2,6 +2,8 @@ import { useRef, useState, type ReactNode } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { GuardianUnlockScreen } from "../auth/GuardianUnlock";
+import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, ActionLink, Card } from "../shared/ui";
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { getGuardianPath } from "./app-routes";
@@ -16,12 +18,25 @@ function BoundaryContent({ children }: { children?: ReactNode }) {
   return children ?? <Outlet />;
 }
 
-function AccessCheck() {
+function AccessCheck({ guardianAudience }: { guardianAudience: boolean }) {
+  const { messages } = useGuardianLanguage();
   return (
     <FeaturePlaceholder
+      actionLabel={
+        guardianAudience ? messages.modeBoundary.backToDashboard : undefined
+      }
+      actionTo={guardianAudience ? getGuardianPath() : "/"}
       busy
-      description="Confirming which profile can use this screen."
-      title="Checking guardian access…"
+      description={
+        guardianAudience
+          ? messages.modeBoundary.checkingDescription
+          : "Confirming which profile can use this screen."
+      }
+      title={
+        guardianAudience
+          ? messages.modeBoundary.checkingTitle
+          : "Checking guardian access…"
+      }
     />
   );
 }
@@ -33,7 +48,7 @@ export function GuardianModeBoundary({
   const { mode } = useGuardianAccess();
   const navigate = useNavigate();
 
-  if (mode === "loading") return <AccessCheck />;
+  if (mode === "loading") return <AccessCheck guardianAudience={true} />;
   if (mode === "learner") {
     return (
       <GuardianUnlockScreen
@@ -56,7 +71,7 @@ export function LearnerModeBoundary({
   const [isSwitchDialogOpen, setIsSwitchDialogOpen] = useState(false);
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
-  if (mode === "loading") return <AccessCheck />;
+  if (mode === "loading") return <AccessCheck guardianAudience={false} />;
   if (mode === "learner") return <BoundaryContent>{children}</BoundaryContent>;
 
   return (
@@ -68,6 +83,7 @@ export function LearnerModeBoundary({
         <p className="m-0 max-w-lg font-bold leading-relaxed text-slate-600">
           Learning activities are available in the learner profile.
         </p>
+        <AdultBoundaryHelper message="switchToLearnerHelper" />
         <ActionButton
           onClick={() => setIsSwitchDialogOpen(true)}
           ref={switchTriggerRef}

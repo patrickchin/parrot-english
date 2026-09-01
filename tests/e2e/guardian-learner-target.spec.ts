@@ -55,7 +55,7 @@ for (const width of [280, 320, 390]) {
     await page.keyboard.press("Enter");
     await expect(noah).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("status").filter({ hasText: "Editing settings" })).toContainText(
-      `Editing settings for ${longNames[0]}`,
+      `Editing settings for ⁨${longNames[0]}⁩`,
     );
     await expect(page).toHaveURL(
       new RegExp(
@@ -68,7 +68,7 @@ for (const width of [280, 320, 390]) {
     await page.keyboard.press("Space");
     await expect(alexandria).toHaveAttribute("aria-pressed", "true");
     await expect(page.getByRole("status").filter({ hasText: "Editing settings" })).toContainText(
-      `Editing settings for ${longNames[1]}`,
+      `Editing settings for ⁨${longNames[1]}⁩`,
     );
   });
 }

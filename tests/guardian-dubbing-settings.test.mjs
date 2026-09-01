@@ -121,7 +121,7 @@ function textFromMarkup(markup) {
 test("guardian settings manages stored clips without a recording permission gate", () => {
   const disabled = renderView({ consentState: "not_granted" });
   const disabledText = textFromMarkup(disabled);
-  assert.match(disabledText, /Editing settings for Mia/);
+  assert.match(disabledText, /Editing settings for ⁨Mia⁩/);
   assert.match(disabledText, /Noah/);
   assert.doesNotMatch(disabled, /Allow voice dubbing|type="checkbox"/);
   assert.doesNotMatch(disabledText, /consent|permission/i);
@@ -536,7 +536,7 @@ test("loads Noah's dubbing through explicit target requests only", async () => {
   );
 
   await waitFor(() =>
-    assert.match(container.textContent, /Editing settings for Noah/),
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/),
   );
   await waitFor(() =>
     assert.match(container.textContent, /Voice dubbing is available/),
@@ -620,7 +620,7 @@ test("keeps the dubbing shell and learner selector mounted while a new target lo
         ?.closest('[aria-busy="true"]') !== null,
       true,
     );
-    assert.match(container.textContent, /Editing settings for Noah/);
+    assert.match(container.textContent, /Editing settings for ⁨Noah⁩/);
     assert.doesNotMatch(container.textContent, /Delete Mia's saved nursery-rhyme voice clips/);
   } finally {
     await act(async () => {

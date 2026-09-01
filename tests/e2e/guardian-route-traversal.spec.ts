@@ -219,11 +219,11 @@ test("setting routes normalize only a missing target and reject blank duplicate 
     /\/guardian\/stories\?.*learnerProfileId=learner-mia/,
   );
   await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
 
   for (const path of [

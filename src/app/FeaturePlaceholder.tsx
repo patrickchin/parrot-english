@@ -6,6 +6,7 @@ export function FeaturePlaceholder({
   busy = false,
   description,
   onRetry,
+  retryLabel = "Try again",
   secondaryActionLabel,
   secondaryActionTo,
   title,
@@ -15,6 +16,7 @@ export function FeaturePlaceholder({
   busy?: boolean;
   description: string;
   onRetry?: () => void;
+  retryLabel?: string;
   secondaryActionLabel?: string;
   secondaryActionTo?: string;
   title: string;
@@ -35,7 +37,7 @@ export function FeaturePlaceholder({
         <div className="mt-2 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center">
           {onRetry ? (
             <ActionButton onClick={onRetry} type="button">
-              Try again
+              {retryLabel}
             </ActionButton>
           ) : (
             <ActionLink to={actionTo}>

@@ -8,6 +8,7 @@ export const englishGuardianMessages = {
     cancel: "Cancel",
     retry: "Try again",
     back: "Back",
+    pageNavigation: "Page navigation",
     save: "Save",
     saving: "Saving…",
   },
@@ -70,6 +71,63 @@ export const englishGuardianMessages = {
     body: "Guardian tools and learner activities stay in separate modes.",
     pending: "Switching modes…",
     action: "Switch to guardian mode",
+  },
+  guardianDashboard: {
+    title: "Guardian dashboard",
+    switchToLearner: "Switch to learner",
+    learnerProfilesTitle: "Learner profiles",
+    learnerProfilesDescription:
+      "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
+    manageLearners: "Manage learners",
+    learningContentTitle: "Learning & content",
+    storySettingsTitle: "Story settings",
+    storySettingsDescription:
+      "Choose the story level and personalized story options.",
+    openStorySettings: "Open story settings",
+    voiceDubbingTitle: "Voice dubbing",
+    voiceDubbingDescription:
+      "Review and delete private nursery-rhyme voice clips.",
+    manageVoiceDubbing: "Manage voice dubbing",
+    accountPrivacyTitle: "Account & privacy",
+    accountPrivacyDescription:
+      "Review how AI is used, what Parrot saves, and account deletion controls.",
+    openAccountPrivacy: "Open account & privacy",
+  },
+  modeBoundary: {
+    checkingTitle: "Checking guardian access…",
+    checkingDescription: "Confirming which profile can use this screen.",
+    loadingTitle: "Loading…",
+    loadingDescription: "Getting your activity ready.",
+    backToDashboard: "Back to Guardian dashboard",
+  },
+  learnerSwitch: {
+    title: "Who is learning now?",
+    description: "Choose who will use learner mode.",
+    loading: "Loading learners…",
+    loadFailed: "Learner profiles could not be loaded.",
+    profilesLabel: "Learner profiles",
+    empty: "Add a learner before switching to learner mode.",
+    manageLearners: "Manage learners",
+    startAs: (name: string) => `Start learner mode as ⁨${name}⁩`,
+    starting: (name: string) => `Starting ⁨${name}⁩…`,
+    startingStatus: (name: string) =>
+      `Starting learner mode as ⁨${name}⁩…`,
+    errors: {
+      "select-failed": "Could not select this learner. Try again.",
+      "lock-failed":
+        "Could not lock guardian mode. Try again before handing over the device.",
+    },
+  },
+  learnerTarget: {
+    loading: "Loading learner settings…",
+    loadFailed: "Learner profiles could not be loaded.",
+    noLearners: "No learners yet.",
+    addLearner: "Add learner",
+    invalidTarget: "The learner target in this page link could not be found.",
+    manageLearners: "Manage learners",
+    chooserLabel: "Choose learner settings target",
+    learnerMode: "Learner mode",
+    editingFor: (name: string) => `Editing settings for ⁨${name}⁩`,
   },
   account: {
     label: "Account",

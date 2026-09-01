@@ -30,6 +30,9 @@ const targetModule = await vite
   .ssrLoadModule("/src/learner-profile/GuardianLearnerTarget.tsx")
   .catch(() => ({}));
 const { GuardianLearnerTarget, useGuardianLearnerTarget } = targetModule;
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 
 const mia = {
   age: 6,
@@ -121,11 +124,18 @@ function TargetHarness() {
   );
 }
 
-function harness(initialEntry = "/guardian/stories") {
+function harness(
+  initialEntry = "/guardian/stories",
+  initialLanguage = "en",
+) {
   return createElement(
-    MemoryRouter,
-    { initialEntries: [initialEntry] },
-    createElement(TargetHarness),
+    GuardianLanguageProvider,
+    { initialLanguage, storage: null },
+    createElement(
+      MemoryRouter,
+      { initialEntries: [initialEntry] },
+      createElement(TargetHarness),
+    ),
   );
 }
 
@@ -168,14 +178,65 @@ test("offers a retry after roster loading fails", async () => {
   );
   const container = await mountStrict(harness());
   await waitFor(() =>
-    assert.match(container.textContent, /Roster unavailable/),
+    assert.match(container.textContent, /Learner profiles could not be loaded/),
   );
+  assert.doesNotMatch(container.textContent, /Roster unavailable/);
 
   failing = false;
   await click(namedButton(container, "Try again"));
 
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
-  assert.match(container.textContent, /Editing settings for Mia/);
+  assert.match(container.textContent, /Editing settings for ⁨Mia⁩/);
+});
+
+test("localizes loading, retry, chooser context, and selected target in Chinese", async () => {
+  const firstLoad = deferred();
+  let failing = true;
+  globalThis.fetch = async () => {
+    if (failing) {
+      await firstLoad.promise;
+      return json({ message: "SERVER ROSTER SENTENCE" }, { status: 503 });
+    }
+    return json(roster());
+  };
+  const container = await mountStrict(
+    harness(
+      "/guardian/stories?learnerProfileId=learner-noah",
+      "zh-Hans",
+    ),
+  );
+
+  assert.match(container.textContent, /正在加载孩子设置…/);
+  firstLoad.resolve();
+  await waitFor(() => assert.match(container.textContent, /无法加载孩子资料/));
+  assert.doesNotMatch(container.textContent, /SERVER ROSTER SENTENCE/);
+  failing = false;
+  await click(namedButton(container, "重试"));
+
+  await waitFor(() => assert.equal(resolvedTarget(container), noah.id));
+  assert.equal(
+    container.querySelector('[role="group"]')?.getAttribute("aria-label"),
+    "选择要设置的孩子",
+  );
+  assert.match(container.textContent, /学习模式/);
+  assert.match(container.textContent, /正在编辑 ⁨Noah the Space Explorer⁩ 的设置/);
+  assert.equal(
+    namedButton(container, noah.name).getAttribute("aria-pressed"),
+    "true",
+  );
+});
+
+test("localizes the no-learners recovery in Chinese", async () => {
+  installRosterFetch(roster(null, []));
+  const container = await mountStrict(
+    harness("/guardian/stories", "zh-Hans"),
+  );
+
+  await waitFor(() => assert.match(container.textContent, /还没有孩子资料/));
+  const link = [...container.querySelectorAll("a")].find(
+    (candidate) => candidate.textContent.trim() === "添加孩子",
+  );
+  assert.equal(link?.getAttribute("href"), "/guardian/learners");
 });
 
 test("offers an Add learner recovery when the roster is empty", async () => {
@@ -202,7 +263,10 @@ test("resolves one valid URL target and keeps every learner name visible", async
     namedButton(container, noah.name).getAttribute("aria-pressed"),
     "true",
   );
-  assert.match(container.textContent, /Editing settings for Noah the Space Explorer/);
+  assert.match(
+    container.textContent,
+    /Editing settings for ⁨Noah the Space Explorer⁩/,
+  );
 });
 
 test("normalizes a missing target to the owned active learner with replace", async () => {
@@ -327,5 +391,8 @@ test("selects an editing target without changing the Learner mode badge", async 
   assert.ok(learnerModeBadge);
   assert.equal(learnerModeBadge.closest("button"), null);
   assert.equal(learnerModeBadge.parentElement?.textContent.includes(mia.name), true);
-  assert.match(container.textContent, /Editing settings for Noah the Space Explorer/);
+  assert.match(
+    container.textContent,
+    /Editing settings for ⁨Noah the Space Explorer⁩/,
+  );
 });

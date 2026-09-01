@@ -7,6 +7,7 @@ import { createServer } from "vite";
 import {
   cleanupMountedRoots,
   click,
+  deferred,
   installDom,
   mountStrict,
   waitFor,
@@ -30,6 +31,9 @@ const { createGuardianAccessProvider } = await vite.ssrLoadModule(
 );
 const { LearnerSelectionProvider } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileContext.tsx",
+);
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
 );
 
 const profiles = [
@@ -128,7 +132,12 @@ function DialogHarness({ onBeforeNavigate }) {
   );
 }
 
-function harness({ operations }) {
+function harness({
+  initialLanguage = "en",
+  lockAttempt = null,
+  operations,
+  selectError = null,
+}) {
   const Provider = createGuardianAccessProvider({
     api: {
       async loadGuardianAccess() {
@@ -139,6 +148,7 @@ function harness({ operations }) {
       },
       async lockGuardianAccess() {
         operations.push("lock");
+        if (lockAttempt) return lockAttempt.promise;
         return { mode: "learner" };
       },
       async unlockGuardianAccess() {
@@ -152,29 +162,34 @@ function harness({ operations }) {
   });
 
   return createElement(
-    Provider,
-    { sessionIdentity: "user-1" },
+    GuardianLanguageProvider,
+    { initialLanguage, storage: null },
     createElement(
-      LearnerSelectionProvider,
-      {
-        activeProfileId: "learner-bob",
-        async createAndSelectLearner() {
-          throw new Error("Not used by the mode chooser.");
-        },
-        async reloadSelectedLearner() {
-          throw new Error("Not used by the mode chooser.");
-        },
-        async selectLearner(profileId) {
-          operations.push(`select:${profileId}`);
-          return { activeProfileId: profileId, profiles };
-        },
-      },
+      Provider,
+      { sessionIdentity: "user-1" },
       createElement(
-        MemoryRouter,
-        { initialEntries: ["/guardian"] },
-        createElement(DialogHarness, {
-          onBeforeNavigate: () => operations.push("before-navigate"),
-        }),
+        LearnerSelectionProvider,
+        {
+          activeProfileId: "learner-bob",
+          async createAndSelectLearner() {
+            throw new Error("Not used by the mode chooser.");
+          },
+          async reloadSelectedLearner() {
+            throw new Error("Not used by the mode chooser.");
+          },
+          async selectLearner(profileId) {
+            operations.push(`select:${profileId}`);
+            if (selectError) throw selectError;
+            return { activeProfileId: profileId, profiles };
+          },
+        },
+        createElement(
+          MemoryRouter,
+          { initialEntries: ["/guardian"] },
+          createElement(DialogHarness, {
+            onBeforeNavigate: () => operations.push("before-navigate"),
+          }),
+        ),
       ),
     ),
   );
@@ -222,11 +237,11 @@ test("opening the chooser offers direct learner buttons without switching", asyn
     document.activeElement === dialog,
     "Expected focus to enter the loading dialog.",
   );
-  await waitFor(() => namedButton(container, "Start learner mode as Bob"));
+  await waitFor(() => namedButton(container, "Start learner mode as ⁨Bob⁩"));
 
   assert.ok(requestCount() >= 1);
   assert.deepEqual(operations, []);
-  assert.ok(namedButton(container, "Start learner mode as Mary"));
+  assert.ok(namedButton(container, "Start learner mode as ⁨Mary⁩"));
   assert.equal(container.querySelector('input[type="radio"]'), null);
   assert.equal(
     [...container.querySelectorAll("button")].some(
@@ -248,7 +263,7 @@ test("retries a failed protected roster load", async () => {
   await waitFor(() => assert.match(container.textContent, /Learner profiles could not be loaded/));
   await click(namedButton(container, "Try again"));
 
-  await waitFor(() => namedButton(container, "Start learner mode as Mary"));
+  await waitFor(() => namedButton(container, "Start learner mode as ⁨Mary⁩"));
   assert.ok(requestCount() >= 2);
   assert.deepEqual(operations, []);
 });
@@ -259,12 +274,12 @@ test("offers normal learners but omits deletion-pending learners", async () => {
   const container = await mountStrict(harness({ operations }));
 
   await click(namedButton(container, "Open chooser"));
-  await waitFor(() => namedButton(container, "Start learner mode as Bob"));
+  await waitFor(() => namedButton(container, "Start learner mode as ⁨Bob⁩"));
 
-  assert.ok(namedButton(container, "Start learner mode as Mary"));
+  assert.ok(namedButton(container, "Start learner mode as ⁨Mary⁩"));
   const pendingLearnerButton = [...container.querySelectorAll("button")].find(
     (candidate) =>
-      candidate.getAttribute("aria-label") === "Start learner mode as Rose",
+      candidate.getAttribute("aria-label") === "Start learner mode as ⁨Rose⁩",
   );
   const renderedText = container.textContent;
   await click(namedButton(container, "Cancel"));
@@ -282,8 +297,8 @@ test("a learner button selects, locks, and navigates in one click", async () => 
   const container = await mountStrict(harness({ operations }));
 
   await click(namedButton(container, "Open chooser"));
-  await waitFor(() => namedButton(container, "Start learner mode as Mary"));
-  await click(namedButton(container, "Start learner mode as Mary"));
+  await waitFor(() => namedButton(container, "Start learner mode as ⁨Mary⁩"));
+  await click(namedButton(container, "Start learner mode as ⁨Mary⁩"));
 
   await waitFor(() => assert.equal(currentRoute(container), "/"));
   assert.deepEqual(operations, [
@@ -308,4 +323,127 @@ test("empty chooser routes the Guardian to Manage learners", async () => {
   assert.equal(namedLink(container, "Manage learners").getAttribute("href"), "/guardian/learners");
   assert.equal(container.querySelector('input[type="radio"]'), null);
   assert.deepEqual(operations, []);
+});
+
+test("Chinese empty chooser keeps its recovery in the selected language", async () => {
+  const operations = [];
+  globalThis.fetch = async () =>
+    Response.json({ activeProfileId: null, profiles: [] });
+  const container = await mountStrict(
+    harness({ initialLanguage: "zh-Hans", operations }),
+  );
+
+  await click(namedButton(container, "Open chooser"));
+  await waitFor(() => namedLink(container, "管理孩子"));
+  assert.match(container.textContent, /切换到学习模式前，请先添加孩子/);
+  assert.equal(namedLink(container, "管理孩子").getAttribute("href"), "/guardian/learners");
+  assert.deepEqual(operations, []);
+});
+
+test("Chinese chooser localizes every state and keeps learner names as values", async () => {
+  const operations = [];
+  const firstLoad = deferred();
+  let failing = true;
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    if (failing) {
+      await firstLoad.promise;
+      return Response.json(
+        { message: "SERVER ROSTER SENTENCE" },
+        { status: 503 },
+      );
+    }
+    return Response.json({ activeProfileId: "learner-bob", profiles });
+  };
+  const container = await mountStrict(
+    harness({ initialLanguage: "zh-Hans", operations }),
+  );
+
+  await click(namedButton(container, "Open chooser"));
+  const dialog = container.querySelector('[role="dialog"]');
+  assert.equal(dialog?.getAttribute("lang"), "zh-Hans");
+  assert.equal(
+    dialog?.querySelector('[role="group"]')?.getAttribute("aria-label"),
+    "家长指导语言",
+  );
+  assert.match(dialog?.textContent ?? "", /谁在学习？/);
+  assert.match(dialog?.textContent ?? "", /正在加载孩子资料…/);
+
+  firstLoad.resolve();
+  await waitFor(() => assert.match(dialog?.textContent ?? "", /无法加载孩子资料/));
+  failing = false;
+  await click(namedButton(container, "重试"));
+  await waitFor(() => namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
+
+  assert.match(dialog?.textContent ?? "", /Bob/);
+  assert.match(dialog?.textContent ?? "", /Mary/);
+  assert.doesNotMatch(dialog?.textContent ?? "", /鲍勃|玛丽/);
+  assert.ok(requests >= 2);
+  await click(namedButton(container, "取消"));
+});
+
+test("chooser retranslates a stable selection failure without another roster request", async () => {
+  const operations = [];
+  const requestCount = installRosterFetch();
+  const container = await mountStrict(
+    harness({
+      initialLanguage: "zh-Hans",
+      operations,
+      selectError: new Error("SERVER SELECT SENTENCE"),
+    }),
+  );
+
+  await click(namedButton(container, "Open chooser"));
+  await waitFor(() => namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
+  await click(namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
+  const dialog = container.querySelector('[role="dialog"]');
+  await waitFor(() => assert.match(dialog?.textContent ?? "", /无法选择这位孩子/));
+  assert.doesNotMatch(dialog?.textContent ?? "", /SERVER SELECT SENTENCE/);
+  const requestsBeforeLanguageChange = requestCount();
+
+  await click(namedButton(container, "English"));
+
+  assert.equal(dialog?.getAttribute("lang"), "en");
+  assert.match(dialog?.textContent ?? "", /Could not select this learner/);
+  assert.doesNotMatch(dialog?.textContent ?? "", /无法选择这位孩子/);
+  assert.equal(requestCount(), requestsBeforeLanguageChange);
+  assert.match(dialog?.textContent ?? "", /Bob/);
+  assert.deepEqual(operations, ["select:learner-bob"]);
+});
+
+test("chooser localizes switching and retranslates a stable lock failure", async () => {
+  const lockAttempt = deferred();
+  const operations = [];
+  const requestCount = installRosterFetch();
+  const container = await mountStrict(
+    harness({ initialLanguage: "zh-Hans", lockAttempt, operations }),
+  );
+
+  await click(namedButton(container, "Open chooser"));
+  await waitFor(() => namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
+  await click(namedButton(container, "以 ⁨Bob⁩ 身份开始学习模式"));
+  const dialog = container.querySelector('[role="dialog"]');
+  await waitFor(() =>
+    assert.match(dialog?.textContent ?? "", /正在以 ⁨Bob⁩ 身份开始…/),
+  );
+  assert.equal(
+    dialog?.querySelector("fieldset")?.disabled,
+    true,
+  );
+  assert.equal(namedButton(container, "English").disabled, false);
+
+  lockAttempt.reject(new Error("SERVER LOCK SENTENCE"));
+  await waitFor(() =>
+    assert.match(dialog?.textContent ?? "", /无法锁定家长模式/),
+  );
+  assert.doesNotMatch(dialog?.textContent ?? "", /SERVER LOCK SENTENCE/);
+  const requestsBeforeLanguageChange = requestCount();
+  await click(namedButton(container, "English"));
+  assert.match(
+    dialog?.textContent ?? "",
+    /Could not lock guardian mode/,
+  );
+  assert.equal(requestCount(), requestsBeforeLanguageChange);
+  assert.deepEqual(operations, ["select:learner-bob", "lock"]);
 });

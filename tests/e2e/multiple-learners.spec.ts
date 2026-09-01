@@ -468,7 +468,10 @@ async function chooseLearnerAndStart(
 ) {
   const dialog = await openLearnerModeChooser(page, triggerName);
   await dialog
-    .getByRole("button", { exact: true, name: `Start learner mode as ${name}` })
+    .getByRole("button", {
+      exact: true,
+      name: `Start learner mode as ⁨${name}⁩`,
+    })
     .click();
   return dialog;
 }
@@ -715,7 +718,7 @@ test("active learner detail and story saves reach learner-mode consumers in the 
   await page.getByRole("link", { name: /Back to Guardian dashboard/i }).click();
   await page.getByRole("link", { name: "Open story settings" }).click();
   await expect(
-    page.getByText("Editing settings for Mia Updated", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia Updated⁩", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByText(
@@ -1532,12 +1535,12 @@ test("reconciles a rejected learner selection without switching learner mode", a
   const dialog = await chooseLearnerFromManager(page, "Noah");
 
   await expect(dialog.getByRole("alert")).toHaveText(
-    "Could not select this learner.",
+    "Could not select this learner. Try again.",
   );
   await expect(
     dialog.getByRole("button", {
       exact: true,
-      name: "Start learner mode as Noah",
+      name: "Start learner mode as ⁨Noah⁩",
     }),
   ).toBeEnabled();
   expect(
@@ -1596,7 +1599,7 @@ test("suppresses a held selection response after a newer selection wins", async 
   const chooser = await openLearnerModeChooser(page);
   const startNoah = chooser.getByRole("button", {
     exact: true,
-    name: "Start learner mode as Noah",
+    name: "Start learner mode as ⁨Noah⁩",
   });
   await startNoah.click({ noWaitAfter: true });
   await expect
@@ -1639,7 +1642,7 @@ test("suppresses a held selection response after a newer selection wins", async 
   ).toBe(true);
 
   await expect(chooser.getByRole("alert")).toHaveText(
-    "The selected learner could not be loaded.",
+    "Could not select this learner. Try again.",
   );
   await expect(startNoah).toBeFocused();
   await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
@@ -1655,7 +1658,10 @@ test("keeps the chooser modal and non-dismissible while a learner switch is pend
     .click();
   const chooser = await openLearnerModeChooser(page);
   await chooser
-    .getByRole("button", { exact: true, name: "Start learner mode as Noah" })
+    .getByRole("button", {
+      exact: true,
+      name: "Start learner mode as ⁨Noah⁩",
+    })
     .click({ noWaitAfter: true });
   await expect
     .poll(() =>
@@ -1674,7 +1680,7 @@ test("keeps the chooser modal and non-dismissible while a learner switch is pend
 
   await expect(chooser).toHaveAttribute("aria-busy", "true");
   await expect(chooser.getByRole("status")).toHaveText(
-    "Starting learner mode as Noah…",
+    "Starting learner mode as ⁨Noah⁩…",
   );
   await expect(chooser.getByRole("button", { name: "Cancel" })).toBeDisabled();
   await page.keyboard.press("Escape");
@@ -1832,7 +1838,7 @@ for (const viewport of requiredViewports) {
       page,
     );
     await expectContainedHorizontally(
-      chooser.getByRole("button", { name: "Start learner mode as Mia" }),
+      chooser.getByRole("button", { name: "Start learner mode as ⁨Mia⁩" }),
       page,
     );
     await expectNoHorizontalOverflow(page);
@@ -2059,7 +2065,7 @@ test("targets Noah's story level and personalized art without changing Mia's lea
     target.getByRole("button", { exact: true, name: "Noah" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
+    page.getByText("Editing settings for ⁨Noah⁩", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("tab", { name: /Level 3 · Short stories/ })
@@ -2089,7 +2095,7 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   const miaTarget = target.getByRole("button", { exact: true, name: "Mia" });
   await miaTarget.click();
   await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
   expect(
     await storySettingsMain?.evaluate(
@@ -2099,7 +2105,7 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   await expect(miaTarget).toBeFocused();
   await page.goBack();
   await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
+    page.getByText("Editing settings for ⁨Noah⁩", { exact: true }),
   ).toBeVisible();
   expect(
     await storySettingsMain?.evaluate(
@@ -2108,7 +2114,7 @@ test("targets Noah's story level and personalized art without changing Mia's lea
   ).toBe(true);
   await page.reload();
   await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
+    page.getByText("Editing settings for ⁨Noah⁩", { exact: true }),
   ).toBeVisible();
 
   const state = await page.evaluate(async () => {
@@ -2171,7 +2177,7 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
     target.getByRole("button", { exact: true, name: "Noah" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
+    page.getByText("Editing settings for ⁨Noah⁩", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Voice dubbing is available" }),
@@ -2217,11 +2223,11 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
 
   await target.getByRole("button", { exact: true, name: "Mia" }).click();
   await expect(
-    page.getByText("Editing settings for Mia", { exact: true }),
+    page.getByText("Editing settings for ⁨Mia⁩", { exact: true }),
   ).toBeVisible();
   await page.goBack();
   await expect(
-    page.getByText("Editing settings for Noah", { exact: true }),
+    page.getByText("Editing settings for ⁨Noah⁩", { exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect

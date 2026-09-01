@@ -18,6 +18,9 @@ const { HomeMenu } = await vite.ssrLoadModule("/src/app/HomeMenu.tsx");
 const { GuardianDashboardView } = await vite
   .ssrLoadModule("/src/app/GuardianDashboard.tsx")
   .catch(() => ({}));
+const { GuardianLanguageProvider } = await vite.ssrLoadModule(
+  "/src/i18n/guardian-language.tsx",
+);
 const { LessonListView } = await vite.ssrLoadModule(
   "/src/lessons/LessonList.tsx",
 );
@@ -88,6 +91,45 @@ test("guardian dashboard presents one learner-management destination", () => {
   assert.doesNotMatch(html, /is using learner mode|select who uses learner mode/);
   assert.doesNotMatch(html, /Managing Mia/);
   assert.doesNotMatch(html, />Manage learners<\/h2>|Learner details|Manage learner details/);
+});
+
+test("guardian dashboard localizes all authored navigation in Chinese", () => {
+  const html = renderInRouter(
+    createElement(
+      GuardianLanguageProvider,
+      { initialLanguage: "zh-Hans", storage: null },
+      createElement(GuardianDashboardView, {
+        onSwitchToLearner() {},
+      }),
+    ),
+    "/guardian",
+  );
+
+  assert.equal((html.match(/<h1/g) ?? []).length, 1);
+  assert.match(html, /<h1[^>]*>\s*家长中心\s*<\/h1>/);
+  assert.match(html, /aria-label="页面导航"/);
+  assert.match(html, /aria-label="切换到学习模式"/);
+  for (const copy of [
+    "孩子资料",
+    "管理孩子",
+    "学习与内容",
+    "故事设置",
+    "配音管理",
+    "账户与隐私",
+  ]) {
+    assert.match(html, new RegExp(copy));
+  }
+  for (const english of [
+    "Guardian dashboard",
+    "Learner profiles",
+    "Manage learners",
+    "Learning &amp; content",
+    "Story settings",
+    "Voice dubbing",
+    "Account &amp; privacy",
+  ]) {
+    assert.doesNotMatch(html, new RegExp(english));
+  }
 });
 
 test("guardian dashboard shows only the remaining learning and content cards", () => {

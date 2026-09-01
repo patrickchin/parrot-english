@@ -88,7 +88,10 @@ async function chooseLearnerAndStart(
   const dialog = page.getByRole("dialog", { name: "Who is learning now?" });
   await expect(dialog).toBeVisible();
   await dialog
-    .getByRole("button", { exact: true, name: `Start learner mode as ${name}` })
+    .getByRole("button", {
+      exact: true,
+      name: `Start learner mode as ⁨${name}⁩`,
+    })
     .click();
   return dialog;
 }
@@ -695,7 +698,7 @@ test("failed dashboard lock preserves guardian content and navigation", async ({
 
   await expect(dialog.getByRole("alert")).toHaveText(LOCK_ERROR);
   await expect(
-    dialog.getByRole("button", { name: "Start learner mode as Noah" }),
+    dialog.getByRole("button", { name: "Start learner mode as ⁨Noah⁩" }),
   ).toBeFocused();
   await expect(dashboard).toBeVisible();
   await expect(page).toHaveURL(url);
@@ -719,7 +722,7 @@ test("failed learner-boundary lock preserves the requested learner route", async
 
   await expect(dialog.getByRole("alert")).toHaveText(LOCK_ERROR);
   await expect(
-    dialog.getByRole("button", { name: "Start learner mode as Noah" }),
+    dialog.getByRole("button", { name: "Start learner mode as ⁨Noah⁩" }),
   ).toBeFocused();
   await expect(boundary).toBeVisible();
   await expect(page).toHaveURL(url);

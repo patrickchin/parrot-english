@@ -1239,7 +1239,7 @@ async function confirmModeSwitch() {
     const dialog = document.querySelector('[role="dialog"]');
     const candidate = [...dialog.querySelectorAll("button")].find(
       (button) =>
-        button.getAttribute("aria-label") === "Start learner mode as Mia",
+        button.getAttribute("aria-label") === "Start learner mode as ⁨Mia⁩",
     );
     assert.ok(candidate, "Expected a direct learner-mode button for Mia.");
     return candidate;
@@ -6430,7 +6430,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
 
     assert.equal(document.querySelector('input[name="password"]'), null);
     await click(button("Switch to guardian mode"));
-    await waitFor(() => text(/Editing settings for Noah/));
+    await waitFor(() => text(/Editing settings for ⁨Noah⁩/));
     assert.equal(currentRoute().path, deepLink);
     assert.ok(targetedLoads > loadsBeforeUnlock);
   });

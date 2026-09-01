@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
 import {
   loadLearnerProfiles,
@@ -10,10 +11,11 @@ import {
 const TARGET_QUERY_KEY = "learnerProfileId";
 
 type TargetPhase = "empty" | "error" | "invalid" | "loading" | "ready";
+export type GuardianLearnerTargetFailure = "load-failed" | null;
 
 export type GuardianLearnerTargetState = {
   activeProfileId: string | null;
-  error: string;
+  failure: GuardianLearnerTargetFailure;
   learnerName: string | null;
   learnerProfileId: string | null;
   phase: TargetPhase;
@@ -24,14 +26,8 @@ export type GuardianLearnerTargetState = {
 
 type RosterState =
   | { phase: "loading" }
-  | { error: string; phase: "error" }
+  | { failure: GuardianLearnerTargetFailure; phase: "error" }
   | { phase: "ready"; roster: LearnerProfileRoster };
-
-function errorMessage(error: unknown) {
-  return error instanceof Error
-    ? error.message
-    : "Learner profiles could not be loaded.";
-}
 
 function isAbortError(error: unknown) {
   return error instanceof DOMException && error.name === "AbortError";
@@ -56,7 +52,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
       },
       (error) => {
         if (!controller.signal.aborted && !isAbortError(error)) {
-          setRosterState({ error: errorMessage(error), phase: "error" });
+          setRosterState({ failure: "load-failed", phase: "error" });
         }
       },
     );
@@ -128,7 +124,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
   if (rosterState.phase === "loading") {
     return {
       activeProfileId: null,
-      error: "",
+      failure: null,
       learnerName: null,
       learnerProfileId: null,
       phase: "loading",
@@ -140,7 +136,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
   if (rosterState.phase === "error") {
     return {
       activeProfileId: null,
-      error: rosterState.error,
+      failure: rosterState.failure,
       learnerName: null,
       learnerProfileId: null,
       phase: "error",
@@ -153,7 +149,7 @@ export function useGuardianLearnerTarget(): GuardianLearnerTargetState {
   const readyResolution = resolution!;
   return {
     activeProfileId: readyResolution.activeProfileId,
-    error: "",
+    failure: null,
     learnerName:
       readyResolution.phase === "ready"
         ? readyResolution.selectedProfile.name
@@ -174,6 +170,8 @@ export function GuardianLearnerTarget({
 }: {
   state: GuardianLearnerTargetState;
 }) {
+  const { messages } = useGuardianLanguage();
+
   if (state.phase === "loading") {
     return (
       <p
@@ -181,7 +179,7 @@ export function GuardianLearnerTarget({
         className="m-0 text-center font-extrabold text-brand-blue"
         role="status"
       >
-        Loading learner settings…
+        {messages.learnerTarget.loading}
       </p>
     );
   }
@@ -190,7 +188,7 @@ export function GuardianLearnerTarget({
     return (
       <section className="grid w-full justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
         <p className="m-0 font-extrabold text-red-900" role="alert">
-          {state.error}
+          {messages.learnerTarget.loadFailed}
         </p>
         <ActionButton
           onClick={state.retry}
@@ -198,7 +196,7 @@ export function GuardianLearnerTarget({
           type="button"
           variant="surface"
         >
-          Try again
+          {messages.common.retry}
         </ActionButton>
       </section>
     );
@@ -207,9 +205,11 @@ export function GuardianLearnerTarget({
   if (state.phase === "empty") {
     return (
       <section className="grid w-full justify-items-center gap-3 rounded-2xl bg-sky-50 px-4 py-3 text-center">
-        <p className="m-0 font-extrabold text-brand-navy">No learners yet.</p>
+        <p className="m-0 font-extrabold text-brand-navy">
+          {messages.learnerTarget.noLearners}
+        </p>
         <ActionLink size="compact" to="/guardian/learners">
-          Add learner
+          {messages.learnerTarget.addLearner}
         </ActionLink>
       </section>
     );
@@ -219,10 +219,10 @@ export function GuardianLearnerTarget({
     return (
       <section className="grid w-full justify-items-center gap-3 rounded-2xl bg-rose-100 px-4 py-3 text-center">
         <p className="m-0 font-extrabold text-red-900" role="alert">
-          The learner target in this page link could not be found.
+          {messages.learnerTarget.invalidTarget}
         </p>
         <ActionLink size="compact" to="/guardian/learners" variant="surface">
-          Manage learners
+          {messages.learnerTarget.manageLearners}
         </ActionLink>
       </section>
     );
@@ -231,7 +231,7 @@ export function GuardianLearnerTarget({
   return (
     <section className="grid w-full min-w-0 gap-3">
       <div
-        aria-label="Choose learner settings target"
+        aria-label={messages.learnerTarget.chooserLabel}
         className="flex w-full min-w-0 flex-wrap gap-2"
         role="group"
       >
@@ -261,7 +261,7 @@ export function GuardianLearnerTarget({
               </ActionButton>
               {active ? (
                 <span className="shrink-0 rounded-full bg-brand-green px-2 py-1 text-xs font-black leading-tight text-white">
-                  Learner mode
+                  {messages.learnerTarget.learnerMode}
                 </span>
               ) : null}
             </div>
@@ -274,7 +274,7 @@ export function GuardianLearnerTarget({
         className="m-0 min-w-0 text-center font-extrabold text-brand-blue [overflow-wrap:anywhere]"
         role="status"
       >
-        Editing settings for {state.learnerName}
+        {messages.learnerTarget.editingFor(state.learnerName ?? "")}
       </p>
     </section>
   );

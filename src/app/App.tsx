@@ -144,7 +144,11 @@ import {
   LearnerModeBoundary,
 } from "./ModeRouteBoundaries";
 import { GuardianLanguageChrome } from "../i18n/GuardianLanguageChrome";
-import { GuardianLanguageProvider } from "../i18n/guardian-language";
+import {
+  GuardianLanguageProvider,
+  isGuardianGuidanceSurface,
+  useGuardianLanguage,
+} from "../i18n/guardian-language";
 
 const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
   ({ route }) => route !== getDuckDubPath(),
@@ -1200,13 +1204,34 @@ export function ApplicationRoutes({
   onBeforeModeNavigate?: () => void;
   wildcardTarget?: string | null;
 }) {
+  const location = useLocation();
+  const { messages } = useGuardianLanguage();
+  const guardianAudience = isGuardianGuidanceSurface(
+    location.pathname,
+    location.search,
+  );
+
   return (
     <Suspense
       fallback={
         <FeaturePlaceholder
+          actionLabel={
+            guardianAudience
+              ? messages.modeBoundary.backToDashboard
+              : undefined
+          }
+          actionTo={guardianAudience ? getGuardianPath() : "/"}
           busy
-          description="Getting your activity ready."
-          title="Loading…"
+          description={
+            guardianAudience
+              ? messages.modeBoundary.loadingDescription
+              : "Getting your activity ready."
+          }
+          title={
+            guardianAudience
+              ? messages.modeBoundary.loadingTitle
+              : "Loading…"
+          }
         />
       }
     >
@@ -1292,9 +1317,23 @@ export function ApplicationRoutes({
           element={
             wildcardTarget === null ? (
               <FeaturePlaceholder
+                actionLabel={
+                  guardianAudience
+                    ? messages.modeBoundary.backToDashboard
+                    : undefined
+                }
+                actionTo={guardianAudience ? getGuardianPath() : "/"}
                 busy
-                description="Confirming which profile can use this screen."
-                title="Checking guardian access…"
+                description={
+                  guardianAudience
+                    ? messages.modeBoundary.checkingDescription
+                    : "Confirming which profile can use this screen."
+                }
+                title={
+                  guardianAudience
+                    ? messages.modeBoundary.checkingTitle
+                    : "Checking guardian access…"
+                }
               />
             ) : (
               <Navigate replace to={wildcardTarget} />
