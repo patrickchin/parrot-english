@@ -77,8 +77,8 @@ a multi-learner session with no valid selection shows the required
 Peppa, lesson playback, stories at the
 selected learner's stored level, and consented recording activities. Its
 profile dropdown exposes `Switch learner` and the grown-up access action; it
-does not expose profile editing, consent, AI/data, sign-out, deletion, or
-story-art controls.
+does not expose profile editing, consent, AI/data, sign-out, or deletion
+controls.
 
 The current temporary flow opens `Grown-up access` without asking for the
 account password again. Selecting it, or entering a declared Guardian route
@@ -92,11 +92,10 @@ remain enforced. `/guardian` is the management dashboard. Its
 changes the session's learner selection. `/guardian/learners` owns learner
 creation and deletion, while
 `/guardian/learners/:learnerId` owns page-local details and lesson-recording
-consent. `/guardian/stories` owns story level and optional personalized art, and
-`/guardian/dubbing` owns dubbing consent and cleanup. The legacy profile and
-Guardian URLs use the same boundary. Manage learners never changes learner
-mode. Switching from Guardian mode selects the named learner, removes the
-unlock, then opens the requested learner route; switching from learner mode
+consent, while `/guardian/dubbing` owns dubbing consent and cleanup. The legacy
+profile and Guardian URLs use the same boundary. Manage learners never changes
+learner mode. Switching from Guardian mode selects the named learner, removes
+the unlock, then opens the requested learner route; switching from learner mode
 selects the learner and returns home without a Guardian lock request.
 Individual deletion requires confirmation, rejects the final learner, keeps
 failed cleanup retryable, and never auto-selects a sibling after deleting the
@@ -105,10 +104,10 @@ active learner.
 The same-origin `GET|POST|DELETE /api/guardian-access` endpoint reports,
 creates, or removes the current session unlock. D1 table
 `guardian_session_unlock` stores its fixed expiry, while
-`learner_profile.story_level` stores the selected shelf level. The Worker
-returns `guardian_required` for protected profile, profile-edit conversation,
-and personalized-art requests made in learner mode. Owner-scoped reads still
-let learners view saved story art.
+`learner_profile.story_level` retains the starting shelf level for existing
+profiles. Learners can move among every built-in story level directly on the
+story shelf. The Worker returns `guardian_required` for protected profile and
+profile-edit conversation requests made in learner mode.
 
 ## Lesson Content
 
@@ -180,9 +179,9 @@ npx wrangler d1 migrations apply parrot-english --remote
 ### One-time custom lesson recording purge
 
 The audited purge command considers only the two complete custom-recording R2
-key shapes below. It never deletes built-in `parrot` recordings, personalized
-story art, or other bucket objects. It is a dry run unless `--execute` is
-provided, and the execute path verifies a fresh scan has zero exact matches.
+key shapes below. It never deletes built-in `parrot` recordings, private media,
+or other bucket objects. It is a dry run unless `--execute` is provided, and
+the execute path verifies a fresh scan has zero exact matches.
 
 ```text
 personalized-story-art/<account>/lesson-recordings/my/...

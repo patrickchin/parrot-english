@@ -19,7 +19,6 @@ import {
 } from "../lib/learner-profile-privacy.ts";
 import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
-import { isLearnerStoryLevelId } from "../lib/story-level.ts";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
 import type { Database } from "./database.ts";
@@ -933,28 +932,6 @@ export async function handleLearnerProfileRequest(
       });
     }
 
-    if (
-      url.pathname === "/api/profile/preferences" &&
-      input.request.method === "PUT"
-    ) {
-      const record = await readJsonRecord(input.request);
-      if (
-        Object.keys(record).length !== 1 ||
-        !isLearnerStoryLevelId(record.storyLevel)
-      ) {
-        throw new ApiError(
-          400,
-          "invalid_story_level",
-          "Choose an available story level.",
-        );
-      }
-      const profile = await repository.saveStoryLevel(
-        input.identity,
-        record.storyLevel,
-      );
-      return jsonResponse(profilePayload(profile));
-    }
-
     const recognized =
       url.pathname === "/api/learner-profile" ||
       url.pathname === "/api/learner-profile/answer" ||
@@ -962,7 +939,6 @@ export async function handleLearnerProfileRequest(
       url.pathname === "/api/learner-profile/skip" ||
       url.pathname === "/api/learner-profile/complete" ||
       url.pathname === "/api/profile" ||
-      url.pathname === "/api/profile/preferences" ||
       url.pathname === "/api/lesson-recordings/consent" ||
       url.pathname === "/api/profile/lesson-recording-consent";
     return jsonResponse(

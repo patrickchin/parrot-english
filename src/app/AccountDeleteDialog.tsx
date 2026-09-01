@@ -3,7 +3,7 @@ import { ActionButton, fieldClassName } from "../shared/ui";
 import { useDialogFocus } from "./useDialogFocus";
 
 const DELETE_ACCOUNT_ERROR_MESSAGE =
-  "Unable to delete the account. The account and private story art were kept. Please try again.";
+  "Unable to delete the account. The account and private media were kept. Please try again.";
 
 export function AccountDeleteDialog({
   onClose,
@@ -84,8 +84,9 @@ export function AccountDeleteDialog({
         <p className="m-0 font-bold leading-relaxed text-slate-700">
           This removes your account, all learner profiles, saved conversation
           text, private voice clips from all nursery rhymes,
-          lesson voice recordings, and private story art from Parrot. A small
-          deletion marker stays so old private art cannot return.
+          lesson voice recordings, and any previously saved private story
+          pictures from Parrot. A small deletion marker stays so removed
+          private media cannot return.
         </p>
 
         <form className="grid gap-5" onSubmit={handleSubmit}>

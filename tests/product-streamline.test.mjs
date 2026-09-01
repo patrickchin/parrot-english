@@ -117,11 +117,12 @@ test("guardian dashboard shows only the remaining learning and content cards", (
       .filter((heading) => heading !== "Learning &amp; content"),
     [
       "Learner profiles",
-      "Story settings",
       "Voice dubbing",
       "Account &amp; privacy",
     ],
   );
+  assert.doesNotMatch(html, /Story settings|Open story settings/);
+  assert.doesNotMatch(html, /href="\/guardian\/stories"/);
   assert.doesNotMatch(html, /My Lessons/);
   assert.doesNotMatch(html, /href="\/guardian\/lessons"|>Manage lessons<\/a>/);
 });
@@ -140,7 +141,6 @@ test("guardian dashboard links a separate account and privacy destination", () =
 
   assert.deepEqual(hrefs, [
     "/guardian/learners",
-    "/guardian/stories",
     "/guardian/dubbing",
     "/guardian/account",
   ]);

@@ -77,11 +77,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
       heading: "Learner profiles",
     },
     {
-      action: "Open story settings",
-      description: "Choose the story level and personalized story options.",
-      heading: "Story settings",
-    },
-    {
       action: "Manage voice dubbing",
       description:
         "Review and delete private nursery-rhyme voice clips.",
@@ -105,7 +100,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
   const cardColors = await Promise.all(
     [
       "Learner profiles",
-      "Story settings",
       "Voice dubbing",
       "Account & privacy",
     ].map((heading) =>
@@ -119,7 +113,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
   const [sectionHeadingSize, cardHeadingSize] = await Promise.all(
     [
       page.getByRole("heading", { name: "Learning & content" }),
-      page.getByRole("heading", { name: "Story settings" }),
+      page.getByRole("heading", { name: "Voice dubbing" }),
     ].map((heading) =>
       heading.evaluate((element) =>
         Number.parseFloat(getComputedStyle(element).fontSize),
@@ -133,13 +127,6 @@ test("every Guardian dashboard card associates its copy and traverses through it
     "Manage learners",
     /\/guardian\/learners$/,
     "Manage learners",
-    "Back to guardian dashboard",
-  );
-  await traverseDashboardAction(
-    page,
-    "Open story settings",
-    /\/guardian\/stories\?learnerProfileId=learner-mia$/,
-    "Story settings",
     "Back to guardian dashboard",
   );
   await traverseDashboardAction(
@@ -211,12 +198,12 @@ test("the retired Guardian profile route replaces history with Manage learners",
   ).toBeVisible();
 });
 
-test("setting routes normalize only a missing target and reject blank duplicate or unknown targets", async ({
+test("learner-targeted routes normalize only a missing target and reject duplicate or unknown targets", async ({
   page,
 }) => {
-  await page.goto(scenarioUrl("/guardian/stories"));
+  await page.goto(scenarioUrl("/guardian/dubbing"));
   await expect(page).toHaveURL(
-    /\/guardian\/stories\?.*learnerProfileId=learner-mia/,
+    /\/guardian\/dubbing\?.*learnerProfileId=learner-mia/,
   );
   await expect(
     page.getByText("Editing settings for Mia", { exact: true }),
@@ -227,7 +214,7 @@ test("setting routes normalize only a missing target and reject blank duplicate 
   ).toBeVisible();
 
   for (const path of [
-    "/guardian/stories?learnerProfileId=learner-mia&learnerProfileId=learner-noah",
+    "/guardian/dubbing?learnerProfileId=learner-mia&learnerProfileId=learner-noah",
     "/guardian/dubbing?learnerProfileId=unknown-learner",
   ]) {
     await page.goto(scenarioUrl(path));

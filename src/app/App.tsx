@@ -136,7 +136,6 @@ import {
   saveLessonRecording,
 } from "../lessons/lesson-recording-api";
 import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
-import { usePersonalizedStoryArt } from "../stories/usePersonalizedStoryArt";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
@@ -159,7 +158,6 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian/learners/:learnerId",
   "/guardian/profile",
   "/guardian/profile/setup",
-  "/guardian/stories",
   "/talk-to-peppa",
   "/word-game",
   "/word-games",
@@ -192,13 +190,6 @@ const StoryList = import.meta.env.SSR
       import("../stories/StoryList").then(({ StoryList }) => ({
         default: StoryList,
       })),
-    );
-const GuardianStorySettings = import.meta.env.SSR
-  ? (await import("../stories/GuardianStorySettings")).GuardianStorySettings
-  : lazy(() =>
-      import("../stories/GuardianStorySettings").then(
-        ({ GuardianStorySettings }) => ({ default: GuardianStorySettings }),
-      ),
     );
 const GuardianDubbingSettings = import.meta.env.SSR
   ? (await import("../dubbing/GuardianDubbingSettings")).GuardianDubbingSettings
@@ -1132,7 +1123,6 @@ function StoryRouteDecisionView({
   decision: StoryRouteDecision;
 }) {
   const navigate = useNavigate();
-  const personalizedStoryArt = usePersonalizedStoryArt();
 
   if (decision.kind === "redirect") {
     return <Navigate replace={decision.replace} to={decision.to} />;
@@ -1145,7 +1135,6 @@ function StoryRouteDecisionView({
         navigate(getStoryPagePath(decision.story.id, pageIndex))
       }
       pageIndex={decision.pageIndex}
-      personalizedOverrides={personalizedStoryArt.personalizedOverrides}
       story={decision.story}
     />
   );
@@ -1248,7 +1237,6 @@ export function ApplicationRoutes({
           element={<GuardianLearnerDetails />}
           path="/guardian/learners/:learnerId"
         />
-        <Route element={<GuardianStorySettings />} path="/guardian/stories" />
         <Route
           element={<GuardianDubbingSettings />}
           path={getGuardianDubbingPath()}

@@ -100,7 +100,7 @@ const focusScenarios: Array<{
   {
     name: "selected story level tab",
     prepare: async (page) => {
-      await page.goto(guardianPath("/guardian/stories"));
+      await page.goto("/stories");
       return page.getByRole("tab", {
         name: "Level 1 · Words & pictures",
       });

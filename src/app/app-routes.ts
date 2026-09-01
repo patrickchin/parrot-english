@@ -51,7 +51,6 @@ const GUARDIAN_ROUTE_PATHS = [
   GUARDIAN_LEARNERS_ROUTE_PATH,
   /^\/guardian\/profile\/*$/i,
   /^\/guardian\/profile\/setup\/*$/i,
-  /^\/guardian\/stories\/*$/i,
 ];
 const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
   ...GUARDIAN_ROUTE_PATHS,
@@ -138,10 +137,6 @@ export function isGuardianLearnerManagerRoute(pathname: string) {
     GUARDIAN_LEARNERS_ROUTE_PATH.test(pathname) ||
     getGuardianLearnerRouteId(pathname) !== null
   );
-}
-
-export function getGuardianStoriesPath(learnerProfileId?: string) {
-  return withLearnerProfileTarget("/guardian/stories", learnerProfileId);
 }
 
 function parseSceneNumber(value: string | undefined) {

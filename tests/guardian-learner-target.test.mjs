@@ -121,7 +121,7 @@ function TargetHarness() {
   );
 }
 
-function harness(initialEntry = "/guardian/stories") {
+function harness(initialEntry = "/guardian/dubbing") {
   return createElement(
     MemoryRouter,
     { initialEntries: [initialEntry] },
@@ -193,7 +193,7 @@ test("offers an Add learner recovery when the roster is empty", async () => {
 test("resolves one valid URL target and keeps every learner name visible", async () => {
   installRosterFetch();
   const container = await mountStrict(
-    harness("/guardian/stories?learnerProfileId=learner-noah"),
+    harness("/guardian/dubbing?learnerProfileId=learner-noah"),
   );
 
   await waitFor(() => assert.equal(resolvedTarget(container), noah.id));
@@ -208,19 +208,19 @@ test("resolves one valid URL target and keeps every learner name visible", async
 test("normalizes a missing target to the owned active learner with replace", async () => {
   installRosterFetch();
   const container = await mountStrict(
-    harness("/guardian/stories?filter=saved&filter=new#levels"),
+    harness("/guardian/dubbing?filter=saved&filter=new#clips"),
   );
 
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
   assert.equal(
     routerState(container),
-    "REPLACE ?filter=saved&filter=new&learnerProfileId=learner-mia#levels",
+    "REPLACE ?filter=saved&filter=new&learnerProfileId=learner-mia#clips",
   );
 });
 
 test("normalizes a missing target to the first learner when none is active", async () => {
   installRosterFetch(roster(null));
-  const container = await mountStrict(harness("/guardian/stories?sort=name"));
+  const container = await mountStrict(harness("/guardian/dubbing?sort=name"));
 
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
   assert.equal(
@@ -232,7 +232,7 @@ test("normalizes a missing target to the first learner when none is active", asy
 test("defaults to the live learner when the active learner is pending deletion", async () => {
   installRosterFetch(roster(pendingSam.id, [pendingSam, bob]));
   const container = await mountStrict(
-    harness("/guardian/stories?sort=name"),
+    harness("/guardian/dubbing?sort=name"),
   );
 
   await waitFor(() => assert.equal(resolvedTarget(container), bob.id));
@@ -255,7 +255,7 @@ test("defaults to the live learner when the active learner is pending deletion",
 test("does not resolve an explicit learner target that is pending deletion", async () => {
   installRosterFetch(roster(pendingSam.id, [pendingSam, bob]));
   const container = await mountStrict(
-    harness(`/guardian/stories?learnerProfileId=${pendingSam.id}`),
+    harness(`/guardian/dubbing?learnerProfileId=${pendingSam.id}`),
   );
 
   await waitFor(() =>
@@ -292,7 +292,7 @@ for (const [label, search] of [
 ]) {
   test(`does not silently fall back from a present ${label} target`, async () => {
     installRosterFetch();
-    const container = await mountStrict(harness(`/guardian/stories?${search}`));
+    const container = await mountStrict(harness(`/guardian/dubbing?${search}`));
 
     await waitFor(() =>
       assert.match(container.textContent, /learner target.*could not be found/i),
@@ -309,7 +309,7 @@ for (const [label, search] of [
 test("selects an editing target without changing the Learner mode badge", async () => {
   installRosterFetch();
   const container = await mountStrict(
-    harness("/guardian/stories?view=art&learnerProfileId=learner-mia"),
+    harness("/guardian/dubbing?view=clips&learnerProfileId=learner-mia"),
   );
   await waitFor(() => assert.equal(resolvedTarget(container), mia.id));
 
@@ -318,7 +318,7 @@ test("selects an editing target without changing the Learner mode badge", async 
   await waitFor(() => assert.equal(resolvedTarget(container), noah.id));
   assert.equal(
     routerState(container),
-    "PUSH ?view=art&learnerProfileId=learner-noah",
+    "PUSH ?view=clips&learnerProfileId=learner-noah",
   );
   assert.equal(namedButton(container, noah.name).getAttribute("aria-pressed"), "true");
   const learnerModeBadge = [...container.querySelectorAll("span")].find(

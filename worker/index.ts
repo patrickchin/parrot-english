@@ -1,5 +1,4 @@
 import {
-  checkPersonalizedStoryArtRateLimit,
   checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
@@ -33,10 +32,6 @@ import {
   handleLessonRecordingRequest,
   type LessonRecordingEnv,
 } from "./lesson-recordings.ts";
-import {
-  handlePersonalizedStoryArtRequest,
-  type PersonalizedStoryArtEnv,
-} from "./personalized-story-art.ts";
 import { handleDubRequest, type DubEnv } from "./dubs.ts";
 import { isEncodedDubRouteAlias } from "./dub-route.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
@@ -60,7 +55,6 @@ interface Env
     ConversationEnv,
     LearnerProfilesEnv,
     LessonRecordingEnv,
-    PersonalizedStoryArtEnv,
     DubEnv {
   ASSETS: AssetFetcher;
   GROQ_API_KEY?: string;
@@ -72,14 +66,12 @@ interface WorkerDependencies {
   checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
-  checkPersonalizedStoryArtRateLimit: typeof checkPersonalizedStoryArtRateLimit;
   handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleLearnerProfilesRequest: typeof handleLearnerProfilesRequest;
   handleConversationRequest: typeof handleConversationRequest;
   handleLessonRecordingRequest: typeof handleLessonRecordingRequest;
-  handlePersonalizedStoryArtRequest: typeof handlePersonalizedStoryArtRequest;
   handleDubRequest: typeof handleDubRequest;
   prepareAccountDeletion: typeof prepareAccountDeletion;
 }
@@ -89,7 +81,6 @@ function isLearnerProfilePath(pathname: string) {
     pathname === "/api/learner-profile" ||
     pathname.startsWith("/api/learner-profile/") ||
     pathname === "/api/profile" ||
-    pathname === "/api/profile/preferences" ||
     pathname === "/api/profile/lesson-recording-consent"
   );
 }
@@ -114,10 +105,6 @@ function isLessonRecordingPath(pathname: string) {
     pathname === "/api/lesson-recordings" ||
     pathname.startsWith("/api/lesson-recordings/")
   );
-}
-
-function isPersonalizedStoryArtPath(pathname: string) {
-  return /^\/api\/stories\/[^/]+\/personalized-art(?:\/asset)?$/.test(pathname);
 }
 
 function isDubPath(pathname: string) {
@@ -238,9 +225,6 @@ export function createWorker(
   const learnerProfileEnrichmentRateLimit =
     dependencies.checkLearnerProfileEnrichmentRateLimit ??
     checkLearnerProfileEnrichmentRateLimit;
-  const personalizedStoryArtRateLimit =
-    dependencies.checkPersonalizedStoryArtRateLimit ??
-    checkPersonalizedStoryArtRateLimit;
   const evaluateSpeech =
     dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const guardianAccessRequest =
@@ -253,9 +237,6 @@ export function createWorker(
     dependencies.handleConversationRequest ?? handleConversationRequest;
   const lessonRecordingRequest =
     dependencies.handleLessonRecordingRequest ?? handleLessonRecordingRequest;
-  const personalizedStoryArtRequest =
-    dependencies.handlePersonalizedStoryArtRequest ??
-    handlePersonalizedStoryArtRequest;
   const dubRequest = dependencies.handleDubRequest ?? handleDubRequest;
   const authFactory = dependencies.createAuth ?? createAuth;
   const accountDeletion =
@@ -564,48 +545,6 @@ export function createWorker(
           return learnerSelectionRequired();
         }
         return conversationRequest({
-          database,
-          env,
-          identity: learner.identity,
-          request,
-        });
-      }
-
-      if (isPersonalizedStoryArtPath(url.pathname)) {
-        const session = await authFactory(env).api.getSession({
-          headers: request.headers,
-        });
-        if (!session) {
-          return Response.json({ error: "unauthorized" }, { status: 401 });
-        }
-        const accountIdentity: AccountIdentity = {
-          sessionId: session.session.id,
-          userId: session.user.id,
-          userName: session.user.name?.trim() || null,
-        };
-        const database = createDatabase(env.DB);
-        const explicitLearner = await resolveExplicitLearnerTarget({
-          account: accountIdentity,
-          database,
-          request,
-          url,
-        });
-        if (explicitLearner instanceof Response) return explicitLearner;
-        const learner = explicitLearner
-          ? { status: "selected" as const, identity: explicitLearner }
-          : await resolveLearnerIdentity(database, accountIdentity);
-        if (learner.status === "selection_required") {
-          return learnerSelectionRequired();
-        }
-        if (request.method === "POST") {
-          const rateLimited = await personalizedStoryArtRateLimit(
-            request,
-            env,
-            accountIdentity.userId,
-          );
-          if (rateLimited) return rateLimited;
-        }
-        return personalizedStoryArtRequest({
           database,
           env,
           identity: learner.identity,

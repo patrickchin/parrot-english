@@ -16,7 +16,6 @@ const PROTECTED_REQUESTS = [
   ["POST", "/api/learner-profile/complete"],
   ["GET", "/api/profile"],
   ["PUT", "/api/profile"],
-  ["PUT", "/api/profile/preferences"],
   ["GET", "/api/lesson-recordings/consent"],
   ["PUT", "/api/profile/lesson-recording-consent"],
 ];
@@ -337,41 +336,6 @@ describe("onboarding persistence and API", () => {
         },
       );
       assert.equal((await sibling.json()).canBypass, false);
-    } finally {
-      state.close();
-    }
-  });
-
-  it("updates only the selected sibling's story level", async () => {
-    const state = createSeededDatabase();
-    try {
-      seedSiblingProfile(state);
-
-      const response = await callLearnerProfile(
-        state.database,
-        "/api/profile/preferences",
-        "PUT",
-        { storyLevel: "tiny-stories" },
-        {
-          learnerProfileId: "learner-b",
-          learnerName: "Leo",
-          legacyStorageOwner: false,
-        },
-      );
-
-      assert.equal(response.status, 200);
-      assert.deepEqual(
-        state.sqlite
-          .prepare(
-            "SELECT id, story_level FROM learner_profile WHERE auth_user_id = ? ORDER BY id",
-          )
-          .all("user-1")
-          .map(({ id, story_level }) => ({ id, story_level })),
-        [
-          { id: "learner-a", story_level: "first-words" },
-          { id: "learner-b", story_level: "tiny-stories" },
-        ],
-      );
     } finally {
       state.close();
     }
@@ -764,53 +728,12 @@ describe("onboarding persistence and API", () => {
     }
   });
 
-  it("returns and updates the learner's selected story level", async () => {
+  it("returns the learner's stored story level", async () => {
     const state = createSeededDatabase();
     try {
       const loaded = await callLearnerProfile(state.database, "/api/profile");
       assert.equal(loaded.status, 200);
       assert.equal((await loaded.json()).profile.storyLevel, "first-words");
-
-      const saved = await callLearnerProfile(
-        state.database,
-        "/api/profile/preferences",
-        "PUT",
-        { storyLevel: "tiny-stories" },
-      );
-      assert.equal(saved.status, 200);
-      assert.equal((await saved.json()).profile.storyLevel, "tiny-stories");
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT story_level FROM learner_profile WHERE auth_user_id = ?")
-          .get("user-1").story_level,
-        "tiny-stories",
-      );
-    } finally {
-      state.close();
-    }
-  });
-
-  it("rejects non-learner story levels and extra preference keys", async () => {
-    const state = createSeededDatabase();
-    try {
-      await callLearnerProfile(state.database, "/api/profile");
-      for (const body of [
-        { storyLevel: "expert" },
-        { storyLevel: "long-stories" },
-        { storyLevel: "first-words", extra: true },
-      ]) {
-        const response = await callLearnerProfile(
-          state.database,
-          "/api/profile/preferences",
-          "PUT",
-          body,
-        );
-        assert.equal(response.status, 400);
-        assert.deepEqual(await response.json(), {
-          error: "invalid_story_level",
-          fieldError: "Choose an available story level.",
-        });
-      }
     } finally {
       state.close();
     }

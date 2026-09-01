@@ -2618,7 +2618,7 @@ test("the desktop project keeps the video and compact scene strip in one view", 
   await expectNoHorizontalOverflow(page);
 });
 
-test("the narrow project keeps its full title and transport outside the story art", async ({ page }) => {
+test("the narrow project keeps its full title and transport outside the scene artwork", async ({ page }) => {
   await page.setViewportSize({ height: 568, width: 280 });
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);

@@ -17,7 +17,6 @@ Browser
             -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
             -> /api/conversations/* -> LiveKit -> D1
             -> /api/lesson-recordings/* -> learner consent + private R2 slots
-            -> /api/stories/*/personalized-art -> Workers AI + D1 + private R2
             -> /api/dubs/five-little-ducks-v2/* -> D1 consent + private R2 clip slots
        -> /api/evaluate-speech -> Groq
        -> static Vite assets
@@ -43,10 +42,9 @@ prototype build entry in the shipped product.
   and reloads before the new learner's routes render.
 - `src/conversation` owns the learner-controlled LiveKit conversation surface.
 - `src/lessons` owns the built-in learner catalog and player.
-- `src/stories` owns the stored-level learner shelf/reader, its always-visible
-  public Long stories section, and Guardian-only story settings and
-  personalized-art controls. Long stories use the main authenticated routes;
-  no private-preview route or build mode remains.
+- `src/stories` owns the stored-level learner shelf/reader and its public Long
+  stories. Long stories use the main authenticated routes; no private-preview
+  route or build mode remains.
 - `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
   client, Guardian settings, decoded take waveform, and synchronized replay.
   Its project home plays the 98-second timeline and opens any of six four-line
@@ -64,8 +62,8 @@ prototype build entry in the shipped product.
 - `src/shared` owns reusable controls and cards.
 
 Top-level learner navigation stays small. Management starts at `/guardian`,
-with learner CRUD at `/guardian/learners`, story controls at `/guardian/stories`,
-and dubbing consent/deletion at `/guardian/dubbing`. Learner selection occurs
+with learner CRUD at `/guardian/learners` and dubbing consent/deletion at
+`/guardian/dubbing`. Learner selection occurs
 inside one shared chooser launched from either the learner account menu or
 Guardian mode. Post-login Guardian return targets normalize to learner home;
 validated learner deep links remain intact. Internal Guardian return targets
@@ -91,8 +89,8 @@ safe; two or more owned learners without a selection return
 `409 learner_selection_required`.
 
 The Worker exposes authentication, Guardian access, the Guardian learner
-roster, learner profile, conversations, lesson join-in recordings, story art,
-build information, speech evaluation, and Five Little Ducks dubbing. The
+roster, learner profile, conversations, lesson join-in recordings, build
+information, speech evaluation, and Five Little Ducks dubbing. The
 authenticated `/api/dubs/five-little-ducks-v2/*` family owns consent-aware
 status, raw clip upload, private clip streaming, durable consent grant, and
 whole-dub revocation/deletion. Static assets are the final fallback.
@@ -139,17 +137,17 @@ re-prove account ownership; malformed, missing, and foreign IDs share a generic
 `404`.
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
-before roster create/delete mutations, Guardian profile reads/updates, profile
-preference changes, personalized-art mutations, dubbing consent grant, and
-whole-dub deletion when the current session lacks a live unlock.
+before roster create/delete mutations, Guardian profile reads/updates, dubbing
+consent grant, and whole-dub deletion when the current session lacks a live
+unlock.
 Conversation start is purpose-aware: profile edits
 always require the current session's live unlock, while onboarding remains
 learner-safe only until the owner profile is completed or bypassed. The
 authenticated `/review` endpoint is the sole conversation path that persists
 profile answers and repeats that current-session check; browser `/finish` and
 trusted-agent `/end` update conversation status only. Owner scoping, request
-validation, rate limits, and art consent still run after the mode check;
-learner-safe reads remain available.
+validation and rate limits still run after the mode check; learner-safe reads
+remain available.
 
 The Worker and browser share the Drizzle schema in `src/db/schema.ts`. Better
 Auth and product data use one D1 database. `guardian_session_unlock` and
@@ -171,13 +169,10 @@ sibling-prefixed storage is never swept.
 One `learner_profile` row per account is marked `legacy_storage_owner`; it owns
 all migrated account-level media compatibility paths. Added learners are
 nonlegacy. `learner_profile.story_level` stores one of the four supported IDs
-and defaults to `first-words`. Profile-specific tables store onboarding bypass,
-dub consent, and story-art generation leases. Conversations and personalized
-art retain `auth_user_id` for account deletion and carry `learner_profile_id`
-for sibling isolation. Compatibility columns remain nullable until a later
-contract migration, but only the marked legacy learner may read a null-profile
-row. New writes always carry the resolved profile ID; a legacy art row is
-attached to that learner before mutation.
+and defaults to `first-words`. Profile-specific tables store onboarding bypass
+and dub consent. Historical story-art rows and generation leases remain only so
+learner and account deletion can remove legacy private objects safely; no
+runtime route creates, reads, or serves them.
 
 ## Durable and Transient State
 
@@ -224,7 +219,6 @@ header to select a profile or storage namespace.
 │   ├── /guardian/account
 │   ├── /guardian/profile
 │   ├── /guardian/profile/setup
-│   ├── /guardian/stories
 │   └── /guardian/dubbing
 ├── /profile                         (compatibility alias; guardian after setup)
 ├── /profile/setup
@@ -247,7 +241,7 @@ mode, so no fallback strands an unlocked session at a learner-only screen.
 | Learner profile, story level, onboarding progress | Learner profile                              |
 | Conversation session                              | Learner profile fixed at creation            |
 | Conversation turns and facts                      | Inherit the conversation's stored learner    |
-| Personalized art and generation lease             | Learner profile plus story                   |
+| Legacy story-art cleanup records                   | Learner profile plus account deletion        |
 | Dubbing consent and clip namespace                | Learner profile                              |
 | Lesson-recording consent and clip namespace       | Learner profile                              |
 | Rate limits                                       | Guardian account plus existing IP dimensions |
