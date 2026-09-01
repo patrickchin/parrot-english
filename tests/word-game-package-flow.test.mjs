@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import test from "node:test";
 import * as staticAudio from "../lib/static-audio.js";
 import { runWordGameCatalogGenerator } from "../scripts/generate-word-game-catalog.mjs";
+import { planWordGameAudio } from "../scripts/word-game/compiler.mjs";
 import * as wordGameCatalog from "../src/games/word-game-catalog.ts";
 
 const repositoryRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -18,6 +19,13 @@ async function createPackageRoot(context) {
   const categoryRoot = join(rootDir, "content", "word-games", "categories");
   const audioRoot = join(rootDir, "public", "assets", "audio");
   const fluentRoot = join(rootDir, "public", "assets", "word-games", "fluent-3d");
+  const fixturePlayer = JSON.parse(
+    await readFile(join(fixtureRoot, "player.json"), "utf8"),
+  );
+  fixturePlayer.successAudio.text = "Fixture success.";
+  fixturePlayer.retryAudio.text = "Fixture retry.";
+  fixturePlayer.completeAudio.text = "Fixture complete.";
+
   await Promise.all([
     mkdir(categoryRoot, { recursive: true }),
     mkdir(audioRoot, { recursive: true }),
@@ -43,7 +51,10 @@ async function createPackageRoot(context) {
       `${JSON.stringify(fixtureCategory, null, 2)}\n`,
     ),
     cp(join(fixtureRoot, "fluent-3d-assets.json"), join(rootDir, "content", "word-games", "fluent-3d-assets.json")),
-    cp(join(fixtureRoot, "player.json"), join(rootDir, "content", "word-games", "player.json")),
+    writeFile(
+      join(rootDir, "content", "word-games", "player.json"),
+      `${JSON.stringify(fixturePlayer, null, 2)}\n`,
+    ),
     cp(join(fixtureRoot, "cat_3d.png"), join(fluentRoot, "1f431.png")),
     cp(
       join(fixtureRoot, "fluentui-emoji-LICENSE"),
@@ -56,7 +67,7 @@ async function createPackageRoot(context) {
       cp(join(fixtureRoot, "tiny.mp3"), join(audioRoot, `${id}.mp3`))),
   ]);
 
-  return { fixtureCategory, rootDir };
+  return { fixtureCategory, fixturePlayer, rootDir };
 }
 
 test("package lifecycle gates both generated content catalogs", async () => {
@@ -94,7 +105,7 @@ test("package lifecycle gates both generated content catalogs", async () => {
   );
 });
 
-test("an appended JSON category flows through generation, resolution, shelf data, and audio", async (context) => {
+test("an appended schema-v2 JSON package flows through generation, runtime resolution, covers, and static audio", async (context) => {
   assert.equal(
     typeof wordGameCatalog.createWordGameCatalog,
     "function",
@@ -106,26 +117,57 @@ test("an appended JSON category flows through generation, resolution, shelf data
     "Expected a generated-data static-audio seam.",
   );
 
-  const { fixtureCategory, rootDir } = await createPackageRoot(context);
+  const { fixtureCategory, fixturePlayer, rootDir } = await createPackageRoot(context);
+  const audioPlan = await planWordGameAudio({ rootDir });
   await runWordGameCatalogGenerator({ check: false, rootDir });
   const generatedPath = join(rootDir, "src", "games", "generated-word-game-catalog.ts");
   const generated = await import(`${pathToFileURL(generatedPath).href}?test=${Date.now()}`);
   const runtime = wordGameCatalog.createWordGameCatalog(generated.GENERATED_WORD_GAME_CATALOG);
-  const audioLines = staticAudio.createWordGameAudioLines(runtime.categories);
+  const audioLines = staticAudio.createWordGameAudioLines(runtime.categories, runtime.player);
 
   assert.deepEqual(
     generated.GENERATED_WORD_GAME_CATALOG.categories.map(({ id }) => id),
     ["animals", "fixtures"],
   );
   assert.equal(runtime.resolveCategory("fixtures")?.title, "Fixtures");
-  assert.equal(runtime.resolveQuiz("fixtures", "simple-1")?.category.id, "fixtures");
+  const selection = runtime.resolveQuiz("fixtures", "simple-1");
+  assert.equal(selection?.category.id, "fixtures");
+  assert.equal(selection?.quiz.coverItem.id, fixtureCategory.tiers[0].quizzes[0].questions[0].targetId);
+  assert.equal(selection?.quiz.coverItem, selection?.category.items[0]);
   assert.deepEqual(runtime.categories.map(({ id }) => id), ["animals", "fixtures"]);
+  const plannedAudio = new Map(audioPlan.lines.map((line) => [line.id, line.text]));
   assert.equal(
     audioLines[fixtureCategory.items[0].labelAudio.id].text,
+    fixtureCategory.items[0].labelAudio.text,
+  );
+  assert.equal(
+    plannedAudio.get(fixtureCategory.items[0].labelAudio.id),
     fixtureCategory.items[0].labelAudio.text,
   );
   assert.equal(
     audioLines[fixtureCategory.items[0].promptAudio.id].text,
     fixtureCategory.items[0].promptAudio.text,
   );
+  assert.equal(
+    plannedAudio.get(fixtureCategory.items[0].promptAudio.id),
+    fixtureCategory.items[0].promptAudio.text,
+  );
+  for (const cue of [
+    fixturePlayer.successAudio,
+    fixturePlayer.retryAudio,
+    fixturePlayer.completeAudio,
+  ]) {
+    assert.equal(plannedAudio.get(cue.id), cue.text);
+    assert.deepEqual(
+      Object.fromEntries(
+        ["lang", "speaker", "src", "text"].map((key) => [key, audioLines[cue.id][key]]),
+      ),
+      {
+        lang: "en-US",
+        speaker: "narrator",
+        src: `/assets/audio/${cue.id}.mp3`,
+        text: cue.text,
+      },
+    );
+  }
 });

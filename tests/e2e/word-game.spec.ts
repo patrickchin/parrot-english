@@ -22,8 +22,15 @@ const responsiveViewports = [
   { columns: 2, height: 568, name: "280px", rows: 2, width: 280 },
   { columns: 2, height: 844, name: "390px", rows: 2, width: 390 },
   { columns: 2, height: 360, name: "640px", rows: 2, width: 640 },
-  { columns: 4, height: 500, name: "768px", rows: 1, width: 768 },
-  { columns: 4, height: 800, name: "1280px", rows: 1, width: 1280 },
+  { columns: 4, height: 900, name: "768px", rows: 1, width: 768 },
+  { columns: 4, height: 900, name: "1280px", rows: 1, width: 1280 },
+] as const;
+
+const promptParityCases = [
+  ["animals", "Which is the cat?", "word-game-animals-cat-prompt"],
+  ["colors", "Which color is red?", "word-game-colors-red-prompt"],
+  ["body-parts", "Which picture shows the eyes?", "word-game-body-parts-eyes-prompt"],
+  ["feelings", "Which face looks happy?", "word-game-feelings-happy-prompt"],
 ] as const;
 
 type MediaSnapshot = {
@@ -258,6 +265,18 @@ test("keeps visual play usable with one persistent saved-sound failure", async (
   await expect(choices.getByRole("button", { name: /^Choose / })).toHaveCount(4);
 });
 
+test("uses the rendered saved prompt cue for animal, color, body-part, and feeling questions", async ({ page }) => {
+  for (const [categoryId, prompt, audioId] of promptParityCases) {
+    await page.goto(`/word-games/${categoryId}/simple-1?parrotE2eLesson=held-cue`);
+    const { main } = game(page);
+    await expect(main.getByRole("heading", { level: 2, name: prompt })).toBeVisible();
+    await expect.poll(async () => (await staticRequests(page)).at(-1)).toEqual({
+      audioId,
+      source: `/assets/audio/${audioId}.mp3`,
+    });
+  }
+});
+
 test("keeps all short-wide controls scrollable and reachable", async ({ page }) => {
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/word-games/animals/simple-1?parrotE2eLesson=held-cue");
@@ -406,17 +425,32 @@ test("keeps the round usable when the browser blocks initial autoplay", async ({
   await expect.poll(() => hasStaticRequest(page, "word-game-animals-cat-prompt")).toBe(true);
 });
 
-test("lays out sibling tiers at large widths and stacks them on small screens", async ({ page }) => {
-  await page.setViewportSize({ height: 900, width: 1280 });
-  await page.goto("/word-games/animals");
-  const headings = page.getByRole("main").getByRole("heading", { level: 2 });
-  await expect(headings).toHaveCount(3);
-  const largeBoxes = await Promise.all((await headings.all()).map(visibleBox));
-  expect(new Set(largeBoxes.map(({ x }) => Math.round(x))).size).toBe(3);
-  expect(new Set(largeBoxes.map(({ y }) => Math.round(y))).size).toBe(1);
+test("keeps all tier headings and quiz cards reachable across required category viewports", async ({ page }) => {
+  const smallWidths = new Set([280, 390, 640, 768]);
+  for (const viewport of responsiveViewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/word-games/animals");
+    const main = page.getByRole("main");
+    const headings = main.getByRole("heading", { level: 2 });
+    const cards = main.getByRole("link", { name: /^(?:Simple|Intermediate|Advanced) Animals:/ });
+    await expect(headings).toHaveCount(3);
+    await expect(cards).toHaveCount(9);
 
-  await page.setViewportSize({ height: 900, width: 390 });
-  const smallBoxes = await Promise.all((await headings.all()).map(visibleBox));
-  expect(new Set(smallBoxes.map(({ y }) => Math.round(y))).size).toBe(3);
-  await expect(page.getByRole("main").getByRole("link", { name: "Advanced Animals: Quick check" })).toBeVisible();
+    for (const locator of [...await headings.all(), ...await cards.all()]) {
+      await locator.scrollIntoViewIfNeeded();
+      await expect(locator).toBeInViewport();
+      await expectHorizontallyContained(page, locator);
+    }
+
+    const headingBoxes = await Promise.all((await headings.all()).map(visibleBox));
+    const cardBoxes = await Promise.all((await cards.all()).slice(0, 3).map(visibleBox));
+    if (smallWidths.has(viewport.width)) {
+      expect(new Set(headingBoxes.map(({ y }) => Math.round(y))).size).toBe(3);
+      expect(cardBoxes.every(({ width }) => width > 0)).toBe(true);
+    } else {
+      expect(new Set(headingBoxes.map(({ x }) => Math.round(x))).size).toBe(3);
+      expect(new Set(headingBoxes.map(({ y }) => Math.round(y))).size).toBe(1);
+      expect(new Set(cardBoxes.map(({ y }) => Math.round(y))).size).toBe(3);
+    }
+  }
 });
