@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { BidiLearnerName, isolateBidiText } from "../app/AppHeader";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
 import {
@@ -244,7 +245,7 @@ export function GuardianLearnerTarget({
               key={profile.id}
             >
               <ActionButton
-                aria-label={profile.name}
+                aria-label={isolateBidiText(profile.name)}
                 aria-pressed={selected}
                 className={cx(
                   "min-h-12 min-w-0 max-w-full grow whitespace-normal px-3 py-2 leading-tight [overflow-wrap:anywhere]",
@@ -257,7 +258,7 @@ export function GuardianLearnerTarget({
                 type="button"
                 variant={selected ? "navy" : "surface"}
               >
-                {profile.name}
+                <BidiLearnerName learnerName={profile.name} />
               </ActionButton>
               {active ? (
                 <span className="shrink-0 rounded-full bg-brand-green px-2 py-1 text-xs font-black leading-tight text-white">

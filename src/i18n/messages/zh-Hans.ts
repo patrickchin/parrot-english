@@ -60,12 +60,6 @@ export const chineseGuardianMessages = {
       "access-changed": "家长访问权限已更改。请重试。",
     },
   },
-  unlock: {
-    title: "切换到家长模式",
-    body: "家长工具和学习活动分别保留在不同模式中。",
-    pending: "正在切换模式…",
-    action: "切换到家长模式",
-  },
   guardianDashboard: {
     title: "家长中心",
     switchToLearner: "切换到学习模式",
@@ -387,7 +381,7 @@ export const chineseGuardianMessages = {
     switchingModes: "正在切换模式…",
     switchModes: "切换模式",
     guardianDashboard: "家长控制面板",
-    manageLearners: "管理学习者",
+    manageLearners: "管理孩子",
     accountPrivacy: "账户与隐私",
     signOut: "退出登录",
     signingOut: "正在退出登录…",
@@ -397,9 +391,6 @@ export const chineseGuardianMessages = {
     grownUpAccessHelper: "家长入口",
     guardianAccessErrorHelper: "请让家长重试。",
     switchToLearnerHelper: "请家长切换到学习模式后继续。",
-    chooseLearnerTitleHelper: "请家长先选择一位孩子",
-    chooseLearnerBodyHelper:
-      "家长可以进入家长模式，选择正在学习的孩子后再返回。",
     savedAnswersHelper: "我们会保存你的回答，家长可以修改你的姓名和年龄。",
     recordingPermissionHelper: "请让家长开启麦克风权限，然后重试。",
     recordingCautionHelper: "录音前请先征得家长同意。",

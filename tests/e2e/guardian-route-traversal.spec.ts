@@ -65,7 +65,7 @@ test("every Guardian dashboard card associates its copy and traverses through it
   await page.goto(scenarioUrl("/guardian"));
   await expect(
     page.getByRole("button", {
-      name: `Profile for ${GUARDIAN_NAME}, guardian mode`,
+      name: `Profile for ⁨${GUARDIAN_NAME}⁩, guardian mode`,
     }),
   ).toBeVisible();
 
@@ -328,7 +328,7 @@ test("Guardian menu follows its exact native Tab order and restores focus on Esc
 }) => {
   await page.goto(scenarioUrl("/guardian"));
   const trigger = page.getByRole("button", {
-    name: `Profile for ${GUARDIAN_NAME}, guardian mode`,
+    name: `Profile for ⁨${GUARDIAN_NAME}⁩, guardian mode`,
   });
   await trigger.focus();
   await page.keyboard.press("Enter");

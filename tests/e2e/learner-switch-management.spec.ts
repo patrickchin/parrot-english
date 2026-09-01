@@ -140,7 +140,7 @@ test("deleting the active learner never chooses its sibling automatically", asyn
   await start.click();
   await expect(page).toHaveURL("/");
   await expect(
-    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
+    page.getByRole("button", { name: /Profile for ⁨Noah⁩, learner mode/ }),
   ).toBeVisible();
 });
 
@@ -183,7 +183,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
   await expect(chooser.dialog.getByText("Noah", { exact: true })).toHaveCount(0);
   await chooser.dialog.getByRole("button", { name: "Cancel" }).click();
 
-  await page.getByRole("button", { name: /Profile for Alex Guardian/ }).click();
+  await page.getByRole("button", { name: /Profile for ⁨Alex Guardian⁩/ }).click();
   await page
     .getByRole("menu", { name: "Account menu" })
     .getByRole("menuitem", { name: "Manage learners" })

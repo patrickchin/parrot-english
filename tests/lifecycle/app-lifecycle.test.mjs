@@ -10279,7 +10279,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       { email: "mia@example.com", password: "correct-horse" },
     ]);
 
-    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
+    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
     await click(button("Sign out"));
     await waitFor(() => text(/Welcome back/));
     noText(/AUTHENTICATED APP/);
@@ -10607,7 +10607,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     const account = await waitFor(() =>
-      button("Profile for Mia, guardian mode"),
+      button("Profile for ⁨Mia⁩, guardian mode"),
     );
     const status = document.querySelector('[role="status"]');
     const alert = document.querySelector('[role="alert"]');
@@ -10715,7 +10715,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       ),
     );
 
-    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
+    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
     await click(button("Sign out"));
     assert.equal(signOutCalls, 1);
 
@@ -10733,7 +10733,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     });
     await waitFor(() => text(/AUTHENTICATED APP/));
     const account = await waitFor(() =>
-      button("Profile for Mia, guardian mode"),
+      button("Profile for ⁨Mia⁩, guardian mode"),
     );
     assert.equal(account.getAttribute("aria-disabled"), null);
 
@@ -10795,10 +10795,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
+    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
     await click(button("Sign out"));
     assert.equal(
-      button("Signing out… Profile for Mia, guardian mode").getAttribute(
+      button("Signing out… Profile for ⁨Mia⁩, guardian mode").getAttribute(
         "aria-disabled",
       ),
       "true",
@@ -10814,7 +10814,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
     });
     const noahAccount = await waitFor(() =>
-      button("Profile for Noah, guardian mode"),
+      button("Profile for ⁨Noah⁩, guardian mode"),
     );
     assert.equal(noahAccount.getAttribute("aria-disabled"), null);
     noText(/Signing out|Sign out did not finish|Sign out again/);
@@ -10858,7 +10858,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
         createElement("p", null, "AUTHENTICATED APP"),
       ),
     );
-    await click(await waitFor(() => button("Profile for Mia, guardian mode")));
+    await click(await waitFor(() => button("Profile for ⁨Mia⁩, guardian mode")));
     await click(button("Sign out"));
     await waitFor(() => button("Sign out again"));
 
@@ -10872,7 +10872,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       });
     });
     const noahAccount = await waitFor(() =>
-      button("Profile for Noah, guardian mode"),
+      button("Profile for ⁨Noah⁩, guardian mode"),
     );
     assert.equal(noahAccount.getAttribute("aria-disabled"), null);
     noText(/Sign out did not finish|Sign out again/);

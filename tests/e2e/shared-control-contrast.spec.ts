@@ -358,7 +358,7 @@ test("shared menu items do not move when hovered", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1440 });
   await page.goto(guardianPath("/lessons"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   const manageLearners = page.getByRole("menuitem", {
     name: "Manage learners",
@@ -426,7 +426,7 @@ for (const viewport of viewports) {
     await preparePage(page, viewport);
     await page.goto(guardianPath("/lessons"));
     await page
-      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
       .click();
 
     await expectPointerStateContrast({
@@ -468,7 +468,7 @@ for (const viewport of viewports) {
     await page.goto(guardianPath("/lessons"));
 
     await page
-      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
       .click();
     await page.getByRole("menuitem", { name: "Account & privacy" }).click();
     await page

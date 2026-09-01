@@ -57,6 +57,12 @@ const bob = {
   id: "learner-bob",
   name: "Bob",
 };
+const rtlRuntimeName = "مريم الببغاء ١٢٣";
+const rtlMary = {
+  ...mia,
+  id: "learner-rtl-mary",
+  name: rtlRuntimeName,
+};
 
 test.afterEach(async () => {
   await cleanupMountedRoots();
@@ -135,7 +141,7 @@ function harness(initialEntry = "/guardian/dubbing", initialLanguage = "en") {
 function namedButton(container, name) {
   const button = [...container.querySelectorAll("button")].find(
     (candidate) =>
-      candidate.getAttribute("aria-label") === name ||
+      candidate.getAttribute("aria-label") === `⁨${name}⁩` ||
       candidate.textContent.trim() === name,
   );
   assert.ok(button, `Expected a button named "${name}".`);
@@ -263,6 +269,21 @@ test("resolves one valid URL target and keeps every learner name visible", async
   );
 });
 
+test("isolates an adversarial runtime learner name in its accessible and visible text", async () => {
+  installRosterFetch(roster(rtlMary.id, [rtlMary]));
+  const container = await mountStrict(
+    harness(`/guardian/dubbing?learnerProfileId=${rtlMary.id}`),
+  );
+
+  await waitFor(() => assert.equal(resolvedTarget(container), rtlMary.id));
+  const target = namedButton(container, rtlRuntimeName);
+  assert.equal(target.getAttribute("aria-label"), `⁨${rtlRuntimeName}⁩`);
+  const visibleName = target.querySelector("bdi");
+  assert.ok(visibleName);
+  assert.equal(visibleName.getAttribute("dir"), "auto");
+  assert.equal(visibleName.textContent, rtlRuntimeName);
+});
+
 test("normalizes a missing target to the owned active learner with replace", async () => {
   installRosterFetch();
   const container = await mountStrict(
@@ -302,7 +323,8 @@ test("defaults to the live learner when the active learner is pending deletion",
   );
   assert.equal(
     [...container.querySelectorAll("button")].some(
-      (candidate) => candidate.getAttribute("aria-label") === pendingSam.name,
+      (candidate) =>
+        candidate.getAttribute("aria-label") === `⁨${pendingSam.name}⁩`,
     ),
     false,
   );
@@ -320,7 +342,8 @@ test("does not resolve an explicit learner target that is pending deletion", asy
   assert.equal(resolvedTarget(container), "unresolved");
   assert.equal(
     [...container.querySelectorAll("button")].some(
-      (candidate) => candidate.getAttribute("aria-label") === pendingSam.name,
+      (candidate) =>
+        candidate.getAttribute("aria-label") === `⁨${pendingSam.name}⁩`,
     ),
     false,
   );

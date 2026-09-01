@@ -1215,7 +1215,7 @@ test("lesson intro and start action stay contained at exactly 667x280", async ({
   });
   const start = intro.getByRole("button", { exact: true, name: "Let's go" });
   const account = page.getByRole("button", {
-    name: "Profile for Mia, learner mode",
+    name: "Profile for ⁨Mia⁩, learner mode",
   });
   const routeBack = page.getByRole("button", { name: "Back to lesson list" });
 
@@ -1250,7 +1250,7 @@ for (const viewport of [
     });
     const start = intro.getByRole("button", { exact: true, name: "Let's go" });
     const account = page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
+      name: "Profile for ⁨Mia⁩, learner mode",
     });
     const routeBack = page.getByRole("button", {
       name: "Back to lesson list",

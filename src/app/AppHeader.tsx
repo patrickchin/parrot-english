@@ -95,6 +95,10 @@ export function BidiLearnerName({
   );
 }
 
+export function isolateBidiText(value: string) {
+  return `\u2068${value}\u2069`;
+}
+
 export function GuardianLearnerContextLabel({
   audience,
   learnerName,
@@ -105,7 +109,7 @@ export function GuardianLearnerContextLabel({
   const { messages: selectedMessages } = useGuardianLanguage();
   const messages =
     audience === "guardian" ? selectedMessages : englishGuardianMessages;
-  const isolatedName = `\u2068${learnerName}\u2069`;
+  const isolatedName = isolateBidiText(learnerName);
   return (
     <p
       aria-label={messages.learners.profile.managing(isolatedName)}
@@ -216,10 +220,11 @@ export function AccountHeader({
   const managedLearnerLabel = learnerLabel.trim() || "Learner";
   const activeLabel =
     activeMode === "guardian" ? guardianLabel : managedLearnerLabel;
+  const isolatedActiveLabel = isolateBidiText(activeLabel);
   const activeModeLabel =
     activeMode === "guardian" ? messages.account.guardian : "Learner";
   const profileLabel = messages.account.profileLabel(
-    activeLabel,
+    isolatedActiveLabel,
     activeMode === "guardian"
       ? language === "en"
         ? "guardian"

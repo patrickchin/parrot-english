@@ -864,7 +864,7 @@ test("a fallback account email stays hidden from learner profile controls", asyn
     const progress = page.getByText("Question 1 of 6", { exact: true });
     const account = page.getByRole("button", {
       exact: true,
-      name: "Profile for Learner, learner mode",
+      name: "Profile for ⁨Learner⁩, learner mode",
     });
     await expect(page.getByText(longAccountEmail, { exact: true })).toHaveCount(0);
 

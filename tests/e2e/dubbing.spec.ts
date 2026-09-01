@@ -541,7 +541,7 @@ for (const viewport of [
         name: "Back to guardian dashboard",
       });
       const account = page.getByRole("button", {
-        name: /Profile for Alex Guardian, guardian mode/,
+        name: /Profile for ⁨Alex Guardian⁩, guardian mode/,
       });
       const pageHeading = page.getByRole("heading", {
         exact: true,
@@ -3016,7 +3016,7 @@ test("completed full playback restores focus to the full-video play action", asy
   await expectDubProject(page);
   await page.getByRole("button", { name: "Play full video" }).click();
   await page
-    .getByRole("button", { name: /Profile for Mia, learner mode/ })
+    .getByRole("button", { name: /Profile for ⁨Mia⁩, learner mode/ })
     .focus();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused({ timeout: 8_000 });
 });

@@ -18,7 +18,9 @@ for (const width of [280, 320, 390]) {
     ];
     await expect(selector).toBeVisible();
     for (const name of longNames) {
-      await expect(page.getByRole("button", { name })).toBeVisible();
+      await expect(
+        page.getByRole("button", { exact: true, name: `⁨${name}⁩` }),
+      ).toBeVisible();
     }
     await expect
       .poll(() =>
@@ -38,19 +40,28 @@ for (const width of [280, 320, 390]) {
       for (const name of visibleNames) {
         await page.keyboard.press("Tab");
         await expect(
-          selector.getByRole("button", { exact: true, name }),
+          selector.getByRole("button", {
+            exact: true,
+            name: `⁨${name}⁩`,
+          }),
         ).toBeFocused();
       }
       await page.keyboard.press("Shift+Tab");
       await expect(
-        selector.getByRole("button", { exact: true, name: longNames[0] }),
+        selector.getByRole("button", {
+          exact: true,
+          name: `⁨${longNames[0]}⁩`,
+        }),
       ).toBeFocused();
       await expect(
-        selector.getByRole("button", { exact: true, name: "Mia" }),
+        selector.getByRole("button", { exact: true, name: "⁨Mia⁩" }),
       ).toHaveAttribute("aria-pressed", "true");
     }
 
-    const noah = page.getByRole("button", { name: longNames[0] });
+    const noah = page.getByRole("button", {
+      exact: true,
+      name: `⁨${longNames[0]}⁩`,
+    });
     await noah.focus();
     await page.keyboard.press("Enter");
     await expect(noah).toHaveAttribute("aria-pressed", "true");
@@ -63,7 +74,10 @@ for (const width of [280, 320, 390]) {
       ),
     );
 
-    const alexandria = page.getByRole("button", { name: longNames[1] });
+    const alexandria = page.getByRole("button", {
+      exact: true,
+      name: `⁨${longNames[1]}⁩`,
+    });
     await alexandria.focus();
     await page.keyboard.press("Space");
     await expect(alexandria).toHaveAttribute("aria-pressed", "true");

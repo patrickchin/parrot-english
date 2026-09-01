@@ -676,7 +676,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    trigger = button("Profile for Mia, learner mode");
+    trigger = button("Profile for ⁨Mia⁩, learner mode");
     await click(trigger);
     const menu = document.querySelector('[role="menu"]');
     assert.ok(menu);
@@ -709,7 +709,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Profile for Patrick, guardian mode"));
+    await click(button("Profile for ⁨Patrick⁩, guardian mode"));
     const menu = document.querySelector('[role="menu"]');
     assert.ok(menu);
     assert.equal(
@@ -755,7 +755,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Profile for Mia, learner mode"));
+    await click(button("Profile for ⁨Mia⁩, learner mode"));
     const menu = document.querySelector('[role="menu"]');
     assert.equal(menu.getAttribute("aria-label"), "Account menu");
     assert.match(menu.textContent, /Grown-up access/);
@@ -795,7 +795,7 @@ describe("keyboard accessibility lifecycles", () => {
         ),
       ),
     );
-    await click(button("Patrick的档案，家长模式"));
+    await click(button("⁨Patrick⁩的档案，家长模式"));
     const guardianMenu = document.querySelector('[role="menu"]');
     assert.equal(
       document.querySelector("aside").getAttribute("aria-label"),
@@ -804,7 +804,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(guardianMenu.getAttribute("aria-label"), "账户菜单");
     assert.deepEqual(
       [...guardianMenu.children].map((item) => item.textContent.trim()),
-      ["家长控制面板", "管理学习者", "账户与隐私", "退出登录"],
+      ["家长控制面板", "管理孩子", "账户与隐私", "退出登录"],
     );
   });
 
@@ -1015,7 +1015,7 @@ describe("keyboard accessibility lifecycles", () => {
       );
 
       await click(
-        await waitFor(() => button("Profile for Patrick, guardian mode")),
+        await waitFor(() => button("Profile for ⁨Patrick⁩, guardian mode")),
       );
       assert.ok(document.querySelector('[role="menu"]'));
 
@@ -1027,7 +1027,7 @@ describe("keyboard accessibility lifecycles", () => {
         await act(async () => notifyGuardianAccessRequired());
       }
 
-      await waitFor(() => button("Profile for Learner, learner mode"));
+      await waitFor(() => button("Profile for ⁨Learner⁩, learner mode"));
       assert.ok(
         !document.querySelector('[role="dialog"]'),
         `Dialog remained exposed after ${transition}`,
@@ -1111,7 +1111,7 @@ describe("keyboard accessibility lifecycles", () => {
 
     canRecover = true;
     await click(button("Try again"));
-    await waitFor(() => button("Profile for Patrick, guardian mode"));
+    await waitFor(() => button("Profile for ⁨Patrick⁩, guardian mode"));
     assert.equal(
       [...document.querySelectorAll('[role="alert"]')].filter(
         (alert) => alert.textContent.trim() !== "",
@@ -1140,7 +1140,7 @@ describe("keyboard accessibility lifecycles", () => {
     await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
 
     await click(
-      await waitFor(() => button("Profile for Patrick, guardian mode")),
+      await waitFor(() => button("Profile for ⁨Patrick⁩, guardian mode")),
     );
     assert.deepEqual(
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
@@ -1189,7 +1189,7 @@ describe("keyboard accessibility lifecycles", () => {
     );
 
     await click(
-      await waitFor(() => button("Profile for Patrick, guardian mode")),
+      await waitFor(() => button("Profile for ⁨Patrick⁩, guardian mode")),
     );
     assert.deepEqual(
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
@@ -1203,9 +1203,9 @@ describe("keyboard accessibility lifecycles", () => {
       ],
     );
     await click(button("Guardian dashboard"));
-    await click(button("Profile for Patrick, guardian mode"));
+    await click(button("Profile for ⁨Patrick⁩, guardian mode"));
     await click(button("Manage learners"));
-    await click(button("Profile for Patrick, guardian mode"));
+    await click(button("Profile for ⁨Patrick⁩, guardian mode"));
     await click(button("Account & privacy"));
     assert.deepEqual(navigations, [
       "/guardian",
@@ -1242,11 +1242,11 @@ describe("keyboard accessibility lifecycles", () => {
     );
 
     await click(
-      await waitFor(() => button("Profile for Learner, learner mode")),
+      await waitFor(() => button("Profile for ⁨Learner⁩, learner mode")),
     );
     await click(button("Grown-up accessSwitch modes"));
     await waitFor(() => assert.deepEqual(navigations, ["/guardian/learners"]));
-    await click(button("Profile for Patrick, guardian mode"));
+    await click(button("Profile for ⁨Patrick⁩, guardian mode"));
     assert.deepEqual(
       [...document.querySelectorAll('[role="menuitem"]')].map((item) =>
         item.textContent.trim(),
@@ -1323,7 +1323,7 @@ describe("keyboard accessibility lifecycles", () => {
     });
     await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
     await click(
-      await waitFor(() => button("Profile for Learner, learner mode")),
+      await waitFor(() => button("Profile for ⁨Learner⁩, learner mode")),
     );
     await click(button("Grown-up accessSwitch modes"));
     await waitFor(() =>
@@ -1343,7 +1343,7 @@ describe("keyboard accessibility lifecycles", () => {
       "Guardian access could not be checked. Please try again.",
     );
     assert.equal(document.querySelector('[role="dialog"]'), null);
-    assert.ok(button("Profile for Learner, learner mode"));
+    assert.ok(button("Profile for ⁨Learner⁩, learner mode"));
   });
 
   it("localizes Guardian access checks but keeps learner checks English", async () => {
@@ -1487,7 +1487,7 @@ describe("keyboard accessibility lifecycles", () => {
     });
     await mountStrict(createElement(TestAuthGate, null, "LEARNER APP"));
     const trigger = await waitFor(() =>
-      button("Profile for Learner, learner mode"),
+      button("Profile for ⁨Learner⁩, learner mode"),
     );
     await click(trigger);
     const guardian = button("Grown-up accessSwitch modes");
@@ -1521,7 +1521,7 @@ describe("keyboard accessibility lifecycles", () => {
     );
 
     await click(
-      await waitFor(() => button("Profile for Learner, learner mode")),
+      await waitFor(() => button("Profile for ⁨Learner⁩, learner mode")),
     );
     await click(button("Grown-up accessSwitch modes"));
 
@@ -1582,7 +1582,7 @@ describe("keyboard accessibility lifecycles", () => {
       );
       if (!guardian) {
         await click(
-          await waitFor(() => button("Profile for Mia, learner mode")),
+          await waitFor(() => button("Profile for ⁨Mia⁩, learner mode")),
         );
         guardian = button("Grown-up accessSwitch modes");
       }
@@ -1594,7 +1594,7 @@ describe("keyboard accessibility lifecycles", () => {
 
     await unlock();
     await act(async () => access.lock());
-    await waitFor(() => button("Profile for Mia, learner mode"));
+    await waitFor(() => button("Profile for ⁨Mia⁩, learner mode"));
     await unlock();
     await waitFor(() => assert.equal(announcements.length, 3));
     observer.disconnect();
@@ -1635,7 +1635,7 @@ describe("keyboard accessibility lifecycles", () => {
         ),
       ),
     );
-    await click(await waitFor(() => button("Profile for Mia, learner mode")));
+    await click(await waitFor(() => button("Profile for ⁨Mia⁩, learner mode")));
     await click(button("Grown-up accessSwitch modes"));
     const liveStatuses = document.querySelectorAll(
       'span[role="status"][aria-live="polite"]',
@@ -1664,7 +1664,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    const trigger = button("Profile for Patrick, guardian mode");
+    const trigger = button("Profile for ⁨Patrick⁩, guardian mode");
     trigger.focus();
     await press(trigger, "ArrowDown");
     const items = [...document.querySelectorAll('[role="menuitem"]')];
@@ -1720,7 +1720,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Profile for Mia, learner mode"));
+    await click(button("Profile for ⁨Mia⁩, learner mode"));
     const menu = document.querySelector('[role="menu"]');
     assert.ok(menu);
     await waitFor(() =>

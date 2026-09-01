@@ -64,12 +64,6 @@ export const englishGuardianMessages = {
       "access-changed": "Guardian access changed. Please try again.",
     },
   },
-  unlock: {
-    title: "Switch to guardian mode",
-    body: "Guardian tools and learner activities stay in separate modes.",
-    pending: "Switching modes…",
-    action: "Switch to guardian mode",
-  },
   guardianDashboard: {
     title: "Guardian dashboard",
     switchToLearner: "Switch to learner",
@@ -427,8 +421,6 @@ export const englishGuardianMessages = {
     grownUpAccessHelper: "",
     guardianAccessErrorHelper: "",
     switchToLearnerHelper: "",
-    chooseLearnerTitleHelper: "",
-    chooseLearnerBodyHelper: "",
     savedAnswersHelper: "",
     recordingPermissionHelper: "",
     recordingCautionHelper: "",

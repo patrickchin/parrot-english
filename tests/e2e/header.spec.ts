@@ -454,7 +454,7 @@ for (const route of routes) {
       });
       const accountMenu = page.getByRole("button", {
         name: new RegExp(
-          `Profile for ${mode === "guardian" ? "Alex Guardian" : "Mia"}, ${mode} mode`,
+          `Profile for ⁨${mode === "guardian" ? "Alex Guardian" : "Mia"}⁩, ${mode} mode`,
         ),
       });
       const accountBox = await expectInsideViewport(account, viewport);
@@ -636,12 +636,12 @@ test("guardian profile keeps its identity in the account trigger at every header
   await page.goto(guardianPath("/guardian"));
 
   const account = page.getByRole("button", {
-    name: `Profile for ${longAccountName}, guardian mode`,
+    name: `Profile for ⁨${longAccountName}⁩, guardian mode`,
   });
   const closedBox = await visibleBox(account);
   expect(closedBox.width).toBe(closedBox.height);
   await expect(account).toHaveAccessibleName(
-    `Profile for ${longAccountName}, guardian mode`,
+    `Profile for ⁨${longAccountName}⁩, guardian mode`,
   );
   const compactName = account.getByText(longAccountName, { exact: true });
   await expect(compactName).toHaveAttribute("dir", "auto");
@@ -664,7 +664,7 @@ test("guardian profile keeps its identity in the account trigger at every header
   await page.setViewportSize({ height: 900, width: 1360 });
   await page.goto(guardianPath("/guardian"));
   const wideAccount = page.getByRole("button", {
-    name: `Profile for ${longAccountName}, guardian mode`,
+    name: `Profile for ⁨${longAccountName}⁩, guardian mode`,
   });
   await expect(wideAccount).toContainText(longAccountName);
   await expect(wideAccount).toContainText("Guardian");
@@ -677,7 +677,7 @@ test("guardian profile keeps its identity in the account trigger at every header
   await page.goto(guardianPath("/guardian"));
   await expect(
     page.getByRole("button", {
-      name: `Profile for ${longAccountEmail}, guardian mode`,
+      name: `Profile for ⁨${longAccountEmail}⁩, guardian mode`,
     }),
   ).toBeVisible();
 });
@@ -728,12 +728,14 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     ).toBeFocused();
 
     const account = page.getByRole("button", {
-      name: /^Profile for .+, guardian mode$/,
+      exact: true,
+      name: `Profile for ⁨${currentCase.identity.name}⁩, guardian mode`,
     });
     await expect(account).toHaveAccessibleName(
-      `Profile for ${currentCase.identity.name}, guardian mode`,
+      `Profile for ⁨${currentCase.identity.name}⁩, guardian mode`,
     );
     const name = account.getByText(currentCase.identity.name, { exact: true });
+    expect(await name.evaluate((element) => element.tagName)).toBe("BDI");
     await expect(name).toHaveAttribute("dir", "auto");
     expect(
       await name.evaluate((element) => getComputedStyle(element).direction),
@@ -935,7 +937,7 @@ for (const viewport of [
     });
     const back = page.getByRole("button", { name: "Switch to learner" });
     const account = page.getByRole("button", {
-      name: "Profile for Alex Guardian, guardian mode",
+      name: "Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     await account.click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -990,7 +992,7 @@ for (const key of ["Enter", "Space"]) {
     await page.goto(guardianPath("/guardian"));
 
     const account = page.getByRole("button", {
-      name: "Profile for Alex Guardian, guardian mode",
+      name: "Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     await account.click();
     await page.getByRole("menuitem", { name: "Sign out" }).click();
@@ -1009,7 +1011,7 @@ for (const key of ["Enter", "Space"]) {
 
     const pendingAccount = page.getByRole("button", {
       exact: true,
-      name: "Signing out… Profile for Alex Guardian, guardian mode",
+      name: "Signing out… Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     await expect(pendingAccount).toBeFocused();
     await expect(
@@ -1041,12 +1043,12 @@ test("wide pending sign out keeps its established 180px frame", async ({
   await page.goto(guardianPath("/guardian"));
 
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   const pendingAccount = page.getByRole("button", {
     exact: true,
-    name: "Signing out… Profile for Alex Guardian, guardian mode",
+    name: "Signing out… Profile for ⁨Alex Guardian⁩, guardian mode",
   });
   expect((await visibleBox(pendingAccount)).width).toBe(180);
 
@@ -1062,7 +1064,7 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   await page.goto("/lessons");
 
   const accountMenu = page.getByRole("button", {
-    name: "Profile for Mia, learner mode",
+    name: "Profile for ⁨Mia⁩, learner mode",
   });
   await expect(accountMenu).toHaveAttribute("aria-expanded", "false");
 
@@ -1087,7 +1089,7 @@ test("the learner menu switches to a sibling and returns to learner home", async
   );
 
   await page
-    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .getByRole("button", { name: "Profile for ⁨Mia⁩, learner mode" })
     .click();
   await page.getByRole("menuitem", { name: "Switch learner" }).click();
 
@@ -1101,7 +1103,7 @@ test("the learner menu switches to a sibling and returns to learner home", async
     page.getByRole("navigation", { name: "Learning activities" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Profile for Noah, learner mode" }),
+    page.getByRole("button", { name: "Profile for ⁨Noah⁩, learner mode" }),
   ).toBeVisible();
 });
 
@@ -1110,7 +1112,7 @@ test("Guardian menu opens the protected Account & privacy page with deletion onl
 }) => {
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
 
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1165,7 +1167,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
     await page.setViewportSize(viewport);
     await page.goto(guardianPath("/guardian"));
     await page
-      .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
       .click();
 
     const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1234,7 +1236,7 @@ test("switching to guardian mode reaches learner details through Manage learners
 }) => {
   await page.goto("/");
   await page
-    .getByRole("button", { name: "Profile for Mia, learner mode" })
+    .getByRole("button", { name: "Profile for ⁨Mia⁩, learner mode" })
     .click();
   await page.getByRole("menuitem", { name: /Grown-up access/ }).click();
 
@@ -1281,7 +1283,7 @@ test("forced colors keeps account exit actions visibly focused", async ({
   ).toBeFocused();
 
   const trigger = page.getByRole("button", {
-    name: "Profile for Alex Guardian, guardian mode",
+    name: "Profile for ⁨Alex Guardian⁩, guardian mode",
   });
   await trigger.press("ArrowDown");
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -1315,7 +1317,7 @@ test("Account & privacy explains caregiver facts before optional technical detai
   await page.setViewportSize(viewport);
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
@@ -1403,7 +1405,7 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
   });
   await page.goto(guardianPath("/guardian"));
   await page
-    .getByRole("button", { name: "Profile for Alex Guardian, guardian mode" })
+    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
   await page.getByRole("menuitem", { name: "Account & privacy" }).click();
 
@@ -1461,7 +1463,7 @@ test("account menu stays visible after scrolling a short lesson list", async ({
     .toBeGreaterThan(0);
 
   const accountMenu = page.getByRole("button", {
-    name: "Profile for Mia, learner mode",
+    name: "Profile for ⁨Mia⁩, learner mode",
   });
   await expectInsideViewport(accountMenu, viewport);
 });
@@ -1474,7 +1476,7 @@ test("desktop header controls share one rendered chrome and focus outline", asyn
 
   const controls = [
     page.getByRole("button", {
-      name: "Profile for Mia, learner mode",
+      name: "Profile for ⁨Mia⁩, learner mode",
     }),
     page.getByRole("button", { name: "Back to lesson list" }),
   ];

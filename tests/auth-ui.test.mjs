@@ -520,7 +520,7 @@ test("background session refetches preserve mounted lesson children", () => {
   );
 
   assert.match(html, /BACKGROUND REFRESH CHILD/);
-  assert.match(html, /aria-label="Profile for Learner, learner mode"/);
+  assert.match(html, /aria-label="Profile for ⁨Learner⁩, learner mode"/);
   assert.doesNotMatch(html, /Checking your session…/);
 });
 
@@ -671,7 +671,7 @@ test("guardian account controls expose signing-out progress persistently", () =>
 
   assert.match(
     html,
-    /aria-label="Signing out… Profile for Patrick, guardian mode"/,
+    /aria-label="Signing out… Profile for ⁨Patrick⁩, guardian mode"/,
   );
   assert.match(html, /aria-disabled="true"/);
   assert.match(html, /aria-atomic="true" aria-live="polite"[^>]*role="status"/);
@@ -680,7 +680,7 @@ test("guardian account controls expose signing-out progress persistently", () =>
   assert.match(html, /aria-expanded="false"/);
   assert.doesNotMatch(html, /<aside[^>]*aria-busy/);
   const accountButton = html.match(
-    /<button[^>]*aria-label="Signing out… Profile for Patrick, guardian mode"[\s\S]*?<\/button>/,
+    /<button[^>]*aria-label="Signing out… Profile for ⁨Patrick⁩, guardian mode"[\s\S]*?<\/button>/,
   )?.[0];
   assert.ok(accountButton);
   assert.doesNotMatch(accountButton, /title=/);
@@ -717,7 +717,7 @@ test("guardian account controls pre-mount one sign-out alert beside a specific r
   );
   assert.match(
     failedBar,
-    /aria-label="Profile for Patrick, guardian mode"[\s\S]*Sign out again[\s\S]*<\/button>/,
+    /aria-label="Profile for ⁨Patrick⁩, guardian mode"[\s\S]*Sign out again[\s\S]*<\/button>/,
   );
   assert.equal((failedBar.match(/role="alert"/g) ?? []).length, 1);
   assert.doesNotMatch(failedBar, /Unable to sign you out|Please try again/);
@@ -732,7 +732,7 @@ test("learner mode names the active learner in the compact profile trigger", () 
   assert.ok(bar);
   assert.match(
     bar,
-    /<button[^>]*aria-label="Profile for Mia, learner mode"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
+    /<button[^>]*aria-label="Profile for ⁨Mia⁩, learner mode"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
   );
   assert.match(bar, />Mia</);
   assert.match(bar, />Learner</);
@@ -743,10 +743,42 @@ test("learner mode names the active learner in the compact profile trigger", () 
 test("guardian mode names the account holder in the compact profile trigger", () => {
   const html = renderAccountHeader({ activeMode: "guardian" });
 
-  assert.match(html, /aria-label="Profile for Patrick, guardian mode"/);
+  assert.match(html, /aria-label="Profile for ⁨Patrick⁩, guardian mode"/);
   assert.match(html, />Patrick</);
   assert.match(html, />Guardian</);
-  assert.doesNotMatch(html, /aria-label="Profile for Mia, learner mode"/);
+  assert.doesNotMatch(html, /aria-label="Profile for ⁨Mia⁩, learner mode"/);
+});
+
+test("account triggers isolate adversarial runtime identities while preserving visible bidi direction", () => {
+  const cjkName = "家庭学习者🦜".repeat(35);
+  const rtlName = "اسم-العائلة-".repeat(24);
+  const guardian = renderAccountHeader({
+    activeMode: "guardian",
+    guardianLabel: cjkName,
+    isSigningOut: true,
+  });
+  const learner = renderAccountHeader({ learnerLabel: rtlName });
+
+  assert.ok(
+    guardian.includes(
+      `aria-label="Signing out… Profile for ⁨${cjkName}⁩, guardian mode"`,
+    ),
+  );
+  assert.ok(
+    learner.includes(
+      `aria-label="Profile for ⁨${rtlName}⁩, learner mode"`,
+    ),
+  );
+  assert.ok(
+    guardian.includes(
+      `<bdi class="min-w-0 [overflow-wrap:anywhere]" dir="auto">${cjkName}</bdi>`,
+    ),
+  );
+  assert.ok(
+    learner.includes(
+      `<bdi class="min-w-0 [overflow-wrap:anywhere]" dir="auto">${rtlName}</bdi>`,
+    ),
+  );
 });
 
 test("guardian learner context names the managed learner without clipping long names", () => {

@@ -116,7 +116,7 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
     guardianMenu.getByRole("menuitem", { name: "家长控制面板" }),
   ).toBeVisible();
   await expect(
-    guardianMenu.getByRole("menuitem", { name: "管理学习者" }),
+    guardianMenu.getByRole("menuitem", { name: "管理孩子" }),
   ).toBeVisible();
   await expect(
     guardianMenu.getByRole("menuitem", { name: "账户与隐私" }),

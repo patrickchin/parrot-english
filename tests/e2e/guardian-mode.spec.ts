@@ -116,7 +116,7 @@ for (const viewport of requiredViewports) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     const trigger = page.getByRole("button", {
-      name: /Profile for Mia, learner mode/,
+      name: /Profile for ⁨Mia⁩, learner mode/,
     });
     const menu = await openLearnerAccountMenu(page);
     const panel = menu.locator("..");
@@ -176,7 +176,7 @@ test("the browser Guardian API ignores request bodies", async ({
 }) => {
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
+    page.getByRole("button", { name: /Profile for ⁨Mia⁩, learner mode/ }),
   ).toBeVisible();
 
   const attempts = await page.evaluate(async () => {
@@ -277,7 +277,7 @@ test("successful switch opens guardian management and announces the mode", async
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu).toHaveCount(0);
   await page
-    .getByRole("button", { name: /Profile for Alex Guardian, guardian mode/ })
+    .getByRole("button", { name: /Profile for ⁨Alex Guardian⁩, guardian mode/ })
     .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
@@ -296,7 +296,7 @@ test("automatic Guardian access resumes the current deep link", async ({
   const requestedUrl = "/guardian/dubbing?section=recordings#clips";
   await page.goto("/");
   await expect(
-    page.getByRole("button", { name: /Profile for Mia, learner mode/ }),
+    page.getByRole("button", { name: /Profile for ⁨Mia⁩, learner mode/ }),
   ).toBeVisible();
   await page.evaluate((destination) => {
     window.history.pushState(null, "", destination);
@@ -396,7 +396,7 @@ for (const viewport of lessonPrivacyViewports) {
     await page.goto(guardianUrl("/guardian/learners/e2e-learner", "guardian"));
 
     const account = page.getByRole("button", {
-      name: "Profile for Alex Guardian, guardian mode",
+      name: "Profile for ⁨Alex Guardian⁩, guardian mode",
     });
     const back = page.getByRole("button", { exact: true, name: "Back" });
     const consentSection = page.getByRole("region", {
@@ -558,7 +558,7 @@ test("a valid guardian unlock resumes after refresh", async ({ page }) => {
   ).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: /Profile for Alex Guardian, guardian mode/,
+      name: /Profile for ⁨Alex Guardian⁩, guardian mode/,
     }),
   ).toBeVisible();
 });
@@ -569,7 +569,7 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
   await page.goto(guardianUrl("/", "guardian"));
   await expect(
     page.getByRole("button", {
-      name: /Profile for Alex Guardian, guardian mode/,
+      name: /Profile for ⁨Alex Guardian⁩, guardian mode/,
     }),
   ).toBeVisible();
   const expiresAtBeforeRefresh = await page.evaluate(async () => {
@@ -581,7 +581,7 @@ test("a seeded guardian expiry stays fixed across refresh", async ({
   await page.reload();
   await expect(
     page.getByRole("button", {
-      name: /Profile for Alex Guardian, guardian mode/,
+      name: /Profile for ⁨Alex Guardian⁩, guardian mode/,
     }),
   ).toBeVisible();
 
@@ -674,7 +674,7 @@ test("successful lock redirects the stale route once and permits a later direct 
     page.getByRole("navigation", { name: "Learning activities" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: /Profile for Noah, learner mode/ }),
+    page.getByRole("button", { name: /Profile for ⁨Noah⁩, learner mode/ }),
   ).toBeVisible();
 
   await page.goto("/guardian/dubbing");
@@ -795,7 +795,7 @@ test("direct switching closes learner menu while guardian-menu keys follow rende
 }) => {
   await page.goto("/");
   const trigger = page.getByRole("button", {
-    name: /Profile for Mia, learner mode/,
+    name: /Profile for ⁨Mia⁩, learner mode/,
   });
   await trigger.click();
   const learnerMenu = page.getByRole("menu", { name: "Account menu" });
@@ -809,7 +809,7 @@ test("direct switching closes learner menu while guardian-menu keys follow rende
 
   await page.goto(guardianUrl("/guardian", "guardian"));
   const guardianTrigger = page.getByRole("button", {
-    name: /Profile for Alex Guardian, guardian mode/,
+    name: /Profile for ⁨Alex Guardian⁩, guardian mode/,
   });
   await guardianTrigger.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
@@ -908,7 +908,7 @@ for (const viewport of [
       "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=held-cue-no-consent",
     );
     const profile = page.getByRole("button", {
-      name: /Profile for Mia, learner mode/,
+      name: /Profile for ⁨Mia⁩, learner mode/,
     });
     const back = page.getByRole("button", { name: "Back to lesson list" });
     const start = page.getByRole("button", { exact: true, name: "Let's go" });
