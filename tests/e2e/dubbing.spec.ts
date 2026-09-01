@@ -62,6 +62,24 @@ async function expectNoLearnerAdultControls(page: Page) {
   ).toHaveCount(0);
 }
 
+async function expectStaticPresentationText(target: Locator) {
+  await expect(target).toHaveCount(1);
+  const semantics = await target.evaluate((element) => ({
+    hasLiveRegion: element.closest("[aria-live]") !== null,
+    hasStatusRole: element.closest('[role~="status"], output') !== null,
+    nativeFocusTarget: element.matches(
+      'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, object, embed, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])',
+    ),
+    tabIndex: (element as HTMLElement).tabIndex,
+  }));
+  expect(semantics).toEqual({
+    hasLiveRegion: false,
+    hasStatusRole: false,
+    nativeFocusTarget: false,
+    tabIndex: -1,
+  });
+}
+
 async function visibleBox(locator: Locator) {
   await expect(locator).toBeVisible();
   return boundingBoxOrThrow(locator);
@@ -143,6 +161,22 @@ async function dubStoreSnapshot(page: Page): Promise<DubStoreSnapshot> {
     if (!store) throw new Error("Dub store is missing.");
     return store.snapshot();
   });
+}
+
+function expectSingleActionContextCleanup(
+  baseline: DubStoreSnapshot,
+  snapshot: DubStoreSnapshot,
+) {
+  // Subtract completed selected-line waveform work captured by the baseline.
+  const created = snapshot.audioContextsCreated - baseline.audioContextsCreated;
+  const closed = snapshot.audioContextCloses - baseline.audioContextCloses;
+  expect(created).toBe(1);
+  expect(closed).toBe(1);
+  expect(created).toBe(closed);
+  expect(
+    snapshot.audioContextDoubleCloses - baseline.audioContextDoubleCloses,
+  ).toBe(0);
+  expect(snapshot.audioContextDoubleCloses).toBe(0);
 }
 
 function revocationCount(snapshot: DubStoreSnapshot, url: string) {
@@ -1539,8 +1573,7 @@ test("starts capture on the authored downbeat and records exactly the line windo
   await page.getByRole("button", { name: "Record line" }).click();
   const countInTwo = page.getByText("Count-in 2", { exact: true });
   await expect(countInTwo).toBeVisible();
-  await expect(countInTwo).not.toBeFocused();
-  await expect(countInTwo).not.toHaveAttribute("aria-live", "polite");
+  await expectStaticPresentationText(countInTwo);
   await expect(page.getByRole("status", { name: "Dub updates" })).not.toContainText(
     "Count-in 2",
   );
@@ -1554,7 +1587,7 @@ test("starts capture on the authored downbeat and records exactly the line windo
   await page.clock.runFor(definition.music.countInBeatMs / 20);
   const countInOne = page.getByText("Count-in 1", { exact: true });
   await expect(countInOne).toBeVisible();
-  await expect(countInOne).not.toBeFocused();
+  await expectStaticPresentationText(countInOne);
   await expect(page.getByRole("status", { name: "Dub updates" })).not.toContainText(
     "Count-in 1",
   );
@@ -1568,10 +1601,12 @@ test("starts capture on the authored downbeat and records exactly the line windo
     "0:00 / 0:04",
   );
   const heading = page.getByRole("heading", { level: 1, name: line.text });
-  await expect(heading.getByText("Five", { exact: true })).toHaveAttribute(
+  const firstActiveWord = heading.getByText("Five", { exact: true });
+  await expect(firstActiveWord).toHaveAttribute(
     "aria-current",
     "true",
   );
+  await expectStaticPresentationText(firstActiveWord);
   snapshot = await dubStoreSnapshot(page);
   expect(snapshot.recorderStartCount).toBe(1);
   expect(snapshot.recorderStartWallMs[0] - countInStartedAt).toBeGreaterThanOrEqual(
@@ -1616,6 +1651,7 @@ for (const cancelBeat of [2, 1] as const) {
     await expectDubProject(page);
     await openScene(page, 1);
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+    const baseline = await dubStoreSnapshot(page);
 
     await page.getByRole("button", { name: "Record again" }).click();
     await expect(page.getByText("Count-in 2", { exact: true })).toBeVisible();
@@ -1635,9 +1671,8 @@ for (const cancelBeat of [2, 1] as const) {
     expect(snapshot.recorderStopWallMs).toEqual([]);
     expect(snapshot.uploads).toEqual([]);
     expect(snapshot.createdObjectUrls).toEqual([]);
-    expect(snapshot.microphoneTrackStops).toBe(1);
-    expect(snapshot.audioContextCloses).toBe(1);
-    expect(snapshot.audioContextDoubleCloses).toBe(0);
+    expect(snapshot.microphoneTrackStops - baseline.microphoneTrackStops).toBe(1);
+    expectSingleActionContextCleanup(baseline, snapshot);
   });
 }
 
@@ -1650,6 +1685,7 @@ for (const scenario of ["recorder-start-failed", "melody-start-failed"] as const
     await expectDubProject(page);
     await openScene(page, 1);
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+    const baseline = await dubStoreSnapshot(page);
 
     await page.getByRole("button", { name: "Record again" }).click();
     if (scenario === "recorder-start-failed") {
@@ -1674,9 +1710,8 @@ for (const scenario of ["recorder-start-failed", "melody-start-failed"] as const
     expect(snapshot.recorderStopWallMs).toEqual([]);
     expect(snapshot.uploads).toEqual([]);
     expect(snapshot.createdObjectUrls).toEqual([]);
-    expect(snapshot.microphoneTrackStops).toBe(1);
-    expect(snapshot.audioContextCloses).toBe(1);
-    expect(snapshot.audioContextDoubleCloses).toBe(0);
+    expect(snapshot.microphoneTrackStops - baseline.microphoneTrackStops).toBe(1);
+    expectSingleActionContextCleanup(baseline, snapshot);
     const melodyStarts = snapshot.scheduledBacking.filter(
       ({ type }) => type === "triangle",
     );
@@ -1713,6 +1748,8 @@ async function installControllablePlaybackFrames(page: Page) {
   });
 }
 
+const FULL_PLAYBACK_START_LEAD_MS = 120;
+
 async function flushPlaybackFrame(page: Page) {
   await page.evaluate(() => {
     (
@@ -1726,12 +1763,14 @@ async function expectFirstFullPlaybackWordTransition(page: Page) {
   const guide = page.getByRole("region", { name: "Karaoke guide" });
   const ducks = line.words[2];
   const went = line.words[3];
-  await page.clock.runFor((120 + line.cueMs + ducks.atMs) / 20);
+  await page.clock.runFor(
+    (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) / 20,
+  );
   await flushPlaybackFrame(page);
   await expect(guide).toBeVisible();
   const activeWord = guide.locator('[aria-current="true"]');
   await expect(activeWord).toHaveText("ducks");
-  await expect(activeWord).not.toBeFocused();
+  await expectStaticPresentationText(activeWord);
   await expect(page.getByRole("status", { name: "Dub updates" })).not.toContainText(
     "ducks",
   );
@@ -1739,7 +1778,7 @@ async function expectFirstFullPlaybackWordTransition(page: Page) {
   await page.clock.runFor((went.atMs - ducks.atMs) / 20);
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("went");
-  await expect(activeWord).not.toBeFocused();
+  await expectStaticPresentationText(activeWord);
 }
 
 test("project full playback changes its active word at the authored boundary", async ({ page }) => {
@@ -1804,19 +1843,22 @@ test("editor actions keep the complete lyric heading and non-live word semantics
   const hiddenGuideGraphic = guide.locator('svg[aria-hidden="true"]');
   await expect(hiddenGuideGraphic).toHaveCount(1);
   await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+  await installControllablePlaybackFrames(page);
 
   await page.getByRole("button", { name: "Hear line" }).click();
-  await page.clock.runFor(100);
-  const firstWord = heading.getByText("Five", { exact: true });
+  await flushPlaybackFrame(page);
+  const activeWord = heading.locator('[aria-current="true"]');
+  await expect(activeWord).toHaveText("Five");
   await expect(heading).toHaveAccessibleName(line.text);
-  await expect(firstWord).not.toBeFocused();
-  await expect(firstWord).not.toHaveAttribute("aria-live", "polite");
+  await expectStaticPresentationText(activeWord);
   await page.clock.runFor(line.durationMs / 20 + 20);
   await expect(page.getByRole("button", { name: "Hear line" })).toBeFocused();
 
   await page.getByRole("button", { name: "Play my recording" }).click();
   await expect(page.getByRole("button", { name: "Stop my recording" })).toBeVisible();
-  await page.clock.runFor(100);
+  await flushPlaybackFrame(page);
+  await expect(activeWord).toHaveText("Five");
+  await expectStaticPresentationText(activeWord);
   await expect(heading).toHaveAccessibleName(line.text);
   await expect(page.getByRole("status", { name: "Dub updates" })).not.toContainText(
     line.text,
@@ -2102,12 +2144,16 @@ test("reduced motion keeps timed words discrete and repeated count-in cleanup id
   const line = definition.lines[0];
   const ducks = line.words[2];
   const went = line.words[3];
-  await page.clock.runFor((120 + line.cueMs + ducks.atMs) / 20);
+  await page.clock.runFor(
+    (FULL_PLAYBACK_START_LEAD_MS + line.cueMs + ducks.atMs) / 20,
+  );
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("ducks");
+  await expectStaticPresentationText(activeWord);
   await page.clock.runFor((went.atMs - ducks.atMs) / 20);
   await flushPlaybackFrame(page);
   await expect(activeWord).toHaveText("went");
+  await expectStaticPresentationText(activeWord);
   await page.getByRole("button", { name: "Stop full video" }).click();
   await page.clock.runFor(20);
   await expect(page.getByRole("button", { name: "Play full video" })).toBeFocused();
@@ -2136,14 +2182,13 @@ for (const viewport of [
   { height: 360, width: 640 },
   { height: 900, width: 1280 },
 ]) {
-  test(`lyric, feedback, controls, navigation, and errors remain reachable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`count-in, recording, navigation, and errors remain reachable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    const definition = DUB_DEFINITIONS[0];
+    const clockStartedAt = Date.parse("2026-09-01T08:00:00.000Z");
     await page.setViewportSize(viewport);
     await page.goto(
       "/dubs/five-little-ducks?parrotE2eDub=complete&parrotE2eMicrophone=denied",
     );
-    await expect(
-      page.getByRole("heading", { level: 1, name: "Five Little Ducks" }),
-    ).toBeVisible();
     await expectDubProject(page);
     await openScene(page, 1);
 
@@ -2161,7 +2206,6 @@ for (const viewport of [
       name: "Page navigation",
     });
     const linePosition = page.getByText("Line 1 of 4", { exact: true });
-
     await record.click();
     const error = page.getByRole("alert").filter({
       hasText: "The microphone is off.",
@@ -2182,12 +2226,71 @@ for (const viewport of [
     }
     await expectNoHorizontalOverflow(page);
 
+    await page.clock.install({ time: clockStartedAt });
+    await page.goto("/dubs/five-little-ducks?parrotE2eDub=complete");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Five Little Ducks" }),
+    ).toBeVisible();
+    await expectDubProject(page);
+    await openScene(page, 1);
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+
+    await record.click();
+    const countInTwo = page.getByText("Count-in 2", { exact: true });
+    const cancel = page.getByRole("button", { name: "Cancel count-in" });
+    await expect(countInTwo).toBeVisible();
+    await expectStaticPresentationText(countInTwo);
+    for (const surface of [
+      lyric,
+      guide,
+      countInTwo,
+      cancel,
+      linePosition,
+      next,
+      routeNavigation,
+    ]) {
+      await surface.scrollIntoViewIfNeeded();
+      await expectFullyInViewport(page, surface);
+    }
+    await expectNoHorizontalOverflow(page);
+
+    await page.clock.runFor(definition.music.countInBeatMs / 20);
+    const countInOne = page.getByText("Count-in 1", { exact: true });
+    await expect(countInOne).toBeVisible();
+    await expectStaticPresentationText(countInOne);
+    await countInOne.scrollIntoViewIfNeeded();
+    await expectFullyInViewport(page, countInOne);
+    await expectFullyInViewport(page, cancel);
+
+    await page.clock.runFor(
+      (definition.music.countInDurationMs - definition.music.countInBeatMs) / 20,
+    );
+    const stop = page.getByRole("button", { name: "Stop recording" });
+    const timer = page.getByRole("timer", { name: "Recording duration" });
+    await expect(stop).toBeVisible();
+    await expect(timer).toContainText("0:00 / 0:04");
+    await lyric.scrollIntoViewIfNeeded();
+    await lyric.evaluate((element) => element.scrollIntoView({ block: "center" }));
+    await expectFullyInViewport(page, lyric);
+    for (const surface of [
+      guide,
+      stop,
+      timer,
+      linePosition,
+      next,
+      routeNavigation,
+    ]) {
+      await surface.scrollIntoViewIfNeeded();
+      await expectFullyInViewport(page, surface);
+    }
+    await expectNoHorizontalOverflow(page);
+
     if (viewport.width === 640) {
       const stage = page.getByRole("region", { name: "Scene video" });
       const controls = page.getByRole("complementary", {
         name: "Scene line controls",
       });
-      for (const surface of [stage, lyric, guide, feedback, record, next]) {
+      for (const surface of [stage, lyric, guide, feedback, stop, timer, next]) {
         await expect(surface).toBeInViewport();
       }
       const scroll = await controls.evaluate((element) => ({
