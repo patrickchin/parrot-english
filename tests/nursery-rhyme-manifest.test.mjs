@@ -108,10 +108,17 @@ describe("nursery rhyme manifests", () => {
     );
   });
 
-  it("requires exactly two count-in beats", () => {
+  it("accepts a complete four-beat count-in", () => {
+    assert.equal(
+      parseRhymeManifest(validManifest({ countInBeats: 4 }), sourcePath).countInBeats,
+      4,
+    );
+  });
+
+  it("requires either two or four count-in beats", () => {
     assert.throws(
       () => parseRhymeManifest(validManifest({ countInBeats: 3 }), sourcePath),
-      /rhyme\.json.*countInBeats.*2/i,
+      /rhyme\.json.*countInBeats.*2 or 4/i,
     );
   });
 

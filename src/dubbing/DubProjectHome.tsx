@@ -7,8 +7,6 @@ import {
   DubTimedWords,
   type DubGuidancePosition,
 } from "./DubKaraokeGuide";
-import { DubWaveform } from "./DubTakeWaveform";
-import { EMPTY_DUB_PEAK_BARS } from "./dub-waveform";
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import {
   FIVE_LITTLE_DUCKS_DUB,
@@ -32,7 +30,6 @@ export type DubProjectHomeProps = {
   playbackButtonRef?: RefObject<HTMLButtonElement | null>;
   playbackLocked?: boolean;
   playingLineId?: string | null;
-  recordingPeakBars?: Readonly<Record<string, readonly number[]>>;
   saved: Readonly<Record<string, string>>;
   visualLine?: DubLine;
 };
@@ -63,7 +60,6 @@ export function DubProjectHome({
   playbackButtonRef,
   playbackLocked = locked,
   playingLineId = null,
-  recordingPeakBars = {},
   saved,
   visualLine = activeLine,
 }: DubProjectHomeProps) {
@@ -86,8 +82,8 @@ export function DubProjectHome({
     : undefined;
 
   return (
-    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16">
-      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:h-full short-wide:max-w-none short-wide:gap-2">
+    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16 lg:overflow-y-hidden">
+      <section aria-label="Dub project workspace" className="mx-auto grid min-w-0 w-full max-w-[1600px] gap-3 short-wide:h-full short-wide:max-w-none short-wide:gap-2 lg:h-full lg:min-h-0 lg:grid-rows-[auto_minmax(0,1fr)_auto]">
         <header className="grid min-w-0 items-start gap-2 min-[420px]:grid-cols-[minmax(0,1fr)_auto] min-[420px]:items-center">
           <h1 className="m-0 min-w-0 text-xl leading-tight text-brand-ink short-wide:text-lg md:text-4xl short-wide:md:text-lg">{definition.title}</h1>
           <p
@@ -103,7 +99,7 @@ export function DubProjectHome({
           </p>
         </header>
 
-        <div className="grid min-w-0 items-start gap-4 short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
+        <div className="grid min-w-0 items-start gap-4 short-wide:min-h-0 short-wide:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)] short-wide:gap-2 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1.7fr)_minmax(24rem,0.8fr)] short-wide:lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
           <div className="grid min-w-0 content-start gap-3 short-wide:min-h-0 short-wide:gap-1">
             <section
               aria-label="Full video player"
@@ -137,7 +133,7 @@ export function DubProjectHome({
           </div>
 
           {editor ?? (
-            <aside aria-label="Lyrics and recordings" className="grid min-w-0 content-start gap-2 self-start rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:max-h-full short-wide:min-h-0 short-wide:overflow-y-auto short-wide:rounded-2xl short-wide:p-2 md:max-h-[calc(100dvh-10rem)] md:overflow-y-auto md:p-4 short-wide:md:max-h-full short-wide:md:p-2">
+            <aside aria-label="Lyrics and recordings" className="grid min-w-0 content-start gap-2 self-start rounded-3xl border-4 border-white bg-white/90 p-3 shadow-card short-wide:max-h-full short-wide:min-h-0 short-wide:overflow-y-auto short-wide:rounded-2xl short-wide:p-2 md:max-h-[calc(100dvh-10rem)] md:overflow-y-auto md:p-4 short-wide:md:max-h-full short-wide:md:p-2 lg:h-full lg:max-h-none lg:self-stretch">
               <h2 className="m-0 text-lg font-black text-brand-ink short-wide:text-base">Lyrics</h2>
               <ol className="m-0 grid list-none gap-2 p-0">
                 {definition.lines.map((line, index) => {
@@ -145,13 +141,12 @@ export function DubProjectHome({
                   const selected = line.id === activeLine.id;
                   const playable = status === "Recorded";
                   const playing = playingLineId === line.id;
-                  const recordedBars = recordingPeakBars[line.id];
                   return (
                     <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_3.25rem] gap-1 rounded-2xl bg-white/80 p-1 shadow-sm" key={line.id}>
                       <ActionButton
                         aria-current={selected ? "step" : undefined}
                         aria-label={`Edit line ${index + 1}: ${line.text} ${status}`}
-                        className="!grid min-h-20 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 rounded-xl p-2 text-left"
+                        className="!grid min-h-12 min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-xl p-2 text-left"
                         disabled={locked}
                         onClick={() => onEditLine(line.id)}
                         ref={selected ? lineButtonRef : undefined}
@@ -161,15 +156,6 @@ export function DubProjectHome({
                       >
                         <span className="text-xs font-black opacity-75">{index + 1}</span>
                         <strong className="min-w-0 text-sm leading-tight md:text-base short-wide:md:text-sm">{line.text}</strong>
-                        <span className="col-span-2 grid">
-                          <DubWaveform
-                            accessibleName={`${recordedBars ? "Your" : "No"} recording waveform for line ${index + 1}`}
-                            bars={recordedBars ?? EMPTY_DUB_PEAK_BARS}
-                            className={recordedBars ? "text-brand-blue" : "text-slate-300"}
-                            narrow
-                          />
-                        </span>
-                        <span className="col-span-2 text-xs font-black">{status}</span>
                       </ActionButton>
                       <ActionButton
                         aria-label={`${playing ? "Stop" : "Play"} line ${index + 1} recording`}

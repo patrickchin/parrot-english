@@ -544,6 +544,11 @@ export function DubStudio({
   }
 
   function handleHearGuide() {
+    if (state.operation === "guide-playing") {
+      cancelMedia(false);
+      dispatch({ type: "OPERATION_FINISHED" });
+      return;
+    }
     if (isUnsafeOperation(state.operation)) return;
     const generation = cancelMedia(false);
     const controller = new AbortController();
@@ -823,7 +828,7 @@ export function DubStudio({
   if (state.operation === "mic-opening") {
     liveStatus = "Opening microphone…";
   } else if (state.operation === "counting-in") {
-    liveStatus = "Get ready. Recording starts after two beats.";
+    liveStatus = `Get ready. Recording starts after ${definition.countInBeats} beats.`;
   } else if (state.operation === "recording") {
     liveStatus = "Recording with melody…";
   } else if (state.operation === "saving") {
@@ -875,7 +880,7 @@ export function DubStudio({
         : null}
       recordedPeakBars={takePreview?.lineId === selectedLine.id
         ? takePreview.peakBars
-        : null}
+        : recordingPeakBars[selectedLine.id] ?? null}
       backButtonRef={backButtonRef}
       nextButtonRef={nextButtonRef}
       recordButtonRef={recordButtonRef}
@@ -938,7 +943,6 @@ export function DubStudio({
         playbackButtonRef={fullPlaybackButtonRef}
         playbackLocked={isUnsafeOperation(state.operation) || state.saveRecovery === "save"}
         playingLineId={state.operation === "take-playing" ? playbackLine.id : null}
-        recordingPeakBars={recordingPeakBars}
         saved={state.saved}
         visualLine={visualLine}
         guidance={state.operation === "playback" && state.playbackScope === "full"

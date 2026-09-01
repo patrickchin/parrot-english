@@ -398,7 +398,7 @@ export async function prepareDubLineBacking({
         music.connect(master);
         const startAt = context.currentTime;
         const downbeatAt = startAt + definition.music.countInDurationMs / 1_000;
-        oscillators = scheduleDubCountClicks(context, definition, music, startAt);
+        oscillators = scheduleDubCountClicks(context, definition, master, startAt);
         oscillators.push(...scheduleDubMusic(
           context,
           definition,
@@ -655,7 +655,7 @@ export async function startDubPlayback({
       startAt,
     });
     oscillators = fullDub
-      ? scheduleDubCountClicks(context, definition, music, startAt)
+      ? scheduleDubCountClicks(context, definition, master, startAt)
       : [];
     oscillators.push(...scheduleDubMusic(
       context,

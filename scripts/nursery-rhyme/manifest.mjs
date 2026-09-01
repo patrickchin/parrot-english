@@ -70,7 +70,9 @@ const scene = z
 
 const rhymeManifestSchema = z
   .object({
-    countInBeats: z.literal(2, "must equal 2 in schemaVersion 1"),
+    countInBeats: z.union([z.literal(2), z.literal(4)], {
+      error: "must equal 2 or 4 in schemaVersion 1",
+    }),
     countInMidi: z
       .number()
       .int("must be an integer from 0 through 127")

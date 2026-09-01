@@ -4724,10 +4724,10 @@ export const GENERATED_DUB_DEFINITIONS = [
     "id": "old-macdonald-v1",
     "route": "/dubs/old-macdonald",
     "title": "Old MacDonald Had a Farm",
-    "durationMs": 162000,
+    "durationMs": 162800,
     "finalCueTailMs": 9200,
     "linesPerScene": 7,
-    "countInBeats": 2,
+    "countInBeats": 4,
     "countInMidi": 72,
     "sceneTitles": [
       "Cows on the farm",
@@ -4773,7 +4773,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-1",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 800,
+        "cueMs": 1600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -4816,44 +4816,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-2",
         "text": "And on his farm he had some cows, E-I-E-I-O!",
-        "cueMs": 8800,
+        "cueMs": 9600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-2",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-2.mp3",
@@ -4908,50 +4908,50 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 7,
             "endOffset": 10,
             "atMs": 1000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 11,
             "endOffset": 15,
-            "atMs": 2000,
+            "atMs": 1500,
             "durationMs": 500
           },
           {
             "startOffset": 16,
             "endOffset": 18,
-            "atMs": 2500,
+            "atMs": 2000,
             "durationMs": 500
           },
           {
             "startOffset": 19,
             "endOffset": 22,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 23,
             "endOffset": 27,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 500
           },
           {
             "startOffset": 28,
             "endOffset": 32,
-            "atMs": 5000,
+            "atMs": 3500,
             "durationMs": 500
           },
           {
             "startOffset": 34,
             "endOffset": 43,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-3",
         "text": "With a moo-moo here",
-        "cueMs": 16800,
+        "cueMs": 17600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-3",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-3.mp3",
@@ -5019,7 +5019,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-4",
         "text": "And a moo-moo there",
-        "cueMs": 18800,
+        "cueMs": 19600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-4",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-4.mp3",
@@ -5087,7 +5087,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-5",
         "text": "Here a moo, there a moo",
-        "cueMs": 20800,
+        "cueMs": 21600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-5",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-5.mp3",
@@ -5167,7 +5167,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-6",
         "text": "Everywhere a moo-moo",
-        "cueMs": 22800,
+        "cueMs": 23600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-6",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-6.mp3",
@@ -5210,26 +5210,26 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 10,
             "atMs": 0,
-            "durationMs": 500
+            "durationMs": 1000
           },
           {
             "startOffset": 11,
             "endOffset": 12,
-            "atMs": 500,
+            "atMs": 1000,
             "durationMs": 500
           },
           {
             "startOffset": 13,
             "endOffset": 20,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 1500,
+            "durationMs": 500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-7",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 24800,
+        "cueMs": 25600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -5272,44 +5272,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-8",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 32800,
+        "cueMs": 33600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -5352,44 +5352,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-9",
         "text": "And on his farm he had some ducks, E-I-E-I-O!",
-        "cueMs": 40800,
+        "cueMs": 41600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-9",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-9.mp3",
@@ -5444,50 +5444,50 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 7,
             "endOffset": 10,
             "atMs": 1000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 11,
             "endOffset": 15,
-            "atMs": 2000,
+            "atMs": 1500,
             "durationMs": 500
           },
           {
             "startOffset": 16,
             "endOffset": 18,
-            "atMs": 2500,
+            "atMs": 2000,
             "durationMs": 500
           },
           {
             "startOffset": 19,
             "endOffset": 22,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 23,
             "endOffset": 27,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 500
           },
           {
             "startOffset": 28,
             "endOffset": 33,
-            "atMs": 5000,
+            "atMs": 3500,
             "durationMs": 500
           },
           {
             "startOffset": 35,
             "endOffset": 44,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-10",
         "text": "With a quack-quack here",
-        "cueMs": 48800,
+        "cueMs": 49600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-10",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-10.mp3",
@@ -5555,7 +5555,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-11",
         "text": "And a quack-quack there",
-        "cueMs": 50800,
+        "cueMs": 51600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-11",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-11.mp3",
@@ -5623,7 +5623,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-12",
         "text": "Here a quack, there a quack",
-        "cueMs": 52800,
+        "cueMs": 53600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-12",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-12.mp3",
@@ -5703,7 +5703,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-13",
         "text": "Everywhere a quack-quack",
-        "cueMs": 54800,
+        "cueMs": 55600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-13",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-13.mp3",
@@ -5746,26 +5746,26 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 10,
             "atMs": 0,
-            "durationMs": 500
+            "durationMs": 1000
           },
           {
             "startOffset": 11,
             "endOffset": 12,
-            "atMs": 500,
+            "atMs": 1000,
             "durationMs": 500
           },
           {
             "startOffset": 13,
             "endOffset": 24,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 1500,
+            "durationMs": 500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-14",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 56800,
+        "cueMs": 57600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -5808,44 +5808,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-15",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 64800,
+        "cueMs": 65600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -5888,44 +5888,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-16",
         "text": "And on his farm he had some pigs, E-I-E-I-O!",
-        "cueMs": 72800,
+        "cueMs": 73600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-16",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-16.mp3",
@@ -5980,50 +5980,50 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 7,
             "endOffset": 10,
             "atMs": 1000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 11,
             "endOffset": 15,
-            "atMs": 2000,
+            "atMs": 1500,
             "durationMs": 500
           },
           {
             "startOffset": 16,
             "endOffset": 18,
-            "atMs": 2500,
+            "atMs": 2000,
             "durationMs": 500
           },
           {
             "startOffset": 19,
             "endOffset": 22,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 23,
             "endOffset": 27,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 500
           },
           {
             "startOffset": 28,
             "endOffset": 32,
-            "atMs": 5000,
+            "atMs": 3500,
             "durationMs": 500
           },
           {
             "startOffset": 34,
             "endOffset": 43,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-17",
         "text": "With a snort here",
-        "cueMs": 80800,
+        "cueMs": 81600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-17",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-17.mp3",
@@ -6091,7 +6091,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-18",
         "text": "And a snort there",
-        "cueMs": 82800,
+        "cueMs": 83600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-18",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-18.mp3",
@@ -6159,7 +6159,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-19",
         "text": "Here a snort, there a snort",
-        "cueMs": 84800,
+        "cueMs": 85600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-19",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-19.mp3",
@@ -6239,7 +6239,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-20",
         "text": "Everywhere a snort-snort",
-        "cueMs": 86800,
+        "cueMs": 87600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-20",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-20.mp3",
@@ -6282,26 +6282,26 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 10,
             "atMs": 0,
-            "durationMs": 500
+            "durationMs": 1000
           },
           {
             "startOffset": 11,
             "endOffset": 12,
-            "atMs": 500,
+            "atMs": 1000,
             "durationMs": 500
           },
           {
             "startOffset": 13,
             "endOffset": 24,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 1500,
+            "durationMs": 500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-21",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 88800,
+        "cueMs": 89600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -6344,44 +6344,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-22",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 96800,
+        "cueMs": 97600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -6424,44 +6424,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-23",
         "text": "And on his farm he had a dog, E-I-E-I-O!",
-        "cueMs": 104800,
+        "cueMs": 105600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-23",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-23.mp3",
@@ -6516,50 +6516,50 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 7,
             "endOffset": 10,
             "atMs": 1000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 11,
             "endOffset": 15,
-            "atMs": 2000,
+            "atMs": 1500,
             "durationMs": 500
           },
           {
             "startOffset": 16,
             "endOffset": 18,
-            "atMs": 2500,
+            "atMs": 2000,
             "durationMs": 500
           },
           {
             "startOffset": 19,
             "endOffset": 22,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 23,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 500
           },
           {
             "startOffset": 25,
             "endOffset": 28,
-            "atMs": 5000,
+            "atMs": 3500,
             "durationMs": 500
           },
           {
             "startOffset": 30,
             "endOffset": 39,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-24",
         "text": "With a woof-woof here",
-        "cueMs": 112800,
+        "cueMs": 113600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-24",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-24.mp3",
@@ -6627,7 +6627,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-25",
         "text": "And a woof-woof there",
-        "cueMs": 114800,
+        "cueMs": 115600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-25",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-25.mp3",
@@ -6695,7 +6695,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-26",
         "text": "Here a woof, there a woof",
-        "cueMs": 116800,
+        "cueMs": 117600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-26",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-26.mp3",
@@ -6775,7 +6775,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-27",
         "text": "Everywhere a woof-woof",
-        "cueMs": 118800,
+        "cueMs": 119600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-27",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-27.mp3",
@@ -6818,26 +6818,26 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 10,
             "atMs": 0,
-            "durationMs": 500
+            "durationMs": 1000
           },
           {
             "startOffset": 11,
             "endOffset": 12,
-            "atMs": 500,
+            "atMs": 1000,
             "durationMs": 500
           },
           {
             "startOffset": 13,
             "endOffset": 22,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 1500,
+            "durationMs": 500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-28",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 120800,
+        "cueMs": 121600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -6880,44 +6880,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-29",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 128800,
+        "cueMs": 129600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -6960,44 +6960,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-30",
         "text": "And on his farm he had some sheep, E-I-E-I-O!",
-        "cueMs": 136800,
+        "cueMs": 137600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-30",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-30.mp3",
@@ -7052,50 +7052,50 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 7,
             "endOffset": 10,
             "atMs": 1000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 11,
             "endOffset": 15,
-            "atMs": 2000,
+            "atMs": 1500,
             "durationMs": 500
           },
           {
             "startOffset": 16,
             "endOffset": 18,
-            "atMs": 2500,
+            "atMs": 2000,
             "durationMs": 500
           },
           {
             "startOffset": 19,
             "endOffset": 22,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 23,
             "endOffset": 27,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 500
           },
           {
             "startOffset": 28,
             "endOffset": 33,
-            "atMs": 5000,
+            "atMs": 3500,
             "durationMs": 500
           },
           {
             "startOffset": 35,
             "endOffset": 44,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-31",
         "text": "With a baa-baa here",
-        "cueMs": 144800,
+        "cueMs": 145600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-31",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-31.mp3",
@@ -7163,7 +7163,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-32",
         "text": "And a baa-baa there",
-        "cueMs": 146800,
+        "cueMs": 147600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-32",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-32.mp3",
@@ -7231,7 +7231,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-33",
         "text": "Here a baa, there a baa",
-        "cueMs": 148800,
+        "cueMs": 149600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-33",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-33.mp3",
@@ -7311,7 +7311,7 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "id": "old-macdonald-v1-line-34",
         "text": "Everywhere a baa-baa",
-        "cueMs": 150800,
+        "cueMs": 151600,
         "durationMs": 2000,
         "guideAudioId": "old-macdonald-v1-guide-line-34",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-34.mp3",
@@ -7354,26 +7354,26 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 10,
             "atMs": 0,
-            "durationMs": 500
+            "durationMs": 1000
           },
           {
             "startOffset": 11,
             "endOffset": 12,
-            "atMs": 500,
+            "atMs": 1000,
             "durationMs": 500
           },
           {
             "startOffset": 13,
             "endOffset": 20,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 1500,
+            "durationMs": 500
           }
         ]
       },
       {
         "id": "old-macdonald-v1-line-35",
         "text": "Old MacDonald had a farm, E-I-E-I-O!",
-        "cueMs": 152800,
+        "cueMs": 153600,
         "durationMs": 8000,
         "guideAudioId": "old-macdonald-v1-guide-line-1",
         "guideAudioSrc": "/assets/nursery-rhymes/old-macdonald/guides/old-macdonald-v1-guide-line-1.mp3",
@@ -7416,44 +7416,44 @@ export const GENERATED_DUB_DEFINITIONS = [
             "startOffset": 0,
             "endOffset": 3,
             "atMs": 0,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 4,
             "endOffset": 13,
-            "atMs": 1000,
-            "durationMs": 1000
+            "atMs": 500,
+            "durationMs": 1500
           },
           {
             "startOffset": 14,
             "endOffset": 17,
             "atMs": 2000,
-            "durationMs": 1000
+            "durationMs": 500
           },
           {
             "startOffset": 18,
             "endOffset": 19,
-            "atMs": 3000,
-            "durationMs": 1500
+            "atMs": 2500,
+            "durationMs": 500
           },
           {
             "startOffset": 20,
             "endOffset": 24,
-            "atMs": 4500,
+            "atMs": 3000,
             "durationMs": 1000
           },
           {
             "startOffset": 26,
             "endOffset": 35,
-            "atMs": 5500,
-            "durationMs": 2000
+            "atMs": 4000,
+            "durationMs": 3500
           }
         ]
       }
     ],
     "music": {
       "countInBeatMs": 400,
-      "countInDurationMs": 800,
+      "countInDurationMs": 1600,
       "linePhrases": [
         {
           "durationMs": 8000,
@@ -10883,13 +10883,13 @@ export const GENERATED_DUB_DEFINITIONS = [
       ],
       "outroNotes": [
         {
-          "atMs": 160800,
+          "atMs": 161600,
           "durationMs": 1200,
           "midi": 48,
           "role": "accompaniment"
         },
         {
-          "atMs": 160800,
+          "atMs": 161600,
           "durationMs": 1200,
           "midi": 55,
           "role": "accompaniment"
