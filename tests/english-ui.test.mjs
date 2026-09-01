@@ -16,12 +16,21 @@ function collectTextFiles(path) {
 }
 
 describe("English-only shipped UI", () => {
-  it("contains no Chinese characters in runtime source or web metadata", () => {
+  it("keeps Chinese copy confined to the Simplified-Chinese guardian catalog", () => {
     const paths = ["src", "lib", "worker", "index.html", "vite.config.ts", "public/manifest.webmanifest"].map(
       (path) => fileURLToPath(new URL(`../${path}`, import.meta.url)),
     );
     for (const file of paths.flatMap(collectTextFiles)) {
-      assert.doesNotMatch(readFileSync(file, "utf8"), /\p{Script=Han}/u, file);
+      const source = readFileSync(file, "utf8");
+      if (file.endsWith("/src/i18n/messages/zh-Hans.ts")) {
+        assert.match(source, /\p{Script=Han}/u, file);
+        continue;
+      }
+      if (file.endsWith("/src/i18n/messages/en.ts")) {
+        assert.doesNotMatch(source.replace("中文", ""), /\p{Script=Han}/u, file);
+        continue;
+      }
+      assert.doesNotMatch(source, /\p{Script=Han}/u, file);
     }
   });
 });
