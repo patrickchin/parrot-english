@@ -165,8 +165,11 @@ describe("learner roster Worker routing", () => {
     assert.equal(payload.profiles.length, 1);
     assert.equal(payload.activeProfileId, payload.profiles[0].id);
     assert.equal(
-      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-        .count,
+      state.sqlite
+        .prepare(
+          "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-a").count,
       1,
     );
   });
@@ -188,8 +191,11 @@ describe("learner roster Worker routing", () => {
       }
     }
     assert.equal(
-      state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile").get()
-        .count,
+      state.sqlite
+        .prepare(
+          "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+        )
+        .get("user-a").count,
       0,
     );
   });
