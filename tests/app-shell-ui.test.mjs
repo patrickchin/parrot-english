@@ -228,7 +228,7 @@ test("word-game library renders nine category choices and a home link", () => {
   assert.match(html, /<img[^>]*alt="A friendly cat\."[^>]*src="\/assets\/word-games\/illustrated\/animals-cat\.webp"/);
 });
 
-test("word-game category renders nine independent numbered quiz links", () => {
+test("word-game category separates level and quiz labels across nine links", () => {
   assert.equal(typeof WordGameCategory, "function");
   const category = resolveWordGameCategory("animals");
   assert.ok(category);
@@ -237,6 +237,10 @@ test("word-game category renders nine independent numbered quiz links", () => {
     "/word-games/animals",
   );
   const quizLabels = [...html.matchAll(/aria-label="(Level [1-3] · Quiz [1-3])"/g)]
+    .map(([, label]) => label);
+  const levelLabels = [...html.matchAll(/<span[^>]*>(Level [1-3])<\/span>/g)]
+    .map(([, label]) => label);
+  const quizNames = [...html.matchAll(/<strong[^>]*>(Quiz [1-3])<\/strong>/g)]
     .map(([, label]) => label);
   const hrefs = [...html.matchAll(/<a[^>]*href="([^"]+)"/g)].map(([, href]) => href);
 
@@ -253,6 +257,16 @@ test("word-game category renders nine independent numbered quiz links", () => {
     "Level 3 · Quiz 1",
     "Level 3 · Quiz 2",
     "Level 3 · Quiz 3",
+  ]);
+  assert.deepEqual(levelLabels, [
+    "Level 1", "Level 1", "Level 1",
+    "Level 2", "Level 2", "Level 2",
+    "Level 3", "Level 3", "Level 3",
+  ]);
+  assert.deepEqual(quizNames, [
+    "Quiz 1", "Quiz 2", "Quiz 3",
+    "Quiz 1", "Quiz 2", "Quiz 3",
+    "Quiz 1", "Quiz 2", "Quiz 3",
   ]);
   assert.doesNotMatch(html, /Simple|Intermediate|Advanced|First look|Mix it up|Quick check/);
   assert.deepEqual(hrefs.filter((href) => href.startsWith("/word-games/animals/")), [
