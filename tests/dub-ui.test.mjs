@@ -1135,7 +1135,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.deepEqual(privateRequests, []);
   });
 
-  it("requests unprocessed microphone audio before recording", async () => {
+  it("leaves dubbing automatic gain control to the browser", async () => {
     const audio = installSynchronizedRecordingHarness();
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
@@ -1152,9 +1152,8 @@ describe("duck dubbing storyboard presentation", () => {
 
     assert.deepEqual(audio.microphoneConstraints, [{
       audio: {
-        autoGainControl: { exact: false },
-        echoCancellation: { exact: false },
-        noiseSuppression: { exact: false },
+        echoCancellation: true,
+        noiseSuppression: false,
       },
     }]);
   });
