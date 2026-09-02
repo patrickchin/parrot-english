@@ -419,6 +419,26 @@ test("renders the generated hierarchy, illustrated covers, and accessible color 
   await expect(quizLinks).toHaveCount(9);
   await expect(category.getByRole("link", { name: "Level 1 · Quiz 1" }))
     .toHaveAttribute("href", "/word-games/animals/simple-1");
+  const levelBackgrounds: string[] = [];
+  for (const level of [1, 2, 3]) {
+    const cards = category.getByRole("link", {
+      name: new RegExp(`^Level ${level} · Quiz [1-3]$`),
+    });
+    await expect(cards).toHaveCount(3);
+    const levelLabel = cards.first().getByText(`Level ${level}`, { exact: true });
+    await expect(levelLabel).toBeVisible();
+    levelBackgrounds.push(
+      await levelLabel.evaluate((element) => getComputedStyle(element).backgroundColor),
+    );
+  }
+  expect(new Set(levelBackgrounds).size).toBe(3);
+  for (const quiz of [1, 2, 3]) {
+    await expect(
+      category.getByRole("link", { name: new RegExp(`^Level [1-3] · Quiz ${quiz}$`) })
+        .first()
+        .getByText(`Quiz ${quiz}`, { exact: true }),
+    ).toBeVisible();
+  }
   for (const alt of [
     "A friendly cat.", "A friendly bird.", "A friendly duck.",
     "A friendly cow.", "A friendly pig.", "A friendly horse.", "A friendly elephant.",
@@ -504,8 +524,17 @@ test("keeps all independent quiz cards reachable across required category viewpo
     expect(await renderedColumns(cards)).toBe(expectedColumns);
     expect(await renderedRows(cards)).toBe(Math.ceil(9 / expectedColumns));
     if (viewport.width === 390) {
-      const firstLabel = cards.first().getByText("Level 1 · Quiz 1", { exact: true });
-      expect((await visibleBox(firstLabel)).height).toBeLessThan(30);
+      for (const label of ["Level 1", "Quiz 1"]) {
+        const lineCount = await cards.first().getByText(label, { exact: true })
+          .evaluate((element) => {
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            const rects = [...range.getClientRects()]
+              .filter((rect) => rect.width > 0 && rect.height > 0);
+            return new Set(rects.map((rect) => Math.round(rect.y))).size;
+          });
+        expect(lineCount).toBe(1);
+      }
     }
   }
 });

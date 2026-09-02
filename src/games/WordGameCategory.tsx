@@ -8,6 +8,12 @@ import {
 } from "./word-game-catalog";
 import { WordGameVisual } from "./WordGameVisual";
 
+const levelLabelClassNames = [
+  "bg-sky-200 text-sky-950",
+  "bg-amber-200 text-amber-950",
+  "bg-violet-200 text-violet-950",
+] as const;
+
 export function WordGameCategory({
   category,
 }: {
@@ -33,19 +39,24 @@ export function WordGameCategory({
           aria-label={`${category.title} quizzes`}
           className="grid gap-3 min-[360px]:grid-cols-2 md:grid-cols-3"
         >
-          {category.tiers.flatMap((tier) =>
-            tier.quizzes.map((quiz) => {
+          {category.tiers.flatMap((tier, tierIndex) =>
+            tier.quizzes.map((quiz, quizIndex) => {
               const displayName = getWordGameQuizDisplayName({ category, tier, quiz });
               return (
                 <InteractiveCardLink
                   aria-label={displayName}
-                  className="grid justify-items-center gap-3 p-3 text-center"
+                  className="grid overflow-hidden text-center"
                   key={quiz.id}
                   to={getWordGameQuizRoute(category.id, quiz.id)}
                 >
-                  <WordGameVisual className="size-16" item={quiz.coverItem} showLabel={false} />
-                  <span className="grid min-w-0 gap-1">
-                    <strong className="text-lg text-brand-ink sm:text-xl">{displayName}</strong>
+                  <span
+                    className={`py-2 text-sm font-black ${levelLabelClassNames[tierIndex]}`}
+                  >
+                    Level {tierIndex + 1}
+                  </span>
+                  <span className="grid min-w-0 justify-items-center gap-2 px-3 pb-4 pt-3">
+                    <WordGameVisual className="size-16" item={quiz.coverItem} showLabel={false} />
+                    <strong className="text-2xl text-brand-ink">Quiz {quizIndex + 1}</strong>
                     <span className="font-bold text-brand-navy">{quiz.description}</span>
                   </span>
                 </InteractiveCardLink>
