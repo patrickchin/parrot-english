@@ -39,6 +39,13 @@ const longStoryViewports = [
   { cropsArtwork: true, height: 360, name: "short-wide boundary", width: 559 },
   { cropsArtwork: true, height: 360, name: "short-wide reader", width: 640 },
   { cropsArtwork: false, height: 1024, name: "portrait tablet", width: 768 },
+  { cropsArtwork: true, height: 1024, name: "square tablet", width: 1024 },
+  {
+    cropsArtwork: false,
+    height: 1366,
+    name: "portrait large tablet",
+    width: 1024,
+  },
   { cropsArtwork: false, height: 800, name: "desktop", width: 1280 },
 ] as const;
 
@@ -46,7 +53,14 @@ const longStoryInventoryViewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
   { height: 844, name: "regular phone", width: 390 },
   { height: 360, name: "short-wide boundary", width: 559 },
+  { height: 768, name: "landscape large tablet", width: 1024 },
+  { height: 1024, name: "square tablet", width: 1024 },
   { height: 800, name: "desktop", width: 1280 },
+] as const;
+
+const largeLandscapeStoryViewports = [
+  { height: 1080, name: "large desktop", width: 1920 },
+  { height: 1440, name: "extra-large desktop", width: 2560 },
 ] as const;
 
 async function installStoryMediaGuard(page: Page) {
@@ -1064,6 +1078,12 @@ for (const viewport of longStoryViewports) {
     const orderedControls = [previous, listen, wholeStory, next];
 
     await expect(pageText).toBeFocused();
+    if (viewport.name === "portrait large tablet") {
+      const fontSize = await pageText.evaluate((element) =>
+        Number.parseFloat(getComputedStyle(element).fontSize),
+      );
+      expect(fontSize).toBeGreaterThanOrEqual(24);
+    }
     await expectContainedWithoutScrolling(reader, controls);
     await expectFullyInsideViewportWithoutScrolling(controls, page);
     await expect(wholeStory).toBeVisible();
@@ -1851,6 +1871,198 @@ test("a wide desktop gives the full shelf and reader room beyond the old caps", 
   expect.soft(readerWidth, "story reader width at 1600x900").toBeGreaterThan(1280);
   await expectNoHorizontalOverflow(page);
 });
+
+test("long-story geometry stays stable across the desktop width boundary", async ({
+  page,
+}) => {
+  const layouts: Array<{ height: number; width: number }> = [];
+
+  for (const width of [1279, 1280]) {
+    await page.setViewportSize({ height: 800, width });
+    await page.goto("/stories/we-re-going-on-a-bear-hunt/pages/1");
+
+    const reader = page.getByRole("region", { name: "Story reader" });
+    const pageText = reader.getByLabel(/^Page 1 of 13\./);
+    const readingPane = pageText.locator("..");
+    const readerBox = await visibleBoxWithoutScrolling(reader);
+
+    layouts.push({ height: readerBox.height, width: readerBox.width });
+    await expect(
+      readingPane.evaluate(
+        (element) => element.scrollHeight - element.clientHeight,
+      ),
+    ).resolves.toBeLessThanOrEqual(1);
+    await expectFullyInsideViewportWithoutScrolling(reader, page);
+    await expectNoHorizontalOverflow(page);
+  }
+
+  expect(Math.abs(layouts[1].width - layouts[0].width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(layouts[1].height - layouts[0].height)).toBeLessThanOrEqual(2);
+});
+
+test("wide story shelves scale sparse and dense card groups deliberately", async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 1080, width: 1920 });
+  await page.goto("/stories?level=long-stories");
+
+  const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+  const storyLinks = shelf.getByRole("link", { name: /^Listen to story:/ });
+  await expect(storyLinks).toHaveCount(2);
+  const shelfBox = await visibleBoxWithoutScrolling(shelf);
+  const sparseBoxes = await storyLinks.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().toJSON()),
+  );
+
+  expect(Math.min(...sparseBoxes.map(({ width }) => width))).toBeGreaterThanOrEqual(
+    480,
+  );
+  expect(Math.max(...sparseBoxes.map(({ width }) => width))).toBeLessThanOrEqual(
+    520,
+  );
+  expect(Math.max(...sparseBoxes.map(({ y }) => y)) - Math.min(...sparseBoxes.map(({ y }) => y))).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(
+      sparseBoxes[0].x - shelfBox.x -
+        (shelfBox.x + shelfBox.width - (sparseBoxes[1].x + sparseBoxes[1].width)),
+    ),
+  ).toBeLessThanOrEqual(1);
+
+  await shelf
+    .getByRole("tab", { name: "Level 1 · Words & pictures" })
+    .click();
+  await expect(storyLinks).toHaveCount(7);
+  const denseBoxes = await storyLinks.evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().toJSON()),
+  );
+  const firstRow = denseBoxes.filter(
+    ({ y }) => Math.abs(y - denseBoxes[0].y) <= 1,
+  );
+
+  expect(firstRow).toHaveLength(5);
+  expect(Math.min(...firstRow.map(({ width }) => width))).toBeGreaterThanOrEqual(
+    290,
+  );
+  expect(Math.max(...firstRow.map(({ width }) => width))).toBeLessThanOrEqual(
+    320,
+  );
+  await expectNoHorizontalOverflow(page);
+});
+
+test("dense story cards stay substantial when the fifth column appears", async ({
+  page,
+}) => {
+  const layouts: Array<{ cardWidth: number; columns: number }> = [];
+
+  for (const width of [1535, 1536, 1711, 1712]) {
+    await page.setViewportSize({ height: 1080, width });
+    await page.goto("/stories?level=first-words");
+
+    const shelf = page.getByRole("region", { name: "Read-aloud stories" });
+    const storyLinks = shelf.getByRole("link", { name: /^Listen to story:/ });
+    await expect(storyLinks).toHaveCount(7);
+    const boxes = await storyLinks.evaluateAll((elements) =>
+      elements.map((element) => element.getBoundingClientRect().toJSON()),
+    );
+    const firstRow = boxes.filter(({ y }) => Math.abs(y - boxes[0].y) <= 1);
+    const cardWidth = firstRow[0].width;
+
+    expect(firstRow).toHaveLength(width < 1712 ? 4 : 5);
+    expect(Math.min(...firstRow.map((box) => box.width))).toBeGreaterThanOrEqual(
+      290,
+    );
+    expect(Math.max(...firstRow.map((box) => box.width))).toBeLessThanOrEqual(
+      310,
+    );
+    layouts.push({ cardWidth, columns: firstRow.length });
+    await expectNoHorizontalOverflow(page);
+  }
+
+  expect(Math.abs(layouts[1].cardWidth - layouts[0].cardWidth))
+    .toBeLessThanOrEqual(2);
+  expect(Math.abs(layouts[3].cardWidth - layouts[2].cardWidth))
+    .toBeLessThanOrEqual(6);
+});
+
+for (const viewport of largeLandscapeStoryViewports) {
+  test(`Bear Hunt remains a prominent reading experience on a ${viewport.name}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto("/stories/we-re-going-on-a-bear-hunt/pages/1");
+
+    const reader = page.getByRole("region", { name: "Story reader" });
+    const artwork = reader.getByRole("img", {
+      name: "Four children push through long grass toward a wide patch of thick mud.",
+    });
+    const pageText = reader.getByLabel(/^Page 1 of 13\./);
+    const readingPane = pageText.locator("..");
+    const controls = reader.getByRole("navigation", {
+      name: "Story controls",
+    });
+
+    await expect(
+      reader.getByRole("heading", {
+        exact: true,
+        name: "We’re Going on a Bear Hunt",
+      }),
+    ).toBeVisible();
+    await expect(pageText).toBeFocused();
+    await expectFullyInsideViewportWithoutScrolling(reader, page);
+    await expectContainedWithoutScrolling(reader, controls);
+
+    const [readerBox, artworkBox, readingPaneBox] = await Promise.all([
+      visibleBoxWithoutScrolling(reader),
+      visibleBoxWithoutScrolling(artwork),
+      visibleBoxWithoutScrolling(readingPane),
+    ]);
+    const viewportArea = viewport.width * viewport.height;
+    const readerArea = readerBox.width * readerBox.height;
+
+    expect.soft(
+      readerBox.width / viewport.width,
+      "reader share of viewport width",
+    ).toBeGreaterThanOrEqual(0.92);
+    expect.soft(
+      readerBox.height / viewport.height,
+      "reader share of viewport height",
+    ).toBeGreaterThanOrEqual(0.65);
+    expect.soft(
+      readerArea / viewportArea,
+      "reader share of viewport area",
+    ).toBeGreaterThanOrEqual(0.6);
+    expect.soft(
+      artworkBox.width / readerBox.width,
+      "artwork share of reader width",
+    ).toBeGreaterThanOrEqual(0.6);
+    expect.soft(
+      artworkBox.width / readerBox.width,
+      "artwork share of reader width",
+    ).toBeLessThanOrEqual(0.72);
+    expect.soft(
+      readingPaneBox.width / readerBox.width,
+      "reading pane share of reader width",
+    ).toBeGreaterThanOrEqual(0.28);
+    expect.soft(
+      readingPaneBox.width / readerBox.width,
+      "reading pane share of reader width",
+    ).toBeLessThanOrEqual(0.4);
+    expect.soft(
+      artworkBox.width / artworkBox.height,
+      "uncropped story artwork ratio",
+    ).toBeGreaterThanOrEqual(1.42);
+    expect.soft(
+      artworkBox.width / artworkBox.height,
+      "uncropped story artwork ratio",
+    ).toBeLessThanOrEqual(1.58);
+    await expect(
+      readingPane.evaluate(
+        (element) => element.scrollHeight - element.clientHeight,
+      ),
+    ).resolves.toBeLessThanOrEqual(1);
+    await expectNoHorizontalOverflow(page);
+  });
+}
 
 for (const viewport of viewports) {
   test(`the focused shelf and reader avoid horizontal overflow on a ${viewport.name}`, async ({

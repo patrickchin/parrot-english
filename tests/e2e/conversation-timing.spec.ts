@@ -208,6 +208,61 @@ test("short landscape gives Peppa and the conversation their own columns", async
   await expectNoPageScroll(page);
 });
 
+test("desktop landscapes keep one bounded two-column conversation stage", async ({
+  page,
+}) => {
+  const compactLayouts: Array<{
+    captions: Awaited<ReturnType<typeof box>>;
+    controls: Awaited<ReturnType<typeof box>>;
+    peppa: Awaited<ReturnType<typeof box>>;
+  }> = [];
+  const viewports = [
+    { height: 620, width: 1360 },
+    { height: 621, width: 1360 },
+    { height: 1080, width: 1920 },
+    { height: 1440, width: 2560 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/talk-to-peppa");
+    await startSmallChat(page);
+
+    const peppa = await box(
+      page.getByRole("img", { exact: true, name: "Peppa" }),
+    );
+    const captions = await box(
+      page.getByRole("region", { name: "Conversation captions" }),
+    );
+    const controls = await box(
+      page.getByRole("group", { name: "Conversation controls" }),
+    );
+
+    expect(peppa.width).toBeGreaterThanOrEqual(640);
+    expect(peppa.x + peppa.width).toBeLessThanOrEqual(captions.x);
+    expect(Math.abs(captions.x - controls.x)).toBeLessThanOrEqual(1);
+    expect(Math.abs(captions.width - controls.width)).toBeLessThanOrEqual(1);
+    const stageWidth = controls.x + controls.width - peppa.x;
+    expect(stageWidth).toBeGreaterThanOrEqual(1200);
+    expect(stageWidth).toBeLessThanOrEqual(1320);
+    await expectNoPageScroll(page);
+
+    if (viewport.width === 1360) {
+      compactLayouts.push({ captions, controls, peppa });
+    }
+  }
+
+  expect(Math.abs(compactLayouts[1].peppa.x - compactLayouts[0].peppa.x))
+    .toBeLessThanOrEqual(12);
+  expect(
+    Math.abs(
+      compactLayouts[1].captions.width - compactLayouts[0].captions.width,
+    ),
+  ).toBeLessThanOrEqual(12);
+  expect(Math.abs(compactLayouts[1].controls.x - compactLayouts[0].controls.x))
+    .toBeLessThanOrEqual(12);
+});
+
 test("a long landscape reply grows upward without moving the turn control", async ({
   page,
 }) => {

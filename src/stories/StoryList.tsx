@@ -10,6 +10,7 @@ import { BidiLearnerName, HeaderLink, RouteHeader } from "../app/AppHeader";
 import { useLearnerProfile } from "../learner-profile/LearnerProfileContext";
 import {
   Card,
+  cx,
   InteractiveCardLink,
   SegmentedButton,
   SegmentedControl,
@@ -26,7 +27,9 @@ import {
 } from "./story-catalog";
 
 const STORY_SHELF_IMAGE_SIZES =
-  "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 168px) / 3), 305px";
+  "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) min(calc((100vw - 160px) / 3), 299px), (max-width: 1711px) min(calc((100vw - 176px) / 4), 300px), 308px";
+const STORYTIME_SHELF_IMAGE_SIZES =
+  "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 144px) / 2), 504px";
 const STORY_SHELF_LEVELS = STORY_LEVELS.filter(
   ({ id }) => getStoryShelfLevelId(id) === id,
 );
@@ -74,7 +77,7 @@ export function StoryList() {
 
       <section
         aria-label="Read-aloud stories"
-        className="mx-auto grid w-full max-w-7xl gap-4 sm:gap-5"
+        className="mx-auto grid w-full max-w-[100rem] gap-4 sm:gap-5"
       >
         <Card className="p-2 sm:p-3">
           <SegmentedControl
@@ -136,7 +139,14 @@ function StoryShelfSection({
         </p>
       ) : null}
 
-      <div className="grid grid-cols-1 gap-4 min-[520px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div
+        className={cx(
+          "grid grid-cols-1 gap-4 min-[520px]:grid-cols-2",
+          stories.length === 2
+            ? "mx-auto w-full max-w-5xl"
+            : "mx-auto w-full lg:max-w-[58rem] lg:grid-cols-3 xl:max-w-[78rem] xl:grid-cols-4 min-[1712px]:!max-w-[100rem] min-[1712px]:!grid-cols-5",
+        )}
+      >
         {stories.map((story, storyIndex) => (
           <article aria-labelledby={`story-card-${story.id}`} key={story.id}>
             <InteractiveCardLink
@@ -148,7 +158,11 @@ function StoryShelfSection({
                 <StoryArtwork
                   artwork={story.cover}
                   priority={storyIndex === 0}
-                  sizes={STORY_SHELF_IMAGE_SIZES}
+                  sizes={
+                    stories.length === 2
+                      ? STORYTIME_SHELF_IMAGE_SIZES
+                      : STORY_SHELF_IMAGE_SIZES
+                  }
                 />
               </div>
 

@@ -400,16 +400,16 @@ export function StoryReader({
       <section
         aria-label="Story reader"
         className={cx(
-          "mx-auto grid h-full min-h-0 w-full max-w-[90rem] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:aspect-[2.72/1] lg:h-auto lg:max-h-full lg:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)] lg:grid-rows-[minmax(0,1fr)]",
+          "mx-auto grid h-full min-h-0 w-full max-w-[90rem] grid-rows-[auto_minmax(0,1fr)] overflow-hidden rounded-[1.75rem] border-4 border-white bg-[#fffaf0] shadow-card short:landscape:grid-rows-[minmax(0,1fr)] md:rounded-[2.25rem] lg:landscape:h-auto lg:landscape:max-h-full lg:landscape:grid-rows-[minmax(0,1fr)]",
           isLongStory
-            ? "short:landscape:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)]"
-            : "short:landscape:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.9fr)]",
+            ? "short:landscape:grid-cols-[minmax(12rem,0.8fr)_minmax(18rem,1.2fr)] lg:landscape:aspect-[2.3/1] lg:landscape:max-w-[calc((100dvh-7.75rem)*2.3)] lg:landscape:grid-cols-[minmax(0,1.3fr)_minmax(22rem,0.7fr)]"
+            : "short:landscape:grid-cols-[minmax(0,1.1fr)_minmax(16rem,0.9fr)] lg:landscape:aspect-[2.72/1] lg:landscape:max-w-[calc((100dvh-7.75rem)*2.72)] lg:landscape:grid-cols-[minmax(0,1.1fr)_minmax(22rem,0.9fr)]",
         )}
       >
-        <figure className="relative m-0 aspect-[3/2] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:landscape:h-full short:landscape:aspect-auto short:landscape:border-b-0 short:landscape:border-r-4 lg:h-full lg:aspect-auto lg:border-b-0 lg:border-r-4">
+        <figure className="relative m-0 aspect-[3/2] max-h-[52dvh] w-full overflow-hidden border-b-4 border-white bg-brand-navy short:landscape:h-full short:landscape:max-h-none short:landscape:aspect-auto short:landscape:border-b-0 short:landscape:border-r-4 lg:landscape:h-full lg:landscape:max-h-none lg:landscape:aspect-auto lg:landscape:border-b-0 lg:landscape:border-r-4">
           <StoryArtwork
             artwork={page.artwork}
-            className="aspect-[3/2] max-h-[52dvh] min-h-40 short:landscape:h-full short:landscape:max-h-none short:landscape:aspect-auto lg:h-full lg:max-h-none lg:aspect-auto"
+            className="aspect-[3/2] max-h-[52dvh] min-h-40 short:landscape:h-full short:landscape:max-h-none short:landscape:aspect-auto lg:landscape:h-full lg:landscape:max-h-none lg:landscape:aspect-auto"
             key={page.id}
             priority
           />
@@ -487,7 +487,7 @@ export function StoryReader({
               className={cx(
                 "m-0 whitespace-pre-line font-black text-slate-800 outline-none forced-colors:focus:outline-2 forced-colors:focus:outline-solid forced-colors:focus:outline-offset-2",
                 isLongStory
-                  ? "grid gap-1 text-[1.0625rem] leading-[1.125] min-[360px]:text-xl min-[360px]:leading-tight short:landscape:!text-base short:landscape:!leading-[1.1] lg:text-2xl lg:leading-tight"
+                  ? "grid gap-1 text-[1.0625rem] leading-[1.125] min-[360px]:text-xl min-[360px]:leading-tight short:landscape:!text-base short:landscape:!leading-[1.1] lg:portrait:text-2xl lg:portrait:leading-tight xl:text-2xl xl:leading-tight"
                   : "text-[1.35rem] leading-snug short:landscape:!text-xl sm:text-2xl lg:text-3xl lg:leading-snug",
               )}
               ref={pageTextRef}

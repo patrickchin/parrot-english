@@ -95,6 +95,26 @@ test("home keeps five equal cards in one desktop row", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test("wide desktop home gives each activity a substantial card", async ({ page }) => {
+  await page.setViewportSize({ height: 1080, width: 1920 });
+  await page.goto("/");
+
+  const activities = page.getByRole("navigation", { name: "Learning activities" });
+  await expectActivityPicturesLoaded(activities);
+  const boxes = await activities.getByRole("link").evaluateAll((elements) =>
+    elements.map((element) => element.getBoundingClientRect().toJSON()),
+  );
+
+  expect(boxes).toHaveLength(5);
+  expect(Math.min(...boxes.map(({ width }) => width))).toBeGreaterThanOrEqual(280);
+  expect(Math.max(...boxes.map(({ width }) => width))).toBeLessThanOrEqual(320);
+  expect(Math.min(...boxes.map(({ height }) => height))).toBeGreaterThanOrEqual(280);
+  expect(
+    Math.max(...boxes.map(({ y }) => y)) - Math.min(...boxes.map(({ y }) => y)),
+  ).toBeLessThanOrEqual(1);
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("desktop home keeps one activity icon and an unobstructed label on each card", async ({ page }) => {
   await page.setViewportSize({ height: 900, width: 1280 });
   await page.goto("/");

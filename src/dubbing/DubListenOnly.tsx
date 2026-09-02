@@ -40,9 +40,9 @@ export function DubListenOnly({
     : undefined;
 
   return (
-    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16">
-      <section aria-label="Listen-only video" className="mx-auto grid w-full max-w-5xl gap-3 short-wide:max-w-[38rem] short-wide:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)] short-wide:gap-2">
-        <h1 className="m-0 text-2xl leading-tight text-brand-ink short-wide:col-span-2 short-wide:text-xl md:text-4xl short-wide:md:text-xl">
+    <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-5 pt-20 short-wide:px-2 short-wide:pb-2 short-wide:pt-16 min-[560px]:landscape:grid min-[560px]:landscape:content-center md:px-6 md:pt-24 short-wide:md:px-2 short-wide:md:pt-16">
+      <section aria-label="Listen-only video" className="mx-auto grid w-full max-w-5xl gap-3 short-wide:gap-2 min-[560px]:landscape:max-w-[min(100rem,calc((100dvh-7.25rem)*2.35))] min-[560px]:landscape:grid-cols-[minmax(0,1.35fr)_minmax(16rem,0.65fr)]">
+        <h1 className="m-0 text-2xl leading-tight text-brand-ink short-wide:text-xl min-[560px]:landscape:col-span-2 md:text-4xl short-wide:md:text-xl">
           {definition.title}
         </h1>
         <div className="grid min-w-0 gap-3 short-wide:gap-1">

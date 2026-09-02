@@ -142,7 +142,7 @@ test("home menu prioritizes the five learner activities", () => {
   );
   assert.match(
     html,
-    /<img[^>]*sizes="\(max-width: 767px\) calc\(\(100vw - 3.25rem\) \/ 2\), \(max-width: 1279px\) calc\(\(100vw - 7rem\) \/ 3\), min\(calc\(\(100vw - 8rem\) \/ 5\), 15rem\)"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp"[^>]*srcSet="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-768\.webp 768w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp 1536w"/,
+    /<img[^>]*sizes="\(max-width: 767px\) calc\(\(100vw - 3.25rem\) \/ 2\), \(max-width: 1279px\) calc\(\(100vw - 7rem\) \/ 3\), min\(calc\(\(100vw - 14rem\) \/ 5\), 17rem\)"[^>]*src="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp"[^>]*srcSet="https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-384\.webp 384w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover-768\.webp 768w, https:\/\/media\.parrotbook\.com\/assets\/v6\/dubbing\/nursery-rhymes-cover\.webp 1536w"/,
   );
   assert.doesNotMatch(
     html,
