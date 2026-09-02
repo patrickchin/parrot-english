@@ -86,7 +86,7 @@ const LEARNING_PATHS: readonly LearningPath[] = [
     imageClassName: "object-cover",
     imageHeight: NURSERY_RHYMES_COVER_ARTWORK.height,
     imageSizes:
-      "(max-width: 767px) calc((100vw - 3.25rem) / 2), (max-width: 1279px) calc((100vw - 7rem) / 3), min(calc((100vw - 8rem) / 5), 15rem)",
+      "(max-width: 767px) calc((100vw - 3.25rem) / 2), (max-width: 1279px) calc((100vw - 7rem) / 3), min(calc((100vw - 14rem) / 5), 17rem)",
     imageSrc: NURSERY_RHYMES_COVER_ARTWORK.src,
     imageSrcSet: dubArtworkSrcSet(NURSERY_RHYMES_COVER_ARTWORK.src),
     imageWidth: NURSERY_RHYMES_COVER_ARTWORK.width,
@@ -107,7 +107,7 @@ const LEARNING_PATHS: readonly LearningPath[] = [
 export function HomeMenu() {
   return (
     <main className="grid h-dvh w-screen content-center overflow-x-hidden overflow-y-auto bg-home px-4 pb-5 pt-20 short:content-start short:pb-3 short:pt-15 short-wide:!pb-0 short-wide:!pt-12 sm:px-6 md:px-10 md:py-24 lg:px-6">
-      <section className="mx-auto grid w-full max-w-7xl gap-5 short:gap-2 short-wide:!gap-2 md:gap-9">
+      <section className="mx-auto grid w-full max-w-[100rem] gap-5 short:gap-2 short-wide:!gap-2 md:gap-9">
         <header className="mx-auto max-w-3xl text-center">
           <h1 className="m-0 text-3xl leading-none tracking-tight text-brand-ink short:!text-[2rem] short-wide:!text-[2rem] min-[360px]:text-4xl sm:text-5xl lg:text-7xl">
             Parrot English
@@ -131,7 +131,7 @@ export function HomeMenu() {
           }) => (
             <InteractiveCardLink
               aria-label={accessibleLabel}
-              className="grid min-h-40 grid-cols-1 content-stretch items-center gap-2 overflow-hidden p-2 text-center short:min-h-24 short:gap-1.5 short:p-1.5 short-wide:min-h-24 short-wide:gap-1.5 short-wide:p-1.5 md:min-h-72 md:gap-4 md:p-4 xl:min-h-0"
+              className="grid min-h-40 grid-cols-1 content-stretch items-center gap-2 overflow-hidden p-2 text-center short:min-h-24 short:gap-1.5 short:p-1.5 short-wide:min-h-24 short-wide:gap-1.5 short-wide:p-1.5 md:min-h-72 md:gap-4 md:p-4 xl:min-h-0 2xl:min-h-72"
               key={to}
               to={to}
             >

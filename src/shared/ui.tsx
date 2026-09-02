@@ -118,7 +118,7 @@ export function controlClassName({
     size === "hero" &&
       "min-h-16 gap-2 px-6 py-2 text-xl md:min-h-20 md:text-2xl",
     size === "header" &&
-      "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-12 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5",
+      "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-12 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5 short:wide:!w-auto short:wide:!px-5",
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
     size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-2 text-base",
     variant === "brand" && "bg-brand-pink text-brand-action-ink",

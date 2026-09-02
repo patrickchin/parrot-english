@@ -614,6 +614,67 @@ test("wide guardian language control stays inside the account menu", async ({
   await expectNoOverlap(language, account);
 });
 
+test("wide header labels stay aligned across the short-screen boundary", async ({
+  page,
+}) => {
+  const layouts: Array<{ account: Rect; route: Rect }> = [];
+
+  for (const height of [620, 621]) {
+    const viewport = { height, name: `wide screen at ${height}px`, width: 1360 };
+    await page.setViewportSize(viewport);
+    await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
+
+    const routeControl = page.getByRole("link", {
+      exact: true,
+      name: "Back to Nursery rhymes",
+    });
+    const accountControl = page.getByRole("button", {
+      name: /Profile for .* learner mode/,
+    });
+    const pairs = [
+      [routeControl, routeControl.getByText("Nursery rhymes", { exact: true })],
+      [accountControl, accountControl.getByText("Mia", { exact: true })],
+    ] as const;
+
+    for (const [control, label] of pairs) {
+      const [controlBox, labelBox] = await Promise.all([
+        expectInsideViewport(control, viewport),
+        visibleBox(label),
+      ]);
+      expect(controlBox.width).toBeGreaterThan(controlBox.height);
+      expect(labelBox.x).toBeGreaterThanOrEqual(controlBox.x);
+      expect(labelBox.y).toBeGreaterThanOrEqual(controlBox.y);
+      expect(labelBox.x + labelBox.width).toBeLessThanOrEqual(
+        controlBox.x + controlBox.width,
+      );
+      expect(labelBox.y + labelBox.height).toBeLessThanOrEqual(
+        controlBox.y + controlBox.height,
+      );
+    }
+
+    layouts.push({
+      account: await visibleBox(accountControl),
+      route: await visibleBox(routeControl),
+    });
+  }
+
+  expect(Math.abs(layouts[1].route.x - layouts[0].route.x)).toBeLessThanOrEqual(
+    1,
+  );
+  expect(Math.abs(layouts[1].route.y - layouts[0].route.y)).toBeLessThanOrEqual(
+    1,
+  );
+  expect(
+    Math.abs(
+      layouts[1].account.x + layouts[1].account.width -
+        (layouts[0].account.x + layouts[0].account.width),
+    ),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(layouts[1].account.y - layouts[0].account.y),
+  ).toBeLessThanOrEqual(1);
+});
+
 test("arbitrary guardian identity cannot cover the compact learner switch", async ({
   page,
 }) => {

@@ -75,7 +75,7 @@ export function RouteHeader({
   return (
     <nav
       aria-label={ariaLabel}
-      className="fixed left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7"
+      className="fixed left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7 short:wide:!left-7 short:wide:!top-6"
     >
       {children}
     </nav>
@@ -330,7 +330,7 @@ export function AccountHeader({
   return (
     <aside
       aria-label={messages.account.label}
-      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7"
+      className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7 short:wide:!right-7 short:wide:!top-6"
       lang={language}
       ref={accountRef}
     >

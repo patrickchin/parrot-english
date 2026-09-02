@@ -497,7 +497,7 @@ function ConversationCaptions({
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -top-2.5 left-1/2 z-0 size-6 -translate-x-1/2 rotate-45 border-l-4 border-t-4 border-white bg-white short-wide:-left-2.5 short-wide:top-1/2 short-wide:-translate-y-1/2 short-wide:translate-x-0 short-wide:border-b-4 short-wide:border-l-4 short-wide:border-t-0"
+        className="pointer-events-none absolute -top-2.5 left-1/2 z-0 size-6 -translate-x-1/2 rotate-45 border-l-4 border-t-4 border-white bg-white min-[560px]:landscape:-left-2.5 min-[560px]:landscape:top-1/2 min-[560px]:landscape:-translate-y-1/2 min-[560px]:landscape:translate-x-0 min-[560px]:landscape:border-b-4 min-[560px]:landscape:border-l-4 min-[560px]:landscape:border-t-0"
       />
       <div
         aria-label="Conversation captions"
@@ -715,15 +715,15 @@ export function ConversationSurface({
   return (
     <ConversationScreen>
       <ConversationHeader onBack={onBack} />
-      <section className="mx-auto grid h-full min-h-0 w-full max-w-3xl grid-rows-[auto_auto_minmax(0,1fr)_auto_auto] justify-items-center gap-2 text-center short:gap-1.5 short-wide:max-w-5xl short-wide:grid-cols-[minmax(12rem,2fr)_minmax(20rem,3fr)] short-wide:grid-rows-[auto_auto_minmax(0,1fr)_auto] short-wide:gap-x-4 md:gap-3">
-        <h1 className="m-0 text-lg font-black leading-tight text-brand-ink short:text-base short-wide:col-start-2 short-wide:row-start-1 short-wide:self-end sm:text-2xl">
+      <section className="mx-auto grid h-full min-h-0 w-full max-w-3xl grid-rows-[auto_auto_minmax(0,1fr)_auto_auto] justify-items-center gap-2 text-center short:gap-1.5 min-[560px]:landscape:max-w-7xl min-[560px]:landscape:grid-cols-[minmax(12rem,2fr)_minmax(20rem,3fr)] min-[560px]:landscape:grid-rows-[auto_auto_minmax(0,1fr)_auto] min-[560px]:landscape:gap-x-4 min-[900px]:landscape:grid-cols-[minmax(20rem,1.15fr)_minmax(28rem,0.85fr)] min-[900px]:landscape:gap-x-6 md:gap-3">
+        <h1 className="m-0 text-lg font-black leading-tight text-brand-ink short:text-base min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-1 min-[560px]:landscape:self-end sm:text-2xl">
           {title}
         </h1>
 
         <ConversationStatus
           audioPlaybackBlocked={showAudioRecovery && audioPlaybackBlocked}
           audioPlaybackError={showAudioRecovery ? audioPlaybackError : ""}
-          className="short-wide:col-start-2 short-wide:row-start-2 short-wide:self-start"
+          className="min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-2 min-[560px]:landscape:self-start"
           directActionAnnouncement={directActionAnnouncement}
           microphoneEnabled={microphoneEnabled}
           purpose={purpose}
@@ -732,9 +732,9 @@ export function ConversationSurface({
           waitDetailIsVisibleTranscript={caption.transcript === "final"}
         />
 
-        <figure className="m-0 grid h-full min-h-0 w-full place-items-center short-wide:col-start-1 short-wide:row-span-4 short-wide:row-start-1">
+        <figure className="m-0 grid h-full min-h-0 w-full place-items-center min-[560px]:landscape:col-start-1 min-[560px]:landscape:row-span-4 min-[560px]:landscape:row-start-1">
           {recoveryAction === "lesson" ? (
-            <div className="relative aspect-[4/3] max-h-full w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short:max-w-56 short:rounded-2xl short-wide:max-w-sm sm:max-w-md">
+            <div className="relative aspect-[4/3] max-h-full w-full max-w-sm overflow-hidden rounded-3xl border-4 border-white bg-sky-100 shadow-card short:max-w-56 short:rounded-2xl short-wide:max-w-sm sm:max-w-md min-[900px]:landscape:!max-w-2xl">
               <img
                 alt={LESSON_LEARNING_PATH.imageAlt}
                 className="size-full object-cover"
@@ -750,7 +750,7 @@ export function ConversationSurface({
             <img
               alt="Peppa"
               className={cx(
-                "h-full min-h-0 w-full max-w-sm object-contain drop-shadow-lg short:max-w-32 short-wide:max-w-56 sm:max-w-md",
+                "h-full min-h-0 w-full max-w-sm object-contain drop-shadow-lg short:max-w-32 short-wide:max-w-56 sm:max-w-md min-[900px]:landscape:!max-w-2xl",
                 !peppaIsStatic &&
                   "animate-float motion-reduce:animate-none",
               )}
@@ -768,10 +768,10 @@ export function ConversationSurface({
           <ConversationCaptions
             caption={caption}
             className={cx(
-              "short-wide:col-start-2 short-wide:row-start-3",
+              "min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-3",
               expandLandscapeCaption
-                ? "short-wide:h-full short-wide:self-stretch"
-                : "short-wide:h-28 short-wide:self-end",
+                ? "min-[560px]:landscape:!h-full min-[560px]:landscape:self-stretch min-[900px]:landscape:max-h-72 min-[900px]:landscape:self-end"
+                : "min-[560px]:landscape:!h-28 min-[560px]:landscape:self-end",
             )}
             onRepeatAudio={onRepeatAudio}
             regionRef={captionRegionRef}
@@ -787,7 +787,7 @@ export function ConversationSurface({
             "grid min-h-14 w-full max-w-xl items-center gap-2 short:min-h-12 md:min-h-16",
             showFinish &&
               "grid-cols-[minmax(0,1fr)_auto]",
-            "short-wide:col-start-2 short-wide:row-start-4",
+            "min-[560px]:landscape:col-start-2 min-[560px]:landscape:row-start-4",
           )}
           role={hasConversationControls ? "group" : undefined}
         >

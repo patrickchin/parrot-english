@@ -2194,6 +2194,66 @@ test("listen-only playback keeps its guide below the stage and transport visible
   await expectTargetAtLeast48(stop);
 });
 
+test("listen-only video keeps one bounded landscape stage across desktop heights", async ({
+  page,
+}) => {
+  const compactLayouts: Array<{
+    play: Awaited<ReturnType<typeof boundingBoxOrThrow>>;
+    player: Awaited<ReturnType<typeof boundingBoxOrThrow>>;
+  }> = [];
+  const viewports = [
+    { height: 620, width: 1360 },
+    { height: 621, width: 1360 },
+    { height: 1080, width: 1920 },
+    { height: 1440, width: 2560 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
+
+    const stage = page.getByRole("region", { name: "Listen-only video" });
+    const player = page.getByRole("region", { name: "Full video player" });
+    const play = page.getByRole("button", { name: "Play full video" });
+    const retry = page.getByRole("button", { name: "Try recording again" });
+    const [stageBox, playerBox, playBox] = await Promise.all([
+      boundingBoxOrThrow(stage),
+      boundingBoxOrThrow(player),
+      boundingBoxOrThrow(play),
+    ]);
+
+    expect(playerBox.width).toBeGreaterThanOrEqual(780);
+    expect(playerBox.x + playerBox.width).toBeLessThanOrEqual(playBox.x);
+    expect(stageBox.width).toBeGreaterThanOrEqual(1180);
+    expect(stageBox.width).toBeLessThanOrEqual(1600);
+    if (viewport.width >= 1920) {
+      expect(playerBox.width).toBeGreaterThanOrEqual(1050);
+      expect(stageBox.width).toBeGreaterThanOrEqual(1500);
+    }
+    for (const target of [stage, player, play, retry]) {
+      await expectFullyInViewport(page, target);
+    }
+    await expect
+      .poll(() =>
+        page.getByRole("main").evaluate((element) =>
+          element.scrollHeight <= element.clientHeight),
+      )
+      .toBe(true);
+
+    if (viewport.width === 1360) {
+      compactLayouts.push({ play: playBox, player: playerBox });
+    }
+  }
+
+  expect(Math.abs(compactLayouts[1].player.x - compactLayouts[0].player.x))
+    .toBeLessThanOrEqual(4);
+  expect(
+    Math.abs(compactLayouts[1].player.width - compactLayouts[0].player.width),
+  ).toBeLessThanOrEqual(4);
+  expect(Math.abs(compactLayouts[1].play.x - compactLayouts[0].play.x))
+    .toBeLessThanOrEqual(4);
+});
+
 test("editor actions keep the complete line heading and non-live word semantics", async ({ page }) => {
   const line = DUB_DEFINITIONS[0].lines[0];
   const clockStartedAt = Date.parse("2026-09-01T08:00:00.000Z");
@@ -2238,13 +2298,15 @@ test("editor actions keep the complete line heading and non-live word semantics"
   );
 });
 
-test("Old MacDonald records on its two- and eight-second phrase windows", async ({ page }) => {
+test("Old MacDonald exposes its two- and eight-second recording windows", async ({ page }) => {
   await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
   await expectDubProject(page);
   await openScene(page, 1);
+  await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("progressbar", { name: "Recording time" }))
     .toHaveAttribute("aria-valuemax", "8000");
+  await page.getByRole("button", { name: "Stop recording" }).click();
   await expectSavedTake(page, 1);
   await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
     .toBeGreaterThan(0);
@@ -2256,6 +2318,7 @@ test("Old MacDonald records on its two- and eight-second phrase windows", async 
     .toHaveAttribute("aria-valuemax", "2000");
   await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
     .toBeGreaterThan(backingCount);
+  await page.getByRole("button", { name: "Stop recording" }).click();
   await expectSavedTake(page, 2);
 });
 
