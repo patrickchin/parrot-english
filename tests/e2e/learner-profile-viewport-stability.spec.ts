@@ -822,8 +822,20 @@ test("profile Replay and grown-up access gateway remain independently operable",
   const account = page.getByRole("button", { name: /^Profile for / });
   await account.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
+  const panel = page.getByRole("dialog", { name: "Account menu" });
   const switchLearner = menu.getByRole("menuitem", {
     name: "Switch learner",
+  });
+  const language = panel.getByRole("group", {
+    name: "Guardian guidance language",
+  });
+  const english = language.getByRole("button", {
+    exact: true,
+    name: "English",
+  });
+  const chinese = language.getByRole("button", {
+    exact: true,
+    name: "中文",
   });
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Switch learner",
@@ -832,6 +844,10 @@ test("profile Replay and grown-up access gateway remain independently operable",
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
   ).toHaveCount(0);
+  await expect(english).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(chinese).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(switchLearner).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);

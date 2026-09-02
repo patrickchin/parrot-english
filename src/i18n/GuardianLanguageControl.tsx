@@ -5,7 +5,7 @@ import { useGuardianLanguage } from "./guardian-language";
 export function GuardianLanguageControl({
   placement = "global",
 }: {
-  placement?: "global" | "dialog";
+  placement?: "global" | "dialog" | "menu";
 }): ReactElement {
   const { language, messages, selectLanguage } = useGuardianLanguage();
 

@@ -5,7 +5,6 @@ import {
   type ReactElement,
 } from "react";
 import { useLocation } from "react-router";
-import { GuardianLanguageControl } from "./GuardianLanguageControl";
 import {
   isGuardianGuidanceSurface,
   useGuardianLanguage,
@@ -36,10 +35,5 @@ export function GuardianLanguageChrome({
     };
   }, [documentLanguage]);
 
-  return (
-    <>
-      <GuardianLanguageControl />
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

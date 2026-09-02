@@ -187,11 +187,13 @@ test("delayed dashboard readiness preserves an open Account menu", async ({
     })
     .click();
   const menu = page.getByRole("menu", { name: "Account menu" });
-  const dashboardItem = menu.getByRole("menuitem", {
-    exact: true,
-    name: "Guardian dashboard",
-  });
-  await expect(dashboardItem).toBeFocused();
+  const language = page
+    .getByRole("dialog", { name: "Account menu" })
+    .getByRole("button", {
+      exact: true,
+      name: "English",
+    });
+  await expect(language).toBeFocused();
 
   expect(
     await page.evaluate(
@@ -210,7 +212,7 @@ test("delayed dashboard readiness preserves an open Account menu", async ({
     page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
   ).toBeVisible();
   await expect(menu).toBeVisible();
-  await expect(dashboardItem).toBeFocused();
+  await expect(language).toBeFocused();
 });
 
 test("a reconciled learner creation refreshes inline dubbing targets", async ({
@@ -456,6 +458,17 @@ test("Guardian menu follows its exact native Tab order and restores focus on Esc
   await page.keyboard.press("Enter");
   const menu = page.getByRole("menu", { name: "Account menu" });
   const items = menu.getByRole("menuitem");
+  const language = page
+    .getByRole("dialog", { name: "Account menu" })
+    .getByRole("group", { name: "Guardian guidance language" });
+  const english = language.getByRole("button", {
+    exact: true,
+    name: "English",
+  });
+  const chinese = language.getByRole("button", {
+    exact: true,
+    name: "中文",
+  });
   await expect(items).toHaveText([
     "Guardian dashboard",
     "Manage learners",
@@ -463,16 +476,10 @@ test("Guardian menu follows its exact native Tab order and restores focus on Esc
     "Sign out",
   ]);
 
-  for (const name of [
-    "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
-    "Sign out",
-  ]) {
-    await expect(
-      menu.getByRole("menuitem", { exact: true, name }),
-    ).toBeFocused();
-    if (name !== "Sign out") await page.keyboard.press("Tab");
+  const controls = [english, chinese, ...(await items.all())];
+  for (let index = 0; index < controls.length; index += 1) {
+    await expect(controls[index]).toBeFocused();
+    if (index < controls.length - 1) await page.keyboard.press("Tab");
   }
 
   await page.keyboard.press("Tab");
@@ -486,11 +493,7 @@ test("Guardian menu follows its exact native Tab order and restores focus on Esc
   await expect(trigger).toBeFocused();
 
   await page.keyboard.press("Enter");
-  await expect(
-    page
-      .getByRole("menu", { name: "Account menu" })
-      .getByRole("menuitem", { exact: true, name: "Guardian dashboard" }),
-  ).toBeFocused();
+  await expect(english).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu", { name: "Account menu" })).toHaveCount(0);
   await expect(trigger).toBeFocused();

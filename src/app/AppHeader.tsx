@@ -19,6 +19,7 @@ import {
 import type { LinkProps } from "react-router";
 import { ActionButton, ActionLink, cx, MenuButton } from "../shared/ui";
 import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { englishGuardianMessages, type GuardianMessages } from "../i18n/messages/en";
 
@@ -215,6 +216,7 @@ export function AccountHeader({
   const accountButtonRef = useRef<HTMLButtonElement>(null);
   const menuFocusRef = useRef<"first" | "last">("first");
   const menuId = useId();
+  const panelId = useId();
   const previousModeRef = useRef(activeMode);
   const signOutAlertId = useId();
   const managedLearnerLabel = learnerLabel.trim() || "Learner";
@@ -243,12 +245,16 @@ export function AccountHeader({
   useEffect(() => {
     if (!isMenuOpen) return;
 
-    const menuItems = accountRef.current?.querySelectorAll<HTMLButtonElement>(
-      "[role='menuitem']:not(:disabled)",
-    );
-    menuItems?.[
-      menuFocusRef.current === "last" ? menuItems.length - 1 : 0
-    ]?.focus();
+    const focusTarget =
+      menuFocusRef.current === "last"
+        ? accountRef.current?.querySelectorAll<HTMLButtonElement>(
+            "[role='menuitem']:not(:disabled)",
+          )
+        : accountRef.current?.querySelectorAll<HTMLButtonElement>(
+            "button[aria-pressed]:not(:disabled)",
+          );
+    focusTarget?.[menuFocusRef.current === "last" ? focusTarget.length - 1 : 0]
+      ?.focus();
 
     function closeFromOutside(event: PointerEvent) {
       if (isDialogOpen) return;
@@ -349,9 +355,9 @@ export function AccountHeader({
               ? messages.account.signingOutProfileLabel(profileLabel)
               : profileLabel
           }
-          aria-controls={menuId}
+          aria-controls={panelId}
           aria-expanded={isMenuOpen}
-          aria-haspopup="menu"
+          aria-haspopup="dialog"
           className={cx(
             "max-w-full shrink-0",
             isSigningOut &&
@@ -448,7 +454,21 @@ export function AccountHeader({
         {activeMode === "guardian" ? signOutError : ""}
       </span>
       {isMenuOpen && !isSigningOut ? (
-        <div className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] w-72 min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]">
+        <div
+          aria-label={messages.account.menuLabel}
+          className="absolute right-0 top-full mt-2 grid max-h-[calc(100dvh-7rem)] w-72 min-w-52 max-w-[calc(100vw-1.25rem)] gap-1 overflow-y-auto overscroll-contain rounded-3xl border-4 border-white bg-brand-navy p-2 shadow-control-navy short:max-h-[calc(100dvh-4.5rem)]"
+          id={panelId}
+          onBlur={(event) => {
+            if (
+              !isDialogOpen &&
+              !event.currentTarget.contains(event.relatedTarget as Node | null)
+            ) {
+              setIsMenuOpen(false);
+            }
+          }}
+          role="dialog"
+        >
+          <GuardianLanguageControl placement="menu" />
           {activeMode === "learner" ? (
             <div
               aria-label="Active profile"
@@ -475,16 +495,6 @@ export function AccountHeader({
             aria-label={messages.account.menuLabel}
             className="grid gap-1 [&>button]:scroll-my-2"
             id={menuId}
-            onBlur={(event) => {
-              if (
-                !isDialogOpen &&
-                !event.currentTarget.contains(
-                  event.relatedTarget as Node | null,
-                )
-              ) {
-                setIsMenuOpen(false);
-              }
-            }}
             onKeyDown={handleMenuKeyDown}
             role="menu"
           >
