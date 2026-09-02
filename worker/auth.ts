@@ -1,12 +1,15 @@
 import { APIError, betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 import { AUTH_TURNSTILE_ACTION } from "../lib/auth-captcha.ts";
 import { SHARED_GUEST_USER_ID } from "../lib/shared-guest.ts";
 import * as schema from "../src/db/schema.ts";
 import { prepareAccountDeletion } from "./account-deletion.ts";
 import { createDatabase } from "./database.ts";
+import { accountPrivateMediaPrefix } from "./private-media-storage.ts";
 import { PUBLIC_APP_ORIGIN } from "./public-origin.ts";
+import { normalizeUserEmail } from "./request-identity.ts";
 import { sharedGuestAuth } from "./shared-guest-auth.ts";
 
 const PR_PREVIEW_ORIGIN_PATTERN = "https://*-parrot-english.p-ch.workers.dev";
@@ -73,6 +76,32 @@ export function createAuth(
       provider: "sqlite",
       schema,
     }),
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            const email = normalizeUserEmail(user.email);
+            const [reservation] = await database
+              .select({ userIdHash: schema.accountDeletionTombstone.userIdHash })
+              .from(schema.accountDeletionTombstone)
+              .where(
+                eq(
+                  schema.accountDeletionTombstone.r2Prefix,
+                  accountPrivateMediaPrefix(email),
+                ),
+              )
+              .limit(1);
+            if (reservation) {
+              throw APIError.fromStatus("UNPROCESSABLE_ENTITY", {
+                code: "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
+                message: "Please use a different email address.",
+              });
+            }
+            return { data: { ...user, email } };
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: false,
@@ -90,6 +119,7 @@ export function createAuth(
       enabled: true,
     },
     user: {
+      changeEmail: { enabled: false },
       deleteUser: {
         enabled: true,
         beforeDelete: async (user) => {

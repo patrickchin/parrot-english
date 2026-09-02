@@ -6,7 +6,11 @@ import {
 } from "../src/db/schema.ts";
 import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import type { Database } from "./database.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
+import {
+  learnerNameKey,
+  normalizeLearnerName,
+  type LearnerIdentity,
+} from "./request-identity.ts";
 
 type RepositoryOptions = {
   createId?: () => string;
@@ -59,6 +63,17 @@ export function createLearnerProfileRepository(
     return profile;
   }
 
+  function nameFields(
+    _identity: LearnerIdentity,
+    name: string | null | undefined,
+  ) {
+    const normalizedName = normalizeLearnerName(name);
+    return {
+      name: normalizedName,
+      nameKey: learnerNameKey(normalizedName),
+    };
+  }
+
   async function ensureProfile(
     identity: LegacyLearnerIdentity | LearnerIdentity,
   ) {
@@ -67,12 +82,15 @@ export function createLearnerProfileRepository(
     let profile = await findProfile(identity.userId);
     if (!profile) {
       const timestamp = now();
+      const name = normalizeLearnerName(identity.userName);
       await database
         .insert(learnerProfile)
         .values({
           id: createId(),
           authUserId: identity.userId,
-          name: identity.userName,
+          name,
+          nameKey: learnerNameKey(name),
+          privateMediaName: "Learner",
           profileStatus: "not_started",
           createdAt: timestamp,
           updatedAt: timestamp,
@@ -257,9 +275,12 @@ export function createLearnerProfileRepository(
       skippedQuestionKeysJson?: string;
     }
   ) {
+    const normalizedNameFields = Object.hasOwn(values, "name")
+      ? await nameFields(identity, values.name)
+      : {};
     await database
       .update(learnerProfile)
-      .set({ ...values, updatedAt: now() })
+      .set({ ...values, ...normalizedNameFields, updatedAt: now() })
       .where(
         and(
           eq(learnerProfile.id, identity.learnerProfileId),
@@ -362,6 +383,7 @@ export function createLearnerProfileRepository(
     }
   ) {
     const timestamp = now();
+    const normalizedNameFields = await nameFields(identity, values.name);
     await database
       .update(learnerProfile)
       .set({
@@ -369,7 +391,7 @@ export function createLearnerProfileRepository(
         answersJson: values.answersJson,
         completedAt: values.completed ? timestamp : null,
         currentQuestionKey: values.currentQuestionKey,
-        name: values.name,
+        ...normalizedNameFields,
         profileStatus: values.completed ? "completed" : "in_progress",
         skippedQuestionKeysJson: values.skippedQuestionKeysJson,
         updatedAt: timestamp,
@@ -424,6 +446,7 @@ export function createLearnerProfileRepository(
     findProfile,
     hasSessionBypass,
     loadProfile,
+    nameFields,
     clearLessonRecordingCleanup,
     readLessonRecordingConsent,
     readLessonRecordingConsentState,

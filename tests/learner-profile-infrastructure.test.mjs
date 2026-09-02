@@ -15,6 +15,8 @@ const EXPECTED_MODELS = {
       "authUserId",
       "legacyStorageOwner",
       "name",
+      "privateMediaName",
+      "nameKey",
       "age",
       "storyLevel",
       "answersJson",
@@ -327,9 +329,30 @@ describe("learner-profile infrastructure", () => {
         ),
       );
       assert.ok(
+        indexDetails(database, "account_deletion_tombstone").some(
+          (index) =>
+            index.unique === 1 && index.columns.join() === "r2_prefix",
+        ),
+        "Expected deleted account media roots to remain reserved",
+      );
+      assert.ok(
         profileIndexes.some(
           (index) =>
             index.unique === 1 && index.columns.join() === "id,auth_user_id",
+        ),
+      );
+      assert.ok(
+        profileIndexes.some(
+          (index) =>
+            index.unique === 1 &&
+            index.columns.join() === "auth_user_id,name_key",
+        ),
+      );
+      assert.ok(
+        profileIndexes.some(
+          (index) =>
+            index.unique === 1 &&
+            index.columns.join() === "auth_user_id,private_media_name",
         ),
       );
       assert.ok(
@@ -367,6 +390,120 @@ describe("learner-profile infrastructure", () => {
       const bypassIndexes = indexDetails(database, "onboarding_session_bypass");
       assert.ok(
         bypassIndexes.some((index) => index.columns.join() === "auth_user_id"),
+      );
+    } finally {
+      database.close();
+    }
+  });
+
+  it("backfills stable readable learner media names before enforcing uniqueness", () => {
+    const migrations = readMigrations();
+    const migrationIndex = migrations.findIndex(
+      ({ name }) => name === "0020_human-readable-private-media.sql",
+    );
+    assert.ok(migrationIndex > 0);
+    const database = new DatabaseSync(":memory:");
+    database.exec("PRAGMA foreign_keys = ON");
+
+    try {
+      for (const migration of migrations.slice(0, migrationIndex)) {
+        database.exec(migration.sql);
+      }
+      database.exec(`
+        INSERT INTO user (id, name, email)
+        VALUES ('user-a', 'Guardian', 'guardian@example.test');
+        INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, created_at, updated_at)
+        VALUES
+          ('learner-a', 'user-a', 1, NULL, 100, 100),
+          ('learner-b', 'user-a', 0, 'Learner', 200, 200),
+          ('learner-c', 'user-a', 0, NULL, 300, 300),
+          ('learner-d', 'user-a', 0, ' Mary ', 400, 400);
+        INSERT INTO learner_profile_deletion_tombstone
+          (learner_profile_id, user_id_hash, legacy_storage_owner,
+           generation, requested_at)
+        VALUES
+          ('learner-c', 'hash-c', 0, 1, 500),
+          ('missing-learner', 'hash-missing', 0, 1, 500);
+        INSERT INTO guardian_dub_consent
+          (auth_user_id, consent_version, grant_generation, state,
+           granted_at, updated_at)
+        VALUES ('user-a', 'current-consent', 'current-generation', 'granted',
+          600, 601);
+        INSERT INTO learner_dub_consent
+          (learner_profile_id, auth_user_id, consent_version, grant_generation,
+           state, granted_at, updated_at)
+        VALUES ('learner-a', 'user-a', 'stale-consent', 'stale-generation',
+          'granted', 1, 1);
+      `);
+
+      database.exec(migrations[migrationIndex].sql);
+
+      assert.deepEqual(
+        database
+          .prepare(
+            `SELECT id, private_media_name, name_key
+             FROM learner_profile
+             WHERE auth_user_id = 'user-a'
+             ORDER BY created_at, id`,
+          )
+          .all()
+          .map((row) => ({ ...row })),
+        [
+          { id: "learner-a", private_media_name: "Learner", name_key: null },
+          {
+            id: "learner-b",
+            private_media_name: "Learner (2)",
+            name_key: "learner",
+          },
+          {
+            id: "learner-c",
+            private_media_name: "Learner (3)",
+            name_key: null,
+          },
+          { id: "learner-d", private_media_name: "Mary", name_key: "mary" },
+        ],
+      );
+      assert.deepEqual(
+        database
+          .prepare(
+            `SELECT learner_profile_id, private_media_name
+             FROM learner_profile_deletion_tombstone
+             ORDER BY learner_profile_id`,
+          )
+          .all()
+          .map((row) => ({ ...row })),
+        [
+          { learner_profile_id: "learner-c", private_media_name: "Learner (3)" },
+          { learner_profile_id: "missing-learner", private_media_name: "Learner" },
+        ],
+      );
+      assert.deepEqual(
+        {
+          ...database
+            .prepare(
+              `SELECT consent_version, grant_generation, granted_at, updated_at
+               FROM learner_dub_consent
+               WHERE learner_profile_id = 'learner-a'`,
+            )
+            .get(),
+        },
+        {
+          consent_version: "current-consent",
+          grant_generation: "current-generation",
+          granted_at: 600,
+          updated_at: 601,
+        },
+      );
+      assert.throws(
+        () =>
+          database.exec(`
+            INSERT INTO learner_profile
+              (id, auth_user_id, legacy_storage_owner, name,
+               private_media_name, name_key)
+            VALUES ('learner-e', 'user-a', 0, 'MARY', 'Mary (2)', 'mary');
+          `),
+        /UNIQUE constraint failed: learner_profile\.auth_user_id, learner_profile\.name_key/,
       );
     } finally {
       database.close();

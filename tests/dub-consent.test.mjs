@@ -39,11 +39,12 @@ beforeEach(() => {
   insertUser(state.sqlite, "user-1");
   const insertLearner = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-     VALUES (?, ?, ?, 'not_started', ?)`,
+      (id, auth_user_id, name, private_media_name, name_key,
+       onboarding_status, legacy_storage_owner)
+     VALUES (?, ?, ?, ?, ?, 'not_started', ?)`,
   );
-  insertLearner.run("learner-a", "user-1", "Mia", 1);
-  insertLearner.run("learner-b", "user-1", "Leo", 0);
+  insertLearner.run("learner-a", "user-1", "Mia", "Mia", "mia", 1);
+  insertLearner.run("learner-b", "user-1", "Leo", "Leo", "leo", 0);
   repository = createDubConsentRepository(createDatabase(state.d1), {
     createGeneration: () => "grant-1",
     now: () => new Date("2026-08-25T08:00:00.000Z"),

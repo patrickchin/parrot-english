@@ -27,8 +27,10 @@ function insertAccount(database) {
     .run();
   database
     .prepare(
-      `INSERT INTO learner_profile (id, auth_user_id, legacy_storage_owner)
-       VALUES ('learner-a', 'user-a', 1)`,
+      `INSERT INTO learner_profile
+        (id, auth_user_id, legacy_storage_owner, name,
+         private_media_name, name_key)
+       VALUES ('learner-a', 'user-a', 1, 'Mary', 'Mary', 'mary')`,
     )
     .run();
 }
@@ -48,6 +50,7 @@ describe("learner deletion persistence", () => {
       [
         "learnerProfileId",
         "userIdHash",
+        "privateMediaName",
         "legacyStorageOwner",
         "generation",
         "requestedAt",
@@ -75,10 +78,11 @@ describe("learner deletion persistence", () => {
       database
         .prepare(
           `INSERT INTO learner_profile_deletion_tombstone
-            (learner_profile_id, user_id_hash, legacy_storage_owner,
-             generation, requested_at, storage_keys_json)
-           VALUES ('learner-a', 'opaque-user-hash', 1, 3, 1700000000000,
-                   '["learners/learner-a/"]')`,
+            (learner_profile_id, user_id_hash, private_media_name,
+             legacy_storage_owner, generation, requested_at, storage_keys_json)
+           VALUES ('learner-a', 'opaque-user-hash', 'Mary', 1, 3,
+                   1700000000000,
+                   '["accounts/guardian@example.test/learners/Mary/recordings/"]')`,
         )
         .run();
 
@@ -89,8 +93,9 @@ describe("learner deletion persistence", () => {
         {
           ...database
             .prepare(
-              `SELECT learner_profile_id, user_id_hash, legacy_storage_owner,
-                      generation, requested_at, storage_keys_json
+              `SELECT learner_profile_id, user_id_hash, private_media_name,
+                      legacy_storage_owner, generation, requested_at,
+                      storage_keys_json
                FROM learner_profile_deletion_tombstone`,
             )
             .get(),
@@ -98,10 +103,12 @@ describe("learner deletion persistence", () => {
         {
           learner_profile_id: "learner-a",
           user_id_hash: "opaque-user-hash",
+          private_media_name: "Mary",
           legacy_storage_owner: 1,
           generation: 3,
           requested_at: 1_700_000_000_000,
-          storage_keys_json: '["learners/learner-a/"]',
+          storage_keys_json:
+            '["accounts/guardian@example.test/learners/Mary/recordings/"]',
         },
       );
       assert.deepEqual(

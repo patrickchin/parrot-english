@@ -19,9 +19,9 @@ const OLD_LINE_IDS = Array.from(
   { length: 35 },
   (_, index) => `old-macdonald-v1-line-${index + 1}`,
 );
-const ACCOUNT_PREFIX = "accounts/user-1/";
+const ACCOUNT_PREFIX = "accounts/guardian@example.test/";
 const OWNER_RECORDINGS_PREFIX =
-  `${ACCOUNT_PREFIX}learners/learner-a/recordings/`;
+  `${ACCOUNT_PREFIX}learners/Mary/recordings/`;
 const OWNER_PREFIX =
   `${OWNER_RECORDINGS_PREFIX}nursery-rhymes/five-little-ducks-v2/`;
 const MARKER_KEY = `${OWNER_PREFIX}.dub-generation`;
@@ -33,13 +33,15 @@ const oldSlotKey = (lineId) => `${OLD_OWNER_PREFIX}${lineId}.audio`;
 const catalogMarkerKey = (dubId) =>
   `${OWNER_RECORDINGS_PREFIX}nursery-rhymes/${dubId}/.dub-generation`;
 const SIBLING_PREFIX =
-  `${ACCOUNT_PREFIX}learners/learner-b/recordings/nursery-rhymes/five-little-ducks-v2/`;
+  `${ACCOUNT_PREFIX}learners/Rose/recordings/nursery-rhymes/five-little-ducks-v2/`;
 const siblingSlotKey = (lineId) => `${SIBLING_PREFIX}${lineId}.audio`;
 const DEFAULT_IDENTITY = {
   learnerName: "Mia",
   learnerProfileId: "learner-a",
   legacyStorageOwner: true,
+  privateMediaName: "Mary",
   sessionId: "session-1",
+  userEmail: "guardian@example.test",
   userId: "user-1",
   userName: "Parent",
 };
@@ -367,6 +369,7 @@ async function callDub({
   pending = async () => false,
   generation = () => "generation-1",
   nonce = () => "upload-1",
+  userEmail = "guardian@example.test",
   wait = async () => {},
   userId = "user-1",
 }) {
@@ -377,7 +380,7 @@ async function callDub({
   return handleDubRequest({
     database,
     env: { PRIVATE_MEDIA_BUCKET: bucket },
-    identity: identity ?? { ...DEFAULT_IDENTITY, userId },
+    identity: identity ?? { ...DEFAULT_IDENTITY, userEmail, userId },
     request: new Request(`https://example.test${path}`, init),
   }, {
     consentRepository,
@@ -401,11 +404,12 @@ describe("private learner dub API", () => {
       ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', ?)`,
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, ?, ?, 'not_started', ?)`,
       );
-      insertLearner.run("learner-a", "user-1", "Mia", 1);
-      insertLearner.run("learner-b", "user-1", "Leo", 0);
+      insertLearner.run("learner-a", "user-1", "Mia", "Mary", "mia", 1);
+      insertLearner.run("learner-b", "user-1", "Leo", "Rose", "leo", 0);
       const database = createDatabase(state.d1);
       let consentSequence = 0;
       const consentRepository = createDubConsentRepository(database, {
@@ -416,7 +420,9 @@ describe("private learner dub API", () => {
         learnerName: "Mia",
         learnerProfileId: "learner-a",
         legacyStorageOwner: true,
+        privateMediaName: "Mary",
         sessionId: "legacy-session",
+        userEmail: "guardian@example.test",
         userId: "user-1",
         userName: "Guardian",
       };
@@ -424,7 +430,9 @@ describe("private learner dub API", () => {
         learnerName: "Leo",
         learnerProfileId: "learner-b",
         legacyStorageOwner: false,
+        privateMediaName: "Rose",
         sessionId: "new-session",
+        userEmail: "guardian@example.test",
         userId: "user-1",
         userName: "Guardian",
       };
@@ -495,7 +503,7 @@ describe("private learner dub API", () => {
       );
       assert.match(
         siblingAudioPut.key,
-        /\/learners\/learner-b\/recordings\/nursery-rhymes\//,
+        /\/learners\/Rose\/recordings\/nursery-rhymes\//,
       );
       assert.ok(await bucket.head(ownerKey));
       assert.ok(await bucket.head(siblingSlotKey("line-1")));
@@ -1123,7 +1131,7 @@ describe("private learner dub API", () => {
       headers: CONSENT_HEADERS,
       method: "PUT",
       path: `${DUB_PATH}/lines/line-1`,
-      userId: "user/one",
+      userEmail: "guardian/one@example.test",
     });
 
     assert.equal(upload.status, 201);
@@ -1135,7 +1143,7 @@ describe("private learner dub API", () => {
     assert.equal(bucket.calls.put.length, 2);
     assert.deepEqual(bucket.calls.put[0], {
       bytes: fenceBytes("marker", "consent-1", "ready"),
-      key: "accounts/user%2Fone/learners/learner-a/recordings/nursery-rhymes/five-little-ducks-v2/.dub-generation",
+      key: "accounts/guardian%2Fone@example.test/learners/Mary/recordings/nursery-rhymes/five-little-ducks-v2/.dub-generation",
       options: {
         customMetadata: { generation: "consent-1", state: "ready" },
         onlyIf: { etagDoesNotMatch: "*" },
@@ -1143,7 +1151,7 @@ describe("private learner dub API", () => {
     });
     assert.deepEqual(bucket.calls.put[1], {
       bytes: envelope.bytes,
-      key: "accounts/user%2Fone/learners/learner-a/recordings/nursery-rhymes/five-little-ducks-v2/line-1.audio",
+      key: "accounts/guardian%2Fone@example.test/learners/Mary/recordings/nursery-rhymes/five-little-ducks-v2/line-1.audio",
       options: {
         customMetadata: {
           generation: "consent-1",
@@ -1164,7 +1172,7 @@ describe("private learner dub API", () => {
       bucket,
       method: "GET",
       path: `${DUB_PATH}/lines/line-1/audio`,
-      userId: "user/one",
+      userEmail: "guardian/one@example.test",
     });
     assert.equal(asset.status, 200);
     assert.equal(asset.headers.get("Cache-Control"), "private, no-store");
@@ -1176,7 +1184,7 @@ describe("private learner dub API", () => {
       bucket,
       method: "GET",
       path: DUB_PATH,
-      userId: "user/one",
+      userEmail: "guardian/one@example.test",
     });
     const statusPayload = await status.json();
     assert.equal(statusPayload.lines[0].saved, true);

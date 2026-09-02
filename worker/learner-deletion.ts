@@ -40,9 +40,9 @@ type LearnerDeletionInput = {
 type DeletionTombstone = typeof learnerProfileDeletionTombstone.$inferSelect;
 export type LearnerDeletionStorageOwner = Pick<
   AccountIdentity,
-  "userId"
+  "userEmail"
 > & {
-  learnerProfileId: string;
+  privateMediaName: string;
 };
 
 export class LearnerDeletionError extends Error {
@@ -163,9 +163,10 @@ async function markDeletionPending(
     database.$client.prepare(
       `INSERT INTO learner_profile_deletion_tombstone (
          learner_profile_id, user_id_hash, legacy_storage_owner,
-         generation, requested_at, storage_keys_json
+         private_media_name, generation, requested_at, storage_keys_json
        )
-       SELECT target.id, ?, target.legacy_storage_owner, 1, ?, '[]'
+       SELECT target.id, ?, target.legacy_storage_owner,
+              target.private_media_name, 1, ?, '[]'
        FROM learner_profile AS target
        WHERE target.id = ? AND target.auth_user_id = ?
          AND EXISTS (
@@ -284,8 +285,8 @@ async function listPrefix(
 
 function deletionOwner(identity: AccountIdentity, tombstone: DeletionTombstone) {
   return {
-    learnerProfileId: tombstone.learnerProfileId,
-    userId: identity.userId,
+    privateMediaName: tombstone.privateMediaName,
+    userEmail: identity.userEmail,
   };
 }
 

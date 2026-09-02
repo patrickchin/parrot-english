@@ -24,7 +24,7 @@ type DubStorageClosure = {
 export function createDubStorageKeys(
   identity: Pick<
     LearnerIdentity,
-    "userId" | "learnerProfileId"
+    "privateMediaName" | "userEmail"
   >,
   dubId: string,
 ): DubStorageKeys {

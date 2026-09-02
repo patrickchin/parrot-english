@@ -37,6 +37,7 @@ import { isEncodedDubRouteAlias } from "./dub-route.ts";
 import { createPublicAppRedirect } from "./public-origin.ts";
 import {
   LEARNER_PROFILE_TARGET_QUERY_KEY,
+  normalizeUserEmail,
   parseLearnerProfileTarget,
   resolveLearnerIdentity,
   resolveOwnedLearnerIdentity,
@@ -295,6 +296,7 @@ export function createWorker(
         const accountIdentity: AccountIdentity = {
           sessionId: session.session.id,
           userId: session.user.id,
+          userEmail: normalizeUserEmail(session.user.email),
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
@@ -329,6 +331,7 @@ export function createWorker(
         const accountIdentity: AccountIdentity = {
           sessionId: session.session.id,
           userId: session.user.id,
+          userEmail: normalizeUserEmail(session.user.email),
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
@@ -369,6 +372,7 @@ export function createWorker(
         const accountIdentity: AccountIdentity = {
           sessionId: session.session.id,
           userId: session.user.id,
+          userEmail: normalizeUserEmail(session.user.email),
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
@@ -414,6 +418,7 @@ export function createWorker(
         const accountIdentity: AccountIdentity = {
           sessionId: session.session.id,
           userId: session.user.id,
+          userEmail: normalizeUserEmail(session.user.email),
           userName: session.user.name?.trim() || null,
         };
         return guardianAccessRequest({
@@ -433,6 +438,7 @@ export function createWorker(
         const accountIdentity: AccountIdentity = {
           sessionId: session.session.id,
           userId: session.user.id,
+          userEmail: normalizeUserEmail(session.user.email),
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
@@ -501,6 +507,7 @@ export function createWorker(
         const accountIdentity: AccountIdentity = {
           sessionId: session.session.id,
           userId: session.user.id,
+          userEmail: normalizeUserEmail(session.user.email),
           userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);

@@ -3,8 +3,9 @@
 > Personalized story generation and serving are retired. References below to
 > legacy learners describe historical D1 migration roles only, not a live R2
 > compatibility namespace. Current Workers use `PRIVATE_MEDIA_BUCKET` and the
-> learner-scoped recording layout exclusively; do not copy, drain, or read the
-> retired personalized-story-art recording keys.
+> learner-scoped recording layout exclusively. A reviewed one-time migration
+> may copy validated current-format recordings out of the retired bucket, but
+> runtime code must never read it or fall back to its keys.
 
 ## Purpose and Safety Floor
 
@@ -90,7 +91,10 @@ configuration.
 - Authentication, Guardian grants, rate limits, the deletion tombstone, and
   whole-account deletion remain account- or session-scoped.
 - Every learner uses
-  `accounts/{user}/learners/{learner}/recordings/{nursery-rhymes|lessons}/`.
+  `accounts/{escaped-email}/learners/{stable-readable-private-media-name}/recordings/{nursery-rhymes|lessons}/`.
+  The readable learner directory is immutable across display-name edits, and
+  current display names are unique per account. Deleted learner directories and
+  deleted account roots remain reserved. R2 has no alias or symlink path.
   There is no account-root, story-art, or earlier-format recording fallback.
 - Individual learner deletion rejects the final usable learner, never
   auto-selects a sibling, and keeps an unfinished cleanup tombstoned and
@@ -194,16 +198,20 @@ substitute a rebuilt or cherry-picked commit after capturing the merge SHA.
 
 The private-media cutover is intentionally one-way. Before its first production
 deployment, verify that the production and preview buckets exist and the built
-Worker exposes only `PRIVATE_MEDIA_BUCKET`. Do not copy objects from the old
-personalized-story-art bucket: current reads require the new learner-scoped key
-layout and the current recording envelopes. Do not deploy a pre-cutover Worker
+Worker exposes only `PRIVATE_MEDIA_BUCKET`. A one-time migration may preserve
+recordings from the old personalized-story-art bucket only after it has mapped
+each object to a live account and learner, validated the current recording
+envelope, and written it under the readable learner-scoped layout. Preserve
+unmatched but valid retired recordings below an explicit `retired/` subtree;
+never make runtime reads depend on old keys. Do not deploy a pre-cutover Worker
 after recordings begin in the new bucket.
 
-After the new Worker is verified, confirm no old revision is serving or in
-flight and that rollback will not target an old-bucket revision. Then retire
-both old buckets in the Cloudflare dashboard: use **Settings → Empty Bucket**,
-wait for the background purge to finish, verify the bucket is empty, and delete
-it. The equivalent final CLI commands are:
+After the new Worker and every migrated recording are byte- and metadata-
+verified, confirm no old revision is serving or in flight and that rollback
+will not target an old-bucket revision. With fresh operator approval for this
+irreversible action, retire both old buckets in the Cloudflare dashboard: use
+**Settings → Empty Bucket**, wait for the background purge to finish, verify the
+bucket is empty, and delete it. The equivalent final CLI commands are:
 
 ```bash
 npx wrangler r2 bucket delete parrot-english-personalized-story-art
@@ -374,9 +382,11 @@ Use controlled test profiles to verify:
 9. A conversation remains bound to the learner that created it after the
    session selects a sibling.
 10. Both learners write only below their own
-    `accounts/{user}/learners/{learner}/recordings/` prefixes. Confirm that raw
-    or earlier-format dub objects are not reported as saved, and deleting one
-    disposable learner does not sweep a sibling's prefix.
+    `accounts/{escaped-email}/learners/{stable-readable-private-media-name}/recordings/`
+    prefixes. Edit one learner's visible name and confirm its storage directory
+    remains unchanged. Confirm that raw or earlier-format dub objects are not
+    reported as saved, and deleting one disposable learner does not sweep a
+    sibling's prefix.
 11. Outside the owned-profile chooser, learner mode contains no sibling name,
     Guardian dashboard, roster, editing, authoring, consent, privacy, sign-out,
     or deletion control. Neither Five

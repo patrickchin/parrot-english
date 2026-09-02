@@ -13,6 +13,7 @@ import {
 import type { Database } from "./database.ts";
 import {
   LearnerDeletionError,
+  learnerDeletionUserIdHash,
   prepareLearnerDeletion,
 } from "./learner-deletion.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
@@ -21,6 +22,10 @@ import {
   RequestBodyTooLargeError,
 } from "./request-body.ts";
 import {
+  availablePrivateMediaName,
+  isLearnerNameConflict,
+  learnerNameKey,
+  LEARNER_NAME_CONFLICT_MESSAGE,
   resolveLearnerIdentity,
   type AccountIdentity,
 } from "./request-identity.ts";
@@ -279,13 +284,34 @@ export async function handleLearnerProfilesRequest(input: {
         await resolveLearnerIdentity(input.database, input.identity);
       }
       const profileId = crypto.randomUUID();
+      const privateMediaNames = await input.database
+        .select({ value: learnerProfile.privateMediaName })
+        .from(learnerProfile)
+        .where(eq(learnerProfile.authUserId, input.identity.userId));
+      const deletedPrivateMediaNames = await input.database
+        .select({ value: learnerProfileDeletionTombstone.privateMediaName })
+        .from(learnerProfileDeletionTombstone)
+        .where(
+          eq(
+            learnerProfileDeletionTombstone.userIdHash,
+            await learnerDeletionUserIdHash(input.identity.userId),
+          ),
+        );
+      const privateMediaName = availablePrivateMediaName(
+        name,
+        [
+          ...privateMediaNames.map(({ value }) => value),
+          ...deletedPrivateMediaNames.map(({ value }) => value),
+        ],
+      );
       const createProfile = input.database.$client
         .prepare(
           `INSERT INTO learner_profile (
              id, auth_user_id, legacy_storage_owner, name,
+             private_media_name, name_key,
              created_at, updated_at
            )
-           SELECT ?, ?, 0, ?, next_created_at, next_created_at
+           SELECT ?, ?, 0, ?, ?, ?, next_created_at, next_created_at
            FROM (
              SELECT max(
                cast(unixepoch('subsecond') * 1000 as integer),
@@ -299,6 +325,8 @@ export async function handleLearnerProfilesRequest(input: {
           profileId,
           input.identity.userId,
           name,
+          privateMediaName,
+          learnerNameKey(name),
           input.identity.userId,
         );
       if (!activate) {
@@ -423,6 +451,15 @@ export async function handleLearnerProfilesRequest(input: {
     }
     if (error instanceof LearnerDeletionError) {
       return json({ error: error.code }, { status: error.status });
+    }
+    if (isLearnerNameConflict(error)) {
+      return json(
+        {
+          error: "learner_name_conflict",
+          message: LEARNER_NAME_CONFLICT_MESSAGE,
+        },
+        { status: 409 },
+      );
     }
     throw error;
   }

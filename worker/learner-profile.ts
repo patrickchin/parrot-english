@@ -38,7 +38,11 @@ import {
   readBoundedText,
   RequestBodyTooLargeError,
 } from "./request-body.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
+import {
+  isLearnerNameConflict,
+  LEARNER_NAME_CONFLICT_MESSAGE,
+  type LearnerIdentity,
+} from "./request-identity.ts";
 
 export type LearnerProfileIdentity = LearnerIdentity;
 
@@ -954,6 +958,15 @@ export async function handleLearnerProfileRequest(
           ...(error.details ?? {}),
         },
         { status: error.status }
+      );
+    }
+    if (isLearnerNameConflict(error)) {
+      return jsonResponse(
+        {
+          error: "learner_name_conflict",
+          fieldError: LEARNER_NAME_CONFLICT_MESSAGE,
+        },
+        { status: 409 },
       );
     }
     return jsonResponse({ error: "questionnaire_unavailable" }, { status: 503 });

@@ -134,18 +134,17 @@ catalog keeps stable background IDs, descriptive alt text, and versioned media
 URLs. See [the R2 background-media runbook](docs/deployment/background-media-r2.md)
 for bucket setup, staging, dry-run publishing, verification, and rollback.
 
-Private learner recordings use opaque account and learner IDs in R2 so email
-addresses and child names do not become object keys. To browse those prefixes
-with human labels, print the read-only D1 directory locally or remotely:
-
-```bash
-npm run inspect:private-media -- --local
-npm run inspect:private-media -- --remote --account
-```
-
-The output contains private account data; keep it out of shared logs and issue
-reports. Each row includes the exact R2 prefix to paste into the Cloudflare
-dashboard.
+Private learner recordings use one human-readable R2 hierarchy:
+`accounts/{escaped-email}/learners/{stable-readable-private-media-name}/recordings/`.
+The learner directory name is assigned once and does not change when the
+profile's visible name is edited, so existing recordings remain reachable; an
+initial unnamed profile keeps the readable `Learner` directory. Current learner
+display names must be unique within an account, and deleted learner directories
+remain reserved. Deleted account email roots are also permanently reserved, so
+sign-up must use another email after account deletion. R2 has no symlink or
+alias layer; this canonical path is used for both browsing and programmatic
+access. Treat object keys as private account data and keep them out of shared
+logs and issue reports.
 
 ## Environment
 

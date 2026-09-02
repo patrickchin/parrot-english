@@ -4,8 +4,11 @@ import * as storage from "../worker/lesson-recording-storage.ts";
 
 const LEARNER_IDENTITY = {
   learnerProfileId: "learner-a",
+  privateMediaName: "Mary",
+  userEmail: "guardian@example.com",
   userId: "user-1",
 };
+const LESSON_PREFIX = storage.lessonRecordingOwnerPrefix(LEARNER_IDENTITY);
 
 function pagedBucket(pages) {
   const lists = [];
@@ -40,7 +43,7 @@ describe("lesson recording storage", () => {
     };
     assert.equal(
       storage.lessonRecordingObjectKey(LEARNER_IDENTITY, slot),
-      "accounts/user-1/learners/learner-a/recordings/lessons/lesson-1/scene-0/step-1.audio",
+      `${LESSON_PREFIX}lesson-1/scene-0/step-1.audio`,
     );
     const writes = [];
     await storage.reserveLessonRecordingUpload(
@@ -64,8 +67,7 @@ describe("lesson recording storage", () => {
   });
 
   it("does not purge a newer take that replaced the listed object", async () => {
-    const prefix =
-      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const prefix = LESSON_PREFIX;
     const key = `${prefix}lesson-1/scene-0/step-1.audio`;
     const stale = { etag: "etag-a", key, version: "version-a" };
     const newer = {
@@ -119,8 +121,7 @@ describe("lesson recording storage", () => {
   });
 
   it("fences an older-generation take that replaces a listed object", async () => {
-    const prefix =
-      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const prefix = LESSON_PREFIX;
     const key = `${prefix}lesson-1/scene-0/step-1.audio`;
     const listed = {
       customMetadata: { consentGeneration: "0", state: "audio" },
@@ -164,8 +165,7 @@ describe("lesson recording storage", () => {
   });
 
   it("never replaces a permanent learner-deletion fence with a purge fence", async () => {
-    const prefix =
-      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const prefix = LESSON_PREFIX;
     const current = {
       customMetadata: { state: "learner-deleting" },
       etag: "learner-fence-etag",
@@ -196,7 +196,7 @@ describe("lesson recording storage", () => {
   it("fences every listed object only below the encoded owner prefix", async () => {
     assert.equal(typeof storage.deleteAllLessonRecordings, "function");
     const prefix =
-      "accounts/user%2Fone/learners/learner%2Ftwo/recordings/lessons/";
+      "accounts/guardian%2Fone@example.com/learners/Mary%2FTwo/recordings/lessons/";
     const state = pagedBucket(
       new Map([
         [
@@ -227,6 +227,8 @@ describe("lesson recording storage", () => {
       state.bucket,
       {
         learnerProfileId: "learner/two",
+        privateMediaName: "Mary/Two",
+        userEmail: "guardian/one@example.com",
         userId: "user/one",
       },
       1,
@@ -261,7 +263,7 @@ describe("lesson recording storage", () => {
           {
             objects: [{
               key:
-                "accounts/user-2/learners/learner-a/recordings/lessons/lesson-1/scene-0/step-1.audio",
+                "accounts/other@example.com/learners/Mary/recordings/lessons/lesson-1/scene-0/step-1.audio",
             }],
             truncated: false,
           },
@@ -278,8 +280,7 @@ describe("lesson recording storage", () => {
   });
 
   it("rejects truncated pages whose cursor does not advance", async () => {
-    const prefix =
-      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const prefix = LESSON_PREFIX;
     for (const cursor of [undefined, ""]) {
       const state = pagedBucket(
         new Map([
@@ -322,8 +323,7 @@ describe("lesson recording storage", () => {
   });
 
   it("keeps re-consented takes that already exist when revocation cleanup lists", async () => {
-    const prefix =
-      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const prefix = LESSON_PREFIX;
     const old = {
       customMetadata: { consentGeneration: "1", state: "audio" },
       etag: "old-etag",
@@ -359,8 +359,7 @@ describe("lesson recording storage", () => {
   });
 
   it("retries transient purge listing and conditional fences with bounded pacing", async () => {
-    const prefix =
-      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const prefix = LESSON_PREFIX;
     const object = {
       etag: "old-etag",
       key: `${prefix}lesson-1/scene-0/step-1.audio`,

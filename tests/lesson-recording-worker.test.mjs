@@ -14,6 +14,7 @@ import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const USER_ID = "user-1";
+const USER_EMAIL = "one@example.test";
 const CONSENT_VERSION = "lesson-join-in-recording-v1";
 const RECORDED_AT = "2026-08-26T08:00:00.000Z";
 const BUILT_IN_PATH =
@@ -129,16 +130,19 @@ function seedDatabase({ consent = true } = {}) {
   insertUser.run("user-2", "Parent Two", "two@example.test", timestamp, timestamp);
   const insertProfile = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, legacy_storage_owner, name, onboarding_status,
+      (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+       name_key, onboarding_status,
        lesson_recording_consent_version, lesson_recording_consent_at,
        created_at, updated_at)
-     VALUES (?, ?, ?, ?, 'completed', ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?)`,
   );
   insertProfile.run(
     "profile-1",
     USER_ID,
     1,
     "Mia",
+    "Mia",
+    "mia",
     consent ? CONSENT_VERSION : null,
     consent ? timestamp : null,
     timestamp,
@@ -149,6 +153,8 @@ function seedDatabase({ consent = true } = {}) {
     USER_ID,
     0,
     "Leo",
+    "Leo",
+    "leo",
     null,
     null,
     timestamp,
@@ -159,6 +165,8 @@ function seedDatabase({ consent = true } = {}) {
     "user-2",
     1,
     "Noah",
+    "Noah",
+    "noah",
     CONSENT_VERSION,
     timestamp,
     timestamp,
@@ -227,11 +235,13 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
       env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
       identity: {
         sessionId: "session-1",
+        userEmail: options.userEmail ?? USER_EMAIL,
         userId: options.userId ?? USER_ID,
         userName: "Parent",
         learnerProfileId: options.learnerProfileId ?? "profile-1",
         learnerName: options.learnerName ?? "Mia",
         legacyStorageOwner: options.legacyStorageOwner ?? true,
+        privateMediaName: options.privateMediaName ?? "Mia",
       },
       request: request(path, { ...options, expectedLearnerProfileId }),
     },
@@ -250,11 +260,13 @@ function saveRecordingConsent(state, bucket, enabled, identity = {}) {
       env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
       identity: {
         sessionId: "session-1",
+        userEmail: USER_EMAIL,
         userId: USER_ID,
         userName: "Parent",
         learnerProfileId: "profile-1",
         learnerName: "Mia",
         legacyStorageOwner: true,
+        privateMediaName: "Mia",
         ...identity,
       },
       request: new Request(
@@ -352,11 +364,14 @@ describe("lesson recording Worker handler", () => {
             },
             identity: {
               sessionId: "session-1",
+              userEmail: USER_EMAIL,
               userId: USER_ID,
               userName: "Parent",
               learnerProfileId,
               learnerName: "Mia",
               legacyStorageOwner: learnerProfileId === "profile-1",
+              privateMediaName:
+                learnerProfileId === "profile-1" ? "Mia" : "Leo",
             },
             request: requestWithoutReadableBody,
           },
@@ -382,6 +397,7 @@ describe("lesson recording Worker handler", () => {
       learnerProfileId: "profile-sibling",
       learnerName: "Leo",
       legacyStorageOwner: false,
+      privateMediaName: "Leo",
     };
     try {
       const denied = await call(state, bucket, BUILT_IN_PATH, sibling);
@@ -397,7 +413,7 @@ describe("lesson recording Worker handler", () => {
       assert.equal(saved.status, 201);
       assert.equal(
         audioWrites(bucket)[0].key,
-        "accounts/user-1/learners/profile-sibling/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio",
+        "accounts/one@example.test/learners/Leo/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio",
       );
       assert.equal(
         state.sqlite
@@ -427,7 +443,7 @@ describe("lesson recording Worker handler", () => {
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
       const audioWrite = audioWrites(bucket)[0];
       assert.equal(audioWrite.key,
-        "accounts/user-1/learners/profile-1/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio");
+        "accounts/one@example.test/learners/Mia/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio");
       const envelope = JSON.stringify([
         AUDIO_ENVELOPE_FORMAT,
         "upload-built-in",
@@ -469,11 +485,13 @@ describe("lesson recording Worker handler", () => {
         env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
         identity: {
           sessionId: "session-1",
+          userEmail: USER_EMAIL,
           userId: USER_ID,
           userName: "Parent",
           learnerProfileId: "profile-1",
           learnerName: "Mia",
           legacyStorageOwner: true,
+          privateMediaName: "Mia",
         },
         request: new Request(
           "https://example.test/api/lesson-recordings/my/lesson-1/scenes/0/steps/0",
@@ -901,7 +919,7 @@ describe("lesson recording Worker handler", () => {
     const audioStored = deferred();
     const releaseStoredAudio = deferred();
     const key =
-      "accounts/user-1/learners/profile-1/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio";
+      "accounts/one@example.test/learners/Mia/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio";
     bucket.onAudioPut = async () => {
       audioStored.resolve();
       await releaseStoredAudio.promise;
@@ -921,8 +939,8 @@ describe("lesson recording Worker handler", () => {
         wait: async () => {},
       });
       const markerKey = createDubStorageKeys({
-        learnerProfileId: "profile-1",
-        userId: USER_ID,
+        privateMediaName: "Mia",
+        userEmail: USER_EMAIL,
       }, DUB_DEFINITIONS[0].id).markerKey;
       const deletionMarker = bucket.stored.get(markerKey)?.object;
       assert.equal(deletionMarker?.customMetadata.state, "account-deleting");

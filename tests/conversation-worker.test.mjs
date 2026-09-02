@@ -132,11 +132,13 @@ function request(path, method = "GET", body, headers = {}) {
 
 const identity = {
   sessionId: "session-1",
+  userEmail: "one@example.test",
   userId: "user-1",
   userName: "Parent One",
   learnerProfileId: "profile-1",
   learnerName: null,
   legacyStorageOwner: true,
+  privateMediaName: "Learner",
 };
 
 async function callConversation(
@@ -186,10 +188,12 @@ function insertLearnerProfile(
 ) {
   state.sqlite
     .prepare(
-      "UPDATE learner_profile SET name = ?, age = ?, answers_json = ?, onboarding_status = ?, last_skipped_at = ?, last_skipped_session_id = ?, completed_at = ?, updated_at = ? WHERE id = ? AND auth_user_id = ?",
+      "UPDATE learner_profile SET name = ?, private_media_name = ?, name_key = ?, age = ?, answers_json = ?, onboarding_status = ?, last_skipped_at = ?, last_skipped_session_id = ?, completed_at = ?, updated_at = ? WHERE id = ? AND auth_user_id = ?",
     )
     .run(
       name,
+      name?.normalize("NFKC").trim() || "Learner",
+      name?.normalize("NFKC").trim().toLowerCase() || null,
       age,
       JSON.stringify({
         schemaVersion: 2,
@@ -212,11 +216,12 @@ function createMultiLearnerDatabase() {
   const state = createSeededDatabase({ seedProfile: false });
   const insertProfile = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-     VALUES (?, 'user-1', ?, ?, 'not_started', 1000, 1000)`,
+      (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+       name_key, onboarding_status, created_at, updated_at)
+     VALUES (?, 'user-1', ?, ?, ?, ?, 'not_started', 1000, 1000)`,
   );
-  insertProfile.run("learner-a", 1, "Mia");
-  insertProfile.run("learner-b", 0, "Leo");
+  insertProfile.run("learner-a", 1, "Mia", "Mia", "mia");
+  insertProfile.run("learner-b", 0, "Leo", "Leo", "leo");
   const insertSession = state.sqlite.prepare(
     "INSERT INTO session (id, expires_at, token, user_id) VALUES (?, ?, ?, 'user-1')",
   );
@@ -241,7 +246,11 @@ function createRoutedConversationWorker() {
           if (sessionId !== "session-a" && sessionId !== "session-b") return null;
           return {
             session: { id: sessionId },
-            user: { id: "user-1", name: "Parent One" },
+            user: {
+              id: "user-1",
+              name: "Parent One",
+              email: "one@example.test",
+            },
           };
         },
       },
@@ -917,6 +926,8 @@ describe("conversation persistence and API", () => {
         .prepare("SELECT * FROM learner_profile WHERE auth_user_id = ?")
         .get("user-1");
       assert.equal(profile.name, "Mia");
+      assert.equal(profile.name_key, "mia");
+      assert.equal(profile.private_media_name, "Learner");
       assert.equal(profile.age, 8);
       assert.equal(JSON.parse(profile.answers_json).description, "Mia is eight years old.");
     } finally {
@@ -1360,11 +1371,13 @@ describe("conversation persistence and API", () => {
         {
           identity: {
             sessionId: "session-2",
+            userEmail: "two@example.test",
             userId: "user-2",
             userName: "Parent Two",
             learnerProfileId: "profile-2",
             learnerName: null,
             legacyStorageOwner: true,
+            privateMediaName: "Learner",
           },
         },
       );

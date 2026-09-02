@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
 import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
+import { LEARNER_NAME_CONFLICT_MESSAGE } from "../worker/request-identity.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
@@ -65,26 +67,46 @@ function insertOtherAccount(state) {
 function insertLearner(
   state,
   id,
-  { age = 8, legacyStorageOwner = true, name = " Mia " } = {},
+  {
+    age = 8,
+    legacyStorageOwner = true,
+    name = " Mia ",
+    privateMediaName = name?.normalize("NFKC").trim() || "Learner",
+  } = {},
 ) {
+  const nameKey = name?.normalize("NFKC").trim().toLowerCase() || null;
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, legacy_storage_owner, name, age, onboarding_status, created_at, updated_at)
-       VALUES (?, 'user-a', ?, ?, ?, 'completed', ?, ?)`,
+        (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+         name_key, age, onboarding_status, created_at, updated_at)
+       VALUES (?, 'user-a', ?, ?, ?, ?, ?, 'completed', ?, ?)`,
     )
-    .run(id, legacyStorageOwner ? 1 : 0, name, age, timestamp, timestamp);
+    .run(
+      id,
+      legacyStorageOwner ? 1 : 0,
+      name,
+      privateMediaName,
+      nameKey,
+      age,
+      timestamp,
+      timestamp,
+    );
 }
 
-function insertDeletionTombstone(state, learnerProfileId) {
+function insertDeletionTombstone(
+  state,
+  learnerProfileId,
+  { privateMediaName = "Learner", userIdHash = "opaque-user-hash" } = {},
+) {
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner,
-         generation, requested_at, storage_keys_json)
-       VALUES (?, 'opaque-user-hash', 1, 1, ?, '[]')`,
+        (learner_profile_id, user_id_hash, private_media_name,
+         legacy_storage_owner, generation, requested_at, storage_keys_json)
+       VALUES (?, ?, ?, 1, 1, ?, '[]')`,
     )
-    .run(learnerProfileId, timestamp);
+    .run(learnerProfileId, userIdHash, privateMediaName, timestamp);
 }
 
 function requireLearnerSelection(state, sessionId = "session-a") {
@@ -369,6 +391,81 @@ describe("learner roster Worker routing", () => {
     );
   });
 
+  it("rejects a normalized duplicate learner name with a clear conflict", async () => {
+    insertLearner(state, "learner-mary", { name: "Mary" });
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("POST", "/api/learner-profiles", { name: "  ＭＡＲＹ  " }),
+      env,
+    );
+
+    assert.equal(response.status, 409);
+    assert.deepEqual(await response.json(), {
+      error: "learner_name_conflict",
+      message: LEARNER_NAME_CONFLICT_MESSAGE,
+    });
+    assert.equal(learnerRows(state).length, 1);
+  });
+
+  it("adds a readable suffix when an immutable media name is already in use", async () => {
+    insertLearner(state, "learner-rose", {
+      name: "Rose",
+      privateMediaName: "Mary",
+    });
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("POST", "/api/learner-profiles", { name: "Mary" }),
+      env,
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      {
+        ...state.sqlite
+          .prepare(
+            `SELECT name, private_media_name, name_key
+             FROM learner_profile WHERE id = ?`,
+          )
+          .get(payload.createdProfileId),
+      },
+      { name: "Mary", private_media_name: "Mary (2)", name_key: "mary" },
+    );
+  });
+
+  it("does not reuse a deleted learner's reserved media directory", async () => {
+    insertLearner(state, "learner-bob", { name: "Bob" });
+    insertDeletionTombstone(state, "deleted-learner", {
+      privateMediaName: "Mary",
+      userIdHash: createHash("sha256").update("user-a").digest("hex"),
+    });
+    await createGuardianAccessRepository(database).unlock("session-a");
+    env.MULTI_LEARNER_PROFILES_ENABLED = "1";
+
+    const response = await createWorker({ createAuth: () => authStub() }).fetch(
+      request("POST", "/api/learner-profiles", { name: "Mary" }),
+      env,
+    );
+    const payload = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      {
+        ...state.sqlite
+          .prepare(
+            `SELECT name, private_media_name, name_key
+             FROM learner_profile WHERE id = ?`,
+          )
+          .get(payload.createdProfileId),
+      },
+      { name: "Mary", private_media_name: "Mary (2)", name_key: "mary" },
+    );
+  });
+
   it("identifies each concurrently created managed learner without changing learner mode", async () => {
     insertLearner(state, "learner-sam", { name: "Sam" });
     await createGuardianAccessRepository(database).unlock("session-a");
@@ -542,9 +639,10 @@ describe("learner roster Worker routing", () => {
     state.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, onboarding_status,
-           created_at, updated_at)
-         VALUES ('other-learner', 'user-b', 1, 'Noah', 'completed', ?, ?)`,
+          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+           name_key, onboarding_status, created_at, updated_at)
+         VALUES ('other-learner', 'user-b', 1, 'Noah', 'Noah', 'noah',
+           'completed', ?, ?)`,
       )
       .run(timestamp + 10_000, timestamp + 10_000);
     insertSession(state, "session-b");
@@ -1008,8 +1106,10 @@ describe("learner roster Worker routing", () => {
     state.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-         VALUES ('foreign-profile', 'user-b', 1, 'Noah', 'completed', ?, ?)`,
+          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+           name_key, onboarding_status, created_at, updated_at)
+         VALUES ('foreign-profile', 'user-b', 1, 'Noah', 'Noah', 'noah',
+           'completed', ?, ?)`,
       )
       .run(timestamp, timestamp);
     env.MULTI_LEARNER_PROFILES_ENABLED = "1";
