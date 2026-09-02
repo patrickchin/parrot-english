@@ -493,7 +493,17 @@ export function DubStudio({
         signal: controller.signal,
       });
       backingPrepared = true;
-      session = await prepareSpeechRecording({ signal: controller.signal });
+      // Firefox needs EC and NS together for normal built-in Mac levels; AGC makes steady takes drift.
+      session = await prepareSpeechRecording({
+        constraints: {
+          audio: {
+            autoGainControl: false,
+            echoCancellation: true,
+            noiseSuppression: true,
+          },
+        },
+        signal: controller.signal,
+      });
       if (!mountedRef.current || generation !== mediaGenerationRef.current) {
         session.cancel();
         backing.stop();
