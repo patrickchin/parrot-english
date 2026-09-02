@@ -1,8 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import {
-  guardianDubConsent,
-  learnerDubConsent,
-} from "../src/db/schema.ts";
+import { learnerDubConsent } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 
@@ -24,9 +21,7 @@ type RepositoryOptions = {
 };
 
 function statusFromRow(
-  row:
-    | typeof guardianDubConsent.$inferSelect
-    | typeof learnerDubConsent.$inferSelect,
+  row: typeof learnerDubConsent.$inferSelect,
 ): DubConsentStatus {
   if (row.state === "revoking") {
     return { state: "revoking", grantGeneration: row.grantGeneration };
@@ -47,22 +42,16 @@ export function createDubConsentRepository(
   }: RepositoryOptions = {},
 ) {
   async function status(identity: LearnerIdentity): Promise<DubConsentStatus> {
-    const [row] = identity.legacyStorageOwner
-      ? await database
-          .select()
-          .from(guardianDubConsent)
-          .where(eq(guardianDubConsent.authUserId, identity.userId))
-          .limit(1)
-      : await database
-          .select()
-          .from(learnerDubConsent)
-          .where(
-            and(
-              eq(learnerDubConsent.learnerProfileId, identity.learnerProfileId),
-              eq(learnerDubConsent.authUserId, identity.userId),
-            ),
-          )
-          .limit(1);
+    const [row] = await database
+      .select()
+      .from(learnerDubConsent)
+      .where(
+        and(
+          eq(learnerDubConsent.learnerProfileId, identity.learnerProfileId),
+          eq(learnerDubConsent.authUserId, identity.userId),
+        ),
+      )
+      .limit(1);
     return row ? statusFromRow(row) : { state: "not_granted" };
   }
 
@@ -82,70 +71,37 @@ export function createDubConsentRepository(
     const timestamp = now();
     const grantGeneration = createGeneration();
     const timestampMs = timestamp.getTime();
-    if (identity.legacyStorageOwner) {
-      await database.$client.prepare(
-        `INSERT INTO guardian_dub_consent
-          (auth_user_id, consent_version, grant_generation, state,
-           granted_at, updated_at)
-         SELECT ?, ?, ?, 'granted', ?, ?
-         WHERE NOT EXISTS (
+    await database.$client.prepare(
+      `INSERT INTO learner_dub_consent
+        (learner_profile_id, auth_user_id, consent_version,
+         grant_generation, state, granted_at, updated_at)
+       SELECT ?, ?, ?, ?, 'granted', ?, ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM learner_profile_deletion_tombstone
+         WHERE learner_profile_id = ?
+       )
+       ON CONFLICT(learner_profile_id, auth_user_id) DO UPDATE SET
+         consent_version = excluded.consent_version,
+         grant_generation = excluded.grant_generation,
+         state = 'granted',
+         granted_at = excluded.granted_at,
+         updated_at = excluded.updated_at
+       WHERE learner_dub_consent.state = 'granted'
+         AND learner_dub_consent.consent_version <> excluded.consent_version
+         AND NOT EXISTS (
            SELECT 1 FROM learner_profile_deletion_tombstone
            WHERE learner_profile_id = ?
-         )
-         ON CONFLICT(auth_user_id) DO UPDATE SET
-           consent_version = excluded.consent_version,
-           grant_generation = excluded.grant_generation,
-           state = 'granted',
-           granted_at = excluded.granted_at,
-           updated_at = excluded.updated_at
-         WHERE guardian_dub_consent.state = 'granted'
-           AND guardian_dub_consent.consent_version <> excluded.consent_version
-           AND NOT EXISTS (
-             SELECT 1 FROM learner_profile_deletion_tombstone
-             WHERE learner_profile_id = ?
-           )`,
-      ).bind(
-        identity.userId,
-        CURRENT_DUB_CONSENT_VERSION,
-        grantGeneration,
-        timestampMs,
-        timestampMs,
-        identity.learnerProfileId,
-        identity.learnerProfileId,
-      ).run();
-    } else {
-      await database.$client.prepare(
-        `INSERT INTO learner_dub_consent
-          (learner_profile_id, auth_user_id, consent_version,
-           grant_generation, state, granted_at, updated_at)
-         SELECT ?, ?, ?, ?, 'granted', ?, ?
-         WHERE NOT EXISTS (
-           SELECT 1 FROM learner_profile_deletion_tombstone
-           WHERE learner_profile_id = ?
-         )
-         ON CONFLICT(learner_profile_id, auth_user_id) DO UPDATE SET
-           consent_version = excluded.consent_version,
-           grant_generation = excluded.grant_generation,
-           state = 'granted',
-           granted_at = excluded.granted_at,
-           updated_at = excluded.updated_at
-         WHERE learner_dub_consent.state = 'granted'
-           AND learner_dub_consent.consent_version <> excluded.consent_version
-           AND NOT EXISTS (
-             SELECT 1 FROM learner_profile_deletion_tombstone
-             WHERE learner_profile_id = ?
-           )`,
-      ).bind(
-        identity.learnerProfileId,
-        identity.userId,
-        CURRENT_DUB_CONSENT_VERSION,
-        grantGeneration,
-        timestampMs,
-        timestampMs,
-        identity.learnerProfileId,
-        identity.learnerProfileId,
-      ).run();
-    }
+         )`,
+    ).bind(
+      identity.learnerProfileId,
+      identity.userId,
+      CURRENT_DUB_CONSENT_VERSION,
+      grantGeneration,
+      timestampMs,
+      timestampMs,
+      identity.learnerProfileId,
+      identity.learnerProfileId,
+    ).run();
     const pending = await database.$client.prepare(
       `SELECT 1 AS pending FROM learner_profile_deletion_tombstone
        WHERE learner_profile_id = ?`,
@@ -164,28 +120,17 @@ export function createDubConsentRepository(
   async function beginRevocation(
     identity: LearnerIdentity,
   ): Promise<DubConsentStatus> {
-    const [row] = identity.legacyStorageOwner
-      ? await database
-          .update(guardianDubConsent)
-          .set({ state: "revoking", updatedAt: now() })
-          .where(
-            and(
-              eq(guardianDubConsent.authUserId, identity.userId),
-              eq(guardianDubConsent.state, "granted"),
-            ),
-          )
-          .returning()
-      : await database
-          .update(learnerDubConsent)
-          .set({ state: "revoking", updatedAt: now() })
-          .where(
-            and(
-              eq(learnerDubConsent.learnerProfileId, identity.learnerProfileId),
-              eq(learnerDubConsent.authUserId, identity.userId),
-              eq(learnerDubConsent.state, "granted"),
-            ),
-          )
-          .returning();
+    const [row] = await database
+      .update(learnerDubConsent)
+      .set({ state: "revoking", updatedAt: now() })
+      .where(
+        and(
+          eq(learnerDubConsent.learnerProfileId, identity.learnerProfileId),
+          eq(learnerDubConsent.authUserId, identity.userId),
+          eq(learnerDubConsent.state, "granted"),
+        ),
+      )
+      .returning();
     return row ? statusFromRow(row) : status(identity);
   }
 
@@ -193,18 +138,6 @@ export function createDubConsentRepository(
     identity: LearnerIdentity,
     generation: string,
   ) {
-    if (identity.legacyStorageOwner) {
-      await database
-        .delete(guardianDubConsent)
-        .where(
-          and(
-            eq(guardianDubConsent.authUserId, identity.userId),
-            eq(guardianDubConsent.grantGeneration, generation),
-            eq(guardianDubConsent.state, "revoking"),
-          ),
-        );
-      return;
-    }
     await database
       .delete(learnerDubConsent)
       .where(

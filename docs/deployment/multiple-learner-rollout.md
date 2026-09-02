@@ -1,8 +1,10 @@
 # Multiple Learner Rollout
 
 > Personalized story generation and serving are retired. References below to
-> its shipped tables or migrations are historical rollout and legacy
-> deletion-cleanup requirements, not active product routes.
+> legacy learners describe historical D1 migration roles only, not a live R2
+> compatibility namespace. Current Workers use `PRIVATE_MEDIA_BUCKET` and the
+> learner-scoped recording layout exclusively; do not copy, drain, or read the
+> retired personalized-story-art recording keys.
 
 ## Purpose and Safety Floor
 
@@ -31,15 +33,15 @@ The required order is:
 1. Prepare and review, but do not merge, a follow-up main PR that removes exactly
    `migrations/0013_multi_learner_enable.sql` and sets
    `MULTI_LEARNER_PROFILES_ENABLED=0`, while retaining 0012, 0014, 0015, and
-   the legacy private-media deletion closure and learner-deletion protocols.
+   the current private-media deletion closure and learner-deletion protocols.
 2. Activate and verify an externally approved hold on account deletion and
    relevant traffic before merging the compatibility PR.
 3. Merge that PR while the hold remains active. Capture its main merge SHA and
    follow the automatic main-push workflow as the compatibility deployment.
-4. For the first production deployment that retires personalized story art,
-   verify the previous Worker has no in-flight personalized-art requests, then
-   wait the full five-minute legacy generation-lease window without releasing
-   the hold.
+4. Before the first private-media deployment, verify that
+   `parrot-english-private-media` and its preview bucket exist and that the
+   Worker binding is `PRIVATE_MEDIA_BUCKET`. This cutover does not migrate old
+   object keys.
 5. Verify `/api/build-info`, migration state, and singleton smoke checks, then
    record that exact SHA in `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`.
 6. Release the external hold in a controlled step only after the compatible
@@ -84,13 +86,13 @@ configuration.
   or Guardian-only endpoint checks and is not the intended permanent boundary.
 - Learner APIs resolve the selection on the server and never trust a
   browser-supplied profile ID.
-- Profiles, onboarding, conversations, dubbing consent, and voice clips are
-  learner-scoped. Retained legacy private-media cleanup records remain tied to
-  their original learner.
+- Profiles, onboarding, conversations, recording consent, and voice clips are
+  learner-scoped.
 - Authentication, Guardian grants, rate limits, the deletion tombstone, and
   whole-account deletion remain account- or session-scoped.
-- The marked legacy learner retains existing data and exact historical R2
-  keys. New learners use profile-prefixed R2 namespaces.
+- Every learner uses
+  `accounts/{user}/learners/{learner}/recordings/{nursery-rhymes|lessons}/`.
+  There is no account-root, story-art, or earlier-format recording fallback.
 - Individual learner deletion rejects the final usable learner, never
   auto-selects a sibling, and keeps an unfinished cleanup tombstoned and
   retryable. Whole-account deletion must include every completed or unfinished
@@ -147,8 +149,8 @@ The commit must contain the compatibility Worker as well as `0012`. It must:
 - recognize null-profile compatibility rows only for the marked legacy
   learner;
 - retain the old singleton tables and unique indexes;
-- preserve the shipped private-media deletion closure and fence its retained
-  legacy keys before user deletion can cascade;
+- preserve the shipped private-media deletion closure for the current account
+  and learner prefixes before user deletion can cascade;
 - keep profile creation, selection, and deletion mutations disabled.
 
 `0014_personalized_art_deletion_closure.sql` is intentionally a new migration;
@@ -192,15 +194,28 @@ pending D1 migrations, and deploys the Worker. For this release the guard is a
 no-op because `0013` is absent. Do not substitute a rebuilt or cherry-picked
 commit after capturing the merge SHA.
 
-On the first production deployment that removes personalized story-art
-generation, verify the previous revision has no in-flight personalized-art
-generation requests, then wait the full five-minute legacy generation-lease
-window while the external hold remains active. The previous revision used
-unguarded tracking and unconditional candidate writes; skipping this drain can
-let one old request write private derived media after deletion cleanup has
-finished. Do not record the compatibility SHA or proceed without evidence for
-this drain. Later deployments need not repeat it once no traffic-capable
-revision contains the retired generation route.
+The private-media cutover is intentionally one-way. Before its first production
+deployment, verify that the production and preview buckets exist and the built
+Worker exposes only `PRIVATE_MEDIA_BUCKET`. Do not copy objects from the old
+personalized-story-art bucket: current reads require the new learner-scoped key
+layout and the current recording envelopes. Do not deploy a pre-cutover Worker
+after recordings begin in the new bucket.
+
+After the new Worker is verified, confirm no old revision is serving or in
+flight and that rollback will not target an old-bucket revision. Then retire
+both old buckets in the Cloudflare dashboard: use **Settings → Empty Bucket**,
+wait for the background purge to finish, verify the bucket is empty, and delete
+it. The equivalent final CLI commands are:
+
+```bash
+npx wrangler r2 bucket delete parrot-english-personalized-story-art
+npx wrangler r2 bucket delete parrot-english-personalized-story-art-preview
+```
+
+Do not empty either bucket before the cutover is verified; the currently
+deployed pre-cutover Worker can still write there. Record the empty-and-delete
+result in the release evidence so unreachable trial recordings do not outlive
+the prototype.
 
 ### 4. Verify the deployed compatibility commit
 
@@ -243,7 +258,7 @@ Use a nonproduction test account that had data before `0012`:
 8. Confirm profile creation, selection, and deletion mutation endpoints are
    still disabled while the flag is `"0"`.
 
-Stop here if any legacy data is missing, a learner route exposes Guardian
+Stop here if any migrated D1 data is missing, a learner route exposes Guardian
 controls, or a Guardian route is stranded. Do not record the compatibility SHA
 until the compatibility release itself is healthy.
 
@@ -360,9 +375,10 @@ Use controlled test profiles to verify:
    settings targets, then finish deletion with the same-ID retry.
 9. A conversation remains bound to the learner that created it after the
    session selects a sibling.
-10. The migrated legacy learner still reads its legacy dub namespace; deleting
-    that disposable legacy test learner closes retained account-root private-
-    media cleanup paths without sweeping a sibling's prefixed namespace.
+10. Both learners write only below their own
+    `accounts/{user}/learners/{learner}/recordings/` prefixes. Confirm that raw
+    or earlier-format dub objects are not reported as saved, and deleting one
+    disposable learner does not sweep a sibling's prefix.
 11. Outside the owned-profile chooser, learner mode contains no sibling name,
     Guardian dashboard, roster, editing, authoring, consent, privacy, sign-out,
     or deletion control. Neither Five
@@ -476,10 +492,11 @@ selection. If reads or ownership are suspect, stop the affected feature paths
 at the Worker, preserve D1 and R2 evidence, and recover through a reviewed
 forward fix.
 
-Do not delete new learner-prefixed R2 objects during rollback. The compatibility
-Worker and account-deletion path understand the new namespaces. Whole-account
-deletion must continue to enumerate every learner and persist every dub closure
-before the Better Auth user row is removed.
+Do not restore the old R2 binding or deploy a Worker that expects story-art or
+account-root recording keys. Roll back only to a reviewed revision that binds
+`PRIVATE_MEDIA_BUCKET`, understands the current learner namespaces, and accepts
+the strict v2 dub envelope. Whole-account deletion must continue to close the
+account prefix before the Better Auth user row is removed.
 
 ## Completion Record
 

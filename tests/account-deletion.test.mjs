@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
-import { TextEncoder } from "node:util";
 import { createDatabase } from "../worker/database.ts";
 import {
   isAccountDeletionPending,
@@ -10,74 +9,55 @@ import {
 } from "../worker/account-deletion.ts";
 import { handleDubRequest } from "../worker/dubs.ts";
 import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  createDubStorageKeys,
+  dubStorageClosureKeys,
+  fenceBody,
+} from "../worker/dub-storage.ts";
+import { lessonRecordingObjectKey } from "../worker/lesson-recording-storage.ts";
+import {
+  accountPrivateMediaPrefix,
+  learnerPrivateMediaPrefix,
+} from "../worker/private-media-storage.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const USER_ID = "user-1";
-const USER_PREFIX = "personalized-story-art/user-1/";
+const DEFAULT_LEARNER_ID = "learner-a";
+const USER_PREFIX = accountPrivateMediaPrefix(USER_ID);
 const DELETION_REQUESTED_AT = "2026-08-25T10:00:00.000Z";
 const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .update(USER_ID)
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
-const DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v2/`;
-const OLD_DUB_PREFIX = `${USER_PREFIX}learner-dubs/old-macdonald-v1/`;
-const LESSON_RECORDING_KEY =
-  `${USER_PREFIX}lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio`;
+const learnerOwner = (learnerProfileId = DEFAULT_LEARNER_ID) => ({
+  learnerProfileId,
+  userId: USER_ID,
+});
+const learnerDubStorage = (
+  learnerProfileId = DEFAULT_LEARNER_ID,
+  dubId = DUB_DEFINITIONS[0].id,
+) => createDubStorageKeys(learnerOwner(learnerProfileId), dubId);
+const defaultDubStorage = learnerDubStorage();
+const MARKER_KEY = defaultDubStorage.markerKey;
+const slotKey = (lineId) => defaultDubStorage.objectKey(lineId);
 const learnerLessonRecordingKey = (learnerProfileId) =>
-  `${USER_PREFIX}learners/${learnerProfileId}/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio`;
-const HELD_ART_CANDIDATE_KEY =
-  `${USER_PREFIX}learners/learner-a/the-red-ball/versions/held-candidate.png`;
-const LEGACY_ART_CANDIDATE_KEY =
-  `${USER_PREFIX}the-red-ball/versions/legacy-held.png`;
-const MARKER_KEY = `${DUB_PREFIX}.dub-generation`;
-const LINE_IDS = Array.from({ length: 24 }, (_, index) => `line-${index + 1}`);
-const slotKey = (lineId) => `${DUB_PREFIX}${lineId}.audio`;
-const OLD_MARKER_KEY = `${OLD_DUB_PREFIX}.dub-generation`;
-const OLD_LINE_IDS = Array.from(
-  { length: 35 },
-  (_, index) => `old-macdonald-v1-line-${index + 1}`,
+  lessonRecordingObjectKey(learnerOwner(learnerProfileId), {
+    lessonId: "01-peppas-high-ball",
+    sceneIndex: 0,
+    stepIndex: 2,
+  });
+const LESSON_RECORDING_KEY = learnerLessonRecordingKey(DEFAULT_LEARNER_ID);
+const closureKeysFor = (learnerProfileId) =>
+  DUB_DEFINITIONS.flatMap(({ id }) => {
+    const closure = dubStorageClosureKeys(
+      learnerDubStorage(learnerProfileId, id),
+    );
+    return [...closure.markerKeys, ...closure.slotKeys];
+  });
+const CATALOG_MARKER_KEYS = DUB_DEFINITIONS.map(({ id }) =>
+  learnerDubStorage(DEFAULT_LEARNER_ID, id).markerKey,
 );
-const oldSlotKey = (lineId) => `${OLD_DUB_PREFIX}${lineId}.audio`;
-const LEGACY_DUB_PREFIX = `${USER_PREFIX}learner-dubs/five-little-ducks-v1/`;
-const LEGACY_MARKER_KEY = `${LEGACY_DUB_PREFIX}.dub-generation`;
-const LEGACY_LINE_IDS = Array.from(
-  { length: 9 },
-  (_, index) => `line-${index + 1}`,
-);
-const legacySlotKey = (lineId) => `${LEGACY_DUB_PREFIX}${lineId}.audio`;
-const catalogDubPrefix = (dubId) => `${USER_PREFIX}learner-dubs/${dubId}/`;
-const catalogMarkerKey = (dubId) => `${catalogDubPrefix(dubId)}.dub-generation`;
-const catalogSlotKey = (dubId, lineId) => `${catalogDubPrefix(dubId)}${lineId}.audio`;
-const CATALOG_MARKER_KEYS = DUB_DEFINITIONS.map(({ id }) => catalogMarkerKey(id));
-const CATALOG_CLOSURE_KEYS = DUB_DEFINITIONS.flatMap((definition) => [
-  catalogMarkerKey(definition.id),
-  ...definition.lines.map(({ id }) => catalogSlotKey(definition.id, id)),
-]);
-const learnerDubPrefix = (learnerProfileId) =>
-  `${USER_PREFIX}learners/${learnerProfileId}/learner-dubs/five-little-ducks-v2/`;
-const learnerOldDubPrefix = (learnerProfileId) =>
-  `${USER_PREFIX}learners/${learnerProfileId}/learner-dubs/old-macdonald-v1/`;
-const learnerMarkerKey = (learnerProfileId) =>
-  `${learnerDubPrefix(learnerProfileId)}.dub-generation`;
-const learnerOldMarkerKey = (learnerProfileId) =>
-  `${learnerOldDubPrefix(learnerProfileId)}.dub-generation`;
-const learnerSlotKey = (learnerProfileId, lineId) =>
-  `${learnerDubPrefix(learnerProfileId)}${lineId}.audio`;
-const learnerOldSlotKey = (learnerProfileId, lineId) =>
-  `${learnerOldDubPrefix(learnerProfileId)}${lineId}.audio`;
-const CLOSURE_KEYS = [
-  ...CATALOG_CLOSURE_KEYS,
-  LEGACY_MARKER_KEY,
-  ...LEGACY_LINE_IDS.map(legacySlotKey),
-];
-
-function encoded(value) {
-  return new TextEncoder().encode(JSON.stringify(value));
-}
-
-function fenceBytes(kind, generation, state) {
-  return encoded(["parrot-dub-fence-v1", kind, generation, state]);
-}
+const CLOSURE_KEYS = closureKeysFor(DEFAULT_LEARNER_ID);
 
 function deferred() {
   let resolve;
@@ -209,156 +189,51 @@ function createBucket(seed = []) {
   };
 }
 
-function assertDeletionFences(bucket, generation) {
-  assert.deepEqual(
-    bucket.stored.get(MARKER_KEY)?.bytes,
-    fenceBytes("marker", generation, "account-deleting"),
-  );
-  assert.deepEqual(bucket.stored.get(MARKER_KEY)?.options.customMetadata, {
-    generation,
-    state: "account-deleting",
-  });
-  for (const lineId of LINE_IDS) {
-    const item = bucket.stored.get(slotKey(lineId));
-    assert.deepEqual(
-      item?.bytes,
-      fenceBytes("slot", generation, "account-deleting"),
-      lineId,
-    );
-    assert.deepEqual(
-      item?.options.customMetadata,
-      {
-        generation,
-        state: "account-deleting",
-      },
-      lineId,
-    );
-  }
-  assert.deepEqual(
-    bucket.stored.get(OLD_MARKER_KEY)?.bytes,
-    fenceBytes("marker", generation, "account-deleting"),
-  );
-  assert.deepEqual(bucket.stored.get(OLD_MARKER_KEY)?.options.customMetadata, {
-    generation,
-    state: "account-deleting",
-  });
-  for (const lineId of OLD_LINE_IDS) {
-    const item = bucket.stored.get(oldSlotKey(lineId));
-    assert.deepEqual(
-      item?.bytes,
-      fenceBytes("slot", generation, "account-deleting"),
-      `old ${lineId}`,
-    );
-    assert.deepEqual(
-      item?.options.customMetadata,
-      { generation, state: "account-deleting" },
-      `old ${lineId}`,
-    );
-  }
-  for (const definition of DUB_DEFINITIONS.slice(2)) {
-    const marker = bucket.stored.get(catalogMarkerKey(definition.id));
+function assertLearnerDeletionFences(bucket, learnerProfileId, generation) {
+  for (const definition of DUB_DEFINITIONS) {
+    const storage = learnerDubStorage(learnerProfileId, definition.id);
+    const marker = bucket.stored.get(storage.markerKey);
     assert.deepEqual(
       marker?.bytes,
-      fenceBytes("marker", generation, "account-deleting"),
-      definition.id,
+      fenceBody("marker", generation, "account-deleting"),
+      `${learnerProfileId} ${definition.id}`,
     );
     assert.deepEqual(
       marker?.options.customMetadata,
       { generation, state: "account-deleting" },
-      definition.id,
+      `${learnerProfileId} ${definition.id}`,
     );
     for (const { id } of definition.lines) {
-      const item = bucket.stored.get(catalogSlotKey(definition.id, id));
+      const item = bucket.stored.get(storage.objectKey(id));
       assert.deepEqual(
         item?.bytes,
-        fenceBytes("slot", generation, "account-deleting"),
-        id,
+        fenceBody("slot", generation, "account-deleting"),
+        `${learnerProfileId} ${id}`,
       );
       assert.deepEqual(
         item?.options.customMetadata,
         { generation, state: "account-deleting" },
-        id,
+        `${learnerProfileId} ${id}`,
       );
     }
   }
-  assert.deepEqual(
-    bucket.stored.get(LEGACY_MARKER_KEY)?.bytes,
-    fenceBytes("marker", generation, "account-deleting"),
-  );
-  assert.deepEqual(
-    bucket.stored.get(LEGACY_MARKER_KEY)?.options.customMetadata,
-    { generation, state: "account-deleting" },
-  );
-  for (const lineId of LEGACY_LINE_IDS) {
-    const item = bucket.stored.get(legacySlotKey(lineId));
-    assert.deepEqual(
-      item?.bytes,
-      fenceBytes("slot", generation, "account-deleting"),
-      `legacy ${lineId}`,
-    );
-    assert.deepEqual(
-      item?.options.customMetadata,
-      { generation, state: "account-deleting" },
-      `legacy ${lineId}`,
-    );
+}
+
+function assertDeletionFences(
+  bucket,
+  generation,
+  learnerProfileIds = [DEFAULT_LEARNER_ID],
+) {
+  for (const learnerProfileId of learnerProfileIds) {
+    assertLearnerDeletionFences(bucket, learnerProfileId, generation);
   }
 }
 
-function assertLearnerDeletionFences(bucket, learnerProfileId, generation) {
-  const marker = bucket.stored.get(learnerMarkerKey(learnerProfileId));
-  assert.deepEqual(
-    marker?.bytes,
-    fenceBytes("marker", generation, "account-deleting"),
-  );
-  assert.deepEqual(marker?.options.customMetadata, {
-    generation,
-    state: "account-deleting",
-  });
-  for (const lineId of LINE_IDS) {
-    const item = bucket.stored.get(learnerSlotKey(learnerProfileId, lineId));
-    assert.deepEqual(
-      item?.bytes,
-      fenceBytes("slot", generation, "account-deleting"),
-      `${learnerProfileId} ${lineId}`,
-    );
-    assert.deepEqual(
-      item?.options.customMetadata,
-      {
-        generation,
-        state: "account-deleting",
-      },
-      `${learnerProfileId} ${lineId}`,
-    );
-  }
-  const oldMarker = bucket.stored.get(learnerOldMarkerKey(learnerProfileId));
-  assert.deepEqual(
-    oldMarker?.bytes,
-    fenceBytes("marker", generation, "account-deleting"),
-  );
-  assert.deepEqual(oldMarker?.options.customMetadata, {
-    generation,
-    state: "account-deleting",
-  });
-  for (const lineId of OLD_LINE_IDS) {
-    const item = bucket.stored.get(learnerOldSlotKey(learnerProfileId, lineId));
-    assert.deepEqual(
-      item?.bytes,
-      fenceBytes("slot", generation, "account-deleting"),
-      `${learnerProfileId} old ${lineId}`,
-    );
-    assert.deepEqual(
-      item?.options.customMetadata,
-      {
-        generation,
-        state: "account-deleting",
-      },
-      `${learnerProfileId} old ${lineId}`,
-    );
-  }
-}
-
-function assertNoClosureDeletes(bucket) {
-  const closureKeys = new Set(CLOSURE_KEYS);
+function assertNoClosureDeletes(
+  bucket,
+  learnerProfileIds = [DEFAULT_LEARNER_ID],
+) {
+  const closureKeys = new Set(learnerProfileIds.flatMap(closureKeysFor));
   assert.equal(
     bucket.calls.delete.flat().some((key) => closureKeys.has(key)),
     false,
@@ -380,11 +255,10 @@ async function callDub({
   return handleDubRequest(
     {
       database,
-      env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
+      env: { PRIVATE_MEDIA_BUCKET: bucket },
       identity: identity ?? {
-        learnerName: "Mia",
-        learnerProfileId: "learner-a",
-        legacyStorageOwner: true,
+        learnerName: "Mary",
+        learnerProfileId: DEFAULT_LEARNER_ID,
         sessionId: "session-1",
         userId: USER_ID,
         userName: "Parent",
@@ -396,7 +270,6 @@ async function callDub({
             ? {}
             : {
                 "Content-Type": "audio/webm",
-                "X-Parrot-Guardian-Consent-Version": "guardian-voice-r2-v1",
               },
         method,
       }),
@@ -427,291 +300,23 @@ function seedDatabase() {
     .run(USER_ID, "Parent One", "one@example.test", 1_000, 1_000);
   state.sqlite
     .prepare(
-      `INSERT INTO guardian_dub_consent
-      (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
-     VALUES (?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
+      `INSERT INTO learner_profile
+        (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+       VALUES (?, ?, 'Mary', 'completed', 0)`,
     )
-    .run(USER_ID, 1_000, 1_000);
-  const insertArt = state.sqlite.prepare(
-    `INSERT INTO personalized_story_art (
-      id, auth_user_id, story_id, status, r2_object_key, content_type,
-      guardian_consent_version, guardian_consent_at, provider,
-      prompt_version, created_at, updated_at
-    ) VALUES (?, ?, ?, 'ready', ?, 'image/webp', 'guardian-photo-cloudflare-v1', ?,
-      'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-  );
-  insertArt.run(
-    "art-1",
-    USER_ID,
-    "the-red-ball",
-    `${USER_PREFIX}the-red-ball/versions/one.webp`,
-    1_000,
-    1_000,
-    1_000,
-  );
-  insertArt.run(
-    "art-2",
-    USER_ID,
-    "future-story",
-    `${USER_PREFIX}future-story/versions/two.webp`,
-    1_000,
-    1_000,
-    1_000,
-  );
+    .run(DEFAULT_LEARNER_ID, USER_ID);
+  state.sqlite
+    .prepare(
+      `INSERT INTO learner_dub_consent
+        (learner_profile_id, auth_user_id, consent_version, grant_generation,
+         state, granted_at, updated_at)
+       VALUES (?, ?, 'guardian-voice-r2-v2', 'consent-1', 'granted', ?, ?)`,
+    )
+    .run(DEFAULT_LEARNER_ID, USER_ID, 1_000, 1_000);
   return { ...state, database: createDatabase(state.d1) };
 }
 
-describe("account deletion legacy private-media cleanup", () => {
-  it("retains the durable legacy art-candidate closure and blocks cascade until its fence succeeds", async () => {
-    const state = seedDatabase();
-    const bucket = createBucket([{ key: HELD_ART_CANDIDATE_KEY }]);
-    const put = bucket.put.bind(bucket);
-    let failCandidateFence = true;
-    bucket.put = async (key, bytes, options) => {
-      if (
-        failCandidateFence &&
-        key === HELD_ART_CANDIDATE_KEY &&
-        options?.customMetadata?.state === "account-deleting"
-      ) {
-        throw new Error("candidate fence failed");
-      }
-      return put(key, bytes, options);
-    };
-
-    try {
-      state.sqlite
-        .prepare(
-          `INSERT INTO learner_profile
-            (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-           VALUES ('learner-a', ?, 'Mia', 'completed', 1)`,
-        )
-        .run(USER_ID);
-      state.sqlite
-        .prepare(
-          `INSERT INTO learner_story_art_generation_lease (
-            learner_profile_id, auth_user_id, story_id, generation_token,
-            candidate_r2_object_key, lease_expires_at, created_at, updated_at
-          ) VALUES ('learner-a', ?, 'the-red-ball', 'held', ?, ?, 1, 1)`,
-        )
-        .run(USER_ID, HELD_ART_CANDIDATE_KEY, 9_999_999_999_999);
-
-      await assert.rejects(
-        prepareDeletion({
-          bucket,
-          database: state.database,
-          userId: USER_ID,
-          wait: async () => {},
-        }),
-        /candidate fence failed/,
-      );
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
-          .get(USER_ID).count,
-        1,
-      );
-      assert.deepEqual(
-        JSON.parse(
-          state.sqlite
-            .prepare(
-              `SELECT personalized_art_candidate_keys_json
-               FROM account_deletion_tombstone`,
-            )
-            .get().personalized_art_candidate_keys_json,
-        ),
-        [HELD_ART_CANDIDATE_KEY],
-      );
-
-      state.sqlite
-        .prepare("DELETE FROM learner_story_art_generation_lease")
-        .run();
-      failCandidateFence = false;
-      await prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async () => {},
-      });
-      assert.deepEqual(
-        bucket.stored.get(HELD_ART_CANDIDATE_KEY)?.options.customMetadata,
-        {
-          generation: DELETION_GENERATION,
-          state: "account-deleting",
-        },
-      );
-    } finally {
-      state.close();
-    }
-  });
-
-  it("captures distinct legacy and learner candidates while deduplicating learner mirrors", async () => {
-    const state = seedDatabase();
-    const bucket = createBucket();
-
-    try {
-      state.sqlite
-        .prepare(
-          `INSERT INTO learner_profile
-            (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-           VALUES
-             ('learner-a', ?, 'Mia', 'completed', 1),
-             ('learner-b', ?, 'Leo', 'completed', 0)`,
-        )
-        .run(USER_ID, USER_ID);
-      state.sqlite
-        .prepare(
-          `INSERT INTO personalized_story_art_generation_lease (
-            auth_user_id, story_id, generation_token,
-            candidate_r2_object_key, lease_expires_at, created_at, updated_at
-          ) VALUES (?, 'the-red-ball', 'legacy-held', ?, ?, 1, 1)`,
-        )
-        .run(USER_ID, LEGACY_ART_CANDIDATE_KEY, 9_999_999_999_999);
-      state.sqlite
-        .prepare(
-          `INSERT INTO learner_story_art_generation_lease (
-            learner_profile_id, auth_user_id, story_id, generation_token,
-            candidate_r2_object_key, lease_expires_at, created_at, updated_at
-          ) VALUES ('learner-a', ?, 'the-red-ball', 'learner-held', ?, ?, 1, 1)`,
-        )
-        .run(USER_ID, HELD_ART_CANDIDATE_KEY, 9_999_999_999_999);
-      state.sqlite
-        .prepare(
-          `INSERT INTO learner_story_art_generation_lease (
-            learner_profile_id, auth_user_id, story_id, generation_token,
-            candidate_r2_object_key, lease_expires_at, created_at, updated_at
-          ) VALUES ('learner-b', ?, 'the-red-ball', 'learner-mirror', ?, ?, 1, 1)`,
-        )
-        .run(USER_ID, HELD_ART_CANDIDATE_KEY, 9_999_999_999_999);
-
-      await prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async () => {},
-      });
-
-      assert.deepEqual(
-        JSON.parse(
-          state.sqlite
-            .prepare(
-              `SELECT personalized_art_candidate_keys_json
-               FROM account_deletion_tombstone`,
-            )
-            .get().personalized_art_candidate_keys_json,
-        ),
-        [HELD_ART_CANDIDATE_KEY, LEGACY_ART_CANDIDATE_KEY],
-      );
-      for (const candidateKey of [
-        HELD_ART_CANDIDATE_KEY,
-        LEGACY_ART_CANDIDATE_KEY,
-      ]) {
-        assert.equal(
-          bucket.calls.put.filter(
-            ({ key, options }) =>
-              key === candidateKey &&
-              options?.customMetadata?.state === "account-deleting",
-          ).length,
-          1,
-        );
-        assert.deepEqual(
-          bucket.stored.get(candidateKey)?.options.customMetadata,
-          {
-            generation: DELETION_GENERATION,
-            state: "account-deleting",
-          },
-        );
-      }
-    } finally {
-      state.close();
-    }
-  });
-
-  it("routes a DB-owned legacy art candidate through exact fencing", async () => {
-    const state = seedDatabase();
-    const externalCandidate = "legacy-exact/external-candidate.webp";
-    const bucket = createBucket([{
-      bytes: new Uint8Array([1, 2, 3]),
-      key: externalCandidate,
-    }]);
-
-    try {
-      state.sqlite.prepare(
-        `INSERT INTO personalized_story_art_generation_lease (
-           auth_user_id, story_id, generation_token,
-           candidate_r2_object_key, lease_expires_at, created_at, updated_at
-         ) VALUES (?, 'the-red-ball', 'external-held', ?, ?, 1, 1)`,
-      ).run(USER_ID, externalCandidate, 9_999_999_999_999);
-
-      await prepareDeletion({
-        bucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async () => {},
-      });
-
-      assert.deepEqual(
-        JSON.parse(
-          state.sqlite.prepare(
-            `SELECT personalized_art_candidate_keys_json
-             FROM account_deletion_tombstone`,
-          ).get().personalized_art_candidate_keys_json,
-        ),
-        [],
-      );
-      assert.deepEqual(
-        bucket.stored.get(externalCandidate)?.options.customMetadata,
-        { generation: DELETION_GENERATION, state: "account-deleting" },
-      );
-    } finally {
-      state.close();
-    }
-  });
-
-  it("fails closed before R2 work when a persisted candidate escapes the account prefix", async () => {
-    const state = seedDatabase();
-    const initialBucket = createBucket();
-
-    try {
-      await prepareDeletion({
-        bucket: initialBucket,
-        database: state.database,
-        userId: USER_ID,
-        wait: async () => {},
-      });
-      state.sqlite
-        .prepare(
-          `UPDATE account_deletion_tombstone
-           SET personalized_art_candidate_keys_json = ?`,
-        )
-        .run(JSON.stringify(["personalized-story-art/another-user/private.png"]));
-      const retryBucket = createBucket();
-
-      await assert.rejects(
-        prepareDeletion({
-          bucket: retryBucket,
-          database: state.database,
-          userId: USER_ID,
-          wait: async () => {},
-        }),
-        /candidate closure is invalid/,
-      );
-      assert.deepEqual(retryBucket.calls, {
-        delete: [],
-        head: [],
-        list: [],
-        put: [],
-      });
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
-          .get(USER_ID).count,
-        1,
-      );
-    } finally {
-      state.close();
-    }
-  });
-
+describe("account deletion private-media cleanup", () => {
   it("bounds final fence writes while closing every learner subtree", async () => {
     const state = seedDatabase();
     const siblingRecordingKey = learnerLessonRecordingKey("learner-b");
@@ -727,11 +332,10 @@ describe("account deletion legacy private-media cleanup", () => {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', ?)`,
+         VALUES (?, ?, ?, 'not_started', 0)`,
       );
-      insertLearner.run("learner-a", USER_ID, "Mia", 1);
-      insertLearner.run("learner-b", USER_ID, "Leo", 0);
-      insertLearner.run("learner-c", USER_ID, "Ava", 0);
+      insertLearner.run("learner-b", USER_ID, "Bob");
+      insertLearner.run("learner-c", USER_ID, "Rose");
 
       bucket.put = async (key, bytes, options) => {
         activeWrites += 1;
@@ -759,9 +363,11 @@ describe("account deletion legacy private-media cleanup", () => {
         maxActiveWrites <= 4,
         "Fence write concurrency must stay bounded",
       );
-      assertDeletionFences(bucket, DELETION_GENERATION);
-      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
-      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assertDeletionFences(
+        bucket,
+        DELETION_GENERATION,
+        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
+      );
       for (const key of [LESSON_RECORDING_KEY, siblingRecordingKey]) {
         assert.deepEqual(bucket.stored.get(key)?.options.customMetadata, {
           generation: DELETION_GENERATION,
@@ -773,7 +379,7 @@ describe("account deletion legacy private-media cleanup", () => {
     }
   });
 
-  it("fences in-flight uploads in the legacy namespace and every learner subtree", async () => {
+  it("fences in-flight uploads in every learner subtree", async () => {
     const state = seedDatabase();
     const allAudioPutsStarted = deferred();
     const releaseAudioPuts = deferred();
@@ -794,11 +400,10 @@ describe("account deletion legacy private-media cleanup", () => {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', ?)`,
+         VALUES (?, ?, ?, 'not_started', 0)`,
       );
-      insertLearner.run("learner-a", USER_ID, "Mia", 1);
-      insertLearner.run("learner-b", USER_ID, "Leo", 0);
-      insertLearner.run("learner-c", USER_ID, "Ava", 0);
+      insertLearner.run("learner-b", USER_ID, "Bob");
+      insertLearner.run("learner-c", USER_ID, "Rose");
       const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
       const insertConsent = state.sqlite.prepare(
         `INSERT INTO learner_dub_consent
@@ -810,25 +415,22 @@ describe("account deletion legacy private-media cleanup", () => {
       insertConsent.run("learner-c", USER_ID, timestamp, timestamp);
       const identities = [
         {
-          learnerName: "Mia",
-          learnerProfileId: "learner-a",
-          legacyStorageOwner: true,
+          learnerName: "Mary",
+          learnerProfileId: DEFAULT_LEARNER_ID,
           sessionId: "session-a",
           userId: USER_ID,
           userName: "Parent",
         },
         {
-          learnerName: "Leo",
+          learnerName: "Bob",
           learnerProfileId: "learner-b",
-          legacyStorageOwner: false,
           sessionId: "session-b",
           userId: USER_ID,
           userName: "Parent",
         },
         {
-          learnerName: "Ava",
+          learnerName: "Rose",
           learnerProfileId: "learner-c",
-          legacyStorageOwner: false,
           sessionId: "session-c",
           userId: USER_ID,
           userName: "Parent",
@@ -852,9 +454,11 @@ describe("account deletion legacy private-media cleanup", () => {
         wait: async () => {},
       });
 
-      assertDeletionFences(bucket, DELETION_GENERATION);
-      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
-      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assertDeletionFences(
+        bucket,
+        DELETION_GENERATION,
+        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
+      );
       assert.equal(
         [...bucket.stored.values()].some(
           (item) => item.options.customMetadata.state === "audio",
@@ -880,9 +484,13 @@ describe("account deletion legacy private-media cleanup", () => {
     }
   });
 
-  it("tombstones the account, purges legacy art, and retains dub and recording fences", async () => {
+  it("tombstones the account, paginates its prefix, and retains recording fences", async () => {
     const state = seedDatabase();
     const events = [];
+    const firstOrphan = `${USER_PREFIX}temporary/orphan-one.bin`;
+    const secondOrphan = `${USER_PREFIX}temporary/orphan-two.bin`;
+    const otherAccountObject =
+      `${accountPrivateMediaPrefix("user-2")}learners/learner-z/recordings/keep.audio`;
     try {
       const pages = new Map([
         [
@@ -890,8 +498,8 @@ describe("account deletion legacy private-media cleanup", () => {
           {
             cursor: "page-2",
             objects: [
-              { key: `${USER_PREFIX}the-red-ball/versions/one.webp` },
-              { key: `${USER_PREFIX}untracked/orphan.webp` },
+              { key: firstOrphan },
+              { key: slotKey("line-1") },
             ],
             truncated: true,
           },
@@ -900,14 +508,14 @@ describe("account deletion legacy private-media cleanup", () => {
           "page-2",
           {
             objects: [
-              { key: `${USER_PREFIX}future-story/versions/two.webp` },
+              { key: secondOrphan },
               { key: LESSON_RECORDING_KEY },
             ],
             truncated: false,
           },
         ],
       ]);
-      const bucket = createBucket();
+      const bucket = createBucket([{ key: otherAccountObject }]);
       bucket.list = async ({ cursor = "", prefix }) => {
         assert.equal(prefix, USER_PREFIX);
         return pages.get(cursor);
@@ -916,16 +524,10 @@ describe("account deletion legacy private-media cleanup", () => {
         const tombstoneCount = state.sqlite
           .prepare("SELECT count(*) AS count FROM account_deletion_tombstone")
           .get().count;
-        const statuses = state.sqlite
-          .prepare(
-            "SELECT status FROM personalized_story_art WHERE auth_user_id = ? ORDER BY id",
-          )
-          .all(USER_ID)
-          .map(({ status }) => status);
         const userCount = state.sqlite
           .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
           .get(USER_ID).count;
-        events.push({ keys, statuses, tombstoneCount, userCount });
+        events.push({ keys, tombstoneCount, userCount });
       };
 
       await prepareDeletion({
@@ -940,17 +542,12 @@ describe("account deletion legacy private-media cleanup", () => {
       );
       assert.deepEqual(events, [
         {
-          keys: [
-            `${USER_PREFIX}the-red-ball/versions/one.webp`,
-            `${USER_PREFIX}untracked/orphan.webp`,
-          ],
-          statuses: ["deleting", "deleting"],
+          keys: [firstOrphan],
           tombstoneCount: 1,
           userCount: 1,
         },
         {
-          keys: [`${USER_PREFIX}future-story/versions/two.webp`],
-          statuses: ["deleting", "deleting"],
+          keys: [secondOrphan],
           tombstoneCount: 1,
           userCount: 1,
         },
@@ -958,7 +555,7 @@ describe("account deletion legacy private-media cleanup", () => {
       assertDeletionFences(bucket, DELETION_GENERATION);
       assert.deepEqual(
         bucket.stored.get(LESSON_RECORDING_KEY)?.bytes,
-        fenceBytes("slot", DELETION_GENERATION, "account-deleting"),
+        fenceBody("slot", DELETION_GENERATION, "account-deleting"),
       );
       assert.deepEqual(
         bucket.stored.get(LESSON_RECORDING_KEY)?.options.customMetadata,
@@ -968,17 +565,16 @@ describe("account deletion legacy private-media cleanup", () => {
         },
       );
       assert.equal(
-        [...bucket.stored.values()].every(
-          (item) => item.options.customMetadata.state !== "audio",
-        ),
+        bucket.stored.has(otherAccountObject),
         true,
+        "Deleting one account must not touch another account prefix",
       );
 
       state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
       assert.equal(
         state.sqlite
-          .prepare("SELECT count(*) AS count FROM personalized_story_art")
-          .get().count,
+          .prepare("SELECT count(*) AS count FROM user WHERE id = ?")
+          .get(USER_ID).count,
         0,
       );
       assert.equal(
@@ -993,13 +589,75 @@ describe("account deletion legacy private-media cleanup", () => {
     }
   });
 
-  it("keeps the user and tombstoned rows recoverable when R2 purge fails, then retries safely", async () => {
+  it("adopts an unfinished learner deletion closure after its profile is gone", async () => {
+    const state = seedDatabase();
+    const removedLearnerId = "learner-removed";
+    const removedOwner = learnerOwner(removedLearnerId);
+    const removedStorage = learnerDubStorage(removedLearnerId);
+    const removedLineKey = removedStorage.objectKey(DUB_DEFINITIONS[0].lines[0].id);
+    const removedLessonKey = learnerLessonRecordingKey(removedLearnerId);
+    const bucket = createBucket([
+      { key: removedLineKey },
+      { key: removedLessonKey },
+    ]);
+    state.sqlite.prepare(
+      `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
+         requested_at, storage_keys_json)
+       VALUES (?, ?, 0, 1, ?, ?)`,
+    ).run(
+      removedLearnerId,
+      createHash("sha256").update(USER_ID).digest("hex"),
+      Date.parse(DELETION_REQUESTED_AT),
+      JSON.stringify({
+        markerKeys: [removedStorage.markerKey],
+        prefixes: [learnerPrivateMediaPrefix(removedOwner)],
+        slotKeys: [removedLineKey, removedLessonKey],
+        version: 1,
+      }),
+    );
+
+    try {
+      await prepareDeletion({
+        bucket,
+        database: state.database,
+        userId: USER_ID,
+        wait: async () => {},
+      });
+
+      assertDeletionFences(
+        bucket,
+        DELETION_GENERATION,
+        [DEFAULT_LEARNER_ID, removedLearnerId],
+      );
+      assert.deepEqual(
+        bucket.stored.get(removedLessonKey)?.options.customMetadata,
+        { generation: DELETION_GENERATION, state: "account-deleting" },
+      );
+      assert.deepEqual(
+        JSON.parse(
+          state.sqlite.prepare(
+            `SELECT learner_storage_identities_json
+             FROM account_deletion_tombstone`,
+          ).get().learner_storage_identities_json,
+        ),
+        [
+          { learnerProfileId: DEFAULT_LEARNER_ID },
+          { learnerProfileId: removedLearnerId },
+        ],
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("keeps the user recoverable when R2 purge fails, then retries safely", async () => {
     const state = seedDatabase();
     let failDelete = true;
     try {
       const bucket = createBucket([
         {
-          key: `${USER_PREFIX}the-red-ball/versions/one.webp`,
+          key: `${USER_PREFIX}temporary/orphan.bin`,
         },
       ]);
       const remove = bucket.delete.bind(bucket);
@@ -1026,16 +684,6 @@ describe("account deletion legacy private-media cleanup", () => {
           .get(USER_ID).count,
         1,
       );
-      assert.deepEqual(
-        state.sqlite
-          .prepare(
-            "SELECT status FROM personalized_story_art WHERE auth_user_id = ? ORDER BY id",
-          )
-          .all(USER_ID)
-          .map(({ status }) => status),
-        ["deleting", "deleting"],
-      );
-
       failDelete = false;
       await prepareDeletion({
         bucket,
@@ -1148,8 +796,8 @@ describe("account deletion legacy private-media cleanup", () => {
       assertNoClosureDeletes(bucket);
 
       state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
-      await put(`${USER_PREFIX}orphan.webp`, new Uint8Array([1]), {
-        customMetadata: { state: "art" },
+      await put(`${USER_PREFIX}temporary/orphan.bin`, new Uint8Array([1]), {
+        customMetadata: { state: "temporary" },
       });
       releaseSecondList.resolve();
       await secondDeleteFinished.promise;
@@ -1170,7 +818,7 @@ describe("account deletion legacy private-media cleanup", () => {
 
       assert.deepEqual(
         secondHookKeys.sort(),
-        [...CLOSURE_KEYS, `${USER_PREFIX}orphan.webp`].sort(),
+        [...CLOSURE_KEYS, `${USER_PREFIX}temporary/orphan.bin`].sort(),
       );
       assert.equal(settledUpload.error, undefined);
       assert.equal(settledUpload.response.status, 409);
@@ -1230,11 +878,10 @@ describe("account deletion legacy private-media cleanup", () => {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', ?)`,
+         VALUES (?, ?, ?, 'not_started', 0)`,
       );
-      insertLearner.run("learner-a", USER_ID, "Mia", 1);
-      insertLearner.run("learner-b", USER_ID, "Leo", 0);
-      insertLearner.run("learner-c", USER_ID, "Ava", 0);
+      insertLearner.run("learner-b", USER_ID, "Bob");
+      insertLearner.run("learner-c", USER_ID, "Rose");
       const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
       const insertConsent = state.sqlite.prepare(
         `INSERT INTO learner_dub_consent
@@ -1250,9 +897,8 @@ describe("account deletion legacy private-media cleanup", () => {
         database: state.database,
         generation: () => "upload-cleanup",
         identity: {
-          learnerName: "Leo",
+          learnerName: "Bob",
           learnerProfileId: "learner-b",
-          legacyStorageOwner: false,
           sessionId: "session-b",
           userId: USER_ID,
           userName: "Parent",
@@ -1293,8 +939,11 @@ describe("account deletion legacy private-media cleanup", () => {
         userId: USER_ID,
         wait: async () => {},
       });
-      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
-      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assertDeletionFences(
+        bucket,
+        DELETION_GENERATION,
+        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
+      );
       assert.deepEqual(
         JSON.parse(
           state.sqlite
@@ -1305,9 +954,9 @@ describe("account deletion legacy private-media cleanup", () => {
             .get().learner_storage_identities_json,
         ),
         [
-          { learnerProfileId: "learner-a", legacyStorageOwner: true },
-          { learnerProfileId: "learner-b", legacyStorageOwner: false },
-          { learnerProfileId: "learner-c", legacyStorageOwner: false },
+          { learnerProfileId: DEFAULT_LEARNER_ID },
+          { learnerProfileId: "learner-b" },
+          { learnerProfileId: "learner-c" },
         ],
       );
 
@@ -1330,8 +979,11 @@ describe("account deletion legacy private-media cleanup", () => {
       assert.equal(settledUpload.response.status, 409);
       assert.equal(pendingChecks, 1);
       assert.equal(cleanupAttempts, 0);
-      assertLearnerDeletionFences(bucket, "learner-b", DELETION_GENERATION);
-      assertLearnerDeletionFences(bucket, "learner-c", DELETION_GENERATION);
+      assertDeletionFences(
+        bucket,
+        DELETION_GENERATION,
+        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
+      );
       assert.equal(
         [...bucket.stored.values()].some(
           (item) => item.options.customMetadata.state === "audio",
@@ -1354,7 +1006,7 @@ describe("account deletion legacy private-media cleanup", () => {
         customMetadata: { generation: "reset-1", state: "audio" },
         key: slotKey("line-1"),
       },
-      { key: `${USER_PREFIX}orphan.webp` },
+      { key: `${USER_PREFIX}temporary/orphan.bin` },
     ]);
 
     try {
@@ -1563,7 +1215,7 @@ describe("account deletion legacy private-media cleanup", () => {
 
   it("retries a 10058 prefix delete with paced, bounded attempts", async () => {
     const state = seedDatabase();
-    const bucket = createBucket([{ key: `${USER_PREFIX}orphan.webp` }]);
+    const bucket = createBucket([{ key: `${USER_PREFIX}temporary/orphan.bin` }]);
     const remove = bucket.delete.bind(bucket);
     const waits = [];
     let attempts = 0;
@@ -1596,7 +1248,7 @@ describe("account deletion legacy private-media cleanup", () => {
 
   it("stops retrying a persistent 10058 prefix delete and retains the user", async () => {
     const state = seedDatabase();
-    const bucket = createBucket([{ key: `${USER_PREFIX}orphan.webp` }]);
+    const bucket = createBucket([{ key: `${USER_PREFIX}temporary/orphan.bin` }]);
     const waits = [];
     let attempts = 0;
     bucket.delete = async () => {

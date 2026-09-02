@@ -2,14 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as storage from "../worker/lesson-recording-storage.ts";
 
-const LEGACY_IDENTITY = {
+const LEARNER_IDENTITY = {
   learnerProfileId: "learner-a",
-  legacyStorageOwner: true,
-  userId: "user-1",
-};
-const SIBLING_IDENTITY = {
-  learnerProfileId: "learner-b",
-  legacyStorageOwner: false,
   userId: "user-1",
 };
 
@@ -45,12 +39,8 @@ describe("lesson recording storage", () => {
       stepIndex: 1,
     };
     assert.equal(
-      storage.lessonRecordingObjectKey(LEGACY_IDENTITY, slot),
-      "personalized-story-art/user-1/lesson-recordings/parrot/lesson-1/scene-0/step-1.audio",
-    );
-    assert.equal(
-      storage.lessonRecordingObjectKey(SIBLING_IDENTITY, slot),
-      "personalized-story-art/user-1/learners/learner-b/lesson-recordings/parrot/lesson-1/scene-0/step-1.audio",
+      storage.lessonRecordingObjectKey(LEARNER_IDENTITY, slot),
+      "accounts/user-1/learners/learner-a/recordings/lessons/lesson-1/scene-0/step-1.audio",
     );
     const writes = [];
     await storage.reserveLessonRecordingUpload(
@@ -61,7 +51,7 @@ describe("lesson recording storage", () => {
           return { etag: "reservation", key, version: "reservation" };
         },
       },
-      storage.lessonRecordingObjectKey(LEGACY_IDENTITY, slot),
+      storage.lessonRecordingObjectKey(LEARNER_IDENTITY, slot),
       "upload-1",
       0,
       async () => {},
@@ -74,8 +64,9 @@ describe("lesson recording storage", () => {
   });
 
   it("does not purge a newer take that replaced the listed object", async () => {
-    const prefix = "personalized-story-art/user-1/lesson-recordings/";
-    const key = `${prefix}my/lesson-1/scene-0/step-1.audio`;
+    const prefix =
+      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const key = `${prefix}lesson-1/scene-0/step-1.audio`;
     const stale = { etag: "etag-a", key, version: "version-a" };
     const newer = {
       customMetadata: {
@@ -117,7 +108,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 2, async () => {});
+    await storage.deleteAllLessonRecordings(bucket, LEARNER_IDENTITY, 2, async () => {});
 
     assert.strictEqual(current, newer);
     assert.deepEqual(deletions, []);
@@ -128,8 +119,9 @@ describe("lesson recording storage", () => {
   });
 
   it("fences an older-generation take that replaces a listed object", async () => {
-    const prefix = "personalized-story-art/user-1/lesson-recordings/";
-    const key = `${prefix}parrot/lesson-1/scene-0/step-1.audio`;
+    const prefix =
+      "accounts/user-1/learners/learner-a/recordings/lessons/";
+    const key = `${prefix}lesson-1/scene-0/step-1.audio`;
     const listed = {
       customMetadata: { consentGeneration: "0", state: "audio" },
       etag: "listed-etag",
@@ -164,7 +156,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 1, async () => {});
+    await storage.deleteAllLessonRecordings(bucket, LEARNER_IDENTITY, 1, async () => {});
 
     assert.equal(writes.length, 2);
     assert.equal(current.customMetadata.state, "purged");
@@ -172,11 +164,12 @@ describe("lesson recording storage", () => {
   });
 
   it("never replaces a permanent learner-deletion fence with a purge fence", async () => {
-    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const prefix =
+      "accounts/user-1/learners/learner-a/recordings/lessons/";
     const current = {
       customMetadata: { state: "learner-deleting" },
       etag: "learner-fence-etag",
-      key: `${prefix}parrot/lesson-1/scene-0/step-1.audio`,
+      key: `${prefix}lesson-1/scene-0/step-1.audio`,
       version: "learner-fence-version",
     };
     const writes = [];
@@ -191,7 +184,7 @@ describe("lesson recording storage", () => {
 
     await storage.deleteAllLessonRecordings(
       bucket,
-      LEGACY_IDENTITY,
+      LEARNER_IDENTITY,
       1,
       async () => {},
     );
@@ -202,13 +195,17 @@ describe("lesson recording storage", () => {
 
   it("fences every listed object only below the encoded owner prefix", async () => {
     assert.equal(typeof storage.deleteAllLessonRecordings, "function");
-    const prefix = "personalized-story-art/user%2Fone/lesson-recordings/";
+    const prefix =
+      "accounts/user%2Fone/learners/learner%2Ftwo/recordings/lessons/";
     const state = pagedBucket(
       new Map([
         [
           "",
           {
-            objects: [{ etag: "etag-1", key: `${prefix}my/lesson-1/clip-1.webm` }],
+            objects: [{
+              etag: "etag-1",
+              key: `${prefix}lesson-1/scene-0/step-1.audio`,
+            }],
             truncated: true,
             cursor: "page-2",
           },
@@ -216,7 +213,10 @@ describe("lesson recording storage", () => {
         [
           "page-2",
           {
-            objects: [{ etag: "etag-2", key: `${prefix}my/lesson-2/clip-2.webm` }],
+            objects: [{
+              etag: "etag-2",
+              key: `${prefix}lesson-2/scene-1/step-2.audio`,
+            }],
             truncated: false,
           },
         ],
@@ -225,7 +225,10 @@ describe("lesson recording storage", () => {
 
     await storage.deleteAllLessonRecordings(
       state.bucket,
-      { ...LEGACY_IDENTITY, userId: "user/one" },
+      {
+        learnerProfileId: "learner/two",
+        userId: "user/one",
+      },
       1,
       async () => {},
     );
@@ -240,11 +243,11 @@ describe("lesson recording storage", () => {
       onlyIf: options.onlyIf,
     })), [
       {
-        key: `${prefix}my/lesson-1/clip-1.webm`,
+        key: `${prefix}lesson-1/scene-0/step-1.audio`,
         onlyIf: { etagMatches: "etag-1" },
       },
       {
-        key: `${prefix}my/lesson-2/clip-2.webm`,
+        key: `${prefix}lesson-2/scene-1/step-2.audio`,
         onlyIf: { etagMatches: "etag-2" },
       },
     ]);
@@ -256,7 +259,10 @@ describe("lesson recording storage", () => {
         [
           "",
           {
-            objects: [{ key: "personalized-story-art/user-2/private.webm" }],
+            objects: [{
+              key:
+                "accounts/user-2/learners/learner-a/recordings/lessons/lesson-1/scene-0/step-1.audio",
+            }],
             truncated: false,
           },
         ],
@@ -264,7 +270,7 @@ describe("lesson recording storage", () => {
     );
 
     await assert.rejects(
-      storage.deleteAllLessonRecordings(state.bucket, LEGACY_IDENTITY, 1, async () => {}),
+      storage.deleteAllLessonRecordings(state.bucket, LEARNER_IDENTITY, 1, async () => {}),
       /outside the lesson recording prefix/i,
     );
     assert.deepEqual(state.deletions, []);
@@ -272,14 +278,15 @@ describe("lesson recording storage", () => {
   });
 
   it("rejects truncated pages whose cursor does not advance", async () => {
-    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const prefix =
+      "accounts/user-1/learners/learner-a/recordings/lessons/";
     for (const cursor of [undefined, ""]) {
       const state = pagedBucket(
         new Map([
           [
             "",
             {
-              objects: [{ key: `${prefix}clip-1.webm` }],
+              objects: [{ key: `${prefix}lesson-1/scene-0/step-1.audio` }],
               truncated: true,
               cursor,
             },
@@ -287,7 +294,7 @@ describe("lesson recording storage", () => {
         ]),
       );
       await assert.rejects(
-        storage.deleteAllLessonRecordings(state.bucket, LEGACY_IDENTITY, 1, async () => {}),
+        storage.deleteAllLessonRecordings(state.bucket, LEARNER_IDENTITY, 1, async () => {}),
         /did not advance its cursor/i,
       );
       assert.deepEqual(state.deletions, []);
@@ -307,7 +314,7 @@ describe("lesson recording storage", () => {
       ]),
     );
     await assert.rejects(
-      storage.deleteAllLessonRecordings(repeated.bucket, LEGACY_IDENTITY, 1, async () => {}),
+      storage.deleteAllLessonRecordings(repeated.bucket, LEARNER_IDENTITY, 1, async () => {}),
       /did not advance its cursor/i,
     );
     assert.deepEqual(repeated.deletions, []);
@@ -315,23 +322,24 @@ describe("lesson recording storage", () => {
   });
 
   it("keeps re-consented takes that already exist when revocation cleanup lists", async () => {
-    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const prefix =
+      "accounts/user-1/learners/learner-a/recordings/lessons/";
     const old = {
       customMetadata: { consentGeneration: "1", state: "audio" },
       etag: "old-etag",
-      key: `${prefix}parrot/lesson-1/old.audio`,
+      key: `${prefix}lesson-1/scene-0/step-0.audio`,
       version: "old-version",
     };
     const reconsented = {
       customMetadata: { consentGeneration: "3", state: "audio" },
       etag: "new-etag",
-      key: `${prefix}parrot/lesson-1/new.audio`,
+      key: `${prefix}lesson-1/scene-0/step-1.audio`,
       version: "new-version",
     };
     const accountFence = {
       customMetadata: { state: "account-deleting" },
       etag: "account-etag",
-      key: `${prefix}parrot/lesson-1/account.audio`,
+      key: `${prefix}lesson-1/scene-0/step-2.audio`,
       version: "account-version",
     };
     const writes = [];
@@ -345,16 +353,17 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 2, async () => {});
+    await storage.deleteAllLessonRecordings(bucket, LEARNER_IDENTITY, 2, async () => {});
 
     assert.deepEqual(writes.map(({ key }) => key), [old.key]);
   });
 
   it("retries transient purge listing and conditional fences with bounded pacing", async () => {
-    const prefix = "personalized-story-art/user-1/lesson-recordings/";
+    const prefix =
+      "accounts/user-1/learners/learner-a/recordings/lessons/";
     const object = {
       etag: "old-etag",
-      key: `${prefix}legacy.audio`,
+      key: `${prefix}lesson-1/scene-0/step-1.audio`,
       version: "old-version",
     };
     let listAttempts = 0;
@@ -373,7 +382,7 @@ describe("lesson recording storage", () => {
       },
     };
 
-    await storage.deleteAllLessonRecordings(bucket, LEGACY_IDENTITY, 1, async (delay) => {
+    await storage.deleteAllLessonRecordings(bucket, LEARNER_IDENTITY, 1, async (delay) => {
       waits.push(delay);
     });
 

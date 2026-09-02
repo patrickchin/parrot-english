@@ -16,7 +16,7 @@ export interface AuthEnv {
   BETTER_AUTH_SECRET?: string;
   BETTER_AUTH_URL?: string;
   TURNSTILE_SECRET_KEY?: string;
-  PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
+  PRIVATE_MEDIA_BUCKET: R2Bucket;
 }
 
 interface AuthDependencies {
@@ -55,10 +55,10 @@ export function createAuth(
   const accountDeletion =
     dependencies.prepareAccountDeletion ?? prepareAccountDeletion;
   const prepareUserDataForDeletion = async (userId: string) => {
-    const bucket = env.PERSONALIZED_STORY_ART_BUCKET;
+    const bucket = env.PRIVATE_MEDIA_BUCKET;
     if (!bucket) {
       throw new Error(
-        "PERSONALIZED_STORY_ART_BUCKET is required to delete an account.",
+        "PRIVATE_MEDIA_BUCKET is required to delete an account.",
       );
     }
     await accountDeletion({ bucket, database, userId });

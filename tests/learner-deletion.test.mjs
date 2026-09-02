@@ -9,11 +9,7 @@ import { createDubStorageKeys } from "../worker/dub-storage.ts";
 import { handleDubRequest } from "../worker/dubs.ts";
 import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
-import {
-  artCleanupUncertainGeneration,
-  prepareLearnerDeletion,
-} from "../worker/learner-deletion.ts";
-import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
+import { prepareLearnerDeletion } from "../worker/learner-deletion.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
@@ -24,11 +20,10 @@ const SIBLING_ID = "learner-b";
 const SESSION_ID = "session-1";
 const OTHER_SESSION_ID = "session-2";
 const NOW = Date.parse("2026-08-29T08:00:00.000Z");
-const USER_PREFIX = `personalized-story-art/${encodeURIComponent(USER_ID)}/`;
+const USER_PREFIX = `accounts/${encodeURIComponent(USER_ID)}/`;
 const TARGET_PREFIX = `${USER_PREFIX}learners/${TARGET_ID}/`;
 const SIBLING_PREFIX = `${USER_PREFIX}learners/${SIBLING_ID}/`;
 const LESSON_RECORDING_CONSENT_VERSION = "lesson-join-in-recording-v1";
-const STORY_CONSENT_VERSION = "guardian-photo-cloudflare-v1";
 const WEBM = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]);
 
 const accountIdentity = {
@@ -37,12 +32,11 @@ const accountIdentity = {
   userName: "Guardian",
 };
 
-function learnerIdentity({ legacyStorageOwner = false } = {}) {
+function learnerIdentity() {
   return {
     ...accountIdentity,
     learnerName: "Mary",
     learnerProfileId: TARGET_ID,
-    legacyStorageOwner,
   };
 }
 
@@ -182,7 +176,7 @@ function createBucket(seed = []) {
   return bucket;
 }
 
-function seedDatabase({ legacyStorageOwner = false } = {}) {
+function seedDatabase() {
   const state = createTestD1Database();
   const insertUser = state.sqlite.prepare(
     `INSERT INTO user
@@ -229,13 +223,13 @@ function seedDatabase({ legacyStorageOwner = false } = {}) {
   insertLearner.run(
     TARGET_ID,
     USER_ID,
-    legacyStorageOwner ? 1 : 0,
+    0,
     "Mary",
     NOW,
     NOW,
   );
   insertLearner.run(SIBLING_ID, USER_ID, 0, "Bob", NOW + 1, NOW + 1);
-  insertLearner.run("learner-foreign", OTHER_USER_ID, 1, "Rose", NOW, NOW);
+  insertLearner.run("learner-foreign", OTHER_USER_ID, 0, "Rose", NOW, NOW);
   return { ...state, database: createDatabase(state.d1) };
 }
 
@@ -269,7 +263,7 @@ function workerEnvironment(state, bucket) {
     ASSETS: { async fetch() { return new Response("asset"); } },
     DB: state.d1,
     MULTI_LEARNER_PROFILES_ENABLED: "1",
-    PERSONALIZED_STORY_ART_BUCKET: bucket,
+    PRIVATE_MEDIA_BUCKET: bucket,
   };
 }
 
@@ -289,8 +283,8 @@ function prepare(state, bucket, profileId = TARGET_ID, wait = async () => {}) {
 
 function tombstone(state, profileId = TARGET_ID) {
   return state.sqlite.prepare(
-    `SELECT learner_profile_id, user_id_hash, legacy_storage_owner,
-            generation, requested_at, storage_keys_json
+    `SELECT learner_profile_id, user_id_hash, generation, requested_at,
+            storage_keys_json
      FROM learner_profile_deletion_tombstone
      WHERE learner_profile_id = ?`,
   ).get(profileId);
@@ -352,31 +346,6 @@ function addDeletionGraph(state) {
       `provider-${profileId}`,
       NOW,
     );
-    const artKey = `${USER_PREFIX}learners/${profileId}/the-red-ball/versions/current.webp`;
-    state.sqlite.prepare(
-      `INSERT INTO personalized_story_art
-        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
-         content_type, guardian_consent_version, guardian_consent_at, provider,
-         prompt_version, created_at, updated_at)
-       VALUES (?, ?, ?, 'the-red-ball', 'ready', ?, 'image/webp', ?, ?,
-         'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-    ).run(`art-${profileId}`, USER_ID, profileId, artKey, STORY_CONSENT_VERSION, NOW, NOW, NOW);
-    state.sqlite.prepare(
-      `INSERT INTO learner_story_art_generation_lease
-        (learner_profile_id, auth_user_id, story_id, generation_token,
-         candidate_r2_object_key, previous_r2_object_key, lease_expires_at,
-         created_at, updated_at)
-       VALUES (?, ?, 'the-red-ball', ?, ?, ?, ?, ?, ?)`,
-    ).run(
-      profileId,
-      USER_ID,
-      `token-${profileId}`,
-      `${USER_PREFIX}learners/${profileId}/the-red-ball/versions/candidate.webp`,
-      artKey,
-      NOW + 60_000,
-      NOW,
-      NOW,
-    );
   }
 }
 
@@ -385,8 +354,6 @@ function assertOnlySiblingGraphRemains(state) {
     ["learner_dub_consent", "learner_profile_id"],
     ["onboarding_learner_session_bypass", "learner_profile_id"],
     ["conversation_session", "learner_profile_id"],
-    ["personalized_story_art", "learner_profile_id"],
-    ["learner_story_art_generation_lease", "learner_profile_id"],
   ]) {
     assert.deepEqual(
       plainRows(state.sqlite.prepare(
@@ -712,25 +679,6 @@ describe("learner deletion endpoint", () => {
 });
 
 describe("learner deletion lifecycle", () => {
-  it("binds neutral legacy-art authority to every distinct JavaScript key string", async () => {
-    const loneHighSurrogate = "\uD800";
-    const nextLoneHighSurrogate = "\uD801";
-    const replacementCharacter = "\uFFFD";
-    const generations = await Promise.all([
-      loneHighSurrogate,
-      nextLoneHighSurrogate,
-      replacementCharacter,
-    ].map(artCleanupUncertainGeneration));
-
-    assert.equal(new Set(generations).size, 3);
-    assert.equal(
-      await artCleanupUncertainGeneration("external-art/valid-😀.webp"),
-      `art-cleanup-uncertain-v1:${createHash("sha256")
-        .update("external-art/valid-😀.webp")
-        .digest("hex")}`,
-    );
-  });
-
   it("cascades the target SQL graph and removes only its R2 subtree", async () => {
     const state = seedDatabase();
     addDeletionGraph(state);
@@ -807,69 +755,11 @@ describe("learner deletion lifecycle", () => {
     }
   });
 
-  it("preflights every persisted slot before authorizing an earlier external key", async () => {
-    const state = seedDatabase();
-    const externalKey = "000-external/preflight.webp";
-    const siblingKey = `${SIBLING_PREFIX}corrupt.webp`;
-    const bucket = createBucket([
-      {
-        bytes: new Uint8Array([1]),
-        customMetadata: {
-          generation: "account-deletion-v1:existing",
-          state: "account-deleting",
-        },
-        key: externalKey,
-      },
-      { bytes: new Uint8Array([2]), key: siblingKey },
-    ]);
-    state.sqlite.prepare(
-      `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
-         requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 1, ?, ?)`,
-    ).run(
-      TARGET_ID,
-      createHash("sha256").update(USER_ID).digest("hex"),
-      NOW,
-      JSON.stringify({
-        markerKeys: [],
-        prefixes: [TARGET_PREFIX],
-        slotKeys: [externalKey, siblingKey],
-        version: 1,
-      }),
-    );
-
-    try {
-      await assert.rejects(
-        prepare(state, bucket),
-        /Learner deletion storage closure is invalid/,
-      );
-      assert.deepEqual(bucket.calls, {
-        delete: [],
-        head: [],
-        list: [],
-        put: [],
-      });
-      assert.equal(profileCount(state), 1);
-      assert.equal(profileCount(state, SIBLING_ID), 1);
-    } finally {
-      state.close();
-    }
-  });
-
   it("preflights all unfinished learner closures before account deletion touches R2", async () => {
     const state = seedDatabase();
-    const externalKey = "000-external/account-preflight.webp";
-    const corruptKey = `${TARGET_PREFIX}owned-by-the-other-tombstone.webp`;
+    const targetKey = `${TARGET_PREFIX}recordings/lessons/lesson/scene-0/step-0.audio`;
     const userIdHash = createHash("sha256").update(USER_ID).digest("hex");
-    const bucket = createBucket([{
-      bytes: new Uint8Array([1]),
-      customMetadata: {
-        generation: "account-deletion-v1:existing",
-        state: "account-deleting",
-      },
-      key: externalKey,
-    }]);
+    const bucket = createBucket([{ bytes: new Uint8Array([1]), key: targetKey }]);
     const insert = state.sqlite.prepare(
       `INSERT INTO learner_profile_deletion_tombstone
         (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
@@ -883,7 +773,7 @@ describe("learner deletion lifecycle", () => {
       JSON.stringify({
         markerKeys: [],
         prefixes: [TARGET_PREFIX],
-        slotKeys: [externalKey],
+        slotKeys: [targetKey],
         version: 1,
       }),
     );
@@ -894,7 +784,7 @@ describe("learner deletion lifecycle", () => {
       JSON.stringify({
         markerKeys: [],
         prefixes: [SIBLING_PREFIX],
-        slotKeys: [corruptKey],
+        slotKeys: [targetKey],
         version: 1,
       }),
     );
@@ -918,178 +808,6 @@ describe("learner deletion lifecycle", () => {
       });
       assert.equal(profileCount(state), 1);
       assert.equal(profileCount(state, SIBLING_ID), 1);
-    } finally {
-      state.close();
-    }
-  });
-
-  it("rejects neutral takeover authority generated for a distinct ill-formed external key", async () => {
-    const state = seedDatabase();
-    const externalKey = "external-art/\uD800.webp";
-    const distinctKey = "external-art/\uD801.webp";
-    const bucket = createBucket([{
-      bytes: new Uint8Array([1]),
-      customMetadata: {
-        generation: await artCleanupUncertainGeneration(distinctKey),
-        state: "art-cleanup-uncertain",
-      },
-      key: externalKey,
-    }]);
-    state.sqlite.prepare(
-      `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
-         requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 1, ?, ?)`,
-    ).run(
-      TARGET_ID,
-      createHash("sha256").update(USER_ID).digest("hex"),
-      NOW,
-      JSON.stringify({
-        markerKeys: [],
-        prefixes: [TARGET_PREFIX],
-        slotKeys: [externalKey],
-        version: 1,
-      }),
-    );
-
-    try {
-      await assert.rejects(
-        prepare(state, bucket),
-        /Learner deletion storage closure is invalid/,
-      );
-      assert.equal(profileCount(state), 1);
-      assert.equal(metadataState(bucket, externalKey), "art-cleanup-uncertain");
-      assert.equal(
-        bucket.calls.put.some(({ key }) => key === externalKey),
-        false,
-      );
-    } finally {
-      state.close();
-    }
-  });
-
-  it("rejects a DB-owned legacy art key in a sibling namespace before any R2 work", async () => {
-    const state = seedDatabase();
-    const siblingKey = `${SIBLING_PREFIX}the-red-ball/versions/corrupt.webp`;
-    state.sqlite.prepare(
-      `INSERT INTO personalized_story_art
-        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
-         content_type, guardian_consent_version, guardian_consent_at, provider,
-         prompt_version, created_at, updated_at)
-       VALUES ('corrupt-sibling-art', ?, ?, 'the-red-ball', 'ready', ?,
-         'image/webp', ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-    ).run(
-      USER_ID,
-      TARGET_ID,
-      siblingKey,
-      STORY_CONSENT_VERSION,
-      NOW,
-      NOW,
-      NOW,
-    );
-    const bucket = createBucket([
-      { key: siblingKey, bytes: new Uint8Array([1]) },
-    ]);
-    try {
-      await assert.rejects(
-        prepare(state, bucket),
-        /Learner deletion storage closure is invalid/,
-      );
-      assert.deepEqual(bucket.calls, {
-        delete: [],
-        head: [],
-        list: [],
-        put: [],
-      });
-      assert.equal(profileCount(state), 1);
-      assert.equal(profileCount(state, SIBLING_ID), 1);
-      assert.equal(bucket.stored.has(siblingKey), true);
-    } finally {
-      state.close();
-    }
-  });
-
-  it("removes legacy compatibility rows and root namespaces without promoting or sweeping the sibling", async () => {
-    const state = seedDatabase({ legacyStorageOwner: true });
-    const identity = learnerIdentity({ legacyStorageOwner: true });
-    const currentArt = "legacy-exact/current.webp";
-    const candidateArt = `${USER_PREFIX}the-red-ball/versions/candidate.webp`;
-    const previousArt = `${USER_PREFIX}the-red-ball/versions/previous.webp`;
-    const rootDubOrphan = `${USER_PREFIX}learner-dubs/retired/custom.audio`;
-    const rootRecording = `${USER_PREFIX}lesson-recordings/parrot/lesson/scene-0/step-0.audio`;
-    const siblingObject = `${SIBLING_PREFIX}keep.bin`;
-    state.sqlite.prepare(
-      `INSERT INTO guardian_dub_consent
-        (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
-       VALUES (?, 'guardian-voice-r2-v2', 'legacy-grant', 'granted', ?, ?)`,
-    ).run(USER_ID, NOW, NOW);
-    state.sqlite.prepare(
-      `INSERT INTO onboarding_session_bypass (session_id, auth_user_id, skipped_at)
-       VALUES (?, ?, ?)`,
-    ).run(SESSION_ID, USER_ID, NOW);
-    insertConversation(state, null, "completed", "legacy-conversation");
-    state.sqlite.prepare(
-      `INSERT INTO personalized_story_art
-        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
-         content_type, guardian_consent_version, guardian_consent_at, provider,
-         prompt_version, created_at, updated_at)
-       VALUES ('legacy-art', ?, NULL, 'the-red-ball', 'ready', ?, 'image/webp',
-         ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-    ).run(USER_ID, currentArt, STORY_CONSENT_VERSION, NOW, NOW, NOW);
-    state.sqlite.prepare(
-      `INSERT INTO personalized_story_art_generation_lease
-        (auth_user_id, story_id, generation_token, candidate_r2_object_key,
-         previous_r2_object_key, lease_expires_at, created_at, updated_at)
-       VALUES (?, 'the-red-ball', 'legacy-token', ?, ?, ?, ?, ?)`,
-    ).run(USER_ID, candidateArt, previousArt, NOW + 60_000, NOW, NOW);
-    const bucket = createBucket([
-      { key: currentArt, bytes: new Uint8Array([1]) },
-      { key: candidateArt, bytes: new Uint8Array([2]) },
-      { key: previousArt, bytes: new Uint8Array([3]) },
-      { key: rootDubOrphan, bytes: new Uint8Array([4]) },
-      { key: rootRecording, bytes: new Uint8Array([5]) },
-      { key: siblingObject, bytes: new Uint8Array([6]) },
-    ]);
-    try {
-      await prepare(state, bucket);
-      for (const table of [
-        "guardian_dub_consent",
-        "onboarding_session_bypass",
-        "personalized_story_art_generation_lease",
-      ]) {
-        assert.equal(
-          state.sqlite.prepare(`SELECT count(*) AS count FROM ${table} WHERE auth_user_id = ?`).get(USER_ID).count,
-          0,
-          table,
-        );
-      }
-      for (const table of ["conversation_session", "personalized_story_art"]) {
-        assert.equal(
-          state.sqlite.prepare(`SELECT count(*) AS count FROM ${table} WHERE auth_user_id = ? AND learner_profile_id IS NULL`).get(USER_ID).count,
-          0,
-          table,
-        );
-      }
-      assert.equal(
-        state.sqlite.prepare("SELECT legacy_storage_owner FROM learner_profile WHERE id = ?").get(SIBLING_ID).legacy_storage_owner,
-        0,
-      );
-      assert.equal(bucket.stored.has(rootDubOrphan), false);
-      assert.equal(metadataState(bucket, rootRecording), "learner-deleting");
-      assert.equal(metadataState(bucket, currentArt), "learner-deleting");
-      assert.equal(metadataState(bucket, candidateArt), "learner-deleting");
-      assert.equal(metadataState(bucket, previousArt), "learner-deleting");
-      assert.equal(bucket.stored.has(siblingObject), true);
-      assert.equal(
-        bucket.calls.list.some(({ prefix }) => prefix === SIBLING_PREFIX),
-        false,
-      );
-      for (const definition of DUB_DEFINITIONS) {
-        assert.equal(
-          metadataState(bucket, createDubStorageKeys(identity, definition.id).markerKey),
-          "learner-deleting",
-        );
-      }
     } finally {
       state.close();
     }
@@ -1166,17 +884,9 @@ describe("learner deletion lifecycle", () => {
   });
 
   it("keeps whole-account fences authoritative while learner and account deletion overlap", async () => {
-    const state = seedDatabase({ legacyStorageOwner: true });
-    const externalArt = "legacy-exact/concurrent.webp";
-    state.sqlite.prepare(
-      `INSERT INTO personalized_story_art
-        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
-         content_type, guardian_consent_version, guardian_consent_at, provider,
-         prompt_version, created_at, updated_at)
-       VALUES ('legacy-concurrent', ?, NULL, 'the-red-ball', 'ready', ?,
-         'image/webp', ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-    ).run(USER_ID, externalArt, STORY_CONSENT_VERSION, NOW, NOW, NOW);
-    const bucket = createBucket([{ key: externalArt, bytes: new Uint8Array([1]) }]);
+    const state = seedDatabase();
+    const lessonKey = `${TARGET_PREFIX}recordings/lessons/lesson-1/scene-0/step-0.audio`;
+    const bucket = createBucket([{ key: lessonKey, bytes: new Uint8Array([1]) }]);
     const learnerFenceStarted = deferred();
     const releaseLearnerFence = deferred();
     let held = false;
@@ -1199,71 +909,17 @@ describe("learner deletion lifecycle", () => {
       });
       releaseLearnerFence.resolve();
       await learnerDeletion;
-      assert.equal(metadataState(bucket, externalArt), "account-deleting");
-      const rootStorage = firstDubStorage(learnerIdentity({ legacyStorageOwner: true }));
-      assert.equal(metadataState(bucket, rootStorage.markerKey), "account-deleting");
+      assert.equal(metadataState(bucket, lessonKey), "account-deleting");
+      assert.equal(
+        metadataState(bucket, firstDubStorage().markerKey),
+        "account-deleting",
+      );
     } finally {
       releaseLearnerFence.resolve();
       state.close();
     }
   });
 
-  it("lets account deletion fence external legacy art while a new learner closure is still empty", async () => {
-    const state = seedDatabase();
-    const externalArt = "legacy-exact/pre-closure.webp";
-    state.sqlite.prepare(
-      `INSERT INTO personalized_story_art
-        (id, auth_user_id, learner_profile_id, story_id, status, r2_object_key,
-         content_type, guardian_consent_version, guardian_consent_at, provider,
-         prompt_version, created_at, updated_at)
-       VALUES ('pre-closure-art', ?, ?, 'the-red-ball', 'ready', ?,
-         'image/webp', ?, ?, 'cloudflare-workers-ai', 'red-ball-v1', ?, ?)`,
-    ).run(
-      USER_ID,
-      TARGET_ID,
-      externalArt,
-      STORY_CONSENT_VERSION,
-      NOW,
-      NOW,
-      NOW,
-    );
-    const bucket = createBucket([
-      { key: externalArt, bytes: new Uint8Array([1]) },
-    ]);
-    const learnerListStarted = deferred();
-    const releaseLearnerList = deferred();
-    let held = false;
-    bucket.beforeList = async ({ prefix }) => {
-      if (!held && prefix === TARGET_PREFIX) {
-        held = true;
-        learnerListStarted.resolve();
-        await releaseLearnerList.promise;
-      }
-    };
-    let learnerDeletion;
-    try {
-      learnerDeletion = prepare(state, bucket);
-      await learnerListStarted.promise;
-      assert.equal(tombstone(state)?.storage_keys_json, "[]");
-
-      await prepareAccountDeletion({
-        bucket,
-        database: state.database,
-        now: () => new Date(NOW),
-        userId: USER_ID,
-        wait: async () => {},
-      });
-      state.sqlite.prepare("DELETE FROM user WHERE id = ?").run(USER_ID);
-      releaseLearnerList.resolve();
-      await learnerDeletion;
-
-      assert.equal(metadataState(bucket, externalArt), "account-deleting");
-    } finally {
-      releaseLearnerList.resolve();
-      await Promise.allSettled([learnerDeletion].filter(Boolean));
-      state.close();
-    }
-  });
 });
 
 describe("tombstone write fences", () => {
@@ -1327,7 +983,7 @@ describe("tombstone write fences", () => {
       const upload = handleDubRequest(
         {
           database: state.database,
-          env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
+          env: { PRIVATE_MEDIA_BUCKET: bucket },
           identity,
           request: new Request(
             `https://example.test/api/dubs/${definition.id}/lines/${lineId}`,
@@ -1346,81 +1002,6 @@ describe("tombstone write fences", () => {
       assert.notEqual(metadataState(bucket, key), "audio");
     } finally {
       releaseAudioPut.resolve();
-      state.close();
-    }
-  });
-
-  it("does not recreate legacy dub consent after learner SQL cleanup", async () => {
-    const state = seedDatabase({ legacyStorageOwner: true });
-    const bucket = createBucket();
-    const delayedDatabase = createDatabase(beforeStatementWhen(
-      state.d1,
-      (sql) => /INSERT INTO [`"]?guardian_dub_consent/i.test(sql),
-      () => prepare(state, bucket),
-    ));
-    const definition = DUB_DEFINITIONS[0];
-    try {
-      const response = await handleDubRequest(
-        {
-          database: delayedDatabase,
-          env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
-          identity: learnerIdentity({ legacyStorageOwner: true }),
-          request: new Request(
-            `https://example.test/api/dubs/${definition.id}/consent`,
-            {
-              body: JSON.stringify({
-                accepted: true,
-                consentVersion: "guardian-voice-r2-v2",
-              }),
-              headers: { "Content-Type": "application/json" },
-              method: "PUT",
-            },
-          ),
-        },
-        { wait: async () => {} },
-      );
-      assert.equal(response.status, 409);
-      assert.equal((await response.json()).error, "learner_deletion_pending");
-      assert.equal(
-        state.sqlite.prepare(
-          "SELECT count(*) AS count FROM guardian_dub_consent WHERE auth_user_id = ?",
-        ).get(USER_ID).count,
-        0,
-      );
-    } finally {
-      state.close();
-    }
-  });
-
-  it("atomically refuses both legacy onboarding bypass writes after tombstoning", async () => {
-    const state = seedDatabase({ legacyStorageOwner: true });
-    const bucket = createBucket();
-    const delayedDatabase = createDatabase(beforeStatementWhen(
-      state.d1,
-      (sql) => /INSERT INTO [`"]?onboarding_session_bypass/i.test(sql),
-      () => prepare(state, bucket),
-    ));
-    const repository = createLearnerProfileRepository(delayedDatabase, {
-      now: () => new Date(NOW),
-    });
-    try {
-      await assert.rejects(
-        repository.skipSession(learnerIdentity({ legacyStorageOwner: true })),
-        /learner_deletion_pending/,
-      );
-      assert.equal(
-        state.sqlite.prepare(
-          "SELECT count(*) AS count FROM onboarding_learner_session_bypass WHERE learner_profile_id = ?",
-        ).get(TARGET_ID).count,
-        0,
-      );
-      assert.equal(
-        state.sqlite.prepare(
-          "SELECT count(*) AS count FROM onboarding_session_bypass WHERE auth_user_id = ?",
-        ).get(USER_ID).count,
-        0,
-      );
-    } finally {
       state.close();
     }
   });
@@ -1447,7 +1028,7 @@ describe("tombstone write fences", () => {
       const upload = handleLessonRecordingRequest(
         {
           database: state.database,
-          env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+          env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
           identity: learnerIdentity(),
           request: new Request(
             "https://example.test/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
@@ -1470,7 +1051,7 @@ describe("tombstone write fences", () => {
       assert.equal(response.status, 409);
       assert.deepEqual(await response.json(), { error: "learner_deletion_pending" });
       const recording = [...bucket.stored.values()].find(
-        ({ object }) => object.key.includes("/lesson-recordings/"),
+        ({ object }) => object.key.includes("/recordings/lessons/"),
       );
       assert.equal(recording?.object.customMetadata.state, "learner-deleting");
     } finally {
@@ -1498,7 +1079,7 @@ describe("tombstone write fences", () => {
       const response = await handleLessonRecordingRequest(
         {
           database: state.database,
-          env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+          env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
           identity: learnerIdentity(),
           request: new Request(
             "https://example.test/api/lesson-recordings/parrot/01-peppas-high-ball/scenes/0/steps/2",
@@ -1519,7 +1100,7 @@ describe("tombstone write fences", () => {
         error: "learner_deletion_pending",
       });
       const recording = [...bucket.stored.values()].find(
-        ({ object }) => object.key.includes("/lesson-recordings/"),
+        ({ object }) => object.key.includes("/recordings/lessons/"),
       );
       assert.equal(recording?.object.customMetadata.state, "learner-deleting");
     } finally {

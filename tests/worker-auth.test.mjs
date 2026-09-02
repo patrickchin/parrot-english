@@ -183,7 +183,7 @@ describe("Worker authentication", () => {
     const calls = [];
     const bucket = {};
     const auth = createAuth(
-      createAuthEnvironment({ PERSONALIZED_STORY_ART_BUCKET: bucket }),
+      createAuthEnvironment({ PRIVATE_MEDIA_BUCKET: bucket }),
       {
         async prepareAccountDeletion(input) {
           calls.push(input);
@@ -689,7 +689,7 @@ describe("Worker authentication", () => {
       const auth = createAuth(
         createAuthEnvironment({
           DB: state.d1,
-          PERSONALIZED_STORY_ART_BUCKET: {},
+          PRIVATE_MEDIA_BUCKET: {},
         }),
         {
           async prepareAccountDeletion() {
@@ -808,14 +808,14 @@ describe("Worker authentication", () => {
   it("enables password-confirmed account deletion with a fail-closed pre-delete purge", () => {
     const auth = createAuth({
       ...createAuthEnvironment(),
-      PERSONALIZED_STORY_ART_BUCKET: {},
+      PRIVATE_MEDIA_BUCKET: {},
     });
 
     assert.equal(auth.options.user?.deleteUser?.enabled, true);
     assert.equal(
       typeof auth.options.user?.deleteUser?.beforeDelete,
       "function",
-      "Account removal must run legacy private-media cleanup before Better Auth deletes the user row",
+      "Account removal must run private-media cleanup before Better Auth deletes the user row",
     );
   });
 

@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { describe, it } from "node:test";
 import { TextDecoder, TextEncoder } from "node:util";
+import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 import {
   markAccountDeletionPending,
   prepareAccountDeletion,
 } from "../worker/account-deletion.ts";
 import { createDatabase } from "../worker/database.ts";
-import { markerKey } from "../worker/dub-storage.ts";
+import { createDubStorageKeys } from "../worker/dub-storage.ts";
 import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { handleLessonRecordingRequest } from "../worker/lesson-recordings.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
@@ -223,7 +224,7 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
   return handleLessonRecordingRequest(
     {
       database: state.database,
-      env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+      env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
       identity: {
         sessionId: "session-1",
         userId: options.userId ?? USER_ID,
@@ -246,7 +247,7 @@ function saveRecordingConsent(state, bucket, enabled, identity = {}) {
   return handleLearnerProfileRequest(
     {
       database: state.database,
-      env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+      env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
       identity: {
         sessionId: "session-1",
         userId: USER_ID,
@@ -347,7 +348,7 @@ describe("lesson recording Worker handler", () => {
             database: state.database,
             env: {
               DB: state.d1,
-              PERSONALIZED_STORY_ART_BUCKET: bucket,
+              PRIVATE_MEDIA_BUCKET: bucket,
             },
             identity: {
               sessionId: "session-1",
@@ -396,7 +397,7 @@ describe("lesson recording Worker handler", () => {
       assert.equal(saved.status, 201);
       assert.equal(
         audioWrites(bucket)[0].key,
-        "personalized-story-art/user-1/learners/profile-sibling/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio",
+        "accounts/user-1/learners/profile-sibling/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio",
       );
       assert.equal(
         state.sqlite
@@ -426,7 +427,7 @@ describe("lesson recording Worker handler", () => {
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
       const audioWrite = audioWrites(bucket)[0];
       assert.equal(audioWrite.key,
-        "personalized-story-art/user-1/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio");
+        "accounts/user-1/learners/profile-1/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio");
       const envelope = JSON.stringify([
         AUDIO_ENVELOPE_FORMAT,
         "upload-built-in",
@@ -465,7 +466,7 @@ describe("lesson recording Worker handler", () => {
     try {
       const response = await handleLessonRecordingRequest({
         database: state.database,
-        env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+        env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
         identity: {
           sessionId: "session-1",
           userId: USER_ID,
@@ -900,7 +901,7 @@ describe("lesson recording Worker handler", () => {
     const audioStored = deferred();
     const releaseStoredAudio = deferred();
     const key =
-      "personalized-story-art/user-1/lesson-recordings/parrot/01-peppas-high-ball/scene-0/step-2.audio";
+      "accounts/user-1/learners/profile-1/recordings/lessons/01-peppas-high-ball/scene-0/step-2.audio";
     bucket.onAudioPut = async () => {
       audioStored.resolve();
       await releaseStoredAudio.promise;
@@ -919,7 +920,11 @@ describe("lesson recording Worker handler", () => {
         userId: USER_ID,
         wait: async () => {},
       });
-      const deletionMarker = bucket.stored.get(markerKey(USER_ID))?.object;
+      const markerKey = createDubStorageKeys({
+        learnerProfileId: "profile-1",
+        userId: USER_ID,
+      }, DUB_DEFINITIONS[0].id).markerKey;
+      const deletionMarker = bucket.stored.get(markerKey)?.object;
       assert.equal(deletionMarker?.customMetadata.state, "account-deleting");
       const deletionFence = bucket.stored.get(key)?.object;
       assert.equal(deletionFence?.customMetadata.state, "account-deleting");
@@ -948,7 +953,7 @@ describe("lesson recording Worker handler", () => {
         "Failed upload cleanup must not replace the durable lesson fence",
       );
       assert.deepEqual(
-        bucket.stored.get(markerKey(USER_ID))?.object,
+        bucket.stored.get(markerKey)?.object,
         deletionMarker,
         "The stale upload must not replace the durable deletion marker",
       );

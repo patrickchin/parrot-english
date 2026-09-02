@@ -39,7 +39,7 @@ const MIME_SIGNATURES = {
 
 export interface LessonRecordingEnv {
   DB: D1Database;
-  PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
+  PRIVATE_MEDIA_BUCKET: R2Bucket;
 }
 
 export interface LessonRecordingRequestInput {
@@ -241,7 +241,7 @@ export async function handleLessonRecordingRequest(
     const recordedAt = now().toISOString();
     const key = lessonRecordingObjectKey(input.identity, route);
     const encoded = lessonRecordingAudioBody(bytes, uploadNonce);
-    const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
+    const bucket = input.env.PRIVATE_MEDIA_BUCKET;
     const putOptions: R2PutOptions = {
       customMetadata: {
         consentGeneration: String(consentGeneration),

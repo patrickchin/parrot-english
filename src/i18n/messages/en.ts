@@ -147,7 +147,7 @@ export const englishGuardianMessages = {
       cannotUndo: "Cannot be undone",
       title: "Delete account",
       description:
-        "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, lesson voice recordings, and any previously saved private story pictures from Parrot. A small deletion marker stays so removed private media cannot return.",
+        "This removes your account, all learner profiles, saved conversation text, private voice clips from all nursery rhymes, and lesson voice recordings from Parrot. A small deletion marker stays so removed private media cannot return.",
       password: "Password",
       cancel: "Cancel",
       deleting: "Deleting account…",

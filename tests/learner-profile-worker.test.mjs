@@ -309,7 +309,7 @@ async function callLearnerProfile(
       database,
       env: {
         DB: database.$client,
-        PERSONALIZED_STORY_ART_BUCKET: {
+        PRIVATE_MEDIA_BUCKET: {
           async list() { return { objects: [], truncated: false }; },
           async put() { return null; },
         },
@@ -506,7 +506,7 @@ describe("onboarding persistence and API", () => {
             objects: [
               {
                 etag: "clip-etag",
-                key: "personalized-story-art/user-1/lesson-recordings/clip-1.webm",
+                key: "accounts/user-1/learners/learner-a/recordings/lessons/clip-1.audio",
                 version: "clip-version",
               },
             ],
@@ -525,7 +525,7 @@ describe("onboarding persistence and API", () => {
 
       const disabled = await handleLearnerProfileRequest({
         database: state.database,
-        env: { DB: state.d1, PERSONALIZED_STORY_ART_BUCKET: bucket },
+        env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
         identity: {
           sessionId: "session-1",
           userId: "user-1",
@@ -551,12 +551,12 @@ describe("onboarding persistence and API", () => {
           "list",
           {
             include: ["customMetadata"],
-            prefix: "personalized-story-art/user-1/lesson-recordings/",
+            prefix: "accounts/user-1/learners/learner-a/recordings/lessons/",
           },
         ],
         [
           "put",
-          "personalized-story-art/user-1/lesson-recordings/clip-1.webm",
+          "accounts/user-1/learners/learner-a/recordings/lessons/clip-1.audio",
           ["parrot-lesson-recording-purge-v1", "clip-version"],
           {
             customMetadata: {
@@ -598,7 +598,7 @@ describe("onboarding persistence and API", () => {
           database: state.database,
           env: {
             DB: state.d1,
-            PERSONALIZED_STORY_ART_BUCKET: {
+            PRIVATE_MEDIA_BUCKET: {
               async list() {
                 listAttempts += 1;
                 throw new Error("R2 unavailable (10058)");
@@ -649,13 +649,13 @@ describe("onboarding persistence and API", () => {
           database: state.database,
           env: {
             DB: state.d1,
-            PERSONALIZED_STORY_ART_BUCKET: {
+            PRIVATE_MEDIA_BUCKET: {
               async list() {
                 return {
                   objects: [{
-                    etag: "legacy-etag",
-                    key: "personalized-story-art/user-1/lesson-recordings/legacy.audio",
-                    version: "legacy-version",
+                    etag: "clip-etag",
+                    key: "accounts/user-1/learners/learner-a/recordings/lessons/clip.audio",
+                    version: "clip-version",
                   }],
                   truncated: false,
                 };

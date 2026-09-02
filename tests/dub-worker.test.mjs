@@ -19,20 +19,21 @@ const OLD_LINE_IDS = Array.from(
   { length: 35 },
   (_, index) => `old-macdonald-v1-line-${index + 1}`,
 );
-const OWNER_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
+const ACCOUNT_PREFIX = "accounts/user-1/";
+const OWNER_RECORDINGS_PREFIX =
+  `${ACCOUNT_PREFIX}learners/learner-a/recordings/`;
+const OWNER_PREFIX =
+  `${OWNER_RECORDINGS_PREFIX}nursery-rhymes/five-little-ducks-v2/`;
 const MARKER_KEY = `${OWNER_PREFIX}.dub-generation`;
 const slotKey = (lineId) => `${OWNER_PREFIX}${lineId}.audio`;
-const OLD_OWNER_PREFIX = "personalized-story-art/user-1/learner-dubs/old-macdonald-v1/";
+const OLD_OWNER_PREFIX =
+  `${OWNER_RECORDINGS_PREFIX}nursery-rhymes/old-macdonald-v1/`;
 const OLD_MARKER_KEY = `${OLD_OWNER_PREFIX}.dub-generation`;
 const oldSlotKey = (lineId) => `${OLD_OWNER_PREFIX}${lineId}.audio`;
-const LEGACY_PREFIX = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v1/";
-const LEGACY_LINE_IDS = Array.from({ length: 9 }, (_, index) => `line-${index + 1}`);
-const LEGACY_MARKER_KEY = `${LEGACY_PREFIX}.dub-generation`;
-const legacySlotKey = (lineId) => `${LEGACY_PREFIX}${lineId}.audio`;
 const catalogMarkerKey = (dubId) =>
-  `personalized-story-art/user-1/learner-dubs/${dubId}/.dub-generation`;
+  `${OWNER_RECORDINGS_PREFIX}nursery-rhymes/${dubId}/.dub-generation`;
 const SIBLING_PREFIX =
-  "personalized-story-art/user-1/learners/learner-b/learner-dubs/five-little-ducks-v2/";
+  `${ACCOUNT_PREFIX}learners/learner-b/recordings/nursery-rhymes/five-little-ducks-v2/`;
 const siblingSlotKey = (lineId) => `${SIBLING_PREFIX}${lineId}.audio`;
 const DEFAULT_IDENTITY = {
   learnerName: "Mia",
@@ -51,14 +52,48 @@ function fenceBytes(kind, generation, state) {
   return encoded(["parrot-dub-fence-v1", kind, generation, state]);
 }
 
-function envelopedAudio(generation, audio, uploadNonce) {
-  const prefix = uploadNonce === undefined
-    ? encoded(["parrot-dub-audio-v1", generation])
-    : encoded(["parrot-dub-audio-v2", generation, uploadNonce]);
+function envelopedAudio(generation, audio, uploadNonce = "upload-1") {
+  const prefix = encoded(["parrot-dub-audio-v2", generation, uploadNonce]);
   const bytes = new Uint8Array(prefix.byteLength + audio.byteLength);
   bytes.set(prefix);
   bytes.set(audio, prefix.byteLength);
   return { bytes, payloadOffset: prefix.byteLength };
+}
+
+function readyMarker(generation = "consent-1") {
+  return {
+    bytes: fenceBytes("marker", generation, "ready"),
+    options: { customMetadata: { generation, state: "ready" } },
+    uploaded: new Date("2026-08-25T09:00:00.000Z"),
+  };
+}
+
+function v2AudioObject({
+  audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]),
+  consentGeneration = "consent-1",
+  generation = consentGeneration,
+  lineId,
+  recordedAt = "2026-08-25T09:00:00.000Z",
+  uploadNonce = `upload-${lineId}`,
+} = {}) {
+  const envelope = envelopedAudio(generation, audio, uploadNonce);
+  return {
+    bytes: envelope.bytes,
+    options: {
+      customMetadata: {
+        generation,
+        guardianConsentGeneration: consentGeneration,
+        guardianConsentVersion: CURRENT_CONSENT_VERSION,
+        lineId,
+        payloadOffset: String(envelope.payloadOffset),
+        recordedAt,
+        state: "audio",
+        uploadNonce,
+      },
+      httpMetadata: { contentType: "audio/webm" },
+    },
+    uploaded: new Date("2026-08-25T09:00:00.000Z"),
+  };
 }
 
 function storedAudio(item) {
@@ -171,30 +206,6 @@ function assertOldResetTombstones(bucket, generation) {
     assert.deepEqual(item?.options.customMetadata, {
       generation,
       state: "tombstone",
-    }, lineId);
-  }
-}
-
-function assertLegacyRetirementFences(bucket, generation) {
-  const marker = bucket.stored.get(LEGACY_MARKER_KEY);
-  assert.deepEqual(
-    marker?.bytes,
-    fenceBytes("marker", generation, "account-deleting"),
-  );
-  assert.deepEqual(marker?.options.customMetadata, {
-    generation,
-    state: "account-deleting",
-  });
-  for (const lineId of LEGACY_LINE_IDS) {
-    const item = bucket.stored.get(legacySlotKey(lineId));
-    assert.deepEqual(
-      item?.bytes,
-      fenceBytes("slot", generation, "account-deleting"),
-      lineId,
-    );
-    assert.deepEqual(item?.options.customMetadata, {
-      generation,
-      state: "account-deleting",
     }, lineId);
   }
 }
@@ -365,7 +376,7 @@ async function callDub({
     : { body, headers, method };
   return handleDubRequest({
     database,
-    env: { PERSONALIZED_STORY_ART_BUCKET: bucket },
+    env: { PRIVATE_MEDIA_BUCKET: bucket },
     identity: identity ?? { ...DEFAULT_IDENTITY, userId },
     request: new Request(`https://example.test${path}`, init),
   }, {
@@ -401,7 +412,7 @@ describe("private learner dub API", () => {
         createGeneration: () => `consent-${++consentSequence}`,
         now: () => new Date("2026-08-25T08:00:00.000Z"),
       });
-      const legacyIdentity = {
+      const ownerIdentity = {
         learnerName: "Mia",
         learnerProfileId: "learner-a",
         legacyStorageOwner: true,
@@ -417,19 +428,42 @@ describe("private learner dub API", () => {
         userId: "user-1",
         userName: "Guardian",
       };
-      const legacyKey = slotKey("line-1");
-      const bucket = createBucket([[legacyKey, {
-        bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]),
-        options: { httpMetadata: { contentType: "audio/webm" } },
-        uploaded: new Date("2026-08-25T07:00:00.000Z"),
-      }]]);
+      const ownerKey = slotKey("line-1");
+      const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]);
+      const envelope = envelopedAudio("consent-1", audio);
+      const bucket = createBucket([
+        [MARKER_KEY, {
+          bytes: fenceBytes("marker", "consent-1", "ready"),
+          options: {
+            customMetadata: { generation: "consent-1", state: "ready" },
+          },
+          uploaded: new Date("2026-08-25T07:00:00.000Z"),
+        }],
+        [ownerKey, {
+          bytes: envelope.bytes,
+          options: {
+            customMetadata: {
+              generation: "consent-1",
+              guardianConsentGeneration: "consent-1",
+              guardianConsentVersion: CURRENT_CONSENT_VERSION,
+              lineId: "line-1",
+              payloadOffset: String(envelope.payloadOffset),
+              recordedAt: "2026-08-25T07:00:00.000Z",
+              state: "audio",
+              uploadNonce: "upload-1",
+            },
+            httpMetadata: { contentType: "audio/webm" },
+          },
+          uploaded: new Date("2026-08-25T07:00:00.000Z"),
+        }],
+      ]);
 
-      await consentRepository.grant(legacyIdentity);
-      const legacyStatus = await (await callDub({
+      await consentRepository.grant(ownerIdentity);
+      const ownerStatus = await (await callDub({
         bucket,
         consentRepository,
         database,
-        identity: legacyIdentity,
+        identity: ownerIdentity,
         method: "GET",
         path: DUB_PATH,
       })).json();
@@ -441,7 +475,7 @@ describe("private learner dub API", () => {
         method: "GET",
         path: DUB_PATH,
       })).json();
-      assert.equal(legacyStatus.lines.filter(({ saved }) => saved).length, 1);
+      assert.equal(ownerStatus.lines.filter(({ saved }) => saved).length, 1);
       assert.equal(siblingStatus.lines.filter(({ saved }) => saved).length, 0);
       assert.equal(siblingStatus.consentState, "granted");
 
@@ -461,9 +495,9 @@ describe("private learner dub API", () => {
       );
       assert.match(
         siblingAudioPut.key,
-        /\/learners\/learner-b\/learner-dubs\//,
+        /\/learners\/learner-b\/recordings\/nursery-rhymes\//,
       );
-      assert.ok(await bucket.head(legacyKey));
+      assert.ok(await bucket.head(ownerKey));
       assert.ok(await bucket.head(siblingSlotKey("line-1")));
 
       const reset = await callDub({
@@ -477,23 +511,23 @@ describe("private learner dub API", () => {
       });
       assert.equal(reset.status, 204);
       assert.equal(
-        (await bucket.head(legacyKey)).customMetadata?.state,
-        undefined,
+        (await bucket.head(ownerKey)).customMetadata?.state,
+        "audio",
       );
       assert.equal(
         (await bucket.head(siblingSlotKey("line-1"))).customMetadata?.state,
         "tombstone",
       );
-      const legacyAfterReset = await (await callDub({
+      const ownerAfterReset = await (await callDub({
         bucket,
         consentRepository,
         database,
-        identity: legacyIdentity,
+        identity: ownerIdentity,
         method: "GET",
         path: DUB_PATH,
       })).json();
       assert.equal(
-        legacyAfterReset.lines.filter(({ saved }) => saved).length,
+        ownerAfterReset.lines.filter(({ saved }) => saved).length,
         1,
       );
     } finally {
@@ -501,7 +535,7 @@ describe("private learner dub API", () => {
     }
   });
 
-  it("keeps the first durable generation without reviving the retired v1 prefix", async () => {
+  it("lets automatic recording access take over an incomplete deleting marker", async () => {
     const state = createTestD1Database();
     try {
       const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
@@ -510,85 +544,11 @@ describe("private learner dub API", () => {
           (id, name, email, email_verified, created_at, updated_at)
          VALUES (?, ?, ?, 1, ?, ?)`,
       ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
-      let generationCalls = 0;
-      const consentRepository = createDubConsentRepository(
-        createDatabase(state.d1),
-        {
-          createGeneration: () => `consent-${++generationCalls}`,
-          now: () => new Date("2026-08-25T08:00:00.000Z"),
-        },
-      );
-      const bucket = createBucket([
-        [slotKey("line-1"), {
-          bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-          options: { httpMetadata: { contentType: "audio/webm" } },
-          uploaded: new Date("2026-08-25T07:00:00.000Z"),
-        }],
-        [legacySlotKey("line-2"), {
-          bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 2]),
-          options: { httpMetadata: { contentType: "audio/webm" } },
-          uploaded: new Date("2026-08-25T07:00:00.000Z"),
-        }],
-      ]);
-      const grant = () => callDub({
-        body: JSON.stringify({
-          accepted: true,
-          consentVersion: CURRENT_CONSENT_VERSION,
-        }),
-        bucket,
-        consentRepository,
-        headers: { "Content-Type": "application/json" },
-        method: "PUT",
-        path: `${DUB_PATH}/consent`,
-      });
-
-      assert.equal((await grant()).status, 204);
-      const first = await consentRepository.status(DEFAULT_IDENTITY);
-      assert.equal(first.state, "granted");
-      assert.equal(first.grantGeneration, "consent-1");
-      const firstStatus = await callDub({
-        bucket,
-        consentRepository,
-        method: "GET",
-        path: DUB_PATH,
-      }).then((response) => response.json());
-      assert.deepEqual(
-        firstStatus.lines.filter(({ saved }) => saved).map(({ id }) => id),
-        ["line-1"],
-      );
-      assert.equal((await callDub({
-        bucket,
-        consentRepository,
-        method: "GET",
-        path: `${DUB_PATH}/lines/line-2/audio`,
-      })).status, 404);
-
-      const repeated = await Promise.all([grant(), grant()]);
-      assert.deepEqual(repeated.map(({ status }) => status), [204, 204]);
-      const current = await consentRepository.status(DEFAULT_IDENTITY);
-      assert.equal(current.state, "granted");
-      assert.equal(current.grantGeneration, first.grantGeneration);
-      assert.equal(generationCalls, 1);
-      assert.equal((await callDub({
-        bucket,
-        consentRepository,
-        method: "GET",
-        path: DUB_PATH,
-      }).then((response) => response.json())).lines[0].saved, true);
-    } finally {
-      state.close();
-    }
-  });
-
-  it("lets automatic recording access take over a legacy deleting marker", async () => {
-    const state = createTestD1Database();
-    try {
-      const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
       state.sqlite.prepare(
-        `INSERT INTO user
-          (id, name, email, email_verified, created_at, updated_at)
-         VALUES (?, ?, ?, 1, ?, ?)`,
-      ).run("user-1", "Guardian", "guardian@example.test", timestamp, timestamp);
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, 'not_started', 1)`,
+      ).run("learner-a", "user-1", "Mia");
       const consentRepository = createDubConsentRepository(
         createDatabase(state.d1),
         {
@@ -597,9 +557,9 @@ describe("private learner dub API", () => {
         },
       );
       const bucket = createBucket([[MARKER_KEY, {
-        bytes: fenceBytes("marker", "legacy-reset", "deleting"),
+        bytes: fenceBytes("marker", "interrupted-reset", "deleting"),
         options: {
-          customMetadata: { generation: "legacy-reset", state: "deleting" },
+          customMetadata: { generation: "interrupted-reset", state: "deleting" },
         },
         uploaded: new Date("2026-08-25T07:00:00.000Z"),
       }]]);
@@ -664,7 +624,7 @@ describe("private learner dub API", () => {
       recordingEnabled: true,
     });
     assert.equal((await consentRepository.status()).state, "granted");
-    assert.equal(bucket.calls.list.length, 1);
+    assert.equal(bucket.calls.list.length, 0);
   });
 
   it("keeps recording unavailable only while deletion is still running", async () => {
@@ -738,11 +698,10 @@ describe("private learner dub API", () => {
 
   it("fails status and audio closed when consent revokes during R2 work", async () => {
     const statusConsent = createConsentRepository();
-    const statusBucket = createBucket([[slotKey("line-1"), {
-      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-      options: { httpMetadata: { contentType: "audio/webm" } },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
+    const statusBucket = createBucket([
+      [MARKER_KEY, readyMarker()],
+      [slotKey("line-1"), v2AudioObject({ lineId: "line-1" })],
+    ]);
     const list = statusBucket.list.bind(statusBucket);
     statusBucket.list = async (...args) => {
       const page = await list(...args);
@@ -766,11 +725,10 @@ describe("private learner dub API", () => {
     );
 
     const audioConsent = createConsentRepository();
-    const audioBucket = createBucket([[slotKey("line-1"), {
-      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-      options: { httpMetadata: { contentType: "audio/webm" } },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
+    const audioBucket = createBucket([
+      [MARKER_KEY, readyMarker()],
+      [slotKey("line-1"), v2AudioObject({ lineId: "line-1" })],
+    ]);
     const get = audioBucket.get.bind(audioBucket);
     audioBucket.get = async (...args) => {
       const object = await get(...args);
@@ -786,7 +744,7 @@ describe("private learner dub API", () => {
     });
     assert.equal(audio.status, 403);
     assert.equal((await audio.json()).error, "dubbing_not_enabled");
-    assert.equal(audioBucket.calls.get.length, 1);
+    assert.equal(audioBucket.calls.get.length, 2);
   });
 
   it("grants only the exact bounded guardian consent object", async () => {
@@ -919,11 +877,10 @@ describe("private learner dub API", () => {
     assert.equal(blockedBucket.calls.list.length, 0);
     assert.equal(blockedBucket.calls.head.length, 0);
 
-    const racedBucket = createBucket([[slotKey("line-1"), {
-      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-      options: { httpMetadata: { contentType: "audio/webm" } },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
+    const racedBucket = createBucket([
+      [MARKER_KEY, readyMarker()],
+      [slotKey("line-1"), v2AudioObject({ lineId: "line-1" })],
+    ]);
     let pendingChecks = 0;
     const raced = await callDub({
       bucket: racedBucket,
@@ -938,11 +895,10 @@ describe("private learner dub API", () => {
   });
 
   it("fails audio closed before R2 work and after a tombstone response race", async () => {
-    const seed = [[slotKey("line-1"), {
-      bytes: new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-      options: { httpMetadata: { contentType: "audio/webm" } },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]];
+    const seed = [
+      [MARKER_KEY, readyMarker()],
+      [slotKey("line-1"), v2AudioObject({ lineId: "line-1" })],
+    ];
     const blockedBucket = createBucket(seed);
     const blocked = await callDub({
       bucket: blockedBucket,
@@ -966,7 +922,7 @@ describe("private learner dub API", () => {
     assert.equal(raced.status, 409);
     assert.equal((await raced.json()).error, "account_deletion_pending");
     assert.equal(pendingChecks, 2);
-    assert.equal(racedBucket.calls.get.length, 1);
+    assert.equal(racedBucket.calls.get.length, 2);
   });
 
   it("blocks regrant while consent cleanup remains in progress", async () => {
@@ -1046,11 +1002,9 @@ describe("private learner dub API", () => {
 
     assert.equal(response.status, 403);
     assert.equal((await response.json()).error, "dubbing_not_enabled");
-    assert.equal(bucket.calls.put.length, 2);
-    assert.deepEqual(bucket.calls.put[1].options.onlyIf, {
-      etagMatches: bucket.calls.put[0].bytes.length
-        ? contentEtag(bucket.calls.put[0].bytes)
-        : "",
+    assert.equal(bucket.calls.put.length, 3);
+    assert.deepEqual(bucket.calls.put[2].options.onlyIf, {
+      etagMatches: contentEtag(bucket.calls.put[1].bytes),
     });
     assert.equal(
       bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
@@ -1071,7 +1025,7 @@ describe("private learner dub API", () => {
       ...createConsentRepository(granted),
       async requireCurrentGrant() {
         checks += 1;
-        if (checks === 2) throw new Error("D1 unavailable");
+        if (checks === 3) throw new Error("D1 unavailable");
         return granted;
       },
     };
@@ -1087,9 +1041,9 @@ describe("private learner dub API", () => {
 
     assert.equal(response.status, 403);
     assert.equal((await response.json()).error, "dubbing_not_enabled");
-    assert.equal(bucket.calls.put.length, 2);
-    assert.deepEqual(bucket.calls.put[1].options.onlyIf, {
-      etagMatches: contentEtag(bucket.calls.put[0].bytes),
+    assert.equal(bucket.calls.put.length, 3);
+    assert.deepEqual(bucket.calls.put[2].options.onlyIf, {
+      etagMatches: contentEtag(bucket.calls.put[1].bytes),
     });
     assert.equal(
       bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
@@ -1099,13 +1053,14 @@ describe("private learner dub API", () => {
 
   it("never reads current-version audio from an old consent generation", async () => {
     const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9]);
-    const envelope = envelopedAudio("legacy", body, "upload-old");
+    const envelope = envelopedAudio("ready-1", body, "upload-old");
     const bucket = createBucket([
+      [MARKER_KEY, readyMarker("ready-1")],
       [slotKey("line-1"), {
         bytes: envelope.bytes,
         options: {
           customMetadata: {
-            generation: "legacy",
+            generation: "ready-1",
             guardianConsentGeneration: "consent-old",
             guardianConsentVersion: CURRENT_CONSENT_VERSION,
             lineId: "line-1",
@@ -1160,7 +1115,7 @@ describe("private learner dub API", () => {
   it("stores and privately streams one encoded owner-scoped WebM slot", async () => {
     const bucket = createBucket();
     const body = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1, 2]);
-    const envelope = envelopedAudio("legacy", body, "upload-1");
+    const envelope = envelopedAudio("consent-1", body, "upload-1");
 
     const upload = await callDub({
       body,
@@ -1177,13 +1132,21 @@ describe("private learner dub API", () => {
       lineId: "line-1",
       recordedAt: "2026-08-25T10:00:00.000Z",
     });
-    assert.equal(bucket.calls.put.length, 1);
+    assert.equal(bucket.calls.put.length, 2);
     assert.deepEqual(bucket.calls.put[0], {
+      bytes: fenceBytes("marker", "consent-1", "ready"),
+      key: "accounts/user%2Fone/learners/learner-a/recordings/nursery-rhymes/five-little-ducks-v2/.dub-generation",
+      options: {
+        customMetadata: { generation: "consent-1", state: "ready" },
+        onlyIf: { etagDoesNotMatch: "*" },
+      },
+    });
+    assert.deepEqual(bucket.calls.put[1], {
       bytes: envelope.bytes,
-      key: "personalized-story-art/user%2Fone/learner-dubs/five-little-ducks-v2/line-1.audio",
+      key: "accounts/user%2Fone/learners/learner-a/recordings/nursery-rhymes/five-little-ducks-v2/line-1.audio",
       options: {
         customMetadata: {
-          generation: "legacy",
+          generation: "consent-1",
           guardianConsentGeneration: "consent-1",
           guardianConsentVersion: CURRENT_CONSENT_VERSION,
           lineId: "line-1",
@@ -1239,7 +1202,11 @@ describe("private learner dub API", () => {
 
     assert.equal(upload.status, 201);
     assert.deepEqual((await upload.json()).peakBars, peakBytes.map((peak) => peak / 255));
-    assert.equal(bucket.calls.put[0].options.customMetadata.peakBars, encodedPeakBars);
+    assert.equal(
+      bucket.calls.put.find(({ options }) => options.customMetadata?.state === "audio")
+        .options.customMetadata.peakBars,
+      encodedPeakBars,
+    );
 
     const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
     assert.deepEqual(
@@ -1288,7 +1255,7 @@ describe("private learner dub API", () => {
     assert.equal(accepted.status, 201);
     assert.equal((await accepted.json()).lineId, "line-24");
     assert.equal(rejected.status, 404);
-    assert.equal(bucket.calls.put.length, 1);
+    assert.equal(bucket.calls.put.length, 2);
   });
 
   it("writes Old MacDonald uploads only into the Old MacDonald namespace", async () => {
@@ -1316,28 +1283,18 @@ describe("private learner dub API", () => {
   });
 
   it("returns all canonical status rows and safely derives recorded times", async () => {
-    const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
+    const prefix = OWNER_PREFIX;
     const bucket = createBucket([
+      [MARKER_KEY, readyMarker()],
       [`${prefix}line-1.audio`, {
-        bytes: new Uint8Array([1]),
-        options: {
-          customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
-          httpMetadata: { contentType: "audio/webm" },
-        },
-        uploaded: new Date("2026-08-25T09:01:00.000Z"),
+        ...v2AudioObject({ lineId: "line-1" }),
       }],
       [`${prefix}line-2.audio`, {
-        bytes: new Uint8Array([2]),
-        options: {
-          customMetadata: { recordedAt: "not-a-date" },
-          httpMetadata: { contentType: "audio/webm" },
-        },
+        ...v2AudioObject({ lineId: "line-2", recordedAt: "not-a-date" }),
         uploaded: new Date("2026-08-25T09:02:00.000Z"),
       }],
       [`${prefix}line-99.audio`, {
-        bytes: new Uint8Array([99]),
-        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
-        uploaded: new Date("2026-08-25T09:03:00.000Z"),
+        ...v2AudioObject({ lineId: "line-99" }),
       }],
     ]);
 
@@ -1369,29 +1326,19 @@ describe("private learner dub API", () => {
 
   it("returns all Old MacDonald status rows under its own namespace", async () => {
     const bucket = createBucket([
+      [OLD_MARKER_KEY, readyMarker()],
       [oldSlotKey("old-macdonald-v1-line-1"), {
-        bytes: new Uint8Array([1]),
-        options: {
-          customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
-          httpMetadata: { contentType: "audio/webm" },
-        },
-        uploaded: new Date("2026-08-25T09:01:00.000Z"),
+        ...v2AudioObject({ lineId: "old-macdonald-v1-line-1" }),
       }],
       [oldSlotKey("old-macdonald-v1-line-2"), {
-        bytes: new Uint8Array([2]),
-        options: {
-          customMetadata: { recordedAt: "not-a-date" },
-          httpMetadata: { contentType: "audio/webm" },
-        },
+        ...v2AudioObject({
+          lineId: "old-macdonald-v1-line-2",
+          recordedAt: "not-a-date",
+        }),
         uploaded: new Date("2026-08-25T09:02:00.000Z"),
       }],
       [slotKey("line-1"), {
-        bytes: new Uint8Array([9]),
-        options: {
-          customMetadata: { recordedAt: "2026-08-25T09:03:00.000Z" },
-          httpMetadata: { contentType: "audio/webm" },
-        },
-        uploaded: new Date("2026-08-25T09:03:00.000Z"),
+        ...v2AudioObject({ lineId: "line-1" }),
       }],
     ]);
 
@@ -1421,15 +1368,10 @@ describe("private learner dub API", () => {
   });
 
   it("reports complete only when every fixed slot exists", async () => {
-    const prefix = "personalized-story-art/user-1/learner-dubs/five-little-ducks-v2/";
-    const bucket = createBucket(LINE_IDS.map((id, index) => [
-      `${prefix}${id}.audio`,
-      {
-        bytes: new Uint8Array([index]),
-        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
-        uploaded: new Date(`2026-08-25T09:0${index}:00.000Z`),
-      },
-    ]));
+    const bucket = createBucket([
+      [MARKER_KEY, readyMarker()],
+      ...LINE_IDS.map((id) => [slotKey(id), v2AudioObject({ lineId: id })]),
+    ]);
 
     const response = await callDub({ bucket, method: "GET", path: DUB_PATH });
     assert.equal((await response.json()).complete, true);
@@ -1464,109 +1406,6 @@ describe("private learner dub API", () => {
     assert.equal(response.status, 204);
     assertResetTombstones(bucket, "reset-1");
     assertOldResetTombstones(bucket, "reset-1");
-  });
-
-  it("retires the owner's legacy v1 slots and purges only arbitrary legacy objects", async () => {
-    const otherProductKey =
-      "personalized-story-art/user-1/learner-dubs/another-story-v1/line-1.audio";
-    const otherUserKey =
-      "personalized-story-art/user-2/learner-dubs/five-little-ducks-v1/line-1.audio";
-    const retiredTakeKey = `${LEGACY_PREFIX}retired-take.webm`;
-    const legacyAudioKeys = [legacySlotKey("line-1"), legacySlotKey("line-9")];
-    const bucket = createBucket([
-      ...[LEGACY_MARKER_KEY, ...legacyAudioKeys, retiredTakeKey].map((key) => [key, {
-        bytes: new Uint8Array([1]),
-        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
-      }]),
-      [otherProductKey, {
-        bytes: new Uint8Array([2]),
-        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
-      }],
-      [otherUserKey, {
-        bytes: new Uint8Array([3]),
-        options: { customMetadata: {}, httpMetadata: { contentType: "audio/webm" } },
-      }],
-    ]);
-
-    const response = await callDub({
-      bucket,
-      generation: () => "reset-1",
-      method: "DELETE",
-      path: DUB_PATH,
-    });
-
-    assert.equal(response.status, 204);
-    assertResetTombstones(bucket, "reset-1");
-    assertLegacyRetirementFences(bucket, "reset-1");
-    assert.equal(bucket.stored.has(retiredTakeKey), false);
-    assert.equal(legacyAudioKeys.some((key) =>
-      bucket.stored.get(key)?.options.customMetadata.state === "audio"), false);
-    assert.equal(bucket.stored.has(otherProductKey), true);
-    assert.equal(bucket.stored.has(otherUserKey), true);
-  });
-
-  it("makes a held old-v1 upload lose to durable retirement fences", async () => {
-    const bucket = createBucket();
-    const oldPutStarted = deferred();
-    const releaseOldPut = deferred();
-    const put = bucket.put.bind(bucket);
-    bucket.put = async (key, bytes, options) => {
-      if (
-        key === legacySlotKey("line-1") &&
-        options?.customMetadata?.state === "audio"
-      ) {
-        oldPutStarted.resolve();
-        await releaseOldPut.promise;
-      }
-      return put(key, bytes, options);
-    };
-    const legacyAudio = envelopedAudio(
-      "legacy",
-      new Uint8Array([0x1a, 0x45, 0xdf, 0xa3]),
-      "old-upload-1",
-    );
-    const oldUpload = (async () => {
-      const marker = await bucket.head(LEGACY_MARKER_KEY);
-      const previous = await bucket.head(legacySlotKey("line-1"));
-      assert.equal(marker, null);
-      assert.equal(previous, null);
-      assert.equal(await bucket.head(LEGACY_MARKER_KEY), null);
-      return bucket.put(legacySlotKey("line-1"), legacyAudio.bytes, {
-        customMetadata: {
-          generation: "legacy",
-          payloadOffset: String(legacyAudio.payloadOffset),
-          state: "audio",
-          uploadNonce: "old-upload-1",
-        },
-        httpMetadata: { contentType: "audio/webm" },
-        onlyIf: { etagDoesNotMatch: "*" },
-      });
-    })();
-    await oldPutStarted.promise;
-
-    let reset;
-    try {
-      reset = await callDub({
-        bucket,
-        generation: () => "reset-1",
-        method: "DELETE",
-        path: DUB_PATH,
-      });
-    } finally {
-      releaseOldPut.resolve();
-    }
-    const oldStored = await oldUpload;
-
-    assert.equal(reset.status, 204);
-    assert.equal(oldStored, null);
-    assertResetTombstones(bucket, "reset-1");
-    assertLegacyRetirementFences(bucket, "reset-1");
-    assert.equal(
-      [...bucket.stored]
-        .filter(([key]) => key.startsWith(LEGACY_PREFIX))
-        .some(([, item]) => item.options.customMetadata.state === "audio"),
-      false,
-    );
   });
 
   it("keeps revoking state after failed R2 cleanup and finishes it on retry", async () => {
@@ -1608,50 +1447,6 @@ describe("private learner dub API", () => {
     assert.equal(retry.status, 204);
     assert.equal((await consentRepository.status()).state, "not_granted");
     assertResetTombstones(bucket, "reset-2");
-  });
-
-  it("keeps revoking when legacy-prefix purge fails and converges on retry", async () => {
-    const retiredTakeKey = `${LEGACY_PREFIX}retired-take.webm`;
-    const bucket = createBucket([[retiredTakeKey, {
-      bytes: new Uint8Array([1, 2, 3]),
-      options: { httpMetadata: { contentType: "audio/webm" } },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
-    const consentRepository = createConsentRepository();
-    const remove = bucket.delete.bind(bucket);
-    let failLegacyPurge = true;
-    bucket.delete = async (keys) => {
-      if (failLegacyPurge && keys.includes(retiredTakeKey)) {
-        failLegacyPurge = false;
-        throw new Error("legacy purge unavailable");
-      }
-      return remove(keys);
-    };
-
-    await assert.rejects(
-      callDub({
-        bucket,
-        consentRepository,
-        generation: () => "reset-1",
-        method: "DELETE",
-        path: DUB_PATH,
-      }),
-      /legacy purge unavailable/,
-    );
-    assert.equal((await consentRepository.status()).state, "revoking");
-
-    const retry = await callDub({
-      bucket,
-      consentRepository,
-      generation: () => "reset-2",
-      method: "DELETE",
-      path: DUB_PATH,
-    });
-    assert.equal(retry.status, 204);
-    assert.equal((await consentRepository.status()).state, "not_granted");
-    assert.equal(bucket.stored.has(retiredTakeKey), false);
-    assertResetTombstones(bucket, "reset-2");
-    assertLegacyRetirementFences(bucket, "reset-2");
   });
 
   it("paces recent slot overwrites and reset marker finalization for R2 hot keys", async () => {
@@ -2336,7 +2131,14 @@ describe("private learner dub API", () => {
       ...cases.map(([lineId, bytes, customMetadata]) => [slotKey(lineId), {
         bytes,
         options: {
-          customMetadata,
+          customMetadata: {
+            guardianConsentGeneration: "consent-1",
+            guardianConsentVersion: CURRENT_CONSENT_VERSION,
+            lineId,
+            recordedAt: "2026-08-25T09:00:00.000Z",
+            uploadNonce: "upload-1",
+            ...customMetadata,
+          },
           httpMetadata: { contentType: "audio/webm" },
         },
         uploaded: new Date("2026-08-25T09:00:00.000Z"),
@@ -2365,13 +2167,18 @@ describe("private learner dub API", () => {
       generation,
       new Uint8Array(512 * 1024 + 1),
     );
-    const stored = (envelope) => ({
+    const stored = (lineId, envelope) => ({
       bytes: envelope.bytes,
       options: {
         customMetadata: {
           generation,
+          guardianConsentGeneration: "consent-1",
+          guardianConsentVersion: CURRENT_CONSENT_VERSION,
+          lineId,
           payloadOffset: String(envelope.payloadOffset),
+          recordedAt: "2026-08-25T09:00:00.000Z",
           state: "audio",
+          uploadNonce: "upload-1",
         },
         httpMetadata: { contentType: "audio/webm" },
       },
@@ -2383,8 +2190,8 @@ describe("private learner dub API", () => {
         options: { customMetadata: { generation, state: "ready" } },
         uploaded: new Date("2026-08-25T09:00:00.000Z"),
       }],
-      [slotKey("line-1"), stored(aboveLimit)],
-      [slotKey("line-2"), stored(atLimit)],
+      [slotKey("line-1"), stored("line-1", aboveLimit)],
+      [slotKey("line-2"), stored("line-2", atLimit)],
     ]);
 
     const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
@@ -2405,16 +2212,13 @@ describe("private learner dub API", () => {
     assert.equal((await boundary.arrayBuffer()).byteLength, 512 * 1024);
   });
 
-  it("requires an envelope for explicit legacy audio metadata", async () => {
+  it("rejects raw audio even when it carries current metadata", async () => {
     const raw = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 8]);
-    const bucket = createBucket([[slotKey("line-1"), {
-      bytes: raw,
-      options: {
-        customMetadata: { generation: "legacy", state: "audio" },
-        httpMetadata: { contentType: "audio/webm" },
-      },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
+    const current = v2AudioObject({ lineId: "line-1" });
+    const bucket = createBucket([
+      [MARKER_KEY, readyMarker()],
+      [slotKey("line-1"), { ...current, bytes: raw }],
+    ]);
 
     const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
     assert.equal((await status.json()).lines[0].saved, false);
@@ -2425,11 +2229,11 @@ describe("private learner dub API", () => {
     })).status, 404);
   });
 
-  it("streams split validated envelopes and raw pre-marker legacy audio byte-exactly", async () => {
+  it("streams a split validated v2 envelope byte-exactly", async () => {
     const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10, 11]);
-    const envelope = envelopedAudio("legacy", audio);
-    const raw = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 12, 13]);
+    const envelope = envelopedAudio("consent-1", audio);
     const bucket = createBucket([
+      [MARKER_KEY, readyMarker()],
       [slotKey("line-1"), {
         bytes: envelope.bytes,
         chunks: [
@@ -2439,18 +2243,15 @@ describe("private learner dub API", () => {
         ],
         options: {
           customMetadata: {
-            generation: "legacy",
+            generation: "consent-1",
+            guardianConsentGeneration: "consent-1",
+            guardianConsentVersion: CURRENT_CONSENT_VERSION,
+            lineId: "line-1",
             payloadOffset: String(envelope.payloadOffset),
+            recordedAt: "2026-08-25T09:00:00.000Z",
             state: "audio",
+            uploadNonce: "upload-1",
           },
-          httpMetadata: { contentType: "audio/webm" },
-        },
-        uploaded: new Date("2026-08-25T09:00:00.000Z"),
-      }],
-      [slotKey("line-2"), {
-        bytes: raw,
-        options: {
-          customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
           httpMetadata: { contentType: "audio/webm" },
         },
         uploaded: new Date("2026-08-25T09:00:00.000Z"),
@@ -2460,17 +2261,15 @@ describe("private learner dub API", () => {
     const status = await callDub({ bucket, method: "GET", path: DUB_PATH });
     assert.deepEqual(
       (await status.json()).lines.filter(({ saved }) => saved).map(({ id }) => id),
-      ["line-1", "line-2"],
+      ["line-1"],
     );
-    for (const [lineId, expected] of [["line-1", audio], ["line-2", raw]]) {
-      const response = await callDub({
-        bucket,
-        method: "GET",
-        path: `${DUB_PATH}/lines/${lineId}/audio`,
-      });
-      assert.equal(response.status, 200, lineId);
-      assert.deepEqual(new Uint8Array(await response.arrayBuffer()), expected, lineId);
-    }
+    const response = await callDub({
+      bucket,
+      method: "GET",
+      path: `${DUB_PATH}/lines/line-1/audio`,
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()), audio);
   });
 
   it("streams v2 audio ranges relative to the decoded payload", async () => {
@@ -2491,7 +2290,11 @@ describe("private learner dub API", () => {
         options: {
           customMetadata: {
             generation,
+            guardianConsentGeneration: "consent-1",
+            guardianConsentVersion: CURRENT_CONSENT_VERSION,
+            lineId: "line-1",
             payloadOffset: String(envelope.payloadOffset),
+            recordedAt: "2026-08-25T09:00:00.000Z",
             state: "audio",
             uploadNonce,
           },
@@ -2585,50 +2388,12 @@ describe("private learner dub API", () => {
     });
   });
 
-  it("maps legacy raw byte ranges from offset zero", async () => {
-    const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10]);
-    const bucket = createBucket([[slotKey("line-1"), {
-      bytes: audio,
-      options: {
-        customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
-        httpMetadata: { contentType: "audio/webm" },
-      },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
-
-    const response = await callDub({
-      bucket,
-      headers: { Range: "bytes=0-1" },
-      method: "GET",
-      path: `${DUB_PATH}/lines/line-1/audio`,
-    });
-
-    assert.equal(response.status, 206);
-    assert.equal(response.headers.get("Content-Range"), "bytes 0-1/6");
-    assert.equal(response.headers.get("Content-Length"), "2");
-    assert.deepEqual(
-      new Uint8Array(await response.arrayBuffer()),
-      audio.subarray(0, 2),
-    );
-    assert.deepEqual(bucket.calls.getOptions.at(-1), {
-      key: slotKey("line-1"),
-      options: {
-        onlyIf: { etagMatches: bucket.stored.get(slotKey("line-1")).etag },
-        range: { length: 2, offset: 0 },
-      },
-    });
-  });
-
   it("rejects malformed, multiple, and unsatisfiable audio ranges privately", async () => {
     const audio = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 9, 10]);
-    const bucket = createBucket([[slotKey("line-1"), {
-      bytes: audio,
-      options: {
-        customMetadata: { recordedAt: "2026-08-25T09:00:00.000Z" },
-        httpMetadata: { contentType: "audio/webm" },
-      },
-      uploaded: new Date("2026-08-25T09:00:00.000Z"),
-    }]]);
+    const bucket = createBucket([
+      [MARKER_KEY, readyMarker()],
+      [slotKey("line-1"), v2AudioObject({ audio, lineId: "line-1" })],
+    ]);
 
     for (const range of [
       "items=0-1",
@@ -2654,10 +2419,10 @@ describe("private learner dub API", () => {
         message: "range_not_satisfiable",
       });
     }
-    assert.equal(bucket.calls.get.length, 0);
+    assert.equal(bucket.calls.get.length, 5);
   });
 
-  it("counts and serves only current-generation audio while preserving legacy mode", async () => {
+  it("counts and serves only strict current-generation audio", async () => {
     const bucket = createBucket();
     assert.equal((await callDub({
       bucket,
@@ -2704,7 +2469,7 @@ describe("private learner dub API", () => {
     })).status, 404);
   });
 
-  it("keeps current and retired markers and tombstones private and outside status rows", async () => {
+  it("keeps current markers and tombstones private and outside status rows", async () => {
     const bucket = createBucket();
     assert.equal((await callDub({
       bucket,
@@ -2718,13 +2483,13 @@ describe("private learner dub API", () => {
     assert.equal(payload.lines.length, LINE_IDS.length);
     assert.equal(payload.lines.every(({ saved }) => !saved), true);
     const accountObjects = await bucket.list({
-      prefix: "personalized-story-art/user-1/",
+      prefix: ACCOUNT_PREFIX,
     });
     assert.equal(
       accountObjects.objects.length,
       DUB_DEFINITIONS.reduce(
         (total, definition) => total + definition.lines.length + 1,
-        LEGACY_LINE_IDS.length + 1,
+        0,
       ),
     );
     assert.equal(accountObjects.objects.some(({ key }) => key === MARKER_KEY), true);
@@ -2738,9 +2503,8 @@ describe("private learner dub API", () => {
         true,
       );
     }
-    assertLegacyRetirementFences(bucket, "reset-1");
     assert.equal(accountObjects.objects.every(({ key }) =>
-      key.startsWith("personalized-story-art/user-1/")), true);
+      key.startsWith(ACCOUNT_PREFIX)), true);
     await bucket.delete(accountObjects.objects.map(({ key }) => key));
     assert.equal(bucket.stored.size, 0);
   });
@@ -2832,7 +2596,9 @@ describe("private learner dub API", () => {
       assert.equal(response.status, 201, contentType);
     }
     assert.deepEqual(
-      bucket.calls.put.map(({ options }) => options.httpMetadata.contentType),
+      bucket.calls.put
+        .filter(({ options }) => options.customMetadata?.state === "audio")
+        .map(({ options }) => options.httpMetadata.contentType),
       ["audio/webm", "audio/mp4", "audio/ogg"],
     );
   });
@@ -2991,15 +2757,16 @@ describe("private learner dub API", () => {
     });
     await audioPutStarted.promise;
     const swept = await bucket.list({
-      prefix: "personalized-story-art/user-1/",
+      prefix: ACCOUNT_PREFIX,
     });
-    assert.deepEqual(swept.objects, []);
+    assert.deepEqual(swept.objects.map(({ key }) => key), [MARKER_KEY]);
+    await bucket.delete(swept.objects.map(({ key }) => key));
     pending = true;
     releaseAudioPut.resolve();
     const response = await responsePromise;
 
     assert.equal(response.status, 409);
-    assert.deepEqual(bucket.calls.delete, []);
+    assert.deepEqual(bucket.calls.delete, [[MARKER_KEY]]);
     assert.equal(cleanupFailures, -1);
     assert.deepEqual(
       bucket.stored.get(slotKey("line-1")).options.customMetadata.state,
@@ -3043,7 +2810,7 @@ describe("private learner dub API", () => {
     });
     await audioPutStarted.promise;
     pending = true;
-    const swept = await bucket.list({ prefix: "personalized-story-art/user-1/" });
+    const swept = await bucket.list({ prefix: ACCOUNT_PREFIX });
     await bucket.delete(swept.objects.map(({ key }) => key));
     assert.equal(bucket.stored.has(MARKER_KEY), false);
     releaseAudioPut.resolve();
@@ -3089,7 +2856,7 @@ describe("private learner dub API", () => {
     });
     await markerReadStarted.promise;
     pending = true;
-    const swept = await bucket.list({ prefix: "personalized-story-art/user-1/" });
+    const swept = await bucket.list({ prefix: ACCOUNT_PREFIX });
     await bucket.delete(swept.objects.map(({ key }) => key));
     releaseMarkerRead.resolve();
     const response = await responsePromise;
@@ -3138,7 +2905,7 @@ describe("private learner dub API", () => {
       },
     });
     await audioPutStarted.promise;
-    const swept = await bucket.list({ prefix: "personalized-story-art/user-1/" });
+    const swept = await bucket.list({ prefix: ACCOUNT_PREFIX });
     await bucket.delete(swept.objects.map(({ key }) => key));
     releaseAudioPut.resolve();
 
@@ -3319,12 +3086,17 @@ describe("private learner dub API", () => {
     });
     await cleanupStarted.promise;
     const firstWriter = bucket.stored.get(slotKey("line-1"));
-    const racer = envelopedAudio("legacy-racer", audio);
+    const racer = envelopedAudio("stale-racer", audio);
     await put(slotKey("line-1"), racer.bytes, {
       customMetadata: {
-        generation: "legacy-racer",
+        generation: "stale-racer",
+        guardianConsentGeneration: "consent-1",
+        guardianConsentVersion: CURRENT_CONSENT_VERSION,
+        lineId: "line-1",
         payloadOffset: String(racer.payloadOffset),
+        recordedAt: "2026-08-25T09:00:00.000Z",
         state: "audio",
+        uploadNonce: "upload-1",
       },
       httpMetadata: { contentType: "audio/webm" },
       onlyIf: { etagMatches: firstWriter.etag },

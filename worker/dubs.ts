@@ -16,7 +16,6 @@ import {
   fenceBody,
   hasState,
   isR2WriteRateError,
-  LEGACY_DUB_LINE_IDS,
   MAX_R2_WRITE_ATTEMPTS,
   R2_WRITE_INTERVAL_MS,
   retryDelay,
@@ -32,10 +31,7 @@ import {
 
 const MAX_CLIP_BYTES = 512 * 1024;
 const MAX_CONSENT_BODY_BYTES = 8 * 1024;
-const LEGACY_CONSENT_VERSION = "guardian-voice-r2-v1";
-const LEGACY_GENERATION = "legacy";
-const AUDIO_FORMAT = "parrot-dub-audio-v1";
-const AUDIO_FORMAT_V2 = "parrot-dub-audio-v2";
+const AUDIO_FORMAT = "parrot-dub-audio-v2";
 const MAX_CAS_CONFLICTS = 16;
 const MIME_SIGNATURES = {
   "audio/webm": (bytes: Uint8Array) =>
@@ -51,7 +47,7 @@ const MIME_SIGNATURES = {
 } as const;
 
 export interface DubEnv {
-  PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
+  PRIVATE_MEDIA_BUCKET: R2Bucket;
 }
 
 export interface DubRequestInput {
@@ -88,14 +84,11 @@ type DubMarker =
         | "ready";
     };
 
-type AudioStorage =
-  | { kind: "legacy" }
-  | {
-      generation: string;
-      kind: "enveloped";
-      prefix: Uint8Array;
-      uploadNonce: string | undefined;
-    };
+type AudioStorage = {
+  generation: string;
+  prefix: Uint8Array;
+  uploadNonce: string;
+};
 
 type AudioByteRange = {
   end: number;
@@ -177,6 +170,29 @@ async function readyGeneration(bucket: R2Bucket, storage: DubStorageKeys) {
   return marker.generation;
 }
 
+async function ensureReadyGeneration(
+  bucket: R2Bucket,
+  storage: DubStorageKeys,
+  initialGeneration: string,
+  wait: Wait,
+) {
+  for (let conflict = 0; conflict < MAX_CAS_CONFLICTS; conflict += 1) {
+    const ready = await readyGeneration(bucket, storage);
+    if (ready !== null) return ready;
+    const marker = await conditionalPut(
+      bucket,
+      storage.markerKey,
+      fenceBody("marker", initialGeneration, "ready"),
+      { customMetadata: { generation: initialGeneration, state: "ready" } },
+      null,
+      wait,
+      (object) => hasState(object, initialGeneration, "ready"),
+    );
+    if (marker) return initialGeneration;
+  }
+  throw new DubApiError(409, "dub_reset_in_progress");
+}
+
 async function beginReset(
   bucket: R2Bucket,
   storage: DubStorageKeys,
@@ -209,10 +225,8 @@ function encoded(value: unknown) {
   return new TextEncoder().encode(JSON.stringify(value));
 }
 
-function audioPrefix(generation: string, uploadNonce?: string) {
-  return uploadNonce === undefined
-    ? encoded([AUDIO_FORMAT, generation])
-    : encoded([AUDIO_FORMAT_V2, generation, uploadNonce]);
+function audioPrefix(generation: string, uploadNonce: string) {
+  return encoded([AUDIO_FORMAT, generation, uploadNonce]);
 }
 
 function audioBody(generation: string, uploadNonce: string, audio: Uint8Array) {
@@ -266,34 +280,22 @@ function audioStorage(
   object: R2Object,
   ready: string | null,
   consentGeneration: string,
+  lineId: string,
 ): AudioStorage | null {
   const metadata = object.customMetadata;
-  const consentVersion = metadata?.guardianConsentVersion;
   if (
-    (consentVersion === CURRENT_DUB_CONSENT_VERSION &&
-      metadata?.guardianConsentGeneration !== consentGeneration) ||
-    (consentVersion !== undefined &&
-      consentVersion !== LEGACY_CONSENT_VERSION &&
-      consentVersion !== CURRENT_DUB_CONSENT_VERSION)
+    ready === null ||
+    metadata?.guardianConsentVersion !== CURRENT_DUB_CONSENT_VERSION ||
+    metadata.guardianConsentGeneration !== consentGeneration ||
+    metadata.lineId !== lineId
   ) {
     return null;
   }
-  if (
-    ready === null &&
-    metadata?.generation === undefined &&
-    metadata?.state === undefined &&
-    metadata?.payloadOffset === undefined &&
-    metadata?.uploadNonce === undefined
-  ) {
-    return object.size > 0 ? { kind: "legacy" } : null;
-  }
-
-  const generation = ready ?? LEGACY_GENERATION;
   const uploadNonce = metadata?.uploadNonce;
-  if (uploadNonce === "") return null;
-  const prefix = audioPrefix(generation, uploadNonce);
+  if (!uploadNonce) return null;
+  const prefix = audioPrefix(ready, uploadNonce);
   if (
-    metadata?.generation !== generation ||
+    metadata.generation !== ready ||
     metadata.state !== "audio" ||
     metadata.payloadOffset !== String(prefix.byteLength) ||
     object.size <= prefix.byteLength ||
@@ -301,7 +303,7 @@ function audioStorage(
   ) {
     return null;
   }
-  return { generation, kind: "enveloped", prefix, uploadNonce };
+  return { generation: ready, prefix, uploadNonce };
 }
 
 function hasBody(object: R2Object | R2ObjectBody | null): object is R2ObjectBody {
@@ -373,7 +375,6 @@ async function validateAudioPrefix(
   object: R2Object,
   storage: AudioStorage,
 ) {
-  if (storage.kind === "legacy") return object;
   const prefixObject = await bucket.get(key, {
     onlyIf: { etagMatches: object.etag },
     range: { length: storage.prefix.byteLength, offset: 0 },
@@ -397,23 +398,11 @@ async function getAudioPayload(
   object: R2Object,
   ready: string | null,
   consentGeneration: string,
+  lineId: string,
   rangeHeader: string | null,
 ): Promise<AudioPayload | null> {
-  const storage = audioStorage(object, ready, consentGeneration);
+  const storage = audioStorage(object, ready, consentGeneration, lineId);
   if (!storage) return null;
-  if (storage.kind === "legacy") {
-    const range = parseAudioRange(rangeHeader, object.size);
-    const legacy = await bucket.get(key, {
-      onlyIf: { etagMatches: object.etag },
-      ...(range
-        ? { range: { length: range.length, offset: range.start } }
-        : {}),
-    });
-    return hasBody(legacy) &&
-        audioStorage(legacy, ready, consentGeneration)?.kind === "legacy"
-      ? { object: legacy, range, totalLength: object.size }
-      : null;
-  }
   if (!await validateAudioPrefix(bucket, key, object, storage)) return null;
   const totalLength = object.size - storage.prefix.byteLength;
   const range = parseAudioRange(rangeHeader, totalLength);
@@ -503,87 +492,6 @@ function tombstoneSlot(
     markerEtag,
     wait,
   );
-}
-
-async function deleteWithRetry(bucket: R2Bucket, keys: string[], wait: Wait) {
-  for (let attempt = 0; attempt < MAX_R2_WRITE_ATTEMPTS; attempt += 1) {
-    try {
-      await bucket.delete(keys);
-      return;
-    } catch (error) {
-      if (!isR2WriteRateError(error) || attempt === MAX_R2_WRITE_ATTEMPTS - 1) {
-        throw error;
-      }
-      await wait(retryDelay(attempt));
-    }
-  }
-}
-
-async function retireLegacyDub(
-  bucket: R2Bucket,
-  storage: DubStorageKeys,
-  generation: string,
-  markerEtag: string,
-  wait: Wait,
-) {
-  const marker = storage.retiredLegacyMarkerKey;
-  if (!marker) return;
-  const prefix = marker.slice(0, -".dub-generation".length);
-  const slots = LEGACY_DUB_LINE_IDS.map((lineId) =>
-    storage.retiredLegacyObjectKey(lineId)
-  ).filter((key): key is string => key !== null);
-  const retirementKeys = new Set([marker, ...slots]);
-
-  await fenceResetOwnedKey(
-    bucket,
-    storage,
-    marker,
-    "marker",
-    generation,
-    "account-deleting",
-    markerEtag,
-    wait,
-  );
-  for (const key of slots) {
-    await fenceResetOwnedKey(
-      bucket,
-      storage,
-      key,
-      "slot",
-      generation,
-      "account-deleting",
-      markerEtag,
-      wait,
-    );
-  }
-
-  let cursor: string | undefined;
-  let hasMore = true;
-  const seenCursors = new Set<string>();
-
-  while (hasMore) {
-    await assertResetOwner(bucket, storage, generation, markerEtag);
-    const page = await bucket.list({
-      ...(cursor === undefined ? {} : { cursor }),
-      prefix,
-    });
-    const listedKeys = page.objects.map(({ key }) => key);
-    if (listedKeys.some((key) => !key.startsWith(prefix))) {
-      throw new Error("R2 returned an object outside the legacy dub prefix.");
-    }
-    const keys = listedKeys.filter((key) => !retirementKeys.has(key));
-    await assertResetOwner(bucket, storage, generation, markerEtag);
-    if (keys.length > 0) await deleteWithRetry(bucket, keys, wait);
-
-    hasMore = page.truncated;
-    if (page.truncated) {
-      if (!page.cursor || seenCursors.has(page.cursor)) {
-        throw new Error("R2 legacy dub listing did not advance its cursor.");
-      }
-      seenCursors.add(page.cursor);
-      cursor = page.cursor;
-    }
-  }
 }
 
 function isDemonstrablyNonAudio(object: R2Object) {
@@ -791,7 +699,7 @@ export async function handleDubRequest(
 
   try {
     if (!route) throw new DubApiError(404, "not_found");
-    const bucket = input.env.PERSONALIZED_STORY_ART_BUCKET;
+    const bucket = input.env.PRIVATE_MEDIA_BUCKET;
     const userId = input.identity.userId;
     const definition = route.definition;
     const storage = createDubStorageKeys(input.identity, route.dubId);
@@ -862,17 +770,19 @@ export async function handleDubRequest(
           ));
         }
         const generation = await readyGeneration(bucket, storage);
-        const page = await bucket.list({
-          include: ["customMetadata"],
-          prefix: storage.objectPrefix,
-        });
+        const page = generation === null
+          ? { objects: [] }
+          : await bucket.list({
+              include: ["customMetadata"],
+              prefix: storage.objectPrefix,
+            });
         const objects = new Map(
           page.objects.map((object) => [object.key, object]),
         );
         const lines = await Promise.all(definition.lines.map(async ({ id }) => {
           const object = objects.get(storage.objectKey(id));
           const audio = object &&
-            audioStorage(object, generation, consent.grantGeneration);
+            audioStorage(object, generation, consent.grantGeneration, id);
           const current = object && audio
             ? await validateAudioPrefix(
                 bucket,
@@ -961,18 +871,6 @@ export async function handleDubRequest(
           }
         }
         await assertDeletionNotPending();
-        const duckReset = deletingMarkers.find(({ definition: currentDefinition }) =>
-          currentDefinition.id === "five-little-ducks-v2"
-        );
-        if (!duckReset) throw new Error("Duck dub reset target is required.");
-        await retireLegacyDub(
-          bucket,
-          duckReset.storage,
-          generation,
-          duckReset.deletingMarker.etag,
-          wait,
-        );
-        await assertDeletionNotPending();
         await wait(R2_WRITE_INTERVAL_MS);
         for (const { deletingMarker, storage: targetStorage } of deletingMarkers) {
           const readyMarker = await conditionalPut(
@@ -1022,6 +920,7 @@ export async function handleDubRequest(
       const consent = await consentRepository.status(input.identity);
       if (!isCurrentGrant(consent)) consentError(consent);
       const generation = await readyGeneration(bucket, storage);
+      if (generation === null) throw new DubApiError(404, "not_found");
       const key = storage.objectKey(route.lineId!);
       const head = await bucket.head(key);
       const payload = head
@@ -1031,6 +930,7 @@ export async function handleDubRequest(
             head,
             generation,
             consent.grantGeneration,
+            route.lineId!,
             input.request.headers.get("Range"),
           )
         : null;
@@ -1083,8 +983,6 @@ export async function handleDubRequest(
       throw new DubApiError(400, "invalid_peak_bars");
     }
     const serializedPeakBars = peakBars ? serializeDubPeakBars(peakBars) : null;
-    const ready = await readyGeneration(bucket, storage);
-    const generation = ready ?? LEGACY_GENERATION;
     const contentType = normalizeContentType(input.request);
     let bytes: Uint8Array;
     try {
@@ -1099,10 +997,22 @@ export async function handleDubRequest(
     if (!validSignature(contentType, bytes)) {
       throw new DubApiError(415, "unsupported_audio");
     }
+    if (!await consentRepository.requireCurrentGrant(
+      input.identity,
+      consent.grantGeneration,
+    )) {
+      throw new DubApiError(403, "dubbing_not_enabled");
+    }
 
+    const generation = await ensureReadyGeneration(
+      bucket,
+      storage,
+      consent.grantGeneration,
+      wait,
+    );
     const key = storage.objectKey(route.lineId!);
     const previous = await bucket.head(key);
-    if (await readyGeneration(bucket, storage) !== ready) {
+    if (await readyGeneration(bucket, storage) !== generation) {
       throw new DubApiError(409, "dub_reset_in_progress");
     }
     if (!await consentRepository.requireCurrentGrant(
@@ -1186,7 +1096,7 @@ export async function handleDubRequest(
     }
     let markerConflict: unknown;
     try {
-      if (await readyGeneration(bucket, storage) !== ready) {
+      if (await readyGeneration(bucket, storage) !== generation) {
         markerConflict = new DubApiError(409, "dub_reset_in_progress");
       }
     } catch (error) {

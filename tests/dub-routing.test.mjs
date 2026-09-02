@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createDatabase } from "../worker/database.ts";
 import { parseDubRoute } from "../worker/dub-route.ts";
-import { createDubStorageKeys, objectPrefix } from "../worker/dub-storage.ts";
+import { createDubStorageKeys } from "../worker/dub-storage.ts";
 import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
 import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
@@ -35,7 +35,7 @@ function environment() {
         },
       },
       DB: {},
-      PERSONALIZED_STORY_ART_BUCKET: {
+      PRIVATE_MEDIA_BUCKET: {
         async delete() {},
         async get() { return null; },
         async list() { return { objects: [], truncated: false }; },
@@ -94,16 +94,11 @@ describe("dub Worker routing", () => {
       null,
     );
     assert.equal(
-      objectPrefix("user-1", "old-macdonald-v1"),
-      "personalized-story-art/user-1/learner-dubs/old-macdonald-v1/",
-    );
-    assert.equal(
       createDubStorageKeys({
         learnerProfileId: "learner-b",
-        legacyStorageOwner: false,
         userId: "user-1",
       }, "old-macdonald-v1").objectPrefix,
-      "personalized-story-art/user-1/learners/learner-b/learner-dubs/old-macdonald-v1/",
+      "accounts/user-1/learners/learner-b/recordings/nursery-rhymes/old-macdonald-v1/",
     );
   });
 
