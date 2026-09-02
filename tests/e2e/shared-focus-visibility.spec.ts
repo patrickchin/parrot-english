@@ -40,7 +40,7 @@ const focusScenarios: Array<{
           name: "Profile for ⁨Alex Guardian⁩, guardian mode",
         })
         .click();
-      return page.getByRole("menuitem", { name: "Manage learners" });
+      return page.getByRole("menuitem", { name: "Guardian dashboard" });
     },
     viewport: { height: 844, width: 390 },
   },
@@ -1209,24 +1209,18 @@ test("dark-surface focus does not fade in or linger after moving", async ({
     panel.getByRole("button", { exact: true, name: "中文" }),
   ).toBeFocused();
   await page.keyboard.press("Tab");
-  await expect(
-    page.getByRole("menuitem", { name: "Guardian dashboard" }),
-  ).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  const manageLearners = page.getByRole("menuitem", {
-    name: "Manage learners",
+  const dashboard = page.getByRole("menuitem", {
+    name: "Guardian dashboard",
   });
-  await expect(manageLearners).toBeFocused();
+  await expect(dashboard).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  const accountPrivacy = page.getByRole("menuitem", {
-    name: "Account & privacy",
-  });
-  await expect(accountPrivacy).toBeFocused();
-  const unfocusedShadow = await manageLearners.evaluate(
+  const signOut = page.getByRole("menuitem", { name: "Sign out" });
+  await expect(signOut).toBeFocused();
+  const unfocusedShadow = await dashboard.evaluate(
     (element) => getComputedStyle(element).boxShadow,
   );
 
-  await manageLearners.evaluate((element) => {
+  await dashboard.evaluate((element) => {
     const measured = element as HTMLElement & {
       parrotInitialFocusShadow?: string;
     };
@@ -1240,8 +1234,8 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   });
 
   await page.keyboard.press("ArrowUp");
-  await expect(manageLearners).toBeFocused();
-  const initialShadow = await manageLearners.evaluate(
+  await expect(dashboard).toBeFocused();
+  const initialShadow = await dashboard.evaluate(
     (element) =>
       (element as HTMLElement & { parrotInitialFocusShadow?: string })
         .parrotInitialFocusShadow,
@@ -1249,12 +1243,12 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   expect(initialShadow).toBeTruthy();
 
   await page.waitForTimeout(200);
-  const settledShadow = await manageLearners.evaluate(
+  const settledShadow = await dashboard.evaluate(
     (element) => getComputedStyle(element).boxShadow,
   );
   expect(initialShadow).toBe(settledShadow);
 
-  await manageLearners.evaluate((element) => {
+  await dashboard.evaluate((element) => {
     const measured = element as HTMLElement & {
       parrotInitialBlurShadow?: string;
     };
@@ -1266,9 +1260,9 @@ test("dark-surface focus does not fade in or linger after moving", async ({
       { once: true },
     );
   });
-  await manageLearners.press("ArrowDown");
-  await expect(accountPrivacy).toBeFocused();
-  const initialBlurShadow = await manageLearners.evaluate(
+  await dashboard.press("ArrowDown");
+  await expect(signOut).toBeFocused();
+  const initialBlurShadow = await dashboard.evaluate(
     (element) =>
       (element as HTMLElement & { parrotInitialBlurShadow?: string })
         .parrotInitialBlurShadow,
@@ -1277,7 +1271,7 @@ test("dark-surface focus does not fade in or linger after moving", async ({
 
   await page.waitForTimeout(200);
   expect(
-    await manageLearners.evaluate(
+    await dashboard.evaluate(
       (element) => getComputedStyle(element).boxShadow,
     ),
   ).toBe(unfocusedShadow);

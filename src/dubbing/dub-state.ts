@@ -268,16 +268,17 @@ export function reduceDubState(
     const preserveRecoveryError = state.saveRecovery !== null
       && (
         event.operation === "guide-playing"
-        || event.operation === "mic-opening"
-        || event.operation === "counting-in"
         || event.operation === "take-playing"
       );
+    const startsNewRecording = event.operation === "mic-opening"
+      || event.operation === "counting-in"
+      || event.operation === "recording";
     return {
       ...state,
       error: preserveRecoveryError ? state.error : "",
       operation: event.operation,
       playbackScope: event.playbackScope ?? null,
-      saveRecovery: event.operation === "recording" ? null : state.saveRecovery,
+      saveRecovery: startsNewRecording ? null : state.saveRecovery,
     };
   }
   if (event.type === "OPERATION_FINISHED") {

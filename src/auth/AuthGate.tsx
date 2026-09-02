@@ -303,7 +303,6 @@ function AccountExperienceHeader({
   onOpenLearnerSwitcher,
   onSignOut,
   signOutError,
-  userEmail,
 }: {
   error: string;
   guardianLabel: string;
@@ -315,7 +314,6 @@ function AccountExperienceHeader({
   onOpenLearnerSwitcher: (() => void) | null;
   onSignOut: () => void;
   signOutError: AuthErrorCode | "";
-  userEmail: string;
 }) {
   const access = useGuardianAccess();
   const { messages } = useGuardianLanguage();
@@ -329,14 +327,11 @@ function AccountExperienceHeader({
   const activeMode = access.mode === "guardian" ? "guardian" : "learner";
   const accessErrorCode = access.error ?? switchError;
   const accessError = accessErrorCode
-    ? activeMode === "guardian"
-      ? messages.guardianAccess.errors[accessErrorCode]
-      : englishGuardianMessages.guardianAccess.errors[accessErrorCode]
+    ? messages.guardianAccess.errors[accessErrorCode]
     : "";
   const accountError = accessError || error;
   const localizedSignOutError = signOutError
-    ? (activeMode === "guardian" ? messages : englishGuardianMessages).auth
-        .errors[signOutError]
+    ? messages.auth.errors[signOutError]
     : "";
   const previousAccessModeRef = useRef(access.mode);
 
@@ -379,14 +374,8 @@ function AccountExperienceHeader({
         hasActiveLearner={hasActiveLearner}
         isModePending={isSwitchingMode}
         isSigningOut={activeMode === "guardian" && isSigningOut}
-        learnerLabel={learnerName?.trim() || "Learner"}
-        onOpenAccountPrivacy={() =>
-          onNavigate(`${getGuardianPath()}#account-privacy`)
-        }
+        learnerLabel={learnerName ?? ""}
         onOpenGuardianDashboard={() => onNavigate(getGuardianPath())}
-        onOpenLearnerProfiles={() =>
-          onNavigate(`${getGuardianPath()}#learner-profiles`)
-        }
         onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onRetryError={
           access.error
@@ -398,7 +387,6 @@ function AccountExperienceHeader({
         onSelectGuardian={() => void switchToGuardian()}
         onSignOut={onSignOut}
         signOutError={activeMode === "guardian" ? localizedSignOutError : ""}
-        userEmail={userEmail}
       />
       <span
         aria-atomic="true"
@@ -409,7 +397,7 @@ function AccountExperienceHeader({
         {announcement === "guardian"
           ? messages.account.guardianModeStatus
           : announcement === "learner"
-            ? englishGuardianMessages.account.learnerModeStatus
+            ? messages.account.learnerModeStatus
             : ""}
       </span>
     </>
@@ -699,7 +687,7 @@ export function AuthGateView({
     session.user.name?.trim() || session.user.email || "Learner";
   const accountError =
     profileError ||
-    (formError ? englishGuardianMessages.auth.errors[formError] : "");
+    (formError ? messages.auth.errors[formError] : "");
   const showNarrowSignOutRecovery = Boolean(signOutError) && !isSigningOut;
 
   return (
@@ -715,7 +703,6 @@ export function AuthGateView({
         onOpenLearnerSwitcher={onOpenLearnerSwitcher}
         onSignOut={onSignOut}
         signOutError={signOutError}
-        userEmail={session.user.email}
       />
       <div
         className={
@@ -982,9 +969,7 @@ export function createAuthGate({
 
     return (
       <>
-        {isPending || isRetrying || Boolean(error) || !session || isSigningOut ? (
-          <GuardianLanguageControl />
-        ) : null}
+        {!session ? <GuardianLanguageControl /> : null}
         <AccountActionProvider
           deleteAccount={handleDeleteAccount}
           isSharedGuest={isSharedGuest}

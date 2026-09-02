@@ -839,7 +839,7 @@ test("profile Replay and grown-up access gateway remain independently operable",
   });
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Switch learner",
-    "Grown-up accessSwitch modes",
+    "Grown-up access",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),

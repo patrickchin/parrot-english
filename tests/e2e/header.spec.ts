@@ -434,18 +434,16 @@ test("Continue as guest normalizes a Guardian return target to learner home", as
   const accountCard = page.getByRole("region", {
     name: "Account & privacy",
   });
+  await expect(accountCard).toBeVisible();
   await expect(
-    accountCard.getByRole("heading", { name: "Technical build details" }),
+    accountCard.getByRole("link", { name: "Open account & privacy" }),
   ).toBeVisible();
   await expect(accountCard).not.toContainText("permanently delete");
 
   await page.goto(guardianPath("/guardian/account"));
-  await expect(page).toHaveURL(/\/guardian\?[^#]*#account-privacy$/);
+  await expect(page).toHaveURL(/\/guardian\/account\?/);
   await expect(
-    page.getByRole("heading", { level: 1, name: "Guardian dashboard" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("heading", { level: 2, name: "Account & privacy" }),
+    page.getByRole("heading", { level: 1, name: "Account & privacy" }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "How Parrot uses AI" }),
@@ -506,6 +504,11 @@ for (const route of routes) {
         Math.abs(controlBox.height - accountBox.height),
       ).toBeLessThanOrEqual(1);
       expect(controlBox.x + controlBox.width).toBeLessThanOrEqual(accountBox.x);
+      expect(
+        Math.abs(
+          controlBox.x - (viewport.width - accountBox.x - accountBox.width),
+        ),
+      ).toBeLessThanOrEqual(1);
 
       await expect
         .poll(() =>
@@ -525,9 +528,9 @@ for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
     await page.goto(guardianPath("/guardian/account"));
 
-    const routeControl = page.getByRole("button", {
+    const routeControl = page.getByRole("link", {
       exact: true,
-      name: /Switch to learner|切换到学习模式/,
+      name: /Back to Guardian dashboard|返回家长中心/,
     });
     const account = page.getByRole("button", {
       name: /Profile for .+, guardian mode|.+的档案，家长模式/,
@@ -589,9 +592,9 @@ test("wide guardian language control stays inside the account menu", async ({
   await page.setViewportSize(viewport);
   await page.goto(guardianPath("/guardian/account"));
 
-  const routeControl = page.getByRole("button", {
+  const routeControl = page.getByRole("link", {
     exact: true,
-    name: "Switch to learner",
+    name: "Back to Guardian dashboard",
   });
   const account = page.getByRole("button", {
     name: /Profile for .+, guardian mode/,
@@ -713,8 +716,6 @@ test("guardian profile keeps its identity in the account trigger at every header
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
     "Sign out",
   ]);
   await expect(page.getByRole("group", { name: "Active profile" })).toHaveCount(
@@ -1140,11 +1141,15 @@ test("the learner profile opens a locked grown-up access gateway", async ({
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Switch learner",
-    "Grown-up accessSwitch modes",
+    "Grown-up access",
   ]);
   await expect(
     page.getByRole("group", { name: "Choose profile mode" }),
   ).toHaveCount(0);
+
+  await accountMenu.click();
+  await expect(accountMenu).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
 });
 
 test("the learner menu switches to a sibling and returns to learner home", async ({
@@ -1173,7 +1178,7 @@ test("the learner menu switches to a sibling and returns to learner home", async
   ).toBeVisible();
 });
 
-test("Guardian menu jumps to inline Account & privacy with deletion only in its Danger zone", async ({
+test("Guardian menu stays concise while the dashboard owns Account & privacy", async ({
   page,
 }) => {
   await page.goto(guardianPath("/guardian"));
@@ -1184,15 +1189,20 @@ test("Guardian menu jumps to inline Account & privacy with deletion only in its 
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
     "Sign out",
   ]);
-
-  await menu.getByRole("menuitem", { name: "Account & privacy" }).click();
-  await expect(page).toHaveURL("/guardian#account-privacy");
   await expect(
-    page.getByRole("heading", { level: 2, name: "Account & privacy" }),
+    menu.getByRole("menuitem", { name: "Manage learners" }),
+  ).toHaveCount(0);
+  await expect(
+    menu.getByRole("menuitem", { name: "Account & privacy" }),
+  ).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Open account & privacy" }).click();
+  await expect(page).toHaveURL("/guardian/account");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Account & privacy" }),
   ).toBeFocused();
   await expect(
     page.getByRole("heading", { name: "How Parrot uses AI" }),
@@ -1240,24 +1250,22 @@ test("account actions keep routine sign out in the menu and stage deletion on it
     const items = menu.getByRole("menuitem");
     await expect(items).toHaveText([
       "Guardian dashboard",
-      "Manage learners",
-      "Account & privacy",
       "Sign out",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),
     ).toHaveCount(0);
 
-    const accountPrivacy = menu.getByRole("menuitem", {
-      name: "Account & privacy",
+    const guardianDashboard = menu.getByRole("menuitem", {
+      name: "Guardian dashboard",
     });
     const signOut = menu.getByRole("menuitem", { name: "Sign out" });
-    const [accountColors, signOutColors] = await Promise.all([
-      renderedColors(accountPrivacy),
+    const [dashboardColors, signOutColors] = await Promise.all([
+      renderedColors(guardianDashboard),
       renderedColors(signOut),
     ]);
 
-    expect(signOutColors).toEqual(accountColors);
+    expect(signOutColors).toEqual(dashboardColors);
 
     for (let index = 0; index < (await items.count()); index += 1) {
       const box = await visibleBox(items.nth(index));
@@ -1275,10 +1283,11 @@ test("account actions keep routine sign out in the menu and stage deletion on it
     await page.keyboard.press("End");
     await expect(signOut).toBeFocused();
     await page.keyboard.press("ArrowUp");
-    await expect(accountPrivacy).toBeFocused();
+    await expect(guardianDashboard).toBeFocused();
 
     if (viewport.name === "regular phone") {
-      await accountPrivacy.click();
+      await page.keyboard.press("Escape");
+      await page.getByRole("link", { name: "Open account & privacy" }).click();
       const deleteAccount = page.getByRole("button", {
         exact: true,
         name: "Delete account",
@@ -1304,7 +1313,7 @@ test("account actions keep routine sign out in the menu and stage deletion on it
   }
 });
 
-test("switching to guardian mode reaches learner details from inline Manage learners", async ({
+test("switching to guardian mode reaches learner details from the dashboard", async ({
   page,
 }) => {
   await page.goto("/");
@@ -1315,8 +1324,9 @@ test("switching to guardian mode reaches learner details from inline Manage lear
 
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { level: 2, name: "Manage learners" }),
+    page.getByRole("heading", { level: 2, name: "Learner profiles" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Manage learners" }).click();
   await page
     .getByRole("button", { exact: true, name: "Edit ⁨Mia⁩'s profile" })
     .click();
@@ -1371,14 +1381,15 @@ test("forced colors keeps account exit actions visibly focused", async ({
   expect(Number.parseFloat(signOutOutline.width)).toBeGreaterThanOrEqual(2);
   expectBoxInside(await focusedPaintBox(signOut), await overflowClipBox(panel));
 
-  await page.keyboard.press("ArrowUp");
-  await page.keyboard.press("Enter");
+  await page.keyboard.press("Escape");
+  await page.getByRole("link", { name: "Open account & privacy" }).click();
   const deleteAccount = page.getByRole("button", {
     exact: true,
     name: "Delete account",
   });
   await deleteAccount.scrollIntoViewIfNeeded();
-  await deleteAccount.focus();
+  await focusWithKeyboard(page, deleteAccount);
+  await expect(deleteAccount).toBeFocused();
   const deleteOutline = await renderedFocusOutline(deleteAccount);
   expect(deleteOutline.style).not.toBe("none");
   expect(Number.parseFloat(deleteOutline.width)).toBeGreaterThanOrEqual(2);
@@ -1390,14 +1401,11 @@ test("Account & privacy keeps optional technical details without retired guidanc
   const viewport = mobileViewports.find(({ name }) => name === "small phone")!;
   await page.setViewportSize(viewport);
   await page.goto(guardianPath("/guardian"));
-  await page
-    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
-    .click();
-  await page.getByRole("menuitem", { name: "Account & privacy" }).click();
+  await page.getByRole("link", { name: "Open account & privacy" }).click();
 
   const accountPage = page.getByRole("main");
   await expect(
-    accountPage.getByRole("heading", { level: 2, name: "Account & privacy" }),
+    accountPage.getByRole("heading", { level: 1, name: "Account & privacy" }),
   ).toBeFocused();
   await expect(
     accountPage.getByText("For grown-ups", { exact: true }),
@@ -1442,7 +1450,7 @@ test("Account & privacy keeps optional technical details without retired guidanc
   await expect(accountPage.getByText("Input transcription")).toBeVisible();
   await expect(accountPage.getByText("gpt-4o-mini-transcribe")).toBeVisible();
 
-  await expect(page).toHaveURL("/guardian#account-privacy");
+  await expect(page).toHaveURL("/guardian/account");
 });
 
 test("Account & privacy stays usable on a 280px by 480px screen when technical details fail", async ({
@@ -1458,10 +1466,7 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
     await route.fulfill({ body: "", status: 503 });
   });
   await page.goto(guardianPath("/guardian"));
-  await page
-    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
-    .click();
-  await page.getByRole("menuitem", { name: "Account & privacy" }).click();
+  await page.getByRole("link", { name: "Open account & privacy" }).click();
 
   const accountPage = page.getByRole("main");
   await expect(
@@ -1496,7 +1501,7 @@ test("Account & privacy stays usable on a 280px by 480px screen when technical d
       ),
     )
     .toBe(true);
-  await expect(page).toHaveURL("/guardian#account-privacy");
+  await expect(page).toHaveURL("/guardian/account");
 });
 
 test("account menu stays visible after scrolling a short lesson list", async ({

@@ -1792,7 +1792,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       await waitFor(() => button(action));
       await click(button(action));
       await waitFor(() =>
-        assert.equal(currentRoute().path, "/guardian#learner-profiles"),
+        assert.equal(currentRoute().path, "/guardian/learners"),
       );
       await cleanupMountedRoots();
       document.body.replaceChildren();
@@ -1840,7 +1840,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await waitFor(() => text(/Learner details are taking a break/));
     await click(link("Back to Manage learners"));
     await waitFor(() =>
-      assert.equal(currentRoute().path, "/guardian#learner-profiles"),
+      assert.equal(currentRoute().path, "/guardian/learners"),
     );
     await waitFor(() => text(/Manage learners/));
   });
@@ -2508,7 +2508,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     text(/Add a learner before switching to learner mode/);
   });
 
-  it("redirects bypass-only Guardian pages to learner management on the flattened dashboard", async () => {
+  it("redirects bypass-only Guardian pages to learner management", async () => {
     const api = {
       async loadGuardianAccess() {
         return {
@@ -2540,10 +2540,10 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       }),
     );
     await waitFor(() => {
-      assert.equal(currentRoute().path, "/guardian#learner-profiles");
+      assert.equal(currentRoute().path, "/guardian/learners");
       text(/Manage learners/);
     });
-    text(/Voice dubbing/);
+    noText(/Voice dubbing/);
   });
 
   it("locked guardian routes switch modes automatically without rendering a prompt", async () => {
@@ -6729,7 +6729,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(requests.some((request) => request.includes("/active")), false);
   });
 
-  it("recovers an authoritative targeted dubbing 403 on the flattened dashboard", async () => {
+  it("recovers an authoritative targeted dubbing 403 on its management page", async () => {
     let guardianMode = "guardian";
     let targetedLoads = 0;
     let unlockCalls = 0;
@@ -6823,7 +6823,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     text(/Editing settings for ⁨Noah⁩/);
     assert.equal(
       currentRoute().path,
-      "/guardian?learnerProfileId=learner-noah&from=deep-link#voice-dubbing",
+      "/guardian/dubbing?learnerProfileId=learner-noah&from=deep-link",
     );
     noText(/Switch to guardian mode/);
   });
@@ -6867,7 +6867,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
       );
 
       await waitFor(() => {
-        assert.equal(currentRoute().path, "/guardian#learner-profiles");
+        assert.equal(currentRoute().path, "/guardian/learners");
         text(/Manage learners/);
         noText(/Switch to learner mode/);
       });
@@ -6929,7 +6929,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     );
 
     await waitFor(() => text(/Manage learners/));
-    assert.equal(currentRoute().path, "/guardian#learner-profiles");
+    assert.equal(currentRoute().path, "/guardian/learners");
     assert.equal(profileEditorLoads, 0);
   });
 
@@ -7012,7 +7012,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     assert.equal(selectedId, "learner-mia");
     button("Edit ⁨Mia⁩'s profile");
     button("Edit ⁨Ava⁩'s profile");
-    assert.equal(currentRoute().path, "/guardian#learner-profiles");
+    assert.equal(currentRoute().path, "/guardian/learners");
   });
 
   it("rejects learner creation when the success roster did not add a learner", async () => {
@@ -7074,7 +7074,7 @@ describe("mounted React lifecycle boundaries", { concurrency: false }, () => {
     await click(button("Add learner"));
     await waitFor(() => text(/The learner could not be added/i));
     assert.equal(profileLoads, initialProfileLoads);
-    assert.equal(currentRoute().path, "/guardian#learner-profiles");
+    assert.equal(currentRoute().path, "/guardian/learners");
     button("Edit ⁨Mia⁩'s profile");
     assert.equal(
       document.querySelector('button[aria-label="Edit ⁨Ava⁩\'s profile"]'),

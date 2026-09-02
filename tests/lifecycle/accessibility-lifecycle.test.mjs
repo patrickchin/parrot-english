@@ -205,17 +205,11 @@ function accountHeaderProps(overrides = {}) {
     isSigningOut: false,
     hasActiveLearner: true,
     learnerLabel: "Mia",
-    onDeleteAccount: async () => null,
-    onOpenAccountPrivacy() {},
     onOpenGuardianDashboard() {},
-    onOpenLearnerProfiles() {},
     onOpenLearnerSwitcher() {},
-    onOpenProfile() {},
     onSelectGuardian() {},
-    onSelectLearner() {},
     onSignOut() {},
     signOutError: "",
-    userEmail: "patrick@example.test",
     ...overrides,
   };
 }
@@ -685,7 +679,7 @@ describe("keyboard accessibility lifecycles", () => {
     );
     assert.deepEqual(menuItems, [
       "Switch learner",
-      "Grown-up accessSwitch modes",
+      "Grown-up access",
     ]);
     await click(button("Switch learner"));
     assert.deepEqual(activations, ["switch-learner"]);
@@ -701,7 +695,7 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("guardian mode exposes the approved learner-aware management order", async () => {
+  it("guardian mode exposes only dashboard and sign out", async () => {
     await mountStrict(
       createElement(
         AccountHeader,
@@ -723,8 +717,6 @@ describe("keyboard accessibility lifecycles", () => {
       })),
       [
         { role: "menuitem", text: "Guardian dashboard" },
-        { role: "menuitem", text: "Manage learners" },
-        { role: "menuitem", text: "Account & privacy" },
         { role: "menuitem", text: "Sign out" },
       ],
     );
@@ -739,25 +731,22 @@ describe("keyboard accessibility lifecycles", () => {
     );
   });
 
-  it("localizes Guardian account chrome while learner helpers follow preference", async () => {
+  it("localizes the complete account menu under a Chinese preference", async () => {
     await mountStrict(
       createElement(
         GuardianLanguageProvider,
         { initialLanguage: "zh-Hans", storage: null },
         createElement(
           AccountHeader,
-          accountHeaderProps({
-            error: "Guardian access could not be checked. Please try again.",
-            errorHelper: "guardianAccessErrorHelper",
-          }),
+          accountHeaderProps(),
         ),
       ),
     );
 
-    const trigger = button("Profile for ⁨Mia⁩, learner mode");
+    const trigger = button("⁨Mia⁩的档案，学习者模式");
     await click(trigger);
     const panel = document.querySelector(
-      '[role="dialog"][aria-label="Account menu"]',
+      '[role="dialog"][aria-label="账户菜单"]',
     );
     assert.ok(panel);
     assert.equal(trigger.getAttribute("aria-controls"), panel.id);
@@ -766,17 +755,17 @@ describe("keyboard accessibility lifecycles", () => {
       '[role="group"][aria-label="家长指导语言"]',
     );
     assert.ok(language);
-    assert.equal(menu.getAttribute("aria-label"), "Account menu");
-    assert.match(menu.textContent, /Grown-up access/);
-    assert.match(menu.textContent, /Switch modes/);
+    assert.equal(document.querySelector("aside").getAttribute("lang"), "zh-Hans");
+    assert.equal(menu.getAttribute("aria-label"), "账户菜单");
     assert.equal(
-      menu.querySelector('[lang="zh-Hans"]')?.textContent,
-      "家长入口",
+      panel.querySelector('[role="group"][aria-label="当前档案"]')?.textContent,
+      "Mia学习者",
     );
-    assert.equal(
-      document.querySelector('[role="alert"] [lang="zh-Hans"]')?.textContent,
-      "请让家长重试。",
+    assert.deepEqual(
+      [...menu.children].map((item) => item.textContent.trim()),
+      ["切换孩子", "家长入口"],
     );
+    assert.doesNotMatch(menu.textContent, /Switch learner|Grown-up access/);
 
     const english = [...language.querySelectorAll("button")].find(
       (candidate) => candidate.textContent.trim() === "English",
@@ -784,16 +773,11 @@ describe("keyboard accessibility lifecycles", () => {
     assert.ok(english);
     await click(english);
     assert.equal(document.querySelector('[role="menu"]'), menu);
-    assert.equal(menu.querySelector('[lang="zh-Hans"]'), null);
-    assert.equal(
-      document.querySelector('[role="alert"] [lang="zh-Hans"]'),
-      null,
-    );
-    assert.match(
-      [...document.querySelectorAll('[role="alert"]')].find(
-        (alert) => alert.textContent.trim() !== "",
-      ).textContent,
-      /Guardian access/,
+    assert.equal(document.querySelector("aside").getAttribute("lang"), "en");
+    assert.equal(menu.getAttribute("aria-label"), "Account menu");
+    assert.deepEqual(
+      [...menu.children].map((item) => item.textContent.trim()),
+      ["Switch learner", "Grown-up access"],
     );
 
     await cleanupMountedRoots();
@@ -817,7 +801,7 @@ describe("keyboard accessibility lifecycles", () => {
     assert.equal(guardianMenu.getAttribute("aria-label"), "账户菜单");
     assert.deepEqual(
       [...guardianMenu.children].map((item) => item.textContent.trim()),
-      ["家长中心", "管理孩子", "账户与隐私", "退出登录"],
+      ["家长中心", "退出登录"],
     );
   });
 
@@ -1147,8 +1131,6 @@ describe("keyboard accessibility lifecycles", () => {
       ),
       [
         "Guardian dashboard",
-        "Manage learners",
-        "Account & privacy",
         "Sign out",
       ],
     );
@@ -1196,21 +1178,11 @@ describe("keyboard accessibility lifecycles", () => {
       ),
       [
         "Guardian dashboard",
-        "Manage learners",
-        "Account & privacy",
         "Sign out",
       ],
     );
     await click(button("Guardian dashboard"));
-    await click(button("Profile for ⁨Patrick⁩, guardian mode"));
-    await click(button("Manage learners"));
-    await click(button("Profile for ⁨Patrick⁩, guardian mode"));
-    await click(button("Account & privacy"));
-    assert.deepEqual(navigations, [
-      "/guardian",
-      "/guardian#learner-profiles",
-      "/guardian#account-privacy",
-    ]);
+    assert.deepEqual(navigations, ["/guardian"]);
   });
 
   it("switches directly from the learner menu to guardian management", async () => {
@@ -1243,7 +1215,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for ⁨Learner⁩, learner mode")),
     );
-    await click(button("Grown-up accessSwitch modes"));
+    await click(button("Grown-up access"));
     await waitFor(() => assert.deepEqual(navigations, ["/guardian/learners"]));
     await click(button("Profile for ⁨Patrick⁩, guardian mode"));
     assert.deepEqual(
@@ -1252,8 +1224,6 @@ describe("keyboard accessibility lifecycles", () => {
       ),
       [
         "Guardian dashboard",
-        "Manage learners",
-        "Account & privacy",
         "Sign out",
       ],
     );
@@ -1324,7 +1294,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for ⁨Learner⁩, learner mode")),
     );
-    await click(button("Grown-up accessSwitch modes"));
+    await click(button("Grown-up access"));
     await waitFor(() =>
       assert.equal(
         [...document.querySelectorAll('[role="alert"]')].filter(
@@ -1489,7 +1459,7 @@ describe("keyboard accessibility lifecycles", () => {
       button("Profile for ⁨Learner⁩, learner mode"),
     );
     await click(trigger);
-    const guardian = button("Grown-up accessSwitch modes");
+    const guardian = button("Grown-up access");
     await click(guardian);
     await waitFor(() => assert.equal(window.location.pathname, "/guardian"));
 
@@ -1522,7 +1492,7 @@ describe("keyboard accessibility lifecycles", () => {
     await click(
       await waitFor(() => button("Profile for ⁨Learner⁩, learner mode")),
     );
-    await click(button("Grown-up accessSwitch modes"));
+    await click(button("Grown-up access"));
 
     await waitFor(() =>
       assert.deepEqual(navigations, ["/guardian/dubbing?section=clips#saved"]),
@@ -1577,13 +1547,13 @@ describe("keyboard accessibility lifecycles", () => {
     async function unlock() {
       let guardian = [...document.querySelectorAll("button")].find(
         (candidate) =>
-          candidate.textContent.trim() === "Grown-up accessSwitch modes",
+          candidate.textContent.trim() === "Grown-up access",
       );
       if (!guardian) {
         await click(
           await waitFor(() => button("Profile for ⁨Mia⁩, learner mode")),
         );
-        guardian = button("Grown-up accessSwitch modes");
+        guardian = button("Grown-up access");
       }
       await click(guardian);
       await waitFor(() =>
@@ -1635,7 +1605,7 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
     await click(await waitFor(() => button("Profile for ⁨Mia⁩, learner mode")));
-    await click(button("Grown-up accessSwitch modes"));
+    await click(button("Grown-up access"));
     const liveStatuses = document.querySelectorAll(
       'span[role="status"][aria-live="polite"]',
     );
@@ -1671,8 +1641,6 @@ describe("keyboard accessibility lifecycles", () => {
       items.map((item) => item.textContent.trim()),
       [
         "Guardian dashboard",
-        "Manage learners",
-        "Account & privacy",
         "Sign out",
       ],
     );
@@ -1683,16 +1651,12 @@ describe("keyboard accessibility lifecycles", () => {
     await press(items[0], "ArrowDown");
     assert.equal(document.activeElement, items[1]);
     await press(items[1], "End");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "ArrowUp");
-    assert.equal(document.activeElement, items[2]);
-    await press(items[2], "ArrowDown");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "ArrowDown");
+    assert.equal(document.activeElement, items[1]);
+    await press(items[1], "ArrowUp");
     assert.equal(document.activeElement, items[0]);
     await press(items[0], "ArrowUp");
-    assert.equal(document.activeElement, items[3]);
-    await press(items[3], "Home");
+    assert.equal(document.activeElement, items[1]);
+    await press(items[1], "Home");
     assert.equal(document.activeElement, items[0]);
 
     await press(items[0], "Escape");
@@ -1709,6 +1673,20 @@ describe("keyboard accessibility lifecycles", () => {
     );
     await press(document.activeElement, "Escape");
     assert.equal(document.activeElement, trigger);
+  });
+
+  it("closes the account menu when its trigger is clicked again", async () => {
+    await mountStrict(createElement(AccountHeader, accountHeaderProps()));
+    const trigger = button("Profile for ⁨Mia⁩, learner mode");
+    await click(trigger);
+    await waitFor(() => assert.equal(document.activeElement, button("English")));
+
+    await act(async () => trigger.focus());
+    assert.ok(document.querySelector('[role="menu"]'));
+    await click(trigger);
+
+    assert.equal(trigger.getAttribute("aria-expanded"), "false");
+    assert.equal(document.querySelector('[role="menu"]'), null);
   });
 
   it("closes the account menu when focus leaves it", async () => {

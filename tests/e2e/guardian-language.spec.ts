@@ -122,7 +122,7 @@ test("learner session recovery stays English under a Chinese preference", async 
   await expect(page.getByText("暂时无法登录")).toHaveCount(0);
 });
 
-test("account chrome localizes Guardian mode and keeps learner chrome English", async ({
+test("account chrome follows the Guardian language in both modes", async ({
   page,
 }) => {
   await page.addInitScript(() =>
@@ -140,14 +140,12 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
     guardianMenu.getByRole("menuitem", { name: "家长中心" }),
   ).toBeVisible();
   await expect(
-    guardianMenu.getByRole("menuitem", { name: "管理孩子" }),
-  ).toBeVisible();
-  await expect(
-    guardianMenu.getByRole("menuitem", { name: "账户与隐私" }),
-  ).toBeVisible();
-  await expect(
     guardianMenu.getByRole("menuitem", { name: "退出登录" }),
   ).toBeVisible();
+  await expect(guardianMenu.getByRole("menuitem")).toHaveText([
+    "家长中心",
+    "退出登录",
+  ]);
   await guardianLanguage
     .getByRole("button", { exact: true, name: "English" })
     .click();
@@ -160,20 +158,24 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
   await expect(page.getByRole("menu", { name: "账户菜单" })).toBeVisible();
 
   await page.goto("/lessons");
-  await page.getByRole("button", { name: /learner mode/i }).click();
-  const learnerMenu = page.getByRole("menu", { name: "Account menu" });
+  await page.getByRole("button", { name: /学习者模式/ }).click();
+  const learnerPanel = page.getByRole("dialog", { name: "账户菜单" });
+  const learnerMenu = learnerPanel.getByRole("menu", { name: "账户菜单" });
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(
-    page
-      .getByRole("dialog", { name: "Account menu" })
-      .getByRole("group", { name: "家长指导语言" }),
+    page.getByRole("complementary", { name: "账户" }),
+  ).toHaveAttribute("lang", "zh-Hans");
+  await expect(
+    learnerPanel.getByRole("group", { name: "家长指导语言" }),
   ).toBeVisible();
-  const grownUpAccess = learnerMenu.getByRole("menuitem", {
-    name: /Grown-up access.*家长入口/,
-  });
+  await expect(learnerMenu.getByRole("menuitem")).toHaveText([
+    "切换孩子",
+    "家长入口",
+  ]);
+  await expect(learnerMenu.getByText("Grown-up access")).toHaveCount(0);
+  await expect(learnerMenu.getByText("Switch modes")).toHaveCount(0);
+  const grownUpAccess = learnerMenu.getByRole("menuitem", { name: "家长入口" });
   await expect(grownUpAccess).toBeVisible();
-  await expect(
-    learnerMenu.getByText("Switch modes", { exact: true }),
-  ).toBeVisible();
 
   await grownUpAccess.click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -272,29 +274,12 @@ test("Chinese preference keeps representative learner destinations English and l
 
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/dubs");
-  const englishRecordingNotice = page.getByText(
-    "Ask a grown-up before recording.",
-    { exact: true },
-  );
-  const chineseRecordingNotice = page.getByText(
-    "录音前请先征得家长同意。",
-    { exact: true },
-  );
-  await expect(englishRecordingNotice).toHaveAttribute("lang", "en");
-  await expect(chineseRecordingNotice).toHaveAttribute(
-    "lang",
-    "zh-Hans",
-  );
-  await expect(englishRecordingNotice.locator("..")).toContainText(
-    "录音前请先征得家长同意。",
-  );
-  const [englishBox, chineseBox] = await Promise.all([
-    englishRecordingNotice.boundingBox(),
-    chineseRecordingNotice.boundingBox(),
-  ]);
-  expect(englishBox).not.toBeNull();
-  expect(chineseBox).not.toBeNull();
-  expect(chineseBox!.y).toBeGreaterThanOrEqual(englishBox!.y + englishBox!.height);
+  await expect(
+    page.getByText("Ask a grown-up before recording.", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("录音前请先征得家长同意。", { exact: true }),
+  ).toHaveCount(0);
 });
 
 test("browser Chinese preference is inferred without a persistence write", async ({
@@ -375,11 +360,12 @@ test("Chinese Guardian dashboard and learner chooser are consistently localized"
     page.getByRole("navigation", { name: "页面导航" }),
   ).toBeVisible();
   await expect(page.getByRole("heading", { name: "家长中心" })).toBeVisible();
-  for (const heading of ["管理孩子", "配音管理", "账户与隐私"]) {
+  for (const heading of ["孩子资料", "账户与隐私"]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
+  await expect(page.getByRole("heading", { name: "配音管理" })).toHaveCount(0);
   await expect(page.getByText("学习与内容", { exact: true })).toHaveCount(0);
-  await expect(page.getByLabel("技术构建详情")).toBeVisible();
+  await expect(page.getByLabel("技术构建详情")).toHaveCount(0);
   await expect(
     page.getByText("查看技术构建详情和可用的账户操作。", { exact: true }),
   ).toHaveCount(0);
@@ -409,7 +395,7 @@ test("Chinese Guardian learner roster and profile editor localize without renami
   await expect(
     page.getByRole("navigation", { name: "页面导航" }),
   ).toBeVisible();
-  const manager = page.getByRole("region", { name: "管理孩子" });
+  const manager = page.getByRole("main");
   await expect(manager.getByRole("heading", { name: "管理孩子" })).toBeVisible();
   await expect(manager.getByRole("heading", { exact: true, name: "Mia" })).toBeVisible();
   await expect(manager.getByRole("heading", { exact: true, name: "Noah" })).toBeVisible();

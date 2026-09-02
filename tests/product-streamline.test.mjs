@@ -230,7 +230,7 @@ test("word-game list and player remain English under a Chinese preference", () =
   );
   assertEnglishOnly(player, [
     "Animals",
-    "Level 1 · Quiz 1",
+    "Simple Animals: First look",
     "Animals · Level 1",
     "Game progress",
     "1 of 6",
@@ -273,7 +273,7 @@ test("home gives children five clear, working learning choices", () => {
   );
 });
 
-test("guardian dashboard keeps its flattened shell localized in Chinese", () => {
+test("guardian dashboard presents a localized two-destination hub in Chinese", () => {
   assert.equal(
     typeof GuardianDashboardView,
     "function",
@@ -294,6 +294,10 @@ test("guardian dashboard keeps its flattened shell localized in Chinese", () => 
   assert.match(html, /<h1[^>]*>\s*家长中心\s*<\/h1>/);
   assert.match(html, /aria-label="页面导航"/);
   assert.match(html, /aria-label="切换到学习模式"/);
+  assert.match(html, /<h2[^>]*>\s*孩子资料\s*<\/h2>/);
+  assert.match(html, /<h2[^>]*>\s*账户与隐私\s*<\/h2>/);
+  assert.match(html, /href="\/guardian\/learners"/);
+  assert.match(html, /href="\/guardian\/account"/);
   for (const english of [
     "Guardian dashboard",
     "Learner profiles",
@@ -305,7 +309,8 @@ test("guardian dashboard keeps its flattened shell localized in Chinese", () => 
   ]) {
     assert.doesNotMatch(html, new RegExp(english));
   }
-  assert.doesNotMatch(html, /href="\/guardian\/(?:learners|dubbing|account)"/);
+  assert.doesNotMatch(html, /href="\/guardian\/dubbing"/);
+  assert.doesNotMatch(html, /管理配音/);
 });
 test("lesson catalog presents one canonical path without artwork experiments", () => {
   const html = renderInRouter(createElement(LessonListView), "/lessons");

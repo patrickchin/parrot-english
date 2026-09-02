@@ -86,7 +86,6 @@ import {
   type WordGameRouteDecision,
 } from "./app-routes";
 import { AuthGate } from "../auth/AuthGate";
-import { useAccountExperience } from "../auth/account-actions";
 import { useGuardianAccess } from "../auth/GuardianAccess";
 import { HeaderButton, RouteHeader } from "./AppHeader";
 import {
@@ -96,6 +95,7 @@ import {
 import { FeaturePlaceholder } from "./FeaturePlaceholder";
 import { HomeMenu } from "./HomeMenu";
 import { NurseryRhymeList } from "../dubbing/NurseryRhymeList";
+import { GuardianDubbingSettings } from "../dubbing/GuardianDubbingSettings";
 import { WordGameList } from "../games/WordGameList";
 import { WordGameCategory } from "../games/WordGameCategory";
 import { WordGamePlayer } from "../games/WordGamePlayer";
@@ -140,6 +140,7 @@ import {
 import { createLessonRecordingQueue } from "../lessons/lesson-recording-queue";
 import { GuardianDashboard } from "./GuardianDashboard";
 import { GuardianLearnerDetails } from "../learner-profile/GuardianLearnerDetails";
+import { GuardianLearnerProfiles } from "../learner-profile/GuardianLearnerProfiles";
 import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
 import {
   GuardianModeBoundary,
@@ -151,6 +152,7 @@ import {
   isGuardianGuidanceSurface,
   useGuardianLanguage,
 } from "../i18n/guardian-language";
+import { AccountPrivacyPage } from "./AccountPrivacyPage";
 
 const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
   ({ route }) => route !== getDuckDubPath(),
@@ -1191,27 +1193,11 @@ function WordGameRoute() {
   );
 }
 
-function GuardianDashboardSectionRedirect({
-  sectionId,
-}: {
-  sectionId: string;
-}) {
-  const { search } = useLocation();
-  return (
-    <Navigate
-      replace
-      to={{ hash: `#${sectionId}`, pathname: getGuardianPath(), search }}
-    />
-  );
-}
-
 export function ApplicationRoutes({
-  learnerName = "Learner",
   loginTarget,
   onBeforeModeNavigate,
   wildcardTarget = "/",
 }: {
-  learnerName?: string;
   loginTarget: string;
   onBeforeModeNavigate?: () => void;
   wildcardTarget?: string | null;
@@ -1252,22 +1238,17 @@ export function ApplicationRoutes({
         <Route
           element={
             <GuardianDashboard
-              learnerName={learnerName}
               onBeforeNavigate={onBeforeModeNavigate}
             />
           }
           path={getGuardianPath()}
         />
         <Route
-          element={
-            <GuardianDashboardSectionRedirect sectionId="account-privacy" />
-          }
+          element={<AccountPrivacyPage />}
           path={getGuardianAccountPath()}
         />
         <Route
-          element={
-            <GuardianDashboardSectionRedirect sectionId="learner-profiles" />
-          }
+          element={<GuardianLearnerProfiles />}
           path={getGuardianLearnersPath()}
         />
         <Route
@@ -1275,9 +1256,7 @@ export function ApplicationRoutes({
           path="/guardian/learners/:learnerId"
         />
         <Route
-          element={
-            <GuardianDashboardSectionRedirect sectionId="voice-dubbing" />
-          }
+          element={<GuardianDubbingSettings />}
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
@@ -1372,7 +1351,6 @@ export function AuthenticatedApplication({
 }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const accountExperience = useAccountExperience();
   const {
     acknowledgeLearnerSwitch,
     blockedByLearnerSwitch,
@@ -1437,7 +1415,6 @@ export function AuthenticatedApplication({
 
   const applicationRoutes = (
     <ApplicationRoutes
-      learnerName={accountExperience?.learnerName?.trim() || "Learner"}
       loginTarget={safeReturnTo}
       onBeforeModeNavigate={onExitLessonRoute}
       wildcardTarget={

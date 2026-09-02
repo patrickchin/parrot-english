@@ -77,12 +77,7 @@ test("Manage learners is CRUD-only and deletion of an inactive learner persists"
 }) => {
   await page.goto(scenarioUrl("/guardian/learners"));
   const main = page.getByRole("main");
-  const learnerManager = main.getByRole("region", {
-    name: "Manage learners",
-  });
-  const voiceTargets = main.getByRole("group", {
-    name: "Choose learner settings target",
-  });
+  const learnerManager = main;
 
   await expect(
     learnerManager.getByRole("heading", { name: "Manage learners" }),
@@ -99,17 +94,10 @@ test("Manage learners is CRUD-only and deletion of an inactive learner persists"
   await expect(learnerManager).not.toContainText(
     /Learner mode|Current learner|Managing /,
   );
-  await expect(voiceTargets.getByRole("button", { name: "Mia" })).toBeVisible();
-  await expect(voiceTargets.getByRole("button", { name: "Noah" })).toBeVisible();
-
   const { dialog } = await deleteLearner(page, "Noah");
   await expect(dialog).toHaveCount(0);
   await expect(learnerCard(page, "Noah")).toHaveCount(0);
   await expect(learnerCard(page, "Mia")).toBeVisible();
-  await expect(
-    voiceTargets.getByRole("button", { name: "Noah" }),
-  ).toHaveCount(0);
-  await expect(voiceTargets.getByRole("button", { name: "Mia" })).toBeVisible();
   expect(await readLearnerState(page)).toMatchObject({
     activeProfileId: "learner-mia",
     profiles: [{ id: "learner-mia" }],
@@ -151,6 +139,7 @@ test("deleting the active learner never chooses its sibling automatically", asyn
   await expect(learnerCard(page, "Noah")).toBeVisible();
   expect(await readLearnerState(page)).toMatchObject({ activeProfileId: null });
 
+  await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   const chooser = await openLearnerChooser(page);
   const start = chooser.dialog.getByRole("button", {
     name: "Start learner mode as ⁨Noah⁩",
@@ -194,6 +183,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
     ],
   });
 
+  await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   const chooser = await openLearnerChooser(page);
   await expect(
     chooser.dialog.getByRole("button", { name: "Start learner mode as ⁨Mia⁩" }),
@@ -201,15 +191,12 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
   await expect(chooser.dialog.getByText("Noah", { exact: true })).toHaveCount(0);
   await chooser.dialog.getByRole("button", { name: "Cancel" }).click();
 
-  await page.getByRole("button", { name: /Profile for ⁨Alex Guardian⁩/ }).click();
-  await page
-    .getByRole("menu", { name: "Account menu" })
-    .getByRole("menuitem", { name: "Manage learners" })
-    .click();
+  await page.getByRole("link", { name: "Manage learners" }).click();
   await page.reload();
   const pending = learnerCard(page, "Noah").getByRole("button", {
     name: "Finish deleting ⁨Noah⁩",
   });
+  await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   const refreshedChooser = await openLearnerChooser(page);
   await expect(
     refreshedChooser.dialog.getByRole("button", {
@@ -220,6 +207,7 @@ test("pending learner deletion survives refresh, stays out of the chooser, and r
     refreshedChooser.dialog.getByText("Noah", { exact: true }),
   ).toHaveCount(0);
   await refreshedChooser.dialog.getByRole("button", { name: "Cancel" }).click();
+  await page.getByRole("link", { name: "Manage learners" }).click();
   await expect(pending).toBeVisible();
   await pending.click();
   const retry = page.getByRole("dialog", { name: "Delete Noah?" });
@@ -252,12 +240,6 @@ test("a chooser roster failure stays in Guardian mode and retries safely", async
   page,
 }) => {
   await page.goto(scenarioUrl("/guardian"));
-  await expect(learnerCard(page, "Mia")).toBeVisible();
-  await expect(
-    page
-      .getByRole("group", { name: "Choose learner settings target" })
-      .getByRole("button", { name: "Mia" }),
-  ).toBeVisible();
   await readLearnerState(page);
   await page.evaluate(() => {
     const controller = (
@@ -304,10 +286,9 @@ test("a zero-profile Guardian learner deep link returns to Manage learners", asy
 }) => {
   await page.goto(scenarioUrl("/lessons", "zero-learners"));
 
-  await expect.poll(() => {
-    const url = new URL(page.url());
-    return `${url.pathname}${url.hash}`;
-  }).toBe("/guardian#learner-profiles");
+  await expect.poll(() => new URL(page.url()).pathname).toBe(
+    "/guardian/learners",
+  );
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
