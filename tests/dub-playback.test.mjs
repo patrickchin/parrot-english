@@ -628,7 +628,7 @@ describe("duck dub playback", () => {
     assert.equal(performanceEnded, 1);
   });
 
-  it("counts two score-spaced beats before starting prepared melody presentation", async () => {
+  it("counts two score-spaced beats before starting prepared recording presentation", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const counts = [];
@@ -661,8 +661,6 @@ describe("duck dub playback", () => {
     const context = audio.contexts[0];
     assert.deepEqual(counts, [2]);
     assert.deepEqual(ticks, []);
-    const melody = context.oscillators.filter(({ type }) => type === "triangle");
-    assert.equal(melody[0].startTimes[0], startAt + 1);
     const phraseTerminal = context.oscillators.find(
       ({ connections, stopTimes }) => connections.length === 0
         && stopTimes[0] === startAt + 1 + line.durationMs / 1_000,
@@ -695,6 +693,28 @@ describe("duck dub playback", () => {
     downbeatMarker.finish();
     assert.equal(downbeats, 1);
     assert.deepEqual(ticks, [0]);
+  });
+
+  it("keeps app-produced audio out of the recording window", async () => {
+    const audio = createAudioHarness();
+    const backing = await prepareDubLineBacking({
+      AudioContext: audio.AudioContext,
+      definition: OLD_MACDONALD_DUB,
+      line: OLD_MACDONALD_DUB.lines[0],
+    });
+
+    const startAt = audio.contexts[0].currentTime;
+    const downbeatAt = startAt + backing.countInDurationMs / 1_000;
+    backing.start();
+
+    const audibleSources = audio.contexts[0].oscillators.filter(
+      ({ connections }) => connections.length > 0,
+    );
+    assert.ok(audibleSources.length > 0, "the count-in remains audible");
+    assert.ok(
+      audibleSources.every(({ stopTimes }) => stopTimes[0] <= downbeatAt),
+      "all app-produced audio ends before capture starts",
+    );
   });
 
   it("uses line duration when a prepared backing's music phrase duration drifts", async () => {
@@ -833,9 +853,7 @@ describe("duck dub playback", () => {
     backing.start();
 
     const context = audio.contexts[0];
-    const melody = context.oscillators.filter(({ type }) => type === "triangle");
     assert.equal(context.resumeCalls, 1);
-    assert.equal(melody[0].startTimes[0], 10 + backing.countInDurationMs / 1_000);
     const terminal = context.oscillators.find(({ frequency }) => frequency.value === 0);
     const downbeatMarker = context.oscillators.find(
       ({ connections, stopTimes }) => connections.length === 0
@@ -849,49 +867,6 @@ describe("duck dub playback", () => {
     assert.deepEqual(ticks, [0]);
     assert.equal(raf.callbacks.size, 0);
     assert.equal(context.closeCalls, 1);
-  });
-
-  it("starts a recording backing at full level without an attack fade", async () => {
-    const audio = createAudioHarness();
-    const raf = createRaf();
-    const backing = await prepareDubLineBacking({
-      AudioContext: audio.AudioContext,
-      cancelAnimationFrame: raf.cancelAnimationFrame,
-      definition: OLD_MACDONALD_DUB,
-      line: OLD_MACDONALD_DUB.lines[2],
-      requestAnimationFrame: raf.requestAnimationFrame,
-    });
-
-    backing.start();
-
-    const context = audio.contexts[0];
-    const downbeatAt = 10 + backing.countInDurationMs / 1_000;
-    const accompaniment = context.oscillators.find((oscillator) =>
-      oscillator.type === "sine"
-        && roundedFrequency(oscillator) === 130.813
-        && oscillator.startTimes[0] === downbeatAt
-        && oscillator.connections.length === 1
-    );
-    const melody = context.oscillators.filter(({ type }) => type === "triangle");
-    const gainEvents = ({ gain }) => gain.events.map(([kind, value, time]) => [
-      kind,
-      value,
-      Number(time.toFixed(2)),
-    ]);
-    assert.ok(accompaniment);
-    assert.deepEqual(gainEvents(accompaniment.connections[0]), [
-      ["set", 0.24, 11.6],
-      ["ramp", 0, 13.2],
-    ]);
-    assert.deepEqual(gainEvents(melody[0].connections[0]), [
-      ["set", 0.78, 11.6],
-      ["ramp", 0, 12.1],
-    ]);
-    assert.deepEqual(gainEvents(melody[1].connections[0]), [
-      ["set", 0, 12.1],
-      ["ramp", 0.78, 12.12],
-      ["ramp", 0, 12.6],
-    ]);
   });
 
   it("closes a prepared line backing once across stop and abort", async () => {
@@ -925,7 +900,7 @@ describe("duck dub playback", () => {
     assert.equal(raf.callbacks.size, 0);
   });
 
-  it("closes the prepared context when melody scheduling fails", async () => {
+  it("closes the prepared context when count-in tone scheduling fails", async () => {
     const failure = new Error("music setup failed");
     const audio = createAudioHarness({ oscillatorStopFailure: failure });
     const backing = await prepareDubLineBacking({

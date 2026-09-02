@@ -1894,7 +1894,7 @@ test("automatically stops and saves at the selected four-second phrase", async (
   await page.getByRole("button", { name: "Record line" }).click();
   await expect(page.getByRole("progressbar", { name: "Recording time" })).toHaveAttribute("aria-valuemax", "4000");
   await expect(page.getByRole("timer", { name: "Recording duration" }))
-    .toContainText("Recording with melody");
+    .toContainText("Recording");
   await expectSavedTake(page, 1);
   await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
     .toBeGreaterThan(0);
@@ -1921,7 +1921,7 @@ test("exposes recorder, microphone, context, and scheduled-backing evidence only
     },
   }]);
   expect(snapshot.recordedStreamTrackKinds).toEqual([["audio"]]);
-  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(true);
+  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(false);
 });
 
 test("starts capture on the authored downbeat and records exactly the line window", async ({ page }) => {
@@ -1981,15 +1981,8 @@ test("starts capture on the authored downbeat and records exactly the line windo
   const firstClick = snapshot.scheduledBacking.find(
     ({ type }) => type === "sine",
   );
-  const firstMelody = snapshot.scheduledBacking.find(
-    ({ type }) => type === "triangle",
-  );
   expect(firstClick).toBeDefined();
-  expect(firstMelody).toBeDefined();
-  expect((firstMelody?.at ?? 0) - (firstClick?.at ?? 0)).toBeCloseTo(
-    definition.music.countInDurationMs / 1_000,
-    5,
-  );
+  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(false);
 
   await page.clock.runFor(line.durationMs / DUB_AUDIO_CLOCK_SCALE);
   await expectSavedTake(page, 1);
@@ -2045,51 +2038,41 @@ for (const cancelBeat of [2, 1] as const) {
   });
 }
 
-for (const scenario of ["recorder-start-failed", "melody-start-failed"] as const) {
-  test(`${scenario} retains the old take without creating or uploading a replacement`, async ({ page }) => {
-    const definition = DUB_DEFINITIONS[0];
-    const clockStartedAt = Date.parse("2026-09-01T08:00:00.000Z");
-    await page.clock.install({ time: clockStartedAt });
-    await page.goto(`/dubs/five-little-ducks?parrotE2eDub=${scenario}`);
-    await expectDubProject(page);
-    await openScene(page, 1);
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
-    const baseline = await dubStoreSnapshot(page);
+test("recorder start failure retains the old take without creating or uploading a replacement", async ({ page }) => {
+  const definition = DUB_DEFINITIONS[0];
+  const clockStartedAt = Date.parse("2026-09-01T08:00:00.000Z");
+  await page.clock.install({ time: clockStartedAt });
+  await page.goto("/dubs/five-little-ducks?parrotE2eDub=recorder-start-failed");
+  await expectDubProject(page);
+  await openScene(page, 1);
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1_000));
+  const baseline = await dubStoreSnapshot(page);
 
-    await page.getByRole("button", { name: "Record again" }).click();
-    if (scenario === "recorder-start-failed") {
-      await expect(page.getByText("Count-in 2", { exact: true })).toBeVisible();
-      await page.clock.runFor(
-        definition.music.countInDurationMs / DUB_AUDIO_CLOCK_SCALE,
-      );
-    }
-    await expect(
-      page.getByRole("alert").filter({ hasText: "The melody could not start." }),
-    ).toBeVisible();
-    await page.clock.runFor(PAGE_FRAME_SETTLE_MS);
-    await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
-    await expect(page.getByRole("button", { name: "Play my recording" })).toBeVisible();
+  await page.getByRole("button", { name: "Record again" }).click();
+  await expect(page.getByText("Count-in 2", { exact: true })).toBeVisible();
+  await page.clock.runFor(
+    definition.music.countInDurationMs / DUB_AUDIO_CLOCK_SCALE,
+  );
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Recording failed." }),
+  ).toBeVisible();
+  await page.clock.runFor(PAGE_FRAME_SETTLE_MS);
+  await expect(page.getByRole("button", { name: "Record again" })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Play my recording" })).toBeVisible();
 
-    const snapshot = await dubStoreSnapshot(page);
-    expect(snapshot.recorderStartCount).toBe(
-      scenario === "recorder-start-failed" ? 1 : 0,
-    );
-    expect(snapshot.recorderStartWallMs).toHaveLength(
-      snapshot.recorderStartCount,
-    );
-    expect(snapshot.recorderStopCount).toBe(0);
-    expect(snapshot.recorderStopWallMs).toEqual([]);
-    expect(snapshot.uploads).toEqual([]);
-    expect(snapshot.createdObjectUrls).toEqual([]);
-    expect(snapshot.microphoneTrackStops - baseline.microphoneTrackStops).toBe(1);
-    expectSingleActionContextCleanup(baseline, snapshot);
-    const melodyStarts = snapshot.scheduledBacking.filter(
-      ({ type }) => type === "triangle",
-    );
-    if (scenario === "melody-start-failed") expect(melodyStarts).toHaveLength(1);
-    else expect(melodyStarts.length).toBeGreaterThan(0);
-  });
-}
+  const snapshot = await dubStoreSnapshot(page);
+  expect(snapshot.recorderStartCount).toBe(1);
+  expect(snapshot.recorderStartWallMs).toHaveLength(
+    snapshot.recorderStartCount,
+  );
+  expect(snapshot.recorderStopCount).toBe(0);
+  expect(snapshot.recorderStopWallMs).toEqual([]);
+  expect(snapshot.uploads).toEqual([]);
+  expect(snapshot.createdObjectUrls).toEqual([]);
+  expect(snapshot.microphoneTrackStops - baseline.microphoneTrackStops).toBe(1);
+  expectSingleActionContextCleanup(baseline, snapshot);
+  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(false);
+});
 
 async function installControllablePlaybackFrames(page: Page) {
   await page.evaluate(() => {
@@ -2371,7 +2354,7 @@ test("held microphone readiness keeps every scene action locked behind one live 
   await expect(page.getByRole("button", { name: "Next line" })).toBeDisabled();
 
   await resolveDelayedMicrophone(page);
-  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Recording with melody…");
+  await expect(page.getByRole("status", { name: "Dub updates" })).toHaveText("Recording…");
   await expect(page.getByRole("timer", { name: "Recording duration" })).toContainText("0:04");
   expectSameActionSlot(
     await visibleBoxWithin(page.getByRole("button", { name: "Stop recording" }), controls),
