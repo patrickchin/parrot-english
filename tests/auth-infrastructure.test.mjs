@@ -408,7 +408,7 @@ describe("authentication infrastructure", () => {
     const devVars = readProjectFile(".dev.vars.example");
     const frontendEnv = readProjectFile(".env.example");
     const deployWorkflow = readProjectFile(
-      ".github/workflows/deploy-cloudflare.yml"
+      ".github/workflows/deploy-production.yml"
     );
     const workerTypes = readProjectFile("worker-configuration.d.ts");
     const workerConfig = JSON.parse(wrangler);

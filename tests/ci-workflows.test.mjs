@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -14,10 +14,15 @@ const verificationUrl = new URL(
   "../.github/workflows/verify-pr.yml",
   import.meta.url,
 );
-const deploymentUrl = new URL(
+const retiredDeploymentUrl = new URL(
   "../.github/workflows/deploy-cloudflare.yml",
   import.meta.url,
 );
+const deploymentUrl = new URL(
+  "../.github/workflows/deploy-production.yml",
+  import.meta.url,
+);
+const workflowsUrl = new URL("../.github/workflows/", import.meta.url);
 const compatibilityGuardUrl = new URL(
   "../scripts/verify-multi-learner-compatibility-release.mjs",
   import.meta.url,
@@ -334,7 +339,9 @@ test("deployment guard rejects a non-fatal generated-catalog check", (context) =
 test("main deployment does not repeat the pull-request verification sequence", () => {
   const workflow = readFileSync(deploymentUrl, "utf8");
 
+  assert.equal(existsSync(retiredDeploymentUrl), false);
   assert.match(workflow, /push:\s+branches:\s+- main/);
+  assert.doesNotMatch(workflow, /workflow_dispatch|media_only/);
   assert.match(workflow, /fetch-depth:\s*0/);
   assert.match(workflow, /run: npm ci/);
   assert.match(workflow, /Verify Cloudflare credentials/);
@@ -353,6 +360,16 @@ test("main deployment does not repeat the pull-request verification sequence", (
   assert.doesNotMatch(workflow, /run: npm test/);
   assert.doesNotMatch(workflow, /run: npm run lint/);
   assert.match(workflow, /run: npm run build/);
+});
+
+test("no production workflow can be dispatched from a feature branch", () => {
+  const deployingWorkflows = readdirSync(workflowsUrl)
+    .filter((name) => /\.ya?ml$/u.test(name))
+    .map((name) => [name, readFileSync(new URL(name, workflowsUrl), "utf8")])
+    .filter(([, workflow]) => /(?:deploy:worker|wrangler deploy)/u.test(workflow));
+
+  assert.deepEqual(deployingWorkflows.map(([name]) => name), ["deploy-production.yml"]);
+  assert.doesNotMatch(deployingWorkflows[0][1], /workflow_dispatch/u);
 });
 
 test("lint ignores browser artifacts generated earlier in pull-request verification", async () => {

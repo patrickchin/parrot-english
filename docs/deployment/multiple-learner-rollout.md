@@ -53,11 +53,10 @@ The required order is:
 8. Never roll back below the recorded compatibility SHA after 0013 applies.
 
 The checked-in `Deploy to Cloudflare Workers` workflow in
-`.github/workflows/deploy-cloudflare.yml` runs automatically on every main
-push; that path performs the application deployment because `media_only` is
-not enabled. Do not manually dispatch a duplicate workflow after either merge,
-and do not apply migrations manually ahead of their corresponding Worker
-release.
+`.github/workflows/deploy-production.yml` runs automatically and exclusively
+on every main push and has no manual dispatch trigger. Do not add another
+production dispatch path, and do not apply migrations manually ahead of their
+corresponding Worker release.
 
 The Cloudflare Workers Builds Git integration for this Worker is disconnected
 and must remain disconnected. This is the control that leaves the guarded
@@ -188,11 +187,10 @@ git show --check "$PARROT_COMPATIBILITY_SHA"
 ```
 
 Confirm the automatic workflow run is attached to that exact SHA and preserve
-its URL. Do not manually dispatch a second run. After its dependency and
-static-media steps, the workflow builds, runs the compatibility guard, applies
-pending D1 migrations, and deploys the Worker. For this release the guard is a
-no-op because `0013` is absent. Do not substitute a rebuilt or cherry-picked
-commit after capturing the merge SHA.
+its URL. After its dependency and static-media steps, the workflow builds, runs
+the compatibility guard, applies pending D1 migrations, and deploys the Worker.
+For this release the guard is a no-op because `0013` is absent. Do not
+substitute a rebuilt or cherry-picked commit after capturing the merge SHA.
 
 The private-media cutover is intentionally one-way. Before its first production
 deployment, verify that the production and preview buckets exist and the built
@@ -323,10 +321,10 @@ git show --check "$PARROT_ENABLE_SHA"
 git merge-base --is-ancestor "$PARROT_COMPATIBILITY_SHA" "$PARROT_ENABLE_SHA"
 ```
 
-Confirm the automatic workflow run is attached to `PARROT_ENABLE_SHA`. Do not
-manually dispatch a second run. The `Verify multi-learner compatibility
-release` step runs before `Apply D1 migrations`. It prevents an accidental
-one-shot rollout; it does not replace Release 1.
+Confirm the automatic workflow run is attached to `PARROT_ENABLE_SHA`. The
+`Verify multi-learner compatibility release` step runs before `Apply D1
+migrations`. It prevents an accidental one-shot rollout; it does not replace
+Release 1.
 
 `0013_multi_learner_enable.sql` repeats every expansion backfill to catch writes
 from the deploy gap, fails if learner-owned rows or eligible single-profile

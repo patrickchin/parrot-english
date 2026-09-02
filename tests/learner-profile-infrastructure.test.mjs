@@ -421,7 +421,7 @@ describe("learner-profile infrastructure", () => {
 describe("checked-in questionnaire deployment", () => {
   it("serializes deploys without canceling a migration in progress", () => {
     const workflow = readFileSync(
-      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      new URL("../.github/workflows/deploy-production.yml", import.meta.url),
       "utf8",
     );
 

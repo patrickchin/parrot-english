@@ -95,7 +95,7 @@ describe("conversation persistence infrastructure", () => {
 
   it("keeps realtime deployment production-shaped and enabled", () => {
     const workflow = readFileSync(
-      new URL("../.github/workflows/deploy-cloudflare.yml", import.meta.url),
+      new URL("../.github/workflows/deploy-production.yml", import.meta.url),
       "utf8",
     );
     const dockerfile = readFileSync(
