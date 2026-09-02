@@ -165,8 +165,8 @@ function renderNurseryRhymes(language = "en") {
 
 function installSynchronizedRecordingHarness({
   decodeError,
-  melodyStartError,
-  melodyPreparationError,
+  backingStartError,
+  backingPreparationError,
   playbackVoiceDuration = 1,
   recorderStartErrorAt = 0,
   rejectMicrophone = false,
@@ -264,7 +264,7 @@ function installSynchronizedRecordingHarness({
     }
 
     createGain() {
-      if (melodyStartError) throw melodyStartError;
+      if (backingStartError) throw backingStartError;
       return { connect() {}, gain: new Param() };
     }
 
@@ -302,8 +302,8 @@ function installSynchronizedRecordingHarness({
       return decodeError ? Promise.reject(decodeError) : Promise.resolve({ duration: playbackVoiceDuration });
     }
     resume() {
-      return contexts.length === 1 && melodyPreparationError
-        ? Promise.reject(melodyPreparationError)
+      return contexts.length === 1 && backingPreparationError
+        ? Promise.reject(backingPreparationError)
         : Promise.resolve();
     }
   }
@@ -1135,7 +1135,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.deepEqual(privateRequests, []);
   });
 
-  it("requests unprocessed microphone audio for melody-backed lines", async () => {
+  it("requests unprocessed microphone audio before recording", async () => {
     const audio = installSynchronizedRecordingHarness();
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
@@ -1204,12 +1204,14 @@ describe("duck dubbing storyboard presentation", () => {
     await act(async () => audio.finishDownbeat());
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
     assert.equal(audio.recorderStarts, 1);
+    assert.equal(audio.events.includes("melody:start"), false);
     assert.ok(container.querySelector('[aria-label="Line recording controls"] h2 [aria-current="true"]'));
     await waitFor(() => assert.equal(audio.mediaStreamSourceCalls, 1));
     assert.equal(
       container.querySelector('[aria-label="Recording time"]')?.getAttribute("aria-valuemax"),
       "4000",
     );
+    assert.equal(liveStatus.textContent, "Recording…");
 
     await act(async () => audio.finishBacking());
     await waitFor(() => assert.equal(uploads, 1));
@@ -1305,13 +1307,13 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(uploads, 1);
     assert.deepEqual(revoked, []);
     assert.match(container.textContent, /Not saved/);
-    assert.doesNotMatch(container.textContent, /melody could not start/i);
+    assert.doesNotMatch(container.textContent, /Recording failed/i);
     assert.ok(container.querySelector('[aria-label="Save again"]'));
     assert.equal(document.activeElement, container.querySelector('[aria-label="Record again"]'));
     assert.equal(audio.tracks[1].stopCalls, 1);
   });
 
-  it("saves a partial take when the learner stops the melody early", async () => {
+  it("saves a partial take when the learner stops recording early", async () => {
     const audio = installSynchronizedRecordingHarness();
     let uploads = 0;
     globalThis.fetch = async (path, init = {}) => {
@@ -1350,7 +1352,7 @@ describe("duck dubbing storyboard presentation", () => {
     await click(container.querySelector('[aria-label="Record line"]'));
     await finishRecordingCountIn(audio, container);
     await act(async () => audio.failBackingProgress());
-    await waitFor(() => assert.match(container.textContent, /melody could not start/i));
+    await waitFor(() => assert.match(container.textContent, /Recording failed/i));
 
     assert.equal(uploads, 0);
     assert.equal(audio.track.stopped, true);
@@ -1438,8 +1440,8 @@ describe("duck dubbing storyboard presentation", () => {
     ));
   });
 
-  it("cancels the microphone session when prepared melody start fails", async () => {
-    const audio = installSynchronizedRecordingHarness({ melodyStartError: new Error("melody failed") });
+  it("cancels the microphone session when prepared backing start fails", async () => {
+    const audio = installSynchronizedRecordingHarness({ backingStartError: new Error("backing failed") });
     let uploads = 0;
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
@@ -1451,15 +1453,15 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Edit line 1:"]')));
     await click(container.querySelector('[aria-label^="Edit line 1:"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.match(container.textContent, /melody could not start/i));
+    await waitFor(() => assert.match(container.textContent, /Recording failed/i));
 
     assert.equal(uploads, 0);
     assert.equal(audio.contexts[0].closeCalls, 1);
     assert.equal(audio.track.stopped, true);
   });
 
-  it("does not open microphone capture when melody preparation fails", async () => {
-    const audio = installSynchronizedRecordingHarness({ melodyPreparationError: new Error("melody unavailable") });
+  it("does not open microphone capture when backing preparation fails", async () => {
+    const audio = installSynchronizedRecordingHarness({ backingPreparationError: new Error("backing unavailable") });
     let uploads = 0;
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) return Response.json(enabledDubStatus());
@@ -1471,7 +1473,7 @@ describe("duck dubbing storyboard presentation", () => {
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Edit line 1:"]')));
     await click(container.querySelector('[aria-label^="Edit line 1:"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
-    await waitFor(() => assert.match(container.textContent, /melody could not start/i));
+    await waitFor(() => assert.match(container.textContent, /Recording failed/i));
 
     assert.equal(audio.events.includes("recorder:start"), false);
     assert.equal(uploads, 0);
@@ -2010,7 +2012,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     assert.equal(definition.music.linePhrases[2].durationMs, 2_000);
     assert.doesNotMatch(idle, /Melody length:/);
-    assert.match(recording, /Recording with melody/);
+    assert.match(recording, />Recording</);
     assert.match(recording, /0:02 \/ 0:03/);
     assert.match(recording, /aria-valuemax="3000"/);
     assert.match(recording, /aria-valuenow="2500"/);
@@ -2023,7 +2025,7 @@ describe("duck dubbing storyboard presentation", () => {
       presentation: { countInBeat: null, elapsedMs: 2_100, lineId: DUB_LINES[0].id },
     });
     assert.match(html, /aria-label="Stop recording"/);
-    assert.match(html, /role="timer"[\s\S]*?Recording with melody[\s\S]*?0:02 \/ 0:04/);
+    assert.match(html, /role="timer"[\s\S]*?>Recording<\/[\s\S]*?0:02 \/ 0:04/);
     assert.match(html, /<div(?=[^>]*aria-label="Recording time")(?=[^>]*aria-valuemax="4000")(?=[^>]*aria-valuenow="2100")(?=[^>]*role="progressbar")[^>]*>/);
     assert.match(html, /aria-label="Original audio waveform"/);
     assert.match(html, /aria-label="Next line"/);

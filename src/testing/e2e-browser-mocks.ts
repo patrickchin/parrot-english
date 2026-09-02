@@ -28,7 +28,6 @@ const dubMediaMetrics = {
     type: OscillatorType;
   }>,
 };
-let failedDubMelodyStart = false;
 const DEFAULT_SCENARIO = "correct";
 const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
@@ -40,7 +39,6 @@ const E2E_DUB_SCENARIOS = new Set([
   "delete-held",
   "empty",
   "load-held",
-  "melody-start-failed",
   "multiple-source-failed",
   "not-granted",
   "partial",
@@ -1875,7 +1873,6 @@ function initialE2eDubLineIds(scenario: string, lineIds: readonly string[]) {
     scenario === "complete" ||
     scenario === "corrupt-line-5" ||
     scenario === "multiple-source-failed" ||
-    scenario === "melody-start-failed" ||
     scenario === "playback-setup-failed" ||
     scenario === "recorder-start-failed" ||
     scenario === "reset-delete-failed" ||
@@ -3390,14 +3387,6 @@ class MockScheduledAudioNode extends MockAudioNode {
         frequencyHz: this.frequency.value,
         type: this.type,
       });
-      if (
-        this.type === "triangle" &&
-        getE2eDubScenario() === "melody-start-failed" &&
-        !failedDubMelodyStart
-      ) {
-        failedDubMelodyStart = true;
-        throw new DOMException("Mock dub melody start failed.", "InvalidStateError");
-      }
     }
   }
   stop(when = 0) {

@@ -215,7 +215,7 @@ export function DubSceneEditor({
           {recording ? (
             <>
               <p aria-label="Recording duration" className="m-0 flex items-center justify-between gap-2 text-sm font-black text-brand-rose" role="timer">
-                <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-3 rounded-full bg-red-600" />Recording with melody</span>
+                <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="size-3 rounded-full bg-red-600" />Recording</span>
                 <span>{elapsedLabel} / {recordingLimitLabel}</span>
               </p>
               <div

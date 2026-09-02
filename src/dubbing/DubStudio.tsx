@@ -440,7 +440,7 @@ export function DubStudio({
     const nextGeneration = cancelMedia(captureStarted);
     dispatch({ type: "OPERATION_FINISHED" });
     if (captureStarted || state.saveRecovery === null) {
-      dispatch({ type: "SET_ERROR", message: "The melody could not start. Try recording again." });
+      dispatch({ type: "SET_ERROR", message: "Recording failed. Try recording again." });
     }
     focusAfterRender(recordButtonRef, nextGeneration);
   }
@@ -530,7 +530,7 @@ export function DubStudio({
         dispatch({
           type: "SET_ERROR",
           message: !backingPrepared || session
-            ? "The melody could not start. Try recording again."
+            ? "Recording failed. Try recording again."
             : microphoneMessage(error),
         });
       }
@@ -840,7 +840,7 @@ export function DubStudio({
   } else if (state.operation === "counting-in") {
     liveStatus = `Get ready. Recording starts after ${definition.countInBeats} beats.`;
   } else if (state.operation === "recording") {
-    liveStatus = "Recording with melody…";
+    liveStatus = "Recording…";
   } else if (state.operation === "saving") {
     liveStatus = "Saving your take…";
   } else if (state.operation === "guide-playing") {
