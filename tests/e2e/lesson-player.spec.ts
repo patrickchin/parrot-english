@@ -460,9 +460,22 @@ test("decoded artwork does not steal focus from an open account menu", async ({
   await page
     .getByRole("button", { name: /^Profile for .+, learner mode$/ })
     .click();
-  const switchLearner = page.getByRole("menuitem", {
+  const panel = page.getByRole("dialog", { name: "Account menu" });
+  const english = panel.getByRole("button", {
+    exact: true,
+    name: "English",
+  });
+  const chinese = panel.getByRole("button", {
+    exact: true,
+    name: "中文",
+  });
+  const switchLearner = panel.getByRole("menuitem", {
     name: "Switch learner",
   });
+  await expect(english).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(chinese).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(switchLearner).toBeFocused();
 
   releaseArtwork();

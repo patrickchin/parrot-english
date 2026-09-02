@@ -744,7 +744,6 @@ describe("keyboard accessibility lifecycles", () => {
       createElement(
         GuardianLanguageProvider,
         { initialLanguage: "zh-Hans", storage: null },
-        createElement(GuardianLanguageControl),
         createElement(
           AccountHeader,
           accountHeaderProps({
@@ -755,8 +754,18 @@ describe("keyboard accessibility lifecycles", () => {
       ),
     );
 
-    await click(button("Profile for ⁨Mia⁩, learner mode"));
+    const trigger = button("Profile for ⁨Mia⁩, learner mode");
+    await click(trigger);
+    const panel = document.querySelector(
+      '[role="dialog"][aria-label="Account menu"]',
+    );
+    assert.ok(panel);
+    assert.equal(trigger.getAttribute("aria-controls"), panel.id);
     const menu = document.querySelector('[role="menu"]');
+    const language = panel.querySelector(
+      '[role="group"][aria-label="家长指导语言"]',
+    );
+    assert.ok(language);
     assert.equal(menu.getAttribute("aria-label"), "Account menu");
     assert.match(menu.textContent, /Grown-up access/);
     assert.match(menu.textContent, /Switch modes/);
@@ -769,7 +778,11 @@ describe("keyboard accessibility lifecycles", () => {
       "请让家长重试。",
     );
 
-    await click(button("English"));
+    const english = [...language.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent.trim() === "English",
+    );
+    assert.ok(english);
+    await click(english);
     assert.equal(document.querySelector('[role="menu"]'), menu);
     assert.equal(menu.querySelector('[lang="zh-Hans"]'), null);
     assert.equal(
@@ -1663,7 +1676,9 @@ describe("keyboard accessibility lifecycles", () => {
         "Sign out",
       ],
     );
-    await waitFor(() => assert.equal(document.activeElement, items[0]));
+    const languageButton = button("English");
+    await waitFor(() => assert.equal(document.activeElement, languageButton));
+    await act(async () => items[0].focus());
 
     await press(items[0], "ArrowDown");
     assert.equal(document.activeElement, items[1]);
@@ -1709,12 +1724,13 @@ describe("keyboard accessibility lifecycles", () => {
     await click(button("Profile for ⁨Mia⁩, learner mode"));
     const menu = document.querySelector('[role="menu"]');
     assert.ok(menu);
+    const languageButton = [...menu.parentElement.querySelectorAll("button")]
+      .find((candidate) => candidate.textContent.trim() === "English");
+    assert.ok(languageButton);
     await waitFor(() =>
-      assert.equal(
-        document.activeElement,
-        menu.querySelector('[role="menuitem"]'),
-      ),
+      assert.equal(document.activeElement, languageButton),
     );
+    assert.equal(document.querySelector('[role="menu"]'), menu);
 
     const destination = button("Play a lesson");
     await act(async () => destination.focus());

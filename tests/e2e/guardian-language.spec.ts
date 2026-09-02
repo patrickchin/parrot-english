@@ -3,6 +3,18 @@ import { expect, test } from "@playwright/test";
 const languageGroup = (page: import("@playwright/test").Page) =>
   page.getByRole("group", { name: /Guardian guidance language|家长指导语言/ });
 
+async function openAccountLanguageControl(
+  page: import("@playwright/test").Page,
+) {
+  const language = languageGroup(page);
+  await page
+    .getByRole("complementary", { name: /Account|账户/ })
+    .getByRole("button", { expanded: false })
+    .click();
+  await expect(language).toBeVisible();
+  return language;
+}
+
 async function expectUnchangedNavigation(
   page: import("@playwright/test").Page,
   snapshot: { historyLength: number; href: string },
@@ -48,7 +60,7 @@ test("language selection persists locally without changing login navigation", as
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
 });
 
-test("language control is always visible and keeps learner documents English", async ({
+test("language control moves between signed-out chrome and the account menu", async ({
   page,
 }) => {
   await page.addInitScript(() =>
@@ -58,18 +70,25 @@ test("language control is always visible and keeps learner documents English", a
     "/guardian?parrotE2eGuardian=guardian",
     "/guardian/learners/e2e-learner?parrotE2eGuardian=guardian",
     "/lessons/parrot/01-peppas-high-ball/scenes/1",
-    "/login",
   ]) {
     await page.goto(route);
-    await expect(languageGroup(page)).toBeVisible();
+    await expect(languageGroup(page)).toHaveCount(0);
+    await openAccountLanguageControl(page);
   }
 
   await page.goto("/lessons");
-  await expect(languageGroup(page)).toHaveAttribute("lang", "zh-Hans");
+  const accountLanguage = await openAccountLanguageControl(page);
+  await expect(accountLanguage).toHaveAttribute("lang", "zh-Hans");
   await expect(
-    page.getByRole("button", { exact: true, name: "中文" }),
+    accountLanguage.getByRole("button", { exact: true, name: "中文" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
+
+  await page.route("**/api/auth/get-session", (route) =>
+    route.fulfill({ contentType: "application/json", json: null }),
+  );
+  await page.goto("/login");
+  await expect(languageGroup(page)).toBeVisible();
 });
 
 test("language control remains available when the session check fails", async ({
@@ -112,6 +131,11 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
   await page.goto("/guardian?parrotE2eGuardian=guardian");
   await page.getByRole("button", { name: /家长模式/ }).click();
   const guardianMenu = page.getByRole("menu", { name: "账户菜单" });
+  const guardianPanel = page.getByRole("dialog", { name: "账户菜单" });
+  const guardianLanguage = guardianPanel.getByRole("group", {
+    name: "家长指导语言",
+  });
+  await expect(guardianLanguage).toBeVisible();
   await expect(
     guardianMenu.getByRole("menuitem", { name: "家长中心" }),
   ).toBeVisible();
@@ -124,10 +148,25 @@ test("account chrome localizes Guardian mode and keeps learner chrome English", 
   await expect(
     guardianMenu.getByRole("menuitem", { name: "退出登录" }),
   ).toBeVisible();
+  await guardianLanguage
+    .getByRole("button", { exact: true, name: "English" })
+    .click();
+  const englishMenu = page.getByRole("menu", { name: "Account menu" });
+  await expect(englishMenu).toBeVisible();
+  await page
+    .getByRole("dialog", { name: "Account menu" })
+    .getByRole("button", { exact: true, name: "中文" })
+    .click();
+  await expect(page.getByRole("menu", { name: "账户菜单" })).toBeVisible();
 
   await page.goto("/lessons");
   await page.getByRole("button", { name: /learner mode/i }).click();
   const learnerMenu = page.getByRole("menu", { name: "Account menu" });
+  await expect(
+    page
+      .getByRole("dialog", { name: "Account menu" })
+      .getByRole("group", { name: "家长指导语言" }),
+  ).toBeVisible();
   const grownUpAccess = learnerMenu.getByRole("menuitem", {
     name: /Grown-up access.*家长入口/,
   });
@@ -148,7 +187,7 @@ test("Chinese preference keeps representative learner destinations English and l
     localStorage.setItem("parrot:guardian-language", "zh-Hans"),
   );
   await page.goto("/?parrotE2eLesson=held-story");
-  await expect(languageGroup(page)).toBeVisible();
+  await expect(languageGroup(page)).toHaveCount(0);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.getByRole("link", { name: "Play a lesson" }).click();
   await page
@@ -158,12 +197,10 @@ test("Chinese preference keeps representative learner destinations English and l
     historyLength: history.length,
     href: location.href,
   }));
-  await expect(languageGroup(page)).toBeVisible();
   await expect(
     page.getByRole("button", { exact: true, name: "Let's go" }),
   ).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Let's go" }).click();
-  await expect(languageGroup(page)).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   const peppaDialogue = page.getByRole("status", { name: "Peppa is speaking" });
   await expect(peppaDialogue).toContainText("Look! My ball!");
@@ -200,7 +237,6 @@ test("Chinese preference keeps representative learner destinations English and l
   await page.getByRole("button", { name: "Try sound" }).click();
   await expect(soundError).toHaveCount(0);
   await expect(peppaDialogue).toContainText("Look! My ball!");
-  await expect(languageGroup(page)).toBeVisible();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
 
   const destinations = [
@@ -271,6 +307,9 @@ test("browser Chinese preference is inferred without a persistence write", async
       value: ["zh-CN", "en-US"],
     });
   });
+  await page.route("**/api/auth/get-session", (route) =>
+    route.fulfill({ contentType: "application/json", json: null }),
+  );
   await page.goto("/login");
   await expect(
     page.getByRole("button", { exact: true, name: "中文" }),
@@ -290,7 +329,10 @@ test("guardian document language changes immediately while learner document lang
     historyLength: history.length,
     href: location.href,
   }));
-  await page.getByRole("button", { exact: true, name: "中文" }).click();
+  const guardianLanguage = await openAccountLanguageControl(page);
+  await guardianLanguage
+    .getByRole("button", { exact: true, name: "中文" })
+    .click();
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans");
   await expectUnchangedNavigation(page, guardianSnapshot);
 
@@ -299,11 +341,16 @@ test("guardian document language changes immediately while learner document lang
     historyLength: history.length,
     href: location.href,
   }));
-  await page.getByRole("button", { exact: true, name: "English" }).click();
-  await page.getByRole("button", { exact: true, name: "中文" }).click();
+  const learnerLanguage = await openAccountLanguageControl(page);
+  await learnerLanguage
+    .getByRole("button", { exact: true, name: "English" })
+    .click();
+  await learnerLanguage
+    .getByRole("button", { exact: true, name: "中文" })
+    .click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(
-    page.getByRole("button", { exact: true, name: "中文" }),
+    learnerLanguage.getByRole("button", { exact: true, name: "中文" }),
   ).toHaveAttribute("lang", "zh-Hans");
   await expectUnchangedNavigation(page, learnerSnapshot);
 

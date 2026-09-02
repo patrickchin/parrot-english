@@ -128,7 +128,7 @@ for (const viewport of requiredViewports) {
       name: /Profile for ⁨Mia⁩, learner mode/,
     });
     const menu = await openLearnerAccountMenu(page);
-    const panel = menu.locator("..");
+    const panel = page.getByRole("dialog", { name: "Account menu" });
 
     await expectInsideViewport(trigger, viewport);
     await expectInsideViewport(panel, viewport);
@@ -847,6 +847,13 @@ test("direct switching closes learner menu while guardian-menu keys follow rende
     name: "Account & privacy",
   });
   const signOut = menu.getByRole("menuitem", { name: "Sign out" });
+  await expect(
+    page
+      .getByRole("dialog", { name: "Account menu" })
+      .getByRole("button", { exact: true, name: "English" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await expect(dashboard).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(manageLearners).toBeFocused();

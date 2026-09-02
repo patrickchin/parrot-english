@@ -734,7 +734,7 @@ test("learner mode names the active learner in the compact profile trigger", () 
   assert.ok(bar);
   assert.match(
     bar,
-    /<button[^>]*aria-label="Profile for ⁨Mia⁩, learner mode"[^>]*aria-expanded="false"[^>]*aria-haspopup="menu"/,
+    /<button[^>]*aria-label="Profile for ⁨Mia⁩, learner mode"[^>]*aria-controls="[^"]+"[^>]*aria-expanded="false"[^>]*aria-haspopup="dialog"/,
   );
   assert.match(bar, />Mia</);
   assert.match(bar, />Learner</);

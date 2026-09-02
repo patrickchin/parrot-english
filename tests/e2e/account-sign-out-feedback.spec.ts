@@ -132,6 +132,11 @@ for (const viewport of viewports) {
       ),
     );
     await expect(page.getByRole("menu", { name: "Account menu" })).toBeHidden();
+    await expect(
+      page.getByRole("group", {
+        name: /Guardian guidance language|家长指导语言/,
+      }),
+    ).toBeVisible();
 
     const [accountBox, statusBox, headingDuring] = await Promise.all([
       pendingAccount.boundingBox(),
@@ -185,23 +190,19 @@ for (const viewport of viewports) {
       exact: true,
       name: "Sign out again",
     });
-    const language = page.getByRole("group", {
-      name: /Guardian guidance language|家长指导语言/,
-    });
+    await expect(
+      page.getByRole("group", {
+        name: /Guardian guidance language|家长指导语言/,
+      }),
+    ).toHaveCount(0);
     await expect(retry).toBeVisible();
-    const [
-      failureAccountBox,
-      retryBox,
-      headingAfterFailure,
-      backBox,
-      languageBox,
-    ] = await Promise.all([
-      account.boundingBox(),
-      retry.boundingBox(),
-      heading.boundingBox(),
-      page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
-      language.boundingBox(),
-    ]);
+    const [failureAccountBox, retryBox, headingAfterFailure, backBox] =
+      await Promise.all([
+        account.boundingBox(),
+        retry.boundingBox(),
+        heading.boundingBox(),
+        page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
+      ]);
     expect(failureAccountBox).not.toBeNull();
     expect(retryBox).not.toBeNull();
     if (viewport.width < 1360) {
@@ -210,14 +211,12 @@ for (const viewport of viewports) {
       expect(headingAfterFailure).toEqual(headingBefore);
     }
     expect(backBox).not.toBeNull();
-    expect(languageBox).not.toBeNull();
     expect(Math.round(retryBox!.height)).toBeGreaterThanOrEqual(44);
     expect(Math.round(retryBox!.width)).toBeGreaterThanOrEqual(44);
     if (viewport.width < 1360) {
       expect(retryBox!.y).toBeGreaterThanOrEqual(
         failureAccountBox!.y + failureAccountBox!.height,
       );
-      expect(boxesOverlap(retryBox!, languageBox!)).toBe(false);
       expect(boxesOverlap(retryBox!, backBox!)).toBe(false);
       expect(boxesOverlap(retryBox!, failureAccountBox!)).toBe(false);
     } else {
@@ -282,6 +281,8 @@ test("sign-out feedback keeps words and focus without motion in forced colors", 
   });
   await account.focus();
   await account.press("ArrowDown");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await page.keyboard.press("End");
   await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeFocused();
   await page.keyboard.press("Enter");
@@ -439,9 +440,11 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
     exact: true,
     name: "Sign out again",
   });
-  const language = page.getByRole("group", {
-    name: /Guardian guidance language|家长指导语言/,
-  });
+  await expect(
+    page.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    }),
+  ).toHaveCount(0);
   const routeControl = page.getByRole("button", {
     name: "Switch to learner",
   });
@@ -449,14 +452,12 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
     retryBox,
     headingAfter,
     voiceDubbingAfter,
-    languageBox,
     routeBox,
     accountBox,
   ] = await Promise.all([
     retry.boundingBox(),
     heading.boundingBox(),
     voiceDubbing.boundingBox(),
-    language.boundingBox(),
     routeControl.boundingBox(),
     account.boundingBox(),
   ]);
@@ -466,7 +467,6 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   expect(retryBox!.y).toBeGreaterThanOrEqual(
     accountBox!.y + accountBox!.height,
   );
-  expect(boxesOverlap(retryBox!, languageBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, routeBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, accountBox!)).toBe(false);
 
@@ -499,25 +499,24 @@ test("sign-out recovery keeps text-spacing focus clear of the narrow dashboard",
     exact: true,
     name: "Sign out again",
   });
-  const [retryBox, languageBox, routeBox, accountBox, headingBox] =
-    await Promise.all([
-      retry.boundingBox(),
-      page
-        .getByRole("group", { name: /Guardian guidance language|家长指导语言/ })
-        .boundingBox(),
-      page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
-      account.boundingBox(),
-      heading.boundingBox(),
-    ]);
+  await expect(
+    page.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    }),
+  ).toHaveCount(0);
+  const [retryBox, routeBox, accountBox, headingBox] = await Promise.all([
+    retry.boundingBox(),
+    page.getByRole("button", { name: "Switch to learner" }).boundingBox(),
+    account.boundingBox(),
+    heading.boundingBox(),
+  ]);
   expect(retryBox).not.toBeNull();
-  expect(languageBox).not.toBeNull();
   expect(routeBox).not.toBeNull();
   expect(accountBox).not.toBeNull();
   expect(headingBox).not.toBeNull();
   expect(retryBox!.y).toBeGreaterThanOrEqual(
     accountBox!.y + accountBox!.height,
   );
-  expect(boxesOverlap(retryBox!, languageBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, routeBox!)).toBe(false);
   expect(boxesOverlap(retryBox!, accountBox!)).toBe(false);
   expect(

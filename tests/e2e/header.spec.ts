@@ -519,17 +519,12 @@ for (const route of routes) {
 }
 
 for (const viewport of mobileViewports) {
-  test(`guardian language, dashboard, and account controls remain separate on a ${viewport.name}`, async ({
+  test(`guardian language stays inside the account menu on a ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
     await page.goto(guardianPath("/guardian/account"));
 
-    const language = page.getByRole("group", {
-      name: /Guardian guidance language|家长指导语言/,
-    });
-    const english = page.getByRole("button", { exact: true, name: "English" });
-    const chinese = page.getByRole("button", { exact: true, name: "中文" });
     const routeControl = page.getByRole("button", {
       exact: true,
       name: /Switch to learner|切换到学习模式/,
@@ -537,19 +532,37 @@ for (const viewport of mobileViewports) {
     const account = page.getByRole("button", {
       name: /Profile for .+, guardian mode|.+的档案，家长模式/,
     });
+    await expect(
+      page.getByRole("group", {
+        name: /Guardian guidance language|家长指导语言/,
+      }),
+    ).toHaveCount(0);
+    await expectInsideViewport(routeControl, viewport);
+    await expectInsideViewport(account, viewport);
+    await expectNoOverlap(routeControl, account);
+
+    await account.click();
+    const panel = page.getByRole("dialog", {
+      name: /Account menu|账户菜单/,
+    });
+    const language = panel.getByRole("group", {
+      name: /Guardian guidance language|家长指导语言/,
+    });
+    const english = language.getByRole("button", {
+      exact: true,
+      name: "English",
+    });
+    const chinese = language.getByRole("button", {
+      exact: true,
+      name: "中文",
+    });
+    await expect(english).toBeFocused();
 
     for (const option of [english, chinese]) {
       await option.click();
       await expect(option).toBeFocused();
       await expectInsideViewport(language, viewport);
-      await expectInsideViewport(routeControl, viewport);
-      await expectInsideViewport(account, viewport);
-      await expectNoOverlap(language, routeControl);
       await expectNoOverlap(language, account);
-      await expectNoOverlap(routeControl, account);
-      await focusWithKeyboard(page, option);
-      await focusWithKeyboard(page, routeControl);
-      await focusWithKeyboard(page, account);
       await expect
         .poll(() =>
           page.evaluate(
@@ -558,26 +571,44 @@ for (const viewport of mobileViewports) {
         )
         .toBe(true);
     }
+
+    await page.keyboard.press("Shift+Tab");
+    await expect(english).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(chinese).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(account).toBeFocused();
+    await expect(language).toHaveCount(0);
   });
 }
 
-test("wide language and dashboard controls have separate shared header slots", async ({
+test("wide guardian language control stays inside the account menu", async ({
   page,
 }) => {
   const viewport = { height: 900, name: "wide", width: 1360 };
   await page.setViewportSize(viewport);
   await page.goto(guardianPath("/guardian/account"));
 
-  const language = page.getByRole("group", {
-    name: "Guardian guidance language",
-  });
   const routeControl = page.getByRole("button", {
     exact: true,
     name: "Switch to learner",
   });
-  await expectInsideViewport(language, viewport);
+  const account = page.getByRole("button", {
+    name: /Profile for .+, guardian mode/,
+  });
+  await expect(
+    page.getByRole("group", { name: "Guardian guidance language" }),
+  ).toHaveCount(0);
   await expectInsideViewport(routeControl, viewport);
-  await expectNoOverlap(language, routeControl);
+  await expectInsideViewport(account, viewport);
+  await expectNoOverlap(routeControl, account);
+
+  await account.click();
+  const language = page
+    .getByRole("dialog", { name: "Account menu" })
+    .getByRole("group", { name: "Guardian guidance language" });
+  await expectInsideViewport(language, viewport);
+  await expectNoOverlap(language, account);
 });
 
 test("arbitrary guardian identity cannot cover the compact learner switch", async ({
@@ -773,8 +804,7 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
       await name.evaluate((element) => getComputedStyle(element).direction),
     ).toBe(currentCase.direction);
     await account.click();
-    const menu = page.getByRole("menu", { name: "Account menu" });
-    const panel = menu.locator("..");
+    const panel = page.getByRole("dialog", { name: "Account menu" });
     await expectInsideViewport(panel, currentCase.viewport);
     const panelOverflows = await panel.evaluate(
       (element) => element.scrollHeight > element.clientHeight,
@@ -787,6 +817,11 @@ test("Account menu keeps arbitrary identity and every action reachable in short 
     const firstAction = page.getByRole("menuitem", {
       name: "Guardian dashboard",
     });
+    await expect(
+      panel.getByRole("button", { exact: true, name: "English" }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
     await expect(firstAction).toBeFocused();
     await page.keyboard.press("End");
     const signOut = page.getByRole("menuitem", { name: "Sign out" });
@@ -877,7 +912,7 @@ test("a failed sign out keeps Account beside one specific retry", async ({
 
   await account.click();
   const menu = page.getByRole("menu", { name: "Account menu" });
-  const panel = menu.locator("..");
+  const panel = page.getByRole("dialog", { name: "Account menu" });
   await expectInsideViewport(panel, viewport);
   await expect(panel.getByRole("alert")).toHaveCount(0);
   expect(
@@ -931,6 +966,8 @@ test("a failed sign out keeps Account beside one specific retry", async ({
   await expect(panel.getByRole("alert")).toHaveCount(0);
   await expect(retry).toBeVisible();
 
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await page.keyboard.press("End");
   const signOut = page.getByRole("menuitem", { name: "Sign out" });
   await expect(signOut).toBeFocused();
@@ -964,9 +1001,6 @@ for (const viewport of [
       `,
     });
 
-    const language = page.getByRole("group", {
-      name: /Guardian guidance language|家长指导语言/,
-    });
     const back = page.getByRole("button", { name: "Switch to learner" });
     const account = page.getByRole("button", {
       name: "Profile for ⁨Alex Guardian⁩, guardian mode",
@@ -979,7 +1013,11 @@ for (const viewport of [
       name: "Sign out again",
     });
     const retryBox = await expectInsideViewport(retry, viewport);
-    expect(boxesOverlap(retryBox, await visibleBox(language))).toBe(false);
+    await expect(
+      page.getByRole("group", {
+        name: /Guardian guidance language|家长指导语言/,
+      }),
+    ).toHaveCount(0);
     expect(boxesOverlap(retryBox, await visibleBox(back))).toBe(false);
     expect(boxesOverlap(retryBox, await visibleBox(account))).toBe(false);
     const sizing = await retry.evaluate((control) => ({
@@ -1226,6 +1264,13 @@ test("account actions keep routine sign out in the menu and stage deletion on it
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
+    await expect(
+      page
+        .getByRole("dialog", { name: "Account menu" })
+        .getByRole("button", { exact: true, name: "English" }),
+    ).toBeFocused();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
     await expect(items.first()).toBeFocused();
     await page.keyboard.press("End");
     await expect(signOut).toBeFocused();
@@ -1314,9 +1359,11 @@ test("forced colors keeps account exit actions visibly focused", async ({
   });
   await trigger.press("ArrowDown");
   const menu = page.getByRole("menu", { name: "Account menu" });
-  const panel = menu.locator("..");
+  const panel = page.getByRole("dialog", { name: "Account menu" });
   const signOut = menu.getByRole("menuitem", { name: "Sign out" });
 
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
   await page.keyboard.press("End");
   await expect(signOut).toBeFocused();
   const signOutOutline = await renderedFocusOutline(signOut);

@@ -1200,6 +1200,15 @@ test("dark-surface focus does not fade in or linger after moving", async ({
   await page
     .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
+  const panel = page.getByRole("dialog", { name: "Account menu" });
+  await expect(
+    panel.getByRole("button", { exact: true, name: "English" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    panel.getByRole("button", { exact: true, name: "中文" }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(
     page.getByRole("menuitem", { name: "Guardian dashboard" }),
   ).toBeFocused();

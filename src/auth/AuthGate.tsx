@@ -37,6 +37,7 @@ import {
   isGuardianGuidanceSurface,
   useGuardianLanguage,
 } from "../i18n/guardian-language";
+import { GuardianLanguageControl } from "../i18n/GuardianLanguageControl";
 import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   ActionButton,
@@ -866,6 +867,7 @@ export function createAuthGate({
     );
     const ownsSignOutState =
       sessionIdentity !== null && signOutState.owner === sessionIdentity;
+    const isSigningOut = ownsSignOutState && signOutState.isPending;
 
     useEffect(() => {
       if (
@@ -979,56 +981,63 @@ export function createAuthGate({
     }
 
     return (
-      <AccountActionProvider
-        deleteAccount={handleDeleteAccount}
-        isSharedGuest={isSharedGuest}
-        profileAction={profileAction}
-        sessionIdentity={sessionIdentity}
-        setProfileAction={setProfileAction}
-      >
-        <GuardianAccessBoundary
-          key={sessionIdentity ?? "signed-out"}
+      <>
+        {isPending || isRetrying || Boolean(error) || !session || isSigningOut ? (
+          <GuardianLanguageControl />
+        ) : null}
+        <AccountActionProvider
+          deleteAccount={handleDeleteAccount}
+          isSharedGuest={isSharedGuest}
+          profileAction={profileAction}
           sessionIdentity={sessionIdentity}
+          setProfileAction={setProfileAction}
         >
-          <View
-            fields={fields}
-            formError={formError}
-            guardianAudience={guardianAudience}
-            isPending={isPending}
-            isRetrying={isRetrying}
-            isSigningOut={ownsSignOutState && signOutState.isPending}
-            isSubmitting={isSubmitting}
-            isGuestSubmitting={isGuestSubmitting}
-            hasActiveLearner={profileAction?.hasActiveLearner ?? false}
-            learnerName={profileAction?.learnerName ?? null}
-            guardianUnlockDestination={
-              profileAction?.guardianUnlockDestination ??
-              guardianUnlockDestination ??
-              null
-            }
-            mode={mode}
-            onFieldChange={updateField}
-            onGuestSignIn={() => void handleGuestSignIn()}
-            onModeChange={selectMode}
-            onNavigate={navigate}
-            onOpenLearnerSwitcher={profileAction?.onOpenLearnerSwitcher ?? null}
-            onRetry={() => void handleRetry()}
-            onSignOut={handleSignOut}
-            onSubmit={handleSubmit}
-            onTurnstileTokenChange={setTurnstileToken}
-            profileError={profileAction?.error ?? ""}
-            session={session}
-            sessionError={error}
-            signOutError={ownsSignOutState ? signOutState.error : ""}
-            signedOutFallback={signedOutFallback ?? null}
-            turnstileResetKey={turnstileResetKey}
-            turnstileSiteKey={turnstileSiteKey}
-            turnstileToken={turnstileToken}
+          <GuardianAccessBoundary
+            key={sessionIdentity ?? "signed-out"}
+            sessionIdentity={sessionIdentity}
           >
-            {children}
-          </View>
-        </GuardianAccessBoundary>
-      </AccountActionProvider>
+            <View
+              fields={fields}
+              formError={formError}
+              guardianAudience={guardianAudience}
+              isPending={isPending}
+              isRetrying={isRetrying}
+              isSigningOut={isSigningOut}
+              isSubmitting={isSubmitting}
+              isGuestSubmitting={isGuestSubmitting}
+              hasActiveLearner={profileAction?.hasActiveLearner ?? false}
+              learnerName={profileAction?.learnerName ?? null}
+              guardianUnlockDestination={
+                profileAction?.guardianUnlockDestination ??
+                guardianUnlockDestination ??
+                null
+              }
+              mode={mode}
+              onFieldChange={updateField}
+              onGuestSignIn={() => void handleGuestSignIn()}
+              onModeChange={selectMode}
+              onNavigate={navigate}
+              onOpenLearnerSwitcher={
+                profileAction?.onOpenLearnerSwitcher ?? null
+              }
+              onRetry={() => void handleRetry()}
+              onSignOut={handleSignOut}
+              onSubmit={handleSubmit}
+              onTurnstileTokenChange={setTurnstileToken}
+              profileError={profileAction?.error ?? ""}
+              session={session}
+              sessionError={error}
+              signOutError={ownsSignOutState ? signOutState.error : ""}
+              signedOutFallback={signedOutFallback ?? null}
+              turnstileResetKey={turnstileResetKey}
+              turnstileSiteKey={turnstileSiteKey}
+              turnstileToken={turnstileToken}
+            >
+              {children}
+            </View>
+          </GuardianAccessBoundary>
+        </AccountActionProvider>
+      </>
     );
   };
 }
