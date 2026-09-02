@@ -134,6 +134,19 @@ catalog keeps stable background IDs, descriptive alt text, and versioned media
 URLs. See [the R2 background-media runbook](docs/deployment/background-media-r2.md)
 for bucket setup, staging, dry-run publishing, verification, and rollback.
 
+Private learner recordings use opaque account and learner IDs in R2 so email
+addresses and child names do not become object keys. To browse those prefixes
+with human labels, print the read-only D1 directory locally or remotely:
+
+```bash
+npm run inspect:private-media -- --local
+npm run inspect:private-media -- --remote --account
+```
+
+The output contains private account data; keep it out of shared logs and issue
+reports. Each row includes the exact R2 prefix to paste into the Cloudflare
+dashboard.
+
 ## Environment
 
 Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation and profile
@@ -175,64 +188,6 @@ Apply future reviewed migrations with:
 ```bash
 npx wrangler d1 migrations apply parrot-english --remote
 ```
-
-### One-time custom lesson recording purge
-
-The audited purge command considers only the two complete custom-recording R2
-key shapes below. It never deletes built-in `parrot` recordings, private media,
-or other bucket objects. It is a dry run unless `--execute` is provided, and
-the execute path verifies a fresh scan has zero exact matches.
-
-```text
-personalized-story-art/<account>/lesson-recordings/my/...
-personalized-story-art/<account>/learners/<learner>/lesson-recordings/my/...
-```
-
-#### Custom-lesson removal production handoff
-
-The following production-only sequence must be run by an authorized operator
-in this exact order. It is intentionally **not** part of local verification;
-do not run it without production authority and the required Cloudflare
-credentials.
-
-1. Deploy the runtime removal:
-
-   ```bash
-   npm run deploy:worker
-   ```
-
-2. Record the remote D1 row count before applying the migration:
-
-   ```bash
-   npx wrangler d1 execute parrot-english --remote --command "SELECT count(*) AS learner_lesson_rows FROM learner_lesson"
-   ```
-
-3. Apply the reviewed remote D1 migration:
-
-   ```bash
-   npx wrangler d1 migrations apply parrot-english --remote
-   ```
-
-4. Confirm that the retired table is absent after the migration. This query
-   must return no rows:
-
-   ```bash
-   npx wrangler d1 execute parrot-english --remote --command "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'learner_lesson'"
-   ```
-
-5. Review the exact R2 key list from the required dry run:
-
-   ```bash
-   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art
-   ```
-
-6. Only after reviewing that dry run, explicitly execute the sequential
-   deletes, then confirm the utility's fresh scan reports zero exact
-   custom-recording keys:
-
-   ```bash
-   CLOUDFLARE_ACCOUNT_ID=... CLOUDFLARE_API_TOKEN=... npm run purge:custom-lesson-recordings -- --bucket parrot-english-personalized-story-art --execute
-   ```
 
 `BETTER_AUTH_SECRET` must be a production-only random value of at least 32
 characters. `BETTER_AUTH_URL` must exactly match the deployed Worker origin.

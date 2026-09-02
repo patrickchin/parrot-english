@@ -3,7 +3,10 @@ import {
   MAX_R2_WRITE_ATTEMPTS,
   retryDelay,
 } from "./dub-storage.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
+import {
+  learnerRecordingsPrefix,
+  type PrivateMediaOwner,
+} from "./private-media-storage.ts";
 
 type LessonRecordingBucket = Pick<R2Bucket, "head" | "list" | "put">;
 type LessonRecordingWriteBucket = Pick<R2Bucket, "head" | "put">;
@@ -37,23 +40,17 @@ export type LessonRecordingSlot = {
   stepIndex: number;
 };
 
-export type LessonRecordingOwner = Pick<
-  LearnerIdentity,
-  "learnerProfileId" | "legacyStorageOwner" | "userId"
->;
+export type LessonRecordingOwner = PrivateMediaOwner;
 
 export function lessonRecordingOwnerPrefix(identity: LessonRecordingOwner) {
-  const accountPrefix = `personalized-story-art/${encodeURIComponent(identity.userId)}/`;
-  return identity.legacyStorageOwner
-    ? `${accountPrefix}lesson-recordings/`
-    : `${accountPrefix}learners/${encodeURIComponent(identity.learnerProfileId)}/lesson-recordings/`;
+  return `${learnerRecordingsPrefix(identity)}lessons/`;
 }
 
 export function lessonRecordingObjectKey(
   identity: LessonRecordingOwner,
   slot: LessonRecordingSlot,
 ) {
-  return `${lessonRecordingOwnerPrefix(identity)}parrot/${encodeURIComponent(slot.lessonId)}/scene-${slot.sceneIndex}/step-${slot.stepIndex}.audio`;
+  return `${lessonRecordingOwnerPrefix(identity)}${encodeURIComponent(slot.lessonId)}/scene-${slot.sceneIndex}/step-${slot.stepIndex}.audio`;
 }
 
 export function lessonRecordingAudioBody(

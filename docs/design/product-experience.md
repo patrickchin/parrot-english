@@ -233,13 +233,14 @@ Next action or automatic advancement. Consent, `Grown-up options`, reset, and
 deletion controls do not appear in learner mode.
 
 Only a live Guardian session can turn dubbing off and delete the active
-learner's saved clips. The original migrated learner retains the exact legacy
-account-level dub namespace; every added learner gets an independent
-learner-prefixed namespace and grant. A v2 revoke for the legacy owner also
-retires the old v1 prefix with ten non-audio fences. Whole-account deletion
-enumerates every learner namespace and persists its marker and line-slot
-fences, so stale uploads cannot recreate voice data. Recordings are not shared
-publicly or sent to speech recognition.
+learner's saved clips. Every learner has an independent namespace and grant.
+Recordings live only under
+`accounts/{user}/learners/{learner}/recordings/{nursery-rhymes|lessons}/` in
+the private-media bucket; there is no story-art or account-root recording
+fallback. Dubbing playback accepts only the current v2 recording envelope.
+Whole-account deletion closes the account namespace so stale uploads cannot
+recreate voice data. Recordings are not shared publicly or sent to speech
+recognition.
 
 ## Visual and Interaction Rules
 

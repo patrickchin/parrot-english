@@ -9,6 +9,7 @@ import {
   dubStorageClosureKeys,
 } from "./dub-storage.ts";
 import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
+import { learnerPrivateMediaPrefix } from "./private-media-storage.ts";
 import type { AccountIdentity } from "./request-identity.ts";
 import {
   deleteWithRetry,
@@ -42,7 +43,6 @@ export type LearnerDeletionStorageOwner = Pick<
   "userId"
 > & {
   learnerProfileId: string;
-  legacyStorageOwner: boolean;
 };
 
 export class LearnerDeletionError extends Error {
@@ -120,47 +120,6 @@ export async function learnerDeletionUserIdHash(userId: string) {
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0")
   ).join("");
-}
-
-function neutralArtKeyBytes(key: string) {
-  let wellFormed = true;
-  for (let index = 0; index < key.length; index += 1) {
-    const codeUnit = key.charCodeAt(index);
-    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
-      const next = key.charCodeAt(index + 1);
-      if (!(next >= 0xdc00 && next <= 0xdfff)) {
-        wellFormed = false;
-        break;
-      }
-      index += 1;
-    } else if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
-      wellFormed = false;
-      break;
-    }
-  }
-  if (wellFormed) return new TextEncoder().encode(key);
-
-  // TextEncoder never emits ff/fe, so this domain cannot alias valid UTF-8.
-  const encoded = new Uint8Array(2 + key.length * 2);
-  encoded.set([0xff, 0xfe]);
-  for (let index = 0; index < key.length; index += 1) {
-    const codeUnit = key.charCodeAt(index);
-    encoded[2 + index * 2] = codeUnit >>> 8;
-    encoded[3 + index * 2] = codeUnit & 0xff;
-  }
-  return encoded;
-}
-
-export async function artCleanupUncertainGeneration(key: string) {
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    neutralArtKeyBytes(key),
-  );
-  return `art-cleanup-uncertain-v1:${
-    Array.from(new Uint8Array(digest), (byte) =>
-      byte.toString(16).padStart(2, "0")
-    ).join("")
-  }`;
 }
 
 async function findTombstone(database: Database, profileId: string) {
@@ -297,52 +256,6 @@ async function markDeletionPending(
   throw new Error("Learner deletion tombstone could not be persisted.");
 }
 
-async function artKeys(
-  database: Database,
-  owner: LearnerDeletionStorageOwner,
-) {
-  const ready = await database.$client.prepare(
-    `SELECT r2_object_key AS key
-     FROM personalized_story_art
-     WHERE auth_user_id = ?
-       AND (
-         learner_profile_id = ?
-         OR (? = 1 AND learner_profile_id IS NULL)
-       )`,
-  ).bind(
-    owner.userId,
-    owner.learnerProfileId,
-    owner.legacyStorageOwner ? 1 : 0,
-  ).all<{ key: string }>();
-  const learnerLease = await database.$client.prepare(
-    `SELECT candidate_r2_object_key AS candidateKey,
-            previous_r2_object_key AS previousKey
-     FROM learner_story_art_generation_lease
-     WHERE auth_user_id = ? AND learner_profile_id = ?`,
-  ).bind(owner.userId, owner.learnerProfileId).all<{
-    candidateKey: string | null;
-    previousKey: string | null;
-  }>();
-  const legacyLease = owner.legacyStorageOwner
-    ? await database.$client.prepare(
-      `SELECT candidate_r2_object_key AS candidateKey,
-              previous_r2_object_key AS previousKey
-       FROM personalized_story_art_generation_lease
-       WHERE auth_user_id = ?`,
-    ).bind(owner.userId).all<{
-      candidateKey: string | null;
-      previousKey: string | null;
-    }>()
-    : { results: [] };
-  return unique([
-    ...ready.results.map(({ key }) => key),
-    ...[...learnerLease.results, ...legacyLease.results].flatMap(
-      ({ candidateKey, previousKey }) =>
-        [candidateKey, previousKey].filter((key): key is string => Boolean(key)),
-    ),
-  ]);
-}
-
 async function listPrefix(
   bucket: StorageDeletionBucket,
   prefix: string,
@@ -372,29 +285,19 @@ async function listPrefix(
 function deletionOwner(identity: AccountIdentity, tombstone: DeletionTombstone) {
   return {
     learnerProfileId: tombstone.learnerProfileId,
-    legacyStorageOwner: tombstone.legacyStorageOwner,
     userId: identity.userId,
   };
 }
 
 function closureAuthority(owner: LearnerDeletionStorageOwner) {
-  const accountPrefix =
-    `personalized-story-art/${encodeURIComponent(owner.userId)}/`;
-  const learnerPrefix =
-    `${accountPrefix}learners/${encodeURIComponent(owner.learnerProfileId)}/`;
+  const learnerPrefix = learnerPrivateMediaPrefix(owner);
   const recordingPrefix = lessonRecordingOwnerPrefix(owner);
-  const allowedPrefixes = new Set([learnerPrefix]);
-  if (owner.legacyStorageOwner) {
-    allowedPrefixes.add(`${accountPrefix}learner-dubs/`);
-    allowedPrefixes.add(recordingPrefix);
-  }
   const dubClosure = DUB_DEFINITIONS.map(({ id }) =>
     dubStorageClosureKeys(createDubStorageKeys(owner, id))
   );
   return {
-    accountPrefix,
     allowedMarkers: new Set(dubClosure.flatMap(({ markerKeys }) => markerKeys)),
-    allowedPrefixes,
+    allowedPrefixes: new Set([learnerPrefix]),
     allowedSlots: new Set(dubClosure.flatMap(({ slotKeys }) => slotKeys)),
     learnerPrefix,
     recordingPrefix,
@@ -408,91 +311,29 @@ export function preflightLearnerDeletionStorageClosure(
   const authority = closureAuthority(owner);
   if (
     closure.prefixes.some((prefix) => !authority.allowedPrefixes.has(prefix)) ||
-    closure.markerKeys.some((key) => !authority.allowedMarkers.has(key))
-  ) {
-    throw new Error("Learner deletion storage closure is invalid.");
-  }
-  const siblingNamespace = `${authority.accountPrefix}learners/`;
-  if (
+    closure.markerKeys.some((key) => !authority.allowedMarkers.has(key)) ||
     closure.slotKeys.some((key) =>
-      key.startsWith(siblingNamespace) &&
-      !key.startsWith(authority.learnerPrefix)
+      !authority.allowedSlots.has(key) &&
+      !key.startsWith(authority.recordingPrefix)
     )
   ) {
-    throw new Error("Learner deletion storage closure is invalid.");
-  }
-}
-
-export async function validateLearnerDeletionStorageClosure(
-  bucket: Pick<R2Bucket, "head">,
-  database: Database,
-  owner: LearnerDeletionStorageOwner,
-  closure: LearnerDeletionStorageClosure,
-  deletionGeneration: string,
-) {
-  preflightLearnerDeletionStorageClosure(owner, closure);
-  const {
-    allowedSlots,
-    learnerPrefix,
-    recordingPrefix,
-  } = closureAuthority(owner);
-  const ownedArtKeys = new Set(await artKeys(database, owner));
-  for (const key of closure.slotKeys) {
-    if (
-      allowedSlots.has(key) ||
-      key.startsWith(recordingPrefix) ||
-      key.startsWith(learnerPrefix) ||
-      ownedArtKeys.has(key)
-    ) {
-      continue;
-    }
-    const object = await bucket.head(key);
-    const state = object?.customMetadata?.state;
-    const generation = object?.customMetadata?.generation;
-    if (
-      state === "account-deleting" ||
-      (state === "learner-deleting" &&
-        generation === deletionGeneration) ||
-      (state === "art-cleanup-uncertain" &&
-        generation === await artCleanupUncertainGeneration(key))
-    ) {
-      continue;
-    }
     throw new Error("Learner deletion storage closure is invalid.");
   }
 }
 
 async function snapshotClosure(
   bucket: StorageDeletionBucket,
-  database: Database,
   identity: AccountIdentity,
   tombstone: DeletionTombstone,
 ) {
   const owner = deletionOwner(identity, tombstone);
-  const accountPrefix = `personalized-story-art/${encodeURIComponent(identity.userId)}/`;
-  const learnerPrefix =
-    `${accountPrefix}learners/${encodeURIComponent(tombstone.learnerProfileId)}/`;
-  const ownedArtKeys = await artKeys(database, owner);
-  const siblingNamespace = `${accountPrefix}learners/`;
-  if (
-    ownedArtKeys.some((key) =>
-      key.startsWith(siblingNamespace) && !key.startsWith(learnerPrefix)
-    )
-  ) {
-    throw new Error("Learner deletion storage closure is invalid.");
-  }
+  const learnerPrefix = learnerPrivateMediaPrefix(owner);
   const prefixes = [learnerPrefix];
-  if (tombstone.legacyStorageOwner) {
-    prefixes.push(`${accountPrefix}learner-dubs/`);
-    prefixes.push(lessonRecordingOwnerPrefix(owner));
-  }
-  const listed = (
-    await Promise.all(prefixes.map((prefix) => listPrefix(bucket, prefix)))
-  ).flat();
+  const listed = await listPrefix(bucket, learnerPrefix);
   const storages = DUB_DEFINITIONS.map(({ id }) =>
     createDubStorageKeys(owner, id)
   );
-  const dubClosure = storages.map(dubStorageClosureKeys);
+  const dubClosure = storages.map((storage) => dubStorageClosureKeys(storage));
   const recordingPrefixes = [lessonRecordingOwnerPrefix(owner)];
   const recordingKeys = listed
     .map(({ key }) => key)
@@ -503,14 +344,12 @@ async function snapshotClosure(
     slotKeys: unique([
       ...dubClosure.flatMap(({ slotKeys }) => slotKeys),
       ...recordingKeys,
-      ...ownedArtKeys,
     ]),
     version: 1,
   } satisfies LearnerDeletionStorageClosure;
 }
 
 async function persistClosure(
-  bucket: Pick<R2Bucket, "head">,
   database: Database,
   identity: AccountIdentity,
   tombstone: DeletionTombstone,
@@ -524,12 +363,9 @@ async function persistClosure(
     const persisted = parseLearnerDeletionStorageClosure(
       current.storageKeysJson,
     );
-    await validateLearnerDeletionStorageClosure(
-      bucket,
-      database,
+    preflightLearnerDeletionStorageClosure(
       deletionOwner(identity, current),
       persisted,
-      learnerDeletionGeneration(current),
     );
     const merged = mergeClosure(persisted, snapshot);
     const serialized = JSON.stringify(merged);
@@ -602,66 +438,19 @@ async function deleteDatabaseClosure(
   identity: AccountIdentity,
   tombstone: DeletionTombstone,
 ) {
-  const legacyGuard = `EXISTS (
-    SELECT 1 FROM learner_profile_deletion_tombstone
-    WHERE learner_profile_id = ? AND user_id_hash = ?
-      AND legacy_storage_owner = 1
-  )`;
-  const statements = tombstone.legacyStorageOwner
-    ? [
-      database.$client.prepare(
-        `DELETE FROM guardian_dub_consent
-         WHERE auth_user_id = ? AND ${legacyGuard}`,
-      ).bind(
-        identity.userId,
-        tombstone.learnerProfileId,
-        tombstone.userIdHash,
-      ),
-      database.$client.prepare(
-        `DELETE FROM onboarding_session_bypass
-         WHERE auth_user_id = ? AND ${legacyGuard}`,
-      ).bind(
-        identity.userId,
-        tombstone.learnerProfileId,
-        tombstone.userIdHash,
-      ),
-      database.$client.prepare(
-        `DELETE FROM personalized_story_art_generation_lease
-         WHERE auth_user_id = ? AND ${legacyGuard}`,
-      ).bind(
-        identity.userId,
-        tombstone.learnerProfileId,
-        tombstone.userIdHash,
-      ),
-      ...["conversation_session", "personalized_story_art"].map(
-        (table) => database.$client.prepare(
-          `DELETE FROM ${table}
-           WHERE auth_user_id = ? AND learner_profile_id IS NULL
-             AND ${legacyGuard}`,
-        ).bind(
-          identity.userId,
-          tombstone.learnerProfileId,
-          tombstone.userIdHash,
-        ),
-      ),
-    ]
-    : [];
-  await database.$client.batch([
-    ...statements,
-    database.$client.prepare(
-      `DELETE FROM learner_profile
-       WHERE id = ? AND auth_user_id = ?
-         AND EXISTS (
-           SELECT 1 FROM learner_profile_deletion_tombstone
-           WHERE learner_profile_id = ? AND user_id_hash = ?
-         )`,
-    ).bind(
-      tombstone.learnerProfileId,
-      identity.userId,
-      tombstone.learnerProfileId,
-      tombstone.userIdHash,
-    ),
-  ]);
+  await database.$client.prepare(
+    `DELETE FROM learner_profile
+     WHERE id = ? AND auth_user_id = ?
+       AND EXISTS (
+         SELECT 1 FROM learner_profile_deletion_tombstone
+         WHERE learner_profile_id = ? AND user_id_hash = ?
+       )`,
+  ).bind(
+    tombstone.learnerProfileId,
+    identity.userId,
+    tombstone.learnerProfileId,
+    tombstone.userIdHash,
+  ).run();
 }
 
 export async function prepareLearnerDeletion({
@@ -677,11 +466,10 @@ export async function prepareLearnerDeletion({
     parseLearnerDeletionStorageClosure(tombstone.storageKeysJson),
   );
   const closure = await persistClosure(
-    bucket,
     database,
     identity,
     tombstone,
-    await snapshotClosure(bucket, database, identity, tombstone),
+    await snapshotClosure(bucket, identity, tombstone),
   );
   await cleanStorage(
     bucket,

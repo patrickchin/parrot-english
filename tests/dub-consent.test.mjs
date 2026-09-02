@@ -78,10 +78,19 @@ test("revoking blocks grant and exact-generation checks until cleanup finishes",
 test("replaces a stale consent version with one fresh current generation", async () => {
   const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
   state.sqlite.prepare(
-    `INSERT INTO guardian_dub_consent
-      (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run("user-1", "guardian-voice-r2-v1", "old-grant", "granted", timestamp, timestamp);
+    `INSERT INTO learner_dub_consent
+      (learner_profile_id, auth_user_id, consent_version, grant_generation,
+       state, granted_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    "learner-a",
+    "user-1",
+    "guardian-voice-r2-v1",
+    "old-grant",
+    "granted",
+    timestamp,
+    timestamp,
+  );
 
   assert.equal(await repository.requireCurrentGrant(legacyIdentity), null);
   const granted = await repository.grant(legacyIdentity);
@@ -105,7 +114,7 @@ test("finishing a different revocation generation preserves the active cleanup",
   assert.deepEqual(await repository.status(legacyIdentity), revoking);
 });
 
-test("legacy and sibling learners use separate consent authorities", async () => {
+test("every learner uses an independent learner-scoped consent authority", async () => {
   const legacyGrant = await repository.grant(legacyIdentity);
 
   assert.deepEqual(await repository.status(siblingIdentity), {
@@ -113,12 +122,8 @@ test("legacy and sibling learners use separate consent authorities", async () =>
   });
   assert.equal(await repository.requireCurrentGrant(siblingIdentity), null);
   assert.equal(
-    state.sqlite.prepare("SELECT count(*) AS count FROM guardian_dub_consent").get().count,
-    1,
-  );
-  assert.equal(
     state.sqlite.prepare("SELECT count(*) AS count FROM learner_dub_consent").get().count,
-    0,
+    1,
   );
 
   const siblingGrant = await repository.grant(siblingIdentity);
@@ -142,11 +147,7 @@ test("legacy and sibling learners use separate consent authorities", async () =>
   });
   assert.deepEqual(await repository.status(legacyIdentity), legacyGrant);
   assert.equal(
-    state.sqlite.prepare("SELECT count(*) AS count FROM guardian_dub_consent").get().count,
-    1,
-  );
-  assert.equal(
     state.sqlite.prepare("SELECT count(*) AS count FROM learner_dub_consent").get().count,
-    0,
+    1,
   );
 });

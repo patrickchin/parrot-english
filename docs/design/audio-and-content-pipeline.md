@@ -17,19 +17,12 @@ they are not runtime catalog fields. Artwork production prompts stay with their
 artwork as production provenance and fallback descriptions, but they are never
 rendered as extra child-facing reading text.
 
-The Five Little Ducks dubbing activity is a separate media path built around
-the authentic traditional six-stanza rhyme. Its scene is an original inline
-SVG and its quiet pentatonic music bed is synthesized in the browser. Saved
-ElevenLabs narrator MP3s provide the line examples; there is no device-speech
-fallback for those guides. Final playback uses one native Web Audio clock to
-schedule the 24 private voice clips, procedural music, and original SVG scene
-beats across the 98-second timeline. Authored cues are four seconds apart and
-each recording has a six-second maximum. The same player can fetch one four-line
-verse, rebase its cues to a short local clock, and play it as immediate feedback
-without downloading the other 20 recordings. The scoped clock extends through
-the decoded fourth take so the preview never cuts off a valid six-second
-recording, while the scoped visual clock holds on that fourth cue until audio
-ends. The path does not use a third-party player or a mixed downloadable video.
+The nursery-rhyme dubbing activity is a separate media path generated from the
+checked-in rhyme manifests and scores. Saved ElevenLabs narrator MP3s provide
+the line examples; there is no device-speech fallback for those guides. Final
+and scene playback use one native Web Audio clock to schedule private voice
+clips, music, and original scene beats. The path does not use a third-party
+player or a mixed downloadable video.
 
 ## Sources of Truth
 
@@ -48,12 +41,20 @@ ends. The path does not use a third-party player or a mixed downloadable video.
 - Published story covers and pages: immutable URLs in the checked-in story data
 - Story language and prompt research:
   `docs/design/young-learner-storytelling.md`
-- Five Little Ducks authored script and timing: `src/dubbing/dub-script.ts`
-- Five Little Ducks saved narrator guides: `lib/static-audio.js` and
-  `public/assets/audio/five-little-ducks-v2-guide-line-*.mp3`
-- Private replaceable voice slots: authenticated
-  `/api/dubs/five-little-ducks-v2/*` backed by the existing private R2 account
-  purge prefix and deletion tombstone, with no dub-specific D1 metadata
+- Nursery-rhyme manifests, scores, and guides:
+  `public/assets/nursery-rhymes/*`
+- Generated runtime catalog: `src/dubbing/generated-rhyme-catalog.ts`
+- Private replaceable dubbing slots: authenticated `/api/dubs/:dubId/*`, backed
+  by `PRIVATE_MEDIA_BUCKET` under
+  `accounts/{user}/learners/{learner}/recordings/nursery-rhymes/{dubId}/`
+- Private lesson join-in slots: authenticated `/api/lesson-recordings/*`, backed
+  by the same bucket under
+  `accounts/{user}/learners/{learner}/recordings/lessons/{lessonId}/`
+
+`PRIVATE_MEDIA_BUCKET` maps to `parrot-english-private-media` in production and
+`parrot-english-private-media-preview` in preview. These buckets contain
+private learner recordings only. Story artwork and source assets belong to
+separate pipelines; no recording path is rooted under personalized story art.
 
 Do not edit `dist` directly.
 
@@ -98,14 +99,18 @@ and lets the learner replay the take before advancing. In parallel, it uploads
 the Blob directly to its authenticated fixed line slot. The local preview is
 ephemeral; R2 remains the durable source of truth.
 
-The browser can replay or replace each owner-only take, reset all 24 v2 slots,
-and assemble the complete performance with native Web Audio. A normal v2 reset
-also purges every recording under only that owner's legacy
-`five-little-ducks-v1/` prefix. It retains one terminal marker plus nine tiny
-non-audio slot fences so an in-flight old-v1 upload cannot recreate a take, and
-deletes every other legacy object. Account deletion removes those retirement
-fences along with all saved clips. Only the reusable narrator guides are static
-assets.
+Lesson join-in uploads use only the current
+`parrot-lesson-recording-audio-v1` envelope, with a request-unique nonce and
+matching current consent-generation metadata. The Worker does not address an
+older lesson-recording namespace.
+
+The browser can replay or replace each owner-only take, reset every
+catalog-defined slot, and assemble the complete performance with native Web
+Audio. New dubbing uploads use only the `parrot-dub-audio-v2` envelope with
+matching R2 metadata. Reads do not fall back to raw or earlier-format objects;
+objects that fail the v2 validation are treated as unsaved. Learner deletion
+cleans only that learner's prefix, while account deletion cleans the complete
+account prefix. Only the reusable narrator guides are static assets.
 
 ## ElevenLabs Generation
 

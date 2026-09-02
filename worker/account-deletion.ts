@@ -1,26 +1,21 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { DUB_DEFINITIONS } from "../src/dubbing/rhyme-catalog.ts";
 import {
   accountDeletionTombstone,
   learnerProfile,
   learnerProfileDeletionTombstone,
-  learnerStoryArtGenerationLease,
-  personalizedStoryArt,
-  personalizedStoryArtGenerationLease,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import {
   createDubStorageKeys,
   dubStorageClosureKeys,
-  LEGACY_DUB_LINE_IDS,
 } from "./dub-storage.ts";
 import { lessonRecordingOwnerPrefix } from "./lesson-recording-storage.ts";
 import {
-  learnerDeletionGeneration,
   parseLearnerDeletionStorageClosure,
   preflightLearnerDeletionStorageClosure,
-  validateLearnerDeletionStorageClosure,
 } from "./learner-deletion.ts";
+import { accountPrivateMediaPrefix } from "./private-media-storage.ts";
 import type { LearnerIdentity } from "./request-identity.ts";
 import {
   deleteWithRetry,
@@ -32,7 +27,7 @@ type Clock = () => Date;
 type Wait = (delay: number) => Promise<void>;
 type LearnerStorageIdentity = Pick<
   LearnerIdentity,
-  "userId" | "learnerProfileId" | "legacyStorageOwner"
+  "userId" | "learnerProfileId"
 >;
 type StoredLearnerStorageIdentity = Omit<LearnerStorageIdentity, "userId">;
 type UnfinishedLearnerDeletion = {
@@ -51,10 +46,6 @@ type AccountDeletionInput = {
 
 const MAX_TOMBSTONE_CONFLICTS = 16;
 
-function r2PrefixForUser(userId: string) {
-  return `personalized-story-art/${encodeURIComponent(userId)}/`;
-}
-
 export async function listLearnerStorageIdentities(
   database: Database,
   userId: string,
@@ -62,7 +53,6 @@ export async function listLearnerStorageIdentities(
   return database
     .select({
       learnerProfileId: learnerProfile.id,
-      legacyStorageOwner: learnerProfile.legacyStorageOwner,
       userId: learnerProfile.authUserId,
     })
     .from(learnerProfile)
@@ -70,7 +60,6 @@ export async function listLearnerStorageIdentities(
 }
 
 async function listUnfinishedLearnerDeletions(
-  bucket: Pick<R2Bucket, "head">,
   database: Database,
   userIdHash: string,
   userId: string,
@@ -78,9 +67,6 @@ async function listUnfinishedLearnerDeletions(
   const tombstones = await database
     .select({
       learnerProfileId: learnerProfileDeletionTombstone.learnerProfileId,
-      legacyStorageOwner: learnerProfileDeletionTombstone.legacyStorageOwner,
-      generation: learnerProfileDeletionTombstone.generation,
-      requestedAt: learnerProfileDeletionTombstone.requestedAt,
       storageKeysJson: learnerProfileDeletionTombstone.storageKeysJson,
     })
     .from(learnerProfileDeletionTombstone)
@@ -91,25 +77,15 @@ async function listUnfinishedLearnerDeletions(
     );
     const identity = {
       learnerProfileId: tombstone.learnerProfileId,
-      legacyStorageOwner: tombstone.legacyStorageOwner,
       userId,
     };
     preflightLearnerDeletionStorageClosure(identity, closure);
     return { closure, identity, tombstone };
   });
-  return Promise.all(unfinished.map(async ({ closure, identity, tombstone }) => {
-    await validateLearnerDeletionStorageClosure(
-      bucket,
-      database,
-      identity,
-      closure,
-      learnerDeletionGeneration(tombstone),
-    );
-    return {
-      identity,
-      markerKeys: closure.markerKeys,
-      slotKeys: closure.slotKeys,
-    };
+  return unfinished.map(({ closure, identity }) => ({
+    identity,
+    markerKeys: closure.markerKeys,
+    slotKeys: closure.slotKeys,
   }));
 }
 
@@ -130,38 +106,15 @@ function parseLearnerStorageClosure(serialized: string) {
       typeof (identity as Record<string, unknown>).learnerProfileId !==
         "string" ||
       (identity as Record<string, unknown>).learnerProfileId === "" ||
-      typeof (identity as Record<string, unknown>).legacyStorageOwner !==
-        "boolean"
+      Object.keys(identity as Record<string, unknown>).length !== 1
     ) {
       throw new Error("Account deletion learner storage closure is invalid.");
     }
     return {
       learnerProfileId: (identity as Record<string, unknown>)
         .learnerProfileId as string,
-      legacyStorageOwner: (identity as Record<string, unknown>)
-        .legacyStorageOwner as boolean,
     };
   });
-}
-
-function parsePersonalizedArtCandidateClosure(serialized: string) {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(serialized);
-  } catch {
-    throw new Error(
-      "Account deletion personalized-art candidate closure is invalid.",
-    );
-  }
-  if (
-    !Array.isArray(parsed) ||
-    parsed.some((key) => typeof key !== "string" || key === "")
-  ) {
-    throw new Error(
-      "Account deletion personalized-art candidate closure is invalid.",
-    );
-  }
-  return parsed as string[];
 }
 
 function mergeLearnerStorageClosure(
@@ -171,10 +124,7 @@ function mergeLearnerStorageClosure(
 ) {
   const merged = new Map<string, StoredLearnerStorageIdentity>();
   for (const identity of stored) {
-    merged.set(
-      `${identity.legacyStorageOwner ? 1 : 0}:${identity.learnerProfileId}`,
-      identity,
-    );
+    merged.set(identity.learnerProfileId, identity);
   }
   for (const identity of identities) {
     if (identity.userId !== userId || identity.learnerProfileId === "") {
@@ -182,17 +132,13 @@ function mergeLearnerStorageClosure(
     }
     const storedIdentity = {
       learnerProfileId: identity.learnerProfileId,
-      legacyStorageOwner: identity.legacyStorageOwner,
     };
-    merged.set(
-      `${identity.legacyStorageOwner ? 1 : 0}:${identity.learnerProfileId}`,
-      storedIdentity,
-    );
+    merged.set(identity.learnerProfileId, storedIdentity);
   }
   return [...merged.values()].sort((left, right) => {
     if (left.learnerProfileId < right.learnerProfileId) return -1;
     if (left.learnerProfileId > right.learnerProfileId) return 1;
-    return Number(right.legacyStorageOwner) - Number(left.legacyStorageOwner);
+    return 0;
   });
 }
 
@@ -246,116 +192,6 @@ async function persistLearnerStorageClosure(
   );
 }
 
-async function listPersonalizedArtCandidateKeys(
-  database: Database,
-  userId: string,
-) {
-  const legacy = await database
-    .select({
-      key: personalizedStoryArtGenerationLease.candidateR2ObjectKey,
-    })
-    .from(personalizedStoryArtGenerationLease)
-    .where(eq(personalizedStoryArtGenerationLease.authUserId, userId));
-  const learner = await database
-    .select({ key: learnerStoryArtGenerationLease.candidateR2ObjectKey })
-    .from(learnerStoryArtGenerationLease)
-    .where(eq(learnerStoryArtGenerationLease.authUserId, userId));
-  return [...legacy, ...learner].flatMap(({ key }) => (key ? [key] : []));
-}
-
-async function listExternalPersonalizedArtKeys(
-  database: Database,
-  userId: string,
-  r2Prefix: string,
-) {
-  const ready = await database
-    .select({ key: personalizedStoryArt.r2ObjectKey })
-    .from(personalizedStoryArt)
-    .where(eq(personalizedStoryArt.authUserId, userId));
-  const legacy = await database
-    .select({
-      candidateKey: personalizedStoryArtGenerationLease.candidateR2ObjectKey,
-      previousKey: personalizedStoryArtGenerationLease.previousR2ObjectKey,
-    })
-    .from(personalizedStoryArtGenerationLease)
-    .where(eq(personalizedStoryArtGenerationLease.authUserId, userId));
-  const learner = await database
-    .select({
-      candidateKey: learnerStoryArtGenerationLease.candidateR2ObjectKey,
-      previousKey: learnerStoryArtGenerationLease.previousR2ObjectKey,
-    })
-    .from(learnerStoryArtGenerationLease)
-    .where(eq(learnerStoryArtGenerationLease.authUserId, userId));
-  return [
-    ...new Set([
-      ...ready.map(({ key }) => key),
-      ...[...legacy, ...learner].flatMap(({ candidateKey, previousKey }) =>
-        [candidateKey, previousKey].filter(
-          (key): key is string => Boolean(key),
-        )
-      ),
-    ].filter((key) => !key.startsWith(r2Prefix))),
-  ].sort();
-}
-
-async function persistPersonalizedArtCandidateClosure(
-  database: Database,
-  userIdHash: string,
-  r2Prefix: string,
-  keys: string[],
-) {
-  for (let conflict = 0; conflict < MAX_TOMBSTONE_CONFLICTS; conflict += 1) {
-    const [tombstone] = await database
-      .select({
-        personalizedArtCandidateKeysJson:
-          accountDeletionTombstone.personalizedArtCandidateKeysJson,
-      })
-      .from(accountDeletionTombstone)
-      .where(eq(accountDeletionTombstone.userIdHash, userIdHash))
-      .limit(1);
-    if (!tombstone) {
-      throw new Error("Account deletion tombstone could not be persisted.");
-    }
-    const merged = [
-      ...new Set([
-        ...parsePersonalizedArtCandidateClosure(
-          tombstone.personalizedArtCandidateKeysJson,
-        ),
-        ...keys,
-      ]),
-    ].sort();
-    if (
-      merged.some((key) => !key.startsWith(r2Prefix) || key === r2Prefix)
-    ) {
-      throw new Error(
-        "Account deletion personalized-art candidate closure is invalid.",
-      );
-    }
-    const serialized = JSON.stringify(merged);
-    if (serialized === tombstone.personalizedArtCandidateKeysJson) {
-      return merged;
-    }
-
-    const updated = await database
-      .update(accountDeletionTombstone)
-      .set({ personalizedArtCandidateKeysJson: serialized })
-      .where(
-        and(
-          eq(accountDeletionTombstone.userIdHash, userIdHash),
-          eq(
-            accountDeletionTombstone.personalizedArtCandidateKeysJson,
-            tombstone.personalizedArtCandidateKeysJson,
-          ),
-        ),
-      )
-      .returning({ userIdHash: accountDeletionTombstone.userIdHash });
-    if (updated.length === 1) return merged;
-  }
-  throw new Error(
-    "Account deletion personalized-art candidate closure contention exceeded.",
-  );
-}
-
 export async function accountDeletionTombstoneKey(userId: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -386,26 +222,17 @@ export async function markAccountDeletionPending(
 ) {
   const requestedAt = now();
   const tombstone = {
-    r2Prefix: r2PrefixForUser(userId),
+    r2Prefix: accountPrivateMediaPrefix(userId),
     requestedAt,
     userIdHash: await accountDeletionTombstoneKey(userId),
   };
 
-  await database.batch([
-    database
-      .insert(accountDeletionTombstone)
-      .values(tombstone)
-      .onConflictDoNothing({
-        target: accountDeletionTombstone.userIdHash,
-      }),
-    database
-      .update(personalizedStoryArt)
-      .set({
-        status: "deleting",
-        updatedAt: sql`${personalizedStoryArt.updatedAt}`,
-      })
-      .where(eq(personalizedStoryArt.authUserId, userId)),
-  ] as const);
+  await database
+    .insert(accountDeletionTombstone)
+    .values(tombstone)
+    .onConflictDoNothing({
+      target: accountDeletionTombstone.userIdHash,
+    });
 
   const [storedTombstone] = await database
     .select()
@@ -436,7 +263,6 @@ export async function prepareAccountDeletion({
   const tombstone = await markAccountDeletionPending(database, userId, now);
   const unfinishedLearnerDeletions =
     await listUnfinishedLearnerDeletions(
-      bucket,
       database,
       tombstone.userIdHash,
       userId,
@@ -451,35 +277,7 @@ export async function prepareAccountDeletion({
       ...unfinishedLearnerDeletions.map(({ identity }) => identity),
     ],
   );
-  const livePersonalizedArtCandidateKeys =
-    await listPersonalizedArtCandidateKeys(database, userId);
-  const personalizedArtCandidateKeys =
-    await persistPersonalizedArtCandidateClosure(
-      database,
-      tombstone.userIdHash,
-      tombstone.r2Prefix,
-      livePersonalizedArtCandidateKeys.filter(
-        (key) => key.startsWith(tombstone.r2Prefix) && key !== tombstone.r2Prefix,
-      ),
-    );
-  const externalPersonalizedArtKeys = await listExternalPersonalizedArtKeys(
-    database,
-    userId,
-    tombstone.r2Prefix,
-  );
-  const legacyIdentity = identities.find(
-    ({ legacyStorageOwner }) => legacyStorageOwner,
-  );
-  const storageIdentities = [
-    legacyIdentity ?? {
-      learnerProfileId: "",
-      legacyStorageOwner: true,
-      userId,
-    },
-    ...identities
-      .filter(({ legacyStorageOwner }) => !legacyStorageOwner),
-  ];
-  const storages = storageIdentities.flatMap((identity) =>
+  const storages = identities.flatMap((identity) =>
     DUB_DEFINITIONS.map((definition) => ({
       definition,
       storage: createDubStorageKeys(identity, definition.id),
@@ -495,12 +293,11 @@ export async function prepareAccountDeletion({
       const closure = dubStorageClosureKeys(storage);
       return [...closure.markerKeys, ...closure.slotKeys];
     }),
-    ...personalizedArtCandidateKeys,
     ...unfinishedLearnerDeletions.flatMap(({ markerKeys }) => markerKeys),
     ...unfinishedLearnerDeletions.flatMap(({ slotKeys }) => slotKeys),
   ]);
   const lessonRecordingKeys = new Set<string>();
-  const recordingPrefixes = storageIdentities.map(lessonRecordingOwnerPrefix);
+  const recordingPrefixes = identities.map(lessonRecordingOwnerPrefix);
   let cursor: string | undefined;
   let hasMore = true;
   const seenCursors = new Set<string>();
@@ -545,29 +342,12 @@ export async function prepareAccountDeletion({
     storages.map(({ storage }) => fenceTask(storage.markerKey, "marker")),
   );
   await runBoundedFenceWrites(
-    storages.flatMap(({ storage }) =>
-      storage.retiredLegacyMarkerKey
-        ? [fenceTask(storage.retiredLegacyMarkerKey, "marker")]
-        : [],
+    storages.flatMap(({ definition, storage }) =>
+      definition.lines.map(({ id }) => fenceTask(storage.objectKey(id), "slot"))
     ),
   );
   await runBoundedFenceWrites(
-    storages.flatMap(({ definition, storage }) => [
-      ...definition.lines.map(({ id }) => fenceTask(storage.objectKey(id), "slot")),
-      ...LEGACY_DUB_LINE_IDS.flatMap((lineId) => {
-        const key = storage.retiredLegacyObjectKey(lineId);
-        return key ? [fenceTask(key, "slot")] : [];
-      }),
-    ]),
-  );
-  await runBoundedFenceWrites(
     [...lessonRecordingKeys].map((key) => fenceTask(key, "slot")),
-  );
-  await runBoundedFenceWrites(
-    personalizedArtCandidateKeys.map((key) => fenceTask(key, "slot")),
-  );
-  await runBoundedFenceWrites(
-    externalPersonalizedArtKeys.map((key) => fenceTask(key, "slot")),
   );
   await runBoundedFenceWrites(
     unfinishedLearnerDeletions.flatMap(({ markerKeys }) =>

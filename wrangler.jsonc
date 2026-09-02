@@ -53,9 +53,9 @@
   },
   "r2_buckets": [
     {
-      "binding": "PERSONALIZED_STORY_ART_BUCKET",
-      "bucket_name": "parrot-english-personalized-story-art",
-      "preview_bucket_name": "parrot-english-personalized-story-art-preview"
+      "binding": "PRIVATE_MEDIA_BUCKET",
+      "bucket_name": "parrot-english-private-media",
+      "preview_bucket_name": "parrot-english-private-media-preview"
     }
   ],
   "observability": {

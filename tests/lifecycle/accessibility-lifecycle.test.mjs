@@ -551,7 +551,7 @@ describe("keyboard accessibility lifecycles", () => {
     await waitFor(() => assert.equal(document.activeElement, password));
     assert.match(
       document.querySelector('[role="dialog"]')?.textContent ?? "",
-      /all learner profiles.*private voice clips.*previously saved private story pictures/i,
+      /all learner profiles.*private voice clips.*lesson voice recordings/i,
     );
 
     await input(password, "parent-password");

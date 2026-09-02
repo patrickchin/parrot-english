@@ -687,7 +687,7 @@ export async function handleLearnerProfileRequest(
     if (state.cleanupBeforeGeneration === null) return state;
     try {
       await deleteAllLessonRecordings(
-        input.env.PERSONALIZED_STORY_ART_BUCKET,
+        input.env.PRIVATE_MEDIA_BUCKET,
         input.identity,
         state.cleanupBeforeGeneration,
         dependencies.wait,

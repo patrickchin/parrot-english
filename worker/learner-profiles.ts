@@ -27,7 +27,7 @@ import {
 
 export type LearnerProfilesEnv = {
   MULTI_LEARNER_PROFILES_ENABLED?: string;
-  PERSONALIZED_STORY_ART_BUCKET: R2Bucket;
+  PRIVATE_MEDIA_BUCKET: R2Bucket;
 };
 
 const MAX_ROSTER_BODY_BYTES = 8 * 1024;
@@ -403,11 +403,11 @@ export async function handleLearnerProfilesRequest(input: {
 
     if (input.request.method === "DELETE") {
       const profileId = deletedProfileId(url.pathname);
-      if (!profileId || !input.env.PERSONALIZED_STORY_ART_BUCKET) {
+      if (!profileId || !input.env.PRIVATE_MEDIA_BUCKET) {
         return json({ error: "not_found" }, { status: 404 });
       }
       await prepareLearnerDeletion({
-        bucket: input.env.PERSONALIZED_STORY_ART_BUCKET,
+        bucket: input.env.PRIVATE_MEDIA_BUCKET,
         database: input.database,
         identity: input.identity,
         profileId,

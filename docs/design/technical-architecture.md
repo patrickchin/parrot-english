@@ -17,7 +17,7 @@ Browser
             -> /api/learner-profile/* -> Groq / ElevenLabs -> D1
             -> /api/conversations/* -> LiveKit -> D1
             -> /api/lesson-recordings/* -> learner consent + private R2 slots
-            -> /api/dubs/five-little-ducks-v2/* -> D1 consent + private R2 clip slots
+            -> /api/dubs/:dubId/* -> D1 consent + private R2 clip slots
        -> /api/evaluate-speech -> Groq
        -> static Vite assets
 ```
@@ -31,8 +31,8 @@ prototype build entry in the shipped product.
 - `src/app/App.tsx` composes route guards and owns lesson playback effects.
 - `src/app/app-routes.ts` owns canonical paths, safe return targets, and route
   decisions.
-- `src/app/HomeMenu.tsx` exposes the four learner activities, including Five
-  Little Ducks dubbing.
+- `src/app/HomeMenu.tsx` exposes the four learner activities, including the
+  nursery-rhyme dubbing catalog.
 - `src/auth` owns the Better Auth session, account UI, guardian-access state,
   automatic temporary grant, fixed expiry, and learner/guardian route
   boundaries.
@@ -45,19 +45,14 @@ prototype build entry in the shipped product.
 - `src/stories` owns the stored-level learner shelf/reader and its public Long
   stories. Long stories use the main authenticated routes; no private-preview
   route or build mode remains.
-- `src/dubbing` owns the fixed Five Little Ducks script, studio, authenticated
-  client, Guardian settings, decoded take waveform, and synchronized replay.
-  Its project home plays the 98-second timeline and opens any of six four-line
-  scene editors.
-  The traditional six-stanza script still has 24 fixed slots with cues every
-  four seconds and a six-second maximum recording, but selection is non-linear:
-  each scene can select or replace any of its four line clips. Full and
-  cue-rebased scene playback resolve each line independently, preferring the
-  authenticated private take when saved and otherwise using the checked-in
+- `src/dubbing` owns the generated nursery-rhyme catalog, studio,
+  authenticated client, Guardian settings, decoded take waveform, and
+  synchronized replay. Each rhyme defines fixed line slots grouped into scene
+  editors. Full and scene playback resolve each line independently, preferring
+  the authenticated private take when saved and otherwise using the checked-in
   ElevenLabs guide. A failed private fetch or decode uses that guide as a
   fallback; only an unavailable preferred and fallback source omits its voice
-  while the shared animation and music clock continues. This changes no R2
-  slots or v2 API contract.
+  while the shared animation and music clock continues.
 - `src/media` owns recording and browser playback adapters.
 - `src/shared` owns reusable controls and cards.
 
@@ -81,19 +76,18 @@ access, and account-scoped rate limiting use that identity directly.
 
 Learner-data routes pass the account identity through one central resolver. It
 joins the current session selection to a profile owned by the same account and
-produces a `LearnerIdentity` with immutable profile ID, learner name, and the
-`legacyStorageOwner` compatibility marker. Existing learner APIs do not accept
-an arbitrary learner ID from the browser. A stale, corrupt, or foreign
-selection fails closed. The resolver auto-selects the only owned learner when
-safe; two or more owned learners without a selection return
+produces a `LearnerIdentity` with immutable profile ID and learner name.
+Existing learner APIs do not accept an arbitrary learner ID from the browser.
+A stale, corrupt, or foreign selection fails closed. The resolver auto-selects
+the only owned learner when safe; two or more owned learners without a selection return
 `409 learner_selection_required`.
 
 The Worker exposes authentication, Guardian access, the Guardian learner
 roster, learner profile, conversations, lesson join-in recordings, build
-information, speech evaluation, and Five Little Ducks dubbing. The
-authenticated `/api/dubs/five-little-ducks-v2/*` family owns consent-aware
-status, raw clip upload, private clip streaming, durable consent grant, and
-whole-dub revocation/deletion. Static assets are the final fallback.
+information, speech evaluation, and nursery-rhyme dubbing. The authenticated
+`/api/dubs/:dubId/*` family owns consent-aware status, raw clip upload, private
+clip streaming, durable consent grant, and whole-catalog revocation/deletion.
+Static assets are the final fallback.
 
 `GET`, `POST`, and `DELETE /api/guardian-access` read, grant, and revoke the
 current Better Auth session. In the current temporary flow, `POST` accepts no
@@ -122,7 +116,7 @@ DELETE /api/learner-profiles/:profileId
 
 `GET` returns owned profiles in stable creation order plus the current
 session's active profile ID. `POST` accepts only a bounded preferred name,
-creates an incomplete nonlegacy profile, and does not change this session's
+creates an incomplete profile, and does not change this session's
 active learner.
 `PUT` selects only a profile owned by the authenticated account; missing and
 foreign IDs share a generic `404`. The browser calls it only from the shared
@@ -167,17 +161,12 @@ single-profile fallback from silently selecting a sibling in sessions that
 lost their active learner. A tombstoned learner is omitted from chooser and
 settings-target lists but remains in the Guardian roster with
 `deletionPending` until cleanup finishes. Retry uses the same learner ID and
-closure. The legacy storage owner additionally closes the historical
-account-root dubbing, lesson-recording, art, and null-owned compatibility paths;
-sibling-prefixed storage is never swept.
+closure. Cleanup is limited to that learner's private-media prefix, so sibling
+storage is never swept. Whole-account deletion closes the account prefix.
 
-One `learner_profile` row per account is marked `legacy_storage_owner`; it owns
-all migrated account-level media compatibility paths. Added learners are
-nonlegacy. `learner_profile.story_level` stores one of the four supported IDs
-and defaults to `first-words`. Profile-specific tables store onboarding bypass
-and dub consent. Historical story-art rows and generation leases remain only so
-learner and account deletion can remove legacy private objects safely; no
-runtime route creates, reads, or serves them.
+`learner_profile.story_level` stores one of the four supported IDs and defaults
+to `first-words`. Profile-specific tables store onboarding bypass and recording
+consent. No runtime route creates, reads, or serves personalized story art.
 
 ## Durable and Transient State
 
@@ -246,7 +235,6 @@ mode, so no fallback strands an unlocked session at a learner-only screen.
 | Learner profile, story level, onboarding progress | Learner profile                              |
 | Conversation session                              | Learner profile fixed at creation            |
 | Conversation turns and facts                      | Inherit the conversation's stored learner    |
-| Legacy story-art cleanup records                   | Learner profile plus account deletion        |
 | Dubbing consent and clip namespace                | Learner profile                              |
 | Lesson-recording consent and clip namespace       | Learner profile                              |
 | Rate limits                                       | Guardian account plus existing IP dimensions |
@@ -260,8 +248,8 @@ row cascades.
 
 ## Dubbing Capability Boundary
 
-`GET /api/dubs/five-little-ducks-v2` returns `recordingEnabled`,
-`consentState`, the fixed 24-line status shape, and consent contract
+`GET /api/dubs/:dubId` returns `recordingEnabled`, `consentState`, the selected
+rhyme's fixed-line status shape, and consent contract
 `guardian-voice-r2-v2`. Absence or `revoking` returns no saved lines and never
 lists R2. Consent lookup and every R2 path use the resolved learner identity.
 Learners may upload, retake, read, and replay clips only while that learner's
@@ -269,13 +257,12 @@ current D1 grant generation remains valid. The upload path captures that
 generation, checks it around the conditional R2 write, and fences the exact
 object it wrote if consent changes.
 
-`PUT /api/dubs/five-little-ducks-v2/consent` accepts only the bounded version-2
-attestation object under a live Guardian unlock. Guardian-only
-`DELETE /api/dubs/five-little-ducks-v2` changes D1 to `revoking` before R2
-cleanup and removes that learner's consent row only after cleanup succeeds. The
-learner studio contains no self-attestation, `Grown-up options`, or delete
-action; it retains recording, retakes, saved-line replacement, and final
-playback.
+`PUT /api/dubs/:dubId/consent` accepts only the bounded version-2 attestation
+object under a live Guardian unlock. Guardian-only `DELETE /api/dubs/:dubId`
+changes D1 to `revoking` before R2 cleanup and removes that learner's consent
+row only after every supported rhyme is clean. The learner studio contains no
+self-attestation, `Grown-up options`, or delete action; it retains recording,
+retakes, saved-line replacement, and final playback.
 
 After the permanent account-deletion tombstone exists, consent grant, status,
 audio, upload, and revocation fail closed. Grant checks before and after its D1
@@ -295,41 +282,49 @@ Worker.
 - `src/stories/long-stories.ts` owns the two published long read-aloud scripts;
   their narration IDs resolve through the same static audio manifest.
 - `content/learner-profile/questionnaire-v2.json` owns form-fallback prompts.
+- `public/assets/nursery-rhymes/*/rhyme.json` and each adjacent MusicXML score
+  own the generated dubbing catalog's scripts, timing, and guide references.
 
 Built-in lesson JSON never stores asset filenames. Story language, vocabulary,
 and participation choices are reviewed before check-in. Runtime story records
 keep only the identity, shelf level, title, cover, reader pages, and completion
 text consumed by the product.
 
-Five Little Ducks voice clips use a generation marker and 24 format-agnostic
-fixed slots beneath the private account-purge prefix. The marked legacy learner
-keeps the exact existing key shape:
+All learner recordings use the `PRIVATE_MEDIA_BUCKET` binding, backed by
+`parrot-english-private-media` in production and
+`parrot-english-private-media-preview` for preview deployments. R2 keys have
+one account root, one learner root, and recording-kind subtrees:
 
 ```text
-personalized-story-art/{encoded-user-id}/learner-dubs/
-  five-little-ducks-v2/
-    .dub-generation
-    line-{1..24}.audio
+accounts/{encoded-user-id}/
+  learners/{encoded-learner-profile-id}/
+    recordings/
+      nursery-rhymes/{dub-id}/
+        .dub-generation
+        {line-id}.audio
+      lessons/{lesson-id}/
+        scene-{scene-index}/
+          step-{step-index}.audio
 ```
 
-Every nonlegacy learner uses an isolated subtree:
+There is no live story-art namespace, account-root recording namespace, or
+legacy dub fallback. The old personalized-story-art buckets are not part of the
+runtime storage contract.
 
-```text
-personalized-story-art/{encoded-user-id}/learners/{encoded-learner-profile-id}/
-  learner-dubs/five-little-ducks-v2/
-    .dub-generation
-    line-{1..24}.audio
-```
+Object keys keep immutable IDs rather than email addresses or learner names.
+Operators can run `npm run inspect:private-media -- --remote` to resolve current
+human labels from D1 beside the exact R2 prefixes without persisting those
+labels in R2.
 
-The browser creates an object URL immediately from each finished MediaRecorder
-`Blob`, decodes the same bytes to PCM for the visible waveform, and can replay
-that local take while its selected line remains open, including after a
-successful upload. Upload and draft playback remain separate: R2 is the durable
-source of truth, while the local object URL is revoked when a take is replaced
-or discarded by navigation, deletion, or unmount. The full project and each
-four-line scene resolve saved slots from authenticated R2 and missing slots from
+For dubbing, the browser creates an object URL immediately from each finished
+MediaRecorder `Blob`, decodes the same bytes to PCM for the visible waveform,
+and can replay that local take while its selected line remains open, including
+after a successful upload. Upload and draft playback remain separate: R2 is the
+durable source of truth, while the local object URL is revoked when a take is
+replaced or discarded by navigation, deletion, or unmount. The full project and
+each scene resolve saved slots from authenticated R2 and missing slots from
 checked-in guides, then schedule the usable voices, procedural music bed, and
-SVG scene beats against one Web Audio clock. Private playback failures retry the
+scene beats against one Web Audio clock. Private playback failures retry the
 guide and set a browser-session Needs-retake marker; if both sources fail, the
 voice is omitted without stopping the draft.
 
@@ -347,29 +342,23 @@ the payload.
 
 Replacement conditionally writes the observed fixed slot and rechecks the
 generation fence. Reset conditionally acquires a new `deleting` generation,
-conditionally replaces all 24 fixed slots with generation-owned non-audio
-tombstones, and then conditionally finalizes the v2 marker as `ready`; an
-interrupted reset remains fenced until another DELETE completes it. For the
-legacy owner only, reset also retires `five-little-ducks-v1/` with a terminal
-marker and nine non-audio slot fences that old v1 Workers recognize. Those ten
-tiny fences remain so a v1 upload that passed its old marker checks before a
-gradual deployment cannot recreate recording bytes.
+conditionally replaces every catalog-defined line slot with generation-owned
+non-audio tombstones, and then conditionally finalizes the marker as `ready`;
+an interrupted reset remains fenced until another DELETE completes it. Reads
+accept only the current `parrot-dub-audio-v2` envelope and matching metadata;
+raw legacy audio is treated as unsaved rather than streamed.
 
 The paginated sweep validates its exact prefix and cursor, rechecks ownership
-of the observed v2 deleting marker around each page, and bounds retries for
-transient R2 write-rate failures. Account deletion derives one stable
-generation from the permanent D1 deletion tombstone, records the complete
-learner-storage closure, and sweeps every non-closure object below the account
-prefix. It then persists the marker and 24 slot fences for the legacy namespace
-and every nonlegacy learner namespace, plus the retired-v1 marker and nine slots
-for the legacy owner. Closure keys are excluded from every broad sweep, so
-concurrent deletion hooks converge instead of dismantling one another. Better
-Auth can remove the user only after every learner closure exists; ordinary dub
-resets cannot take over a terminal marker. The retained objects contain no
-recording bytes. Guardian revocation first changes the selected learner's D1
-consent to `revoking`, completes the R2 tombstones, and deletes the consent row
-only after cleanup succeeds. New grants and all media access fail closed while
-that cleanup is incomplete.
+of the observed deleting marker around each page, and bounds retries for
+transient R2 write-rate failures. Learner deletion sweeps only that learner's
+prefix; account deletion sweeps `accounts/{encoded-user-id}/`. Closure keys are
+excluded from broad sweeps, so concurrent deletion hooks converge instead of
+dismantling one another. Better Auth can remove the user only after every
+learner closure exists; ordinary dub resets cannot take over a terminal marker.
+The retained fence objects contain no recording bytes. Guardian revocation
+first changes the selected learner's D1 consent to `revoking`, completes the R2
+tombstones, and deletes the consent row only after cleanup succeeds. New grants
+and all media access fail closed while that cleanup is incomplete.
 
 ## Migration and Deployment Boundary
 
@@ -403,7 +392,7 @@ commands, smoke tests, monitoring signals, and rollback rules are in
 ## Provider Boundaries
 
 - Built-in lesson lines use checked-in ElevenLabs audio assets.
-- Five Little Ducks line guides use checked-in ElevenLabs narrator MP3s; the
+- Nursery-rhyme line guides use checked-in ElevenLabs narrator MP3s; the
   browser never substitutes device speech for a missing guide.
 - Groq evaluates lesson speech and supports profile enrichment.
 - LiveKit carries realtime conversation audio; the agent uses explicit model
