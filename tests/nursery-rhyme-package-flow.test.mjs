@@ -260,16 +260,16 @@ it("flows one compiled seventh package through shelf, learner, Worker, and stora
   assert.equal(route?.lineId, "one-little-bell-v1-line-2");
 
   const storage = createDubStorageKeys({
-    learnerProfileId: "learner-1",
-    userId: "user-1",
+    privateMediaName: "Mary",
+    userEmail: "guardian@example.com",
   }, "one-little-bell-v1");
   assert.deepEqual(dubStorageClosureKeys(storage, definitions), {
     markerKeys: [
-      "accounts/user-1/learners/learner-1/recordings/nursery-rhymes/one-little-bell-v1/.dub-generation",
+      "accounts/guardian@example.com/learners/Mary/recordings/nursery-rhymes/one-little-bell-v1/.dub-generation",
     ],
     slotKeys: [
-      "accounts/user-1/learners/learner-1/recordings/nursery-rhymes/one-little-bell-v1/one-little-bell-v1-line-1.audio",
-      "accounts/user-1/learners/learner-1/recordings/nursery-rhymes/one-little-bell-v1/one-little-bell-v1-line-2.audio",
+      "accounts/guardian@example.com/learners/Mary/recordings/nursery-rhymes/one-little-bell-v1/one-little-bell-v1-line-1.audio",
+      "accounts/guardian@example.com/learners/Mary/recordings/nursery-rhymes/one-little-bell-v1/one-little-bell-v1-line-2.audio",
     ],
   });
 });

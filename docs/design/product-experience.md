@@ -235,9 +235,13 @@ deletion controls do not appear in learner mode.
 Only a live Guardian session can turn dubbing off and delete the active
 learner's saved clips. Every learner has an independent namespace and grant.
 Recordings live only under
-`accounts/{user}/learners/{learner}/recordings/{nursery-rhymes|lessons}/` in
-the private-media bucket; there is no story-art or account-root recording
-fallback. Dubbing playback accepts only the current v2 recording envelope.
+`accounts/{escaped-email}/learners/{stable-readable-private-media-name}/recordings/{nursery-rhymes|lessons}/`
+in the private-media bucket. The readable learner directory is fixed when the
+profile is created, while current display names remain unique per account;
+editing a visible name does not move saved audio. Deleted directories remain
+reserved; a recreated name receives a readable suffix. There is no alias,
+story-art, or account-root recording fallback. Dubbing playback accepts only the current
+v2 recording envelope.
 Whole-account deletion closes the account namespace so stale uploads cannot
 recreate voice data. Recordings are not shared publicly or sent to speech
 recognition.

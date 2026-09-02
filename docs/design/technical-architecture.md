@@ -71,12 +71,14 @@ are validated against known Guardian routes and invalid targets fall back to
 `worker/index.ts` authenticates protected requests, applies endpoint-specific
 rate limits, resolves account or learner identity, and delegates to focused
 handlers. Better Auth first produces an `AccountIdentity` containing the
-session ID, user ID, and Guardian account name. Account deletion, Guardian
-access, and account-scoped rate limiting use that identity directly.
+session ID, user ID, normalized account email, and Guardian account name.
+Account deletion, Guardian access, and account-scoped rate limiting use that
+identity directly.
 
 Learner-data routes pass the account identity through one central resolver. It
 joins the current session selection to a profile owned by the same account and
-produces a `LearnerIdentity` with immutable profile ID and learner name.
+produces a `LearnerIdentity` with immutable profile ID, current learner name,
+and stable readable private-media directory name.
 Existing learner APIs do not accept an arbitrary learner ID from the browser.
 A stale, corrupt, or foreign selection fails closed. The resolver auto-selects
 the only owned learner when safe; two or more owned learners without a selection return
@@ -296,8 +298,8 @@ All learner recordings use the `PRIVATE_MEDIA_BUCKET` binding, backed by
 one account root, one learner root, and recording-kind subtrees:
 
 ```text
-accounts/{encoded-user-id}/
-  learners/{encoded-learner-profile-id}/
+accounts/{escaped-email}/
+  learners/{stable-readable-private-media-name}/
     recordings/
       nursery-rhymes/{dub-id}/
         .dub-generation
@@ -311,10 +313,15 @@ There is no live story-art namespace, account-root recording namespace, or
 legacy dub fallback. The old personalized-story-art buckets are not part of the
 runtime storage contract.
 
-Object keys keep immutable IDs rather than email addresses or learner names.
-Operators can run `npm run inspect:private-media -- --remote` to resolve current
-human labels from D1 beside the exact R2 prefixes without persisting those
-labels in R2.
+The escaped account email and stable readable learner directory make this tree
+directly navigable in R2. A learner receives that directory name once; later
+display-name edits do not rename it or orphan recordings. An unnamed initial
+profile keeps `Learner`; deleted learner directories remain reserved and a
+later profile with the same name receives a readable numeric suffix. Current
+display names are unique per account. Account-deletion tombstones permanently
+reserve their email roots, so a deleted email cannot sign up again and collide
+with retained fences. R2 has no symlinks, so reads, writes, and deletion use this
+one canonical path rather than maintaining aliases or duplicate objects.
 
 For dubbing, the browser creates an object URL immediately from each finished
 MediaRecorder `Blob`, decodes the same bytes to PCM for the visible waveform,
@@ -351,7 +358,7 @@ raw legacy audio is treated as unsaved rather than streamed.
 The paginated sweep validates its exact prefix and cursor, rechecks ownership
 of the observed deleting marker around each page, and bounds retries for
 transient R2 write-rate failures. Learner deletion sweeps only that learner's
-prefix; account deletion sweeps `accounts/{encoded-user-id}/`. Closure keys are
+prefix; account deletion sweeps `accounts/{escaped-email}/`. Closure keys are
 excluded from broad sweeps, so concurrent deletion hooks converge instead of
 dismantling one another. Better Auth can remove the user only after every
 learner closure exists; ordinary dub resets cannot take over a terminal marker.

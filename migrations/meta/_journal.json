@@ -141,6 +141,13 @@
       "when": 1788264028486,
       "tag": "0019_shared_guest_account",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1788386054680,
+      "tag": "0020_human-readable-private-media",
+      "breakpoints": true
     }
   ]
 }

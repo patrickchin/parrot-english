@@ -1,0 +1,36 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "parrot-english-private-media-migration",
+  "main": "scripts/private-media-migration.ts",
+  "compatibility_date": "2026-05-22",
+  "preview_urls": false,
+  "workers_dev": false,
+  "dev": {
+    "ip": "127.0.0.1",
+    "port": 8790,
+    "local_protocol": "http"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "parrot-english",
+      "database_id": "a034d27d-7125-4a8f-b4fc-c403610e9994",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SOURCE_BUCKET",
+      "bucket_name": "parrot-english-personalized-story-art",
+      "remote": true
+    },
+    {
+      "binding": "DESTINATION_BUCKET",
+      "bucket_name": "parrot-english-private-media",
+      "remote": true
+    }
+  ],
+  "observability": {
+    "enabled": false
+  }
+}

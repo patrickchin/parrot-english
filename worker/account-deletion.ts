@@ -4,6 +4,7 @@ import {
   accountDeletionTombstone,
   learnerProfile,
   learnerProfileDeletionTombstone,
+  user,
 } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
 import {
@@ -16,7 +17,10 @@ import {
   preflightLearnerDeletionStorageClosure,
 } from "./learner-deletion.ts";
 import { accountPrivateMediaPrefix } from "./private-media-storage.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
+import {
+  normalizeUserEmail,
+  type LearnerIdentity,
+} from "./request-identity.ts";
 import {
   deleteWithRetry,
   persistFence,
@@ -27,9 +31,12 @@ type Clock = () => Date;
 type Wait = (delay: number) => Promise<void>;
 type LearnerStorageIdentity = Pick<
   LearnerIdentity,
-  "userId" | "learnerProfileId"
+  "learnerProfileId" | "privateMediaName" | "userEmail" | "userId"
 >;
-type StoredLearnerStorageIdentity = Omit<LearnerStorageIdentity, "userId">;
+type StoredLearnerStorageIdentity = {
+  learnerProfileId: string;
+  privateMediaName?: string;
+};
 type UnfinishedLearnerDeletion = {
   identity: LearnerStorageIdentity;
   markerKeys: string[];
@@ -49,24 +56,29 @@ const MAX_TOMBSTONE_CONFLICTS = 16;
 export async function listLearnerStorageIdentities(
   database: Database,
   userId: string,
+  userEmail: string,
 ): Promise<LearnerStorageIdentity[]> {
-  return database
+  const identities = await database
     .select({
       learnerProfileId: learnerProfile.id,
+      privateMediaName: learnerProfile.privateMediaName,
       userId: learnerProfile.authUserId,
     })
     .from(learnerProfile)
     .where(eq(learnerProfile.authUserId, userId));
+  return identities.map((identity) => ({ ...identity, userEmail }));
 }
 
 async function listUnfinishedLearnerDeletions(
   database: Database,
   userIdHash: string,
   userId: string,
+  userEmail: string,
 ): Promise<UnfinishedLearnerDeletion[]> {
   const tombstones = await database
     .select({
       learnerProfileId: learnerProfileDeletionTombstone.learnerProfileId,
+      privateMediaName: learnerProfileDeletionTombstone.privateMediaName,
       storageKeysJson: learnerProfileDeletionTombstone.storageKeysJson,
     })
     .from(learnerProfileDeletionTombstone)
@@ -77,6 +89,8 @@ async function listUnfinishedLearnerDeletions(
     );
     const identity = {
       learnerProfileId: tombstone.learnerProfileId,
+      privateMediaName: tombstone.privateMediaName,
+      userEmail,
       userId,
     };
     preflightLearnerDeletionStorageClosure(identity, closure);
@@ -100,19 +114,26 @@ function parseLearnerStorageClosure(serialized: string) {
     throw new Error("Account deletion learner storage closure is invalid.");
   }
   return parsed.map((identity): StoredLearnerStorageIdentity => {
+    const record = identity as Record<string, unknown>;
     if (
       typeof identity !== "object" ||
       identity === null ||
-      typeof (identity as Record<string, unknown>).learnerProfileId !==
-        "string" ||
-      (identity as Record<string, unknown>).learnerProfileId === "" ||
-      Object.keys(identity as Record<string, unknown>).length !== 1
+      typeof record.learnerProfileId !== "string" ||
+      record.learnerProfileId === "" ||
+      (record.privateMediaName !== undefined &&
+        (typeof record.privateMediaName !== "string" ||
+          record.privateMediaName === "")) ||
+      Object.keys(record).some((key) =>
+        key !== "learnerProfileId" && key !== "privateMediaName"
+      )
     ) {
       throw new Error("Account deletion learner storage closure is invalid.");
     }
     return {
-      learnerProfileId: (identity as Record<string, unknown>)
-        .learnerProfileId as string,
+      learnerProfileId: record.learnerProfileId,
+      ...(record.privateMediaName === undefined
+        ? {}
+        : { privateMediaName: record.privateMediaName }),
     };
   });
 }
@@ -127,11 +148,16 @@ function mergeLearnerStorageClosure(
     merged.set(identity.learnerProfileId, identity);
   }
   for (const identity of identities) {
-    if (identity.userId !== userId || identity.learnerProfileId === "") {
+    if (
+      identity.userId !== userId ||
+      identity.learnerProfileId === "" ||
+      identity.privateMediaName === ""
+    ) {
       throw new Error("Account deletion learner storage identity is invalid.");
     }
     const storedIdentity = {
       learnerProfileId: identity.learnerProfileId,
+      privateMediaName: identity.privateMediaName,
     };
     merged.set(identity.learnerProfileId, storedIdentity);
   }
@@ -146,6 +172,7 @@ async function persistLearnerStorageClosure(
   database: Database,
   userIdHash: string,
   userId: string,
+  userEmail: string,
   identities: LearnerStorageIdentity[],
 ): Promise<LearnerStorageIdentity[]> {
   for (let conflict = 0; conflict < MAX_TOMBSTONE_CONFLICTS; conflict += 1) {
@@ -167,7 +194,19 @@ async function persistLearnerStorageClosure(
     );
     const serialized = JSON.stringify(merged);
     if (serialized === tombstone.learnerStorageIdentitiesJson) {
-      return merged.map((identity) => ({ ...identity, userId }));
+      return merged.map((identity) => {
+        if (!identity.privateMediaName) {
+          throw new Error(
+            "Account deletion learner storage closure is incomplete.",
+          );
+        }
+        return {
+          ...identity,
+          privateMediaName: identity.privateMediaName,
+          userEmail,
+          userId,
+        };
+      });
     }
 
     const updated = await database
@@ -184,7 +223,19 @@ async function persistLearnerStorageClosure(
       )
       .returning({ userIdHash: accountDeletionTombstone.userIdHash });
     if (updated.length === 1) {
-      return merged.map((identity) => ({ ...identity, userId }));
+      return merged.map((identity) => {
+        if (!identity.privateMediaName) {
+          throw new Error(
+            "Account deletion learner storage closure is incomplete.",
+          );
+        }
+        return {
+          ...identity,
+          privateMediaName: identity.privateMediaName,
+          userEmail,
+          userId,
+        };
+      });
     }
   }
   throw new Error(
@@ -220,9 +271,18 @@ export async function markAccountDeletionPending(
   userId: string,
   now: Clock = () => new Date(),
 ) {
+  const [account] = await database
+    .select({ email: user.email })
+    .from(user)
+    .where(eq(user.id, userId))
+    .limit(1);
+  if (!account) {
+    throw new Error("Account deletion owner could not be resolved.");
+  }
+  const userEmail = normalizeUserEmail(account.email);
   const requestedAt = now();
   const tombstone = {
-    r2Prefix: accountPrivateMediaPrefix(userId),
+    r2Prefix: accountPrivateMediaPrefix(userEmail),
     requestedAt,
     userIdHash: await accountDeletionTombstoneKey(userId),
   };
@@ -242,7 +302,10 @@ export async function markAccountDeletionPending(
   if (!storedTombstone) {
     throw new Error("Account deletion tombstone could not be persisted.");
   }
-  return storedTombstone;
+  if (storedTombstone.r2Prefix !== tombstone.r2Prefix) {
+    throw new Error("Account deletion private-media namespace changed.");
+  }
+  return { ...storedTombstone, userEmail };
 }
 
 function accountDeletionGeneration(userIdHash: string, requestedAt: Date) {
@@ -266,12 +329,18 @@ export async function prepareAccountDeletion({
       database,
       tombstone.userIdHash,
       userId,
+      tombstone.userEmail,
     );
-  const liveIdentities = await listLearnerStorageIdentities(database, userId);
+  const liveIdentities = await listLearnerStorageIdentities(
+    database,
+    userId,
+    tombstone.userEmail,
+  );
   const identities = await persistLearnerStorageClosure(
     database,
     tombstone.userIdHash,
     userId,
+    tombstone.userEmail,
     [
       ...liveIdentities,
       ...unfinishedLearnerDeletions.map(({ identity }) => identity),

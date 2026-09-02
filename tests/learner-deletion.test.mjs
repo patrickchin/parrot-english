@@ -20,14 +20,16 @@ const SIBLING_ID = "learner-b";
 const SESSION_ID = "session-1";
 const OTHER_SESSION_ID = "session-2";
 const NOW = Date.parse("2026-08-29T08:00:00.000Z");
-const USER_PREFIX = `accounts/${encodeURIComponent(USER_ID)}/`;
-const TARGET_PREFIX = `${USER_PREFIX}learners/${TARGET_ID}/`;
-const SIBLING_PREFIX = `${USER_PREFIX}learners/${SIBLING_ID}/`;
+const USER_EMAIL = "guardian@example.test";
+const USER_PREFIX = `accounts/${USER_EMAIL}/`;
+const TARGET_PREFIX = `${USER_PREFIX}learners/Mary/`;
+const SIBLING_PREFIX = `${USER_PREFIX}learners/Bob/`;
 const LESSON_RECORDING_CONSENT_VERSION = "lesson-join-in-recording-v1";
 const WEBM = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1]);
 
 const accountIdentity = {
   sessionId: SESSION_ID,
+  userEmail: USER_EMAIL,
   userId: USER_ID,
   userName: "Guardian",
 };
@@ -37,6 +39,8 @@ function learnerIdentity() {
     ...accountIdentity,
     learnerName: "Mary",
     learnerProfileId: TARGET_ID,
+    legacyStorageOwner: false,
+    privateMediaName: "Mary",
   };
 }
 
@@ -216,20 +220,40 @@ function seedDatabase() {
   );
   const insertLearner = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, legacy_storage_owner, name, age, onboarding_status,
-       created_at, updated_at)
-     VALUES (?, ?, ?, ?, 8, 'completed', ?, ?)`,
+      (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+       name_key, age, onboarding_status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 8, 'completed', ?, ?)`,
   );
   insertLearner.run(
     TARGET_ID,
     USER_ID,
     0,
     "Mary",
+    "Mary",
+    "mary",
     NOW,
     NOW,
   );
-  insertLearner.run(SIBLING_ID, USER_ID, 0, "Bob", NOW + 1, NOW + 1);
-  insertLearner.run("learner-foreign", OTHER_USER_ID, 0, "Rose", NOW, NOW);
+  insertLearner.run(
+    SIBLING_ID,
+    USER_ID,
+    0,
+    "Bob",
+    "Bob",
+    "bob",
+    NOW + 1,
+    NOW + 1,
+  );
+  insertLearner.run(
+    "learner-foreign",
+    OTHER_USER_ID,
+    0,
+    "Rose",
+    "Rose",
+    "rose",
+    NOW,
+    NOW,
+  );
   return { ...state, database: createDatabase(state.d1) };
 }
 
@@ -243,7 +267,7 @@ function selectLearner(state, profileId, sessionId = SESSION_ID) {
 
 function authStub(session = {
   session: { id: SESSION_ID },
-  user: { id: USER_ID, name: " Guardian " },
+  user: { email: USER_EMAIL, id: USER_ID, name: " Guardian " },
 }) {
   return {
     api: { async getSession() { return session; } },
@@ -284,7 +308,7 @@ function prepare(state, bucket, profileId = TARGET_ID, wait = async () => {}) {
 function tombstone(state, profileId = TARGET_ID) {
   return state.sqlite.prepare(
     `SELECT learner_profile_id, user_id_hash, generation, requested_at,
-            storage_keys_json
+            private_media_name, storage_keys_json
      FROM learner_profile_deletion_tombstone
      WHERE learner_profile_id = ?`,
   ).get(profileId);
@@ -570,9 +594,9 @@ describe("learner deletion endpoint", () => {
       async () => {
         state.sqlite.prepare(
           `INSERT INTO learner_profile
-            (id, auth_user_id, legacy_storage_owner, name, age,
-             onboarding_status, created_at, updated_at)
-           VALUES (?, ?, 0, 'Bob', 8, 'completed', ?, ?)`,
+            (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+             name_key, age, onboarding_status, created_at, updated_at)
+           VALUES (?, ?, 0, 'Bob', 'Bob', 'bob', 8, 'completed', ?, ?)`,
         ).run(SIBLING_ID, USER_ID, NOW + 1, NOW + 1);
       },
     );
@@ -712,15 +736,16 @@ describe("learner deletion lifecycle", () => {
     const siblingStorage = firstDubStorage({
       ...learnerIdentity(),
       learnerProfileId: SIBLING_ID,
+      privateMediaName: "Bob",
     });
     const bucket = createBucket([
       { key: siblingObject, bytes: new Uint8Array([1]) },
     ]);
     state.sqlite.prepare(
       `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
-         requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 1, ?, ?)`,
+        (learner_profile_id, user_id_hash, legacy_storage_owner,
+         private_media_name, generation, requested_at, storage_keys_json)
+       VALUES (?, ?, 0, 'Mary', 1, ?, ?)`,
     ).run(
       TARGET_ID,
       createHash("sha256").update(USER_ID).digest("hex"),
@@ -762,13 +787,14 @@ describe("learner deletion lifecycle", () => {
     const bucket = createBucket([{ bytes: new Uint8Array([1]), key: targetKey }]);
     const insert = state.sqlite.prepare(
       `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
-         requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 1, ?, ?)`,
+        (learner_profile_id, user_id_hash, legacy_storage_owner,
+         private_media_name, generation, requested_at, storage_keys_json)
+       VALUES (?, ?, 0, ?, 1, ?, ?)`,
     );
     insert.run(
       TARGET_ID,
       userIdHash,
+      "Mary",
       NOW,
       JSON.stringify({
         markerKeys: [],
@@ -780,6 +806,7 @@ describe("learner deletion lifecycle", () => {
     insert.run(
       SIBLING_ID,
       userIdHash,
+      "Bob",
       NOW,
       JSON.stringify({
         markerKeys: [],

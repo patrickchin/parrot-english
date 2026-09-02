@@ -17,7 +17,12 @@ import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 const timestamp = Date.parse("2026-08-26T08:00:00.000Z");
 
 function account(sessionId, userId = "user-a", userName = "Guardian") {
-  return { sessionId, userId, userName };
+  return {
+    sessionId,
+    userEmail: `${userId}@example.test`,
+    userId,
+    userName,
+  };
 }
 
 function insertUser(state, userId, name = "Guardian") {
@@ -56,14 +61,17 @@ function insertLearner(
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, 'not_started', ?, ?)`,
+        (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+         name_key, onboarding_status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
     )
     .run(
       learnerProfileId,
       userId,
       legacyStorageOwner ? 1 : 0,
       name,
+      name?.normalize("NFKC").trim() || "Learner",
+      name?.normalize("NFKC").trim().toLowerCase() || null,
       timestamp,
       timestamp,
     );
@@ -111,11 +119,13 @@ function expectedLearner(
 ) {
   return {
     sessionId,
+    userEmail: "user-a@example.test",
     userId: "user-a",
     userName: "Guardian",
     learnerProfileId,
     learnerName,
     legacyStorageOwner: true,
+    privateMediaName: learnerName ?? "Learner",
   };
 }
 
@@ -154,11 +164,13 @@ describe("request learner identity", () => {
         status: "selected",
         identity: {
           sessionId: "shared-guest-session",
+          userEmail: `${SHARED_GUEST_USER_ID}@example.test`,
           userId: SHARED_GUEST_USER_ID,
           userName: "Guest",
           learnerProfileId: SHARED_GUEST_LEARNER_ID,
           learnerName: SHARED_GUEST_LEARNER_NAME,
           legacyStorageOwner: true,
+          privateMediaName: SHARED_GUEST_LEARNER_NAME,
         },
       },
     );
@@ -180,11 +192,13 @@ describe("request learner identity", () => {
       ),
       {
         sessionId: "session-a",
+        userEmail: "user-a@example.test",
         userId: "user-a",
         userName: "Guardian",
         learnerProfileId: "learner-b",
         learnerName: "Leo",
         legacyStorageOwner: false,
+        privateMediaName: "Leo",
       },
     );
     assert.deepEqual(
@@ -353,6 +367,7 @@ describe("request learner identity", () => {
 
     assert.equal(first.id, second.id);
     assert.equal(first.legacyStorageOwner, true);
+    assert.equal(first.privateMediaName, "Learner");
     assert.equal(
       state.sqlite
         .prepare(

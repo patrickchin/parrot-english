@@ -218,6 +218,8 @@ export const learnerProfile = sqliteTable(
       .default(true)
       .notNull(),
     name: text("name"),
+    privateMediaName: text("private_media_name").default("Learner").notNull(),
+    nameKey: text("name_key"),
     age: integer("age"),
     storyLevel: text("story_level").default("first-words").notNull(),
     answersJson: text("answers_json").default("{}").notNull(),
@@ -252,6 +254,14 @@ export const learnerProfile = sqliteTable(
     uniqueIndex("learner_profile_id_user_unique").on(
       table.id,
       table.authUserId,
+    ),
+    uniqueIndex("learner_profile_user_name_key_unique").on(
+      table.authUserId,
+      table.nameKey,
+    ),
+    uniqueIndex("learner_profile_user_private_media_name_unique").on(
+      table.authUserId,
+      table.privateMediaName,
     ),
     uniqueIndex("learner_profile_legacy_storage_owner_unique")
       .on(table.authUserId)
@@ -288,6 +298,7 @@ export const learnerProfileDeletionTombstone = sqliteTable(
   {
     learnerProfileId: text("learner_profile_id").primaryKey(),
     userIdHash: text("user_id_hash").notNull(),
+    privateMediaName: text("private_media_name").default("Learner").notNull(),
     legacyStorageOwner: integer("legacy_storage_owner", { mode: "boolean" })
       .notNull(),
     generation: integer("generation").notNull(),
@@ -585,6 +596,9 @@ export const accountDeletionTombstone = sqliteTable(
       .notNull(),
   },
   (table) => [
+    uniqueIndex("account_deletion_tombstone_r2_prefix_unique").on(
+      table.r2Prefix,
+    ),
     check(
       "account_deletion_tombstone_learner_storage_identities_json_check",
       sql`json_valid(${table.learnerStorageIdentitiesJson})`,

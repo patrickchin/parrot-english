@@ -68,9 +68,10 @@ function authenticatedEnvironment() {
   );
   state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, name, onboarding_status, created_at, updated_at)
-     VALUES (?, ?, ?, 'not_started', ?, ?)`,
-  ).run("learner-a", "user-1", "Mia", timestamp, timestamp);
+      (id, auth_user_id, name, private_media_name, name_key,
+       onboarding_status, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'not_started', ?, ?)`,
+  ).run("learner-a", "user-1", "Mia", "Mia", "mia", timestamp, timestamp);
   const result = environment();
   result.env.DB = state.d1;
   return { ...result, state };
@@ -95,10 +96,10 @@ describe("dub Worker routing", () => {
     );
     assert.equal(
       createDubStorageKeys({
-        learnerProfileId: "learner-b",
-        userId: "user-1",
+        privateMediaName: "Mary",
+        userEmail: "guardian@example.test",
       }, "old-macdonald-v1").objectPrefix,
-      "accounts/user-1/learners/learner-b/recordings/nursery-rhymes/old-macdonald-v1/",
+      "accounts/guardian@example.test/learners/Mary/recordings/nursery-rhymes/old-macdonald-v1/",
     );
   });
 
@@ -126,7 +127,11 @@ describe("dub Worker routing", () => {
       let handlerCalls = 0;
       const session = {
         session: { id: "session-1" },
-        user: { id: "user-1", name: "Guardian" },
+        user: {
+          email: "guardian@example.test",
+          id: "user-1",
+          name: "Guardian",
+        },
       };
       const worker = createWorker({
         createAuth: () => authStub(session, []),
@@ -203,7 +208,11 @@ describe("dub Worker routing", () => {
       const worker = createWorker({
         createAuth: () => authStub({
           session: { id: "session-1" },
-          user: { id: "user-1", name: "Guardian" },
+          user: {
+            email: "guardian@example.test",
+            id: "user-1",
+            name: "Guardian",
+          },
         }, []),
         async handleDubRequest() {
           handlerCalls += 1;
@@ -312,11 +321,13 @@ describe("dub Worker routing", () => {
       assert.equal(calls[0].database.$client, env.DB);
       assert.deepEqual(calls[0].identity, {
         sessionId: "session-1",
+        userEmail: "parent@example.test",
         userId: "user-1",
         userName: "Parent",
         learnerProfileId: "learner-a",
         learnerName: "Mia",
         legacyStorageOwner: true,
+        privateMediaName: "Mia",
       });
       assert.equal(getAssetCalls(), 0);
     } finally {
@@ -327,15 +338,20 @@ describe("dub Worker routing", () => {
   it("passes the selected nonlegacy learner identity to the dub handler", async () => {
     const session = {
       session: { id: "session-1" },
-      user: { id: "user-1", name: " Parent " },
+      user: {
+        email: "parent@example.test",
+        id: "user-1",
+        name: " Parent ",
+      },
     };
     const { env, state } = authenticatedEnvironment();
     try {
       state.sqlite.prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', 0)`,
-      ).run("learner-b", "user-1", "Leo");
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
+      ).run("learner-b", "user-1", "Leo", "Leo", "leo");
       state.sqlite.prepare(
         `INSERT INTO session_learner_selection
           (session_id, auth_user_id, learner_profile_id)
@@ -357,7 +373,9 @@ describe("dub Worker routing", () => {
         learnerName: "Leo",
         learnerProfileId: "learner-b",
         legacyStorageOwner: false,
+        privateMediaName: "Leo",
         sessionId: "session-1",
+        userEmail: "parent@example.test",
         userId: "user-1",
         userName: "Parent",
       });
@@ -370,7 +388,11 @@ describe("dub Worker routing", () => {
     const sessionCalls = [];
     const session = {
       session: { id: "session-1" },
-      user: { id: "user-1", name: "Parent" },
+      user: {
+        email: "parent@example.test",
+        id: "user-1",
+        name: "Parent",
+      },
     };
     const { env, getAssetCalls, state } = authenticatedEnvironment();
     try {

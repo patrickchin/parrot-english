@@ -46,15 +46,21 @@ player or a mixed downloadable video.
 - Generated runtime catalog: `src/dubbing/generated-rhyme-catalog.ts`
 - Private replaceable dubbing slots: authenticated `/api/dubs/:dubId/*`, backed
   by `PRIVATE_MEDIA_BUCKET` under
-  `accounts/{user}/learners/{learner}/recordings/nursery-rhymes/{dubId}/`
+  `accounts/{escaped-email}/learners/{stable-readable-private-media-name}/recordings/nursery-rhymes/{dubId}/`
 - Private lesson join-in slots: authenticated `/api/lesson-recordings/*`, backed
   by the same bucket under
-  `accounts/{user}/learners/{learner}/recordings/lessons/{lessonId}/`
+  `accounts/{escaped-email}/learners/{stable-readable-private-media-name}/recordings/lessons/{lessonId}/`
 
 `PRIVATE_MEDIA_BUCKET` maps to `parrot-english-private-media` in production and
 `parrot-english-private-media-preview` in preview. These buckets contain
 private learner recordings only. Story artwork and source assets belong to
 separate pipelines; no recording path is rooted under personalized story art.
+The account email is escaped for its path segment, and the readable learner
+directory is immutable even if the visible profile name changes. Current
+learner display names are unique within an account. Deleted learner directories
+and deleted account email roots stay reserved so terminal fences cannot be
+reused by a later owner. R2 has no symlink layer; all media operations use this
+single canonical path.
 
 Do not edit `dist` directly.
 

@@ -69,14 +69,17 @@ function insertLearner(
   sqlite
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, 'not_started', ?, ?)`,
+        (id, auth_user_id, legacy_storage_owner, name, private_media_name, name_key,
+         onboarding_status, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
     )
     .run(
       learnerProfileId,
       userId,
       legacyStorageOwner ? 1 : 0,
       name,
+      name.trim() || "Learner",
+      name.trim().toLowerCase() || null,
       timestamp,
       timestamp,
     );
@@ -207,7 +210,11 @@ describe("guardian management authorization", () => {
             async getSession() {
               return {
                 session: { id: "session-1" },
-                user: { id: "user-1", name: "Guardian" },
+                user: {
+                  id: "user-1",
+                  name: "Guardian",
+                  email: "user-1@example.test",
+                },
               };
             },
           },
@@ -271,7 +278,11 @@ describe("guardian management authorization", () => {
             async getSession() {
               return {
                 session: { id: "session-1" },
-                user: { id: "user-1", name: "Guardian" },
+                user: {
+                  id: "user-1",
+                  name: "Guardian",
+                  email: "user-1@example.test",
+                },
               };
             },
           },
@@ -329,7 +340,11 @@ describe("guardian management authorization", () => {
             async getSession() {
               return {
                 session: { id: "session-1" },
-                user: { id: "user-1", name: "Guardian" },
+                user: {
+                  id: "user-1",
+                  name: "Guardian",
+                  email: "user-1@example.test",
+                },
               };
             },
           },
@@ -364,9 +379,11 @@ describe("guardian management authorization", () => {
         assert.deepEqual(call.identity, {
           sessionId: "session-1",
           userId: "user-1",
+          userEmail: "user-1@example.test",
           userName: "Guardian",
           learnerProfileId: "learner-b",
           learnerName: "Leo",
+          privateMediaName: "Leo",
           legacyStorageOwner: false,
         });
       }
@@ -397,7 +414,11 @@ describe("guardian management authorization", () => {
             async getSession() {
               return {
                 session: { id: "session-1" },
-                user: { id: "user-1", name: "Guardian" },
+                user: {
+                  id: "user-1",
+                  name: "Guardian",
+                  email: "user-1@example.test",
+                },
               };
             },
           },

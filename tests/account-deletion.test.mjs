@@ -22,15 +22,25 @@ import {
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const USER_ID = "user-1";
+const USER_EMAIL = "one@example.test";
 const DEFAULT_LEARNER_ID = "learner-a";
-const USER_PREFIX = accountPrivateMediaPrefix(USER_ID);
+const USER_PREFIX = accountPrivateMediaPrefix(USER_EMAIL);
 const DELETION_REQUESTED_AT = "2026-08-25T10:00:00.000Z";
 const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .update(USER_ID)
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
+const PRIVATE_MEDIA_NAMES = {
+  "learner-a": "Mary",
+  "learner-b": "Bob",
+  "learner-c": "Rose",
+  "learner-removed": "Jack",
+  "learner-z": "Sam",
+};
 const learnerOwner = (learnerProfileId = DEFAULT_LEARNER_ID) => ({
   learnerProfileId,
+  privateMediaName: PRIVATE_MEDIA_NAMES[learnerProfileId],
+  userEmail: USER_EMAIL,
   userId: USER_ID,
 });
 const learnerDubStorage = (
@@ -259,7 +269,10 @@ async function callDub({
       identity: identity ?? {
         learnerName: "Mary",
         learnerProfileId: DEFAULT_LEARNER_ID,
+        legacyStorageOwner: true,
+        privateMediaName: "Mary",
         sessionId: "session-1",
+        userEmail: USER_EMAIL,
         userId: USER_ID,
         userName: "Parent",
       },
@@ -301,8 +314,9 @@ function seedDatabase() {
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-       VALUES (?, ?, 'Mary', 'completed', 0)`,
+        (id, auth_user_id, name, private_media_name, name_key,
+         onboarding_status, legacy_storage_owner)
+       VALUES (?, ?, 'Mary', 'Mary', 'mary', 'completed', 0)`,
     )
     .run(DEFAULT_LEARNER_ID, USER_ID);
   state.sqlite
@@ -317,6 +331,44 @@ function seedDatabase() {
 }
 
 describe("account deletion private-media cleanup", () => {
+  it("never rewrites a persisted account storage namespace", async () => {
+    const state = seedDatabase();
+    const oldPrefix = "personalized-story-art/retained-account/";
+    state.sqlite
+      .prepare(
+        `INSERT INTO account_deletion_tombstone
+          (user_id_hash, r2_prefix, requested_at)
+         VALUES (?, ?, ?)`,
+      )
+      .run(
+        createHash("sha256").update(USER_ID).digest("hex"),
+        oldPrefix,
+        Date.parse(DELETION_REQUESTED_AT),
+      );
+
+    try {
+      await assert.rejects(
+        prepareDeletion({
+          bucket: createBucket(),
+          database: state.database,
+          userId: USER_ID,
+        }),
+        /private-media namespace changed/,
+      );
+      assert.equal(
+        state.sqlite
+          .prepare(
+            `SELECT r2_prefix FROM account_deletion_tombstone
+             WHERE user_id_hash = ?`,
+          )
+          .get(createHash("sha256").update(USER_ID).digest("hex")).r2_prefix,
+        oldPrefix,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("bounds final fence writes while closing every learner subtree", async () => {
     const state = seedDatabase();
     const siblingRecordingKey = learnerLessonRecordingKey("learner-b");
@@ -331,11 +383,12 @@ describe("account deletion private-media cleanup", () => {
     try {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', 0)`,
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
       );
-      insertLearner.run("learner-b", USER_ID, "Bob");
-      insertLearner.run("learner-c", USER_ID, "Rose");
+      insertLearner.run("learner-b", USER_ID, "Bob", "Bob", "bob");
+      insertLearner.run("learner-c", USER_ID, "Rose", "Rose", "rose");
 
       bucket.put = async (key, bytes, options) => {
         activeWrites += 1;
@@ -399,11 +452,12 @@ describe("account deletion private-media cleanup", () => {
     try {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', 0)`,
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
       );
-      insertLearner.run("learner-b", USER_ID, "Bob");
-      insertLearner.run("learner-c", USER_ID, "Rose");
+      insertLearner.run("learner-b", USER_ID, "Bob", "Bob", "bob");
+      insertLearner.run("learner-c", USER_ID, "Rose", "Rose", "rose");
       const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
       const insertConsent = state.sqlite.prepare(
         `INSERT INTO learner_dub_consent
@@ -417,21 +471,30 @@ describe("account deletion private-media cleanup", () => {
         {
           learnerName: "Mary",
           learnerProfileId: DEFAULT_LEARNER_ID,
+          legacyStorageOwner: false,
+          privateMediaName: "Mary",
           sessionId: "session-a",
+          userEmail: USER_EMAIL,
           userId: USER_ID,
           userName: "Parent",
         },
         {
           learnerName: "Bob",
           learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          privateMediaName: "Bob",
           sessionId: "session-b",
+          userEmail: USER_EMAIL,
           userId: USER_ID,
           userName: "Parent",
         },
         {
           learnerName: "Rose",
           learnerProfileId: "learner-c",
+          legacyStorageOwner: false,
+          privateMediaName: "Rose",
           sessionId: "session-c",
+          userEmail: USER_EMAIL,
           userId: USER_ID,
           userName: "Parent",
         },
@@ -490,7 +553,7 @@ describe("account deletion private-media cleanup", () => {
     const firstOrphan = `${USER_PREFIX}temporary/orphan-one.bin`;
     const secondOrphan = `${USER_PREFIX}temporary/orphan-two.bin`;
     const otherAccountObject =
-      `${accountPrivateMediaPrefix("user-2")}learners/learner-z/recordings/keep.audio`;
+      `${accountPrivateMediaPrefix("two@example.test")}learners/Sam/recordings/keep.audio`;
     try {
       const pages = new Map([
         [
@@ -602,9 +665,9 @@ describe("account deletion private-media cleanup", () => {
     ]);
     state.sqlite.prepare(
       `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner, generation,
-         requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 1, ?, ?)`,
+        (learner_profile_id, user_id_hash, legacy_storage_owner,
+         private_media_name, generation, requested_at, storage_keys_json)
+       VALUES (?, ?, 0, 'Jack', 1, ?, ?)`,
     ).run(
       removedLearnerId,
       createHash("sha256").update(USER_ID).digest("hex"),
@@ -642,8 +705,11 @@ describe("account deletion private-media cleanup", () => {
           ).get().learner_storage_identities_json,
         ),
         [
-          { learnerProfileId: DEFAULT_LEARNER_ID },
-          { learnerProfileId: removedLearnerId },
+          {
+            learnerProfileId: DEFAULT_LEARNER_ID,
+            privateMediaName: "Mary",
+          },
+          { learnerProfileId: removedLearnerId, privateMediaName: "Jack" },
         ],
       );
     } finally {
@@ -877,11 +943,12 @@ describe("account deletion private-media cleanup", () => {
     try {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, name, onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, 'not_started', 0)`,
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, legacy_storage_owner)
+         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
       );
-      insertLearner.run("learner-b", USER_ID, "Bob");
-      insertLearner.run("learner-c", USER_ID, "Rose");
+      insertLearner.run("learner-b", USER_ID, "Bob", "Bob", "bob");
+      insertLearner.run("learner-c", USER_ID, "Rose", "Rose", "rose");
       const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
       const insertConsent = state.sqlite.prepare(
         `INSERT INTO learner_dub_consent
@@ -899,7 +966,10 @@ describe("account deletion private-media cleanup", () => {
         identity: {
           learnerName: "Bob",
           learnerProfileId: "learner-b",
+          legacyStorageOwner: false,
+          privateMediaName: "Bob",
           sessionId: "session-b",
+          userEmail: USER_EMAIL,
           userId: USER_ID,
           userName: "Parent",
         },
@@ -954,9 +1024,12 @@ describe("account deletion private-media cleanup", () => {
             .get().learner_storage_identities_json,
         ),
         [
-          { learnerProfileId: DEFAULT_LEARNER_ID },
-          { learnerProfileId: "learner-b" },
-          { learnerProfileId: "learner-c" },
+          {
+            learnerProfileId: DEFAULT_LEARNER_ID,
+            privateMediaName: "Mary",
+          },
+          { learnerProfileId: "learner-b", privateMediaName: "Bob" },
+          { learnerProfileId: "learner-c", privateMediaName: "Rose" },
         ],
       );
 

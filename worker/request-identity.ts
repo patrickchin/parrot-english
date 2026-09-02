@@ -11,6 +11,7 @@ import type { Database } from "./database.ts";
 export type AccountIdentity = {
   sessionId: string;
   userId: string;
+  userEmail: string;
   userName: string | null;
 };
 
@@ -18,6 +19,7 @@ export type LearnerIdentity = AccountIdentity & {
   learnerProfileId: string;
   learnerName: string | null;
   legacyStorageOwner: boolean;
+  privateMediaName: string;
 };
 
 export type LearnerIdentityResolution =
@@ -25,8 +27,51 @@ export type LearnerIdentityResolution =
   | { status: "selection_required" };
 
 export const LEARNER_PROFILE_TARGET_QUERY_KEY = "learnerProfileId";
+export const LEARNER_NAME_CONFLICT_MESSAGE =
+  "Please choose a different name; each learner on this account needs a unique name.";
 
 const MAX_LEARNER_PROFILE_ID_BYTES = 128;
+
+export function normalizeUserEmail(email: string) {
+  return email.normalize("NFKC").trim().toLowerCase();
+}
+
+export function normalizeLearnerName(name: string | null | undefined) {
+  return name?.normalize("NFKC").trim() || null;
+}
+
+export function learnerNameKey(name: string | null | undefined) {
+  return normalizeLearnerName(name)?.toLowerCase() ?? null;
+}
+
+export function availablePrivateMediaName(
+  name: string | null | undefined,
+  existingNames: Iterable<string>,
+) {
+  const baseName = normalizeLearnerName(name) ?? "Learner";
+  const occupied = new Set(
+    Array.from(
+      existingNames,
+      (existing) => existing.normalize("NFKC").trim().toLowerCase(),
+    ),
+  );
+  if (!occupied.has(baseName.toLowerCase())) return baseName;
+  for (let suffix = 2; ; suffix += 1) {
+    const candidate = `${baseName} (${suffix})`;
+    if (!occupied.has(candidate.toLowerCase())) return candidate;
+  }
+}
+
+export function isLearnerNameConflict(error: unknown) {
+  const constraint =
+    /UNIQUE constraint failed:.*learner_profile\.(?:name_key|private_media_name)/i;
+  if (error instanceof Error && constraint.test(error.message)) return true;
+  const cause =
+    error && typeof error === "object" && "cause" in error
+      ? error.cause
+      : null;
+  return cause instanceof Error && constraint.test(cause.message);
+}
 
 export function parseLearnerProfileTarget(
   searchParams: URLSearchParams,
@@ -67,6 +112,7 @@ export async function resolveOwnedLearnerIdentity(
       learnerProfileId: learnerProfile.id,
       learnerName: learnerProfile.name,
       legacyStorageOwner: learnerProfile.legacyStorageOwner,
+      privateMediaName: learnerProfile.privateMediaName,
     })
     .from(learnerProfile)
     .leftJoin(
@@ -89,8 +135,9 @@ export async function resolveOwnedLearnerIdentity(
     ? {
         ...account,
         learnerProfileId: owned.learnerProfileId,
-        learnerName: owned.learnerName?.trim() || null,
+        learnerName: normalizeLearnerName(owned.learnerName),
         legacyStorageOwner: owned.legacyStorageOwner,
+        privateMediaName: owned.privateMediaName,
       }
     : null;
 }
@@ -105,6 +152,7 @@ export async function resolveLearnerIdentity(
         learnerProfileId: learnerProfile.id,
         learnerName: learnerProfile.name,
         legacyStorageOwner: learnerProfile.legacyStorageOwner,
+        privateMediaName: learnerProfile.privateMediaName,
       })
       .from(sessionLearnerSelection)
       .innerJoin(
@@ -142,8 +190,9 @@ export async function resolveLearnerIdentity(
       ? {
           ...account,
           learnerProfileId: selected.learnerProfileId,
-          learnerName: selected.learnerName?.trim() || null,
+          learnerName: normalizeLearnerName(selected.learnerName),
           legacyStorageOwner: selected.legacyStorageOwner,
+          privateMediaName: selected.privateMediaName,
         }
       : null;
   }

@@ -5,6 +5,7 @@ import { createDatabase } from "../worker/database.ts";
 import { handleLearnerProfileRequest } from "../worker/learner-profile.ts";
 import { createLearnerProfileRepository } from "../worker/learner-profile-repository.ts";
 import { createWorker } from "../worker/index.ts";
+import { LEARNER_NAME_CONFLICT_MESSAGE } from "../worker/request-identity.ts";
 import {
   SHARED_GUEST_LEARNER_ID,
   SHARED_GUEST_LEARNER_NAME,
@@ -89,8 +90,10 @@ describe("onboarding Worker routing", () => {
     state.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, name, onboarding_status, created_at, updated_at)
-         VALUES ('learner-a', 'user-1', 'Mia', 'not_started', 1000, 1000)`,
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, created_at, updated_at)
+         VALUES ('learner-a', 'user-1', 'Mia', 'Mia', 'mia',
+           'not_started', 1000, 1000)`,
       )
       .run();
     const session = {
@@ -122,11 +125,13 @@ describe("onboarding Worker routing", () => {
       assert.equal(calls[0].env, env);
       assert.deepEqual(calls[0].identity, {
         sessionId: "session-1",
+        userEmail: "mia@example.test",
         userId: "user-1",
         userName: "Mia",
         learnerProfileId: "learner-a",
         learnerName: "Mia",
         legacyStorageOwner: true,
+        privateMediaName: "Mia",
       });
       assert.equal(calls[0].database.$client, env.DB);
       assert.equal(getAssetCalls(), 0);
@@ -140,17 +145,18 @@ describe("onboarding Worker routing", () => {
     try {
       const insert = state.sqlite.prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-         VALUES (?, 'user-1', ?, ?, 'not_started', 1000, 1000)`,
+          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+           name_key, onboarding_status, created_at, updated_at)
+         VALUES (?, 'user-1', ?, ?, ?, ?, 'not_started', 1000, 1000)`,
       );
-      insert.run("learner-a", 1, "Mia");
-      insert.run("learner-b", 0, "Leo");
+      insert.run("learner-a", 1, "Mia", "Mia", "mia");
+      insert.run("learner-b", 0, "Leo", "Leo", "leo");
       let handlerCalls = 0;
       const worker = createWorker({
         createAuth: () =>
           createAuthStub({
             session: { id: "session-1" },
-            user: { id: "user-1", name: "Mia" },
+            user: { id: "user-1", name: "Mia", email: "mia@example.test" },
           }).auth,
         async handleLearnerProfileRequest() {
           handlerCalls += 1;
@@ -191,7 +197,11 @@ describe("onboarding Worker routing", () => {
         );
       const authStub = createAuthStub({
         session: { id: "shared-guest-session" },
-        user: { id: SHARED_GUEST_USER_ID, name: "Guest" },
+        user: {
+          id: SHARED_GUEST_USER_ID,
+          name: "Guest",
+          email: "shared-guest@parrotbook.invalid",
+        },
       });
       const worker = createWorker({ createAuth: () => authStub.auth });
       const { env } = createEnvironment();
@@ -239,8 +249,10 @@ function createSeededDatabase({ seedProfile = true } = {}) {
     testDatabase.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-         VALUES ('learner-a', 'user-1', 1, 'Mia', 'not_started', 1000, 1000)`,
+          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+           name_key, onboarding_status, created_at, updated_at)
+         VALUES ('learner-a', 'user-1', 1, 'Mia', 'Mia', 'mia',
+           'not_started', 1000, 1000)`,
       )
       .run();
   }
@@ -254,8 +266,10 @@ function seedSiblingProfile(state) {
   state.sqlite
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-       VALUES ('learner-b', 'user-1', 0, 'Leo', 'not_started', 1000, 1000)`,
+        (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+         name_key, onboarding_status, created_at, updated_at)
+       VALUES ('learner-b', 'user-1', 0, 'Leo', 'Leo', 'leo',
+         'not_started', 1000, 1000)`,
     )
     .run();
 }
@@ -316,11 +330,13 @@ async function callLearnerProfile(
       },
       identity: {
         sessionId: "session-1",
+        userEmail: "mia@example.test",
         userId: "user-1",
         userName: "Mia",
         learnerProfileId: "learner-a",
         learnerName: "Mia",
         legacyStorageOwner: true,
+        privateMediaName: "Mia",
         ...identity,
       },
       request: request(path, method, body),
@@ -345,6 +361,7 @@ describe("onboarding persistence and API", () => {
           learnerProfileId: "learner-b",
           learnerName: "Leo",
           legacyStorageOwner: false,
+          privateMediaName: "Leo",
         },
       );
 
@@ -376,6 +393,7 @@ describe("onboarding persistence and API", () => {
           learnerProfileId: "learner-b",
           learnerName: "Leo",
           legacyStorageOwner: false,
+          privateMediaName: "Leo",
         },
       );
       assert.equal((await sibling.json()).canBypass, false);
@@ -452,6 +470,7 @@ describe("onboarding persistence and API", () => {
           learnerProfileId: "learner-b",
           learnerName: "Leo",
           legacyStorageOwner: false,
+          privateMediaName: "Leo",
         },
       );
       assert.deepEqual(await sibling.json(), {
@@ -506,7 +525,7 @@ describe("onboarding persistence and API", () => {
             objects: [
               {
                 etag: "clip-etag",
-                key: "accounts/user-1/learners/learner-a/recordings/lessons/clip-1.audio",
+                key: "accounts/mia@example.test/learners/Mia/recordings/lessons/clip-1.audio",
                 version: "clip-version",
               },
             ],
@@ -528,11 +547,13 @@ describe("onboarding persistence and API", () => {
         env: { DB: state.d1, PRIVATE_MEDIA_BUCKET: bucket },
         identity: {
           sessionId: "session-1",
+          userEmail: "mia@example.test",
           userId: "user-1",
           userName: "Mia",
           learnerProfileId: "learner-a",
           learnerName: "Mia",
           legacyStorageOwner: true,
+          privateMediaName: "Mia",
         },
         request: request(
           "/api/profile/lesson-recording-consent",
@@ -551,12 +572,12 @@ describe("onboarding persistence and API", () => {
           "list",
           {
             include: ["customMetadata"],
-            prefix: "accounts/user-1/learners/learner-a/recordings/lessons/",
+            prefix: "accounts/mia@example.test/learners/Mia/recordings/lessons/",
           },
         ],
         [
           "put",
-          "accounts/user-1/learners/learner-a/recordings/lessons/clip-1.audio",
+          "accounts/mia@example.test/learners/Mia/recordings/lessons/clip-1.audio",
           ["parrot-lesson-recording-purge-v1", "clip-version"],
           {
             customMetadata: {
@@ -608,11 +629,13 @@ describe("onboarding persistence and API", () => {
           },
           identity: {
             sessionId: "session-1",
+            userEmail: "mia@example.test",
             userId: "user-1",
             userName: "Mia",
             learnerProfileId: "learner-a",
             learnerName: "Mia",
             legacyStorageOwner: true,
+            privateMediaName: "Mia",
           },
           request: request(
             "/api/profile/lesson-recording-consent",
@@ -654,7 +677,7 @@ describe("onboarding persistence and API", () => {
                 return {
                   objects: [{
                     etag: "clip-etag",
-                    key: "accounts/user-1/learners/learner-a/recordings/lessons/clip.audio",
+                    key: "accounts/mia@example.test/learners/Mia/recordings/lessons/clip.audio",
                     version: "clip-version",
                   }],
                   truncated: false,
@@ -668,11 +691,13 @@ describe("onboarding persistence and API", () => {
           },
           identity: {
             sessionId: "session-1",
+            userEmail: "mia@example.test",
             userId: "user-1",
             userName: "Mia",
             learnerProfileId: "learner-a",
             learnerName: "Mia",
             legacyStorageOwner: true,
+            privateMediaName: "Mia",
           },
           request: request(
             "/api/profile/lesson-recording-consent",
@@ -711,11 +736,13 @@ describe("onboarding persistence and API", () => {
       const repository = createLearnerProfileRepository(state.database);
       const identity = {
         sessionId: "session-1",
+        userEmail: "mia@example.test",
         userId: "user-1",
         userName: "Mia",
         learnerProfileId: "learner-a",
         learnerName: "Mia",
         legacyStorageOwner: true,
+        privateMediaName: "Mia",
       };
       assert.equal((await repository.saveLessonRecordingConsent(identity, true)).generation, 1);
       const firstRevoke = await repository.saveLessonRecordingConsent(identity, false);
@@ -833,11 +860,13 @@ describe("onboarding persistence and API", () => {
         env: { DB: state.d1, GROQ_API_KEY: "test-key" },
         identity: {
           sessionId: "session-1",
+          userEmail: "mia@example.test",
           userId: "user-1",
           userName: "Mia",
           learnerProfileId: "learner-a",
           learnerName: "Mia",
           legacyStorageOwner: true,
+          privateMediaName: "Mia",
         },
         request: new Request(
           "https://example.test/api/learner-profile/transcribe",
@@ -908,11 +937,13 @@ describe("onboarding persistence and API", () => {
           env: { DB: state.d1, REALTIME_CONVERSATIONS_ENABLED: "1" },
           identity: {
             sessionId: "session-1",
+            userEmail: "mia@example.test",
             userId: "user-1",
             userName: "Mia",
             learnerProfileId: "learner-a",
             learnerName: "Mia",
             legacyStorageOwner: true,
+            privateMediaName: "Mia",
           },
           request: request("/api/learner-profile"),
         },
@@ -969,11 +1000,13 @@ describe("onboarding persistence and API", () => {
           env,
           identity: {
             sessionId: "session-1",
+            userEmail: "mia@example.test",
             userId: "user-1",
             userName: "Mia",
             learnerProfileId: "learner-a",
             learnerName: "Mia",
             legacyStorageOwner: true,
+            privateMediaName: "Mia",
           },
           request: request("/api/learner-profile/answer", "PUT", {
             questionKey: "name",
@@ -1688,6 +1721,131 @@ describe("onboarding persistence and API", () => {
       assert.equal(answers.responses.age.rawAnswer, "9");
     } finally {
       state.close();
+    }
+  });
+
+  it("keeps the directory assigned at creation while updating the current name key", async () => {
+    const state = createSeededDatabase();
+    try {
+      state.sqlite.exec(`
+        UPDATE learner_profile
+        SET name = NULL, private_media_name = 'Learner', name_key = NULL
+        WHERE id = 'learner-a';
+      `);
+      const nameAnswer = (canonicalName) =>
+        createDependencies({
+          async enrichAnswer() {
+            return {
+              ...GENERATED,
+              summary: `Is called ${canonicalName}.`,
+              canonicalName,
+            };
+          },
+        });
+
+      const firstName = await callLearnerProfile(
+        state.database,
+        "/api/learner-profile/answer",
+        "PUT",
+        { questionKey: "name", rawAnswer: "Mary" },
+        { learnerName: null, privateMediaName: "Learner" },
+        nameAnswer("Mary"),
+      );
+      assert.equal(firstName.status, 200);
+      assert.deepEqual(
+        {
+          ...state.sqlite
+            .prepare(
+              `SELECT name, private_media_name, name_key
+               FROM learner_profile WHERE id = 'learner-a'`,
+            )
+            .get(),
+        },
+        { name: "Mary", private_media_name: "Learner", name_key: "mary" },
+      );
+
+      const renamed = await callLearnerProfile(
+        state.database,
+        "/api/profile",
+        "PUT",
+        { questionKey: "name", rawAnswer: "Rose" },
+        { learnerName: "Mary", privateMediaName: "Learner" },
+        nameAnswer("Rose"),
+      );
+      assert.equal(renamed.status, 200);
+      assert.deepEqual(
+        {
+          ...state.sqlite
+            .prepare(
+              `SELECT name, private_media_name, name_key
+               FROM learner_profile WHERE id = 'learner-a'`,
+            )
+            .get(),
+        },
+        { name: "Rose", private_media_name: "Learner", name_key: "rose" },
+      );
+    } finally {
+      state.close();
+    }
+  });
+
+  it("returns a clear conflict for duplicate names in onboarding and profile edits", async () => {
+    for (const path of ["/api/learner-profile/answer", "/api/profile"]) {
+      const state = createSeededDatabase();
+      try {
+        state.sqlite.exec(`
+          UPDATE learner_profile
+          SET name = 'Mary', private_media_name = 'Mary', name_key = 'mary'
+          WHERE id = 'learner-a';
+        `);
+        seedSiblingProfile(state);
+        state.sqlite.exec(`
+          UPDATE learner_profile
+          SET name = 'Rose', private_media_name = 'Rose', name_key = 'rose'
+          WHERE id = 'learner-b';
+        `);
+
+        const response = await callLearnerProfile(
+          state.database,
+          path,
+          "PUT",
+          { questionKey: "name", rawAnswer: "ＭＡＲＹ" },
+          {
+            learnerProfileId: "learner-b",
+            learnerName: "Rose",
+            legacyStorageOwner: false,
+            privateMediaName: "Rose",
+          },
+          createDependencies({
+            async enrichAnswer() {
+              return {
+                ...GENERATED,
+                summary: "Is called Mary.",
+                canonicalName: "ＭＡＲＹ",
+              };
+            },
+          }),
+        );
+
+        assert.equal(response.status, 409, path);
+        assert.deepEqual(await response.json(), {
+          error: "learner_name_conflict",
+          fieldError: LEARNER_NAME_CONFLICT_MESSAGE,
+        });
+        assert.deepEqual(
+          {
+            ...state.sqlite
+              .prepare(
+                `SELECT name, private_media_name, name_key
+                 FROM learner_profile WHERE id = 'learner-b'`,
+              )
+              .get(),
+          },
+          { name: "Rose", private_media_name: "Rose", name_key: "rose" },
+        );
+      } finally {
+        state.close();
+      }
     }
   });
 

@@ -22,7 +22,10 @@ import type { Database } from "./database.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import { LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS } from "./livekit-token.ts";
-import type { LearnerIdentity } from "./request-identity.ts";
+import {
+  isLearnerNameConflict,
+  type LearnerIdentity,
+} from "./request-identity.ts";
 
 const MAX_CONTROLLER_STATE_BYTES = 16 * 1024;
 
@@ -513,6 +516,9 @@ export function createConversationRepository(
       ? JSON.stringify({ ...answers, description: profileSummary })
       : readableProfile.answersJson;
     const timestamp = now();
+    const profileNameFields = profileName && (profileCompleted || profileSummary)
+      ? await profileRepository.nameFields(storedIdentity, profileName)
+      : {};
     const sessionUpdate = database
       .update(conversationSession)
       .set({
@@ -529,34 +535,41 @@ export function createConversationRepository(
         updatedAt: timestamp,
       })
       .where(eq(conversationSession.id, conversationId));
-    if (profileCompleted) {
-      const profileUpdate = database
-        .update(learnerProfile)
-        .set({
-          name: profileName,
-          age: profileAge as number,
-          answersJson,
-          profileStatus: "completed",
-          currentQuestionKey: null,
-          completedAt: timestamp,
-          updatedAt: timestamp,
-        })
-        .where(eq(learnerProfile.id, profile.id));
-      await database.batch([profileUpdate, sessionUpdate] as const);
-    } else {
-      const profileUpdate = database
-        .update(learnerProfile)
-        .set({
-          ...(profileSummary && profileName ? { name: profileName } : {}),
-          ...(profileSummary && Number.isSafeInteger(profileAge)
-            ? { age: profileAge as number }
-            : {}),
-          ...(profileSummary ? { answersJson } : {}),
-          updatedAt: timestamp,
-        })
-        .where(eq(learnerProfile.id, profile.id));
-      await database.batch([profileUpdate, sessionUpdate] as const);
-      await profileRepository.skipSession(storedIdentity);
+    try {
+      if (profileCompleted) {
+        const profileUpdate = database
+          .update(learnerProfile)
+          .set({
+            ...profileNameFields,
+            age: profileAge as number,
+            answersJson,
+            profileStatus: "completed",
+            currentQuestionKey: null,
+            completedAt: timestamp,
+            updatedAt: timestamp,
+          })
+          .where(eq(learnerProfile.id, profile.id));
+        await database.batch([profileUpdate, sessionUpdate] as const);
+      } else {
+        const profileUpdate = database
+          .update(learnerProfile)
+          .set({
+            ...profileNameFields,
+            ...(profileSummary && Number.isSafeInteger(profileAge)
+              ? { age: profileAge as number }
+              : {}),
+            ...(profileSummary ? { answersJson } : {}),
+            updatedAt: timestamp,
+          })
+          .where(eq(learnerProfile.id, profile.id));
+        await database.batch([profileUpdate, sessionUpdate] as const);
+        await profileRepository.skipSession(storedIdentity);
+      }
+    } catch (error) {
+      if (isLearnerNameConflict(error)) {
+        throw new ConversationRepositoryError(409, "learner_name_conflict");
+      }
+      throw error;
     }
     return {
       conversationId,

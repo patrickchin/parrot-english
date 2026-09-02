@@ -168,6 +168,7 @@ describe("Worker authentication", () => {
       (plugin) => plugin.id === "captcha",
     );
 
+    assert.equal(auth.options.user?.changeEmail?.enabled, false);
     assert.ok(sharedGuestPlugin);
     assert.equal(anonymousPlugin, undefined);
     assert.ok(captchaPlugin);
@@ -488,6 +489,60 @@ describe("Worker authentication", () => {
         assert.equal(response.status, 200, pathname);
         assert.deepEqual(await response.json(), { status: true }, pathname);
       }
+    } finally {
+      globalThis.fetch = originalFetch;
+      state.close();
+    }
+  });
+
+  it("keeps a deleted account's readable media root permanently reserved", async () => {
+    const state = createTestD1Database();
+    state.sqlite
+      .prepare(
+        `INSERT INTO account_deletion_tombstone
+          (user_id_hash, r2_prefix, requested_at)
+         VALUES ('deleted-user-hash', 'accounts/mary@example.test/', ?)`,
+      )
+      .run(Date.parse("2026-08-25T08:00:00.000Z"));
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (input, init) => {
+      if (new URL(input).hostname === "challenges.cloudflare.com") {
+        return Response.json({ success: true, action: "account_access" });
+      }
+      return originalFetch(input, init);
+    };
+
+    try {
+      const worker = createTestWorker();
+      const response = await worker.fetch(
+        new Request("https://example.test/api/auth/sign-up/email", {
+          body: JSON.stringify({
+            email: "MARY@example.test",
+            name: "Mary",
+            password: "registered-password",
+          }),
+          headers: {
+            "cf-connecting-ip": "192.0.2.5",
+            "content-type": "application/json",
+            origin: "https://example.test",
+            "x-captcha-response": "valid-turnstile-proof",
+          },
+          method: "POST",
+        }),
+        createAuthEnvironment({ DB: state.d1 }),
+      );
+
+      assert.equal(response.status, 422);
+      assert.equal(
+        (await response.json()).code,
+        "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL",
+      );
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM user WHERE email = ?")
+          .get("mary@example.test").count,
+        0,
+      );
     } finally {
       globalThis.fetch = originalFetch;
       state.close();
@@ -971,7 +1026,11 @@ describe("Worker authentication", () => {
     const authStub = createAuthStub({
       session: {
         session: { id: "session-1" },
-        user: { id: "user-1", name: " Parent One " },
+        user: {
+          id: "user-1",
+          name: " Parent One ",
+          email: "parent@example.test",
+        },
       },
     });
     const state = createTestD1Database();
@@ -997,8 +1056,10 @@ describe("Worker authentication", () => {
     state.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-         VALUES ('learner-b', 'user-1', 0, 'Leo', 'completed', ?, ?)`,
+          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+           name_key, onboarding_status, created_at, updated_at)
+         VALUES ('learner-b', 'user-1', 0, 'Leo', 'Leo', 'leo',
+           'completed', ?, ?)`,
       )
       .run(timestamp, timestamp);
     state.sqlite
@@ -1029,11 +1090,13 @@ describe("Worker authentication", () => {
       assert.deepEqual(await response.json(), { routed: true });
       assert.deepEqual(received.identity, {
         sessionId: "session-1",
+        userEmail: "parent@example.test",
         userId: "user-1",
         userName: "Parent One",
         learnerProfileId: "learner-b",
         learnerName: "Leo",
         legacyStorageOwner: false,
+        privateMediaName: "Leo",
       });
       assert.strictEqual(received.request, request);
       assert.equal(getAssetCalls(), 0);
@@ -1075,7 +1138,10 @@ describe("Worker authentication", () => {
 
   it("allows an authenticated session through the existing speech path", async () => {
     const authStub = createAuthStub({
-      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", email: "parent@example.test" },
+      },
     });
     const { env } = createEnvironment();
     let rateLimitCalls = 0;
@@ -1109,7 +1175,10 @@ describe("Worker authentication", () => {
 
   it("returns an existing rate-limit response before speech evaluation", async () => {
     const authStub = createAuthStub({
-      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", email: "parent@example.test" },
+      },
     });
     const { env } = createEnvironment();
     let evaluationCalls = 0;
@@ -1138,7 +1207,10 @@ describe("Worker authentication", () => {
 
   it("rate limits authenticated onboarding transcription before its handler", async () => {
     const authStub = createAuthStub({
-      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", email: "parent@example.test" },
+      },
     });
     const { env } = createEnvironment();
     let rateLimitIdentity = "";
@@ -1169,7 +1241,10 @@ describe("Worker authentication", () => {
 
   it("rate limits authenticated answer and profile enrichment before handlers", async () => {
     const authStub = createAuthStub({
-      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", email: "parent@example.test" },
+      },
     });
     const state = createTestD1Database();
     try {
@@ -1255,7 +1330,10 @@ describe("Worker authentication", () => {
 
   it("uses one request-scoped auth instance for the session", async () => {
     const authStub = createAuthStub({
-      session: { session: { id: "session-1" }, user: { id: "user-1" } },
+      session: {
+        session: { id: "session-1" },
+        user: { id: "user-1", email: "parent@example.test" },
+      },
     });
     const { env } = createEnvironment();
     let authFactoryCalls = 0;
@@ -1285,6 +1363,7 @@ describe("Worker authentication", () => {
     assert.equal(authFactoryCalls, 1);
     assert.deepEqual(receivedIdentity, {
       sessionId: "session-1",
+      userEmail: "parent@example.test",
       userId: "user-1",
       userName: null,
     });
