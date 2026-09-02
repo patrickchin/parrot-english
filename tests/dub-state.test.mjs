@@ -320,7 +320,7 @@ describe("five little ducks dub domain", () => {
     assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
   });
 
-  it("preserves retryable recovery until count-in reaches a real recording start", () => {
+  it("clears recovery feedback when a new recording attempt starts", () => {
     let state = reduceDubState(createInitialDubState(), {
       type: "LOADED",
       recordingEnabled: true,
@@ -330,13 +330,13 @@ describe("five little ducks dub domain", () => {
     state = reduceDubState(state, {
       type: "SAVE_FAILED",
       message: "Keep this take.",
-      recovery: "save",
+      recovery: "record",
     });
 
     for (const operation of ["mic-opening", "counting-in"]) {
       state = reduceDubState(state, { type: "OPERATION_STARTED", operation });
-      assert.equal(state.saveRecovery, "save");
-      assert.equal(state.error, "Keep this take.");
+      assert.equal(state.saveRecovery, null);
+      assert.equal(state.error, "");
       assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
       assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
     }

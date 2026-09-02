@@ -254,11 +254,9 @@ export function getWordGameQuizRoute(categoryId: string, quizId: string): string
 }
 
 export function getWordGameQuizDisplayName({
-  category,
-  tier,
   quiz,
 }: WordGameSelection): string {
-  return `Level ${category.tiers.indexOf(tier) + 1} · Quiz ${tier.quizzes.indexOf(quiz) + 1}`;
+  return quiz.title;
 }
 
 function shuffled<T>(values: readonly T[], random: () => number): readonly T[] {

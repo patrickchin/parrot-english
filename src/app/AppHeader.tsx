@@ -75,7 +75,7 @@ export function RouteHeader({
   return (
     <nav
       aria-label={ariaLabel}
-      className="absolute left-38 top-3.5 z-20 flex gap-2.5 short:top-2.5 md:top-6 wide:left-41"
+      className="fixed left-3.5 top-3.5 z-20 flex gap-2.5 short:left-2.5 short:top-2.5 md:left-4 md:top-6 wide:left-7"
     >
       {children}
     </nav>
@@ -180,9 +180,7 @@ export function AccountHeader({
   isModePending = false,
   isSigningOut,
   learnerLabel,
-  onOpenAccountPrivacy,
   onOpenGuardianDashboard,
-  onOpenLearnerProfiles,
   onOpenLearnerSwitcher,
   onRetryError,
   onSelectGuardian,
@@ -198,19 +196,15 @@ export function AccountHeader({
   isModePending?: boolean;
   isSigningOut: boolean;
   learnerLabel: string;
-  onOpenAccountPrivacy: () => void;
   onOpenGuardianDashboard: () => void;
-  onOpenLearnerProfiles: () => void;
   onOpenLearnerSwitcher: (() => void) | null;
   onRetryError?: () => void;
   onSelectGuardian: () => void;
   onSignOut: () => void;
   signOutError: string;
-  userEmail: string;
 }) {
   const { language, messages: selectedMessages } = useGuardianLanguage();
-  const messages =
-    activeMode === "guardian" ? selectedMessages : englishGuardianMessages;
+  const messages = selectedMessages;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const accountRef = useRef<HTMLElement>(null);
   const accountButtonRef = useRef<HTMLButtonElement>(null);
@@ -219,19 +213,17 @@ export function AccountHeader({
   const panelId = useId();
   const previousModeRef = useRef(activeMode);
   const signOutAlertId = useId();
-  const managedLearnerLabel = learnerLabel.trim() || "Learner";
+  const managedLearnerLabel = learnerLabel.trim() || messages.account.learner;
   const activeLabel =
     activeMode === "guardian" ? guardianLabel : managedLearnerLabel;
   const isolatedActiveLabel = isolateBidiText(activeLabel);
   const activeModeLabel =
-    activeMode === "guardian" ? messages.account.guardian : "Learner";
+    activeMode === "guardian"
+      ? messages.account.guardian
+      : messages.account.learner;
   const profileLabel = messages.account.profileLabel(
     isolatedActiveLabel,
-    activeMode === "guardian"
-      ? language === "en"
-        ? "guardian"
-        : messages.account.guardian
-      : "learner",
+    language === "en" ? activeMode : activeModeLabel,
   );
   const showSignOutRecovery =
     activeMode === "guardian" && Boolean(signOutError) && !isSigningOut;
@@ -339,6 +331,7 @@ export function AccountHeader({
     <aside
       aria-label={messages.account.label}
       className="fixed right-3.5 top-3.5 z-40 max-w-[calc(100vw-1.75rem)] font-ui text-base font-black leading-none short:right-2.5 short:top-2.5 short:max-w-[calc(100vw-1.25rem)] md:right-4 md:top-6 md:max-w-xl wide:right-7"
+      lang={language}
       ref={accountRef}
     >
       <div
@@ -461,7 +454,7 @@ export function AccountHeader({
           onBlur={(event) => {
             if (
               !isDialogOpen &&
-              !event.currentTarget.contains(event.relatedTarget as Node | null)
+              !accountRef.current?.contains(event.relatedTarget as Node | null)
             ) {
               setIsMenuOpen(false);
             }
@@ -471,7 +464,7 @@ export function AccountHeader({
           <GuardianLanguageControl placement="menu" />
           {activeMode === "learner" ? (
             <div
-              aria-label="Active profile"
+              aria-label={messages.account.activeProfile}
               className="grid min-w-0 gap-1 px-3 pb-2 pt-1 text-xs font-bold leading-tight text-sky-100"
               role="group"
             >
@@ -510,7 +503,7 @@ export function AccountHeader({
                   aria-hidden="true"
                   className="size-5 shrink-0"
                 />
-                Switch learner
+                {messages.account.switchLearner}
               </MenuButton>
             ) : null}
             {activeMode === "learner" ? (
@@ -521,18 +514,9 @@ export function AccountHeader({
                 type="button"
               >
                 <ShieldCheck aria-hidden="true" className="size-5 shrink-0" />
-                <span className="grid gap-1">
-                  <span className="grid gap-1">
-                    <span>Grown-up access</span>
-                    <AdultBoundaryHelper
-                      message="grownUpAccessHelper"
-                      placement="compact"
-                    />
-                  </span>
-                  <span className="text-xs font-bold">
-                    {isModePending ? "Switching modes…" : "Switch modes"}
-                  </span>
-                </span>
+                {isModePending
+                  ? messages.account.switchingModes
+                  : messages.account.grownUpAccess}
               </MenuButton>
             ) : null}
             {activeMode === "guardian" ? (
@@ -543,20 +527,6 @@ export function AccountHeader({
                   type="button"
                 >
                   {messages.account.guardianDashboard}
-                </MenuButton>
-                <MenuButton
-                  onClick={() => selectAction(onOpenLearnerProfiles)}
-                  role="menuitem"
-                  type="button"
-                >
-                  {messages.account.manageLearners}
-                </MenuButton>
-                <MenuButton
-                  onClick={() => selectAction(onOpenAccountPrivacy)}
-                  role="menuitem"
-                  type="button"
-                >
-                  {messages.account.accountPrivacy}
                 </MenuButton>
                 <MenuButton
                   disabled={isSigningOut}

@@ -360,17 +360,17 @@ test("shared menu items do not move when hovered", async ({ page }) => {
   await page
     .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
     .click();
-  const manageLearners = page.getByRole("menuitem", {
-    name: "Manage learners",
+  const dashboard = page.getByRole("menuitem", {
+    name: "Guardian dashboard",
   });
-  const before = await manageLearners.boundingBox();
+  const before = await dashboard.boundingBox();
 
-  await manageLearners.hover();
-  await manageLearners.evaluate((element) =>
+  await dashboard.hover();
+  await dashboard.evaluate((element) =>
     Promise.all(element.getAnimations().map((animation) => animation.finished)),
   );
 
-  expect(await manageLearners.boundingBox()).toEqual(before);
+  expect(await dashboard.boundingBox()).toEqual(before);
 });
 
 test("secondary actions keep a visible frame on light cards", async ({ page }) => {
@@ -409,9 +409,9 @@ for (const viewport of viewports) {
       page,
     });
     await expectPointerStateContrast({
-      interaction: page.getByRole("menuitem", { name: "Account & privacy" }),
+      interaction: page.getByRole("menuitem", { name: "Guardian dashboard" }),
       minimum: 4.5,
-      name: "Account & privacy",
+      name: "Guardian dashboard",
       page,
     });
   });
@@ -438,12 +438,7 @@ for (const viewport of viewports) {
     page,
   }) => {
     await preparePage(page, viewport);
-    await page.goto(guardianPath("/lessons"));
-
-    await page
-      .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
-      .click();
-    await page.getByRole("menuitem", { name: "Account & privacy" }).click();
+    await page.goto(guardianPath("/guardian/account"));
     await page
       .getByRole("region", { name: "Danger zone" })
       .getByRole("button", { name: "Delete account" })
@@ -540,9 +535,7 @@ for (const viewport of viewports) {
   test(`nursery Record keeps rendered contrast on a ${viewport.name}`, async ({ page }) => {
     await preparePage(page, viewport);
     await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-    await page.getByRole("button", {
-      name: /^Edit line 1: .* Not recorded$/,
-    }).click();
+    await page.getByRole("button", { name: "Start with Scene 1" }).click();
     await expectPointerStateContrast({
       interaction: page.getByRole("button", { name: "Record line" }),
       minimum: 4.5,

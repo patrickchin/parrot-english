@@ -127,7 +127,7 @@ test("Chinese account privacy localizes compact technical details and danger act
     "页面导航",
   );
   assert.match(document.body.textContent, /返回家长中心/);
-  for (const heading of ["技术构建详情", "危险操作区"]) {
+  for (const heading of ["已保存的配音片段", "技术构建详情", "危险操作区"]) {
     assert.ok(
       [...document.querySelectorAll("h2, h3")].some(
         (candidate) => candidate.textContent === heading,
@@ -147,6 +147,10 @@ test("Chinese account privacy localizes compact technical details and danger act
     /AI 与已保存的数据|Parrot 如何使用 AI|此账户保存什么|你可以做什么/,
   );
   assert.doesNotMatch(document.body.textContent, /佩奇/);
+  const dubbingLink = [...document.querySelectorAll("a")].find(
+    (candidate) => candidate.textContent === "管理已保存片段",
+  );
+  assert.equal(dubbingLink?.getAttribute("href"), "/guardian/dubbing");
   assert.ok(button("删除账户"));
 });
 

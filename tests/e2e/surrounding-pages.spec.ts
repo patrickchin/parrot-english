@@ -448,7 +448,7 @@ const guardianContentPages = [
   {
     heading: "Guardian dashboard",
     lastControl: (page: Page) =>
-      page.getByRole("button", { name: "Delete account" }),
+      page.getByRole("link", { name: "Open account & privacy" }),
     name: "dashboard",
     path: "/guardian",
   },
@@ -513,7 +513,7 @@ test("guardian learner details has one clear manager exit without a duplicate se
     page.getByRole("region", { name: "Lesson voice recordings" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian#learner-profiles");
+  await expect(page).toHaveURL("/guardian/learners");
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
@@ -523,16 +523,13 @@ test("guardian learner details opens from and returns to Manage learners", async
   page,
 }) => {
   await page.goto(guardianPath("/guardian"));
-  await page
-    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
-    .click();
-  await page.getByRole("menuitem", { name: "Manage learners" }).click();
+  await page.getByRole("link", { name: "Manage learners" }).click();
   await page
     .getByRole("button", { exact: true, name: "Edit ⁨Mia⁩'s profile" })
     .click();
   await expect(page).toHaveURL("/guardian/learners/e2e-learner");
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian#learner-profiles");
+  await expect(page).toHaveURL("/guardian/learners");
   await expect(
     page.getByRole("heading", { exact: true, name: "Manage learners" }),
   ).toBeVisible();
@@ -571,8 +568,6 @@ test("account menu separates account navigation from sign-out", async ({
   const menu = page.getByRole("menu", { name: "Account menu" });
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
     "Sign out",
   ]);
   await menu.getByRole("menuitem", { name: "Sign out" }).click();
@@ -611,12 +606,8 @@ test("account deletion requires the password and returns to sign in only after p
     await route.continue();
   });
   await page.goto(guardianPath("/guardian"));
-
-  await page
-    .getByRole("button", { name: "Profile for ⁨Alex Guardian⁩, guardian mode" })
-    .click();
-  await page.getByRole("menuitem", { name: "Account & privacy" }).click();
-  await expect(page).toHaveURL("/guardian#account-privacy");
+  await page.getByRole("link", { name: "Open account & privacy" }).click();
+  await expect(page).toHaveURL("/guardian/account");
   await page
     .getByRole("region", { name: "Danger zone" })
     .getByRole("button", { name: "Delete account" })
@@ -632,7 +623,7 @@ test("account deletion requires the password and returns to sign in only after p
   await confirm.click();
 
   await expect(page).toHaveURL(
-    /\/login\?returnTo=%2Fguardian%23account-privacy/,
+    /\/login\?returnTo=%2Fguardian%2Faccount/,
   );
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),

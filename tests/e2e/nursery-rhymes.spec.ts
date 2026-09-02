@@ -36,7 +36,10 @@ test("nursery rhyme picker presents six large illustrated projects", async ({ pa
   const back = routeHeader.getByRole("link", { name: "Back to home" });
   await expect(
     page.getByText("Ask a grown-up before recording.", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("录音前请先征得家长同意。", { exact: true }),
+  ).toHaveCount(0);
   await expect(picker.getByText("Sing & record", { exact: true })).toHaveCount(0);
   await expect(picker.getByRole("link")).toHaveCount(6);
   for (const [name, route] of RHYMES) {
@@ -115,25 +118,25 @@ test("every new rhyme opens its own recording workspace", async ({ page }) => {
   }
 });
 
-test("empty nursery projects show project progress and every line status", async ({
+test("empty nursery projects show project progress and every scene status", async ({
   page,
 }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  const lyrics = page.getByRole("complementary", {
-    name: "Lyrics and recordings",
+  const scenes = page.getByRole("complementary", {
+    name: "Scene selection",
   });
 
   await expect(
     page.getByRole("progressbar", { name: "Project recording progress" }),
   ).toHaveText("Ready to start");
   await expect(
-    lyrics.getByRole("button", {
-      name: /^Edit line \d+: .* Not recorded$/,
+    scenes.getByRole("button", {
+      name: /^Scene \d+, .* Ready to start$/,
     }),
-  ).toHaveCount(24);
+  ).toHaveCount(6);
   await expect(
-    lyrics.getByText("Ready to start", { exact: true }),
-  ).toHaveCount(0);
+    scenes.getByText("Ready to start", { exact: true }),
+  ).toHaveCount(6);
 });
 
 for (const route of [
@@ -142,9 +145,7 @@ for (const route of [
 ] as const) {
   test(`${route} selects a different image for each lyric`, async ({ page }) => {
     await page.goto(`${route}?parrotE2eDub=empty`);
-    await page.getByRole("button", {
-      name: /^Edit line 1: .* Not recorded$/,
-    }).click();
+    await page.getByRole("button", { name: "Start with Scene 1" }).click();
 
     const video = page.getByRole("region", { name: "Full video player" });
     const sources: string[] = [];
@@ -164,9 +165,9 @@ for (const route of [
     }
     expect(new Set(sources).size).toBe(4);
 
-    await page.getByRole("button", { name: "Back to all lyrics" }).click();
+    await page.getByRole("button", { name: "Back to scenes" }).click();
     await expect(
-      page.getByRole("complementary", { name: "Lyrics and recordings" }),
+      page.getByRole("complementary", { name: "Scene selection" }),
     ).toBeVisible();
   });
 }

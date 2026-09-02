@@ -136,7 +136,7 @@ for (const viewport of viewports) {
       page.getByRole("group", {
         name: /Guardian guidance language|家长指导语言/,
       }),
-    ).toBeVisible();
+    ).toHaveCount(0);
 
     const [accountBox, statusBox, headingDuring] = await Promise.all([
       pendingAccount.boundingBox(),
@@ -406,13 +406,13 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   await waitForVisualAssets(page);
 
   const heading = page.getByRole("heading", { name: "Guardian dashboard" });
-  const voiceDubbing = page.getByRole("heading", {
+  const accountPrivacy = page.getByRole("heading", {
     exact: true,
-    name: "Voice dubbing",
+    name: "Account & privacy",
   });
-  const [headingBefore, voiceDubbingBefore] = await Promise.all([
+  const [headingBefore, accountPrivacyBefore] = await Promise.all([
     heading.boundingBox(),
-    voiceDubbing.boundingBox(),
+    accountPrivacy.boundingBox(),
   ]);
   const account = page.getByRole("button", {
     name: "Profile for ⁨Alex Guardian⁩, guardian mode",
@@ -428,7 +428,7 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   await expect(pending).toBeVisible();
   await expect(pendingAccount).toBeFocused();
   expect(await heading.boundingBox()).toEqual(headingBefore);
-  expect(await voiceDubbing.boundingBox()).toEqual(voiceDubbingBefore);
+  expect(await accountPrivacy.boundingBox()).toEqual(accountPrivacyBefore);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(640);
@@ -451,19 +451,19 @@ test("sign-out feedback preserves the guardian dashboard and shared header", asy
   const [
     retryBox,
     headingAfter,
-    voiceDubbingAfter,
+    accountPrivacyAfter,
     routeBox,
     accountBox,
   ] = await Promise.all([
     retry.boundingBox(),
     heading.boundingBox(),
-    voiceDubbing.boundingBox(),
+    accountPrivacy.boundingBox(),
     routeControl.boundingBox(),
     account.boundingBox(),
   ]);
   expect(retryBox).not.toBeNull();
   expect(headingAfter!.y - headingBefore!.y).toBe(48);
-  expect(voiceDubbingAfter!.y - voiceDubbingBefore!.y).toBe(48);
+  expect(accountPrivacyAfter!.y - accountPrivacyBefore!.y).toBe(48);
   expect(retryBox!.y).toBeGreaterThanOrEqual(
     accountBox!.y + accountBox!.height,
   );

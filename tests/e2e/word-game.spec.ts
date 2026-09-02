@@ -125,11 +125,11 @@ test("navigates through a category and plays saved four-choice feedback in seque
   await page.getByRole("navigation", { name: "Word games" })
     .getByRole("link", { name: "Animals" }).click();
   await expect(page).toHaveURL(/\/word-games\/animals/);
-  await page.getByRole("link", { name: "Level 1 · Quiz 1" }).click();
+  await page.getByRole("link", { name: "Simple Animals: First look" }).click();
   await expect(page).toHaveURL(/\/word-games\/animals\/simple-1/);
 
   const { choices, main, progress } = game(page);
-  await expect(main.getByRole("heading", { level: 1, name: "Level 1 · Quiz 1" })).toBeVisible();
+  await expect(main.getByRole("heading", { level: 1, name: "Simple Animals: First look" })).toBeVisible();
   await expect(main.getByRole("heading", { level: 2, name: animals[0][1] })).toBeVisible();
   await expect(main.getByRole("link", { name: "Back to Animals" }).first())
     .toHaveAttribute("href", "/word-games/animals");
@@ -414,39 +414,38 @@ test("renders the generated hierarchy, illustrated covers, and accessible color 
     .toHaveCount(1);
   await expect(category.getByRole("link", { name: "Back to word games" }))
     .toHaveAttribute("href", "/word-games");
-  await expect(category.getByRole("heading", { level: 2 })).toHaveCount(0);
-  const quizLinks = category.getByRole("link", { name: /^Level [1-3] · Quiz [1-3]$/ });
+  const levels = [
+    ["Level 1 · Simple", "Simple"],
+    ["Level 2 · Intermediate", "Intermediate"],
+    ["Level 3 · Advanced", "Advanced"],
+  ] as const;
+  await expect(category.getByRole("heading", { level: 2 })).toHaveCount(3);
+  const quizLinks = category.getByRole("link", {
+    name: /^(?:Simple|Intermediate|Advanced) Animals: (?:First look|Mix it up|Quick check)$/,
+  });
   await expect(quizLinks).toHaveCount(9);
-  await expect(category.getByRole("link", { name: "Level 1 · Quiz 1" }))
+  await expect(category.getByRole("link", { name: "Simple Animals: First look" }))
     .toHaveAttribute("href", "/word-games/animals/simple-1");
-  const levelBackgrounds: string[] = [];
-  for (const level of [1, 2, 3]) {
-    const cards = category.getByRole("link", {
-      name: new RegExp(`^Level ${level} · Quiz [1-3]$`),
+  for (const [heading, tier] of levels) {
+    const section = category.getByRole("region", { name: heading });
+    await expect(section.getByRole("heading", { level: 2, name: heading }))
+      .toBeVisible();
+    const cards = section.getByRole("link", {
+      name: new RegExp(`^${tier} Animals: (?:First look|Mix it up|Quick check)$`),
     });
     await expect(cards).toHaveCount(3);
-    const levelLabel = cards.first().getByText(`Level ${level}`, { exact: true });
-    await expect(levelLabel).toBeVisible();
-    levelBackgrounds.push(
-      await levelLabel.evaluate((element) => getComputedStyle(element).backgroundColor),
-    );
-  }
-  expect(new Set(levelBackgrounds).size).toBe(3);
-  for (const quiz of [1, 2, 3]) {
-    await expect(
-      category.getByRole("link", { name: new RegExp(`^Level [1-3] · Quiz ${quiz}$`) })
-        .first()
-        .getByText(`Quiz ${quiz}`, { exact: true }),
-    ).toBeVisible();
+    for (const purpose of ["First look", "Mix it up", "Quick check"]) {
+      await expect(cards.getByText(purpose, { exact: true })).toHaveCount(1);
+    }
   }
   for (const alt of [
     "A friendly cat.", "A friendly bird.", "A friendly duck.",
     "A friendly cow.", "A friendly pig.", "A friendly horse.", "A friendly elephant.",
   ]) await expect(category.getByRole("img", { name: alt }).first()).toBeVisible();
 
-  await category.getByRole("link", { name: "Level 1 · Quiz 1" }).click();
+  await category.getByRole("link", { name: "Simple Animals: First look" }).click();
   const player = page.getByRole("main");
-  await expect(player.getByRole("heading", { level: 1, name: "Level 1 · Quiz 1" }))
+  await expect(player.getByRole("heading", { level: 1, name: "Simple Animals: First look" }))
     .toHaveCount(1);
   await expect(player.getByRole("link", { name: "Back to Animals" }))
     .toHaveAttribute("href", "/word-games/animals");
@@ -510,8 +509,10 @@ test("keeps all independent quiz cards reachable across required category viewpo
     await page.setViewportSize(viewport);
     await page.goto("/word-games/animals");
     const main = page.getByRole("main");
-    const cards = main.getByRole("link", { name: /^Level [1-3] · Quiz [1-3]$/ });
-    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(0);
+    const cards = main.getByRole("link", {
+      name: /^(?:Simple|Intermediate|Advanced) Animals: (?:First look|Mix it up|Quick check)$/,
+    });
+    await expect(main.getByRole("heading", { level: 2 })).toHaveCount(3);
     await expect(cards).toHaveCount(9);
 
     for (const locator of await cards.all()) {
@@ -520,12 +521,23 @@ test("keeps all independent quiz cards reachable across required category viewpo
       await expectHorizontallyContained(page, locator);
     }
 
-    const expectedColumns = viewport.width < 360 ? 1 : viewport.width < 768 ? 2 : 3;
-    expect(await renderedColumns(cards)).toBe(expectedColumns);
-    expect(await renderedRows(cards)).toBe(Math.ceil(9 / expectedColumns));
+    const expectedColumns = viewport.width < 640 ? 1 : 3;
+    for (const [heading, tier] of [
+      ["Level 1 · Simple", "Simple"],
+      ["Level 2 · Intermediate", "Intermediate"],
+      ["Level 3 · Advanced", "Advanced"],
+    ] as const) {
+      const section = main.getByRole("region", { name: heading });
+      const levelCards = section.getByRole("link", {
+        name: new RegExp(`^${tier} Animals: (?:First look|Mix it up|Quick check)$`),
+      });
+      await expect(levelCards).toHaveCount(3);
+      expect(await renderedColumns(levelCards)).toBe(expectedColumns);
+      expect(await renderedRows(levelCards)).toBe(3 / expectedColumns);
+    }
     if (viewport.width === 390) {
-      for (const label of ["Level 1", "Quiz 1"]) {
-        const lineCount = await cards.first().getByText(label, { exact: true })
+      for (const label of ["Level 1 · Simple", "First look"]) {
+        const lineCount = await main.getByText(label, { exact: true }).first()
           .evaluate((element) => {
             const range = document.createRange();
             range.selectNodeContents(element);

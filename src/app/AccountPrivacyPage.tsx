@@ -5,28 +5,49 @@ import {
   useIsSharedGuestAccount,
 } from "../auth/account-actions";
 import { useGuardianLanguage } from "../i18n/guardian-language";
-import { ActionButton, Card } from "../shared/ui";
+import { ActionButton, ActionLink, Card } from "../shared/ui";
 import { AccountDeleteDialog } from "./AccountDeleteDialog";
 import { AccountPrivacySections } from "./AboutDialog";
 import { HeaderLink, RouteHeader } from "./AppHeader";
-import { getGuardianPath } from "./app-routes";
+import { getGuardianDubbingPath, getGuardianPath } from "./app-routes";
 
-export function AccountPrivacyContent({
-  embedded = false,
-}: {
-  embedded?: boolean;
-}) {
+export function AccountPrivacyContent() {
   const { messages } = useGuardianLanguage();
   const copy = messages.accountPrivacy;
   const deleteAccount = useDeleteAccountAction();
   const isSharedGuest = useIsSharedGuestAccount();
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const DangerHeading = embedded ? "h3" : "h2";
 
-  const content = (
+  return (
     <>
-      <AccountPrivacySections headingLevel={embedded ? 3 : 2} />
+      <Card
+        aria-labelledby="voice-clips-title"
+        className="grid items-center gap-4 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:p-6"
+        tone="solid"
+      >
+        <div className="grid min-w-0 gap-2">
+          <h2
+            className="m-0 text-2xl leading-tight text-brand-navy"
+            id="voice-clips-title"
+          >
+            {copy.savedVoiceClipsTitle}
+          </h2>
+          <p className="m-0 font-bold leading-relaxed text-slate-600">
+            {copy.savedVoiceClipsDescription}
+          </p>
+        </div>
+        <ActionLink
+          className="w-full sm:w-auto"
+          size="compact"
+          to={getGuardianDubbingPath()}
+          variant="surface"
+        >
+          {copy.manageSavedVoiceClips}
+        </ActionLink>
+      </Card>
+
+      <AccountPrivacySections />
 
       {!isSharedGuest ? (
         <Card
@@ -36,12 +57,12 @@ export function AccountPrivacyContent({
           tone="solid"
         >
           <div className="grid gap-2">
-            <DangerHeading
+            <h2
               className="m-0 text-2xl font-black leading-tight text-red-800"
               id="danger-zone-title"
             >
               {copy.dangerTitle}
-            </DangerHeading>
+            </h2>
             <p className="m-0 font-bold leading-relaxed text-slate-700">
               {copy.dangerBody}
             </p>
@@ -68,28 +89,6 @@ export function AccountPrivacyContent({
       ) : null}
     </>
   );
-
-  if (embedded) {
-    return (
-      <section
-        aria-labelledby="account-privacy-heading"
-        className="mx-auto grid w-full max-w-3xl scroll-mt-24 gap-6"
-        id="account-privacy"
-      >
-        <header className="grid gap-2 text-center">
-          <h2
-            className="m-0 text-3xl leading-tight text-brand-navy sm:text-4xl"
-            id="account-privacy-heading"
-          >
-            {copy.title}
-          </h2>
-        </header>
-        {content}
-      </section>
-    );
-  }
-
-  return content;
 }
 
 export function AccountPrivacyPage() {

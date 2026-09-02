@@ -422,7 +422,24 @@ async function chooseLearnerAndStart(
 }
 
 async function chooseLearnerFromManager(page: Page, name: string) {
+  await page
+    .getByRole("link", { name: "Back to guardian dashboard" })
+    .click();
   return chooseLearnerAndStart(page, name);
+}
+
+async function openLearnerManagerFromDashboard(page: Page) {
+  await page.getByRole("link", { name: "Manage learners" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Manage learners" }),
+  ).toBeVisible();
+}
+
+async function openLearnerModeChooserFromManager(page: Page) {
+  await page
+    .getByRole("link", { name: "Back to guardian dashboard" })
+    .click();
+  return openLearnerModeChooser(page);
 }
 
 async function activeLearnerId(page: Page) {
@@ -663,7 +680,7 @@ test("edits Noah by ID while Mia remains in learner mode after Back and refresh"
     .toBe("learner-mia");
 
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian#learner-profiles");
+  await expect(page).toHaveURL("/guardian/learners");
   await expect(learnerCard(page, "Mia")).not.toContainText("Learner mode");
   await page.reload();
   await expect.poll(() => activeLearnerId(page)).toBe("learner-mia");
@@ -689,9 +706,9 @@ test("active learner detail saves reach learner-mode consumers in the same SPA",
     page.getByRole("status").filter({ hasText: "available automatically" }),
   ).toBeVisible();
   await page.getByRole("button", { exact: true, name: "Save changes" }).click();
-  await expect(page).toHaveURL("/guardian#learner-profiles");
+  await expect(page).toHaveURL("/guardian/learners");
 
-  await chooseLearnerAndStart(page, "Mia Updated");
+  await chooseLearnerFromManager(page, "Mia Updated");
   await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("button", {
@@ -1021,9 +1038,7 @@ test("hides an unsaved Guardian profile edit during handoff and restores persist
     await draftPage.bringToFront();
     await expect(draftPage).toHaveURL("/");
     await unlockGuardianFromLearnerMenu(draftPage);
-    await expect(
-      draftPage.getByRole("heading", { name: "Manage learners" }),
-    ).toBeVisible();
+    await openLearnerManagerFromDashboard(draftPage);
     await learnerCard(draftPage, "Mia")
       .getByRole("button", { name: "Edit ⁨Mia⁩'s profile" })
       .click();
@@ -1072,7 +1087,7 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
 
     await profilePage.getByLabel("Name", { exact: true }).fill("Mia Targeted");
     await profilePage.getByRole("button", { name: "Save changes" }).click();
-    await expect(profilePage).toHaveURL("/guardian#learner-profiles");
+    await expect(profilePage).toHaveURL("/guardian/learners");
     await expect(learnerCard(profilePage, "Mia Targeted")).toBeVisible();
 
     await managerPage.bringToFront();
@@ -1080,9 +1095,7 @@ test("keeps a saved URL-targeted learner update after another tab changes learne
     await profilePage.bringToFront();
     await expect(profilePage).toHaveURL("/");
     await unlockGuardianFromLearnerMenu(profilePage);
-    await expect(
-      profilePage.getByRole("heading", { name: "Manage learners" }),
-    ).toBeVisible();
+    await openLearnerManagerFromDashboard(profilePage);
     await expect(learnerCard(profilePage, "Mia Targeted")).toBeVisible();
     await expect(learnerCard(profilePage, "Noah")).not.toContainText(
       "Learner mode",
@@ -1370,13 +1383,13 @@ test("automatically reveals a selection-required roster in Guardian mode", async
   );
   await page.goto(requestedUrl);
 
-  await expect(page).toHaveURL(/\/guardian\?[^#]+#learner-profiles$/);
+  await expect(page).toHaveURL(/\/guardian\/learners\?[^#]+$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
   await expect(page.getByRole("radio")).toHaveCount(0);
-  const chooser = await openLearnerModeChooser(page);
+  const chooser = await openLearnerModeChooserFromManager(page);
   await expect(chooser.getByRole("radio")).toHaveCount(0);
   await expect(
     chooser.getByRole("button", { name: /Start learner mode as/ }),
@@ -1489,7 +1502,7 @@ test("suppresses a held selection response after a newer selection wins", async 
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
-  const chooser = await openLearnerModeChooser(page);
+  const chooser = await openLearnerModeChooserFromManager(page);
   const startNoah = chooser.getByRole("button", {
     exact: true,
     name: "Start learner mode as ⁨Noah⁩",
@@ -1546,7 +1559,7 @@ test("keeps the chooser modal and non-dismissible while a learner switch is pend
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian/learners", "stale-selection"));
-  const chooser = await openLearnerModeChooser(page);
+  const chooser = await openLearnerModeChooserFromManager(page);
   await chooser
     .getByRole("button", {
       exact: true,
@@ -1634,7 +1647,7 @@ test("keeps sibling identity and every Guardian action out of learner routes", a
     const menu = page.getByRole("menu", { name: "Account menu" });
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Switch learner",
-      "Grown-up accessSwitch modes",
+      "Grown-up access",
     ]);
     await expect(menu).not.toContainText("Noah");
     await page.keyboard.press("Escape");
@@ -1699,8 +1712,6 @@ for (const viewport of requiredViewports) {
     await expect(panel).not.toContainText("Managing Mia");
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Guardian dashboard",
-      "Manage learners",
-      "Account & privacy",
       "Sign out",
     ]);
     await expectContainedHorizontally(panel, page);
@@ -1710,6 +1721,9 @@ for (const viewport of requiredViewports) {
     await main.evaluate((element) => element.scrollTo(0, element.scrollHeight));
     await expect(add).toBeVisible();
 
+    await page
+      .getByRole("link", { name: "Back to guardian dashboard" })
+      .click();
     const switchTrigger = page.getByRole("button", {
       exact: true,
       name: "Switch to learner",
@@ -1810,8 +1824,6 @@ async function expectGuardianNameSurfacesContained(page: Page, name: string) {
     ).toHaveCount(0);
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Guardian dashboard",
-      "Manage learners",
-      "Account & privacy",
       "Sign out",
     ]);
     directions.push(...(await expectNameContentContained(page, name)));
@@ -1844,8 +1856,6 @@ test("wraps an unbroken 120-character active learner name without horizontal ove
   ).toHaveCount(0);
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
     "Sign out",
   ]);
   await expectContainedHorizontally(menu.locator(".."), page);
@@ -1886,7 +1896,7 @@ test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian nav
     page.getByRole("heading", { name: "Learner details" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian#learner-profiles");
+  await expect(page).toHaveURL("/guardian/learners");
   await expect(
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();

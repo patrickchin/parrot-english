@@ -3,9 +3,7 @@ import { useLocation } from "react-router";
 
 export function hasRouteOwnedFocusLifecycle(pathname: string) {
   return (
-    pathname === "/guardian" ||
-    pathname.includes("/scenes/") ||
-    pathname.includes("/pages/")
+    pathname.includes("/scenes/") || pathname.includes("/pages/")
   );
 }
 

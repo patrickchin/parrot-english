@@ -69,16 +69,11 @@ export const englishGuardianMessages = {
     title: "Guardian dashboard",
     switchToLearner: "Switch to learner",
     learnerProfilesTitle: "Learner profiles",
-    learnerProfilesDescription:
-      "Add, edit, or delete learner profiles. You’ll choose a learner when switching to learner mode.",
+    learnerProfilesDescription: "Add, edit, or delete learner profiles.",
     manageLearners: "Manage learners",
-    voiceDubbingTitle: "Voice dubbing",
-    voiceDubbingDescription:
-      "Review and delete private nursery-rhyme voice clips.",
-    manageVoiceDubbing: "Manage voice dubbing",
     accountPrivacyTitle: "Account & privacy",
     accountPrivacyDescription:
-      "View technical build details and available account controls.",
+      "Manage saved recordings, privacy details, and account deletion.",
     openAccountPrivacy: "Open account & privacy",
   },
   dubbingSettings: {
@@ -116,6 +111,10 @@ export const englishGuardianMessages = {
   accountPrivacy: {
     backToDashboard: "Back to Guardian dashboard",
     title: "Account & privacy",
+    savedVoiceClipsTitle: "Saved voice clips",
+    savedVoiceClipsDescription:
+      "Review or delete saved nursery-rhyme recordings.",
+    manageSavedVoiceClips: "Manage saved clips",
     technicalLabel: "Technical build details",
     technicalTitle: "Technical build details",
     technicalSubtitle: "Versions and AI services for troubleshooting",
@@ -379,23 +378,19 @@ export const englishGuardianMessages = {
     learnerModeStatus: "Learner mode",
     activeProfile: "Active profile",
     menuLabel: "Account menu",
+    switchLearner: "Switch learner",
     grownUpAccess: "Grown-up access",
     switchingModes: "Switching modes…",
-    switchModes: "Switch modes",
     guardianDashboard: "Guardian dashboard",
-    manageLearners: "Manage learners",
-    accountPrivacy: "Account & privacy",
     signOut: "Sign out",
     signingOut: "Signing out…",
     signOutAgain: "Sign out again",
   },
   learnerBoundary: {
-    grownUpAccessHelper: "",
     guardianAccessErrorHelper: "",
     switchToLearnerHelper: "",
     savedAnswersHelper: "",
     recordingPermissionHelper: "",
-    recordingCautionHelper: "",
   },
 } as const;
 

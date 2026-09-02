@@ -146,16 +146,11 @@ function renderAccountHeader(overrides = {}, language = "en") {
         isSigningOut: false,
         hasActiveLearner: true,
         learnerLabel: "Mia",
-        onDeleteAccount: async () => null,
         onOpenGuardianDashboard() {},
-        onOpenLearnerProfiles() {},
         onOpenLearnerSwitcher() {},
-        onOpenProfile() {},
         onSelectGuardian() {},
-        onSelectLearner() {},
         onSignOut() {},
         signOutError: "",
-        userEmail: "patrick@example.test",
         ...overrides,
       }),
     ),
@@ -617,7 +612,7 @@ test("learner auth recovery remains English under a Chinese preference", () => {
   assert.doesNotMatch(`${pending}${failed}`, /正在检查登录状态|暂时无法登录/);
 });
 
-test("account chrome localizes only Guardian mode and allowlisted learner helpers", () => {
+test("account chrome follows the Guardian language in both modes", () => {
   const guardian = renderAccountHeader(
     {
       activeMode: "guardian",
@@ -627,23 +622,13 @@ test("account chrome localizes only Guardian mode and allowlisted learner helper
     "zh-Hans",
   );
   const learner = renderAccountHeader({}, "zh-Hans");
-  const learnerFailure = renderAccountHeader(
-    {
-      error: "Guardian access could not be checked. Please try again.",
-      errorHelper: "guardianAccessErrorHelper",
-    },
-    "zh-Hans",
-  );
 
   assert.match(guardian, /aria-label="账户"/);
   assert.match(guardian, /家长/);
-  assert.match(learner, /aria-label="Account"/);
-  assert.match(learner, />Learner</);
-  assert.match(learnerFailure, /Guardian access could not be checked/);
-  assert.match(
-    learnerFailure,
-    /<span[^>]*lang="zh-Hans"[^>]*>请让家长重试。<\/span>/,
-  );
+  assert.match(learner, /aria-label="账户"/);
+  assert.match(learner, /lang="zh-Hans"/);
+  assert.match(learner, /aria-label="⁨Mia⁩的档案，学习者模式"/);
+  assert.match(learner, />学习者</);
 });
 
 test("failed form state preserves values and disables controls while submitting", () => {

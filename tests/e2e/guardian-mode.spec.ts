@@ -76,11 +76,12 @@ function guardianLearnerUrl(path: string, scenario: string) {
 
 async function expectGuardianSection(page: Page, sectionId: string) {
   await expect
-    .poll(() => {
-      const url = new URL(page.url());
-      return `${url.pathname}${url.hash}`;
-    })
-    .toBe(`/guardian#${sectionId}`);
+    .poll(() => new URL(page.url()).pathname)
+    .toBe(
+      sectionId === "account-privacy"
+        ? "/guardian/account"
+        : "/guardian/dubbing",
+    );
 }
 
 async function chooseLearnerAndStart(
@@ -134,7 +135,7 @@ for (const viewport of requiredViewports) {
     await expectInsideViewport(panel, viewport);
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Switch learner",
-      "Grown-up accessSwitch modes",
+      "Grown-up access",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),
@@ -268,13 +269,12 @@ test("successful switch opens guardian management and announces the mode", async
     }),
   ).toHaveText("Guardian mode");
 
-  for (const heading of [
-    "Manage learners",
-    "Voice dubbing",
-    "Account & privacy",
-  ]) {
+  for (const heading of ["Learner profiles", "Account & privacy"]) {
     await expect(page.getByRole("heading", { name: heading })).toBeVisible();
   }
+  await expect(
+    page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
+  ).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Learning & content" }),
   ).toHaveCount(0);
@@ -292,8 +292,6 @@ test("successful switch opens guardian management and announces the mode", async
     .click();
   await expect(menu.getByRole("menuitem")).toHaveText([
     "Guardian dashboard",
-    "Manage learners",
-    "Account & privacy",
     "Sign out",
   ]);
   await expect(
@@ -320,10 +318,9 @@ test("automatic Guardian access resumes the current deep link", async ({
     page.getByRole("heading", { exact: true, name: "Voice dubbing" }),
   ).toBeVisible();
   const openedUrl = new URL(page.url());
-  expect(openedUrl.pathname).toBe("/guardian");
+  expect(openedUrl.pathname).toBe("/guardian/dubbing");
   expect(openedUrl.searchParams.get("section")).toBe("recordings");
-  expect(openedUrl.searchParams.get("learnerProfileId")).toBeNull();
-  expect(openedUrl.hash).toBe("#voice-dubbing");
+  expect(openedUrl.hash).toBe("#clips");
   expect(await page.evaluate(() => window.history.length)).toBe(
     historyLengthBeforeAccess,
   );
@@ -840,12 +837,6 @@ test("direct switching closes learner menu while guardian-menu keys follow rende
   const dashboard = menu.getByRole("menuitem", {
     name: "Guardian dashboard",
   });
-  const manageLearners = menu.getByRole("menuitem", {
-    name: "Manage learners",
-  });
-  const accountPrivacy = menu.getByRole("menuitem", {
-    name: "Account & privacy",
-  });
   const signOut = menu.getByRole("menuitem", { name: "Sign out" });
   await expect(
     page
@@ -856,11 +847,9 @@ test("direct switching closes learner menu while guardian-menu keys follow rende
   await page.keyboard.press("Tab");
   await expect(dashboard).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(manageLearners).toBeFocused();
-  await page.keyboard.press("ArrowDown");
-  await expect(accountPrivacy).toBeFocused();
-  await page.keyboard.press("ArrowDown");
   await expect(signOut).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(dashboard).toBeFocused();
   await page.keyboard.press("End");
   await expect(signOut).toBeFocused();
   await page.keyboard.press("Home");
@@ -902,7 +891,7 @@ test("learner routes omit adult management actions", async ({ page }) => {
     const menu = await openLearnerAccountMenu(page);
     await expect(menu.getByRole("menuitem")).toHaveText([
       "Switch learner",
-      "Grown-up accessSwitch modes",
+      "Grown-up access",
     ]);
     await expect(
       page.getByRole("group", { name: "Choose profile mode" }),

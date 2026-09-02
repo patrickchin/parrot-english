@@ -120,7 +120,7 @@ export function controlClassName({
     size === "header" &&
       "size-13 min-h-0 min-w-0 gap-2 p-0 text-base short:size-12 short:text-sm md:size-16 md:text-base wide:w-auto wide:px-5",
     size === "inline" && "min-h-11 min-w-0 gap-1 px-1 py-0 text-sm",
-    size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-0 text-base",
+    size === "menu" && "min-h-11 w-full min-w-0 gap-2 px-4 py-2 text-base",
     variant === "brand" && "bg-brand-pink text-brand-action-ink",
     variant === "dangerSurface" && "bg-rose-50 text-red-800",
     variant === "navy" && "bg-brand-navy text-white",
