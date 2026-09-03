@@ -1,48 +1,120 @@
 import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
-import { Buffer } from "node:buffer";
 import type { ServerResponse } from "node:http";
 import { defineConfig, type Plugin } from "vite";
-
-type MockEvaluationScenario = "correct" | "incorrect" | "no-speech";
+import type {
+  ConversationScenarioDescriptor,
+  ConversationSession,
+  ConversationStartResponse,
+  ConversationTurn,
+} from "./src/conversation/conversation-api.ts";
+import type {
+  FullLearnerProfileState,
+  LearnerProfileSummary,
+  ProfileState,
+} from "./src/learner-profile/learner-profile-api.ts";
 
 type PackageManifest = {
   version?: string;
 };
 
-const MOCK_API_DELAY_MS = Number.parseInt(
-  process.env.PARROT_E2E_MOCK_API_DELAY_MS ?? "900",
-  10
-);
 const E2E_TIMESTAMP = "2026-07-10T08:00:00.000Z";
 
 const E2E_PROFILE = {
   id: "e2e-learner",
   name: "Mia",
   age: 8,
+  description: null,
   answers: {
+    description: null,
     schemaVersion: 2,
     questionnaireVersion: 2,
     responses: {},
-    legacyAnswers: null,
   },
-  questionnaireVersion: 2,
   currentQuestionKey: null,
   profileStatus: "completed",
   completedAt: E2E_TIMESTAMP,
   storyLevel: "first-words",
-};
+} satisfies LearnerProfileSummary;
 
 const E2E_LEARNER_PROFILE_STATE = {
   mode: "full",
-  experienceMode: "realtime",
   profile: E2E_PROFILE,
-  questionnaire: { version: 2 },
   question: null,
   progress: { answered: 2, current: 2, total: 2 },
   canBypass: true,
-};
+} satisfies FullLearnerProfileState;
+
+const E2E_GUARDIAN_PROFILE_STATE = {
+  profile: {
+    ...E2E_PROFILE,
+    lessonRecordingCleanupPending: false,
+    lessonRecordingConsent: false,
+  },
+  questions: [],
+} satisfies ProfileState;
+
+const E2E_CONVERSATION = {
+  id: "e2e-conversation",
+  authUserId: "e2e-user",
+  scenarioKey: "onboarding",
+  scenarioVersion: 1,
+  promptStyle: null,
+  roomName: "e2e-room",
+  status: "starting",
+  finishReason: null,
+  controllerState: {},
+  startedAt: E2E_TIMESTAMP,
+  endedAt: null,
+  createdAt: E2E_TIMESTAMP,
+  updatedAt: E2E_TIMESTAMP,
+} satisfies ConversationSession;
+
+const E2E_CONVERSATION_SCENARIO = {
+  key: "onboarding",
+  version: 1,
+  requiredDetails: ["name", "age"],
+  summaryMode: "prose",
+  maxOptionalExchanges: 3,
+} satisfies ConversationScenarioDescriptor;
+
+const E2E_CONVERSATION_START_RESPONSE = {
+  conversation: E2E_CONVERSATION,
+  livekit: {
+    participantToken: "parrot-e2e-participant-token",
+    url: "wss://parrot-e2e.invalid",
+  },
+  scenario: E2E_CONVERSATION_SCENARIO,
+} satisfies ConversationStartResponse;
+
+const E2E_CONVERSATION_TURN = {
+  id: "e2e-agent-greeting",
+  conversationId: E2E_CONVERSATION.id,
+  providerItemId: "e2e-agent-greeting-provider-item",
+  sequence: 0,
+  role: "assistant",
+  text: "Lovely chat! I'll remember that.",
+  language: "en",
+  inputMode: "voice",
+  interrupted: false,
+  startedAt: E2E_TIMESTAMP,
+  endedAt: E2E_TIMESTAMP,
+  createdAt: E2E_TIMESTAMP,
+} satisfies ConversationTurn;
+
+const E2E_ACTIVE_CONVERSATION = {
+  ...E2E_CONVERSATION,
+  status: "active",
+  turns: [E2E_CONVERSATION_TURN],
+} satisfies ConversationSession;
+
+const E2E_STOPPED_CONVERSATION = {
+  ...E2E_CONVERSATION,
+  status: "stopped",
+  finishReason: "finished_by_learner",
+  endedAt: E2E_TIMESTAMP,
+} satisfies ConversationSession;
 
 function sendMockJson(response: ServerResponse, payload: unknown, status = 200) {
   response.statusCode = status;
@@ -50,63 +122,6 @@ function sendMockJson(response: ServerResponse, payload: unknown, status = 200) 
   response.setHeader("Content-Type", "application/json");
   response.setHeader("X-Parrot-Mock-Api", "true");
   response.end(JSON.stringify(payload));
-}
-
-const MOCK_EVALUATIONS: Record<
-  MockEvaluationScenario,
-  {
-    transcript: string;
-    similarity: number;
-    outcome: "correct" | "incorrect" | "noInput";
-    passed: boolean;
-    feedbackText: string;
-    retryAllowed: boolean;
-  }
-> = {
-  correct: {
-    transcript: "Hello, Peppa!",
-    similarity: 1,
-    outcome: "correct",
-    passed: true,
-    feedbackText: "Great job! Let's continue.",
-    retryAllowed: false,
-  },
-  incorrect: {
-    transcript: "yellow ball",
-    similarity: 0.25,
-    outcome: "incorrect",
-    passed: false,
-    feedbackText: "Almost! Listen to Dolly and try again.",
-    retryAllowed: true,
-  },
-  "no-speech": {
-    transcript: "",
-    similarity: 0,
-    outcome: "noInput",
-    passed: false,
-    feedbackText: "I couldn't hear you. Let's slow down and try again.",
-    retryAllowed: true,
-  },
-};
-
-function getMockEvaluationScenario(bodyText: string): MockEvaluationScenario {
-  if (bodyText.includes("parrot-e2e-audio:incorrect")) return "incorrect";
-  if (bodyText.includes("parrot-e2e-audio:no-speech")) return "no-speech";
-  if (process.env.PARROT_E2E_SCENARIO === "incorrect") return "incorrect";
-  if (process.env.PARROT_E2E_SCENARIO === "no-speech") return "no-speech";
-
-  return "correct";
-}
-
-function sendMockEvaluationResponse(
-  response: ServerResponse,
-  scenario: MockEvaluationScenario
-) {
-  response.statusCode = 200;
-  response.setHeader("Cache-Control", "no-store");
-  response.setHeader("Content-Type", "application/json");
-  response.setHeader("X-Parrot-Mock-Api", "true");
-  response.end(JSON.stringify(MOCK_EVALUATIONS[scenario]));
 }
 
 function readPackageVersion() {
@@ -193,8 +208,11 @@ function parrotE2eMockApi(): Plugin {
           return;
         }
 
-        if (pathname === "/api/profile" && request.method === "GET") {
-          sendMockJson(response, { profile: E2E_PROFILE, questions: [] });
+        if (
+          pathname === `/api/learner-profiles/${E2E_PROFILE.id}` &&
+          request.method === "GET"
+        ) {
+          sendMockJson(response, E2E_GUARDIAN_PROFILE_STATE);
           return;
         }
 
@@ -225,37 +243,7 @@ function parrotE2eMockApi(): Plugin {
         }
 
         if (pathname === "/api/conversations" && request.method === "POST") {
-          sendMockJson(
-            response,
-            {
-              conversation: {
-                id: "e2e-conversation",
-                authUserId: "e2e-user",
-                scenarioKey: "onboarding",
-                scenarioVersion: 1,
-                roomName: "e2e-room",
-                status: "starting",
-                finishReason: null,
-                controllerState: {},
-                startedAt: E2E_TIMESTAMP,
-                endedAt: null,
-                createdAt: E2E_TIMESTAMP,
-                updatedAt: E2E_TIMESTAMP,
-              },
-              livekit: {
-                participantToken: "parrot-e2e-participant-token",
-                url: "wss://parrot-e2e.invalid",
-              },
-              scenario: {
-                key: "onboarding",
-                version: 1,
-                requiredDetails: ["name", "age"],
-                summaryMode: "prose",
-                maxOptionalExchanges: 3,
-              },
-            },
-            201,
-          );
+          sendMockJson(response, E2E_CONVERSATION_START_RESPONSE, 201);
           return;
         }
 
@@ -264,16 +252,7 @@ function parrotE2eMockApi(): Plugin {
           request.method === "GET"
         ) {
           sendMockJson(response, {
-            conversation: {
-              id: "e2e-conversation",
-              turns: [
-                {
-                  id: "e2e-agent-greeting",
-                  role: "assistant",
-                  text: "Lovely chat! I'll remember that.",
-                },
-              ],
-            },
+            conversation: E2E_ACTIVE_CONVERSATION,
           });
           return;
         }
@@ -283,10 +262,7 @@ function parrotE2eMockApi(): Plugin {
           request.method === "POST"
         ) {
           sendMockJson(response, {
-            conversation: {
-              id: "e2e-conversation",
-              status: "finished",
-            },
+            conversation: E2E_STOPPED_CONVERSATION,
           });
           return;
         }
@@ -304,32 +280,6 @@ function parrotE2eMockApi(): Plugin {
         }
 
         next();
-      });
-
-      server.middlewares.use("/api/evaluate-speech", (request, response, next) => {
-        if (request.method !== "POST") {
-          next();
-          return;
-        }
-
-        const chunks: Buffer[] = [];
-        request.on("data", (chunk: Buffer) => {
-          chunks.push(chunk);
-        });
-        request.on("end", () => {
-          const scenario = getMockEvaluationScenario(
-            Buffer.concat(chunks).toString("utf8")
-          );
-
-          setTimeout(() => {
-            sendMockEvaluationResponse(response, scenario);
-          }, Number.isFinite(MOCK_API_DELAY_MS) ? MOCK_API_DELAY_MS : 900);
-        });
-        request.on("error", () => {
-          response.statusCode = 400;
-          response.setHeader("Content-Type", "application/json");
-          response.end(JSON.stringify({ error: "mock_request_failed" }));
-        });
       });
     },
   };

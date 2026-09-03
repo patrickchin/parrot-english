@@ -130,16 +130,15 @@ function seedDatabase({ consent = true } = {}) {
   insertUser.run("user-2", "Parent Two", "two@example.test", timestamp, timestamp);
   const insertProfile = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+      (id, auth_user_id, name, private_media_name,
        name_key, onboarding_status,
        lesson_recording_consent_version, lesson_recording_consent_at,
        created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, 'completed', ?, ?, ?, ?)`,
   );
   insertProfile.run(
     "profile-1",
     USER_ID,
-    1,
     "Mia",
     "Mia",
     "mia",
@@ -151,7 +150,6 @@ function seedDatabase({ consent = true } = {}) {
   insertProfile.run(
     "profile-sibling",
     USER_ID,
-    0,
     "Leo",
     "Leo",
     "leo",
@@ -163,7 +161,6 @@ function seedDatabase({ consent = true } = {}) {
   insertProfile.run(
     "profile-2",
     "user-2",
-    1,
     "Noah",
     "Noah",
     "noah",
@@ -237,10 +234,8 @@ function call(state, bucket, path = BUILT_IN_PATH, options = {}) {
         sessionId: "session-1",
         userEmail: options.userEmail ?? USER_EMAIL,
         userId: options.userId ?? USER_ID,
-        userName: "Parent",
         learnerProfileId: options.learnerProfileId ?? "profile-1",
         learnerName: options.learnerName ?? "Mia",
-        legacyStorageOwner: options.legacyStorageOwner ?? true,
         privateMediaName: options.privateMediaName ?? "Mia",
       },
       request: request(path, { ...options, expectedLearnerProfileId }),
@@ -262,15 +257,13 @@ function saveRecordingConsent(state, bucket, enabled, identity = {}) {
         sessionId: "session-1",
         userEmail: USER_EMAIL,
         userId: USER_ID,
-        userName: "Parent",
         learnerProfileId: "profile-1",
         learnerName: "Mia",
-        legacyStorageOwner: true,
         privateMediaName: "Mia",
         ...identity,
       },
       request: new Request(
-        "https://example.test/api/profile/lesson-recording-consent",
+        `https://example.test/api/learner-profiles/${identity.learnerProfileId ?? "profile-1"}/lesson-recording-consent`,
         {
           body: JSON.stringify({ enabled }),
           headers: { "Content-Type": "application/json" },
@@ -283,7 +276,7 @@ function saveRecordingConsent(state, bucket, enabled, identity = {}) {
 }
 
 describe("lesson recording Worker handler", () => {
-  it("makes recording available automatically and supports only GET", async () => {
+  it("reads recording consent without changing it and supports only GET", async () => {
     const state = seedDatabase({ consent: false });
     const bucket = createBucket();
     try {
@@ -297,7 +290,7 @@ describe("lesson recording Worker handler", () => {
       assert.equal(response.headers.get("Cache-Control"), "private, no-store");
       assert.deepEqual(await response.json(), {
         cleanupPending: false,
-        enabled: true,
+        enabled: false,
       });
       assert.equal(
         state.sqlite
@@ -305,7 +298,7 @@ describe("lesson recording Worker handler", () => {
             "SELECT lesson_recording_consent_version AS version FROM learner_profile WHERE id = 'profile-1'",
           )
           .get().version,
-        CONSENT_VERSION,
+        null,
       );
 
       const denied = await call(
@@ -366,10 +359,8 @@ describe("lesson recording Worker handler", () => {
               sessionId: "session-1",
               userEmail: USER_EMAIL,
               userId: USER_ID,
-              userName: "Parent",
               learnerProfileId,
               learnerName: "Mia",
-              legacyStorageOwner: learnerProfileId === "profile-1",
               privateMediaName:
                 learnerProfileId === "profile-1" ? "Mia" : "Leo",
             },
@@ -396,7 +387,6 @@ describe("lesson recording Worker handler", () => {
     const sibling = {
       learnerProfileId: "profile-sibling",
       learnerName: "Leo",
-      legacyStorageOwner: false,
       privateMediaName: "Leo",
     };
     try {
@@ -487,10 +477,8 @@ describe("lesson recording Worker handler", () => {
           sessionId: "session-1",
           userEmail: USER_EMAIL,
           userId: USER_ID,
-          userName: "Parent",
           learnerProfileId: "profile-1",
           learnerName: "Mia",
-          legacyStorageOwner: true,
           privateMediaName: "Mia",
         },
         request: new Request(

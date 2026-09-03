@@ -17,7 +17,6 @@ export function isLearnerStoryLevelId(
 }
 
 export const STORY_LEVEL_IDS = [
-  "first-english-words",
   ...LEARNER_STORY_LEVEL_IDS,
   "long-stories",
 ] as const;

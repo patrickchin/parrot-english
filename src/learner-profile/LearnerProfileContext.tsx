@@ -6,7 +6,6 @@ import type {
 
 type LearnerProfileContextValue = {
   profile: LearnerProfileSummary;
-  replaceProfile: (profile: LearnerProfileSummary) => void;
 };
 
 const LearnerProfileContext = createContext<LearnerProfileContextValue | null>(
@@ -15,10 +14,6 @@ const LearnerProfileContext = createContext<LearnerProfileContextValue | null>(
 
 export type LearnerSelectionContextValue = {
   activeProfileId: string | null;
-  createAndSelectLearner: (
-    name: string,
-    existingProfileIds: readonly string[],
-  ) => Promise<LearnerProfileRoster>;
   deleteLearner: (profileId: string) => Promise<LearnerProfileRoster>;
   interactionReady: boolean;
   reloadSelectedLearner: (
@@ -34,10 +29,9 @@ const LearnerSelectionContext =
 export function LearnerProfileProvider({
   children,
   profile,
-  replaceProfile,
 }: LearnerProfileContextValue & { children: ReactNode }) {
   return (
-    <LearnerProfileContext.Provider value={{ profile, replaceProfile }}>
+    <LearnerProfileContext.Provider value={{ profile }}>
       {children}
     </LearnerProfileContext.Provider>
   );
@@ -52,7 +46,6 @@ export function useLearnerProfile() {
 export function LearnerSelectionProvider({
   activeProfileId,
   children,
-  createAndSelectLearner,
   deleteLearner,
   interactionReady = true,
   reloadSelectedLearner,
@@ -69,7 +62,6 @@ export function LearnerSelectionProvider({
   const value = useMemo(
     () => ({
       activeProfileId,
-      createAndSelectLearner,
       deleteLearner,
       interactionReady,
       reloadSelectedLearner,
@@ -78,7 +70,6 @@ export function LearnerSelectionProvider({
     }),
     [
       activeProfileId,
-      createAndSelectLearner,
       deleteLearner,
       interactionReady,
       reloadSelectedLearner,

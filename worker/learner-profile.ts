@@ -1,10 +1,10 @@
 import {
-  ensureV2Profile,
   getV2CurrentQuestion,
   getV2Progress,
   isSameV2Answer,
   isV2Complete,
   readV2Answers,
+  skipProfileQuestion,
   writeV2Response,
 } from "../lib/learner-profile-responses.js";
 import {
@@ -17,15 +17,11 @@ import {
   PREFERRED_NAME_FIELD_ERROR,
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
-import { skipProfileQuestion } from "../lib/learner-profile.js";
 import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import { STATIC_AUDIO_LINES } from "../lib/static-audio.js";
 import type { AuthEnv } from "./auth.ts";
 import type { Database } from "./database.ts";
-import {
-  handleLearnerProfileTranscription,
-  type ApiEnv,
-} from "./groq.ts";
+import { handleLearnerProfileTranscription, type ApiEnv } from "./groq.ts";
 import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import {
   enrichLearnerProfileAnswer,
@@ -34,21 +30,16 @@ import {
 } from "./learner-profile-enrichment.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import { deleteAllLessonRecordings } from "./lesson-recording-storage.ts";
-import {
-  readBoundedText,
-  RequestBodyTooLargeError,
-} from "./request-body.ts";
+import { readBoundedText, RequestBodyTooLargeError } from "./request-body.ts";
 import {
   isLearnerNameConflict,
   LEARNER_NAME_CONFLICT_MESSAGE,
   type LearnerIdentity,
 } from "./request-identity.ts";
 
-export type LearnerProfileIdentity = LearnerIdentity;
-
 export interface LearnerProfileRequestInput {
   database: Database;
-  env: AuthEnv & ApiEnv & { REALTIME_CONVERSATIONS_ENABLED?: string };
+  env: AuthEnv & ApiEnv;
   identity: LearnerIdentity;
   request: Request;
 }
@@ -75,7 +66,7 @@ class ApiError extends Error {
     status: number,
     code: string,
     fieldError?: string,
-    details?: Record<string, unknown>
+    details?: Record<string, unknown>,
   ) {
     super(code);
     this.status = status;
@@ -123,22 +114,8 @@ function serializeAcknowledgment(question: Question) {
   };
 }
 
-function isV2Profile(profile: Profile) {
-  try {
-    readV2Answers(profile);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function clientProfile(profile: Profile) {
-  const readable = isV2Profile(profile)
-    ? profile
-    : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
-        forProfileEdit: true,
-      });
-  const storedAnswers = readV2Answers(readable);
+  const storedAnswers = readV2Answers(profile);
   const answers = {
     ...storedAnswers,
     responses: Object.fromEntries(
@@ -161,54 +138,20 @@ function clientProfile(profile: Profile) {
     description:
       typeof answers.description === "string" ? answers.description : null,
     answers,
-    questionnaireVersion: LEARNER_PROFILE_QUESTIONNAIRE.version,
     currentQuestionKey: profile.currentQuestionKey,
     profileStatus: profile.profileStatus,
     completedAt: profile.completedAt,
   };
 }
 
-async function prepareLearnerProfile(
-  repository: Repository,
-  identity: LearnerIdentity
-) {
-  const stored = await repository.loadProfile(identity);
-  const prepared = ensureV2Profile(stored, LEARNER_PROFILE_QUESTIONNAIRE);
-  if (
-    prepared.answersJson !== stored.answersJson ||
-    prepared.currentQuestionKey !== stored.currentQuestionKey ||
-    prepared.profileStatus !== stored.profileStatus ||
-    prepared.skippedQuestionKeysJson !== stored.skippedQuestionKeysJson
-  ) {
-    await repository.saveAnswer(identity, {
-      answersJson: prepared.answersJson,
-      currentQuestionKey: prepared.currentQuestionKey,
-      profileStatus: prepared.profileStatus,
-      skippedQuestionKeysJson: prepared.skippedQuestionKeysJson,
-    });
-    return repository.loadProfile(identity);
-  }
-  return stored;
-}
-
-function learnerProfilePayload(
-  profile: Profile,
-  canBypass: boolean,
-  experienceMode: "realtime" | "form",
-) {
+function learnerProfilePayload(profile: Profile, canBypass: boolean) {
   const completed = profile.profileStatus === "completed";
-  const readable = isV2Profile(profile)
-    ? profile
-    : ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
-        forProfileEdit: true,
-      });
   const question = completed
     ? null
-    : getV2CurrentQuestion(readable, LEARNER_PROFILE_QUESTIONNAIRE);
+    : getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE);
   return {
     mode: "full" as const,
     profile: clientProfile(profile),
-    questionnaire: { version: LEARNER_PROFILE_QUESTIONNAIRE.version },
     question: question ? serializeQuestion(question) : null,
     progress: completed
       ? {
@@ -216,14 +159,9 @@ function learnerProfilePayload(
           current: LEARNER_PROFILE_QUESTIONNAIRE.questions.length,
           total: LEARNER_PROFILE_QUESTIONNAIRE.questions.length,
         }
-      : getV2Progress(readable, LEARNER_PROFILE_QUESTIONNAIRE),
+      : getV2Progress(profile, LEARNER_PROFILE_QUESTIONNAIRE),
     canBypass,
-    experienceMode,
   };
-}
-
-function learnerProfileExperienceMode(env: LearnerProfileRequestInput["env"]) {
-  return env.REALTIME_CONVERSATIONS_ENABLED === "1" ? "realtime" : "form";
 }
 
 function profilePayload(profile: Profile) {
@@ -238,10 +176,6 @@ function profilePayload(profile: Profile) {
     },
     questions: LEARNER_PROFILE_QUESTIONNAIRE.questions.map(serializeQuestion),
   };
-}
-
-function bypassOnlyPayload() {
-  return { mode: "bypass-only" as const, canBypass: true as const };
 }
 
 async function readJsonRecord(request: Request) {
@@ -271,13 +205,13 @@ async function readJsonRecord(request: Request) {
 function parseAnswerRecord(record: Record<string, unknown>) {
   if (
     Object.keys(record).some(
-      (key) => key !== "questionKey" && key !== "rawAnswer"
+      (key) => key !== "questionKey" && key !== "rawAnswer",
     )
   ) {
     throw new ApiError(
       400,
       "invalid_answer",
-      "Only the question key and answer may be submitted."
+      "Only the question key and answer may be submitted.",
     );
   }
   if (typeof record.questionKey !== "string") {
@@ -298,24 +232,16 @@ async function readAnswerBody(request: Request) {
 }
 
 function parseProfileEditRecord(record: Record<string, unknown>) {
-  if (!("answers" in record)) {
-    return {
-      kind: "single" as const,
-      ...parseAnswerRecord(record),
-    };
-  }
   if (
-    Object.keys(record).some((key) => key !== "answers") ||
+    Object.keys(record).length !== 1 ||
+    !("answers" in record) ||
     record.answers === null ||
     typeof record.answers !== "object" ||
     Array.isArray(record.answers)
   ) {
     throw new ApiError(400, "invalid_profile");
   }
-  return {
-    kind: "bulk" as const,
-    answers: record.answers as Record<string, unknown>,
-  };
+  return record.answers as Record<string, unknown>;
 }
 
 async function readQuestionKeyBody(request: Request) {
@@ -324,7 +250,7 @@ async function readQuestionKeyBody(request: Request) {
     throw new ApiError(
       400,
       "invalid_answer",
-      "Only the question key may be submitted."
+      "Only the question key may be submitted.",
     );
   }
   if (typeof record.questionKey !== "string") {
@@ -336,7 +262,7 @@ async function readQuestionKeyBody(request: Request) {
 function findQuestion(answerKey: string) {
   return (
     LEARNER_PROFILE_QUESTIONNAIRE.questions.find(
-      (question) => question.answerKey === answerKey
+      (question) => question.answerKey === answerKey,
     ) ?? null
   );
 }
@@ -360,10 +286,7 @@ function enrichmentFieldError(enrichment: LearnerProfileEnrichment) {
     };
   }
   if (
-    containsLikelyFullLearnerName(
-      enrichment.canonicalName,
-      enrichment.summary,
-    )
+    containsLikelyFullLearnerName(enrichment.canonicalName, enrichment.summary)
   ) {
     return {
       code: "preferred_name_required",
@@ -398,7 +321,7 @@ async function getEnrichment(
   dependencies: HandlerDependencies,
   profile: Profile,
   question: Question,
-  rawAnswer: string
+  rawAnswer: string,
 ): Promise<LearnerProfileEnrichmentResult> {
   if (isSameV2Answer(profile, question.answerKey, rawAnswer)) {
     const saved = savedEnrichment(profile, question.answerKey);
@@ -418,7 +341,6 @@ async function saveAnswer({
   profile,
   question,
   rawAnswer,
-  profileEdit,
 }: {
   input: LearnerProfileRequestInput;
   dependencies: HandlerDependencies;
@@ -426,26 +348,16 @@ async function saveAnswer({
   profile: Profile;
   question: Question;
   rawAnswer: string;
-  profileEdit: boolean;
 }) {
   if (rawAnswer.length > Math.min(question.maxLength, 500)) {
     throw new ApiError(
       400,
       "invalid_answer",
-      `Please use ${Math.min(question.maxLength, 500)} characters or fewer.`
+      `Please use ${Math.min(question.maxLength, 500)} characters or fewer.`,
     );
   }
 
-  const readable = profileEdit
-    ? ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
-        forProfileEdit: true,
-      })
-    : profile;
-  const sameAnswer = isSameV2Answer(
-    readable,
-    question.answerKey,
-    rawAnswer
-  );
+  const sameAnswer = isSameV2Answer(profile, question.answerKey, rawAnswer);
   if (sameAnswer) {
     return {
       profile,
@@ -462,9 +374,9 @@ async function saveAnswer({
   const enrichment = await getEnrichment(
     input,
     dependencies,
-    readable,
+    profile,
     question,
-    rawAnswer
+    rawAnswer,
   );
   if ("fieldError" in enrichment) {
     throw new ApiError(
@@ -479,34 +391,23 @@ async function saveAnswer({
   }
 
   let storedProfile = profile;
-  const updated = writeV2Response(readable, question, {
+  const updated = writeV2Response(profile, question, {
     ...enrichment,
     rawAnswer: storedRawAnswer(question, enrichment, rawAnswer),
     answeredAt: dependencies.now().toISOString(),
   });
 
-  if (profileEdit) {
-    await repository.saveAnswer(input.identity, {
-      age: updated.age,
-      answersJson: updated.answersJson,
-      name: updated.name,
-      skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
-    });
-  } else {
-    const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
-    const completed = next === null && isV2Complete(
-      updated,
-      LEARNER_PROFILE_QUESTIONNAIRE
-    );
-    await repository.saveTransition(input.identity, {
-      age: updated.age,
-      answersJson: updated.answersJson,
-      completed,
-      currentQuestionKey: next?.answerKey ?? null,
-      name: updated.name,
-      skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
-    });
-  }
+  const next = getV2CurrentQuestion(updated, LEARNER_PROFILE_QUESTIONNAIRE);
+  const completed =
+    next === null && isV2Complete(updated, LEARNER_PROFILE_QUESTIONNAIRE);
+  await repository.saveTransition(input.identity, {
+    age: updated.age,
+    answersJson: updated.answersJson,
+    completed,
+    currentQuestionKey: next?.answerKey ?? null,
+    name: updated.name,
+    skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
+  });
   storedProfile = await repository.loadProfile(input.identity);
 
   return {
@@ -528,17 +429,15 @@ async function saveProfileAnswers({
   profile: Profile;
   answers: Record<string, unknown>;
 }) {
-  let updated = ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
-    forProfileEdit: true,
-  });
+  let updated = profile;
   const fieldErrors: Record<string, string> = Object.create(null);
   const errorCodes = new Set<string>();
-  const knownKeys = new Set(
-    [
-      ...LEARNER_PROFILE_QUESTIONNAIRE.questions.map((question) => question.answerKey),
-      "description",
-    ]
-  );
+  const knownKeys = new Set([
+    ...LEARNER_PROFILE_QUESTIONNAIRE.questions.map(
+      (question) => question.answerKey,
+    ),
+    "description",
+  ]);
   for (const answerKey of Object.keys(answers)) {
     if (!knownKeys.has(answerKey)) {
       fieldErrors[answerKey] = "This question is no longer available.";
@@ -575,7 +474,7 @@ async function saveProfileAnswers({
     }
   }
 
-  const changed: Question[] = [];
+  let changed = false;
   for (const question of LEARNER_PROFILE_QUESTIONNAIRE.questions) {
     if (!(question.answerKey in answers)) continue;
     const submitted = answers[question.answerKey];
@@ -639,9 +538,10 @@ async function saveProfileAnswers({
         rawAnswer: storedRawAnswer(question, enrichment, rawAnswer),
         answeredAt: dependencies.now().toISOString(),
       });
-      changed.push(question);
+      changed = true;
     } catch {
-      fieldErrors[question.answerKey] = "Please check this answer and try again.";
+      fieldErrors[question.answerKey] =
+        "Please check this answer and try again.";
     }
   }
 
@@ -655,7 +555,7 @@ async function saveProfileAnswers({
   }
 
   let storedProfile = profile;
-  if (changed.length > 0 || descriptionChanged) {
+  if (changed || descriptionChanged) {
     await repository.saveAnswer(input.identity, {
       age: updated.age,
       answersJson: updated.answersJson,
@@ -665,13 +565,12 @@ async function saveProfileAnswers({
     storedProfile = await repository.loadProfile(input.identity);
   }
 
-  const acknowledgments = changed.map(serializeAcknowledgment);
-  return { profile: storedProfile, acknowledgments };
+  return storedProfile;
 }
 
 export async function handleLearnerProfileRequest(
   input: LearnerProfileRequestInput,
-  dependencyOverrides: Partial<HandlerDependencies> = {}
+  dependencyOverrides: Partial<HandlerDependencies> = {},
 ): Promise<Response> {
   const dependencies: HandlerDependencies = {
     enrichAnswer: enrichLearnerProfileAnswer,
@@ -683,6 +582,11 @@ export async function handleLearnerProfileRequest(
     now: dependencies.now,
   });
   const url = new URL(input.request.url);
+  const profileDetails = /^\/api\/learner-profiles\/[^/]+$/.test(url.pathname);
+  const lessonRecordingConsent =
+    /^\/api\/learner-profiles\/[^/]+\/lesson-recording-consent$/.test(
+      url.pathname,
+    );
 
   async function reconcileLessonRecordingCleanup() {
     const state = await repository.readLessonRecordingConsentState(
@@ -711,14 +615,16 @@ export async function handleLearnerProfileRequest(
       return handleLearnerProfileTranscription(input.request, input.env);
     }
 
-    if (url.pathname === "/api/learner-profile" && input.request.method === "GET") {
-      const profile = await prepareLearnerProfile(repository, input.identity);
+    if (
+      url.pathname === "/api/learner-profile" &&
+      input.request.method === "GET"
+    ) {
+      const profile = await repository.loadProfile(input.identity);
       return jsonResponse(
         learnerProfilePayload(
           profile,
           await repository.canBypass(input.identity),
-          learnerProfileExperienceMode(input.env),
-        )
+        ),
       );
     }
 
@@ -727,26 +633,29 @@ export async function handleLearnerProfileRequest(
       input.request.method === "PUT"
     ) {
       const body = await readAnswerBody(input.request);
-      const profile = await prepareLearnerProfile(repository, input.identity);
+      const profile = await repository.loadProfile(input.identity);
       const question = findQuestion(body.questionKey);
       if (!question) {
         throw new ApiError(
           409,
           "invalid_answer",
-          "This question is no longer available."
+          "This question is no longer available.",
         );
       }
       const repeated = isSameV2Answer(
         profile,
         question.answerKey,
-        body.rawAnswer
+        body.rawAnswer,
       );
-      const current = getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE);
+      const current = getV2CurrentQuestion(
+        profile,
+        LEARNER_PROFILE_QUESTIONNAIRE,
+      );
       if (!repeated && current?.answerKey !== question.answerKey) {
         throw new ApiError(
           409,
           "invalid_answer",
-          "Please answer the current question first."
+          "Please answer the current question first.",
         );
       }
 
@@ -757,13 +666,11 @@ export async function handleLearnerProfileRequest(
         profile,
         question,
         rawAnswer: body.rawAnswer,
-        profileEdit: false,
       });
       return jsonResponse({
         ...learnerProfilePayload(
           saved.profile,
           await repository.canBypass(input.identity),
-          learnerProfileExperienceMode(input.env),
         ),
         acknowledgment: saved.acknowledgment,
       });
@@ -774,23 +681,23 @@ export async function handleLearnerProfileRequest(
       input.request.method === "POST"
     ) {
       const body = await readQuestionKeyBody(input.request);
-      const profile = await prepareLearnerProfile(repository, input.identity);
+      const profile = await repository.loadProfile(input.identity);
       const question = findQuestion(body.questionKey);
       if (!question) {
         throw new ApiError(
           409,
           "invalid_answer",
-          "This question is no longer available."
+          "This question is no longer available.",
         );
       }
       if (
-        getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE)?.answerKey !==
-        question.answerKey
+        getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE)
+          ?.answerKey !== question.answerKey
       ) {
         throw new ApiError(
           409,
           "invalid_answer",
-          "Please answer the current question first."
+          "Please answer the current question first.",
         );
       }
       if (question.required) {
@@ -802,7 +709,8 @@ export async function handleLearnerProfileRequest(
       await repository.saveTransition(input.identity, {
         age: updated.age,
         answersJson: updated.answersJson,
-        completed: next === null && isV2Complete(updated, LEARNER_PROFILE_QUESTIONNAIRE),
+        completed:
+          next === null && isV2Complete(updated, LEARNER_PROFILE_QUESTIONNAIRE),
         currentQuestionKey: next?.answerKey ?? null,
         name: updated.name,
         skippedQuestionKeysJson: updated.skippedQuestionKeysJson,
@@ -812,8 +720,7 @@ export async function handleLearnerProfileRequest(
         learnerProfilePayload(
           stored,
           await repository.canBypass(input.identity),
-          learnerProfileExperienceMode(input.env),
-        )
+        ),
       );
     }
 
@@ -822,61 +729,18 @@ export async function handleLearnerProfileRequest(
       input.request.method === "POST"
     ) {
       await repository.skipSession(input.identity);
-      try {
-        const profile = await prepareLearnerProfile(repository, input.identity);
-        await repository.skip(input.identity);
-        return jsonResponse(
-          learnerProfilePayload(profile, true, learnerProfileExperienceMode(input.env)),
-        );
-      } catch {
-        return jsonResponse(bypassOnlyPayload());
-      }
+      const profile = await repository.loadProfile(input.identity);
+      return jsonResponse(learnerProfilePayload(profile, true));
     }
 
-    if (
-      url.pathname === "/api/learner-profile/complete" &&
-      input.request.method === "POST"
-    ) {
-      const profile = await prepareLearnerProfile(repository, input.identity);
-      if (profile.profileStatus !== "completed") {
-        const missing = getV2CurrentQuestion(profile, LEARNER_PROFILE_QUESTIONNAIRE);
-        if (missing || !isV2Complete(profile, LEARNER_PROFILE_QUESTIONNAIRE)) {
-          throw new ApiError(409, "learner_profile_incomplete", undefined, {
-            missingQuestionKey: missing?.answerKey ?? null,
-          });
-        }
-        await repository.complete(input.identity);
-      }
-      const completed = await repository.loadProfile(input.identity);
-      return jsonResponse(
-        learnerProfilePayload(completed, true, learnerProfileExperienceMode(input.env)),
-      );
-    }
-
-    if (url.pathname === "/api/profile" && input.request.method === "GET") {
+    if (profileDetails && input.request.method === "GET") {
       await repository.loadProfile(input.identity);
       await reconcileLessonRecordingCleanup();
       const profile = await repository.loadProfile(input.identity);
       return jsonResponse(profilePayload(profile));
     }
 
-    if (
-      url.pathname === "/api/lesson-recordings/consent" &&
-      input.request.method === "GET"
-    ) {
-      const consent = await repository.readLessonRecordingConsentState(
-        input.identity,
-      );
-      return jsonResponse({
-        cleanupPending: consent.cleanupBeforeGeneration !== null,
-        enabled: consent.enabled,
-      });
-    }
-
-    if (
-      url.pathname === "/api/profile/lesson-recording-consent" &&
-      input.request.method === "PUT"
-    ) {
+    if (lessonRecordingConsent && input.request.method === "PUT") {
       const record = await readJsonRecord(input.request);
       if (
         Object.keys(record).length !== 1 ||
@@ -888,52 +752,29 @@ export async function handleLearnerProfileRequest(
         input.identity,
         record.enabled,
       );
-      const reconciled = saved.cleanupBeforeGeneration === null
-        ? saved
-        : await reconcileLessonRecordingCleanup();
+      const reconciled =
+        saved.cleanupBeforeGeneration === null
+          ? saved
+          : await reconcileLessonRecordingCleanup();
       return jsonResponse({
         cleanupPending: reconciled.cleanupBeforeGeneration !== null,
         enabled: reconciled.enabled,
       });
     }
 
-    if (url.pathname === "/api/profile" && input.request.method === "PUT") {
-      const body = parseProfileEditRecord(await readJsonRecord(input.request));
+    if (profileDetails && input.request.method === "PUT") {
+      const answers = parseProfileEditRecord(
+        await readJsonRecord(input.request),
+      );
       const profile = await repository.loadProfile(input.identity);
-      if (body.kind === "bulk") {
-        const saved = await saveProfileAnswers({
-          input,
-          dependencies,
-          repository,
-          profile,
-          answers: body.answers,
-        });
-        return jsonResponse({
-          ...profilePayload(saved.profile),
-          acknowledgments: saved.acknowledgments,
-        });
-      }
-      const question = findQuestion(body.questionKey);
-      if (!question) {
-        throw new ApiError(
-          409,
-          "invalid_answer",
-          "This question is no longer available."
-        );
-      }
-      const saved = await saveAnswer({
+      const saved = await saveProfileAnswers({
         input,
         dependencies,
         repository,
         profile,
-        question,
-        rawAnswer: body.rawAnswer,
-        profileEdit: true,
+        answers,
       });
-      return jsonResponse({
-        ...profilePayload(saved.profile),
-        acknowledgment: saved.acknowledgment,
-      });
+      return jsonResponse(profilePayload(saved));
     }
 
     const recognized =
@@ -941,13 +782,11 @@ export async function handleLearnerProfileRequest(
       url.pathname === "/api/learner-profile/answer" ||
       url.pathname === "/api/learner-profile/question/skip" ||
       url.pathname === "/api/learner-profile/skip" ||
-      url.pathname === "/api/learner-profile/complete" ||
-      url.pathname === "/api/profile" ||
-      url.pathname === "/api/lesson-recordings/consent" ||
-      url.pathname === "/api/profile/lesson-recording-consent";
+      profileDetails ||
+      lessonRecordingConsent;
     return jsonResponse(
       { error: recognized ? "method_not_allowed" : "not_found" },
-      { status: recognized ? 405 : 404 }
+      { status: recognized ? 405 : 404 },
     );
   } catch (error) {
     if (error instanceof ApiError) {
@@ -957,7 +796,7 @@ export async function handleLearnerProfileRequest(
           ...(error.fieldError ? { fieldError: error.fieldError } : {}),
           ...(error.details ?? {}),
         },
-        { status: error.status }
+        { status: error.status },
       );
     }
     if (isLearnerNameConflict(error)) {
@@ -969,6 +808,9 @@ export async function handleLearnerProfileRequest(
         { status: 409 },
       );
     }
-    return jsonResponse({ error: "questionnaire_unavailable" }, { status: 503 });
+    return jsonResponse(
+      { error: "questionnaire_unavailable" },
+      { status: 503 },
+    );
   }
 }

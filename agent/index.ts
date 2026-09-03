@@ -14,7 +14,6 @@ import {
 } from "../lib/conversation-audio.js";
 import { isConversationPurpose } from "../lib/conversation-purpose.ts";
 import {
-  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   isTalkToPeppaPromptStyle,
 } from "../lib/talk-to-peppa-prompt-style.ts";
 import type { AgentConfig } from "./config.ts";
@@ -35,6 +34,13 @@ import {
 } from "./peppa-conversation.ts";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 
+function hasExactKeys(value: Record<string, unknown>, keys: string[]) {
+  return (
+    Object.keys(value).length === keys.length &&
+    keys.every((key) => Object.hasOwn(value, key))
+  );
+}
+
 export function parseConversationParticipantMetadata(metadata: string) {
   let value: unknown;
   try {
@@ -45,9 +51,9 @@ export function parseConversationParticipantMetadata(metadata: string) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Participant metadata must contain conversationId.");
   }
-  const conversationId = (value as Record<string, unknown>).conversationId;
-  const purpose = (value as Record<string, unknown>).scenarioKey;
-  const suppliedPromptStyle = (value as Record<string, unknown>).promptStyle;
+  const record = value as Record<string, unknown>;
+  const conversationId = record.conversationId;
+  const purpose = record.scenarioKey;
   if (
     typeof conversationId !== "string" ||
     !conversationId.trim() ||
@@ -58,47 +64,50 @@ export function parseConversationParticipantMetadata(metadata: string) {
   if (!isConversationPurpose(purpose)) {
     throw new Error("Participant metadata must contain a valid scenarioKey.");
   }
+  const metadataKeys = ["conversationId", "learnerProfile", "scenarioKey"];
+  if (purpose === "small-chat") metadataKeys.push("promptStyle");
+  if (!hasExactKeys(record, metadataKeys)) {
+    throw new Error("Participant metadata must use the current shape.");
+  }
+  const suppliedPromptStyle = record.promptStyle;
   const promptStyle =
     purpose === "small-chat"
-      ? suppliedPromptStyle === undefined
-        ? DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE
-        : isTalkToPeppaPromptStyle(suppliedPromptStyle)
-          ? suppliedPromptStyle
-          : null
+      ? isTalkToPeppaPromptStyle(suppliedPromptStyle)
+        ? suppliedPromptStyle
+        : null
       : suppliedPromptStyle === undefined
         ? undefined
         : null;
   if (promptStyle === null) {
     throw new Error("Participant metadata must contain a valid promptStyle.");
   }
-  const profile = (value as Record<string, unknown>).learnerProfile;
-  if (profile !== undefined && (
+  const profile = record.learnerProfile;
+  if (
     profile === null ||
     typeof profile !== "object" ||
-    Array.isArray(profile)
-  )) {
+    Array.isArray(profile) ||
+    !hasExactKeys(profile as Record<string, unknown>, ["age", "name", "summary"])
+  ) {
     throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
-  const profileRecord = (profile ?? {}) as Record<string, unknown>;
+  const profileRecord = profile as Record<string, unknown>;
   const profileName = profileRecord.name;
   const profileAge = profileRecord.age;
   const profileSummary = profileRecord.summary;
   if (
-    profileName !== undefined &&
     profileName !== null &&
     (typeof profileName !== "string" || !profileName.trim() || profileName.length > 120)
   ) {
     throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
   if (
-    profileAge !== undefined &&
     profileAge !== null &&
     (!Number.isSafeInteger(profileAge) || Number(profileAge) < 0)
   ) {
     throw new Error("Participant metadata must contain a valid learnerProfile.");
   }
   if (
-    profileSummary !== undefined &&
+    profileSummary !== null &&
     (typeof profileSummary !== "string" || profileSummary.length > 2_000)
   ) {
     throw new Error("Participant metadata must contain a valid learnerProfile.");
@@ -309,8 +318,6 @@ export const agentDefinition = defineAgent({
     let latestAssistantText = "";
 
     const task = createPeppaConversationTask({
-      conversationId,
-      ingest,
       initialState,
       promptStyle,
       purpose,

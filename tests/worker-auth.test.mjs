@@ -84,17 +84,15 @@ function createAuthStub({
 }
 
 describe("Worker authentication", () => {
-  it("recognizes only exact learner-profile DELETE routes as Guardian-protected", () => {
-    assert.equal(
-      requiresGuardianAccess("/api/learner-profiles/learner-a", "DELETE"),
-      true,
-    );
+  it("protects only the exact Guardian learner-resource routes", () => {
+    for (const method of ["GET", "PUT", "DELETE"]) {
+      assert.equal(
+        requiresGuardianAccess("/api/learner-profiles/learner-a", method),
+        true,
+      );
+    }
     assert.equal(
       requiresGuardianAccess("/api/learner-profiles/learner-a/extra", "DELETE"),
-      false,
-    );
-    assert.equal(
-      requiresGuardianAccess("/api/learner-profiles/learner-a", "GET"),
       false,
     );
   });
@@ -1056,9 +1054,9 @@ describe("Worker authentication", () => {
     state.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+          (id, auth_user_id, name, private_media_name,
            name_key, onboarding_status, created_at, updated_at)
-         VALUES ('learner-b', 'user-1', 0, 'Leo', 'Leo', 'leo',
+         VALUES ('learner-b', 'user-1', 'Leo', 'Leo', 'leo',
            'completed', ?, ?)`,
       )
       .run(timestamp, timestamp);
@@ -1092,10 +1090,8 @@ describe("Worker authentication", () => {
         sessionId: "session-1",
         userEmail: "parent@example.test",
         userId: "user-1",
-        userName: "Parent One",
         learnerProfileId: "learner-b",
         learnerName: "Leo",
-        legacyStorageOwner: false,
         privateMediaName: "Leo",
       });
       assert.strictEqual(received.request, request);
@@ -1103,106 +1099,6 @@ describe("Worker authentication", () => {
     } finally {
       state.close();
     }
-  });
-
-  it("rejects anonymous speech evaluation before protected dependencies run", async () => {
-    const authStub = createAuthStub();
-    const { env } = createEnvironment();
-    let rateLimitCalls = 0;
-    let evaluationCalls = 0;
-    const worker = createTestWorker({
-      createAuth: () => authStub.auth,
-      checkEvaluateSpeechRateLimit() {
-        rateLimitCalls += 1;
-        return null;
-      },
-      async handleEvaluateSpeech() {
-        evaluationCalls += 1;
-        return Response.json({ ok: true });
-      },
-    });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/evaluate-speech", {
-        method: "POST",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 401);
-    assert.deepEqual(await response.json(), { error: "unauthorized" });
-    assert.equal(authStub.getSessionCalls(), 1);
-    assert.equal(rateLimitCalls, 0);
-    assert.equal(evaluationCalls, 0);
-  });
-
-  it("allows an authenticated session through the existing speech path", async () => {
-    const authStub = createAuthStub({
-      session: {
-        session: { id: "session-1" },
-        user: { id: "user-1", email: "parent@example.test" },
-      },
-    });
-    const { env } = createEnvironment();
-    let rateLimitCalls = 0;
-    let evaluationCalls = 0;
-    const worker = createTestWorker({
-      createAuth: () => authStub.auth,
-      checkEvaluateSpeechRateLimit() {
-        rateLimitCalls += 1;
-        return null;
-      },
-      async handleEvaluateSpeech() {
-        evaluationCalls += 1;
-        return Response.json({ evaluated: true });
-      },
-    });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/evaluate-speech", {
-        method: "POST",
-        headers: { Cookie: "better-auth.session_token=test" },
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), { evaluated: true });
-    assert.equal(authStub.getSessionCalls(), 1);
-    assert.equal(rateLimitCalls, 1);
-    assert.equal(evaluationCalls, 1);
-  });
-
-  it("returns an existing rate-limit response before speech evaluation", async () => {
-    const authStub = createAuthStub({
-      session: {
-        session: { id: "session-1" },
-        user: { id: "user-1", email: "parent@example.test" },
-      },
-    });
-    const { env } = createEnvironment();
-    let evaluationCalls = 0;
-    const worker = createTestWorker({
-      createAuth: () => authStub.auth,
-      checkEvaluateSpeechRateLimit() {
-        return Response.json({ error: "rate_limited" }, { status: 429 });
-      },
-      async handleEvaluateSpeech() {
-        evaluationCalls += 1;
-        return Response.json({ evaluated: true });
-      },
-    });
-
-    const response = await worker.fetch(
-      new Request("https://example.test/api/evaluate-speech", {
-        method: "POST",
-      }),
-      env,
-    );
-
-    assert.equal(response.status, 429);
-    assert.deepEqual(await response.json(), { error: "rate_limited" });
-    assert.equal(evaluationCalls, 0);
   });
 
   it("rate limits authenticated onboarding transcription before its handler", async () => {
@@ -1266,6 +1162,15 @@ describe("Worker authentication", () => {
           timestamp,
           "user-1",
         );
+      state.sqlite
+        .prepare(
+          `INSERT INTO learner_profile
+            (id, auth_user_id, name, private_media_name, name_key,
+             onboarding_status, created_at, updated_at)
+           VALUES ('learner-a', 'user-1', 'Mary', 'Mary', 'mary',
+             'completed', ?, ?)`,
+        )
+        .run(timestamp, timestamp);
       await createGuardianAccessRepository(createDatabase(state.d1)).unlock(
         "session-1",
       );
@@ -1285,7 +1190,10 @@ describe("Worker authentication", () => {
         },
       });
 
-      for (const path of ["/api/learner-profile/answer", "/api/profile"]) {
+      for (const path of [
+        "/api/learner-profile/answer",
+        "/api/learner-profiles/learner-a",
+      ]) {
         const response = await worker.fetch(
           new Request(`https://example.test${path}`, { method: "PUT" }),
           env,
@@ -1294,7 +1202,7 @@ describe("Worker authentication", () => {
       }
       assert.deepEqual(limitedPaths, [
         ["/api/learner-profile/answer", "user-1"],
-        ["/api/profile", "user-1"],
+        ["/api/learner-profiles/learner-a", "user-1"],
       ]);
       assert.equal(learnerProfileCalls, 0);
     } finally {
@@ -1365,7 +1273,6 @@ describe("Worker authentication", () => {
       sessionId: "session-1",
       userEmail: "parent@example.test",
       userId: "user-1",
-      userName: null,
     });
     assert.equal(authStub.getSessionCalls(), 1);
     assert.equal(authStub.getPasswordCalls().length, 0);

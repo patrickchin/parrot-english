@@ -22,7 +22,6 @@ import {
 import { IllustratedDubScene } from "./IllustratedDubScene";
 import { dubArtworkSrcSet } from "./dub-artwork";
 import {
-  FIVE_LITTLE_DUCKS_DUB,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog";
@@ -32,7 +31,7 @@ const DUB_THUMBNAIL_IMAGE_SIZES =
 
 export type DubProjectHomeProps = {
   activeLine: DubLine;
-  definition?: DubDefinition;
+  definition: DubDefinition;
   editor?: ReactNode;
   error?: string;
   guidance?: DubGuidancePosition | null;
@@ -76,7 +75,7 @@ function SceneStatusIcon({ kind }: { kind: DubSceneStatus["kind"] }) {
 
 export function DubProjectHome({
   activeLine,
-  definition = FIVE_LITTLE_DUCKS_DUB,
+  definition,
   editor,
   error = "",
   guidance = null,

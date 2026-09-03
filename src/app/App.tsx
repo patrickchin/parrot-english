@@ -56,7 +56,6 @@ import {
 } from "../media/audio-playback";
 import {
   getGateRouteKind,
-  getDuckDubPath,
   getNurseryRhymesPath,
   getGuardianAccountPath,
   getGuardianDubbingPath,
@@ -66,8 +65,6 @@ import {
   getLoginPath,
   getLearnerProfilePath,
   getPostLoginDestination,
-  getProfilePath,
-  getRedoLearnerProfilePath,
   getRequestedProtectedTarget,
   getSafeGuardianReturnTo,
   getSafeReturnTo,
@@ -76,7 +73,6 @@ import {
   isGuardianLearnerChildRoute,
   isGuardianLearnerManagerRoute,
   isGuardianRoute,
-  isRedoLearnerProfileRequest,
   isTalkToPeppaRoute,
   resolveParrotLessonRouteDecision,
   resolveStoryRouteDecision,
@@ -128,9 +124,9 @@ import {
   LessonStage,
 } from "../lessons/LessonPlayerUi";
 import {
+  prepareSpeechRecording,
   requestMicrophoneAccess,
-  startSpeechRecording,
-  type SpeechRecordingSession,
+  type PreparedSpeechRecordingSession,
 } from "../media/speech-recorder";
 import { createPlaybackOperation } from "../lessons/playback-operation";
 import {
@@ -154,10 +150,6 @@ import {
 } from "../i18n/guardian-language";
 import { AccountPrivacyPage } from "./AccountPrivacyPage";
 
-const CATALOG_DUB_ROUTES = DUB_DEFINITIONS.filter(
-  ({ route }) => route !== getDuckDubPath(),
-);
-
 const APPLICATION_ROUTE_PATTERNS = [
   "/",
   "/guardian",
@@ -165,10 +157,7 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/guardian/dubbing",
   "/guardian/learners",
   "/guardian/learners/:learnerId",
-  "/guardian/profile",
-  "/guardian/profile/setup",
   "/talk-to-peppa",
-  "/word-game",
   "/word-games",
   "/word-games/:categoryId",
   "/word-games/:categoryId/:quizId",
@@ -176,7 +165,6 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/lessons",
   "/lessons/parrot/:lessonId",
   "/lessons/parrot/:lessonId/scenes/:sceneNumber",
-  "/progress",
   "/stories",
   getNurseryRhymesPath(),
   ...DUB_DEFINITIONS.map(({ route }) => route),
@@ -184,7 +172,6 @@ const APPLICATION_ROUTE_PATTERNS = [
   "/stories/:storyId/pages/:pageNumber",
   "/login",
   "/profile/setup",
-  "/profile",
 ];
 
 function isDeclaredApplicationRoute(pathname: string) {
@@ -207,14 +194,6 @@ const StoryReader = import.meta.env.SSR
         default: StoryReader,
       })),
     );
-const DuckDub = import.meta.env.SSR
-  ? (await import("../dubbing/DuckDub")).DuckDub
-  : lazy(() =>
-      import("../dubbing/DuckDub").then(({ DuckDub }) => ({
-        default: DuckDub,
-      })),
-    );
-
 const JOIN_IN_TAIL_MS = 250;
 const JOIN_IN_FAILURE_DISPLAY_MS = 700;
 const MICROPHONE_NOTICE =
@@ -283,7 +262,7 @@ export function LessonPlayer({
   const playbackControlRef = useRef<PlaybackControl | null>(null);
   const playbackGenerationRef = useRef(0);
   const preflightControllerRef = useRef<AbortController | null>(null);
-  const recordingRef = useRef<SpeechRecordingSession | null>(null);
+  const recordingRef = useRef<PreparedSpeechRecordingSession | null>(null);
   const recordingPermissionRef = useRef(false);
   const startPendingRef = useRef(false);
   const consentPromiseRef = useRef<Promise<boolean> | null>(null);
@@ -654,7 +633,7 @@ export function LessonPlayer({
     playbackGenerationRef.current = generation;
     const controller = new AbortController();
     playbackControllerRef.current = controller;
-    let session: SpeechRecordingSession | null = null;
+    let session: PreparedSpeechRecordingSession | null = null;
     const slot = {
       lessonId,
       sceneIndex: state.sceneIndex,
@@ -687,11 +666,12 @@ export function LessonPlayer({
     const runJoinIn = async () => {
       if (recordingPermissionRef.current) {
         try {
-          session = await startSpeechRecording({ signal: controller.signal });
+          session = await prepareSpeechRecording({ signal: controller.signal });
           if (!isCurrent()) {
             session.cancel();
             return;
           }
+          session.start();
           recordingRef.current = session;
           setJoinInRecording(true);
         } catch (caughtError) {
@@ -1204,10 +1184,7 @@ export function ApplicationRoutes({
 }) {
   const location = useLocation();
   const { messages } = useGuardianLanguage();
-  const guardianAudience = isGuardianGuidanceSurface(
-    location.pathname,
-    location.search,
-  );
+  const guardianAudience = isGuardianGuidanceSurface(location.pathname);
 
   return (
     <Suspense
@@ -1260,7 +1237,6 @@ export function ApplicationRoutes({
           path={getGuardianDubbingPath()}
         />
         <Route element={<HomeMenu />} path="/" />
-        <Route element={<Navigate replace to="/word-games" />} path="/word-game" />
         <Route element={<WordGameList />} path="/word-games" />
         <Route element={<WordGameRoute />} path="/word-games/:categoryId/:quizId" />
         <Route element={<WordGameRoute />} path="/word-games/:categoryId" />
@@ -1287,11 +1263,9 @@ export function ApplicationRoutes({
           element={<ParrotLessonSceneRoute />}
           path="/lessons/parrot/:lessonId/scenes/:sceneNumber"
         />
-        <Route element={<Navigate replace to="/" />} path="/progress" />
         <Route element={<StoryList />} path="/stories" />
         <Route element={<NurseryRhymeList />} path={getNurseryRhymesPath()} />
-        <Route element={<DuckDub />} path={getDuckDubPath()} />
-        {CATALOG_DUB_ROUTES.map((definition) => (
+        {DUB_DEFINITIONS.map((definition) => (
           <Route
             element={<DubStudio definition={definition} />}
             key={definition.id}
@@ -1304,13 +1278,7 @@ export function ApplicationRoutes({
           path="/stories/:storyId/pages/:pageNumber"
         />
         <Route element={<Navigate replace to={loginTarget} />} path="/login" />
-        <Route element={null} path="/guardian/profile/setup" />
-        <Route
-          element={<Navigate replace to={getGuardianLearnersPath()} />}
-          path="/guardian/profile"
-        />
         <Route element={null} path="/profile/setup" />
-        <Route element={null} path="/profile" />
         <Route
           element={
             wildcardTarget === null ? (
@@ -1359,12 +1327,11 @@ export function AuthenticatedApplication({
   const gateRoute = getGateRouteKind(location.pathname);
   const onLoginRoute = gateRoute === "login";
   const isLearnerProfileRoute = gateRoute === "learner-profile";
-  const isProfileRoute = gateRoute === "profile";
   const isConversationRoute = isTalkToPeppaRoute(location.pathname);
   const guardianLearnerChildRoute = isGuardianLearnerChildRoute(
     location.pathname,
   );
-  const guardianRoute = isGuardianRoute(location.pathname, location.search);
+  const guardianRoute = isGuardianRoute(location.pathname);
   const learnerProfileRoute = isLearnerProfileRoute && !guardianRoute;
   const guardianBoundaryRoute = guardianRoute || guardianLearnerChildRoute;
   const guardianDashboardRoute =
@@ -1377,13 +1344,7 @@ export function AuthenticatedApplication({
       location.pathname,
     ) !== null ||
     guardianLearnerChildRoute ||
-    isGuardianLearnerManagerRoute(location.pathname) ||
-    matchPath(
-      { end: true, path: "/guardian/profile" },
-      location.pathname,
-    ) !== null;
-  const redoLearnerProfile =
-    isLearnerProfileRoute && isRedoLearnerProfileRequest(location.search);
+    isGuardianLearnerManagerRoute(location.pathname);
   const safeReturnTo = guardianRoute
     ? getSafeGuardianReturnTo(location.search)
     : onLoginRoute
@@ -1408,11 +1369,6 @@ export function AuthenticatedApplication({
     guardianAccessMode,
     learnerProfileRoute,
   ]);
-  const openProfileRoute = useCallback(() => {
-    onExitLessonRoute();
-    navigate(getProfilePath(requestedProtectedTarget));
-  }, [navigate, onExitLessonRoute, requestedProtectedTarget]);
-
   const applicationRoutes = (
     <ApplicationRoutes
       loginTarget={safeReturnTo}
@@ -1451,7 +1407,6 @@ export function AuthenticatedApplication({
       guardianUnlockDestination={getGuardianLearnersPath()}
       isConversationRoute={isConversationRoute}
       isLearnerProfileRoute={isLearnerProfileRoute}
-      isProfileRoute={isProfileRoute}
       learnerManagerRoute={learnerManagerRoute}
       learnerSelectionDestination={requestedProtectedTarget}
       learnerProfileFallback={
@@ -1460,17 +1415,10 @@ export function AuthenticatedApplication({
           to={getLearnerProfilePath(requestedProtectedTarget)}
         />
       }
-      onCloseProfileRoute={() => navigate(safeReturnTo, { replace: true })}
       onCloseGuardianRoute={() => navigate(safeReturnTo, { replace: true })}
       onConversationCompleted={() => navigate("/", { replace: true })}
       onBeforeLearnerSelectionNavigate={onExitLessonRoute}
       onOpenLessons={() => navigate("/lessons", { replace: true })}
-      onOpenProfileRoute={openProfileRoute}
-      onRedoCompleted={() => navigate(safeReturnTo, { replace: true })}
-      onRedoLearnerProfileRoute={() =>
-        navigate(getRedoLearnerProfilePath(getProfilePath(safeReturnTo)))
-      }
-      redoLearnerProfile={redoLearnerProfile}
       routeFocusManagedByContent={hasRouteOwnedFocusLifecycle(
         location.pathname,
       )}

@@ -9,6 +9,8 @@ import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
 const OLD_DUB_PATH = "/api/dubs/old-macdonald-v1";
+const DUBS_PATH = "/api/dubs";
+const DUB_CONSENT_PATH = "/api/dubs/consent";
 
 function authStub(session, sessionCalls) {
   return {
@@ -72,6 +74,11 @@ function authenticatedEnvironment() {
        onboarding_status, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, 'not_started', ?, ?)`,
   ).run("learner-a", "user-1", "Mia", "Mia", "mia", timestamp, timestamp);
+  state.sqlite.prepare(
+    `INSERT INTO session_learner_selection
+      (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?)`,
+  ).run("session-1", "user-1", "learner-a", timestamp, timestamp);
   const result = environment();
   result.env.DB = state.d1;
   return { ...result, state };
@@ -124,6 +131,17 @@ describe("dub Worker routing", () => {
         timestamp,
         "user-1",
       );
+      state.sqlite.prepare(
+        `INSERT INTO learner_profile
+          (id, auth_user_id, name, private_media_name, name_key,
+           onboarding_status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, 'not_started', ?, ?)`,
+      ).run("learner-a", "user-1", "Mia", "Mia", "mia", timestamp, timestamp);
+      state.sqlite.prepare(
+        `INSERT INTO session_learner_selection
+          (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run("session-1", "user-1", "learner-a", timestamp, timestamp);
       let handlerCalls = 0;
       const session = {
         session: { id: "session-1" },
@@ -144,26 +162,14 @@ describe("dub Worker routing", () => {
       env.DB = state.d1;
 
       for (const [method, path] of [
-        ["PUT", `${DUB_PATH}/consent`],
-        ["DELETE", DUB_PATH],
-        ["PUT", `${OLD_DUB_PATH}/consent`],
-        ["DELETE", OLD_DUB_PATH],
+        ["PUT", DUB_CONSENT_PATH],
+        ["DELETE", DUBS_PATH],
       ]) {
         const response = await worker.fetch(request(method, path), env);
         assert.equal(response.status, 403, `${method} ${path}`);
         assert.deepEqual(await response.json(), { error: "guardian_required" });
       }
       assert.equal(handlerCalls, 0);
-
-      for (const [method, path] of [
-        ["PUT", "/api/dubs/five-little-ducks-v1/consent"],
-        ["DELETE", "/api/dubs/five-little-ducks-v1"],
-      ]) {
-        const response = await worker.fetch(request(method, path), env);
-        assert.equal(response.status, 200, `${method} ${path}`);
-        assert.deepEqual(await response.json(), { routed: true });
-      }
-      assert.equal(handlerCalls, 2);
 
       for (const [method, path] of [
         ["GET", DUB_PATH],
@@ -177,7 +183,7 @@ describe("dub Worker routing", () => {
         assert.equal(response.status, 200, `${method} ${path}`);
         assert.deepEqual(await response.json(), { routed: true });
       }
-      assert.equal(handlerCalls, 8);
+      assert.equal(handlerCalls, 6);
     } finally {
       state.close();
     }
@@ -223,10 +229,7 @@ describe("dub Worker routing", () => {
       env.DB = state.d1;
       const aliases = [
         ["DELETE", "/api/dubs/%66ive-little-ducks-v2"],
-        ["PUT", "/api/dubs/%66ive-little-ducks-v2/consent"],
-        ["PUT", "/api/dubs/five-little-ducks-v2/%63onsent"],
         ["DELETE", "/api/dubs/%6fld-macdonald-v1"],
-        ["PUT", "/api/dubs/%6fld-macdonald-v1/consent"],
       ];
 
       for (const mode of ["locked", "unlocked"]) {
@@ -267,13 +270,13 @@ describe("dub Worker routing", () => {
     const { env, getAssetCalls } = environment();
     const routes = [
       ["GET", DUB_PATH],
+      ["DELETE", DUBS_PATH],
+      ["PUT", DUB_CONSENT_PATH],
       ["PUT", `${DUB_PATH}/lines/line-1`],
       ["GET", `${DUB_PATH}/lines/line-1/audio`],
-      ["DELETE", DUB_PATH],
       ["GET", OLD_DUB_PATH],
       ["PUT", `${OLD_DUB_PATH}/lines/old-macdonald-v1-line-1`],
       ["GET", `${OLD_DUB_PATH}/lines/old-macdonald-v1-line-1/audio`],
-      ["DELETE", OLD_DUB_PATH],
       ["POST", DUB_PATH],
       ["GET", `${DUB_PATH}/lines/line-1`],
       ["PUT", `${DUB_PATH}/lines/line-1/audio`],
@@ -323,10 +326,8 @@ describe("dub Worker routing", () => {
         sessionId: "session-1",
         userEmail: "parent@example.test",
         userId: "user-1",
-        userName: "Parent",
         learnerProfileId: "learner-a",
         learnerName: "Mia",
-        legacyStorageOwner: true,
         privateMediaName: "Mia",
       });
       assert.equal(getAssetCalls(), 0);
@@ -335,7 +336,7 @@ describe("dub Worker routing", () => {
     }
   });
 
-  it("passes the selected nonlegacy learner identity to the dub handler", async () => {
+  it("passes the selected learner identity to the dub handler", async () => {
     const session = {
       session: { id: "session-1" },
       user: {
@@ -349,14 +350,14 @@ describe("dub Worker routing", () => {
       state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, private_media_name, name_key,
-           onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
+           onboarding_status)
+         VALUES (?, ?, ?, ?, ?, 'not_started')`,
       ).run("learner-b", "user-1", "Leo", "Leo", "leo");
       state.sqlite.prepare(
-        `INSERT INTO session_learner_selection
-          (session_id, auth_user_id, learner_profile_id)
-         VALUES (?, ?, ?)`,
-      ).run("session-1", "user-1", "learner-b");
+        `UPDATE session_learner_selection
+         SET learner_profile_id = ?
+         WHERE session_id = ? AND auth_user_id = ?`,
+      ).run("learner-b", "session-1", "user-1");
       let routedIdentity;
       const worker = createWorker({
         createAuth: () => authStub(session, []),
@@ -372,12 +373,10 @@ describe("dub Worker routing", () => {
       assert.deepEqual(routedIdentity, {
         learnerName: "Leo",
         learnerProfileId: "learner-b",
-        legacyStorageOwner: false,
         privateMediaName: "Leo",
         sessionId: "session-1",
         userEmail: "parent@example.test",
         userId: "user-1",
-        userName: "Parent",
       });
     } finally {
       state.close();
@@ -400,7 +399,9 @@ describe("dub Worker routing", () => {
         createAuth: () => authStub(session, sessionCalls),
       });
       const routes = [
-        ["POST", DUB_PATH, "GET, DELETE"],
+        ["DELETE", DUB_PATH, "GET"],
+        ["GET", DUBS_PATH, "DELETE"],
+        ["POST", DUB_CONSENT_PATH, "PUT"],
         ["GET", `${DUB_PATH}/lines/line-1`, "PUT"],
         ["PUT", `${DUB_PATH}/lines/line-1/audio`, "GET"],
       ];

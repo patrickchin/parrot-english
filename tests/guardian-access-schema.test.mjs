@@ -26,52 +26,14 @@ function tableSql(database, table) {
 }
 
 describe("guardian access persistence", () => {
-  it("persists constrained dubbing consent and cascades it with the account", () => {
-    assert.equal(getTableName(schema.guardianDubConsent), "guardian_dub_consent");
-    assert.deepEqual(Object.keys(getTableColumns(schema.guardianDubConsent)), [
-      "authUserId",
-      "consentVersion",
-      "grantGeneration",
-      "state",
-      "grantedAt",
-      "updatedAt",
-    ]);
-
+  it("does not expose the removed account-wide dubbing consent table", () => {
+    assert.equal(schema.guardianDubConsent, undefined);
     const database = createMigratedDatabase();
-    const sql = tableSql(database, "guardian_dub_consent");
-    assert.match(sql, /state[^,]*NOT NULL/i);
-    assert.match(sql, /state[^\n]*granted[^\n]*revoking/i);
-    database
-      .prepare(
-        `INSERT INTO user (id, name, email, email_verified)
-         VALUES (?, ?, ?, ?)`,
-      )
-      .run("user-1", "Guardian", "guardian@example.test", 1);
-    database
-      .prepare(
-        `INSERT INTO guardian_dub_consent
-          (auth_user_id, consent_version, grant_generation, state, granted_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      )
-      .run(
-        "user-1",
-        "guardian-voice-r2-v2",
-        "grant-1",
-        "granted",
-        1_700_000_000_000,
-        1_700_000_000_000,
-      );
-
-    database.prepare("DELETE FROM user WHERE id = ?").run("user-1");
-
-    assert.equal(
-      database
-        .prepare(
-          "SELECT COUNT(*) AS count FROM guardian_dub_consent WHERE auth_user_id = ?",
-        )
-        .get("user-1").count,
-      0,
-    );
+    try {
+      assert.equal(tableSql(database, "guardian_dub_consent"), undefined);
+    } finally {
+      database.close();
+    }
   });
 
   it("stores one expiring guardian unlock per auth session", () => {

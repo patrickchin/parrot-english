@@ -85,7 +85,6 @@ describe("Worker app delivery", () => {
 
     for (const [method, pathname] of [
       ["GET", "/api/lessons/my"],
-      ["PUT", "/api/profile/preferences"],
       ["GET", "/api/stories/the-red-ball/personalized-art"],
       ["POST", "/api/stories/the-red-ball/personalized-art"],
       ["DELETE", "/api/stories/the-red-ball/personalized-art"],

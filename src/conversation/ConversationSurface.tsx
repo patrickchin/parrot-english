@@ -103,10 +103,6 @@ const PURPOSE_COPY: Record<
     finishLabel: "Save and finish",
     title: "Help Peppa know you",
   },
-  "profile-edit": {
-    finishLabel: "Save changes",
-    title: "Update my profile",
-  },
 };
 
 function latestConversationTurn(turns: ConversationSurfaceTurn[]) {

@@ -17,8 +17,6 @@ const result = spawnSync(
     `PARROT_BACKEND_VERSION:${version}`,
     "--var",
     `PARROT_BACKEND_COMMIT_SHA:${commitSha}`,
-    "--var",
-    "REALTIME_CONVERSATIONS_ENABLED:1",
     ...process.argv.slice(2),
   ],
   { stdio: "inherit" },

@@ -44,7 +44,6 @@ import {
   type DubOperation,
 } from "./dub-state";
 import {
-  FIVE_LITTLE_DUCKS_DUB,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog";
@@ -127,11 +126,11 @@ export function resolveGuideOnlyDubLineAudioSource(
 export function DubEntry({
   error,
   onRetryLoad,
-  title = FIVE_LITTLE_DUCKS_DUB.title,
+  title,
 }: {
   error: string;
   onRetryLoad(): void;
-  title?: string;
+  title: string;
 }) {
   return (
     <main className="h-dvh w-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-story-shelf px-3 pb-6 pt-20 md:px-6 md:pt-24">
@@ -149,11 +148,11 @@ export function DubEntry({
 export function DubLoading({
   error,
   onRetryLoad,
-  title = FIVE_LITTLE_DUCKS_DUB.title,
+  title,
 }: {
   error: string;
   onRetryLoad(): void;
-  title?: string;
+  title: string;
 }) {
   if (error) {
     return (
@@ -175,9 +174,9 @@ export function DubLoading({
 }
 
 export function DubStudio({
-  definition = FIVE_LITTLE_DUCKS_DUB,
+  definition,
 }: {
-  definition?: DubDefinition;
+  definition: DubDefinition;
 }) {
   const [state, dispatch] = useReducer(
     (current, event) => reduceDubState(current, event, definition),
@@ -286,7 +285,7 @@ export function DubStudio({
     const generation = cancelMedia(true);
     setLoadError("");
     resetPresentation(definition.lines[0]?.id ?? null);
-    dispatch({ type: "LOADED", recordingEnabled: false, savedLineIds: [] });
+    dispatch({ type: "LOADED", consentState: "not_granted", savedLineIds: [] });
     focusAfterRender(fullPlaybackButtonRef, generation);
   }, [cancelMedia, definition.lines, resetPresentation]);
 
@@ -308,8 +307,8 @@ export function DubStudio({
         if (!mountedRef.current || statusControllerRef.current !== controller) return;
         dispatch({
           type: "LOADED",
-          recordingEnabled: status.recordingEnabled,
-          savedLineIds: status.recordingEnabled
+          consentState: status.consentState,
+          savedLineIds: status.consentState === "granted"
             ? status.lines.filter(({ saved }) => saved).map(({ id }) => id)
             : [],
         });
@@ -874,6 +873,7 @@ export function DubStudio({
   } else if (state.view === "listen-only") {
     content = (
       <DubListenOnly
+        consentState={state.consentState === "revoking" ? "revoking" : "not_granted"}
         definition={definition}
         error={state.error}
         onRetryLoad={handleRetryLoad}

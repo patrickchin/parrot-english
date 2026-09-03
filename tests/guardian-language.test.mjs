@@ -101,8 +101,6 @@ describe("guardian language domain", () => {
     const messages = chineseModule.chineseGuardianMessages;
 
     assert.doesNotMatch(JSON.stringify(messages), /佩奇/);
-    assert.match(messages.learners.profile.redoDescription, /Peppa/);
-    assert.equal(messages.learners.profile.peppaAlt, "Peppa 微笑");
     assert.equal(messages.learners.setup.peppaAlt, "Peppa 挥手问好");
     assert.equal(messages.learners.question.peppaAlt, "你的英语主持人 Peppa");
     assert.equal(messages.learners.acknowledgment.peppaAlt, "Peppa 微笑");
@@ -110,10 +108,8 @@ describe("guardian language domain", () => {
 
   it("identifies guardian and login guidance surfaces without changing learner routes", () => {
     assert.equal(isGuardianGuidanceSurface("/guardian"), true);
-    assert.equal(isGuardianGuidanceSurface("/profile/setup", "?redo=1"), true);
     assert.equal(isGuardianGuidanceSurface("/login"), true);
     assert.equal(isGuardianGuidanceSurface("/profile/setup"), false);
-    assert.equal(isGuardianGuidanceSurface("/profile"), false);
     assert.equal(isGuardianGuidanceSurface("/lessons"), false);
   });
 });
@@ -278,7 +274,7 @@ describe("GuardianLanguageControl", { concurrency: false }, () => {
     ["/guardian/learners/a", "zh-Hans"],
     ["/", "en"],
     ["/lessons", "en"],
-    ["/profile", "en"],
+    ["/profile/setup", "en"],
   ]) {
     it(`uses ${expectedLanguage} for ${route} and restores the previous document language`, async () => {
       document.documentElement.lang = "before-test";

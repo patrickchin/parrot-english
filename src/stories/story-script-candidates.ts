@@ -12,6 +12,8 @@ type PrototypeStory = Pick<
   pages: readonly PrototypePage[];
 };
 
+const V7_STORY_IDS = new Set(["hello-cat", "marys-face", "wash-sam-wash"]);
+
 function pageArtwork({
   alt,
   prompt,
@@ -30,10 +32,9 @@ function pageArtwork({
 
 function coverArtwork(
   storyId: string,
-  level: Story["level"],
   prompt: string,
 ): StoryArtwork {
-  const imageVersion = level === "first-english-words" ? 7 : 3;
+  const imageVersion = V7_STORY_IDS.has(storyId) ? 7 : 3;
   return {
     alt: prompt,
     prompt,
@@ -42,7 +43,7 @@ function coverArtwork(
 }
 
 function storyPageImageVersion(story: Pick<Story, "id" | "level">) {
-  if (story.level === "first-english-words") return 7;
+  if (V7_STORY_IDS.has(story.id)) return 7;
   if (story.level === "first-words" || story.id === "where-is-dot") return 3;
   return 6;
 }
@@ -63,7 +64,7 @@ function makePrototypeStory({
 }: PrototypeStory): Story {
   return {
     ...story,
-    cover: coverArtwork(story.id, story.level, coverPrompt),
+    cover: coverArtwork(story.id, coverPrompt),
     pages: pages.map(({ artworkPrompt, ...page }, pageIndex) => ({
       ...page,
       artwork: pageArtwork({
@@ -81,7 +82,7 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "hello-cat",
     title: "Hello, Cat!",
-    level: "first-english-words",
+    level: "first-words",
     coverPrompt: "Bob waves hello to a friendly cat, dog, and bird",
     completionText: "Bye, cat. Bye, dog. Bye, bird.",
     pages: [
@@ -120,7 +121,7 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "marys-face",
     title: "Mary’s Face",
-    level: "first-english-words",
+    level: "first-words",
     coverPrompt: "Mary pointing to her smiling face",
     completionText: "Face, eyes, ears, nose, mouth.",
     pages: [
@@ -159,7 +160,7 @@ export const STORY_SCRIPT_CANDIDATES: readonly Story[] = [
   makePrototypeStory({
     id: "wash-sam-wash",
     title: "Wash, Sam, Wash!",
-    level: "first-english-words",
+    level: "first-words",
     coverPrompt: "Sam washing his hands with soap and water",
     completionText: "Clean hands!",
     pages: [

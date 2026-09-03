@@ -8,13 +8,12 @@ These docs describe the current product and technical design.
   non-technical guide to what information a lesson needs, where it goes, and
   how to add a built-in lesson.
 - [Lesson JSON Schema Reference](./lesson-json-schema.md) documents every lesson,
-  scene, step, emote, speech check, response, branching, validation, and draft
-  repair rule.
+  scene, step, emote, join-in, and validation rule.
 - [Product Experience](./design/product-experience.md) explains the child-facing
   lesson experience, character roles, state flow, and UX rules.
 - [Technical Architecture](./design/technical-architecture.md) explains the app,
-  Worker API, lesson state machine, speech evaluation path, and local/dev
-  runtime modes.
+  Worker API, learner-profile and conversation flows, lesson state machine, and
+  local/deployment runtime modes.
 - [Audio and Content Pipeline](./design/audio-and-content-pipeline.md) explains
   built-in static lesson audio, voice direction, and regeneration rules.
 - [Young-Learner Storytelling Language Guide](./design/young-learner-storytelling.md)

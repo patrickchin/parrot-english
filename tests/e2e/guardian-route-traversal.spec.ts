@@ -247,23 +247,6 @@ test("direct learner details keep the URL target separate from learner mode and 
   ).toBeVisible();
 });
 
-test("the retired Guardian profile route replaces history with Manage learners", async ({
-  page,
-}) => {
-  await page.goto(scenarioUrl("/guardian"));
-  await page.goto(scenarioUrl("/guardian/profile?returnTo=%2Fguardian"));
-  await expect(page).toHaveURL("/guardian/learners");
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Manage learners" }),
-  ).toBeVisible();
-
-  await page.goBack();
-  await expect(page).toHaveURL(/\/guardian\?.*parrotE2eLearners=multiple/);
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Guardian dashboard" }),
-  ).toBeVisible();
-});
-
 test("learner-targeted dubbing settings default cleanly and reject duplicate or unknown targets", async ({
   page,
 }) => {
@@ -306,7 +289,7 @@ test("learner routes recover progress, invalid story and lesson details, and wil
 }) => {
   await page.goto(scenarioUrl("/lessons", "multiple", "learner"));
   await page.evaluate(() => {
-    window.history.pushState(null, "", "/progress");
+    window.history.pushState(null, "", "/not-a-route");
     window.dispatchEvent(new PopStateEvent("popstate"));
   });
   await expect(page).toHaveURL("/");
@@ -315,17 +298,6 @@ test("learner routes recover progress, invalid story and lesson details, and wil
   ).toBeVisible();
   await page.goBack();
   await expect(page).toHaveURL(/\/lessons\?.*parrotE2eGuardian=learner/);
-
-  await page.goto(scenarioUrl("/profile", "multiple", "learner"));
-  await expect(
-    page.getByRole("heading", { exact: true, name: "Learner details" }),
-  ).toBeVisible();
-  await page.evaluate(() => fetch("/api/guardian-access", { method: "DELETE" }));
-  await page.goto(scenarioUrl("/", "multiple", "learner"));
-  await expect(page).toHaveURL(/\/\?.*parrotE2eGuardian=learner/);
-  await expect(
-    page.getByRole("navigation", { name: "Learning activities" }),
-  ).toBeVisible();
 
   await page.goto(scenarioUrl("/stories/not-a-story", "multiple", "learner"));
   await expect(page).toHaveURL("/stories");

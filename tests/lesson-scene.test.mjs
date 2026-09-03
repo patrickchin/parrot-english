@@ -47,25 +47,6 @@ const lesson = {
           speaker: "user",
           dialogue: "Here you are!",
           emotes: { dolly: "listening", user: "talking" },
-          check: {
-            maxAttempts: 2,
-            correct: {
-              speaker: "peppa",
-              dialogue: "Well done!",
-              emotes: { peppa: "happy" },
-              after: "continue",
-            },
-            incorrect: {
-              speaker: "dolly",
-              dialogue: "Almost! Try again.",
-              after: "retry",
-            },
-            incorrectFinal: {
-              speaker: "peppa",
-              dialogue: "Good try! Let's continue.",
-              after: "continue",
-            },
-          },
         },
       ],
     },

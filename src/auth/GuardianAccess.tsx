@@ -18,8 +18,6 @@ import {
   type GuardianAccessState,
 } from "./guardian-access-api";
 
-export { notifyGuardianAccessRequired } from "./guardian-access-api";
-
 export type GuardianMode = "loading" | "learner" | "guardian";
 export type GuardianAccessErrorCode =
   "check-failed" | "lock-failed" | "access-changed";
@@ -67,9 +65,6 @@ const STALE_OPERATION_ERROR = "access-changed" as const;
 const GUARDIAN_ACCESS_LOCK_CHANNEL = "parrot-guardian-access-lock";
 
 async function guardianAccessLockScopeName(identity: string) {
-  if (!globalThis.crypto?.subtle || typeof TextEncoder === "undefined") {
-    return null;
-  }
   try {
     const digest = await globalThis.crypto.subtle.digest(
       "SHA-256",
@@ -93,19 +88,7 @@ function guardianAccessStorage() {
 }
 
 function guardianAccessLockToken() {
-  try {
-    if (typeof globalThis.crypto?.randomUUID === "function") {
-      return globalThis.crypto.randomUUID();
-    }
-    if (typeof globalThis.crypto?.getRandomValues !== "function") {
-      throw new Error("Secure random values are unavailable.");
-    }
-    const bytes = new Uint32Array(4);
-    globalThis.crypto.getRandomValues(bytes);
-    return Array.from(bytes, (byte) => byte.toString(16)).join("-");
-  } catch {
-    return `${Date.now()}-${Math.random()}`;
-  }
+  return globalThis.crypto.randomUUID();
 }
 
 function guardianAccessLockMarker(storageKey: string) {

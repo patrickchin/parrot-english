@@ -21,7 +21,7 @@ async function expectAnimationCount(
     .toBe(count);
 }
 
-test("each purpose has its own framing and only profile flows offer save completion", async ({
+test("small chat and initial onboarding have distinct save framing", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 568, width: 280 });
@@ -39,15 +39,6 @@ test("each purpose has its own framing and only profile flows offer save complet
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Save and finish" }),
-  ).toBeVisible();
-
-  await page.unroute("**/api/learner-profile");
-  await page.goto("/profile/setup?redo=1&parrotE2eGuardian=guardian");
-  await expect(
-    page.getByRole("heading", { name: "Update my profile" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Save changes" }),
   ).toBeVisible();
 });
 

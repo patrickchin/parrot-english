@@ -3,35 +3,24 @@ import { z } from "zod";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import type { ConversationPurpose } from "../lib/conversation-purpose.ts";
 import {
-  containsLikelyFullLearnerName,
-  containsPrivateLearnerProfileDetails,
-  PREFERRED_NAME_FIELD_ERROR,
-} from "../lib/learner-profile-privacy.ts";
-import {
-  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   type TalkToPeppaPromptStyle,
 } from "../lib/talk-to-peppa-prompt-style.ts";
-import type { ConversationIngestClient } from "./ingest-client.ts";
 import { INTRODUCTION_SYSTEM_PROMPT } from "./prompts/introduction.ts";
-import { PROFILE_EDIT_SYSTEM_PROMPT } from "./prompts/profile-edit.ts";
 import {
   getSmallChatSystemPrompt,
-  SMALL_CHAT_SYSTEM_PROMPT,
 } from "./prompts/small-chat.ts";
 
-export const CONVERSATION_SYSTEM_PROMPTS: Record<ConversationPurpose, string> = {
+export const CONVERSATION_SYSTEM_PROMPTS = {
   onboarding: INTRODUCTION_SYSTEM_PROMPT,
-  "profile-edit": PROFILE_EDIT_SYSTEM_PROMPT,
-  "small-chat": SMALL_CHAT_SYSTEM_PROMPT,
-};
+} as const;
 
 export function getConversationSystemPrompt(
   purpose: ConversationPurpose,
-  promptStyle: TalkToPeppaPromptStyle = DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
+  promptStyle?: TalkToPeppaPromptStyle,
 ) {
-  return purpose === "small-chat"
-    ? getSmallChatSystemPrompt(promptStyle)
-    : CONVERSATION_SYSTEM_PROMPTS[purpose];
+  if (purpose === "onboarding") return CONVERSATION_SYSTEM_PROMPTS.onboarding;
+  if (!promptStyle) throw new Error("Small chat requires a prompt style.");
+  return getSmallChatSystemPrompt(promptStyle);
 }
 
 export const AGENT_SESSION_START_OPTIONS = { record: false } as const;
@@ -72,11 +61,9 @@ type ControllerState = Omit<
 > & { finishReason: string | null };
 
 type CreateTaskOptions = {
-  conversationId?: string;
-  ingest?: ConversationIngestClient;
-  initialState?: ControllerState;
+  initialState: ControllerState;
   promptStyle?: TalkToPeppaPromptStyle;
-  purpose?: ConversationPurpose;
+  purpose: ConversationPurpose;
 };
 
 function savedProfileContext(state: ControllerState) {
@@ -89,90 +76,11 @@ function savedProfileContext(state: ControllerState) {
   return `<SAVED_PROFILE>\n${savedProfile}\n</SAVED_PROFILE>`;
 }
 
-function createProfileEditTool({
-  conversationId,
-  getCompleteTask,
-  ingest,
-  initialState,
-}: {
-  conversationId: string;
-  getCompleteTask: () => (result: ConversationTaskResult) => void;
-  ingest: ConversationIngestClient;
-  initialState: ControllerState;
-}) {
-  let state = initialState;
-
-  return llm.tool({
-    name: "updateLearnerProfile",
-    description:
-      "Save the learner's current preferred name, age, and About paragraph, then end the profile-edit conversation.",
-    parameters: z.object({
-      name: z
-        .string()
-        .trim()
-        .min(1)
-        .max(120)
-        .describe("The learner's first name or nickname only."),
-      age: z
-        .number()
-        .int()
-        .nonnegative()
-        .describe("The learner's complete current age in whole years."),
-      about: z
-        .string()
-        .trim()
-        .min(1)
-        .max(2_000)
-        .describe(
-          "The complete current About profile as one natural third-person paragraph.",
-        ),
-    }),
-    execute: async ({ about, age, name }) => {
-      const completeTask = getCompleteTask();
-      const hasPrivateDetails = containsPrivateLearnerProfileDetails(name, about);
-      const hasFullName = containsLikelyFullLearnerName(name, about);
-      if (hasPrivateDetails || hasFullName) {
-        const isUnchangedSavedProfile =
-          state.learnedName &&
-          state.learnedAge &&
-          name === state.profileName &&
-          age === state.profileAge &&
-          about === state.profileSummary;
-        if (!isUnchangedSavedProfile) {
-          if (hasPrivateDetails) {
-            throw new Error("Learner profiles cannot include private details.");
-          }
-          throw new Error(PREFERRED_NAME_FIELD_ERROR);
-        }
-        completeTask({ finishReason: "conversation_complete" });
-        return { ending: true, saved: true };
-      }
-      state = {
-        ...state,
-        learnedAge: true,
-        learnedName: true,
-        profileAge: age,
-        profileName: name,
-        profileSummary: about,
-      };
-      await ingest.updateState(conversationId, state);
-      completeTask({ finishReason: "conversation_complete" });
-      return { ending: true, saved: true };
-    },
-    onDuplicate: "reject",
-  });
-}
-
 function createConversationTask({
-  conversationId,
-  ingest,
-  initialState = createLearnerProfileConversationState() as ControllerState,
-  promptStyle = DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
-  purpose = "onboarding",
-}: CreateTaskOptions = {}) {
-  if (purpose === "profile-edit" && (!conversationId || !ingest)) {
-    throw new Error("Profile editing requires conversation persistence.");
-  }
+  initialState,
+  promptStyle,
+  purpose,
+}: CreateTaskOptions) {
   let completeTask: ((result: ConversationTaskResult) => void) | null = null;
   const getCompleteTask = () => {
     if (!completeTask) {
@@ -180,19 +88,7 @@ function createConversationTask({
     }
     return completeTask;
   };
-  const profileEditTools =
-    purpose === "profile-edit"
-      ? [
-          createProfileEditTool({
-            conversationId: conversationId!,
-            getCompleteTask,
-            ingest: ingest!,
-            initialState,
-          }),
-        ]
-      : [];
   const tools = [
-    ...profileEditTools,
     llm.tool({
       name: "endConversation",
       description:
@@ -212,12 +108,7 @@ function createConversationTask({
     }),
   ];
   const task = voice.AgentTask.create<ConversationTaskResult>({
-    id:
-      purpose === "onboarding"
-        ? "learner_introduction"
-        : purpose === "profile-edit"
-          ? "profile_edit"
-          : "small_chat",
+    id: purpose === "onboarding" ? "learner_introduction" : "small_chat",
     instructions: [
       getConversationSystemPrompt(purpose, promptStyle),
       savedProfileContext(initialState),
@@ -235,35 +126,8 @@ function createConversationTask({
   return task;
 }
 
-export function createGettingToKnowYouTask(options: CreateTaskOptions = {}) {
+export function createPeppaConversationTask(options: CreateTaskOptions) {
   return createConversationTask(options);
-}
-
-export function createSmallChatTask({
-  initialState = createLearnerProfileConversationState() as ControllerState,
-  promptStyle = DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
-}: Pick<CreateTaskOptions, "initialState" | "promptStyle"> = {}) {
-  return createConversationTask({
-    initialState,
-    promptStyle,
-    purpose: "small-chat",
-  });
-}
-
-export function createPeppaConversationTask(options: {
-  conversationId: string;
-  ingest: ConversationIngestClient;
-  initialState?: ControllerState;
-  promptStyle?: TalkToPeppaPromptStyle;
-  purpose: ConversationPurpose;
-}) {
-  if (options.purpose === "small-chat") {
-    return createSmallChatTask({
-      initialState: options.initialState,
-      promptStyle: options.promptStyle,
-    });
-  }
-  return createGettingToKnowYouTask(options);
 }
 
 type ConversationClosingSession = Pick<

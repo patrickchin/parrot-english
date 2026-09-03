@@ -3,11 +3,9 @@ import { describe, it } from "node:test";
 import * as learnerProfileApi from "../src/learner-profile/learner-profile-api.ts";
 import {
   LearnerProfileApiError,
-  completeLearnerProfile,
   loadLearnerProfile,
   loadProfile,
   saveLearnerProfileAnswer,
-  saveProfileAnswer,
   skipLearnerProfile,
   transcribeLearnerProfileAudio,
 } from "../src/learner-profile/learner-profile-api.ts";
@@ -71,11 +69,11 @@ describe("learnerProfile browser API", () => {
     assert.equal(learnerProfile.calls[0][1].method, "GET");
 
     const profile = jsonFetch({ profile: { id: "learner-1" }, questions: [] });
-    assert.deepEqual(await loadProfile({ fetch: profile.fetch }), {
+    assert.deepEqual(await loadProfile("learner-1", { fetch: profile.fetch }), {
       profile: { id: "learner-1" },
       questions: [],
     });
-    assert.equal(profile.calls[0][0], "/api/profile");
+    assert.equal(profile.calls[0][0], "/api/learner-profiles/learner-1");
     assert.equal(profile.calls[0][1].method, "GET");
   });
 
@@ -154,7 +152,7 @@ describe("learnerProfile browser API", () => {
     });
   });
 
-  it("requests managed learner creation without changing the existing default activation contract", async () => {
+  it("creates a learner without an activation option", async () => {
     const payload = {
       activeProfileId: "learner-mia",
       createdProfileId: "learner-mia",
@@ -171,16 +169,11 @@ describe("learnerProfile browser API", () => {
     };
     const request = jsonFetch(payload);
 
-    await learnerProfileApi.createLearnerProfile("Noah", {
-      activate: false,
-      fetch: request.fetch,
-    });
-    await learnerProfileApi.createLearnerProfile("Ava", {
+    await learnerProfileApi.createLearnerProfile("Mary", {
       fetch: request.fetch,
     });
 
-    assert.equal(request.calls[0][1].body, '{"name":"Noah","activate":false}');
-    assert.equal(request.calls[1][1].body, '{"name":"Ava"}');
+    assert.equal(request.calls[0][1].body, '{"name":"Mary"}');
   });
 
   it("rejects learner creation responses without an authoritative roster member ID", async () => {
@@ -205,7 +198,6 @@ describe("learnerProfile browser API", () => {
       const request = jsonFetch(payload);
       await assert.rejects(
         learnerProfileApi.createLearnerProfile("Mary", {
-          activate: false,
           fetch: request.fetch,
         }),
         (error) =>
@@ -311,7 +303,7 @@ describe("learnerProfile browser API", () => {
 
       const malformedProfile = jsonFetch({ profile: { id }, questions: [] });
       await assert.rejects(
-        loadProfile({ fetch: malformedProfile.fetch }),
+        loadProfile("learner-1", { fetch: malformedProfile.fetch }),
         (error) =>
           error instanceof LearnerProfileApiError &&
           error.code === "invalid_profile",
@@ -337,7 +329,6 @@ describe("learnerProfile browser API", () => {
         learnerProfileApi.skipLearnerProfileQuestion("favoriteAnimals", {
           fetch,
         }),
-      (fetch) => completeLearnerProfile({ fetch }),
     ]) {
       const request = jsonFetch(invalidLearnerState);
       await assert.rejects(
@@ -349,9 +340,12 @@ describe("learnerProfile browser API", () => {
     }
 
     for (const invoke of [
-      (fetch) => saveProfileAnswer("name", "Mia", { fetch }),
       (fetch) =>
-        learnerProfileApi.saveProfileAnswers({ name: "Mia" }, { fetch }),
+        learnerProfileApi.saveProfileAnswers(
+          "learner-1",
+          { name: "Mary" },
+          { fetch },
+        ),
     ]) {
       const request = jsonFetch(invalidProfileState);
       await assert.rejects(
@@ -389,15 +383,6 @@ describe("learnerProfile browser API", () => {
       body: '{"questionKey":"favoriteAnimals","rawAnswer":"I like dinosaurs"}',
       signal: undefined,
     });
-
-    const profile = jsonFetch({ profile: { id: "learner-1", name: "Maya" } });
-    await saveProfileAnswer("name", "Maya", { fetch: profile.fetch });
-    assert.equal(profile.calls[0][0], "/api/profile");
-    assert.equal(profile.calls[0][1].method, "PUT");
-    assert.equal(
-      profile.calls[0][1].body,
-      '{"questionKey":"name","rawAnswer":"Maya"}',
-    );
   });
 
   it("submits all prose profile edits in one request", async () => {
@@ -419,6 +404,7 @@ describe("learnerProfile browser API", () => {
 
     assert.deepEqual(
       await learnerProfileApi.saveProfileAnswers(
+        "learner-1",
         {
           name: "Maya",
           age: "I am nine",
@@ -429,7 +415,7 @@ describe("learnerProfile browser API", () => {
       ),
       payload,
     );
-    assert.equal(request.calls[0][0], "/api/profile");
+    assert.equal(request.calls[0][0], "/api/learner-profiles/learner-1");
     assert.deepEqual(JSON.parse(request.calls[0][1].body), {
       answers: {
         name: "Maya",
@@ -456,13 +442,13 @@ describe("learnerProfile browser API", () => {
 
     const saved = jsonFetch({ cleanupPending: false, enabled: true });
     assert.deepEqual(
-      await learnerProfileApi.saveLessonRecordingConsent(true, {
+      await learnerProfileApi.saveLessonRecordingConsent("learner-1", true, {
         fetch: saved.fetch,
       }),
       { cleanupPending: false, enabled: true },
     );
     assert.deepEqual(saved.calls[0], [
-      "/api/profile/lesson-recording-consent",
+      "/api/learner-profiles/learner-1/lesson-recording-consent",
       {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -472,63 +458,45 @@ describe("learnerProfile browser API", () => {
     ]);
   });
 
-  it("targets Guardian profile and recording requests with one exact learner query", async () => {
-    const learnerProfileId = "learner /Noah";
+  it("targets Guardian profile and recording requests by resource ID", async () => {
+    const learnerProfileId = "learner /Mary";
     const profilePayload = {
       profile: { id: learnerProfileId, storyLevel: "tiny-stories" },
       questions: [],
     };
     const request = jsonFetch(profilePayload);
 
-    await learnerProfileApi.loadProfile({
+    await learnerProfileApi.loadProfile(learnerProfileId, {
       fetch: request.fetch,
-      learnerProfileId,
     });
-    await learnerProfileApi.saveProfileAnswer("name", "Noah", {
+    await learnerProfileApi.saveProfileAnswers(learnerProfileId, { name: "Mary" }, {
       fetch: request.fetch,
-      learnerProfileId,
-    });
-    await learnerProfileApi.saveProfileAnswers({ name: "Noah" }, {
-      fetch: request.fetch,
-      learnerProfileId,
     });
     const consent = jsonFetch({ cleanupPending: false, enabled: true });
-    await learnerProfileApi.loadLessonRecordingConsent({
+    await learnerProfileApi.saveLessonRecordingConsent(learnerProfileId, true, {
       fetch: consent.fetch,
-      learnerProfileId,
-    });
-    await learnerProfileApi.saveLessonRecordingConsent(true, {
-      fetch: consent.fetch,
-      learnerProfileId,
     });
 
     assert.deepEqual(
       request.calls.map(([url]) => url),
       [
-        "/api/profile?learnerProfileId=learner+%2FNoah",
-        "/api/profile?learnerProfileId=learner+%2FNoah",
-        "/api/profile?learnerProfileId=learner+%2FNoah",
+        "/api/learner-profiles/learner%20%2FMary",
+        "/api/learner-profiles/learner%20%2FMary",
       ],
     );
     assert.deepEqual(
       consent.calls.map(([url]) => url),
       [
-        "/api/lesson-recordings/consent?learnerProfileId=learner+%2FNoah",
-        "/api/profile/lesson-recording-consent?learnerProfileId=learner+%2FNoah",
+        "/api/learner-profiles/learner%20%2FMary/lesson-recording-consent",
       ],
     );
   });
 
-  it("posts skip and completion transitions", async () => {
+  it("posts the skip transition", async () => {
     const skipped = jsonFetch({ canBypass: true });
     await skipLearnerProfile({ fetch: skipped.fetch });
     assert.equal(skipped.calls[0][0], "/api/learner-profile/skip");
     assert.equal(skipped.calls[0][1].method, "POST");
-
-    const completed = jsonFetch({ canBypass: true });
-    await completeLearnerProfile({ fetch: completed.fetch });
-    assert.equal(completed.calls[0][0], "/api/learner-profile/complete");
-    assert.equal(completed.calls[0][1].method, "POST");
   });
 
   it("posts an explicit optional-question skip", async () => {
@@ -609,7 +577,7 @@ describe("learnerProfile browser API", () => {
 
     try {
       const failed = jsonFetch({ error: "guardian_required" }, 403);
-      await assert.rejects(loadProfile({ fetch: failed.fetch }), (error) => {
+      await assert.rejects(loadProfile("learner-1", { fetch: failed.fetch }), (error) => {
         order.push("error");
         assert.ok(error instanceof LearnerProfileApiError);
         assert.equal(error.status, 403);
@@ -642,6 +610,7 @@ describe("learnerProfile browser API", () => {
 
     await assert.rejects(
       learnerProfileApi.saveProfileAnswers(
+        "learner-1",
         { name: "Maya", age: "very old" },
         { fetch: failed.fetch },
       ),

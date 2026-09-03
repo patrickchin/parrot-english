@@ -1,6 +1,10 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { DUB_LINES } from "../../src/dubbing/dub-script";
-import { DUB_DEFINITIONS } from "../../src/dubbing/rhyme-catalog";
+import {
+  DUB_DEFINITIONS,
+  FIVE_LITTLE_DUCKS_DUB,
+} from "../../src/dubbing/rhyme-catalog";
+
+const DUCK_LINES = FIVE_LITTLE_DUCKS_DUB.lines;
 
 type DubStoreSnapshot = {
   audioContextCloses: number;
@@ -52,6 +56,27 @@ async function expectDubProject(page: Page) {
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
   await expect(page.getByRole("complementary", { name: "Scene selection" })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Scenes" })).toBeVisible();
+  await expectNoLearnerAdultControls(page);
+}
+
+async function expectDubListenOnly(page: Page) {
+  await expect(page.getByRole("region", { name: "Listen-only video" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Full video player" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
+  await expect(
+    page.getByText(
+      "You can watch the video now. Ask a grown-up to turn on recording when you want to join in.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Check recording access" }),
+  ).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Scene selection" })).toHaveCount(0);
+  await expect(page.getByRole("navigation", { name: "Scenes" })).toHaveCount(0);
+  await expect(
+    page.getByRole("progressbar", { name: "Project recording progress" }),
+  ).toHaveCount(0);
   await expectNoLearnerAdultControls(page);
 }
 
@@ -259,20 +284,21 @@ async function resolveDelayedMicrophone(page: Page) {
   expect(resolved).toBe(true);
 }
 
-test("dubbing opens automatically without exposing adult controls", async ({
+test("dubbing stays listen-only until a guardian grants recording consent", async ({
   page,
 }) => {
   await page.goto(
     "/dubs/five-little-ducks?parrotE2eDub=not-granted&parrotE2eLearners=multiple",
   );
 
-  await expectDubProject(page);
-  await expect(
-    page.getByRole("region", { name: "Full video player" }),
-  ).toBeVisible();
-  await openScene(page, 1);
-  await stopAndSave(page);
-  await expectNoLearnerAdultControls(page);
+  await expectDubListenOnly(page);
+  const [store, microphone] = await Promise.all([
+    dubStoreSnapshot(page),
+    microphoneSnapshot(page),
+  ]);
+  expect(store.privateFetches).toEqual([]);
+  expect(store.uploads).toEqual([]);
+  expect(microphone.requests).toBe(0);
 });
 
 test("keeps recording unavailable while voice clips are being cleared", async ({
@@ -282,7 +308,9 @@ test("keeps recording unavailable while voice clips are being cleared", async ({
 
   await expect(
     page.getByRole("main").getByRole("paragraph"),
-  ).toContainText("You can watch the video now.");
+  ).toContainText(
+    "You can watch the video while saved voice clips are being cleared.",
+  );
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Try recording again" }),
@@ -295,7 +323,12 @@ test("keeps recording unavailable while voice clips are being cleared", async ({
 
 test("learners can watch public video without private media during cleanup", async ({ page }) => {
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
-  await expect(page.getByText("You can watch the video now.", { exact: false })).toBeVisible();
+  await expect(
+    page.getByText(
+      "You can watch the video while saved voice clips are being cleared.",
+      { exact: false },
+    ),
+  ).toBeVisible();
   await expectNoLearnerAdultControls(page);
   await expect(page.getByRole("button", { name: /Record|Play my recording|Save/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Scene \d/ })).toHaveCount(0);
@@ -403,7 +436,12 @@ test("guardian mode deletes a complete private dub and revokes consent", async (
     })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Allow Mia to record and save nursery-rhyme voice clips",
+    }),
   ).toBeVisible();
 });
 
@@ -487,18 +525,19 @@ test("shared-consent deletion clears saved clips for both rhyme routes", async (
     name: "Delete Mia's saved nursery-rhyme voice clips",
   }).click();
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Allow Mia to record and save nursery-rhyme voice clips",
+    }),
   ).toBeVisible();
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=empty");
-  await expectDubProject(page);
-  await expect(page.getByRole("progressbar", { name: "Project recording progress" }))
-    .toHaveAttribute("aria-valuetext", "Ready to start");
+  await expectDubListenOnly(page);
 
   await page.goto("/dubs/old-macdonald?parrotE2eDub=empty");
-  await expectDubProject(page);
-  await expect(page.getByRole("progressbar", { name: "Project recording progress" }))
-    .toHaveAttribute("aria-valuetext", "Ready to start");
+  await expectDubListenOnly(page);
 });
 
 const guardianResponsiveStates = [
@@ -508,8 +547,8 @@ const guardianResponsiveStates = [
     scenario: "complete",
   },
   {
-    action: "Delete Mia's saved nursery-rhyme voice clips",
-    heading: "Voice dubbing is available",
+    action: "Allow Mia to record and save nursery-rhyme voice clips",
+    heading: "No saved voice clips",
     scenario: "not-granted",
   },
   {
@@ -578,44 +617,6 @@ for (const viewport of [
   }
 }
 
-test("guardian mode recovers a legacy interrupted reset without a permission gate", async ({
-  page,
-}) => {
-  await page.goto(
-    "/guardian/dubbing?parrotE2eDub=reset-interrupted&parrotE2eGuardian=guardian",
-  );
-
-  await expect(
-    page.getByRole("heading", { name: "Voice clip removal needs to finish" }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Allow voice dubbing" }),
-  ).toHaveCount(0);
-  const interruptedStatus = await page.evaluate(async () => {
-    const response = await fetch("/api/dubs/five-little-ducks-v2");
-    return { body: await response.json(), status: response.status };
-  });
-  expect(interruptedStatus).toEqual({
-    body: { error: "dub_reset_in_progress" },
-    status: 409,
-  });
-
-  await page
-    .getByRole("button", { name: "Finish removing nursery-rhyme clips" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
-  ).toBeVisible();
-  const finalConsentState = await page.evaluate(async () => {
-    const response = await fetch("/api/dubs/five-little-ducks-v2");
-    const body: unknown = await response.json();
-    return typeof body === "object" && body !== null && "consentState" in body
-      ? body.consentState
-      : null;
-  });
-  expect(finalConsentState).toBe("granted");
-});
-
 test("keeps a failed cleanup revoking until the guardian retries", async ({
   page,
 }) => {
@@ -645,11 +646,13 @@ test("keeps a failed cleanup revoking until the guardian retries", async ({
     page.getByRole("button", { name: "Finish removing nursery-rhyme clips" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Allow voice dubbing" }),
+    page.getByRole("button", {
+      name: "Allow Mia to record and save nursery-rhyme voice clips",
+    }),
   ).toHaveCount(0);
 
   const blockedRegrant = await page.evaluate(async (consentVersion) => {
-    const response = await fetch("/api/dubs/five-little-ducks-v2/consent", {
+    const response = await fetch("/api/dubs/consent", {
       body: JSON.stringify({ accepted: true, consentVersion }),
       headers: { "Content-Type": "application/json" },
       method: "PUT",
@@ -686,7 +689,12 @@ test("keeps a failed cleanup revoking until the guardian retries", async ({
     .getByRole("button", { name: "Finish removing nursery-rhyme clips" })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Allow Mia to record and save nursery-rhyme voice clips",
+    }),
   ).toBeVisible();
 });
 
@@ -706,7 +714,12 @@ test("reconciles a lost cleanup response from durable status", async ({
   ).toBeVisible();
 
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Allow Mia to record and save nursery-rhyme voice clips",
+    }),
   ).toBeVisible();
 });
 
@@ -863,7 +876,7 @@ test("scene statuses identify completed work and open the exact scene", async ({
   await page.getByRole("navigation", { name: "Scenes" }).getByRole("button", {
     name: /^Scene 1, Five little ducks, Ready to start$/,
   }).click();
-  await expect(page.getByRole("heading", { name: DUB_LINES[0].text })).toBeFocused();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[0].text })).toBeFocused();
 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=partial");
   await expectDubProject(page);
@@ -875,7 +888,7 @@ test("scene statuses identify completed work and open the exact scene", async ({
   await scenes.getByRole("button", {
     name: /^Scene 2, Four little ducks, Ready to start$/,
   }).click();
-  await expect(page.getByRole("heading", { name: DUB_LINES[4].text })).toBeFocused();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[4].text })).toBeFocused();
 });
 
 test("an empty project plays a fully generated draft", async ({ page }) => {
@@ -912,12 +925,12 @@ test("scene cards open exact groups across the complete rhyme", async ({ page })
   await expectDubProject(page);
   await openScene(page, 1);
   await expect(page.getByText("Line 4 of 4", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: DUB_LINES[3].text })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[3].text })).toBeVisible();
 
   await page.getByRole("button", { name: "Back to scenes" }).click();
   await openScene(page, 5);
   await expect(page.getByText("Line 1 of 4", { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: DUB_LINES[16].text })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[16].text })).toBeVisible();
   await page.getByRole("button", { name: "Next line" }).click();
   await page.getByRole("button", { name: "Next line" }).click();
   await page.getByRole("button", { name: "Next line" }).click();
@@ -934,10 +947,10 @@ test("line navigation has previous and keeps the shared route header", async ({ 
   const previous = page.getByRole("button", { name: "Previous line" });
   await expect(previous).toBeDisabled();
   await page.getByRole("button", { name: "Next line" }).click();
-  await expect(page.getByRole("heading", { name: DUB_LINES[1].text })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[1].text })).toBeVisible();
   await expect(previous).toBeEnabled();
   await previous.click();
-  await expect(page.getByRole("heading", { name: DUB_LINES[0].text })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[0].text })).toBeVisible();
 
   await page.getByRole("button", { name: "Back to scenes" }).click();
   await expect(page.getByRole("button", { name: "Play full video" })).toBeVisible();
@@ -1313,7 +1326,7 @@ test("saving the final scene line focuses Finish scene", async ({ page }) => {
   for (let line = 1; line < 4; line += 1) {
     await page.getByRole("button", { name: "Next line" }).click();
   }
-  await expect(page.getByRole("heading", { name: DUB_LINES[23].text })).toBeVisible();
+  await expect(page.getByRole("heading", { name: DUCK_LINES[23].text })).toBeVisible();
   await holdDubRecordingEnd(page);
   await page.getByRole("button", { name: "Record line" }).click();
   await page.getByRole("button", { name: "Stop recording" }).click();
@@ -2491,13 +2504,16 @@ test("a held Guardian delete is exclusive until removal succeeds", async ({ page
 
   await releaseDubOperation(page, "delete");
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Allow Mia to record and save nursery-rhyme voice clips",
+    }),
   ).toBeVisible();
 
   await page.goto("/dubs/old-macdonald?parrotE2eDub=delete-held");
-  await expectDubProject(page);
-  await expect(page.getByRole("progressbar", { name: "Project recording progress" }))
-    .toHaveAttribute("aria-valuetext", "Ready to start");
+  await expectDubListenOnly(page);
 });
 
 test("a failed Guardian delete stays actionable only in Guardian mode", async ({
@@ -2535,7 +2551,9 @@ test("every dubbing route state stays horizontally contained", async ({ page }) 
   await page.goto("/dubs/five-little-ducks?parrotE2eDub=revoking");
   await expect(
     page.getByRole("main").getByRole("paragraph"),
-  ).toContainText("You can watch the video now.");
+  ).toContainText(
+    "You can watch the video while saved voice clips are being cleared.",
+  );
   await expectNoLearnerAdultControls(page);
   await expectDubRouteContained(page);
 
@@ -2991,7 +3009,7 @@ test("the narrow line editor puts its recording task before the supporting playe
   await openScene(page, 1);
 
   const stage = page.getByRole("region", { name: "Full video player" });
-  const lyric = page.getByRole("heading", { level: 2, name: DUB_LINES[3].text });
+  const lyric = page.getByRole("heading", { level: 2, name: DUCK_LINES[3].text });
   const controls = page.getByRole("complementary", { name: "Line recording controls" });
   const example = page.getByRole("button", { name: "Hear example" });
   const record = page.getByRole("button", { name: "Record line" });

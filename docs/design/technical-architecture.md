@@ -18,7 +18,6 @@ Browser
             -> /api/conversations/* -> LiveKit -> D1
             -> /api/lesson-recordings/* -> learner consent + private R2 slots
             -> /api/dubs/:dubId/* -> D1 consent + private R2 clip slots
-       -> /api/evaluate-speech -> Groq
        -> static Vite assets
 ```
 
@@ -80,15 +79,16 @@ joins the current session selection to a profile owned by the same account and
 produces a `LearnerIdentity` with immutable profile ID, current learner name,
 and stable readable private-media directory name.
 Existing learner APIs do not accept an arbitrary learner ID from the browser.
-A stale, corrupt, or foreign selection fails closed. The resolver auto-selects
-the only owned learner when safe; two or more owned learners without a selection return
-`409 learner_selection_required`.
+A missing, stale, corrupt, or foreign selection fails closed with
+`409 learner_selection_required`; the learner chooser is the only path that
+creates the current session selection.
 
 The Worker exposes authentication, Guardian access, the Guardian learner
 roster, learner profile, conversations, lesson join-in recordings, build
-information, speech evaluation, and nursery-rhyme dubbing. The authenticated
-`/api/dubs/:dubId/*` family owns consent-aware status, raw clip upload, private
-clip streaming, durable consent grant, and whole-catalog revocation/deletion.
+information, and nursery-rhyme dubbing. The authenticated
+`/api/dubs/:dubId/*` owns consent-aware status, raw clip upload, and private
+clip streaming. Learner-wide `/api/dubs/consent` and `/api/dubs` own durable
+consent and whole-catalog revocation/deletion.
 Static assets are the final fallback.
 
 `GET`, `POST`, and `DELETE /api/guardian-access` read, grant, and revoke the
@@ -127,23 +127,22 @@ mode before navigation; a learner-mode choice does not call the lock API.
 `DELETE` requires the same live Guardian unlock and a name-specific UI
 confirmation. It returns the authoritative remaining roster, rejects the final
 usable learner with `409 last_learner`, and leaves retryable cleanup visible as
-`deletionPending`. Deleting the active learner clears its selection and records
-selection-required state instead of auto-selecting a sibling. All four routes
+`deletionPending`. Deleting the active learner clears its selection instead of
+auto-selecting a sibling. All four routes
 re-prove account ownership; malformed, missing, and foreign IDs share a generic
 `404`.
 
 One Worker dispatch guard returns `403 { "error": "guardian_required" }`
 before roster create/delete mutations, Guardian profile reads/updates, dubbing
-consent grant, and whole-dub deletion when the current session lacks a live
+consent grant, and whole-catalog deletion when the current session lacks a live
 unlock.
-Conversation start is purpose-aware: profile edits
-always require the current session's live unlock, while onboarding remains
-learner-safe only until the owner profile is completed or bypassed. The
-authenticated `/review` endpoint is the sole conversation path that persists
-profile answers and repeats that current-session check; browser `/finish` and
-trusted-agent `/end` update conversation status only. Owner scoping, request
-validation and rate limits still run after the mode check; learner-safe reads
-remain available.
+Conversation start is purpose-aware: onboarding remains learner-safe only until
+the owner profile is completed or bypassed, while small chat never writes
+learner-profile data. The authenticated `/review` endpoint is the sole
+conversation path that persists onboarding profile answers and repeats that
+current-session check; browser `/finish` and trusted-agent `/end` update
+conversation status only. Owner scoping, request validation and rate limits
+still run after the mode check; learner-safe reads remain available.
 
 The Worker and browser share the Drizzle schema in `src/db/schema.ts`. Better
 Auth and product data use one D1 database. `guardian_session_unlock` and
@@ -158,10 +157,8 @@ data shared for that identity, while the active learner selection remains
 scoped to each session.
 
 `learner_profile_deletion_tombstone` stores a durable, account-bound cleanup
-closure for individual deletion, while `learner_selection_required` prevents
-single-profile fallback from silently selecting a sibling in sessions that
-lost their active learner. A tombstoned learner is omitted from chooser and
-settings-target lists but remains in the Guardian roster with
+closure for individual deletion. A tombstoned learner is omitted from chooser
+and settings-target lists but remains in the Guardian roster with
 `deletionPending` until cleanup finishes. Retry uses the same learner ID and
 closure. Cleanup is limited to that learner's private-media prefix, so sibling
 storage is never swept. Whole-account deletion closes the account prefix.
@@ -213,10 +210,7 @@ header to select a profile or storage namespace.
 │   ├── /guardian/learners
 │   │   └── /guardian/learners/:learnerId
 │   ├── /guardian/account
-│   ├── /guardian/profile
-│   ├── /guardian/profile/setup
 │   └── /guardian/dubbing
-├── /profile                         (compatibility alias; guardian after setup)
 ├── /profile/setup
 └── /login
 ```
@@ -236,7 +230,7 @@ mode, so no fallback strands an unlocked session at a learner-only screen.
 | Active learner selection                          | Account session plus owned learner           |
 | Learner profile, story level, onboarding progress | Learner profile                              |
 | Conversation session                              | Learner profile fixed at creation            |
-| Conversation turns and facts                      | Inherit the conversation's stored learner    |
+| Conversation turns                                | Inherit the conversation's stored learner    |
 | Dubbing consent and clip namespace                | Learner profile                              |
 | Lesson-recording consent and clip namespace       | Learner profile                              |
 | Rate limits                                       | Guardian account plus existing IP dimensions |
@@ -250,8 +244,8 @@ row cascades.
 
 ## Dubbing Capability Boundary
 
-`GET /api/dubs/:dubId` returns `recordingEnabled`, `consentState`, the selected
-rhyme's fixed-line status shape, and consent contract
+`GET /api/dubs/:dubId` returns `consentState`, the selected rhyme's fixed-line
+status shape, and consent contract
 `guardian-voice-r2-v2`. Absence or `revoking` returns no saved lines and never
 lists R2. Consent lookup and every R2 path use the resolved learner identity.
 Learners may upload, retake, read, and replay clips only while that learner's
@@ -259,18 +253,16 @@ current D1 grant generation remains valid. The upload path captures that
 generation, checks it around the conditional R2 write, and fences the exact
 object it wrote if consent changes.
 
-`PUT /api/dubs/:dubId/consent` accepts only the bounded version-2 attestation
-object under a live Guardian unlock. Guardian-only `DELETE /api/dubs/:dubId`
-changes D1 to `revoking` before R2 cleanup and removes that learner's consent
-row only after every supported rhyme is clean. The learner studio contains no
+`PUT /api/dubs/consent` accepts only the bounded version-2 attestation object
+under a live Guardian unlock. Guardian-only `DELETE /api/dubs` changes D1 to
+`revoking` before R2 cleanup and removes that learner's consent row only after
+every supported rhyme is clean. The learner studio contains no
 self-attestation, `Grown-up options`, or delete action; it retains recording,
 retakes, saved-line replacement, and final playback.
 
 After the permanent account-deletion tombstone exists, consent grant, status,
 audio, upload, and revocation fail closed. Grant checks before and after its D1
 mutation; status and audio check before R2 access and again before returning.
-Migration `0011_guardian_dub_consent` must be deployed before the consent-aware
-Worker.
 
 ## Content Boundaries
 
@@ -309,9 +301,7 @@ accounts/{escaped-email}/
           step-{step-index}.audio
 ```
 
-There is no live story-art namespace, account-root recording namespace, or
-legacy dub fallback. The old personalized-story-art buckets are not part of the
-runtime storage contract.
+There is no story-art namespace or account-root recording namespace.
 
 The escaped account email and stable readable learner directory make this tree
 directly navigable in R2. A learner receives that directory name once; later
@@ -352,8 +342,7 @@ generation fence. Reset conditionally acquires a new `deleting` generation,
 conditionally replaces every catalog-defined line slot with generation-owned
 non-audio tombstones, and then conditionally finalizes the marker as `ready`;
 an interrupted reset remains fenced until another DELETE completes it. Reads
-accept only the current `parrot-dub-audio-v2` envelope and matching metadata;
-raw legacy audio is treated as unsaved rather than streamed.
+accept only the current `parrot-dub-audio-v2` envelope and matching metadata.
 
 The paginated sweep validates its exact prefix and cursor, rechecks ownership
 of the observed deleting marker around each page, and bounds retries for
@@ -367,41 +356,20 @@ first changes the selected learner's D1 consent to `revoking`, completes the R2
 tombstones, and deletes the consent row only after cleanup succeeds. New grants
 and all media access fail closed while that cleanup is incomplete.
 
-## Migration and Deployment Boundary
+## Schema Boundary
 
-Multi-learner ownership ships through an expand/compatibility/enable sequence:
-
-1. `0012_multi_learner_expand.sql` adds nullable profile ownership, backfills
-   existing data and sessions to the marked legacy learner, and retains every
-   singleton table and unique index required by the old Worker.
-2. A compatibility Worker resolves learner identity, writes profile IDs,
-   recognizes null-profile rows only for the legacy learner, and keeps roster
-   mutations disabled with `MULTI_LEARNER_PROFILES_ENABLED="0"`.
-3. After that exact Worker commit is verified in production and recorded in
-   `MULTI_LEARNER_COMPATIBILITY_DEPLOYED`, `0013_multi_learner_enable.sql`
-   repeats backfills, asserts there are no unmapped rows or eligible sessions,
-   removes singleton uniqueness, and enables roster mutations with the flag set
-   to `"1"`.
-4. `0015_learner_profile_deletion.sql` adds durable learner-deletion and
-   selection-required state. It is safe to apply with the compatibility Worker
-   while roster mutations are disabled and is required before individual
-   deletion is exposed.
-5. A later contract migration may make ownership columns non-null and retire
-   compatibility tables after the rollback and session-expiry window.
-
-The deployment workflow verifies that the recorded compatibility commit is an
-ancestor of the enable commit, contains `0012`, and does not contain `0013`
-before applying remote migrations. After `0013` applies, production must never
-run a Worker older than that recorded compatibility floor. The operational
-commands, smoke tests, monitoring signals, and rollback rules are in
-[multiple-learner-rollout.md](../deployment/multiple-learner-rollout.md).
+The current schema stores learner ownership directly: every conversation has a
+non-null learner profile, every session selection points to an owned learner,
+and profile-scoped consent and onboarding state use only learner tables.
+Migration history remains immutable so a fresh database can be constructed,
+while forward migrations remove superseded tables and columns.
 
 ## Provider Boundaries
 
 - Built-in lesson lines use checked-in ElevenLabs audio assets.
 - Nursery-rhyme line guides use checked-in ElevenLabs narrator MP3s; the
   browser never substitutes device speech for a missing guide.
-- Groq evaluates lesson speech and supports profile enrichment.
+- Groq supports profile transcription, enrichment, and conversation summaries.
 - LiveKit carries realtime conversation audio; the agent uses explicit model
   IDs and purpose-specific prompts.
 

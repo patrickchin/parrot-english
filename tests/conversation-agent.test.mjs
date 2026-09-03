@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { initializeLogger, llm } from "@livekit/agents";
+import { initializeLogger } from "@livekit/agents";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import {
   DEFAULT_AGENT_MODELS,
@@ -11,8 +11,7 @@ import {
   AGENT_SESSION_START_OPTIONS,
   AGENT_TURN_HANDLING,
   CONVERSATION_SYSTEM_PROMPTS,
-  createGettingToKnowYouTask,
-  createSmallChatTask,
+  createPeppaConversationTask,
   getConversationSystemPrompt,
 } from "../agent/peppa-conversation.ts";
 import {
@@ -95,6 +94,7 @@ describe("LiveKit agent configuration", () => {
   it("constructs one low-latency realtime voice model and validates participant metadata", () => {
     const config = readAgentConfig(environment());
     const models = createAgentModels(config);
+    const emptyLearnerProfile = { age: null, name: null, summary: null };
 
     assert.deepEqual(Object.keys(models), ["realtime"]);
     assert.equal(models.realtime.model, config.realtimeModel);
@@ -110,7 +110,7 @@ describe("LiveKit agent configuration", () => {
       parseConversationParticipantMetadata(
         JSON.stringify({
           conversationId: "conversation-1",
-          scenarioKey: "profile-edit",
+          scenarioKey: "onboarding",
           learnerProfile: {
             age: 30,
             name: "Mia",
@@ -133,26 +133,97 @@ describe("LiveKit agent configuration", () => {
           finishReason: null,
         },
         promptStyle: undefined,
-        purpose: "profile-edit",
+        purpose: "onboarding",
       },
     );
-    const legacySmallChat = parseConversationParticipantMetadata(
+    const smallChat = parseConversationParticipantMetadata(
       JSON.stringify({
         conversationId: "conversation-2",
+        learnerProfile: emptyLearnerProfile,
+        promptStyle: "tiny-turns",
         scenarioKey: "small-chat",
       }),
     );
-    assert.equal(legacySmallChat.promptStyle, "tiny-turns");
+    assert.equal(smallChat.promptStyle, "tiny-turns");
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-retired",
+            learnerProfile: emptyLearnerProfile,
+            scenarioKey: "profile-edit",
+          }),
+        ),
+      /scenarioKey/,
+    );
     assert.throws(
       () =>
         parseConversationParticipantMetadata(
           JSON.stringify({
             conversationId: "conversation-3",
+            learnerProfile: emptyLearnerProfile,
+            scenarioKey: "small-chat",
+          }),
+        ),
+      /current shape/,
+    );
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-extra",
+            learnerProfile: emptyLearnerProfile,
+            obsolete: true,
+            scenarioKey: "onboarding",
+          }),
+        ),
+      /current shape/,
+    );
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-4",
+            learnerProfile: emptyLearnerProfile,
             promptStyle: "wordy",
             scenarioKey: "small-chat",
           }),
         ),
       /promptStyle/,
+    );
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-5",
+            learnerProfile: emptyLearnerProfile,
+            promptStyle: "tiny-turns",
+            scenarioKey: "onboarding",
+          }),
+        ),
+      /current shape/,
+    );
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-6",
+            learnerProfile: { ...emptyLearnerProfile, obsolete: true },
+            scenarioKey: "onboarding",
+          }),
+        ),
+      /learnerProfile/,
+    );
+    assert.throws(
+      () =>
+        parseConversationParticipantMetadata(
+          JSON.stringify({
+            conversationId: "conversation-7",
+            learnerProfile: { age: null, name: null },
+            scenarioKey: "onboarding",
+          }),
+        ),
+      /learnerProfile/,
     );
     assert.throws(
       () => parseConversationParticipantMetadata("{}"),
@@ -232,16 +303,6 @@ describe("LiveKit agent configuration", () => {
     );
   });
 
-  it("keeps asynchronous realtime transcripts in English when a legacy override remains", () => {
-    const config = readAgentConfig(environment({ AGENT_STT_LANGUAGE: "zh" }));
-    const models = createAgentModels(config);
-
-    assert.equal(
-      models.realtime._options.inputAudioTranscription.language,
-      "en",
-    );
-  });
-
   it("generates and finishes the realtime goodbye before closing the session", async () => {
     const calls = [];
     const session = {
@@ -268,32 +329,25 @@ describe("LiveKit agent configuration", () => {
 });
 
 describe("purpose-specific Peppa conversation prompts", () => {
-  it("keeps onboarding, profile editing, and small chat as distinct contracts", () => {
+  it("keeps onboarding and small chat as distinct contracts", () => {
     const prompts = conversationScenario.CONVERSATION_SYSTEM_PROMPTS;
+    const smallChat = getConversationSystemPrompt("small-chat", "gentle-guide");
 
-    assert.deepEqual(Object.keys(prompts).sort(), [
-      "onboarding",
-      "profile-edit",
-      "small-chat",
-    ]);
+    assert.deepEqual(Object.keys(prompts), ["onboarding"]);
     assert.match(prompts.onboarding, /first introduction/i);
     assert.match(prompts.onboarding, /learn.*name.*age/is);
-    assert.match(prompts["profile-edit"], /update.*profile/is);
-    assert.match(prompts["profile-edit"], /correct|change/i);
-    assert.match(prompts["small-chat"], /ordinary.*chat/is);
-    assert.match(prompts["small-chat"], /do not[\s\S]*profile/i);
-    assert.equal(new Set(Object.values(prompts)).size, 3);
+    assert.match(smallChat, /ordinary.*chat/is);
+    assert.match(smallChat, /do not[\s\S]*profile/i);
+    assert.equal(new Set([...Object.values(prompts), smallChat]).size, 2);
   });
 
   it("keeps Peppa's speech brief and easy for a beginner child", () => {
-    for (const purpose of ["onboarding", "profile-edit"]) {
-      const prompt = CONVERSATION_SYSTEM_PROMPTS[purpose];
-      assert.match(prompt, /beginner English/i);
-      assert.match(prompt, /one short sentence/i);
-      assert.match(prompt, /3[-–]8 words/i);
-      assert.match(prompt, /one question/i);
-      assert.match(prompt, /opening.*10 words/is);
-    }
+    const onboarding = CONVERSATION_SYSTEM_PROMPTS.onboarding;
+    assert.match(onboarding, /beginner English/i);
+    assert.match(onboarding, /one short sentence/i);
+    assert.match(onboarding, /3[-–]8 words/i);
+    assert.match(onboarding, /one question/i);
+    assert.match(onboarding, /opening.*10 words/is);
 
     for (const promptStyle of Object.keys(SMALL_CHAT_STYLE_PROMPTS)) {
       const prompt = getSmallChatSystemPrompt(promptStyle);
@@ -337,109 +391,14 @@ describe("purpose-specific Peppa conversation prompts", () => {
 });
 
 describe("purpose-scoped learner-profile agent tools", () => {
-  function ingest(overrides = {}) {
-    return {
-      async appendTurn() {},
-      async endConversation() {},
-      async updateState() {},
-      ...overrides,
-    };
-  }
-
   it("uses only the end-conversation tool during onboarding learner turns", () => {
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest(),
+    const task = createPeppaConversationTask({
+      initialState: createLearnerProfileConversationState(),
+      purpose: "onboarding",
     });
     assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
       "endConversation",
     ]);
-  });
-
-  it("persists name, age, and About changes alongside the ending tool", async () => {
-    const stateUpdates = [];
-    let completed;
-    let opening;
-    const task = createGettingToKnowYouTask({
-      conversationId: "conversation-1",
-      ingest: ingest({
-        async updateState(...args) {
-          stateUpdates.push(args);
-        },
-      }),
-      purpose: "profile-edit",
-      initialState: createLearnerProfileConversationState({
-        profileAge: 30,
-        profileName: "Mia",
-        profileSummary: "Mia is thirty and loves fast red cars.",
-      }),
-    });
-
-    await task.hookAdapter.hooks.onEnter({
-      complete(result) {
-        completed = result;
-      },
-      session: {
-        generateReply(options) {
-          opening = options;
-        },
-      },
-    });
-
-    assert.deepEqual(opening, { allowInterruptions: false });
-    assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
-      "updateLearnerProfile",
-      "endConversation",
-    ]);
-    const updateTool = task.toolCtx.functionTools.updateLearnerProfile;
-    assert.match(updateTool.description, /preferred name/i);
-    const schema = llm.toJsonSchema(updateTool.parameters, true, true);
-    assert.deepEqual(Object.keys(schema.properties ?? {}).sort(), [
-      "about",
-      "age",
-      "name",
-    ]);
-
-    const result = await updateTool.execute(
-      {
-        about: "Maya is nine and loves drawing dragons.",
-        age: 9,
-        name: "Maya",
-      },
-      {},
-    );
-
-    assert.deepEqual(result, { ending: true, saved: true });
-    assert.deepEqual(completed, { finishReason: "conversation_complete" });
-    assert.equal(stateUpdates.length, 1);
-    assert.equal(stateUpdates[0][0], "conversation-1");
-    assert.equal(stateUpdates[0][1].profileName, "Maya");
-    assert.equal(stateUpdates[0][1].profileAge, 9);
-    assert.equal(
-      stateUpdates[0][1].profileSummary,
-      "Maya is nine and loves drawing dragons.",
-    );
-    assert.equal(stateUpdates[0][1].learnedName, true);
-    assert.equal(stateUpdates[0][1].learnedAge, true);
-    assert.match(CONVERSATION_SYSTEM_PROMPTS["profile-edit"], /speak first/i);
-    assert.match(
-      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
-      /saved profile|saved learner details/i,
-    );
-    assert.match(
-      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
-      /do not ask.*known.*name.*age|do not ask.*name.*age.*known/i,
-    );
-    assert.match(
-      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
-      /updateLearnerProfile[\s\S]*name[\s\S]*age[\s\S]*about/i,
-    );
-    assert.match(
-      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
-      /first or preferred name/i,
-    );
-    assert.match(task._instructions, /Mia/);
-    assert.match(task._instructions, /fast red cars/);
   });
 
   it("keeps profile persistence out of onboarding live turns", () => {
@@ -460,7 +419,11 @@ describe("purpose-scoped learner-profile agent tools", () => {
   });
 
   it("gives ordinary small chat a static opening prompt and only the ending tool", async () => {
-    const task = createSmallChatTask({ promptStyle: "gentle-guide" });
+    const task = createPeppaConversationTask({
+      initialState: createLearnerProfileConversationState(),
+      promptStyle: "gentle-guide",
+      purpose: "small-chat",
+    });
     let opening;
 
     await task.hookAdapter.hooks.onEnter({
@@ -479,7 +442,10 @@ describe("purpose-scoped learner-profile agent tools", () => {
     assert.match(task._instructions, /ordinary small chat/i);
     assert.match(task._instructions, /Selected style: Gentle guide/i);
     assert.doesNotMatch(task._instructions, /Selected style: Tiny turns/i);
-    assert.match(CONVERSATION_SYSTEM_PROMPTS["small-chat"], /speak first/i);
+    assert.match(
+      getConversationSystemPrompt("small-chat", "gentle-guide"),
+      /speak first/i,
+    );
     assert.doesNotMatch(task._instructions, /call exactly one appropriate state tool/i);
   });
 
@@ -537,7 +503,7 @@ describe("conversation ingest client", () => {
 
     assert.equal(
       calls[0][0],
-      "https://app.example.test/api/conversations/conversation-1/facts",
+      "https://app.example.test/api/conversations/conversation-1/state",
     );
     assert.equal(calls[0][1].headers.Authorization, "Bearer agent-secret");
     const body = JSON.parse(calls[0][1].body);

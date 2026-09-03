@@ -494,7 +494,6 @@ export function GuardianLearnerProfiles({
     setPendingProfileId(ADD_PENDING_PROFILE_ID);
     try {
       const result = await createLearnerProfile(name, {
-        activate: false,
         signal: operation.controller.signal,
       });
       if (!operation.isCurrent()) return;

@@ -187,9 +187,6 @@ function harness({
         LearnerSelectionProvider,
         {
           activeProfileId: "learner-bob",
-          async createAndSelectLearner() {
-            throw new Error("Not used by the mode chooser.");
-          },
           async reloadSelectedLearner() {
             throw new Error("Not used by the mode chooser.");
           },

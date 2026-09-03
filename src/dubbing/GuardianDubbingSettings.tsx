@@ -17,14 +17,15 @@ import {
 } from "../learner-profile/GuardianLearnerTarget";
 import { ActionButton, Card } from "../shared/ui";
 import {
-  deleteDub,
+  deleteAllDubs,
   DubResetInProgressError,
+  grantDubConsent,
   loadDubStatus,
   type DubStatus,
 } from "./dub-api";
 import { DUB_DEFINITIONS } from "./rhyme-catalog";
 
-type Mutation = "delete";
+type Mutation = "delete" | "enable";
 export type GuardianDubbingErrorCode =
   | "load-failed"
   | "change-failed"
@@ -33,7 +34,7 @@ export type GuardianDubbingPhase =
   | "loading"
   | "available"
   | "cleanup-required";
-type GuardianDubbingStatusCode = "removed" | null;
+type GuardianDubbingStatusCode = "enabled" | "removed" | null;
 type GuardianDubbingStatus = {
   consentState: DubStatus["consentState"];
   savedCount: number;
@@ -51,6 +52,7 @@ type GuardianDubbingSettingsViewProps = {
   headingLevel?: 2 | 3;
   mutation: Mutation | null;
   onDelete: () => void;
+  onEnable: () => void;
   onRetry: () => void;
   phase: GuardianDubbingPhase;
   savedCount: number;
@@ -127,6 +129,7 @@ function GuardianDubbingSettingsContent({
   headingLevel = 2,
   mutation,
   onDelete,
+  onEnable,
   onRetry,
   phase,
   savedCount,
@@ -228,7 +231,7 @@ function GuardianDubbingSettingsContent({
       ) : null}
 
       {phase === "available" && consentState === "not_granted" ? (
-        <Card className="grid gap-2 p-5 text-center sm:p-7">
+        <Card className="grid gap-5 p-5 text-center sm:p-7">
           <StateHeading
             className="m-0 text-2xl leading-tight text-brand-navy"
             ref={stateHeadingRef}
@@ -241,6 +244,22 @@ function GuardianDubbingSettingsContent({
             <BidiLearnerName learnerName={managedLearnerName} />
             {copy.emptyAfterName}
           </p>
+          <ActionButton
+            disabled={busy}
+            fullWidth
+            onClick={onEnable}
+            type="button"
+          >
+            {mutation === "enable" ? (
+              copy.enabling
+            ) : (
+              <>
+                {copy.enableBeforeName}
+                <BidiLearnerName learnerName={managedLearnerName} />
+                {copy.enableAfterName}
+              </>
+            )}
+          </ActionButton>
         </Card>
       ) : null}
 
@@ -283,9 +302,11 @@ function GuardianDubbingSettingsContent({
           className="m-0 text-center text-sm font-extrabold text-emerald-900"
           role="status"
         >
-          {copy.removedBeforeName}
+          {status === "enabled"
+            ? copy.enabledBeforeName
+            : copy.removedBeforeName}
           <BidiLearnerName learnerName={managedLearnerName} />
-          {copy.removedAfterName}
+          {status === "enabled" ? copy.enabledAfterName : copy.removedAfterName}
         </p>
       ) : null}
     </div>
@@ -457,7 +478,9 @@ function TargetedGuardianDubbingSettings({
         invalidateOnFailure: true,
         preserveOperationError: failure !== null,
       });
-      if (failure === null && refreshed) setAnnouncement("removed");
+      if (failure === null && refreshed) {
+        setAnnouncement(kind === "enable" ? "enabled" : "removed");
+      }
       setFocusRequest((request) => request + 1);
     }
 
@@ -479,7 +502,16 @@ function TargetedGuardianDubbingSettings({
       return;
     }
     void mutate("delete", (options) =>
-      deleteDub({ ...options, learnerProfileId }),
+      deleteAllDubs({ ...options, learnerProfileId }),
+    );
+  }
+
+  function enable() {
+    if (phase !== "available" || status?.consentState !== "not_granted") {
+      return;
+    }
+    void mutate("enable", (options) =>
+      grantDubConsent({ ...options, learnerProfileId }),
     );
   }
 
@@ -491,6 +523,7 @@ function TargetedGuardianDubbingSettings({
       headingLevel={headingLevel}
       mutation={mutation}
       onDelete={remove}
+      onEnable={enable}
       onRetry={() =>
         void refresh({
           clearOperationErrorOnSuccess: true,

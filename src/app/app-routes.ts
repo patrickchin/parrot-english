@@ -1,6 +1,5 @@
 import { LESSONS, type LessonCatalogEntry } from "../lessons/lesson-catalog";
 import {
-  getStoryShelfLevelId,
   isStoryLevelId,
   resolveStory as resolveCatalogStory,
   type Story,
@@ -18,7 +17,7 @@ import {
   type WordGameSelection,
 } from "../games/word-game-catalog";
 
-export type GateRouteKind = "login" | "learner-profile" | "profile";
+export type GateRouteKind = "login" | "learner-profile";
 type ResolvedLessonScene = {
   entry: LessonCatalogEntry;
   sceneIndex: number;
@@ -34,10 +33,8 @@ export type WordGameRouteDecision =
   | { kind: "category"; category: WordGameCategory }
   | { kind: "game"; selection: WordGameSelection };
 
-const GATE_ROUTE_PATH =
-  /^\/(login|profile\/setup|profile|guardian\/profile\/setup|guardian\/profile)\/*$/i;
+const GATE_ROUTE_PATH = /^\/(login|profile\/setup)\/*$/i;
 const TALK_TO_PEPPA_ROUTE_PATH = /^\/talk-to-peppa\/*$/i;
-const WORD_GAME_ROUTE_PATH = /^\/word-game\/*$/i;
 const WORD_GAMES_ROUTE_PATH = /^\/word-games\/*$/i;
 const WORD_GAME_CATEGORY_ROUTE_PATH = /^\/word-games\/([^/]+)\/*$/i;
 const WORD_GAME_QUIZ_ROUTE_PATH = /^\/word-games\/([^/]+)\/([^/]+)\/*$/i;
@@ -49,12 +46,6 @@ const GUARDIAN_ROUTE_PATHS = [
   /^\/guardian\/account\/*$/i,
   /^\/guardian\/dubbing\/*$/i,
   GUARDIAN_LEARNERS_ROUTE_PATH,
-  /^\/guardian\/profile\/*$/i,
-  /^\/guardian\/profile\/setup\/*$/i,
-];
-const GUARDIAN_MANAGEMENT_ROUTE_PATHS = [
-  ...GUARDIAN_ROUTE_PATHS,
-  /^\/profile\/*$/i,
 ];
 export function getDubRoutePaths(
   definitions: readonly DubDefinition[] = DUB_DEFINITIONS,
@@ -71,15 +62,12 @@ const SAFE_RETURN_PATHS = [
   /^\/dubs\/*$/i,
   ...DUB_ROUTE_PATHS,
   ...GUARDIAN_ROUTE_PATHS,
-  /^\/profile\/*$/i,
   /^\/lessons\/*$/i,
   /^\/lessons\/parrot\/[^/]+\/*$/i,
   /^\/lessons\/parrot\/[^/]+\/scenes\/[^/]+\/*$/i,
-  /^\/progress\/*$/i,
   /^\/stories\/*$/i,
   /^\/stories\/[^/]+\/*$/i,
   /^\/stories\/[^/]+\/pages\/[^/]+\/*$/i,
-  WORD_GAME_ROUTE_PATH,
   WORD_GAMES_ROUTE_PATH,
 ];
 const RETURN_TO_ORIGIN = "https://parrot.invalid";
@@ -166,16 +154,8 @@ export function getStoryPath(storyId: string) {
   return `/stories/${encodeURIComponent(storyId)}`;
 }
 
-export function getDuckDubPath() {
-  return "/dubs/five-little-ducks" as const;
-}
-
 export function getNurseryRhymesPath() {
   return "/dubs" as const;
-}
-
-export function getOldMacDonaldDubPath() {
-  return "/dubs/old-macdonald" as const;
 }
 
 export function getStoryShelfPath(
@@ -183,7 +163,7 @@ export function getStoryShelfPath(
 ) {
   return levelId === undefined
     ? "/stories"
-    : `/stories?level=${encodeURIComponent(getStoryShelfLevelId(levelId))}`;
+    : `/stories?level=${encodeURIComponent(levelId)}`;
 }
 
 export function resolveStoryShelfLevel(
@@ -191,9 +171,7 @@ export function resolveStoryShelfLevel(
   fallbackLevelId: StoryLevelId = DEFAULT_STORY_LEVEL_ID,
 ): StoryLevelId {
   const levelId = new URLSearchParams(search).get("level");
-  return getStoryShelfLevelId(
-    isStoryLevelId(levelId) ? levelId : fallbackLevelId,
-  );
+  return isStoryLevelId(levelId) ? levelId : fallbackLevelId;
 }
 
 export function getStoryPagePath(storyId: string, pageIndex: number) {
@@ -212,25 +190,10 @@ export function getLearnerProfilePath(returnTo: string) {
   return `/profile/setup?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-export function getProfilePath(returnTo: string) {
-  return `/guardian/profile?returnTo=${encodeURIComponent(returnTo)}`;
-}
-
-export function getRedoLearnerProfilePath(returnTo: string) {
-  return `/guardian/profile/setup?redo=1&returnTo=${encodeURIComponent(returnTo)}`;
-}
-
-export function isRedoLearnerProfileRequest(search: string) {
-  return new URLSearchParams(search).get("redo") === "1";
-}
-
-export function isGuardianRoute(pathname: string, search = "") {
-  if (/^\/profile\/setup\/*$/i.test(pathname)) {
-    return isRedoLearnerProfileRequest(search);
-  }
+export function isGuardianRoute(pathname: string) {
   return (
     isGuardianLearnerManagerRoute(pathname) ||
-    GUARDIAN_MANAGEMENT_ROUTE_PATHS.some((path) => path.test(pathname))
+    GUARDIAN_ROUTE_PATHS.some((path) => path.test(pathname))
   );
 }
 
@@ -238,12 +201,7 @@ export function getGateRouteKind(pathname: string): GateRouteKind | null {
   const match = GATE_ROUTE_PATH.exec(pathname);
   if (!match) return null;
   const route = match[1].toLowerCase();
-  if (route === "profile/setup" || route === "guardian/profile/setup") {
-    return "learner-profile";
-  }
-  return route === "profile" || route === "guardian/profile"
-    ? "profile"
-    : "login";
+  return route === "profile/setup" ? "learner-profile" : "login";
 }
 
 export function isTalkToPeppaRoute(pathname: string) {
@@ -295,7 +253,7 @@ export function getPostLoginDestination(search: string) {
   const safe = getSafeReturnTo(search);
   if (!safe) return "/";
   const destination = new URL(safe, RETURN_TO_ORIGIN);
-  return isGuardianRoute(destination.pathname, destination.search) ? "/" : safe;
+  return isGuardianRoute(destination.pathname) ? "/" : safe;
 }
 
 export function resolveWordGameRouteDecision(
@@ -350,7 +308,7 @@ export function getSafeGuardianUnlockDestination(
   search: string,
   hash: string,
 ) {
-  return isGuardianRoute(pathname, search)
+  return isGuardianRoute(pathname)
     ? `${pathname}${search}${hash}`
     : getGuardianPath();
 }
@@ -363,7 +321,7 @@ export function getRequestedProtectedTarget(
   const gateRoute = getGateRouteKind(pathname);
   if (
     gateRoute === "login" ||
-    (gateRoute === "learner-profile" && !isGuardianRoute(pathname, search))
+    (gateRoute === "learner-profile" && !isGuardianRoute(pathname))
   ) {
     return getSafeReturnTo(search) ?? "/";
   }

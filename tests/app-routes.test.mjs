@@ -157,10 +157,6 @@ describe("app route helpers", () => {
       "/stories?level=first-words",
     );
     assert.equal(
-      routes.getStoryShelfPath("first-english-words"),
-      "/stories?level=first-words",
-    );
-    assert.equal(
       routes.getStoryShelfPath("long-stories"),
       "/stories?level=long-stories",
     );
@@ -168,13 +164,6 @@ describe("app route helpers", () => {
     assert.equal(
       routes.resolveStoryShelfLevel("?level=early-a1", "tiny-stories"),
       "early-a1",
-    );
-    assert.equal(
-      routes.resolveStoryShelfLevel(
-        "?level=first-english-words",
-        "tiny-stories",
-      ),
-      "first-words",
     );
     assert.equal(
       routes.resolveStoryShelfLevel("", "tiny-stories"),
@@ -202,8 +191,8 @@ describe("app route helpers", () => {
 
   it("builds auth paths with encoded return destinations", () => {
     assert.equal(
-      routes.getLoginPath("/progress?period=week"),
-      "/login?returnTo=%2Fprogress%3Fperiod%3Dweek",
+      routes.getLoginPath("/lessons?source=home"),
+      "/login?returnTo=%2Flessons%3Fsource%3Dhome",
     );
     assert.equal(
       routes.getLearnerProfilePath(
@@ -211,19 +200,6 @@ describe("app route helpers", () => {
       ),
       "/profile/setup?returnTo=%2Flessons%2Fparrot%2F01-peppas-high-ball%2Fscenes%2F2",
     );
-    assert.equal(
-      routes.getProfilePath("/lessons?source=home#ready-made"),
-      "/guardian/profile?returnTo=%2Flessons%3Fsource%3Dhome%23ready-made",
-    );
-    assert.equal(
-      routes.getRedoLearnerProfilePath("/profile"),
-      "/guardian/profile/setup?redo=1&returnTo=%2Fprofile",
-    );
-    assert.equal(
-      routes.isRedoLearnerProfileRequest("?redo=1&returnTo=%2Fprofile"),
-      true,
-    );
-    assert.equal(routes.isRedoLearnerProfileRequest("?redo=0"), false);
   });
 
   it("normalizes post-login destinations to learner routes", () => {
@@ -266,35 +242,20 @@ describe("app route helpers", () => {
       "/guardian/learners/learner%2Fnoah",
     );
     assert.equal(routes.getGuardianStoriesPath, undefined);
-    assert.equal(
-      routes.getProfilePath("/guardian"),
-      "/guardian/profile?returnTo=%2Fguardian",
-    );
-    assert.equal(
-      routes.getRedoLearnerProfilePath("/guardian/profile"),
-      "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
-    );
-
-    for (const [pathname, search = ""] of [
+    for (const [pathname] of [
       ["/guardian"],
       ["/guardian/account"],
       ["/guardian/dubbing"],
       ["/guardian/learners/learner-noah"],
       ["/guardian/learners/learner%2Fnoah"],
-      ["/guardian/profile"],
-      ["/guardian/profile/setup"],
-      ["/guardian/profile/setup", "?redo=1"],
-      ["/profile"],
-      ["/profile/setup", "?redo=1"],
     ]) {
-      assert.equal(routes.isGuardianRoute(pathname, search), true);
+      assert.equal(routes.isGuardianRoute(pathname), true);
     }
 
-    for (const [pathname, search = ""] of [
+    for (const [pathname] of [
       ["/"],
       ["/lessons"],
       ["/profile/setup"],
-      ["/profile/setup", "?redo=01"],
       ["/guardianish"],
       ["/guardian/lessons"],
       ["/guardian/lessons/extra"],
@@ -305,11 +266,10 @@ describe("app route helpers", () => {
       ["/lessons/my/create"],
       ["/%2F%2Fevil.example/guardian"],
     ]) {
-      assert.equal(routes.isGuardianRoute(pathname, search), false);
+      assert.equal(routes.isGuardianRoute(pathname), false);
     }
 
     assert.equal(routes.isGuardianRoute("/profile/setup"), false);
-    assert.equal(routes.isGuardianRoute("/profile/setup", "?redo=1"), true);
   });
 
   it("rejects unsafe Guardian learner route IDs and classifies only valid manager children", () => {
@@ -382,7 +342,7 @@ describe("app route helpers", () => {
     for (const value of [
       "/",
       "/lessons",
-      "/guardian/profile",
+      "/guardian/unknown",
       "https://evil.test/",
     ]) {
       assert.equal(
@@ -411,15 +371,6 @@ describe("app route helpers", () => {
       ),
       "/guardian",
     );
-    assert.equal(
-      routes.getSafeGuardianUnlockDestination(
-        "/profile/setup",
-        "?redo=1&returnTo=%2Fguardian",
-        "#questions",
-      ),
-      "/profile/setup?redo=1&returnTo=%2Fguardian#questions",
-    );
-
     for (const pathname of [
       "/login",
       "/lessons",
@@ -443,17 +394,13 @@ describe("app route helpers", () => {
       ["/Login///", "login"],
       ["/PROFILE/SETUP", "learner-profile"],
       ["/Profile/Setup//", "learner-profile"],
-      ["/profile", "profile"],
-      ["/Profile//", "profile"],
-      ["/guardian/profile", "profile"],
-      ["/guardian/profile/setup", "learner-profile"],
     ]) {
       assert.equal(routes.getGateRouteKind(pathname), kind);
     }
 
     for (const pathname of [
       "/",
-      "/progress",
+      "/unknown",
       "/login/extra",
       "/login//extra",
       "//login",
@@ -466,12 +413,10 @@ describe("app route helpers", () => {
     for (const [pattern, pathname, gateKind] of [
       ["/login", "/Login///", "login"],
       ["/profile/setup", "/Profile/Setup//", "learner-profile"],
-      ["/profile", "/Profile//", "profile"],
       ["/talk-to-peppa", "/Talk-To-Peppa///", null],
       ["/word-games", "/Word-Games///", null],
       ["/word-games/:categoryId", "/Word-Games/Animals///", null],
       ["/word-games/:categoryId/:quizId", "/Word-Games/Animals/Simple-1///", null],
-      ["/progress", "/Progress///", null],
       ["/stories", "/Stories///", null],
       ["/dubs/five-little-ducks", "/Dubs/Five-Little-Ducks///", null],
       ["/dubs/old-macdonald", "/Dubs/Old-MacDonald///", null],
@@ -506,66 +451,29 @@ describe("app route helpers", () => {
     }
   });
 
-  it("preserves an initial legacy learner-profile return target when reauthentication is required", () => {
-    for (const [pathname, search] of [
-      ["/profile/setup", "?returnTo=%2Fprogress"],
-      ["/Profile/Setup//", "?returnTo=%2Fprogress"],
-      ["/PROFILE/SETUP///", "?redo=01&returnTo=%2Fprogress"],
-    ]) {
-      assert.equal(
-        routes.getRequestedProtectedTarget(pathname, search, ""),
-        "/progress",
-      );
-    }
-  });
-
-  it("preserves canonical and legacy redo management URLs through reauthentication", () => {
-    for (const [pathname, search, hash, expected] of [
-      [
-        "/guardian/profile/setup",
-        "?returnTo=%2Fguardian",
-        "#questions",
-        "/guardian/profile/setup?returnTo=%2Fguardian#questions",
-      ],
-      [
-        "/guardian/profile/setup",
-        "?redo=1&returnTo=%2Fguardian%2Fprofile",
-        "",
-        "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Fprofile",
-      ],
-      [
+  it("preserves the canonical learner-profile return target", () => {
+    assert.equal(
+      routes.getRequestedProtectedTarget(
         "/profile/setup",
-        "?redo=1&returnTo=%2Fguardian",
-        "#review",
-        "/profile/setup?redo=1&returnTo=%2Fguardian#review",
-      ],
-    ]) {
-      assert.equal(
-        routes.getRequestedProtectedTarget(pathname, search, hash),
-        expected,
-      );
-    }
+        "?returnTo=%2Flessons",
+        "",
+      ),
+      "/lessons",
+    );
   });
 
   it("treats case-variant login routes as auth gates", () => {
     assert.equal(routes.getRequestedProtectedTarget("/Login///", "", ""), "/");
   });
 
-  it("keeps a case-variant profile route as a protected target", () => {
-    assert.equal(
-      routes.getRequestedProtectedTarget("/Profile//", "", ""),
-      "/Profile//",
-    );
-  });
-
   it("keeps an ordinary protected URL as its reauthentication target", () => {
     assert.equal(
       routes.getRequestedProtectedTarget(
-        "/progress",
+        "/lessons",
         "?period=week",
         "#today",
       ),
-      "/progress?period=week#today",
+      "/lessons?period=week#today",
     );
   });
 
@@ -584,8 +492,7 @@ describe("app route helpers", () => {
     assert.equal(routes.isTalkToPeppaRoute("/talk-to-peppa/extra"), false);
   });
 
-  it("builds and safely returns to the fixed duck dubbing route", () => {
-    assert.equal(routes.getDuckDubPath(), "/dubs/five-little-ducks");
+  it("safely returns to the Five Little Ducks route", () => {
     for (const pathname of [
       "/dubs/five-little-ducks",
       "/Dubs/Five-Little-Ducks//",
@@ -604,11 +511,7 @@ describe("app route helpers", () => {
     assert.equal(routes.getSafeReturnTo(returnToSearch("/dubs/extra")), null);
   });
 
-  it("builds and safely returns to the Old MacDonald dubbing route", () => {
-    assert.equal(
-      routes.getOldMacDonaldDubPath(),
-      "/dubs/old-macdonald",
-    );
+  it("safely returns to the Old MacDonald dubbing route", () => {
     for (const pathname of [
       "/dubs/old-macdonald",
       "/Dubs/Old-MacDonald//",
@@ -851,20 +754,10 @@ describe("app route helpers", () => {
 
   it("accepts only known same-origin return paths", () => {
     assert.equal(routes.getSafeReturnTo("?returnTo=%2F"), "/");
-    assert.equal(
-      routes.getSafeReturnTo("?returnTo=%2Fprogress"),
-      "/progress",
-    );
-    assert.equal(
-      routes.getSafeReturnTo("?returnTo=%2FProgress%2F"),
-      "/Progress/",
-    );
     for (const returnTo of [
-      "/progress//",
       "/stories///",
       "/stories/the-lantern-trail//",
       "/stories/the-lantern-trail/pages/2///",
-      "/profile//",
       "/lessons//",
       "/lessons/parrot/01-peppas-high-ball//",
       "/lessons/parrot/01-peppas-high-ball/scenes/2///",
@@ -885,10 +778,6 @@ describe("app route helpers", () => {
         "?returnTo=%2Fstories%2Fthe-lantern-trail%2Fpages%2F2",
       ),
       "/stories/the-lantern-trail/pages/2",
-    );
-    assert.equal(
-      routes.getSafeReturnTo(returnToSearch("/word-game")),
-      "/word-game",
     );
     for (const returnTo of [
       "/word-games",
@@ -933,23 +822,21 @@ describe("app route helpers", () => {
     assert.equal(routes.getSafeReturnTo("?returnTo=%2Fprofile%2Fsetup"), null);
     assert.equal(
       routes.getSafeReturnTo(
-        returnToSearch("/Login/?returnTo=%2Fprogress"),
+        returnToSearch("/Login/?returnTo=%2Funknown"),
       ),
       null,
     );
     assert.equal(
       routes.getSafeReturnTo(
-        returnToSearch("/LEARNER_PROFILE?returnTo=%2Fprogress"),
+        returnToSearch("/LEARNER_PROFILE?returnTo=%2Funknown"),
       ),
       null,
     );
     for (const returnTo of [
-      "/progress/history",
-      "/progress//history",
+      "/unknown/history",
       "/stories//the-lantern-trail",
       "/stories/the-lantern-trail//pages/1",
       "/stories/the-lantern-trail/pages/1/extra",
-      "/word-game/extra",
       "/word-games/missing",
       "/word-games/%2F",
       "/word-games/animals/missing",
@@ -995,21 +882,21 @@ describe("app route helpers", () => {
 
   it("normalizes return destinations before checking durable routes", () => {
     for (const returnTo of [
-      "/progress/../login",
+      "/unknown/../login",
       "/lessons/../profile/setup",
       "/stories/../admin",
-      "/profile/../../outside",
-      "/progress/%2e%2e/login",
+      "/unknown/../../outside",
+      "/unknown/%2e%2e/login",
       "/lessons/%2E%2E/profile/setup",
       "/stories/%2e%2e/admin",
-      "/profile/%2e%2e/%2e%2e/outside",
+      "/unknown/%2e%2e/%2e%2e/outside",
     ]) {
       assert.equal(routes.getSafeReturnTo(returnToSearch(returnTo)), null);
     }
 
     assert.equal(
       routes.getSafeReturnTo(
-        returnToSearch("/progress/./history?period=week#today"),
+        returnToSearch("/unknown/./history?period=week#today"),
       ),
       null,
     );

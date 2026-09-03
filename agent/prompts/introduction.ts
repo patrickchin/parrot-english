@@ -2,7 +2,7 @@
  * When this is used:
  * A learner sees this when they have their first welcome chat with Peppa.
  * It tells Peppa to introduce herself and learn the child's name, age, and a
- * few interests. It is not used for later profile changes or ordinary chats.
+ * few interests. It is not used for ordinary chats.
  *
  * Example:
  * Peppa: Hi! What's your name?

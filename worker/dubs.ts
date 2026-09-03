@@ -21,8 +21,10 @@ import {
   retryDelay,
 } from "./dub-storage.ts";
 import { parseDubRoute } from "./dub-route.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
-import { isLearnerDeletionPending } from "./request-identity.ts";
+import {
+  isLearnerDeletionPending,
+  type LearnerIdentity,
+} from "./request-identity.ts";
 import {
   readBoundedBytes,
   readBoundedText,
@@ -53,7 +55,7 @@ export interface DubEnv {
 export interface DubRequestInput {
   database: Database;
   env: DubEnv;
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   request: Request;
 }
 
@@ -602,12 +604,10 @@ function emptyStatus(
   consentState: "not_granted" | "revoking",
 ) {
   return {
-    complete: false,
     consentState,
     dubId: definition.id,
     guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
     lines: definition.lines.map(({ id }) => ({ id, recordedAt: null, saved: false })),
-    recordingEnabled: false,
   };
 }
 
@@ -695,14 +695,17 @@ export async function handleDubRequest(
   const wait = overrides.wait ?? ((delay: number) => scheduler.wait(delay));
   const consentRepository = overrides.consentRepository ??
     createDubConsentRepository(input.database);
-  const route = parseDubRoute(new URL(input.request.url).pathname);
+  const pathname = new URL(input.request.url).pathname;
+  const route = parseDubRoute(pathname);
+  const isConsentRoute = pathname === "/api/dubs/consent";
+  const isCollectionRoute = pathname === "/api/dubs";
 
   try {
-    if (!route) throw new DubApiError(404, "not_found");
+    if (!route && !isConsentRoute && !isCollectionRoute) {
+      throw new DubApiError(404, "not_found");
+    }
     const bucket = input.env.PRIVATE_MEDIA_BUCKET;
     const userId = input.identity.userId;
-    const definition = route.definition;
-    const storage = createDubStorageKeys(input.identity, route.dubId);
     const deletionState = async () => ({
       account: await isDeletionPending(input.database, userId),
       learner: await learnerDeletionPending(
@@ -720,7 +723,7 @@ export async function handleDubRequest(
       }
     };
 
-    if (route.consent) {
+    if (isConsentRoute) {
       if (input.request.method !== "PUT") {
         throw new DubApiError(405, "method_not_allowed", undefined, {
           Allow: "PUT",
@@ -744,24 +747,89 @@ export async function handleDubRequest(
       });
     }
 
+    if (isCollectionRoute) {
+      if (input.request.method !== "DELETE") {
+        throw new DubApiError(405, "method_not_allowed", undefined, {
+          Allow: "DELETE",
+        });
+      }
+      await assertDeletionNotPending();
+      const resetTargets = DUB_DEFINITIONS.map((definition) => ({
+        definition,
+        storage: createDubStorageKeys(input.identity, definition.id),
+      }));
+      const resetStates = await Promise.all(
+        resetTargets.map(({ storage }) => readMarker(bucket, storage)),
+      );
+      if (resetStates.some((marker) =>
+        marker.kind === "valid" && marker.state === "account-deleting"
+      )) {
+        throw new DubApiError(409, "account_deletion_pending");
+      }
+      const revocation = await consentRepository.beginRevocation(input.identity);
+      if (revocation.state === "not_granted") consentError(revocation);
+      const consentGeneration = revocation.grantGeneration;
+      const generation = createGeneration();
+      if (!generation) throw new Error("Dub reset generation is required.");
+      const deletingMarkers = await Promise.all(
+        resetTargets.map(async (target) => ({
+          deletingMarker: await beginReset(
+            bucket,
+            target.storage,
+            generation,
+            wait,
+          ),
+          ...target,
+        })),
+      );
+      await assertDeletionNotPending();
+      for (const target of deletingMarkers) {
+        for (const { id } of target.definition.lines) {
+          await tombstoneSlot(
+            bucket,
+            target.storage,
+            id,
+            generation,
+            target.deletingMarker.etag,
+            wait,
+          );
+        }
+      }
+      await assertDeletionNotPending();
+      await wait(R2_WRITE_INTERVAL_MS);
+      for (const { deletingMarker, storage } of deletingMarkers) {
+        const readyMarker = await conditionalPut(
+          bucket,
+          storage.markerKey,
+          fenceBody("marker", generation, "ready"),
+          { customMetadata: { generation, state: "ready" } },
+          deletingMarker,
+          wait,
+          (object) => hasState(object, generation, "ready"),
+        );
+        if (!readyMarker) {
+          throw new DubApiError(409, "dub_reset_in_progress");
+        }
+      }
+      await assertDeletionNotPending();
+      await consentRepository.finishRevocation(
+        input.identity,
+        consentGeneration,
+      );
+      return new Response(null, {
+        headers: { "Cache-Control": "private, no-store" },
+        status: 204,
+      });
+    }
+
+    if (!route) throw new DubApiError(404, "not_found");
+    const definition = route.definition;
+    const storage = createDubStorageKeys(input.identity, route.dubId);
+
     if (!route.lineId && !route.audio) {
       if (input.request.method === "GET") {
         await assertDeletionNotPending();
-        let consent = await consentRepository.status(input.identity);
-        if (consent.state === "not_granted") {
-          try {
-            consent = await consentRepository.grant(input.identity);
-          } catch (error) {
-            await assertDeletionNotPending();
-            if (
-              error instanceof Error &&
-              error.message === "dub_consent_revoking"
-            ) {
-              throw new DubApiError(409, "dub_consent_revoking");
-            }
-            throw error;
-          }
-        }
+        const consent = await consentRepository.status(input.identity);
         if (!isCurrentGrant(consent)) {
           await assertDeletionNotPending();
           return json(emptyStatus(
@@ -816,86 +884,10 @@ export async function handleDubRequest(
         }
         await assertDeletionNotPending();
         return json({
-          complete: lines.every(({ saved }) => saved),
           consentState: "granted",
           dubId: definition.id,
           guardianConsentVersion: CURRENT_DUB_CONSENT_VERSION,
           lines,
-          recordingEnabled: true,
-        });
-      }
-
-      if (input.request.method === "DELETE") {
-        await assertDeletionNotPending();
-        const resetTargets = DUB_DEFINITIONS.map((currentDefinition) => ({
-          definition: currentDefinition,
-          storage: createDubStorageKeys(input.identity, currentDefinition.id),
-        }));
-        const resetStates = await Promise.all(
-          resetTargets.map(({ storage: targetStorage }) =>
-            readMarker(bucket, targetStorage)
-          ),
-        );
-        if (resetStates.some((marker) =>
-          marker.kind === "valid" && marker.state === "account-deleting"
-        )) {
-          throw new DubApiError(409, "account_deletion_pending");
-        }
-        const revocation = await consentRepository.beginRevocation(input.identity);
-        if (revocation.state === "not_granted") consentError(revocation);
-        const consentGeneration = revocation.grantGeneration;
-        const generation = createGeneration();
-        if (!generation) throw new Error("Dub reset generation is required.");
-        const deletingMarkers = await Promise.all(
-          resetTargets.map(async (target) => ({
-            deletingMarker: await beginReset(
-              bucket,
-              target.storage,
-              generation,
-              wait,
-            ),
-            ...target,
-          })),
-        );
-        await assertDeletionNotPending();
-        for (const target of deletingMarkers) {
-          for (const { id } of target.definition.lines) {
-            await tombstoneSlot(
-              bucket,
-              target.storage,
-              id,
-              generation,
-              target.deletingMarker.etag,
-              wait,
-            );
-          }
-        }
-        await assertDeletionNotPending();
-        await wait(R2_WRITE_INTERVAL_MS);
-        for (const { deletingMarker, storage: targetStorage } of deletingMarkers) {
-          const readyMarker = await conditionalPut(
-            bucket,
-            targetStorage.markerKey,
-            fenceBody("marker", generation, "ready"),
-            {
-              customMetadata: { generation, state: "ready" },
-            },
-            deletingMarker,
-            wait,
-            (object) => hasState(object, generation, "ready"),
-          );
-          if (!readyMarker) {
-            throw new DubApiError(409, "dub_reset_in_progress");
-          }
-        }
-        await assertDeletionNotPending();
-        await consentRepository.finishRevocation(
-          input.identity,
-          consentGeneration,
-        );
-        return new Response(null, {
-          headers: { "Cache-Control": "private, no-store" },
-          status: 204,
         });
       }
 
@@ -903,7 +895,7 @@ export async function handleDubRequest(
         405,
         "method_not_allowed",
         undefined,
-        { Allow: "GET, DELETE" },
+        { Allow: "GET" },
       );
     }
 

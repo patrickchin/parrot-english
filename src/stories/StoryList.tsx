@@ -17,7 +17,6 @@ import {
 } from "../shared/ui";
 import { StoryArtwork } from "./StoryArtwork";
 import {
-  getStoryShelfLevelId,
   isLearnerStoryLevelId,
   isStoryLevelId,
   STORIES,
@@ -30,10 +29,6 @@ const STORY_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) min(calc((100vw - 160px) / 3), 299px), (max-width: 1711px) min(calc((100vw - 176px) / 4), 300px), 308px";
 const STORYTIME_SHELF_IMAGE_SIZES =
   "(max-width: 519px) calc(100vw - 24px), (max-width: 639px) calc((100vw - 40px) / 2), (max-width: 1023px) calc((100vw - 48px) / 2), (max-width: 1279px) calc((100vw - 144px) / 2), 504px";
-const STORY_SHELF_LEVELS = STORY_LEVELS.filter(
-  ({ id }) => getStoryShelfLevelId(id) === id,
-);
-
 export function StoryList() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -44,9 +39,7 @@ export function StoryList() {
     profile.storyLevel,
   );
   const requestedLevelId = new URLSearchParams(location.search).get("level");
-  const stories = STORIES.filter(
-    (story) => getStoryShelfLevelId(story.level) === activeLevelId,
-  );
+  const stories = STORIES.filter((story) => story.level === activeLevelId);
   const canonicalPath = isStoryLevelId(requestedLevelId)
     ? getStoryShelfPath(requestedLevelId)
     : getStoryShelfPath();
@@ -85,7 +78,7 @@ export function StoryList() {
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
             role="tablist"
           >
-            {STORY_SHELF_LEVELS.map((level) => (
+            {STORY_LEVELS.map((level) => (
               <SegmentedButton
                 aria-controls="story-shelf-panel"
                 className="min-h-14 justify-center px-2 text-center text-xs leading-tight last:col-span-2 min-[360px]:px-3 min-[360px]:text-sm lg:last:col-span-1"
@@ -106,7 +99,7 @@ export function StoryList() {
           labelledBy={`story-shelf-tab-${activeLevelId}`}
           recommendedFor={
             isLearnerStoryLevelId(profile.storyLevel) &&
-            activeLevelId === getStoryShelfLevelId(profile.storyLevel)
+            activeLevelId === profile.storyLevel
               ? learnerName
               : undefined
           }

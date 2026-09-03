@@ -6,6 +6,17 @@ function guardianPath(path: string) {
   return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
 }
 
+async function openProfileForm(page: Page) {
+  await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
+  await expect(
+    page.getByRole("heading", { name: "Help Peppa know you" }),
+  ).toBeVisible();
+  await page.getByRole("button", { exact: true, name: "Back" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Answer 6 questions" }),
+  ).toBeVisible();
+}
+
 const viewports = [
   { height: 568, name: "ultra-narrow phone", width: 280 },
   { height: 900, name: "desktop", width: 1440 },
@@ -483,7 +494,7 @@ for (const viewport of viewports) {
     page,
   }) => {
     await preparePage(page, viewport);
-    await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
+    await openProfileForm(page);
     const setup = page.getByRole("button", { name: "Start questions" });
     await expectPointerStateContrast({
       interaction: setup,
@@ -497,7 +508,7 @@ for (const viewport of viewports) {
     page,
   }) => {
     await preparePage(page, viewport);
-    await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
+    await openProfileForm(page);
     await page.getByRole("button", { name: "Start questions" }).click();
     await expect(
       page.getByRole("heading", {

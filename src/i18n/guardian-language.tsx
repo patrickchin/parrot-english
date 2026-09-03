@@ -46,9 +46,8 @@ export function resolveGuardianLanguage(
     : "en";
 }
 
-export function isGuardianGuidanceSurface(pathname: string, search = "") {
-  if (/^\/profile\/*$/i.test(pathname)) return false;
-  return getGateRouteKind(pathname) === "login" || isGuardianRoute(pathname, search);
+export function isGuardianGuidanceSurface(pathname: string) {
+  return getGateRouteKind(pathname) === "login" || isGuardianRoute(pathname);
 }
 
 function getBrowserStorage(): GuardianLanguageStorage | null {

@@ -89,21 +89,14 @@ function parseDotenvValue(contents, key) {
   );
 }
 
-async function readLocalSecret(...keys) {
-  for (const key of keys) {
-    if (process.env[key]) return process.env[key];
-  }
+async function readLocalSecret(key) {
+  if (process.env[key]) return process.env[key];
 
   const varsPath = join(rootDir, ".dev.vars");
   if (!existsSync(varsPath)) return "";
 
   const contents = await readFile(varsPath, "utf8");
-  for (const key of keys) {
-    const value = parseDotenvValue(contents, key);
-    if (value) return value;
-  }
-
-  return "";
+  return parseDotenvValue(contents, key);
 }
 
 async function requestElevenLabsSpeech(apiKey, line) {
@@ -136,10 +129,7 @@ async function requestElevenLabsSpeech(apiKey, line) {
 
 async function getElevenLabsVoiceId(line) {
   const speakerKey = `ELEVENLABS_${line.speaker.toUpperCase()}_VOICE_ID`;
-  const configuredVoice = await readLocalSecret(
-    speakerKey,
-    "ELEVENLABS_VOICE_ID"
-  );
+  const configuredVoice = await readLocalSecret(speakerKey);
 
   if (configuredVoice) return configuredVoice;
   const defaultVoice = ELEVENLABS_SPEAKER_VOICE_IDS[line.speaker];
@@ -259,7 +249,7 @@ if (wordGameContent) {
   ({ STATIC_AUDIO_LINES: lines } = await import("../lib/static-audio.js"));
 }
 
-const apiKey = await readLocalSecret("ELEVENLABS_API_KEY", "ELEVEN_LABS_API_KEY");
+const apiKey = await readLocalSecret("ELEVENLABS_API_KEY");
 if (!apiKey) {
   throw new Error("ELEVENLABS_API_KEY is required in the environment or .dev.vars.");
 }

@@ -18,10 +18,7 @@ export function GuardianLanguageChrome({
 }: PropsWithChildren): ReactElement {
   const location = useLocation();
   const { language } = useGuardianLanguage();
-  const documentLanguage = isGuardianGuidanceSurface(
-    location.pathname,
-    location.search,
-  )
+  const documentLanguage = isGuardianGuidanceSurface(location.pathname)
     ? language
     : "en";
 

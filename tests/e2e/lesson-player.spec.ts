@@ -18,7 +18,6 @@ type LessonMediaSnapshot = {
     text: string;
     volume: number;
   }>;
-  evaluateRequests: number;
   getUserMediaCalls: number;
   pendingCues: number;
   pendingUploads: number;
@@ -740,7 +739,6 @@ test("consent preflight leads to a fresh capture for every automatic beat", asyn
     },
   ]);
   expect(snapshot.uploads.every(({ size }) => size > 0)).toBe(true);
-  expect(snapshot.evaluateRequests).toBe(0);
   await expect(
     page.getByText(/checking your words|tap to talk|skip speaking|great job/i),
   ).toHaveCount(0);
@@ -1112,7 +1110,7 @@ test("built-in completion focuses Replay and restarts without another consent re
 }) => {
   await openParrotLesson(
     page,
-    "device-no-consent",
+    "no-consent",
     undefined,
     parrotLessonFinalScenePath,
   );

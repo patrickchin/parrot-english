@@ -9,4 +9,3 @@ LIVEKIT_API_KEY=your_livekit_api_key
 LIVEKIT_API_SECRET=your_livekit_api_secret
 LIVEKIT_AGENT_NAME=parrot-conversation
 CONVERSATION_AGENT_SECRET=replace_with_a_separate_random_secret
-REALTIME_CONVERSATIONS_ENABLED=0

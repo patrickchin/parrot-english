@@ -55,7 +55,7 @@ esac
   return readFileSync(argumentsPath, "utf8").trim().split("\n");
 }
 
-test("Worker deployment sends release metadata and enables realtime conversations", (context) => {
+test("Worker deployment sends release metadata", (context) => {
   const arguments_ = captureDeploymentArguments(
     context,
     "npx",
@@ -73,8 +73,6 @@ test("Worker deployment sends release metadata and enables realtime conversation
     "PARROT_BACKEND_VERSION:0.1.42",
     "--var",
     "PARROT_BACKEND_COMMIT_SHA:abcdef0",
-    "--var",
-    "REALTIME_CONVERSATIONS_ENABLED:1",
   ]);
 });
 

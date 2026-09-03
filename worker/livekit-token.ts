@@ -5,7 +5,6 @@ import {
 } from "livekit-server-sdk";
 import { isConversationPurpose } from "../lib/conversation-purpose.ts";
 import {
-  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   isTalkToPeppaPromptStyle,
   type TalkToPeppaPromptStyle,
 } from "../lib/talk-to-peppa-prompt-style.ts";
@@ -23,7 +22,7 @@ type TokenInput = {
   env: LiveKitTokenEnv;
   conversation: { id: string; roomName: string; scenarioKey: string };
   identity: LearnerIdentity;
-  initialState?: Record<string, unknown>;
+  initialState: Record<string, unknown>;
   promptStyle?: TalkToPeppaPromptStyle;
 };
 
@@ -42,13 +41,9 @@ export async function createLiveKitParticipantToken({
   if (!isConversationPurpose(conversation.scenarioKey)) {
     throw new Error("Conversation purpose is invalid.");
   }
-  const resolvedPromptStyle =
-    conversation.scenarioKey === "small-chat"
-      ? promptStyle ?? DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE
-      : undefined;
   if (
-    (resolvedPromptStyle !== undefined &&
-      !isTalkToPeppaPromptStyle(resolvedPromptStyle)) ||
+    (conversation.scenarioKey === "small-chat" &&
+      !isTalkToPeppaPromptStyle(promptStyle)) ||
     (conversation.scenarioKey !== "small-chat" && promptStyle !== undefined)
   ) {
     throw new Error("Conversation prompt style is invalid.");
@@ -61,11 +56,11 @@ export async function createLiveKitParticipantToken({
       metadata: JSON.stringify({
         conversationId: conversation.id,
         learnerProfile: {
-          age: initialState?.profileAge ?? null,
-          name: initialState?.profileName ?? null,
-          summary: initialState?.profileSummary ?? "",
+          age: initialState.profileAge,
+          name: initialState.profileName,
+          summary: initialState.profileSummary,
         },
-        ...(resolvedPromptStyle ? { promptStyle: resolvedPromptStyle } : {}),
+        ...(promptStyle ? { promptStyle } : {}),
         scenarioKey: conversation.scenarioKey,
       }),
       ttl: LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS / 1_000,

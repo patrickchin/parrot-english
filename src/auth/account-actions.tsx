@@ -15,7 +15,6 @@ export type AccountExperience = {
   hasActiveLearner: boolean;
   learnerName: string | null;
   onOpenLearnerSwitcher: (() => void) | null;
-  onOpenProfile: (() => void) | null;
 };
 
 export type AccountDeleteErrorCode = "account-delete-failed" | null;

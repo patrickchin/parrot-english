@@ -2,8 +2,10 @@ import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consen
 import { isSafeRouteId } from "../lib/route-id.ts";
 import { isAccountDeletionPending } from "./account-deletion.ts";
 import type { Database } from "./database.ts";
-import type { LearnerProfileIdentity } from "./learner-profile.ts";
-import { isLearnerDeletionPending } from "./request-identity.ts";
+import {
+  isLearnerDeletionPending,
+  type LearnerIdentity,
+} from "./request-identity.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import { resolveLessonRecordingTarget } from "./lesson-recording-catalog.ts";
 import {
@@ -14,20 +16,15 @@ import {
   reserveLessonRecordingUpload,
   type LessonRecordingSlot,
 } from "./lesson-recording-storage.ts";
-import {
-  readBoundedBytes,
-  RequestBodyTooLargeError,
-} from "./request-body.ts";
+import { readBoundedBytes, RequestBodyTooLargeError } from "./request-body.ts";
 
 const MAX_CLIP_BYTES = 512 * 1024;
 const MAX_TARGET_TEXT_BYTES = 4096;
 const MAX_EXPECTED_LEARNER_PROFILE_BYTES = 128;
-const EXPECTED_LEARNER_PROFILE_HEADER =
-  "X-Parrot-Expected-Learner-Profile";
+const EXPECTED_LEARNER_PROFILE_HEADER = "X-Parrot-Expected-Learner-Profile";
 const MIME_SIGNATURES = {
   "audio/mp4": (bytes: Uint8Array) =>
-    bytes.length >= 8 &&
-    new TextDecoder().decode(bytes.slice(4, 8)) === "ftyp",
+    bytes.length >= 8 && new TextDecoder().decode(bytes.slice(4, 8)) === "ftyp",
   "audio/ogg": (bytes: Uint8Array) =>
     new TextDecoder().decode(bytes.slice(0, 4)) === "OggS",
   "audio/webm": (bytes: Uint8Array) =>
@@ -45,7 +42,7 @@ export interface LessonRecordingEnv {
 export interface LessonRecordingRequestInput {
   database: Database;
   env: LessonRecordingEnv;
-  identity: LearnerProfileIdentity;
+  identity: LearnerIdentity;
   request: Request;
 }
 
@@ -109,15 +106,19 @@ function parseRoute(pathname: string): "consent" | LessonRecordingSlot | null {
 }
 
 function contentType(request: Request) {
-  return request.headers
-    .get("Content-Type")
-    ?.split(";", 1)[0]
-    ?.trim()
-    .toLowerCase() ?? "";
+  return (
+    request.headers
+      .get("Content-Type")
+      ?.split(";", 1)[0]
+      ?.trim()
+      .toLowerCase() ?? ""
+  );
 }
 
 function validSignature(type: string, bytes: Uint8Array) {
-  return MIME_SIGNATURES[type as keyof typeof MIME_SIGNATURES]?.(bytes) === true;
+  return (
+    MIME_SIGNATURES[type as keyof typeof MIME_SIGNATURES]?.(bytes) === true
+  );
 }
 
 export async function handleLessonRecordingRequest(
@@ -143,15 +144,9 @@ export async function handleLessonRecordingRequest(
           Allow: "GET",
         });
       }
-      let consent = await repository.readLessonRecordingConsentState(
+      const consent = await repository.readLessonRecordingConsentState(
         input.identity,
       );
-      if (!consent.enabled) {
-        consent = await repository.saveLessonRecordingConsent(
-          input.identity,
-          true,
-        );
-      }
       return json({
         cleanupPending: consent.cleanupBeforeGeneration !== null,
         enabled: consent.enabled,
@@ -173,19 +168,20 @@ export async function handleLessonRecordingRequest(
       throw new LessonRecordingApiError(409, "learner_selection_changed");
     }
 
-    const accessState = async () => ({
-      consent: await repository.readLessonRecordingConsentState(
-        input.identity,
-      ),
-      accountDeletion: await isDeletionPending(
-        input.database,
-        input.identity.userId,
-      ),
-      learnerDeletion: await learnerDeletionPending(
-        input.database,
-        input.identity.learnerProfileId,
-      ),
-    });
+    const accessState = async () => {
+      const [accountDeletion, learnerDeletion] = await Promise.all([
+        isDeletionPending(input.database, input.identity.userId),
+        learnerDeletionPending(input.database, input.identity.learnerProfileId),
+      ]);
+      return {
+        accountDeletion,
+        learnerDeletion,
+        consent:
+          accountDeletion || learnerDeletion
+            ? null
+            : await repository.readLessonRecordingConsentState(input.identity),
+      };
+    };
     const requireAccess = (
       state: Awaited<ReturnType<typeof accessState>>,
       consentGeneration?: number,
@@ -197,7 +193,7 @@ export async function handleLessonRecordingRequest(
         throw new LessonRecordingApiError(409, "learner_deletion_pending");
       }
       if (
-        !state.consent.enabled ||
+        !state.consent?.enabled ||
         (consentGeneration !== undefined &&
           state.consent.generation !== consentGeneration)
       ) {
@@ -206,7 +202,7 @@ export async function handleLessonRecordingRequest(
     };
     const initialAccess = await accessState();
     requireAccess(initialAccess);
-    const consentGeneration = initialAccess.consent.generation;
+    const consentGeneration = initialAccess.consent!.generation;
 
     const target = resolveLessonRecordingTarget(route);
     if (!target) throw new LessonRecordingApiError(404, "not_found");
@@ -321,7 +317,7 @@ export async function handleLessonRecordingRequest(
     if (
       after.accountDeletion ||
       after.learnerDeletion ||
-      !after.consent.enabled ||
+      !after.consent?.enabled ||
       after.consent.generation !== consentGeneration
     ) {
       await fenceLessonRecordingUpload(

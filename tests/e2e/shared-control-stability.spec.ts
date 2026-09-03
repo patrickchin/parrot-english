@@ -85,6 +85,13 @@ test("shared action, icon, and interactive card controls do not move on hover or
   page,
 }) => {
   await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
+  await expect(
+    page.getByRole("heading", { name: "Help Peppa know you" }),
+  ).toBeVisible();
+  await page.getByRole("button", { exact: true, name: "Back" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Answer 6 questions" }),
+  ).toBeVisible();
   await expectStationaryPointerStates(
     page,
     page.getByRole("button", { name: "Start questions" }),

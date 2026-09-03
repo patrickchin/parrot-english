@@ -15,14 +15,6 @@ import {
 const projectRoot = fileURLToPath(new URL("..", import.meta.url));
 const restoreDom = installDom();
 const originalAudio = Object.getOwnPropertyDescriptor(globalThis, "Audio");
-const originalSpeechSynthesis = Object.getOwnPropertyDescriptor(
-  globalThis,
-  "speechSynthesis",
-);
-const originalSpeechUtterance = Object.getOwnPropertyDescriptor(
-  globalThis,
-  "SpeechSynthesisUtterance",
-);
 const vite = await createServer({
   appType: "custom",
   logLevel: "silent",
@@ -52,8 +44,6 @@ afterEach(async () => {
   await cleanupMountedRoots();
   document.body.replaceChildren();
   restoreProperty("Audio", originalAudio);
-  restoreProperty("speechSynthesis", originalSpeechSynthesis);
-  restoreProperty("SpeechSynthesisUtterance", originalSpeechUtterance);
 });
 
 after(async () => {
@@ -62,128 +52,6 @@ after(async () => {
 });
 
 describe("child-first story reader behavior", () => {
-  it("reads a page with the English device voice when saved narration is null", async () => {
-    const events = [];
-    let finishSpeech;
-
-    class TestSpeechUtterance {
-      constructor(text) {
-        this.text = text;
-      }
-    }
-
-    Object.defineProperty(globalThis, "SpeechSynthesisUtterance", {
-      configurable: true,
-      value: TestSpeechUtterance,
-    });
-    Object.defineProperty(globalThis, "speechSynthesis", {
-      configurable: true,
-      value: {
-        cancel() {
-          events.push("cancel");
-        },
-        getVoices() {
-          return [
-            {
-              default: true,
-              lang: "en-US",
-              localService: true,
-              name: "Test English",
-            },
-          ];
-        },
-        pause() {
-          events.push("pause");
-        },
-        resume() {
-          events.push("resume");
-        },
-        speak(utterance) {
-          events.push(`speak:${utterance.text}`);
-          finishSpeech = () => utterance.onend?.();
-        },
-      },
-    });
-
-    const deviceSpeechStory = {
-      ...firstStory,
-      pages: [
-        {
-          ...firstStory.pages[0],
-          joinInAudioId: null,
-          narrationAudioId: null,
-        },
-      ],
-    };
-
-    const container = await mountStrict(
-      createElement(
-        MemoryRouter,
-        { initialEntries: ["/stories/the-red-ball/pages/1"] },
-        createElement(StoryReader, {
-          backToStories: "/stories",
-          onNavigatePage() {},
-          pageIndex: 0,
-          story: deviceSpeechStory,
-        }),
-      ),
-    );
-    const readButton = container.querySelector(
-      '[aria-label="Listen to this page"]',
-    );
-    const listenControls = container.querySelector(
-      '[role="group"][aria-label="Listen"]',
-    );
-    assert.ok(readButton);
-    assert.ok(listenControls);
-    assert.equal(readButton.disabled, false);
-    assert.equal(
-      [...listenControls.querySelectorAll('[aria-hidden="true"]')].some(
-        (candidate) => candidate.textContent.trim() === "Listen",
-      ),
-      false,
-    );
-    assert.match(container.textContent, /Choose how to listen/);
-
-    await click(readButton);
-    await waitFor(() =>
-      assert.ok(container.querySelector('[aria-label="Pause story"]')),
-    );
-    assert.deepEqual(events, [
-      "speak:Here is my red ball.",
-    ]);
-
-    await click(container.querySelector('[aria-label="Pause story"]'));
-    await waitFor(() =>
-      assert.ok(container.querySelector('[aria-label="Resume story"]')),
-    );
-    await click(container.querySelector('[aria-label="Resume story"]'));
-    assert.deepEqual(events, [
-      "speak:Here is my red ball.",
-      "pause",
-      "resume",
-    ]);
-
-    await act(async () => finishSpeech());
-    await waitFor(() =>
-      assert.deepEqual(events, [
-        "speak:Here is my red ball.",
-        "pause",
-        "resume",
-        "speak:Red ball!",
-      ]),
-    );
-    assert.match(container.textContent, /Listen and say it/);
-
-    await act(async () => finishSpeech());
-    await waitFor(() =>
-      assert.ok(
-        container.querySelector('[aria-label="Listen to this page again"]'),
-      ),
-    );
-    assert.match(container.textContent, /Your turn/);
-  });
-
   it("reveals the prompt between separate saved narration and join-in clips", async () => {
     const events = [];
     const finishAudio = [];

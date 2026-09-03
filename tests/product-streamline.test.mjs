@@ -167,7 +167,7 @@ test("story shelf and reader remain English under a Chinese preference", () => {
   const profile = {
     age: 6,
     answers: {
-      legacyAnswers: null,
+      description: null,
       questionnaireVersion: 2,
       responses: {},
       schemaVersion: 2,
@@ -177,13 +177,12 @@ test("story shelf and reader remain English under a Chinese preference", () => {
     description: "Likes animals",
     name: "Sam",
     profileStatus: "completed",
-    questionnaireVersion: 2,
     storyLevel: "tiny-stories",
   };
   const shelf = renderLearnerWithChinesePreference(
     createElement(
       LearnerProfileProvider,
-      { profile, replaceProfile() {} },
+      { profile },
       createElement(StoryList),
     ),
     "/stories",
@@ -332,7 +331,7 @@ test("story shelf presents one curated shelf at a time without research controls
         profile: {
           age: 6,
           answers: {
-            legacyAnswers: null,
+            description: null,
             questionnaireVersion: 2,
             responses: {},
             schemaVersion: 2,
@@ -342,10 +341,8 @@ test("story shelf presents one curated shelf at a time without research controls
           description: "Likes animals",
           name: "Mia",
           profileStatus: "completed",
-          questionnaireVersion: 2,
           storyLevel: "tiny-stories",
         },
-        replaceProfile() {},
       },
       createElement(StoryList),
     ),
@@ -366,7 +363,6 @@ test("story shelf presents one curated shelf at a time without research controls
   assert.deepEqual(
     STORY_LEVELS.map(({ id }) => id),
     [
-      "first-english-words",
       "first-words",
       "repeating-patterns",
       "tiny-stories",
@@ -378,7 +374,7 @@ test("story shelf presents one curated shelf at a time without research controls
     STORY_LEVELS.map(
       ({ id }) => STORIES.filter(({ level }) => level === id).length,
     ),
-    [3, 4, 6, 5, 5, 2],
+    [7, 6, 5, 5, 2],
   );
   assert.equal(STORIES.length, 25);
   assert.equal(new Set(STORIES.map(({ id }) => id)).size, 25);

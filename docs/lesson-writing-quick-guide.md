@@ -16,8 +16,8 @@ Decide these things first:
 5. **Location:** Where does the lesson happen?
 6. **Scenes:** What happens first, next, and last?
 7. **Speakers:** Who says each line: Peppa, Dolly, the child, or the narrator?
-8. **Speaking checks:** Which child lines should be checked, and what should
-   happen when the child says them correctly or incorrectly?
+8. **Join-in lines:** Which short phrases should the child be invited to say
+   along with the group?
 
 There is no required number of goal phrases or scenes. A lesson only needs at
 least one scene with at least one spoken line.
@@ -29,7 +29,7 @@ Keep the story itself in the foreground:
 1. Give each scene one background and a small on-stage character set.
 2. Put dialogue in playback order, including any learner join-in line.
 3. Add an emote only when a character changes expression.
-4. Add a speaking check only where feedback changes the story.
+4. Put each join-in line directly after the matching character line.
 5. Review the scene as a short, continuous cartoon episode before checking it
    in.
 
@@ -40,7 +40,7 @@ The field names below describe every checked-in lesson file.
 | Information                   | Where it goes                  | Example                                 |
 | ----------------------------- | ------------------------------ | --------------------------------------- |
 | Lesson name                   | `title`                        | `"The Helpful Friend"`                  |
-| Child's name                  | `childName`                    | `"Mia"`                                 |
+| Child's name                  | `childName`                    | `"Mary"`                                |
 | Practice phrases              | `goalPhrases`                  | `["Can you help me?"]`                  |
 | Short description             | `summary`                      | `"Peppa asks Dolly for help."`          |
 | Longer description            | `detailedSummary`              | `"Peppa needs help reaching her ball."` |
@@ -52,13 +52,12 @@ The field names below describe every checked-in lesson file.
 | Who says a line               | A step's `speaker`             | `"dolly"` or `"user"`                   |
 | The words spoken              | A step's `dialogue`            | `"Can you help me?"`                    |
 | Character expression changes  | A step's optional `emotes`     | `{ "dolly": "happy" }`                  |
-| Speaking result responses     | A user step's optional `check` | Correct and incorrect replies           |
 
 ## Speaker Choices
 
 - `peppa`: Peppa speaks.
 - `dolly`: Dolly speaks.
-- `user`: The child is asked to speak into the microphone.
+- `user`: The child sees an ungraded join-in phrase and may speak along.
 - `narrator`: A voice-only narrator speaks.
 
 Only Peppa and Dolly are visible. Put the visible characters for a scene in its
@@ -92,10 +91,10 @@ their current expressions. At the beginning of a new scene, everyone starts as
 
 Use `"speaker": "user"` for a child speaking turn.
 
-### No Speaking Check
-
-Omit `check` when the child should speak without being graded. The lesson
-continues when the child releases the microphone.
+The app shows the exact phrase, plays a quiet group cue, and continues the
+story. It does not score, correct, retry, or treat silence as failure. When a
+Guardian has enabled lesson recordings, the app may privately save the short
+join-in beat; recording availability or failure never changes lesson progress.
 
 ```json
 {
@@ -104,32 +103,12 @@ continues when the child releases the microphone.
 }
 ```
 
-### With a Speaking Check
-
-Add `check` when the app should listen and choose a response:
-
-- `maxAttempts`: How many unsuccessful tries are allowed, from 1 to 5.
-- `correct`: What someone says when the answer is correct.
-- `incorrect`: What someone says before the final unsuccessful try.
-- `incorrectFinal`: What someone says on the final unsuccessful try.
-- `noInput`: Optional special reply when nothing was heard.
-- `noInputFinal`: Optional final reply when nothing was heard.
-
-Each reply chooses:
-
-- `speaker`: Peppa, Dolly, or narrator.
-- `dialogue`: What that speaker says.
-- `after`: `retry` to try again or `continue` to move on.
-- `emotes`: Optional expression changes.
-
-Correct and final replies must use `"after": "continue"`.
-
 ## Small Complete Example
 
 ```json
 {
   "title": "Ask for Help",
-  "childName": "Mia",
+  "childName": "Mary",
   "goalPhrases": ["Can you help me?"],
   "summary": "Peppa asks Dolly for help.",
   "detailedSummary": "Peppa needs help reaching her ball.",
@@ -154,28 +133,7 @@ Correct and final replies must use `"after": "continue"`.
         },
         {
           "speaker": "user",
-          "dialogue": "Can you help me?",
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "peppa",
-              "dialogue": "Great asking!",
-              "emotes": {
-                "peppa": "happy"
-              },
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "dolly",
-              "dialogue": "Listen and try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Good try. Let us continue.",
-              "after": "continue"
-            }
-          }
+          "dialogue": "Can you help me?"
         }
       ]
     }
@@ -186,7 +144,7 @@ Correct and final replies must use `"after": "continue"`.
 ## Where to Put the Lesson
 
 Save the JSON as its own file in `content/lessons`. Built-in automatic lines
-and speaking-check replies need matching saved audio entries and files under
+and join-in group cues need matching saved audio entries and files under
 `public/assets/audio`.
 
 Useful locations:
@@ -206,6 +164,6 @@ Before checking in the lesson, confirm:
 - Every scene has a supported background and at least one step.
 - Every step has a speaker and dialogue.
 - `user` and `narrator` are not listed as visible characters.
-- Every `check` is attached to a `user` step.
-- Correct and final replies continue rather than retry.
+- Every `user` step contains one short phrase the learner may say along with
+  the group.
 - The JSON file has no comments or trailing commas.

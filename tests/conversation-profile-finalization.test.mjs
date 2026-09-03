@@ -9,7 +9,7 @@ function providerResponse(value) {
   });
 }
 
-describe("deferred conversation profile finalization", () => {
+describe("deferred onboarding profile finalization", () => {
   it("makes one structured LLM call after the conversation", async () => {
     const requests = [];
     const initialState = createLearnerProfileConversationState();
@@ -67,7 +67,7 @@ describe("deferred conversation profile finalization", () => {
         throw new Error("should not be called");
       },
       initialState,
-      purpose: "profile-edit",
+      purpose: "onboarding",
       turns: [{ role: "user", text: "I like pandas now." }],
     });
 
@@ -113,9 +113,9 @@ describe("deferred conversation profile finalization", () => {
           age: 9,
           description: "Mia is nine years old.",
           inventedField: true,
-        }),
+      }),
       initialState,
-      purpose: "profile-edit",
+      purpose: "onboarding",
       turns: [{ role: "user", text: "I am nine now." }],
     });
 
@@ -144,7 +144,7 @@ describe("deferred conversation profile finalization", () => {
         fetch: async () =>
           providerResponse({ name: "Mia", age: 8, description }),
         initialState,
-        purpose: "profile-edit",
+        purpose: "onboarding",
         turns: [{ role: "user", text: description }],
       });
 
@@ -158,9 +158,9 @@ describe("deferred conversation profile finalization", () => {
           name: "Mia Smith",
           age: 8,
           description: "Mia likes pandas.",
-        }),
+      }),
       initialState,
-      purpose: "profile-edit",
+      purpose: "onboarding",
       turns: [{ role: "user", text: "My full name is Mia Smith." }],
     });
     assert.deepEqual(fullName, initialState);
@@ -180,7 +180,7 @@ describe("deferred conversation profile finalization", () => {
       fetch: async () =>
         providerResponse({ name: "Mia", age: 8, description }),
       initialState,
-      purpose: "profile-edit",
+      purpose: "onboarding",
       turns: [{ role: "user", text: description }],
     });
 
@@ -198,7 +198,7 @@ describe("deferred conversation profile finalization", () => {
       env: { GROQ_API_KEY: "test-key" },
       fetch: async () => new Response("unavailable", { status: 503 }),
       initialState,
-      purpose: "profile-edit",
+      purpose: "onboarding",
       turns: [{ role: "user", text: "I am nine now." }],
     });
 
@@ -235,7 +235,7 @@ describe("deferred conversation profile finalization", () => {
         env: { GROQ_API_KEY: "test-key" },
         fetch: async () => Response.json(payload),
         initialState,
-        purpose: "profile-edit",
+        purpose: "onboarding",
         turns: [{ role: "user", text: "I am nine now." }],
       });
       assert.deepEqual(result, initialState);

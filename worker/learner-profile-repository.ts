@@ -1,9 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
-import {
-  learnerProfile,
-  learnerSessionBypass,
-  profileSessionBypass,
-} from "../src/db/schema.ts";
+import { learnerProfile, learnerSessionBypass } from "../src/db/schema.ts";
 import { LESSON_RECORDING_CONSENT_VERSION } from "../lib/lesson-recording-consent.js";
 import type { Database } from "./database.ts";
 import {
@@ -13,45 +9,22 @@ import {
 } from "./request-identity.ts";
 
 type RepositoryOptions = {
-  createId?: () => string;
   now?: () => Date;
 };
 
-type LegacyLearnerIdentity = Pick<
-  LearnerIdentity,
-  "sessionId" | "userId" | "userName"
->;
-
-function isResolvedLearnerIdentity(
-  identity: LegacyLearnerIdentity | LearnerIdentity,
-): identity is LearnerIdentity {
-  return typeof (identity as LearnerIdentity).learnerProfileId === "string";
-}
-
 export function createLearnerProfileRepository(
   database: Database,
-  {
-    createId = () => crypto.randomUUID(),
-    now = () => new Date(),
-  }: RepositoryOptions = {}
+  { now = () => new Date() }: RepositoryOptions = {},
 ) {
-  function findProfile(
-    identity: LearnerIdentity,
-  ): Promise<typeof learnerProfile.$inferSelect | null>;
-  function findProfile(
-    userId: string,
-  ): Promise<typeof learnerProfile.$inferSelect | null>;
-  async function findProfile(identity: LearnerIdentity | string) {
+  async function findProfile(identity: LearnerIdentity) {
     const [profile] = await database
       .select()
       .from(learnerProfile)
       .where(
-        typeof identity === "string"
-          ? eq(learnerProfile.authUserId, identity)
-          : and(
-              eq(learnerProfile.id, identity.learnerProfileId),
-              eq(learnerProfile.authUserId, identity.userId),
-            ),
+        and(
+          eq(learnerProfile.id, identity.learnerProfileId),
+          eq(learnerProfile.authUserId, identity.userId),
+        ),
       )
       .limit(1);
     return profile ?? null;
@@ -63,10 +36,7 @@ export function createLearnerProfileRepository(
     return profile;
   }
 
-  function nameFields(
-    _identity: LearnerIdentity,
-    name: string | null | undefined,
-  ) {
+  function nameFields(name: string | null | undefined) {
     const normalizedName = normalizeLearnerName(name);
     return {
       name: normalizedName,
@@ -74,62 +44,15 @@ export function createLearnerProfileRepository(
     };
   }
 
-  async function ensureProfile(
-    identity: LegacyLearnerIdentity | LearnerIdentity,
-  ) {
-    if (isResolvedLearnerIdentity(identity)) return loadProfile(identity);
-
-    let profile = await findProfile(identity.userId);
-    if (!profile) {
-      const timestamp = now();
-      const name = normalizeLearnerName(identity.userName);
-      await database
-        .insert(learnerProfile)
-        .values({
-          id: createId(),
-          authUserId: identity.userId,
-          name,
-          nameKey: learnerNameKey(name),
-          privateMediaName: "Learner",
-          profileStatus: "not_started",
-          createdAt: timestamp,
-          updatedAt: timestamp,
-        })
-        .onConflictDoNothing();
-      profile = await findProfile(identity.userId);
-    }
-    if (!profile) throw new Error("Learner profile could not be created.");
-    return profile;
-  }
-
-  async function hasSessionBypass(
-    identity: LegacyLearnerIdentity | LearnerIdentity,
-  ) {
-    if (isResolvedLearnerIdentity(identity)) {
-      const profile = await findProfile(identity);
-      if (!profile) return false;
-      const [learnerRow] = await database
-        .select({ sessionId: learnerSessionBypass.sessionId })
-        .from(learnerSessionBypass)
-        .where(
-          and(
-            eq(learnerSessionBypass.sessionId, identity.sessionId),
-            eq(learnerSessionBypass.learnerProfileId, identity.learnerProfileId),
-          ),
-      )
-      .limit(1);
-      if (learnerRow) return true;
-      if (!profile.legacyStorageOwner) return false;
-    }
-
+  async function hasSessionBypass(identity: LearnerIdentity) {
     const [row] = await database
-      .select({ sessionId: profileSessionBypass.sessionId })
-      .from(profileSessionBypass)
+      .select({ sessionId: learnerSessionBypass.sessionId })
+      .from(learnerSessionBypass)
       .where(
         and(
-          eq(profileSessionBypass.sessionId, identity.sessionId),
-          eq(profileSessionBypass.authUserId, identity.userId)
-        )
+          eq(learnerSessionBypass.sessionId, identity.sessionId),
+          eq(learnerSessionBypass.learnerProfileId, identity.learnerProfileId),
+        ),
       )
       .limit(1);
     return Boolean(row);
@@ -139,129 +62,59 @@ export function createLearnerProfileRepository(
     const profile = await findProfile(identity);
     return (
       profile?.profileStatus === "completed" ||
-      profile?.lastSkippedSessionId === identity.sessionId ||
       (await hasSessionBypass(identity))
     );
   }
 
-  async function skipSession(
-    identity: LegacyLearnerIdentity | LearnerIdentity,
-  ) {
+  async function skipSession(identity: LearnerIdentity) {
     const skippedAt = now();
-    if (isResolvedLearnerIdentity(identity)) {
-      const profile = await loadProfile(identity);
-      const skippedAtMs = skippedAt.getTime();
-      const statements = [
-        database.$client.prepare(
-          `INSERT INTO onboarding_learner_session_bypass
-            (session_id, learner_profile_id, skipped_at)
-           SELECT ?, ?, ?
-           WHERE NOT EXISTS (
+    await loadProfile(identity);
+    await database.$client
+      .prepare(
+        `INSERT INTO onboarding_learner_session_bypass
+        (session_id, learner_profile_id, skipped_at)
+       SELECT ?, ?, ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM learner_profile_deletion_tombstone
+         WHERE learner_profile_id = ?
+       )
+       ON CONFLICT(session_id, learner_profile_id) DO UPDATE SET
+         skipped_at = excluded.skipped_at
+       WHERE NOT EXISTS (
+         SELECT 1 FROM learner_profile_deletion_tombstone
+         WHERE learner_profile_id = ?
+       )`,
+      )
+      .bind(
+        identity.sessionId,
+        identity.learnerProfileId,
+        skippedAt.getTime(),
+        identity.learnerProfileId,
+        identity.learnerProfileId,
+      )
+      .run();
+    const result = await database.$client
+      .prepare(
+        `SELECT
+           EXISTS (
              SELECT 1 FROM learner_profile_deletion_tombstone
              WHERE learner_profile_id = ?
-           )
-           ON CONFLICT(session_id, learner_profile_id) DO UPDATE SET
-             skipped_at = excluded.skipped_at
-           WHERE NOT EXISTS (
-             SELECT 1 FROM learner_profile_deletion_tombstone
-             WHERE learner_profile_id = ?
-           )`,
-        ).bind(
-          identity.sessionId,
-          identity.learnerProfileId,
-          skippedAtMs,
-          identity.learnerProfileId,
-          identity.learnerProfileId,
-        ),
-      ];
-      if (profile.legacyStorageOwner) {
-        statements.push(
-          database.$client.prepare(
-            `INSERT INTO onboarding_session_bypass
-              (session_id, auth_user_id, skipped_at)
-             SELECT ?, ?, ?
-             WHERE EXISTS (
-               SELECT 1 FROM learner_profile
-               WHERE id = ? AND auth_user_id = ? AND legacy_storage_owner = 1
-             )
-               AND NOT EXISTS (
-                 SELECT 1 FROM learner_profile_deletion_tombstone
-                 WHERE learner_profile_id = ?
-               )
-             ON CONFLICT(session_id) DO UPDATE SET
-               auth_user_id = excluded.auth_user_id,
-               skipped_at = excluded.skipped_at
-             WHERE EXISTS (
-               SELECT 1 FROM learner_profile
-               WHERE id = ? AND auth_user_id = ? AND legacy_storage_owner = 1
-             )
-               AND NOT EXISTS (
-                 SELECT 1 FROM learner_profile_deletion_tombstone
-                 WHERE learner_profile_id = ?
-               )`,
-          ).bind(
-            identity.sessionId,
-            identity.userId,
-            skippedAtMs,
-            identity.learnerProfileId,
-            identity.userId,
-            identity.learnerProfileId,
-            identity.learnerProfileId,
-            identity.userId,
-            identity.learnerProfileId,
-          ),
-        );
-      }
-      await database.$client.batch(statements);
-      const result = await database.$client
-        .prepare(
-          `SELECT
-             EXISTS (
-               SELECT 1 FROM learner_profile_deletion_tombstone
-               WHERE learner_profile_id = ?
-             ) AS deletion_pending,
-             EXISTS (
-               SELECT 1 FROM onboarding_learner_session_bypass
-               WHERE session_id = ? AND learner_profile_id = ?
-             ) AS learner_bypass_stored,
-             CASE WHEN ? = 0 THEN 1 ELSE EXISTS (
-               SELECT 1 FROM onboarding_session_bypass
-               WHERE session_id = ? AND auth_user_id = ?
-             ) END AS legacy_bypass_stored`,
-        )
-        .bind(
-          identity.learnerProfileId,
-          identity.sessionId,
-          identity.learnerProfileId,
-          profile.legacyStorageOwner ? 1 : 0,
-          identity.sessionId,
-          identity.userId,
-        )
-        .first<{
-          deletion_pending: number;
-          learner_bypass_stored: number;
-          legacy_bypass_stored: number;
-        }>();
-      if (result?.deletion_pending) {
-        throw new Error("learner_deletion_pending");
-      }
-      if (!result?.learner_bypass_stored || !result.legacy_bypass_stored) {
-        throw new Error("Learner onboarding bypass could not be persisted.");
-      }
-      return;
+           ) AS deletion_pending,
+           EXISTS (
+             SELECT 1 FROM onboarding_learner_session_bypass
+             WHERE session_id = ? AND learner_profile_id = ?
+           ) AS learner_bypass_stored`,
+      )
+      .bind(
+        identity.learnerProfileId,
+        identity.sessionId,
+        identity.learnerProfileId,
+      )
+      .first<{ deletion_pending: number; learner_bypass_stored: number }>();
+    if (result?.deletion_pending) throw new Error("learner_deletion_pending");
+    if (!result?.learner_bypass_stored) {
+      throw new Error("Learner onboarding bypass could not be persisted.");
     }
-
-    await database
-      .insert(profileSessionBypass)
-      .values({
-        authUserId: identity.userId,
-        sessionId: identity.sessionId,
-        skippedAt,
-      })
-      .onConflictDoUpdate({
-        target: profileSessionBypass.sessionId,
-        set: { authUserId: identity.userId, skippedAt },
-      });
   }
 
   async function saveAnswer(
@@ -273,10 +126,10 @@ export function createLearnerProfileRepository(
       name?: string | null;
       profileStatus?: string;
       skippedQuestionKeysJson?: string;
-    }
+    },
   ) {
     const normalizedNameFields = Object.hasOwn(values, "name")
-      ? await nameFields(identity, values.name)
+      ? nameFields(values.name)
       : {};
     await database
       .update(learnerProfile)
@@ -294,14 +147,13 @@ export function createLearnerProfileRepository(
   }
 
   async function readLessonRecordingConsentState(identity: LearnerIdentity) {
-    const profile = await findProfile(identity);
+    const profile = await loadProfile(identity);
     return {
-      cleanupBeforeGeneration:
-        profile?.lessonRecordingCleanupBeforeGeneration ?? null,
+      cleanupBeforeGeneration: profile.lessonRecordingCleanupBeforeGeneration,
       enabled:
-        profile?.lessonRecordingConsentVersion ===
+        profile.lessonRecordingConsentVersion ===
         LESSON_RECORDING_CONSENT_VERSION,
-      generation: profile?.lessonRecordingGeneration ?? 0,
+      generation: profile.lessonRecordingGeneration,
     };
   }
 
@@ -380,10 +232,10 @@ export function createLearnerProfileRepository(
       currentQuestionKey: string | null;
       name?: string | null;
       skippedQuestionKeysJson: string;
-    }
+    },
   ) {
     const timestamp = now();
-    const normalizedNameFields = await nameFields(identity, values.name);
+    const normalizedNameFields = nameFields(values.name);
     await database
       .update(learnerProfile)
       .set({
@@ -404,45 +256,8 @@ export function createLearnerProfileRepository(
       );
   }
 
-  async function skip(identity: LearnerIdentity) {
-    const timestamp = now();
-    await database
-      .update(learnerProfile)
-      .set({
-        lastSkippedAt: timestamp,
-        lastSkippedSessionId: identity.sessionId,
-        updatedAt: timestamp,
-      })
-      .where(
-        and(
-          eq(learnerProfile.id, identity.learnerProfileId),
-          eq(learnerProfile.authUserId, identity.userId),
-        ),
-      );
-  }
-
-  async function complete(identity: LearnerIdentity) {
-    const timestamp = now();
-    await database
-      .update(learnerProfile)
-      .set({
-        completedAt: timestamp,
-        currentQuestionKey: null,
-        profileStatus: "completed",
-        updatedAt: timestamp,
-      })
-      .where(
-        and(
-          eq(learnerProfile.id, identity.learnerProfileId),
-          eq(learnerProfile.authUserId, identity.userId),
-        ),
-      );
-  }
-
   return {
     canBypass,
-    complete,
-    ensureProfile,
     findProfile,
     hasSessionBypass,
     loadProfile,
@@ -453,7 +268,6 @@ export function createLearnerProfileRepository(
     saveAnswer,
     saveLessonRecordingConsent,
     saveTransition,
-    skip,
     skipSession,
   };
 }

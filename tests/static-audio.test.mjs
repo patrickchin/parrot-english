@@ -6,14 +6,15 @@ import { basename } from "node:path";
 import { describe, it } from "node:test";
 import snapshot from "./fixtures/nursery-rhyme-runtime-snapshot.json" with { type: "json" };
 import * as staticAudio from "../lib/static-audio.js";
-import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   DUB_DEFINITIONS,
+  FIVE_LITTLE_DUCKS_DUB,
   OLD_MACDONALD_DUB,
 } from "../src/dubbing/rhyme-catalog.ts";
 import { STORIES } from "../src/stories/story-catalog.ts";
 import { GENERATED_WORD_GAME_CATALOG } from "../src/games/generated-word-game-catalog.ts";
 
+const DUCK_LINES = FIVE_LITTLE_DUCKS_DUB.lines;
 
 const WORD_GAME_ITEM_AUDIO = new Map(
   GENERATED_WORD_GAME_CATALOG.categories.flatMap(({ items }) =>
@@ -115,7 +116,7 @@ describe("static audio cache metadata", () => {
     assert.deepEqual(guides, snapshot.guides);
   });
 
-  it("keeps all 59 protected guide IDs out of the legacy audio root", () => {
+  it("keeps all 59 protected guide IDs out of the removed aggregate audio root", () => {
     const guideIds = snapshot.guides.map(({ id }) => id);
     assert.equal(guideIds.length, 59);
     assert.equal(new Set(guideIds).size, 59);
@@ -205,7 +206,7 @@ describe("static audio cache metadata", () => {
 
   it("registers an ElevenLabs narrator guide for every unique duck lyric", () => {
     const guideLines = new Map();
-    for (const { text } of DUB_LINES) {
+    for (const { text } of DUCK_LINES) {
       const line = getStaticAudioLineForSpeech("narrator", text);
       assert.match(line.id, /^five-little-ducks-v2-guide-/);
       assert.equal(line.text, text);
@@ -399,7 +400,7 @@ describe("static audio cache metadata", () => {
     }
   });
 
-  it("uses speaker-specific cache files instead of deleted legacy assets", () => {
+  it("uses speaker-specific cache files", () => {
     for (const [id, expectedSource] of Object.entries(normalizedCharacterSources)) {
       assert.equal(staticAudio.STATIC_AUDIO_LINES[id].src, expectedSource, id);
     }
@@ -431,16 +432,6 @@ describe("static audio cache metadata", () => {
     );
     assert.match(generator, /Oqy85UMasXzUjUxF0ta5/);
     assert.match(generator, /ELEVENLABS_DEFAULT_MODEL = "eleven_v3"/);
-    for (const legacyId of [
-      "learner-profile-introduction",
-      "learner-profile-age",
-      "learner-profile-favourite-cartoons",
-      "learner-profile-favourite-animals",
-      "learner-profile-favourite-activities",
-      "learner-profile-favourite-story-topics",
-    ]) {
-      assert.equal(staticAudio.STATIC_AUDIO_LINES[legacyId], undefined, legacyId);
-    }
   });
 
   it("pins the selected Peppa profile acknowledgment asset", () => {

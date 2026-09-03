@@ -3,7 +3,6 @@ export interface RateLimitBinding {
 }
 
 export interface RateLimitEnv {
-  EVALUATE_RATE_LIMITER: RateLimitBinding;
   LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER: RateLimitBinding;
   LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: RateLimitBinding;
 }
@@ -40,17 +39,6 @@ async function checkRateLimit(
       status: 429,
       headers: { "Retry-After": "60" },
     },
-  );
-}
-
-export function checkEvaluateSpeechRateLimit(
-  request: Request,
-  env: RateLimitEnv,
-) {
-  return checkRateLimit(
-    env.EVALUATE_RATE_LIMITER,
-    getClientAddress(request),
-    "Too many speech evaluation requests. Please wait and try again.",
   );
 }
 

@@ -5,6 +5,7 @@ import { getTableColumns, getTableName } from "drizzle-orm";
 import { describe, it } from "node:test";
 import questionnaireV2 from "../content/learner-profile/questionnaire-v2.json" with { type: "json" };
 import { validateLearnerProfileQuestionnaire } from "../lib/learner-profile-questionnaire.js";
+import { readV2Answers } from "../lib/learner-profile-responses.js";
 import * as schema from "../src/db/schema.ts";
 
 const EXPECTED_MODELS = {
@@ -13,7 +14,6 @@ const EXPECTED_MODELS = {
     properties: [
       "id",
       "authUserId",
-      "legacyStorageOwner",
       "name",
       "privateMediaName",
       "nameKey",
@@ -21,11 +21,8 @@ const EXPECTED_MODELS = {
       "storyLevel",
       "answersJson",
       "skippedQuestionKeysJson",
-      "questionnaireVersion",
       "currentQuestionKey",
       "profileStatus",
-      "lastSkippedAt",
-      "lastSkippedSessionId",
       "completedAt",
       "lessonRecordingConsentVersion",
       "lessonRecordingConsentAt",
@@ -34,39 +31,6 @@ const EXPECTED_MODELS = {
       "createdAt",
       "updatedAt",
     ],
-  },
-  questionnaire: {
-    table: "questionnaire",
-    properties: [
-      "id",
-      "version",
-      "status",
-      "definitionHash",
-      "createdAt",
-      "activatedAt",
-    ],
-  },
-  questionnaireQuestion: {
-    table: "questionnaire_question",
-    properties: [
-      "id",
-      "questionnaireId",
-      "answerKey",
-      "position",
-      "promptEn",
-      "promptZh",
-      "answerType",
-      "cardinality",
-      "required",
-      "optionsJson",
-      "validationJson",
-      "branchingJson",
-      "audioId",
-    ],
-  },
-  profileSessionBypass: {
-    table: "onboarding_session_bypass",
-    properties: ["sessionId", "authUserId", "skippedAt"],
   },
   sessionLearnerSelection: {
     table: "session_learner_selection",
@@ -94,21 +58,18 @@ const EXPECTED_MODELS = {
       "updatedAt",
     ],
   },
-  learnerStoryArtGenerationLease: {
-    table: "learner_story_art_generation_lease",
-    properties: [
-      "learnerProfileId",
-      "authUserId",
-      "storyId",
-      "generationToken",
-      "candidateR2ObjectKey",
-      "previousR2ObjectKey",
-      "leaseExpiresAt",
-      "createdAt",
-      "updatedAt",
-    ],
-  },
 };
+
+const REMOVED_TABLES = [
+  "guardian_dub_consent",
+  "learner_selection_required",
+  "learner_story_art_generation_lease",
+  "personalized_story_art",
+  "personalized_story_art_generation_lease",
+  "onboarding_session_bypass",
+  "questionnaire",
+  "questionnaire_question",
+];
 
 function readMigrations() {
   return readdirSync(new URL("../migrations/", import.meta.url))
@@ -116,7 +77,10 @@ function readMigrations() {
     .sort()
     .map((name) => ({
       name,
-      sql: readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
+      sql: readFileSync(
+        new URL(`../migrations/${name}`, import.meta.url),
+        "utf8",
+      ),
     }));
 }
 
@@ -154,11 +118,6 @@ describe("learner-profile infrastructure", () => {
     );
 
     assert.deepEqual(config.ratelimits, [
-      {
-        name: "EVALUATE_RATE_LIMITER",
-        namespace_id: "104201",
-        simple: { limit: 8, period: 60 },
-      },
       {
         name: "LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER",
         namespace_id: "104202",
@@ -203,8 +162,8 @@ describe("learner-profile infrastructure", () => {
       ["name", "age", null, null, null, null],
     );
     assert.deepEqual(
-      definition.questions.map(({ fallbackAcknowledgment }) =>
-        fallbackAcknowledgment
+      definition.questions.map(
+        ({ fallbackAcknowledgment }) => fallbackAcknowledgment,
       ),
       Array(6).fill("Thank you!"),
     );
@@ -237,109 +196,104 @@ describe("learner-profile infrastructure", () => {
         }),
       /Invalid learner-profile questionnaire/,
     );
+
+    assert.throws(() => {
+      const question = { ...questionnaireV2.questions[2] };
+      delete question.canonicalField;
+      validateLearnerProfileQuestionnaire({
+        ...questionnaireV2,
+        questions: questionnaireV2.questions.map((entry, index) =>
+          index === 2 ? question : entry,
+        ),
+      });
+    }, /Invalid learner-profile questionnaire/);
   });
 
-  it("exports separate learner profile and questionnaire Drizzle models", () => {
+  it("exports only the current learner-profile Drizzle models", () => {
     for (const [exportName, expected] of Object.entries(EXPECTED_MODELS)) {
       const table = schema[exportName];
       assert.ok(table, `Expected schema.${exportName}`);
       assert.equal(getTableName(table), expected.table);
-      assert.deepEqual(Object.keys(getTableColumns(table)), expected.properties);
+      assert.deepEqual(
+        Object.keys(getTableColumns(table)),
+        expected.properties,
+      );
     }
 
-    assert.ok(schema.sessionLearnerSelection);
-    assert.ok(schema.learnerSessionBypass);
-    assert.ok(schema.learnerDubConsent);
-    assert.ok(schema.learnerStoryArtGenerationLease);
+    for (const exportName of [
+      "guardianDubConsent",
+      "learnerSelectionRequired",
+      "learnerStoryArtGenerationLease",
+      "personalizedStoryArt",
+      "personalizedStoryArtGenerationLease",
+      "profileSessionBypass",
+      "questionnaire",
+      "questionnaireQuestion",
+    ]) {
+      assert.equal(schema[exportName], undefined);
+    }
   });
 
-  it("generates additive D1 tables with foreign keys, checks, and lookup indexes", () => {
+  it("generates the current D1 tables with foreign keys, checks, and lookup indexes", () => {
     const migrations = readMigrations();
     assert.ok(
-      migrations.length >= 5 && migrations.some(({ name }) => /^0004_/.test(name)),
+      migrations.length >= 5 &&
+        migrations.some(({ name }) => /^0004_/.test(name)),
       "Expected the conversation persistence migration",
-    );
-    assert.doesNotMatch(
-      migrations[1].sql,
-      /(?:^|\n)\s*(?:INSERT|UPDATE|DELETE)\b/im,
-    );
-    assert.doesNotMatch(migrations[1].sql, /ALTER TABLE [`"]?(?:user|session|account|verification)/i);
-    assert.match(
-      migrations[2].sql,
-      /UPDATE [`"]?questionnaire[`"]?\s+SET [`"]?definition_hash/i,
-    );
-    assert.doesNotMatch(
-      migrations[2].sql,
-      /(?:INSERT|UPDATE|DELETE)\s+(?:INTO\s+)?[`"]?(?:user|session|account|verification)/i,
     );
 
     const database = createMigratedDatabase();
     try {
       const profileSql = tableSql(database, "learner_profile");
-      const questionnaireSql = tableSql(database, "questionnaire");
-      const questionSql = tableSql(database, "questionnaire_question");
-      const bypassSql = tableSql(database, "onboarding_session_bypass");
       const selectionSql = tableSql(database, "session_learner_selection");
       const learnerBypassSql = tableSql(
         database,
         "onboarding_learner_session_bypass",
       );
       const learnerConsentSql = tableSql(database, "learner_dub_consent");
-      const learnerLeaseSql = tableSql(
-        database,
-        "learner_story_art_generation_lease",
-      );
 
-      assert.match(profileSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
-      assert.match(profileSql, /CHECK\s*\(json_valid\([^)]*answers_json[^)]*\)\)/i);
+      assert.match(
+        profileSql,
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
+      assert.match(
+        profileSql,
+        /CHECK\s*\(json_valid\([^)]*answers_json[^)]*\)\)/i,
+      );
       assert.match(
         profileSql,
         /CHECK\s*\(json_valid\([^)]*skipped_question_keys_json[^)]*\)\)/i,
       );
-      assert.match(profileSql, /CHECK\s*\([^\n]*onboarding_status[^\n]* in \('not_started', 'in_progress', 'completed'\)\)/i);
-      assert.match(questionnaireSql, /[`"]?definition_hash[`"]?\s+text/i);
-      assert.match(questionnaireSql, /CHECK\s*\([^\n]*status[^\n]* in \('draft', 'active', 'inactive'\)\)/i);
-      assert.match(questionSql, /CHECK\s*\([^\n]*answer_type[^\n]* in \('text', 'number', 'choice'\)\)/i);
-      assert.match(questionSql, /CHECK\s*\([^\n]*cardinality[^\n]* in \('scalar', 'array'\)\)/i);
-      for (const column of ["options_json", "validation_json", "branching_json"]) {
-        assert.match(
-          questionSql,
-          new RegExp(`CHECK\\s*\\([^\\n]*${column}[^\\n]*json_valid\\([^\\n]*${column}`),
-        );
-      }
       assert.match(
-        bypassSql,
-        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+        profileSql,
+        /CHECK\s*\([^\n]*onboarding_status[^\n]* in \('not_started', 'in_progress', 'completed'\)\)/i,
       );
       assert.match(
-        bypassSql,
-        /REFERENCES [`"]?session[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+        profileSql,
+        /answers_json[^,]*DEFAULT ['"]\{"schemaVersion":2,"questionnaireVersion":2,"responses":\{\},"description":null\}['"]/i,
       );
-      for (const sql of [selectionSql, learnerBypassSql, learnerConsentSql, learnerLeaseSql]) {
+      for (const sql of [selectionSql, learnerBypassSql, learnerConsentSql]) {
         assert.match(
           sql,
           /REFERENCES [`"]?learner_profile[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
         );
       }
+      for (const table of REMOVED_TABLES) {
+        assert.equal(tableSql(database, table), undefined);
+      }
 
       const profileIndexes = indexDetails(database, "learner_profile");
       assert.ok(
         profileIndexes.some(
-          (index) => index.unique === 1 && index.columns.join() === "auth_user_id",
+          (index) =>
+            index.unique === 0 && index.columns.join() === "auth_user_id",
         ),
       );
       assert.ok(
         indexDetails(database, "account_deletion_tombstone").some(
-          (index) =>
-            index.unique === 1 && index.columns.join() === "r2_prefix",
+          (index) => index.unique === 1 && index.columns.join() === "r2_prefix",
         ),
         "Expected deleted account media roots to remain reserved",
-      );
-      assert.ok(
-        profileIndexes.some(
-          (index) =>
-            index.unique === 1 && index.columns.join() === "id,auth_user_id",
-        ),
       );
       assert.ok(
         profileIndexes.some(
@@ -355,42 +309,150 @@ describe("learner-profile infrastructure", () => {
             index.columns.join() === "auth_user_id,private_media_name",
         ),
       );
+    } finally {
+      database.close();
+    }
+  });
+
+  it("removes obsolete storage while preserving canonical v2 response envelopes", () => {
+    const migrations = readMigrations();
+    const migrationIndex = migrations.findIndex(
+      ({ name }) => name === "0021_remove_legacy_compatibility.sql",
+    );
+    assert.ok(migrationIndex > 0);
+
+    const database = new DatabaseSync(":memory:");
+    database.exec("PRAGMA foreign_keys = ON");
+    try {
+      for (const migration of migrations.slice(0, migrationIndex)) {
+        database.exec(migration.sql);
+      }
+      for (const table of REMOVED_TABLES) {
+        assert.ok(
+          tableSql(database, table),
+          `Expected pre-0021 table ${table}`,
+        );
+      }
+
+      database.exec(`
+        INSERT INTO user (id, name, email)
+        VALUES ('user-current', 'Guardian', 'guardian-current@example.test');
+        INSERT INTO learner_profile
+          (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+           name_key, answers_json, skipped_question_keys_json,
+           questionnaire_version, current_question_key, onboarding_status)
+        VALUES
+          ('learner-current', 'user-current', 1, 'Mary', 'Mary', 'mary',
+           '{"schemaVersion":2,"questionnaireVersion":1,"responses":{"name":{"question":"What is your name?","rawAnswer":"Mary","summary":"Mary","acknowledgment":"Thank you!","enrichmentStatus":"fallback","answeredAt":"2026-09-03T00:00:00.000Z"}},"legacyAnswers":{"name":"Mary"},"description":"Likes stories."}',
+           '["age"]', NULL, 'cartoons', 'in_progress'),
+          ('learner-obsolete', 'user-current', 0, 'Bob', 'Bob', 'bob',
+           '{"name":"Bob"}', '["animals"]', NULL, 'animals', 'in_progress');
+        INSERT INTO conversation_session
+          (id, auth_user_id, learner_profile_id, scenario_key, scenario_version,
+           prompt_style, room_name, status, controller_state, started_at)
+        VALUES
+          ('conversation-onboarding', 'user-current', 'learner-current',
+           'onboarding', 1, NULL, 'room-onboarding', 'completed', '{}', 1),
+          ('conversation-small-chat', 'user-current', 'learner-current',
+           'small-chat', 2, 'tiny-turns', 'room-small-chat', 'completed', '{}', 1),
+          ('conversation-profile-edit', 'user-current', 'learner-current',
+           'profile-edit', 1, NULL, 'room-profile-edit', 'completed', '{}', 1),
+          ('conversation-unknown', 'user-current', 'learner-current',
+           'retired-purpose', 1, NULL, 'room-unknown', 'completed', '{}', 1),
+          ('conversation-null-profile', 'user-current', NULL,
+           'onboarding', 1, NULL, 'room-null-profile', 'completed', '{}', 1),
+          ('conversation-invalid-style', 'user-current', 'learner-current',
+           'small-chat', 2, NULL, 'room-invalid-style', 'completed', '{}', 1);
+        INSERT INTO conversation_turn
+          (id, conversation_id, provider_item_id, sequence, role, text, input_mode)
+        VALUES
+          ('turn-onboarding', 'conversation-onboarding', 'provider-onboarding', 0,
+           'user', 'Hello', 'voice'),
+          ('turn-small-chat', 'conversation-small-chat', 'provider-small-chat', 0,
+           'user', 'Hello', 'voice'),
+          ('turn-profile-edit', 'conversation-profile-edit', 'provider-profile-edit', 0,
+           'user', 'Hello', 'voice'),
+          ('turn-unknown', 'conversation-unknown', 'provider-unknown', 0,
+           'user', 'Hello', 'voice'),
+          ('turn-null-profile', 'conversation-null-profile', 'provider-null-profile', 0,
+           'user', 'Hello', 'voice'),
+          ('turn-invalid-style', 'conversation-invalid-style', 'provider-invalid-style', 0,
+           'user', 'Hello', 'voice');
+      `);
+
+      database.exec(migrations[migrationIndex].sql);
+
+      for (const table of REMOVED_TABLES) {
+        assert.equal(tableSql(database, table), undefined);
+      }
+      const columns = database
+        .prepare("PRAGMA table_info('learner_profile')")
+        .all()
+        .map(({ name }) => name);
+      assert.ok(!columns.includes("legacy_storage_owner"));
+      assert.ok(!columns.includes("questionnaire_version"));
       assert.ok(
-        profileIndexes.some(
-          (index) => index.columns.join() === "questionnaire_version,onboarding_status",
-        ),
+        !database
+          .prepare("PRAGMA table_info('account_deletion_tombstone')")
+          .all()
+          .some(({ name }) => name === "personalized_art_candidate_keys_json"),
+      );
+      assert.ok(
+        !database
+          .prepare("PRAGMA table_info('learner_profile_deletion_tombstone')")
+          .all()
+          .some(({ name }) => name === "legacy_storage_owner"),
       );
 
-      const questionnaireIndexes = indexDetails(database, "questionnaire");
-      assert.ok(
-        questionnaireIndexes.some(
-          (index) => index.unique === 1 && index.columns.join() === "version",
-        ),
+      const rows = database
+        .prepare(
+          `SELECT id, answers_json, skipped_question_keys_json,
+                  current_question_key
+           FROM learner_profile
+           WHERE auth_user_id = 'user-current'
+           ORDER BY id`,
+        )
+        .all();
+      assert.deepEqual(readV2Answers({ answersJson: rows[0].answers_json }), {
+        schemaVersion: 2,
+        questionnaireVersion: 2,
+        responses: {
+          name: {
+            question: "What is your name?",
+            rawAnswer: "Mary",
+            summary: "Mary",
+            acknowledgment: "Thank you!",
+            enrichmentStatus: "fallback",
+            answeredAt: "2026-09-03T00:00:00.000Z",
+          },
+        },
+        description: "Likes stories.",
+      });
+      assert.equal(rows[0].skipped_question_keys_json, '["age"]');
+      assert.equal(rows[0].current_question_key, "cartoons");
+      assert.deepEqual(JSON.parse(rows[1].answers_json), {
+        schemaVersion: 2,
+        questionnaireVersion: 2,
+        responses: {},
+        description: null,
+      });
+      assert.equal(rows[1].skipped_question_keys_json, "[]");
+      assert.equal(rows[1].current_question_key, "name");
+      assert.deepEqual(
+        database
+          .prepare("SELECT id FROM conversation_session ORDER BY id")
+          .all()
+          .map(({ id }) => id),
+        ["conversation-onboarding", "conversation-small-chat"],
       );
-      assert.ok(
-        questionnaireIndexes.some((index) => index.columns.join() === "status"),
+      assert.deepEqual(
+        database
+          .prepare("SELECT id FROM conversation_turn ORDER BY id")
+          .all()
+          .map(({ id }) => id),
+        ["turn-onboarding", "turn-small-chat"],
       );
-
-      const questionIndexes = indexDetails(database, "questionnaire_question");
-      assert.ok(
-        questionIndexes.some(
-          (index) =>
-            index.unique === 1 &&
-            index.columns.join() === "questionnaire_id,answer_key",
-        ),
-      );
-      assert.ok(
-        questionIndexes.some(
-          (index) =>
-            index.unique === 1 &&
-            index.columns.join() === "questionnaire_id,position",
-        ),
-      );
-
-      const bypassIndexes = indexDetails(database, "onboarding_session_bypass");
-      assert.ok(
-        bypassIndexes.some((index) => index.columns.join() === "auth_user_id"),
-      );
+      assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
     } finally {
       database.close();
     }
@@ -474,8 +536,14 @@ describe("learner-profile infrastructure", () => {
           .all()
           .map((row) => ({ ...row })),
         [
-          { learner_profile_id: "learner-c", private_media_name: "Learner (3)" },
-          { learner_profile_id: "missing-learner", private_media_name: "Learner" },
+          {
+            learner_profile_id: "learner-c",
+            private_media_name: "Learner (3)",
+          },
+          {
+            learner_profile_id: "missing-learner",
+            private_media_name: "Learner",
+          },
         ],
       );
       assert.deepEqual(
@@ -571,12 +639,17 @@ describe("checked-in questionnaire deployment", () => {
     );
     assert.equal(packageJson.scripts["questionnaire:publish"], undefined);
     assert.equal(
-      existsSync(new URL("../scripts/publish-questionnaire.mjs", import.meta.url)),
+      existsSync(
+        new URL("../scripts/publish-questionnaire.mjs", import.meta.url),
+      ),
       false,
     );
     assert.equal(
       existsSync(
-        new URL("../content/learner-profile/questionnaire-v2.json", import.meta.url),
+        new URL(
+          "../content/learner-profile/questionnaire-v2.json",
+          import.meta.url,
+        ),
       ),
       true,
     );
@@ -589,7 +662,10 @@ describe("checked-in questionnaire deployment", () => {
     );
     const workerSource = [
       readFileSync(new URL("../worker/index.ts", import.meta.url), "utf8"),
-      readFileSync(new URL("../worker/learner-profile.ts", import.meta.url), "utf8"),
+      readFileSync(
+        new URL("../worker/learner-profile.ts", import.meta.url),
+        "utf8",
+      ),
     ].join("\n");
 
     assert.equal(

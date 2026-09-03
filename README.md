@@ -10,7 +10,7 @@ List-first, scene-based English speaking practice for young learners.
 - Cloudflare Worker TypeScript REST API
 - Better Auth with cookie-backed sessions
 - Drizzle ORM over one shared Cloudflare D1 database
-- Groq speech evaluation, onboarding transcription, and answer enrichment
+- Groq onboarding transcription, answer enrichment, and conversation summaries
 - ElevenLabs saved prompt audio and runtime onboarding acknowledgments
 - LiveKit WebRTC and Agents for purpose-specific Peppa conversations
 
@@ -33,8 +33,7 @@ npm run generate:audio:elevenlabs -- --only=narrator-copy-dolly --force
 `npm run dev` builds the Vite app and starts Wrangler on port 3000, so local
 browser requests use the deployment REST shape. Use it for the full app,
 including authentication and Worker APIs. `npm run dev:vite` is only a
-frontend convenience server and cannot provide the Better Auth or speech
-evaluation Worker APIs.
+frontend convenience server and cannot provide Better Auth or Worker APIs.
 
 ## Local Authentication Setup
 
@@ -71,9 +70,9 @@ changed; a clean no-drift result does not require a new migration.
 ## Learner and Guardian Modes
 
 Every authenticated Guardian account can own one or more learner profiles and
-starts in learner mode. A single owned learner may be selected automatically;
-a multi-learner session with no valid selection shows the required
-`Who is learning now?` picker immediately. Learner mode contains Talk to
+starts in learner mode. A session with no valid selection shows the required
+`Who is learning now?` picker immediately; a new account uses its Manage
+learners action to create the first profile. Learner mode contains Talk to
 Peppa, lesson playback, stories at the
 selected learner's stored level, and consented recording activities. Its
 profile dropdown exposes `Switch learner` and the grown-up access action; it
@@ -92,9 +91,9 @@ remain enforced. `/guardian` is the management dashboard. Its
 changes the session's learner selection. `/guardian/learners` owns learner
 creation and deletion, while
 `/guardian/learners/:learnerId` owns page-local details and lesson-recording
-consent, while `/guardian/dubbing` owns dubbing consent and cleanup. The legacy
-profile and Guardian URLs use the same boundary. Manage learners never changes
-learner mode. Switching from Guardian mode selects the named learner, removes
+consent, while `/guardian/dubbing` owns dubbing consent and cleanup. Manage
+learners never changes learner mode. Switching from Guardian mode selects the
+named learner, removes
 the unlock, then opens the requested learner route; switching from learner mode
 selects the learner and returns home without a Guardian lock request.
 Individual deletion requires confirmation, rejects the final learner, keeps
@@ -107,7 +106,7 @@ creates, or removes the current session unlock. D1 table
 `learner_profile.story_level` retains the starting shelf level for existing
 profiles. Learners can move among every built-in story level directly on the
 story shelf. The Worker returns `guardian_required` for protected profile and
-profile-edit conversation requests made in learner mode.
+recording-consent requests made in learner mode.
 
 ## Lesson Content
 
@@ -118,8 +117,8 @@ registry edit.
 A lesson contains display summaries, zero or more goal phrases, and one or more
 scenes. Every scene chooses a supported background while also describing its
 setting in free-form text. Each scene step contains dialogue and one speaker.
-Optional partial emote maps change only the listed characters, and optional
-`check` objects on user steps define pronunciation responses and retry behavior.
+Optional partial emote maps change only the listed characters. User steps are
+ungraded join-in turns: the learner may record and save their line, then move on.
 
 Lesson JSON deliberately contains no image or audio filenames. Scripted
 character IDs, background IDs, and the six supported emotes are resolved
@@ -148,18 +147,12 @@ logs and issue reports.
 
 ## Environment
 
-Set `GROQ_API_KEY` in `.dev.vars` for local speech evaluation and profile
-enrichment. Keep real keys out of source control. Optional evaluation limits
-are:
+Set `GROQ_API_KEY` in `.dev.vars` for local profile transcription and
+enrichment. Keep real keys out of source control.
 
-```bash
-EVALUATE_RATE_LIMIT_MAX=8
-EVALUATE_RATE_LIMIT_WINDOW_SECONDS=60
-```
-
-Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries and playful
-acknowledgments. Set `ELEVENLABS_API_KEY` in `.dev.vars` to speak those dynamic
-acknowledgments; the browser never receives either provider key.
+Voice onboarding also uses `GROQ_API_KEY` for child-safe summaries. Its playful
+acknowledgments use checked-in saved audio; the browser never receives provider
+keys.
 
 Email/password authentication currently has no email verification, password
 reset, social sign-in, or Resend integration. Signed-out visitors can also
@@ -179,7 +172,6 @@ be configured without committing them:
 npx wrangler secret put BETTER_AUTH_SECRET
 npx wrangler secret put BETTER_AUTH_URL
 npx wrangler secret put TURNSTILE_SECRET_KEY
-npx wrangler secret put ELEVENLABS_API_KEY
 ```
 
 Apply future reviewed migrations with:
@@ -196,7 +188,8 @@ Create a production Turnstile widget for the deployed hostnames, store its
 secret with Wrangler as shown above, and set its public site key as the GitHub
 Actions repository variable `TURNSTILE_SITE_KEY` before deploying.
 
-Set `ELEVENLABS_API_KEY` to generate missing saved lesson audio. Use
+Set `ELEVENLABS_API_KEY` in `.dev.vars` when generating missing saved lesson
+audio locally. Use
 `--only=<audio-id>` to avoid spending credits on unrelated lines. Built-in
 saved audio must be generated with ElevenLabs; do not substitute local or macOS
 system speech for missing built-in assets.
@@ -209,47 +202,43 @@ manifest speaker:
 - Narrator: `pFZP5JQG7iQjIQuC4Bku` (Lily)
 
 Override one speaker with `ELEVENLABS_PEPPA_VOICE_ID`,
-`ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`. The general
-`ELEVENLABS_VOICE_ID` remains a fallback override.
+`ELEVENLABS_DOLLY_VOICE_ID`, or `ELEVENLABS_NARRATOR_VOICE_ID`.
 
 ## Realtime Peppa Conversations
 
-When `REALTIME_CONVERSATIONS_ENABLED=1`, the same LiveKit agent supports three
-explicit conversation purposes with separate system prompts:
+The LiveKit agent supports two explicit conversation purposes with separate
+system prompts:
 
 - onboarding is a first introduction that learns name, age, and a few interests;
-- profile editing asks what the learner wants to change or add and persists it;
 - Talk to Peppa is ordinary small chat and never updates the learner profile.
 
-All three permit interruption and an immediate finish. Onboarding and profile
-editing also accept uncertainty, silence, and refusal without pressure. The
-existing six-question experience remains the complete keyboard/recording form
-fallback for onboarding while the flag is `0`.
+Both use manual learner turns and keep agent playback non-interruptible. An
+immediate finish remains available, and onboarding accepts uncertainty, silence,
+and refusal without pressure. The six-question experience remains available as
+the complete keyboard/recording form alternative for onboarding.
 
 The Worker stores every finalized conversation transcript turn, including
-partial or abandoned sessions. Onboarding and profile editing can also persist
-one cumulative “About this learner” paragraph in D1; small chat cannot. Live
-turns use one LLM inference each because the agent exposes no profile-writing
-tools. After the conversation finishes, the Worker makes one separate structured
-Groq call over the saved transcript and persists the resulting profile.
+partial or abandoned sessions. Onboarding can also persist one cumulative
+“About this learner” paragraph in D1; small chat cannot. Live turns use one
+Realtime inference each because the agent exposes no profile-writing tools.
+After onboarding finishes, the Worker makes one separate structured Groq call
+over the saved transcript and persists the resulting profile.
 Raw audio is not stored: LiveKit session recording is explicitly disabled with
 `record: false`. Onboarding completes only when the finished transcript provides
 both name and age; otherwise it grants the existing session-scoped bypass. The
-active agent creates no structured fact rows. Migration 0016 drops the legacy
-`conversation_fact` table, so it is absent from current and fresh deployments;
-conversation rows cascade from the Better Auth user and remain until account
-deletion under the current retention policy.
+active agent creates no structured fact rows. Conversation rows cascade from
+the Better Auth user and remain until account deletion under the current
+retention policy.
 
 The browser receives only a short-lived, room-scoped LiveKit participant token.
 LiveKit and ingest secrets stay on the Worker or agent. The agent uses explicit
-LiveKit Inference model IDs for ElevenLabs Scribe STT, OpenAI LLM reasoning, and
-ElevenLabs `eleven_v3` TTS with the Summer character-directed voice. It does not
-claim to be a named television character and does not use an exact protected
-voice clone.
+OpenAI model IDs for Realtime audio input, reasoning, and output with the
+`marin` voice, plus asynchronous `gpt-4o-mini-transcribe` captions and saved
+turn text. It does not use an exact protected-character voice clone.
 
 See [the LiveKit agent deployment runbook](docs/deployment/livekit-agent.md) for
 local setup, secrets, deployment, cost dependencies, smoke testing, and
-feature-flag rollback.
+rollback.
 
 ### Form fallback
 
@@ -260,13 +249,8 @@ code review and deployment; there is no questionnaire publishing command.
 Every confirmed answer is stored as prose in `learner_profile.answers_json`
 with the exact question, raw answer, concise summary, playful acknowledgment,
 enrichment status, and server timestamp. Canonical name and age remain in their
-existing profile columns as well. Groq enrichment is persisted before the
-Worker requests optional acknowledgment audio from ElevenLabs, so a TTS failure
-does not lose the answer.
-
-The normalized `questionnaire` and `questionnaire_question` tables remain
-dormant for rollback safety. Runtime onboarding no longer reads or writes them;
-removing them requires a later reviewed migration.
+existing profile columns as well. Groq enrichment is persisted with the answer;
+acknowledgments reference saved audio from the checked-in questionnaire.
 
 ## Design Docs
 

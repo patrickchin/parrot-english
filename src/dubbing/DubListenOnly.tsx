@@ -10,6 +10,7 @@ import {
 import type { DubDefinition, DubLine } from "./rhyme-catalog";
 
 export type DubListenOnlyProps = {
+  consentState: "not_granted" | "revoking";
   definition: DubDefinition;
   error: string;
   onRetryLoad(): void;
@@ -21,6 +22,7 @@ export type DubListenOnlyProps = {
 };
 
 export function DubListenOnly({
+  consentState,
   definition,
   error,
   onRetryLoad,
@@ -30,6 +32,7 @@ export function DubListenOnly({
   visualLine,
   guidance = null,
 }: DubListenOnlyProps) {
+  const cleanupPending = consentState === "revoking";
   const playbackLabel = playback === "playing"
     ? "Stop full video"
     : playback === "loading"
@@ -58,8 +61,9 @@ export function DubListenOnly({
         </div>
         <div className="grid min-w-0 content-start gap-3 short-wide:gap-2">
           <p className="m-0 rounded-2xl bg-white/90 p-3 font-bold leading-snug text-brand-ink shadow-sm">
-            You can watch the video now. Your saved voice clips are being
-            cleared, so try recording again in a moment.
+            {cleanupPending
+              ? "You can watch the video while saved voice clips are being cleared. Recording will stay unavailable until cleanup finishes."
+              : "You can watch the video now. Ask a grown-up to turn on recording when you want to join in."}
           </p>
           <ActionButton
             aria-label={playbackLabel}
@@ -83,7 +87,7 @@ export function DubListenOnly({
             size="compact"
             variant="surface"
           >
-            Try recording again
+            {cleanupPending ? "Try recording again" : "Check recording access"}
           </ActionButton>
           {error ? <p className="m-0 rounded-2xl bg-rose-50 p-3 font-bold text-red-800" role="alert">{error}</p> : null}
         </div>

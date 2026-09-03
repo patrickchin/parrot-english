@@ -1,6 +1,6 @@
 /**
  * When this is used:
- * The Worker uses this prompt once after an onboarding or profile-edit
+ * The Worker uses this prompt once after an onboarding
  * conversation has finished. It converts the saved transcript into the
  * learner's current profile without adding latency to live conversation turns.
  */

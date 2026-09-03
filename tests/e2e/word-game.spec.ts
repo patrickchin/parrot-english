@@ -35,7 +35,7 @@ const promptParityCases = [
 
 type MediaSnapshot = {
   cueCancellations: number;
-  cues: Array<{ audioId?: string; kind: "device" | "static"; source?: string; text: string }>;
+  cues: Array<{ audioId?: string; kind: "static"; source?: string; text: string }>;
   pendingCues: number;
 };
 

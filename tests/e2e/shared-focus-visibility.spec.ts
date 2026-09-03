@@ -7,10 +7,19 @@ function guardianPath(path: string) {
   return `${path}${path.includes("?") ? "&" : "?"}parrotE2eGuardian=guardian`;
 }
 
-async function openProfileSetup(page: Page) {
-  await page.goto("/profile/setup?parrotE2eProfile=viewport-stability");
+async function openProfileSetup(
+  page: Page,
+  scenario = "viewport-stability",
+) {
+  await page.goto(`/profile/setup?parrotE2eProfile=${scenario}`);
   await expect(
-    page.getByRole("heading", { name: "Answer 6 questions" }),
+    page.getByRole("heading", { name: "Help Peppa know you" }),
+  ).toBeVisible();
+  await page.getByRole("button", { exact: true, name: "Back" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: /^Answer \d+(?: more)? questions?$/,
+    }),
   ).toBeFocused();
 }
 
@@ -1133,7 +1142,7 @@ test("the long profile acknowledgment focus stays contained and undecorated", as
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ height: 568, width: 280 });
-  await page.goto("/profile/setup?parrotE2eProfile=long-acknowledgment");
+  await openProfileSetup(page, "long-acknowledgment");
   await page.getByRole("button", { name: "Start questions" }).click();
   await page
     .getByRole("textbox", { exact: true, name: "Your answer" })

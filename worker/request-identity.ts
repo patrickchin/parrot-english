@@ -2,7 +2,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import {
   learnerProfile,
   learnerProfileDeletionTombstone,
-  learnerSelectionRequired,
   session,
   sessionLearnerSelection,
 } from "../src/db/schema.ts";
@@ -12,13 +11,11 @@ export type AccountIdentity = {
   sessionId: string;
   userId: string;
   userEmail: string;
-  userName: string | null;
 };
 
 export type LearnerIdentity = AccountIdentity & {
   learnerProfileId: string;
   learnerName: string | null;
-  legacyStorageOwner: boolean;
   privateMediaName: string;
 };
 
@@ -31,6 +28,41 @@ export const LEARNER_NAME_CONFLICT_MESSAGE =
   "Please choose a different name; each learner on this account needs a unique name.";
 
 const MAX_LEARNER_PROFILE_ID_BYTES = 128;
+
+export type LearnerProfileResource = {
+  action: "active" | "details" | "lesson-recording-consent";
+  learnerProfileId: string;
+};
+
+export function parseLearnerProfileResource(
+  pathname: string,
+): LearnerProfileResource | null {
+  const match = /^\/api\/learner-profiles\/([^/]+)(?:\/(active|lesson-recording-consent))?$/.exec(
+    pathname,
+  );
+  if (!match) return null;
+  try {
+    const learnerProfileId = decodeURIComponent(match[1]);
+    if (
+      !learnerProfileId ||
+      learnerProfileId.includes("/") ||
+      new TextEncoder().encode(learnerProfileId).byteLength >
+        MAX_LEARNER_PROFILE_ID_BYTES
+    ) {
+      return null;
+    }
+    const action = match[2];
+    return {
+      action:
+        action === "active" || action === "lesson-recording-consent"
+          ? action
+          : "details",
+      learnerProfileId,
+    };
+  } catch {
+    return null;
+  }
+}
 
 export function normalizeUserEmail(email: string) {
   return email.normalize("NFKC").trim().toLowerCase();
@@ -111,7 +143,6 @@ export async function resolveOwnedLearnerIdentity(
     .select({
       learnerProfileId: learnerProfile.id,
       learnerName: learnerProfile.name,
-      legacyStorageOwner: learnerProfile.legacyStorageOwner,
       privateMediaName: learnerProfile.privateMediaName,
     })
     .from(learnerProfile)
@@ -136,7 +167,6 @@ export async function resolveOwnedLearnerIdentity(
         ...account,
         learnerProfileId: owned.learnerProfileId,
         learnerName: normalizeLearnerName(owned.learnerName),
-        legacyStorageOwner: owned.legacyStorageOwner,
         privateMediaName: owned.privateMediaName,
       }
     : null;
@@ -151,7 +181,6 @@ export async function resolveLearnerIdentity(
       .select({
         learnerProfileId: learnerProfile.id,
         learnerName: learnerProfile.name,
-        legacyStorageOwner: learnerProfile.legacyStorageOwner,
         privateMediaName: learnerProfile.privateMediaName,
       })
       .from(sessionLearnerSelection)
@@ -191,90 +220,13 @@ export async function resolveLearnerIdentity(
           ...account,
           learnerProfileId: selected.learnerProfileId,
           learnerName: normalizeLearnerName(selected.learnerName),
-          legacyStorageOwner: selected.legacyStorageOwner,
           privateMediaName: selected.privateMediaName,
         }
       : null;
   }
 
   const selected = await selectedIdentity();
-  if (selected) return { status: "selected", identity: selected };
-
-  const [existingSelection] = await database
-    .select({ sessionId: sessionLearnerSelection.sessionId })
-    .from(sessionLearnerSelection)
-    .where(eq(sessionLearnerSelection.sessionId, account.sessionId))
-    .limit(1);
-  if (existingSelection) return { status: "selection_required" };
-
-  const [selectionRequired] = await database
-    .select({ sessionId: learnerSelectionRequired.sessionId })
-    .from(learnerSelectionRequired)
-    .where(eq(learnerSelectionRequired.sessionId, account.sessionId))
-    .limit(1);
-  if (selectionRequired) return { status: "selection_required" };
-
-  let profiles = await database
-    .select({ id: learnerProfile.id })
-    .from(learnerProfile)
-    .leftJoin(
-      learnerProfileDeletionTombstone,
-      eq(
-        learnerProfileDeletionTombstone.learnerProfileId,
-        learnerProfile.id,
-      ),
-    )
-    .where(
-      and(
-        eq(learnerProfile.authUserId, account.userId),
-        isNull(learnerProfileDeletionTombstone.learnerProfileId),
-      ),
-    )
-    .limit(2);
-
-  if (profiles.length === 0) {
-    await database
-      .insert(learnerProfile)
-      .values({
-        id: crypto.randomUUID(),
-        authUserId: account.userId,
-        legacyStorageOwner: true,
-        name: null,
-        profileStatus: "not_started",
-      })
-      .onConflictDoNothing();
-    profiles = await database
-      .select({ id: learnerProfile.id })
-      .from(learnerProfile)
-      .leftJoin(
-        learnerProfileDeletionTombstone,
-        eq(
-          learnerProfileDeletionTombstone.learnerProfileId,
-          learnerProfile.id,
-        ),
-      )
-      .where(
-        and(
-          eq(learnerProfile.authUserId, account.userId),
-          isNull(learnerProfileDeletionTombstone.learnerProfileId),
-        ),
-      )
-      .limit(2);
-  }
-
-  if (profiles.length !== 1) return { status: "selection_required" };
-
-  await database
-    .insert(sessionLearnerSelection)
-    .values({
-      sessionId: account.sessionId,
-      authUserId: account.userId,
-      learnerProfileId: profiles[0].id,
-    })
-    .onConflictDoNothing({ target: sessionLearnerSelection.sessionId });
-
-  const resolved = await selectedIdentity();
-  return resolved
-    ? { status: "selected", identity: resolved }
+  return selected
+    ? { status: "selected", identity: selected }
     : { status: "selection_required" };
 }

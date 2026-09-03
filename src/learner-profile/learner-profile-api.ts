@@ -28,10 +28,9 @@ export type LearnerProfileResponseSnapshot = {
 
 export type LearnerProfileAnswers = {
   schemaVersion: 2;
-  questionnaireVersion: number;
+  questionnaireVersion: 2;
   responses: Record<string, LearnerProfileResponseSnapshot>;
-  legacyAnswers: Record<string, unknown> | null;
-  description?: string | null;
+  description: string | null;
 };
 
 export type LearnerProfileAcknowledgment = {
@@ -46,7 +45,6 @@ export type LearnerProfileSummary = {
   storyLevel: LearnerStoryLevelId;
   description: string | null;
   answers: LearnerProfileAnswers;
-  questionnaireVersion: number;
   currentQuestionKey: string | null;
   profileStatus: "not_started" | "in_progress" | "completed";
   completedAt: string | null;
@@ -54,20 +52,11 @@ export type LearnerProfileSummary = {
 
 export type FullLearnerProfileState = {
   mode: "full";
-  experienceMode: "realtime" | "form";
   profile: LearnerProfileSummary;
-  questionnaire: {
-    version: number;
-  };
   question: LearnerProfileQuestion | null;
   progress: { answered: number; current: number; total: number };
   canBypass: boolean;
   acknowledgment?: LearnerProfileAcknowledgment;
-};
-
-export type BypassOnlyLearnerProfileState = {
-  mode: "bypass-only";
-  canBypass: true;
 };
 
 export type SelectionRequiredLearnerProfileState = {
@@ -76,7 +65,6 @@ export type SelectionRequiredLearnerProfileState = {
 
 export type LearnerProfileState =
   | FullLearnerProfileState
-  | BypassOnlyLearnerProfileState
   | SelectionRequiredLearnerProfileState;
 
 export type GuardianLearnerProfileSummary = {
@@ -103,13 +91,10 @@ export type ProfileState = {
     lessonRecordingConsent: boolean;
   };
   questions: LearnerProfileQuestion[];
-  acknowledgment?: LearnerProfileAcknowledgment;
-  acknowledgments?: LearnerProfileAcknowledgment[];
 };
 
 export type LearnerProfileRequestOptions = {
   fetch?: typeof globalThis.fetch;
-  learnerProfileId?: string;
   signal?: AbortSignal;
 };
 
@@ -157,10 +142,6 @@ export function getLearnerProfileFieldErrorCode(
     ? (FIELD_ERROR_CODES.get(message) ?? "check-answer")
     : "check-answer";
 }
-
-export type CreateLearnerProfileOptions = LearnerProfileRequestOptions & {
-  activate?: boolean;
-};
 
 export class LearnerProfileApiError extends Error {
   readonly status: number;
@@ -216,16 +197,9 @@ function stringRecord(value: unknown) {
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
-  {
-    fetch: request = globalThis.fetch,
-    learnerProfileId,
-    signal,
-  }: LearnerProfileRequestOptions = {},
+  { fetch: request = globalThis.fetch, signal }: LearnerProfileRequestOptions = {},
 ): Promise<Result> {
-  const response = await request(
-    appendLearnerProfileTarget(path, learnerProfileId),
-    { ...init, signal },
-  );
+  const response = await request(path, { ...init, signal });
   let payload: unknown;
   try {
     payload = await response.json();
@@ -266,32 +240,6 @@ async function requestJson<Result>(
   }
 
   return payload as Result;
-}
-
-function appendLearnerProfileTarget(
-  path: string,
-  learnerProfileId: string | undefined,
-) {
-  if (learnerProfileId === undefined) return path;
-  return `${path}?${new URLSearchParams({ learnerProfileId })}`;
-}
-
-function jsonRequest<Result>(
-  path: string,
-  method: "PUT",
-  questionKey: string,
-  rawAnswer: string,
-  options?: LearnerProfileRequestOptions,
-) {
-  return requestJson<Result>(
-    path,
-    {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ questionKey, rawAnswer }),
-    },
-    options,
-  );
 }
 
 function requireValidLearnerProfileState(
@@ -459,14 +407,6 @@ export function skipLearnerProfileQuestion(
   );
 }
 
-export function completeLearnerProfile(options?: LearnerProfileRequestOptions) {
-  return learnerProfileRequest(
-    "/api/learner-profile/complete",
-    { method: "POST" },
-    options,
-  );
-}
-
 async function learnerProfilesRequest(
   path: string,
   init: RequestInit,
@@ -487,16 +427,14 @@ export function loadLearnerProfiles(options?: LearnerProfileRequestOptions) {
 
 export function createLearnerProfile(
   name: string,
-  { activate, ...options }: CreateLearnerProfileOptions = {},
+  options?: LearnerProfileRequestOptions,
 ) {
   return requestJson<LearnerProfileCreationResult>(
     "/api/learner-profiles",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        activate === undefined ? { name } : { name, activate },
-      ),
+      body: JSON.stringify({ name }),
     },
     options,
   ).then(requireValidLearnerProfileCreation);
@@ -524,32 +462,28 @@ export function deleteLearnerProfile(
   );
 }
 
-export function loadProfile(options?: LearnerProfileRequestOptions) {
-  return profileRequest("/api/profile", { method: "GET" }, options);
+function learnerProfileResourcePath(profileId: string, suffix = "") {
+  return `/api/learner-profiles/${encodeURIComponent(profileId)}${suffix}`;
 }
 
-export async function saveProfileAnswer(
-  questionKey: string,
-  rawAnswer: string,
+export function loadProfile(
+  profileId: string,
   options?: LearnerProfileRequestOptions,
 ) {
-  return requireValidProfileState(
-    await jsonRequest<ProfileState>(
-      "/api/profile",
-      "PUT",
-      questionKey,
-      rawAnswer,
-      options,
-    ),
+  return profileRequest(
+    learnerProfileResourcePath(profileId),
+    { method: "GET" },
+    options,
   );
 }
 
 export function saveProfileAnswers(
+  profileId: string,
   answers: Record<string, string>,
   options?: LearnerProfileRequestOptions,
 ) {
   return profileRequest(
-    "/api/profile",
+    learnerProfileResourcePath(profileId),
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -570,11 +504,12 @@ export function loadLessonRecordingConsent(
 }
 
 export function saveLessonRecordingConsent(
+  profileId: string,
   enabled: boolean,
   options?: LearnerProfileRequestOptions,
 ) {
   return requestJson<{ cleanupPending: boolean; enabled: boolean }>(
-    "/api/profile/lesson-recording-consent",
+    learnerProfileResourcePath(profileId, "/lesson-recording-consent"),
     {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

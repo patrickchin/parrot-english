@@ -13,10 +13,6 @@
     "host": "localhost",
     "local_protocol": "http"
   },
-  "vars": {
-    "MULTI_LEARNER_PROFILES_ENABLED": "1",
-    "REALTIME_CONVERSATIONS_ENABLED": "1"
-  },
   "version_metadata": {
     "binding": "CF_VERSION_METADATA"
   },
@@ -29,11 +25,6 @@
     }
   ],
   "ratelimits": [
-    {
-      "name": "EVALUATE_RATE_LIMITER",
-      "namespace_id": "104201",
-      "simple": { "limit": 8, "period": 60 }
-    },
     {
       "name": "LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER",
       "namespace_id": "104202",

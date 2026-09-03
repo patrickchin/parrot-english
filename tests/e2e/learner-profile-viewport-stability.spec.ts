@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { openLearnerProfileForm } from "./learner-profile-helpers";
 
 const profilePath = "/profile/setup?parrotE2eProfile=viewport-stability";
 const resumeProfilePath = "/profile/setup?parrotE2eProfile=viewport-resume";
@@ -355,7 +356,7 @@ async function expectDelayedImageKeepsGeometry({
 
 async function openSetup(page: Page, viewport: Viewport) {
   await page.setViewportSize(viewport);
-  await page.goto(profilePath);
+  await openLearnerProfileForm(page, profilePath);
   const heading = page.getByRole("heading", {
     name: "Answer 6 questions",
   });
@@ -537,7 +538,7 @@ for (const viewport of targetViewports) {
     page,
   }) => {
     await page.setViewportSize(viewport);
-    await page.goto(resumeProfilePath);
+    await openLearnerProfileForm(page, resumeProfilePath);
     const heading = page.getByRole("heading", {
       name: "Answer 5 more questions",
     });
@@ -773,9 +774,6 @@ for (const viewport of targetViewports) {
     });
     await recordings.scrollIntoViewIfNeeded();
     await expectInsideViewport(recordings, viewport);
-    await expect(
-      page.getByRole("button", { name: "Redo setup questions" }),
-    ).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
   });
 }

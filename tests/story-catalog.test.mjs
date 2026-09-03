@@ -48,7 +48,7 @@ function learnerProfile(storyLevel) {
   return {
     age: 6,
     answers: {
-      legacyAnswers: null,
+      description: null,
       questionnaireVersion: 2,
       responses: {},
       schemaVersion: 2,
@@ -58,7 +58,6 @@ function learnerProfile(storyLevel) {
     description: "Likes animals",
     name: "Mia",
     profileStatus: "completed",
-    questionnaireVersion: 2,
     storyLevel,
   };
 }
@@ -81,7 +80,7 @@ function storyListAt(storyLevel, initialEntry) {
   );
   return createElement(
     LearnerProfileProvider,
-    { profile: learnerProfile(storyLevel), replaceProfile() {} },
+    { profile: learnerProfile(storyLevel) },
     createElement(
       MemoryRouter,
       { initialEntries: [initialEntry] },
@@ -196,7 +195,7 @@ describe("story script catalog", () => {
 
   // Production break caught: preference stories are added/removed or Rose stays
   // in the first learner level instead of moving to repeating patterns.
-  it("publishes 20 stories in the 4/6/5/5 learner preference distribution", () => {
+  it("publishes 23 stories in the 7/6/5/5 learner preference distribution", () => {
     const learnerStories = STORIES.filter(({ level }) =>
       LEARNER_STORY_LEVEL_IDS.includes(level),
     );
@@ -204,7 +203,7 @@ describe("story script catalog", () => {
       LEARNER_STORY_LEVEL_IDS.includes(id),
     );
 
-    assert.equal(learnerStories.length, 20);
+    assert.equal(learnerStories.length, 23);
     assert.equal(learnerLevels.length, 4);
     assert.deepEqual(
       learnerLevels.map(({ id }) => id),
@@ -218,7 +217,7 @@ describe("story script catalog", () => {
     assert.deepEqual(
       learnerStories.map(({ level }) => level),
       [
-        ...Array(4).fill("first-words"),
+        ...Array(7).fill("first-words"),
         ...Array(6).fill("repeating-patterns"),
         ...Array(5).fill("tiny-stories"),
         ...Array(5).fill("early-a1"),
@@ -226,7 +225,7 @@ describe("story script catalog", () => {
     );
 
     const expectedStoryCount = new Map([
-      ["first-words", 4],
+      ["first-words", 7],
       ["repeating-patterns", 6],
       ["tiny-stories", 5],
       ["early-a1", 5],
@@ -240,18 +239,7 @@ describe("story script catalog", () => {
     }
   });
 
-  // Production break caught: the earliest stories stop sharing the clear
-  // learner-facing Level 1 label even though their stable internal IDs remain.
-  it("labels both beginner buckets as Level 1 words and pictures", () => {
-    assert.deepEqual(
-      STORY_LEVELS.find(({ id }) => id === "first-english-words"),
-      {
-        id: "first-english-words",
-        label: "Level 1 · Words & pictures",
-        cefrReference: "Before Pre-A1",
-        description: "A few familiar words on each page.",
-      },
-    );
+  it("labels the beginner shelf as Level 1 words and pictures", () => {
     assert.deepEqual(
       STORY_LEVELS.find(({ id }) => id === "first-words"),
       {
@@ -263,12 +251,12 @@ describe("story script catalog", () => {
     );
   });
 
-  // Production break caught: a First English words story is missing, renamed,
-  // reordered, or no longer has its five stable reader pages.
-  it("publishes exactly the three approved five-page First English words stories", () => {
+  it("keeps the three early five-page stories on the first-words shelf", () => {
     assert.equal(STORIES.length, 25);
     assert.deepEqual(
-      STORIES.filter(({ level }) => level === "first-english-words").map(
+      STORIES.filter(({ id }) =>
+        ["hello-cat", "marys-face", "wash-sam-wash"].includes(id),
+      ).map(
         ({ id, pages, title }) => ({
           id,
           pageIds: pages.map(({ id: pageId }) => pageId),
@@ -450,7 +438,8 @@ describe("story script catalog", () => {
     const joinInAudioByText = new Map();
 
     for (const story of STORIES.filter(({ level }) => level !== "long-stories")) {
-      const coverVersion = story.level === "first-english-words" ? 7 : 3;
+      const usesV7Artwork = ["hello-cat", "marys-face", "wash-sam-wash"].includes(story.id);
+      const coverVersion = usesV7Artwork ? 7 : 3;
       assert.equal(
         story.cover.src,
         `https://media.parrotbook.com/assets/v${coverVersion}/stories/${story.id}-cover.webp`,
@@ -462,7 +451,7 @@ describe("story script catalog", () => {
 
       for (const page of story.pages) {
         const imageVersion =
-          story.level === "first-english-words"
+          usesV7Artwork
             ? 7
             : story.level === "first-words" || story.id === "where-is-dot"
               ? 3
@@ -521,9 +510,9 @@ describe("story script catalog", () => {
     assert.deepEqual(
       STORIES.map(({ id, level, title }) => [id, title, level]),
       [
-        ["hello-cat", "Hello, Cat!", "first-english-words"],
-        ["marys-face", "Mary’s Face", "first-english-words"],
-        ["wash-sam-wash", "Wash, Sam, Wash!", "first-english-words"],
+        ["hello-cat", "Hello, Cat!", "first-words"],
+        ["marys-face", "Mary’s Face", "first-words"],
+        ["wash-sam-wash", "Wash, Sam, Wash!", "first-words"],
         ["the-red-ball", "The Red Ball", "first-words"],
         ["which-hat", "Which Hat?", "first-words"],
         ["wake-up-nori", "Wake Up, Mary!", "first-words"],

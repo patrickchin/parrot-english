@@ -1,9 +1,0 @@
-export {
-  DUB_DURATION_MS,
-  DUB_ID,
-  DUB_LINES,
-  DUB_LINES_PER_VERSE,
-  DUB_ROUTE,
-  DUB_SCENE_TITLES,
-  FIVE_LITTLE_DUCKS_DUB,
-} from "./rhyme-catalog.ts";

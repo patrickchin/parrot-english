@@ -210,13 +210,6 @@ function settleConversationStart({
   void flushStaleConversationStarts();
 }
 
-export function selectLearnerProfileExperience(
-  serverMode: "realtime" | "form",
-  userSelectedForm: boolean,
-) {
-  return serverMode === "realtime" && !userSelectedForm ? "realtime" : "form";
-}
-
 export function mergeConversationTurns(
   liveTurns: ConversationSurfaceTurn[],
   storedTurns: Array<Pick<ConversationTurn, "id" | "role" | "text">>,
@@ -245,9 +238,6 @@ function childFacingConversationError(
   }
   if (purpose === "onboarding") {
     return "Your answers did not save. Tap Save and finish again.";
-  }
-  if (purpose === "profile-edit") {
-    return "Your changes did not save. Tap Save changes again.";
   }
   return "The chat did not finish. Tap Finish chat again.";
 }
@@ -911,13 +901,6 @@ export function usePeppaConversation({
         token: participantToken,
         url: livekitUrl,
       });
-      // The production adapter always reports playback. Preserve dependency-
-      // injected legacy transports that predate that contract.
-      if (
-        typeof (transport as { startAudio?: unknown }).startAudio !== "function"
-      ) {
-        runtimeRef.current.audioPlaybackReady = true;
-      }
       transportRef.current = transport;
       transport.subscribe((event) =>
         handleTransportEvent(event, conversationId, operation),

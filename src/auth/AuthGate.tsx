@@ -1038,10 +1038,7 @@ export function AuthGate(props: Omit<AuthGateProps, "navigate">) {
   return (
     <ProductionAuthGate
       {...props}
-      guardianAudience={isGuardianGuidanceSurface(
-        location.pathname,
-        location.search,
-      )}
+      guardianAudience={isGuardianGuidanceSurface(location.pathname)}
       guardianUnlockDestination={getSafeGuardianUnlockDestination(
         location.pathname,
         location.search,

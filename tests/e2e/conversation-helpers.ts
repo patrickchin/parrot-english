@@ -2,13 +2,12 @@ import { expect, type Page } from "@playwright/test";
 
 const incompleteProfile = {
   canBypass: false,
-  experienceMode: "realtime",
   mode: "full",
   profile: {
     id: "e2e-learner",
     age: null,
     answers: {
-      legacyAnswers: null,
+      description: null,
       questionnaireVersion: 2,
       responses: {},
       schemaVersion: 2,
@@ -17,7 +16,6 @@ const incompleteProfile = {
     currentQuestionKey: "name",
     name: null,
     profileStatus: "not_started",
-    questionnaireVersion: 2,
   },
   progress: { answered: 0, current: 1, total: 6 },
   question: {
@@ -29,7 +27,6 @@ const incompleteProfile = {
     promptZh: "你叫什么名字？",
     required: true,
   },
-  questionnaire: { version: 2 },
 };
 
 export async function useIncompleteProfile(page: Page) {
