@@ -456,11 +456,10 @@ export function DubStudio({
         signal: controller.signal,
       });
       backingPrepared = true;
-      // Firefox needs EC and NS together for normal built-in Mac levels; AGC makes steady takes drift.
+      // Firefox's default AGC is required for normal built-in Mac microphone levels.
       session = await prepareSpeechRecording({
         constraints: {
           audio: {
-            autoGainControl: false,
             echoCancellation: true,
             noiseSuppression: true,
           },
