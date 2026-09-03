@@ -1043,7 +1043,7 @@ describe("duck dubbing storyboard presentation", () => {
     await act(async () => audio.finishDownbeat());
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop recording"]')));
     assert.equal(audio.recorderStarts, 1);
-    assert.equal(audio.events.includes("melody:start"), false);
+    assert.equal(audio.events.includes("melody:start"), true);
     assert.ok(container.querySelector('[aria-label="Line recording controls"] h2 [aria-current="true"]'));
     assert.equal(audio.mediaStreamSourceCalls, 0);
     assert.equal(

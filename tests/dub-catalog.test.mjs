@@ -306,19 +306,19 @@ describe("rhyme catalog", () => {
 
   it("aligns every Old MacDonald scene to its traditional musical phrases", () => {
     assert.equal(OLD_MACDONALD_DUB.countInBeats, 4);
-    assert.equal(OLD_MACDONALD_DUB.music.countInBeatMs, 400);
-    assert.equal(OLD_MACDONALD_DUB.music.countInDurationMs, 1_600);
-    assert.equal(OLD_MACDONALD_DUB.lines[0].cueMs, 1_600);
-    assert.equal(OLD_MACDONALD_DUB.durationMs, 162_800);
+    assert.equal(OLD_MACDONALD_DUB.music.countInBeatMs, 500);
+    assert.equal(OLD_MACDONALD_DUB.music.countInDurationMs, 2_000);
+    assert.equal(OLD_MACDONALD_DUB.lines[0].cueMs, 2_000);
+    assert.equal(OLD_MACDONALD_DUB.durationMs, 163_200);
     assert.equal(OLD_MACDONALD_DUB.finalCueTailMs, 9_200);
     assert.deepEqual(
-      OLD_MACDONALD_DUB.lines.slice(0, 7).map(({ cueMs }) => cueMs - 1_600),
+      OLD_MACDONALD_DUB.lines.slice(0, 7).map(({ cueMs }) => cueMs - 2_000),
       [0, 8_000, 16_000, 18_000, 20_000, 22_000, 24_000],
     );
     assert.deepEqual(
       Array.from({ length: 5 }, (_, sceneIndex) =>
         OLD_MACDONALD_DUB.lines[sceneIndex * 7].cueMs),
-      [1_600, 33_600, 65_600, 97_600, 129_600],
+      [2_000, 34_000, 66_000, 98_000, 130_000],
     );
   });
 
