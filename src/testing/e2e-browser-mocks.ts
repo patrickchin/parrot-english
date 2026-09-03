@@ -1,5 +1,8 @@
 import questionnaire from "../../content/learner-profile/questionnaire-v2.json";
-import { DUB_DEFINITIONS } from "../dubbing/rhyme-catalog";
+import {
+  DUB_DEFINITIONS,
+  getDubDefinition,
+} from "../dubbing/rhyme-catalog";
 
 type RecorderHandler<TEvent extends Event> = ((event: TEvent) => void) | null;
 
@@ -28,8 +31,6 @@ const dubMediaMetrics = {
     type: OscillatorType;
   }>,
 };
-const DEFAULT_SCENARIO = "correct";
-const E2E_SCENARIOS = new Set(["correct", "incorrect", "no-speech"]);
 const E2E_DUB_SCENARIOS = new Set([
   "audio-fetch-failed",
   "almost-complete",
@@ -46,7 +47,6 @@ const E2E_DUB_SCENARIOS = new Set([
   "playback-setup-failed",
   "reset-delete-failed",
   "reset-delete-lost-response",
-  "reset-interrupted",
   "recorder-start-failed",
   "revoking",
   "upload-failed",
@@ -79,7 +79,7 @@ if (
 type E2ELessonCue = {
   audioId?: string;
   endedAt: number | null;
-  kind: "device" | "static";
+  kind: "static";
   source?: string;
   startedAt: number;
   text: string;
@@ -120,7 +120,6 @@ type PendingLessonUpload = {
 };
 type LessonRecordingMockScope = {
   consentRequested: () => void;
-  enable?: () => void;
   isEnabled: () => boolean;
   learnerProfileId?: () => string | null;
   pendingUploads: PendingLessonUpload[];
@@ -141,7 +140,6 @@ const lessonMediaMetrics = {
   consentRequests: 0,
   cueCancellations: 0,
   cues: [] as E2ELessonCue[],
-  evaluateRequests: 0,
   getUserMediaCalls: 0,
   nextRecorderId: 0,
   recorderStarts: [] as Array<{ id: number; startedAt: number }>,
@@ -200,9 +198,7 @@ const E2E_LEARNER_SCENARIOS = new Set([
 const E2E_LEARNER_SCENARIO_KEY = "parrot-e2e-learners:active-scenario";
 const E2E_LEARNER_SESSION_KEY = "parrot-e2e-learners:active-session";
 const E2E_LEARNER_ACCOUNT_KEY_PREFIX = "parrot-e2e-learners:account";
-const DEFAULT_E2E_DUB_DEFINITION =
-  DUB_DEFINITIONS.find(({ id }) => id === DEFAULT_E2E_DUB_ID) ??
-  DUB_DEFINITIONS[0];
+const DEFAULT_E2E_DUB_DEFINITION = getDubDefinition(DEFAULT_E2E_DUB_ID);
 
 function normalizeE2ePathname(pathname: string) {
   const normalized = pathname.replace(/\/+$/u, "");
@@ -231,10 +227,7 @@ function getActiveE2eDubDefinition() {
 function matchE2eDubDefinitionApiPath(pathname: string) {
   for (const definition of DUB_DEFINITIONS) {
     const basePath = `/api/dubs/${definition.id}`;
-    if (pathname === basePath) return { definition, kind: "dub" as const };
-    if (pathname === `${basePath}/consent`) {
-      return { definition, kind: "consent" as const };
-    }
+    if (pathname === basePath) return definition;
   }
   return null;
 }
@@ -265,13 +258,12 @@ function matchActiveE2eDubGuidePath(pathname: string) {
 
 const E2E_INCOMPLETE_PROFILE = {
   canBypass: false,
-  experienceMode: "form",
   mode: "full",
   profile: {
     id: "e2e-learner",
     age: null,
     answers: {
-      legacyAnswers: null,
+      description: null,
       questionnaireVersion: 2,
       responses: {},
       schemaVersion: 2,
@@ -281,7 +273,6 @@ const E2E_INCOMPLETE_PROFILE = {
     description: null,
     name: null,
     profileStatus: "not_started",
-    questionnaireVersion: 2,
   },
   progress: { answered: 0, current: 1, total: 1 },
   question: {
@@ -293,7 +284,6 @@ const E2E_INCOMPLETE_PROFILE = {
     promptZh: null,
     required: true,
   },
-  questionnaire: { version: 2 },
 };
 
 const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
@@ -307,7 +297,16 @@ const E2E_COMPLETED_PROFILE_WITH_ACKNOWLEDGMENT = {
     ...E2E_INCOMPLETE_PROFILE.profile,
     answers: {
       ...E2E_INCOMPLETE_PROFILE.profile.answers,
-      responses: { name: "Mia" },
+      responses: {
+        name: {
+          acknowledgment: "Thank you!",
+          answeredAt: "2026-07-10T08:00:00.000Z",
+          enrichmentStatus: "generated",
+          question: "What's your name?",
+          rawAnswer: "Mia",
+          summary: "Mia",
+        },
+      },
     },
     completedAt: "2026-07-10T08:00:00.000Z",
     currentQuestionKey: null,
@@ -378,12 +377,10 @@ const E2E_VIEWPORT_PROFILE_AFTER_NAME = {
 
 const E2E_VIEWPORT_RESUMED_PROFILE = {
   canBypass: E2E_VIEWPORT_PROFILE_AFTER_NAME.canBypass,
-  experienceMode: E2E_VIEWPORT_PROFILE_AFTER_NAME.experienceMode,
   mode: E2E_VIEWPORT_PROFILE_AFTER_NAME.mode,
   profile: E2E_VIEWPORT_PROFILE_AFTER_NAME.profile,
   progress: E2E_VIEWPORT_PROFILE_AFTER_NAME.progress,
   question: E2E_VIEWPORT_PROFILE_AFTER_NAME.question,
-  questionnaire: E2E_VIEWPORT_PROFILE_AFTER_NAME.questionnaire,
 };
 
 const E2E_VIEWPORT_RAW_ANSWERS = [
@@ -427,12 +424,10 @@ const E2E_VIEWPORT_EDITOR_PROFILE = {
 
 const E2E_VIEWPORT_EDITOR_GATE = {
   canBypass: true,
-  experienceMode: "form",
   mode: "full",
   profile: E2E_VIEWPORT_EDITOR_PROFILE,
   progress: { answered: 6, current: 6, total: 6 },
   question: null,
-  questionnaire: { version: 2 },
 };
 
 const E2E_VIEWPORT_EDITOR_STATE = {
@@ -458,18 +453,17 @@ const MAX_LEARNER_PROFILE_ID_BYTES = 128;
 const TARGETABLE_LEARNER_PROFILE_PATHS = new Set([
   "/api/learner-profile",
   "/api/learner-profile/answer",
-  "/api/learner-profile/complete",
   "/api/learner-profile/question/skip",
   "/api/learner-profile/skip",
   "/api/learner-profile/transcribe",
-  "/api/profile",
-  "/api/profile/lesson-recording-consent",
 ]);
 
 function isTargetableLearnerPath(pathname: string) {
   return (
     TARGETABLE_LEARNER_PROFILE_PATHS.has(pathname) ||
     pathname === "/api/lesson-recordings/consent" ||
+    pathname === "/api/dubs" ||
+    pathname === "/api/dubs/consent" ||
     lessonRecordingSlot(new URL(pathname, window.location.origin)) !== null ||
     matchE2eDubDefinitionApiPath(pathname) !== null ||
     matchActiveE2eDubLinePath(pathname) !== null
@@ -486,31 +480,28 @@ function hasExplicitLearnerTarget(url: URL) {
 
 function singletonUnsupportedTargetMethodResponse(url: URL, method: string) {
   const pathname = url.pathname;
-  const dubRoute = matchE2eDubDefinitionApiPath(pathname);
+  const dubDefinition = matchE2eDubDefinitionApiPath(pathname);
   let allowedMethods: readonly string[] | null = null;
 
   if (pathname === "/api/learner-profile") allowedMethods = ["GET"];
   else if (pathname === "/api/learner-profile/answer") {
     allowedMethods = ["PUT"];
   } else if (
-    pathname === "/api/learner-profile/complete" ||
     pathname === "/api/learner-profile/question/skip" ||
     pathname === "/api/learner-profile/skip" ||
     pathname === "/api/learner-profile/transcribe"
   ) {
     allowedMethods = ["POST"];
-  } else if (pathname === "/api/profile") {
-    allowedMethods = ["GET", "PUT"];
-  } else if (pathname === "/api/profile/lesson-recording-consent") {
-    allowedMethods = ["PUT"];
   } else if (pathname === "/api/lesson-recordings/consent") {
     allowedMethods = ["GET"];
   } else if (lessonRecordingSlot(url) !== null) {
     allowedMethods = ["PUT"];
-  } else if (dubRoute?.kind === "dub") {
-    allowedMethods = ["GET", "DELETE"];
-  } else if (dubRoute?.kind === "consent") {
+  } else if (pathname === "/api/dubs") {
+    allowedMethods = ["DELETE"];
+  } else if (pathname === "/api/dubs/consent") {
     allowedMethods = ["PUT"];
+  } else if (dubDefinition) {
+    allowedMethods = ["GET"];
   } else if (matchActiveE2eDubLinePath(pathname)?.audioPath) {
     allowedMethods = ["GET"];
   } else if (matchActiveE2eDubLinePath(pathname) !== null) {
@@ -518,7 +509,7 @@ function singletonUnsupportedTargetMethodResponse(url: URL, method: string) {
   }
 
   if (allowedMethods === null || allowedMethods.includes(method)) return null;
-  return pathname.startsWith("/api/dubs/")
+  return pathname === "/api/dubs" || pathname.startsWith("/api/dubs/")
     ? e2eDubJson({ error: "method_not_allowed" }, 405)
     : e2eJson({ error: "method_not_allowed" }, 405);
 }
@@ -544,8 +535,8 @@ function targetedLearnerNotFound() {
 type MockLearnerProfile = {
   age: number | null;
   answers: {
-    legacyAnswers: Record<string, unknown> | null;
-    questionnaireVersion: number;
+    description: string | null;
+    questionnaireVersion: 2;
     responses: Record<string, unknown>;
     schemaVersion: 2;
   };
@@ -555,7 +546,6 @@ type MockLearnerProfile = {
   id: string;
   name: string;
   profileStatus: "completed" | "in_progress" | "not_started";
-  questionnaireVersion: number;
   storyLevel:
     "early-a1" | "first-words" | "repeating-patterns" | "tiny-stories";
 };
@@ -654,7 +644,7 @@ function createMockProfile(
   return {
     age,
     answers: {
-      legacyAnswers: null,
+      description: null,
       questionnaireVersion: 2,
       responses: completed
         ? {
@@ -676,7 +666,6 @@ function createMockProfile(
     id,
     name,
     profileStatus: completed ? "completed" : "not_started",
-    questionnaireVersion: 2,
     storyLevel: "first-words",
   };
 }
@@ -746,35 +735,13 @@ function restoreMockAccountState(
   return {
     activeProfileId,
     learners: new Map(
-      state.learners.map(([id, learner]) => {
-        const {
-          art: retiredArt,
-          conversationIds,
-          lessonRecording,
-          ...rest
-        } = learner as StoredMockLearnerState & { art?: unknown };
-        void retiredArt;
-        return [
-          id,
-          {
-            ...rest,
-            conversationIds: new Set(conversationIds),
-            deletionPending: learner.deletionPending === true,
-            lessonRecording: {
-              cleanupPending: lessonRecording?.cleanupPending === true,
-              consent: lessonRecording?.consent === true,
-              consentRequests: Number.isSafeInteger(
-                lessonRecording?.consentRequests,
-              )
-                ? lessonRecording.consentRequests
-                : 0,
-              uploads: Array.isArray(lessonRecording?.uploads)
-                ? lessonRecording.uploads
-                : [],
-            },
-          },
-        ];
-      }),
+      state.learners.map(([id, learner]) => [
+        id,
+        {
+          ...learner,
+          conversationIds: new Set(learner.conversationIds),
+        },
+      ]),
     ),
   };
 }
@@ -941,11 +908,6 @@ function createE2eLearnerAccount(
       : null;
     return {
       canBypass: learner.profile.profileStatus === "completed",
-      experienceMode:
-        learner.profile.profileStatus === "completed" &&
-        getE2eProfileScenario() !== E2E_PROFILE_VIEWPORT_SCENARIO
-          ? "realtime"
-          : "form",
       mode: "full",
       profile: learner.profile,
       progress: {
@@ -954,7 +916,6 @@ function createE2eLearnerAccount(
         total: questionnaire.questions.length,
       },
       question,
-      questionnaire: { version: questionnaire.version },
     };
   }
 
@@ -1014,9 +975,6 @@ function createE2eLearnerAccount(
     const lineIds = definition.lines.map(({ id }) => id);
     const saved = new Set(learner.dub.savedLineIds);
     return {
-      complete:
-        learner.dub.consentState === "granted" &&
-        lineIds.every((id) => saved.has(id)),
       consentState: learner.dub.consentState,
       dubId: definition.id,
       guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
@@ -1025,10 +983,11 @@ function createE2eLearnerAccount(
         peakBars: learner.dub.consentState === "granted" && saved.has(id)
           ? E2E_DUB_PEAK_BARS
           : null,
-        recordedAt: saved.has(id) ? E2E_DUB_RECORDED_AT : null,
+        recordedAt: learner.dub.consentState === "granted" && saved.has(id)
+          ? E2E_DUB_RECORDED_AT
+          : null,
         saved: learner.dub.consentState === "granted" && saved.has(id),
       })),
-      recordingEnabled: learner.dub.consentState === "granted",
     };
   }
 
@@ -1039,13 +998,16 @@ function createE2eLearnerAccount(
     explicitLearner: MockLearnerState | null,
     explicitProfileId: string | null,
   ) {
-    if (!url.pathname.startsWith("/api/dubs/")) return null;
-    const dubRoute = matchE2eDubDefinitionApiPath(url.pathname);
+    if (
+      url.pathname !== "/api/dubs" &&
+      !url.pathname.startsWith("/api/dubs/")
+    ) return null;
+    const dubDefinition = matchE2eDubDefinitionApiPath(url.pathname);
     const resolvedLearner = requestLearner(explicitLearner);
     if (resolvedLearner instanceof Response) return resolvedLearner;
     const learner = resolvedLearner;
 
-    if (dubRoute?.kind === "consent") {
+    if (url.pathname === "/api/dubs/consent") {
       if (method !== "PUT")
         return e2eDubJson({ error: "method_not_allowed" }, 405);
       if (currentGuardianAccess(sessionId).mode !== "guardian") {
@@ -1065,22 +1027,17 @@ function createE2eLearnerAccount(
       return new Response(null, { status: 204 });
     }
 
-    if (dubRoute?.kind === "dub") {
-      if (method === "GET") {
-        if (learner.dub.consentState === "not_granted") {
-          learner.dub.consentState = "granted";
-          persist();
-        }
-        return e2eDubJson(dubStatus(learner, dubRoute.definition));
+    if (url.pathname === "/api/dubs" && method === "DELETE") {
+      if (currentGuardianAccess(sessionId).mode !== "guardian") {
+        return e2eDubJson({ error: "guardian_required" }, 403);
       }
-      if (method === "DELETE") {
-        if (currentGuardianAccess(sessionId).mode !== "guardian") {
-          return e2eDubJson({ error: "guardian_required" }, 403);
-        }
-        learner.dub = { consentState: "not_granted", savedLineIds: [] };
-        persist();
-        return new Response(null, { status: 204 });
-      }
+      learner.dub = { consentState: "not_granted", savedLineIds: [] };
+      persist();
+      return new Response(null, { status: 204 });
+    }
+
+    if (dubDefinition && method === "GET") {
+      return e2eDubJson(dubStatus(learner, dubDefinition));
     }
 
     const line = matchActiveE2eDubLinePath(url.pathname);
@@ -1128,11 +1085,6 @@ function createE2eLearnerAccount(
         learner.lessonRecording.consentRequests += 1;
         persist();
       },
-      enable() {
-        learner.lessonRecording.consent = true;
-        learner.lessonRecording.cleanupPending = false;
-        persist();
-      },
       isEnabled: () =>
         learner.lessonRecording.consent &&
         !learner.lessonRecording.cleanupPending,
@@ -1165,14 +1117,30 @@ function createE2eLearnerAccount(
     const isLessonRecordingPath =
       url.pathname === "/api/lesson-recordings/consent" ||
       lessonRecordingSlot(url) !== null;
-    const isProfileConsentPath =
-      url.pathname === "/api/profile/lesson-recording-consent";
-    if (!isLessonRecordingPath && !isProfileConsentPath) return null;
+    const profileConsentPath = url.pathname.match(
+      /^\/api\/learner-profiles\/([^/]+)\/lesson-recording-consent$/,
+    );
+    if (!isLessonRecordingPath && !profileConsentPath) return null;
 
-    const resolvedLearner = requestLearner(explicitLearner);
-    if (resolvedLearner instanceof Response) return resolvedLearner;
-    const learner = resolvedLearner;
-    if (isProfileConsentPath) {
+    let learner: MockLearnerState;
+    if (profileConsentPath) {
+      let profileId = "";
+      try {
+        profileId = decodeURIComponent(profileConsentPath[1]!);
+      } catch {
+        return targetedLearnerNotFound();
+      }
+      const targetedLearner = state.learners.get(profileId);
+      if (!targetedLearner || targetedLearner.deletionPending) {
+        return targetedLearnerNotFound();
+      }
+      learner = targetedLearner;
+    } else {
+      const resolvedLearner = requestLearner(explicitLearner);
+      if (resolvedLearner instanceof Response) return resolvedLearner;
+      learner = resolvedLearner;
+    }
+    if (profileConsentPath) {
       if (method !== "PUT") {
         return e2eJson({ error: "method_not_allowed" }, 405);
       }
@@ -1180,7 +1148,10 @@ function createE2eLearnerAccount(
       if (typeof body.enabled !== "boolean") {
         return e2eJson({ error: "invalid_request" }, 400);
       }
-      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
+      const commitLearner = rebindLearnerForCommit(
+        learner,
+        learner.profile.id,
+      );
       if (commitLearner instanceof Response) return commitLearner;
       if (body.enabled) {
         commitLearner.lessonRecording.consent = true;
@@ -1348,16 +1319,45 @@ function createE2eLearnerAccount(
       return response;
     }
 
-    const deletion = url.pathname.match(/^\/api\/learner-profiles\/([^/]+)$/);
-    if (deletion && method === "DELETE") {
+    const profileResource = url.pathname.match(
+      /^\/api\/learner-profiles\/([^/]+)$/,
+    );
+    if (profileResource) {
       let profileId = "";
       try {
-        profileId = decodeURIComponent(deletion[1]!);
+        profileId = decodeURIComponent(profileResource[1]!);
       } catch {
         return e2eJson({ error: "not_found" }, 404);
       }
       const learner = state.learners.get(profileId);
-      if (!learner) return e2eJson({ error: "not_found" }, 404);
+      if (!learner || (learner.deletionPending && method !== "DELETE")) {
+        return e2eJson({ error: "not_found" }, 404);
+      }
+      if (method === "GET") return e2eJson(profileEditorState(learner));
+      if (method === "PUT") {
+        const body = await jsonBody(request);
+        const answers =
+          body.answers && typeof body.answers === "object"
+            ? (body.answers as Record<string, unknown>)
+            : {};
+        if (typeof answers.name === "string" && answers.name.trim()) {
+          learner.profile.name = answers.name.normalize("NFKC").trim();
+        }
+        if (
+          typeof answers.age === "string" &&
+          /^\d+$/.test(answers.age.trim())
+        ) {
+          learner.profile.age = Number.parseInt(answers.age.trim(), 10);
+        }
+        if (typeof answers.description === "string") {
+          learner.profile.description = answers.description.trim() || null;
+        }
+        persist();
+        return e2eJson(profileEditorState(learner));
+      }
+      if (method !== "DELETE") {
+        return e2eJson({ error: "method_not_allowed" }, 405);
+      }
       const usableLearners = [...state.learners.values()].filter(
         ({ deletionPending }) => !deletionPending,
       );
@@ -1381,7 +1381,6 @@ function createE2eLearnerAccount(
     let learner = resolvedLearner instanceof Response ? null : resolvedLearner;
     const learnerOwnedPath =
       url.pathname.startsWith("/api/learner-profile") ||
-      url.pathname === "/api/profile" ||
       url.pathname.startsWith("/api/conversations");
     if (learnerOwnedPath && resolvedLearner instanceof Response) {
       return resolvedLearner;
@@ -1428,16 +1427,8 @@ function createE2eLearnerAccount(
       }
       return e2eJson(fullProfileState(learner));
     }
-    if (
-      (url.pathname === "/api/learner-profile/skip" ||
-        url.pathname === "/api/learner-profile/complete") &&
-      method === "POST"
-    ) {
-      learner.profile.profileStatus = "completed";
-      learner.profile.currentQuestionKey = null;
-      learner.profile.completedAt = E2E_DUB_RECORDED_AT;
-      persist();
-      return e2eJson(fullProfileState(learner));
+    if (url.pathname === "/api/learner-profile/skip" && method === "POST") {
+      return e2eJson({ ...fullProfileState(learner), canBypass: true });
     }
     if (
       url.pathname === "/api/learner-profile/question/skip" &&
@@ -1487,31 +1478,6 @@ function createE2eLearnerAccount(
         questionnaire.questions[index + 1]?.answerKey ?? null;
       persist();
       return e2eJson(fullProfileState(learner));
-    }
-
-    if (url.pathname === "/api/profile" && method === "GET") {
-      return e2eJson(profileEditorState(learner));
-    }
-    if (url.pathname === "/api/profile" && method === "PUT") {
-      const body = await jsonBody(request);
-      const commitLearner = rebindLearnerForCommit(learner, explicitProfileId);
-      if (commitLearner instanceof Response) return commitLearner;
-      learner = commitLearner;
-      const answers =
-        body.answers && typeof body.answers === "object"
-          ? (body.answers as Record<string, unknown>)
-          : {};
-      if (typeof answers.name === "string" && answers.name.trim()) {
-        learner.profile.name = answers.name.normalize("NFKC").trim();
-      }
-      if (typeof answers.age === "string" && /^\d+$/.test(answers.age.trim())) {
-        learner.profile.age = Number.parseInt(answers.age.trim(), 10);
-      }
-      if (typeof answers.description === "string") {
-        learner.profile.description = answers.description.trim() || null;
-      }
-      persist();
-      return e2eJson(profileEditorState(learner));
     }
 
     if (url.pathname === "/api/conversations" && method === "POST") {
@@ -1565,7 +1531,7 @@ function createE2eLearnerAccount(
         });
       }
       if (conversation[2] === "/finish") {
-        return e2eJson({ conversation: { id, status: "finished" } });
+        return e2eJson({ conversation: { id, status: "completed" } });
       }
       return e2eJson({
         conversation: {
@@ -1660,14 +1626,6 @@ function createE2eLearnerAccount(
   };
 }
 
-function getE2eScenario() {
-  const scenario = new URL(window.location.href).searchParams.get(
-    "parrotE2eScenario",
-  );
-
-  return scenario && E2E_SCENARIOS.has(scenario) ? scenario : DEFAULT_SCENARIO;
-}
-
 function getE2eLessonScenario() {
   return E2E_LESSON_SCENARIO;
 }
@@ -1678,7 +1636,6 @@ function lessonRecordingConsentEnabled() {
     scenario &&
     ![
       "consent-error",
-      "device-no-consent",
       "held-cue-no-consent",
       "held-story",
       "no-consent",
@@ -1876,8 +1833,7 @@ function initialE2eDubLineIds(scenario: string, lineIds: readonly string[]) {
     scenario === "playback-setup-failed" ||
     scenario === "recorder-start-failed" ||
     scenario === "reset-delete-failed" ||
-    scenario === "reset-delete-lost-response" ||
-    scenario === "reset-interrupted"
+    scenario === "reset-delete-lost-response"
   ) {
     return [...lineIds];
   }
@@ -1931,7 +1887,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
   }
   const savedLineIds = readSavedLineIds(definition);
   let consentState = (sessionStorage.getItem(consentKey) ??
-    (scenario === "not-granted" || scenario === "reset-interrupted"
+    (scenario === "not-granted"
       ? "not_granted"
       : scenario === "reset-delete-failed" ||
           scenario === "reset-delete-lost-response" ||
@@ -1953,9 +1909,6 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
   let failedUpload: Uint8Array | null = null;
   let failAudioFetch =
     scenario === "audio-fetch-failed" || scenario === "verse-fetch-failed";
-  let legacyResetPending =
-    scenario === "reset-interrupted" &&
-    sessionStorage.getItem(resetKey) !== "yes";
   let resetCleanupPending =
     (scenario === "reset-delete-failed" ||
       scenario === "reset-delete-lost-response") &&
@@ -2003,7 +1956,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
   return {
     async handle(url: URL, method: string, request: Request) {
       if (url.origin !== window.location.origin) return null;
-      const dubRoute = matchE2eDubDefinitionApiPath(url.pathname);
+      const dubDefinition = matchE2eDubDefinitionApiPath(url.pathname);
       const guideLineId = matchActiveE2eDubGuidePath(url.pathname);
       const guideMatch = guideLineId ? [url.pathname, guideLineId] : null;
       if (method === "GET" && guideMatch) {
@@ -2025,7 +1978,7 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
         }
         return null;
       }
-      if (dubRoute?.kind === "consent") {
+      if (url.pathname === "/api/dubs/consent") {
         if (method !== "PUT")
           return e2eDubJson({ error: "method_not_allowed" }, 405);
         if (currentGuardianAccess(sessionId).mode !== "guardian") {
@@ -2057,99 +2010,87 @@ function createE2eDubStore(scenario: string | null, sessionId: string) {
           status: 204,
         });
       }
-      if (dubRoute?.kind === "dub") {
-        if (method === "GET") {
-          if (scenario === "load-held") return new Promise<Response>(() => {});
-          if (delayNextStatus) {
-            delayNextStatus = false;
-            await new Promise<void>((resolve) =>
-              window.setTimeout(resolve, 400),
-            );
-          }
-          if (consentState === "not_granted") persistConsent("granted");
-          if (legacyResetPending && consentState === "granted") {
-            return e2eDubJson({ error: "dub_reset_in_progress" }, 409);
-          }
-          const requestedLineIds = dubRoute.definition.lines.map(
-            ({ id }) => id,
+      if (dubDefinition && method === "GET") {
+        if (scenario === "load-held") return new Promise<Response>(() => {});
+        if (delayNextStatus) {
+          delayNextStatus = false;
+          await new Promise<void>((resolve) =>
+            window.setTimeout(resolve, 400),
           );
-          const requestedSaved = new Set(
-            dubRoute.definition.id === definition.id
-              ? clips.keys()
-              : readSavedLineIds(dubRoute.definition),
-          );
-          return e2eDubJson({
-            complete:
-              consentState === "granted" &&
-              requestedLineIds.every((id) => requestedSaved.has(id)),
-            consentState,
-            dubId: dubRoute.definition.id,
-            guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
-            lines: requestedLineIds.map((id) => ({
-              id,
-              peakBars:
-                consentState === "granted" && requestedSaved.has(id)
-                  ? E2E_DUB_PEAK_BARS
-                  : null,
-              recordedAt:
-                consentState === "granted" && requestedSaved.has(id)
-                  ? E2E_DUB_RECORDED_AT
-                  : null,
-              saved: consentState === "granted" && requestedSaved.has(id),
-            })),
-            recordingEnabled: consentState === "granted",
+        }
+        const requestedLineIds = dubDefinition.lines.map(({ id }) => id);
+        const requestedSaved = new Set(
+          dubDefinition.id === definition.id
+            ? clips.keys()
+            : readSavedLineIds(dubDefinition),
+        );
+        return e2eDubJson({
+          consentState,
+          dubId: dubDefinition.id,
+          guardianConsentVersion: E2E_DUB_CONSENT_VERSION,
+          lines: requestedLineIds.map((id) => ({
+            id,
+            peakBars:
+              consentState === "granted" && requestedSaved.has(id)
+                ? E2E_DUB_PEAK_BARS
+                : null,
+            recordedAt:
+              consentState === "granted" && requestedSaved.has(id)
+                ? E2E_DUB_RECORDED_AT
+                : null,
+            saved: consentState === "granted" && requestedSaved.has(id),
+          })),
+        });
+      }
+      if (url.pathname === "/api/dubs" && method === "DELETE") {
+        if (currentGuardianAccess(sessionId).mode !== "guardian") {
+          return e2eDubJson({ error: "guardian_required" }, 403);
+        }
+        persistConsent("revoking");
+        if (scenario === "delete-failed") {
+          return new Response(null, { status: 503 });
+        }
+        if (scenario === "delete-held") {
+          return new Promise<Response>((resolve) => {
+            pendingDelete = resolve;
           });
         }
-        if (method === "DELETE") {
-          if (currentGuardianAccess(sessionId).mode !== "guardian") {
-            return e2eDubJson({ error: "guardian_required" }, 403);
-          }
-          persistConsent("revoking");
-          if (scenario === "delete-failed") {
-            return new Response(null, { status: 503 });
-          }
-          if (scenario === "delete-held") {
-            return new Promise<Response>((resolve) => {
-              pendingDelete = resolve;
-            });
-          }
-          if (failResetDelete) {
-            failResetDelete = false;
-            sessionStorage.setItem(resetDeleteFailureKey, "used");
-            return new Response(null, { status: 503 });
-          }
-          if (legacyResetPending || resetCleanupPending) {
-            await new Promise<void>((resolve) =>
-              window.setTimeout(resolve, 250),
-            );
-            legacyResetPending = false;
-            resetCleanupPending = false;
-            sessionStorage.setItem(resetKey, "yes");
-            clearAllSavedClips();
-            clips.clear();
-            persist();
-            persistConsent("not_granted");
-            if (loseResetDeleteResponse) {
-              loseResetDeleteResponse = false;
-              delayNextStatus = true;
-              sessionStorage.setItem(resetDeleteFailureKey, "used");
-              return new Response(null, { status: 503 });
-            }
-          }
+        if (failResetDelete) {
+          failResetDelete = false;
+          sessionStorage.setItem(resetDeleteFailureKey, "used");
+          return new Response(null, { status: 503 });
+        }
+        if (resetCleanupPending) {
+          await new Promise<void>((resolve) =>
+            window.setTimeout(resolve, 250),
+          );
+          resetCleanupPending = false;
+          sessionStorage.setItem(resetKey, "yes");
           clearAllSavedClips();
           clips.clear();
           persist();
           persistConsent("not_granted");
-          return new Response(null, {
-            headers: { "Cache-Control": "private, no-store" },
-            status: 204,
-          });
+          if (loseResetDeleteResponse) {
+            loseResetDeleteResponse = false;
+            delayNextStatus = true;
+            sessionStorage.setItem(resetDeleteFailureKey, "used");
+            return new Response(null, { status: 503 });
+          }
         }
+        clearAllSavedClips();
+        clips.clear();
+        persist();
+        persistConsent("not_granted");
+        return new Response(null, {
+          headers: { "Cache-Control": "private, no-store" },
+          status: 204,
+        });
       }
 
       const lineMatch = matchActiveE2eDubLinePath(url.pathname);
       if (!lineMatch) {
-        return url.pathname.startsWith("/api/dubs/")
+        return url.pathname === "/api/dubs" ||
+          url.pathname.startsWith("/api/dubs/")
           ? e2eDubJson({ error: "not_found", message: "not_found" }, 404)
           : null;
       }
@@ -2392,18 +2333,19 @@ function requiresGuardianAccess(
     return method === "POST";
   }
   if (/^\/api\/learner-profiles\/[^/]+$/.test(url.pathname)) {
-    return method === "DELETE";
+    return method === "DELETE" || method === "GET" || method === "PUT";
   }
-  if (url.pathname === "/api/profile") {
-    return method === "GET" || method === "PUT";
-  }
-  if (url.pathname === "/api/profile/lesson-recording-consent") {
+  if (
+    /^\/api\/learner-profiles\/[^/]+\/lesson-recording-consent$/.test(
+      url.pathname,
+    )
+  ) {
     return method === "PUT";
   }
-  if (/^\/api\/dubs\/[^/]+\/consent$/.test(url.pathname)) {
+  if (url.pathname === "/api/dubs/consent") {
     return method === "PUT";
   }
-  if (/^\/api\/dubs\/[^/]+$/.test(url.pathname)) {
+  if (url.pathname === "/api/dubs") {
     return method === "DELETE";
   }
   return false;
@@ -2476,7 +2418,7 @@ function defaultProfileOperationPayload(
 ) {
   if (operation === "transcription") return { transcript: "Mia" };
   if (operation === "skipForNow") {
-    return { canBypass: true, mode: "bypass-only" };
+    return { ...E2E_INCOMPLETE_PROFILE, canBypass: true };
   }
   return answerSavePayload(profileScenario);
 }
@@ -2659,8 +2601,7 @@ async function lessonRecordingResponse(
     if (getE2eLessonScenario() === "consent-error") {
       return e2eJson({ error: "request_failed" }, 503);
     }
-    scope.enable?.();
-    return e2eJson({ enabled: scope.enable ? true : scope.isEnabled() });
+    return e2eJson({ enabled: scope.isEnabled() });
   }
 
   const slot = lessonRecordingSlot(url);
@@ -2905,9 +2846,6 @@ function installE2eProfileFetchMock() {
     const url = new URL(source, window.location.href);
     const method = (init?.method ?? request?.method ?? "GET").toUpperCase();
     const hasLearnerTarget = hasExplicitLearnerTarget(url);
-    if (getE2eLessonScenario() && url.pathname === "/api/evaluate-speech") {
-      lessonMediaMetrics.evaluateRequests += 1;
-    }
     const guardedResponse = await guardianResponse(
       input,
       init,
@@ -2984,9 +2922,9 @@ function installE2eProfileFetchMock() {
     }
     if (
       !learnerAccount &&
-      fallbackTarget === E2E_VIEWPORT_EDITOR_STATE.profile.id &&
       url.origin === window.location.origin &&
-      url.pathname === "/api/profile" &&
+      url.pathname ===
+        `/api/learner-profiles/${encodeURIComponent(E2E_VIEWPORT_EDITOR_STATE.profile.id)}` &&
       method === "GET"
     ) {
       return e2eJson(E2E_VIEWPORT_EDITOR_STATE);
@@ -3046,15 +2984,6 @@ function installE2eProfileFetchMock() {
             }
           : profileState,
       );
-    }
-
-    if (
-      profileScenario === E2E_PROFILE_VIEWPORT_SCENARIO &&
-      url.origin === window.location.origin &&
-      url.pathname === "/api/profile" &&
-      method === "GET"
-    ) {
-      return e2eJson(E2E_VIEWPORT_EDITOR_STATE);
     }
 
     if (
@@ -3328,7 +3257,7 @@ class MockMediaRecorder {
       }
     }
     finishHeldProfileRecording(this, "resolved");
-    const data = createE2eDubBlob(getE2eScenario());
+    const data = createE2eDubBlob();
     this.ondataavailable?.({ data } as BlobEvent);
     this.onstop?.(new Event("stop"));
   }
@@ -3665,7 +3594,6 @@ const e2eLessonMedia = {
       consentRequests: lessonRecording.consentRequests,
       cueCancellations: lessonMediaMetrics.cueCancellations,
       cues: lessonMediaMetrics.cues.map((cue) => ({ ...cue })),
-      evaluateRequests: lessonMediaMetrics.evaluateRequests,
       getUserMediaCalls: lessonMediaMetrics.getUserMediaCalls,
       pendingCues: pendingLessonPlayback.length,
       pendingUploads: lessonRecording.pendingUploads,
@@ -3678,91 +3606,6 @@ const e2eLessonMedia = {
       stoppedTracks: lessonMediaMetrics.stoppedTracks,
       uploads: lessonRecording.uploads,
     };
-  },
-};
-
-class MockLessonSpeechUtterance {
-  lang = "";
-  onend: (() => void) | null = null;
-  onerror: (() => void) | null = null;
-  pitch = 1;
-  rate = 1;
-  voice = null;
-  volume = 1;
-
-  constructor(readonly text: string) {}
-}
-
-let currentDevicePlayback: PendingLessonPlayback | null = null;
-const mockLessonSpeechSynthesis = {
-  cancel() {
-    currentDevicePlayback?.cancel();
-    currentDevicePlayback = null;
-  },
-  getVoices() {
-    return [
-      {
-        default: true,
-        lang: "en-US",
-        localService: true,
-        name: "Parrot E2E English",
-      },
-    ];
-  },
-  pause() {},
-  resume() {},
-  speak(utterance: MockLessonSpeechUtterance) {
-    const cue: E2ELessonCue = {
-      endedAt: null,
-      kind: "device",
-      startedAt: performance.now(),
-      text: utterance.text,
-      volume: utterance.volume,
-    };
-    lessonMediaMetrics.cues.push(cue);
-    let settled = false;
-    let timerId: number | null = null;
-    const removePending = () => {
-      if (!currentDevicePlayback) return;
-      const index = pendingLessonPlayback.indexOf(currentDevicePlayback);
-      if (index >= 0) pendingLessonPlayback.splice(index, 1);
-      currentDevicePlayback = null;
-    };
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      cue.endedAt = performance.now();
-      removePending();
-      utterance.onend?.();
-    };
-    const fail = () => {
-      if (settled) return;
-      settled = true;
-      cue.endedAt = performance.now();
-      removePending();
-      utterance.onerror?.();
-    };
-    const cancel = () => {
-      if (settled) return;
-      settled = true;
-      if (timerId !== null) window.clearTimeout(timerId);
-      removePending();
-      lessonMediaMetrics.cueCancellations += 1;
-    };
-    currentDevicePlayback = { cancel, fail, finish };
-    const lessonScenario = getE2eLessonScenario();
-    if (
-      lessonScenario === "held-cue" ||
-      lessonScenario === "held-cue-no-consent" ||
-      (lessonScenario === "account-deletion-pending" &&
-        utterance.text === "The kite turns.")
-    ) {
-      pendingLessonPlayback.push(currentDevicePlayback);
-    } else if (getE2eLessonScenario() === "cue-failure") {
-      timerId = window.setTimeout(fail, 10);
-    } else {
-      timerId = window.setTimeout(finish, MOCK_AUDIO_DELAY_MS);
-    }
   },
 };
 
@@ -3779,17 +3622,6 @@ Object.defineProperty(window, "__parrotE2ePlaybackLine", {
     pendingE2EPlaybackLines.set(line.audioSrc, lines);
   },
 });
-
-if (getE2eLessonScenario()) {
-  Object.defineProperty(window, "SpeechSynthesisUtterance", {
-    configurable: true,
-    value: MockLessonSpeechUtterance,
-  });
-  Object.defineProperty(window, "speechSynthesis", {
-    configurable: true,
-    value: mockLessonSpeechSynthesis,
-  });
-}
 
 Object.defineProperty(window, "__parrotE2eLessonMicrophone", {
   configurable: true,

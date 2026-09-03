@@ -13,7 +13,7 @@ type SpeechRecorderConstructor = new (
 ) => MediaRecorder;
 
 type SpeechRecorderClass = SpeechRecorderConstructor & {
-  isTypeSupported?: (mimeType: string) => boolean;
+  isTypeSupported: (mimeType: string) => boolean;
 };
 
 const RECORDING_MIME_TYPES = [
@@ -55,10 +55,6 @@ export function selectRecordingMimeType(
 ) {
   if (!MediaRecorderClass) {
     throw new RecordingUnsupportedError();
-  }
-
-  if (typeof MediaRecorderClass.isTypeSupported !== "function") {
-    return "";
   }
 
   const isTypeSupported = MediaRecorderClass.isTypeSupported;
@@ -129,15 +125,14 @@ export async function requestMicrophoneAccess({
   }
 }
 
-async function prepareSpeechRecordingInternal({
+export async function prepareSpeechRecording({
   MediaRecorder: MediaRecorderClass = globalThis.MediaRecorder,
   constraints = MICROPHONE_CONSTRAINTS,
   getUserMedia = (constraints) =>
     navigator.mediaDevices.getUserMedia(constraints),
   mimeType,
   signal,
-}: SpeechRecordingSessionOptions = {},
-  startImmediately = false
+}: SpeechRecordingSessionOptions = {}
 ): Promise<PreparedSpeechRecordingSession> {
   if (signal?.aborted) {
     throw createAbortError();
@@ -253,20 +248,7 @@ async function prepareSpeechRecordingInternal({
     },
   };
 
-  if (startImmediately) session.start();
   return session;
-}
-
-export function prepareSpeechRecording(
-  options: SpeechRecordingSessionOptions = {}
-): Promise<PreparedSpeechRecordingSession> {
-  return prepareSpeechRecordingInternal(options);
-}
-
-export function startSpeechRecording(
-  options: SpeechRecordingSessionOptions = {}
-): Promise<SpeechRecordingSession> {
-  return prepareSpeechRecordingInternal(options, true);
 }
 
 export async function recordSpeechClip({
@@ -281,12 +263,13 @@ export async function recordSpeechClip({
   signal,
   stopSignal,
 }: SpeechRecorderOptions = {}) {
-  const session = await startSpeechRecording({
+  const session = await prepareSpeechRecording({
     MediaRecorder: MediaRecorderClass,
     getUserMedia,
     mimeType,
     signal,
   });
+  session.start();
 
   try {
     onRecordingStart?.();

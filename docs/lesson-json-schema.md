@@ -12,13 +12,10 @@ For a shorter, plain-language introduction, start with the
 
 A lesson contains one or more scenes. Each scene contains an ordered list of
 steps. A normal character or narrator step plays automatically. A `user` step
-waits for the learner to hold the microphone button and speak.
-
-A user step can work in either of two ways:
-
-- Omit `check` to accept the recording and continue without evaluating it.
-- Add `check` to evaluate the recording and play a script-selected response for
-  correct, incorrect, or empty input.
+is an ungraded join-in beat: the app shows its exact phrase, plays a quiet group
+cue, and continues without scoring, correction, or retry branching. With
+Guardian consent, the app may also save the learner's short recording without
+changing playback progress.
 
 Emote maps are optional and partial. Every visible character starts a scene as
 `idle`. A later step changes only the emotes it lists; all other visible
@@ -54,23 +51,6 @@ type Step = {
   speaker: "peppa" | "dolly" | "user" | "narrator";
   dialogue: string;
   emotes?: Record<string, Emote>;
-  check?: Check;
-};
-
-type Check = {
-  maxAttempts: number;
-  correct: Response;
-  incorrect: Response;
-  incorrectFinal: Response;
-  noInput?: Response;
-  noInputFinal?: Response;
-};
-
-type Response = {
-  speaker: "peppa" | "dolly" | "narrator";
-  dialogue: string;
-  emotes?: Record<string, Emote>;
-  after: "retry" | "continue";
 };
 
 type Emote = "idle" | "talking" | "listening" | "happy" | "sad" | "surprised";
@@ -135,30 +115,30 @@ visible.
 
 ## Step Object
 
-| Field      | Type       | Required | Runtime meaning                                                      |
-| ---------- | ---------- | -------- | -------------------------------------------------------------------- |
-| `speaker`  | speaker ID | Yes      | Determines who speaks and whether playback waits for the learner.    |
-| `dialogue` | string     | Yes      | Text spoken or targeted by this step.                                |
-| `emotes`   | object     | No       | Partial visible-character emote changes.                             |
-| `check`    | Check      | No       | Evaluation and scripted response rules; valid only on a `user` step. |
+| Field      | Type       | Required | Runtime meaning                                                   |
+| ---------- | ---------- | -------- | ----------------------------------------------------------------- |
+| `speaker`  | speaker ID | Yes      | Selects automatic playback or an ungraded learner join-in beat.   |
+| `dialogue` | string     | Yes      | Text spoken by a character or shown for the learner to join in.   |
+| `emotes`   | object     | No       | Partial visible-character emote changes.                          |
 
 ### Speaker IDs
 
-| ID         | Visual                    | Behavior                                   |
-| ---------- | ------------------------- | ------------------------------------------ |
-| `peppa`    | If listed in `characters` | Plays automatically as a character line.   |
-| `dolly`    | If listed in `characters` | Plays automatically as a character line.   |
-| `narrator` | Never                     | Plays automatically as a narrator caption. |
-| `user`     | Never                     | Waits for press-and-hold microphone input. |
+| ID         | Visual                    | Behavior                                         |
+| ---------- | ------------------------- | ------------------------------------------------ |
+| `peppa`    | If listed in `characters` | Plays automatically as a character line.         |
+| `dolly`    | If listed in `characters` | Plays automatically as a character line.         |
+| `narrator` | Never                     | Plays automatically as a narrator caption.       |
+| `user`     | Never                     | Shows and plays an ungraded learner join-in beat. |
 
 User lines are flexible. They do not need a preceding model line and do not
 need to repeat another speaker's dialogue.
 
-### Unchecked User Step
+### User Join-in Step
 
-When a user step omits `check`, the app records while the microphone is held but
-does not send the recording for evaluation. Releasing the microphone advances
-to the next step.
+A user step always advances after its fixed join-in beat. The learner may say
+the displayed phrase with the group, but the app does not evaluate the audio or
+wait for a successful response. Recording occurs only when a Guardian has
+enabled it, and capture or storage failures do not block the story.
 
 ```json
 {
@@ -198,126 +178,18 @@ Emote resolution follows these rules:
 3. A listed emote replaces that character's current emote.
 4. An omitted character keeps its previous emote.
 5. An omitted `emotes` object changes nothing.
-6. While a scripted check response is playing, its emotes are applied on top of
-   the current scene state.
-7. Moving to another scene resets that scene's characters to `idle` before its
+6. Moving to another scene resets that scene's characters to `idle` before its
    steps are applied.
 
 Only visible scene characters have rendered emotes. For portable scripts, use
 only IDs from the scene's `characters` array as emote keys.
-
-## Check Object
-
-A `check` is allowed only when the enclosing step has `"speaker": "user"`.
-
-| Field            | Type        | Required | Runtime meaning                                                                |
-| ---------------- | ----------- | -------- | ------------------------------------------------------------------------------ |
-| `maxAttempts`    | integer 1–5 | Yes      | Number of unsuccessful attempts allowed before a final response is selected.   |
-| `correct`        | Response    | Yes      | Played when evaluation returns `correct`.                                      |
-| `incorrect`      | Response    | Yes      | Played after a non-final `incorrect` result.                                   |
-| `incorrectFinal` | Response    | Yes      | Played when an incorrect result reaches `maxAttempts`.                         |
-| `noInput`        | Response    | No       | Played after a non-final empty recording. Falls back to `incorrect`.           |
-| `noInputFinal`   | Response    | No       | Played when empty input reaches `maxAttempts`. Falls back to `incorrectFinal`. |
-
-Only unsuccessful `incorrect` and `noInput` results increase the attempt count.
-A correct result selects `correct` immediately. With `maxAttempts: 1`, the first
-unsuccessful result selects a final response.
-
-### Outcome Selection
-
-| Evaluation result | Attempts after result   | Selected response                                |
-| ----------------- | ----------------------- | ------------------------------------------------ |
-| `correct`         | Unchanged               | `correct`                                        |
-| `incorrect`       | Less than `maxAttempts` | `incorrect`                                      |
-| `incorrect`       | At `maxAttempts`        | `incorrectFinal`                                 |
-| `noInput`         | Less than `maxAttempts` | `noInput`, or `incorrect` when omitted           |
-| `noInput`         | At `maxAttempts`        | `noInputFinal`, or `incorrectFinal` when omitted |
-
-If the evaluation service itself fails, no response is selected. The player
-shows an error and returns to the same user step.
-
-## Response Object
-
-| Field      | Type                            | Required | Runtime meaning                                                         |
-| ---------- | ------------------------------- | -------- | ----------------------------------------------------------------------- |
-| `speaker`  | `peppa`, `dolly`, or `narrator` | Yes      | Character or narrator who delivers the response. `user` is not allowed. |
-| `dialogue` | string                          | Yes      | Response text to display and play.                                      |
-| `emotes`   | object                          | No       | Partial emote changes applied while the response plays.                 |
-| `after`    | `retry` or `continue`           | Yes      | Action taken after response playback finishes.                          |
-
-The `correct`, `incorrectFinal`, and `noInputFinal` responses must use
-`"after": "continue"`. Non-final `incorrect` and `noInput` responses may either
-retry or continue.
-
-### `after: "continue"`
-
-The player advances to the next step. If the response followed the final step
-of a scene, playback starts the next scene. If there are no more steps, the
-lesson finishes. The attempt counter resets.
-
-### `after: "retry"`
-
-When the checked user step has a preceding non-user step, the player replays
-that step and then returns to the user step. This is useful for replaying a
-model line.
-
-When the checked user step is first, or the preceding step is also a user step,
-the player returns directly to the same user step. The unsuccessful attempt
-count is preserved.
-
-## Complete Checked-Step Example
-
-This example lets Dolly respond to a correct answer, an ordinary miss, an empty
-recording, and a final unsuccessful attempt:
-
-```json
-{
-  "speaker": "user",
-  "dialogue": "Can you help me, please?",
-  "emotes": {
-    "peppa": "listening",
-    "dolly": "listening"
-  },
-  "check": {
-    "maxAttempts": 2,
-    "correct": {
-      "speaker": "dolly",
-      "dialogue": "Yes! Well done!",
-      "emotes": {
-        "dolly": "happy"
-      },
-      "after": "continue"
-    },
-    "incorrect": {
-      "speaker": "dolly",
-      "dialogue": "Almost. Try again!",
-      "after": "retry"
-    },
-    "incorrectFinal": {
-      "speaker": "narrator",
-      "dialogue": "Good try. Let's continue.",
-      "after": "continue"
-    },
-    "noInput": {
-      "speaker": "narrator",
-      "dialogue": "I could not hear you. Try again.",
-      "after": "retry"
-    },
-    "noInputFinal": {
-      "speaker": "narrator",
-      "dialogue": "That is okay. Let's continue.",
-      "after": "continue"
-    }
-  }
-}
-```
 
 ## Complete Lesson Example
 
 ```json
 {
   "title": "The Helpful Friend",
-  "childName": "Mia",
+  "childName": "Mary",
   "goalPhrases": ["Can you help me, please?", "Thank you!"],
   "summary": "Peppa asks Dolly for help.",
   "detailedSummary": "Peppa needs help reaching a ball, and Dolly helps her.",
@@ -349,28 +221,7 @@ recording, and a final unsuccessful attempt:
         },
         {
           "speaker": "user",
-          "dialogue": "Can you help me, please?",
-          "check": {
-            "maxAttempts": 2,
-            "correct": {
-              "speaker": "peppa",
-              "dialogue": "Wonderful asking!",
-              "emotes": {
-                "peppa": "happy"
-              },
-              "after": "continue"
-            },
-            "incorrect": {
-              "speaker": "dolly",
-              "dialogue": "Listen once more and try again.",
-              "after": "retry"
-            },
-            "incorrectFinal": {
-              "speaker": "narrator",
-              "dialogue": "Good try. Let us continue.",
-              "after": "continue"
-            }
-          }
+          "dialogue": "Can you help me, please?"
         },
         {
           "speaker": "dolly",
@@ -389,16 +240,12 @@ recording, and a final unsuccessful attempt:
 }
 ```
 
-## Validation and Draft Repair
-
-There are two related boundaries:
-
-### Playable Lesson Validation
+## Playable Lesson Validation
 
 Built-in lessons must contain all required root, location, scene, and step
 fields. Validation rejects missing or blank required text, unknown backgrounds,
 unknown scene characters, duplicate scene characters, unsupported speakers,
-invalid visible emotes, malformed checks, and scenes with no steps.
+invalid visible emotes, and scenes with no steps.
 
 Extra metadata is permitted, but the player ignores fields it does not know.
 
@@ -406,11 +253,12 @@ Extra metadata is permitted, but the player ignores fields it does not know.
 
 Lesson JSON never contains audio filenames or voice IDs.
 
-- Built-in Parrot Lessons resolve every non-user step and check response by
-  exact speaker plus dialogue text in the static audio catalog.
-- User steps never play synthesized or saved speech as the learner's voice.
+- Built-in Parrot Lessons resolve every non-user step by exact speaker plus
+  dialogue text in the static audio catalog.
+- Each user step resolves a separate saved group cue by exact dialogue text;
+  the app never substitutes synthesized or saved speech as the learner's voice.
 
-When adding new built-in dialogue or check responses, add the corresponding
+When adding automatic dialogue or a new join-in phrase, add the corresponding
 saved audio metadata and assets.
 
 ## Author Checklist
@@ -422,12 +270,8 @@ saved audio metadata and assets.
 - Use `user` only as a speaker, never as a visible character or emote key.
 - Omit `emotes` when nothing changes; use a partial map when one character
   changes.
-- Put `check` only on a user step.
-- Define `correct`, `incorrect`, `incorrectFinal`, and `maxAttempts` for every
-  check.
-- Use `continue` for correct and final responses.
-- Use `noInput` and `noInputFinal` only when silence needs different wording.
-- For built-in lessons, ensure every automatic line and response has saved
+- Keep every user step short and suitable for an ungraded join-in beat.
+- For built-in lessons, ensure every automatic line and join-in cue has saved
   audio.
 
 The catalog files under `content/catalogs` are the source of truth for currently

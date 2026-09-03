@@ -2,9 +2,6 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import * as speechRecorder from "../src/media/speech-recorder.ts";
 
-const startSpeechRecording =
-  speechRecorder.startSpeechRecording ??
-  (() => Promise.reject(new Error("startSpeechRecording is missing")));
 const prepareSpeechRecording =
   speechRecorder.prepareSpeechRecording ??
   (() => Promise.reject(new Error("prepareSpeechRecording is missing")));
@@ -15,6 +12,12 @@ const requestMicrophoneAccess =
   speechRecorder.requestMicrophoneAccess ??
   (() => Promise.reject(new Error("requestMicrophoneAccess is missing")));
 
+async function startPreparedRecording(options) {
+  const session = await prepareSpeechRecording(options);
+  session.start();
+  return session;
+}
+
 describe("recording MIME negotiation", () => {
   it("selects the first supported portable recording type", () => {
     class FakeRecorder {}
@@ -24,26 +27,6 @@ describe("recording MIME negotiation", () => {
       speechRecorder.selectRecordingMimeType(FakeRecorder),
       "audio/webm;codecs=opus"
     );
-  });
-
-  it("uses the browser default when MIME probing is unavailable", () => {
-    class FakeRecorder {}
-
-    assert.equal(speechRecorder.selectRecordingMimeType(FakeRecorder), "");
-  });
-
-  it("omits options and preserves the recorder type without MIME probing", async () => {
-    const { stream } = createStream();
-    const { FakeMediaRecorder, instances } = createRecorderClass();
-    FakeMediaRecorder.prototype.mimeType = "audio/mp4";
-
-    const session = await startSpeechRecording({
-      MediaRecorder: FakeMediaRecorder,
-      getUserMedia: async () => stream,
-    });
-
-    assert.equal(instances[0].options, undefined);
-    assert.equal((await session.stop()).type, "audio/mp4");
   });
 
   it("returns no MIME type when probing finds no supported format", () => {
@@ -59,7 +42,7 @@ describe("recording MIME negotiation", () => {
     FakeMediaRecorder.isTypeSupported = (type) => type === "audio/mp4";
     FakeMediaRecorder.prototype.mimeType = "audio/mp4";
 
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: FakeMediaRecorder,
       getUserMedia: async () => stream,
     });
@@ -71,7 +54,7 @@ describe("recording MIME negotiation", () => {
     const startStream = createStream();
     const startRecorder = createRecorderClass();
     startRecorder.FakeMediaRecorder.isTypeSupported = () => false;
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: startRecorder.FakeMediaRecorder,
       getUserMedia: async () => startStream.stream,
     });
@@ -98,7 +81,7 @@ describe("recording MIME negotiation", () => {
   it("omits options and preserves an explicit empty MIME type", async () => {
     const startStream = createStream();
     const startRecorder = createRecorderClass();
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: startRecorder.FakeMediaRecorder,
       getUserMedia: async () => startStream.stream,
       mimeType: "",
@@ -150,6 +133,10 @@ function createStream(track = createTrack()) {
 function createRecorderClass({ onStart, startError } = {}) {
   const instances = [];
   class FakeMediaRecorder {
+    static isTypeSupported() {
+      return false;
+    }
+
     constructor(stream, options) {
       this.stream = stream;
       this.options = options;
@@ -282,7 +269,7 @@ describe("hold-to-talk speech recorder", () => {
     let requestedMicrophone = false;
 
     await assert.rejects(
-      startSpeechRecording({
+      startPreparedRecording({
         MediaRecorder: undefined,
         getUserMedia() {
           requestedMicrophone = true;
@@ -299,7 +286,7 @@ describe("hold-to-talk speech recorder", () => {
     const { stream } = createStream();
     const { FakeMediaRecorder } = createRecorderClass();
     let constraints;
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: FakeMediaRecorder,
       getUserMedia(value) {
         constraints = value;
@@ -316,11 +303,11 @@ describe("hold-to-talk speech recorder", () => {
     await session.stop();
   });
 
-  it("starts immediately and returns captured audio when stopped", async () => {
+  it("returns captured audio after a prepared session starts", async () => {
     const { stream, track } = createStream();
     const { FakeMediaRecorder, instances } = createRecorderClass();
     const constraints = [];
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: FakeMediaRecorder,
       getUserMedia(value) {
         constraints.push(value);
@@ -491,7 +478,7 @@ describe("hold-to-talk speech recorder", () => {
   it("cancels an active session with an AbortError and stops tracks", async () => {
     const { stream, track } = createStream();
     const { FakeMediaRecorder } = createRecorderClass();
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: FakeMediaRecorder,
       getUserMedia: () => Promise.resolve(stream),
     });
@@ -505,7 +492,7 @@ describe("hold-to-talk speech recorder", () => {
   it("makes repeated stop calls safe", async () => {
     const { stream } = createStream();
     const { FakeMediaRecorder, instances } = createRecorderClass();
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: FakeMediaRecorder,
       getUserMedia: () => Promise.resolve(stream),
     });
@@ -522,14 +509,14 @@ describe("hold-to-talk speech recorder", () => {
     const before = new AbortController();
     before.abort();
     await assert.rejects(
-      startSpeechRecording({ signal: before.signal }),
+      startPreparedRecording({ signal: before.signal }),
       { name: "AbortError" }
     );
 
     const { stream, track } = createStream();
     const { FakeMediaRecorder } = createRecorderClass();
     const during = new AbortController();
-    const session = await startSpeechRecording({
+    const session = await startPreparedRecording({
       MediaRecorder: FakeMediaRecorder,
       getUserMedia: () => Promise.resolve(stream),
       signal: during.signal,

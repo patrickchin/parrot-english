@@ -450,31 +450,6 @@ test("Chinese account privacy and deletion dialog keep technical data and focus 
   ).toBeDisabled();
 });
 
-test("Guardian redo setup localizes controls while learning content stays English", async ({
-  page,
-}) => {
-  await page.addInitScript(() =>
-    localStorage.setItem("parrot:guardian-language", "zh-Hans"),
-  );
-  await page.goto(
-    "/guardian/profile/setup?redo=1&returnTo=%2Fguardian&parrotE2eGuardian=guardian&parrotE2eLearners=multiple&parrotE2eProfile=viewport-stability",
-  );
-
-  const prompt = page.getByRole("heading", {
-    name: "Hi! I'm Peppa. What's your name?",
-  });
-  await expect(prompt).toBeVisible();
-  await expect(prompt).toHaveAttribute("lang", "en");
-  await expect(page.getByText("问题 1/6", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "重播问题" })).toBeVisible();
-  await expect(page.getByRole("textbox", { name: "你的回答" })).toHaveAttribute(
-    "lang",
-    "en",
-  );
-  await expect(page.getByRole("button", { name: "返回" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "保存" })).toBeVisible();
-});
-
 test("learner document stays English while its adult chooser is fully Chinese", async ({
   page,
 }) => {

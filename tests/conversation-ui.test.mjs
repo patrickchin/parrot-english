@@ -145,15 +145,6 @@ describe("accessible realtime conversation surface", () => {
     assert.match(onboarding, /Help Peppa know you/);
     assert.match(onboarding, /Save and finish/);
     assert.doesNotMatch(onboarding, /Update my profile|Finish conversation/);
-
-    const profileEdit = render({
-      microphoneEnabled: false,
-      purpose: "profile-edit",
-      status: "listening",
-    });
-    assert.match(profileEdit, /Update my profile/);
-    assert.match(profileEdit, /Save changes/);
-    assert.doesNotMatch(profileEdit, /Help Peppa know you|Finish conversation/);
   });
 
   it("does not show chat setup in profile flows", () => {
@@ -606,48 +597,4 @@ describe("accessible realtime conversation surface", () => {
     assert.match(html, /Tap, then talk/);
   });
 
-  it("saves the prose profile without showing a review page", () => {
-    const html = render({
-      purpose: "profile-edit",
-      status: "saving",
-      candidates: [
-        {
-          id: "profile-summary",
-          factKey: "summary",
-          label: "About this learner",
-          status: "accepted",
-          value: "Mia is seven years old and loves giant pandas.",
-        },
-      ],
-      turns: [
-        { id: "heard-one", role: "assistant", text: "How old are you?" },
-        { id: "heard-two", role: "user", text: "I am seven." },
-      ],
-    });
-
-    assert.match(html, /Saving your answers/);
-    assert.match(html, /Lovely chat!/);
-    const document = new Window().document;
-    document.body.innerHTML = html;
-    const status = document.querySelector('[role="status"]');
-    const captions = document.querySelector(
-      '[aria-label="Conversation captions"]',
-    );
-    assert.ok(status);
-    assert.ok(captions);
-    assert.equal(
-      status.textContent.replace(/\s+/g, " ").trim(),
-      "Saving your answers. Lovely chat!",
-    );
-    assert.doesNotMatch(captions.textContent, /Saving your answers/);
-    assert.equal(
-      document.querySelector('[role="group"][aria-label="Conversation controls"]'),
-      null,
-    );
-    assert.doesNotMatch(html, /Here’s what I heard/);
-    assert.doesNotMatch(html, /aria-label="Edit About this learner"/);
-    assert.doesNotMatch(html, /<textarea/);
-    assert.doesNotMatch(html, /Save and continue|Keep this|Leave this out/);
-    assert.doesNotMatch(html, /Debug transcript|I am seven\./);
-  });
 });

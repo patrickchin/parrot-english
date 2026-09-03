@@ -1,7 +1,4 @@
 export const DUB_PEAK_BAR_COUNT = 32;
-export const EMPTY_DUB_PEAK_BARS = Object.freeze(
-  Array.from({ length: DUB_PEAK_BAR_COUNT }, () => 0),
-);
 export const DUB_PEAK_BARS_HEADER = "X-Parrot-Dub-Peak-Bars";
 const MAX_SERIALIZED_DUB_PEAK_BARS_LENGTH = 129;
 

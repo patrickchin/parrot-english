@@ -79,8 +79,6 @@ function generatorEnv(overrides = {}) {
     "ELEVENLABS_MODEL_ID",
     "ELEVENLABS_OUTPUT_FORMAT",
     "ELEVENLABS_NARRATOR_VOICE_ID",
-    "ELEVENLABS_VOICE_ID",
-    "ELEVEN_LABS_API_KEY",
   ]) delete env[key];
   return env;
 }
@@ -265,6 +263,7 @@ describe("static audio generator", () => {
     assert.match(generator, /ELEVENLABS_PEPPA_VOICE_ID/);
     assert.match(generator, /ELEVENLABS_DOLLY_VOICE_ID/);
     assert.match(generator, /ELEVENLABS_NARRATOR_VOICE_ID/);
+    assert.doesNotMatch(generator, /ELEVENLABS_VOICE_ID|ELEVEN_LABS_API_KEY/);
     assert.match(generator, /line\.speaker/);
     assert.match(generator, /5N1BjZ10t6GcJUhZCP40/);
     assert.match(generator, /pFZP5JQG7iQjIQuC4Bku/);

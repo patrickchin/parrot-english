@@ -48,27 +48,6 @@ function createStep(overrides = {}) {
   };
 }
 
-function createResponse(overrides = {}) {
-  return {
-    speaker: "dolly",
-    dialogue: "Well done!",
-    after: "continue",
-    ...overrides,
-  };
-}
-
-function createCheck() {
-  return {
-    maxAttempts: 2,
-    correct: createResponse(),
-    incorrect: createResponse({
-      dialogue: "Almost! Try again.",
-      after: "retry",
-    }),
-    incorrectFinal: createResponse({ dialogue: "Good try! Let's continue." }),
-  };
-}
-
 function createScene(index) {
   const dialogue = index === 4 ? "Thank you!" : "Can you help me, please?";
   return {
@@ -230,7 +209,7 @@ describe("lesson data contract", () => {
     );
   });
 
-  it("accepts optional checks and inherited or partial emotes", { skip: !hasValidator }, () => {
+  it("accepts inherited or partial emotes", { skip: !hasValidator }, () => {
     const catalog = lessonData.createLessonCatalog(createCatalogInput());
     const lesson = createLesson();
     const firstStep = lesson.scenes[0].steps[0];
@@ -238,22 +217,6 @@ describe("lesson data contract", () => {
 
     delete firstStep.emotes;
     userStep.emotes = { dolly: "listening" };
-    userStep.check = {
-      ...createCheck(),
-      correct: createResponse({
-        speaker: "peppa",
-        emotes: { peppa: "happy" },
-      }),
-      noInput: createResponse({
-        speaker: "narrator",
-        dialogue: "I couldn't hear you. Try again.",
-        after: "retry",
-      }),
-      noInputFinal: createResponse({
-        speaker: "narrator",
-        dialogue: "Let's continue.",
-      }),
-    };
 
     assert.strictEqual(
       lessonData.validateLesson(lesson, catalog, "valid.json"),
@@ -279,6 +242,17 @@ describe("lesson data contract", () => {
         pattern
       );
     }
+  });
+
+  it("rejects the retired speaking-check field", { skip: !hasValidator }, () => {
+    const catalog = lessonData.createLessonCatalog(createCatalogInput());
+    const lesson = createLesson();
+    lesson.scenes[0].steps[1].check = {};
+
+    assert.throws(
+      () => lessonData.validateLesson(lesson, catalog, "retired.json"),
+      /scenes\[0\]\.steps\[1\]\.check is not supported/,
+    );
   });
 
   it("rejects unknown scene catalog values", { skip: !hasValidator }, () => {
@@ -341,34 +315,6 @@ describe("lesson data contract", () => {
       lessonData.validateLesson(extra, catalog, "extra.json"),
       extra,
     );
-  });
-
-  it("rejects invalid scripted speech checks", { skip: !hasValidator }, () => {
-    const catalog = lessonData.createLessonCatalog(createCatalogInput());
-
-    const characterCheck = createLesson();
-    characterCheck.scenes[0].steps[0].check = createCheck();
-    assert.throws(
-      () => lessonData.validateLesson(characterCheck, catalog, "bad.json"),
-      /scenes\[0\]\.steps\[0\]\.check.*user step/i,
-    );
-
-    const missingFinal = createLesson();
-    missingFinal.scenes[0].steps[1].check = createCheck();
-    delete missingFinal.scenes[0].steps[1].check.incorrectFinal;
-    assert.throws(
-      () => lessonData.validateLesson(missingFinal, catalog, "bad.json"),
-      /incorrectFinal/,
-    );
-
-    const loopingFinal = createLesson();
-    loopingFinal.scenes[0].steps[1].check = createCheck();
-    loopingFinal.scenes[0].steps[1].check.incorrectFinal.after = "retry";
-    assert.throws(
-      () => lessonData.validateLesson(loopingFinal, catalog, "bad.json"),
-      /incorrectFinal\.after.*continue/,
-    );
-
   });
 
   it("validates every checked-in lesson against the checked-in catalogs", () => {

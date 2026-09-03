@@ -28,9 +28,8 @@ function insertAccount(database) {
   database
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, legacy_storage_owner, name,
-         private_media_name, name_key)
-       VALUES ('learner-a', 'user-a', 1, 'Mary', 'Mary', 'mary')`,
+        (id, auth_user_id, name, private_media_name, name_key)
+       VALUES ('learner-a', 'user-a', 'Mary', 'Mary', 'mary')`,
     )
     .run();
 }
@@ -51,24 +50,12 @@ describe("learner deletion persistence", () => {
         "learnerProfileId",
         "userIdHash",
         "privateMediaName",
-        "legacyStorageOwner",
         "generation",
         "requestedAt",
         "storageKeysJson",
       ],
     );
-    assert.ok(
-      schema.learnerSelectionRequired,
-      "Expected schema.learnerSelectionRequired",
-    );
-    assert.equal(
-      getTableName(schema.learnerSelectionRequired),
-      "learner_selection_required",
-    );
-    assert.deepEqual(
-      Object.keys(getTableColumns(schema.learnerSelectionRequired)),
-      ["sessionId"],
-    );
+    assert.equal(schema.learnerSelectionRequired, undefined);
   });
 
   it("keeps a learner tombstone after its learner and account rows are deleted", () => {
@@ -79,8 +66,8 @@ describe("learner deletion persistence", () => {
         .prepare(
           `INSERT INTO learner_profile_deletion_tombstone
             (learner_profile_id, user_id_hash, private_media_name,
-             legacy_storage_owner, generation, requested_at, storage_keys_json)
-           VALUES ('learner-a', 'opaque-user-hash', 'Mary', 1, 3,
+             generation, requested_at, storage_keys_json)
+           VALUES ('learner-a', 'opaque-user-hash', 'Mary', 3,
                    1700000000000,
                    '["accounts/guardian@example.test/learners/Mary/recordings/"]')`,
         )
@@ -94,8 +81,7 @@ describe("learner deletion persistence", () => {
           ...database
             .prepare(
               `SELECT learner_profile_id, user_id_hash, private_media_name,
-                      legacy_storage_owner, generation, requested_at,
-                      storage_keys_json
+                      generation, requested_at, storage_keys_json
                FROM learner_profile_deletion_tombstone`,
             )
             .get(),
@@ -104,7 +90,6 @@ describe("learner deletion persistence", () => {
           learner_profile_id: "learner-a",
           user_id_hash: "opaque-user-hash",
           private_media_name: "Mary",
-          legacy_storage_owner: 1,
           generation: 3,
           requested_at: 1_700_000_000_000,
           storage_keys_json:
@@ -130,22 +115,18 @@ describe("learner deletion persistence", () => {
       insertAccount(database);
       const insert = database.prepare(
         `INSERT INTO learner_profile_deletion_tombstone
-          (learner_profile_id, user_id_hash, legacy_storage_owner,
-           generation, requested_at, storage_keys_json)
-         VALUES (?, 'opaque-user-hash', ?, 1, 1700000000000, ?)`,
+          (learner_profile_id, user_id_hash, generation, requested_at,
+           storage_keys_json)
+         VALUES (?, 'opaque-user-hash', 1, 1700000000000, ?)`,
       );
-      insert.run("learner-a", 1, "[]");
+      insert.run("learner-a", "[]");
 
       assert.throws(
-        () => insert.run("learner-a", 1, "[]"),
+        () => insert.run("learner-a", "[]"),
         /unique|primary key/i,
       );
       assert.throws(
-        () => insert.run("learner-b", 2, "[]"),
-        /check constraint/i,
-      );
-      assert.throws(
-        () => insert.run("learner-c", 0, "not-json"),
+        () => insert.run("learner-c", "not-json"),
         /check constraint/i,
       );
       assert.ok(
@@ -164,24 +145,15 @@ describe("learner deletion persistence", () => {
     }
   });
 
-  it("cascades a selection-required marker with its auth session", () => {
+  it("does not create the removed selection-required marker table", () => {
     const database = createMigratedDatabase();
     try {
-      insertAccount(database);
-      database
-        .prepare(
-          `INSERT INTO learner_selection_required (session_id)
-           VALUES ('session-a')`,
-        )
-        .run();
-
-      database.prepare("DELETE FROM session WHERE id = 'session-a'").run();
-
       assert.equal(
         database
           .prepare(
-            `SELECT count(*) AS count FROM learner_selection_required
-             WHERE session_id = 'session-a'`,
+            `SELECT count(*) AS count
+             FROM sqlite_master
+             WHERE type = 'table' AND name = 'learner_selection_required'`,
           )
           .get().count,
         0,

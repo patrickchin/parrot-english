@@ -300,13 +300,12 @@ async function routeIncompleteLearnerProfile(page: Page) {
     await route.fulfill({
       body: JSON.stringify({
         canBypass: false,
-        experienceMode: "form",
         mode: "full",
         profile: {
           id: "e2e-learner",
           age: null,
           answers: {
-            legacyAnswers: null,
+            description: null,
             questionnaireVersion: 2,
             responses: {},
             schemaVersion: 2,
@@ -316,7 +315,6 @@ async function routeIncompleteLearnerProfile(page: Page) {
           description: null,
           name: null,
           profileStatus: "not_started",
-          questionnaireVersion: 2,
         },
         progress: { answered: 0, current: 1, total: 6 },
         question: {
@@ -328,7 +326,6 @@ async function routeIncompleteLearnerProfile(page: Page) {
           promptZh: null,
           required: true,
         },
-        questionnaire: { version: 2 },
       }),
       contentType: "application/json",
       status: 200,
@@ -462,7 +459,9 @@ const guardianContentPages = [
   {
     heading: "Voice dubbing",
     lastControl: (page: Page) =>
-      page.getByRole("button", { name: "Delete Mia's saved nursery-rhyme voice clips" }),
+      page.getByRole("button", {
+        name: "Allow Mia to record and save nursery-rhyme voice clips",
+      }),
     name: "dubbing settings",
     path: "/guardian/dubbing?parrotE2eDub=not-granted",
   },
@@ -497,7 +496,7 @@ for (const guardianPage of guardianContentPages) {
   }
 }
 
-test("guardian learner details has one clear manager exit without a duplicate setup action", async ({
+test("guardian learner details has one clear manager exit", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 568, width: 320 });
@@ -506,9 +505,6 @@ test("guardian learner details has one clear manager exit without a duplicate se
   await expect(
     page.getByRole("heading", { name: "Learner details" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Redo setup questions" }),
-  ).toHaveCount(0);
   await expect(
     page.getByRole("region", { name: "Lesson voice recordings" }),
   ).toBeVisible();

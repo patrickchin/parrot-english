@@ -16,22 +16,18 @@ function insertUser(sqlite, userId) {
 let state;
 let repository;
 
-const legacyIdentity = {
+const ownerIdentity = {
   learnerName: "Mia",
   learnerProfileId: "learner-a",
-  legacyStorageOwner: true,
   sessionId: "session-a",
   userId: "user-1",
-  userName: "Guardian",
 };
 
 const siblingIdentity = {
   learnerName: "Leo",
   learnerProfileId: "learner-b",
-  legacyStorageOwner: false,
   sessionId: "session-b",
   userId: "user-1",
-  userName: "Guardian",
 };
 
 beforeEach(() => {
@@ -40,11 +36,11 @@ beforeEach(() => {
   const insertLearner = state.sqlite.prepare(
     `INSERT INTO learner_profile
       (id, auth_user_id, name, private_media_name, name_key,
-       onboarding_status, legacy_storage_owner)
-     VALUES (?, ?, ?, ?, ?, 'not_started', ?)`,
+       onboarding_status)
+     VALUES (?, ?, ?, ?, ?, 'not_started')`,
   );
-  insertLearner.run("learner-a", "user-1", "Mia", "Mia", "mia", 1);
-  insertLearner.run("learner-b", "user-1", "Leo", "Leo", "leo", 0);
+  insertLearner.run("learner-a", "user-1", "Mia", "Mia", "mia");
+  insertLearner.run("learner-b", "user-1", "Leo", "Leo", "leo");
   repository = createDubConsentRepository(createDatabase(state.d1), {
     createGeneration: () => "grant-1",
     now: () => new Date("2026-08-25T08:00:00.000Z"),
@@ -54,12 +50,12 @@ beforeEach(() => {
 afterEach(() => state.close());
 
 test("a fresh account has no current dubbing grant", async () => {
-  assert.deepEqual(await repository.status(legacyIdentity), { state: "not_granted" });
-  assert.equal(await repository.requireCurrentGrant(legacyIdentity), null);
+  assert.deepEqual(await repository.status(ownerIdentity), { state: "not_granted" });
+  assert.equal(await repository.requireCurrentGrant(ownerIdentity), null);
 });
 
 test("grant stores the current version and a fresh opaque generation", async () => {
-  const granted = await repository.grant(legacyIdentity);
+  const granted = await repository.grant(ownerIdentity);
   assert.equal(granted.state, "granted");
   assert.equal(granted.consentVersion, "guardian-voice-r2-v2");
   assert.equal(granted.grantGeneration, "grant-1");
@@ -67,13 +63,13 @@ test("grant stores the current version and a fresh opaque generation", async () 
 });
 
 test("revoking blocks grant and exact-generation checks until cleanup finishes", async () => {
-  const granted = await repository.grant(legacyIdentity);
-  const revoking = await repository.beginRevocation(legacyIdentity);
+  const granted = await repository.grant(ownerIdentity);
+  const revoking = await repository.beginRevocation(ownerIdentity);
   assert.equal(revoking.state, "revoking");
-  assert.equal(await repository.requireCurrentGrant(legacyIdentity, granted.grantGeneration), null);
-  await assert.rejects(() => repository.grant(legacyIdentity), /dub_consent_revoking/);
-  await repository.finishRevocation(legacyIdentity, revoking.grantGeneration);
-  assert.deepEqual(await repository.status(legacyIdentity), { state: "not_granted" });
+  assert.equal(await repository.requireCurrentGrant(ownerIdentity, granted.grantGeneration), null);
+  await assert.rejects(() => repository.grant(ownerIdentity), /dub_consent_revoking/);
+  await repository.finishRevocation(ownerIdentity, revoking.grantGeneration);
+  assert.deepEqual(await repository.status(ownerIdentity), { state: "not_granted" });
 });
 
 test("replaces a stale consent version with one fresh current generation", async () => {
@@ -93,30 +89,30 @@ test("replaces a stale consent version with one fresh current generation", async
     timestamp,
   );
 
-  assert.equal(await repository.requireCurrentGrant(legacyIdentity), null);
-  const granted = await repository.grant(legacyIdentity);
+  assert.equal(await repository.requireCurrentGrant(ownerIdentity), null);
+  const granted = await repository.grant(ownerIdentity);
   assert.equal(granted.state, "granted");
   assert.equal(granted.consentVersion, "guardian-voice-r2-v2");
   assert.equal(granted.grantGeneration, "grant-1");
 });
 
 test("rejects wrong grant generations", async () => {
-  await repository.grant(legacyIdentity);
+  await repository.grant(ownerIdentity);
 
-  assert.equal(await repository.requireCurrentGrant(legacyIdentity, "wrong-grant"), null);
+  assert.equal(await repository.requireCurrentGrant(ownerIdentity, "wrong-grant"), null);
 });
 
 test("finishing a different revocation generation preserves the active cleanup", async () => {
-  await repository.grant(legacyIdentity);
-  const revoking = await repository.beginRevocation(legacyIdentity);
+  await repository.grant(ownerIdentity);
+  const revoking = await repository.beginRevocation(ownerIdentity);
 
-  await repository.finishRevocation(legacyIdentity, "wrong-grant");
+  await repository.finishRevocation(ownerIdentity, "wrong-grant");
 
-  assert.deepEqual(await repository.status(legacyIdentity), revoking);
+  assert.deepEqual(await repository.status(ownerIdentity), revoking);
 });
 
 test("every learner uses an independent learner-scoped consent authority", async () => {
-  const legacyGrant = await repository.grant(legacyIdentity);
+  const ownerGrant = await repository.grant(ownerIdentity);
 
   assert.deepEqual(await repository.status(siblingIdentity), {
     state: "not_granted",
@@ -130,7 +126,7 @@ test("every learner uses an independent learner-scoped consent authority", async
   const siblingGrant = await repository.grant(siblingIdentity);
   const siblingRevocation = await repository.beginRevocation(siblingIdentity);
   assert.equal(siblingRevocation.state, "revoking");
-  assert.deepEqual(await repository.status(legacyIdentity), legacyGrant);
+  assert.deepEqual(await repository.status(ownerIdentity), ownerGrant);
   assert.equal(
     await repository.requireCurrentGrant(
       siblingIdentity,
@@ -146,7 +142,7 @@ test("every learner uses an independent learner-scoped consent authority", async
   assert.deepEqual(await repository.status(siblingIdentity), {
     state: "not_granted",
   });
-  assert.deepEqual(await repository.status(legacyIdentity), legacyGrant);
+  assert.deepEqual(await repository.status(ownerIdentity), ownerGrant);
   assert.equal(
     state.sqlite.prepare("SELECT count(*) AS count FROM learner_dub_consent").get().count,
     1,

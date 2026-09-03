@@ -24,7 +24,6 @@ import {
   playAudioLine,
   type PlaybackControl,
 } from "../media/audio-playback";
-import { playDeviceSpeech } from "../media/device-speech";
 import { ActionButton, ActionLink, cx } from "../shared/ui";
 import { StoryArtwork } from "./StoryArtwork";
 import type { Story } from "./story-catalog";
@@ -162,58 +161,29 @@ export function StoryReader({
       }
     };
 
-    let narrationPromise: Promise<void>;
     const narrationAudioId = page.narrationAudioId;
     const joinInAudioId = page.joinInAudioId;
+    let narrationPromise: Promise<void>;
     try {
-      if (narrationAudioId) {
-        narrationPromise = (async () => {
-          await playSavedStoryLine(
-            narrationAudioId,
-            page.text,
-            controller.signal,
-            onPlaybackControl,
-          );
-          if (!joinInAudioId) return;
-          if (generation !== playbackGenerationRef.current) return;
-          revealWithinPane(
-            readingPaneRef.current,
-            joinInPromptRef.current,
-          );
-          resumeNarrationStateRef.current = "join-in";
-          setNarrationState("join-in");
-          await playSavedStoryLine(
-            joinInAudioId,
-            page.joinIn,
-            controller.signal,
-            onPlaybackControl,
-          );
-        })();
-      } else if (!narrationAudioId && !joinInAudioId) {
-        narrationPromise = (async () => {
-          await playDeviceSpeech({
-            onPlaybackControl,
-            signal: controller.signal,
-            speaker: "narrator",
-            text: page.text,
-          });
-          if (generation !== playbackGenerationRef.current) return;
-          revealWithinPane(
-            readingPaneRef.current,
-            joinInPromptRef.current,
-          );
-          resumeNarrationStateRef.current = "join-in";
-          setNarrationState("join-in");
-          await playDeviceSpeech({
-            onPlaybackControl,
-            signal: controller.signal,
-            speaker: "narrator",
-            text: page.joinIn,
-          });
-        })();
-      } else {
-        throw new Error("Story audio metadata is incomplete.");
-      }
+      narrationPromise = (async () => {
+        await playSavedStoryLine(
+          narrationAudioId,
+          page.text,
+          controller.signal,
+          onPlaybackControl,
+        );
+        if (!joinInAudioId) return;
+        if (generation !== playbackGenerationRef.current) return;
+        revealWithinPane(readingPaneRef.current, joinInPromptRef.current);
+        resumeNarrationStateRef.current = "join-in";
+        setNarrationState("join-in");
+        await playSavedStoryLine(
+          joinInAudioId,
+          page.joinIn,
+          controller.signal,
+          onPlaybackControl,
+        );
+      })();
     } catch {
       showReadAloudError();
       return;

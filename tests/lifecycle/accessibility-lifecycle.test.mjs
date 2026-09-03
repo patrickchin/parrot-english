@@ -66,9 +66,11 @@ before(async () => {
     await vite.ssrLoadModule("/src/auth/account-actions.tsx"));
   ({
     createGuardianAccessProvider,
-    notifyGuardianAccessRequired,
     useGuardianAccess,
   } = await vite.ssrLoadModule("/src/auth/GuardianAccess.tsx"));
+  ({ notifyGuardianAccessRequired } = await vite.ssrLoadModule(
+    "/src/auth/guardian-access-api.ts",
+  ));
   ({ ConversationSurface } = await vite.ssrLoadModule(
     "/src/conversation/ConversationSurface.tsx",
   ));

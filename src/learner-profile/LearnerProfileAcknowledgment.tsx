@@ -12,7 +12,8 @@ import {
   LearnerProfileStepHeading,
 } from "./LearnerProfileLayout";
 import { ActionButton, cx } from "../shared/ui";
-import type { ProfileEditorAudience } from "./ProfileEditor";
+
+type LearnerProfileAudience = "guardian" | "learner";
 
 type PlayLine = typeof playAudioLine;
 
@@ -69,7 +70,7 @@ export function LearnerProfileAcknowledgment({
   operationId,
 }: {
   acknowledgment: Acknowledgment;
-  audience: ProfileEditorAudience;
+  audience: LearnerProfileAudience;
   onNext: () => void;
   operationId: number;
 }) {

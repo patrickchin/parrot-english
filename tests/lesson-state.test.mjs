@@ -18,7 +18,6 @@ const lesson = {
         {
           speaker: "user",
           dialogue: "Here you are!",
-          check: { maxAttempts: 2 },
         },
       ],
     },
@@ -34,7 +33,7 @@ function reduce(state, event, currentLesson = lesson) {
 }
 
 describe("scene-script lesson state", () => {
-  it("automatically advances a join-in beat without reading legacy checks", () => {
+  it("automatically advances a join-in beat", () => {
     const started = reduce(createInitialLessonState(), { type: "PLAY_SCENE" });
     const joining = reduce(started, { type: "LINE_DONE" });
 

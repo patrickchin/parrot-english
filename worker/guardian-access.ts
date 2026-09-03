@@ -1,16 +1,15 @@
 import { and, eq, lte } from "drizzle-orm";
 import { guardianSessionUnlock } from "../src/db/schema.ts";
 import type { Database } from "./database.ts";
-import { parseDubRoute } from "./dub-route.ts";
 import type { AccountIdentity } from "./request-identity.ts";
 
 export const GUARDIAN_ACCESS_TTL_MS = 15 * 60 * 1000;
 
-export type GuardianAccessPayload =
+type GuardianAccessPayload =
   | { mode: "learner" }
   | { mode: "guardian"; expiresAt: string };
 
-export type GuardianAccessRepository = {
+type GuardianAccessRepository = {
   status(sessionId: string): Promise<GuardianAccessPayload>;
   unlock(sessionId: string): Promise<GuardianAccessPayload>;
   lock(sessionId: string): Promise<{ mode: "learner" }>;
@@ -91,6 +90,9 @@ export async function handleGuardianAccessRequest(input: {
       return json(await repository.status(input.identity.sessionId));
     }
     if (input.request.method === "POST") {
+      if (input.request.body !== null) {
+        return json({ error: "invalid_request" }, { status: 400 });
+      }
       return json(await repository.unlock(input.identity.sessionId));
     }
     if (input.request.method === "DELETE") {
@@ -123,20 +125,16 @@ export function requiresGuardianAccess(
     return method === "POST";
   }
   if (/^\/api\/learner-profiles\/[^/]+$/.test(pathname)) {
-    return method === "DELETE";
+    return method === "GET" || method === "PUT" || method === "DELETE";
   }
-  const dubRoute = parseDubRoute(pathname);
-  if (dubRoute?.consent) {
+  if (
+    /^\/api\/learner-profiles\/[^/]+\/lesson-recording-consent$/.test(
+      pathname,
+    )
+  ) {
     return method === "PUT";
   }
-  if (dubRoute && !dubRoute.lineId) {
-    return method === "DELETE";
-  }
-  if (pathname === "/api/profile") {
-    return method === "GET" || method === "PUT";
-  }
-  if (pathname === "/api/profile/lesson-recording-consent") {
-    return method === "PUT";
-  }
+  if (pathname === "/api/dubs/consent") return method === "PUT";
+  if (pathname === "/api/dubs") return method === "DELETE";
   return false;
 }

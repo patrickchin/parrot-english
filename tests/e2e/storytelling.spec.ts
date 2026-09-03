@@ -63,128 +63,6 @@ const largeLandscapeStoryViewports = [
   { height: 1440, name: "extra-large desktop", width: 2560 },
 ] as const;
 
-async function installStoryMediaGuard(page: Page) {
-  await page.addInitScript(() => {
-    let forbiddenStoryAudioConstructions = 0;
-    class ForbiddenStoryAudio {
-      constructor() {
-        forbiddenStoryAudioConstructions += 1;
-        throw new Error("A script-only story tried to create audio.");
-      }
-    }
-
-    Object.defineProperty(window, "Audio", {
-      configurable: true,
-      value: ForbiddenStoryAudio,
-    });
-    const storySpeech = {
-      cancelled: 0,
-      endCallbacks: [] as Array<() => void>,
-      errorCallbacks: [] as Array<() => void>,
-      paused: 0,
-      resumed: 0,
-      snapshots: [] as Array<{
-        promptFullyVisible: boolean;
-        scrollTop: number | null;
-        text: string;
-      }>,
-      spoken: [] as string[],
-      throwOnSpeak: false,
-    };
-    class StorySpeechUtterance {
-      lang = "";
-      onend: (() => void) | null = null;
-      onerror: (() => void) | null = null;
-      pitch = 1;
-      rate = 1;
-      text: string;
-      voice = null;
-      volume = 1;
-
-      constructor(text: string) {
-        this.text = text;
-      }
-    }
-    Object.defineProperty(window, "SpeechSynthesisUtterance", {
-      configurable: true,
-      value: StorySpeechUtterance,
-    });
-    Object.defineProperty(window, "__storySpeech", {
-      configurable: true,
-      value: storySpeech,
-    });
-    Object.defineProperty(window, "__storyAudioConstructions", {
-      configurable: true,
-      get: () => forbiddenStoryAudioConstructions,
-    });
-    Object.defineProperty(window, "speechSynthesis", {
-      configurable: true,
-      value: {
-        cancel() {
-          storySpeech.cancelled += 1;
-        },
-        getVoices() {
-          return [
-            {
-              default: true,
-              lang: "en-US",
-              localService: true,
-              name: "Test English",
-            },
-          ];
-        },
-        pause() {
-          storySpeech.paused += 1;
-        },
-        resume() {
-          storySpeech.resumed += 1;
-        },
-        speak(utterance: StorySpeechUtterance) {
-          if (storySpeech.throwOnSpeak) {
-            storySpeech.throwOnSpeak = false;
-            throw new Error("Simulated speech start failure.");
-          }
-
-          const prompt = document.querySelector<HTMLElement>(
-            '[aria-label^="Say it:"]',
-          );
-          let pane = prompt?.parentElement ?? null;
-          while (pane) {
-            const overflowY = getComputedStyle(pane).overflowY;
-            if (overflowY === "auto" || overflowY === "scroll") break;
-            pane = pane.parentElement;
-          }
-          const promptBox = prompt?.getBoundingClientRect();
-          const paneBox = pane?.getBoundingClientRect();
-          const visibleHeight =
-            promptBox && paneBox
-              ? Math.max(
-                  0,
-                  Math.min(promptBox.bottom, paneBox.bottom) -
-                    Math.max(promptBox.top, paneBox.top),
-                )
-              : 0;
-
-          storySpeech.spoken.push(utterance.text);
-          storySpeech.snapshots.push({
-            promptFullyVisible: Boolean(
-              promptBox && visibleHeight >= promptBox.height - 1,
-            ),
-            scrollTop: pane?.scrollTop ?? null,
-            text: utterance.text,
-          });
-          if (utterance.onend) {
-            storySpeech.endCallbacks.push(utterance.onend);
-          }
-          if (utterance.onerror) {
-            storySpeech.errorCallbacks.push(utterance.onerror);
-          }
-        },
-      },
-    });
-  });
-}
-
 async function installSavedStoryAudio(page: Page) {
   await page.waitForFunction(() => Audio.name === "MockAudioElement");
   await page.evaluate(() => {
@@ -395,44 +273,6 @@ async function expectFullyVisibleInReadingPane(locator: Locator) {
     .toBe(true);
 }
 
-async function storySpeechState(page: Page) {
-  return page.evaluate(() => {
-    const speech = (
-      window as unknown as {
-        __storyAudioConstructions: number;
-        __storySpeech: {
-          cancelled: number;
-          endCallbacks: Array<() => void>;
-          errorCallbacks: Array<() => void>;
-          paused: number;
-          resumed: number;
-          snapshots: Array<{
-            promptFullyVisible: boolean;
-            scrollTop: number | null;
-            text: string;
-          }>;
-          spoken: string[];
-          throwOnSpeak: boolean;
-        };
-      }
-    ).__storySpeech;
-    return {
-      audioConstructions: (
-        window as unknown as { __storyAudioConstructions: number }
-      ).__storyAudioConstructions,
-      callbackCounts: {
-        end: speech.endCallbacks.length,
-        error: speech.errorCallbacks.length,
-      },
-      cancelled: speech.cancelled,
-      paused: speech.paused,
-      resumed: speech.resumed,
-      snapshots: speech.snapshots,
-      spoken: speech.spoken,
-    };
-  });
-}
-
 async function expectContainedWithoutScrolling(
   container: Locator,
   content: Locator,
@@ -460,10 +300,6 @@ function expectStablePosition(
   expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
 }
-
-test.beforeEach(async ({ page }) => {
-  await installStoryMediaGuard(page);
-});
 
 test("the learner shelf opens one recommended shelf and switches shelves on demand", async ({
   page,
@@ -703,7 +539,7 @@ test("only the active shelf loads covers and its first cover loads eagerly", asy
 test("shelf queries and reader back links restore the matching shelf", async ({
   page,
 }) => {
-  await page.goto("/stories?level=first-english-words");
+  await page.goto("/stories?level=first-words");
   await expect(page).toHaveURL("/stories?level=first-words");
   await expect(
     page.getByRole("tab", { name: "Level 1 · Words & pictures" }),
@@ -1043,7 +879,6 @@ for (const viewport of completionViewports) {
         scrollingElement: 0,
         window: 0,
       });
-      expect((await storySpeechState(page)).spoken).toEqual([]);
       await expectNoHorizontalOverflow(page);
     }
   });
@@ -1672,7 +1507,6 @@ for (const viewport of completionViewports) {
   test(`story completion owns a visible, useful focus location on a ${viewport.name}`, async ({
     page,
   }) => {
-    await installStoryMediaGuard(page);
     await page.setViewportSize(viewport);
     await page.goto("/stories/the-red-ball/pages/5");
 
@@ -1695,7 +1529,6 @@ for (const viewport of completionViewports) {
       scrollingElement: 0,
       window: 0,
     });
-    expect((await storySpeechState(page)).spoken).toEqual([]);
     await expectNoHorizontalOverflow(page);
 
     await page.keyboard.press("Tab");
@@ -1722,7 +1555,6 @@ for (const viewport of completionViewports) {
       scrollingElement: 0,
       window: 0,
     });
-    expect((await storySpeechState(page)).spoken).toEqual([]);
     await expectNoHorizontalOverflow(page);
 
     await page.keyboard.press("Tab");
@@ -1735,7 +1567,6 @@ for (const viewport of completionViewports) {
 test("keyboard completion and restart return to silent page-one context", async ({
   page,
 }) => {
-  await installStoryMediaGuard(page);
   await page.setViewportSize({ height: 844, width: 390 });
   await page.goto("/stories/the-red-ball/pages/5");
 
@@ -1774,13 +1605,11 @@ test("keyboard completion and restart return to silent page-one context", async 
     scrollingElement: 0,
     window: 0,
   });
-  expect((await storySpeechState(page)).spoken).toEqual([]);
 });
 
 test("replay resets a deliberately scrolled completion screen", async ({
   page,
 }) => {
-  await installStoryMediaGuard(page);
   await page.setViewportSize({ height: 360, width: 640 });
   await page.goto("/stories/the-red-ball/pages/5");
   await page.getByRole("button", { name: "Finish story" }).click();
@@ -1811,7 +1640,6 @@ test("replay resets a deliberately scrolled completion screen", async ({
     scrollingElement: 0,
     window: 0,
   });
-  expect((await storySpeechState(page)).spoken).toEqual([]);
 });
 
 test("completion cancels active narration and ignores its stale callback", async ({

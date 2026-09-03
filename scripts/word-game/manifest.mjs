@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const WORD_GAME_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const WORD_GAME_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const HEX_COLOR_PATTERN = /^#[a-f0-9]{6}$/;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;

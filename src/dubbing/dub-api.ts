@@ -1,5 +1,5 @@
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
-import { DUB_ID, getDubDefinition } from "./rhyme-catalog.ts";
+import { getDubDefinition } from "./rhyme-catalog.ts";
 import {
   DUB_PEAK_BARS_HEADER,
   isDubPeakBars,
@@ -8,13 +8,11 @@ import {
 
 const GUARDIAN_CONSENT_VERSION = "guardian-voice-r2-v2" as const;
 const LOAD_FAILURE = "Your saved dub could not be loaded.";
-const PLAYBACK_FAILURE = "Your recording could not be played. Record the line again.";
 const SAVE_FAILURE = "Your take was not saved. Try again.";
 const DELETE_FAILURE =
   "Your saved nursery-rhyme voice clips were not deleted.";
 
 export type DubStatus = {
-  complete: boolean;
   consentState: "granted" | "not_granted" | "revoking";
   dubId: string;
   guardianConsentVersion: typeof GUARDIAN_CONSENT_VERSION;
@@ -24,14 +22,16 @@ export type DubStatus = {
     recordedAt: string | null;
     saved: boolean;
   }>;
-  recordingEnabled: boolean;
 };
 
 export type DubRequestOptions = {
-  dubId?: string;
   fetch?: typeof globalThis.fetch;
   learnerProfileId?: string;
   signal?: AbortSignal;
+};
+
+type DubResourceRequestOptions = DubRequestOptions & {
+  dubId: string;
 };
 
 export class DubResetInProgressError extends Error {
@@ -134,14 +134,12 @@ function isDubStatus(value: unknown, expectedDubId: string): value is DubStatus 
   }
   const expectedLineIds = definition.lines.map(({ id }) => id);
   return (
-    typeof status.complete === "boolean" &&
     (status.consentState === "granted" ||
       status.consentState === "not_granted" ||
       status.consentState === "revoking") &&
     status.guardianConsentVersion === GUARDIAN_CONSENT_VERSION &&
     Array.isArray(status.lines) &&
     status.lines.length === expectedLineIds.length &&
-    typeof status.recordingEnabled === "boolean" &&
     status.lines.every((line, index) =>
       typeof line === "object" &&
       line !== null &&
@@ -185,52 +183,18 @@ function appendLearnerProfileTarget(
 
 export const getDubLineAudioUrl = (
   lineId: string,
-  {
-    dubId = DUB_ID,
-    learnerProfileId,
-  }: Pick<DubRequestOptions, "dubId" | "learnerProfileId"> = {},
+  { dubId, learnerProfileId }: Pick<
+    DubResourceRequestOptions,
+    "dubId" | "learnerProfileId"
+  >,
 ) =>
   appendLearnerProfileTarget(
     `/api/dubs/${dubId}/lines/${encodeURIComponent(lineId)}/audio`,
     learnerProfileId,
   );
 
-export async function loadDubLineAudio(
-  lineId: string,
-  options: DubRequestOptions = {},
-): Promise<Blob> {
-  const dubId = options.dubId ?? DUB_ID;
-  getDubDefinition(dubId);
-  const response = await requestResponse(
-    options.fetch ?? globalThis.fetch,
-    getDubLineAudioUrl(lineId, {
-      dubId,
-      learnerProfileId: options.learnerProfileId,
-    }),
-    {
-      credentials: "same-origin",
-      signal: options.signal,
-    },
-    PLAYBACK_FAILURE,
-  );
-  await notifyGuardianAccessRequiredForResponse(response);
-  if (!response.ok) {
-    const consentLoss = await dubConsentLossError(response);
-    if (consentLoss) throw consentLoss;
-    throw new Error(PLAYBACK_FAILURE);
-  }
-  let blob: Blob;
-  try {
-    blob = await response.blob();
-  } catch (error) {
-    friendlyFailure(error, PLAYBACK_FAILURE);
-  }
-  if (blob.size === 0) throw new Error(PLAYBACK_FAILURE);
-  return blob;
-}
-
-export async function loadDubStatus(options: DubRequestOptions = {}) {
-  const dubId = options.dubId ?? DUB_ID;
+export async function loadDubStatus(options: DubResourceRequestOptions) {
+  const { dubId } = options;
   getDubDefinition(dubId);
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
@@ -265,9 +229,12 @@ export async function loadDubStatus(options: DubRequestOptions = {}) {
 export async function saveDubLine(
   lineId: string,
   blob: Blob,
-  options: DubRequestOptions & { peakBars?: readonly number[] | null } = {},
+  options: DubResourceRequestOptions & {
+    peakBars?: readonly number[] | null;
+  },
 ) {
-  const dubId = options.dubId ?? DUB_ID;
+  const { dubId } = options;
+  getDubDefinition(dubId);
   const serializedPeakBars = options.peakBars == null
     ? null
     : serializeDubPeakBars(options.peakBars);
@@ -319,11 +286,10 @@ export async function saveDubLine(
 }
 
 export async function grantDubConsent(options: DubRequestOptions = {}) {
-  const dubId = options.dubId ?? DUB_ID;
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
     appendLearnerProfileTarget(
-      `/api/dubs/${dubId}/consent`,
+      "/api/dubs/consent",
       options.learnerProfileId,
     ),
     {
@@ -339,14 +305,10 @@ export async function grantDubConsent(options: DubRequestOptions = {}) {
   requireOk(response, "Voice dubbing could not be turned on.");
 }
 
-export async function deleteDub(options: DubRequestOptions = {}) {
-  const dubId = options.dubId ?? DUB_ID;
+export async function deleteAllDubs(options: DubRequestOptions = {}) {
   const response = await requestResponse(
     options.fetch ?? globalThis.fetch,
-    appendLearnerProfileTarget(
-      `/api/dubs/${dubId}`,
-      options.learnerProfileId,
-    ),
+    appendLearnerProfileTarget("/api/dubs", options.learnerProfileId),
     {
       credentials: "same-origin",
       method: "DELETE",

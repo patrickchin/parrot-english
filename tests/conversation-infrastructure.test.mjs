@@ -50,7 +50,10 @@ function readMigrations() {
     .sort()
     .map((name) => ({
       name,
-      sql: readFileSync(new URL(`../migrations/${name}`, import.meta.url), "utf8"),
+      sql: readFileSync(
+        new URL(`../migrations/${name}`, import.meta.url),
+        "utf8",
+      ),
     }));
 }
 
@@ -86,14 +89,17 @@ describe("conversation persistence infrastructure", () => {
       const table = schema[exportName];
       assert.ok(table, `Expected schema.${exportName}`);
       assert.equal(getTableName(table), expected.table);
-      assert.deepEqual(Object.keys(getTableColumns(table)), expected.properties);
+      assert.deepEqual(
+        Object.keys(getTableColumns(table)),
+        expected.properties,
+      );
     }
 
     assert.equal(schema.conversationFact, undefined);
     assert.equal(schema.conversationFactRelations, undefined);
   });
 
-  it("keeps realtime deployment production-shaped and enabled", () => {
+  it("keeps realtime deployment production-shaped", () => {
     const workflow = readFileSync(
       new URL("../.github/workflows/deploy-production.yml", import.meta.url),
       "utf8",
@@ -120,7 +126,8 @@ describe("conversation persistence infrastructure", () => {
     );
 
     assert.ok(
-      workflow.indexOf("d1 migrations apply") < workflow.indexOf("deploy:worker"),
+      workflow.indexOf("d1 migrations apply") <
+        workflow.indexOf("deploy:worker"),
       "D1 migrations must run before the Worker deploy.",
     );
     assert.match(workflow, /npm run build:agent/);
@@ -133,7 +140,7 @@ describe("conversation persistence infrastructure", () => {
     );
     assert.match(dockerfile, /ca-certificates/);
     assert.match(dockerfile, /USER node/);
-    assert.match(wrangler, /"REALTIME_CONVERSATIONS_ENABLED": "1"/);
+    assert.doesNotMatch(wrangler, /REALTIME_CONVERSATIONS_ENABLED/);
     for (const name of [
       "LIVEKIT_URL",
       "LIVEKIT_API_KEY",
@@ -160,9 +167,12 @@ describe("conversation persistence infrastructure", () => {
       "lk agent create",
       "npm run deploy:agent",
     ]) {
-      assert.match(deployment, new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+      assert.match(
+        deployment,
+        new RegExp(command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
+      );
     }
-    assert.match(deployment, /REALTIME_CONVERSATIONS_ENABLED/);
+    assert.doesNotMatch(deployment, /REALTIME_CONVERSATIONS_ENABLED/);
     assert.match(deployment, /record: false/);
     assert.match(deployment, /form fallback/i);
   });
@@ -178,14 +188,28 @@ describe("conversation persistence infrastructure", () => {
       const turnSql = tableSql(database, "conversation_turn");
       const factSql = tableSql(database, "conversation_fact");
 
-      assert.match(sessionSql, /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i);
+      assert.match(
+        sessionSql,
+        /REFERENCES [`"]?user[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
+      );
       assert.match(
         sessionSql,
         /learner_profile_id[\s\S]*REFERENCES [`"]?learner_profile[`"]?\s*\([`"]?id[`"]?\).*ON DELETE cascade/i,
       );
       assert.match(sessionSql, /json_valid\([^)]*controller_state/i);
       assert.match(sessionSql, /prompt_style/i);
-      assert.match(sessionSql, /starting.*active.*completed.*stopped.*disconnected.*failed.*abandoned/i);
+      assert.match(
+        sessionSql,
+        /scenario_key[^\n]*in \('onboarding', 'small-chat'\)/i,
+      );
+      assert.match(
+        sessionSql,
+        /small-chat[^\n]*prompt_style[^\n]*tiny-turns[^\n]*gentle-guide[^\n]*playful-pal/i,
+      );
+      assert.match(
+        sessionSql,
+        /starting.*active.*completed.*stopped.*disconnected.*failed.*abandoned/i,
+      );
       assert.match(turnSql, /REFERENCES [`"]?conversation_session/i);
       assert.match(turnSql, /CHECK\s*\([^\n]*role[^\n]*user[^\n]*assistant/i);
       assert.match(turnSql, /CHECK\s*\([^\n]*input_mode[^\n]*voice[^\n]*text/i);
@@ -209,20 +233,50 @@ describe("conversation persistence infrastructure", () => {
 
       database.exec(`
         INSERT INTO user (id, name, email) VALUES ('user-1', 'Mia', 'mia@example.test');
+        INSERT INTO learner_profile (id, auth_user_id, name)
+          VALUES ('learner-1', 'user-1', 'Mary');
         INSERT INTO conversation_session
-          (id, auth_user_id, scenario_key, scenario_version, room_name, status, controller_state, started_at)
-          VALUES ('conversation-1', 'user-1', 'learner-profile.get-to-know-you', 1, 'room-1', 'active', '{}', 1);
+          (id, auth_user_id, learner_profile_id, scenario_key, scenario_version,
+           room_name, status, controller_state, started_at)
+          VALUES ('conversation-1', 'user-1', 'learner-1',
+            'onboarding', 1, 'room-1', 'active', '{}', 1);
         INSERT INTO conversation_turn
           (id, conversation_id, provider_item_id, sequence, role, text, input_mode)
           VALUES ('turn-1', 'conversation-1', 'provider-1', 1, 'user', 'Hello', 'voice');
       `);
+      assert.throws(
+        () =>
+          database.exec(`
+            INSERT INTO conversation_session
+              (id, auth_user_id, learner_profile_id, scenario_key,
+               scenario_version, room_name, status, controller_state, started_at)
+            VALUES ('conversation-retired', 'user-1', 'learner-1',
+              'profile-edit', 1, 'room-retired', 'active', '{}', 1);
+          `),
+        /conversation_session_scenario_key_check/,
+      );
+      assert.throws(
+        () =>
+          database.exec(`
+            INSERT INTO conversation_session
+              (id, auth_user_id, learner_profile_id, scenario_key,
+               scenario_version, prompt_style, room_name, status,
+               controller_state, started_at)
+            VALUES ('conversation-invalid-style', 'user-1', 'learner-1',
+              'small-chat', 2, NULL, 'room-invalid-style', 'active', '{}', 1);
+          `),
+        /conversation_session_prompt_style_check/,
+      );
       database.exec("DELETE FROM user WHERE id = 'user-1'");
       assert.equal(
-        database.prepare("SELECT count(*) count FROM conversation_session").get().count,
+        database
+          .prepare("SELECT count(*) count FROM conversation_session")
+          .get().count,
         0,
       );
       assert.equal(
-        database.prepare("SELECT count(*) count FROM conversation_turn").get().count,
+        database.prepare("SELECT count(*) count FROM conversation_turn").get()
+          .count,
         0,
       );
     } finally {

@@ -105,6 +105,7 @@ function renderView(overrides = {}, language = "en") {
           error: null,
           mutation: null,
           onDelete() {},
+          onEnable() {},
           onRetry() {},
           phase: "available",
           savedCount: 0,
@@ -125,13 +126,16 @@ function textFromMarkup(markup) {
     .replaceAll("&amp;", "&");
 }
 
-test("guardian settings manages stored clips without a recording permission gate", () => {
+test("guardian settings enables recording and manages stored clips", () => {
   const disabled = renderView({ consentState: "not_granted" });
   const disabledText = textFromMarkup(disabled);
   assert.match(disabledText, /Editing settings for ⁨Mia⁩/);
   assert.match(disabledText, /Noah/);
-  assert.doesNotMatch(disabled, /Allow voice dubbing|type="checkbox"/);
-  assert.doesNotMatch(disabledText, /consent|permission/i);
+  assert.match(
+    disabledText,
+    /Allow Mia to record and save nursery-rhyme voice clips/,
+  );
+  assert.doesNotMatch(disabled, /type="checkbox"/);
 
   const enabled = renderView({ consentState: "granted", savedCount: 4 });
   const enabledText = textFromMarkup(enabled);
@@ -214,6 +218,7 @@ test("Chinese dubbing settings localizes private-data management and stable stat
 
   const empty = renderView({ consentState: "not_granted" }, "zh-Hans");
   assert.match(textFromMarkup(empty), /没有已保存的配音片段/);
+  assert.match(textFromMarkup(empty), /允许 Mia 录制并保存童谣配音片段/);
 
   const loading = renderView({ phase: "loading" }, "zh-Hans");
   assert.match(loading, /正在加载配音设置…/);
@@ -279,9 +284,11 @@ function isDubPath(path, learnerProfileId) {
 }
 
 function isKnownDubRequest(path) {
-  return typeof path === "string" && DUB_DEFINITIONS.some(
-    ({ id }) => path.startsWith(`/api/dubs/${id}`),
-  );
+  if (typeof path !== "string") return false;
+  const pathname = new URL(path, "https://example.test").pathname;
+  return pathname === "/api/dubs" ||
+    pathname === "/api/dubs/consent" ||
+    DUB_DEFINITIONS.some(({ id }) => pathname === `/api/dubs/${id}`);
 }
 
 function dubStatus(
@@ -293,7 +300,6 @@ function dubStatus(
   assert.ok(definition, `Expected catalog definition ${dubId}`);
   const lineIds = definition.lines.map(({ id }) => id);
   return {
-    complete: savedCount === lineIds.length,
     consentState,
     dubId,
     guardianConsentVersion: "guardian-voice-r2-v2",
@@ -302,7 +308,6 @@ function dubStatus(
       recordedAt: index < savedCount ? "2026-08-25T08:00:00.000Z" : null,
       saved: index < savedCount,
     })),
-    recordingEnabled: consentState === "granted",
   };
 }
 
@@ -429,6 +434,54 @@ test("loads and totals saved clips from every voice-dubbing rhyme", async () => 
       `/api/dubs/${id}?learnerProfileId=learner-mia`,
     ]).sort(),
   );
+});
+
+test("enables voice dubbing for the targeted learner", async () => {
+  let consentState = "not_granted";
+  const consentRequests = [];
+  installDubbingFetch(async (input, init = {}) => {
+    if (init.method === "PUT") {
+      consentRequests.push({ body: JSON.parse(init.body), input });
+      consentState = "granted";
+      return new Response(null, { status: 204 });
+    }
+    return Response.json(
+      dubStatus(consentState, 0, dubIdFromPath(input)),
+    );
+  });
+
+  const container = await mountStrict(
+    createElement(
+      MemoryRouter,
+      { initialEntries: ["/guardian/dubbing"] },
+      createElement(
+        GuardianProvider,
+        { lockGuardianAccess: async () => ({ mode: "learner" }) },
+        createElement(GuardianDubbingSettings),
+      ),
+    ),
+  );
+
+  await click(
+    await waitFor(() =>
+      button(
+        container,
+        "Allow Mia to record and save nursery-rhyme voice clips",
+      ),
+    ),
+  );
+  await waitFor(() =>
+    assert.match(container.textContent, /Voice dubbing is now available for Mia/),
+  );
+  assert.deepEqual(consentRequests, [
+    {
+      body: {
+        accepted: true,
+        consentVersion: "guardian-voice-r2-v2",
+      },
+      input: "/api/dubs/consent?learnerProfileId=learner-mia",
+    },
+  ]);
 });
 
 test("failed cleanup reloads revoking status and offers a retry", async () => {
@@ -581,7 +634,7 @@ test("a successful delete with a failed refresh remains a load failure", async (
   });
 });
 
-test("an interrupted legacy reset exposes guardian cleanup and reconciles afterward", async () => {
+test("an interrupted reset exposes guardian cleanup and reconciles afterward", async () => {
   let cleanupRequired = true;
   let deleteCalls = 0;
   installDubbingFetch(async (input, init = {}) => {

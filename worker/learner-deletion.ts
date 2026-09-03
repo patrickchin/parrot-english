@@ -21,6 +21,12 @@ import {
 
 const MAX_CLOSURE_CONFLICTS = 16;
 const DELETE_BATCH_SIZE = 1_000;
+const EMPTY_STORAGE_CLOSURE = JSON.stringify({
+  markerKeys: [],
+  prefixes: [],
+  slotKeys: [],
+  version: 1,
+});
 
 export type LearnerDeletionStorageClosure = {
   markerKeys: string[];
@@ -80,9 +86,6 @@ export function parseLearnerDeletionStorageClosure(
   } catch {
     throw new Error("Learner deletion storage closure is invalid.");
   }
-  if (Array.isArray(parsed) && parsed.length === 0) {
-    return { markerKeys: [], prefixes: [], slotKeys: [], version: 1 };
-  }
   if (
     typeof parsed !== "object" ||
     parsed === null ||
@@ -92,6 +95,18 @@ export function parseLearnerDeletionStorageClosure(
     throw new Error("Learner deletion storage closure is invalid.");
   }
   const closure = parsed as Record<string, unknown>;
+  const keys = Object.keys(closure);
+  if (
+    keys.length !== 4 ||
+    keys.some((key) =>
+      key !== "markerKeys" &&
+      key !== "prefixes" &&
+      key !== "slotKeys" &&
+      key !== "version"
+    )
+  ) {
+    throw new Error("Learner deletion storage closure is invalid.");
+  }
   return {
     markerKeys: stringArray(closure.markerKeys),
     prefixes: stringArray(closure.prefixes),
@@ -131,21 +146,13 @@ async function findTombstone(database: Database, profileId: string) {
   return row ?? null;
 }
 
-export function learnerDeletionGeneration(
+function learnerDeletionGeneration(
   tombstone: Pick<
     DeletionTombstone,
     "generation" | "learnerProfileId" | "requestedAt"
   >,
 ) {
   return `learner-deletion-v1:${tombstone.learnerProfileId}:${tombstone.generation}:${tombstone.requestedAt.getTime()}`;
-}
-
-export async function findLearnerDeletionGeneration(
-  database: Database,
-  profileId: string,
-) {
-  const tombstone = await findTombstone(database, profileId);
-  return tombstone ? learnerDeletionGeneration(tombstone) : null;
 }
 
 async function markDeletionPending(
@@ -162,11 +169,10 @@ async function markDeletionPending(
   const batchResults = await database.$client.batch([
     database.$client.prepare(
       `INSERT INTO learner_profile_deletion_tombstone (
-         learner_profile_id, user_id_hash, legacy_storage_owner,
-         private_media_name, generation, requested_at, storage_keys_json
+         learner_profile_id, user_id_hash, private_media_name,
+         generation, requested_at, storage_keys_json
        )
-       SELECT target.id, ?, target.legacy_storage_owner,
-              target.private_media_name, 1, ?, '[]'
+       SELECT target.id, ?, target.private_media_name, 1, ?, ?
        FROM learner_profile AS target
        WHERE target.id = ? AND target.auth_user_id = ?
          AND EXISTS (
@@ -185,18 +191,13 @@ async function markDeletionPending(
              AND status IN ('starting', 'active')
          )
        ON CONFLICT(learner_profile_id) DO NOTHING`,
-    ).bind(userIdHash, requestedAt, profileId, identity.userId),
-    database.$client.prepare(
-      `INSERT INTO learner_selection_required (session_id)
-       SELECT selection.session_id
-       FROM session_learner_selection AS selection
-       JOIN learner_profile_deletion_tombstone AS deletion
-         ON deletion.learner_profile_id = selection.learner_profile_id
-       WHERE selection.learner_profile_id = ?
-         AND selection.auth_user_id = ?
-         AND deletion.user_id_hash = ?
-       ON CONFLICT(session_id) DO NOTHING`,
-    ).bind(profileId, identity.userId, userIdHash),
+    ).bind(
+      userIdHash,
+      requestedAt,
+      EMPTY_STORAGE_CLOSURE,
+      profileId,
+      identity.userId,
+    ),
     database.$client.prepare(
       `DELETE FROM session_learner_selection
        WHERE learner_profile_id = ? AND auth_user_id = ?
@@ -242,7 +243,7 @@ async function markDeletionPending(
     return tombstone;
   }
 
-  const diagnostic = batchResults[3]?.results?.[0] as
+  const diagnostic = batchResults[2]?.results?.[0] as
     | { busy?: number; sibling_exists?: number; target_exists?: number }
     | undefined;
   if (!diagnostic?.target_exists) {

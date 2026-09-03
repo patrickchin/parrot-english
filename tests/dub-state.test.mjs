@@ -1,28 +1,47 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  DUB_DURATION_MS,
-  DUB_ID,
-  DUB_LINES,
-  DUB_LINES_PER_VERSE,
-  DUB_ROUTE,
-} from "../src/dubbing/dub-script.ts";
-import {
   createInitialDubState,
   firstMissingDubLineIndex,
   getFirstActionableDubSceneIndex,
   getDubSceneStatus,
   reduceDubState,
 } from "../src/dubbing/dub-state.ts";
-import { DUB_DEFINITIONS, OLD_MACDONALD_DUB } from "../src/dubbing/rhyme-catalog.ts";
+import {
+  DUB_DEFINITIONS,
+  FIVE_LITTLE_DUCKS_DUB,
+  OLD_MACDONALD_DUB,
+} from "../src/dubbing/rhyme-catalog.ts";
+
+const DUCK_LINES = FIVE_LITTLE_DUCKS_DUB.lines;
+
+function createDuckState() {
+  return createInitialDubState(FIVE_LITTLE_DUCKS_DUB);
+}
+
+function reduceDuckState(state, event) {
+  return reduceDubState(state, event, FIVE_LITTLE_DUCKS_DUB);
+}
+
+function firstMissingDuckLineIndex(savedLineIds) {
+  return firstMissingDubLineIndex(savedLineIds, FIVE_LITTLE_DUCKS_DUB);
+}
+
+function getDuckSceneStatus(state, sceneIndex) {
+  return getDubSceneStatus(state, sceneIndex, FIVE_LITTLE_DUCKS_DUB);
+}
+
+function getFirstActionableDuckSceneIndex(state) {
+  return getFirstActionableDubSceneIndex(state, FIVE_LITTLE_DUCKS_DUB);
+}
 
 describe("five little ducks dub domain", () => {
   it("authors the complete traditional rhyme as 24 four-second cues", () => {
-    assert.equal(DUB_ID, "five-little-ducks-v2");
-    assert.equal(DUB_ROUTE, "/dubs/five-little-ducks");
-    assert.equal(DUB_DURATION_MS, 98_000);
-    assert.equal(DUB_LINES.length, 24);
-    assert.deepEqual(DUB_LINES.map(({ cueMs }) => cueMs), [
+    assert.equal(FIVE_LITTLE_DUCKS_DUB.id, "five-little-ducks-v2");
+    assert.equal(FIVE_LITTLE_DUCKS_DUB.route, "/dubs/five-little-ducks");
+    assert.equal(FIVE_LITTLE_DUCKS_DUB.durationMs, 98_000);
+    assert.equal(DUCK_LINES.length, 24);
+    assert.deepEqual(DUCK_LINES.map(({ cueMs }) => cueMs), [
       800, 4800, 8800, 12800, 16800, 20800, 24800, 28800,
       32800, 36800, 40800, 44800, 48800, 52800, 56800, 60800,
       64800, 68800, 72800, 76800, 80800, 84800, 88800, 92800,
@@ -30,21 +49,21 @@ describe("five little ducks dub domain", () => {
   });
 
   it("keeps the authored script immutable", () => {
-    const originalText = DUB_LINES[0].text;
-    assert.throws(() => { DUB_LINES[0].text = "changed"; }, TypeError);
-    assert.throws(() => { DUB_LINES.push(DUB_LINES[0]); }, TypeError);
-    assert.equal(DUB_LINES[0].text, originalText);
-    assert.equal(DUB_LINES.length, 24);
+    const originalText = DUCK_LINES[0].text;
+    assert.throws(() => { DUCK_LINES[0].text = "changed"; }, TypeError);
+    assert.throws(() => { DUCK_LINES.push(DUCK_LINES[0]); }, TypeError);
+    assert.equal(DUCK_LINES[0].text, originalText);
+    assert.equal(DUCK_LINES.length, 24);
   });
 
   it("groups the rhyme into six natural four-line scenes", () => {
-    assert.equal(DUB_LINES_PER_VERSE, 4);
+    assert.equal(FIVE_LITTLE_DUCKS_DUB.linesPerScene, 4);
     assert.deepEqual(
       Array.from(
-        { length: DUB_LINES.length / DUB_LINES_PER_VERSE },
-        (_, index) => DUB_LINES.slice(
-          index * DUB_LINES_PER_VERSE,
-          (index + 1) * DUB_LINES_PER_VERSE,
+        { length: DUCK_LINES.length / FIVE_LITTLE_DUCKS_DUB.linesPerScene },
+        (_, index) => DUCK_LINES.slice(
+          index * FIVE_LITTLE_DUCKS_DUB.linesPerScene,
+          (index + 1) * FIVE_LITTLE_DUCKS_DUB.linesPerScene,
         ).map(({ id }) => id),
       ),
       [
@@ -59,7 +78,8 @@ describe("five little ducks dub domain", () => {
   });
 
   it("exposes the storyboard reducer as the single canonical dub state surface", () => {
-    assert.deepEqual(createInitialDubState(), {
+    assert.deepEqual(createDuckState(), {
+      consentState: null,
       error: "",
       needsRetake: {},
       operation: "idle",
@@ -73,9 +93,9 @@ describe("five little ducks dub domain", () => {
   });
 
   it("loads enabled status directly into the project", () => {
-    const state = reduceDubState(createInitialDubState(), {
+    const state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: ["line-1"],
     });
     assert.equal(state.view, "project");
@@ -83,81 +103,82 @@ describe("five little ducks dub domain", () => {
   });
 
   it("keeps disabled status in the listen-only view", () => {
-    const state = reduceDubState(createInitialDubState(), {
+    const state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: false,
+      consentState: "not_granted",
       savedLineIds: [],
     });
     assert.equal(state.view, "listen-only");
+    assert.equal(state.consentState, "not_granted");
   });
 
   it("resumes at the first missing line and opens exact scene selections", () => {
-    assert.equal(firstMissingDubLineIndex(new Set(["line-1", "line-2"])), 2);
-    let state = reduceDubState(createInitialDubState(), {
+    assert.equal(firstMissingDuckLineIndex(new Set(["line-1", "line-2"])), 2);
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
-      savedLineIds: DUB_LINES.slice(0, 5).map(({ id }) => id),
+      consentState: "granted",
+      savedLineIds: DUCK_LINES.slice(0, 5).map(({ id }) => id),
     });
     assert.equal(state.view, "project");
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 1 });
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 1 });
     assert.deepEqual(
       [state.view, state.selectedSceneIndex, state.selectedLineIndex],
       ["scene", 1, 5],
     );
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
-    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-20" });
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
+    state = reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-20" });
     assert.deepEqual([state.selectedSceneIndex, state.selectedLineIndex], [4, 19]);
   });
 
   it("reports every scene status from saved and retake state", () => {
     assert.deepEqual(
-      getDubSceneStatus({ needsRetake: {}, saved: {} }, 0),
+      getDuckSceneStatus({ needsRetake: {}, saved: {} }, 0),
       { kind: "not-started", recorded: 0 },
     );
     assert.deepEqual(
-      getDubSceneStatus({ needsRetake: {}, saved: { "line-1": "saved" } }, 0),
+      getDuckSceneStatus({ needsRetake: {}, saved: { "line-1": "saved" } }, 0),
       { kind: "in-progress", recorded: 1 },
     );
     assert.deepEqual(
-      getDubSceneStatus({
+      getDuckSceneStatus({
         needsRetake: {},
-        saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
+        saved: Object.fromEntries(DUCK_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
       }, 0),
       { kind: "done", recorded: 4 },
     );
     assert.deepEqual(
-      getDubSceneStatus({
+      getDuckSceneStatus({
         needsRetake: { "line-4": true },
-        saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
+        saved: Object.fromEntries(DUCK_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
       }, 0),
       { kind: "needs-retake", recorded: 4 },
     );
   });
 
   it("finds the first actionable scene and returns null only when all are ready", () => {
-    assert.equal(getFirstActionableDubSceneIndex({ saved: {}, needsRetake: {} }), 0);
-    assert.equal(getFirstActionableDubSceneIndex({
-      saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
+    assert.equal(getFirstActionableDuckSceneIndex({ saved: {}, needsRetake: {} }), 0);
+    assert.equal(getFirstActionableDuckSceneIndex({
+      saved: Object.fromEntries(DUCK_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
       needsRetake: {},
     }), 1);
-    assert.equal(getFirstActionableDubSceneIndex({
-      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+    assert.equal(getFirstActionableDuckSceneIndex({
+      saved: Object.fromEntries(DUCK_LINES.map(({ id }) => [id, "saved"])),
       needsRetake: { "line-9": true },
     }), 2);
-    assert.equal(getFirstActionableDubSceneIndex({
-      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+    assert.equal(getFirstActionableDuckSceneIndex({
+      saved: Object.fromEntries(DUCK_LINES.map(({ id }) => [id, "saved"])),
       needsRetake: {},
     }), null);
   });
 
   it("opens a retake before an earlier unsaved line in the same scene", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: ["line-1"],
     });
-    state = reduceDubState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-4" });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDuckState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-4" });
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
     assert.deepEqual([state.selectedSceneIndex, state.selectedLineIndex], [0, 3]);
   });
 
@@ -166,7 +187,10 @@ describe("five little ducks dub domain", () => {
       OLD_MACDONALD_DUB.lines.slice(0, 8).map(({ id }) => [id, "saved"]),
     );
     assert.equal(
-      getFirstActionableDubSceneIndex({ saved, needsRetake: {} }, OLD_MACDONALD_DUB),
+      getFirstActionableDubSceneIndex(
+        { saved, needsRetake: {} },
+        OLD_MACDONALD_DUB,
+      ),
       1,
     );
   });
@@ -190,7 +214,7 @@ describe("five little ducks dub domain", () => {
 
       let state = reduceDubState(createInitialDubState(definition), {
         type: "LOADED",
-        recordingEnabled: true,
+        consentState: "granted",
         savedLineIds: [],
       }, definition);
       state = reduceDubState(state, {
@@ -207,7 +231,7 @@ describe("five little ducks dub domain", () => {
       createInitialDubState(OLD_MACDONALD_DUB),
       {
         type: "LOADED",
-        recordingEnabled: true,
+        consentState: "granted",
         savedLineIds: OLD_MACDONALD_DUB.lines.slice(0, 6).map(({ id }) => id),
       },
       OLD_MACDONALD_DUB,
@@ -230,16 +254,16 @@ describe("five little ducks dub domain", () => {
   });
 
   it("keeps the same selected line after save and clears its retake marker", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
-      savedLineIds: DUB_LINES.slice(0, 20).map(({ id }) => id),
+      consentState: "granted",
+      savedLineIds: DUCK_LINES.slice(0, 20).map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
-    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-20" });
-    state = reduceDubState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-20" });
-    state = reduceDubState(state, { type: "OPERATION_STARTED", operation: "saving" });
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 4 });
+    state = reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-20" });
+    state = reduceDuckState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-20" });
+    state = reduceDuckState(state, { type: "OPERATION_STARTED", operation: "saving" });
+    state = reduceDuckState(state, {
       type: "SAVE_SUCCEEDED",
       lineId: "line-20",
       recordedAt: "2026-08-25T10:00:00.000Z",
@@ -254,143 +278,147 @@ describe("five little ducks dub domain", () => {
   });
 
   it("locks navigation only while a retryable Blob awaits save or replacement", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDuckState(state, {
       type: "SAVE_FAILED",
       message: "Try again.",
       recovery: "save",
     });
     const retryState = state;
-    assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), retryState);
-    assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), retryState);
+    assert.equal(reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-2" }), retryState);
+    assert.equal(reduceDuckState(state, { type: "BACK_TO_PROJECT" }), retryState);
 
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, {
       type: "SAVE_FAILED",
       message: "Record again.",
       recovery: "record",
     });
-    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" });
+    state = reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-2" });
     assert.equal(state.selectedLineIndex, 1);
     assert.equal(state.saveRecovery, null);
     assert.equal(state.error, "");
 
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, {
       type: "SAVE_FAILED",
       message: "Record again.",
       recovery: "record",
     });
-    state = reduceDubState(state, { type: "BACK_TO_PROJECT" });
+    state = reduceDuckState(state, { type: "BACK_TO_PROJECT" });
     assert.equal(state.view, "project");
     assert.equal(state.saveRecovery, null);
     assert.equal(state.error, "");
   });
 
   it("preserves retryable save recovery while guide and take audio play", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDuckState(state, {
       type: "SAVE_FAILED",
       message: "Try again.",
       recovery: "save",
     });
 
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, {
       type: "OPERATION_STARTED",
       operation: "guide-playing",
     });
     assert.equal(state.saveRecovery, "save");
     assert.equal(state.error, "Try again.");
-    assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
-    state = reduceDubState(state, { type: "OPERATION_FINISHED" });
-    state = reduceDubState(state, {
+    assert.equal(reduceDuckState(state, { type: "BACK_TO_PROJECT" }), state);
+    state = reduceDuckState(state, { type: "OPERATION_FINISHED" });
+    state = reduceDuckState(state, {
       type: "OPERATION_STARTED",
       operation: "take-playing",
     });
     assert.equal(state.saveRecovery, "save");
     assert.equal(state.error, "Try again.");
-    assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
+    assert.equal(reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
   });
 
   it("clears recovery feedback when a new recording attempt starts", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: ["line-1"],
     });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDuckState(state, {
       type: "SAVE_FAILED",
       message: "Keep this take.",
       recovery: "record",
     });
 
     for (const operation of ["mic-opening", "counting-in"]) {
-      state = reduceDubState(state, { type: "OPERATION_STARTED", operation });
+      state = reduceDuckState(state, { type: "OPERATION_STARTED", operation });
       assert.equal(state.saveRecovery, null);
       assert.equal(state.error, "");
-      assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
-      assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
+      assert.equal(reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
+      assert.equal(reduceDuckState(state, { type: "BACK_TO_PROJECT" }), state);
     }
 
-    state = reduceDubState(state, { type: "OPERATION_STARTED", operation: "recording" });
+    state = reduceDuckState(state, { type: "OPERATION_STARTED", operation: "recording" });
     assert.equal(state.saveRecovery, null);
     assert.equal(state.error, "");
   });
 
   it("atomically finishes cancellable playback only after accepted navigation", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDuckState(state, {
       type: "OPERATION_STARTED",
       operation: "playback",
       playbackScope: "scene",
     });
 
-    state = reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" });
+    state = reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-2" });
     assert.equal(state.selectedLineIndex, 1);
     assert.equal(state.operation, "idle");
     assert.equal(state.playbackScope, null);
   });
 
   it("blocks navigation during recording operations", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
+      consentState: "granted",
       savedLineIds: [],
     });
-    state = reduceDubState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
+    state = reduceDuckState(state, { type: "OPEN_SCENE", sceneIndex: 0 });
     for (const operation of ["mic-opening", "counting-in", "recording", "saving"]) {
-      state = reduceDubState(state, { type: "OPERATION_STARTED", operation });
-      assert.equal(reduceDubState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
-      assert.equal(reduceDubState(state, { type: "BACK_TO_PROJECT" }), state);
+      state = reduceDuckState(state, { type: "OPERATION_STARTED", operation });
+      assert.equal(reduceDuckState(state, { type: "SELECT_LINE", lineId: "line-2" }), state);
+      assert.equal(reduceDuckState(state, { type: "BACK_TO_PROJECT" }), state);
     }
   });
 
   it("loads recording-disabled status into listen-only and clears private state", () => {
-    let state = reduceDubState(createInitialDubState(), {
+    let state = reduceDuckState(createDuckState(), {
       type: "LOADED",
-      recordingEnabled: true,
-      savedLineIds: DUB_LINES.map(({ id }) => id),
+      consentState: "granted",
+      savedLineIds: DUCK_LINES.map(({ id }) => id),
     });
-    state = reduceDubState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-1" });
-    state = reduceDubState(state, {
+    state = reduceDuckState(state, { type: "MARK_NEEDS_RETAKE", lineId: "line-1" });
+    state = reduceDuckState(state, {
       type: "LOADED",
-      recordingEnabled: false,
+      consentState: "not_granted",
       savedLineIds: [],
     });
-    assert.deepEqual(state, { ...createInitialDubState(), view: "listen-only" });
+    assert.deepEqual(state, {
+      ...createDuckState(),
+      consentState: "not_granted",
+      view: "listen-only",
+    });
   });
 });

@@ -46,7 +46,7 @@ type LessonCharacterPresentation = {
 };
 
 type LessonSpeechPresentation = {
-  kind: string;
+  kind: "character" | "finished" | "narration" | "user";
   speaker: string;
   text: string;
 };
@@ -90,17 +90,16 @@ function useOverflowText(text: string) {
       if (!active) return;
       setIsOverflowing(target.scrollHeight - target.clientHeight > 1);
     };
-    const resizeObserver =
-      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(update);
+    const resizeObserver = new ResizeObserver(update);
 
     update();
-    resizeObserver?.observe(target);
+    resizeObserver.observe(target);
     window.addEventListener("resize", update);
     void document.fonts?.ready.then(update);
 
     return () => {
       active = false;
-      resizeObserver?.disconnect();
+      resizeObserver.disconnect();
       window.removeEventListener("resize", update);
     };
   }, [text]);
@@ -694,7 +693,7 @@ export function LessonSpeech({
   speech: LessonSpeechPresentation;
 }) {
   const overflowText = useOverflowText(speech.text);
-  if (speech.kind === "user" || speech.kind === "feedback") return null;
+  if (speech.kind === "user") return null;
 
   const isNarration = speech.kind === "narration";
   const speakerName =
@@ -819,70 +818,6 @@ export function LessonJoinInPrompt({
           Your microphone is joining in too
         </div>
       ) : null}
-    </section>
-  );
-}
-
-export function LessonUserPrompt({
-  dialogue,
-  reserved = false,
-  status = "ready",
-}: {
-  dialogue: string;
-  reserved?: boolean;
-  status?: "checking" | "ready" | "recording";
-}) {
-  const overflowText = useOverflowText(dialogue);
-  const promptLabel =
-    status === "recording"
-      ? "Listening"
-      : status === "checking"
-        ? "Checking"
-        : "Your turn";
-
-  return (
-    <section
-      aria-label="Your turn"
-      className={cx(
-        "lesson-dialogue-overlay lesson-user-prompt z-30 rounded-3xl border-4 border-white bg-white/95 px-2.5 py-2 text-center text-brand-ink shadow-control-surface min-[340px]:px-4 min-[340px]:py-3 md:px-7 md:py-4 [@media(min-width:35rem)_and_(max-height:26.25rem)]:rounded-2xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:px-3 [@media(min-width:35rem)_and_(max-height:26.25rem)]:py-1.5",
-        reserved
-          ? "relative max-h-full w-full min-w-0 max-w-none overflow-hidden short-wide:rounded-2xl short-wide:px-3 short-wide:py-1.5 tall-wide:rounded-xl tall-wide:border-0 tall-wide:px-3 tall-wide:py-1.5 tall-wide:shadow-none"
-          : "absolute left-1/2 top-36 w-[calc(100%-1.5rem)] max-w-2xl -translate-x-1/2 short:top-32 md:top-28 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:rounded-2xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:px-3 [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:py-1.5 [@media(min-width:48rem)_and_(max-height:38.75rem)]:top-[6.75rem] [@media(min-width:48rem)_and_(max-height:30rem)]:top-[9.875rem] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-15.25rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[var(--lesson-layered-dialogue-height)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overflow-hidden",
-      )}
-      role="region"
-    >
-      <div
-        className={cx(
-          "lesson-user-prompt-copy min-w-0",
-          reserved && "grid min-h-0 grid-rows-[auto_minmax(0,1fr)]",
-        )}
-      >
-        <span className="mb-1 inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-widest text-brand-green md:text-sm">
-          {status === "checking" ? (
-            <LoaderCircle
-              aria-hidden="true"
-              className="size-4 animate-spin motion-reduce:animate-none"
-            />
-          ) : (
-            <Mic aria-hidden="true" className="size-4" />
-          )}
-          {promptLabel}
-        </span>
-        <p
-          className={cx(
-            "m-0 text-base font-black leading-[1.15] focus-visible:rounded-lg focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-brand-ink min-[340px]:text-[clamp(1.125rem,4vw,1.75rem)] min-[340px]:leading-tight md:text-[clamp(1.25rem,3.5vw,2rem)] [@media(min-width:35rem)_and_(max-height:26.25rem)]:text-xl [@media(min-width:35rem)_and_(max-height:26.25rem)]:leading-[1.2]",
-            reserved &&
-              "min-h-0 overflow-y-auto overscroll-contain short-wide:text-xl tall-wide:text-[clamp(1.125rem,1.7vw,1.5rem)]",
-            !reserved &&
-              "[@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:text-xl [@media(min-width:48rem)_and_(min-height:26.3125rem)_and_(max-height:30rem)]:leading-[1.2] [@media(min-width:48rem)_and_(max-height:30rem)]:max-h-[calc(100dvh-18rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:max-h-[calc(var(--lesson-layered-dialogue-height)-4rem)] [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overflow-y-auto [@media(min-width:48rem)_and_(min-height:30.0625rem)]:overscroll-contain",
-          )}
-          onKeyDown={scrollOverflowText}
-          ref={overflowText.ref}
-          tabIndex={overflowText.tabIndex}
-        >
-          {dialogue}
-        </p>
-      </div>
     </section>
   );
 }

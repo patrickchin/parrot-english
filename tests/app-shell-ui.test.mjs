@@ -84,7 +84,7 @@ function renderApplicationRoute(initialEntry) {
               id: "learner-mia",
               age: 6,
               answers: {
-                legacyAnswers: null,
+                description: null,
                 questionnaireVersion: 2,
                 responses: {},
                 schemaVersion: 2,
@@ -94,10 +94,8 @@ function renderApplicationRoute(initialEntry) {
               description: "Likes animals",
               name: "Mia",
               profileStatus: "completed",
-              questionnaireVersion: 2,
               storyLevel: "first-words",
             },
-            replaceProfile() {},
           },
           createElement(ApplicationRoutes, {
             learnerName: "Mia",
@@ -319,7 +317,7 @@ test("feature placeholder renders supplied copy and a real main-menu link", () =
       description: "This activity is coming soon.",
       title: "Progress",
     }),
-    "/progress",
+    "/lessons",
   );
 
   assert.equal((html.match(/<h1/g) ?? []).length, 1);
@@ -407,9 +405,6 @@ test("authenticated application routes include the core learner activities", () 
     assert.match(rhyme, new RegExp(title));
     assert.match(rhyme, /Loading your private dub…/);
   }
-
-  const retiredProgress = renderApplicationRoute("/progress");
-  assert.doesNotMatch(retiredProgress, /Progress|coming soon/i);
 });
 
 test("guardian dashboard links to two focused management pages", () => {

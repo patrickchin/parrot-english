@@ -7,7 +7,6 @@ import {
 import { FeaturePlaceholder } from "../app/FeaturePlaceholder";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { useLearnerSelection } from "./LearnerProfileContext";
-import { profileDraftsFromState } from "./LearnerProfileGate";
 import {
   ProfileEditorView,
   type LearnerDetailsErrorCode,
@@ -24,6 +23,25 @@ import {
 
 function isAbortError(error: unknown) {
   return error instanceof Error && error.name === "AbortError";
+}
+
+function profileDraftsFromState(profileState: ProfileState) {
+  return {
+    name: profileState.profile.name ?? "",
+    age: profileState.profile.age?.toString() ?? "",
+    description: profileState.profile.description ?? "",
+    ...Object.fromEntries(
+      profileState.questions
+        .filter(
+          ({ answerKey }) =>
+            !["name", "age", "description"].includes(answerKey),
+        )
+        .map(({ answerKey }) => [
+          answerKey,
+          profileState.profile.answers.responses[answerKey]?.rawAnswer ?? "",
+        ]),
+    ),
+  };
 }
 
 export function GuardianLearnerDetails() {
@@ -53,8 +71,7 @@ export function GuardianLearnerDetails() {
     setIsLoading(true);
     setPageError(null);
     setProfileState(null);
-    void loadProfile({
-      learnerProfileId: validLearnerId,
+    void loadProfile(validLearnerId, {
       signal: controller.signal,
     })
       .then((loaded) => {
@@ -122,8 +139,7 @@ export function GuardianLearnerDetails() {
     setFieldErrors({});
     setPageError(null);
     try {
-      const saved = await saveProfileAnswers(drafts, {
-        learnerProfileId: validLearnerId,
+      const saved = await saveProfileAnswers(validLearnerId, drafts, {
         signal: controller.signal,
       });
       if (controller.signal.aborted) return;
@@ -164,8 +180,7 @@ export function GuardianLearnerDetails() {
     setIsSaving(true);
     setPageError(null);
     try {
-      const saved = await saveLessonRecordingConsent(enabled, {
-        learnerProfileId: validLearnerId,
+      const saved = await saveLessonRecordingConsent(validLearnerId, enabled, {
         signal: controller.signal,
       });
       if (controller.signal.aborted) return;
@@ -196,7 +211,6 @@ export function GuardianLearnerDetails() {
 
   return (
     <ProfileEditorView
-      audience="guardian"
       drafts={drafts}
       fieldErrors={fieldErrors}
       isSaving={isSaving}
@@ -210,7 +224,6 @@ export function GuardianLearnerDetails() {
       onLessonRecordingConsentChange={(enabled) =>
         void changeLessonRecordingConsent(enabled)
       }
-      onRedoLearnerProfile={() => {}}
       onSave={() => void save()}
       onValueChange={(answerKey, value) => {
         setDrafts((current) => ({ ...current, [answerKey]: value }));
@@ -222,7 +235,6 @@ export function GuardianLearnerDetails() {
       }}
       pageError={pageError}
       questions={profileState.questions}
-      showRedoLearnerProfile={false}
     />
   );
 }

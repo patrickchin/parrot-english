@@ -6,13 +6,12 @@ agent. The Worker owns Better Auth, D1 persistence, review, and short-lived room
 tokens. The agent owns the realtime voice conversation and finalized transcript
 ingest.
 
-Realtime conversations are enabled in the production Worker configuration.
-Keep the onboarding form fallback available throughout production operation
-and rollback.
+Keep the onboarding form alternative available throughout production
+operation and rollback.
 
 ## Provider and cost dependencies
 
-The runtime uses LiveKit Cloud/WebRTC, LiveKit Agents 1.5, and OpenAI Realtime.
+The runtime uses LiveKit Cloud/WebRTC, LiveKit Agents 1.7, and OpenAI Realtime.
 Each conversation can incur agent compute plus usage for:
 
 - `gpt-realtime-2.1-mini` audio input, reasoning, and audio output with the
@@ -26,13 +25,11 @@ companion enabled because profile finalization and conversation review require
 user text. The agent leaves server VAD disabled so the existing turn button
 continues to commit each learner turn manually.
 
-The OpenAI Realtime API supports function tools. Every purpose registers
-`endConversation` for bounded natural endings. Profile editing also registers
-`updateLearnerProfile`, which saves the complete current name, age, and About
-paragraph before Peppa acknowledges a change. Worker review still derives
-onboarding profiles and provides a transcript-based fallback for profile
-editing. The `marin` voice is character-directed; do not replace it with an
-exact protected-character voice clone.
+The OpenAI Realtime API supports function tools. Both purposes register only
+`endConversation` for bounded natural endings. Worker review derives onboarding
+profile details from the saved transcript; small chat never writes learner
+profile data. The `marin` voice is character-directed; do not replace it with
+an exact protected-character voice clone.
 
 ## Local verification
 
@@ -59,19 +56,17 @@ npm run dev
 Run the agent in another terminal:
 
 ```bash
-node --env-file=.env.local --experimental-strip-types agent/index.ts dev
+node --env-file=.env.local agent/index.ts dev
 ```
 
-For local investigation, set `REALTIME_CONVERSATIONS_ENABLED=1` in `.dev.vars`.
-Return it to `0` before committing. The browser must still offer Use the form
-instead at every realtime error or stop point.
+The browser must still offer Use the form instead at every realtime error or
+stop point.
 
-The Worker sends one of `onboarding`, `profile-edit`, or `small-chat` in the
-signed participant metadata. The agent must select the matching system prompt.
-Every purpose receives `endConversation`; only `profile-edit` also receives the
-authenticated `updateLearnerProfile` tool. Profile-edit writes are persisted
-before the spoken acknowledgment, and Worker review retains transcript-based
-finalization as a fallback.
+The Worker sends either `onboarding` or `small-chat` in the signed participant
+metadata. The agent selects the matching system prompt, and every conversation
+receives `endConversation`. Onboarding profile updates are finalized from the
+reviewed conversation state; ordinary small chat never writes learner-profile
+data.
 
 ## Cloudflare Worker and D1
 
@@ -97,9 +92,6 @@ npx wrangler secret put CONVERSATION_AGENT_SECRET
 `LIVEKIT_AGENT_NAME` must exactly match the value in the agent's
 `.env.livekit`; otherwise rooms wait indefinitely for a nonexistent dispatch
 target.
-
-`wrangler.jsonc` keeps `REALTIME_CONVERSATIONS_ENABLED` at `1` for production.
-Set it to `0` and redeploy when rolling back the realtime experience.
 
 ## LiveKit Cloud agent
 
@@ -144,12 +136,12 @@ at runtime. Keep `.env.livekit` untracked.
 
 ## Smoke test and rollout
 
-Before enabling the flag, authenticate as a test user and verify:
+Before deploying, authenticate as a test user and verify:
 
-1. Onboarding, profile editing, and Talk to Peppa each store the matching
-   scenario key and join one LiveKit room.
-2. Speaking over the pig friend stops its playback and the child is not spoken
-   over.
+1. Onboarding and Talk to Peppa each store the matching scenario key and join
+   one LiveKit room.
+2. Agent playback remains non-interruptible and each manual learner turn is
+   committed only after the prior reply finishes.
 3. Every agent response stays in English, including the single gentle rephrase.
 4. A different child-safe preference than the category asked is recorded and
    followed naturally instead of being treated as off-topic.
@@ -157,20 +149,17 @@ Before enabling the flag, authenticate as a test user and verify:
    all remain usable.
 6. Each live child turn produces a Realtime Mini reply without a separate
    STT-to-LLM-to-TTS chain or a tool-call round trip.
-   Onboarding and profile editing finalize the saved prose summary from the
-   transcript after Finish; small chat finishes without changing the profile.
+   Onboarding finalizes the saved prose summary from the transcript after
+   Finish; small chat finishes without changing the profile.
 7. D1 contains finalized user and assistant turns for completed and abandoned
    sessions, but no raw-audio payload or structured fact rows. LiveKit starts
    with `record: false`.
 
-The production Worker deploys with `REALTIME_CONVERSATIONS_ENABLED=1`. After each
-deployment, watch LiveKit agent logs, Worker errors, token issuance failures,
-D1 ingest conflicts, session duration, and model usage/cost.
+After each deployment, watch LiveKit agent logs, Worker errors, token issuance
+failures, D1 ingest conflicts, session duration, and model usage/cost.
 
 ## Rollback
 
-Disable `REALTIME_CONVERSATIONS_ENABLED` and redeploy the Worker. This immediately
-returns new onboarding visits to the form fallback without deleting transcripts
-or requiring a D1 rollback. The additive tables and deployed agent can remain in
-place while the incident is investigated. If the agent version itself is bad,
-use `lk agent rollback` after disabling the application flag.
+Redeploy the last known-good Worker release. The additive tables do not require
+a D1 rollback and saved transcripts remain intact. If the agent version itself
+is bad, use `lk agent rollback`.

@@ -13,7 +13,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=24.0.0"
   },
   "scripts": {
     "dev": "npm run build && wrangler dev --local --port 3000",
@@ -33,6 +33,7 @@
     "verify:backgrounds": "node scripts/verify-background-media.mjs",
     "pregenerate:audio:elevenlabs": "npm run check:content-catalogs",
     "generate:audio:elevenlabs": "node scripts/generate-static-audio.mjs --provider=elevenlabs",
+    "generate:audio:lesson-join-in": "node scripts/generate-lesson-join-in-audio.mjs",
     "generate:rhyme-catalog": "node scripts/generate-rhyme-catalog.mjs",
     "check:rhyme-catalog": "node scripts/generate-rhyme-catalog.mjs --check",
     "generate:word-game-catalog": "node scripts/generate-word-game-catalog.mjs",
@@ -50,8 +51,8 @@
     "lint": "eslint . --ignore-pattern dist"
   },
   "dependencies": {
-    "@livekit/agents": "1.6.2",
-    "@livekit/agents-plugin-openai": "1.6.2",
+    "@livekit/agents": "1.7.1",
+    "@livekit/agents-plugin-openai": "1.7.1",
     "better-auth": "^1.6.23",
     "drizzle-orm": "^0.45.2",
     "livekit-client": "2.20.0",
@@ -66,7 +67,7 @@
     "@eslint/js": "9.39.4",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "4.2.1",
-    "@types/node": "22.19.19",
+    "@types/node": "24.13.3",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",

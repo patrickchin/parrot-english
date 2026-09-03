@@ -14,24 +14,22 @@ const vite = await createServer({
 const { LearnerProfileGateView } = await vite.ssrLoadModule(
   "/src/learner-profile/LearnerProfileGate.tsx",
 );
-const {
-  mergeConversationTurns,
-  selectLearnerProfileExperience,
-} = await vite.ssrLoadModule("/src/conversation/usePeppaConversation.ts");
+const { mergeConversationTurns } = await vite.ssrLoadModule(
+  "/src/conversation/usePeppaConversation.ts",
+);
 
 after(async () => {
   await vite.close();
 });
 
-function fullState(experienceMode) {
+function fullState() {
   return {
     canBypass: false,
-    experienceMode,
     mode: "full",
     profile: {
       age: null,
       answers: {
-        legacyAnswers: null,
+        description: null,
         questionnaireVersion: 2,
         responses: {},
         schemaVersion: 2,
@@ -40,7 +38,6 @@ function fullState(experienceMode) {
       currentQuestionKey: "name",
       name: null,
       profileStatus: "not_started",
-      questionnaireVersion: 2,
     },
     progress: { answered: 0, current: 1, total: 6 },
     question: {
@@ -52,7 +49,6 @@ function fullState(experienceMode) {
       promptZh: "你叫什么名字？",
       required: true,
     },
-    questionnaire: { version: 2 },
   };
 }
 
@@ -94,24 +90,18 @@ function renderGate(overrides = {}) {
         acknowledgment: null,
         completedLearnerProfileFallback: createElement("p", null, "COMPLETE"),
         conversationProps: null,
-        data: fullState("form"),
+        data: fullState(),
         isConversationRoute: false,
         isLoading: false,
         isLearnerProfileRoute: true,
-        isProfileLoading: false,
-        isProfileRoute: false,
         loadError: "",
         onAcknowledgmentNext() {},
-        onCloseProfileRoute() {},
+        onCloseConversationRoute() {},
         onRetry() {},
-        onRetryProfile() {},
         onSkip() {},
         onStart() {},
         learnerProfileFallback: createElement("p", null, "ONBOARD"),
-        profileEditor: null,
-        profileLoadError: "",
         questionProps: null,
-        redoLearnerProfile: false,
         started: false,
         ...overrides,
       },
@@ -121,18 +111,14 @@ function renderGate(overrides = {}) {
 }
 
 describe("realtime learner-profile gate integration", () => {
-  it("selects realtime from the server while keeping form fallback sticky", () => {
-    assert.equal(selectLearnerProfileExperience("realtime", false), "realtime");
-    assert.equal(selectLearnerProfileExperience("realtime", true), "form");
-    assert.equal(selectLearnerProfileExperience("form", false), "form");
-
+  it("renders realtime onboarding with the form as its local alternative", () => {
     const realtime = renderGate({
       conversationProps: conversationProps(),
-      data: fullState("realtime"),
+      data: fullState(),
     });
     assert.match(realtime, /Help Peppa know you/);
 
-    const fallback = renderGate({ data: fullState("form") });
+    const fallback = renderGate({ data: fullState() });
     assert.match(fallback, /Answer 6 questions/);
     assert.doesNotMatch(fallback, /Chat with Peppa/);
   });
@@ -144,7 +130,7 @@ describe("realtime learner-profile gate integration", () => {
         recoveryPhase: "restart",
         status: "error",
       }),
-      data: fullState("realtime"),
+      data: fullState(),
     });
 
     assert.match(html, /The voice room took a break/);
@@ -155,25 +141,8 @@ describe("realtime learner-profile gate integration", () => {
     assert.doesNotMatch(html, /Type instead|aria-label="Type your answer"/);
   });
 
-  it("lets a completed learner deliberately start a profile-edit conversation", () => {
-    const completed = fullState("realtime");
-    completed.profile.profileStatus = "completed";
-    completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
-
-    const ordinaryVisit = renderGate({ data: completed });
-    assert.match(ordinaryVisit, /COMPLETE/);
-
-    const redoVisit = renderGate({
-      conversationProps: conversationProps({ purpose: "profile-edit" }),
-      data: completed,
-      redoLearnerProfile: true,
-    });
-    assert.match(redoVisit, /Update my profile/);
-    assert.doesNotMatch(redoVisit, /COMPLETE/);
-  });
-
   it("renders the same conversation as a standalone feature for a completed learner", () => {
-    const completed = fullState("realtime");
+    const completed = fullState();
     completed.profile.profileStatus = "completed";
     completed.profile.completedAt = "2026-07-10T08:00:00.000Z";
 
@@ -193,12 +162,12 @@ describe("realtime learner-profile gate integration", () => {
       mergeConversationTurns(
         [{ id: "live", role: "assistant", text: "Hi there!" }],
         [
-          { id: "saved", role: "user", text: "My name is Mia." },
+          { id: "saved", role: "user", text: "My name is Mary." },
           { id: "live", role: "assistant", text: "Hi there!" },
         ],
       ),
       [
-        { id: "saved", role: "user", text: "My name is Mia." },
+        { id: "saved", role: "user", text: "My name is Mary." },
         { id: "live", role: "assistant", text: "Hi there!" },
       ],
     );

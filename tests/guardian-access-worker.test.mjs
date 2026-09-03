@@ -12,11 +12,11 @@ import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
 
 const GUARDED_REQUESTS = [
-  ["GET", "/api/profile"],
-  ["PUT", "/api/profile"],
-  ["PUT", "/api/profile/lesson-recording-consent"],
-  ["PUT", "/api/dubs/five-little-ducks-v2/consent"],
-  ["DELETE", "/api/dubs/five-little-ducks-v2"],
+  ["GET", "/api/learner-profiles/learner-b"],
+  ["PUT", "/api/learner-profiles/learner-b"],
+  ["PUT", "/api/learner-profiles/learner-b/lesson-recording-consent"],
+  ["PUT", "/api/dubs/consent"],
+  ["DELETE", "/api/dubs"],
 ];
 
 const LEARNER_SAFE_REQUESTS = [
@@ -27,15 +27,14 @@ const LEARNER_SAFE_REQUESTS = [
   ["GET", "/api/dubs/five-little-ducks-v2"],
   ["PUT", "/api/dubs/five-little-ducks-v2/lines/line-1"],
   ["GET", "/api/dubs/five-little-ducks-v2/lines/line-1/audio"],
-  ["PUT", "/api/dubs/five-little-ducks-v1/consent"],
-  ["DELETE", "/api/dubs/five-little-ducks-v1"],
 ];
 
 const TARGETABLE_LEARNER_REQUESTS = [
-  ["GET", "/api/learner-profile"],
   ["GET", "/api/lesson-recordings/consent"],
   ["GET", "/api/dubs/five-little-ducks-v2"],
   ["GET", "/api/dubs/five-little-ducks-v2/lines/line-1/audio"],
+  ["PUT", "/api/dubs/consent"],
+  ["DELETE", "/api/dubs"],
 ];
 
 function insertIdentity(sqlite, sessionId, userId = `user-for-${sessionId}`) {
@@ -59,24 +58,18 @@ function insertIdentity(sqlite, sessionId, userId = `user-for-${sessionId}`) {
   );
 }
 
-function insertLearner(
-  sqlite,
-  learnerProfileId,
-  userId,
-  { legacyStorageOwner = false, name = "Leo" } = {},
-) {
+function insertLearner(sqlite, learnerProfileId, userId, { name = "Leo" } = {}) {
   const timestamp = Date.parse("2026-08-25T08:00:00.000Z");
   sqlite
     .prepare(
       `INSERT INTO learner_profile
-        (id, auth_user_id, legacy_storage_owner, name, private_media_name, name_key,
+        (id, auth_user_id, name, private_media_name, name_key,
          onboarding_status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 'not_started', ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, 'not_started', ?, ?)`,
     )
     .run(
       learnerProfileId,
       userId,
-      legacyStorageOwner ? 1 : 0,
       name,
       name.trim() || "Learner",
       name.trim().toLowerCase() || null,
@@ -198,6 +191,8 @@ describe("guardian management authorization", () => {
     const state = createTestD1Database();
     try {
       insertIdentity(state.sqlite, "session-1", "user-1");
+      insertLearner(state.sqlite, "learner-b", "user-1");
+      insertSelection(state.sqlite, "session-1", "user-1", "learner-b");
       let handlerCalls = 0;
       let limiterCalls = 0;
       const routed = async () => {
@@ -324,7 +319,6 @@ describe("guardian management authorization", () => {
     try {
       insertIdentity(state.sqlite, "session-1", "user-1");
       insertLearner(state.sqlite, "learner-a", "user-1", {
-        legacyStorageOwner: true,
         name: "Mia",
       });
       insertLearner(state.sqlite, "learner-b", "user-1");
@@ -380,11 +374,9 @@ describe("guardian management authorization", () => {
           sessionId: "session-1",
           userId: "user-1",
           userEmail: "user-1@example.test",
-          userName: "Guardian",
           learnerProfileId: "learner-b",
           learnerName: "Leo",
           privateMediaName: "Leo",
-          legacyStorageOwner: false,
         });
       }
       assert.equal(
@@ -401,11 +393,12 @@ describe("guardian management authorization", () => {
     }
   });
 
-  it("returns the same no-store 404 for invalid and unowned targets", async () => {
+  it("rejects every retired learner-profile query target", async () => {
     const state = createTestD1Database();
     try {
       insertIdentity(state.sqlite, "session-1", "user-1");
       insertIdentity(state.sqlite, "session-2", "user-2");
+      insertLearner(state.sqlite, "learner-b", "user-1");
       insertLearner(state.sqlite, "foreign", "user-2");
       let handlerCalls = 0;
       const worker = createWorker({
@@ -439,21 +432,29 @@ describe("guardian management authorization", () => {
         "session-1",
       );
 
-      for (const query of [
+      const queries = [
+        "learnerProfileId=learner-b",
         "learnerProfileId=missing",
         "learnerProfileId=foreign",
         "learnerProfileId=",
         "learnerProfileId=%20%20",
         "learnerProfileId=one&learnerProfileId=two",
         `learnerProfileId=${"p".repeat(129)}`,
+      ];
+      for (const pathname of [
+        "/api/learner-profile",
+        "/api/learner-profiles/learner-b",
       ]) {
-        const response = await worker.fetch(
-          new Request(`https://example.test/api/learner-profile?${query}`),
-          env,
-        );
-        assert.equal(response.status, 404, query);
-        assert.equal(response.headers.get("Cache-Control"), "no-store", query);
-        assert.deepEqual(await response.json(), { error: "not_found" }, query);
+        for (const query of queries) {
+          const response = await worker.fetch(
+            new Request(`https://example.test${pathname}?${query}`),
+            env,
+          );
+          const label = `${pathname}?${query}`;
+          assert.equal(response.status, 404, label);
+          assert.equal(response.headers.get("Cache-Control"), "no-store", label);
+          assert.deepEqual(await response.json(), { error: "not_found" }, label);
+        }
       }
       assert.equal(handlerCalls, 0);
       assert.equal(
@@ -502,12 +503,12 @@ describe("guardian access request handler", () => {
     );
   });
 
-  it("does not parse obsolete password-shaped request bodies", async () => {
+  it("rejects request bodies on Guardian unlock", async () => {
     const response = await handle(
-      guardianRequest("POST", "this body is intentionally ignored"),
+      guardianRequest("POST", "unexpected body"),
     );
-    assert.equal(response.status, 200);
-    assert.equal((await response.json()).mode, "guardian");
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "invalid_request" });
   });
 
   it("returns no-store status and lock responses", async () => {

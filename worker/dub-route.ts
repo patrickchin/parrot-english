@@ -5,7 +5,6 @@ import {
 
 export type DubRoute = {
   audio: boolean;
-  consent: boolean;
   definition: DubDefinition;
   dubId: string;
   lineId: string | null;
@@ -15,19 +14,18 @@ export function parseDubRoute(
   pathname: string,
   definitions: readonly DubDefinition[] = DUB_DEFINITIONS,
 ): DubRoute | null {
-  const match = /^\/api\/dubs\/([^/]+)(?:\/(consent)|\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
+  const match = /^\/api\/dubs\/([^/]+)(?:\/lines\/([^/]+)(?:\/(audio))?)?$/.exec(
     pathname,
   );
   if (!match) return null;
   const definition = definitions.find(({ id }) => id === match[1]);
   if (!definition) return null;
-  const lineId = match[3] ?? null;
+  const lineId = match[2] ?? null;
   if (lineId !== null && !definition.lines.some((line) => line.id === lineId)) {
     return null;
   }
   return {
-    audio: match[4] === "audio",
-    consent: match[2] === "consent",
+    audio: match[3] === "audio",
     definition,
     dubId: definition.id,
     lineId,

@@ -1,17 +1,26 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { initializeLogger, llm } from "@livekit/agents";
+import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import {
   AGENT_ROOM_LIFECYCLE_OPTIONS,
   CONVERSATION_END_REASONS,
   CONVERSATION_SYSTEM_PROMPTS,
   conversationEndStatus,
-  createGettingToKnowYouTask,
-  createSmallChatTask,
+  createPeppaConversationTask,
+  getConversationSystemPrompt,
   playConversationGoodbyeAndClose,
 } from "../agent/peppa-conversation.ts";
 
 initializeLogger({ level: "silent", pretty: false });
+
+function taskOptions(purpose, promptStyle) {
+  return {
+    initialState: createLearnerProfileConversationState(),
+    ...(promptStyle ? { promptStyle } : {}),
+    purpose,
+  };
+}
 
 describe("Peppa conversation ending", () => {
   it("ends the LiveKit room when the conversation task closes", () => {
@@ -23,26 +32,14 @@ describe("Peppa conversation ending", () => {
 
   it("gives every conversation mode one bounded endConversation tool", () => {
     const tasks = [
-      ["onboarding", createGettingToKnowYouTask()],
+      ["onboarding", createPeppaConversationTask(taskOptions("onboarding"))],
       [
-        "profile-edit",
-        createGettingToKnowYouTask({
-          conversationId: "conversation-1",
-          ingest: {
-            async appendTurn() {},
-            async endConversation() {},
-            async updateState() {},
-          },
-          purpose: "profile-edit",
-        }),
+        "small-chat",
+        createPeppaConversationTask(taskOptions("small-chat", "tiny-turns")),
       ],
-      ["small-chat", createSmallChatTask()],
     ];
-    for (const [purpose, task] of tasks) {
-      assert.deepEqual(Object.keys(task.toolCtx.functionTools), [
-        ...(purpose === "profile-edit" ? ["updateLearnerProfile"] : []),
-        "endConversation",
-      ]);
+    for (const [, task] of tasks) {
+      assert.deepEqual(Object.keys(task.toolCtx.functionTools), ["endConversation"]);
       const schema = llm.toJsonSchema(
         task.toolCtx.functionTools.endConversation.parameters,
         true,
@@ -54,20 +51,10 @@ describe("Peppa conversation ending", () => {
     }
   });
 
-  it("does not expose profile writing outside profile editing", () => {
-    for (const task of [
-      createGettingToKnowYouTask(),
-      createSmallChatTask(),
-    ]) {
-      assert.equal(
-        Object.hasOwn(task.toolCtx.functionTools, "updateLearnerProfile"),
-        false,
-      );
-    }
-  });
-
   it("completes the active task when Peppa calls endConversation", async () => {
-    const task = createSmallChatTask();
+    const task = createPeppaConversationTask(
+      taskOptions("small-chat", "tiny-turns"),
+    );
     let completed;
     let opening;
 
@@ -125,23 +112,15 @@ describe("Peppa conversation ending", () => {
   });
 
   it("tells Peppa exactly when the ending tool is appropriate", () => {
-    for (const prompt of Object.values(CONVERSATION_SYSTEM_PROMPTS)) {
+    for (const prompt of [
+      ...Object.values(CONVERSATION_SYSTEM_PROMPTS),
+      getConversationSystemPrompt("small-chat", "tiny-turns"),
+    ]) {
       assert.match(prompt, /endConversation/);
       assert.match(prompt, /child.*(?:stop|goodbye)/is);
       assert.match(prompt, /conversation_complete/);
       assert.doesNotMatch(prompt, /markObjectiveUnanswered|requestGentleRephrase/);
+      assert.doesNotMatch(prompt, /updateLearnerProfile/);
     }
-    assert.match(
-      CONVERSATION_SYSTEM_PROMPTS["profile-edit"],
-      /updateLearnerProfile/,
-    );
-    assert.doesNotMatch(
-      CONVERSATION_SYSTEM_PROMPTS.onboarding,
-      /updateLearnerProfile/,
-    );
-    assert.doesNotMatch(
-      CONVERSATION_SYSTEM_PROMPTS["small-chat"],
-      /updateLearnerProfile/,
-    );
   });
 });

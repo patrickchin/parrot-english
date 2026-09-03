@@ -27,10 +27,14 @@ describe("deployment build information", () => {
     state.sqlite.exec(
       `INSERT INTO user (id, name, email)
        VALUES ('user-1', 'Mia', 'mia@example.test');
+       INSERT INTO learner_profile (id, auth_user_id, name)
+       VALUES ('learner-1', 'user-1', 'Mary');
        INSERT INTO conversation_session
-        (id, auth_user_id, scenario_key, scenario_version, room_name, status, controller_state)
+        (id, auth_user_id, learner_profile_id, scenario_key, scenario_version,
+         prompt_style, room_name, status, controller_state)
        VALUES
-        ('conversation-1', 'user-1', 'small-chat', 1, 'room-1', 'active',
+        ('conversation-1', 'user-1', 'learner-1', 'small-chat', 2,
+         'tiny-turns', 'room-1', 'active',
          '{"_buildInfo":{"agent":{"commitSha":"agent12","details":{"models":{"realtime":"gpt-realtime-2.1-mini","transcription":"gpt-4o-mini-transcribe"}},"reportedAt":"2026-07-14T01:04:05.000Z","version":"0.1.275"}}}')`,
     );
     const worker = createWorker();

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { openLearnerProfileForm } from "./learner-profile-helpers";
 
 const profilePath =
   "/profile/setup?parrotE2eProfile=viewport-stability&parrotE2eProfileOperation=held&parrotE2eMicrophone=delayed";
@@ -131,7 +132,7 @@ async function openQuestion(
   path = profilePath,
 ) {
   await page.setViewportSize(viewport);
-  await page.goto(path);
+  await openLearnerProfileForm(page, path);
   await page.getByRole("button", { name: "Start questions" }).click();
   const heading = page.getByRole("heading", {
     name: "Hi! I'm Peppa. What's your name?",
@@ -788,7 +789,7 @@ test("start and replay audio cannot overlap recording or duplicate themselves", 
   page,
 }) => {
   await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto(heldPlaybackProfilePath);
+  await openLearnerProfileForm(page, heldPlaybackProfilePath);
   const start = page.getByRole("button", { name: "Start questions" });
   await start.evaluate((button: HTMLButtonElement) => {
     for (let attempt = 0; attempt < 12; attempt += 1) button.click();

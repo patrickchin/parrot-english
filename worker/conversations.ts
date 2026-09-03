@@ -1,11 +1,9 @@
 import type { AuthEnv } from "./auth.ts";
 import {
   isConversationPurpose,
-  updatesLearnerProfile,
   type ConversationPurpose,
 } from "../lib/conversation-purpose.ts";
 import {
-  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
   isTalkToPeppaPromptStyle,
   type TalkToPeppaPromptStyle,
 } from "../lib/talk-to-peppa-prompt-style.ts";
@@ -37,13 +35,6 @@ const CONVERSATION_SCENARIOS = {
     summaryMode: "prose",
     maxOptionalExchanges: 3,
   },
-  "profile-edit": {
-    key: "profile-edit",
-    version: 1,
-    requiredDetails: [],
-    summaryMode: "prose",
-    maxOptionalExchanges: 3,
-  },
   "small-chat": {
     key: "small-chat",
     version: 2,
@@ -65,7 +56,6 @@ const CONVERSATION_SCENARIOS = {
 export interface ConversationEnv extends AuthEnv, LiveKitTokenEnv, ApiEnv {
   CONVERSATION_AGENT_SECRET?: string;
   LIVEKIT_URL?: string;
-  REALTIME_CONVERSATIONS_ENABLED?: string;
 }
 
 export interface ConversationRequestInput {
@@ -126,6 +116,19 @@ async function readJson(request: Request) {
   }
 }
 
+function hasExactKeys(
+  value: Record<string, unknown>,
+  required: readonly string[],
+  optional: readonly string[] = [],
+) {
+  const keys = Object.keys(value);
+  const allowed = new Set([...required, ...optional]);
+  return (
+    required.every((key) => Object.hasOwn(value, key)) &&
+    keys.every((key) => allowed.has(key))
+  );
+}
+
 function isAgentAuthorized(request: Request, env: ConversationEnv) {
   const secret = env.CONVERSATION_AGENT_SECRET?.trim();
   if (!secret) return false;
@@ -152,18 +155,12 @@ async function requireProfileConversationAccess(input: {
   identity: LearnerIdentity;
   purpose: ConversationPurpose;
 }) {
-  if (!updatesLearnerProfile(input.purpose)) return;
-  let needsGuardian = input.purpose === "profile-edit";
-  if (input.purpose === "onboarding") {
-    const profileRepository = createLearnerProfileRepository(input.database);
-    const profile = await profileRepository.findProfile(input.identity);
-    needsGuardian =
-      Boolean(
-        profile &&
-          (profile.profileStatus === "completed" ||
-            profile.lastSkippedAt !== null),
-      ) || (await profileRepository.hasSessionBypass(input.identity));
-  }
+  if (input.purpose !== "onboarding") return;
+  const profileRepository = createLearnerProfileRepository(input.database);
+  const profile = await profileRepository.findProfile(input.identity);
+  const needsGuardian =
+    Boolean(profile && profile.profileStatus === "completed") ||
+    (await profileRepository.hasSessionBypass(input.identity));
   if (!needsGuardian) return;
   const denied = await requireGuardianAccess({
     database: input.database,
@@ -187,17 +184,17 @@ export async function handleConversationRequest(
   const repository = createConversationRepository(input.database, dependencies);
   const url = new URL(input.request.url);
   const match = url.pathname.match(
-    /^\/api\/conversations\/([^/]+)(?:\/(finish|review|turns|facts|end))?$/,
+    /^\/api\/conversations\/([^/]+)(?:\/(finish|review|turns|state|end))?$/,
   );
 
   try {
-    if (url.pathname === "/api/conversations" && input.request.method === "POST") {
+    if (
+      url.pathname === "/api/conversations" &&
+      input.request.method === "POST"
+    ) {
       if (!input.identity) throw new ConversationApiError(401, "unauthorized");
-      if (input.env.REALTIME_CONVERSATIONS_ENABLED !== "1") {
-        throw new ConversationApiError(404, "realtime_disabled");
-      }
-      const body = input.request.body ? await readJson(input.request) : {};
-      const purpose = body.purpose ?? "onboarding";
+      const body = await readJson(input.request);
+      const purpose = body.purpose;
       if (!isConversationPurpose(purpose)) {
         throw new ConversationApiError(400, "invalid_conversation_purpose");
       }
@@ -208,17 +205,20 @@ export async function handleConversationRequest(
       });
       let promptStyle: TalkToPeppaPromptStyle | undefined;
       if (purpose === "small-chat") {
-        promptStyle =
-          body.promptStyle === undefined
-            ? DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE
-            : isTalkToPeppaPromptStyle(body.promptStyle)
-              ? body.promptStyle
-              : undefined;
-        if (!promptStyle) {
+        if (!isTalkToPeppaPromptStyle(body.promptStyle)) {
           throw new ConversationApiError(400, "invalid_prompt_style");
         }
+        promptStyle = body.promptStyle;
       } else if (body.promptStyle !== undefined) {
         throw new ConversationApiError(400, "invalid_prompt_style");
+      }
+      if (
+        !hasExactKeys(
+          body,
+          purpose === "small-chat" ? ["purpose", "promptStyle"] : ["purpose"],
+        )
+      ) {
+        throw new ConversationApiError(400, "invalid_request");
       }
       const scenario = CONVERSATION_SCENARIOS[purpose];
       const livekitUrl = required(input.env.LIVEKIT_URL, "livekit_url");
@@ -253,7 +253,8 @@ export async function handleConversationRequest(
 
     if (!match) throw new ConversationApiError(404, "not_found");
     const [, conversationId, action] = match;
-    const agentAction = action === "turns" || action === "facts" || action === "end";
+    const agentAction =
+      action === "turns" || action === "state" || action === "end";
     if (agentAction && !isAgentAuthorized(input.request, input.env)) {
       throw new ConversationApiError(401, "unauthorized");
     }
@@ -275,21 +276,55 @@ export async function handleConversationRequest(
     }
 
     if (action === "turns" && input.request.method === "POST") {
+      const body = await readJson(input.request);
+      if (
+        !hasExactKeys(
+          body,
+          [
+            "providerItemId",
+            "sequence",
+            "role",
+            "text",
+            "language",
+            "inputMode",
+            "interrupted",
+          ],
+          ["startedAt", "endedAt"],
+        ) ||
+        (body.language !== null && typeof body.language !== "string") ||
+        typeof body.interrupted !== "boolean" ||
+        (body.startedAt !== undefined && typeof body.startedAt !== "number") ||
+        (body.endedAt !== undefined && typeof body.endedAt !== "number")
+      ) {
+        throw new ConversationApiError(400, "invalid_turn");
+      }
       const result = await repository.appendTurn(
         conversationId,
-        await readJson(input.request) as Parameters<typeof repository.appendTurn>[1],
+        body as Parameters<typeof repository.appendTurn>[1],
       );
-      return json({ turn: result.turn }, { status: result.created ? 201 : 200 });
+      return json(
+        { turn: result.turn },
+        { status: result.created ? 201 : 200 },
+      );
     }
 
-    if (action === "facts" && input.request.method === "POST") {
+    if (action === "state" && input.request.method === "POST") {
       const body = await readJson(input.request);
-      await repository.updateControllerState(conversationId, body.controllerState);
+      if (!hasExactKeys(body, ["controllerState"])) {
+        throw new ConversationApiError(400, "invalid_controller_state");
+      }
+      await repository.updateControllerState(
+        conversationId,
+        body.controllerState,
+      );
       return json({ conversationId });
     }
 
     if (action === "end" && input.request.method === "POST") {
       const body = await readJson(input.request);
+      if (!hasExactKeys(body, ["status", "finishReason"])) {
+        throw new ConversationApiError(400, "invalid_end_state");
+      }
       const allowed = new Set([
         "completed",
         "stopped",
@@ -300,16 +335,25 @@ export async function handleConversationRequest(
       if (!allowed.has(String(body.status))) {
         throw new ConversationApiError(400, "invalid_end_state");
       }
+      if (typeof body.finishReason !== "string") {
+        throw new ConversationApiError(400, "invalid_finish_reason");
+      }
       const conversation = await repository.endConversation(
         conversationId,
         body.status as Parameters<typeof repository.endConversation>[1],
-        String(body.finishReason ?? body.status),
+        body.finishReason,
       );
       return json({ conversation });
     }
 
     if (action === "finish" && input.request.method === "POST") {
       const body = await readJson(input.request);
+      if (!hasExactKeys(body, ["reason"])) {
+        throw new ConversationApiError(400, "invalid_finish_reason");
+      }
+      if (typeof body.reason !== "string") {
+        throw new ConversationApiError(400, "invalid_finish_reason");
+      }
       const owned = await repository.loadBrowserConversation(
         conversationId,
         input.identity!,
@@ -318,13 +362,16 @@ export async function handleConversationRequest(
       const conversation = await repository.endConversation(
         conversationId,
         "stopped",
-        typeof body.reason === "string" ? body.reason : "finished_by_learner",
+        body.reason,
       );
       return json({ conversation });
     }
 
     if (action === "review" && input.request.method === "PUT") {
-      await readJson(input.request);
+      const body = await readJson(input.request);
+      if (!hasExactKeys(body, [])) {
+        throw new ConversationApiError(400, "invalid_request");
+      }
       const loaded = await repository.loadBrowserConversation(
         conversationId,
         input.identity!,
@@ -340,7 +387,7 @@ export async function handleConversationRequest(
       });
       if (
         loaded.conversation.status !== "completed" &&
-        updatesLearnerProfile(loaded.conversation.scenarioKey)
+        loaded.conversation.scenarioKey === "onboarding"
       ) {
         let initialState: ConversationProfileState;
         try {
@@ -377,7 +424,10 @@ export async function handleConversationRequest(
 
     throw new ConversationApiError(404, "not_found");
   } catch (error) {
-    if (error instanceof ConversationApiError || error instanceof ConversationRepositoryError) {
+    if (
+      error instanceof ConversationApiError ||
+      error instanceof ConversationRepositoryError
+    ) {
       return json({ error: error.code }, { status: error.status });
     }
     console.error("Conversation request failed", error);

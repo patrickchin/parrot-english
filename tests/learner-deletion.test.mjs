@@ -31,7 +31,6 @@ const accountIdentity = {
   sessionId: SESSION_ID,
   userEmail: USER_EMAIL,
   userId: USER_ID,
-  userName: "Guardian",
 };
 
 function learnerIdentity() {
@@ -39,7 +38,6 @@ function learnerIdentity() {
     ...accountIdentity,
     learnerName: "Mary",
     learnerProfileId: TARGET_ID,
-    legacyStorageOwner: false,
     privateMediaName: "Mary",
   };
 }
@@ -86,7 +84,10 @@ function createBucket(seed = []) {
     async get(key, options = {}) {
       const item = stored.get(key);
       if (!item) return null;
-      if (options.onlyIf?.etagMatches && options.onlyIf.etagMatches !== item.object.etag) {
+      if (
+        options.onlyIf?.etagMatches &&
+        options.onlyIf.etagMatches !== item.object.etag
+      ) {
         return null;
       }
       const body = item.bytes;
@@ -94,7 +95,10 @@ function createBucket(seed = []) {
         ...item.object,
         body: new Response(body).body,
         async arrayBuffer() {
-          return body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+          return body.buffer.slice(
+            body.byteOffset,
+            body.byteOffset + body.byteLength,
+          );
         },
         async bytes() {
           return new Uint8Array(body);
@@ -194,14 +198,7 @@ function seedDatabase() {
       (id, expires_at, token, created_at, updated_at, user_id)
      VALUES (?, ?, ?, ?, ?, ?)`,
   );
-  insertSession.run(
-    SESSION_ID,
-    NOW + 86_400_000,
-    "token-1",
-    NOW,
-    NOW,
-    USER_ID,
-  );
+  insertSession.run(SESSION_ID, NOW + 86_400_000, "token-1", NOW, NOW, USER_ID);
   insertSession.run(
     OTHER_SESSION_ID,
     NOW + 86_400_000,
@@ -220,34 +217,15 @@ function seedDatabase() {
   );
   const insertLearner = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+      (id, auth_user_id, name, private_media_name,
        name_key, age, onboarding_status, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, 8, 'completed', ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, 8, 'completed', ?, ?)`,
   );
-  insertLearner.run(
-    TARGET_ID,
-    USER_ID,
-    0,
-    "Mary",
-    "Mary",
-    "mary",
-    NOW,
-    NOW,
-  );
-  insertLearner.run(
-    SIBLING_ID,
-    USER_ID,
-    0,
-    "Bob",
-    "Bob",
-    "bob",
-    NOW + 1,
-    NOW + 1,
-  );
+  insertLearner.run(TARGET_ID, USER_ID, "Mary", "Mary", "mary", NOW, NOW);
+  insertLearner.run(SIBLING_ID, USER_ID, "Bob", "Bob", "bob", NOW + 1, NOW + 1);
   insertLearner.run(
     "learner-foreign",
     OTHER_USER_ID,
-    0,
     "Rose",
     "Rose",
     "rose",
@@ -258,35 +236,47 @@ function seedDatabase() {
 }
 
 function selectLearner(state, profileId, sessionId = SESSION_ID) {
-  state.sqlite.prepare(
-    `INSERT INTO session_learner_selection
+  state.sqlite
+    .prepare(
+      `INSERT INTO session_learner_selection
       (session_id, auth_user_id, learner_profile_id, created_at, updated_at)
      VALUES (?, ?, ?, ?, ?)`,
-  ).run(sessionId, USER_ID, profileId, NOW, NOW);
+    )
+    .run(sessionId, USER_ID, profileId, NOW, NOW);
 }
 
-function authStub(session = {
-  session: { id: SESSION_ID },
-  user: { email: USER_EMAIL, id: USER_ID, name: " Guardian " },
-}) {
+function authStub(
+  session = {
+    session: { id: SESSION_ID },
+    user: { email: USER_EMAIL, id: USER_ID, name: " Guardian " },
+  },
+) {
   return {
-    api: { async getSession() { return session; } },
-    async handler() { return new Response("auth"); },
+    api: {
+      async getSession() {
+        return session;
+      },
+    },
+    async handler() {
+      return new Response("auth");
+    },
   };
 }
 
 function deletionRequest(profileId = TARGET_ID) {
-  return new Request(
-    `https://example.test/api/learner-profiles/${profileId}`,
-    { method: "DELETE" },
-  );
+  return new Request(`https://example.test/api/learner-profiles/${profileId}`, {
+    method: "DELETE",
+  });
 }
 
 function workerEnvironment(state, bucket) {
   return {
-    ASSETS: { async fetch() { return new Response("asset"); } },
+    ASSETS: {
+      async fetch() {
+        return new Response("asset");
+      },
+    },
     DB: state.d1,
-    MULTI_LEARNER_PROFILES_ENABLED: "1",
     PRIVATE_MEDIA_BUCKET: bucket,
   };
 }
@@ -306,18 +296,20 @@ function prepare(state, bucket, profileId = TARGET_ID, wait = async () => {}) {
 }
 
 function tombstone(state, profileId = TARGET_ID) {
-  return state.sqlite.prepare(
-    `SELECT learner_profile_id, user_id_hash, generation, requested_at,
+  return state.sqlite
+    .prepare(
+      `SELECT learner_profile_id, user_id_hash, generation, requested_at,
             private_media_name, storage_keys_json
      FROM learner_profile_deletion_tombstone
      WHERE learner_profile_id = ?`,
-  ).get(profileId);
+    )
+    .get(profileId);
 }
 
 function profileCount(state, profileId = TARGET_ID) {
-  return state.sqlite.prepare(
-    "SELECT count(*) AS count FROM learner_profile WHERE id = ?",
-  ).get(profileId).count;
+  return state.sqlite
+    .prepare("SELECT count(*) AS count FROM learner_profile WHERE id = ?")
+    .get(profileId).count;
 }
 
 function metadataState(bucket, key) {
@@ -332,44 +324,58 @@ function firstDubStorage(identity = learnerIdentity()) {
   return createDubStorageKeys(identity, DUB_DEFINITIONS[0].id);
 }
 
-function insertConversation(state, profileId, status = "completed", id = `conversation-${profileId}`) {
-  state.sqlite.prepare(
-    `INSERT INTO conversation_session
+function insertConversation(
+  state,
+  profileId,
+  status = "completed",
+  id = `conversation-${profileId}`,
+) {
+  state.sqlite
+    .prepare(
+      `INSERT INTO conversation_session
       (id, auth_user_id, learner_profile_id, scenario_key, scenario_version,
-       room_name, status, controller_state, started_at, created_at, updated_at)
-     VALUES (?, ?, ?, 'small-chat', 2, ?, ?, '{}', ?, ?, ?)`,
-  ).run(id, USER_ID, profileId, `room-${id}`, status, NOW, NOW, NOW);
+       prompt_style, room_name, status, controller_state, started_at, created_at,
+       updated_at)
+     VALUES (?, ?, ?, 'small-chat', 2, 'tiny-turns', ?, ?, '{}', ?, ?, ?)`,
+    )
+    .run(id, USER_ID, profileId, `room-${id}`, status, NOW, NOW, NOW);
 }
 
 function addDeletionGraph(state) {
   for (const profileId of [TARGET_ID, SIBLING_ID]) {
-    state.sqlite.prepare(
-      `INSERT INTO learner_dub_consent
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_dub_consent
         (learner_profile_id, auth_user_id, consent_version, grant_generation,
          state, granted_at, updated_at)
        VALUES (?, ?, 'guardian-voice-r2-v2', ?, 'granted', ?, ?)`,
-    ).run(profileId, USER_ID, `grant-${profileId}`, NOW, NOW);
-    state.sqlite.prepare(
-      `INSERT INTO onboarding_learner_session_bypass
+      )
+      .run(profileId, USER_ID, `grant-${profileId}`, NOW, NOW);
+    state.sqlite
+      .prepare(
+        `INSERT INTO onboarding_learner_session_bypass
         (session_id, learner_profile_id, skipped_at)
        VALUES (?, ?, ?)`,
-    ).run(
-      profileId === TARGET_ID ? SESSION_ID : OTHER_SESSION_ID,
-      profileId,
-      NOW,
-    );
+      )
+      .run(
+        profileId === TARGET_ID ? SESSION_ID : OTHER_SESSION_ID,
+        profileId,
+        NOW,
+      );
     insertConversation(state, profileId);
-    state.sqlite.prepare(
-      `INSERT INTO conversation_turn
+    state.sqlite
+      .prepare(
+        `INSERT INTO conversation_turn
         (id, conversation_id, provider_item_id, sequence, role, text,
          input_mode, interrupted, created_at)
        VALUES (?, ?, ?, 0, 'user', 'Hello', 'text', 0, ?)`,
-    ).run(
-      `turn-${profileId}`,
-      `conversation-${profileId}`,
-      `provider-${profileId}`,
-      NOW,
-    );
+      )
+      .run(
+        `turn-${profileId}`,
+        `conversation-${profileId}`,
+        `provider-${profileId}`,
+        NOW,
+      );
   }
 }
 
@@ -380,17 +386,25 @@ function assertOnlySiblingGraphRemains(state) {
     ["conversation_session", "learner_profile_id"],
   ]) {
     assert.deepEqual(
-      plainRows(state.sqlite.prepare(
-        `SELECT ${profileColumn} AS profileId FROM ${table} ORDER BY ${profileColumn}`,
-      ).all()),
+      plainRows(
+        state.sqlite
+          .prepare(
+            `SELECT ${profileColumn} AS profileId FROM ${table} ORDER BY ${profileColumn}`,
+          )
+          .all(),
+      ),
       [{ profileId: SIBLING_ID }],
       table,
     );
   }
   assert.deepEqual(
-    plainRows(state.sqlite.prepare(
-      `SELECT conversation_id AS conversationId FROM conversation_turn`,
-    ).all()),
+    plainRows(
+      state.sqlite
+        .prepare(
+          `SELECT conversation_id AS conversationId FROM conversation_turn`,
+        )
+        .all(),
+    ),
     [{ conversationId: `conversation-${SIBLING_ID}` }],
   );
 }
@@ -433,7 +447,10 @@ function beforeStatementWhen(d1, predicate, before) {
         }
         if (
           !triggered &&
-          (property === "all" || property === "first" || property === "raw" || property === "run") &&
+          (property === "all" ||
+            property === "first" ||
+            property === "raw" ||
+            property === "run") &&
           predicate(sql)
         ) {
           return async (...parameters) => {
@@ -454,7 +471,9 @@ function beforeStatementWhen(d1, predicate, before) {
     async batch(statements) {
       if (
         !triggered &&
-        statements.some((statement) => predicate(statementSql.get(statement) ?? ""))
+        statements.some((statement) =>
+          predicate(statementSql.get(statement) ?? ""),
+        )
       ) {
         triggered = true;
         await before();
@@ -526,12 +545,13 @@ describe("learner deletion endpoint", () => {
       status,
     }));
     try {
-      finalState.sqlite.prepare("DELETE FROM learner_profile WHERE id = ?").run(SIBLING_ID);
+      finalState.sqlite
+        .prepare("DELETE FROM learner_profile WHERE id = ?")
+        .run(SIBLING_ID);
       await unlock(finalState);
-      const finalResponse = await createWorker({ createAuth: () => authStub() }).fetch(
-        deletionRequest(),
-        workerEnvironment(finalState, bucket),
-      );
+      const finalResponse = await createWorker({
+        createAuth: () => authStub(),
+      }).fetch(deletionRequest(), workerEnvironment(finalState, bucket));
       assert.equal(finalResponse.status, 409);
       assert.deepEqual(await finalResponse.json(), { error: "last_learner" });
       assert.equal(tombstone(finalState), undefined);
@@ -539,12 +559,15 @@ describe("learner deletion endpoint", () => {
       for (const { state, status } of busyStates) {
         insertConversation(state, TARGET_ID, status, `busy-${status}`);
         await unlock(state);
-        const busyResponse = await createWorker({ createAuth: () => authStub() }).fetch(
-          deletionRequest(),
-          workerEnvironment(state, bucket),
-        );
+        const busyResponse = await createWorker({
+          createAuth: () => authStub(),
+        }).fetch(deletionRequest(), workerEnvironment(state, bucket));
         assert.equal(busyResponse.status, 409, status);
-        assert.deepEqual(await busyResponse.json(), { error: "learner_busy" }, status);
+        assert.deepEqual(
+          await busyResponse.json(),
+          { error: "learner_busy" },
+          status,
+        );
         assert.equal(tombstone(state), undefined, status);
         assert.equal(profileCount(state), 1, status);
       }
@@ -562,9 +585,11 @@ describe("learner deletion endpoint", () => {
       state.d1,
       (sql) => sql.includes("SELECT id FROM learner_profile WHERE id = ?"),
       async () => {
-        state.sqlite.prepare(
-          "UPDATE conversation_session SET status = 'completed' WHERE id = ?",
-        ).run("busy-transition");
+        state.sqlite
+          .prepare(
+            "UPDATE conversation_session SET status = 'completed' WHERE id = ?",
+          )
+          .run("busy-transition");
       },
     );
     try {
@@ -587,17 +612,21 @@ describe("learner deletion endpoint", () => {
   it("keeps the last-learner diagnostic stable when a sibling appears after the guarded insert", async () => {
     const state = seedDatabase();
     const bucket = createBucket();
-    state.sqlite.prepare("DELETE FROM learner_profile WHERE id = ?").run(SIBLING_ID);
+    state.sqlite
+      .prepare("DELETE FROM learner_profile WHERE id = ?")
+      .run(SIBLING_ID);
     const delayedD1 = beforeStatementWhen(
       state.d1,
       (sql) => sql.includes("SELECT id FROM learner_profile WHERE id = ?"),
       async () => {
-        state.sqlite.prepare(
-          `INSERT INTO learner_profile
-            (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+        state.sqlite
+          .prepare(
+            `INSERT INTO learner_profile
+            (id, auth_user_id, name, private_media_name,
              name_key, age, onboarding_status, created_at, updated_at)
-           VALUES (?, ?, 0, 'Bob', 'Bob', 'bob', 8, 'completed', ?, ?)`,
-        ).run(SIBLING_ID, USER_ID, NOW + 1, NOW + 1);
+           VALUES (?, ?, 'Bob', 'Bob', 'bob', 8, 'completed', ?, ?)`,
+          )
+          .run(SIBLING_ID, USER_ID, NOW + 1, NOW + 1);
       },
     );
     try {
@@ -624,29 +653,28 @@ describe("learner deletion endpoint", () => {
       selectLearner(state, TARGET_ID, SESSION_ID);
       selectLearner(state, TARGET_ID, OTHER_SESSION_ID);
       await unlock(state);
-      const response = await createWorker({ createAuth: () => authStub() }).fetch(
-        deletionRequest(),
-        workerEnvironment(state, bucket),
-      );
+      const response = await createWorker({
+        createAuth: () => authStub(),
+      }).fetch(deletionRequest(), workerEnvironment(state, bucket));
       assert.equal(response.status, 200);
       assert.deepEqual(await response.json(), {
         activeProfileId: null,
-        profiles: [{
-          age: 8,
-          createdAt: new Date(NOW + 1).toISOString(),
-          deletionPending: false,
-          id: SIBLING_ID,
-          name: "Bob",
-          profileStatus: "completed",
-        }],
+        profiles: [
+          {
+            age: 8,
+            createdAt: new Date(NOW + 1).toISOString(),
+            deletionPending: false,
+            id: SIBLING_ID,
+            name: "Bob",
+            profileStatus: "completed",
+          },
+        ],
       });
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM session_learner_selection").get().count,
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM session_learner_selection")
+          .get().count,
         0,
-      );
-      assert.deepEqual(
-        plainRows(state.sqlite.prepare("SELECT session_id AS sessionId FROM learner_selection_required ORDER BY session_id").all()),
-        [{ sessionId: SESSION_ID }, { sessionId: OTHER_SESSION_ID }],
       );
     } finally {
       state.close();
@@ -659,19 +687,20 @@ describe("learner deletion endpoint", () => {
     try {
       selectLearner(state, SIBLING_ID);
       await unlock(state);
-      const response = await createWorker({ createAuth: () => authStub() }).fetch(
-        deletionRequest(),
-        workerEnvironment(state, bucket),
-      );
+      const response = await createWorker({
+        createAuth: () => authStub(),
+      }).fetch(deletionRequest(), workerEnvironment(state, bucket));
       assert.equal(response.status, 200);
       assert.equal((await response.json()).activeProfileId, SIBLING_ID);
       assert.deepEqual(
-        plainRows(state.sqlite.prepare("SELECT learner_profile_id AS profileId FROM session_learner_selection").all()),
+        plainRows(
+          state.sqlite
+            .prepare(
+              "SELECT learner_profile_id AS profileId FROM session_learner_selection",
+            )
+            .all(),
+        ),
         [{ profileId: SIBLING_ID }],
-      );
-      assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_selection_required").get().count,
-        0,
       );
     } finally {
       state.close();
@@ -685,15 +714,28 @@ describe("learner deletion endpoint", () => {
       await unlock(state);
       const worker = createWorker({ createAuth: () => authStub() });
       const [left, right] = await Promise.all([
-        worker.fetch(deletionRequest(TARGET_ID), workerEnvironment(state, bucket)),
-        worker.fetch(deletionRequest(SIBLING_ID), workerEnvironment(state, bucket)),
+        worker.fetch(
+          deletionRequest(TARGET_ID),
+          workerEnvironment(state, bucket),
+        ),
+        worker.fetch(
+          deletionRequest(SIBLING_ID),
+          workerEnvironment(state, bucket),
+        ),
       ]);
       const responses = [left, right];
-      assert.deepEqual(responses.map(({ status }) => status).sort(), [200, 409]);
+      assert.deepEqual(
+        responses.map(({ status }) => status).sort(),
+        [200, 409],
+      );
       const conflict = responses.find(({ status }) => status === 409);
       assert.deepEqual(await conflict.json(), { error: "last_learner" });
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?").get(USER_ID).count,
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM learner_profile WHERE auth_user_id = ?",
+          )
+          .get(USER_ID).count,
         1,
       );
     } finally {
@@ -723,7 +765,10 @@ describe("learner deletion lifecycle", () => {
         false,
       );
       const storage = firstDubStorage();
-      assert.equal(metadataState(bucket, storage.markerKey), "learner-deleting");
+      assert.equal(
+        metadataState(bucket, storage.markerKey),
+        "learner-deleting",
+      );
       assert.ok(tombstone(state)?.storage_keys_json.length > 2);
     } finally {
       state.close();
@@ -741,22 +786,24 @@ describe("learner deletion lifecycle", () => {
     const bucket = createBucket([
       { key: siblingObject, bytes: new Uint8Array([1]) },
     ]);
-    state.sqlite.prepare(
-      `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner,
-         private_media_name, generation, requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 'Mary', 1, ?, ?)`,
-    ).run(
-      TARGET_ID,
-      createHash("sha256").update(USER_ID).digest("hex"),
-      NOW,
-      JSON.stringify({
-        markerKeys: [siblingStorage.markerKey],
-        prefixes: [SIBLING_PREFIX],
-        slotKeys: [siblingObject],
-        version: 1,
-      }),
-    );
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, private_media_name,
+         generation, requested_at, storage_keys_json)
+       VALUES (?, ?, 'Mary', 1, ?, ?)`,
+      )
+      .run(
+        TARGET_ID,
+        createHash("sha256").update(USER_ID).digest("hex"),
+        NOW,
+        JSON.stringify({
+          markerKeys: [siblingStorage.markerKey],
+          prefixes: [SIBLING_PREFIX],
+          slotKeys: [siblingObject],
+          version: 1,
+        }),
+      );
 
     try {
       await assert.rejects(
@@ -771,8 +818,9 @@ describe("learner deletion lifecycle", () => {
         false,
       );
       assert.equal(
-        [...bucket.calls.head, ...bucket.calls.put.map(({ key }) => key)]
-          .some((key) => key.startsWith(SIBLING_PREFIX)),
+        [...bucket.calls.head, ...bucket.calls.put.map(({ key }) => key)].some(
+          (key) => key.startsWith(SIBLING_PREFIX),
+        ),
         false,
       );
     } finally {
@@ -784,12 +832,14 @@ describe("learner deletion lifecycle", () => {
     const state = seedDatabase();
     const targetKey = `${TARGET_PREFIX}recordings/lessons/lesson/scene-0/step-0.audio`;
     const userIdHash = createHash("sha256").update(USER_ID).digest("hex");
-    const bucket = createBucket([{ bytes: new Uint8Array([1]), key: targetKey }]);
+    const bucket = createBucket([
+      { bytes: new Uint8Array([1]), key: targetKey },
+    ]);
     const insert = state.sqlite.prepare(
       `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner,
-         private_media_name, generation, requested_at, storage_keys_json)
-       VALUES (?, ?, 0, ?, 1, ?, ?)`,
+        (learner_profile_id, user_id_hash, private_media_name,
+         generation, requested_at, storage_keys_json)
+       VALUES (?, ?, ?, 1, ?, ?)`,
     );
     insert.run(
       TARGET_ID,
@@ -848,7 +898,9 @@ describe("learner deletion lifecycle", () => {
     const waits = [];
     transientBucket.deleteFailures = 2;
     try {
-      await prepare(transientState, transientBucket, TARGET_ID, async (delay) => waits.push(delay));
+      await prepare(transientState, transientBucket, TARGET_ID, async (delay) =>
+        waits.push(delay),
+      );
       assert.equal(profileCount(transientState), 0);
       assert.equal(transientBucket.calls.delete.length, 3);
       assert.equal(waits.length, 2);
@@ -863,18 +915,15 @@ describe("learner deletion lifecycle", () => {
     ]);
     persistentBucket.deleteFailures = 3;
     try {
-      await assert.rejects(
-        prepare(persistentState, persistentBucket),
-        /10058/,
-      );
+      await assert.rejects(prepare(persistentState, persistentBucket), /10058/);
       assert.equal(profileCount(persistentState), 1);
       assert.ok(tombstone(persistentState));
       assert.equal(
-        persistentState.sqlite.prepare("SELECT count(*) AS count FROM learner_selection_required WHERE session_id = ?").get(SESSION_ID).count,
-        1,
-      );
-      assert.equal(
-        persistentState.sqlite.prepare("SELECT count(*) AS count FROM session_learner_selection WHERE session_id = ?").get(SESSION_ID).count,
+        persistentState.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM session_learner_selection WHERE session_id = ?",
+          )
+          .get(SESSION_ID).count,
         0,
       );
 
@@ -883,7 +932,9 @@ describe("learner deletion lifecycle", () => {
       await prepare(persistentState, persistentBucket);
       assert.equal(profileCount(persistentState), 0);
       assert.equal(
-        persistentState.sqlite.prepare("SELECT count(*) AS count FROM learner_profile WHERE id = ?").get(SIBLING_ID).count,
+        persistentState.sqlite
+          .prepare("SELECT count(*) AS count FROM learner_profile WHERE id = ?")
+          .get(SIBLING_ID).count,
         1,
       );
     } finally {
@@ -913,7 +964,9 @@ describe("learner deletion lifecycle", () => {
   it("keeps whole-account fences authoritative while learner and account deletion overlap", async () => {
     const state = seedDatabase();
     const lessonKey = `${TARGET_PREFIX}recordings/lessons/lesson-1/scene-0/step-0.audio`;
-    const bucket = createBucket([{ key: lessonKey, bytes: new Uint8Array([1]) }]);
+    const bucket = createBucket([
+      { key: lessonKey, bytes: new Uint8Array([1]) },
+    ]);
     const learnerFenceStarted = deferred();
     const releaseLearnerFence = deferred();
     let held = false;
@@ -946,7 +999,6 @@ describe("learner deletion lifecycle", () => {
       state.close();
     }
   });
-
 });
 
 describe("tombstone write fences", () => {
@@ -969,13 +1021,18 @@ describe("tombstone write fences", () => {
       const heldCreate = repository.createConversation(
         learnerIdentity(),
         { key: "small-chat", version: 2 },
+        {},
       );
       await started.promise;
       await prepare(state, bucket);
       release.resolve();
       await assert.rejects(heldCreate, /learner_deletion_pending/);
       assert.equal(
-        state.sqlite.prepare("SELECT count(*) AS count FROM conversation_session WHERE id = 'held-conversation'").get().count,
+        state.sqlite
+          .prepare(
+            "SELECT count(*) AS count FROM conversation_session WHERE id = 'held-conversation'",
+          )
+          .get().count,
         0,
       );
     } finally {
@@ -986,12 +1043,14 @@ describe("tombstone write fences", () => {
 
   it("fences a held dub write whose identity resolved before tombstoning", async () => {
     const state = seedDatabase();
-    state.sqlite.prepare(
-      `INSERT INTO learner_dub_consent
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_dub_consent
         (learner_profile_id, auth_user_id, consent_version, grant_generation,
          state, granted_at, updated_at)
        VALUES (?, ?, 'guardian-voice-r2-v2', 'grant-1', 'granted', ?, ?)`,
-    ).run(TARGET_ID, USER_ID, NOW, NOW);
+      )
+      .run(TARGET_ID, USER_ID, NOW, NOW);
     const bucket = createBucket();
     const audioPutStarted = deferred();
     const releaseAudioPut = deferred();
@@ -1014,7 +1073,11 @@ describe("tombstone write fences", () => {
           identity,
           request: new Request(
             `https://example.test/api/dubs/${definition.id}/lines/${lineId}`,
-            { body: WEBM, headers: { "Content-Type": "audio/webm" }, method: "PUT" },
+            {
+              body: WEBM,
+              headers: { "Content-Type": "audio/webm" },
+              method: "PUT",
+            },
           ),
         },
         { createUploadNonce: () => "held-dub", wait: async () => {} },
@@ -1024,7 +1087,9 @@ describe("tombstone write fences", () => {
       releaseAudioPut.resolve();
       const response = await upload;
       assert.equal(response.status, 409);
-      const key = createDubStorageKeys(identity, definition.id).objectKey(lineId);
+      const key = createDubStorageKeys(identity, definition.id).objectKey(
+        lineId,
+      );
       assert.equal(metadataState(bucket, key), "learner-deleting");
       assert.notEqual(metadataState(bucket, key), "audio");
     } finally {
@@ -1035,11 +1100,13 @@ describe("tombstone write fences", () => {
 
   it("fences a held lesson-recording write whose identity resolved before tombstoning", async () => {
     const state = seedDatabase();
-    state.sqlite.prepare(
-      `UPDATE learner_profile
+    state.sqlite
+      .prepare(
+        `UPDATE learner_profile
        SET lesson_recording_consent_version = ?, lesson_recording_consent_at = ?
        WHERE id = ?`,
-    ).run(LESSON_RECORDING_CONSENT_VERSION, NOW, TARGET_ID);
+      )
+      .run(LESSON_RECORDING_CONSENT_VERSION, NOW, TARGET_ID);
     const bucket = createBucket();
     const audioPutStarted = deferred();
     const releaseAudioPut = deferred();
@@ -1076,9 +1143,11 @@ describe("tombstone write fences", () => {
       releaseAudioPut.resolve();
       const response = await upload;
       assert.equal(response.status, 409);
-      assert.deepEqual(await response.json(), { error: "learner_deletion_pending" });
-      const recording = [...bucket.stored.values()].find(
-        ({ object }) => object.key.includes("/recordings/lessons/"),
+      assert.deepEqual(await response.json(), {
+        error: "learner_deletion_pending",
+      });
+      const recording = [...bucket.stored.values()].find(({ object }) =>
+        object.key.includes("/recordings/lessons/"),
       );
       assert.equal(recording?.object.customMetadata.state, "learner-deleting");
     } finally {
@@ -1089,11 +1158,13 @@ describe("tombstone write fences", () => {
 
   it("fences a lesson-recording reservation created after the deletion sweep", async () => {
     const state = seedDatabase();
-    state.sqlite.prepare(
-      `UPDATE learner_profile
+    state.sqlite
+      .prepare(
+        `UPDATE learner_profile
        SET lesson_recording_consent_version = ?, lesson_recording_consent_at = ?
        WHERE id = ?`,
-    ).run(LESSON_RECORDING_CONSENT_VERSION, NOW, TARGET_ID);
+      )
+      .run(LESSON_RECORDING_CONSENT_VERSION, NOW, TARGET_ID);
     const bucket = createBucket();
     let deletionStarted = false;
     bucket.beforePut = async ({ options }) => {
@@ -1126,8 +1197,8 @@ describe("tombstone write fences", () => {
       assert.deepEqual(await response.json(), {
         error: "learner_deletion_pending",
       });
-      const recording = [...bucket.stored.values()].find(
-        ({ object }) => object.key.includes("/recordings/lessons/"),
+      const recording = [...bucket.stored.values()].find(({ object }) =>
+        object.key.includes("/recordings/lessons/"),
       );
       assert.equal(recording?.object.customMetadata.state, "learner-deleting");
     } finally {

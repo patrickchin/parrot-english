@@ -12,7 +12,7 @@ import {
   getDubLineMusicPhrase,
   getDubDefinition,
 } from "../src/dubbing/rhyme-catalog.ts";
-import { FIVE_LITTLE_DUCKS_DUB } from "../src/dubbing/dub-script.ts";
+import { FIVE_LITTLE_DUCKS_DUB } from "../src/dubbing/rhyme-catalog.ts";
 import { NURSERY_RHYMES_COVER_ARTWORK } from "../src/dubbing/dub-artwork.ts";
 
 function normalizeRuntimeScore(definition) {
@@ -150,7 +150,7 @@ function assertDeeplyFrozen(value, path = "catalog") {
 }
 
 describe("rhyme catalog", () => {
-  it("normalizes one deeply frozen generated catalog behind every compatibility export", () => {
+  it("normalizes one deeply frozen generated catalog behind every named export", () => {
     const namedDefinitions = [
       catalog.FIVE_LITTLE_DUCKS_DUB,
       catalog.OLD_MACDONALD_DUB,

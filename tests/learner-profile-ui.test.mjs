@@ -39,15 +39,8 @@ const {
   LearnerProfileGateView,
   LearnerProfileSetupView,
   answerForQuestion,
-  createProfileOperationBoundary,
-  createProfileOperationOwnership,
-  createProfileRouteLifecycle,
-  nextProfileAcknowledgment,
-  profileDraftsFromState,
   saveQuestionAndAdvance,
   shouldSyncActiveQuestion,
-  teardownProfileOperationResources,
-  updateProfileDraft,
 } = gateModule;
 function textFromMarkup(markup) {
   return markup
@@ -529,7 +522,7 @@ describe("Peppa acknowledgment", () => {
 });
 
 describe("profile summary editor", () => {
-  it("localizes Guardian profile editing while learner chrome stays English", () => {
+  it("localizes Guardian profile editing", () => {
     const props = {
       drafts: {
         age: "7",
@@ -548,7 +541,6 @@ describe("profile summary editor", () => {
       onCancel() {},
       onClose() {},
       onLessonRecordingConsentChange() {},
-      onRedoLearnerProfile() {},
       onSave() {},
       onValueChange() {},
       pageError: "save-failed",
@@ -565,7 +557,7 @@ describe("profile summary editor", () => {
     const guardian = renderToStaticMarkup(
       withGuardianLanguage(
         "zh-Hans",
-        createElement(ProfileEditorView, { ...props, audience: "guardian" }),
+        createElement(ProfileEditorView, props),
       ),
     );
     assert.match(guardian, /aria-label="页面导航"/);
@@ -585,46 +577,30 @@ describe("profile summary editor", () => {
     );
     assert.match(guardian, /课程语音录音/);
     assert.match(guardian, /删除已保存的课程录音/);
-    assert.match(guardian, /重新完成孩子设置/);
     assert.match(guardian, /保存更改/);
     assert.match(guardian, /请输入整数年龄/);
     assert.match(guardian, /不要填写学校、住址、电话、电子邮箱或密码/);
     assert.match(guardian, /无法保存孩子资料/);
-    assert.match(guardian, /alt="Peppa 微笑"/);
-    assert.match(guardian, /再次回答 Peppa 的设置问题/);
-    assert.match(guardian, /和 Peppa 对话/);
     assert.doesNotMatch(guardian, /佩奇/);
     assert.doesNotMatch(guardian, /SERVER/);
-
-    const learner = renderToStaticMarkup(
-      withGuardianLanguage(
-        "zh-Hans",
-        createElement(ProfileEditorView, { ...props, audience: "learner" }),
-      ),
-    );
-    assert.match(learner, /<h1[^>]*>Learner details<\/h1>/);
-    assert.match(learner, /Please tell me your age using a whole number\./);
-    assert.match(learner, /We save your answers/);
-    assert.match(learner, /我们会保存你的回答/);
-    assert.doesNotMatch(learner, /孩子资料|无法保存孩子资料/);
   });
 
   it("renders a durable pending-deletion state with an explicit retry action", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
-        drafts: { name: "Mia", age: "8" },
+        drafts: { name: "Mary", age: "8" },
         fieldErrors: {},
         isSaving: false,
-        learnerName: "Mia",
+        learnerName: "Mary",
         lessonRecordingCleanupPending: true,
         lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
         onLessonRecordingConsentChange() {},
-        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
+        questions: [],
       }),
     );
 
@@ -650,7 +626,6 @@ describe("profile summary editor", () => {
         onCancel() {},
         onClose() {},
         onLessonRecordingConsentChange() {},
-        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
@@ -699,15 +674,9 @@ describe("profile summary editor", () => {
       html.indexOf("Mia is thirty and loves pandas") >
         html.indexOf('id="profile-age"'),
     );
-    assert.match(
-      html,
-      /<img[^>]*alt="Peppa smiling"[^>]*peppa-happy-384\.webp/,
-    );
-    assert.match(html, /Redo learner setup/);
-    assert.match(html, />Redo setup questions</);
-    assert.match(html, /normal chat.*Home.*Talk to Peppa/is);
-    assert.doesNotMatch(html, />Chat with Peppa again</);
+    assert.doesNotMatch(html, /Redo learner setup|Redo setup questions/);
     assert.doesNotMatch(html, /pig pal/i);
+    assert.match(html, />Allow lesson voice recordings</);
     assert.match(html, />Save changes</);
     assert.doesNotMatch(html, /Replay|Speak answer/);
   });
@@ -715,30 +684,28 @@ describe("profile summary editor", () => {
   it("keeps the basic form and navigation actions available while idle", () => {
     const html = renderToStaticMarkup(
       createElement(ProfileEditorView, {
-        drafts: { name: "Mia", age: "8" },
+        drafts: { name: "Mary", age: "8" },
         fieldErrors: {},
         isSaving: false,
-        learnerName: "Mia",
+        learnerName: "Mary",
         lessonRecordingCleanupPending: false,
         lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
         onLessonRecordingConsentChange() {},
-        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
+        questions: [],
       }),
     );
     const close = html.match(/<button[^>]*aria-label="Back"[^>]*>/)?.[0];
     const cancel = html.match(/<button[^>]*>Cancel<\/button>/)?.[0];
     const save = html.match(/<button[^>]*>Save changes<\/button>/)?.[0];
-    const redo = html.match(/<button[^>]*>Redo setup questions<\/button>/)?.[0];
 
     assert.doesNotMatch(html, /<fieldset disabled="">/);
     assert.doesNotMatch(close, /\sdisabled(?:=""|(?=[ >]))/);
     assert.doesNotMatch(cancel, /\sdisabled(?:=""|(?=[ >]))/);
-    assert.doesNotMatch(redo, /\sdisabled(?:=""|(?=[ >]))/);
     assert.doesNotMatch(save, /\sdisabled(?:=""|(?=[ >]))/);
     assert.ok(
       html.indexOf("Save changes") < html.indexOf("Cancel"),
@@ -752,344 +719,35 @@ describe("profile summary editor", () => {
         drafts: { age: "I am eight" },
         fieldErrors: {},
         isSaving: true,
-        learnerName: "Mia",
+        learnerName: "Mary",
         lessonRecordingCleanupPending: false,
         lessonRecordingConsent: false,
         onCancel() {},
         onClose() {},
         onLessonRecordingConsentChange() {},
-        onRedoLearnerProfile() {},
         onSave() {},
         onValueChange() {},
         pageError: "",
+        questions: [],
       }),
     );
     const buttons = [
       html.match(/<button[^>]*aria-label="Back"[^>]*>/)?.[0],
       html.match(/<button[^>]*>Cancel<\/button>/)?.[0],
-      html.match(/<button[^>]*>Redo setup questions<\/button>/)?.[0],
       html.match(/<button[^>]*>Saving…<\/button>/)?.[0],
     ];
 
     assert.ok(buttons.every((button) => button?.includes('disabled=""')));
   });
 
-  it("derives core and returned-question profile drafts and updates them immutably", () => {
-    const state = {
-      profile: {
-        name: "Mia",
-        age: 8,
-        description: "Mia is eight and likes dinosaurs.",
-        answers: emptyAnswers({
-          favoriteAnimals: {
-            question: "What animals do you like?",
-            rawAnswer: "I like dinosaurs",
-            summary: "Likes dinosaurs.",
-            acknowledgment: "Dinosaurs are stompy!",
-            enrichmentStatus: "generated",
-            answeredAt: "2026-07-06T10:30:00.000Z",
-          },
-        }),
-      },
-      questions: [
-        question({ answerKey: "name" }),
-        question(),
-        question({ answerKey: "favoriteAnimals" }),
-      ],
-    };
-    assert.deepEqual(profileDraftsFromState(state), {
-      name: "Mia",
-      age: "8",
-      description: "Mia is eight and likes dinosaurs.",
-      favoriteAnimals: "I like dinosaurs",
-    });
-    const original = { name: "Mia" };
-    assert.deepEqual(updateProfileDraft(original, "name", "Maya"), {
-      name: "Maya",
-    });
-    assert.deepEqual(original, { name: "Mia" });
-  });
-
-  it("advances profile acknowledgments one at a time", () => {
-    const acknowledgments = [
-      { text: "Name saved!", audio: null },
-      { text: "Age saved!", audio: null },
-    ];
-    assert.deepEqual(nextProfileAcknowledgment(acknowledgments, 0), {
-      acknowledgment: acknowledgments[1],
-      index: 1,
-    });
-    assert.equal(nextProfileAcknowledgment(acknowledgments, 1), null);
-  });
-
-  it("clears owned profile work on route exit and reloads after re-entry", () => {
-    assert.equal(
-      typeof createProfileRouteLifecycle,
-      "function",
-      "Expected an executable profile route lifecycle",
-    );
-
-    let generation = 0;
-    let loadCount = 0;
-    let profile = null;
-    let profileError = "";
-    let profileLoading = false;
-    let pendingAcknowledgment = null;
-    let controller = null;
-    let exitCount = 0;
-
-    function startOperation() {
-      generation += 1;
-      const operation = generation;
-      const operationController = new AbortController();
-      controller = operationController;
-      return {
-        complete(callback) {
-          if (operation === generation && !operationController.signal.aborted) {
-            callback();
-          }
-        },
-      };
-    }
-
-    function loadCurrentProfile(name) {
-      loadCount += 1;
-      profileLoading = true;
-      const operation = startOperation();
-      operation.complete(() => {
-        profile = name;
-        profileLoading = false;
-      });
-    }
-
-    const lifecycle = createProfileRouteLifecycle(false, {
-      onExit() {
-        exitCount += 1;
-        generation += 1;
-        controller?.abort();
-        controller = null;
-        profile = null;
-        profileError = "";
-        profileLoading = false;
-        if (pendingAcknowledgment?.kind === "profile") {
-          pendingAcknowledgment = null;
-        }
-      },
-    });
-
-    assert.equal(lifecycle.update(false), null);
-    assert.equal(lifecycle.update(true), "entered");
-    loadCurrentProfile("FIRST PROFILE");
-    assert.equal(profile, "FIRST PROFILE");
-
-    pendingAcknowledgment = { kind: "profile" };
-    const lateSave = startOperation();
-    assert.equal(lifecycle.update(true), null);
-    assert.equal(lifecycle.update(false), "exited");
-    assert.equal(exitCount, 1);
-    assert.equal(profile, null);
-    assert.equal(profileLoading, false);
-    assert.equal(profileError, "");
-    assert.equal(pendingAcknowledgment, null);
-
-    lateSave.complete(() => {
-      profileError = "STALE SAVE";
-    });
-    assert.equal(profileError, "");
-
-    assert.equal(lifecycle.update(false), null);
-    assert.equal(lifecycle.update(true), "entered");
-    loadCurrentProfile("FRESH PROFILE");
-    assert.equal(loadCount, 2);
-    assert.equal(profile, "FRESH PROFILE");
-  });
-
-  it("aborts superseded and exited profile operations", () => {
-    assert.equal(
-      typeof createProfileOperationBoundary,
-      "function",
-      "Expected an executable profile operation boundary",
-    );
-
-    let generation = 0;
-    const boundary = createProfileOperationBoundary(() => {
-      generation += 1;
-      return generation;
-    });
-    const first = boundary.begin();
-    const second = boundary.begin();
-    assert.equal(first.operation, 1);
-    assert.equal(second.operation, 2);
-    assert.equal(first.controller.signal.aborted, true);
-    assert.equal(second.controller.signal.aborted, false);
-
-    boundary.finish(first.controller);
-    boundary.cancel();
-    assert.equal(second.controller.signal.aborted, true);
-
-    const third = boundary.begin();
-    boundary.finish(third.controller);
-    boundary.cancel();
-    assert.equal(third.controller.signal.aborted, false);
-  });
-
-  it("rejects deferred profile completions across Back and unmount", async () => {
-    assert.equal(
-      typeof createProfileOperationOwnership,
-      "function",
-      "Expected executable profile operation ownership",
-    );
-
-    let generation = 0;
-    let abortCount = 0;
-    let stateWrites = 0;
-    let refreshCalls = 0;
-    let navigationCalls = 0;
-    const boundary = createProfileOperationBoundary(() => {
-      generation += 1;
-      return generation;
-    });
-    const ownership = createProfileOperationOwnership({
-      getCurrentOperation: () => generation,
-      initialIsProfileRoute: true,
-    });
-
-    const supersededOperation = boundary.begin();
-    assert.equal(ownership.isCurrent(supersededOperation), true);
-    generation += 1;
-    assert.equal(ownership.isCurrent(supersededOperation), false);
-    boundary.finish(supersededOperation.controller);
-
-    const abortedOperation = boundary.begin();
-    assert.equal(ownership.isCurrent(abortedOperation), true);
-    abortedOperation.controller.abort();
-    assert.equal(ownership.isCurrent(abortedOperation), false);
-    boundary.finish(abortedOperation.controller);
-
-    function deferred() {
-      let resolve;
-      const promise = new Promise((next) => {
-        resolve = next;
-      });
-      return { promise, resolve };
-    }
-
-    function settleLater(active, pending) {
-      return pending.promise.then(() => {
-        if (!ownership.isCurrent(active)) return;
-        stateWrites += 1;
-        refreshCalls += 1;
-        navigationCalls += 1;
-      });
-    }
-
-    const backOperation = boundary.begin();
-    backOperation.controller.signal.addEventListener("abort", () => {
-      abortCount += 1;
-    });
-    const backDeferred = deferred();
-    const backSettlement = settleLater(backOperation, backDeferred);
-
-    ownership.setProfileRoute(false);
-    backDeferred.resolve();
-    await backSettlement;
-    assert.equal(abortCount, 0);
-    assert.deepEqual(
-      { navigationCalls, refreshCalls, stateWrites },
-      { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
-    );
-
-    teardownProfileOperationResources({
-      boundary,
-      invalidateOperation() {
-        generation += 1;
-      },
-      resetLoadOperation() {},
-    });
-    assert.equal(abortCount, 1);
-
-    ownership.setProfileRoute(true);
-    const unmountOperation = boundary.begin();
-    unmountOperation.controller.signal.addEventListener("abort", () => {
-      abortCount += 1;
-    });
-    const unmountDeferred = deferred();
-    const unmountSettlement = settleLater(unmountOperation, unmountDeferred);
-
-    ownership.unmount();
-    teardownProfileOperationResources({
-      boundary,
-      invalidateOperation() {
-        generation += 1;
-      },
-      resetLoadOperation() {},
-    });
-    unmountDeferred.resolve();
-    await unmountSettlement;
-
-    assert.equal(abortCount, 2);
-    assert.deepEqual(
-      { navigationCalls, refreshCalls, stateWrites },
-      { navigationCalls: 0, refreshCalls: 0, stateWrites: 0 },
-    );
-  });
-
-  it("tears down active profile resources when the gate unmounts", () => {
-    assert.equal(
-      typeof teardownProfileOperationResources,
-      "function",
-      "Expected a shared no-state-write profile resource teardown",
-    );
-
-    let generation = 0;
-    let profileLoadOperation = null;
-    const boundary = createProfileOperationBoundary(() => {
-      generation += 1;
-      return generation;
-    });
-    const active = boundary.begin();
-    profileLoadOperation = active.operation;
-
-    teardownProfileOperationResources({
-      boundary,
-      invalidateOperation() {
-        generation += 1;
-      },
-      resetLoadOperation() {
-        profileLoadOperation = null;
-      },
-    });
-
-    assert.equal(active.controller.signal.aborted, true);
-    assert.equal(generation, 2);
-    assert.equal(profileLoadOperation, null);
-  });
-
-  it("does not invalidate refreshed data after an explicitly handled profile exit", () => {
-    let unexpectedExitCleanup = 0;
-    const lifecycle = createProfileRouteLifecycle(true, {
-      onExit() {
-        unexpectedExitCleanup += 1;
-      },
-    });
-    assert.equal(
-      typeof lifecycle.markExitHandled,
-      "function",
-      "Expected explicit exits to be marked before navigation",
-    );
-
-    lifecycle.markExitHandled();
-    assert.equal(lifecycle.update(false), "exited");
-    assert.equal(unexpectedExitCleanup, 0);
-  });
 });
 
 function emptyAnswers(responses = {}) {
   return {
+    description: null,
     schemaVersion: 2,
     questionnaireVersion: 2,
     responses,
-    legacyAnswers: null,
   };
 }
 
@@ -1101,12 +759,10 @@ function fullState(overrides = {}) {
       name: "Mia",
       age: null,
       answers: emptyAnswers(),
-      questionnaireVersion: 2,
       currentQuestionKey: "name",
       profileStatus: "not_started",
       completedAt: null,
     },
-    questionnaire: { version: 2 },
     question: question({
       answerKey: "name",
       position: 1,
@@ -1138,16 +794,15 @@ function renderGate(overrides = {}, language = "en") {
             { "data-completed-redirect": true },
             "COMPLETED REDIRECT",
           ),
+          conversationProps: null,
           data: null,
+          isConversationRoute: false,
           isLearnerProfileRoute: true,
-          isProfileLoading: false,
-          isProfileRoute: false,
           isLoading: false,
           loadError: "",
           onAcknowledgmentNext() {},
-          onCloseProfileRoute() {},
+          onCloseConversationRoute() {},
           onRetry() {},
-          onRetryProfile() {},
           onSkip() {},
           onStart() {},
           learnerProfileFallback: createElement(
@@ -1155,10 +810,7 @@ function renderGate(overrides = {}, language = "en") {
             { "data-learner-profile-redirect": true },
             "LEARNER_PROFILE REDIRECT",
           ),
-          profileEditor: null,
-          profileLoadError: "",
           questionProps: null,
-          redoLearnerProfile: false,
           started: false,
           ...overrides,
         },
@@ -1369,19 +1021,6 @@ describe("onboarding and profile gate", () => {
       isLearnerProfileRoute: false,
     });
     assert.match(selectionRedirect, /GUARDIAN MANAGER REDIRECT/);
-
-    const bypassRedirect = renderGate({
-      data: { mode: "bypass-only", canBypass: true },
-      guardianRoute: true,
-      guardianSelectionFallback: createElement(
-        "div",
-        null,
-        "GUARDIAN MANAGER REDIRECT",
-      ),
-      isLearnerProfileRoute: false,
-    });
-    assert.match(bypassRedirect, /GUARDIAN MANAGER REDIRECT/);
-    assert.doesNotMatch(bypassRedirect, /LESSON CONTENT/);
   });
 
   it("keeps a selection-required Guardian dashboard available when learner profiles remain", () => {
@@ -1491,53 +1130,6 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(completedLearnerProfile, /LESSON CONTENT|Meet Peppa/);
   });
 
-  it("routes bypass-only sessions away from onboarding", () => {
-    const html = renderGate({
-      data: { mode: "bypass-only", canBypass: true },
-      isLearnerProfileRoute: true,
-    });
-    assert.match(html, /COMPLETED REDIRECT/);
-    assert.doesNotMatch(html, /LESSON CONTENT/);
-  });
-
-  it("routes bypass-only sessions away from unavailable profile editing", () => {
-    const html = renderGate({
-      data: { mode: "bypass-only", canBypass: true },
-      isLearnerProfileRoute: false,
-      isProfileRoute: true,
-    });
-    assert.match(html, /COMPLETED REDIRECT/);
-    assert.doesNotMatch(html, /LESSON CONTENT/);
-  });
-
-  it("keeps profile loading and retry errors on the profile route", () => {
-    const loading = renderGate({
-      data: fullState({ canBypass: true }),
-      guardianRoute: true,
-      isLearnerProfileRoute: false,
-      isProfileLoading: true,
-      isProfileRoute: true,
-    });
-    assert.match(loading, /role="status"/);
-    assert.match(loading, /Loading your profile/);
-    assert.doesNotMatch(loading, /LESSON CONTENT/);
-
-    const failed = renderGate({
-      data: fullState({ canBypass: true }),
-      guardianRoute: true,
-      isLearnerProfileRoute: false,
-      isProfileRoute: true,
-      profileLoadError: "Profile service is unavailable.",
-    });
-    assert.match(failed, /role="alert"/);
-    assert.match(failed, /The learner profile could not be loaded\./);
-    assert.doesNotMatch(failed, /Profile service is unavailable\./);
-    assert.match(failed, />Try again</);
-    assert.match(failed, />Back</);
-    assert.doesNotMatch(failed, /Back to home/);
-    assert.doesNotMatch(failed, /LESSON CONTENT/);
-  });
-
   it("hides lessons behind loading, errors, and explicit Start", () => {
     assert.doesNotMatch(renderGate({ isLoading: true }), /LESSON CONTENT/);
     const failed = renderGate({ loadError: "Questions are unavailable." });
@@ -1597,29 +1189,6 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(manager, /Skip for now|Loading your questions/);
   });
 
-  it("redirects a non-redo Guardian setup bookmark before learner-profile loading", () => {
-    const html = renderGate({
-      guardianRoute: true,
-      isLearnerProfileRoute: true,
-      isLoading: true,
-      loadError: "Learner questions are unavailable.",
-    });
-
-    assert.match(html, /COMPLETED REDIRECT/);
-    assert.doesNotMatch(html, /Skip for now|Loading your questions/);
-  });
-
-  it("returns a bypass-only Guardian redo to its safe fallback instead of a blank route", () => {
-    const html = renderGate({
-      data: { canBypass: true, mode: "bypass-only" },
-      guardianRoute: true,
-      isLearnerProfileRoute: true,
-      redoLearnerProfile: true,
-    });
-
-    assert.match(html, /COMPLETED REDIRECT/);
-    assert.doesNotMatch(html, /LESSON CONTENT/);
-  });
 
   it("uses the loaded question count with singular grammar", () => {
     const start = renderGate({
@@ -1665,7 +1234,7 @@ describe("onboarding and profile gate", () => {
     assert.doesNotMatch(html, /<textarea/);
   });
 
-  it("renders lessons after completion or current-session bypass", () => {
+  it("renders lessons after a current-session onboarding bypass", () => {
     const html = renderGate({
       data: fullState({
         canBypass: true,
@@ -1678,81 +1247,8 @@ describe("onboarding and profile gate", () => {
     });
     assert.match(html, /LESSON CONTENT/);
     assert.doesNotMatch(html, /aria-label="Edit learner profile"/);
-
-    const bypass = renderGate({
-      data: { mode: "bypass-only", canBypass: true },
-      isLearnerProfileRoute: false,
-    });
-    assert.match(bypass, /LESSON CONTENT/);
-    assert.doesNotMatch(bypass, /Edit learner profile/);
   });
 
-  it("renders Guardian-owned profile and consent management without bypass controls", () => {
-    const html = renderGate({
-      data: fullState({ canBypass: true }),
-      guardianRoute: true,
-      isLearnerProfileRoute: false,
-      isProfileRoute: true,
-      profileEditor: {
-        drafts: { name: "Mia", age: "I am eight", description: "" },
-        fieldErrors: {},
-        isSaving: false,
-        learnerName: "Mia",
-        lessonRecordingCleanupPending: false,
-        lessonRecordingConsent: false,
-        onCancel() {},
-        onClose() {},
-        onLessonRecordingConsentChange() {},
-        onRedoLearnerProfile() {},
-        onSave() {},
-        onValueChange() {},
-        pageError: "",
-      },
-    });
-    assert.match(html, /Learner details/);
-    assert.equal((html.match(/<input/g) ?? []).length, 2);
-    assert.equal((html.match(/<textarea/g) ?? []).length, 1);
-    assert.match(html, /Redo setup questions/);
-    assert.match(html, /Lesson voice recordings/);
-    assert.match(html, /available automatically/i);
-    assert.match(html, />Delete saved lesson recordings</);
-    assert.doesNotMatch(html, /Allow lesson voice recordings|permission/i);
-    assert.doesNotMatch(html, /Chat with Peppa again/);
-    assert.doesNotMatch(html, /Skip for now/);
-    assert.doesNotMatch(html, /LESSON CONTENT/);
-  });
-
-  it("rejects consent management outside Guardian-owned profile routes", () => {
-    const html = renderGate({
-      data: fullState({
-        canBypass: true,
-        profile: {
-          ...fullState().profile,
-          profileStatus: "completed",
-        },
-      }),
-      isLearnerProfileRoute: false,
-      isProfileRoute: true,
-      profileEditor: {
-        drafts: { name: "Mia", age: "8", description: "" },
-        fieldErrors: {},
-        isSaving: false,
-        learnerName: "Mia",
-        lessonRecordingCleanupPending: false,
-        lessonRecordingConsent: false,
-        onCancel() {},
-        onClose() {},
-        onLessonRecordingConsentChange() {},
-        onRedoLearnerProfile() {},
-        onSave() {},
-        onValueChange() {},
-        pageError: "",
-      },
-    });
-
-    assert.match(html, /COMPLETED REDIRECT/);
-    assert.doesNotMatch(html, /Lesson voice recordings/);
-  });
 
   it("derives editable prose from snapshots with canonical prefills", () => {
     const profile = {

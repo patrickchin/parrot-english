@@ -337,13 +337,13 @@ test("automatic Guardian access resumes the current deep link", async ({
 });
 
 for (const viewport of lessonPrivacyViewports) {
-  test(`guardian manages automatic lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
+  test(`guardian explicitly manages lesson voice recordings at ${viewport.width}x${viewport.height}`, async ({
     page,
   }) => {
     const profile = {
       age: 8,
       answers: {
-        legacyAnswers: null,
+        description: null,
         questionnaireVersion: 2,
         responses: {},
         schemaVersion: 2,
@@ -354,7 +354,6 @@ for (const viewport of lessonPrivacyViewports) {
       id: "e2e-learner",
       name: "Mia",
       profileStatus: "completed",
-      questionnaireVersion: 2,
       storyLevel: "first-words",
     };
     let consent = false;
@@ -366,17 +365,15 @@ for (const viewport of lessonPrivacyViewports) {
       route.fulfill({
         json: {
           canBypass: true,
-          experienceMode: "form",
           mode: "full",
           profile,
           progress: { answered: 6, current: 6, total: 6 },
           question: null,
-          questionnaire: { version: 2 },
         },
       }),
     );
     await page.route(
-      (url) => url.pathname === "/api/profile",
+      (url) => url.pathname === "/api/learner-profiles/e2e-learner",
       (route) =>
         route.fulfill({
           json: {
@@ -390,7 +387,9 @@ for (const viewport of lessonPrivacyViewports) {
         }),
     );
     await page.route(
-      (url) => url.pathname === "/api/profile/lesson-recording-consent",
+      (url) =>
+        url.pathname ===
+        "/api/learner-profiles/e2e-learner/lesson-recording-consent",
       async (route) => {
         const body = route.request().postDataJSON() as { enabled: boolean };
         consent = body.enabled;
@@ -410,30 +409,46 @@ for (const viewport of lessonPrivacyViewports) {
     const consentSection = page.getByRole("region", {
       name: "Lesson voice recordings",
     });
+    const enableRecordings = consentSection.getByRole("button", {
+      name: "Allow lesson voice recordings",
+    });
     const deleteRecordings = consentSection.getByRole("button", {
       name: "Delete saved lesson recordings",
     });
     const recordingState = consentSection.getByRole("status");
     await consentSection.scrollIntoViewIfNeeded();
     await expect(consentSection).toContainText(
-      "Recording is available automatically during each join-in moment.",
+      "When enabled, join-in moments can save voice clips",
     );
     await expect(consentSection).toContainText(
-      "Clips apply only to this learner profile",
+      "for this learner profile",
     );
     await expect(consentSection).toContainText(
-      "one latest clip is saved per join-in moment",
+      "Only the latest clip is kept for each moment",
     );
-    await expect(recordingState).toHaveText(
-      "Lesson recording is available automatically.",
-    );
+    await expect(recordingState).toHaveText("Lesson voice recordings are off.");
     const initialRecordingStateBox = await visibleBox(recordingState);
     await expectInsideViewport(consentSection, viewport);
+    await expectInsideViewport(enableRecordings, viewport);
+    await expect(enableRecordings).toHaveAccessibleName(
+      "Allow lesson voice recordings",
+    );
+    await expectNoOverlap(enableRecordings, account);
+    await expectNoOverlap(enableRecordings, back);
+    expect(await horizontalOverflow(page)).toBe(false);
+
+    await enableRecordings.click();
+    await expect(recordingState).toHaveText(
+      "Lesson voice recordings are enabled.",
+    );
     await expectInsideViewport(deleteRecordings, viewport);
-    await expect(deleteRecordings).toHaveAccessibleName("Delete saved lesson recordings");
+    await expect(deleteRecordings).toHaveAccessibleName(
+      "Delete saved lesson recordings",
+    );
     await expectNoOverlap(deleteRecordings, account);
     await expectNoOverlap(deleteRecordings, back);
     expect(await horizontalOverflow(page)).toBe(false);
+    expect(mutations).toEqual([true]);
 
     page.once("dialog", async (dialog) => {
       expect(dialog.type()).toBe("confirm");
@@ -461,15 +476,15 @@ for (const viewport of lessonPrivacyViewports) {
     ).toBeLessThanOrEqual(1);
     await expectInsideViewport(finishDeletion, viewport);
     expect(await horizontalOverflow(page)).toBe(false);
-    expect(mutations).toEqual([false]);
+    expect(mutations).toEqual([true, false]);
 
     await finishDeletion.click();
-    await expect(deleteRecordings).toHaveAccessibleName("Delete saved lesson recordings");
-    await expect(recordingState).toHaveText(
-      "Lesson recording is available automatically.",
+    await expect(enableRecordings).toHaveAccessibleName(
+      "Allow lesson voice recordings",
     );
-    await expectInsideViewport(deleteRecordings, viewport);
-    expect(mutations).toEqual([false, false]);
+    await expect(recordingState).toHaveText("Lesson voice recordings are off.");
+    await expectInsideViewport(enableRecordings, viewport);
+    expect(mutations).toEqual([true, false, false]);
   });
 }
 
@@ -505,27 +520,9 @@ for (const { path, protectedName, sectionId, unlockedPath } of [
     unlockedPath: undefined,
   },
   {
-    path: "/guardian/profile/setup?parrotE2eProfile=viewport-stability",
-    protectedName: "Guardian dashboard",
-    sectionId: undefined,
-    unlockedPath: "/guardian",
-  },
-  {
-    path: "/guardian/profile/setup?redo=1&returnTo=%2Fguardian%2Flearners%2Fe2e-learner",
-    protectedName: "Update my profile",
-    sectionId: undefined,
-    unlockedPath: undefined,
-  },
-  {
     path: "/guardian/dubbing",
     protectedName: "Voice dubbing",
     sectionId: "voice-dubbing",
-    unlockedPath: undefined,
-  },
-  {
-    path: "/profile/setup?redo=1&returnTo=%2Fguardian",
-    protectedName: "Update my profile",
-    sectionId: undefined,
     unlockedPath: undefined,
   },
 ]) {
@@ -782,6 +779,12 @@ test("a sibling learner switch does not block the next Guardian route from profi
     await expect(
       page.getByRole("heading", { name: "Guardian dashboard" }),
     ).toBeVisible();
+    await expect(
+      sibling.getByRole("heading", {
+        name: "Help Peppa know you",
+      }),
+    ).toBeVisible();
+    await sibling.getByRole("button", { exact: true, name: "Back" }).click();
     await expect(
       sibling.getByRole("heading", {
         name: "Answer 6 questions",

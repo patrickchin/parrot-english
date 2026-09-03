@@ -1,7 +1,4 @@
-import {
-  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
-  type TalkToPeppaPromptStyle,
-} from "../../lib/talk-to-peppa-prompt-style.ts";
+import type { TalkToPeppaPromptStyle } from "../../lib/talk-to-peppa-prompt-style.ts";
 
 /**
  * Talk to Peppa uses one shared child-safe contract and one selected teaching
@@ -125,7 +122,3 @@ export const SMALL_CHAT_STYLE_PROMPTS: Record<
 export function getSmallChatSystemPrompt(style: TalkToPeppaPromptStyle) {
   return `${SMALL_CHAT_SHARED_PROMPT}\n\n${SMALL_CHAT_STYLE_PROMPTS[style]}`;
 }
-
-export const SMALL_CHAT_SYSTEM_PROMPT = getSmallChatSystemPrompt(
-  DEFAULT_TALK_TO_PEPPA_PROMPT_STYLE,
-);

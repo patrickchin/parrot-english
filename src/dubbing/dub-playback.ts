@@ -2,7 +2,6 @@ import {
   dubConsentLossError,
 } from "./dub-api.ts";
 import {
-  FIVE_LITTLE_DUCKS_DUB,
   getDubLineMusicPhrase,
   type DubDefinition,
   type DubLine,
@@ -15,7 +14,7 @@ type VoiceSource = Pick<AudioBufferSourceNode, "connect" | "start" | "stop">;
 type ScheduleDubAudioOptions = {
   context: Pick<AudioContext, "currentTime">;
   cueOffsetMs?: number;
-  definition?: DubDefinition;
+  definition: DubDefinition;
   lines?: readonly DubLine[];
   lineSources: Map<string, VoiceSource>;
   output: AudioNode;
@@ -25,7 +24,7 @@ type ScheduleDubAudioOptions = {
 type StartDubPlaybackOptions = {
   AudioContext?: typeof globalThis.AudioContext;
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
-  definition?: DubDefinition;
+  definition: DubDefinition;
   fetch?: typeof globalThis.fetch;
   includeOutro?: boolean;
   lines?: readonly DubLine[];
@@ -49,7 +48,7 @@ export type PreparedDubLineBacking = {
 type PrepareDubLineBackingOptions = {
   AudioContext?: typeof globalThis.AudioContext;
   cancelAnimationFrame?: typeof globalThis.cancelAnimationFrame;
-  definition?: DubDefinition;
+  definition: DubDefinition;
   line: DubLine;
   onCountIn?: (remainingBeats: number) => void;
   onDownbeat?: () => void;
@@ -95,7 +94,7 @@ function stopNode(node: Pick<AudioScheduledSourceNode, "stop">) {
 export function scheduleDubAudio(options: ScheduleDubAudioOptions) {
   const {
     cueOffsetMs = 0,
-    definition = FIVE_LITTLE_DUCKS_DUB,
+    definition,
     lines = definition.lines,
     lineSources,
     output,
@@ -269,7 +268,7 @@ function createAbortError() {
 
 function getPlaybackScope(
   lines: readonly DubLine[],
-  definition: DubDefinition = FIVE_LITTLE_DUCKS_DUB,
+  definition: DubDefinition,
 ) {
   if (lines.length === 0) {
     throw new TypeError("Dub playback lines must be one non-empty authored range.");
@@ -314,7 +313,7 @@ function getPlaybackPosition(
 export async function prepareDubLineBacking({
   AudioContext: AudioContextClass = globalThis.AudioContext,
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
-  definition = FIVE_LITTLE_DUCKS_DUB,
+  definition,
   line,
   onCountIn = () => {},
   onDownbeat = () => {},
@@ -473,7 +472,7 @@ export async function prepareDubLineBacking({
 export async function startDubPlayback({
   AudioContext: AudioContextClass = globalThis.AudioContext,
   cancelAnimationFrame: cancelFrame = globalThis.cancelAnimationFrame,
-  definition = FIVE_LITTLE_DUCKS_DUB,
+  definition,
   fetch: request = globalThis.fetch,
   includeOutro = true,
   lines = definition.lines,

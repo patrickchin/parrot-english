@@ -28,6 +28,11 @@ export function installDom() {
       return Promise.resolve();
     }
   }
+  class TestResizeObserver {
+    disconnect() {}
+    observe() {}
+    unobserve() {}
+  }
   const bindings = {
     CustomEvent: browserWindow.CustomEvent,
     DOMException: browserWindow.DOMException,
@@ -43,6 +48,7 @@ export function installDom() {
     MutationObserver: browserWindow.MutationObserver,
     Node: browserWindow.Node,
     PointerEvent: browserWindow.PointerEvent,
+    ResizeObserver: TestResizeObserver,
     SVGElement: browserWindow.SVGElement,
     cancelAnimationFrame: browserWindow.cancelAnimationFrame.bind(browserWindow),
     document: browserWindow.document,
@@ -145,8 +151,4 @@ export async function waitFor(assertion, { attempts = 100 } = {}) {
     }
   }
   throw lastError;
-}
-
-export function textContent(root = document.body) {
-  return root.textContent;
 }

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { openLearnerProfileForm } from "./learner-profile-helpers";
 
 const acknowledgmentPath =
   "/profile/setup?parrotE2eProfile=acknowledgment";
@@ -21,7 +22,7 @@ async function openAcknowledgment(
     text = "Thank you!",
   }: { path?: string; text?: string } = {},
 ) {
-  await page.goto(path);
+  await openLearnerProfileForm(page, path);
   await page
     .getByRole("button", { name: "Start questions" })
     .click();
@@ -107,7 +108,7 @@ test("saved acknowledgment audio cannot block its visible Next action", async ({
   page,
 }) => {
   await page.setViewportSize({ height: 844, width: 390 });
-  await page.goto(acknowledgmentPath);
+  await openLearnerProfileForm(page, acknowledgmentPath);
   await page.getByRole("button", { name: "Start questions" }).click();
 
   await page.evaluate(() => {

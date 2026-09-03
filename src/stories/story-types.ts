@@ -1,7 +1,5 @@
 import type { StoryLevelId } from "../../lib/story-level.ts";
 
-export type { StoryLevelId } from "../../lib/story-level.ts";
-
 export type StoryArtwork = {
   alt: string;
   prompt: string;
@@ -13,7 +11,7 @@ export type StoryPage = {
   id: string;
   joinIn: string;
   joinInAudioId: string | null;
-  narrationAudioId: string | null;
+  narrationAudioId: string;
   text: string;
 };
 

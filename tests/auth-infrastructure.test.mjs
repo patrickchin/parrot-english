@@ -156,11 +156,6 @@ function readSqlMigrations(
     migrationFiles.length > 0,
     "Expected at least one SQL migration"
   );
-  assert.ok(
-    !migrationFiles.includes("0001_better_auth.sql"),
-    "Expected the legacy handwritten migration to remain removed"
-  );
-
   return migrationFiles.map((name) => ({
     name,
     sql: readFileSync(
@@ -445,8 +440,7 @@ describe("authentication infrastructure", () => {
         "LIVEKIT_API_KEY=your_livekit_api_key\n" +
         "LIVEKIT_API_SECRET=your_livekit_api_secret\n" +
         "LIVEKIT_AGENT_NAME=parrot-conversation\n" +
-        "CONVERSATION_AGENT_SECRET=replace_with_a_separate_random_secret\n" +
-        "REALTIME_CONVERSATIONS_ENABLED=0\n"
+        "CONVERSATION_AGENT_SECRET=replace_with_a_separate_random_secret\n"
     );
     assert.match(
       frontendEnv,

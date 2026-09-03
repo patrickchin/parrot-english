@@ -29,7 +29,7 @@ const TARGETED_WEBM_BYTES = [0x1a, 0x45, 0xdf, 0xa3, 0x01, 0x00];
 const targetedSecurityCases: TargetedRequestCase[] = [
   {
     method: "GET",
-    name: "learner-profile alias",
+    name: "learner-profile state",
     path: "/api/learner-profile",
   },
   {
@@ -53,11 +53,6 @@ const targetedSecurityCases: TargetedRequestCase[] = [
     path: "/api/learner-profile/skip",
   },
   {
-    method: "POST",
-    name: "learner-profile completion",
-    path: "/api/learner-profile/complete",
-  },
-  {
     formData: {
       file: {
         bytes: TARGETED_WEBM_BYTES,
@@ -70,25 +65,10 @@ const targetedSecurityCases: TargetedRequestCase[] = [
     name: "learner-profile transcription",
     path: "/api/learner-profile/transcribe",
   },
-  { method: "GET", name: "profile alias read", path: "/api/profile" },
-  {
-    body: JSON.stringify({ answers: { name: "Target changed" } }),
-    headers: { "Content-Type": "application/json" },
-    method: "PUT",
-    name: "profile alias write",
-    path: "/api/profile",
-  },
   {
     method: "GET",
     name: "recording consent read",
     path: "/api/lesson-recordings/consent",
-  },
-  {
-    body: JSON.stringify({ enabled: true }),
-    headers: { "Content-Type": "application/json" },
-    method: "PUT",
-    name: "recording consent write",
-    path: "/api/profile/lesson-recording-consent",
   },
   {
     bodyBytes: TARGETED_WEBM_BYTES,
@@ -113,7 +93,7 @@ const targetedSecurityCases: TargetedRequestCase[] = [
     headers: { "Content-Type": "application/json" },
     method: "PUT",
     name: "dubbing consent",
-    path: "/api/dubs/five-little-ducks-v2/consent",
+    path: "/api/dubs/consent",
   },
   {
     bodyBytes: TARGETED_WEBM_BYTES,
@@ -130,7 +110,7 @@ const targetedSecurityCases: TargetedRequestCase[] = [
   {
     method: "DELETE",
     name: "dubbing deletion",
-    path: "/api/dubs/five-little-ducks-v2",
+    path: "/api/dubs",
   },
 ];
 
@@ -184,11 +164,14 @@ async function setGuardianAccess(page: Page, mode: "guardian" | "learner") {
 
 async function seedTargetedAuthorizationState(page: Page) {
   const result = await page.evaluate(async () => {
-    const response = await fetch("/api/profile/lesson-recording-consent", {
-      body: JSON.stringify({ enabled: true }),
-      headers: { "Content-Type": "application/json" },
-      method: "PUT",
-    });
+    const response = await fetch(
+      "/api/learner-profiles/learner-mia/lesson-recording-consent",
+      {
+        body: JSON.stringify({ enabled: true }),
+        headers: { "Content-Type": "application/json" },
+        method: "PUT",
+      },
+    );
     return { body: await response.json(), status: response.status };
   });
 
@@ -231,7 +214,7 @@ async function readTargetedAccountState(page: Page) {
       }).toString();
       const [learnerProfile, profile, recording, dubbing] = await Promise.all([
         json(`/api/learner-profile?${target}`),
-        json(`/api/profile?${target}`),
+        json(`/api/learner-profiles/${encodeURIComponent(profileId)}`),
         json(`/api/lesson-recordings/consent?${target}`),
         json(`/api/dubs/five-little-ducks-v2?${target}`),
       ]);
@@ -422,9 +405,7 @@ async function chooseLearnerAndStart(
 }
 
 async function chooseLearnerFromManager(page: Page, name: string) {
-  await page
-    .getByRole("link", { name: "Back to guardian dashboard" })
-    .click();
+  await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   return chooseLearnerAndStart(page, name);
 }
 
@@ -436,9 +417,7 @@ async function openLearnerManagerFromDashboard(page: Page) {
 }
 
 async function openLearnerModeChooserFromManager(page: Page) {
-  await page
-    .getByRole("link", { name: "Back to guardian dashboard" })
-    .click();
+  await page.getByRole("link", { name: "Back to guardian dashboard" }).click();
   return openLearnerModeChooser(page);
 }
 
@@ -584,6 +563,24 @@ async function unlockGuardianFromLearnerMenu(page: Page) {
   ).toBeVisible();
 }
 
+async function enableLessonRecordings(page: Page, learnerProfileId: string) {
+  await page.goto(
+    learnerScenarioUrl(`/guardian/learners/${learnerProfileId}`, "multiple"),
+  );
+  const recordings = page.getByRole("region", {
+    name: "Lesson voice recordings",
+  });
+  await expect(recordings.getByRole("status")).toHaveText(
+    "Lesson voice recordings are off.",
+  );
+  await recordings
+    .getByRole("button", { name: "Allow lesson voice recordings" })
+    .click();
+  await expect(recordings.getByRole("status")).toHaveText(
+    "Lesson voice recordings are enabled.",
+  );
+}
+
 test("chooses a sibling only while switching and keeps that session selection after refresh", async ({
   page,
 }) => {
@@ -703,8 +700,10 @@ test("active learner detail saves reach learner-mode consumers in the same SPA",
     .getByRole("textbox", { exact: true, name: "Name" })
     .fill("Mia Updated");
   await expect(
-    page.getByRole("status").filter({ hasText: "available automatically" }),
-  ).toBeVisible();
+    page
+      .getByRole("region", { name: "Lesson voice recordings" })
+      .getByRole("status"),
+  ).toHaveText("Lesson voice recordings are off.");
   await page.getByRole("button", { exact: true, name: "Save changes" }).click();
   await expect(page).toHaveURL("/guardian/learners");
 
@@ -1115,24 +1114,24 @@ test("keeps conversations and dubbing isolated by selected learner", async ({
   ).toBeVisible();
   const miaData = await page.evaluate(async () => {
     const conversationResponse = await fetch("/api/conversations", {
-      body: JSON.stringify({ purpose: "small-chat" }),
+      body: JSON.stringify({
+        promptStyle: "tiny-turns",
+        purpose: "small-chat",
+      }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
     const conversation = (await conversationResponse.json()) as {
       conversation: { id: string };
     };
-    const consentResponse = await fetch(
-      "/api/dubs/five-little-ducks-v2/consent",
-      {
-        body: JSON.stringify({
-          accepted: true,
-          consentVersion: "guardian-voice-r2-v2",
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "PUT",
-      },
-    );
+    const consentResponse = await fetch("/api/dubs/consent", {
+      body: JSON.stringify({
+        accepted: true,
+        consentVersion: "guardian-voice-r2-v2",
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "PUT",
+    });
     return {
       consentStatus: consentResponse.status,
       conversationId: conversation.conversation.id,
@@ -1158,12 +1157,11 @@ test("keeps conversations and dubbing isolated by selected learner", async ({
 
   expect(noahData.siblingConversationStatus).toBe(404);
   expect(noahData.dub).toMatchObject({
-    consentState: "granted",
-    recordingEnabled: true,
+    consentState: "not_granted",
   });
 });
 
-test("keeps automatic lesson recordings isolated by selected learner", async ({
+test("keeps explicitly enabled lesson recordings isolated by selected learner", async ({
   page,
 }) => {
   const recordingSnapshot = () =>
@@ -1188,14 +1186,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   const lessonPath =
     "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=recording";
 
-  await page.goto(
-    learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
-  );
-  await expect(
-    page
-      .getByRole("region", { name: "Lesson voice recordings" })
-      .getByRole("status"),
-  ).toHaveText("Lesson recording is available automatically.");
+  await enableLessonRecordings(page, "learner-mia");
 
   await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
   await chooseLearnerAndStart(page, "Mia", "Switch to learner mode");
@@ -1220,12 +1211,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
   await unlockGuardianFromLearnerMenu(page);
   await chooseLearnerAndStart(page, "Noah");
   await unlockGuardianFromLearnerMenu(page);
-  await page.goto("/guardian/learners/learner-noah");
-  await expect(
-    page
-      .getByRole("region", { name: "Lesson voice recordings" })
-      .getByRole("status"),
-  ).toHaveText("Lesson recording is available automatically.");
+  await enableLessonRecordings(page, "learner-noah");
 
   await page.goto(learnerScenarioUrl(lessonPath, "multiple"));
   await chooseLearnerAndStart(page, "Noah", "Switch to learner mode");
@@ -1246,7 +1232,7 @@ test("keeps automatic lesson recordings isolated by selected learner", async ({
     page
       .getByRole("region", { name: "Lesson voice recordings" })
       .getByRole("status"),
-  ).toHaveText("Lesson recording is available automatically.");
+  ).toHaveText("Lesson voice recordings are enabled.");
   const storedRecordings = await page.evaluate(() => {
     const learners = (
       window as Window & {
@@ -1310,16 +1296,13 @@ test("keeps Mia's queued built-in recording out of Noah after the Guardian switc
       if (!media) throw new Error("Lesson media controller is missing.");
       return media.snapshot();
     });
-  await page.goto(
-    learnerScenarioUrl("/guardian/learners/learner-mia", "multiple"),
-  );
-  await expect(
-    page.getByRole("status").filter({ hasText: "available automatically" }),
-  ).toBeVisible();
+  await enableLessonRecordings(page, "learner-mia");
   await page.goto("/guardian/learners/learner-noah");
   await expect(
-    page.getByRole("status").filter({ hasText: "available automatically" }),
-  ).toBeVisible();
+    page
+      .getByRole("region", { name: "Lesson voice recordings" })
+      .getByRole("status"),
+  ).toHaveText("Lesson voice recordings are off.");
 
   const lessonPath =
     "/lessons/parrot/01-peppas-high-ball/scenes/1?parrotE2eLesson=upload-held";
@@ -1613,7 +1596,6 @@ const learnerRoutes = [
   "/lessons/parrot/01-peppas-high-ball/scenes/1",
   "/stories",
   "/stories/the-red-ball/pages/1",
-  "/progress",
   "/profile/setup",
   "/dubs/five-little-ducks",
   "/dubs/old-macdonald",
@@ -1759,7 +1741,7 @@ async function renameActiveLearner(page: Page, name: string) {
     page.getByRole("heading", { name: "Manage learners" }),
   ).toBeVisible();
   const updated = await page.evaluate(async (nextName) => {
-    const response = await fetch("/api/profile", {
+    const response = await fetch("/api/learner-profiles/learner-mia", {
       body: JSON.stringify({
         answers: { age: "8", description: "", name: nextName },
       }),
@@ -1803,10 +1785,10 @@ async function expectGuardianNameSurfacesContained(page: Page, name: string) {
         page.getByText(`About ${name}`, { exact: true }),
       ).toBeVisible();
     } else {
-      const deletion = page.getByRole("button", {
-        name: `Delete ${name}'s saved nursery-rhyme voice clips`,
+      const enable = page.getByRole("button", {
+        name: `Allow ${name} to record and save nursery-rhyme voice clips`,
       });
-      await expect(deletion).toBeVisible();
+      await expect(enable).toBeVisible();
     }
 
     directions.push(...(await expectNameContentContained(page, name)));
@@ -1886,7 +1868,7 @@ test("isolates a right-to-left learner name across every Guardian context at 280
   expect(surfaceDirections).toContain("rtl");
 });
 
-test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian navigation", async ({
+test("keeps details, wildcard, and mode-mismatch exits inside Guardian navigation", async ({
   page,
 }) => {
   await page.goto(
@@ -1916,20 +1898,6 @@ test("keeps details, wildcard, mode-mismatch, and redo exits inside Guardian nav
   await expect(
     page.getByRole("heading", { name: "Guardian dashboard" }),
   ).toBeVisible();
-
-  await page.goto(
-    learnerScenarioUrl(
-      "/guardian/profile/setup?redo=1&returnTo=%2Fguardian&parrotE2eProfile=viewport-stability",
-      "multiple",
-    ),
-  );
-  await expect(
-    page.getByRole("heading", {
-      name: "Hi! I'm Peppa. What's your name?",
-    }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Back" }).click();
-  await expect(page).toHaveURL("/guardian");
 });
 
 test("targets Noah's dubbing deletion without switching learner mode", async ({
@@ -1955,7 +1923,7 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
     page.getByText("Editing settings for ⁨Noah⁩", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
   ).toBeVisible();
   await expect(page.getByRole("checkbox")).toHaveCount(0);
   await expect(
@@ -1964,6 +1932,15 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
   await expect(page.getByRole("link", { name: "Manage learners" })).toHaveCount(
     0,
   );
+
+  await page
+    .getByRole("button", {
+      name: "Allow Noah to record and save nursery-rhyme voice clips",
+    })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Voice dubbing is available" }),
+  ).toBeVisible();
 
   const granted = await page.evaluate(async () => {
     const [mia, noah] = await Promise.all([
@@ -1978,7 +1955,7 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
     ]);
     return { mia: mia.consentState, noah: noah.consentState };
   });
-  expect(granted).toEqual({ mia: "granted", noah: "granted" });
+  expect(granted).toEqual({ mia: "not_granted", noah: "granted" });
 
   await page
     .getByRole("button", {
@@ -1986,7 +1963,12 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
     })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Voice dubbing is available" }),
+    page.getByRole("heading", { name: "No saved voice clips" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Allow Noah to record and save nursery-rhyme voice clips",
+    }),
   ).toBeVisible();
   const removed = await page.evaluate(async () => {
     const response = await fetch(
@@ -1994,7 +1976,7 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
     );
     return (await response.json()) as { consentState: string };
   });
-  expect(removed.consentState).toBe("granted");
+  expect(removed.consentState).toBe("not_granted");
 
   await target.getByRole("button", { exact: true, name: "⁨Mia⁩" }).click();
   await expect(
@@ -2021,7 +2003,7 @@ test("targets Noah's dubbing deletion without switching learner mode", async ({
     .toBe("learner-mia");
 });
 
-test("locked 16-row targeted security matrix handles all 32 requests before parsing or resolution", async ({
+test("locked 12-row targeted security matrix rejects requests before parsing or resolution", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/", "multiple", "learner"));
@@ -2044,11 +2026,11 @@ test("locked 16-row targeted security matrix handles all 32 requests before pars
   await setGuardianAccess(page, "guardian");
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(32);
+  expect(result.responses).toHaveLength(24);
   expect(
     result.responses.filter(({ mutationCapable }) => mutationCapable),
-    "15-row mutation-capable subset across two locked target shapes",
-  ).toHaveLength(30);
+    "11-row mutation-capable subset across two locked target shapes",
+  ).toHaveLength(22);
   expect(
     result.responses
       .filter(({ mutationCapable }) => !mutationCapable)
@@ -2080,7 +2062,7 @@ test("question skip rejects a learner's current required question without changi
 
   const created = await page.evaluate(async () => {
     const response = await fetch("/api/learner-profiles", {
-      body: JSON.stringify({ activate: false, name: "Ava" }),
+      body: JSON.stringify({ name: "Ava" }),
       headers: { "Content-Type": "application/json" },
       method: "POST",
     });
@@ -2137,7 +2119,6 @@ test("question skip rejects a learner's current required question without changi
   expect(await readAva()).toEqual(beforeAva);
   expect(await readTargetedAccountState(page)).toEqual(beforeAccount);
 });
-
 test("question skip rejects a non-current question without changing either learner or active selection", async ({
   page,
 }) => {
@@ -2208,7 +2189,7 @@ test("cross-origin learner-target paths stay with native fetch", async ({
 
   const response = await page.evaluate(async () => {
     const result = await fetch(
-      "https://fixture.example/api/profile?learnerProfileId=unknown-learner",
+      "https://fixture.example/api/learner-profiles/unknown-learner",
     );
     return {
       body: await result.json(),
@@ -2221,35 +2202,6 @@ test("cross-origin learner-target paths stay with native fetch", async ({
     body: { source: "native-fetch" },
     mockApi: null,
     status: 207,
-  });
-});
-
-test("singleton targeted fixtures return the Worker method contract without native fetch", async ({
-  page,
-}) => {
-  await page.goto(
-    "/guardian/learners/e2e-learner?parrotE2eProfile=viewport-stability&parrotE2eGuardian=guardian",
-  );
-  await expect(
-    page.getByRole("heading", { name: "Learner details" }),
-  ).toBeVisible();
-
-  const response = await page.evaluate(async () => {
-    const result = await fetch("/api/profile?learnerProfileId=e2e-learner", {
-      method: "DELETE",
-    });
-    const text = await result.text();
-    return {
-      body: text ? JSON.parse(text) : null,
-      mockApi: result.headers.get("X-Parrot-Mock-Api"),
-      status: result.status,
-    };
-  });
-
-  expect(response).toEqual({
-    body: { error: "method_not_allowed" },
-    mockApi: "browser",
-    status: 405,
   });
 });
 
@@ -2278,7 +2230,7 @@ test("malformed targeted question-skip JSON matches the Worker invalid-json resp
   expect(await readTargetedAccountState(page)).toEqual(before);
 });
 
-test("unlocked malformed targets in the 16-row security matrix resolve all 112 combinations once to generic 404", async ({
+test("unlocked malformed targets in the 12-row security matrix resolve all 84 combinations once to generic 404", async ({
   page,
 }) => {
   await page.goto(learnerScenarioUrl("/guardian", "multiple"));
@@ -2303,11 +2255,11 @@ test("unlocked malformed targets in the 16-row security matrix resolve all 112 c
   const result = await exerciseTargetedRequests(page, invalidQueries);
   const after = await readTargetedAccountState(page);
 
-  expect(result.responses).toHaveLength(112);
+  expect(result.responses).toHaveLength(84);
   expect(
     result.responses.filter(({ mutationCapable }) => mutationCapable),
-    "15-row mutation-capable subset across seven invalid target shapes",
-  ).toHaveLength(105);
+    "11-row mutation-capable subset across seven invalid target shapes",
+  ).toHaveLength(77);
   expect(
     result.responses
       .filter(({ mutationCapable }) => !mutationCapable)
@@ -2324,112 +2276,4 @@ test("unlocked malformed targets in the 16-row security matrix resolve all 112 c
   }
   expect(result.parseCalls).toBe(result.responses.length);
   expect(after).toEqual(before);
-});
-
-test("targeted profile aliases and mutations stay on Noah while Mia remains in learner mode", async ({
-  page,
-}) => {
-  await page.goto(learnerScenarioUrl("/guardian", "multiple"));
-  await expect(
-    page.getByRole("heading", { name: "Guardian dashboard" }),
-  ).toBeVisible();
-
-  const result = await page.evaluate(async () => {
-    const target = "learnerProfileId=learner-noah";
-    const json = async (path: string, init?: RequestInit) => {
-      const response = await fetch(path, init);
-      return { body: await response.json(), status: response.status };
-    };
-    const headers = { "Content-Type": "application/json" };
-    const learnerProfile = await json(`/api/learner-profile?${target}`);
-    const answer = await json(`/api/learner-profile/answer?${target}`, {
-      body: JSON.stringify({
-        questionKey: "favoriteAnimals",
-        rawAnswer: "Likes rockets",
-      }),
-      headers,
-      method: "PUT",
-    });
-    const profile = await json(`/api/profile?${target}`);
-    const savedProfile = await json(`/api/profile?${target}`, {
-      body: JSON.stringify({
-        answers: { age: "10", description: "Likes space", name: "Noah" },
-      }),
-      headers,
-      method: "PUT",
-    });
-    const recording = await json(
-      `/api/profile/lesson-recording-consent?${target}`,
-      {
-        body: JSON.stringify({ enabled: true }),
-        headers,
-        method: "PUT",
-      },
-    );
-    const dubConsent = await fetch(
-      `/api/dubs/five-little-ducks-v2/consent?${target}`,
-      {
-        body: JSON.stringify({
-          accepted: true,
-          consentVersion: "guardian-voice-r2-v2",
-        }),
-        headers,
-        method: "PUT",
-      },
-    );
-    const dubDelete = await fetch(`/api/dubs/five-little-ducks-v2?${target}`, {
-      method: "DELETE",
-    });
-    const recordingStatus = await json(
-      `/api/lesson-recordings/consent?${target}`,
-    );
-    const miaProfile = await json("/api/profile");
-    const snapshot = (
-      window as Window & {
-        __parrotE2eLearners?: {
-          snapshot(): { activeProfileId: string | null };
-        };
-      }
-    ).__parrotE2eLearners?.snapshot();
-    return {
-      activeProfileId: snapshot?.activeProfileId,
-      answer,
-      dubConsentStatus: dubConsent.status,
-      dubDeleteStatus: dubDelete.status,
-      learnerProfile,
-      miaProfile,
-      profile,
-      recording,
-      recordingStatus,
-      savedProfile,
-    };
-  });
-
-  expect(result).toMatchObject({
-    activeProfileId: "learner-mia",
-    answer: { body: { profile: { id: "learner-noah" } }, status: 200 },
-    dubConsentStatus: 204,
-    dubDeleteStatus: 204,
-    learnerProfile: {
-      body: { profile: { id: "learner-noah", name: "Noah" } },
-      status: 200,
-    },
-    miaProfile: {
-      body: { profile: { id: "learner-mia", name: "Mia" } },
-      status: 200,
-    },
-    profile: {
-      body: { profile: { id: "learner-noah", name: "Noah" } },
-      status: 200,
-    },
-    recording: {
-      body: { cleanupPending: false, enabled: true },
-      status: 200,
-    },
-    recordingStatus: { body: { enabled: true }, status: 200 },
-    savedProfile: {
-      body: { profile: { id: "learner-noah", name: "Noah" } },
-      status: 200,
-    },
-  });
 });

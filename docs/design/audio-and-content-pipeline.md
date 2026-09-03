@@ -68,17 +68,15 @@ Do not edit `dist` directly.
 
 Each lesson file contains only text and catalog IDs. Every step has one English
 line and one speaker. An optional partial emote map changes listed characters;
-omitted characters inherit their current emotes. A user step may add a `check`
-whose responses select the speaker, dialogue, optional emote changes, and
-retry-or-continue action. Omitting `check` skips speech evaluation.
+omitted characters inherit their current emotes.
 
 When adding a lesson:
 
 1. Add one valid JSON file under `content/lessons`.
 2. Reuse global character, emote, and background IDs.
 3. Add any genuinely new visual definitions to the global catalogs first.
-4. Add saved-audio metadata for each unique non-user step and check-response
-   speaker/text pair.
+4. Add saved-audio metadata for each unique non-user step and learner join-in
+   group cue.
 5. Generate only the missing audio IDs.
 
 No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
@@ -90,8 +88,9 @@ No lesson field stores a sprite path, audio path, voice ID, or TTS setting.
 
 `lib/static-audio.js` resolves a cache entry by both `speaker` and exact `text`.
 The speaker is required because the same sentence may be spoken by Peppa and
-Dolly with different cached voices. User steps never require saved playback.
-Built-in scripted check responses use saved audio.
+Dolly with different cached voices. A user step resolves a separate quiet group
+cue by exact dialogue text; that cue invites the learner to join in but is never
+treated as the learner's voice.
 
 A missing built-in metadata entry or file should fail tests during development
 instead of silently falling back to device speech.
@@ -141,12 +140,10 @@ Optional overrides:
 ELEVENLABS_PEPPA_VOICE_ID=...
 ELEVENLABS_DOLLY_VOICE_ID=...
 ELEVENLABS_NARRATOR_VOICE_ID=...
-ELEVENLABS_VOICE_ID=...
 ELEVENLABS_MODEL_ID=eleven_v3
 ```
 
-The speaker-specific override wins over the general voice override. Current
-defaults are:
+Current defaults are:
 
 - Peppa: `Oqy85UMasXzUjUxF0ta5` (Summer)
 - Dolly: `5N1BjZ10t6GcJUhZCP40` (Adaline)
@@ -164,6 +161,14 @@ failure; the dubbing UI must not substitute browser speech.
 Use `--only=<audio-id>` to avoid regenerating existing assets or spending
 credits unnecessarily. Never substitute local or macOS system speech for a
 missing built-in saved asset.
+
+Quiet lesson join-in cues are layered from the checked-in saved character lines;
+they do not use local text-to-speech. Regenerate the catalogued cue MP3s with
+FFmpeg after changing their source lines:
+
+```bash
+npm run generate:audio:lesson-join-in
+```
 
 ## Visual Generation
 
@@ -192,8 +197,8 @@ URL rather than overwriting an existing object.
 
 - Validate every checked-in lesson and catalog.
 - Confirm each character/emote catalog path exists.
-- Confirm each built-in scripted non-user line and check response resolves by
-  speaker plus text.
+- Confirm each built-in scripted non-user line resolves by speaker plus text and
+  each user step resolves its saved group cue by exact text.
 - Confirm each audio metadata path exists under `public`.
 - Run `npm run verify:backgrounds` after any background catalog change.
 - Run focused lesson/audio tests.

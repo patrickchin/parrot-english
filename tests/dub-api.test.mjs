@@ -1,16 +1,29 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
-  deleteDub,
+  deleteAllDubs,
   DubNotEnabledError,
   DubResetInProgressError,
   DubTakeRejectedError,
   grantDubConsent,
   getDubLineAudioUrl,
-  loadDubLineAudio,
   loadDubStatus,
   saveDubLine,
 } from "../src/dubbing/dub-api.ts";
+
+const DUB_ID = "five-little-ducks-v2";
+
+function loadStatus(options = {}) {
+  return loadDubStatus({ dubId: DUB_ID, ...options });
+}
+
+function saveLine(lineId, blob, options = {}) {
+  return saveDubLine(lineId, blob, { dubId: DUB_ID, ...options });
+}
+
+function lineAudioUrl(lineId, options = {}) {
+  return getDubLineAudioUrl(lineId, { dubId: DUB_ID, ...options });
+}
 
 function requestRecorder(response) {
   const calls = [];
@@ -31,55 +44,18 @@ function duckStatusLines() {
 }
 
 describe("duck dub browser API", () => {
-  it("loads one saved line as a private same-origin blob", async () => {
-    const calls = [];
-    const clip = new Blob(["learner voice"], { type: "audio/webm" });
-    const result = await loadDubLineAudio("line/1", {
-      dubId: "five-little-ducks-v2",
-      fetch: async (...args) => {
-        calls.push(args);
-        return new Response(clip, { status: 200 });
-      },
-    });
-    assert.equal(await result.text(), "learner voice");
-    assert.equal(calls[0][0], "/api/dubs/five-little-ducks-v2/lines/line%2F1/audio");
-    assert.equal(calls[0][1].credentials, "same-origin");
-  });
-
-  it("maps consent loss and other saved-take failures", async () => {
-    await assert.rejects(
-      loadDubLineAudio("line-1", {
-        fetch: async () => new Response(JSON.stringify({ error: "dubbing_not_enabled" }), {
-          headers: { "Content-Type": "application/json" },
-          status: 403,
-        }),
-      }),
-      DubNotEnabledError,
-    );
-    await assert.rejects(
-      loadDubLineAudio("line-1", { fetch: async () => new Response("", { status: 500 }) }),
-      /Your recording could not be played\. Record the line again\./,
-    );
-    await assert.rejects(
-      loadDubLineAudio("line-1", { fetch: async () => new Response(new Blob([]), { status: 200 }) }),
-      /Your recording could not be played\. Record the line again\./,
-    );
-  });
-
   it("uses private same-origin requests and encoded line IDs", async () => {
     const controller = new AbortController();
     const status = {
-      complete: false,
       consentState: "granted",
       dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v2",
       lines: duckStatusLines(),
-      recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
 
     assert.deepEqual(
-      await loadDubStatus({ fetch: load.fetch, signal: controller.signal }),
+      await loadStatus({ fetch: load.fetch, signal: controller.signal }),
       status,
     );
     assert.deepEqual(load.calls[0], [
@@ -93,7 +69,7 @@ describe("duck dub browser API", () => {
     const saved = { recordedAt: "2026-08-25T10:00:00.000Z" };
     const upload = requestRecorder(Response.json(saved, { status: 201 }));
     assert.deepEqual(
-      await saveDubLine("line/1", blob, {
+      await saveLine("line/1", blob, {
         fetch: upload.fetch,
         signal: controller.signal,
       }),
@@ -114,11 +90,11 @@ describe("duck dub browser API", () => {
 
     const remove = requestRecorder(new Response(null, { status: 204 }));
     assert.equal(
-      await deleteDub({ fetch: remove.fetch, signal: controller.signal }),
+      await deleteAllDubs({ fetch: remove.fetch, signal: controller.signal }),
       undefined,
     );
     assert.deepEqual(remove.calls[0], [
-      "/api/dubs/five-little-ducks-v2",
+      "/api/dubs",
       {
         credentials: "same-origin",
         method: "DELETE",
@@ -127,7 +103,7 @@ describe("duck dub browser API", () => {
     ]);
 
     assert.equal(
-      getDubLineAudioUrl("line/1"),
+      lineAudioUrl("line/1"),
       "/api/dubs/five-little-ducks-v2/lines/line%2F1/audio",
     );
   });
@@ -137,7 +113,7 @@ describe("duck dub browser API", () => {
 
     await grantDubConsent({ fetch: request.fetch });
 
-    assert.equal(request.calls[0][0], "/api/dubs/five-little-ducks-v2/consent");
+    assert.equal(request.calls[0][0], "/api/dubs/consent");
     assert.deepEqual(JSON.parse(request.calls[0][1].body), {
       accepted: true,
       consentVersion: "guardian-voice-r2-v2",
@@ -154,7 +130,7 @@ describe("duck dub browser API", () => {
     const upload = requestRecorder(Response.json(saved, { status: 201 }));
 
     assert.deepEqual(
-      await saveDubLine(
+      await saveLine(
         "line-1",
         new Blob(["take"], { type: "audio/webm" }),
         { fetch: upload.fetch, peakBars },
@@ -169,22 +145,20 @@ describe("duck dub browser API", () => {
 
   it("rejects malformed learner waveform metadata in status and save results", async () => {
     const malformedStatus = {
-      complete: false,
       consentState: "granted",
       dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v2",
       lines: duckStatusLines().map((line, index) => index === 0
         ? { ...line, peakBars: [1, 2] }
         : line),
-      recordingEnabled: true,
     };
 
     await assert.rejects(
-      loadDubStatus({ fetch: async () => Response.json(malformedStatus) }),
+      loadStatus({ fetch: async () => Response.json(malformedStatus) }),
       /Your saved dub could not be loaded/,
     );
     await assert.rejects(
-      saveDubLine("line-1", new Blob(["take"], { type: "audio/webm" }), {
+      saveLine("line-1", new Blob(["take"], { type: "audio/webm" }), {
         fetch: async () => Response.json({
           peakBars: [1, 2],
           recordedAt: "2026-08-25T10:00:00.000Z",
@@ -197,12 +171,10 @@ describe("duck dub browser API", () => {
   it("targets every dub request and audio URL with one exact learner query", async () => {
     const learnerProfileId = "learner /Noah";
     const status = {
-      complete: false,
       consentState: "granted",
       dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v2",
       lines: duckStatusLines(),
-      recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
     const upload = requestRecorder(
@@ -211,30 +183,30 @@ describe("duck dub browser API", () => {
     const consent = requestRecorder(new Response(null, { status: 204 }));
     const remove = requestRecorder(new Response(null, { status: 204 }));
 
-    await loadDubStatus({ fetch: load.fetch, learnerProfileId });
-    await saveDubLine("line/1", new Blob(["take"], { type: "audio/webm" }), {
+    await loadStatus({ fetch: load.fetch, learnerProfileId });
+    await saveLine("line/1", new Blob(["take"], { type: "audio/webm" }), {
       fetch: upload.fetch,
       learnerProfileId,
     });
     await grantDubConsent({ fetch: consent.fetch, learnerProfileId });
-    await deleteDub({ fetch: remove.fetch, learnerProfileId });
+    await deleteAllDubs({ fetch: remove.fetch, learnerProfileId });
 
     assert.deepEqual(
       [load, upload, consent, remove].map(({ calls }) => calls[0][0]),
       [
         "/api/dubs/five-little-ducks-v2?learnerProfileId=learner+%2FNoah",
         "/api/dubs/five-little-ducks-v2/lines/line%2F1?learnerProfileId=learner+%2FNoah",
-        "/api/dubs/five-little-ducks-v2/consent?learnerProfileId=learner+%2FNoah",
-        "/api/dubs/five-little-ducks-v2?learnerProfileId=learner+%2FNoah",
+        "/api/dubs/consent?learnerProfileId=learner+%2FNoah",
+        "/api/dubs?learnerProfileId=learner+%2FNoah",
       ],
     );
     assert.equal(
-      getDubLineAudioUrl("line/1", { learnerProfileId }),
+      lineAudioUrl("line/1", { learnerProfileId }),
       "/api/dubs/five-little-ducks-v2/lines/line%2F1/audio?learnerProfileId=learner+%2FNoah",
     );
   });
 
-  it("supports an explicit Old MacDonald dubId without changing the duck default", async () => {
+  it("uses an explicit Old MacDonald ID for per-rhyme requests", async () => {
     const dubId = "old-macdonald-v1";
     const lineIds = Array.from(
       { length: 35 },
@@ -242,12 +214,10 @@ describe("duck dub browser API", () => {
     );
     const lineId = lineIds[0];
     const status = {
-      complete: false,
       consentState: "granted",
       dubId,
       guardianConsentVersion: "guardian-voice-r2-v2",
       lines: lineIds.map((id) => ({ id, recordedAt: null, saved: false })),
-      recordingEnabled: true,
     };
     const load = requestRecorder(Response.json(status));
     const upload = requestRecorder(
@@ -258,31 +228,31 @@ describe("duck dub browser API", () => {
     const take = new Blob(["take"], { type: "audio/webm" });
 
     assert.deepEqual(
-      await loadDubStatus({ dubId, fetch: load.fetch }),
+      await loadStatus({ dubId, fetch: load.fetch }),
       status,
     );
     assert.deepEqual(
-      await saveDubLine(lineId, take, { dubId, fetch: upload.fetch }),
+      await saveLine(lineId, take, { dubId, fetch: upload.fetch }),
       { recordedAt: "2026-08-25T10:00:00.000Z" },
     );
-    await grantDubConsent({ dubId, fetch: consent.fetch });
-    assert.equal(await deleteDub({ dubId, fetch: remove.fetch }), undefined);
+    await grantDubConsent({ fetch: consent.fetch });
+    assert.equal(await deleteAllDubs({ fetch: remove.fetch }), undefined);
 
     assert.deepEqual(
       [load, upload, consent, remove].map(({ calls }) => calls[0][0]),
       [
         "/api/dubs/old-macdonald-v1",
         "/api/dubs/old-macdonald-v1/lines/old-macdonald-v1-line-1",
-        "/api/dubs/old-macdonald-v1/consent",
-        "/api/dubs/old-macdonald-v1",
+        "/api/dubs/consent",
+        "/api/dubs",
       ],
     );
     assert.equal(
-      getDubLineAudioUrl(lineId, { dubId }),
+      lineAudioUrl(lineId, { dubId }),
       "/api/dubs/old-macdonald-v1/lines/old-macdonald-v1-line-1/audio",
     );
     assert.equal(
-      getDubLineAudioUrl("line-1"),
+      lineAudioUrl("line-1"),
       "/api/dubs/five-little-ducks-v2/lines/line-1/audio",
     );
   });
@@ -295,34 +265,28 @@ describe("duck dub browser API", () => {
     ).map((id) => ({ id, recordedAt: null, saved: false }));
     const malformedStatuses = [
       {
-        complete: false,
         consentState: "granted",
         dubId,
         guardianConsentVersion: "guardian-voice-r2-v2",
         lines: ordered.slice(0, 34),
-        recordingEnabled: true,
       },
       {
-        complete: false,
         consentState: "granted",
         dubId,
         guardianConsentVersion: "guardian-voice-r2-v2",
         lines: [ordered[1], ordered[0], ...ordered.slice(2)],
-        recordingEnabled: true,
       },
       {
-        complete: false,
         consentState: "granted",
         dubId,
         guardianConsentVersion: "guardian-voice-r2-v2",
         lines: [...ordered.slice(0, 34), ordered[0]],
-        recordingEnabled: true,
       },
     ];
 
     for (const status of malformedStatuses) {
       await assert.rejects(
-        () => loadDubStatus({ dubId, fetch: async () => Response.json(status) }),
+        () => loadStatus({ dubId, fetch: async () => Response.json(status) }),
         /Your saved dub could not be loaded\./,
       );
     }
@@ -330,12 +294,10 @@ describe("duck dub browser API", () => {
 
   it("rejects a complete status payload for the other supported rhyme", async () => {
     const duckStatus = {
-      complete: false,
       consentState: "granted",
       dubId: "five-little-ducks-v2",
       guardianConsentVersion: "guardian-voice-r2-v2",
       lines: duckStatusLines(),
-      recordingEnabled: true,
     };
     const oldMacDonaldStatus = {
       ...duckStatus,
@@ -351,14 +313,14 @@ describe("duck dub browser API", () => {
     };
 
     await assert.rejects(
-      () => loadDubStatus({
+      () => loadStatus({
         dubId: "old-macdonald-v1",
         fetch: async () => Response.json(duckStatus),
       }),
       /Your saved dub could not be loaded\./,
     );
     await assert.rejects(
-      () => loadDubStatus({
+      () => loadStatus({
         fetch: async () => Response.json(oldMacDonaldStatus),
       }),
       /Your saved dub could not be loaded\./,
@@ -389,13 +351,13 @@ describe("duck dub browser API", () => {
       const guardianRequired = () =>
         Response.json({ error: "guardian_required" }, { status: 403 });
       await expectRejection(
-        () => loadDubStatus({ fetch: async () => guardianRequired() }),
+        () => loadStatus({ fetch: async () => guardianRequired() }),
         "Your saved dub could not be loaded.",
         ["notification", "rejection"],
       );
       await expectRejection(
         () =>
-          saveDubLine("line-1", new Blob(["take"]), {
+          saveLine("line-1", new Blob(["take"]), {
             fetch: async () => guardianRequired(),
           }),
         "Your take was not saved. Try again.",
@@ -407,7 +369,7 @@ describe("duck dub browser API", () => {
         ["notification", "rejection"],
       );
       await expectRejection(
-        () => deleteDub({ fetch: async () => guardianRequired() }),
+        () => deleteAllDubs({ fetch: async () => guardianRequired() }),
         "Your saved nursery-rhyme voice clips were not deleted.",
         ["notification", "rejection"],
       );
@@ -421,7 +383,7 @@ describe("duck dub browser API", () => {
         ["rejection"],
       );
       await expectRejection(
-        () => deleteDub({
+        () => deleteAllDubs({
           fetch: async () => new Response("not json", { status: 403 }),
         }),
         "Your saved nursery-rhyme voice clips were not deleted.",
@@ -450,7 +412,7 @@ describe("duck dub browser API", () => {
       [409, "dub_consent_revoking"],
     ]) {
       await assert.rejects(
-        () => saveDubLine("line-1", new Blob(["take"]), {
+        () => saveLine("line-1", new Blob(["take"]), {
           fetch: async () => Response.json({ error }, { status }),
         }),
         DubNotEnabledError,
@@ -462,17 +424,17 @@ describe("duck dub browser API", () => {
     const failingFetch = async () => new Response(null, { status: 500 });
 
     await assert.rejects(
-      loadDubStatus({ fetch: failingFetch }),
+      loadStatus({ fetch: failingFetch }),
       /Your saved dub could not be loaded\./,
     );
     await assert.rejects(
-      saveDubLine("line-1", new Blob(["take"], { type: "audio/webm" }), {
+      saveLine("line-1", new Blob(["take"], { type: "audio/webm" }), {
         fetch: failingFetch,
       }),
       /Your take was not saved\. Try again\./,
     );
     await assert.rejects(
-      deleteDub({ fetch: failingFetch }),
+      deleteAllDubs({ fetch: failingFetch }),
       /Your saved nursery-rhyme voice clips were not deleted\./,
     );
   });
@@ -485,18 +447,18 @@ describe("duck dub browser API", () => {
     const take = new Blob(["take"], { type: "audio/webm" });
 
     for (const [operation, message] of [
-      [() => loadDubStatus({ fetch: rejectedFetch }), "Your saved dub could not be loaded."],
-      [() => saveDubLine("line-1", take, { fetch: rejectedFetch }), "Your take was not saved. Try again."],
+      [() => loadStatus({ fetch: rejectedFetch }), "Your saved dub could not be loaded."],
+      [() => saveLine("line-1", take, { fetch: rejectedFetch }), "Your take was not saved. Try again."],
       [
-        () => deleteDub({ fetch: rejectedFetch }),
+        () => deleteAllDubs({ fetch: rejectedFetch }),
         "Your saved nursery-rhyme voice clips were not deleted.",
       ],
       [
-        () => loadDubStatus({ fetch: async () => Response.json({}) }),
+        () => loadStatus({ fetch: async () => Response.json({}) }),
         "Your saved dub could not be loaded.",
       ],
       [
-        () => saveDubLine("line-1", take, { fetch: async () => Response.json({}) }),
+        () => saveLine("line-1", take, { fetch: async () => Response.json({}) }),
         "Your take was not saved. Try again.",
       ],
     ]) {
@@ -516,9 +478,9 @@ describe("duck dub browser API", () => {
     };
 
     for (const operation of [
-      () => loadDubStatus({ fetch: rejectedFetch }),
-      () => saveDubLine("line-1", new Blob(["take"]), { fetch: rejectedFetch }),
-      () => deleteDub({ fetch: rejectedFetch }),
+      () => loadStatus({ fetch: rejectedFetch }),
+      () => saveLine("line-1", new Blob(["take"]), { fetch: rejectedFetch }),
+      () => deleteAllDubs({ fetch: rejectedFetch }),
     ]) {
       await assert.rejects(operation, (error) => error === abort);
     }
@@ -526,7 +488,7 @@ describe("duck dub browser API", () => {
 
   it("types an interrupted reset without exposing server details", async () => {
     await assert.rejects(
-      loadDubStatus({
+      loadStatus({
         fetch: async () =>
           Response.json(
             {
@@ -549,7 +511,7 @@ describe("duck dub browser API", () => {
     );
 
     await assert.rejects(
-      loadDubStatus({
+      loadStatus({
         fetch: async () =>
           Response.json(
             { error: "account_deletion_pending" },
@@ -566,7 +528,7 @@ describe("duck dub browser API", () => {
 
   it("explains when an uploaded take is too long", async () => {
     await assert.rejects(
-      saveDubLine("line-1", new Blob(["long take"]), {
+      saveLine("line-1", new Blob(["long take"]), {
         fetch: async () => new Response(null, { status: 413 }),
       }),
       (error) => {
@@ -584,7 +546,7 @@ describe("duck dub browser API", () => {
       [415, "unsupported_audio"],
     ]) {
       await assert.rejects(
-        saveDubLine("line-1", new Blob(["bad take"]), {
+        saveLine("line-1", new Blob(["bad take"]), {
           fetch: async () =>
             Response.json(
               { error: code, message: `TECHNICAL ${code} detail` },

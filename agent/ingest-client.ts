@@ -113,7 +113,7 @@ export function createConversationIngestClient({
     },
 
     updateState(conversationId: string, controllerState: unknown) {
-      return post(conversationId, "facts", {
+      return post(conversationId, "state", {
         controllerState: withBuildInfo(controllerState),
       });
     },

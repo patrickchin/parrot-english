@@ -23,7 +23,7 @@ const LONG_STORY_PAGE_IDS = new Map([
     ),
   ],
 ]);
-const FIRST_ENGLISH_WORD_PAGE_IDS = new Map([
+const FIRST_WORD_COLLECTION_PAGE_IDS = new Map([
   [
     "hello-cat",
     ["cat-hello", "dog-hello", "bird-hello", "friends-hello", "friends-bye"],
@@ -215,11 +215,11 @@ const COLLECTIONS = new Map([
     },
   ],
   [
-    "first-english-words",
+    "first-words",
     {
       inventoryError:
-        "manifest.assets must contain exactly three covers and fifteen first English word page images",
-      pageIdsByStory: FIRST_ENGLISH_WORD_PAGE_IDS,
+        "manifest.assets must contain exactly three covers and fifteen first-word page images",
+      pageIdsByStory: FIRST_WORD_COLLECTION_PAGE_IDS,
       pageIdPattern: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
       pageIdRequirement: "must use a lowercase slug",
       supportsCovers: true,
@@ -359,9 +359,7 @@ export function createStoryMediaPublishPlan(manifestValue) {
   if (!Array.isArray(manifest.assets)) {
     throw new Error("manifest.assets must be an array");
   }
-  const collectionName = manifest.collection === undefined
-    ? "long-stories"
-    : requireText(manifest.collection, "manifest.collection");
+  const collectionName = requireText(manifest.collection, "manifest.collection");
   const collection = COLLECTIONS.get(collectionName);
   if (!collection) throw new Error("manifest.collection is not supported");
 

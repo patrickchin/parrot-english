@@ -35,7 +35,7 @@ type LearnerStorageIdentity = Pick<
 >;
 type StoredLearnerStorageIdentity = {
   learnerProfileId: string;
-  privateMediaName?: string;
+  privateMediaName: string;
 };
 type UnfinishedLearnerDeletion = {
   identity: LearnerStorageIdentity;
@@ -53,7 +53,7 @@ type AccountDeletionInput = {
 
 const MAX_TOMBSTONE_CONFLICTS = 16;
 
-export async function listLearnerStorageIdentities(
+async function listLearnerStorageIdentities(
   database: Database,
   userId: string,
   userEmail: string,
@@ -120,9 +120,9 @@ function parseLearnerStorageClosure(serialized: string) {
       identity === null ||
       typeof record.learnerProfileId !== "string" ||
       record.learnerProfileId === "" ||
-      (record.privateMediaName !== undefined &&
-        (typeof record.privateMediaName !== "string" ||
-          record.privateMediaName === "")) ||
+      typeof record.privateMediaName !== "string" ||
+      record.privateMediaName === "" ||
+      Object.keys(record).length !== 2 ||
       Object.keys(record).some((key) =>
         key !== "learnerProfileId" && key !== "privateMediaName"
       )
@@ -131,9 +131,7 @@ function parseLearnerStorageClosure(serialized: string) {
     }
     return {
       learnerProfileId: record.learnerProfileId,
-      ...(record.privateMediaName === undefined
-        ? {}
-        : { privateMediaName: record.privateMediaName }),
+      privateMediaName: record.privateMediaName,
     };
   });
 }
@@ -194,19 +192,7 @@ async function persistLearnerStorageClosure(
     );
     const serialized = JSON.stringify(merged);
     if (serialized === tombstone.learnerStorageIdentitiesJson) {
-      return merged.map((identity) => {
-        if (!identity.privateMediaName) {
-          throw new Error(
-            "Account deletion learner storage closure is incomplete.",
-          );
-        }
-        return {
-          ...identity,
-          privateMediaName: identity.privateMediaName,
-          userEmail,
-          userId,
-        };
-      });
+      return merged.map((identity) => ({ ...identity, userEmail, userId }));
     }
 
     const updated = await database
@@ -223,19 +209,7 @@ async function persistLearnerStorageClosure(
       )
       .returning({ userIdHash: accountDeletionTombstone.userIdHash });
     if (updated.length === 1) {
-      return merged.map((identity) => {
-        if (!identity.privateMediaName) {
-          throw new Error(
-            "Account deletion learner storage closure is incomplete.",
-          );
-        }
-        return {
-          ...identity,
-          privateMediaName: identity.privateMediaName,
-          userEmail,
-          userId,
-        };
-      });
+      return merged.map((identity) => ({ ...identity, userEmail, userId }));
     }
   }
   throw new Error(
@@ -243,7 +217,7 @@ async function persistLearnerStorageClosure(
   );
 }
 
-export async function accountDeletionTombstoneKey(userId: string) {
+async function accountDeletionTombstoneKey(userId: string) {
   const digest = await crypto.subtle.digest(
     "SHA-256",
     new TextEncoder().encode(userId),

@@ -95,7 +95,12 @@ export const englishGuardianMessages = {
     deleting: "Removing voice clips…",
     emptyTitle: "No saved voice clips",
     emptyBeforeName: "",
-    emptyAfterName: " has no saved nursery-rhyme voice clips.",
+    emptyAfterName: " has no saved nursery-rhyme voice clips yet.",
+    enableBeforeName: "Allow ",
+    enableAfterName: " to record and save nursery-rhyme voice clips",
+    enabling: "Turning on voice dubbing…",
+    enabledBeforeName: "Voice dubbing is now available for ",
+    enabledAfterName: ".",
     cleanupTitle: "Voice clip removal needs to finish",
     cleanupBeforeName: "",
     cleanupAfterName:
@@ -281,19 +286,16 @@ export const englishGuardianMessages = {
       descriptionPlaceholder: "Add a short description",
       recordingTitle: "Lesson voice recordings",
       recordingDescription:
-        "Recording is available automatically during each join-in moment. Clips apply only to this learner profile, and one latest clip is saved per join-in moment. You can delete every saved clip here at any time.",
-      recordingAvailable: "Lesson recording is available automatically.",
+        "When enabled, join-in moments can save voice clips for this learner profile. Only the latest clip is kept for each moment, and you can delete every saved clip here at any time.",
+      recordingEnabled: "Lesson voice recordings are enabled.",
+      recordingDisabled: "Lesson voice recordings are off.",
       recordingCleanupPending:
         "Saved lesson recordings are still being deleted.",
+      enableRecordings: "Allow lesson voice recordings",
       deleteRecordings: "Delete saved lesson recordings",
       finishDeletingRecordings: "Finish deleting lesson recordings",
       deleteRecordingsConfirm:
         "Delete all saved lesson voice recordings? This cannot be undone.",
-      redoTitle: "Redo learner setup",
-      redoDescription:
-        "Answer Peppa’s setup questions again. For a normal chat, go Home and choose Talk to Peppa.",
-      redoAction: "Redo setup questions",
-      peppaAlt: "Peppa smiling",
       saveChanges: "Save changes",
       saving: "Saving…",
       cancel: "Cancel",

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import {
   conversationSession,
   conversationTurn,
@@ -7,19 +7,15 @@ import {
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import {
   isConversationPurpose,
-  updatesLearnerProfile,
+  type ConversationPurpose,
 } from "../lib/conversation-purpose.ts";
 import type { TalkToPeppaPromptStyle } from "../lib/talk-to-peppa-prompt-style.ts";
 import {
   containsLikelyFullLearnerName,
   containsPrivateLearnerProfileDetails,
 } from "../lib/learner-profile-privacy.ts";
-import {
-  ensureV2Profile,
-  readV2Answers,
-} from "../lib/learner-profile-responses.js";
+import { readV2Answers } from "../lib/learner-profile-responses.js";
 import type { Database } from "./database.ts";
-import { LEARNER_PROFILE_QUESTIONNAIRE } from "./learner-profile-definition.ts";
 import { createLearnerProfileRepository } from "./learner-profile-repository.ts";
 import { LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS } from "./livekit-token.ts";
 import {
@@ -79,32 +75,12 @@ function profilePrivacyError(profileName: unknown, profileSummary: unknown) {
   return null;
 }
 
-function matchesStoredProfile(
-  profile: typeof learnerProfile.$inferSelect,
-  values: {
-    profileAge: unknown;
-    profileName: string | null;
-    profileSummary: string | null;
-  },
-) {
-  const readable = ensureV2Profile(profile, LEARNER_PROFILE_QUESTIONNAIRE, {
-    forProfileEdit: true,
-  });
-  const answers = readV2Answers(readable);
-  const description =
-    typeof answers.description === "string" ? answers.description : null;
-  return (
-    profile.name === values.profileName &&
-    profile.age === values.profileAge &&
-    description === values.profileSummary
-  );
-}
 export function createConversationRepository(
   database: Database,
   {
     createId = () => crypto.randomUUID(),
     now = () => new Date(),
-  }: RepositoryOptions = {},
+  }: RepositoryOptions,
 ) {
   async function findConversation(conversationId: string) {
     const [conversation] = await database
@@ -117,8 +93,8 @@ export function createConversationRepository(
 
   async function createConversation(
     identity: LearnerIdentity,
-    scenario: { key: string; version: number },
-    configuration: { promptStyle?: TalkToPeppaPromptStyle } = {},
+    scenario: { key: ConversationPurpose; version: number },
+    configuration: { promptStyle?: TalkToPeppaPromptStyle },
   ) {
     const timestamp = now();
     const promptStyle = configuration.promptStyle ?? null;
@@ -137,13 +113,13 @@ export function createConversationRepository(
       .limit(1);
     const activeTokenIsFresh = Boolean(
       active &&
-        timestamp.getTime() - active.updatedAt.getTime() <
-          LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS,
+      timestamp.getTime() - active.updatedAt.getTime() <
+        LIVEKIT_PARTICIPANT_TOKEN_LIFETIME_MS,
     );
     const activeConfigurationMatches = Boolean(
       active &&
-        active.scenarioVersion === scenario.version &&
-        active.promptStyle === promptStyle,
+      active.scenarioVersion === scenario.version &&
+      active.promptStyle === promptStyle,
     );
     if (active && activeTokenIsFresh && activeConfigurationMatches) {
       return active;
@@ -181,12 +157,7 @@ export function createConversationRepository(
       .limit(1);
     let controllerState = createLearnerProfileConversationState();
     if (storedProfile) {
-      const readableProfile = ensureV2Profile(
-        storedProfile,
-        LEARNER_PROFILE_QUESTIONNAIRE,
-        { forProfileEdit: true },
-      );
-      const answers = readV2Answers(readableProfile);
+      const answers = readV2Answers(storedProfile);
       const completed = storedProfile.profileStatus === "completed";
       controllerState = createLearnerProfileConversationState({
         profileName:
@@ -201,8 +172,9 @@ export function createConversationRepository(
           typeof answers.description === "string" ? answers.description : "",
       });
     }
-    const stored = await database.$client.prepare(
-      `INSERT INTO conversation_session (
+    const stored = await database.$client
+      .prepare(
+        `INSERT INTO conversation_session (
          id, auth_user_id, learner_profile_id, scenario_key,
          scenario_version, prompt_style, room_name, status, controller_state,
          started_at, created_at, updated_at
@@ -212,20 +184,22 @@ export function createConversationRepository(
          SELECT 1 FROM learner_profile_deletion_tombstone
          WHERE learner_profile_id = ?
        )`,
-    ).bind(
-      id,
-      identity.userId,
-      identity.learnerProfileId,
-      scenario.key,
-      scenario.version,
-      promptStyle,
-      roomName,
-      JSON.stringify(controllerState),
-      timestamp.getTime(),
-      timestamp.getTime(),
-      timestamp.getTime(),
-      identity.learnerProfileId,
-    ).run();
+      )
+      .bind(
+        id,
+        identity.userId,
+        identity.learnerProfileId,
+        scenario.key,
+        scenario.version,
+        promptStyle,
+        roomName,
+        JSON.stringify(controllerState),
+        timestamp.getTime(),
+        timestamp.getTime(),
+        timestamp.getTime(),
+        identity.learnerProfileId,
+      )
+      .run();
     if (Number(stored.meta.changes ?? 0) !== 1) {
       throw new ConversationRepositoryError(409, "learner_deletion_pending");
     }
@@ -247,10 +221,6 @@ export function createConversationRepository(
     conversationId: string,
     identity: LearnerIdentity,
   ) {
-    const learnerOwnership = eq(
-      conversationSession.learnerProfileId,
-      identity.learnerProfileId,
-    );
     const [conversation] = await database
       .select()
       .from(conversationSession)
@@ -258,9 +228,7 @@ export function createConversationRepository(
         and(
           eq(conversationSession.id, conversationId),
           eq(conversationSession.authUserId, identity.userId),
-          identity.legacyStorageOwner
-            ? or(learnerOwnership, isNull(conversationSession.learnerProfileId))
-            : learnerOwnership,
+          eq(conversationSession.learnerProfileId, identity.learnerProfileId),
         ),
       )
       .limit(1);
@@ -290,7 +258,11 @@ export function createConversationRepository(
     if (!(await findConversation(conversationId))) {
       throw new ConversationRepositoryError(404, "not_found");
     }
-    const providerItemId = boundedString(input.providerItemId, 200, "invalid_turn");
+    const providerItemId = boundedString(
+      input.providerItemId,
+      200,
+      "invalid_turn",
+    );
     const text = boundedString(input.text, 4_000, "invalid_turn");
     if (!Number.isInteger(input.sequence) || (input.sequence as number) < 0) {
       throw new ConversationRepositoryError(400, "invalid_turn");
@@ -342,7 +314,9 @@ export function createConversationRepository(
         inputMode: input.inputMode,
         interrupted: input.interrupted === true,
         startedAt:
-          typeof input.startedAt === "number" ? new Date(input.startedAt) : null,
+          typeof input.startedAt === "number"
+            ? new Date(input.startedAt)
+            : null,
         endedAt:
           typeof input.endedAt === "number" ? new Date(input.endedAt) : null,
         createdAt: timestamp,
@@ -414,7 +388,7 @@ export function createConversationRepository(
     if (!isConversationPurpose(owned.conversation.scenarioKey)) {
       throw new ConversationRepositoryError(500, "invalid_stored_data");
     }
-    if (!updatesLearnerProfile(owned.conversation.scenarioKey)) {
+    if (owned.conversation.scenarioKey !== "onboarding") {
       const timestamp = now();
       await database
         .update(conversationSession)
@@ -459,66 +433,31 @@ export function createConversationRepository(
     ) {
       throw new ConversationRepositoryError(400, "invalid_review");
     }
-    const profileRepository = createLearnerProfileRepository(database, { createId, now });
-    const storedIdentity = {
-      ...identity,
-      learnerProfileId:
-        owned.conversation.learnerProfileId ?? identity.learnerProfileId,
-    };
+    const profileRepository = createLearnerProfileRepository(database, { now });
+    const storedIdentity = identity;
     const existingProfile = await profileRepository.findProfile(storedIdentity);
     const privacyError = profilePrivacyError(profileName, profileSummary);
     if (privacyError) {
-      if (
-        existingProfile &&
-        matchesStoredProfile(existingProfile, {
-          profileAge: learnedAge ? profileAge : null,
-          profileName,
-          profileSummary,
-        })
-      ) {
-        const timestamp = now();
-        await database
-          .update(conversationSession)
-          .set({
-            status: "completed",
-            finishReason: owned.conversation.finishReason ?? "reviewed",
-            endedAt: owned.conversation.endedAt ?? timestamp,
-            updatedAt: timestamp,
-          })
-          .where(eq(conversationSession.id, conversationId));
-        if (existingProfile.profileStatus !== "completed") {
-          await profileRepository.skipSession(storedIdentity);
-        }
-        return {
-          conversationId,
-          profileCompleted: existingProfile.profileStatus === "completed",
-          bypassed: existingProfile.profileStatus !== "completed",
-        };
-      }
       throw new ConversationRepositoryError(400, privacyError);
     }
     const profileCompleted = Boolean(
       profileSummary &&
-        learnedName &&
-        learnedAge &&
-        profileName &&
-        Number.isSafeInteger(profileAge),
+      learnedName &&
+      learnedAge &&
+      profileName &&
+      Number.isSafeInteger(profileAge),
     );
     const profile =
-      existingProfile ?? (await profileRepository.ensureProfile(storedIdentity));
-    const readableProfile = ensureV2Profile(
-      profile,
-      LEARNER_PROFILE_QUESTIONNAIRE,
-      { forProfileEdit: true },
-    );
-    const answers = readV2Answers(readableProfile);
+      existingProfile ?? (await profileRepository.loadProfile(storedIdentity));
+    const answers = readV2Answers(profile);
     const answersJson = profileSummary
       ? JSON.stringify({ ...answers, description: profileSummary })
-      : readableProfile.answersJson;
+      : profile.answersJson;
     const timestamp = now();
-    const profileNameFields = profileName && (profileCompleted || profileSummary)
-      ? await profileRepository.nameFields(storedIdentity, profileName)
-      : {};
+    const profileNameFields =
+      profileName && (profileCompleted || profileSummary)
+        ? profileRepository.nameFields(profileName)
+        : {};
     const sessionUpdate = database
       .update(conversationSession)
       .set({

@@ -30,12 +30,10 @@ before(async () => {
     .catch(() => ({}));
   ({
     createGuardianAccessProvider,
-    notifyGuardianAccessRequired,
     useGuardianAccess,
   } = module);
-  ({ GuardianAccessApiError } = await vite.ssrLoadModule(
-    "/src/auth/guardian-access-api.ts",
-  ));
+  ({ GuardianAccessApiError, notifyGuardianAccessRequired } =
+    await vite.ssrLoadModule("/src/auth/guardian-access-api.ts"));
 });
 
 afterEach(async () => {
@@ -1078,58 +1076,6 @@ describe("guardian access provider", { concurrency: false }, () => {
     assert.ok(window.localStorage.getItem(storageKey));
   });
 
-  it("keeps learner-switch provenance when cross-tab storage is unavailable", async () => {
-    originalCrypto = globalThis.crypto;
-    Object.defineProperty(globalThis, "crypto", {
-      configurable: true,
-      value: {
-        randomUUID: () => "unused-without-a-storage-scope",
-      },
-      writable: true,
-    });
-    const states = [];
-    let serverMode = "guardian";
-    const api = createApi({
-      async loadGuardianAccess() {
-        this.loadCalls += 1;
-        return serverMode === "guardian"
-          ? {
-              mode: "guardian",
-              expiresAt: "2099-08-25T08:15:00.000Z",
-            }
-          : { mode: "learner" };
-      },
-      async lockGuardianAccess() {
-        this.lockCalls += 1;
-        serverMode = "learner";
-        return { mode: "learner" };
-      },
-    });
-    const Provider = createGuardianAccessProvider({
-      api,
-      schedule: () => () => {},
-    });
-
-    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
-    await waitFor(() => assert.equal(states.at(-1).mode, "guardian"));
-    await act(async () => states.at(-1).lock());
-    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
-
-    Object.defineProperty(document, "visibilityState", {
-      configurable: true,
-      value: "visible",
-    });
-    const previousLoadCalls = api.loadCalls;
-    await act(async () => {
-      document.dispatchEvent(new window.Event("visibilitychange"));
-      await new Promise((resolve) => window.setTimeout(resolve, 0));
-    });
-
-    await waitFor(() => assert.ok(api.loadCalls > previousLoadCalls));
-    assert.equal(states.at(-1).mode, "learner");
-    assert.equal(states.at(-1).blockedByLearnerSwitch, true);
-  });
-
   it("writes one opaque marker for an explicit lock", async () => {
     const states = [];
     const api = createApi({
@@ -1196,6 +1142,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     Object.defineProperty(globalThis, "crypto", {
       configurable: true,
       value: {
+        randomUUID: () => "test-lock-token",
         subtle: {
           digest() {
             const next = deferred();
@@ -1272,6 +1219,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     Object.defineProperty(globalThis, "crypto", {
       configurable: true,
       value: {
+        randomUUID: () => "test-lock-token",
         subtle: {
           digest() {
             return digest.promise;
@@ -1320,6 +1268,7 @@ describe("guardian access provider", { concurrency: false }, () => {
     Object.defineProperty(globalThis, "crypto", {
       configurable: true,
       value: {
+        randomUUID: () => "test-lock-token",
         subtle: {
           digest() {
             const next = deferred();
@@ -1605,25 +1554,6 @@ describe("guardian access provider", { concurrency: false }, () => {
     } finally {
       window.addEventListener = addEventListener;
     }
-  });
-
-  it("uses storage synchronization when BroadcastChannel is unavailable", async () => {
-    Reflect.deleteProperty(globalThis, "BroadcastChannel");
-    const states = [];
-    const api = createApi({
-      async loadGuardianAccess() {
-        this.loadCalls += 1;
-        return { mode: "guardian", expiresAt: "2099-08-25T08:15:00.000Z" };
-      },
-    });
-    const Provider = createGuardianAccessProvider({
-      api,
-      schedule: () => () => {},
-    });
-    await mountProvider(Provider, "id:user-1", (state) => states.push(state));
-    const storageKey = await waitForGuardianLockStorageKey("id:user-1");
-    await act(async () => emitGuardianLock(storageKey));
-    assert.equal(states.at(-1).mode, "learner");
   });
 
   it("compensates an in-flight unlock after a sibling lock wins", async () => {

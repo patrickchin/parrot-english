@@ -22,7 +22,6 @@ const hanCatalogFiles = new Set([
   "src/i18n/messages/zh-Hans.ts",
 ]);
 const questionnaireExceptions = new Set([
-  "content/learner-profile/questionnaire-v1.json",
   "content/learner-profile/questionnaire-v2.json",
 ]);
 

@@ -57,10 +57,10 @@ it without flashing protected content. In learner mode, `Switch learner` opens
 the same chooser; selecting an owned profile returns to learner home without
 calling the Guardian lock API.
 
-When a session has more than one learner and no valid selection, learner mode
-fails closed with the required `Who is learning now?` page. It does not guess a
-learner, show a Cancel path, or require Guardian mode; it lists the account's
-owned profiles for direct selection.
+When a session has no valid selection, learner mode fails closed with the
+required `Who is learning now?` page. It does not guess a learner or show a
+Cancel path; it lists owned profiles for direct selection, or links an empty
+account to Manage learners to create its first profile.
 
 Learner mode exposes no profile editing, AI/data notice, sign-out, account
 deletion, consent, or deletion controls. Guardian mode exposes those management
@@ -80,7 +80,7 @@ actions but not a duplicate learner activity catalog.
 | Join in with lesson phrases                         | Yes                                          | Switch to learner             | Authenticated selected learner                        |
 | Save the latest lesson join-in clip                 | Yes, after guardian consent for that learner | Switch to learner             | Current learner's durable recording consent           |
 | Allow, stop, or delete lesson voice recordings      | No                                           | Yes                           | Guardian unlock plus learner-scoped fenced cleanup    |
-| Edit learner profile or redo setup                  | No                                           | Yes                           | Guardian unlock                                       |
+| Edit learner profile                                | No                                           | Yes                           | Guardian unlock                                       |
 | Open AI/data notice                                 | No                                           | Yes                           | Guardian UI boundary                                  |
 | Sign out                                            | No                                           | Yes                           | Guardian UI boundary                                  |
 | Delete account and every learner's data             | No                                           | Yes                           | Guardian UI plus account-password confirmation        |
@@ -93,10 +93,9 @@ validated learner deep links remain intact. Authenticated learners complete the
 one-time profile flow at `/profile/setup`, then continue to the requested
 activity or `/`.
 
-If the account owns one learner, a new session may select it automatically. If
-it owns multiple learners, a new session without a valid selection shows the
-required owned-profile picker. A missing, stale, or foreign selection never
-falls through to a sibling.
+A new session without a valid selection shows the required owned-profile
+picker. A missing, stale, or foreign selection never falls through to a
+sibling.
 
 Durable learner routes are:
 
@@ -105,21 +104,20 @@ Durable learner routes are:
 - `/lessons/parrot/:lessonId/scenes/:sceneNumber`
 - `/stories`
 - `/stories/:storyId/pages/:pageNumber`
-- `/dubs/five-little-ducks`
+- `/dubs`
+- `/dubs/:rhyme`
 
 Canonical guardian routes are:
 
 - `/guardian` — dashboard;
 - `/guardian/learners` — learner roster, creation, deletion, and details entry;
-- `/guardian/learners/:learnerId` — page-local learner details and setup redo;
-- `/guardian/profile` — retired compatibility route redirected to Manage
-  learners;
+- `/guardian/learners/:learnerId` — page-local learner details and recording consent;
 - `/guardian/dubbing` — durable voice-dubbing consent and clip deletion;
 
 Initial `/profile/setup` remains available to either mode until onboarding is
-complete; later editing and setup redo are Guardian-only. Adding a learner asks
-only for the preferred name and opens that learner's details without changing
-who will enter learner mode.
+complete; later editing is Guardian-only. Adding a learner asks only for the
+preferred name and opens that learner's details without changing who will enter
+learner mode.
 
 Manage learners is strictly CRUD-only: it has no current badge, selector, or
 mode-selection action. Deleting a learner requires a Guardian-only,
@@ -133,16 +131,15 @@ remains navigable and the next `Switch to learner` opens the chooser.
 Guardian navigation is recoverable from every state. Missing, malformed,
 external, learner-mode, unknown, or self-referential Guardian `returnTo` values
 fall back to `/guardian`. Profile Back, Cancel, Save, setup completion, errors,
-and redo use that policy. If an unlocked Guardian reaches a learner route, the
+and recording-consent actions use that policy. If an unlocked Guardian reaches a learner route, the
 mode boundary offers both `Back to Guardian dashboard` and an explicit switch
 to learner mode. Unknown routes fall back to `/guardian` in Guardian mode and
 `/` in learner mode.
 
 ## Talk to Peppa
 
-Talk to Peppa currently shows a learner-safe unavailable screen. When the
-conversation experience is enabled, it shows one calm status, Peppa's latest
-line, the learner's live transcript, and one large turn control. It does not
+Talk to Peppa shows one calm status, Peppa's latest line, the learner's live
+transcript, and one large turn control. It does not
 expose developer timing, transcript history, profile-writing controls, or a
 grown-up chat-style selector; the adult prompt style remains an internal
 default.

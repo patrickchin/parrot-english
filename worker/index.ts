@@ -1,5 +1,4 @@
 import {
-  checkEvaluateSpeechRateLimit,
   checkLearnerProfileEnrichmentRateLimit,
   checkLearnerProfileTranscriptionRateLimit,
 } from "./api-security.ts";
@@ -13,7 +12,6 @@ import {
   handleBuildInfoRequest,
   type BuildInfoEnv,
 } from "./build-info.ts";
-import { handleEvaluateSpeech } from "./groq.ts";
 import {
   handleGuardianAccessRequest,
   requireGuardianAccess,
@@ -38,6 +36,7 @@ import { createPublicAppRedirect } from "./public-origin.ts";
 import {
   LEARNER_PROFILE_TARGET_QUERY_KEY,
   normalizeUserEmail,
+  parseLearnerProfileResource,
   parseLearnerProfileTarget,
   resolveLearnerIdentity,
   resolveOwnedLearnerIdentity,
@@ -64,10 +63,8 @@ interface Env
 
 interface WorkerDependencies {
   createAuth: typeof createAuth;
-  checkEvaluateSpeechRateLimit: typeof checkEvaluateSpeechRateLimit;
   checkLearnerProfileEnrichmentRateLimit: typeof checkLearnerProfileEnrichmentRateLimit;
   checkLearnerProfileTranscriptionRateLimit: typeof checkLearnerProfileTranscriptionRateLimit;
-  handleEvaluateSpeech: typeof handleEvaluateSpeech;
   handleGuardianAccessRequest: typeof handleGuardianAccessRequest;
   handleLearnerProfileRequest: typeof handleLearnerProfileRequest;
   handleLearnerProfilesRequest: typeof handleLearnerProfilesRequest;
@@ -86,9 +83,7 @@ const SHARED_GUEST_BLOCKED_AUTH_PATHS = new Set([
 function isLearnerProfilePath(pathname: string) {
   return (
     pathname === "/api/learner-profile" ||
-    pathname.startsWith("/api/learner-profile/") ||
-    pathname === "/api/profile" ||
-    pathname === "/api/profile/lesson-recording-consent"
+    pathname.startsWith("/api/learner-profile/")
   );
 }
 
@@ -104,7 +99,7 @@ function isConversationPath(pathname: string) {
 }
 
 function isAgentConversationPath(pathname: string) {
-  return /^\/api\/conversations\/[^/]+\/(turns|facts|end)$/.test(pathname);
+  return /^\/api\/conversations\/[^/]+\/(turns|state|end)$/.test(pathname);
 }
 
 function isLessonRecordingPath(pathname: string) {
@@ -224,16 +219,12 @@ function missingStaticAsset(request: Request, pathname: string) {
 export function createWorker(
   dependencies: Partial<WorkerDependencies> = {}
 ) {
-  const rateLimit =
-    dependencies.checkEvaluateSpeechRateLimit ?? checkEvaluateSpeechRateLimit;
   const learnerProfileTranscriptionRateLimit =
     dependencies.checkLearnerProfileTranscriptionRateLimit ??
     checkLearnerProfileTranscriptionRateLimit;
   const learnerProfileEnrichmentRateLimit =
     dependencies.checkLearnerProfileEnrichmentRateLimit ??
     checkLearnerProfileEnrichmentRateLimit;
-  const evaluateSpeech =
-    dependencies.handleEvaluateSpeech ?? handleEvaluateSpeech;
   const guardianAccessRequest =
     dependencies.handleGuardianAccessRequest ?? handleGuardianAccessRequest;
   const learnerProfileRequest =
@@ -297,7 +288,6 @@ export function createWorker(
           sessionId: session.session.id,
           userId: session.user.id,
           userEmail: normalizeUserEmail(session.user.email),
-          userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
         if (requiresGuardianAccess(url.pathname, request.method)) {
@@ -306,6 +296,41 @@ export function createWorker(
             sessionId: accountIdentity.sessionId,
           });
           if (denied) return denied;
+        }
+        if (url.searchParams.has(LEARNER_PROFILE_TARGET_QUERY_KEY)) {
+          return targetedLearnerNotFound();
+        }
+        const profileResource = parseLearnerProfileResource(url.pathname);
+        if (
+          profileResource &&
+          ((profileResource.action === "details" &&
+            (request.method === "GET" || request.method === "PUT")) ||
+            (profileResource.action === "lesson-recording-consent" &&
+              request.method === "PUT"))
+        ) {
+          const learner = await resolveOwnedLearnerIdentity(
+            database,
+            accountIdentity,
+            profileResource.learnerProfileId,
+          );
+          if (!learner) return targetedLearnerNotFound();
+          if (
+            profileResource.action === "details" &&
+            request.method === "PUT"
+          ) {
+            const rateLimited = await learnerProfileEnrichmentRateLimit(
+              request,
+              env,
+              accountIdentity.userId,
+            );
+            if (rateLimited) return rateLimited;
+          }
+          return learnerProfileRequest({
+            database,
+            env,
+            identity: learner,
+            request,
+          });
         }
         return learnerProfilesRequest({
           database,
@@ -332,7 +357,6 @@ export function createWorker(
           sessionId: session.session.id,
           userId: session.user.id,
           userEmail: normalizeUserEmail(session.user.email),
-          userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
         const explicitLearner = await resolveExplicitLearnerTarget({
@@ -373,7 +397,6 @@ export function createWorker(
           sessionId: session.session.id,
           userId: session.user.id,
           userEmail: normalizeUserEmail(session.user.email),
-          userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
         const explicitLearner = await resolveExplicitLearnerTarget({
@@ -419,7 +442,6 @@ export function createWorker(
           sessionId: session.session.id,
           userId: session.user.id,
           userEmail: normalizeUserEmail(session.user.email),
-          userName: session.user.name?.trim() || null,
         };
         return guardianAccessRequest({
           database: createDatabase(env.DB),
@@ -439,16 +461,11 @@ export function createWorker(
           sessionId: session.session.id,
           userId: session.user.id,
           userEmail: normalizeUserEmail(session.user.email),
-          userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
-        const explicitLearner = await resolveExplicitLearnerTarget({
-          account: accountIdentity,
-          database,
-          request,
-          url,
-        });
-        if (explicitLearner instanceof Response) return explicitLearner;
+        if (url.searchParams.has(LEARNER_PROFILE_TARGET_QUERY_KEY)) {
+          return targetedLearnerNotFound();
+        }
 
         if (
           url.pathname === "/api/learner-profile/transcribe" &&
@@ -463,8 +480,7 @@ export function createWorker(
         }
         if (
           request.method === "PUT" &&
-          (url.pathname === "/api/learner-profile/answer" ||
-            url.pathname === "/api/profile")
+          url.pathname === "/api/learner-profile/answer"
         ) {
           const rateLimited = await learnerProfileEnrichmentRateLimit(
             request,
@@ -474,9 +490,7 @@ export function createWorker(
           if (rateLimited) return rateLimited;
         }
 
-        const learner = explicitLearner
-          ? { status: "selected" as const, identity: explicitLearner }
-          : await resolveLearnerIdentity(database, accountIdentity);
+        const learner = await resolveLearnerIdentity(database, accountIdentity);
         if (learner.status === "selection_required") {
           return learnerSelectionRequired();
         }
@@ -508,7 +522,6 @@ export function createWorker(
           sessionId: session.session.id,
           userId: session.user.id,
           userEmail: normalizeUserEmail(session.user.email),
-          userName: session.user.name?.trim() || null,
         };
         const database = createDatabase(env.DB);
         const learner = await resolveLearnerIdentity(database, accountIdentity);
@@ -521,20 +534,6 @@ export function createWorker(
           identity: learner.identity,
           request,
         });
-      }
-
-      if (url.pathname === "/api/evaluate-speech") {
-        const session = await authFactory(env).api.getSession({
-          headers: request.headers,
-        });
-        if (!session) {
-          return Response.json({ error: "unauthorized" }, { status: 401 });
-        }
-
-        const rateLimited = await rateLimit(request, env);
-        if (rateLimited) return rateLimited;
-
-        return evaluateSpeech(request, env);
       }
 
       if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {

@@ -254,7 +254,7 @@ function normalizedGeneratedScore(definition) {
   ]);
 }
 
-function expandedLegacyPhraseDurations(definition) {
+function expandedSnapshotPhraseDurations(definition) {
   if (definition.phraseDurationsMs.length === definition.lines.length) {
     return definition.phraseDurationsMs;
   }
@@ -893,11 +893,11 @@ describe("generated module serialization and generator modes", () => {
   });
 });
 
-describe("production legacy-compatible nursery-rhyme packages", () => {
+describe("deployed nursery-rhyme package invariants", () => {
   it("preserves the protected six-rhyme runtime and guide-byte contract", async () => {
     const expectedCatalog = snapshot.catalog.map((definition) => ({
       ...definition,
-      phraseDurationsMs: expandedLegacyPhraseDurations(definition),
+      phraseDurationsMs: expandedSnapshotPhraseDurations(definition),
     }));
     assert.deepEqual(generatedCatalogContract(GENERATED_DUB_DEFINITIONS), expectedCatalog);
 

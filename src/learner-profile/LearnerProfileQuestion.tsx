@@ -10,7 +10,6 @@ import {
   type LearnerProfileQuestion,
 } from "./learner-profile-api";
 import { recordSpeechClip } from "../media/speech-recorder";
-import type { ProfileEditorAudience } from "./ProfileEditor";
 import {
   LearnerProfileCard,
   LearnerProfilePeppaArt,
@@ -26,6 +25,7 @@ import {
 
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
+type LearnerProfileAudience = "guardian" | "learner";
 
 export type QuestionPendingAction =
   "microphone" | "skip" | "skip-question" | "submit" | null;
@@ -55,7 +55,7 @@ const QUESTION_OPERATION_ERROR_CODES = new Set<string>([
 ]);
 
 type LearnerProfileQuestionViewProps = {
-  audience: ProfileEditorAudience;
+  audience: LearnerProfileAudience;
   fieldError: LearnerProfileQuestionErrorCode | "";
   fieldErrorIsAnswer?: boolean;
   mode: "learner-profile" | "profile";

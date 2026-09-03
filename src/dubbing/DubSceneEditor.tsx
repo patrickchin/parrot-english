@@ -13,14 +13,13 @@ import { ActionButton } from "../shared/ui";
 import { DubTimedWords, type DubGuidancePosition } from "./DubKaraokeGuide";
 import type { DubOperation } from "./dub-state";
 import {
-  FIVE_LITTLE_DUCKS_DUB,
   type DubDefinition,
   type DubLine,
 } from "./rhyme-catalog";
 
 export type DubSceneEditorProps = {
   activeLine: DubLine;
-  definition?: DubDefinition;
+  definition: DubDefinition;
   error: string;
   errorHelper?: ReactNode;
   hasSavedTake: boolean;
@@ -49,7 +48,7 @@ function formatDuration(milliseconds: number) {
 
 export function DubSceneEditor({
   activeLine,
-  definition = FIVE_LITTLE_DUCKS_DUB,
+  definition,
   error,
   errorHelper,
   hasSavedTake,

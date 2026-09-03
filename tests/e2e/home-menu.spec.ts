@@ -207,13 +207,3 @@ test("home routes into and back out of a guided lesson", async ({ page }) => {
   await page.getByRole("button", { name: "Back to lesson list" }).click();
   await expect(page).toHaveURL("/lessons");
 });
-
-test("retired experiment URLs return to the learner home", async ({ page }) => {
-  for (const path of ["/games", "/games/worlds", "/progress"]) {
-    await page.goto(path);
-    await expect(page).toHaveURL("/");
-    await expect(
-      page.getByRole("navigation", { name: "Learning activities" }),
-    ).toBeVisible();
-  }
-});

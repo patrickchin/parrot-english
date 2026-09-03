@@ -129,7 +129,7 @@ describe("deployment build metadata", () => {
       injectWorkersCiMetadata(
         JSON.stringify({
           name: "parrot-english",
-          vars: { REALTIME_CONVERSATIONS_ENABLED: "1" },
+          vars: { EXISTING_SETTING: "kept" },
         }),
         { commitSha: "abcdef1", version: "0.1.312" },
       ),
@@ -138,7 +138,7 @@ describe("deployment build metadata", () => {
     assert.deepEqual(configured.vars, {
       PARROT_BACKEND_COMMIT_SHA: "abcdef1",
       PARROT_BACKEND_VERSION: "0.1.312",
-      REALTIME_CONVERSATIONS_ENABLED: "1",
+      EXISTING_SETTING: "kept",
     });
   });
 

@@ -30,6 +30,7 @@ const DELETION_GENERATION = `account-deletion-v1:${createHash("sha256")
   .update(USER_ID)
   .digest("hex")}:${Date.parse(DELETION_REQUESTED_AT)}`;
 const DUB_PATH = "/api/dubs/five-little-ducks-v2";
+const DUBS_PATH = "/api/dubs";
 const PRIVATE_MEDIA_NAMES = {
   "learner-a": "Mary",
   "learner-b": "Bob",
@@ -64,8 +65,8 @@ const closureKeysFor = (learnerProfileId) =>
     );
     return [...closure.markerKeys, ...closure.slotKeys];
   });
-const CATALOG_MARKER_KEYS = DUB_DEFINITIONS.map(({ id }) =>
-  learnerDubStorage(DEFAULT_LEARNER_ID, id).markerKey,
+const CATALOG_MARKER_KEYS = DUB_DEFINITIONS.map(
+  ({ id }) => learnerDubStorage(DEFAULT_LEARNER_ID, id).markerKey,
 );
 const CLOSURE_KEYS = closureKeysFor(DEFAULT_LEARNER_ID);
 
@@ -269,12 +270,10 @@ async function callDub({
       identity: identity ?? {
         learnerName: "Mary",
         learnerProfileId: DEFAULT_LEARNER_ID,
-        legacyStorageOwner: true,
         privateMediaName: "Mary",
         sessionId: "session-1",
         userEmail: USER_EMAIL,
         userId: USER_ID,
-        userName: "Parent",
       },
       request: new Request(`https://example.test${path}`, {
         ...(body === undefined ? {} : { body }),
@@ -315,8 +314,8 @@ function seedDatabase() {
     .prepare(
       `INSERT INTO learner_profile
         (id, auth_user_id, name, private_media_name, name_key,
-         onboarding_status, legacy_storage_owner)
-       VALUES (?, ?, 'Mary', 'Mary', 'mary', 'completed', 0)`,
+         onboarding_status)
+       VALUES (?, ?, 'Mary', 'Mary', 'mary', 'completed')`,
     )
     .run(DEFAULT_LEARNER_ID, USER_ID);
   state.sqlite
@@ -384,8 +383,8 @@ describe("account deletion private-media cleanup", () => {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, private_media_name, name_key,
-           onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
+           onboarding_status)
+         VALUES (?, ?, ?, ?, ?, 'not_started')`,
       );
       insertLearner.run("learner-b", USER_ID, "Bob", "Bob", "bob");
       insertLearner.run("learner-c", USER_ID, "Rose", "Rose", "rose");
@@ -416,11 +415,11 @@ describe("account deletion private-media cleanup", () => {
         maxActiveWrites <= 4,
         "Fence write concurrency must stay bounded",
       );
-      assertDeletionFences(
-        bucket,
-        DELETION_GENERATION,
-        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
-      );
+      assertDeletionFences(bucket, DELETION_GENERATION, [
+        DEFAULT_LEARNER_ID,
+        "learner-b",
+        "learner-c",
+      ]);
       for (const key of [LESSON_RECORDING_KEY, siblingRecordingKey]) {
         assert.deepEqual(bucket.stored.get(key)?.options.customMetadata, {
           generation: DELETION_GENERATION,
@@ -453,8 +452,8 @@ describe("account deletion private-media cleanup", () => {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, private_media_name, name_key,
-           onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
+           onboarding_status)
+         VALUES (?, ?, ?, ?, ?, 'not_started')`,
       );
       insertLearner.run("learner-b", USER_ID, "Bob", "Bob", "bob");
       insertLearner.run("learner-c", USER_ID, "Rose", "Rose", "rose");
@@ -471,32 +470,26 @@ describe("account deletion private-media cleanup", () => {
         {
           learnerName: "Mary",
           learnerProfileId: DEFAULT_LEARNER_ID,
-          legacyStorageOwner: false,
           privateMediaName: "Mary",
           sessionId: "session-a",
           userEmail: USER_EMAIL,
           userId: USER_ID,
-          userName: "Parent",
         },
         {
           learnerName: "Bob",
           learnerProfileId: "learner-b",
-          legacyStorageOwner: false,
           privateMediaName: "Bob",
           sessionId: "session-b",
           userEmail: USER_EMAIL,
           userId: USER_ID,
-          userName: "Parent",
         },
         {
           learnerName: "Rose",
           learnerProfileId: "learner-c",
-          legacyStorageOwner: false,
           privateMediaName: "Rose",
           sessionId: "session-c",
           userEmail: USER_EMAIL,
           userId: USER_ID,
-          userName: "Parent",
         },
       ];
       uploads = identities.map((identity) =>
@@ -517,11 +510,11 @@ describe("account deletion private-media cleanup", () => {
         wait: async () => {},
       });
 
-      assertDeletionFences(
-        bucket,
-        DELETION_GENERATION,
-        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
-      );
+      assertDeletionFences(bucket, DELETION_GENERATION, [
+        DEFAULT_LEARNER_ID,
+        "learner-b",
+        "learner-c",
+      ]);
       assert.equal(
         [...bucket.stored.values()].some(
           (item) => item.options.customMetadata.state === "audio",
@@ -552,28 +545,21 @@ describe("account deletion private-media cleanup", () => {
     const events = [];
     const firstOrphan = `${USER_PREFIX}temporary/orphan-one.bin`;
     const secondOrphan = `${USER_PREFIX}temporary/orphan-two.bin`;
-    const otherAccountObject =
-      `${accountPrivateMediaPrefix("two@example.test")}learners/Sam/recordings/keep.audio`;
+    const otherAccountObject = `${accountPrivateMediaPrefix("two@example.test")}learners/Sam/recordings/keep.audio`;
     try {
       const pages = new Map([
         [
           "",
           {
             cursor: "page-2",
-            objects: [
-              { key: firstOrphan },
-              { key: slotKey("line-1") },
-            ],
+            objects: [{ key: firstOrphan }, { key: slotKey("line-1") }],
             truncated: true,
           },
         ],
         [
           "page-2",
           {
-            objects: [
-              { key: secondOrphan },
-              { key: LESSON_RECORDING_KEY },
-            ],
+            objects: [{ key: secondOrphan }, { key: LESSON_RECORDING_KEY }],
             truncated: false,
           },
         ],
@@ -657,28 +643,32 @@ describe("account deletion private-media cleanup", () => {
     const removedLearnerId = "learner-removed";
     const removedOwner = learnerOwner(removedLearnerId);
     const removedStorage = learnerDubStorage(removedLearnerId);
-    const removedLineKey = removedStorage.objectKey(DUB_DEFINITIONS[0].lines[0].id);
+    const removedLineKey = removedStorage.objectKey(
+      DUB_DEFINITIONS[0].lines[0].id,
+    );
     const removedLessonKey = learnerLessonRecordingKey(removedLearnerId);
     const bucket = createBucket([
       { key: removedLineKey },
       { key: removedLessonKey },
     ]);
-    state.sqlite.prepare(
-      `INSERT INTO learner_profile_deletion_tombstone
-        (learner_profile_id, user_id_hash, legacy_storage_owner,
-         private_media_name, generation, requested_at, storage_keys_json)
-       VALUES (?, ?, 0, 'Jack', 1, ?, ?)`,
-    ).run(
-      removedLearnerId,
-      createHash("sha256").update(USER_ID).digest("hex"),
-      Date.parse(DELETION_REQUESTED_AT),
-      JSON.stringify({
-        markerKeys: [removedStorage.markerKey],
-        prefixes: [learnerPrivateMediaPrefix(removedOwner)],
-        slotKeys: [removedLineKey, removedLessonKey],
-        version: 1,
-      }),
-    );
+    state.sqlite
+      .prepare(
+        `INSERT INTO learner_profile_deletion_tombstone
+        (learner_profile_id, user_id_hash, private_media_name,
+         generation, requested_at, storage_keys_json)
+       VALUES (?, ?, 'Jack', 1, ?, ?)`,
+      )
+      .run(
+        removedLearnerId,
+        createHash("sha256").update(USER_ID).digest("hex"),
+        Date.parse(DELETION_REQUESTED_AT),
+        JSON.stringify({
+          markerKeys: [removedStorage.markerKey],
+          prefixes: [learnerPrivateMediaPrefix(removedOwner)],
+          slotKeys: [removedLineKey, removedLessonKey],
+          version: 1,
+        }),
+      );
 
     try {
       await prepareDeletion({
@@ -688,21 +678,22 @@ describe("account deletion private-media cleanup", () => {
         wait: async () => {},
       });
 
-      assertDeletionFences(
-        bucket,
-        DELETION_GENERATION,
-        [DEFAULT_LEARNER_ID, removedLearnerId],
-      );
+      assertDeletionFences(bucket, DELETION_GENERATION, [
+        DEFAULT_LEARNER_ID,
+        removedLearnerId,
+      ]);
       assert.deepEqual(
         bucket.stored.get(removedLessonKey)?.options.customMetadata,
         { generation: DELETION_GENERATION, state: "account-deleting" },
       );
       assert.deepEqual(
         JSON.parse(
-          state.sqlite.prepare(
-            `SELECT learner_storage_identities_json
+          state.sqlite
+            .prepare(
+              `SELECT learner_storage_identities_json
              FROM account_deletion_tombstone`,
-          ).get().learner_storage_identities_json,
+            )
+            .get().learner_storage_identities_json,
         ),
         [
           {
@@ -944,8 +935,8 @@ describe("account deletion private-media cleanup", () => {
       const insertLearner = state.sqlite.prepare(
         `INSERT INTO learner_profile
           (id, auth_user_id, name, private_media_name, name_key,
-           onboarding_status, legacy_storage_owner)
-         VALUES (?, ?, ?, ?, ?, 'not_started', 0)`,
+           onboarding_status)
+         VALUES (?, ?, ?, ?, ?, 'not_started')`,
       );
       insertLearner.run("learner-b", USER_ID, "Bob", "Bob", "bob");
       insertLearner.run("learner-c", USER_ID, "Rose", "Rose", "rose");
@@ -966,12 +957,10 @@ describe("account deletion private-media cleanup", () => {
         identity: {
           learnerName: "Bob",
           learnerProfileId: "learner-b",
-          legacyStorageOwner: false,
           privateMediaName: "Bob",
           sessionId: "session-b",
           userEmail: USER_EMAIL,
           userId: USER_ID,
-          userName: "Parent",
         },
         method: "PUT",
         path: `${DUB_PATH}/lines/line-1`,
@@ -1009,11 +998,11 @@ describe("account deletion private-media cleanup", () => {
         userId: USER_ID,
         wait: async () => {},
       });
-      assertDeletionFences(
-        bucket,
-        DELETION_GENERATION,
-        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
-      );
+      assertDeletionFences(bucket, DELETION_GENERATION, [
+        DEFAULT_LEARNER_ID,
+        "learner-b",
+        "learner-c",
+      ]);
       assert.deepEqual(
         JSON.parse(
           state.sqlite
@@ -1052,11 +1041,11 @@ describe("account deletion private-media cleanup", () => {
       assert.equal(settledUpload.response.status, 409);
       assert.equal(pendingChecks, 1);
       assert.equal(cleanupAttempts, 0);
-      assertDeletionFences(
-        bucket,
-        DELETION_GENERATION,
-        [DEFAULT_LEARNER_ID, "learner-b", "learner-c"],
-      );
+      assertDeletionFences(bucket, DELETION_GENERATION, [
+        DEFAULT_LEARNER_ID,
+        "learner-b",
+        "learner-c",
+      ]);
       assert.equal(
         [...bucket.stored.values()].some(
           (item) => item.options.customMetadata.state === "audio",
@@ -1146,7 +1135,7 @@ describe("account deletion private-media cleanup", () => {
         database: state.database,
         generation: () => "reset-1",
         method: "DELETE",
-        path: DUB_PATH,
+        path: DUBS_PATH,
       });
       await resetSlotStarted.promise;
 
@@ -1188,7 +1177,7 @@ describe("account deletion private-media cleanup", () => {
         database: state.database,
         generation: () => "reset-1",
         method: "DELETE",
-        path: DUB_PATH,
+        path: DUBS_PATH,
         pending: () => isAccountDeletionPending(state.database, USER_ID),
       });
       await markerReadStarted.promise;
@@ -1288,7 +1277,9 @@ describe("account deletion private-media cleanup", () => {
 
   it("retries a 10058 prefix delete with paced, bounded attempts", async () => {
     const state = seedDatabase();
-    const bucket = createBucket([{ key: `${USER_PREFIX}temporary/orphan.bin` }]);
+    const bucket = createBucket([
+      { key: `${USER_PREFIX}temporary/orphan.bin` },
+    ]);
     const remove = bucket.delete.bind(bucket);
     const waits = [];
     let attempts = 0;
@@ -1321,7 +1312,9 @@ describe("account deletion private-media cleanup", () => {
 
   it("stops retrying a persistent 10058 prefix delete and retains the user", async () => {
     const state = seedDatabase();
-    const bucket = createBucket([{ key: `${USER_PREFIX}temporary/orphan.bin` }]);
+    const bucket = createBucket([
+      { key: `${USER_PREFIX}temporary/orphan.bin` },
+    ]);
     const waits = [];
     let attempts = 0;
     bucket.delete = async () => {
@@ -1398,7 +1391,10 @@ describe("account deletion private-media cleanup", () => {
       assert.equal(lineThreeAttempts, 2);
       assert.equal(lessonAttempts, 3);
       assert.equal(waits.length, 5);
-      assert.equal(waits.every((delay) => delay >= 1_000), true);
+      assert.equal(
+        waits.every((delay) => delay >= 1_000),
+        true,
+      );
       assertDeletionFences(bucket, DELETION_GENERATION);
       assert.deepEqual(
         bucket.stored.get(LESSON_RECORDING_KEY)?.options.customMetadata,

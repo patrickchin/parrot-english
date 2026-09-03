@@ -87,7 +87,7 @@ function fullProfile(profile) {
   return {
     age: profile.age,
     answers: {
-      legacyAnswers: null,
+      description: null,
       questionnaireVersion: 2,
       responses: {},
       schemaVersion: 2,
@@ -100,12 +100,11 @@ function fullProfile(profile) {
     id: profile.id,
     name: profile.name,
     profileStatus: profile.profileStatus,
-    questionnaireVersion: 2,
     storyLevel: "first-words",
   };
 }
 
-function profileEditorState(profile) {
+function profileEditorState(profile, profileOverrides = {}) {
   return {
     profile: {
       ...fullProfile(profile),
@@ -133,6 +132,7 @@ function profileEditorState(profile) {
           },
         },
       },
+      ...profileOverrides,
     },
     questions: [
       {
@@ -254,9 +254,6 @@ function managerHarness({
     LearnerSelectionProvider,
     {
       activeProfileId: mia.id,
-      async createAndSelectLearner() {
-        throw new Error("Learner management must not select a learner.");
-      },
       deleteLearner,
       async reloadSelectedLearner() {
         return fullProfile(mia);
@@ -278,7 +275,6 @@ function learnerGateHarness({
   children = createElement("p", null, "SAFE CONTENT"),
   guardianAccessMode,
   guardianRoute,
-  isProfileRoute = false,
   learnerManagerRoute = true,
 }) {
   return createElement(
@@ -296,17 +292,11 @@ function learnerGateHarness({
         guardianRoute,
         isConversationRoute: false,
         isLearnerProfileRoute: false,
-        isProfileRoute,
         learnerManagerRoute,
         learnerSelectionDestination: "/",
         learnerProfileFallback: createElement("p", null, "SETUP"),
-        onCloseProfileRoute() {},
         onConversationCompleted() {},
         onOpenLessons() {},
-        onOpenProfileRoute() {},
-        onRedoCompleted() {},
-        onRedoLearnerProfileRoute() {},
-        redoLearnerProfile: false,
       },
       children,
     ),
@@ -337,7 +327,6 @@ function completedGateState() {
     profile: fullProfile(mia),
     progress: { answered: 2, current: 2, total: 2 },
     question: null,
-    questionnaire: { version: 2 },
   };
 }
 
@@ -359,9 +348,6 @@ function detailsHarness({
       LearnerSelectionProvider,
       {
         activeProfileId,
-        async createAndSelectLearner() {
-          throw new Error("Explicit learner details must not create a learner.");
-        },
         reloadSelectedLearner,
         async selectLearner() {
           throw new Error("Explicit learner details must not select a learner.");
@@ -1085,12 +1071,12 @@ test("editing an inactive learner navigates by ID", async () => {
 });
 
 test("adding a managed learner preserves learner mode and opens the new ID route", async () => {
-  const ava = {
+  const rose = {
     age: null,
     createdAt: "2026-08-27T08:00:00.000Z",
     deletionPending: false,
-    id: "learner-ava",
-    name: "Ava",
+    id: "learner-rose",
+    name: "Rose",
     profileStatus: "not_started",
   };
   globalThis.fetch = async (request, init = {}) => {
@@ -1099,13 +1085,10 @@ test("adding a managed learner preserves learner mode and opens the new ID route
       return Response.json(roster());
     }
     if (path === "/api/learner-profiles" && init.method === "POST") {
-      assert.deepEqual(JSON.parse(init.body), {
-        activate: false,
-        name: "Ava",
-      });
+      assert.deepEqual(JSON.parse(init.body), { name: "Rose" });
       return Response.json({
-        ...roster(mia.id, [mia, noah, ava]),
-        createdProfileId: ava.id,
+        ...roster(mia.id, [mia, noah, rose]),
+        createdProfileId: rose.id,
       });
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
@@ -1113,13 +1096,13 @@ test("adding a managed learner preserves learner mode and opens the new ID route
 
   const container = await mountStrict(managerHarness());
   await waitFor(() => button(container, "Add learner"));
-  await input(container.querySelector("#preferred-name"), "  Ava  ");
+  await input(container.querySelector("#preferred-name"), "  Rose  ");
   await click(button(container, "Add learner"));
 
   await waitFor(() => {
     assert.equal(
       currentRoute(container),
-      "/guardian/learners/learner-ava",
+      "/guardian/learners/learner-rose",
     );
   });
 });
@@ -1175,8 +1158,8 @@ async function assertConcurrentManagedAdds(names) {
     assert.equal(currentRoute(second), `/guardian/learners/${created[1].id}`);
   });
   assert.deepEqual(posts, [
-    { activate: false, name: names[0] },
-    { activate: false, name: names[1] },
+    { name: names[0] },
+    { name: names[1] },
   ]);
 }
 
@@ -1195,13 +1178,13 @@ test("loads and saves inactive learner details by ID without changing learner mo
     const path = String(request);
     requests.push({ body: init.body, method: init.method, path });
     if (
-      path === "/api/profile?learnerProfileId=learner-noah" &&
+      path === "/api/learner-profiles/learner-noah" &&
       init.method === "GET"
     ) {
       return Response.json(profileEditorState(noah));
     }
     if (
-      path === "/api/profile?learnerProfileId=learner-noah" &&
+      path === "/api/learner-profiles/learner-noah" &&
       init.method === "PUT"
     ) {
       return Response.json(profileEditorState(noah));
@@ -1289,7 +1272,7 @@ test("Chinese explicit learner details localize a null learner fallback", async 
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (
-      path === "/api/profile?learnerProfileId=learner-noah" &&
+      path === "/api/learner-profiles/learner-noah" &&
       init.method === "GET"
     ) {
       return Response.json(profileEditorState(unnamed));
@@ -1300,43 +1283,6 @@ test("Chinese explicit learner details localize a null learner fallback", async 
   const container = await mountStrict(detailsHarness({ language: "zh-Hans" }));
   await waitFor(() =>
     assert.equal(container.querySelector("#profile-name")?.value, ""),
-  );
-
-  assert.match(container.textContent, /正在管理 这位孩子/);
-  assert.match(container.textContent, /关于 这位孩子/);
-  assert.doesNotMatch(container.textContent, /正在管理 Learner/);
-});
-
-test("Chinese Guardian profile editing localizes a blank learner fallback", async () => {
-  const unnamed = { ...mia, name: "   " };
-  globalThis.fetch = async (input, init = {}) => {
-    const path = String(input);
-    if (path === "/api/learner-profile" && init.method === "GET") {
-      return Response.json({
-        ...completedGateState(),
-        profile: fullProfile(unnamed),
-      });
-    }
-    if (path === "/api/profile" && init.method === "GET") {
-      return Response.json(profileEditorState(unnamed));
-    }
-    throw new Error(`Unexpected request: ${init.method} ${path}`);
-  };
-
-  const container = await mountStrict(
-    createElement(
-      GuardianLanguageProvider,
-      { initialLanguage: "zh-Hans", storage: null },
-      learnerGateHarness({
-        guardianAccessMode: "guardian",
-        guardianRoute: true,
-        isProfileRoute: true,
-        learnerManagerRoute: false,
-      }),
-    ),
-  );
-  await waitFor(() =>
-    assert.equal(container.querySelector("#profile-name")?.value, "   "),
   );
 
   assert.match(container.textContent, /正在管理 这位孩子/);
@@ -1361,25 +1307,25 @@ test("localizes learner detail loading recovery from stable errors", async () =>
   });
 });
 
-test("targets recording deletion at an explicit learner without selecting them", async () => {
+test("enables recordings for an explicit learner without selecting them", async () => {
   let reloadCalls = 0;
   const consentBodies = [];
   window.confirm = () => true;
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (
-      path === "/api/profile?learnerProfileId=learner-noah" &&
+      path === "/api/learner-profiles/learner-noah" &&
       init.method === "GET"
     ) {
       return Response.json(profileEditorState(noah));
     }
     if (
       path ===
-        "/api/profile/lesson-recording-consent?learnerProfileId=learner-noah" &&
+        "/api/learner-profiles/learner-noah/lesson-recording-consent" &&
       init.method === "PUT"
     ) {
       consentBodies.push(JSON.parse(init.body));
-      return Response.json({ cleanupPending: false, enabled: false });
+      return Response.json({ cleanupPending: false, enabled: true });
     }
     throw new Error(`Unexpected request: ${init.method} ${path}`);
   };
@@ -1392,16 +1338,16 @@ test("targets recording deletion at an explicit learner without selecting them",
       },
     }),
   );
-  await waitFor(() => button(container, "Delete saved lesson recordings"));
-  await click(button(container, "Delete saved lesson recordings"));
+  await waitFor(() => button(container, "Allow lesson voice recordings"));
+  await click(button(container, "Allow lesson voice recordings"));
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="status"]')?.textContent ?? "",
-      /available automatically/,
+      /recordings are enabled/,
     ),
   );
 
-  assert.deepEqual(consentBodies, [{ enabled: false }]);
+  assert.deepEqual(consentBodies, [{ enabled: true }]);
   assert.equal(reloadCalls, 0);
   assert.equal(currentRoute(container), "/guardian/learners/learner-noah");
 });
@@ -1412,14 +1358,16 @@ test("refreshes active learner context after targeted recording deletion", async
   globalThis.fetch = async (request, init = {}) => {
     const path = String(request);
     if (
-      path === "/api/profile?learnerProfileId=learner-mia" &&
+      path === "/api/learner-profiles/learner-mia" &&
       init.method === "GET"
     ) {
-      return Response.json(profileEditorState(mia));
+      return Response.json(
+        profileEditorState(mia, { lessonRecordingConsent: true }),
+      );
     }
     if (
       path ===
-        "/api/profile/lesson-recording-consent?learnerProfileId=learner-mia" &&
+        "/api/learner-profiles/learner-mia/lesson-recording-consent" &&
       init.method === "PUT"
     ) {
       return Response.json({ cleanupPending: false, enabled: false });
@@ -1442,7 +1390,7 @@ test("refreshes active learner context after targeted recording deletion", async
   await waitFor(() =>
     assert.match(
       container.querySelector('[role="status"]')?.textContent ?? "",
-      /available automatically/,
+      /recordings are off/,
     ),
   );
 

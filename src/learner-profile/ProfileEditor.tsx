@@ -6,12 +6,9 @@ import {
   HeaderButton,
   RouteHeader,
 } from "../app/AppHeader";
-import { AdultBoundaryHelper } from "../i18n/AdultBoundaryHelper";
 import { useGuardianLanguage } from "../i18n/guardian-language";
-import { englishGuardianMessages } from "../i18n/messages/en";
 import {
   LearnerProfileCard,
-  LearnerProfilePeppaArt,
   LearnerProfileScreen,
 } from "./LearnerProfileLayout";
 import { ActionButton, fieldClassName, TextButton } from "../shared/ui";
@@ -20,14 +17,12 @@ import type {
   LearnerProfileQuestion,
 } from "./learner-profile-api";
 
-export type ProfileEditorAudience = "guardian" | "learner";
 export type LearnerDetailsErrorCode =
   | "load-failed"
   | "save-failed"
   | "recording-choice-failed";
 
 type ProfileEditorViewProps = {
-  audience: ProfileEditorAudience;
   drafts: Record<string, string>;
   fieldErrors: Record<string, LearnerProfileFieldErrorCode>;
   isSaving: boolean;
@@ -37,34 +32,28 @@ type ProfileEditorViewProps = {
   onCancel: () => void;
   onClose: () => void;
   onLessonRecordingConsentChange: (enabled: boolean) => void;
-  onRedoLearnerProfile: () => void;
   onSave: () => void;
   onValueChange: (answerKey: string, value: string) => void;
   pageError: LearnerDetailsErrorCode | null;
-  questions?: LearnerProfileQuestion[];
-  showRedoLearnerProfile?: boolean;
+  questions: LearnerProfileQuestion[];
 };
 
 export function ProfileEditorView({
-  audience,
   drafts,
   fieldErrors,
   isSaving,
   learnerName,
   lessonRecordingCleanupPending,
+  lessonRecordingConsent,
   onCancel,
   onClose,
   onLessonRecordingConsentChange,
-  onRedoLearnerProfile,
   onSave,
   onValueChange,
   pageError,
-  questions = [],
-  showRedoLearnerProfile = true,
+  questions,
 }: ProfileEditorViewProps) {
-  const { messages: selectedMessages } = useGuardianLanguage();
-  const messages =
-    audience === "guardian" ? selectedMessages : englishGuardianMessages;
+  const { messages } = useGuardianLanguage();
   const interestQuestions = questions.filter(
     ({ answerKey }) => !["name", "age", "description"].includes(answerKey),
   );
@@ -74,14 +63,17 @@ export function ProfileEditorView({
     onSave();
   }
 
-  function deleteLessonRecordings() {
+  function changeLessonRecordingConsent() {
     if (
       !lessonRecordingCleanupPending &&
+      lessonRecordingConsent &&
       !window.confirm(messages.learners.profile.deleteRecordingsConfirm)
     ) {
       return;
     }
-    onLessonRecordingConsentChange(false);
+    onLessonRecordingConsentChange(
+      !lessonRecordingCleanupPending && !lessonRecordingConsent,
+    );
   }
 
   return (
@@ -105,7 +97,7 @@ export function ProfileEditorView({
       >
         <header>
           <GuardianLearnerContextLabel
-            audience={audience}
+            audience="guardian"
             learnerName={learnerName}
           />
           <h1
@@ -117,12 +109,6 @@ export function ProfileEditorView({
           <p className="mb-0 mt-3 font-bold leading-relaxed text-slate-600">
             {messages.learners.profile.description}
           </p>
-          {audience === "learner" ? (
-            <p className="mb-0 mt-2 grid gap-1 text-sm font-bold leading-relaxed text-slate-600">
-              <span>{messages.learners.profile.savedAnswersHelper}</span>
-              <AdultBoundaryHelper message="savedAnswersHelper" />
-            </p>
-          ) : null}
         </header>
 
         <form className="mt-6" onSubmit={submit}>
@@ -287,57 +273,31 @@ export function ProfileEditorView({
               >
                 {lessonRecordingCleanupPending
                   ? messages.learners.profile.recordingCleanupPending
-                  : messages.learners.profile.recordingAvailable}
+                  : lessonRecordingConsent
+                    ? messages.learners.profile.recordingEnabled
+                    : messages.learners.profile.recordingDisabled}
               </p>
             </div>
             <ActionButton
               disabled={isSaving}
               fullWidth
-              onClick={deleteLessonRecordings}
+              onClick={changeLessonRecordingConsent}
               size="compact"
               type="button"
-              variant="dangerSurface"
+              variant={
+                lessonRecordingCleanupPending || lessonRecordingConsent
+                  ? "dangerSurface"
+                  : "brand"
+              }
             >
               {lessonRecordingCleanupPending
                 ? messages.learners.profile.finishDeletingRecordings
-                : messages.learners.profile.deleteRecordings}
+                : lessonRecordingConsent
+                  ? messages.learners.profile.deleteRecordings
+                  : messages.learners.profile.enableRecordings}
             </ActionButton>
           </section>
 
-          {showRedoLearnerProfile ? (
-            <section
-              aria-labelledby="redo-learner-setup-title"
-              className="mt-5 grid gap-4 rounded-3xl bg-sky-50 p-4 sm:grid-cols-[auto_1fr] sm:items-center"
-            >
-              <LearnerProfilePeppaArt
-                alt={messages.learners.profile.peppaAlt}
-                className="mx-auto size-20 shrink-0 object-contain"
-                sizes="5rem"
-              />
-              <div className="grid gap-2">
-                <h2
-                  className="m-0 text-xl text-brand-ink"
-                  id="redo-learner-setup-title"
-                >
-                  {messages.learners.profile.redoTitle}
-                </h2>
-                <p className="m-0 text-sm font-bold leading-relaxed text-slate-600">
-                  {messages.learners.profile.redoDescription}
-                </p>
-                <ActionButton
-                  className="mt-1 min-w-0"
-                  disabled={isSaving}
-                  fullWidth
-                  onClick={onRedoLearnerProfile}
-                  size="compact"
-                  type="button"
-                  variant="navy"
-                >
-                  {messages.learners.profile.redoAction}
-                </ActionButton>
-              </div>
-            </section>
-          ) : null}
 
           {pageError ? (
             <p

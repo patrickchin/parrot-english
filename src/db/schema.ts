@@ -36,7 +36,7 @@ export const user = sqliteTable(
       .default(false)
       .notNull(),
   },
-  (table) => [uniqueIndex("user_email_unique").on(table.email)]
+  (table) => [uniqueIndex("user_email_unique").on(table.email)],
 );
 
 export const session = sqliteTable(
@@ -56,7 +56,7 @@ export const session = sqliteTable(
   (table) => [
     uniqueIndex("session_token_unique").on(table.token),
     index("session_user_id_idx").on(table.userId),
-  ]
+  ],
 );
 
 export const guardianSessionUnlock = sqliteTable(
@@ -68,26 +68,8 @@ export const guardianSessionUnlock = sqliteTable(
     unlockedAt: integer("unlocked_at", { mode: "timestamp_ms" }).notNull(),
     expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
   },
-  (table) => [index("guardian_session_unlock_expires_at_idx").on(table.expiresAt)],
-);
-
-export const guardianDubConsent = sqliteTable(
-  "guardian_dub_consent",
-  {
-    authUserId: text("auth_user_id")
-      .primaryKey()
-      .references(() => user.id, { onDelete: "cascade" }),
-    consentVersion: text("consent_version").notNull(),
-    grantGeneration: text("grant_generation").notNull(),
-    state: text("state").notNull(),
-    grantedAt: integer("granted_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
-  },
   (table) => [
-    check(
-      "guardian_dub_consent_state_check",
-      sql`${table.state} in ('granted', 'revoking')`,
-    ),
+    index("guardian_session_unlock_expires_at_idx").on(table.expiresAt),
   ],
 );
 
@@ -116,11 +98,8 @@ export const account = sqliteTable(
   },
   (table) => [
     index("account_user_id_idx").on(table.userId),
-    index("account_provider_account_idx").on(
-      table.providerId,
-      table.accountId
-    ),
-  ]
+    index("account_provider_account_idx").on(table.providerId, table.accountId),
+  ],
 );
 
 export const verification = sqliteTable(
@@ -133,78 +112,7 @@ export const verification = sqliteTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (table) => [index("verification_identifier_idx").on(table.identifier)]
-);
-
-export const questionnaire = sqliteTable(
-  "questionnaire",
-  {
-    id: text("id").primaryKey(),
-    version: integer("version").notNull(),
-    status: text("status").notNull(),
-    definitionHash: text("definition_hash"),
-    createdAt: createdAt(),
-    activatedAt: integer("activated_at", { mode: "timestamp_ms" }),
-  },
-  (table) => [
-    uniqueIndex("questionnaire_version_unique").on(table.version),
-    index("questionnaire_status_idx").on(table.status),
-    check(
-      "questionnaire_status_check",
-      sql`${table.status} in ('draft', 'active', 'inactive')`
-    ),
-  ]
-);
-
-export const questionnaireQuestion = sqliteTable(
-  "questionnaire_question",
-  {
-    id: text("id").primaryKey(),
-    questionnaireId: text("questionnaire_id")
-      .notNull()
-      .references(() => questionnaire.id, { onDelete: "cascade" }),
-    answerKey: text("answer_key").notNull(),
-    position: integer("position").notNull(),
-    promptEn: text("prompt_en").notNull(),
-    promptZh: text("prompt_zh"),
-    answerType: text("answer_type").notNull(),
-    cardinality: text("cardinality").notNull(),
-    required: integer("required", { mode: "boolean" }).notNull(),
-    optionsJson: text("options_json"),
-    validationJson: text("validation_json"),
-    branchingJson: text("branching_json"),
-    audioId: text("audio_id").notNull(),
-  },
-  (table) => [
-    uniqueIndex("questionnaire_question_key_unique").on(
-      table.questionnaireId,
-      table.answerKey
-    ),
-    uniqueIndex("questionnaire_question_position_unique").on(
-      table.questionnaireId,
-      table.position
-    ),
-    check(
-      "questionnaire_question_answer_type_check",
-      sql`${table.answerType} in ('text', 'number', 'choice')`
-    ),
-    check(
-      "questionnaire_question_cardinality_check",
-      sql`${table.cardinality} in ('scalar', 'array')`
-    ),
-    check(
-      "questionnaire_question_options_json_check",
-      sql`${table.optionsJson} is null or json_valid(${table.optionsJson})`
-    ),
-    check(
-      "questionnaire_question_validation_json_check",
-      sql`${table.validationJson} is null or json_valid(${table.validationJson})`
-    ),
-    check(
-      "questionnaire_question_branching_json_check",
-      sql`${table.branchingJson} is null or json_valid(${table.branchingJson})`
-    ),
-  ]
+  (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
 export const learnerProfile = sqliteTable(
@@ -214,27 +122,21 @@ export const learnerProfile = sqliteTable(
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    legacyStorageOwner: integer("legacy_storage_owner", { mode: "boolean" })
-      .default(true)
-      .notNull(),
     name: text("name"),
     privateMediaName: text("private_media_name").default("Learner").notNull(),
     nameKey: text("name_key"),
     age: integer("age"),
     storyLevel: text("story_level").default("first-words").notNull(),
-    answersJson: text("answers_json").default("{}").notNull(),
+    answersJson: text("answers_json")
+      .default(
+        '{"schemaVersion":2,"questionnaireVersion":2,"responses":{},"description":null}',
+      )
+      .notNull(),
     skippedQuestionKeysJson: text("skipped_question_keys_json")
       .default("[]")
       .notNull(),
-    questionnaireVersion: integer("questionnaire_version").references(
-      () => questionnaire.version
-    ),
     currentQuestionKey: text("current_question_key"),
-    profileStatus: text("onboarding_status")
-      .default("not_started")
-      .notNull(),
-    lastSkippedAt: integer("last_skipped_at", { mode: "timestamp_ms" }),
-    lastSkippedSessionId: text("last_skipped_session_id"),
+    profileStatus: text("onboarding_status").default("not_started").notNull(),
     completedAt: integer("completed_at", { mode: "timestamp_ms" }),
     lessonRecordingConsentVersion: text("lesson_recording_consent_version"),
     lessonRecordingConsentAt: integer("lesson_recording_consent_at", {
@@ -251,10 +153,6 @@ export const learnerProfile = sqliteTable(
   },
   (table) => [
     index("learner_profile_auth_user_id_idx").on(table.authUserId),
-    uniqueIndex("learner_profile_id_user_unique").on(
-      table.id,
-      table.authUserId,
-    ),
     uniqueIndex("learner_profile_user_name_key_unique").on(
       table.authUserId,
       table.nameKey,
@@ -263,34 +161,23 @@ export const learnerProfile = sqliteTable(
       table.authUserId,
       table.privateMediaName,
     ),
-    uniqueIndex("learner_profile_legacy_storage_owner_unique")
-      .on(table.authUserId)
-      .where(sql`${table.legacyStorageOwner} = 1`),
-    index("learner_profile_questionnaire_status_idx").on(
-      table.questionnaireVersion,
-      table.profileStatus
-    ),
     check(
       "learner_profile_answers_json_check",
-      sql`json_valid(${table.answersJson})`
+      sql`json_valid(${table.answersJson})`,
     ),
     check(
       "learner_profile_skipped_question_keys_json_check",
-      sql`json_valid(${table.skippedQuestionKeysJson})`
+      sql`json_valid(${table.skippedQuestionKeysJson})`,
     ),
     check(
       "learner_profile_onboarding_status_check",
-      sql`${table.profileStatus} in ('not_started', 'in_progress', 'completed')`
+      sql`${table.profileStatus} in ('not_started', 'in_progress', 'completed')`,
     ),
     check(
       "learner_profile_story_level_check",
       sql`${table.storyLevel} in ('first-words', 'repeating-patterns', 'tiny-stories', 'early-a1')`,
     ),
-    check(
-      "learner_profile_legacy_storage_owner_check",
-      sql`${table.legacyStorageOwner} in (0, 1)`,
-    ),
-  ]
+  ],
 );
 
 export const learnerProfileDeletionTombstone = sqliteTable(
@@ -299,8 +186,6 @@ export const learnerProfileDeletionTombstone = sqliteTable(
     learnerProfileId: text("learner_profile_id").primaryKey(),
     userIdHash: text("user_id_hash").notNull(),
     privateMediaName: text("private_media_name").default("Learner").notNull(),
-    legacyStorageOwner: integer("legacy_storage_owner", { mode: "boolean" })
-      .notNull(),
     generation: integer("generation").notNull(),
     requestedAt: integer("requested_at", { mode: "timestamp_ms" }).notNull(),
     storageKeysJson: text("storage_keys_json").default("[]").notNull(),
@@ -308,10 +193,6 @@ export const learnerProfileDeletionTombstone = sqliteTable(
   (table) => [
     index("learner_profile_deletion_tombstone_user_hash_idx").on(
       table.userIdHash,
-    ),
-    check(
-      "learner_profile_deletion_tombstone_legacy_owner_check",
-      sql`${table.legacyStorageOwner} in (0, 1)`,
     ),
     check(
       "learner_profile_deletion_tombstone_storage_keys_json_check",
@@ -343,15 +224,6 @@ export const sessionLearnerSelection = sqliteTable(
   ],
 );
 
-export const learnerSelectionRequired = sqliteTable(
-  "learner_selection_required",
-  {
-    sessionId: text("session_id")
-      .primaryKey()
-      .references(() => session.id, { onDelete: "cascade" }),
-  },
-);
-
 export const learnerDubConsent = sqliteTable(
   "learner_dub_consent",
   {
@@ -374,22 +246,6 @@ export const learnerDubConsent = sqliteTable(
       sql`${table.state} in ('granted', 'revoking')`,
     ),
   ],
-);
-
-export const profileSessionBypass = sqliteTable(
-  "onboarding_session_bypass",
-  {
-    sessionId: text("session_id")
-      .primaryKey()
-      .references(() => session.id, { onDelete: "cascade" }),
-    authUserId: text("auth_user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    skippedAt: integer("skipped_at", { mode: "timestamp_ms" }).notNull(),
-  },
-  (table) => [
-    index("onboarding_session_bypass_user_idx").on(table.authUserId),
-  ]
 );
 
 export const learnerSessionBypass = sqliteTable(
@@ -415,10 +271,9 @@ export const conversationSession = sqliteTable(
     authUserId: text("auth_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    learnerProfileId: text("learner_profile_id").references(
-      () => learnerProfile.id,
-      { onDelete: "cascade" },
-    ),
+    learnerProfileId: text("learner_profile_id")
+      .notNull()
+      .references(() => learnerProfile.id, { onDelete: "cascade" }),
     scenarioKey: text("scenario_key").notNull(),
     scenarioVersion: integer("scenario_version").notNull(),
     promptStyle: text("prompt_style"),
@@ -437,21 +292,29 @@ export const conversationSession = sqliteTable(
     uniqueIndex("conversation_session_room_name_unique").on(table.roomName),
     index("conversation_session_user_status_idx").on(
       table.authUserId,
-      table.status
+      table.status,
     ),
     index("conversation_session_profile_status_idx").on(
       table.learnerProfileId,
       table.status,
     ),
     check(
+      "conversation_session_scenario_key_check",
+      sql`${table.scenarioKey} in ('onboarding', 'small-chat')`,
+    ),
+    check(
+      "conversation_session_prompt_style_check",
+      sql`(${table.scenarioKey} = 'onboarding' and ${table.promptStyle} is null) or (${table.scenarioKey} = 'small-chat' and ${table.promptStyle} is not null and ${table.promptStyle} in ('tiny-turns', 'gentle-guide', 'playful-pal'))`,
+    ),
+    check(
       "conversation_session_status_check",
-      sql`${table.status} in ('starting', 'active', 'completed', 'stopped', 'disconnected', 'failed', 'abandoned')`
+      sql`${table.status} in ('starting', 'active', 'completed', 'stopped', 'disconnected', 'failed', 'abandoned')`,
     ),
     check(
       "conversation_session_controller_state_json_check",
-      sql`json_valid(${table.controllerState})`
+      sql`json_valid(${table.controllerState})`,
     ),
-  ]
+  ],
 );
 
 export const conversationTurn = sqliteTable(
@@ -477,107 +340,21 @@ export const conversationTurn = sqliteTable(
   (table) => [
     uniqueIndex("conversation_turn_provider_item_unique").on(
       table.conversationId,
-      table.providerItemId
+      table.providerItemId,
     ),
     uniqueIndex("conversation_turn_sequence_unique").on(
       table.conversationId,
-      table.sequence
+      table.sequence,
     ),
     check(
       "conversation_turn_role_check",
-      sql`${table.role} in ('user', 'assistant')`
+      sql`${table.role} in ('user', 'assistant')`,
     ),
     check(
       "conversation_turn_input_mode_check",
-      sql`${table.inputMode} in ('voice', 'text')`
-    ),
-  ]
-);
-
-export const personalizedStoryArt = sqliteTable(
-  "personalized_story_art",
-  {
-    id: text("id").primaryKey(),
-    authUserId: text("auth_user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    learnerProfileId: text("learner_profile_id").references(
-      () => learnerProfile.id,
-      { onDelete: "cascade" },
-    ),
-    storyId: text("story_id").notNull(),
-    status: text("status").notNull(),
-    r2ObjectKey: text("r2_object_key").notNull(),
-    contentType: text("content_type").notNull(),
-    guardianConsentVersion: text("guardian_consent_version").notNull(),
-    guardianConsentAt: integer("guardian_consent_at", {
-      mode: "timestamp_ms",
-    }).notNull(),
-    provider: text("provider").notNull(),
-    promptVersion: text("prompt_version").notNull(),
-    createdAt: createdAt(),
-    updatedAt: updatedAt(),
-  },
-  (table) => [
-    index("personalized_story_art_user_story_idx").on(
-      table.authUserId,
-      table.storyId,
-    ),
-    uniqueIndex("personalized_story_art_profile_story_unique").on(
-      table.learnerProfileId,
-      table.authUserId,
-      table.storyId,
-    ),
-    check(
-      "personalized_story_art_status_check",
-      sql`${table.status} in ('ready', 'deleting')`,
-    ),
-    check(
-      "personalized_story_art_content_type_check",
-      sql`${table.contentType} in ('image/jpeg', 'image/png', 'image/webp')`,
+      sql`${table.inputMode} in ('voice', 'text')`,
     ),
   ],
-);
-
-export const personalizedStoryArtGenerationLease = sqliteTable(
-  "personalized_story_art_generation_lease",
-  {
-    authUserId: text("auth_user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    storyId: text("story_id").notNull(),
-    generationToken: text("generation_token").notNull(),
-    candidateR2ObjectKey: text("candidate_r2_object_key"),
-    previousR2ObjectKey: text("previous_r2_object_key"),
-    leaseExpiresAt: integer("lease_expires_at", {
-      mode: "timestamp_ms",
-    }).notNull(),
-    createdAt: createdAt(),
-    updatedAt: updatedAt(),
-  },
-  (table) => [primaryKey({ columns: [table.authUserId, table.storyId] })],
-);
-
-export const learnerStoryArtGenerationLease = sqliteTable(
-  "learner_story_art_generation_lease",
-  {
-    learnerProfileId: text("learner_profile_id")
-      .notNull()
-      .references(() => learnerProfile.id, { onDelete: "cascade" }),
-    authUserId: text("auth_user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    storyId: text("story_id").notNull(),
-    generationToken: text("generation_token").notNull(),
-    candidateR2ObjectKey: text("candidate_r2_object_key"),
-    previousR2ObjectKey: text("previous_r2_object_key"),
-    leaseExpiresAt: integer("lease_expires_at", {
-      mode: "timestamp_ms",
-    }).notNull(),
-    createdAt: createdAt(),
-    updatedAt: updatedAt(),
-  },
-  (table) => [primaryKey({ columns: [table.learnerProfileId, table.storyId] })],
 );
 
 export const accountDeletionTombstone = sqliteTable(
@@ -589,11 +366,6 @@ export const accountDeletionTombstone = sqliteTable(
     learnerStorageIdentitiesJson: text("learner_storage_identities_json")
       .default("[]")
       .notNull(),
-    personalizedArtCandidateKeysJson: text(
-      "personalized_art_candidate_keys_json",
-    )
-      .default("[]")
-      .notNull(),
   },
   (table) => [
     uniqueIndex("account_deletion_tombstone_r2_prefix_unique").on(
@@ -602,10 +374,6 @@ export const accountDeletionTombstone = sqliteTable(
     check(
       "account_deletion_tombstone_learner_storage_identities_json_check",
       sql`json_valid(${table.learnerStorageIdentitiesJson})`,
-    ),
-    check(
-      "account_deletion_tombstone_personalized_art_candidate_keys_json_check",
-      sql`json_valid(${table.personalizedArtCandidateKeysJson})`,
     ),
   ],
 );

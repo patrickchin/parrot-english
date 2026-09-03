@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DubNotEnabledError } from "../src/dubbing/dub-api.ts";
-import { DUB_LINES } from "../src/dubbing/dub-script.ts";
 import {
   FIVE_LITTLE_DUCKS_DUB,
   OLD_MACDONALD_DUB,
@@ -13,6 +12,23 @@ import {
   startDubPlayback,
 } from "../src/dubbing/dub-playback.ts";
 import * as dubPlayback from "../src/dubbing/dub-playback.ts";
+
+const DUCK_LINES = FIVE_LITTLE_DUCKS_DUB.lines;
+
+function scheduleAudio(options) {
+  return scheduleDubAudio({ definition: FIVE_LITTLE_DUCKS_DUB, ...options });
+}
+
+function prepareLineBacking(options) {
+  return prepareDubLineBacking({
+    definition: FIVE_LITTLE_DUCKS_DUB,
+    ...options,
+  });
+}
+
+function startPlayback(options) {
+  return startDubPlayback({ definition: FIVE_LITTLE_DUCKS_DUB, ...options });
+}
 
 function abortError() {
   const error = new Error("request aborted");
@@ -315,7 +331,7 @@ describe("duck dub playback", () => {
   it("schedules available voices from authored cues and stops once", () => {
     const starts = [];
     const sources = new Map(
-      DUB_LINES.filter(({ id }) => id !== "line-3").map(({ id }, index) => [
+      DUCK_LINES.filter(({ id }) => id !== "line-3").map(({ id }, index) => [
         id,
         {
           duration: 100 + index,
@@ -332,7 +348,7 @@ describe("duck dub playback", () => {
       ]),
     );
 
-    const stop = scheduleDubAudio({
+    const stop = scheduleAudio({
       context: { currentTime: 10 },
       lineSources: sources,
       output: {},
@@ -404,7 +420,7 @@ describe("duck dub playback", () => {
     const audio = createAudioHarness();
     const raf = createRaf();
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition,
@@ -444,7 +460,7 @@ describe("duck dub playback", () => {
     const positions = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: AUTHORED_SCOPE_DEFINITION,
@@ -503,7 +519,7 @@ describe("duck dub playback", () => {
     const positions = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: AUTHORED_SCOPE_DEFINITION,
@@ -566,7 +582,7 @@ describe("duck dub playback", () => {
       });
       const raf = createRaf();
       const positions = [];
-      await startDubPlayback({
+      await startPlayback({
         AudioContext: audio.AudioContext,
         cancelAnimationFrame: raf.cancelAnimationFrame,
         fetch: audio.fetch,
@@ -588,7 +604,7 @@ describe("duck dub playback", () => {
     const audio = createAudioHarness();
     const raf = createRaf();
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: AUTHORED_SCOPE_DEFINITION,
@@ -608,7 +624,7 @@ describe("duck dub playback", () => {
     });
     const performanceRaf = createRaf();
     let performanceEnded = 0;
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: performanceAudio.AudioContext,
       cancelAnimationFrame: performanceRaf.cancelAnimationFrame,
       definition: AUTHORED_SCOPE_DEFINITION,
@@ -644,7 +660,7 @@ describe("duck dub playback", () => {
       },
     };
     const line = definition.lines[0];
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition,
@@ -754,7 +770,7 @@ describe("duck dub playback", () => {
       ...FIVE_LITTLE_DUCKS_DUB,
       lines: [line, ...FIVE_LITTLE_DUCKS_DUB.lines.slice(1)],
     };
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition,
@@ -792,10 +808,10 @@ describe("duck dub playback", () => {
     const counts = [];
     let downbeats = 0;
     let ended = 0;
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       onCountIn: (remainingBeats) => counts.push(remainingBeats),
       onDownbeat: () => { downbeats += 1; },
       onEnded: () => { ended += 1; },
@@ -828,7 +844,7 @@ describe("duck dub playback", () => {
       const options = {
         AudioContext: audio.AudioContext,
         cancelAnimationFrame: raf.cancelAnimationFrame,
-        line: DUB_LINES[0],
+        line: DUCK_LINES[0],
         onCountIn() {},
         onDownbeat() {},
         onFailure: (error) => failures.push(error),
@@ -836,7 +852,7 @@ describe("duck dub playback", () => {
         requestAnimationFrame: raf.requestAnimationFrame,
       };
       options[callbackName] = () => { throw failure; };
-      const backing = await prepareDubLineBacking(options);
+      const backing = await prepareLineBacking(options);
       backing.start();
       if (callbackName !== "onCountIn") {
         const downbeatAt = 10 + FIVE_LITTLE_DUCKS_DUB.music.countInDurationMs / 1_000;
@@ -861,7 +877,7 @@ describe("duck dub playback", () => {
     let ended = 0;
     const ticks = [];
 
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: OLD_MACDONALD_DUB,
@@ -898,10 +914,10 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const controller = new AbortController();
     let ended = 0;
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       onEnded: () => { ended += 1; },
       requestAnimationFrame: raf.requestAnimationFrame,
       signal: controller.signal,
@@ -927,9 +943,9 @@ describe("duck dub playback", () => {
   it("closes the prepared context when count-in tone scheduling fails", async () => {
     const failure = new Error("music setup failed");
     const audio = createAudioHarness({ oscillatorStopFailure: failure });
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
     });
 
     assert.throws(() => backing.start(), /music setup failed/);
@@ -943,10 +959,10 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const controller = new AbortController();
     let ended = 0;
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       onEnded: () => { ended += 1; },
       onTick(elapsedMs) {
         if (elapsedMs === 4_000) controller.abort();
@@ -971,12 +987,12 @@ describe("duck dub playback", () => {
     const controller = new AbortController();
     const listeners = trackAbortListeners(controller.signal);
     let ended = 0;
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame() {
         throw failure;
       },
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       onEnded: () => { ended += 1; },
       requestAnimationFrame: raf.requestAnimationFrame,
       signal: controller.signal,
@@ -1000,10 +1016,10 @@ describe("duck dub playback", () => {
     let ended = 0;
     const failures = [];
     let throwOnRequeue = false;
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       onEnded: () => { ended += 1; },
       onFailure: (error) => failures.push(error),
       requestAnimationFrame(callback) {
@@ -1033,9 +1049,9 @@ describe("duck dub playback", () => {
     const failure = new Error("initial tick failed");
     const audio = createAudioHarness();
     const failures = [];
-    const backing = await prepareDubLineBacking({
+    const backing = await prepareLineBacking({
       AudioContext: audio.AudioContext,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       onFailure: (error) => failures.push(error),
       onTick() {
         throw failure;
@@ -1058,11 +1074,11 @@ describe("duck dub playback", () => {
     const audio = createAudioHarness();
     const raf = createRaf();
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_LINES.slice(0, 4),
+      lines: DUCK_LINES.slice(0, 4),
       onTick() {},
       requestAnimationFrame: raf.requestAnimationFrame,
     });
@@ -1101,7 +1117,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const lines = OLD_MACDONALD_DUB.lines.slice(0, 7);
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: OLD_MACDONALD_DUB,
@@ -1133,7 +1149,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const lines = TWINKLE_TWINKLE_DUB.lines.slice(2, 4);
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: TWINKLE_TWINKLE_DUB,
@@ -1169,7 +1185,7 @@ describe("duck dub playback", () => {
     const ticks = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: TWINKLE_TWINKLE_DUB,
@@ -1206,7 +1222,7 @@ describe("duck dub playback", () => {
       const raf = createRaf();
 
       await assert.rejects(
-        startDubPlayback({
+        startPlayback({
           AudioContext: audio.AudioContext,
           cancelAnimationFrame: raf.cancelAnimationFrame,
           definition,
@@ -1225,7 +1241,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const ticks = [];
     const controller = new AbortController();
-    const playback = await startDubPlayback({
+    const playback = await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -1238,7 +1254,7 @@ describe("duck dub playback", () => {
     assert.equal(context.resumeCalls, 1);
     assert.deepEqual(
       audio.fetchCalls.map(([url]) => url),
-      DUB_LINES.map(
+      DUCK_LINES.map(
         ({ id }) =>
           `/api/dubs/five-little-ducks-v2/lines/${id}/audio`,
       ),
@@ -1291,11 +1307,11 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const ticks = [];
     let ended = 0;
-    const playback = await startDubPlayback({
+    const playback = await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_LINES.slice(4, 8),
+      lines: DUCK_LINES.slice(4, 8),
       onEnded() {
         ended += 1;
       },
@@ -1333,11 +1349,11 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const ticks = [];
     let ended = 0;
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_LINES.slice(20, 24),
+      lines: DUCK_LINES.slice(20, 24),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,
@@ -1354,17 +1370,17 @@ describe("duck dub playback", () => {
     assert.equal(ended, 1);
   });
 
-  it("keeps the final Duck scene on its legacy 17.2-second clock", async () => {
+  it("keeps the final Duck scene on its deployed 17.2-second clock", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const ticks = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_LINES.slice(20, 24),
+      lines: DUCK_LINES.slice(20, 24),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,
@@ -1388,7 +1404,7 @@ describe("duck dub playback", () => {
     const ticks = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: OLD_MACDONALD_DUB,
@@ -1427,7 +1443,7 @@ describe("duck dub playback", () => {
       const ticks = [];
       let ended = 0;
 
-      await startDubPlayback({
+      await startPlayback({
         AudioContext: audio.AudioContext,
         cancelAnimationFrame: raf.cancelAnimationFrame,
         definition: OLD_MACDONALD_DUB,
@@ -1466,7 +1482,7 @@ describe("duck dub playback", () => {
     const ticks = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       definition: OLD_MACDONALD_DUB,
@@ -1499,9 +1515,9 @@ describe("duck dub playback", () => {
   it("loads guides for unsaved lines and private audio for saved lines", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
-    const lines = DUB_LINES.slice(0, 2);
+    const lines = DUCK_LINES.slice(0, 2);
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -1530,11 +1546,11 @@ describe("duck dub playback", () => {
     const unavailable = [];
     const ticks = [];
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_LINES.slice(0, 2),
+      lines: DUCK_LINES.slice(0, 2),
       onLineUnavailable(lineId) {
         unavailable.push(lineId);
       },
@@ -1563,11 +1579,11 @@ describe("duck dub playback", () => {
     const unavailable = [];
     const privateLineOne = "/api/dubs/five-little-ducks-v2/lines/line-1/audio";
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
-      lines: DUB_LINES.slice(0, 2),
+      lines: DUCK_LINES.slice(0, 2),
       onLineUnavailable(lineId) {
         unavailable.push(lineId);
       },
@@ -1587,11 +1603,11 @@ describe("duck dub playback", () => {
   it("retries a private fetch with its guide and starts every voice", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
-    const lines = DUB_LINES.slice(0, 2);
+    const lines = DUCK_LINES.slice(0, 2);
     const calls = [];
     const fallbacks = [];
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url) {
@@ -1638,7 +1654,7 @@ describe("duck dub playback", () => {
     const calls = [];
     const fallbacks = [];
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url, init) {
@@ -1648,7 +1664,7 @@ describe("duck dub playback", () => {
         }
         return audio.fetch(url, init);
       },
-      lines: DUB_LINES.slice(0, 2),
+      lines: DUCK_LINES.slice(0, 2),
       onLineFallback(lineId, stage) {
         fallbacks.push([lineId, stage]);
       },
@@ -1683,7 +1699,7 @@ describe("duck dub playback", () => {
     const fallbacks = [];
     const unavailable = [];
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url, init) {
@@ -1693,7 +1709,7 @@ describe("duck dub playback", () => {
         }
         return audio.fetch(url, init);
       },
-      lines: DUB_LINES.slice(0, 2),
+      lines: DUCK_LINES.slice(0, 2),
       onLineFallback(lineId, stage) {
         fallbacks.push([lineId, stage]);
       },
@@ -1730,13 +1746,13 @@ describe("duck dub playback", () => {
     const ticks = [];
     let ended = 0;
 
-    const playback = await startDubPlayback({
+    const playback = await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch() {
         return new Response(null, { status: 503 });
       },
-      lines: DUB_LINES.slice(4, 8),
+      lines: DUCK_LINES.slice(4, 8),
       onEnded() {
         ended += 1;
       },
@@ -1791,7 +1807,7 @@ describe("duck dub playback", () => {
     const ticks = [];
     let ended = 0;
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url, init) {
@@ -1800,7 +1816,7 @@ describe("duck dub playback", () => {
         }
         return audio.fetch(url, init);
       },
-      lines: DUB_LINES.slice(4, 8),
+      lines: DUCK_LINES.slice(4, 8),
       onEnded: () => { ended += 1; },
       onTick: (elapsedMs) => ticks.push(elapsedMs),
       requestAnimationFrame: raf.requestAnimationFrame,
@@ -1821,7 +1837,7 @@ describe("duck dub playback", () => {
     const fallbacks = [];
     const privateLineOne = "/api/dubs/five-little-ducks-v2/lines/line-1/audio";
 
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       async fetch(url, init) {
@@ -1835,7 +1851,7 @@ describe("duck dub playback", () => {
         }
         return audio.fetch(url, init);
       },
-      lines: DUB_LINES.slice(0, 2),
+      lines: DUCK_LINES.slice(0, 2),
       onLineFallback(lineId, stage) {
         fallbacks.push([lineId, stage]);
       },
@@ -1862,7 +1878,7 @@ describe("duck dub playback", () => {
   it("cancels a pending frame and playback idempotently", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
-    const playback = await startDubPlayback({
+    const playback = await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -1883,7 +1899,7 @@ describe("duck dub playback", () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const controller = new AbortController();
-    await startDubPlayback({
+    await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -1909,7 +1925,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     let playback;
     let tickCount = 0;
-    playback = await startDubPlayback({
+    playback = await startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -1942,10 +1958,10 @@ describe("duck dub playback", () => {
       const audio = createAudioHarness();
       const raf = createRaf();
       const urls = [];
-      const line = DUB_LINES[0];
+      const line = DUCK_LINES[0];
       const preferredUrl = `/api/dubs/five-little-ducks-v2/lines/${line.id}/audio`;
 
-      const error = await startDubPlayback({
+      const error = await startPlayback({
         AudioContext: audio.AudioContext,
         cancelAnimationFrame: raf.cancelAnimationFrame,
         async fetch(url) {
@@ -1986,7 +2002,7 @@ describe("duck dub playback", () => {
     const signal = controller.signal;
     const listenerCalls = trackAbortListeners(signal);
 
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: request.fetch,
@@ -1995,14 +2011,14 @@ describe("duck dub playback", () => {
       signal,
     });
 
-    assert.equal(request.calls.length, DUB_LINES.length);
+    assert.equal(request.calls.length, DUCK_LINES.length);
     assert.ok(request.calls.every(([, init]) => init.signal !== signal));
     controller.abort();
     assert.ok(request.calls.every(([, init]) => init.signal.aborted));
     await assert.rejects(starting, { name: "AbortError" });
     assert.deepEqual(
       request.abortedLineIds.sort(),
-      DUB_LINES.map(({ id }) => id).sort(),
+      DUCK_LINES.map(({ id }) => id).sort(),
     );
     assert.equal(listenerCalls.adds, 1);
     assert.equal(listenerCalls.removes, 1);
@@ -2033,11 +2049,11 @@ describe("duck dub playback", () => {
       });
     };
 
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch,
-      lines: DUB_LINES.slice(0, 2),
+      lines: DUCK_LINES.slice(0, 2),
       onLineFallback(lineId, stage) {
         fallbacks.push([lineId, stage]);
       },
@@ -2082,7 +2098,7 @@ describe("duck dub playback", () => {
     const timers = createTimerHarness();
     let rejection;
 
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -2118,7 +2134,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
     const controller = new AbortController();
 
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -2148,7 +2164,7 @@ describe("duck dub playback", () => {
     let rejection;
 
     timers.setTimeout(() => controller.abort(), 0);
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -2178,7 +2194,7 @@ describe("duck dub playback", () => {
     const controller = new AbortController();
     let rejection;
 
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -2211,7 +2227,7 @@ describe("duck dub playback", () => {
     const listenerCalls = trackAbortListeners(signal);
     let rejection;
 
-    const starting = startDubPlayback({
+    const starting = startPlayback({
       AudioContext: audio.AudioContext,
       cancelAnimationFrame: raf.cancelAnimationFrame,
       fetch: audio.fetch,
@@ -2251,7 +2267,7 @@ describe("duck dub playback", () => {
     const raf = createRaf();
 
     await assert.rejects(
-      startDubPlayback({
+      startPlayback({
         AudioContext: audio.AudioContext,
         cancelAnimationFrame: raf.cancelAnimationFrame,
         fetch: audio.fetch,
@@ -2275,7 +2291,7 @@ describe("duck dub playback", () => {
     controller.abort();
 
     await assert.rejects(
-      startDubPlayback({
+      startPlayback({
         AudioContext: audio.AudioContext,
         cancelAnimationFrame: raf.cancelAnimationFrame,
         fetch: audio.fetch,

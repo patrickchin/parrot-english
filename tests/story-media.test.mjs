@@ -21,6 +21,23 @@ const storyPublisher = await import("../scripts/publish-story-media.mjs").catch(
   () => ({}),
 );
 const temporaryDirectories = [];
+const FIRST_WORD_STORY_PAGES = [
+  [
+    "hello-cat",
+    ["cat-hello", "dog-hello", "bird-hello", "friends-hello", "friends-bye"],
+  ],
+  ["marys-face", ["face", "eyes", "ears", "nose", "mouth"]],
+  [
+    "wash-sam-wash",
+    [
+      "dirty-hands",
+      "water-on-hands",
+      "soap-on-hands",
+      "wash-hands",
+      "clean-hands",
+    ],
+  ],
+];
 
 afterEach(async () => {
   await Promise.all(
@@ -54,7 +71,7 @@ function createManifest() {
       });
     }
   }
-  return { assets, schemaVersion: 1, version: 5 };
+  return { assets, collection: "long-stories", schemaVersion: 1, version: 5 };
 }
 
 function createLearnerPageManifest() {
@@ -63,7 +80,6 @@ function createLearnerPageManifest() {
     ({ id, level }) =>
       level !== "long-stories" &&
       level !== "first-words" &&
-      level !== "first-english-words" &&
       id !== "where-is-dot",
   )) {
     const directory = `tmp/imagegen/story-media/v6/${storyId}`;
@@ -85,25 +101,9 @@ function createLearnerPageManifest() {
   };
 }
 
-function createFirstEnglishWordsManifest() {
+function createFirstWordsManifest() {
   const assets = [];
-  for (const [storyId, pageIds] of [
-    [
-      "hello-cat",
-      ["cat-hello", "dog-hello", "bird-hello", "friends-hello", "friends-bye"],
-    ],
-    ["marys-face", ["face", "eyes", "ears", "nose", "mouth"]],
-    [
-      "wash-sam-wash",
-      [
-        "dirty-hands",
-        "water-on-hands",
-        "soap-on-hands",
-        "wash-hands",
-        "clean-hands",
-      ],
-    ],
-  ]) {
+  for (const [storyId, pageIds] of FIRST_WORD_STORY_PAGES) {
     const directory = `tmp/imagegen/story-media/v7/${storyId}`;
     assets.push({
       kind: "cover",
@@ -123,7 +123,7 @@ function createFirstEnglishWordsManifest() {
   }
   return {
     assets,
-    collection: "first-english-words",
+    collection: "first-words",
     schemaVersion: 1,
     version: 7,
   };
@@ -230,6 +230,13 @@ describe("story media planning", () => {
   });
 
   it("rejects incomplete inventories and staged paths outside the ignored root", () => {
+    const missingCollection = createManifest();
+    delete missingCollection.collection;
+    assert.throws(
+      () => storyMedia.createStoryMediaPublishPlan(missingCollection),
+      /manifest\.collection must be a non-empty string/,
+    );
+
     const incomplete = createManifest();
     incomplete.assets.pop();
     assert.throws(
@@ -296,9 +303,9 @@ describe("story media planning", () => {
     );
   });
 
-  it("plans the dedicated v7 first-English-words masters and immutable outputs", () => {
+  it("plans the dedicated v7 first-word masters and immutable outputs", () => {
     const plan = storyMedia.createStoryMediaPublishPlan(
-      createFirstEnglishWordsManifest(),
+      createFirstWordsManifest(),
     );
 
     assert.deepEqual(
@@ -311,11 +318,24 @@ describe("story media planning", () => {
       },
       {
         assetCount: 18,
-        collection: "first-english-words",
+        collection: "first-words",
         privateCount: 36,
         publicCount: 24,
         version: 7,
       },
+    );
+    assert.deepEqual(
+      [...new Set(plan.assets.map(({ storyId }) => storyId))],
+      FIRST_WORD_STORY_PAGES.map(([storyId]) => storyId),
+    );
+    assert.deepEqual(
+      STORIES.filter(({ id }) =>
+        FIRST_WORD_STORY_PAGES.some(([storyId]) => storyId === id),
+      ).map(({ id, level }) => ({ id, level })),
+      FIRST_WORD_STORY_PAGES.map(([id]) => ({
+        id,
+        level: "first-words",
+      })),
     );
     assert.deepEqual(
       plan.publicOutputs
@@ -372,15 +392,15 @@ describe("story media planning", () => {
     );
   });
 
-  it("rejects incomplete or misplaced v7 first-English-words provenance", () => {
-    const incomplete = createFirstEnglishWordsManifest();
+  it("rejects incomplete or misplaced v7 first-word provenance", () => {
+    const incomplete = createFirstWordsManifest();
     incomplete.assets.pop();
     assert.throws(
       () => storyMedia.createStoryMediaPublishPlan(incomplete),
-      /exactly three covers and fifteen first English word page images/,
+      /exactly three covers and fifteen first-word page images/,
     );
 
-    const misplacedSource = createFirstEnglishWordsManifest();
+    const misplacedSource = createFirstWordsManifest();
     misplacedSource.assets[0].sourceFile =
       "tmp/imagegen/story-media/v6/hello-cat/cover.png";
     assert.throws(
@@ -388,7 +408,7 @@ describe("story media planning", () => {
       /must be inside tmp\/imagegen\/story-media\/v7/,
     );
 
-    const duplicatePrompt = createFirstEnglishWordsManifest();
+    const duplicatePrompt = createFirstWordsManifest();
     duplicatePrompt.assets[1].promptFile = duplicatePrompt.assets[0].promptFile;
     assert.throws(
       () => storyMedia.createStoryMediaPublishPlan(duplicatePrompt),
@@ -525,8 +545,8 @@ describe("story media preparation", () => {
     );
   });
 
-  it("validates every v7 first-English-words source and saved prompt", async () => {
-    const manifest = createFirstEnglishWordsManifest();
+  it("validates every v7 first-word source and saved prompt", async () => {
+    const manifest = createFirstWordsManifest();
     const cwd = await createPublishFiles(manifest);
     const plan = storyMedia.createStoryMediaPublishPlan(manifest);
     const source = path.join(cwd, manifest.assets[0].sourceFile);
@@ -679,8 +699,8 @@ describe("story media CDN verification", () => {
     );
   });
 
-  it("returns only the three v7 first-English-words URL mappings", async () => {
-    const manifest = createFirstEnglishWordsManifest();
+  it("returns only the three v7 first-word URL mappings", async () => {
+    const manifest = createFirstWordsManifest();
     const cwd = await createPublishFiles(manifest);
     const prepared = await storyMedia.prepareStoryMediaUploads(
       storyMedia.createStoryMediaPublishPlan(manifest),
@@ -875,9 +895,9 @@ describe("story media publisher CLI", () => {
     );
   });
 
-  it("dry-runs all v7 first-English-words provenance and public objects", async () => {
+  it("dry-runs all v7 first-word provenance and public objects", async () => {
     const { cwd, manifestFile } = await createPublisherFixture(
-      createFirstEnglishWordsManifest(),
+      createFirstWordsManifest(),
     );
     let output = "";
 

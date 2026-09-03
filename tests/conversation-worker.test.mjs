@@ -4,9 +4,7 @@ import { describe, it } from "node:test";
 import { createLearnerProfileConversationState } from "../lib/conversation-scenario.js";
 import { createDatabase } from "../worker/database.ts";
 import { createGuardianAccessRepository } from "../worker/guardian-access.ts";
-import {
-  handleConversationRequest,
-} from "../worker/conversations.ts";
+import { handleConversationRequest } from "../worker/conversations.ts";
 import { createLiveKitParticipantToken } from "../worker/livekit-token.ts";
 import { createWorker } from "../worker/index.ts";
 import { createTestD1Database } from "./helpers/d1-test-database.mjs";
@@ -37,7 +35,6 @@ function createEnvironment(overrides = {}) {
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
-    REALTIME_CONVERSATIONS_ENABLED: "1",
     ...overrides,
   };
 }
@@ -111,8 +108,8 @@ function createSeededDatabase({ seedProfile = true } = {}) {
     state.sqlite
       .prepare(
         `INSERT INTO learner_profile
-          (id, auth_user_id, legacy_storage_owner, name, onboarding_status, created_at, updated_at)
-         VALUES ('profile-1', 'user-1', 1, NULL, 'not_started', 1000, 1000)`,
+          (id, auth_user_id, name, onboarding_status, created_at, updated_at)
+         VALUES ('profile-1', 'user-1', NULL, 'not_started', 1000, 1000)`,
       )
       .run();
   }
@@ -134,10 +131,8 @@ const identity = {
   sessionId: "session-1",
   userEmail: "one@example.test",
   userId: "user-1",
-  userName: "Parent One",
   learnerProfileId: "profile-1",
   learnerName: null,
-  legacyStorageOwner: true,
   privateMediaName: "Learner",
 };
 
@@ -154,7 +149,6 @@ async function callConversation(
     LIVEKIT_API_KEY: "api-key",
     LIVEKIT_API_SECRET: "api-secret-api-secret-api-secret",
     LIVEKIT_URL: "wss://livekit.example.test",
-    REALTIME_CONVERSATIONS_ENABLED: "1",
     ...options.env,
   };
   return handleConversationRequest(
@@ -180,15 +174,13 @@ function insertLearnerProfile(
   {
     age = 8,
     description = "Mia is eight years old and loves pandas.",
-    lastSkippedAt = null,
-    lastSkippedSessionId = null,
     name = "Mia",
     profileStatus = "completed",
   } = {},
 ) {
   state.sqlite
     .prepare(
-      "UPDATE learner_profile SET name = ?, private_media_name = ?, name_key = ?, age = ?, answers_json = ?, onboarding_status = ?, last_skipped_at = ?, last_skipped_session_id = ?, completed_at = ?, updated_at = ? WHERE id = ? AND auth_user_id = ?",
+      "UPDATE learner_profile SET name = ?, private_media_name = ?, name_key = ?, age = ?, answers_json = ?, onboarding_status = ?, completed_at = ?, updated_at = ? WHERE id = ? AND auth_user_id = ?",
     )
     .run(
       name,
@@ -199,12 +191,9 @@ function insertLearnerProfile(
         schemaVersion: 2,
         questionnaireVersion: 2,
         responses: {},
-        legacyAnswers: null,
         description,
       }),
       profileStatus,
-      lastSkippedAt,
-      lastSkippedSessionId,
       profileStatus === "completed" ? 2_000 : null,
       2_000,
       "profile-1",
@@ -216,12 +205,12 @@ function createMultiLearnerDatabase() {
   const state = createSeededDatabase({ seedProfile: false });
   const insertProfile = state.sqlite.prepare(
     `INSERT INTO learner_profile
-      (id, auth_user_id, legacy_storage_owner, name, private_media_name,
+      (id, auth_user_id, name, private_media_name,
        name_key, onboarding_status, created_at, updated_at)
-     VALUES (?, 'user-1', ?, ?, ?, ?, 'not_started', 1000, 1000)`,
+     VALUES (?, 'user-1', ?, ?, ?, 'not_started', 1000, 1000)`,
   );
-  insertProfile.run("learner-a", 1, "Mia", "Mia", "mia");
-  insertProfile.run("learner-b", 0, "Leo", "Leo", "leo");
+  insertProfile.run("learner-a", "Mia", "Mia", "mia");
+  insertProfile.run("learner-b", "Leo", "Leo", "leo");
   const insertSession = state.sqlite.prepare(
     "INSERT INTO session (id, expires_at, token, user_id) VALUES (?, ?, ?, 'user-1')",
   );
@@ -243,7 +232,8 @@ function createRoutedConversationWorker() {
       api: {
         async getSession({ headers }) {
           const sessionId = headers.get("X-Test-Session");
-          if (sessionId !== "session-a" && sessionId !== "session-b") return null;
+          if (sessionId !== "session-a" && sessionId !== "session-b")
+            return null;
           return {
             session: { id: sessionId },
             user: {
@@ -265,7 +255,14 @@ function routedEnvironment(state) {
   return createEnvironment({ DB: state.d1 });
 }
 
-function browserConversation(worker, state, sessionId, path, method = "GET", body) {
+function browserConversation(
+  worker,
+  state,
+  sessionId,
+  path,
+  method = "GET",
+  body,
+) {
   return worker.fetch(
     request(path, method, body, { "X-Test-Session": sessionId }),
     routedEnvironment(state),
@@ -300,7 +297,7 @@ function storedProfile(state, learnerProfileId) {
 async function stageConversationProfile(database, conversationId, values = {}) {
   return callConversation(
     database,
-    `/api/conversations/${conversationId}/facts`,
+    `/api/conversations/${conversationId}/state`,
     "POST",
     {
       controllerState: {
@@ -326,7 +323,9 @@ async function stageConversationProfile(database, conversationId, values = {}) {
 
 function profileValues(state) {
   const profile = state.sqlite
-    .prepare("SELECT name, age, answers_json FROM learner_profile WHERE auth_user_id = ?")
+    .prepare(
+      "SELECT name, age, answers_json FROM learner_profile WHERE auth_user_id = ?",
+    )
     .get("user-1");
   return {
     age: profile.age,
@@ -373,10 +372,15 @@ describe("conversation persistence and API", () => {
     const state = createSeededDatabase();
     try {
       insertLearnerProfile(state, {
-        lastSkippedAt: 2_000,
-        lastSkippedSessionId: "session-1",
         profileStatus: "not_started",
       });
+      state.sqlite
+        .prepare(
+          `INSERT INTO onboarding_learner_session_bypass
+          (session_id, learner_profile_id, skipped_at)
+         VALUES (?, ?, ?)`,
+        )
+        .run("session-1", "profile-1", 2_000);
 
       const response = await callConversation(
         state.database,
@@ -405,7 +409,10 @@ describe("conversation persistence and API", () => {
       );
 
       assert.equal(response.status, 201);
-      assert.equal((await response.json()).conversation.scenarioKey, "onboarding");
+      assert.equal(
+        (await response.json()).conversation.scenarioKey,
+        "onboarding",
+      );
     } finally {
       state.close();
     }
@@ -423,7 +430,8 @@ describe("conversation persistence and API", () => {
         );
         const { conversation } = await started.json();
         assert.equal(
-          (await stageConversationProfile(state.database, conversation.id)).status,
+          (await stageConversationProfile(state.database, conversation.id))
+            .status,
           200,
         );
         insertLearnerProfile(state);
@@ -460,7 +468,8 @@ describe("conversation persistence and API", () => {
         );
         const { conversation } = await started.json();
         assert.equal(
-          (await stageConversationProfile(state.database, conversation.id)).status,
+          (await stageConversationProfile(state.database, conversation.id))
+            .status,
           200,
         );
         insertLearnerProfile(state);
@@ -501,7 +510,8 @@ describe("conversation persistence and API", () => {
         );
         const { conversation } = await started.json();
         assert.equal(
-          (await stageConversationProfile(state.database, conversation.id)).status,
+          (await stageConversationProfile(state.database, conversation.id))
+            .status,
           200,
         );
         insertLearnerProfile(state);
@@ -527,7 +537,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("saves a profile-edit review through the current authorized session", async () => {
+  it("saves a repeated onboarding review through the current authorized session", async () => {
     const state = createSeededDatabase();
     try {
       insertLearnerProfile(state);
@@ -536,11 +546,12 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        { purpose: "profile-edit" },
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       assert.equal(
-        (await stageConversationProfile(state.database, conversation.id)).status,
+        (await stageConversationProfile(state.database, conversation.id))
+          .status,
         200,
       );
 
@@ -562,30 +573,17 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("guards profile edits while keeping initial onboarding and small chat learner-safe", async () => {
+  it("keeps onboarding and small chat learner-safe", async () => {
     const state = createSeededDatabase();
     try {
-      const lockedStart = await callConversation(
-        state.database,
-        "/api/conversations",
-        "POST",
-        { purpose: "profile-edit" },
-      );
-      assert.equal(lockedStart.status, 403);
-      assert.deepEqual(await lockedStart.json(), { error: "guardian_required" });
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT count(*) AS count FROM conversation_session")
-          .get().count,
-        0,
-      );
-
       for (const purpose of ["onboarding", "small-chat"]) {
         const started = await callConversation(
           state.database,
           "/api/conversations",
           "POST",
-          { purpose },
+          purpose === "small-chat"
+            ? { promptStyle: "tiny-turns", purpose }
+            : { purpose },
         );
         assert.equal(started.status, 201, purpose);
         const conversation = (await started.json()).conversation;
@@ -597,53 +595,6 @@ describe("conversation persistence and API", () => {
         );
         assert.equal(reviewed.status, 200, purpose);
       }
-
-      const access = createGuardianAccessRepository(state.database);
-      await access.unlock("session-1");
-      const started = await callConversation(
-        state.database,
-        "/api/conversations",
-        "POST",
-        { purpose: "profile-edit" },
-      );
-      assert.equal(started.status, 201);
-      const conversation = (await started.json()).conversation;
-      await access.lock("session-1");
-
-      const lockedReview = await callConversation(
-        state.database,
-        `/api/conversations/${conversation.id}/review`,
-        "PUT",
-        {},
-      );
-      assert.equal(lockedReview.status, 403);
-      assert.deepEqual(await lockedReview.json(), {
-        error: "guardian_required",
-      });
-    } finally {
-      state.close();
-    }
-  });
-
-  it("does not mint a conversation token while realtime rollout is disabled", async () => {
-    const state = createSeededDatabase();
-    try {
-      const response = await callConversation(
-        state.database,
-        "/api/conversations",
-        "POST",
-        undefined,
-        { env: { REALTIME_CONVERSATIONS_ENABLED: "0" } },
-      );
-
-      assert.equal(response.status, 404);
-      assert.deepEqual(await response.json(), { error: "realtime_disabled" });
-      assert.equal(
-        state.sqlite
-          .prepare("SELECT count(*) AS count FROM conversation_session")
-          .get().count,
-        0,
-      );
     } finally {
       state.close();
     }
@@ -657,7 +608,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        undefined,
+        { purpose: "onboarding" },
         {
           createId: (() => {
             const ids = ["conversation-1"];
@@ -683,7 +634,10 @@ describe("conversation persistence and API", () => {
       assert.equal("requiredFacts" in payload.scenario, false);
       assert.equal(payload.scenario.maxOptionalExchanges, 3);
       assert.equal(tokenCalls.length, 1);
-      assert.equal(tokenCalls[0].conversation.roomName, payload.conversation.roomName);
+      assert.equal(
+        tokenCalls[0].conversation.roomName,
+        payload.conversation.roomName,
+      );
       assert.equal(tokenCalls[0].identity.userId, "user-1");
 
       const stored = state.sqlite
@@ -702,12 +656,14 @@ describe("conversation persistence and API", () => {
     const tokenPurposes = [];
     try {
       await createGuardianAccessRepository(state.database).unlock("session-1");
-      for (const purpose of ["onboarding", "profile-edit", "small-chat"]) {
+      for (const purpose of ["onboarding", "small-chat"]) {
         const response = await callConversation(
           state.database,
           "/api/conversations",
           "POST",
-          { purpose },
+          purpose === "small-chat"
+            ? { promptStyle: "tiny-turns", purpose }
+            : { purpose },
           {
             async createParticipantToken({ conversation }) {
               tokenPurposes.push(conversation.scenarioKey);
@@ -722,16 +678,12 @@ describe("conversation persistence and API", () => {
         assert.equal(payload.scenario.key, purpose);
       }
 
-      assert.deepEqual(tokenPurposes, [
-        "onboarding",
-        "profile-edit",
-        "small-chat",
-      ]);
+      assert.deepEqual(tokenPurposes, ["onboarding", "small-chat"]);
       assert.equal(
         state.sqlite
           .prepare("SELECT count(*) AS count FROM conversation_session")
           .get().count,
-        3,
+        2,
       );
     } finally {
       state.close();
@@ -743,11 +695,7 @@ describe("conversation persistence and API", () => {
     const tokenStyles = [];
     const ids = ["tiny-session", "guide-session", "play-session"];
     try {
-      for (const promptStyle of [
-        "tiny-turns",
-        "gentle-guide",
-        "playful-pal",
-      ]) {
+      for (const promptStyle of ["tiny-turns", "gentle-guide", "playful-pal"]) {
         const response = await callConversation(
           state.database,
           "/api/conversations",
@@ -789,21 +737,11 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("defaults old clients and rejects invalid prompt-style combinations", async () => {
+  it("requires the current prompt style and rejects invalid combinations", async () => {
     const state = createSeededDatabase();
     try {
-      const compatible = await callConversation(
-        state.database,
-        "/api/conversations",
-        "POST",
-        { purpose: "small-chat" },
-      );
-      assert.equal(
-        (await compatible.json()).conversation.promptStyle,
-        "tiny-turns",
-      );
-
       for (const body of [
+        { purpose: "small-chat" },
         { promptStyle: "wordy", purpose: "small-chat" },
         { promptStyle: "tiny-turns", purpose: "onboarding" },
       ]) {
@@ -823,6 +761,108 @@ describe("conversation persistence and API", () => {
     }
   });
 
+  it("rejects unknown or omitted conversation request properties", async () => {
+    const state = createSeededDatabase();
+    try {
+      const invalidStart = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { purpose: "onboarding", scenarioVersion: 1 },
+      );
+      assert.equal(invalidStart.status, 400);
+      assert.deepEqual(await invalidStart.json(), { error: "invalid_request" });
+
+      const started = await callConversation(
+        state.database,
+        "/api/conversations",
+        "POST",
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
+      );
+      const { conversation } = await started.json();
+      const agentOptions = {
+        identity: null,
+        headers: { Authorization: "Bearer agent-secret" },
+      };
+      const invalidRequests = [
+        {
+          path: `/api/conversations/${conversation.id}/turns`,
+          body: {
+            providerItemId: "turn-extra",
+            sequence: 0,
+            role: "user",
+            text: "Hello!",
+            language: "en",
+            inputMode: "voice",
+            interrupted: false,
+            facts: [],
+          },
+          error: "invalid_turn",
+          options: agentOptions,
+        },
+        {
+          path: `/api/conversations/${conversation.id}/turns`,
+          body: {
+            providerItemId: "turn-old-defaults",
+            sequence: 0,
+            role: "user",
+            text: "Hello!",
+            inputMode: "voice",
+          },
+          error: "invalid_turn",
+          options: agentOptions,
+        },
+        {
+          path: `/api/conversations/${conversation.id}/state`,
+          body: { controllerState: {}, facts: [] },
+          error: "invalid_controller_state",
+          options: agentOptions,
+        },
+        {
+          path: `/api/conversations/${conversation.id}/end`,
+          body: {
+            finishReason: "conversation_complete",
+            status: "completed",
+            unexpected: true,
+          },
+          error: "invalid_end_state",
+          options: agentOptions,
+        },
+        {
+          path: `/api/conversations/${conversation.id}/finish`,
+          body: { reason: "finished_by_learner", status: "stopped" },
+          error: "invalid_finish_reason",
+        },
+        {
+          path: `/api/conversations/${conversation.id}/review`,
+          method: "PUT",
+          body: { answers: {} },
+          error: "invalid_request",
+        },
+      ];
+
+      for (const invalid of invalidRequests) {
+        const response = await callConversation(
+          state.database,
+          invalid.path,
+          invalid.method ?? "POST",
+          invalid.body,
+          invalid.options,
+        );
+        assert.equal(response.status, 400, invalid.path);
+        assert.deepEqual(await response.json(), { error: invalid.error });
+      }
+      assert.equal(
+        state.sqlite
+          .prepare("SELECT count(*) AS count FROM conversation_turn")
+          .get().count,
+        0,
+      );
+    } finally {
+      state.close();
+    }
+  });
+
   it("finishes small chat without creating or changing a learner profile", async () => {
     const state = createSeededDatabase();
     try {
@@ -830,7 +870,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const conversation = (await started.json()).conversation;
       const review = await callConversation(
@@ -846,7 +886,10 @@ describe("conversation persistence and API", () => {
         profileCompleted: false,
         bypassed: false,
       });
-      assert.equal(storedProfile(state, "profile-1").profileStatus, "not_started");
+      assert.equal(
+        storedProfile(state, "profile-1").profileStatus,
+        "not_started",
+      );
     } finally {
       state.close();
     }
@@ -929,7 +972,10 @@ describe("conversation persistence and API", () => {
       assert.equal(profile.name_key, "mia");
       assert.equal(profile.private_media_name, "Learner");
       assert.equal(profile.age, 8);
-      assert.equal(JSON.parse(profile.answers_json).description, "Mia is eight years old.");
+      assert.equal(
+        JSON.parse(profile.answers_json).description,
+        "Mia is eight years old.",
+      );
     } finally {
       state.close();
     }
@@ -961,11 +1007,13 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const second = await callConversation(
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const firstPayload = await first.json();
       const secondPayload = await second.json();
@@ -993,7 +1041,7 @@ describe("conversation persistence and API", () => {
         "session-a",
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const retryA = await browserConversation(
         worker,
@@ -1001,7 +1049,7 @@ describe("conversation persistence and API", () => {
         "session-a",
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const firstB = await browserConversation(
         worker,
@@ -1009,14 +1057,20 @@ describe("conversation persistence and API", () => {
         "session-b",
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const firstAPayload = await firstA.json();
       const retryAPayload = await retryA.json();
       const firstBPayload = await firstB.json();
 
-      assert.equal(retryAPayload.conversation.id, firstAPayload.conversation.id);
-      assert.notEqual(firstBPayload.conversation.id, firstAPayload.conversation.id);
+      assert.equal(
+        retryAPayload.conversation.id,
+        firstAPayload.conversation.id,
+      );
+      assert.notEqual(
+        firstBPayload.conversation.id,
+        firstAPayload.conversation.id,
+      );
       assert.deepEqual(
         state.sqlite
           .prepare(
@@ -1041,7 +1095,7 @@ describe("conversation persistence and API", () => {
         "session-a",
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const { conversation } = await started.json();
 
@@ -1075,7 +1129,7 @@ describe("conversation persistence and API", () => {
         "session-a",
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const { conversation } = await started.json();
 
@@ -1085,7 +1139,7 @@ describe("conversation persistence and API", () => {
         "session-b",
         `/api/conversations/${conversation.id}/finish`,
         "POST",
-        {},
+        { reason: "finished_by_learner" },
       );
 
       assert.equal(sibling.status, 404);
@@ -1110,7 +1164,7 @@ describe("conversation persistence and API", () => {
         "session-a",
         "/api/conversations",
         "POST",
-        { purpose: "small-chat" },
+        { promptStyle: "tiny-turns", purpose: "small-chat" },
       );
       const { conversation } = await started.json();
       selectLearner(state, "session-a", "learner-b");
@@ -1124,13 +1178,15 @@ describe("conversation persistence and API", () => {
           sequence: 0,
           role: "user",
           text: "Hello!",
+          language: null,
           inputMode: "voice",
+          interrupted: false,
         },
       );
       const facts = await agentConversation(
         worker,
         state,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         { controllerState: { checkpoint: "stored-owner" } },
       );
       const ended = await agentConversation(
@@ -1153,8 +1209,14 @@ describe("conversation persistence and API", () => {
       assert.deepEqual(JSON.parse(stored.controller_state), {
         checkpoint: "stored-owner",
       });
-      assert.equal(storedProfile(state, "learner-a").profileStatus, "not_started");
-      assert.equal(storedProfile(state, "learner-b").profileStatus, "not_started");
+      assert.equal(
+        storedProfile(state, "learner-a").profileStatus,
+        "not_started",
+      );
+      assert.equal(
+        storedProfile(state, "learner-b").profileStatus,
+        "not_started",
+      );
     } finally {
       state.close();
     }
@@ -1178,7 +1240,7 @@ describe("conversation persistence and API", () => {
           await agentConversation(
             worker,
             state,
-            `/api/conversations/${conversation.id}/facts`,
+            `/api/conversations/${conversation.id}/state`,
             {
               controllerState: {
                 ...conversation.controllerState,
@@ -1204,7 +1266,10 @@ describe("conversation persistence and API", () => {
         ).status,
         200,
       );
-      assert.equal(storedProfile(state, "learner-a").profileStatus, "not_started");
+      assert.equal(
+        storedProfile(state, "learner-a").profileStatus,
+        "not_started",
+      );
 
       selectLearner(state, "session-a", "learner-b");
       const switchedReview = await browserConversation(
@@ -1216,8 +1281,14 @@ describe("conversation persistence and API", () => {
         {},
       );
       assert.equal(switchedReview.status, 404);
-      assert.equal(storedProfile(state, "learner-a").profileStatus, "not_started");
-      assert.equal(storedProfile(state, "learner-b").profileStatus, "not_started");
+      assert.equal(
+        storedProfile(state, "learner-a").profileStatus,
+        "not_started",
+      );
+      assert.equal(
+        storedProfile(state, "learner-b").profileStatus,
+        "not_started",
+      );
 
       selectLearner(state, "session-a", "learner-a");
       const ownerReview = await browserConversation(
@@ -1229,40 +1300,14 @@ describe("conversation persistence and API", () => {
         {},
       );
       assert.equal(ownerReview.status, 200);
-      assert.equal(storedProfile(state, "learner-a").profileStatus, "completed");
-      assert.equal(storedProfile(state, "learner-b").profileStatus, "not_started");
-    } finally {
-      state.close();
-    }
-  });
-
-  it("shows a null-profile legacy conversation only to the legacy learner", async () => {
-    const state = createMultiLearnerDatabase();
-    const worker = createRoutedConversationWorker();
-    try {
-      state.sqlite
-        .prepare(
-          `INSERT INTO conversation_session
-            (id, auth_user_id, learner_profile_id, scenario_key, scenario_version, room_name, status, controller_state, started_at, created_at, updated_at)
-           VALUES ('legacy-conversation', 'user-1', NULL, 'small-chat', 2, 'legacy-room', 'active', '{}', 1000, 1000, 1000)`,
-        )
-        .run();
-
-      const legacyOwner = await browserConversation(
-        worker,
-        state,
-        "session-a",
-        "/api/conversations/legacy-conversation",
+      assert.equal(
+        storedProfile(state, "learner-a").profileStatus,
+        "completed",
       );
-      const sibling = await browserConversation(
-        worker,
-        state,
-        "session-b",
-        "/api/conversations/legacy-conversation",
+      assert.equal(
+        storedProfile(state, "learner-b").profileStatus,
+        "not_started",
       );
-
-      assert.equal(legacyOwner.status, 200);
-      assert.equal(sibling.status, 404);
     } finally {
       state.close();
     }
@@ -1299,7 +1344,10 @@ describe("conversation persistence and API", () => {
       const changedPayload = await changed.json();
 
       assert.equal(retryPayload.conversation.id, firstPayload.conversation.id);
-      assert.notEqual(changedPayload.conversation.id, firstPayload.conversation.id);
+      assert.notEqual(
+        changedPayload.conversation.id,
+        firstPayload.conversation.id,
+      );
       assert.equal(changedPayload.conversation.promptStyle, "gentle-guide");
       const retired = state.sqlite
         .prepare(
@@ -1307,16 +1355,13 @@ describe("conversation persistence and API", () => {
         )
         .get(firstPayload.conversation.id);
       assert.equal(retired.status, "abandoned");
-      assert.equal(
-        retired.finish_reason,
-        "conversation_configuration_changed",
-      );
+      assert.equal(retired.finish_reason, "conversation_configuration_changed");
     } finally {
       state.close();
     }
   });
 
-  it("seeds profile editing and its signed agent handoff from the saved profile", async () => {
+  it("seeds repeated onboarding and its signed agent handoff from the saved profile", async () => {
     const state = createSeededDatabase();
     const tokenCalls = [];
     try {
@@ -1331,7 +1376,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        { purpose: "profile-edit" },
+        { purpose: "onboarding" },
         {
           async createParticipantToken(input) {
             tokenCalls.push(input);
@@ -1349,7 +1394,10 @@ describe("conversation persistence and API", () => {
         payload.conversation.controllerState.profileSummary,
         "Mia is thirty and loves fast red cars.",
       );
-      assert.deepEqual(tokenCalls[0].initialState, payload.conversation.controllerState);
+      assert.deepEqual(
+        tokenCalls[0].initialState,
+        payload.conversation.controllerState,
+      );
     } finally {
       state.close();
     }
@@ -1358,7 +1406,9 @@ describe("conversation persistence and API", () => {
   it("does not reveal another user's conversation", async () => {
     const state = createSeededDatabase();
     try {
-      await callConversation(state.database, "/api/conversations", "POST");
+      await callConversation(state.database, "/api/conversations", "POST", {
+        purpose: "onboarding",
+      });
       const row = state.sqlite
         .prepare("SELECT id FROM conversation_session LIMIT 1")
         .get();
@@ -1373,10 +1423,8 @@ describe("conversation persistence and API", () => {
             sessionId: "session-2",
             userEmail: "two@example.test",
             userId: "user-2",
-            userName: "Parent Two",
             learnerProfileId: "profile-2",
             learnerName: null,
-            legacyStorageOwner: true,
             privateMediaName: "Learner",
           },
         },
@@ -1396,6 +1444,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const path = `/api/conversations/${conversation.id}/turns`;
@@ -1422,10 +1471,16 @@ describe("conversation persistence and API", () => {
         identity: null,
         headers: { Authorization: "Bearer agent-secret" },
       });
-      const repeated = await callConversation(state.database, path, "POST", turn, {
-        identity: null,
-        headers: { Authorization: "Bearer agent-secret" },
-      });
+      const repeated = await callConversation(
+        state.database,
+        path,
+        "POST",
+        turn,
+        {
+          identity: null,
+          headers: { Authorization: "Bearer agent-secret" },
+        },
+      );
       assert.equal(first.status, 201);
       assert.equal(repeated.status, 200);
       assert.equal(
@@ -1459,6 +1514,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const agentOptions = {
@@ -1505,7 +1561,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("defers an agent-ended profile edit to authenticated review", async () => {
+  it("defers agent-ended onboarding to authenticated review", async () => {
     const state = createSeededDatabase();
     try {
       insertLearnerProfile(state);
@@ -1514,7 +1570,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        { purpose: "profile-edit" },
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const agentOptions = {
@@ -1536,7 +1592,7 @@ describe("conversation persistence and API", () => {
 
       const staged = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         { controllerState },
         agentOptions,
@@ -1589,7 +1645,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        { purpose: "profile-edit" },
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const agentOptions = {
@@ -1599,7 +1655,7 @@ describe("conversation persistence and API", () => {
 
       const staged = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         {
           controllerState: {
@@ -1653,7 +1709,7 @@ describe("conversation persistence and API", () => {
 
       const stagedSurnameSummary = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         {
           controllerState: {
@@ -1681,7 +1737,7 @@ describe("conversation persistence and API", () => {
 
       const stagedFullName = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         {
           controllerState: {
@@ -1711,7 +1767,7 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("finishes without rewriting an unchanged legacy-private profile", async () => {
+  it("applies current privacy rules to unchanged persisted profile fields", async () => {
     const state = createSeededDatabase();
     try {
       await createGuardianAccessRepository(state.database).unlock("session-1");
@@ -1727,7 +1783,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        { purpose: "profile-edit" },
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const agentOptions = {
@@ -1751,11 +1807,9 @@ describe("conversation persistence and API", () => {
         "PUT",
         {},
       );
-      assert.equal(reviewed.status, 200);
+      assert.equal(reviewed.status, 400);
       assert.deepEqual(await reviewed.json(), {
-        bypassed: false,
-        conversationId: conversation.id,
-        profileCompleted: true,
+        error: "preferred_name_required",
       });
       assert.deepEqual(profileStatement.get("user-1"), before);
       assert.equal(
@@ -1776,6 +1830,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const agentOptions = {
@@ -1784,7 +1839,7 @@ describe("conversation persistence and API", () => {
       };
       const staged = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         {
           controllerState: {
@@ -1813,7 +1868,10 @@ describe("conversation persistence and API", () => {
       );
 
       assert.equal(ended.status, 200);
-      assert.equal(storedProfile(state, "profile-1").profileStatus, "not_started");
+      assert.equal(
+        storedProfile(state, "profile-1").profileStatus,
+        "not_started",
+      );
 
       const reviewed = await callConversation(
         state.database,
@@ -1837,18 +1895,19 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("ignores unrelated controller-state request properties", async () => {
+  it("rejects unrelated controller-state request properties", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const factsResponse = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         {
           controllerState: { checkpoint: "stored-owner" },
@@ -1859,16 +1918,19 @@ describe("conversation persistence and API", () => {
           headers: { Authorization: "Bearer agent-secret" },
         },
       );
-      assert.equal(factsResponse.status, 200);
+      assert.equal(factsResponse.status, 400);
       assert.deepEqual(await factsResponse.json(), {
-        conversationId: conversation.id,
+        error: "invalid_controller_state",
       });
       const stored = state.sqlite
-        .prepare("SELECT controller_state FROM conversation_session WHERE id = ?")
+        .prepare(
+          "SELECT controller_state FROM conversation_session WHERE id = ?",
+        )
         .get(conversation.id);
-      assert.deepEqual(JSON.parse(stored.controller_state), {
-        checkpoint: "stored-owner",
-      });
+      assert.deepEqual(
+        JSON.parse(stored.controller_state),
+        conversation.controllerState,
+      );
     } finally {
       state.close();
     }
@@ -1881,6 +1943,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       const controllerState = {
@@ -1897,7 +1960,7 @@ describe("conversation persistence and API", () => {
       };
       const stateResponse = await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         { controllerState },
         {
@@ -1932,7 +1995,9 @@ describe("conversation persistence and API", () => {
         "Mia is thirty years old and likes pandas.",
       );
       const stored = state.sqlite
-        .prepare("SELECT controller_state FROM conversation_session WHERE id = ?")
+        .prepare(
+          "SELECT controller_state FROM conversation_session WHERE id = ?",
+        )
         .get(conversation.id);
       assert.deepEqual(JSON.parse(stored.controller_state), {
         ...controllerState,
@@ -1942,18 +2007,19 @@ describe("conversation persistence and API", () => {
     }
   });
 
-  it("blocks repeated onboarding after finalization creates an exact-session bypass", async () => {
+  it("blocks repeated onboarding after finalization creates a learner-session bypass", async () => {
     const state = createSeededDatabase();
     try {
       const started = await callConversation(
         state.database,
         "/api/conversations",
         "POST",
+        { purpose: "onboarding" },
       );
       const { conversation } = await started.json();
       await callConversation(
         state.database,
-        `/api/conversations/${conversation.id}/facts`,
+        `/api/conversations/${conversation.id}/state`,
         "POST",
         {
           controllerState: {
@@ -1991,9 +2057,9 @@ describe("conversation persistence and API", () => {
       assert.equal(
         state.sqlite
           .prepare(
-            "SELECT count(*) AS count FROM onboarding_session_bypass WHERE session_id = ? AND auth_user_id = ?",
+            "SELECT count(*) AS count FROM onboarding_learner_session_bypass WHERE session_id = ? AND learner_profile_id = ?",
           )
-          .get("session-1", "user-1").count,
+          .get("session-1", "profile-1").count,
         1,
       );
       const profile = state.sqlite
@@ -2001,7 +2067,10 @@ describe("conversation persistence and API", () => {
         .get("user-1");
       assert.equal(profile.name, "Mia");
       assert.equal(profile.onboarding_status, "not_started");
-      assert.equal(JSON.parse(profile.answers_json).description, "Mia shared her name.");
+      assert.equal(
+        JSON.parse(profile.answers_json).description,
+        "Mia shared her name.",
+      );
 
       const repeatedOnboarding = await callConversation(
         state.database,
@@ -2027,7 +2096,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        undefined,
+        { purpose: "onboarding" },
         {
           createId,
           now: () => new Date("2026-07-08T08:00:00.000Z"),
@@ -2037,7 +2106,7 @@ describe("conversation persistence and API", () => {
         state.database,
         "/api/conversations",
         "POST",
-        undefined,
+        { purpose: "onboarding" },
         {
           createId,
           now: () => new Date("2026-07-08T08:10:01.000Z"),
@@ -2046,7 +2115,10 @@ describe("conversation persistence and API", () => {
       const firstPayload = await first.json();
       const secondPayload = await second.json();
 
-      assert.notEqual(secondPayload.conversation.id, firstPayload.conversation.id);
+      assert.notEqual(
+        secondPayload.conversation.id,
+        firstPayload.conversation.id,
+      );
       assert.equal(secondPayload.conversation.status, "starting");
       const expired = state.sqlite
         .prepare(
@@ -2054,10 +2126,7 @@ describe("conversation persistence and API", () => {
         )
         .get(firstPayload.conversation.id);
       assert.equal(expired.status, "abandoned");
-      assert.equal(
-        expired.finish_reason,
-        "participant_token_expired",
-      );
+      assert.equal(expired.finish_reason, "participant_token_expired");
       assert.equal(
         state.sqlite
           .prepare("SELECT count(*) AS count FROM conversation_session")
@@ -2080,7 +2149,7 @@ describe("LiveKit participant tokens", () => {
       conversation: {
         id: "conversation-1",
         roomName: "learner-profile-room-1",
-        scenarioKey: "profile-edit",
+        scenarioKey: "onboarding",
       },
       identity,
       initialState: createLearnerProfileConversationState({
@@ -2090,7 +2159,9 @@ describe("LiveKit participant tokens", () => {
       }),
     });
     const [, encodedPayload] = token.split(".");
-    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString(),
+    );
 
     assert.equal(payload.sub, "learner:user-1:conversation-1");
     assert.deepEqual(JSON.parse(payload.metadata), {
@@ -2100,7 +2171,7 @@ describe("LiveKit participant tokens", () => {
         name: "Mia",
         summary: "Mia is thirty and loves fast red cars.",
       },
-      scenarioKey: "profile-edit",
+      scenarioKey: "onboarding",
     });
     assert.equal(payload.video.room, "learner-profile-room-1");
     assert.equal(payload.video.roomJoin, true);
@@ -2122,10 +2193,13 @@ describe("LiveKit participant tokens", () => {
         scenarioKey: "small-chat",
       },
       identity,
+      initialState: createLearnerProfileConversationState(),
       promptStyle: "playful-pal",
     });
     const [, encodedPayload] = token.split(".");
-    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString());
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString(),
+    );
 
     assert.equal(payload.roomConfig.agents.length, 1);
     assert.equal(payload.roomConfig.agents[0].agentName, "parrot-local");

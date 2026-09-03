@@ -89,7 +89,6 @@ describe("lesson catalog", () => {
       assert.equal(lesson.childName, "Bella");
       assert.deepEqual(lesson.goalPhrases, goalPhrases);
       const steps = lesson.scenes.flatMap((scene) => scene.steps);
-      assert.equal(steps.some((step) => step.check), false);
       assert.equal(
         steps.some((step) => /^Let's (copy|ask|thank)/.test(step.dialogue)),
         false,

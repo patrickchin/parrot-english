@@ -99,13 +99,6 @@ export const ROW_ROW_ROW_YOUR_BOAT_DUB = DUB_DEFINITIONS[3];
 export const MARY_HAD_A_LITTLE_LAMB_DUB = DUB_DEFINITIONS[4];
 export const HUMPTY_DUMPTY_DUB = DUB_DEFINITIONS[5];
 
-export const DUB_ID = FIVE_LITTLE_DUCKS_DUB.id;
-export const DUB_ROUTE = FIVE_LITTLE_DUCKS_DUB.route;
-export const DUB_DURATION_MS = FIVE_LITTLE_DUCKS_DUB.durationMs;
-export const DUB_LINES_PER_VERSE = FIVE_LITTLE_DUCKS_DUB.linesPerScene;
-export const DUB_LINES = FIVE_LITTLE_DUCKS_DUB.lines;
-export const DUB_SCENE_TITLES = FIVE_LITTLE_DUCKS_DUB.sceneTitles;
-
 export function getDubLineMusicPhrase(
   definition: DubDefinition,
   line: DubLine,

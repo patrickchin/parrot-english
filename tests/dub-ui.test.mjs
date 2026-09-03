@@ -47,7 +47,6 @@ const {
   getDubPlayheadPercent,
   getDubTimedWordSegments,
 } = karaokeGuide;
-const { DuckDub } = await vite.ssrLoadModule("/src/dubbing/DuckDub.tsx");
 const { NurseryRhymeList } = await vite.ssrLoadModule(
   "/src/dubbing/NurseryRhymeList.tsx",
 );
@@ -55,17 +54,19 @@ const { GuardianLanguageProvider } = await vite.ssrLoadModule(
   "/src/i18n/guardian-language.tsx",
 );
 const {
+  DubStudio,
   DubLoading,
   resolveGuideOnlyDubLineAudioSource,
   resolveDubLineAudioSource,
 } = await vite.ssrLoadModule("/src/dubbing/DubStudio.tsx");
-const { DUB_LINES, FIVE_LITTLE_DUCKS_DUB } = await vite.ssrLoadModule("/src/dubbing/dub-script.ts");
 const {
   DUB_DEFINITIONS,
+  FIVE_LITTLE_DUCKS_DUB,
   HUMPTY_DUMPTY_DUB,
   OLD_MACDONALD_DUB,
   ROW_ROW_ROW_YOUR_BOAT_DUB,
 } = await vite.ssrLoadModule("/src/dubbing/rhyme-catalog.ts");
+const DUCK_LINES = FIVE_LITTLE_DUCKS_DUB.lines;
 const { NURSERY_RHYMES_COVER_ARTWORK } = await vite.ssrLoadModule(
   "/src/dubbing/dub-artwork.ts",
 );
@@ -100,16 +101,14 @@ after(async () => {
 
 function enabledDubStatus(saved = false) {
   return {
-    complete: saved,
     consentState: "granted",
     dubId: "five-little-ducks-v2",
     guardianConsentVersion: "guardian-voice-r2-v2",
-    lines: DUB_LINES.map(({ id }) => ({
+    lines: DUCK_LINES.map(({ id }) => ({
       id,
       recordedAt: saved ? "2026-08-25T10:00:00.000Z" : null,
       saved,
     })),
-    recordingEnabled: true,
   };
 }
 
@@ -117,8 +116,7 @@ function enabledDubStatusWith(...savedLineIds) {
   const saved = new Set(savedLineIds);
   return {
     ...enabledDubStatus(),
-    complete: saved.size === DUB_LINES.length,
-    lines: DUB_LINES.map(({ id }) => ({
+    lines: DUCK_LINES.map(({ id }) => ({
       id,
       recordedAt: saved.has(id) ? "2026-08-25T10:00:00.000Z" : null,
       saved: saved.has(id),
@@ -128,11 +126,11 @@ function enabledDubStatusWith(...savedLineIds) {
 
 function enabledFirstSceneStatus() {
   return enabledDubStatusWith(
-    ...DUB_LINES.slice(0, 4).map(({ id }) => id),
+    ...DUCK_LINES.slice(0, 4).map(({ id }) => id),
   );
 }
 
-async function mountDuckDub(language = "en") {
+async function mountFiveLittleDucks(language = "en") {
   const container = await mountStrict(
     createElement(
       GuardianLanguageProvider,
@@ -140,7 +138,7 @@ async function mountDuckDub(language = "en") {
       createElement(
         MemoryRouter,
         { initialEntries: ["/dubs/five-little-ducks"] },
-        createElement(DuckDub),
+        createElement(DubStudio, { definition: FIVE_LITTLE_DUCKS_DUB }),
       ),
     ),
   );
@@ -405,7 +403,8 @@ async function advanceDubPlayback(audio, elapsedMs) {
 
 function renderProjectHome(viewProps = {}) {
   return renderToStaticMarkup(createElement(DubProjectHome, {
-    activeLine: DUB_LINES[0],
+    activeLine: DUCK_LINES[0],
+    definition: FIVE_LITTLE_DUCKS_DUB,
     locked: false,
     needsRetake: {},
     onOpenScene() {},
@@ -418,7 +417,7 @@ function renderProjectHome(viewProps = {}) {
 
 function renderSceneEditor(viewProps = {}) {
   return renderToStaticMarkup(createElement(DubSceneEditor, {
-    activeLine: DUB_LINES[0],
+    activeLine: DUCK_LINES[0],
     definition: FIVE_LITTLE_DUCKS_DUB,
     error: "",
     hasSavedTake: false,
@@ -431,7 +430,7 @@ function renderSceneEditor(viewProps = {}) {
     onRetrySave() {},
     operation: "idle",
     pendingTake: null,
-    presentation: { countInBeat: null, elapsedMs: null, lineId: DUB_LINES[0].id },
+    presentation: { countInBeat: null, elapsedMs: null, lineId: DUCK_LINES[0].id },
     locked: false,
     saveRecovery: null,
     ...viewProps,
@@ -450,7 +449,7 @@ function exactKaraokeGuide() {
 
 function karaokeLine(overrides = {}) {
   return {
-    ...DUB_LINES[0],
+    ...DUCK_LINES[0],
     durationMs: 1_000,
     text: "  Mary’s  ducks, quack!",
     words: [
@@ -589,12 +588,12 @@ describe("duck dubbing storyboard presentation", () => {
   it("maps every line in a verse to that verse's generated scene", () => {
     const first = renderToStaticMarkup(createElement(IllustratedDubScene, {
       definition: FIVE_LITTLE_DUCKS_DUB,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
       thumbnail: true,
     }));
     const second = renderToStaticMarkup(createElement(IllustratedDubScene, {
       definition: FIVE_LITTLE_DUCKS_DUB,
-      line: DUB_LINES[4],
+      line: DUCK_LINES[4],
       thumbnail: true,
     }));
 
@@ -606,7 +605,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("offers responsive resolution candidates for illustrated scenes", () => {
     const html = renderToStaticMarkup(createElement(IllustratedDubScene, {
       definition: FIVE_LITTLE_DUCKS_DUB,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
     }));
     const expectedSrcSet =
       "https://media.parrotbook.com/assets/v6/dubbing/five-little-ducks/scene-1-five-ducklings-384.webp 384w, " +
@@ -635,7 +634,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("falls back to the original artwork when a responsive candidate fails", async () => {
     const container = await mountStrict(createElement(IllustratedDubScene, {
       definition: FIVE_LITTLE_DUCKS_DUB,
-      line: DUB_LINES[0],
+      line: DUCK_LINES[0],
     }));
     const image = container.querySelector("img");
     assert.ok(image);
@@ -751,12 +750,12 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(partial, /aria-label="Scene 1, Five little ducks, 1 of 4 lines ready"/);
 
     const firstSceneReady = renderProjectHome({
-      saved: Object.fromEntries(DUB_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
+      saved: Object.fromEntries(DUCK_LINES.slice(0, 4).map(({ id }) => [id, "saved"])),
     });
     assert.match(firstSceneReady, /Continue with Scene 2/);
     assert.match(firstSceneReady, /aria-label="Scene 1, Five little ducks, Scene ready"/);
 
-    const saved = Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"]));
+    const saved = Object.fromEntries(DUCK_LINES.map(({ id }) => [id, "saved"]));
     const retake = renderProjectHome({ needsRetake: { "line-5": true }, saved });
     assert.match(retake, /23 of 24 lines ready/);
     assert.match(retake, /Fix Scene 2/);
@@ -769,7 +768,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.match(onlyRetake, /0 of 24 lines ready/);
     assert.match(onlyRetake, /Fix Scene 1/);
 
-    const complete = renderProjectHome({ activeLine: DUB_LINES[23], saved });
+    const complete = renderProjectHome({ activeLine: DUCK_LINES[23], saved });
     assert.match(complete, /All 24 lines ready/);
     assert.match(complete, /Your video is ready — great singing!/);
     assert.equal(
@@ -793,8 +792,8 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("keeps every scene editable after all clips are recorded", () => {
     const html = renderProjectHome({
-      activeLine: DUB_LINES[23],
-      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+      activeLine: DUCK_LINES[23],
+      saved: Object.fromEntries(DUCK_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.match(html, /All 24 lines ready/);
     assert.match(html, /Your video is ready — great singing!/);
@@ -805,9 +804,9 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("keeps retake status when every clip has a saved object", () => {
     const html = renderProjectHome({
-      activeLine: DUB_LINES[4],
+      activeLine: DUCK_LINES[4],
       needsRetake: { "line-5": true },
-      saved: Object.fromEntries(DUB_LINES.map(({ id }) => [id, "saved"])),
+      saved: Object.fromEntries(DUCK_LINES.map(({ id }) => [id, "saved"])),
     });
     assert.match(html, /aria-label="Scene 2, Four little ducks, Needs a new take"/);
     assert.match(html, /Fix Scene 2/);
@@ -833,7 +832,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     assert.equal(
       [...container.querySelectorAll("button")].filter(({ textContent }) =>
@@ -853,15 +852,15 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await click(container.querySelector('[aria-label="Play full video"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop full video"]')));
-    await advanceDubPlayback(audio, DUB_LINES[4].cueMs + 1_000);
+    await advanceDubPlayback(audio, DUCK_LINES[4].cueMs + 1_000);
 
     const player = container.querySelector('[aria-label="Full video player"]');
     assert.equal(player?.querySelector("img")?.getAttribute("src"), FIVE_LITTLE_DUCKS_DUB.sceneArtwork[1].src);
-    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUB_LINES[4].text));
+    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUCK_LINES[4].text));
     assert.ok(container.querySelector('[aria-label="Karaoke guide"] svg'));
   });
 
@@ -873,7 +872,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Line recording controls"]')));
@@ -886,7 +885,7 @@ describe("duck dubbing storyboard presentation", () => {
     assert.equal(backToRhymes.getAttribute("href"), "/dubs");
   });
 
-  it("retries automatic recording from listen-only playback without a guardian gate", async () => {
+  it("refreshes recording access from the learner-safe listen-only view", async () => {
     let statusLoads = 0;
     let recordingAvailable = false;
     globalThis.fetch = async (path, init = {}) => {
@@ -894,22 +893,19 @@ describe("duck dubbing storyboard presentation", () => {
         statusLoads += 1;
         return Response.json({
           ...enabledDubStatus(),
-          recordingEnabled: recordingAvailable,
+          consentState: recordingAvailable ? "granted" : "not_granted",
         });
       }
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.match(
       container.textContent,
       /You can watch the video now/,
     ));
     assert.ok(container.querySelector('[aria-label="Play full video"]'));
-    assert.doesNotMatch(
-      container.textContent,
-      /ask a grown-up|guardian|permission/i,
-    );
+    assert.match(container.textContent, /ask a grown-up to turn on recording/i);
     assert.equal(
       [...container.querySelectorAll("button")].filter(({ textContent }) =>
         /Start dubbing|Continue dubbing|Continue Scene/.test(textContent),
@@ -921,7 +917,7 @@ describe("duck dubbing storyboard presentation", () => {
     const loadsBeforeRetry = statusLoads;
     await click(
       [...container.querySelectorAll("button")].find(({ textContent }) =>
-        textContent?.includes("Try recording again"),
+        textContent?.includes("Check recording access"),
       ),
     );
     await waitFor(() =>
@@ -950,7 +946,10 @@ describe("duck dubbing storyboard presentation", () => {
     });
     globalThis.fetch = async (path, init = {}) => {
       if (path === "/api/dubs/five-little-ducks-v2" && !init.method) {
-        return Response.json({ ...enabledDubStatus(), recordingEnabled: false });
+        return Response.json({
+          ...enabledDubStatus(),
+          consentState: "not_granted",
+        });
       }
       if (String(path).includes("/api/dubs/") || String(path).endsWith("/audio")) {
         privateRequests.push(String(path));
@@ -960,15 +959,15 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await click(container.querySelector('[aria-label="Play full video"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Stop full video"]')));
-    await advanceDubPlayback(audio, DUB_LINES[4].cueMs + 1_000);
+    await advanceDubPlayback(audio, DUCK_LINES[4].cueMs + 1_000);
 
     const player = container.querySelector('[aria-label="Full video player"]');
     assert.equal(player?.querySelector("img")?.getAttribute("src"), FIVE_LITTLE_DUCKS_DUB.sceneArtwork[1].src);
-    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUB_LINES[4].text));
+    assert.match(container.querySelector('[aria-label="Karaoke guide"]')?.textContent, new RegExp(DUCK_LINES[4].text));
     assert.ok(container.querySelector('[aria-label="Karaoke guide"] svg'));
     assert.equal(microphoneRequests, 0);
     assert.equal(objectUrls, 0);
@@ -984,7 +983,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1012,7 +1011,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1075,7 +1074,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record again"]'));
@@ -1119,7 +1118,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record again"]'));
@@ -1150,7 +1149,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1171,7 +1170,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1194,7 +1193,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1216,7 +1215,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1235,7 +1234,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub("zh-Hans");
+    const container = await mountFiveLittleDucks("zh-Hans");
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1274,7 +1273,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1294,7 +1293,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Record line"]'));
@@ -1317,7 +1316,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     const hearLine = () => container.querySelector('[aria-label="Hear example"]');
@@ -1329,7 +1328,7 @@ describe("duck dubbing storyboard presentation", () => {
       guide.sources[0].startTimes[0],
       guide.oscillators.find(({ type }) => type === "triangle").startTimes[0],
     );
-    await advanceDubPlayback(audio, DUB_LINES[0].durationMs);
+    await advanceDubPlayback(audio, DUCK_LINES[0].durationMs);
     await waitFor(() => assert.equal(
       container.querySelector('[aria-label="Play my recording"]')?.disabled,
       false,
@@ -1356,17 +1355,17 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Hear example"]'));
     await waitFor(() => assert.ok(audio.contexts.some(({ sources }) => sources.length)));
-    await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
+    await advanceDubPlayback(audio, DUCK_LINES[0].durationMs + 500);
 
     const assertFrozenGuide = (status) => {
       assert.match(container.querySelector('[role="status"]')?.textContent, status);
       const heading = container.querySelector('[aria-label="Line recording controls"] h2');
-      assert.equal(heading?.textContent, DUB_LINES[0].text);
+      assert.equal(heading?.textContent, DUCK_LINES[0].text);
       assert.equal(heading?.querySelector("[aria-current='true']"), null);
       assert.equal(
         container.querySelector('[aria-label*="waveform" i], [aria-label*="melody guide" i]'),
@@ -1374,7 +1373,7 @@ describe("duck dubbing storyboard presentation", () => {
       );
     };
     assertFrozenGuide(/Playing example/);
-    await advanceDubPlayback(audio, DUB_LINES[0].durationMs);
+    await advanceDubPlayback(audio, DUCK_LINES[0].durationMs);
     await waitFor(() => assert.equal(
       container.querySelector('[aria-label="Play my recording"]')?.disabled,
       false,
@@ -1382,7 +1381,7 @@ describe("duck dubbing storyboard presentation", () => {
 
     await click(container.querySelector('[aria-label="Play my recording"]'));
     await waitFor(() => assert.equal(audio.contexts.filter(({ sources }) => sources.length).length, 2));
-    await advanceDubPlayback(audio, DUB_LINES[0].durationMs + 500);
+    await advanceDubPlayback(audio, DUCK_LINES[0].durationMs + 500);
     assertFrozenGuide(/Playing your recording/);
   });
 
@@ -1402,7 +1401,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await click(container.querySelector('[aria-label="Hear example"]'));
@@ -1435,7 +1434,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
@@ -1469,7 +1468,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
@@ -1498,7 +1497,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Play my recording"]')));
@@ -1528,7 +1527,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.equal(
@@ -1560,7 +1559,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.equal(
@@ -1603,7 +1602,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.ok(container.querySelector('[aria-label="Record line"]')));
@@ -1637,7 +1636,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.equal(
@@ -1677,7 +1676,7 @@ describe("duck dubbing storyboard presentation", () => {
       throw new Error(`Unexpected dub request: ${init.method} ${path}`);
     };
 
-    const container = await mountDuckDub();
+    const container = await mountFiveLittleDucks();
     await waitFor(() => assert.ok(container.querySelector('[aria-label^="Scene 1,"]')));
     await click(container.querySelector('[aria-label^="Scene 1,"]'));
     await waitFor(() => assert.equal(
@@ -1723,7 +1722,7 @@ describe("duck dubbing storyboard presentation", () => {
         throw new Error(`Unexpected dub request: ${init.method} ${path}`);
       };
 
-      const container = await mountDuckDub();
+      const container = await mountFiveLittleDucks();
       await waitFor(() => assert.ok(container.querySelector('[aria-label="Play full video"]')));
       await click(container.querySelector('[aria-label="Play full video"]'));
       await waitFor(() => assert.match(
@@ -1780,15 +1779,15 @@ describe("duck dubbing storyboard presentation", () => {
   });
 
   it("renders previous, next, and finish navigation within one scene", () => {
-    const first = renderSceneEditor({ activeLine: DUB_LINES[0] });
+    const first = renderSceneEditor({ activeLine: DUCK_LINES[0] });
     assert.match(first, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
     assert.match(first, /aria-label="Next line"/);
 
-    const middle = renderSceneEditor({ activeLine: DUB_LINES[1] });
+    const middle = renderSceneEditor({ activeLine: DUCK_LINES[1] });
     assert.match(middle, /aria-label="Previous line"/);
     assert.doesNotMatch(middle, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
 
-    const final = renderSceneEditor({ activeLine: DUB_LINES[3] });
+    const final = renderSceneEditor({ activeLine: DUCK_LINES[3] });
     assert.match(final, /aria-label="Finish scene"/);
     assert.match(final, /aria-label="Previous line"/);
   });
@@ -1800,7 +1799,7 @@ describe("duck dubbing storyboard presentation", () => {
       { locked: true, operation: "saving" },
       { locked: false, operation: "idle", saveRecovery: "save" },
     ]) {
-      const html = renderSceneEditor({ activeLine: DUB_LINES[1], ...props });
+      const html = renderSceneEditor({ activeLine: DUCK_LINES[1], ...props });
       assert.match(html, /<button(?=[^>]*aria-label="Previous line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
       assert.match(html, /<button(?=[^>]*aria-label="Next line")(?=[^>]*\sdisabled(?:=""|(?=[\s>])))[^>]*>/);
     }
@@ -1808,7 +1807,7 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("keeps the selected line synchronized with its lyric prompt", () => {
     const html = renderSceneEditor({
-      activeLine: DUB_LINES[1],
+      activeLine: DUCK_LINES[1],
     });
     assert.match(html, /aria-current="step"[^>]*>Line 2 of 4/);
     assert.match(html.replace(/<[^>]+>/g, ""), /Over the hill and far away\./);
@@ -1826,7 +1825,7 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("keeps recording available without waveform or melody visuals", () => {
     const html = renderSceneEditor({
-      activeLine: DUB_LINES[0],
+      activeLine: DUCK_LINES[0],
     });
 
     assert.match(html.replace(/<[^>]+>/g, ""), /Five little ducks went out one day\./);
@@ -1860,7 +1859,7 @@ describe("duck dubbing storyboard presentation", () => {
   it("turns the phrase-length record action into an immediate stop action with elapsed time", () => {
     const html = renderSceneEditor({
       operation: "recording",
-      presentation: { countInBeat: null, elapsedMs: 2_100, lineId: DUB_LINES[0].id },
+      presentation: { countInBeat: null, elapsedMs: 2_100, lineId: DUCK_LINES[0].id },
     });
     assert.match(html, /aria-label="Stop recording"/);
     assert.match(html, /role="timer"[\s\S]*?>Recording<\/[\s\S]*?0:02 \/ 0:04/);
@@ -1877,7 +1876,7 @@ describe("duck dubbing storyboard presentation", () => {
       presentation: {
         countInBeat: 2,
         elapsedMs: null,
-        lineId: DUB_LINES[0].id,
+        lineId: DUCK_LINES[0].id,
       },
     });
 
@@ -1963,6 +1962,7 @@ describe("duck dubbing storyboard presentation", () => {
     const loading = renderToStaticMarkup(createElement(DubLoading, {
       error: "Your saved dub could not be loaded.",
       onRetryLoad() {},
+      title: FIVE_LITTLE_DUCKS_DUB.title,
     }));
     assert.match(loading, /role="alert"/);
     assert.match(loading, />Try loading again<\/button>/);
@@ -2010,39 +2010,58 @@ describe("duck dubbing storyboard presentation", () => {
 
   it("shows public video playback without private or recording controls", () => {
     const html = renderToStaticMarkup(createElement(DubListenOnly, {
+      consentState: "not_granted",
       definition: FIVE_LITTLE_DUCKS_DUB,
       error: "",
+      onRetryLoad() {},
       onTogglePlayback() {},
       playback: "idle",
-      visualLine: DUB_LINES[0],
+      visualLine: DUCK_LINES[0],
     }));
     assert.match(html, /You can watch the video now/);
+    assert.match(html, /Ask a grown-up to turn on recording/);
+    assert.match(html, /Check recording access/);
     assert.match(html, /aria-label="Play full video"/);
     assert.doesNotMatch(
       html,
       /Record again|Record line|Play my recording|Save again|Guardian|Delete/,
     );
+
+    const cleanup = renderToStaticMarkup(createElement(DubListenOnly, {
+      consentState: "revoking",
+      definition: FIVE_LITTLE_DUCKS_DUB,
+      error: "",
+      onRetryLoad() {},
+      onTogglePlayback() {},
+      playback: "idle",
+      visualLine: DUCK_LINES[0],
+    }));
+    assert.match(cleanup, /saved voice clips are being cleared/);
+    assert.match(cleanup, /Try recording again/);
+    assert.doesNotMatch(cleanup, /Ask a grown-up to turn on recording/);
+    assert.equal((cleanup.match(/<h1/g) ?? []).length, 1);
   });
 
   it("renders compact score guidance during project and listen-only playback", () => {
-    const guidance = { elapsedMs: 1_200, lineId: DUB_LINES[1].id };
+    const guidance = { elapsedMs: 1_200, lineId: DUCK_LINES[1].id };
     const project = renderProjectHome({
       guidance,
       playback: "playing",
-      visualLine: DUB_LINES[1],
+      visualLine: DUCK_LINES[1],
     });
     const listenOnly = renderToStaticMarkup(createElement(DubListenOnly, {
+      consentState: "not_granted",
       definition: FIVE_LITTLE_DUCKS_DUB,
       error: "",
       guidance,
       onRetryLoad() {},
       onTogglePlayback() {},
       playback: "playing",
-      visualLine: DUB_LINES[1],
+      visualLine: DUCK_LINES[1],
     }));
 
     for (const html of [project, listenOnly]) {
-      assert.match(html.replace(/<[^>]+>/g, ""), new RegExp(DUB_LINES[1].text));
+      assert.match(html.replace(/<[^>]+>/g, ""), new RegExp(DUCK_LINES[1].text));
       assert.match(html, /<svg[^>]*aria-hidden="true"/);
       assert.equal((html.match(/<h1/g) ?? []).length, 1);
       assert.doesNotMatch(html, /aria-live|role="status"/);
