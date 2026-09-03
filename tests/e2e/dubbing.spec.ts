@@ -1864,7 +1864,7 @@ test("exposes recorder, microphone, context, and scheduled-backing evidence only
     },
   }]);
   expect(snapshot.recordedStreamTrackKinds).toEqual([["audio"]]);
-  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(false);
+  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(true);
 });
 
 test("starts capture on the authored downbeat and records exactly the line window", async ({ page }) => {
@@ -1926,8 +1926,18 @@ test("starts capture on the authored downbeat and records exactly the line windo
   const firstClick = snapshot.scheduledBacking.find(
     ({ type }) => type === "sine",
   );
+  const firstMelody = snapshot.scheduledBacking.find(
+    ({ type }) => type === "triangle",
+  );
   expect(firstClick).toBeDefined();
-  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(false);
+  expect(firstMelody).toBeDefined();
+  expect((firstMelody?.at ?? 0) - (firstClick?.at ?? 0)).toBeCloseTo(
+    definition.music.countInDurationMs / 1_000,
+    5,
+  );
+  expect(snapshot.scheduledBacking.some(
+    ({ at, type }) => type === "sine" && at === firstMelody?.at,
+  )).toBe(true);
 
   await page.clock.runFor(line.durationMs / DUB_AUDIO_CLOCK_SCALE);
   await expectSavedTake(page, 1);
@@ -2018,7 +2028,7 @@ test("recorder start failure retains the old take without creating or uploading 
   expect(snapshot.createdObjectUrls).toEqual([]);
   expect(snapshot.microphoneTrackStops - baseline.microphoneTrackStops).toBe(1);
   expectSingleActionContextCleanup(baseline, snapshot);
-  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(false);
+  expect(snapshot.scheduledBacking.some(({ type }) => type === "triangle")).toBe(true);
 });
 
 async function installControllablePlaybackFrames(page: Page) {
@@ -2330,6 +2340,9 @@ for (const definition of DUB_DEFINITIONS) {
     await expectSavedTake(page, 1);
     await expect.poll(async () => (await dubStoreSnapshot(page)).backingStarts.length)
       .toBeGreaterThan(0);
+    expect((await dubStoreSnapshot(page)).scheduledBacking.some(
+      ({ type }) => type === "triangle",
+    )).toBe(true);
   });
 }
 

@@ -174,6 +174,7 @@ function scheduleDubMusic(
   output: AudioNode,
   startAt: number,
   includeOutro = true,
+  startWithoutAttack = false,
 ) {
   const oscillators: OscillatorNode[] = [];
   const getPhrase = (line: DubLine) => getDubLineMusicPhrase(definition, line);
@@ -187,6 +188,7 @@ function scheduleDubMusic(
         if (noteStartsMs < 0 || noteStartsMs >= authoredDurationMs) continue;
         const melody = note.role === "melody";
         scheduleTone(context, output, oscillators, {
+          attackMs: startWithoutAttack && noteStartsMs === 0 ? 0 : undefined,
           durationMs: Math.min(note.durationMs, authoredDurationMs - noteStartsMs),
           gain: melody ? 0.78 : 0.24,
           midi: note.midi,
@@ -391,9 +393,23 @@ export async function prepareDubLineBacking({
         const master = context.createGain();
         master.gain.value = 0.95;
         master.connect(context.destination);
+        const music = context.createGain();
+        music.gain.value = definition.music.volume;
+        music.connect(master);
         const startAt = context.currentTime;
         const downbeatAt = startAt + definition.music.countInDurationMs / 1_000;
         oscillators = scheduleDubCountClicks(context, definition, master, startAt);
+        oscillators.push(...scheduleDubMusic(
+          context,
+          definition,
+          [line],
+          line.cueMs,
+          line.durationMs,
+          music,
+          downbeatAt,
+          false,
+          true,
+        ));
         terminal = context.createOscillator();
         terminal.frequency.value = 0;
         terminal.onended = end;

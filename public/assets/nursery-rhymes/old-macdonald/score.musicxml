@@ -12,7 +12,7 @@
   <part id="P1">
     <measure number="1">
       <attributes>
-        <divisions>400</divisions>
+        <divisions>500</divisions>
         <time>
           <beats>4</beats>
           <beat-type>4</beat-type>
@@ -22,13 +22,13 @@
         <direction-type>
           <metronome>
             <beat-unit>quarter</beat-unit>
-            <per-minute>150</per-minute>
+            <per-minute>120</per-minute>
           </metronome>
         </direction-type>
       </direction>
       <note>
         <rest/>
-        <duration>1600</duration>
+        <duration>2000</duration>
       </note>
       <bookmark id="old-macdonald-v1-line-1"/>
       <note>
@@ -3299,11 +3299,11 @@
   <part id="P2">
     <measure number="1">
       <attributes>
-        <divisions>400</divisions>
+        <divisions>500</divisions>
       </attributes>
       <note>
         <rest/>
-        <duration>1600</duration>
+        <duration>2000</duration>
       </note>
       <note>
         <pitch>

@@ -695,26 +695,50 @@ describe("duck dub playback", () => {
     assert.deepEqual(ticks, [0]);
   });
 
-  it("keeps app-produced audio out of the recording window", async () => {
+  it("plays the authored melody and accompaniment inside the recording window", async () => {
     const audio = createAudioHarness();
+    const line = OLD_MACDONALD_DUB.lines[0];
     const backing = await prepareDubLineBacking({
       AudioContext: audio.AudioContext,
       definition: OLD_MACDONALD_DUB,
-      line: OLD_MACDONALD_DUB.lines[0],
+      line,
     });
 
     const startAt = audio.contexts[0].currentTime;
     const downbeatAt = startAt + backing.countInDurationMs / 1_000;
+    const lineEndsAt = downbeatAt + line.durationMs / 1_000;
     backing.start();
 
     const audibleSources = audio.contexts[0].oscillators.filter(
       ({ connections }) => connections.length > 0,
     );
-    assert.ok(audibleSources.length > 0, "the count-in remains audible");
-    assert.ok(
-      audibleSources.every(({ stopTimes }) => stopTimes[0] <= downbeatAt),
-      "all app-produced audio ends before capture starts",
+    const countClicks = audibleSources.filter(
+      ({ startTimes }) => startTimes[0] < downbeatAt,
     );
+    const melody = audibleSources.filter(({ type }) => type === "triangle");
+    const accompaniment = audibleSources.filter(
+      ({ startTimes, type }) => type === "sine" && startTimes[0] >= downbeatAt,
+    );
+    assert.equal(countClicks.length, OLD_MACDONALD_DUB.countInBeats);
+    assert.deepEqual(
+      countClicks.map(({ startTimes }) => startTimes[0]),
+      [startAt, startAt + 0.5, startAt + 1, startAt + 1.5],
+    );
+    assert.ok(
+      countClicks.every(({ stopTimes }) => stopTimes[0] <= downbeatAt),
+      "the count-in ends before capture starts",
+    );
+    assert.equal(melody[0].startTimes[0], downbeatAt);
+    assert.equal(accompaniment[0].startTimes[0], downbeatAt);
+    assert.ok(
+      [...melody, ...accompaniment].every(({ startTimes, stopTimes }) =>
+        startTimes[0] >= downbeatAt && stopTimes[0] <= lineEndsAt
+      ),
+      "the authored backing stays inside the recording window",
+    );
+    assert.equal(audio.contexts[0].gains[1].gain.value, OLD_MACDONALD_DUB.music.volume);
+    assert.deepEqual(melody[0].connections[0].gain.events[0], ["set", 0.78, downbeatAt]);
+    assert.deepEqual(accompaniment[0].connections[0].gain.events[0], ["set", 0.24, downbeatAt]);
   });
 
   it("uses line duration when a prepared backing's music phrase duration drifts", async () => {
@@ -1436,7 +1460,7 @@ describe("duck dub playback", () => {
     }
   });
 
-  it("ends full Old MacDonald at the exact 162.8-second boundary", async () => {
+  it("ends full Old MacDonald at the exact 163.2-second boundary", async () => {
     const audio = createAudioHarness();
     const raf = createRaf();
     const ticks = [];
@@ -1453,18 +1477,18 @@ describe("duck dub playback", () => {
     });
 
     const context = audio.contexts[0];
-    context.currentTime = 172.919;
+    context.currentTime = 173.319;
     raf.runNext();
 
-    assert.deepEqual(ticks, [162_799]);
+    assert.deepEqual(ticks.map(Math.round), [163_199]);
     assert.equal(ended, 0);
     assert.equal(context.closeCalls, 0);
     assert.equal(raf.callbacks.size, 1);
 
-    context.currentTime = 172.921;
+    context.currentTime = 173.321;
     raf.runNext();
 
-    assert.deepEqual(ticks.map(Math.round), [162_799, 162_801]);
+    assert.deepEqual(ticks.map(Math.round), [163_199, 163_201]);
     assert.equal(ended, 1);
     assert.equal(context.closeCalls, 1);
     assert.equal(raf.callbacks.size, 0);
