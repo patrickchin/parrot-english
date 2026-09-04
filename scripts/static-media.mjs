@@ -171,11 +171,6 @@ const dubbingV6Files = [
   "five-little-ducks/scene-4-two-ducklings.webp",
   "five-little-ducks/scene-5-one-duckling.webp",
   "five-little-ducks/scene-6-family-reunion.webp",
-  "old-macdonald/scene-1-cows.webp",
-  "old-macdonald/scene-2-ducks.webp",
-  "old-macdonald/scene-3-pigs.webp",
-  "old-macdonald/scene-4-dog.webp",
-  "old-macdonald/scene-5-sheep.webp",
   "twinkle-twinkle/scene-1-little-star.webp",
   "twinkle-twinkle/scene-2-world-below.webp",
   "twinkle-twinkle/scene-3-diamond-sky.webp",
@@ -192,9 +187,17 @@ const dubbingV7Files = [
   "humpty-dumpty/line-2-great-fall.webp",
   "humpty-dumpty/line-3-royal-help.webp",
 ];
+const dubbingV8Files = [
+  "old-macdonald/scene-1-cows.webp",
+  "old-macdonald/scene-2-ducks.webp",
+  "old-macdonald/scene-3-pigs.webp",
+  "old-macdonald/scene-4-dog.webp",
+  "old-macdonald/scene-5-sheep.webp",
+];
 const dubbingResponsiveAssets = [
   ...dubbingV6Files.map((path) => ({ path, version: 6 })),
   ...dubbingV7Files.map((path) => ({ path, version: 7 })),
+  ...dubbingV8Files.map((path) => ({ path, version: 8 })),
 ].flatMap(({ path, version }) =>
   responsiveWebps(`dubbing/${path}`, {
     sourceVersion: version,

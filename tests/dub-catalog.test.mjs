@@ -538,7 +538,7 @@ describe("rhyme catalog", () => {
     assert.equal(artwork.length, 25);
     assert.equal(new Set(artwork.map(({ src }) => src)).size, 25);
     for (const image of artwork) {
-      assert.match(image.src, /^https:\/\/media\.parrotbook\.com\/assets\/v[67]\/dubbing\/.+\.webp$/);
+      assert.match(image.src, /^https:\/\/media\.parrotbook\.com\/assets\/v[6-8]\/dubbing\/.+\.webp$/);
       assert.equal(image.width, 1536);
       assert.equal(image.height, 864);
       assert.ok(image.alt.length >= 20);
