@@ -4740,31 +4740,31 @@ export const GENERATED_DUB_DEFINITIONS = [
       {
         "alt": "Old MacDonald greets three friendly cows in the pasture beside his red barn.",
         "height": 864,
-        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-1-cows.webp",
+        "src": "https://media.parrotbook.com/assets/v8/dubbing/old-macdonald/scene-1-cows.webp",
         "width": 1536
       },
       {
         "alt": "Old MacDonald watches four white ducks splash in the farm pond.",
         "height": 864,
-        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-2-ducks.webp",
+        "src": "https://media.parrotbook.com/assets/v8/dubbing/old-macdonald/scene-2-ducks.webp",
         "width": 1536
       },
       {
         "alt": "Old MacDonald laughs with three pink pigs playing in a sunny mud patch.",
         "height": 864,
-        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-3-pigs.webp",
+        "src": "https://media.parrotbook.com/assets/v8/dubbing/old-macdonald/scene-3-pigs.webp",
         "width": 1536
       },
       {
         "alt": "Old MacDonald's brown farm dog waits proudly by the barnyard fence.",
         "height": 864,
-        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-4-dog.webp",
+        "src": "https://media.parrotbook.com/assets/v8/dubbing/old-macdonald/scene-4-dog.webp",
         "width": 1536
       },
       {
         "alt": "Old MacDonald walks with five fluffy sheep in the meadow beyond the red barn.",
         "height": 864,
-        "src": "https://media.parrotbook.com/assets/v6/dubbing/old-macdonald/scene-5-sheep.webp",
+        "src": "https://media.parrotbook.com/assets/v8/dubbing/old-macdonald/scene-5-sheep.webp",
         "width": 1536
       }
     ],
