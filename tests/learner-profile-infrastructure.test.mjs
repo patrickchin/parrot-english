@@ -339,6 +339,8 @@ describe("learner-profile infrastructure", () => {
         VALUES ('user-current', 'Guardian', 'guardian-current@example.test');
         INSERT INTO session (id, expires_at, token, user_id)
         VALUES ('session-current', 9999999999999, 'token-current', 'user-current');
+        INSERT INTO questionnaire (id, version, status)
+        VALUES ('questionnaire-v1', 1, 'active');
         INSERT INTO learner_profile
           (id, auth_user_id, legacy_storage_owner, name, private_media_name,
            name_key, answers_json, skipped_question_keys_json,
@@ -346,7 +348,7 @@ describe("learner-profile infrastructure", () => {
         VALUES
           ('learner-current', 'user-current', 1, 'Mary', 'Mary', 'mary',
            '{"schemaVersion":2,"questionnaireVersion":1,"responses":{"name":{"question":"What is your name?","rawAnswer":"Mary","summary":"Mary","acknowledgment":"Thank you!","enrichmentStatus":"fallback","answeredAt":"2026-09-03T00:00:00.000Z"}},"legacyAnswers":{"name":"Mary"},"description":"Likes stories."}',
-           '["age"]', NULL, 'cartoons', 'in_progress'),
+           '["age"]', 1, 'cartoons', 'in_progress'),
           ('learner-obsolete', 'user-current', 0, 'Bob', 'Bob', 'bob',
            '{"name":"Bob"}', '["animals"]', NULL, 'animals', 'in_progress');
         INSERT INTO conversation_session
@@ -492,7 +494,7 @@ describe("learner-profile infrastructure", () => {
       );
       assert.deepEqual(
         database
-          .prepare("SELECT name FROM sqlite_master WHERE name LIKE '__backup_%'")
+          .prepare("SELECT name FROM sqlite_master WHERE name GLOB '__*'")
           .all(),
         [],
       );
