@@ -337,6 +337,8 @@ describe("learner-profile infrastructure", () => {
       database.exec(`
         INSERT INTO user (id, name, email)
         VALUES ('user-current', 'Guardian', 'guardian-current@example.test');
+        INSERT INTO session (id, expires_at, token, user_id)
+        VALUES ('session-current', 9999999999999, 'token-current', 'user-current');
         INSERT INTO learner_profile
           (id, auth_user_id, legacy_storage_owner, name, private_media_name,
            name_key, answers_json, skipped_question_keys_json,
@@ -378,9 +380,27 @@ describe("learner-profile infrastructure", () => {
            'user', 'Hello', 'voice'),
           ('turn-invalid-style', 'conversation-invalid-style', 'provider-invalid-style', 0,
            'user', 'Hello', 'voice');
+        INSERT INTO session_learner_selection
+          (session_id, auth_user_id, learner_profile_id)
+        VALUES ('session-current', 'user-current', 'learner-current');
+        INSERT INTO onboarding_learner_session_bypass
+          (session_id, learner_profile_id, skipped_at)
+        VALUES ('session-current', 'learner-current', 1);
+        INSERT INTO learner_dub_consent
+          (learner_profile_id, auth_user_id, consent_version, grant_generation,
+           state, granted_at, updated_at)
+        VALUES ('learner-current', 'user-current', 'v1', 'generation-1',
+          'granted', 1, 1);
       `);
 
-      database.exec(migrations[migrationIndex].sql);
+      database.exec("BEGIN");
+      try {
+        database.exec(migrations[migrationIndex].sql);
+        database.exec("COMMIT");
+      } catch (error) {
+        database.exec("ROLLBACK");
+        throw error;
+      }
 
       for (const table of REMOVED_TABLES) {
         assert.equal(tableSql(database, table), undefined);
@@ -451,6 +471,30 @@ describe("learner-profile infrastructure", () => {
           .all()
           .map(({ id }) => id),
         ["turn-onboarding", "turn-small-chat"],
+      );
+      assert.equal(
+        database
+          .prepare("SELECT learner_profile_id FROM session_learner_selection")
+          .get().learner_profile_id,
+        "learner-current",
+      );
+      assert.equal(
+        database
+          .prepare("SELECT learner_profile_id FROM onboarding_learner_session_bypass")
+          .get().learner_profile_id,
+        "learner-current",
+      );
+      assert.equal(
+        database
+          .prepare("SELECT learner_profile_id FROM learner_dub_consent")
+          .get().learner_profile_id,
+        "learner-current",
+      );
+      assert.deepEqual(
+        database
+          .prepare("SELECT name FROM sqlite_master WHERE name LIKE '__backup_%'")
+          .all(),
+        [],
       );
       assert.deepEqual(database.prepare("PRAGMA foreign_key_check").all(), []);
     } finally {

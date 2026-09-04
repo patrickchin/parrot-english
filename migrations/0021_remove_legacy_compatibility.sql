@@ -1,12 +1,35 @@
-PRAGMA foreign_keys=OFF;--> statement-breakpoint
 DROP TABLE `guardian_dub_consent`;--> statement-breakpoint
 DROP TABLE `learner_selection_required`;--> statement-breakpoint
 DROP TABLE `learner_story_art_generation_lease`;--> statement-breakpoint
 DROP TABLE `personalized_story_art`;--> statement-breakpoint
 DROP TABLE `personalized_story_art_generation_lease`;--> statement-breakpoint
 DROP TABLE `onboarding_session_bypass`;--> statement-breakpoint
-DROP TABLE `questionnaire`;--> statement-breakpoint
 DROP TABLE `questionnaire_question`;--> statement-breakpoint
+CREATE TABLE `__backup_session_learner_selection` AS
+SELECT `session_id`, `auth_user_id`, `learner_profile_id`, `created_at`, `updated_at`
+FROM `session_learner_selection`;--> statement-breakpoint
+CREATE TABLE `__backup_onboarding_learner_session_bypass` AS
+SELECT `session_id`, `learner_profile_id`, `skipped_at`
+FROM `onboarding_learner_session_bypass`;--> statement-breakpoint
+CREATE TABLE `__backup_learner_dub_consent` AS
+SELECT `learner_profile_id`, `auth_user_id`, `consent_version`, `grant_generation`, `state`, `granted_at`, `updated_at`
+FROM `learner_dub_consent`;--> statement-breakpoint
+CREATE TABLE `__backup_conversation_session` AS
+SELECT `id`, `auth_user_id`, `learner_profile_id`, `scenario_key`, `scenario_version`, `prompt_style`, `room_name`, `status`, `finish_reason`, `controller_state`, `started_at`, `ended_at`, `created_at`, `updated_at`
+FROM `conversation_session`
+WHERE `learner_profile_id` IS NOT NULL
+	AND ((`scenario_key` = 'onboarding' AND `prompt_style` IS NULL)
+		OR (`scenario_key` = 'small-chat' AND `prompt_style` IS NOT NULL AND `prompt_style` IN ('tiny-turns', 'gentle-guide', 'playful-pal')));--> statement-breakpoint
+CREATE TABLE `__backup_conversation_turn` AS
+SELECT `turn`.`id`, `turn`.`conversation_id`, `turn`.`provider_item_id`, `turn`.`sequence`, `turn`.`role`, `turn`.`text`, `turn`.`language`, `turn`.`input_mode`, `turn`.`interrupted`, `turn`.`started_at`, `turn`.`ended_at`, `turn`.`created_at`
+FROM `conversation_turn` AS `turn`
+INNER JOIN `__backup_conversation_session` AS `conversation`
+	ON `conversation`.`id` = `turn`.`conversation_id`;--> statement-breakpoint
+DROP TABLE `conversation_turn`;--> statement-breakpoint
+DROP TABLE `conversation_session`;--> statement-breakpoint
+DROP TABLE `session_learner_selection`;--> statement-breakpoint
+DROP TABLE `onboarding_learner_session_bypass`;--> statement-breakpoint
+DROP TABLE `learner_dub_consent`;--> statement-breakpoint
 CREATE TABLE `__new_learner_profile` (
 	`id` text PRIMARY KEY NOT NULL,
 	`auth_user_id` text NOT NULL,
@@ -84,6 +107,7 @@ ALTER TABLE `__new_learner_profile` RENAME TO `learner_profile`;--> statement-br
 CREATE INDEX `learner_profile_auth_user_id_idx` ON `learner_profile` (`auth_user_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `learner_profile_user_name_key_unique` ON `learner_profile` (`auth_user_id`,`name_key`);--> statement-breakpoint
 CREATE UNIQUE INDEX `learner_profile_user_private_media_name_unique` ON `learner_profile` (`auth_user_id`,`private_media_name`);--> statement-breakpoint
+DROP TABLE `questionnaire`;--> statement-breakpoint
 CREATE TABLE `__new_account_deletion_tombstone` (
 	`user_id_hash` text PRIMARY KEY NOT NULL,
 	`r2_prefix` text NOT NULL,
@@ -110,7 +134,51 @@ INSERT INTO `__new_learner_profile_deletion_tombstone`("learner_profile_id", "us
 DROP TABLE `learner_profile_deletion_tombstone`;--> statement-breakpoint
 ALTER TABLE `__new_learner_profile_deletion_tombstone` RENAME TO `learner_profile_deletion_tombstone`;--> statement-breakpoint
 CREATE INDEX `learner_profile_deletion_tombstone_user_hash_idx` ON `learner_profile_deletion_tombstone` (`user_id_hash`);--> statement-breakpoint
-CREATE TABLE `__new_conversation_session` (
+CREATE TABLE `session_learner_selection` (
+	`session_id` text PRIMARY KEY NOT NULL,
+	`auth_user_id` text NOT NULL,
+	`learner_profile_id` text NOT NULL,
+	`created_at` integer DEFAULT (unixepoch('subsecond') * 1000) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch('subsecond') * 1000) NOT NULL,
+	FOREIGN KEY (`session_id`) REFERENCES `session`(`id`) ON DELETE cascade,
+	FOREIGN KEY (`auth_user_id`) REFERENCES `user`(`id`) ON DELETE cascade,
+	FOREIGN KEY (`learner_profile_id`) REFERENCES `learner_profile`(`id`) ON DELETE cascade
+);--> statement-breakpoint
+INSERT INTO `session_learner_selection`
+SELECT `session_id`, `auth_user_id`, `learner_profile_id`, `created_at`, `updated_at`
+FROM `__backup_session_learner_selection`;--> statement-breakpoint
+CREATE INDEX `session_learner_selection_auth_profile_idx` ON `session_learner_selection` (`auth_user_id`,`learner_profile_id`);--> statement-breakpoint
+DROP TABLE `__backup_session_learner_selection`;--> statement-breakpoint
+CREATE TABLE `onboarding_learner_session_bypass` (
+	`session_id` text NOT NULL,
+	`learner_profile_id` text NOT NULL,
+	`skipped_at` integer NOT NULL,
+	PRIMARY KEY (`session_id`, `learner_profile_id`),
+	FOREIGN KEY (`session_id`) REFERENCES `session`(`id`) ON DELETE cascade,
+	FOREIGN KEY (`learner_profile_id`) REFERENCES `learner_profile`(`id`) ON DELETE cascade
+);--> statement-breakpoint
+INSERT INTO `onboarding_learner_session_bypass`
+SELECT `session_id`, `learner_profile_id`, `skipped_at`
+FROM `__backup_onboarding_learner_session_bypass`;--> statement-breakpoint
+DROP TABLE `__backup_onboarding_learner_session_bypass`;--> statement-breakpoint
+CREATE TABLE `learner_dub_consent` (
+	`learner_profile_id` text NOT NULL,
+	`auth_user_id` text NOT NULL,
+	`consent_version` text NOT NULL,
+	`grant_generation` text NOT NULL,
+	`state` text NOT NULL,
+	`granted_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	PRIMARY KEY (`learner_profile_id`, `auth_user_id`),
+	FOREIGN KEY (`learner_profile_id`) REFERENCES `learner_profile`(`id`) ON DELETE cascade,
+	FOREIGN KEY (`auth_user_id`) REFERENCES `user`(`id`) ON DELETE cascade,
+	CONSTRAINT "learner_dub_consent_state_check" CHECK (`state` IN ('granted', 'revoking'))
+);--> statement-breakpoint
+INSERT INTO `learner_dub_consent`
+SELECT `learner_profile_id`, `auth_user_id`, `consent_version`, `grant_generation`, `state`, `granted_at`, `updated_at`
+FROM `__backup_learner_dub_consent`;--> statement-breakpoint
+DROP TABLE `__backup_learner_dub_consent`;--> statement-breakpoint
+CREATE TABLE `conversation_session` (
 	`id` text PRIMARY KEY NOT NULL,
 	`auth_user_id` text NOT NULL,
 	`learner_profile_id` text NOT NULL,
@@ -127,24 +195,38 @@ CREATE TABLE `__new_conversation_session` (
 	`updated_at` integer DEFAULT (unixepoch('subsecond') * 1000) NOT NULL,
 	FOREIGN KEY (`auth_user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
 	FOREIGN KEY (`learner_profile_id`) REFERENCES `learner_profile`(`id`) ON UPDATE no action ON DELETE cascade,
-	CONSTRAINT "conversation_session_scenario_key_check" CHECK("__new_conversation_session"."scenario_key" in ('onboarding', 'small-chat')),
-	CONSTRAINT "conversation_session_prompt_style_check" CHECK(("__new_conversation_session"."scenario_key" = 'onboarding' and "__new_conversation_session"."prompt_style" is null) or ("__new_conversation_session"."scenario_key" = 'small-chat' and "__new_conversation_session"."prompt_style" is not null and "__new_conversation_session"."prompt_style" in ('tiny-turns', 'gentle-guide', 'playful-pal'))),
-	CONSTRAINT "conversation_session_status_check" CHECK("__new_conversation_session"."status" in ('starting', 'active', 'completed', 'stopped', 'disconnected', 'failed', 'abandoned')),
-	CONSTRAINT "conversation_session_controller_state_json_check" CHECK(json_valid("__new_conversation_session"."controller_state"))
-);
---> statement-breakpoint
-DELETE FROM `conversation_turn`
-WHERE `conversation_id` IN (
-	SELECT `id` FROM `conversation_session`
-	WHERE `learner_profile_id` IS NULL
-		OR `scenario_key` NOT IN ('onboarding', 'small-chat')
-		OR (`scenario_key` = 'onboarding' AND `prompt_style` IS NOT NULL)
-		OR (`scenario_key` = 'small-chat' AND (`prompt_style` IS NULL OR `prompt_style` NOT IN ('tiny-turns', 'gentle-guide', 'playful-pal')))
+	CONSTRAINT "conversation_session_scenario_key_check" CHECK("conversation_session"."scenario_key" in ('onboarding', 'small-chat')),
+	CONSTRAINT "conversation_session_prompt_style_check" CHECK(("conversation_session"."scenario_key" = 'onboarding' and "conversation_session"."prompt_style" is null) or ("conversation_session"."scenario_key" = 'small-chat' and "conversation_session"."prompt_style" is not null and "conversation_session"."prompt_style" in ('tiny-turns', 'gentle-guide', 'playful-pal'))),
+	CONSTRAINT "conversation_session_status_check" CHECK("conversation_session"."status" in ('starting', 'active', 'completed', 'stopped', 'disconnected', 'failed', 'abandoned')),
+	CONSTRAINT "conversation_session_controller_state_json_check" CHECK(json_valid("conversation_session"."controller_state"))
 );--> statement-breakpoint
-INSERT INTO `__new_conversation_session`("id", "auth_user_id", "learner_profile_id", "scenario_key", "scenario_version", "prompt_style", "room_name", "status", "finish_reason", "controller_state", "started_at", "ended_at", "created_at", "updated_at") SELECT "id", "auth_user_id", "learner_profile_id", "scenario_key", "scenario_version", "prompt_style", "room_name", "status", "finish_reason", "controller_state", "started_at", "ended_at", "created_at", "updated_at" FROM `conversation_session` WHERE `learner_profile_id` IS NOT NULL AND ((`scenario_key` = 'onboarding' AND `prompt_style` IS NULL) OR (`scenario_key` = 'small-chat' AND `prompt_style` IS NOT NULL AND `prompt_style` IN ('tiny-turns', 'gentle-guide', 'playful-pal')));--> statement-breakpoint
-DROP TABLE `conversation_session`;--> statement-breakpoint
-ALTER TABLE `__new_conversation_session` RENAME TO `conversation_session`;--> statement-breakpoint
+INSERT INTO `conversation_session`
+SELECT `id`, `auth_user_id`, `learner_profile_id`, `scenario_key`, `scenario_version`, `prompt_style`, `room_name`, `status`, `finish_reason`, `controller_state`, `started_at`, `ended_at`, `created_at`, `updated_at`
+FROM `__backup_conversation_session`;--> statement-breakpoint
 CREATE UNIQUE INDEX `conversation_session_room_name_unique` ON `conversation_session` (`room_name`);--> statement-breakpoint
 CREATE INDEX `conversation_session_user_status_idx` ON `conversation_session` (`auth_user_id`,`status`);--> statement-breakpoint
 CREATE INDEX `conversation_session_profile_status_idx` ON `conversation_session` (`learner_profile_id`,`status`);--> statement-breakpoint
-PRAGMA foreign_keys=ON;
+DROP TABLE `__backup_conversation_session`;--> statement-breakpoint
+CREATE TABLE `conversation_turn` (
+	`id` text PRIMARY KEY NOT NULL,
+	`conversation_id` text NOT NULL,
+	`provider_item_id` text NOT NULL,
+	`sequence` integer NOT NULL,
+	`role` text NOT NULL,
+	`text` text NOT NULL,
+	`language` text,
+	`input_mode` text NOT NULL,
+	`interrupted` integer DEFAULT false NOT NULL,
+	`started_at` integer,
+	`ended_at` integer,
+	`created_at` integer DEFAULT (unixepoch('subsecond') * 1000) NOT NULL,
+	FOREIGN KEY (`conversation_id`) REFERENCES `conversation_session`(`id`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "conversation_turn_role_check" CHECK("conversation_turn"."role" in ('user', 'assistant')),
+	CONSTRAINT "conversation_turn_input_mode_check" CHECK("conversation_turn"."input_mode" in ('voice', 'text'))
+);--> statement-breakpoint
+INSERT INTO `conversation_turn`
+SELECT `id`, `conversation_id`, `provider_item_id`, `sequence`, `role`, `text`, `language`, `input_mode`, `interrupted`, `started_at`, `ended_at`, `created_at`
+FROM `__backup_conversation_turn`;--> statement-breakpoint
+CREATE UNIQUE INDEX `conversation_turn_provider_item_unique` ON `conversation_turn` (`conversation_id`,`provider_item_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX `conversation_turn_sequence_unique` ON `conversation_turn` (`conversation_id`,`sequence`);--> statement-breakpoint
+DROP TABLE `__backup_conversation_turn`;
