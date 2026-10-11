@@ -1,7 +1,20 @@
 # Alibaba serverless pilot
 
+**Deployment blocked:** Alibaba's current documentation excludes RDS PostgreSQL
+Serverless from SSL/TLS support. The purchased empty pilot cannot meet this
+backend's verified-TLS requirement. Do not disable TLS to deploy it. Select and
+approve a TLS-capable database replacement before completing the setup below.
+
+The replacement quote prepared on October 12, 2026 is PolarDB PostgreSQL 16
+Serverless, Hangzhou zone J, one primary node capped at 1 PCU, zero read-only
+nodes, single availability zone, and PSL4 storage. The console quotes CNY 0.20
+per hour for database compute with its current 50% discount, or CNY 144 per
+30 days. Storage, any proxy/backup charges, Function Compute and traffic are
+additional. The selected PostgreSQL configuration offers no automatic-pause
+option. This is a pending proposal, not a purchased or verified deployment.
+
 The China pilot uses ESA Pages for the frontend, Function Compute for the API,
-and RDS PostgreSQL for account and learner data. It requires a new database;
+and PostgreSQL for account and learner data. It requires a new database;
 existing Cloudflare users and recordings are not migrated by this setup.
 The current outside-China deployment uses Cloudflare D1, a hosted SQLite service.
 
@@ -28,7 +41,7 @@ consent and deletion fences.
 
 ## Local verification
 
-Use Node.js 24 and a disposable PostgreSQL 17 database on localhost:
+Use Node.js 24 and a disposable PostgreSQL 16 or 17 database on localhost:
 
 ```sh
 npm ci
@@ -40,32 +53,34 @@ The test creates and removes its own database schema. It exercises sign-up,
 sign-in, guest sessions, guardian access, learner creation, consent generations,
 concurrent final-learner deletion, account deletion, batch rollback, conditional recording writes,
 byte ranges, rate limits, and multiple response cookies. CI runs it using a
-PostgreSQL service alongside the existing tests.
+PostgreSQL service alongside the existing tests. The deployment workflow checks
+PostgreSQL 16 to match the proposed PolarDB version; the existing verify workflow
+also checks PostgreSQL 17.
 
 ## Cloud setup and approvals
 
-1. Approve the RDS network service role shown in the console. The dialog names
-   `AliyunServiceRoleForRdsPgsqlOnEcs`, which attaches network interfaces for
-   private database connectivity. Inspect any additional role separately.
-2. Approve the cost before purchasing RDS. Select Hangzhou, PostgreSQL 17,
-   Serverless Basic, ESSD PL1, 20 GB, minimum 0.5 RCU, maximum 1 RCU, and enable
-   automatic start and stop. The October 12, 2026 console quote displayed
-   approximately CNY 0.10–0.18 per running hour with a 50% promotion. Continuous
-   operation at those displayed rates would be about CNY 72–130 per 30 days.
-   Auto-pause stops compute billing after ten minutes without connections;
-   storage continues billing. The first connection after a pause can take minutes
-   while RDS wakes up. The pilot returns an unavailable response with a 60-second
-   retry hint when the connection times out; this delay needs a live check before
-   learner use. These are estimates, not a spending cap. Recheck
-   the final quote and promotion terms before purchase. Function Compute,
-   traffic, and excess backups can add charges.
-3. Place RDS and Function Compute in the same VPC and switch. Restrict the RDS
-   whitelist to the Function Compute subnet. Do not enable a public database
+1. Select a TLS-capable PostgreSQL product and check its exact edition's feature
+   support before purchase. RDS PostgreSQL Serverless is excluded from TLS
+   support and must not be used with this backend. PolarDB PostgreSQL supports
+   cloud certificates; its live endpoint still needs verification after setup.
+2. Approve the replacement's actual cost before purchase and release of the
+   empty, incompatible RDS pilot. The original approval does not cover a new
+   product or a changed ongoing cost. Recheck the final quote and discounts.
+3. Place PostgreSQL and Function Compute in the same VPC and switch. Restrict
+   the database whitelist to the Function Compute subnet. Do not enable a public database
    endpoint. Create a pilot database and a dedicated application database user.
-4. Enable RDS TLS and obtain its CA from the instance console. Apply the baseline
+4. Enable database TLS and obtain its CA from the instance console. Apply the baseline
    from a trusted client inside that VPC. The runtime requires verified TLS and
    fails to start without its CA.
-5. Import `patrickchin/parrot-english` in Function Compute's Serverless Application
+5. The prepared `.github/workflows/deploy-aliyun-pilot.yml` provides direct GitHub
+   deployment using Alibaba's official OIDC action and temporary credentials.
+   It stays disabled until `ALIYUN_CHINA_DEPLOY_ENABLED=true` is set. Its database
+   CA and network configuration use repository variables prefixed
+   `ALIYUN_CHINA_`; auth, database and edge credentials use repository secrets
+   with that prefix. Restrict the RAM deployment role to this repository's
+   approved branches and this pilot function. The OIDC provider alone grants no
+   deployment access. The role, secrets and live deployment are still pending.
+   Alternatively, import `patrickchin/parrot-english` in Function Compute's Serverless Application
    Center, scoped to this repository. Use the pilot branch and `s.aliyun.yaml`.
    Review the requested GitHub and Alibaba permissions before granting access;
    ESA's existing GitHub authorization is a separate integration.
@@ -101,6 +116,9 @@ existing public media, CAPTCHA, LiveKit, OpenAI, and Groq integrations are separ
 from this API/database pilot and have not been moved to mainland infrastructure.
 
 Sources: [RDS serverless creation](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/create-a-serverless-apsaradb-rds-for-postgresql-instance),
+[RDS TLS excludes Serverless](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-ssl-encryption-for-an-apsaradb-rds-for-postgresql-instance),
+[PolarDB PostgreSQL TLS](https://help.aliyun.com/en/polardb/polardb-for-postgresql/use-cloud-certificates-to-configure-ssl-encryption),
+[PolarDB serverless prices](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/serverless-cost-description),
 [RDS auto-pause latency](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-the-automatic-start-and-stop-feature-for-a-serverless-apsaradb-rds-for-postgresql-instance),
 [Function Compute Git deployment](https://help.aliyun.com/en/functioncompute/use-serverless-application-center-to-implement-ci-cd-on-existing-projects),
 [ESA function variables](https://help.aliyun.com/en/edge-security-acceleration/esa/user-guide/function-variable),

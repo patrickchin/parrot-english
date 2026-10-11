@@ -1,4 +1,4 @@
-# Isolated Hangzhou pilot. Import this file in Serverless Application Center.
+# Isolated Hangzhou pilot. Deploy from GitHub Actions or Serverless Devs.
 # CI: Node 24 -> npm ci -> npm run build:aliyun:package -> s deploy.
 # RDS is provisioned separately after approval; this file cannot purchase it.
 # Configure all secrets in the pipeline's encrypted variables, never in Git.
@@ -18,6 +18,12 @@ resources:
       diskSize: 512
       timeout: 60
       instanceConcurrency: 1
+      # Two total concurrent requests = at most two instances at concurrency one.
+      concurrencyConfig:
+        reservedConcurrency: 2
+      scalingConfig:
+        minInstances: 0
+        enableOnDemandScaling: true
       internetAccess: true
       customRuntimeConfig:
         command: ["/code/bootstrap"]

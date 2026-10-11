@@ -1,0 +1,81 @@
+name: Deploy Alibaba China pilot
+
+on:
+  push:
+    branches: [main, codex/aliyun-serverless-backend]
+    paths:
+      - backend/**
+      - worker/**
+      - scripts/build-aliyun-*.mjs
+      - package.json
+      - package-lock.json
+      - s.aliyun.yaml
+      - .github/workflows/deploy-aliyun-pilot.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aliyun-china-pilot
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Enable only after the database, TLS and isolated pilot secrets are ready.
+    if: vars.ALIYUN_CHINA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/aliyun-serverless-backend')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: disposable-test-password
+          POSTGRES_DB: parrot_aliyun_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: ${{ secrets.ALIYUN_CHINA_DATABASE_URL }}
+      BETTER_AUTH_URL: ${{ vars.ALIYUN_CHINA_AUTH_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.ALIYUN_CHINA_AUTH_SECRET }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.ALIYUN_CHINA_TURNSTILE_SECRET_KEY }}
+      PARROT_EDGE_SECRET: ${{ secrets.ALIYUN_CHINA_EDGE_SECRET }}
+      PARROT_VPC_ID: ${{ vars.ALIYUN_CHINA_VPC_ID }}
+      PARROT_VSWITCH_ID: ${{ vars.ALIYUN_CHINA_VSWITCH_ID }}
+      PARROT_SECURITY_GROUP_ID: ${{ vars.ALIYUN_CHINA_SECURITY_GROUP_ID }}
+      PARROT_BACKEND_COMMIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Verify the PostgreSQL backend
+        run: npm run test:aliyun
+        env:
+          PARROT_TEST_DATABASE_URL: postgres://postgres:disposable-test-password@127.0.0.1:5432/parrot_aliyun_test
+      - name: Package the backend with its verified database CA
+        env:
+          DATABASE_CA_PEM: ${{ vars.ALIYUN_CHINA_DATABASE_CA_PEM }}
+          RDS_CA_PATH: ${{ runner.temp }}/rds-ca.pem
+        run: |
+          test -n "$DATABASE_CA_PEM"
+          printf '%s\n' "$DATABASE_CA_PEM" > "$RDS_CA_PATH"
+          npm run build:aliyun:package
+      - name: Obtain temporary Alibaba credentials
+        uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1
+        with:
+          oidc-provider-arn: ${{ vars.ALIYUN_CHINA_OIDC_PROVIDER_ARN }}
+          role-to-assume: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
+          role-session-expiration: 1800
+      - name: Deploy from the checked-out GitHub commit
+        run: |
+          npm install -g @serverless-devs/s@3.1.10
+          s config add -a default --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" --SecurityToken "$ALIBABA_CLOUD_SECURITY_TOKEN" -f
+          s deploy -t s.aliyun.yaml --assume-yes
