@@ -20,6 +20,7 @@ const browserGlobals = {
 export default defineConfig([
   globalIgnores([
     "dist/**",
+    "build/**",
     ".wrangler/**",
     "node_modules/**",
     "playwright-report/**",
@@ -48,7 +49,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["tests/**/*.mjs", "*.config.mjs"],
+    files: ["tests/**/*.mjs", "backend/**/*.mjs", "scripts/build-aliyun-backend.mjs", "*.config.mjs"],
     languageOptions: {
       globals: {
         AbortController: "readonly",
@@ -58,7 +59,9 @@ export default defineConfig([
         console: "readonly",
         document: "readonly",
         File: "readonly",
+        fetch: "readonly",
         FormData: "readonly",
+        Headers: "readonly",
         HTMLElement: "readonly",
         HTMLInputElement: "readonly",
         HTMLTextAreaElement: "readonly",

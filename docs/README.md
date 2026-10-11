@@ -19,3 +19,8 @@ These docs describe the current product and technical design.
 - [Young-Learner Storytelling Language Guide](./design/young-learner-storytelling.md)
   records the Pre-A1/A1 research, working vocabulary bands, reusable generation
   prompt, and the twenty-story content set.
+
+## Deployment
+
+- [Alibaba Serverless Pilot](./deployment/aliyun-serverless.md) describes the
+  isolated ESA, Function Compute, and PostgreSQL setup and its approval steps.

@@ -48,7 +48,10 @@
     "test": "node --test tests/*.test.mjs tests/lifecycle/*.test.mjs",
     "test:conversation-safety": "node --test tests/conversation-safety-eval.test.mjs",
     "test:lifecycle": "node --test tests/lifecycle/*.test.mjs",
-    "lint": "eslint . --ignore-pattern dist"
+    "lint": "eslint . --ignore-pattern dist",
+    "build:aliyun": "node scripts/build-aliyun-backend.mjs",
+    "build:aliyun:package": "node scripts/build-aliyun-backend.mjs --package-runtime",
+    "test:aliyun": "node --test tests/aliyun-backend.test.mjs"
   },
   "dependencies": {
     "@livekit/agents": "1.7.1",
@@ -58,6 +61,7 @@
     "livekit-client": "2.20.0",
     "livekit-server-sdk": "2.16.0",
     "lucide-react": "^1.21.0",
+    "pg": "^8.23.1",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-router": "^7.18.2",
@@ -72,6 +76,7 @@
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.2",
     "drizzle-kit": "^0.31.10",
+    "esbuild": "0.28.1",
     "eslint": "9.39.4",
     "happy-dom": "^20.10.6",
     "sharp": "^0.35.3",
