@@ -20,8 +20,10 @@ This environment is rarely accessed. Prefer compute that stops when idle:
 - Persistent data storage, backups and any plan fees can still bill while
   compute is stopped. Scale to zero does not mean all costs are zero.
 
-The empty RDS pilot was verified as `STOPPED` with `AutoPause=true` on October
-12, 2026. Compute is paused; its 20 GB storage still bills until release.
+The empty RDS pilot was released on October 12, 2026, with user approval.
+`DeleteDBInstance` succeeded and a subsequent instance lookup returned
+`InvalidDBInstanceName.NotFound`. Its active compute and 20 GB instance storage
+have been removed.
 
 The earlier PolarDB PostgreSQL 16 Serverless quote (one primary capped at 1 PCU,
 zero read-only nodes, single availability zone, PSL4 storage) was CNY 0.20 per
@@ -35,6 +37,10 @@ quote, trusted TLS certificate and live pause/resume behavior are not yet
 verified. Its official MCP package uses a private-CA SQL proxy and defaults to
 disabling certificate verification; do not use that default for this backend.
 Obtain a trusted CA before connecting. No AgenticDB cluster has been created.
+The user approved `AliyunServiceRoleForPolarDB`; the role and its managed policy
+were created, and PolarDB's `CheckServiceLinkedRole` returned true. The console
+still showed the authorization notice and disabled cluster creation after a
+fresh page load, so the creation quote remains unavailable.
 
 The China pilot uses ESA Pages for the frontend, Function Compute for the API,
 and PostgreSQL for account and learner data. It requires a new database;
