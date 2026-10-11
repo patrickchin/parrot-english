@@ -32,15 +32,19 @@ automatic pause, so this proposal is no longer being pursued for development.
 
 PolarDB PostgreSQL Agentic Database is under investigation instead. Alibaba's
 documentation advertises scale to zero, a Hangzhou public preview and free use
-during that preview, without an SLA. Account eligibility, the actual creation
-quote, trusted TLS certificate and live pause/resume behavior are not yet
-verified. Its official MCP package uses a private-CA SQL proxy and defaults to
+during that preview, without an SLA. The creation page is now accessible, but
+its Hangzhou quote displays CNY 0.000–5.600 per hour, with no visible discount.
+The pricing drawer shows CNY 1.40 for database PCU usage. This conflicts with the
+free-preview documentation and must be resolved before purchase. The two existing
+pilot subnets (zones J and B) both report insufficient capacity. Trusted TLS and
+live pause/resume behavior are not yet verified.
+Its official MCP package uses a private-CA SQL proxy and defaults to
 disabling certificate verification; do not use that default for this backend.
 Obtain a trusted CA before connecting. No AgenticDB cluster has been created.
 The user approved `AliyunServiceRoleForPolarDB`; the role and its managed policy
-were created, and PolarDB's `CheckServiceLinkedRole` returned true. The console
-still showed the authorization notice and disabled cluster creation after a
-fresh page load, so the creation quote remains unavailable.
+were created, and PolarDB's `CheckServiceLinkedRole` returned true. Firefox
+recognized the role and exposed the creation link after the Codex console kept
+showing a stale authorization notice. The creation link also opens in Codex.
 
 The China pilot uses ESA Pages for the frontend, Function Compute for the API,
 and PostgreSQL for account and learner data. It requires a new database;
