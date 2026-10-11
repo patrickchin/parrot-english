@@ -5,7 +5,7 @@ import { createWorker } from "../worker/index.ts";
 import { createPostgresBinding } from "./postgres.mjs";
 import { createPrivateMediaBucket, createRateLimiter } from "./private-media.mjs";
 
-const failure = (error, status) => Response.json({ error }, { status, headers: { "Cache-Control": "no-store" } });
+const failure = (error, status) => Response.json({ error }, { status, headers: { "Cache-Control": "no-store", ...(status === 503 ? { "Retry-After": "60" } : {}) } });
 
 export function createBackendHandler({ pool, variables }) {
   for (const key of ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "TURNSTILE_SECRET_KEY", "PARROT_EDGE_SECRET"]) {

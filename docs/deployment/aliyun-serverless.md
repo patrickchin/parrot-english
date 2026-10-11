@@ -53,7 +53,10 @@ PostgreSQL service alongside the existing tests.
    approximately CNY 0.10–0.18 per running hour with a 50% promotion. Continuous
    operation at those displayed rates would be about CNY 72–130 per 30 days.
    Auto-pause stops compute billing after ten minutes without connections;
-   storage continues billing. These are estimates, not a spending cap. Recheck
+   storage continues billing. The first connection after a pause can take minutes
+   while RDS wakes up. The pilot returns an unavailable response with a 60-second
+   retry hint when the connection times out; this delay needs a live check before
+   learner use. These are estimates, not a spending cap. Recheck
    the final quote and promotion terms before purchase. Function Compute,
    traffic, and excess backups can add charges.
 3. Place RDS and Function Compute in the same VPC and switch. Restrict the RDS
@@ -98,6 +101,7 @@ existing public media, CAPTCHA, LiveKit, OpenAI, and Groq integrations are separ
 from this API/database pilot and have not been moved to mainland infrastructure.
 
 Sources: [RDS serverless creation](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/create-a-serverless-apsaradb-rds-for-postgresql-instance),
+[RDS auto-pause latency](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-the-automatic-start-and-stop-feature-for-a-serverless-apsaradb-rds-for-postgresql-instance),
 [Function Compute Git deployment](https://help.aliyun.com/en/functioncompute/use-serverless-application-center-to-implement-ci-cd-on-existing-projects),
 [ESA function variables](https://help.aliyun.com/en/edge-security-acceleration/esa/user-guide/function-variable),
 [ESA client IP](https://help.aliyun.com/en/edge-security-acceleration/dcdn/user-guide/identify-request-information),
