@@ -5,13 +5,36 @@ Serverless from SSL/TLS support. The purchased empty pilot cannot meet this
 backend's verified-TLS requirement. Do not disable TLS to deploy it. Select and
 approve a TLS-capable database replacement before completing the setup below.
 
-The replacement quote prepared on October 12, 2026 is PolarDB PostgreSQL 16
-Serverless, Hangzhou zone J, one primary node capped at 1 PCU, zero read-only
-nodes, single availability zone, and PSL4 storage. The console quotes CNY 0.20
-per hour for database compute with its current 50% discount, or CNY 144 per
-30 days. Storage, any proxy/backup charges, Function Compute and traffic are
-additional. The selected PostgreSQL configuration offers no automatic-pause
-option. This is a pending proposal, not a purchased or verified deployment.
+## Development cost requirements
+
+This environment is rarely accessed. Prefer compute that stops when idle:
+
+- Keep Function Compute provisioned instances at zero, with on-demand scaling
+  and a two-request concurrency cap. The prepared configuration does this;
+  the function has not yet been deployed.
+- Select a database that can automatically pause or scale to zero. Verify both
+  its pause behavior and authenticated TLS against the actual endpoint before
+  deploying learner APIs.
+- Avoid dedicated virtual machines, idle cache servers, paid NAT gateways and
+  scheduled requests that keep the function or database warm.
+- Persistent data storage, backups and any plan fees can still bill while
+  compute is stopped. Scale to zero does not mean all costs are zero.
+
+The empty RDS pilot was verified as `STOPPED` with `AutoPause=true` on October
+12, 2026. Compute is paused; its 20 GB storage still bills until release.
+
+The earlier PolarDB PostgreSQL 16 Serverless quote (one primary capped at 1 PCU,
+zero read-only nodes, single availability zone, PSL4 storage) was CNY 0.20 per
+hour for database compute with a 50% discount. Its configuration offers no
+automatic pause, so this proposal is no longer being pursued for development.
+
+PolarDB PostgreSQL Agentic Database is under investigation instead. Alibaba's
+documentation advertises scale to zero, a Hangzhou public preview and free use
+during that preview, without an SLA. Account eligibility, the actual creation
+quote, trusted TLS certificate and live pause/resume behavior are not yet
+verified. Its official MCP package uses a private-CA SQL proxy and defaults to
+disabling certificate verification; do not use that default for this backend.
+Obtain a trusted CA before connecting. No AgenticDB cluster has been created.
 
 The China pilot uses ESA Pages for the frontend, Function Compute for the API,
 and PostgreSQL for account and learner data. It requires a new database;
@@ -119,6 +142,9 @@ Sources: [RDS serverless creation](https://help.aliyun.com/zh/rds/apsaradb-rds-f
 [RDS TLS excludes Serverless](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-ssl-encryption-for-an-apsaradb-rds-for-postgresql-instance),
 [PolarDB PostgreSQL TLS](https://help.aliyun.com/en/polardb/polardb-for-postgresql/use-cloud-certificates-to-configure-ssl-encryption),
 [PolarDB serverless prices](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/serverless-cost-description),
+[AgenticDB scale to zero](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/what-is-polardb-agentic-postgresql),
+[AgenticDB public preview](https://help.aliyun.com/en/polardb/polardb-for-postgresql/polardb-agentic-postgresql-public-beta),
+[AgenticDB official MCP](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/access-polardb-postgresql-agentic-database-via-mcp-server),
 [RDS auto-pause latency](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-the-automatic-start-and-stop-feature-for-a-serverless-apsaradb-rds-for-postgresql-instance),
 [Function Compute Git deployment](https://help.aliyun.com/en/functioncompute/use-serverless-application-center-to-implement-ci-cd-on-existing-projects),
 [ESA function variables](https://help.aliyun.com/en/edge-security-acceleration/esa/user-guide/function-variable),
