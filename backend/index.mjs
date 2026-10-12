@@ -2,13 +2,15 @@ import { Buffer } from "node:buffer";
 import { timingSafeEqual } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 import { createWorker } from "../worker/index.ts";
+import { createAuth } from "../worker/auth.ts";
+import { createAlibabaCaptchaPlugin } from "./alibaba-captcha.mjs";
 import { createMysqlBinding } from "./mysql.mjs";
 import { createPrivateMediaBucket, createRateLimiter } from "./mysql-private-media.mjs";
 
 const failure = (error, status) => Response.json({ error }, { status, headers: { "Cache-Control": "no-store", ...(status === 503 ? { "Retry-After": "60" } : {}) } });
 
 export function createBackendHandler({ pool, variables }) {
-  for (const key of ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "TURNSTILE_SECRET_KEY", "PARROT_EDGE_SECRET"]) {
+  for (const key of ["BETTER_AUTH_SECRET", "BETTER_AUTH_URL", "PARROT_EDGE_SECRET"]) {
     if (!variables[key]?.trim()) throw new Error(`${key} is required.`);
   }
   if (variables.PARROT_EDGE_SECRET.length < 32) throw new Error("PARROT_EDGE_SECRET must be at least 32 characters.");
@@ -23,7 +25,10 @@ export function createBackendHandler({ pool, variables }) {
     LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: createRateLimiter(pool, "enrichment", 12),
     ASSETS: { fetch: async () => failure("not_found", 404) },
   };
-  const worker = createWorker();
+  const captchaPlugin = variables.ALIYUN_CAPTCHA_SCENE_ID
+    ? createAlibabaCaptchaPlugin(variables.ALIYUN_CAPTCHA_SCENE_ID) : undefined;
+  if (!captchaPlugin && !variables.TURNSTILE_SECRET_KEY?.trim()) throw new Error("CAPTCHA configuration is required.");
+  const worker = createWorker({ createAuth: (authEnv) => createAuth(authEnv, { captchaPlugin }) });
   const expected = Buffer.from(variables.PARROT_EDGE_SECRET);
   return async (request) => {
     const headers = new Headers(request.headers);

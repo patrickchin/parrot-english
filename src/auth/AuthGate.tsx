@@ -686,8 +686,7 @@ export function AuthGateView({
   const userLabel =
     session.user.name?.trim() || session.user.email || "Learner";
   const accountError =
-    profileError ||
-    (formError ? messages.auth.errors[formError] : "");
+    profileError || (formError ? messages.auth.errors[formError] : "");
   const showNarrowSignOutRecovery = Boolean(signOutError) && !isSigningOut;
 
   return (
@@ -1029,7 +1028,10 @@ export function createAuthGate({
 
 const ProductionAuthGate = createAuthGate({
   client: authClient,
-  turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY ?? "",
+  turnstileSiteKey:
+    import.meta.env.VITE_ALIYUN_CAPTCHA_SCENE_ID ??
+    import.meta.env.VITE_TURNSTILE_SITE_KEY ??
+    "",
 });
 
 export function AuthGate(props: Omit<AuthGateProps, "navigate">) {

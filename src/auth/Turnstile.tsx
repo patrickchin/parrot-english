@@ -4,6 +4,7 @@ import { AUTH_TURNSTILE_ACTION } from "../../lib/auth-captcha";
 import { useGuardianLanguage } from "../i18n/guardian-language";
 import { englishGuardianMessages } from "../i18n/messages/en";
 import { cx } from "../shared/ui";
+import { loadAlibabaCaptcha } from "./AlibabaCaptcha";
 
 const TURNSTILE_SCRIPT_URL =
   "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
@@ -21,10 +22,7 @@ type TurnstileRenderOptions = {
 
 export type TurnstileApi = {
   remove(widgetId: string): void;
-  render(
-    container: HTMLElement,
-    options: TurnstileRenderOptions,
-  ): string;
+  render(container: HTMLElement, options: TurnstileRenderOptions): string;
 };
 
 declare global {
@@ -70,7 +68,9 @@ export function loadTurnstile(): Promise<TurnstileApi> {
 
 export function TurnstileWidget({
   guardianAudience = true,
-  load = loadTurnstile,
+  load = import.meta.env.VITE_ALIYUN_CAPTCHA_SCENE_ID
+    ? loadAlibabaCaptcha
+    : loadTurnstile,
   onTokenChange,
   siteKey,
 }: {
@@ -166,7 +166,9 @@ export function TurnstileWidget({
         aria-atomic="true"
         aria-live="polite"
         className="m-0 inline-flex min-h-10 items-center justify-center gap-3 text-center text-sm font-black leading-snug sm:text-base"
-        role={status === "error" || status === "unavailable" ? "alert" : "status"}
+        role={
+          status === "error" || status === "unavailable" ? "alert" : "status"
+        }
       >
         {status === "checking" ? (
           <LoaderCircle

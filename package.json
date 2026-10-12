@@ -55,6 +55,9 @@
     "test:aliyun": "node --test tests/aliyun-backend.test.mjs"
   },
   "dependencies": {
+    "@alicloud/captcha20230305": "1.1.4",
+    "@alicloud/credentials": "2.4.7",
+    "@alicloud/openapi-core": "1.0.8",
     "@livekit/agents": "1.7.1",
     "@livekit/agents-plugin-openai": "1.7.1",
     "better-auth": "^1.6.23",

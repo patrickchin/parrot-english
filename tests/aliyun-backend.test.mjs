@@ -19,6 +19,8 @@ import gateway from "../backend/esa-gateway.mjs";
 import { createPrivateMediaBucket, createRateLimiter } from "../backend/mysql-private-media.mjs";
 import { createDubConsentRepository } from "../worker/dub-consent.ts";
 import { initializeMysqlDatabase } from "../backend/mysql-bootstrap.mjs";
+import { createAuth } from "../worker/auth.ts";
+import { createAlibabaCaptchaPlugin } from "../backend/alibaba-captcha.mjs";
 
 // Use only a disposable local/CI database. Each run creates and drops its own schema.
 test("Alibaba backend preserves auth, learner access, atomic storage and SQL batches", { skip: !process.env.PARROT_TEST_DATABASE_URL }, async () => {
@@ -75,6 +77,17 @@ test("Alibaba backend preserves auth, learner access, atomic storage and SQL bat
     globalThis.fetch = async (input, init) => new URL(input).hostname === "challenges.cloudflare.com"
       ? Response.json({ success: true, action: "account_access" }) : originalFetch(input, init);
     const variables = { BETTER_AUTH_URL: "https://example.test", BETTER_AUTH_SECRET: "test-auth-secret-at-least-thirty-two-characters", TURNSTILE_SECRET_KEY: "test-key", PARROT_EDGE_SECRET: "test-edge-secret-at-least-thirty-two-characters" };
+    const chinaAuth = createAuth({ ...variables, TURNSTILE_SECRET_KEY: undefined, DB: createMysqlBinding(pool), PRIVATE_MEDIA_BUCKET: createPrivateMediaBucket(pool) },
+      { captchaPlugin: createAlibabaCaptchaPlugin("pilot-scene", async (_scene, token) => token === "verified-original-token") });
+    const chinaSignup = (token) => chinaAuth.handler(new Request("https://example.test/api/auth/sign-up/email", {
+      method: "POST", headers: { origin: variables.BETTER_AUTH_URL, "cf-connecting-ip": "192.0.2.4", "content-type": "application/json", ...(token ? { "x-captcha-response": token } : {}) },
+      body: JSON.stringify({ name: "Mary", email: "mary-china@example.test", password: "test-password-123" }),
+    }));
+    assert.equal((await chinaSignup()).status, 400);
+    assert.equal((await chinaSignup("invalid-token")).status, 403);
+    const chinaCreated = await chinaSignup("verified-original-token");
+    assert.equal(chinaCreated.status, 200, await chinaCreated.clone().text());
+    assert.match(chinaCreated.headers.getSetCookie().join(";"), /session_token=/);
     const handler = createBackendHandler({ pool, variables });
     let cookie = "";
     const call = (path, method = "GET", body, extraHeaders = {}) => handler(new Request("https://backend.test/", {

@@ -1,4 +1,4 @@
-import { APIError, betterAuth } from "better-auth";
+import { APIError, betterAuth, type BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { captcha } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
@@ -24,6 +24,7 @@ export interface AuthEnv {
 
 interface AuthDependencies {
   prepareAccountDeletion: typeof prepareAccountDeletion;
+  captchaPlugin: BetterAuthPlugin;
 }
 
 function requireEnvironmentValue(
@@ -53,16 +54,13 @@ export function createAuth(
 ) {
   const secret = requireAuthSecret(env);
   const baseURL = requireEnvironmentValue(env, "BETTER_AUTH_URL");
-  const turnstileSecret = requireEnvironmentValue(env, "TURNSTILE_SECRET_KEY");
   const database = createDatabase(env.DB);
   const accountDeletion =
     dependencies.prepareAccountDeletion ?? prepareAccountDeletion;
   const prepareUserDataForDeletion = async (userId: string) => {
     const bucket = env.PRIVATE_MEDIA_BUCKET;
     if (!bucket) {
-      throw new Error(
-        "PRIVATE_MEDIA_BUCKET is required to delete an account.",
-      );
+      throw new Error("PRIVATE_MEDIA_BUCKET is required to delete an account.");
     }
     await accountDeletion({ bucket, database, userId });
   };
@@ -82,7 +80,9 @@ export function createAuth(
           before: async (user) => {
             const email = normalizeUserEmail(user.email);
             const [reservation] = await database
-              .select({ userIdHash: schema.accountDeletionTombstone.userIdHash })
+              .select({
+                userIdHash: schema.accountDeletionTombstone.userIdHash,
+              })
               .from(schema.accountDeletionTombstone)
               .where(
                 eq(
@@ -108,12 +108,13 @@ export function createAuth(
     },
     plugins: [
       sharedGuestAuth(),
-      captcha({
-        endpoints: ["/sign-in/shared-guest", "/sign-up/email"],
-        expectedAction: AUTH_TURNSTILE_ACTION,
-        provider: "cloudflare-turnstile",
-        secretKey: turnstileSecret,
-      }),
+      dependencies.captchaPlugin ??
+        captcha({
+          endpoints: ["/sign-in/shared-guest", "/sign-up/email"],
+          expectedAction: AUTH_TURNSTILE_ACTION,
+          provider: "cloudflare-turnstile",
+          secretKey: requireEnvironmentValue(env, "TURNSTILE_SECRET_KEY"),
+        }),
     ],
     rateLimit: {
       enabled: true,
