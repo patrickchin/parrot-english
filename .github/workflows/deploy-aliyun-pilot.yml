@@ -21,7 +21,31 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  verify-identity:
+    # This read-only check can run before a database or paid function exists.
+    if: vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN != '' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/aliyun-serverless-backend')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - uses: aliyun/setup-aliyun-cli-action@09a5f86915bb556e27bf050e9a5e339aeb073df5 # v1
+        with:
+          version: '3.5.1'
+      - uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1
+        with:
+          oidc-provider-arn: ${{ vars.ALIYUN_CHINA_OIDC_PROVIDER_ARN }}
+          role-to-assume: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
+          role-session-expiration: 900
+      - name: Verify the assumed pilot role
+        env:
+          EXPECTED_ROLE_ARN: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
+        run: |
+          aliyun sts GetCallerIdentity --mode StsToken --region cn-hangzhou > "$RUNNER_TEMP/aliyun-identity.json"
+          jq -e --arg role "$EXPECTED_ROLE_ARN" '.IdentityType == "AssumedRoleUser" and (.Arn | startswith($role + "/"))' "$RUNNER_TEMP/aliyun-identity.json"
+          echo 'Verified GitHub OIDC identity for the China pilot deployment role.'
   deploy:
+    needs: verify-identity
     # Enable only after the database, TLS and isolated pilot secrets are ready.
     if: vars.ALIYUN_CHINA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/aliyun-serverless-backend')
     runs-on: ubuntu-latest
