@@ -187,10 +187,36 @@ Turnstile.
 
 This is an isolated preview. Built-in Function Compute domains are for testing;
 a public mainland site needs an ICP-filed custom domain. Public media is now
-deployed on ESA static hosting. Speech recognition and live tutoring still need
-mainland replacements for Groq, LiveKit and OpenAI before describing the whole
-application as hosted in mainland China. Those foreign service credentials are
-not configured on the China pilot.
+deployed on ESA static hosting. Live tutoring still needs mainland replacements
+for LiveKit and OpenAI before describing the whole application as hosted in
+mainland China. Those foreign service credentials are not configured on the
+China pilot.
+
+## Mainland speech and profile summaries
+
+The prepared provider uses the existing Beijing Model Studio workspace.
+`DASHSCOPE_WORKSPACE_ID` derives a fixed mainland vendor hostname; arbitrary
+credential destinations are rejected. Its separate API key permits only
+`qwen-audio-3.0-asr-flash` and `qwen3.7-flash-2026-07-15`. Audio is sent inline
+over HTTPS, without making recordings public or adding an OSS bucket. The
+existing size/type limits, authentication, guardian/learner checks, consent,
+rate limits, privacy validation and safe summary fallbacks remain in place.
+Provider failures do not send China requests to Groq.
+
+Store the key in `ALIYUN_CHINA_DASHSCOPE_API_KEY` and the workspace in
+`ALIYUN_CHINA_DASHSCOPE_WORKSPACE_ID`. The workflow passes the key into Function
+Compute only when `ALIYUN_CHINA_AI_ENABLED=true`. That flag remains **false**:
+the current approval covers the dedicated key and synthetic tests capped at
+CNY 1, rather than ongoing public AI usage. No subscription was purchased.
+
+The observed prices are CNY 0.00022 per audio second and CNY 0.20 / 0.80 per
+million input/output text tokens for text requests under 32,000 tokens. The
+text request disables thinking and limits output to 512 tokens. Synthetic tests
+passed on the actual Beijing APIs, including the app's structured summary call
+and WebM/MP4 transcription using existing generated public fixture audio. No
+learner recording was used. These checks do not yet prove the complete speech
+flow through Function Compute and ESA, including cold-start latency. Verify
+that flow before enabling the feature for users. Live tutoring remains separate.
 
 Sources: [PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/serverless/),
 [automatic pause and endpoints](https://help.aliyun.com/document_detail/2621235.html),

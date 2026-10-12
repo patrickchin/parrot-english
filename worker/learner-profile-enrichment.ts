@@ -10,9 +10,8 @@ import {
   PRIVATE_PROFILE_FIELD_ERROR,
 } from "../lib/learner-profile-privacy.ts";
 import { LEARNER_PROFILE_ENRICHMENT_SYSTEM_PROMPT } from "./prompts/learner-profile-enrichment.ts";
+import { getChatConfig } from "./model-studio.ts";
 
-const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
 const OUTPUT_KEYS = new Set(["summary", "canonicalName", "canonicalAge"]);
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u;
 
@@ -217,20 +216,22 @@ export async function enrichLearnerProfileAnswer({
       };
     }
   }
-  if (!env.GROQ_API_KEY) return safeEnrichment(fallback(question, answer));
+  const chat = getChatConfig(env);
+  if (!chat) return safeEnrichment(fallback(question, answer));
 
   try {
     const upstream = await fetchWithTimeout(
       fetchImplementation,
-      GROQ_CHAT_URL,
+      chat.url,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${chat.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: GROQ_CHAT_MODEL,
+          model: chat.model,
+          ...chat.options,
           messages: [
             {
               role: "system",

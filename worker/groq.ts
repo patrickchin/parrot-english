@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+import { getModelStudioConfig, type ModelStudioEnv } from "./model-studio.ts";
 import {
   readBoundedFormData,
   RequestBodyTooLargeError,
@@ -7,17 +9,17 @@ const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 const STT_MODEL = "whisper-large-v3-turbo";
 const MAX_LEARNER_PROFILE_AUDIO_BYTES = 512 * 1024;
 const MULTIPART_OVERHEAD_BYTES = 64 * 1024;
-const SUPPORTED_AUDIO_TYPES = new Set([
-  "audio/mp4",
-  "audio/mpeg",
-  "audio/ogg",
-  "audio/wav",
-  "audio/webm",
-]);
+const AUDIO_FORMATS: Record<string, string> = {
+  "audio/mp4": "mp4",
+  "audio/mpeg": "mp3",
+  "audio/ogg": "ogg",
+  "audio/wav": "wav",
+  "audio/webm": "webm",
+};
 const DEFAULT_GROQ_REQUEST_TIMEOUT_MS = 15_000;
 const MAX_GROQ_REQUEST_TIMEOUT_MS = 60_000;
 
-export interface ApiEnv {
+export interface ApiEnv extends ModelStudioEnv {
   GROQ_API_KEY?: string;
   GROQ_REQUEST_TIMEOUT_MS?: string;
 }
@@ -98,7 +100,8 @@ export async function handleLearnerProfileTranscription(
     return jsonResponse({ error: "method_not_allowed" }, { status: 405 });
   }
 
-  const apiKey = requireGroqKey(env);
+  const studio = getModelStudioConfig(env);
+  const apiKey = studio?.apiKey ?? requireGroqKey(env);
   if (!apiKey) {
     return jsonResponse(
       { error: "transcription_unavailable" },
@@ -122,7 +125,7 @@ export async function handleLearnerProfileTranscription(
   if (!(audio instanceof File)) {
     return jsonResponse({ error: "audio_file_required" }, { status: 400 });
   }
-  if (!SUPPORTED_AUDIO_TYPES.has(audio.type)) {
+  if (!Object.hasOwn(AUDIO_FORMATS, audio.type)) {
     return jsonResponse(
       { error: "unsupported_audio_type" },
       { status: 415 }
@@ -143,13 +146,33 @@ export async function handleLearnerProfileTranscription(
 
   let upstream: Response;
   try {
+    const body = studio ? JSON.stringify({
+      model: "qwen-audio-3.0-asr-flash",
+      input: {
+        messages: [{
+          role: "user",
+          content: [{
+            type: "input_audio",
+            input_audio: {
+              data: `data:${audio.type};base64,${Buffer.from(await audio.arrayBuffer()).toString("base64")}`,
+            },
+          }],
+        }],
+      },
+      parameters: { format: AUDIO_FORMATS[audio.type], language_hints: ["en"] },
+    }) : groqForm;
     upstream = await fetchWithTimeout(
       globalThis.fetch,
-      `${GROQ_BASE_URL}/audio/transcriptions`,
+      studio
+        ? `${studio.baseUrl}/api/v1/services/aigc/multimodal-generation/generation`
+        : `${GROQ_BASE_URL}/audio/transcriptions`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: groqForm,
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          ...(studio ? { "Content-Type": "application/json", "X-DashScope-SSE": "disable" } : {}),
+        },
+        body,
       },
       getGroqRequestTimeoutMs(env)
     );
@@ -172,11 +195,18 @@ export async function handleLearnerProfileTranscription(
   }
 
   try {
-    const transcription = (await upstream.json()) as { text?: unknown };
+    const transcription = (await upstream.json()) as {
+      text?: unknown;
+      output?: { text?: unknown };
+    };
+    const text = studio ? transcription.output?.text : transcription.text;
+    if (studio && typeof text !== "string") {
+      return jsonResponse({ error: "transcription_failed" }, { status: 502 });
+    }
     return jsonResponse({
       transcript:
-        typeof transcription.text === "string"
-          ? transcription.text.trim()
+        typeof text === "string"
+          ? text.trim()
           : "",
     });
   } catch {

@@ -72,6 +72,9 @@ jobs:
       BETTER_AUTH_SECRET: ${{ secrets.ALIYUN_CHINA_AUTH_SECRET }}
       TURNSTILE_SECRET_KEY: ${{ secrets.ALIYUN_CHINA_TURNSTILE_SECRET_KEY }}
       ALIYUN_CAPTCHA_SCENE_ID: ${{ vars.ALIYUN_CHINA_CAPTCHA_SCENE_ID }}
+      # Synthetic tests are approved; public AI calls need a separate enablement.
+      DASHSCOPE_API_KEY: ${{ vars.ALIYUN_CHINA_AI_ENABLED == 'true' && secrets.ALIYUN_CHINA_DASHSCOPE_API_KEY || '' }}
+      DASHSCOPE_WORKSPACE_ID: ${{ vars.ALIYUN_CHINA_DASHSCOPE_WORKSPACE_ID }}
       PARROT_CAPTCHA_ROLE_ARN: ${{ vars.ALIYUN_CHINA_CAPTCHA_ROLE_ARN }}
       PARROT_EDGE_SECRET: ${{ secrets.ALIYUN_CHINA_EDGE_SECRET }}
       PARROT_VPC_ID: ${{ vars.ALIYUN_CHINA_VPC_ID }}
