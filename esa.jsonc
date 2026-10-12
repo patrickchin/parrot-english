@@ -1,5 +1,6 @@
 {
   "name": "parrot-english",
+  "entry": "./backend/esa-gateway.mjs",
   "installCommand": "npm ci && npm install --prefix /tmp/parrot-esa-tools --no-package-lock ffmpeg-static@5.3.0 ffprobe-static@3.1.0 && node scripts/prepare-esa-build.mjs",
   "buildCommand": "npm run build:esa",
   "assets": {
