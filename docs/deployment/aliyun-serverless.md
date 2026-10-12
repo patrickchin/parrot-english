@@ -1,192 +1,154 @@
 # Alibaba serverless pilot
 
-**Deployment blocked:** Alibaba's current documentation excludes RDS PostgreSQL
-Serverless from SSL/TLS support. The purchased empty pilot cannot meet this
-backend's verified-TLS requirement. Do not disable TLS to deploy it. Select and
-approve a TLS-capable database replacement before completing the setup below.
+The China pilot uses ESA Pages, Function Compute and a new **plain PolarDB MySQL
+Serverless 8.0.2** database in Hangzhou. The MySQL backend is implemented and
+locally verified. The database purchase and live backend deployment are pending;
+the existing ESA preview currently serves only the frontend.
 
-## Development cost requirements
+## Development cost and idle behavior
 
-This environment is rarely accessed. Prefer compute that stops when idle:
+Use one primary node capped at 1 PCU, no read-only nodes, no standby cluster,
+PSL4 storage billed on actual use, and automatic idle suspension. The observed
+console quote was CNY 0.20 per active database-compute hour with a 50% discount.
+It excludes proxy, storage and other usage charges; recheck the final quote and
+obtain approval before purchase. Persistent storage and excess backups can bill
+while compute is paused. At continuous activity, database compute alone would
+be CNY 144 per 30-day month at that quote.
 
-- Keep Function Compute provisioned instances at zero, with on-demand scaling
-  and a two-request concurrency cap. The prepared configuration does this;
-  the function has not yet been deployed.
-- Select a database that can automatically pause or scale to zero. Verify both
-  its pause behavior and authenticated TLS against the actual endpoint before
-  deploying learner APIs.
-- Avoid dedicated virtual machines, idle cache servers, paid NAT gateways and
-  scheduled requests that keep the function or database warm.
-- Persistent data storage, backups and any plan fees can still bill while
-  compute is stopped. Scale to zero does not mean all costs are zero.
+Use the **cluster endpoint**, not the primary endpoint, for automatic pause.
+Set its idle delay to the smallest supported setting (currently five minutes)
+and verify actual pause/resume after deployment. The API closes its database
+connections before returning each response, because Function Compute may freeze
+an idle timer after the response. A cold visit may need to wait for the database.
 
-The empty RDS pilot was released on October 12, 2026, with user approval.
-`DeleteDBInstance` succeeded and a subsequent instance lookup returned
-`InvalidDBInstanceName.NotFound`. Its active compute and 20 GB instance storage
-have been removed.
+Keep Function Compute provisioned instances at zero and concurrent requests
+capped at two. Do not add a VM, paid NAT gateway, cache server or keep-warm task.
+The VPC, switches and security group already exist. Function Compute uses a
+zone J switch; the selected database quote uses zone B in the same VPC.
 
-The earlier PolarDB PostgreSQL 16 Serverless quote (one primary capped at 1 PCU,
-zero read-only nodes, single availability zone, PSL4 storage) was CNY 0.20 per
-hour for database compute with a 50% discount. Its configuration offers no
-automatic pause, so this proposal is no longer being pursued for development.
+The incompatible, empty RDS PostgreSQL Serverless pilot was released with user
+approval on October 12, 2026. That edition excludes TLS. PolarDB PostgreSQL's
+always-running option and AgenticDB's unresolved preview billing are superseded
+by this plain MySQL choice. No AgenticDB cluster has been created and no support
+request was sent. `AliyunServiceRoleForPolarDB` exists with user approval.
 
-PolarDB PostgreSQL Agentic Database is under investigation instead. Alibaba's
-documentation advertises scale to zero, a Hangzhou public preview and free use
-during that preview, without an SLA. The creation page is now accessible, but
-its Hangzhou quote displays CNY 0.000–5.600 per hour, with no visible discount.
-The pricing drawer shows CNY 1.40 for database PCU usage. This conflicts with the
-free-preview documentation and must be resolved before purchase. Zones J and B
-reported insufficient capacity. A new, free zone K subnet now produces a quote
-without that error; this is quote availability, not a reservation or deployment.
-Trusted TLS and live pause/resume behavior are not yet verified.
-Its official MCP package uses a private-CA SQL proxy and defaults to
-disabling certificate verification; do not use that default for this backend.
-Obtain a trusted CA before connecting. No AgenticDB cluster has been created.
-The user approved `AliyunServiceRoleForPolarDB`; the role and its managed policy
-were created, and PolarDB's `CheckServiceLinkedRole` returned true. Firefox
-recognized the role and exposed the creation link after the Codex console kept
-showing a stale authorization notice. The creation link also opens in Codex.
+## Database compatibility and initialization
 
-A plain SQL alternative is PolarDB MySQL Serverless. A Hangzhou zone J quote
-for one primary capped at 1 PCU, no replicas or standby, PSL4 storage and idle
-suspension enabled is CNY 0.20 per active compute hour with the current 50%
-discount. The page explicitly excludes proxy and storage charges. PSL4 is billed
-on actual storage use; persistent storage still costs money while compute is
-paused. RDS MySQL Serverless also supports auto-pause and TLS, but its 20 GB ESSD
-minimum adds about CNY 24.48 per 30-day month at the documented storage rate,
-before any discounts. Neither MySQL product has been purchased. This backend
-currently supports PostgreSQL; selecting MySQL requires a tested database port,
-including transactions, returning rows, constraints and atomic media writes.
+`backend/mysql.mjs` implements the application's existing Drizzle/D1 query
+contract for MySQL. It translates only SQL used by this application, including
+conditional conflict targets and SQLite functions. MySQL has no `RETURNING`;
+the adapter selects and modifies locked rows in the same transaction. It also
+preserves SQLite's simultaneous assignment semantics for consent generations.
+A database row lock serializes mutation batches for this rare-use pilot,
+preserving the final-learner deletion guard. Sustained concurrent traffic would
+warrant a native MySQL repository with finer locking.
 
-The China pilot uses ESA Pages for the frontend, Function Compute for the API,
-and PostgreSQL for account and learner data. It requires a new database;
-existing Cloudflare users and recordings are not migrated by this setup.
-The current outside-China deployment uses Cloudflare D1, a hosted SQLite service.
+Generate `backend/mysql-baseline.sql` with
+`node scripts/build-aliyun-mysql-schema.mjs`. The generator applies the SQLite
+migration history in memory and exports a MySQL baseline with CHECK constraints,
+foreign keys, case-sensitive indexes and a shared guest account with Sam. MySQL
+8.0.2 is chosen because its documented community compatibility includes 8.0.18;
+8.0.1's older compatibility does not provide the required CHECK enforcement.
+Existing Cloudflare accounts and recordings are not copied.
 
-## Database compatibility
+For the first deployment, set `ALIYUN_CHINA_INITIALIZE_DATABASE=true`. The custom
+runtime applies the baseline **inside the private VPC** before listening. It uses
+an advisory initialization lock, refuses a non-empty database without a known
+migration marker, and writes the marker last. A concurrent initializer skips
+only a completed known baseline. DDL is not rollbackable: partial initialization
+requires inspection, not an automatic destructive retry. Verify that the actual
+PolarDB endpoint supports the advisory lock before declaring deployment ready.
+After live initialization is verified, set the flag back to false and redeploy.
+Future changes need reviewed MySQL migrations for databases containing data.
 
-`backend/postgres.mjs` keeps the application's existing Drizzle D1 query contract
-while executing its queries on PostgreSQL. It translates the SQL constructs used
-by this application, including parameter placeholders and conflict targets.
-It is not a general SQLite emulator. PostgreSQL batches use a transaction and
-an advisory lock to preserve the final-learner deletion guard.
+Private recording clips remain in SQL for this pilot, with a 16 MiB object
+limit, byte ranges and atomic conditional writes. A later OSS migration should
+retain the conditional-write index and store immutable payloads in OSS; direct
+OSS writes do not provide all the R2 conditions used by consent/deletion fences.
 
-Generate the baseline with `node scripts/build-aliyun-schema.mjs`. The generator
-applies the SQLite migration history in memory and exports the final schema for
-an empty PostgreSQL database. Apply `backend/postgres-baseline.sql` once to the
-new pilot database with TLS verification enabled. It seeds only the shared guest
-account. It does not copy existing users. Future schema changes need a reviewed
-PostgreSQL migration for a database that already contains pilot data.
+## Local and CI verification
 
-Private recording clips are stored in PostgreSQL for this pilot, with a 16 MiB
-object limit and atomic conditional writes. A later OSS migration should retain
-the PostgreSQL conditional-write index and place immutable payloads in OSS.
-Direct OSS PutObject calls do not support the R2 conditions used by the app's
-consent and deletion fences.
-
-## Local verification
-
-Use Node.js 24 and a disposable PostgreSQL 16 or 17 database on localhost:
+Use Node.js 24 and a disposable local MySQL 8.0.18 container. The integration
+test creates and drops its own database and refuses non-local test hosts.
 
 ```sh
 npm ci
-PARROT_TEST_DATABASE_URL=postgres://postgres@127.0.0.1:55432/parrot_aliyun_test npm run test:aliyun
+node scripts/prepare-aliyun-mysql-test-tls.mjs DISPOSABLE_CONTAINER /tmp/mysql-test-ca.pem
+PARROT_TEST_DATABASE_URL=mysql://root:disposable-test-password@127.0.0.1:3306/parrot_aliyun_test \
+PARROT_TEST_DATABASE_CA_PATH=/tmp/mysql-test-ca.pem npm run test:aliyun
 npm run build:aliyun
 ```
 
-The test creates and removes its own database schema. It exercises sign-up,
-sign-in, guest sessions, guardian access, learner creation, consent generations,
-concurrent final-learner deletion, account deletion, batch rollback, conditional recording writes,
-byte ranges, rate limits, and multiple response cookies. CI runs it using a
-PostgreSQL service alongside the existing tests. The deployment workflow checks
-PostgreSQL 16 to match the proposed PolarDB version; the existing verify workflow
-also checks PostgreSQL 17.
+The TLS preparation script accepts only the named disposable MySQL 8.0.18
+container with the fixture password. It installs a localhost certificate signed
+by that container's CA; it must never be used on a cloud database.
 
-## Cloud setup and approvals
+Checks cover authentication, cookies, guest sessions, guardian and learner
+access, consent generations, concurrent final-learner deletion, account deletion,
+batch rollback, conflict-target uniqueness, CHECK/FK enforcement, conditional
+recording writes, pagination, byte ranges and rate limits. Runtime TLS tests
+prove encrypted connections and reject untrusted CAs, mismatched hostnames and
+IP-based URLs. CI runs these alongside the existing application/browser checks.
 
-1. Select a TLS-capable PostgreSQL product and check its exact edition's feature
-   support before purchase. RDS PostgreSQL Serverless is excluded from TLS
-   support and must not be used with this backend. PolarDB PostgreSQL supports
-   cloud certificates; its live endpoint still needs verification after setup.
-2. Approve the replacement's actual cost before purchase and release of the
-   empty, incompatible RDS pilot. The original approval does not cover a new
-   product or a changed ongoing cost. Recheck the final quote and discounts.
-3. Place PostgreSQL and Function Compute in the same VPC, using a switch in a
-   supported Function Compute zone. The database can use another zone's switch
-   in that VPC if necessary. Restrict
-   the database whitelist to the Function Compute subnet. Do not enable a public database
-   endpoint. Create a pilot database and a dedicated application database user.
-4. Enable database TLS and obtain its CA from the instance console. Apply the baseline
-   from a trusted client inside that VPC. The runtime requires verified TLS and
-   fails to start without its CA.
-5. The prepared `.github/workflows/deploy-aliyun-pilot.yml` provides direct GitHub
-   deployment using Alibaba's official OIDC action and temporary credentials.
-   It stays disabled until `ALIYUN_CHINA_DEPLOY_ENABLED=true` is set. Its database
-   CA and network configuration use repository variables prefixed
-   `ALIYUN_CHINA_`; auth, database and edge credentials use repository secrets
-   with that prefix. Restrict the RAM deployment role to this repository's
-   approved branches and this pilot function. The OIDC provider alone grants no
-   deployment access. The `parrot-github-china-deploy` role is now created, with
-   console login disabled and trust limited to `main` and
-   `codex/aliyun-serverless-backend` in `patrickchin/parrot-english`. Its custom
-   policy permits only create/read/update of `parrot-english-china-test`, its
-   concurrency/scaling configuration and the `esa-gateway` HTTP trigger in
-   Hangzhou. No database, network or RAM administration is granted. The role and
-   network repository variables are saved; deployment is explicitly disabled.
-   Temporary code-upload permissions, if required by Serverless Devs, must be
-   checked against the actual denied action rather than adding broad access.
-   Secrets, the database CA, an actual OIDC deployment and the live backend are
-   still pending.
-   Alternatively, import `patrickchin/parrot-english` in Function Compute's Serverless Application
-   Center, scoped to this repository. Use the pilot branch and `s.aliyun.yaml`.
-   Review the requested GitHub and Alibaba permissions before granting access;
-   ESA's existing GitHub authorization is a separate integration.
-6. Configure the build pipeline for Node 24, run `npm ci`, then
-   `RDS_CA_PATH=/path/to/rds-ca.pem npm run build:aliyun:package`. The script
-   packages a checksum-verified official Linux Node binary and the API bundle.
-   Serverless Devs deploys this directory automatically; no manual ZIP upload is
-   part of the workflow. Use `s deploy -t s.aliyun.yaml` as the deployment step.
-7. Supply these encrypted pipeline variables: `DATABASE_URL` (without query options), `BETTER_AUTH_URL`,
-   `BETTER_AUTH_SECRET`, `TURNSTILE_SECRET_KEY`, `PARROT_EDGE_SECRET`. Supply
-   `PARROT_VPC_ID`, `PARROT_VSWITCH_ID`, `PARROT_SECURITY_GROUP_ID`, and
-   `PARROT_BACKEND_COMMIT_SHA` as configuration. Both auth and edge secrets must
-   contain at least 32 characters. The pipeline sets the function environment;
-   do not write secrets into Git or print resolved deployment configuration.
-   Keep provisioned instances at zero and limit on-demand instances to two in
-   the Function Compute scaling configuration before allowing pilot traffic.
-8. Use a separate ESA pilot project, or staging configuration, with
-   `entry: "./backend/esa-gateway.mjs"` in its build configuration. Retain the
-   existing static assets and SPA fallback. The gateway uses ESA's third `fetch`
-   parameter for variables. Set encrypted `PARROT_EDGE_SECRET` and
-   `PARROT_BACKEND_URL` to the Hangzhou function URL, with the same edge secret
-   as Function Compute. Configure a Turnstile widget for the pilot hostname and
-   build the frontend with its `VITE_TURNSTILE_SITE_KEY`.
-9. Verify the platform-supplied `Ali-Cdn-Real-Ip` header before release, including
-   a request attempting to spoof it. The gateway replaces the application's
-   Cloudflare IP header and rejects requests if the platform header is absent.
-   Check cookies, sign-in, guardian access, recording consent, and deletion from
-   the ESA preview. Reject direct unauthenticated requests to the function URL.
+## Cloud deployment
 
-This setup is an isolated preview. Function Compute's built-in domains are for
-testing; a public mainland website needs an ICP-filed custom domain. The app's
-existing public media, CAPTCHA, LiveKit, OpenAI, and Groq integrations are separate
-from this API/database pilot and have not been moved to mainland infrastructure.
+1. Recheck and approve the final MySQL quote. Select Hangzhou, Serverless,
+   MySQL 8.0.2 Enterprise, one primary at 1 PCU, zero replicas, single AZ, PSL4,
+   idle suspension and the pilot VPC. Do not accept fixed-size defaults restored
+   when the purchase page reloads.
+2. Create a separate pilot database and dedicated application user. Use only a
+   private cluster endpoint and restrict its whitelist to the Function Compute
+   subnet (10.42.2.0/24). Enable TLS for that endpoint and download its CA.
+   `DATABASE_URL` requires a DNS hostname, credentials and one database name,
+   without query options. Certificate-chain and hostname verification are
+   mandatory. The legacy `RDS_CA_PATH` name identifies the packaged database CA
+   and does not restrict the runtime to an RDS product.
+3. Store `ALIYUN_CHINA_DATABASE_URL`, `ALIYUN_CHINA_AUTH_SECRET`,
+   `ALIYUN_CHINA_TURNSTILE_SECRET_KEY` and `ALIYUN_CHINA_EDGE_SECRET` as GitHub
+   secrets. Store `ALIYUN_CHINA_DATABASE_CA_PEM` and `ALIYUN_CHINA_AUTH_URL` as
+   repository variables. Auth and edge secrets must each have at least 32
+   characters. Network and OIDC role variables are already saved. Never print
+   resolved deployment configuration or commit credentials.
+4. The GitHub workflow `.github/workflows/deploy-aliyun-pilot.yml` obtains
+   temporary Alibaba credentials using the official OIDC action. The
+   `parrot-github-china-deploy` role trusts only `main` and
+   `codex/aliyun-serverless-backend` in `patrickchin/parrot-english`. Its policy
+   allows only the Hangzhou pilot function, its scaling/concurrency and
+   `esa-gateway` trigger; it grants no database, network or RAM administration.
+   The read-only identity check has successfully assumed this exact role. If
+   Serverless Devs needs temporary code-upload permissions, inspect the actual
+   denied action and add only the necessary permission.
+5. Set the one-time initialization flag and then
+   `ALIYUN_CHINA_DEPLOY_ENABLED=true` when the cloud database, CA and isolated
+   secrets are ready. The workflow checks MySQL, packages the API plus an
+   official checksum-verified Linux Node runtime, and deploys the checked-out
+   GitHub commit with `s.aliyun.yaml`. There is no manual ZIP upload. Cloud
+   deployment is currently disabled.
+6. Configure the ESA pilot with `entry: "./backend/esa-gateway.mjs"`, retaining
+   static assets and SPA fallback. Its encrypted `PARROT_EDGE_SECRET` must match
+   Function Compute, and `PARROT_BACKEND_URL` must point to the Hangzhou function.
+   The gateway uses ESA's third `fetch` parameter for environment variables.
+   Configure CAPTCHA for the pilot hostname and its frontend site key.
+7. Verify actual TLS and baseline initialization, direct-function rejection,
+   multiple cookies, sign-in, learner/guardian access, consent, recording writes
+   and deletion through ESA. Prove the platform supplies `Ali-Cdn-Real-Ip` and
+   cannot be spoofed by the caller. The gateway overwrites forwarded IP and edge
+   authentication headers and rejects a request missing the platform IP.
+   Finally verify the database pauses after idle and resumes on a real request.
 
-Sources: [RDS serverless creation](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/create-a-serverless-apsaradb-rds-for-postgresql-instance),
-[RDS TLS excludes Serverless](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-ssl-encryption-for-an-apsaradb-rds-for-postgresql-instance),
-[PolarDB PostgreSQL TLS](https://help.aliyun.com/en/polardb/polardb-for-postgresql/use-cloud-certificates-to-configure-ssl-encryption),
-[PolarDB serverless prices](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/serverless-cost-description),
-[AgenticDB scale to zero](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/what-is-polardb-agentic-postgresql),
-[AgenticDB public preview](https://help.aliyun.com/en/polardb/polardb-for-postgresql/polardb-agentic-postgresql-public-beta),
-[AgenticDB official MCP](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/access-polardb-postgresql-agentic-database-via-mcp-server),
-[PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/serverless/),
-[PolarDB compute prices](https://help.aliyun.com/zh/polardb/polardb-for-mysql/compute-nodes),
-[PolarDB PSL4 storage](https://help.aliyun.com/zh/polardb/polardb-for-mysql/how-to-choose-between-psl4-and-psl5),
-[RDS MySQL Serverless](https://help.aliyun.com/zh/rds/apsaradb-rds-for-mysql/rds-mysql-serverless),
-[Function Compute scoped permissions](https://help.aliyun.com/zh/functioncompute/policies-and-sample-policies),
-[RDS auto-pause latency](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-the-automatic-start-and-stop-feature-for-a-serverless-apsaradb-rds-for-postgresql-instance),
-[Function Compute Git deployment](https://help.aliyun.com/en/functioncompute/use-serverless-application-center-to-implement-ci-cd-on-existing-projects),
+This is an isolated preview. Built-in Function Compute domains are for testing;
+a public mainland site needs an ICP-filed custom domain. Public media, CAPTCHA,
+LiveKit, OpenAI and Groq remain outside-China dependencies and need separate
+work before describing the whole application as hosted in mainland China.
+
+Sources: [PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/serverless/),
+[automatic pause and endpoints](https://help.aliyun.com/document_detail/2621235.html),
+[MySQL version compatibility](https://help.aliyun.com/document_detail/2536182.html),
+[PolarDB MySQL TLS](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/configure-ssl-encryption),
+[compute pricing](https://help.aliyun.com/zh/polardb/polardb-for-mysql/compute-nodes),
+[PSL4 storage](https://help.aliyun.com/zh/polardb/polardb-for-mysql/how-to-choose-between-psl4-and-psl5),
+[RDS PostgreSQL Serverless TLS exclusion](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-ssl-encryption-for-an-apsaradb-rds-for-postgresql-instance),
+[Function Compute permissions](https://help.aliyun.com/zh/functioncompute/policies-and-sample-policies),
 [ESA function variables](https://help.aliyun.com/en/edge-security-acceleration/esa/user-guide/function-variable),
 [ESA client IP](https://help.aliyun.com/en/edge-security-acceleration/dcdn/user-guide/identify-request-information),
-[HTTP trigger limits](https://help.aliyun.com/en/functioncompute/http-triggers-overview),
-[OSS conditional PUT limitation](https://help.aliyun.com/en/oss/user-guide/0017-00000245).
+[HTTP trigger limits](https://help.aliyun.com/en/functioncompute/http-triggers-overview).

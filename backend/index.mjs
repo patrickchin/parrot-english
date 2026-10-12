@@ -2,8 +2,8 @@ import { Buffer } from "node:buffer";
 import { timingSafeEqual } from "node:crypto";
 import { setTimeout } from "node:timers/promises";
 import { createWorker } from "../worker/index.ts";
-import { createPostgresBinding } from "./postgres.mjs";
-import { createPrivateMediaBucket, createRateLimiter } from "./private-media.mjs";
+import { createMysqlBinding } from "./mysql.mjs";
+import { createPrivateMediaBucket, createRateLimiter } from "./mysql-private-media.mjs";
 
 const failure = (error, status) => Response.json({ error }, { status, headers: { "Cache-Control": "no-store", ...(status === 503 ? { "Retry-After": "60" } : {}) } });
 
@@ -17,7 +17,7 @@ export function createBackendHandler({ pool, variables }) {
   globalThis.scheduler ??= { wait: setTimeout };
   const env = {
     ...variables,
-    DB: createPostgresBinding(pool),
+    DB: createMysqlBinding(pool),
     PRIVATE_MEDIA_BUCKET: createPrivateMediaBucket(pool),
     LEARNER_PROFILE_TRANSCRIPTION_RATE_LIMITER: createRateLimiter(pool, "transcription", 6),
     LEARNER_PROFILE_ENRICHMENT_RATE_LIMITER: createRateLimiter(pool, "enrichment", 12),

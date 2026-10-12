@@ -236,7 +236,7 @@ export async function handleLearnerProfilesRequest(input: {
              ) AS next_created_at
              FROM learner_profile
              WHERE auth_user_id = ?
-           )`,
+           ) AS profile_clock`,
         )
         .bind(
           profileId,

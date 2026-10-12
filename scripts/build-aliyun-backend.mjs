@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { mkdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync, unlinkSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync, copyFileSync, chmodSync, unlinkSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import process from "node:process";
@@ -7,11 +7,12 @@ import { Buffer } from "node:buffer";
 
 if (Number(process.versions.node.split(".")[0]) < 24) throw new Error("Build with Node.js 24 or newer.");
 const directory = "build/aliyun";
+rmSync(directory, { recursive: true, force: true });
 mkdirSync(directory, { recursive: true });
 await build({ entryPoints: ["backend/server.mjs"], outfile: `${directory}/backend.cjs`, bundle: true,
   platform: "node", format: "cjs", target: "node24", packages: "bundle", sourcemap: false,
 });
-copyFileSync("backend/postgres-baseline.sql", `${directory}/postgres-baseline.sql`);
+copyFileSync("backend/mysql-baseline.sql", `${directory}/mysql-baseline.sql`);
 if (process.argv.includes("--package-runtime")) {
   // CI packages the official Linux runtime; never upload a macOS node binary.
   const version = process.version;
@@ -31,8 +32,8 @@ if (process.argv.includes("--package-runtime")) {
   execFileSync("tar", ["-xJf", `${directory}/${name}`, "--strip-components=2", "-C", `${directory}/node/bin`, `node-${version}-linux-x64/bin/node`]);
   unlinkSync(`${directory}/${name}`);
   const ca = process.env.RDS_CA_PATH;
-  if (!ca || !readFileSync(ca, "utf8").includes("-----BEGIN CERTIFICATE-----")) throw new Error("RDS_CA_PATH must point to the RDS CA downloaded from the instance console.");
+  if (!ca || !readFileSync(ca, "utf8").includes("-----BEGIN CERTIFICATE-----")) throw new Error("RDS_CA_PATH must point to the database CA downloaded from the cluster console.");
   copyFileSync(ca, `${directory}/rds-ca.pem`);
-  writeFileSync(`${directory}/bootstrap`, '#!/bin/sh\ncd /code\nexec /code/node/bin/node -e \'require("./backend.cjs").startBackend()\'\n');
+  writeFileSync(`${directory}/bootstrap`, '#!/bin/sh\ncd /code\nexec /code/node/bin/node -e \'require("./backend.cjs").startBackend().catch(() => { console.error("Backend startup failed"); process.exit(1); })\'\n');
   chmodSync(`${directory}/bootstrap`, 0o755);
 }

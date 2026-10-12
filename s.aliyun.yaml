@@ -1,6 +1,6 @@
 # Isolated Hangzhou pilot. Deploy from GitHub Actions or Serverless Devs.
 # CI: Node 24 -> npm ci -> npm run build:aliyun:package -> s deploy.
-# RDS is provisioned separately after approval; this file cannot purchase it.
+# PolarDB MySQL is provisioned separately after approval; this file cannot purchase it.
 # Configure all secrets in the pipeline's encrypted variables, never in Git.
 edition: 3.0.0
 name: parrot-english-china-test
@@ -28,12 +28,13 @@ resources:
       customRuntimeConfig:
         command: ["/code/bootstrap"]
         port: 9000
-      # Only the private network containing the isolated RDS database.
+      # Only the private network containing the isolated MySQL database.
       vpcConfig:
         vpcId: ${env('PARROT_VPC_ID')}
         vSwitchIds: ["${env('PARROT_VSWITCH_ID')}"]
         securityGroupId: ${env('PARROT_SECURITY_GROUP_ID')}
       environmentVariables:
+        PARROT_INITIALIZE_DATABASE: ${env('PARROT_INITIALIZE_DATABASE')}
         DATABASE_URL: ${env('DATABASE_URL')}
         BETTER_AUTH_URL: ${env('BETTER_AUTH_URL')}
         BETTER_AUTH_SECRET: ${env('BETTER_AUTH_SECRET')}
