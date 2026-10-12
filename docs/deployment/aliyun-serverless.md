@@ -1,9 +1,10 @@
 # Alibaba serverless pilot
 
 The China pilot uses ESA Pages, Function Compute and a new **plain PolarDB MySQL
-Serverless 8.0.2** database in Hangzhou. The MySQL backend is implemented and
-locally verified. The database purchase and live backend deployment are pending;
-the existing ESA preview currently serves only the frontend.
+Serverless 8.0.2** database in Hangzhou. The backend and frontend are deployed
+from GitHub. Private TLS, baseline initialization, actual database idle pause,
+and an ESA session request have been verified. Browser guest access and the
+complete account/recording flow still need live validation.
 
 ## Development cost and idle behavior
 
@@ -82,7 +83,7 @@ limits. It records source URLs, byte sizes and SHA-256 checksums in the local
 The checked build contains 466 mirrored files and 1,238 total files, about
 64 MB. Its HTML, JavaScript and web manifest have no foreign media-origin
 references. A representative image was rendered from the local same-origin
-path in the browser; cloud deployment remains pending.
+path in the browser; the ESA GitHub build has deployed the package.
 
 The existing ESA GitHub build uses this command, so no separate media bucket
 or manual upload is required for the pilot. Build-time downloads still use the
@@ -137,7 +138,8 @@ IP-based URLs. CI runs these alongside the existing application/browser checks.
    `codex/aliyun-serverless-backend` in `patrickchin/parrot-english`. Its policy
    allows only the Hangzhou pilot function, its scaling/concurrency and
    `esa-gateway` trigger; it grants no database, network or RAM administration.
-   The read-only identity check has successfully assumed this exact role. If
+   It can also pass the dedicated CAPTCHA verification role to this function.
+   The GitHub deployment has successfully assumed this exact role. If
    Serverless Devs needs temporary code-upload permissions, inspect the actual
    denied action and add only the necessary permission.
 5. Set the one-time initialization flag and then
@@ -145,12 +147,15 @@ IP-based URLs. CI runs these alongside the existing application/browser checks.
    secrets are ready. The workflow checks MySQL, packages the API plus an
    official checksum-verified Linux Node runtime, and deploys the checked-out
    GitHub commit with `s.aliyun.yaml`. There is no manual ZIP upload. Cloud
-   deployment is currently disabled.
+   deployment is enabled for the isolated pilot. Initialization succeeded in
+   the live private database and is now disabled.
 6. Configure the ESA pilot with `entry: "./backend/esa-gateway.mjs"`, retaining
    static assets and SPA fallback. Its encrypted `PARROT_EDGE_SECRET` must match
    Function Compute, and `PARROT_BACKEND_URL` must point to the Hangzhou function.
    The gateway uses ESA's third `fetch` parameter for environment variables.
-   Configure CAPTCHA for the pilot hostname and its frontend site key.
+   Set `VITE_ALIYUN_CAPTCHA_SCENE_ID` and `VITE_ALIYUN_CAPTCHA_PREFIX` on ESA,
+   and `ALIYUN_CHINA_CAPTCHA_SCENE_ID` and `ALIYUN_CHINA_CAPTCHA_ROLE_ARN` in
+   GitHub. Environment changes require a new ESA build to take effect.
 7. Verify actual TLS and baseline initialization, direct-function rejection,
    multiple cookies, sign-in, learner/guardian access, consent, recording writes
    and deletion through ESA. Prove the platform supplies `Ali-Cdn-Real-Ip` and
@@ -161,11 +166,27 @@ IP-based URLs. CI runs these alongside the existing application/browser checks.
    gateway wait. Do not treat a direct Function Compute success as proof that
    the cold request works through ESA.
 
+## Mainland CAPTCHA
+
+Alibaba CAPTCHA 2.0 is activated with one production Web/H5 one-click scene.
+At the approved quote, mainland verification costs CNY 0.005 per attempt;
+up to three scenes have no base fee. Paid custom strategies, encryption mode,
+and security-event features remain off. The frontend uses Alibaba's mainland
+widget and sends its opaque proof to the backend. A dedicated Function Compute
+role grants only CAPTCHA verification, using temporary credentials and the
+Shanghai verification endpoint. No permanent cloud access key is required.
+
+China signup and shared guest access require a genuine production success;
+missing, invalid, oversized, expired, replayed and test-mode proofs are rejected.
+Vendor errors fail closed. Live missing-proof and invalid-proof rejection have
+been verified. Outside-China builds retain Cloudflare Turnstile.
+
 This is an isolated preview. Built-in Function Compute domains are for testing;
 a public mainland site needs an ICP-filed custom domain. Public media is now
-prepared for ESA static hosting. CAPTCHA, LiveKit, OpenAI and Groq remain
-outside-China dependencies and need separate work before describing the whole
-application as hosted in mainland China.
+deployed on ESA static hosting. Speech recognition and live tutoring still need
+mainland replacements for Groq, LiveKit and OpenAI before describing the whole
+application as hosted in mainland China. Those foreign service credentials are
+not configured on the China pilot.
 
 Sources: [PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/serverless/),
 [automatic pause and endpoints](https://help.aliyun.com/document_detail/2621235.html),
