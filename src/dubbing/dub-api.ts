@@ -1,3 +1,4 @@
+import { apiFetch } from "../shared/api-fetch.ts";
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 import { getDubDefinition } from "./rhyme-catalog.ts";
 import {
@@ -197,7 +198,7 @@ export async function loadDubStatus(options: DubResourceRequestOptions) {
   const { dubId } = options;
   getDubDefinition(dubId);
   const response = await requestResponse(
-    options.fetch ?? globalThis.fetch,
+    options.fetch ?? apiFetch,
     appendLearnerProfileTarget(
       `/api/dubs/${dubId}`,
       options.learnerProfileId,
@@ -246,7 +247,7 @@ export async function saveDubLine(
   };
   if (serializedPeakBars) headers[DUB_PEAK_BARS_HEADER] = serializedPeakBars;
   const response = await requestResponse(
-    options.fetch ?? globalThis.fetch,
+    options.fetch ?? apiFetch,
     appendLearnerProfileTarget(
       `/api/dubs/${dubId}/lines/${encodeURIComponent(lineId)}`,
       options.learnerProfileId,
@@ -287,7 +288,7 @@ export async function saveDubLine(
 
 export async function grantDubConsent(options: DubRequestOptions = {}) {
   const response = await requestResponse(
-    options.fetch ?? globalThis.fetch,
+    options.fetch ?? apiFetch,
     appendLearnerProfileTarget(
       "/api/dubs/consent",
       options.learnerProfileId,
@@ -307,7 +308,7 @@ export async function grantDubConsent(options: DubRequestOptions = {}) {
 
 export async function deleteAllDubs(options: DubRequestOptions = {}) {
   const response = await requestResponse(
-    options.fetch ?? globalThis.fetch,
+    options.fetch ?? apiFetch,
     appendLearnerProfileTarget("/api/dubs", options.learnerProfileId),
     {
       credentials: "same-origin",

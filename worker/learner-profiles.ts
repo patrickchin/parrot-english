@@ -231,12 +231,12 @@ export async function handleLearnerProfilesRequest(input: {
            SELECT ?, ?, ?, ?, ?, next_created_at, next_created_at
            FROM (
              SELECT max(
-               cast(unixepoch('subsecond') * 1000 as integer),
+               cast(unixepoch('subsecond') * 1000 as bigint),
                coalesce(max(created_at), 0) + 1
              ) AS next_created_at
              FROM learner_profile
              WHERE auth_user_id = ?
-           )`,
+           ) AS profile_clock`,
         )
         .bind(
           profileId,

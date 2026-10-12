@@ -403,7 +403,7 @@ test("auth client uses Better Auth's same-origin defaults", () => {
   assert.match(authClient, /from ["']better-auth\/react["']/);
   assert.match(
     authClient,
-    /export const authClient\s*=\s*createAuthClient\(\s*\)/,
+    /export const authClient\s*=\s*createAuthClient\(\s*\{\s*fetchOptions:/,
   );
   assert.doesNotMatch(authClient, /anonymousClient/);
   assert.doesNotMatch(authClient, /baseURL|http:\/\/|https:\/\//);

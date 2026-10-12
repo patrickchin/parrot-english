@@ -1,0 +1,57 @@
+# Isolated Hangzhou pilot. Deploy from GitHub Actions or Serverless Devs.
+# CI: Node 24 -> npm ci -> npm run build:aliyun:package -> s deploy.
+# PolarDB MySQL is provisioned separately after approval; this file cannot purchase it.
+# Configure all secrets in the pipeline's encrypted variables, never in Git.
+edition: 3.0.0
+name: parrot-english-china-test
+resources:
+  backend:
+    component: fc3
+    props:
+      region: cn-hangzhou
+      functionName: parrot-english-china-test
+      runtime: custom.debian12
+      code: ./build/aliyun
+      handler: unused
+      cpu: 0.5
+      memorySize: 512
+      diskSize: 512
+      timeout: 60
+      role: ${env('PARROT_CAPTCHA_ROLE_ARN')}
+      instanceConcurrency: 1
+      # Two total concurrent requests = at most two instances at concurrency one.
+      concurrencyConfig:
+        reservedConcurrency: 2
+      scalingConfig:
+        minInstances: 0
+        enableOnDemandScaling: true
+      internetAccess: true
+      customRuntimeConfig:
+        command: ["/code/bootstrap"]
+        port: 9000
+      # Only the private network containing the isolated MySQL database.
+      vpcConfig:
+        vpcId: ${env('PARROT_VPC_ID')}
+        vSwitchIds: ["${env('PARROT_VSWITCH_ID')}"]
+        securityGroupId: ${env('PARROT_SECURITY_GROUP_ID')}
+      environmentVariables:
+        PARROT_INITIALIZE_DATABASE: ${env('PARROT_INITIALIZE_DATABASE')}
+        DATABASE_URL: ${env('DATABASE_URL')}
+        BETTER_AUTH_URL: ${env('BETTER_AUTH_URL')}
+        BETTER_AUTH_SECRET: ${env('BETTER_AUTH_SECRET')}
+        TURNSTILE_SECRET_KEY: ${env('TURNSTILE_SECRET_KEY')}
+        ALIYUN_CAPTCHA_SCENE_ID: ${env('ALIYUN_CAPTCHA_SCENE_ID')}
+        DASHSCOPE_API_KEY: ${env('DASHSCOPE_API_KEY', '')}
+        DASHSCOPE_WORKSPACE_ID: ${env('DASHSCOPE_WORKSPACE_ID', '')}
+        PARROT_EDGE_SECRET: ${env('PARROT_EDGE_SECRET')}
+        PARROT_BACKEND_COMMIT_SHA: ${env('PARROT_BACKEND_COMMIT_SHA')}
+      triggers:
+        - triggerName: esa-gateway
+          triggerType: http
+          qualifier: LATEST
+          triggerConfig:
+            # The application authenticates every request with PARROT_EDGE_SECRET.
+            # No user API, diagnostic or health route bypasses that check.
+            authType: anonymous
+            disableURLInternet: false
+            methods: [GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS]

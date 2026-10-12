@@ -9,9 +9,8 @@ import {
   type ApiEnv,
 } from "./groq.ts";
 import { CONVERSATION_PROFILE_FINALIZATION_SYSTEM_PROMPT } from "./prompts/conversation-profile-finalization.ts";
+import { getChatConfig } from "./model-studio.ts";
 
-const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_CHAT_MODEL = "openai/gpt-oss-20b";
 const MAX_TRANSCRIPT_CHARACTERS = 16_000;
 const OUTPUT_KEYS = new Set(["name", "age", "description"]);
 const NAME_PATTERN = /^[\p{L}\p{M}][\p{L}\p{M}'’ .-]*$/u;
@@ -146,9 +145,10 @@ export async function deriveConversationProfileState({
   turns,
 }: DeriveConversationProfileStateInput): Promise<ConversationProfileState> {
   const transcript = boundedTranscript(turns);
+  const chat = getChatConfig(env);
   if (
     purpose === "small-chat" ||
-    !env.GROQ_API_KEY ||
+    !chat ||
     !transcript.some(({ role }) => role === "user")
   ) {
     return initialState;
@@ -167,15 +167,16 @@ export async function deriveConversationProfileState({
   try {
     const upstream = await fetchWithTimeout(
       fetchImplementation,
-      GROQ_CHAT_URL,
+      chat.url,
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${env.GROQ_API_KEY}`,
+          Authorization: `Bearer ${chat.apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: GROQ_CHAT_MODEL,
+          model: chat.model,
+          ...chat.options,
           messages: [
             {
               role: "system",

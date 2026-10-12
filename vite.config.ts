@@ -286,7 +286,20 @@ function parrotE2eMockApi(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), parrotE2eMockApi()],
+  plugins: [react(), parrotE2eMockApi(), {
+    name: "parrot-esa-media",
+    enforce: "pre",
+    transform(source, id) {
+      if (process.env.PARROT_CHINA_MEDIA !== "true" || id.includes("node_modules")) return;
+      if (source.includes("https://media.parrotbook.com")) {
+        return source.replaceAll("https://media.parrotbook.com", "/china-media");
+      }
+    },
+    transformIndexHtml(html) {
+      return process.env.PARROT_CHINA_MEDIA === "true"
+        ? html.replaceAll("https://media.parrotbook.com", "/china-media") : html;
+    },
+  }],
   define: {
     "import.meta.env.VITE_PARROT_APP_VERSION": JSON.stringify(getBuildVersion()),
     "import.meta.env.VITE_PARROT_COMMIT_SHA": JSON.stringify(getShortCommitSha()),

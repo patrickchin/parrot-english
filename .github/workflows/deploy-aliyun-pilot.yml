@@ -1,0 +1,118 @@
+name: Deploy Alibaba China pilot
+
+on:
+  push:
+    branches: [main, codex/aliyun-serverless-backend]
+    paths:
+      - backend/**
+      - worker/**
+      - scripts/build-aliyun-*.mjs
+      - package.json
+      - package-lock.json
+      - s.aliyun.yaml
+      - .github/workflows/deploy-aliyun-pilot.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aliyun-china-pilot
+  cancel-in-progress: false
+
+jobs:
+  verify-identity:
+    # This read-only check can run before a database or paid function exists.
+    if: vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN != '' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/aliyun-serverless-backend')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      id-token: write
+    steps:
+      - uses: aliyun/setup-aliyun-cli-action@09a5f86915bb556e27bf050e9a5e339aeb073df5 # v1
+        with:
+          version: '3.5.1'
+      - uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1
+        with:
+          oidc-provider-arn: ${{ vars.ALIYUN_CHINA_OIDC_PROVIDER_ARN }}
+          role-to-assume: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
+          role-session-expiration: 900
+      - name: Verify the assumed pilot role
+        env:
+          EXPECTED_ROLE_ARN: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
+        run: |
+          aliyun configure set --profile china-pilot-identity --mode StsToken --region cn-hangzhou --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN"
+          aliyun sts GetCallerIdentity --profile china-pilot-identity --region cn-hangzhou > "$RUNNER_TEMP/aliyun-identity.json"
+          jq '{IdentityType, AccountId, RoleId, Arn}' "$RUNNER_TEMP/aliyun-identity.json"
+          jq -e --arg role "$EXPECTED_ROLE_ARN" '.IdentityType == "AssumedRoleUser" and (.Arn | startswith(($role | sub(":role/"; ":assumed-role/")) + "/"))' "$RUNNER_TEMP/aliyun-identity.json"
+          echo 'Verified GitHub OIDC identity for the China pilot deployment role.'
+  deploy:
+    needs: verify-identity
+    # Enable only after the database, TLS and isolated pilot secrets are ready.
+    if: vars.ALIYUN_CHINA_DEPLOY_ENABLED == 'true' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/codex/aliyun-serverless-backend')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    services:
+      mysql:
+        image: mysql:8.0.18
+        env:
+          MYSQL_ROOT_PASSWORD: disposable-test-password
+          MYSQL_DATABASE: parrot_aliyun_test
+        ports: [3306:3306]
+        options: >-
+          --health-cmd "mysqladmin ping -h127.0.0.1 --silent"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PARROT_INITIALIZE_DATABASE: ${{ vars.ALIYUN_CHINA_INITIALIZE_DATABASE || 'false' }}
+      DATABASE_URL: ${{ secrets.ALIYUN_CHINA_DATABASE_URL }}
+      BETTER_AUTH_URL: ${{ vars.ALIYUN_CHINA_AUTH_URL }}
+      BETTER_AUTH_SECRET: ${{ secrets.ALIYUN_CHINA_AUTH_SECRET }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.ALIYUN_CHINA_TURNSTILE_SECRET_KEY }}
+      ALIYUN_CAPTCHA_SCENE_ID: ${{ vars.ALIYUN_CHINA_CAPTCHA_SCENE_ID }}
+      # Synthetic tests are approved; public AI calls need a separate enablement.
+      DASHSCOPE_API_KEY: ${{ vars.ALIYUN_CHINA_AI_ENABLED == 'true' && secrets.ALIYUN_CHINA_DASHSCOPE_API_KEY || '' }}
+      DASHSCOPE_WORKSPACE_ID: ${{ vars.ALIYUN_CHINA_DASHSCOPE_WORKSPACE_ID }}
+      PARROT_CAPTCHA_ROLE_ARN: ${{ vars.ALIYUN_CHINA_CAPTCHA_ROLE_ARN }}
+      PARROT_EDGE_SECRET: ${{ secrets.ALIYUN_CHINA_EDGE_SECRET }}
+      PARROT_VPC_ID: ${{ vars.ALIYUN_CHINA_VPC_ID }}
+      PARROT_VSWITCH_ID: ${{ vars.ALIYUN_CHINA_VSWITCH_ID }}
+      PARROT_SECURITY_GROUP_ID: ${{ vars.ALIYUN_CHINA_SECURITY_GROUP_ID }}
+      PARROT_BACKEND_COMMIT_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Prepare verified TLS for the disposable test database
+        env:
+          PARROT_TEST_DATABASE_CA_PATH: ${{ runner.temp }}/mysql-test-ca.pem
+        run: node scripts/prepare-aliyun-mysql-test-tls.mjs '${{ job.services.mysql.id }}' "$PARROT_TEST_DATABASE_CA_PATH"
+      - name: Verify the MySQL backend
+        run: npm run test:aliyun
+        env:
+          PARROT_TEST_DATABASE_URL: mysql://root:disposable-test-password@127.0.0.1:3306/parrot_aliyun_test
+          PARROT_TEST_DATABASE_CA_PATH: ${{ runner.temp }}/mysql-test-ca.pem
+      - name: Package the backend with its verified database CA
+        env:
+          DATABASE_CA_PEM: ${{ vars.ALIYUN_CHINA_DATABASE_CA_PEM }}
+          RDS_CA_PATH: ${{ runner.temp }}/rds-ca.pem
+        run: |
+          test -n "$DATABASE_CA_PEM"
+          printf '%s\n' "$DATABASE_CA_PEM" > "$RDS_CA_PATH"
+          npm run build:aliyun:package
+      - name: Obtain temporary Alibaba credentials
+        uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1
+        with:
+          oidc-provider-arn: ${{ vars.ALIYUN_CHINA_OIDC_PROVIDER_ARN }}
+          role-to-assume: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
+          role-session-expiration: 1800
+      - name: Deploy from the checked-out GitHub commit
+        run: |
+          npm install -g @serverless-devs/s@3.1.10
+          s config add -a default --AccessKeyID "$ALIBABA_CLOUD_ACCESS_KEY_ID" --AccessKeySecret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" --SecurityToken "$ALIBABA_CLOUD_SECURITY_TOKEN" -f
+          s deploy -t s.aliyun.yaml --assume-yes
