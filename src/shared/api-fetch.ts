@@ -5,7 +5,8 @@ export function createChinaApiFetch(request: typeof globalThis.fetch): typeof gl
   async function wake() {
     for (let attempt = 0; attempt < 4; attempt++) {
       const response = await request("/api/china/readiness", {
-        credentials: "omit", cache: "no-store", signal: AbortSignal.timeout(12000),
+        // The temporary ESA preview requires its same-origin authorization cookie.
+        credentials: "same-origin", cache: "no-store", signal: AbortSignal.timeout(12000),
       }).catch(() => null);
       const payload = response?.ok ? await response.json().catch(() => null) as { ready?: unknown } | null : null;
       if (payload?.ready === true) {

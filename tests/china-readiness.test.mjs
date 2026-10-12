@@ -11,7 +11,7 @@ test("China readiness retries only wake reads, shares concurrent wake-up, and se
     calls.push({ url, options });
     if (url === "/api/china/readiness") {
       probes++;
-      assert.equal(options.credentials, "omit");
+      assert.equal(options.credentials, "same-origin");
       assert.equal(options.cache, "no-store");
       return probes === 1 ? new Response("Gateway timeout", { status: 504 }) : Response.json({ ready: true });
     }
