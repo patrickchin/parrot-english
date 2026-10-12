@@ -1,3 +1,4 @@
+import { apiFetch } from "../shared/api-fetch.ts";
 export type GuardianAccessState =
   | { mode: "learner" }
   | { mode: "guardian"; expiresAt: string };
@@ -77,7 +78,7 @@ async function requestGuardianAccess(
   method: "GET" | "POST" | "DELETE",
   body: string | undefined,
   {
-    fetch: request = globalThis.fetch,
+    fetch: request = apiFetch,
     signal,
   }: GuardianAccessRequestOptions = {},
 ) {

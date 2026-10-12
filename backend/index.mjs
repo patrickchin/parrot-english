@@ -43,6 +43,10 @@ export function createBackendHandler({ pool, variables }) {
     const body = request.body === null ? undefined : await request.arrayBuffer();
     if (body?.byteLength > 16 * 1024 * 1024) return failure("request_too_large", 413);
     try {
+      if (url.pathname === "/api/china/readiness" && request.method === "GET") {
+        await pool.query("SELECT 1");
+        return Response.json({ ready: true }, { headers: { "Cache-Control": "private, no-store" } });
+      }
       return await worker.fetch(new Request(url, { method: request.method, headers, body }), env);
     } catch (error) {
       // Error codes only: SQL parameters and storage keys contain personal data.

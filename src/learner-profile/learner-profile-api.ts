@@ -1,3 +1,4 @@
+import { apiFetch } from "../shared/api-fetch.ts";
 import type { LearnerStoryLevelId } from "../../lib/story-level.ts";
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
 
@@ -197,7 +198,7 @@ function stringRecord(value: unknown) {
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
-  { fetch: request = globalThis.fetch, signal }: LearnerProfileRequestOptions = {},
+  { fetch: request = apiFetch, signal }: LearnerProfileRequestOptions = {},
 ): Promise<Result> {
   const response = await request(path, { ...init, signal });
   let payload: unknown;

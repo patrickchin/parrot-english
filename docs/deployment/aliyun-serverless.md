@@ -24,6 +24,17 @@ and verify actual pause/resume after deployment. The API closes its database
 connections before returning each response, because Function Compute may freeze
 an idle timer after the response. A cold visit may need to wait for the database.
 
+ESA's gateway stops waiting after ten seconds. A cold guest request containing
+CAPTCHA verification has exceeded this limit even though simpler cold sign-in
+checks passed. The China frontend therefore performs bounded, shared readiness
+reads before authentication and application API requests. The private gateway's
+`GET /api/china/readiness` performs only `SELECT 1`, returns no database details,
+and retains edge authentication and TLS. Only readiness reads are retried;
+CAPTCHA submissions and application writes are sent once. Readiness is reused
+for thirty seconds after success and checked only on a real request, so it does
+not keep the database awake while the site is idle. The ordinary outside-China
+build keeps its original fetch behavior.
+
 Keep Function Compute provisioned instances at zero and concurrent requests
 capped at two. Do not add a VM, paid NAT gateway, cache server or keep-warm task.
 The VPC, switches and security group already exist. Function Compute uses a

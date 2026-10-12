@@ -98,6 +98,10 @@ test("Alibaba backend preserves auth, learner access, atomic storage and SQL bat
     }));
     assert.equal((await handler(new Request("https://backend.test"))).status, 401);
     assert.equal((await call("/api/../private")).status, 400);
+    const ready = await call("/api/china/readiness");
+    assert.equal(ready.status, 200);
+    assert.deepEqual(await ready.json(), { ready: true });
+    assert.match(ready.headers.get("cache-control"), /no-store/);
     assert.equal((await call("/api/learner-profiles")).status, 401);
     const signup = await call("/api/auth/sign-up/email", "POST", { name: "Mary", email: "mary@example.test", password: "test-password-123" }, { "x-captcha-response": "test-proof" });
     assert.equal(signup.status, 200, await signup.clone().text());

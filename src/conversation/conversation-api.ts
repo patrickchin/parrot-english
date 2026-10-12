@@ -1,3 +1,4 @@
+import { apiFetch } from "../shared/api-fetch.ts";
 import type { ConversationPurpose } from "../../lib/conversation-purpose";
 import type { TalkToPeppaPromptStyle } from "../../lib/talk-to-peppa-prompt-style";
 import { notifyGuardianAccessRequired } from "../auth/guardian-access-api.ts";
@@ -85,7 +86,7 @@ export class ConversationApiError extends Error {
 async function requestJson<Result>(
   path: string,
   init: RequestInit,
-  { fetch: request = globalThis.fetch, signal }: ConversationRequestOptions = {},
+  { fetch: request = apiFetch, signal }: ConversationRequestOptions = {},
 ) {
   const response = await request(path, { ...init, signal });
   let payload: unknown = null;

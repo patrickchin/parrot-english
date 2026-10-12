@@ -1,3 +1,4 @@
+import { apiFetch } from "../shared/api-fetch.ts";
 export { loadLessonRecordingConsent } from "../learner-profile/learner-profile-api.ts";
 
 export type LessonRecordingSlot = {
@@ -42,7 +43,7 @@ export async function saveLessonRecording(
   slot: LessonRecordingSlot,
   {
     expectedLearnerProfileId,
-    fetch: request = globalThis.fetch,
+    fetch: request = apiFetch,
     signal,
   }: LessonRecordingRequestOptions,
 ): Promise<LessonRecordingSaveResult> {
