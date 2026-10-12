@@ -3,8 +3,10 @@
 The China pilot uses ESA Pages, Function Compute and a new **plain PolarDB MySQL
 Serverless 8.0.2** database in Hangzhou. The backend and frontend are deployed
 from GitHub. Private TLS, baseline initialization, actual database idle pause,
-and an ESA session request have been verified. Browser guest access and the
-complete account/recording flow still need live validation.
+and an ESA session request have been verified. The deployed browser flow also passed a genuine CAPTCHA, guest sign-in,
+Sam profile selection, session persistence across reload, and first-lesson
+playback through all five scenes. The complete new-account/guardian and private
+recording flows still need live validation.
 
 ## Development cost and idle behavior
 
@@ -179,7 +181,9 @@ Shanghai verification endpoint. No permanent cloud access key is required.
 China signup and shared guest access require a genuine production success;
 missing, invalid, oversized, expired, replayed and test-mode proofs are rejected.
 Vendor errors fail closed. Live missing-proof and invalid-proof rejection have
-been verified. Outside-China builds retain Cloudflare Turnstile.
+been verified. A genuine CAPTCHA and subsequent shared guest sign-in also
+passed on the deployed ESA website. Outside-China builds retain Cloudflare
+Turnstile.
 
 This is an isolated preview. Built-in Function Compute domains are for testing;
 a public mainland site needs an ICP-filed custom domain. Public media is now
