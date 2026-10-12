@@ -66,6 +66,28 @@ limit, byte ranges and atomic conditional writes. A later OSS migration should
 retain the conditional-write index and store immutable payloads in OSS; direct
 OSS writes do not provide all the R2 conditions used by consent/deletion fences.
 
+## Public media on ESA
+
+`npm run build:esa` enables China-only media URLs before Vite computes its
+output hashes, then copies the referenced public artwork into the static
+package under `/china-media`. Constructed story paths and responsive variants
+are included. The web manifest is rewritten in the built output. Authoring
+catalogs and the normal outside-China build retain their original URLs.
+
+The copier accepts only versioned public paths on `media.parrotbook.com`,
+rejects redirects, private paths, empty responses and incorrect content types,
+caps individual downloads at 25 MB, and checks the 2,000-file / 1 GB package
+limits. It records source URLs, byte sizes and SHA-256 checksums in the local
+`build/esa-media-inventory.json`. No existing source media is overwritten.
+The checked build contains 466 mirrored files and 1,238 total files, about
+64 MB. Its HTML, JavaScript and web manifest have no foreign media-origin
+references. A representative image was rendered from the local same-origin
+path in the browser; cloud deployment remains pending.
+
+The existing ESA GitHub build uses this command, so no separate media bucket
+or manual upload is required for the pilot. Build-time downloads still use the
+existing public source; learner recordings are never copied by this script.
+
 ## Local and CI verification
 
 Use Node.js 24 and a disposable local MySQL 8.0.18 container. The integration
@@ -135,11 +157,15 @@ IP-based URLs. CI runs these alongside the existing application/browser checks.
    cannot be spoofed by the caller. The gateway overwrites forwarded IP and edge
    authentication headers and rejects a request missing the platform IP.
    Finally verify the database pauses after idle and resumes on a real request.
+   Measure the first request after pause against ESA's documented 10-second
+   gateway wait. Do not treat a direct Function Compute success as proof that
+   the cold request works through ESA.
 
 This is an isolated preview. Built-in Function Compute domains are for testing;
-a public mainland site needs an ICP-filed custom domain. Public media, CAPTCHA,
-LiveKit, OpenAI and Groq remain outside-China dependencies and need separate
-work before describing the whole application as hosted in mainland China.
+a public mainland site needs an ICP-filed custom domain. Public media is now
+prepared for ESA static hosting. CAPTCHA, LiveKit, OpenAI and Groq remain
+outside-China dependencies and need separate work before describing the whole
+application as hosted in mainland China.
 
 Sources: [PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/serverless/),
 [automatic pause and endpoints](https://help.aliyun.com/document_detail/2621235.html),
@@ -151,4 +177,5 @@ Sources: [PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-f
 [Function Compute permissions](https://help.aliyun.com/zh/functioncompute/policies-and-sample-policies),
 [ESA function variables](https://help.aliyun.com/en/edge-security-acceleration/esa/user-guide/function-variable),
 [ESA client IP](https://help.aliyun.com/en/edge-security-acceleration/dcdn/user-guide/identify-request-information),
+[ESA Pages limits](https://help.aliyun.com/zh/edge-security-acceleration/esa/user-guide/what-is-functions-and-pages/),
 [HTTP trigger limits](https://help.aliyun.com/en/functioncompute/http-triggers-overview).

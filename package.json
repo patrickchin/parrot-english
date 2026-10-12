@@ -21,6 +21,7 @@
     "dev:vite": "vite --host 0.0.0.0",
     "prebuild": "npm run check:content-catalogs && node scripts/prepare-workers-ci-metadata.mjs",
     "build": "tsc --noEmit && vite build",
+    "build:esa": "PARROT_CHINA_MEDIA=true npm run build && node scripts/build-esa-media.mjs",
     "build:agent": "tsc -p tsconfig.agent.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply parrot-english --local",
