@@ -41,7 +41,8 @@ jobs:
         env:
           EXPECTED_ROLE_ARN: ${{ vars.ALIYUN_CHINA_DEPLOY_ROLE_ARN }}
         run: |
-          aliyun sts GetCallerIdentity --mode StsToken --region cn-hangzhou > "$RUNNER_TEMP/aliyun-identity.json"
+          aliyun configure set --profile china-pilot-identity --mode StsToken --region cn-hangzhou --access-key-id "$ALIBABA_CLOUD_ACCESS_KEY_ID" --access-key-secret "$ALIBABA_CLOUD_ACCESS_KEY_SECRET" --sts-token "$ALIBABA_CLOUD_SECURITY_TOKEN"
+          aliyun sts GetCallerIdentity --profile china-pilot-identity --region cn-hangzhou > "$RUNNER_TEMP/aliyun-identity.json"
           jq -e --arg role "$EXPECTED_ROLE_ARN" '.IdentityType == "AssumedRoleUser" and (.Arn | startswith($role + "/"))' "$RUNNER_TEMP/aliyun-identity.json"
           echo 'Verified GitHub OIDC identity for the China pilot deployment role.'
   deploy:
