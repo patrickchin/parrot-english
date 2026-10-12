@@ -35,9 +35,10 @@ documentation advertises scale to zero, a Hangzhou public preview and free use
 during that preview, without an SLA. The creation page is now accessible, but
 its Hangzhou quote displays CNY 0.000–5.600 per hour, with no visible discount.
 The pricing drawer shows CNY 1.40 for database PCU usage. This conflicts with the
-free-preview documentation and must be resolved before purchase. The two existing
-pilot subnets (zones J and B) both report insufficient capacity. Trusted TLS and
-live pause/resume behavior are not yet verified.
+free-preview documentation and must be resolved before purchase. Zones J and B
+reported insufficient capacity. A new, free zone K subnet now produces a quote
+without that error; this is quote availability, not a reservation or deployment.
+Trusted TLS and live pause/resume behavior are not yet verified.
 Its official MCP package uses a private-CA SQL proxy and defaults to
 disabling certificate verification; do not use that default for this backend.
 Obtain a trusted CA before connecting. No AgenticDB cluster has been created.
@@ -45,6 +46,17 @@ The user approved `AliyunServiceRoleForPolarDB`; the role and its managed policy
 were created, and PolarDB's `CheckServiceLinkedRole` returned true. Firefox
 recognized the role and exposed the creation link after the Codex console kept
 showing a stale authorization notice. The creation link also opens in Codex.
+
+A plain SQL alternative is PolarDB MySQL Serverless. A Hangzhou zone J quote
+for one primary capped at 1 PCU, no replicas or standby, PSL4 storage and idle
+suspension enabled is CNY 0.20 per active compute hour with the current 50%
+discount. The page explicitly excludes proxy and storage charges. PSL4 is billed
+on actual storage use; persistent storage still costs money while compute is
+paused. RDS MySQL Serverless also supports auto-pause and TLS, but its 20 GB ESSD
+minimum adds about CNY 24.48 per 30-day month at the documented storage rate,
+before any discounts. Neither MySQL product has been purchased. This backend
+currently supports PostgreSQL; selecting MySQL requires a tested database port,
+including transactions, returning rows, constraints and atomic media writes.
 
 The China pilot uses ESA Pages for the frontend, Function Compute for the API,
 and PostgreSQL for account and learner data. It requires a new database;
@@ -99,7 +111,9 @@ also checks PostgreSQL 17.
 2. Approve the replacement's actual cost before purchase and release of the
    empty, incompatible RDS pilot. The original approval does not cover a new
    product or a changed ongoing cost. Recheck the final quote and discounts.
-3. Place PostgreSQL and Function Compute in the same VPC and switch. Restrict
+3. Place PostgreSQL and Function Compute in the same VPC, using a switch in a
+   supported Function Compute zone. The database can use another zone's switch
+   in that VPC if necessary. Restrict
    the database whitelist to the Function Compute subnet. Do not enable a public database
    endpoint. Create a pilot database and a dedicated application database user.
 4. Enable database TLS and obtain its CA from the instance console. Apply the baseline
@@ -112,7 +126,17 @@ also checks PostgreSQL 17.
    `ALIYUN_CHINA_`; auth, database and edge credentials use repository secrets
    with that prefix. Restrict the RAM deployment role to this repository's
    approved branches and this pilot function. The OIDC provider alone grants no
-   deployment access. The role, secrets and live deployment are still pending.
+   deployment access. The `parrot-github-china-deploy` role is now created, with
+   console login disabled and trust limited to `main` and
+   `codex/aliyun-serverless-backend` in `patrickchin/parrot-english`. Its custom
+   policy permits only create/read/update of `parrot-english-china-test`, its
+   concurrency/scaling configuration and the `esa-gateway` HTTP trigger in
+   Hangzhou. No database, network or RAM administration is granted. The role and
+   network repository variables are saved; deployment is explicitly disabled.
+   Temporary code-upload permissions, if required by Serverless Devs, must be
+   checked against the actual denied action rather than adding broad access.
+   Secrets, the database CA, an actual OIDC deployment and the live backend are
+   still pending.
    Alternatively, import `patrickchin/parrot-english` in Function Compute's Serverless Application
    Center, scoped to this repository. Use the pilot branch and `s.aliyun.yaml`.
    Review the requested GitHub and Alibaba permissions before granting access;
@@ -155,6 +179,11 @@ Sources: [RDS serverless creation](https://help.aliyun.com/zh/rds/apsaradb-rds-f
 [AgenticDB scale to zero](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/what-is-polardb-agentic-postgresql),
 [AgenticDB public preview](https://help.aliyun.com/en/polardb/polardb-for-postgresql/polardb-agentic-postgresql-public-beta),
 [AgenticDB official MCP](https://help.aliyun.com/zh/polardb/polardb-for-postgresql/access-polardb-postgresql-agentic-database-via-mcp-server),
+[PolarDB MySQL Serverless](https://help.aliyun.com/zh/polardb/polardb-for-mysql/user-guide/serverless/),
+[PolarDB compute prices](https://help.aliyun.com/zh/polardb/polardb-for-mysql/compute-nodes),
+[PolarDB PSL4 storage](https://help.aliyun.com/zh/polardb/polardb-for-mysql/how-to-choose-between-psl4-and-psl5),
+[RDS MySQL Serverless](https://help.aliyun.com/zh/rds/apsaradb-rds-for-mysql/rds-mysql-serverless),
+[Function Compute scoped permissions](https://help.aliyun.com/zh/functioncompute/policies-and-sample-policies),
 [RDS auto-pause latency](https://help.aliyun.com/zh/rds/apsaradb-rds-for-postgresql/configure-the-automatic-start-and-stop-feature-for-a-serverless-apsaradb-rds-for-postgresql-instance),
 [Function Compute Git deployment](https://help.aliyun.com/en/functioncompute/use-serverless-application-center-to-implement-ci-cd-on-existing-projects),
 [ESA function variables](https://help.aliyun.com/en/edge-security-acceleration/esa/user-guide/function-variable),
