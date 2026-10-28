@@ -11,6 +11,7 @@ test('the independently loaded pack rejects traversal, missing roles and overlap
     p => { p.mediaBase = 'http://insecure.example/clips/'; },
     p => { p.mediaBase = 'https://example.com/clips/?token=private'; },
     p => { p.poster = 'https://tracker.example/picture.jpg'; },
+    p => { p.waveform = '../../private.json'; },
     p => { p.lines[0].roleId = 'role_absent'; },
     p => { p.lines[1].start = 0; },
     p => { p.lines[0].end = 500; },

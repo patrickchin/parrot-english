@@ -40,5 +40,7 @@
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "选取原片 00:15.5–00:22.3，避开后续不适合儿童的对白，压缩并添加配音时间标记。Wumbo 是虚构词。"
   },
-  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/wumbo/"
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/wumbo/",
+  "waveform": "waveform-v1.json",
+  "poster": "wumbo-poster-v1.jpg"
 }

@@ -54,5 +54,7 @@
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "选取原片 00:10.8–00:22.2，压缩并添加配音时间标记。"
   },
-  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/chocolate/"
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/chocolate/",
+  "waveform": "waveform-v1.json",
+  "poster": "chocolate-poster-v1.jpg"
 }

@@ -13,7 +13,13 @@ export const test = base.extend({
       const folder = match[1] === 'sintel' ? 'content/media/sintel' : 'content/local-dubbing';
       if (!existsSync(`${folder}/${match[2]}`)) return route.continue();
       const types: Record<string, string> = { '.mp4': 'video/mp4', '.m4a': 'audio/mp4', '.jpg': 'image/jpeg' };
-      await route.fulfill({ body: await readFile(`${folder}/${match[2]}`), contentType: types[extname(match[2])], headers: { 'Access-Control-Allow-Origin': '*' } });
+      const body = await readFile(`${folder}/${match[2]}`);
+      const headers = { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' };
+      const range = /^bytes=(\d+)-(\d*)$/.exec(route.request().headers().range ?? '');
+      if (range) {
+        const start = Number(range[1]), end = Math.min(Number(range[2] || body.length - 1), body.length - 1);
+        await route.fulfill({ status: 206, body: body.subarray(start, end + 1), contentType: types[extname(match[2])], headers: { ...headers, 'Content-Range': `bytes ${start}-${end}/${body.length}` } });
+      } else await route.fulfill({ body, contentType: types[extname(match[2])], headers });
     });
     await use(page);
   },

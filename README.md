@@ -16,6 +16,11 @@ The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
 Takes remain in memory and disappear on refresh, close, or an explicit reset.
 
+The warm single-column player shows a teal original-audio envelope and a coral
+learner envelope with a synchronized playhead during listening, capture, and
+replay. This is timing and emphasis feedback, not pronunciation scoring. See
+[the UI and waveform notes](docs/ui-design.md).
+
 The shelf contains the four selected memes: **No, this is Patrick**, **Chocolate!**,
 **Wumbo**, and **Ogres are like onions**. Their prepared excerpts load
 from a dedicated Alibaba OSS bucket, so each scene opens directly.

@@ -2,7 +2,7 @@ export type Role = { id: string; name: string; label: string; portrait?: string;
 export type Line = { id: string; roleId: string; start: number; end: number; text: string; hint: string };
 export type Pack = {
   version: 1; id: string; title: string; description: string; duration: number;
-  video: string; backing?: string; poster?: string; roles: Role[]; lines: Line[];
+  video: string; backing?: string; poster?: string; waveform?: string; roles: Role[]; lines: Line[];
   base: string; mediaBase?: string; mode?: 'local';
   credit: { title: string; attribution: string; source: string; licence: string; licenceUrl: string; changes: string };
 };
@@ -15,6 +15,7 @@ export function validatePack(value: unknown, base = packRoot): Pack {
       typeof p.title !== 'string' || typeof p.description !== 'string' ||
       !Number.isFinite(p.duration) || p.duration <= 0 || p.duration > 120 ||
       !safeFile(p.video) || ![p.backing, p.poster].every(v => v === undefined || safeFile(v)) ||
+      (p.waveform !== undefined && (typeof p.waveform !== 'string' || !/^[a-zA-Z0-9_-]+\.json$/.test(p.waveform))) ||
       (p.mediaBase !== undefined && (typeof p.mediaBase !== 'string' || !/^https:\/\/[a-z0-9.-]+\/[a-zA-Z0-9_/-]*\/$/.test(p.mediaBase))) ||
       (p.mode !== undefined && p.mode !== 'local') ||
       !Array.isArray(p.roles) || p.roles.length < 1 || p.roles.length > 8 ||

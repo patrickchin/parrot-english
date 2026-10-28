@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { asset, type Pack, type Line } from './pack';
+import { waveformStep } from './waveform';
 
-export type Take = { blob: Blob; url: string; duration: number };
+export type Take = { blob: Blob; url: string; duration: number; peaks: number[] };
 export type Takes = Record<string, Take>;
 type Phase = 'idle' | 'loading' | 'preview' | 'countdown' | 'recording' | 'saving' | 'replay' | 'listening';
 
@@ -11,6 +12,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   const [countdown, setCountdown] = useState(3);
   const [error, setError] = useState('');
   const [level, setLevel] = useState(0);
+  const [livePeaks, setLivePeaks] = useState<number[]>([]);
   const operation = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const frame = useRef(0);
@@ -23,9 +25,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   const backing = useRef<AudioBuffer | null>(null);
   const lastTick = useRef(0);
   const captureCleanup = useRef<(() => void) | null>(null);
+  const pendingSeek = useRef<AbortController | null>(null);
 
   function stop() {
     operation.current++;
+    pendingSeek.current?.abort(); pendingSeek.current = null;
     if (timer.current) clearTimeout(timer.current);
     cancelAnimationFrame(frame.current);
     if (recorder.current?.state === 'recording') recorder.current.stop();
@@ -57,8 +61,21 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   async function readyVideo(start: number, muted: boolean) {
     const el = video.current;
     if (!el || el.error) throw new Error('视频暂时无法播放，请重新加载片段。');
+    const id = operation.current;
     el.muted = muted;
-    el.currentTime = start;
+    if (Math.abs(el.currentTime - start) > 0.025) {
+      const abort = new AbortController(); pendingSeek.current = abort;
+      await new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => finish(new Error('视频定位较慢，请稍后再试。')), 8000);
+        const finish = (error?: Error) => { clearTimeout(timeout); el.removeEventListener('seeked', ready); el.removeEventListener('error', failed); abort.signal.removeEventListener('abort', cancelled); if (pendingSeek.current === abort) pendingSeek.current = null; error ? reject(error) : resolve(); };
+        const ready = () => finish();
+        const failed = () => finish(new Error('视频暂时无法播放，请重新加载片段。'));
+        const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
+        el.addEventListener('seeked', ready, { once: true }); el.addEventListener('error', failed, { once: true }); abort.signal.addEventListener('abort', cancelled, { once: true });
+        el.currentTime = start;
+      });
+    }
+    if (id !== operation.current) throw new DOMException('Cancelled', 'AbortError');
     await el.play();
     return el;
   }
@@ -87,14 +104,19 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
   }
 
-  async function listen(take: Take) {
+  async function listen(take: Take, line: Line) {
     stop(); setError(''); setPhase('listening');
     const id = operation.current;
     const audio = new Audio(take.url);
+    setTime(line.start);
     listenAudio.current = audio;
-    audio.onended = () => { if (id === operation.current) stop(); };
+    audio.onended = () => { if (id === operation.current) { setTime(Math.min(line.end, line.start + take.duration)); stop(); } };
     audio.onerror = () => { if (id === operation.current) { stop(); setError('这次录音无法播放，请重新录一句。'); } };
-    try { await audio.play(); } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
+    try {
+      await audio.play();
+      const tick = () => { if (id !== operation.current) return; setTime(Math.min(line.end, line.start + audio.currentTime)); frame.current = requestAnimationFrame(tick); };
+      if (id === operation.current) frame.current = requestAnimationFrame(tick);
+    } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
   }
 
   async function record(line: Line) {
@@ -104,6 +126,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     }
     const id = operation.current;
     setPhase('loading');
+    setLivePeaks([]); setTime(line.start);
     try {
       context.current ??= new AudioContext();
       // Request capture before waiting on Web Audio: Safari can keep a context
@@ -123,6 +146,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       void context.current.resume().catch(() => {});
       const samples = new Float32Array(analyser.fftSize);
       let peak = 0;
+      const peaks: number[] = [];
       const chunks: Blob[] = [];
       let started = 0;
       capture.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
@@ -141,7 +165,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         if (!blob.size || duration < 0.3 || peak < 0.003) {
           setError('没听到清楚的声音。靠近麦克风，再试一次吧。'); return;
         }
-        onTake(line.id, { blob, url: URL.createObjectURL(blob), duration });
+        onTake(line.id, { blob, url: URL.createObjectURL(blob), duration, peaks });
       };
       capture.onerror = () => { if (id === operation.current) { stop(); setError('录音中断了，请再试一次。上一次录音还在。'); } };
       captured.getAudioTracks().forEach(track => { track.onended = () => {
@@ -162,6 +186,10 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
             if (id !== operation.current || capture.state !== 'recording') return;
             analyser.getFloatTimeDomainData(samples);
             const rms = Math.sqrt(samples.reduce((sum, n) => sum + n * n, 0) / samples.length);
+            const index = Math.floor((performance.now() - started) / 1000 / waveformStep);
+            while (peaks.length <= index) peaks.push(0);
+            peaks[index] = Math.max(peaks[index], rms);
+            setLivePeaks([...peaks]);
             peak = Math.max(peak, rms); setLevel(Math.min(1, rms * 12));
             setTime(video.current?.currentTime ?? line.start);
             frame.current = requestAnimationFrame(meter);
@@ -219,7 +247,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
   }
 
-  return { phase, time, countdown, level, error, setError, stop, preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, time, countdown, level, livePeaks, error, setError, stop, preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function message(error: unknown): string {

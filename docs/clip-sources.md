@@ -90,3 +90,12 @@ The app does not imply endorsement by any film or television producer.
   rerun after an initial concurrent run reset unexpectedly to the role screen.
 - Desktop and phone screenshots are stored outside the repository under the
   project's Codex screenshots directory.
+
+## Waveforms and scene thumbnails — 2026-10-29
+
+`node scripts/prepare-waveforms.mjs` derives 20 ms RMS envelopes from the actual
+prepared clips and extracts four small scene thumbnails. Numeric envelopes are
+pack metadata; video/audio/JPEG media stays in OSS. Thumbnails use the same source
+excerpts and credits above. Learner envelopes are sampled from the microphone
+and retained only with the in-memory take. See [UI notes](ui-design.md) for the
+shared loudness scale, alignment, source-mix limitation, and recording controls.
