@@ -10,7 +10,10 @@ the first product has no teacher workflow.
 
 Read the [product plan](docs/product-plan.md) for scope, content permissions,
 hosting, domain options, and the pilot sequence. This is a planning baseline;
-application code and deployment automation have not been carried into it.
+the earlier application and deployment automation have not been carried into it.
+
+The [Alibaba account smoke test](prototype/README.md) contains a minimal page
+and backend endpoint for checking the new deployment path.
 
 ## Research archive
 
