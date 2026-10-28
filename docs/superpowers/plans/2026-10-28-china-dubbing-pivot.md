@@ -150,6 +150,22 @@ without implementing and testing an adapter separately.
 
 ## Chinese infrastructure and domain
 
+The founder has an existing cloud account and a company used mainly for another
+project, but no company dedicated to Parrotbook. Treat the existing company as
+the first candidate operator, subject to confirming mainland registration,
+business scope, ownership, and the relevant service qualifications. A dedicated
+new company is not a prerequisite for building the prototype. Alibaba allows
+multiple websites under one filing entity, subject to provincial limits; this
+does not establish this particular company's eligibility for the proposed
+service. [Alibaba filing limits](https://help.aliyun.com/zh/icp-filing/basic-icp-service/product-overview/limits).
+
+If the existing company operates Parrotbook, keep its app resources, access
+permissions, and cost tracking separate from the other project. The named
+operator should actually take responsibility for the service and user data.
+Consider a separate company later if ownership, partners, licensing, or business
+separation makes that useful. Confirm operator eligibility before deciding
+domain ownership and filing arrangements.
+
 Keep `parrotbook.com` if the ownership and filing checks succeed. The repository
 currently configures `parrotbook.com` and `www.parrotbook.com` for a Cloudflare
 Worker, and `media.parrotbook.com` for media. Public RDAP and DNS checks on
@@ -268,8 +284,9 @@ operator, rights, and filing decisions; those dependencies can dominate coding.
 - Target phones/tablets and whether families open the activity through WeChat
   or a standalone browser.
 - Pilot learners' ages, English level, and independent-use needs.
-- Mainland operating entity or eligible operator, filing province, and domain
-  ownership arrangements.
+- Eligibility and willingness to use the existing company as the mainland
+  operator, its filing province, and domain ownership arrangements; create a
+  dedicated company only if the operating or ownership requirements call for it.
 - Available original content, performers, and a budget for three starter packs.
 - Whether local playback is sufficient for the pilot or an adult needs private
   video export immediately.
