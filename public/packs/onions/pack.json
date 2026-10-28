@@ -1,9 +1,8 @@
 {
   "version": 1,
   "id": "pack_BeIAKV4J",
-  "mode": "local",
   "title": "怪物就像洋葱",
-  "description": "成人内部配音测试；视频从设备本地载入，不上传。",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
   "duration": 15.7,
   "video": "onions-v1.mp4",
   "roles": [
@@ -54,5 +53,6 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
-  }
+  },
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/onions/"
 }

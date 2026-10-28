@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 
 // Private authoring inputs stay out of public/ and out of Git. This command
-// produces pack metadata for the app and videos for device-local testing only.
+// produces metadata and local excerpts for upload to Alibaba OSS.
 const directory = 'content/local-dubbing';
 const scenes = [
   {
@@ -41,8 +41,9 @@ for (const scene of scenes) {
   try { previous = JSON.parse(await readFile(path + '/pack.json', 'utf8')); } catch { /* First authoring run. */ }
   const roles = scene.roles.map(([name,label,hint],i) => ({ id: previous?.roles[i]?.id ?? id('role'), name,label,hint }));
   const pack = {
-    version:1, id:previous?.id ?? id('pack'), mode:'local', title:scene.title,
-    description:'成人内部配音测试；视频从设备本地载入，不上传。', duration:scene.duration, video:`${scene.slug}-v1.mp4`, roles,
+    version:1, id:previous?.id ?? id('pack'), title:scene.title,
+    mediaBase:`https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/${scene.slug}/`,
+    description:'成人原型配音测试；选角色，听原声，录下自己的版本。', duration:scene.duration, video:`${scene.slug}-v1.mp4`, roles,
     lines:scene.lines.map(([role,start,end,text,hint],i) => ({ id:previous?.lines[i]?.id ?? id('line'),roleId:roles[role].id,start,end,text,hint })),
     rightsStatus:'redistribution-not-cleared',
     credit:{ title:scene.slug==='onions' ? 'Shrek' : 'SpongeBob SquarePants', attribution:scene.slug==='onions' ? '原作：DreamWorks Animation' : '原作：Nickelodeon / Viacom', source:scene.source, licence:'未确认再分发许可', licenceUrl:'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes:scene.changes },
@@ -55,6 +56,6 @@ for (const scene of scenes) {
   args.push('-t',String(scene.duration),'-c:v','libx264','-preset','fast','-crf','24','-pix_fmt','yuv420p','-c:a','aac','-ac','2','-b:a','96k','-movflags','+faststart','-y',`${directory}/${pack.video}`);
   const result = spawnSync('ffmpeg',args,{stdio:'inherit'});
   if (result.status !== 0) throw new Error(`Unable to prepare ${scene.slug}; provide its private source video first.`);
-  console.log(`Prepared ${scene.slug}: ${scene.duration}s, ${pack.lines.length} turns. Video remains private.`);
+  console.log(`Prepared ${scene.slug}: ${scene.duration}s, ${pack.lines.length} turns. Upload the prepared file to its OSS clip path.`);
 }
-await writeFile(`${directory}/START-HERE.txt`, 'Parrotbook private test clips\n\nOpen https://parrotbook.com/ and choose the matching scene, then select its -v1.mp4 file from your device. The file stays on your device.\n\nThese third-party clips have not been cleared for redistribution or public hosting. No licence is granted by this prototype.\n');
+await writeFile(`${directory}/START-HERE.txt`, 'Parrotbook private test clips\n\nOpen https://parrotbook.com/ and choose the matching scene, the hosted clips now open directly. These files are retained as local authoring copies.\n\nThese third-party clips have not been cleared for redistribution or public hosting. No licence is granted by this prototype.\n');

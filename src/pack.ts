@@ -3,11 +3,11 @@ export type Line = { id: string; roleId: string; start: number; end: number; tex
 export type Pack = {
   version: 1; id: string; title: string; description: string; duration: number;
   video: string; backing?: string; poster?: string; roles: Role[]; lines: Line[];
-  base: string; mode?: 'local';
+  base: string; mediaBase?: string; mode?: 'local';
   credit: { title: string; attribution: string; source: string; licence: string; licenceUrl: string; changes: string };
 };
 export const packRoot = '/packs/sintel/';
-export const asset = (pack: Pack, path: string) => pack.base + path;
+export const asset = (pack: Pack, path: string) => (pack.mediaBase ?? pack.base) + path;
 export function validatePack(value: unknown, base = packRoot): Pack {
   const p = value as Pack;
   const safeFile = (s: unknown) => typeof s === 'string' && /^[a-zA-Z0-9_-]+\.(mp4|m4a|jpg)$/.test(s);
@@ -15,6 +15,7 @@ export function validatePack(value: unknown, base = packRoot): Pack {
       typeof p.title !== 'string' || typeof p.description !== 'string' ||
       !Number.isFinite(p.duration) || p.duration <= 0 || p.duration > 120 ||
       !safeFile(p.video) || ![p.backing, p.poster].every(v => v === undefined || safeFile(v)) ||
+      (p.mediaBase !== undefined && (typeof p.mediaBase !== 'string' || !/^https:\/\/[a-z0-9.-]+\/[a-zA-Z0-9_/-]*\/$/.test(p.mediaBase))) ||
       (p.mode !== undefined && p.mode !== 'local') ||
       !Array.isArray(p.roles) || p.roles.length < 1 || p.roles.length > 8 ||
       !Array.isArray(p.lines) || p.lines.length < 1 || p.lines.length > 60) throw new Error('片段文件不完整，请重新加载。');

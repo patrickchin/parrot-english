@@ -114,7 +114,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
         <section aria-label="电影片段" className="min-w-0">
           <div className="overflow-hidden rounded-3xl bg-ink shadow-[0_12px_36px_-22px_#19284280]">
             <div className="relative aspect-[16/9] bg-[#121b2a]">
-              <video ref={video} src={source} poster={pack.poster ? asset(pack, pack.poster) : undefined} playsInline preload="auto" aria-label={`${pack.credit.title} 对话片段`}
+              <video ref={video} src={source} poster={pack.poster ? asset(pack, pack.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={`${pack.credit.title} 对话片段`}
                 className="h-full w-full object-contain" onCanPlay={() => { const duration = video.current?.duration ?? 0; if (pack.mode === "local" && Math.abs(duration - pack.duration) > 0.7) { setVideoReady(false); media.setError(`请选择准备好的 ${pack.video}（约 ${Math.round(pack.duration)} 秒）。`); } else setVideoReady(true); }}
                 onWaiting={() => { if (media.phase === 'replay' || media.phase === 'recording') { media.stop(); media.setError('视频缓冲中，请等一下再试。之前的录音还在。'); } }}
                 onError={() => { setVideoReady(false); media.stop(); media.setError('视频没能加载成功。请检查网络，然后重新加载。'); }} />

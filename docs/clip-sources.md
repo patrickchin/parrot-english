@@ -2,10 +2,12 @@
 
 Prepared on 2026-10-28 for the founder and colleague's adult prototype test.
 The player and pack metadata are separate. The four selected meme clips have
-**not** been cleared for redistribution. Downloaded originals, normalized test
-clips, temporary speech transcripts, and the private ZIP remain under the
-Git-ignored `content/local-dubbing/` directory. They are not in `public/` and are
-not included in the Alibaba function bundle.
+**not** been cleared for redistribution. At the owner’s explicit request, the
+four prepared excerpts are being moved to dedicated Alibaba OSS object storage
+so they can load directly. The account must activate OSS before bucket creation.
+Original downloads, prepared meme excerpts, temporary speech transcripts, and the earlier ZIP remain
+under the Git-ignored `content/local-dubbing/` directory. Uploading these excerpts
+does not establish a redistribution licence.
 
 ## Selected meme shelf
 
@@ -21,13 +23,14 @@ not evidence of permission from the original producer. The Shrek reference is
 an official upload, which also does not itself grant permission for our edits
 or distribution. The actual prepared Shrek footage comes from a
 [landscape upload of the same conversation](https://www.youtube.com/watch?v=aJQmVZSAqlc).
-Both links remain documented rather than presenting the private file as an
+Both links remain documented rather than presenting the hosted excerpt as an
 officially authorized pack.
 
 `scripts/prepare-meme-packs.mjs` records the exact source offsets, edit choices,
 dialogue timings, Chinese hints, and role definitions. It writes metadata to
-`public/packs/<scene>/pack.json` and normalized H.264/AAC video only to the ignored
-local directory. Existing opaque pack/role/line IDs are retained on reruns.
+`public/packs/<scene>/pack.json` and normalized H.264/AAC video to the ignored
+authoring directory for a separate upload to OSS.
+Existing opaque pack/role/line IDs are retained on reruns.
 It requires FFmpeg and the named private source files; it does not fetch files
 or credentials during app builds.
 
@@ -75,10 +78,12 @@ The app does not imply endorsement by any film or television producer.
 - Native MediaRecorder capture, replay, retry, session reset, no-input handling,
   and late permission cancellation were exercised with synthetic microphones
   in desktop and Android-sized Chromium sessions.
-- Each of the four prepared private clips played and accepted a recorded turn.
+- Each of the four prepared excerpts played and accepted a recorded turn.
 - WebKit covered playback, layout, missing media, and denied microphone access.
   WebKit microphone capture and physical iPhone/Android devices remain unverified.
 - The production build's device file picker was tested using the redistributable
   sample as a fixture; selecting the file made no media upload request.
+- Browser-flow tests load the OSS URLs through local media fixtures. Live OSS
+  availability, byte-range requests, CORS, and playback require activation and upload.
 - Desktop and phone screenshots are stored outside the repository under the
   project's Codex screenshots directory.
