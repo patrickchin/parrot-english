@@ -1,5 +1,11 @@
 # Parrot English
 
+The existing prototype is preserved as research at Git tag
+`research/parrot-english-2026-10-28` (commit `8df68a24`). The proposed next
+direction is a China-hosted English dubbing player with separate content packs.
+See the [China dubbing product plan](docs/superpowers/plans/2026-10-28-china-dubbing-pivot.md).
+The documentation below describes the preserved prototype.
+
 List-first, scene-based English speaking practice for young learners.
 
 ## Stack

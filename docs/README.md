@@ -1,6 +1,8 @@
 # Parrot English Docs
 
-These docs describe the current product and technical design.
+The [China dubbing product plan](./superpowers/plans/2026-10-28-china-dubbing-pivot.md)
+sets out the proposed next direction. The design docs below describe the
+Parrot English prototype preserved at `research/parrot-english-2026-10-28`.
 
 ## Design Docs
 
