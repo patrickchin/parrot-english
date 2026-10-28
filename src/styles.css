@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@theme {
+  --color-ink: #192842;
+  --color-muted: #58657a;
+  --color-paper: #f2f6fc;
+  --color-blue: #244cda;
+  --color-lemon: #ffe178;
+  --color-mint: #e5f3ed;
+  --color-danger: #b72f40;
+  --font-sans: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: ui-rounded, "Avenir Next", "PingFang SC", system-ui, sans-serif;
+}
+:root { color-scheme: light; }
+body { margin: 0; min-width: 320px; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), summary, a { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+::selection { background: #ffe178; color: #192842; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

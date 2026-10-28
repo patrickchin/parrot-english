@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "id": "pack_KHUVKWak",
+  "mode": "local",
+  "title": "不，这是派大星！",
+  "description": "成人内部配音测试；视频从设备本地载入，不上传。",
+  "duration": 14.2,
+  "video": "patrick-v1.mp4",
+  "roles": [
+    {
+      "id": "role_GMoleWKV",
+      "name": "派大星",
+      "label": "用普通和生气两种语气接电话",
+      "hint": "2 句台词 · 试试两种语气"
+    },
+    {
+      "id": "role_VMR9ThiJ",
+      "name": "来电者",
+      "label": "打电话来问问题的人",
+      "hint": "2 句相同的问题"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_HXrOVtsT",
+      "roleId": "role_VMR9ThiJ",
+      "start": 3,
+      "end": 4.95,
+      "text": "Is this the Krusty Krab?",
+      "hint": "请问是蟹堡王吗？"
+    },
+    {
+      "id": "line_6Yw7M0iC",
+      "roleId": "role_GMoleWKV",
+      "start": 4.95,
+      "end": 7.8,
+      "text": "No, this is Patrick.",
+      "hint": "不，这是派大星。"
+    },
+    {
+      "id": "line_g72lqe2P",
+      "roleId": "role_VMR9ThiJ",
+      "start": 8.6,
+      "end": 10.7,
+      "text": "Is this the Krusty Krab?",
+      "hint": "请问是蟹堡王吗？"
+    },
+    {
+      "id": "line_3ShAx1P7",
+      "roleId": "role_GMoleWKV",
+      "start": 10.7,
+      "end": 14.2,
+      "text": "No! This is Patrick!",
+      "hint": "不！这是派大星！"
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "SpongeBob SquarePants",
+    "attribution": "原作：Nickelodeon / Viacom",
+    "source": "https://www.youtube.com/watch?v=dwifOuuMkfo",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "选取原片 00:00–00:08 与 00:17–00:23.2，拼接、压缩并添加配音时间标记。"
+  }
+}

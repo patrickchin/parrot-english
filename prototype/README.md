@@ -1,5 +1,9 @@
 # Alibaba account smoke test
 
+Historical deployment proof: the public domain now serves the dubbing player
+described in the root README. This file and `worker.mjs` retain the initial
+account check for reference; they are not the current deployed application.
+
 One ESA edge function serves a small page and `GET /api/health`. The backend
 returns its platform and current server time; the page's **Check backend** button
 measures the round trip. There are no database or recording dependencies.

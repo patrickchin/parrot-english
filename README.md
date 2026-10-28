@@ -12,10 +12,36 @@ Read the [product plan](docs/product-plan.md) for scope, content permissions,
 hosting, domain options, and the pilot sequence. This is a planning baseline;
 the earlier application and deployment automation have not been carried into it.
 
-The [Alibaba account smoke test](prototype/README.md) contains a minimal page
-and backend endpoint for checking the new deployment path.
-It is live at <https://parrotbook.com/>. The [infrastructure record](docs/infrastructure.md)
-describes the new domain setup and the previous services parked with data retained.
+The first player is live at <https://parrotbook.com/>. Choose a scene and role,
+listen to the original dialogue, record each turn, then replay with your voice.
+Takes remain in memory and disappear on refresh, close, or an explicit reset.
+
+The shelf contains the four selected memes: **No, this is Patrick**, **Chocolate!**,
+**Wumbo**, and **Ogres are like onions**. Their private test videos are excluded
+from Git and from the hosted bundle. The public player accepts the prepared
+video from a device file picker without uploading it. A separate CC BY 3.0
+**Sintel** sample can be played immediately. See [clip sources](docs/clip-sources.md)
+for the YouTube links, timing notes, credits, and redistribution status.
+
+```sh
+npm ci
+npm run dev
+npm run build
+npm test
+npm run test:browser
+```
+
+With private footage prepared under `content/local-dubbing/`, the development
+server plays those four scenes directly. On the hosted player, unzip the private
+test-clip package and select the matching `*-v1.mp4` file for the chosen scene.
+No cloud media upload, account, database, voice generation, or speech scoring is
+involved. Microphone capture uses native browser APIs; actual iPhone/Android
+hardware and WeChat still need manual checks before a child pilot.
+
+`npm run build` emits the site and reviewed public assets inside one
+`build/edge-worker.mjs` for Alibaba ESA. The retained [account smoke test](prototype/README.md)
+records the earlier deployment proof. The [infrastructure record](docs/infrastructure.md)
+describes the current service and previous services parked with data retained.
 
 ## Research archive
 

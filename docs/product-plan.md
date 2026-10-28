@@ -2,6 +2,14 @@
 
 Date: 2026-10-28
 
+Prototype status: the first browser dubbing flow now exists, using an immediately
+playable licensed Sintel excerpt and a shelf for four founder-selected meme
+scenes. The meme footage remains private and device-local until redistribution
+rights are established; it is not shipped in the hosted player. See
+[clip sources](clip-sources.md) and [infrastructure](infrastructure.md) for the
+actual state. Adult browser testing is complete for the documented paths;
+physical-device validation and any child pilot remain subsequent work.
+
 Preserve the existing Parrot English prototype as research and build an English
 dubbing player inspired by The Choicer Voicer. The initial route to market is
 through the founder's contacts who work with children. Keep the player usable
@@ -299,5 +307,6 @@ operator, rights, and filing decisions; those dependencies can dominate coding.
 - Whether the first payer is a parent or an institution distributing family
   access; this does not add teacher workflows to the first release.
 
-The next implementation should prove one complete dubbing session. Content
-marketplaces, cloud migrations, and AI assessment follow demonstrated demand.
+The next validation should prove the dubbing session on the founder and
+colleague's actual phones, with human review of the chosen footage and timing.
+Content marketplaces, cloud migrations, and AI assessment follow demonstrated demand.
