@@ -14,6 +14,8 @@ the earlier application and deployment automation have not been carried into it.
 
 The [Alibaba account smoke test](prototype/README.md) contains a minimal page
 and backend endpoint for checking the new deployment path.
+It is live at <https://parrotbook.com/>. The [infrastructure record](docs/infrastructure.md)
+describes the new domain setup and the previous services parked with data retained.
 
 ## Research archive
 

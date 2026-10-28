@@ -1,0 +1,93 @@
+# Infrastructure record — 2026-10-28
+
+The owner chose to keep previous resources and data, and stop using the old
+applications. Do not delete databases, media, recordings, code versions, or
+provider projects as part of this change. This is a reversible parking operation,
+not a completed deletion or a promise of zero ongoing cost.
+
+## Current prototype
+
+- Alibaba ESA routine: `parrotbook-prototype`.
+- Staging and production code: `1793173312655798735`.
+- Website: `parrotbook.com`, site ID `186011743148252`.
+- Website plan: free (`entranceplan`), CNAME access, overseas coverage.
+- Website plan initially shows expiry `2026-11-29 00:00:00` in the console;
+  automatic renewal is off. Confirm the free-plan extension rules before expiry.
+- Functions and Pages account mode remains free. Traffic or retained storage
+  billing should be checked separately from the ¥0 website order.
+- Alibaba rejected mainland/global coverage because the domain lacks ICP filing.
+- Cloudflare remains the registrar and authoritative DNS provider. Registration
+  shows expiry July 13, 2027. Do not cancel the domain or remove the DNS zone.
+
+| DNS name | Type | Value | Proxy |
+| --- | --- | --- | --- |
+| `parrotbook.com` | CNAME (flattened at apex) | `parrotbook.com.a1.initaa.com` | DNS only |
+| `www.parrotbook.com` | CNAME | `www.parrotbook.com.a1.initaa.com` | DNS only |
+| `_esaauth.parrotbook.com` | TXT | Alibaba ownership verification value | DNS only |
+
+The apex and www records trigger the prototype directly, rather than forwarding
+visitors to the protected debug preview. The prototype has no database, account,
+upload, recording, or AI service dependency.
+
+A free Let's Encrypt certificate covers the apex and www names; initial
+expiry is January 26, 2027. SSL/TLS and forced HTTPS are enabled. The live browser
+check at `2026-10-28T08:06:38.461Z` returned **Backend connected** with a 128 ms
+round trip on `https://parrotbook.com/`.
+
+## Parked previous stack
+
+| Resource | State / retained material |
+| --- | --- |
+| Cloudflare Worker `parrot-english` | Worker, secrets, bindings, and deployment history retained; apex and www domain bindings removed; workers.dev and preview URLs disabled; no cron, queue, or email triggers configured |
+| Cloudflare D1 `parrot-english` | Retained; 14 tables, 323,584 bytes at inspection; no learner rows exported to Git |
+| R2 `parrot-english-media` | Retained; 910 objects, 65.7 MB; `media.parrotbook.com` disconnected; r2.dev disabled |
+| R2 `parrot-english-art-source` | Retained; 321 objects, 339 MB; r2.dev disabled |
+| R2 `parrot-english-private-media` | Retained; 69 objects, 3.83 MB; r2.dev disabled |
+| R2 `parrot-english-private-media-preview` | Retained; empty at inspection; r2.dev disabled |
+| R2 `parrot-english-personalized-story-art` and `-preview` | Retained; both empty at inspection; r2.dev disabled |
+| Alibaba FC `parrot-english-china-test` (Hangzhou) | Retained; reserved concurrency changed from 2 to 0 to block invocations |
+| PolarDB `parrot-english-china-pilot` (`pc-bp11927bp5fgtm1d4`) | Retained, already `Stopped`; reported storage used 3,693,084,672 bytes, including database/system overhead; storage may still bill |
+| VPC `parrot-english-china-pilot` | Retained with its three switches, security group, and project RAM roles |
+| Old ESA routine `parrot-english` | Previous code/assets/configuration retained; production and staging now publish the dependency-free offline responder `1793174755620719537`; backend invocations blocked; automatic build branch changed to nonexistent `codex/parked-parrot-english` |
+| GitHub workflow `Deploy Alibaba China pilot` (381467287) | `disabled_manually`; source history still retained |
+| LiveKit project `parrot-english` (`p_b2jd8tz63wo`) | Retained; agent `CA_DvywB7smgX2W` was Sleeping with zero active sessions; room listing empty; agent is not deleted or explicitly suspended |
+
+The old ESA routine's former production code is `1791819186659709977` and
+staging code is `1791808602227958155`; both remain retained versions. Its original automatic build branch and
+production branch were `codex/aliyun-serverless-backend`; only automatic build
+branch selection was changed. The active parking version comes from
+`prototype/parked-worker.mjs`, returns HTTP 503 for every request, and cannot
+call the former backend or serve the former assets. The default debug hostname
+still requires ESA preview authorization.
+The authorized live preview was checked after publication and displayed
+“This earlier Parrot English application is offline.”
+
+Other account resources, including E2B functions, `harpa-pro` buckets,
+`keepsake` resources, `puptime` resources, the default VPC, and ambiguously named
+`private-source` / `public-media` buckets were left alone. Provider-wide plans,
+API keys, and subscriptions were not cancelled because they may support other
+projects. Groq, ElevenLabs, OpenAI, and DashScope account subscriptions were not
+audited; the old application can no longer request them through its retired
+public entry points.
+
+## Restore notes
+
+Old source is available under the research tags listed in the root README.
+Restoring code alone does not reactivate infrastructure.
+
+- Cloudflare: restore Worker custom domains and desired workers.dev settings.
+  Do not attach the old Worker to a hostname still serving the new prototype.
+- R2 media: reconnect `media.parrotbook.com` to `parrot-english-media` in the
+  `parrotbook.com` zone if public delivery is needed again. Objects remain intact.
+- FC: restore reserved concurrency to 2 only when intentionally restarting the
+  old app. This could wake the retained PolarDB database and incur charges.
+- ESA old app: restore automatic build branches to
+  `codex/aliyun-serverless-backend` if deployment automation is wanted, and
+  deliberately publish the former code version for each environment.
+- GitHub: enable workflow 381467287 only as part of an intentional restoration.
+- LiveKit: the sleeping agent can wake on an authenticated dispatch; there is no
+  new application path to mint old LiveKit room tokens. Credentials are retained.
+
+Keeping data in provider storage can incur ongoing storage or subscription
+charges. No private export, deletion, credential revocation, or subscription
+cancellation was performed.

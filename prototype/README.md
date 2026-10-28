@@ -16,6 +16,7 @@ node --test prototype/worker.test.mjs
 - Code version: `1793173312655798735`
 - Source: `worker.mjs`, uploaded directly as the routine's JavaScript code
 - Environments: staging and production of this separate prototype routine
+- Public domains: <https://parrotbook.com/> and <https://www.parrotbook.com/>
 - Default preview: <https://parrotbook-prototype-1263482499936169.debug.er.aliyun-esa.net/>
 
 ESA requires authorization for its default debug domain. In the ESA console,
@@ -31,5 +32,11 @@ server timestamp and a 219 ms round trip in one browser sample. This establishes
 that this account can deploy and run the page plus edge backend; it does not
 measure sustained performance or validate future storage/recording features.
 
-This routine is separate from the archived `parrot-english` routine; no
-custom-domain or previous-app configuration changed.
+The public domains use an ESA free website plan with coverage outside mainland
+China. They do not require the debug domain's preview token. Cloudflare remains
+the registrar and authoritative DNS provider, with DNS-only CNAME records to
+Alibaba. The console reported no ICP filing for this domain, so mainland/global
+ESA coverage could not be selected. No paid website plan was purchased.
+
+The earlier applications and data were parked at the owner's request. See the
+[infrastructure record](../docs/infrastructure.md) before restoring them.
