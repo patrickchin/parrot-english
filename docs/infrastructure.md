@@ -147,3 +147,9 @@ OSS media. Test fixtures now implement byte-range responses so seeks behave like
 OSS. Physical mobile microphones and WeChat remain unverified.
 
 Previous production version 1793182979894750925 remains available for rollback.
+
+The final live check initially received an older HTML entry point referencing a
+retired stylesheet hash. ESA site cache was purged (task 1775291466776611), then
+the root HTML, referenced JS/CSS MIME types, pack metadata, and waveform JSON
+were checked again. Clear/revalidate the HTML entry point as part of publication;
+a successful routine publish alone does not prove the browser has the new app.
