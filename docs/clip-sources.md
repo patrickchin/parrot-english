@@ -3,8 +3,8 @@
 Prepared on 2026-10-28 for the founder and colleague's adult prototype test.
 The player and pack metadata are separate. The four selected meme clips have
 **not** been cleared for redistribution. At the owner’s explicit request, the
-four prepared excerpts are being moved to dedicated Alibaba OSS object storage
-so they can load directly. The account must activate OSS before bucket creation.
+four prepared excerpts are hosted in dedicated Alibaba OSS object storage
+so they load directly. They are not embedded in the ESA function.
 Original downloads, prepared meme excerpts, temporary speech transcripts, and the earlier ZIP remain
 under the Git-ignored `content/local-dubbing/` directory. Uploading these excerpts
 does not establish a redistribution licence.
@@ -84,6 +84,9 @@ The app does not imply endorsement by any film or television producer.
 - The production build's device file picker was tested using the redistributable
   sample as a fixture; selecting the file made no media upload request.
 - Browser-flow tests load the OSS URLs through local media fixtures. Live OSS
-  availability, byte-range requests, CORS, and playback require activation and upload.
+  availability, byte-range requests, and CORS were verified after upload; all nine
+  uploaded objects matched their authoring files by SHA-256. Four real-OSS scene
+  playback checks passed. A real-OSS recording/replay check passed on an isolated
+  rerun after an initial concurrent run reset unexpectedly to the role screen.
 - Desktop and phone screenshots are stored outside the repository under the
   project's Codex screenshots directory.

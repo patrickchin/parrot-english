@@ -17,8 +17,8 @@ listen to the original dialogue, record each turn, then replay with your voice.
 Takes remain in memory and disappear on refresh, close, or an explicit reset.
 
 The shelf contains the four selected memes: **No, this is Patrick**, **Chocolate!**,
-**Wumbo**, and **Ogres are like onions**. Their prepared excerpts will load
-from a dedicated Alibaba OSS bucket once account activation is complete.
+**Wumbo**, and **Ogres are like onions**. Their prepared excerpts load
+from a dedicated Alibaba OSS bucket, so each scene opens directly.
 A separate CC BY 3.0
 **Sintel** sample can be played immediately. See [clip sources](docs/clip-sources.md)
 for the YouTube links, timing notes, credits, and redistribution status.
