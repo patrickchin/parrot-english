@@ -21,3 +21,26 @@ test('the independently loaded pack rejects traversal, missing roles and overlap
     p => { p.lines[0].words[1].start = p.lines[0].start - 0.1; },
   ]) { const invalid = structuredClone(pack); change(invalid); assert.throws(() => validatePack(invalid)); }
 });
+
+
+test('all twenty additional scenes have valid independent packs, timed words, and reference waveforms', async () => {
+  const scenes = JSON.parse(await readFile('content/extra-scenes.json', 'utf8'));
+  const catalog = JSON.parse(await readFile('src/extra-clips.json', 'utf8'));
+  const { validateWaveform } = await import('../src/waveform.ts');
+  assert.equal(scenes.length, 20);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 20);
+  const ids = new Set();
+  for (const scene of scenes) {
+    const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.slug}/pack.json`, 'utf8')));
+    const wave = validateWaveform(JSON.parse(await readFile(`public/packs/${scene.slug}/${pack.waveform}`, 'utf8')));
+    assert.equal(wave.duration, pack.duration);
+    assert.equal(pack.title, catalog.find(c => c.slug === scene.slug).title);
+    assert.equal(pack.credit.source, catalog.find(c => c.slug === scene.slug).source);
+    assert.equal(pack.mediaBase, `https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/${scene.slug}/`);
+    assert.ok(pack.lines.every(l => l.words?.length));
+    for (const entity of [pack, ...pack.roles, ...pack.lines]) {
+      assert.ok(!ids.has(entity.id), `duplicate ID in ${scene.slug}`);
+      ids.add(entity.id);
+    }
+  }
+});

@@ -27,12 +27,13 @@ sit at their spoken positions underneath the waveform; the timeline follows
 playback automatically on smaller screens. This is timing and emphasis feedback, not pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
-The shelf contains the four selected memes: **No, this is Patrick**, **Chocolate!**,
-**Wumbo**, and **Ogres are like onions**. Their prepared excerpts load
-from a dedicated Alibaba OSS bucket, so each scene opens directly.
-A separate CC BY 3.0
-**Sintel** sample can be played immediately. See [clip sources](docs/clip-sources.md)
-for the YouTube links, timing notes, credits, and redistribution status.
+The shelf contains **24 meme scenes**, including SpongeBob, Shrek, Toy Story,
+Finding Nemo, Cars, Up, Ratatouille, Kung Fu Panda, Minions, and Madagascar.
+Search by scene, English line, or film. Every scene opens directly from Alibaba
+OSS, with an original-audio waveform, aligned words, and Chinese meaning hints.
+A separate CC BY 3.0 **Sintel** sample is also available.
+See [clip sources](docs/clip-sources.md) and [the 20 additional scenes](docs/extra-clips.md)
+for YouTube links, source offsets, credits, and redistribution status.
 
 ```sh
 npm ci

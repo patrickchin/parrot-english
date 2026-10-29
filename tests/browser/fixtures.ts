@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 export const test = base.extend({
   page: async ({ page }, use) => {
     if (!process.env.PARROTBOOK_LIVE_MEDIA) await page.route('https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/**', async route => {
-      const match = /^\/clips\/(patrick|chocolate|wumbo|onions|sintel)\/([a-zA-Z0-9_-]+\.(mp4|m4a|jpg))$/.exec(new URL(route.request().url()).pathname);
+      const match = /^\/clips\/([a-z0-9-]+)\/([a-zA-Z0-9_-]+\.(mp4|m4a|jpg))$/.exec(new URL(route.request().url()).pathname);
       if (!match) return route.abort();
       const folder = match[1] === 'sintel' ? 'content/media/sintel' : 'content/local-dubbing';
       if (!existsSync(`${folder}/${match[2]}`)) return route.continue();

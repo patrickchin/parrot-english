@@ -1,14 +1,14 @@
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { clips } from '../../src/catalog';
+import { memeClips } from '../../src/catalog';
 
-for (const clip of clips.slice(0, 4)) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
+for (const clip of memeClips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
   await page.goto('/#' + clip.slug);
   await expect(page.getByLabel('选择本地片段', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '播放原片', exact: true }).click();
-  await expect(page.getByRole('button', { name: '停止播放或录音', exact: true })).toBeVisible();
+  await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0.1);
 });
 
 test('the public build reads a selected device file without uploading it or requesting private server media', async ({ page }) => {

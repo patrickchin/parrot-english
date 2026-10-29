@@ -1,0 +1,473 @@
+[
+  {
+    "slug": "keep-swimming",
+    "title": "一直游下去！",
+    "english": "Just keep swimming.",
+    "source": "https://www.youtube.com/watch?v=AsemWIZUk4k",
+    "film": "Finding Nemo",
+    "input": "keep-swimming-source.mp4",
+    "start": 7.25,
+    "end": 10.7,
+    "lines": [
+      [
+        0,
+        0,
+        3.45,
+        "Just keep swimming. Just keep swimming. Just keep swimming.",
+        "一直游下去，一直游下去，一直游下去。"
+      ]
+    ],
+    "roles": [
+      "多莉"
+    ]
+  },
+  {
+    "slug": "fish-friends",
+    "title": "鱼儿是朋友！",
+    "english": "Fish are friends, not food.",
+    "source": "https://www.youtube.com/watch?v=c6mVl6fAxLw",
+    "film": "Finding Nemo",
+    "input": "fish-friends-source.mp4",
+    "start": 18.6,
+    "end": 21.45,
+    "lines": [
+      [
+        0,
+        0,
+        2.85,
+        "Fish are friends, not food.",
+        "鱼儿是朋友，不是食物。"
+      ]
+    ],
+    "roles": [
+      "布鲁斯"
+    ]
+  },
+  {
+    "slug": "infinity",
+    "title": "飞向宇宙！",
+    "english": "To infinity and beyond!",
+    "source": "https://www.youtube.com/watch?v=T2b-Ve0GHBw",
+    "film": "Toy Story",
+    "input": "infinity-source.mp4",
+    "start": 46.6,
+    "end": 49.8,
+    "lines": [
+      [
+        0,
+        0,
+        3.2,
+        "To infinity and beyond!",
+        "飞向宇宙，浩瀚无垠！"
+      ]
+    ],
+    "roles": [
+      "巴斯光年"
+    ]
+  },
+  {
+    "slug": "you-are-a-toy",
+    "title": "你是个玩具！",
+    "english": "You are a toy!",
+    "source": "https://www.youtube.com/watch?v=wRsTXf4jvhY",
+    "film": "Toy Story",
+    "input": "you-are-a-toy-source.mp4",
+    "start": 45.15,
+    "end": 48.1,
+    "lines": [
+      [
+        0,
+        0,
+        2.95,
+        "You are a toy!",
+        "你是个玩具！"
+      ]
+    ],
+    "roles": [
+      "胡迪"
+    ]
+  },
+  {
+    "slug": "falling-with-style",
+    "title": "有风格地落下！",
+    "english": "This is falling with style.",
+    "source": "https://www.youtube.com/watch?v=zffvi3dTVIo",
+    "film": "Toy Story",
+    "input": "falling-clean-source.mp4",
+    "sourceOffset": 170,
+    "start": 22.75,
+    "end": 26.45,
+    "lines": [
+      [
+        0,
+        0,
+        1.3,
+        "This isn't flying.",
+        "这不叫飞。"
+      ],
+      [
+        0,
+        1.3,
+        3.7,
+        "This is falling with style.",
+        "这叫有风格地落下。"
+      ]
+    ],
+    "roles": [
+      "巴斯光年"
+    ]
+  },
+  {
+    "slug": "i-am-speed",
+    "title": "我就是速度！",
+    "english": "I am speed.",
+    "source": "https://www.youtube.com/watch?v=y39L1PesHmc",
+    "film": "Cars on the Road",
+    "input": "speed-final-source.mp4",
+    "start": 35.85,
+    "end": 38.15,
+    "lines": [
+      [
+        0,
+        0,
+        2.3,
+        "I am speed.",
+        "我就是速度。"
+      ]
+    ],
+    "roles": [
+      "板牙"
+    ]
+  },
+  {
+    "slug": "ka-chow",
+    "title": "咔嚓！",
+    "english": "Ka-chow!",
+    "source": "https://www.youtube.com/watch?v=bhOdIoonjP4",
+    "film": "Cars",
+    "input": "ka-chow-source.mp4",
+    "start": 5.2,
+    "end": 8.2,
+    "lines": [
+      [
+        0,
+        0,
+        3.0,
+        "Ka-chow!",
+        "咔嚓！这是麦昆的口头禅。"
+      ]
+    ],
+    "roles": [
+      "闪电麦昆"
+    ]
+  },
+  {
+    "slug": "so-fluffy",
+    "title": "太毛茸茸了！",
+    "english": "It's so fluffy!",
+    "source": "https://www.youtube.com/watch?v=82utG7Q3G_k",
+    "film": "Despicable Me",
+    "input": "so-fluffy-source.mp4",
+    "start": 52.4,
+    "end": 54.1,
+    "lines": [
+      [
+        0,
+        0,
+        1.7,
+        "It's so fluffy!",
+        "太毛茸茸了！"
+      ]
+    ],
+    "roles": [
+      "艾格尼丝"
+    ]
+  },
+  {
+    "slug": "banana",
+    "title": "香蕉！",
+    "english": "Banana!",
+    "source": "https://www.youtube.com/watch?v=d3psto4Y0o4",
+    "film": "Minions",
+    "input": "banana-source.mp4",
+    "start": 4.5,
+    "end": 6.9,
+    "lines": [
+      [
+        0,
+        0,
+        2.4,
+        "Banana! Banana!",
+        "香蕉！香蕉！"
+      ]
+    ],
+    "roles": [
+      "小黄人"
+    ]
+  },
+  {
+    "slug": "squirrel",
+    "title": "松鼠！",
+    "english": "Squirrel!",
+    "source": "https://www.youtube.com/watch?v=xrAIGLkSMls",
+    "film": "Up",
+    "input": "squirrel-source.mp4",
+    "start": 17.7,
+    "end": 20.04,
+    "lines": [
+      [
+        0,
+        0,
+        2.34,
+        "Squirrel!",
+        "松鼠！"
+      ]
+    ],
+    "roles": [
+      "道格"
+    ]
+  },
+  {
+    "slug": "meet-dug",
+    "title": "刚认识就喜欢你！",
+    "english": "I have just met you, and I love you.",
+    "source": "https://www.youtube.com/watch?v=xrAIGLkSMls",
+    "film": "Up",
+    "input": "squirrel-source.mp4",
+    "start": 8.4,
+    "end": 11.15,
+    "lines": [
+      [
+        0,
+        0,
+        2.75,
+        "I have just met you, and I love you.",
+        "我才刚认识你，就已经喜欢你了。"
+      ]
+    ],
+    "roles": [
+      "道格"
+    ]
+  },
+  {
+    "slug": "anyone-can-cook",
+    "title": "谁都能做饭！",
+    "english": "Anyone can cook!",
+    "source": "https://www.youtube.com/watch?v=thkDWSUzQDo",
+    "film": "Ratatouille",
+    "input": "anyone-can-cook-source.mp4",
+    "start": 17.2,
+    "end": 19.05,
+    "lines": [
+      [
+        0,
+        0,
+        1.85,
+        "Anyone can cook!",
+        "谁都能做饭！"
+      ]
+    ],
+    "roles": [
+      "古斯托"
+    ]
+  },
+  {
+    "slug": "secret-ingredient",
+    "title": "没有秘密配料！",
+    "english": "There is no secret ingredient.",
+    "source": "https://www.youtube.com/watch?v=K7DnFGdqT8c",
+    "film": "Kung Fu Panda",
+    "input": "ingredient-final-source.mp4",
+    "start": 37.15,
+    "end": 39.4,
+    "lines": [
+      [
+        0,
+        0,
+        2.25,
+        "There is no secret ingredient.",
+        "没有什么秘密配料。"
+      ]
+    ],
+    "roles": [
+      "平先生"
+    ]
+  },
+  {
+    "slug": "today-is-a-gift",
+    "title": "今天是一份礼物！",
+    "english": "Today is a gift.",
+    "source": "https://www.youtube.com/watch?v=PSBfcpqICvY",
+    "film": "Kung Fu Panda",
+    "input": "gift-final-source.mp4",
+    "start": 72.2,
+    "end": 77.45,
+    "lines": [
+      [
+        0,
+        0,
+        2.5,
+        "But today is a gift.",
+        "但今天是一份礼物。"
+      ],
+      [
+        0,
+        2.5,
+        5.25,
+        "That is why it is called the present.",
+        "所以现在也叫作 present，它也有礼物的意思。"
+      ]
+    ],
+    "roles": [
+      "乌龟大师"
+    ]
+  },
+  {
+    "slug": "do-the-roar",
+    "title": "吼一声嘛！",
+    "english": "Do the roar!",
+    "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg",
+    "film": "Shrek Forever After",
+    "input": "do-the-roar-source.mp4",
+    "start": 58.35,
+    "end": 59.5,
+    "lines": [
+      [
+        0,
+        0,
+        1.15,
+        "Do the roar!",
+        "吼一声嘛！"
+      ]
+    ],
+    "roles": [
+      "小男孩"
+    ]
+  },
+  {
+    "slug": "are-we-there-yet",
+    "title": "我们到了吗？",
+    "english": "Are we there yet?",
+    "source": "https://www.youtube.com/watch?v=basofea2UEs",
+    "film": "Shrek 2",
+    "input": "there-final-source.mp4",
+    "start": 25.9,
+    "end": 28.6,
+    "lines": [
+      [
+        0,
+        0,
+        1.75,
+        "Are we there yet?",
+        "我们到了吗？"
+      ],
+      [
+        1,
+        1.75,
+        2.7,
+        "No!",
+        "没有！"
+      ]
+    ],
+    "roles": [
+      "驴子",
+      "史莱克"
+    ]
+  },
+  {
+    "slug": "my-swamp",
+    "title": "谁在我的沼泽里？",
+    "english": "What are you doing in my swamp?",
+    "source": "https://www.youtube.com/watch?v=xuS9UxuUZ3Y",
+    "film": "Shrek",
+    "input": "swamp-clean-source.mp4",
+    "start": 70.3,
+    "end": 73.55,
+    "lines": [
+      [
+        0,
+        0,
+        3.25,
+        "What are you doing in my swamp?",
+        "你们在我的沼泽里做什么？"
+      ]
+    ],
+    "roles": [
+      "史莱克"
+    ]
+  },
+  {
+    "slug": "im-ready",
+    "title": "我准备好了！",
+    "english": "I'm ready!",
+    "source": "https://www.youtube.com/watch?v=AGTH7rOEbxE",
+    "film": "SpongeBob SquarePants",
+    "input": "im-ready-source.mp4",
+    "start": 0,
+    "end": 3.35,
+    "lines": [
+      [
+        0,
+        0,
+        3.35,
+        "I'm ready! I'm ready! I'm ready!",
+        "我准备好了！我准备好了！我准备好了！"
+      ]
+    ],
+    "roles": [
+      "海绵宝宝"
+    ]
+  },
+  {
+    "slug": "mayonnaise",
+    "title": "蛋黄酱是乐器吗？",
+    "english": "Is mayonnaise an instrument?",
+    "source": "https://www.youtube.com/watch?v=bJ1-CMJY7CE",
+    "film": "SpongeBob SquarePants",
+    "input": "mayonnaise-source.mp4",
+    "start": 15.1,
+    "end": 20.85,
+    "lines": [
+      [
+        0,
+        0,
+        2.75,
+        "Is mayonnaise an instrument?",
+        "蛋黄酱是乐器吗？"
+      ],
+      [
+        1,
+        2.75,
+        5.75,
+        "No, Patrick, mayonnaise is not an instrument.",
+        "不是，派大星，蛋黄酱不是乐器。"
+      ]
+    ],
+    "roles": [
+      "派大星",
+      "章鱼哥"
+    ]
+  },
+  {
+    "slug": "smile-and-wave",
+    "title": "微笑，挥挥手！",
+    "english": "Just smile and wave, boys.",
+    "source": "https://www.youtube.com/watch?v=F64CJmF2dHM",
+    "film": "Madagascar",
+    "input": "smile-and-wave-source.mp4",
+    "start": 3.1,
+    "end": 6.8,
+    "lines": [
+      [
+        0,
+        0,
+        3.7,
+        "Just smile and wave, boys. Smile and wave.",
+        "小伙子们，微笑，挥挥手。微笑，挥挥手。"
+      ]
+    ],
+    "roles": [
+      "队长"
+    ]
+  }
+]

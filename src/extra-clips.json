@@ -1,0 +1,142 @@
+[
+  {
+    "slug": "keep-swimming",
+    "title": "一直游下去！",
+    "english": "Just keep swimming.",
+    "note": "Finding Nemo",
+    "source": "https://www.youtube.com/watch?v=AsemWIZUk4k&t=7s"
+  },
+  {
+    "slug": "fish-friends",
+    "title": "鱼儿是朋友！",
+    "english": "Fish are friends, not food.",
+    "note": "Finding Nemo",
+    "source": "https://www.youtube.com/watch?v=c6mVl6fAxLw&t=18s"
+  },
+  {
+    "slug": "infinity",
+    "title": "飞向宇宙！",
+    "english": "To infinity and beyond!",
+    "note": "Toy Story",
+    "source": "https://www.youtube.com/watch?v=T2b-Ve0GHBw&t=46s"
+  },
+  {
+    "slug": "you-are-a-toy",
+    "title": "你是个玩具！",
+    "english": "You are a toy!",
+    "note": "Toy Story",
+    "source": "https://www.youtube.com/watch?v=wRsTXf4jvhY&t=45s"
+  },
+  {
+    "slug": "falling-with-style",
+    "title": "有风格地落下！",
+    "english": "This is falling with style.",
+    "note": "Toy Story",
+    "source": "https://www.youtube.com/watch?v=zffvi3dTVIo&t=192s"
+  },
+  {
+    "slug": "i-am-speed",
+    "title": "我就是速度！",
+    "english": "I am speed.",
+    "note": "Cars on the Road",
+    "source": "https://www.youtube.com/watch?v=y39L1PesHmc&t=35s"
+  },
+  {
+    "slug": "ka-chow",
+    "title": "咔嚓！",
+    "english": "Ka-chow!",
+    "note": "Cars",
+    "source": "https://www.youtube.com/watch?v=bhOdIoonjP4&t=5s"
+  },
+  {
+    "slug": "so-fluffy",
+    "title": "太毛茸茸了！",
+    "english": "It's so fluffy!",
+    "note": "Despicable Me",
+    "source": "https://www.youtube.com/watch?v=82utG7Q3G_k&t=52s"
+  },
+  {
+    "slug": "banana",
+    "title": "香蕉！",
+    "english": "Banana!",
+    "note": "Minions",
+    "source": "https://www.youtube.com/watch?v=d3psto4Y0o4&t=4s"
+  },
+  {
+    "slug": "squirrel",
+    "title": "松鼠！",
+    "english": "Squirrel!",
+    "note": "Up",
+    "source": "https://www.youtube.com/watch?v=xrAIGLkSMls&t=17s"
+  },
+  {
+    "slug": "meet-dug",
+    "title": "刚认识就喜欢你！",
+    "english": "I have just met you, and I love you.",
+    "note": "Up",
+    "source": "https://www.youtube.com/watch?v=xrAIGLkSMls&t=8s"
+  },
+  {
+    "slug": "anyone-can-cook",
+    "title": "谁都能做饭！",
+    "english": "Anyone can cook!",
+    "note": "Ratatouille",
+    "source": "https://www.youtube.com/watch?v=thkDWSUzQDo&t=17s"
+  },
+  {
+    "slug": "secret-ingredient",
+    "title": "没有秘密配料！",
+    "english": "There is no secret ingredient.",
+    "note": "Kung Fu Panda",
+    "source": "https://www.youtube.com/watch?v=K7DnFGdqT8c&t=37s"
+  },
+  {
+    "slug": "today-is-a-gift",
+    "title": "今天是一份礼物！",
+    "english": "Today is a gift.",
+    "note": "Kung Fu Panda",
+    "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=72s"
+  },
+  {
+    "slug": "do-the-roar",
+    "title": "吼一声嘛！",
+    "english": "Do the roar!",
+    "note": "Shrek Forever After",
+    "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg&t=58s"
+  },
+  {
+    "slug": "are-we-there-yet",
+    "title": "我们到了吗？",
+    "english": "Are we there yet?",
+    "note": "Shrek 2",
+    "source": "https://www.youtube.com/watch?v=basofea2UEs&t=25s"
+  },
+  {
+    "slug": "my-swamp",
+    "title": "谁在我的沼泽里？",
+    "english": "What are you doing in my swamp?",
+    "note": "Shrek",
+    "source": "https://www.youtube.com/watch?v=xuS9UxuUZ3Y&t=70s"
+  },
+  {
+    "slug": "im-ready",
+    "title": "我准备好了！",
+    "english": "I'm ready!",
+    "note": "SpongeBob SquarePants",
+    "source": "https://www.youtube.com/watch?v=AGTH7rOEbxE&t=0s"
+  },
+  {
+    "slug": "mayonnaise",
+    "title": "蛋黄酱是乐器吗？",
+    "english": "Is mayonnaise an instrument?",
+    "note": "SpongeBob SquarePants",
+    "source": "https://www.youtube.com/watch?v=bJ1-CMJY7CE&t=15s"
+  },
+  {
+    "slug": "smile-and-wave",
+    "title": "微笑，挥挥手！",
+    "english": "Just smile and wave, boys.",
+    "note": "Madagascar",
+    "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=3s"
+  }
+]

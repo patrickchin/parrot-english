@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "id": "pack_4ds3OMdO",
+  "title": "吼一声嘛！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 1.168,
+  "video": "do-the-roar-v1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/do-the-roar/",
+  "roles": [
+    {
+      "id": "role_Kx8gM4db",
+      "name": "小男孩",
+      "label": "小男孩",
+      "hint": "跟着角色的语气说。"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line__AgaKiOf",
+      "roleId": "role_Kx8gM4db",
+      "start": 0,
+      "end": 1.15,
+      "text": "Do the roar!",
+      "hint": "吼一声嘛！",
+      "words": [
+        {
+          "text": "Do",
+          "start": 0.202,
+          "end": 0.464
+        },
+        {
+          "text": "the",
+          "start": 0.525,
+          "end": 0.605
+        },
+        {
+          "text": "roar!",
+          "start": 0.686,
+          "end": 0.989
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Shrek Forever After",
+    "attribution": "原作：DreamWorks Animation",
+    "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg&t=58s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "原上传约 58.35–59.50 秒的节选；添加中英台词和配音时间标记。"
+  },
+  "waveform": "waveform-v2.json",
+  "poster": "do-the-roar-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

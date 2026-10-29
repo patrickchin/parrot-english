@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "id": "pack_Ciq_cd4H",
+  "title": "有风格地落下！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 3.712,
+  "video": "falling-with-style-v1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/falling-with-style/",
+  "poster": "falling-with-style-poster-v1.jpg",
+  "waveform": "waveform-v2.json",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "roles": [
+    {
+      "id": "role_dG7FU8MF",
+      "name": "巴斯光年",
+      "label": "巴斯光年",
+      "hint": "跟着角色的语气说。"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_oovtK_4h",
+      "roleId": "role_dG7FU8MF",
+      "start": 0,
+      "end": 1.3,
+      "text": "This isn't flying.",
+      "hint": "这不叫飞。",
+      "words": [
+        {
+          "text": "This",
+          "start": 0.305,
+          "end": 0.467
+        },
+        {
+          "text": "isn't",
+          "start": 0.569,
+          "end": 0.792
+        },
+        {
+          "text": "flying.",
+          "start": 0.873,
+          "end": 1.3
+        }
+      ]
+    },
+    {
+      "id": "line_mLm50BWf",
+      "roleId": "role_dG7FU8MF",
+      "start": 1.3,
+      "end": 3.7,
+      "text": "This is falling with style.",
+      "hint": "这叫有风格地落下。",
+      "words": [
+        {
+          "text": "This",
+          "start": 1.542,
+          "end": 1.663
+        },
+        {
+          "text": "is",
+          "start": 1.744,
+          "end": 1.824
+        },
+        {
+          "text": "falling",
+          "start": 1.966,
+          "end": 2.389
+        },
+        {
+          "text": "with",
+          "start": 2.611,
+          "end": 2.833
+        },
+        {
+          "text": "style.",
+          "start": 2.994,
+          "end": 3.498
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Toy Story",
+    "attribution": "原作：Disney / Pixar",
+    "source": "https://www.youtube.com/watch?v=zffvi3dTVIo&t=192s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "原上传约 192.75–196.45 秒的节选；添加中英台词和配音时间标记。"
+  }
+}
