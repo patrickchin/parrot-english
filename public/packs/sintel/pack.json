@@ -30,7 +30,19 @@
       "start": 0.2,
       "end": 2.45,
       "text": "Thank you.",
-      "hint": "谢谢你。"
+      "hint": "谢谢你。",
+      "words": [
+        {
+          "text": "Thank",
+          "start": 0.22,
+          "end": 0.321
+        },
+        {
+          "text": "you.",
+          "start": 0.401,
+          "end": 0.481
+        }
+      ]
     },
     {
       "id": "line_z9Pk3s",
@@ -38,7 +50,59 @@
       "start": 2.45,
       "end": 9.9,
       "text": "So… what brings you to the land of the gatekeepers?",
-      "hint": "那么……你为什么来到守门人的领地？"
+      "hint": "那么……你为什么来到守门人的领地？",
+      "words": [
+        {
+          "text": "So…",
+          "start": 2.53,
+          "end": 2.73
+        },
+        {
+          "text": "what",
+          "start": 4.373,
+          "end": 4.493
+        },
+        {
+          "text": "brings",
+          "start": 4.573,
+          "end": 4.833
+        },
+        {
+          "text": "you",
+          "start": 4.893,
+          "end": 4.973
+        },
+        {
+          "text": "to",
+          "start": 5.033,
+          "end": 5.094
+        },
+        {
+          "text": "the",
+          "start": 5.154,
+          "end": 5.214
+        },
+        {
+          "text": "land",
+          "start": 5.294,
+          "end": 5.534
+        },
+        {
+          "text": "of",
+          "start": 5.654,
+          "end": 5.694
+        },
+        {
+          "text": "the",
+          "start": 5.774,
+          "end": 5.835
+        },
+        {
+          "text": "gatekeepers?",
+          "start": 5.875,
+          "end": 6.415
+        }
+      ]
     },
     {
       "id": "line_5rLs7a",
@@ -46,7 +110,29 @@
       "start": 9.9,
       "end": 12.95,
       "text": "I'm searching for someone.",
-      "hint": "我在寻找一个人。"
+      "hint": "我在寻找一个人。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 10.161,
+          "end": 10.261
+        },
+        {
+          "text": "searching",
+          "start": 10.402,
+          "end": 10.783
+        },
+        {
+          "text": "for",
+          "start": 10.863,
+          "end": 10.963
+        },
+        {
+          "text": "someone.",
+          "start": 11.024,
+          "end": 11.365
+        }
+      ]
     },
     {
       "id": "line_j3Aw6t",
@@ -54,7 +140,39 @@
       "start": 12.95,
       "end": 18.3,
       "text": "Someone very dear? A kindred spirit?",
-      "hint": "一个很亲近的人？一位知心朋友？"
+      "hint": "一个很亲近的人？一位知心朋友？",
+      "words": [
+        {
+          "text": "Someone",
+          "start": 12.95,
+          "end": 13.11
+        },
+        {
+          "text": "very",
+          "start": 13.19,
+          "end": 13.391
+        },
+        {
+          "text": "dear?",
+          "start": 13.451,
+          "end": 13.651
+        },
+        {
+          "text": "A",
+          "start": 14.994,
+          "end": 15.014
+        },
+        {
+          "text": "kindred",
+          "start": 15.094,
+          "end": 15.375
+        },
+        {
+          "text": "spirit?",
+          "start": 15.455,
+          "end": 15.835
+        }
+      ]
     },
     {
       "id": "line_b4Nw8u",
@@ -62,7 +180,19 @@
       "start": 18.3,
       "end": 21.1,
       "text": "A dragon.",
-      "hint": "一条龙。"
+      "hint": "一条龙。",
+      "words": [
+        {
+          "text": "A",
+          "start": 18.441,
+          "end": 18.461
+        },
+        {
+          "text": "dragon.",
+          "start": 18.622,
+          "end": 19.025
+        }
+      ]
     }
   ],
   "credit": {
@@ -74,5 +204,11 @@
     "changes": "原片 02:04.900–02:26.000 的节选；压缩、裁切角色照片、添加中英字幕，并在本地播放时替换所选角色的对白。"
   },
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/sintel/",
-  "waveform": "waveform-v1.json"
+  "waveform": "waveform-v2.json",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
 }

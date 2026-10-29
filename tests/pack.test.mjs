@@ -16,5 +16,8 @@ test('the independently loaded pack rejects traversal, missing roles and overlap
     p => { p.lines[1].start = 0; },
     p => { p.lines[0].end = 500; },
     p => { p.lines[1].id = p.lines[0].id; },
+    p => { p.lines[0].words[0].end = 500; },
+    p => { p.lines[0].words[0].text = 'wrong'; },
+    p => { p.lines[0].words[1].start = p.lines[0].start - 0.1; },
   ]) { const invalid = structuredClone(pack); change(invalid); assert.throws(() => validatePack(invalid)); }
 });

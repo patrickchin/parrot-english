@@ -71,7 +71,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
 });
 
 test('missing waveform metadata leaves recording and reference playback available', async ({ page }) => {
-  await page.route('**/waveform-v1.json', route => route.fulfill({ json: { version: 1, peaks: ['invalid'] } }));
+  await page.route('**/waveform-v2.json', route => route.fulfill({ json: { version: 1, peaks: ['invalid'] } }));
   await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByText('原声波形暂时无法显示，仍可听原声并录音。')).toBeVisible();
@@ -102,10 +102,10 @@ test('scene, caption, waveforms and every main action fit one screen across the 
         expect(bounds!.y).toBeGreaterThanOrEqual(0);
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
       }
-      const graph = await page.getByRole('region', { name: '声音波形对比' }).boundingBox();
-      const caption = await page.getByRole('region', { name: '录制台词' }).locator('p[lang=en]').boundingBox();
-      expect(caption!.y).toBeGreaterThanOrEqual(graph!.y + graph!.height);
-      expect(caption!.y - graph!.y - graph!.height).toBeLessThanOrEqual(8);
+      const waveform = await page.getByRole('img', { name: '原声波形', exact: true }).boundingBox();
+      const words = await page.getByRole('list', { name: '逐词台词' }).boundingBox();
+      expect(words!.y).toBeGreaterThanOrEqual(waveform!.y + waveform!.height);
+      expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(2);
       const scene = await page.getByRole('region', { name: '电影片段' }).boundingBox();
       const footer = await page.getByRole('contentinfo').boundingBox();
       const actions = await page.getByRole('group', { name: '配音操作' }).boundingBox();
@@ -118,4 +118,45 @@ test('scene, caption, waveforms and every main action fit one screen across the 
       }
     }
   }
+});
+
+
+test('words share the waveform time scale, stay readable, and follow playback without scrolling the page', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto('/#onions');
+  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
+  const line: Line = pack.lines[0];
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  const list = page.getByRole('list', { name: '逐词台词' });
+  const items = list.getByRole('listitem');
+  await expect(items).toHaveCount(line.words!.length);
+  for (const viewport of [{ width: 375, height: 667 }, { width: 1280, height: 720 }]) {
+    await page.setViewportSize(viewport);
+    const wave = await page.getByRole('img', { name: '原声波形', exact: true }).boundingBox();
+    const boxes = await items.evaluateAll(nodes => nodes.map(n => {
+      const position = n.getBoundingClientRect();
+      const text = n.firstElementChild!.getBoundingClientRect();
+      return { x: position.x, text: { x: text.x, y: text.y, right: text.right, bottom: text.bottom } };
+    }));
+    for (const [i, box] of boxes.entries()) {
+      const expected = wave!.x + (line.words![i].start - line.start) / (line.end - line.start) * wave!.width;
+      expect(Math.abs(box.x - expected)).toBeLessThan(2);
+      for (const other of boxes.slice(i + 1)) {
+        const overlap = box.text.x < other.text.right && box.text.right > other.text.x && box.text.y < other.text.bottom && box.text.bottom > other.text.y;
+        expect(overlap).toBe(false);
+      }
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+  }
+  await page.setViewportSize({ width: 375, height: 667 });
+  const timeline = page.getByRole('group', { name: '声音与台词时间轴' });
+  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  const onions = items.filter({ hasText: /^Onions$/ }).first();
+  await expect(onions).toHaveAttribute('aria-current', 'true', { timeout: 6000 });
+  const word = await onions.boundingBox(), visible = await timeline.boundingBox();
+  expect(word!.x).toBeGreaterThanOrEqual(visible!.x);
+  expect(word!.x + word!.width).toBeLessThanOrEqual(visible!.x + visible!.width);
+  expect(await timeline.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  await page.getByRole('button', { name: '停止播放', exact: true }).click();
 });

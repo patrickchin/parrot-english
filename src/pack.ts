@@ -1,5 +1,6 @@
 export type Role = { id: string; name: string; label: string; portrait?: string; hint: string };
-export type Line = { id: string; roleId: string; start: number; end: number; text: string; hint: string };
+export type TimedWord = { text: string; start: number; end: number };
+export type Line = { id: string; roleId: string; start: number; end: number; text: string; hint: string; words?: TimedWord[] };
 export type Pack = {
   version: 1; id: string; title: string; description: string; duration: number;
   video: string; backing?: string; poster?: string; waveform?: string; roles: Role[]; lines: Line[];
@@ -33,6 +34,17 @@ export function validatePack(value: unknown, base = packRoot): Pack {
         !Number.isFinite(line.start) || !Number.isFinite(line.end) || line.start < end ||
         line.end <= line.start || line.end > p.duration + 0.01 ||
         ![line.text, line.hint].every(v => typeof v === 'string' && v.length < 300)) throw new Error('台词时间有误。');
+    if (line.words !== undefined) {
+      if (!Array.isArray(line.words) || !line.words.length || line.words.length > 80 ||
+          line.words.map(w => w?.text).join('').replace(/\s/g, '') !== line.text.replace(/\s/g, '')) throw new Error('台词时间有误。');
+      let previous = line.start;
+      for (const word of line.words) {
+        if (!word || typeof word.text !== 'string' || !word.text.trim() || word.text.length > 80 ||
+            !Number.isFinite(word.start) || !Number.isFinite(word.end) || word.start < previous - 0.001 ||
+            word.end <= word.start || word.end > line.end + 0.001) throw new Error('台词时间有误。');
+        previous = word.end;
+      }
+    }
     end = line.end; lineIds.add(line.id);
   }
   if (!p.credit || ![p.credit.title, p.credit.attribution, p.credit.source, p.credit.licence, p.credit.licenceUrl, p.credit.changes].every(v => typeof v === 'string' && v.length < 1000) ||

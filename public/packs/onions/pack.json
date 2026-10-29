@@ -26,7 +26,64 @@
       "start": 0,
       "end": 7.6,
       "text": "No! Layers! Onions have layers. Ogres have layers. Onions have layers.",
-      "hint": "不！层次！洋葱有层次，怪物也有层次。"
+      "hint": "不！层次！洋葱有层次，怪物也有层次。",
+      "words": [
+        {
+          "text": "No!",
+          "start": 0.14,
+          "end": 0.481
+        },
+        {
+          "text": "Layers!",
+          "start": 1.243,
+          "end": 1.845
+        },
+        {
+          "text": "Onions",
+          "start": 2.627,
+          "end": 3.028
+        },
+        {
+          "text": "have",
+          "start": 3.429,
+          "end": 3.77
+        },
+        {
+          "text": "layers.",
+          "start": 4.151,
+          "end": 4.592
+        },
+        {
+          "text": "Ogres",
+          "start": 4.993,
+          "end": 5.414
+        },
+        {
+          "text": "have",
+          "start": 5.815,
+          "end": 5.996
+        },
+        {
+          "text": "layers.",
+          "start": 6.096,
+          "end": 6.357
+        },
+        {
+          "text": "Onions",
+          "start": 6.537,
+          "end": 6.778
+        },
+        {
+          "text": "have",
+          "start": 6.798,
+          "end": 6.938
+        },
+        {
+          "text": "layers.",
+          "start": 6.998,
+          "end": 7.299
+        }
+      ]
     },
     {
       "id": "line_2jtMyyG8",
@@ -34,7 +91,44 @@
       "start": 7.6,
       "end": 9.9,
       "text": "You get it? We both have layers.",
-      "hint": "你明白了吗？我们都有层次。"
+      "hint": "你明白了吗？我们都有层次。",
+      "words": [
+        {
+          "text": "You",
+          "start": 8.044,
+          "end": 8.125
+        },
+        {
+          "text": "get",
+          "start": 8.205,
+          "end": 8.367
+        },
+        {
+          "text": "it?",
+          "start": 8.468,
+          "end": 8.508
+        },
+        {
+          "text": "We",
+          "start": 8.77,
+          "end": 8.851
+        },
+        {
+          "text": "both",
+          "start": 8.952,
+          "end": 9.113
+        },
+        {
+          "text": "have",
+          "start": 9.174,
+          "end": 9.315
+        },
+        {
+          "text": "layers.",
+          "start": 9.396,
+          "end": 9.698
+        }
+      ]
     },
     {
       "id": "line_wGmRgHYg",
@@ -42,7 +136,34 @@
       "start": 9.9,
       "end": 15.7,
       "text": "Oh, you both have layers.",
-      "hint": "哦，你们都有层次。"
+      "hint": "哦，你们都有层次。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 12.79,
+          "end": 12.87
+        },
+        {
+          "text": "you",
+          "start": 12.951,
+          "end": 13.011
+        },
+        {
+          "text": "both",
+          "start": 13.111,
+          "end": 13.252
+        },
+        {
+          "text": "have",
+          "start": 13.312,
+          "end": 13.452
+        },
+        {
+          "text": "layers.",
+          "start": 13.573,
+          "end": 14.777
+        }
+      ]
     }
   ],
   "rightsStatus": "redistribution-not-cleared",
@@ -55,6 +176,12 @@
     "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
   },
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/onions/",
-  "waveform": "waveform-v1.json",
-  "poster": "onions-poster-v1.jpg"
+  "waveform": "waveform-v2.json",
+  "poster": "onions-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
 }

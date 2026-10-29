@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { asset, type Pack, type Line } from './pack';
-import { waveformStep } from './waveform';
 
 export type Take = { blob: Blob; url: string; duration: number; peaks: number[] };
 export type Takes = Record<string, Take>;
@@ -18,6 +17,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   const stream = useRef<MediaStream | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const context = useRef<AudioContext | null>(null);
+  const waveformModule = useRef<Promise<void> | null>(null);
   const sources = useRef<AudioBufferSourceNode[]>([]);
   const finishRecording = useRef<(() => void) | null>(null);
   const backing = useRef<AudioBuffer | null>(null);
@@ -124,14 +124,20 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       const capture = new MediaRecorder(captured, mimeType ? { mimeType } : undefined);
       recorder.current = capture;
       const input = context.current.createMediaStreamSource(captured);
-      const analyser = context.current.createAnalyser();
-      analyser.fftSize = 1024; input.connect(analyser);
-      const disconnectInput = () => { input.disconnect(); analyser.disconnect(); };
+      waveformModule.current ??= context.current.audioWorklet.addModule(new URL('./capture-waveform.worklet.js?no-inline', import.meta.url));
+      try { await waveformModule.current; } catch (error) { waveformModule.current = null; throw error; }
+      if (id !== operation.current) { input.disconnect(); return; }
+      const detail = new AudioWorkletNode(context.current, 'capture-waveform', { channelCount: 1 });
+      input.connect(detail).connect(context.current.destination);
+      const disconnectInput = () => { input.disconnect(); detail.disconnect(); detail.port.close(); };
       captureCleanup.current = disconnectInput;
       void context.current.resume().catch(() => {});
-      const samples = new Float32Array(analyser.fftSize);
       let peak = 0;
       const peaks: number[] = [];
+      detail.port.onmessage = event => {
+        if (id !== operation.current || capture.state !== 'recording') return;
+        for (const value of event.data as number[]) { peaks.push(value); peak = Math.max(peak, value); }
+      };
       const chunks: Blob[] = [];
       let started = 0;
       capture.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
@@ -158,19 +164,14 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       }; });
       await readyVideo(line.start, true);
       if (id !== operation.current) return;
-      started = performance.now(); capture.start(); setPhase('recording');
+      started = performance.now(); detail.port.postMessage('start'); capture.start(); setPhase('recording');
       finishRecording.current = () => {
         if (capture.state === 'recording') { setPhase('saving'); capture.stop(); }
       };
       const meter = () => {
         if (id !== operation.current || capture.state !== 'recording') return;
-        analyser.getFloatTimeDomainData(samples);
-        const rms = Math.sqrt(samples.reduce((sum, n) => sum + n * n, 0) / samples.length);
-        const index = Math.floor((performance.now() - started) / 1000 / waveformStep);
-        while (peaks.length <= index) peaks.push(0);
-        peaks[index] = Math.max(peaks[index], rms);
         setLivePeaks([...peaks]);
-        peak = Math.max(peak, rms); setLevel(Math.min(1, rms * 12));
+        setLevel(Math.min(1, (peaks.at(-1) ?? 0) * 3));
         setTime(video.current?.currentTime ?? line.start);
         frame.current = requestAnimationFrame(meter);
       };

@@ -107,6 +107,8 @@ const english: Record<string, string> = {
   '保留录音，继续玩': 'Keep recordings and continue',
   '此片段暂无原声波形，仍可听原声并录音。': 'No original waveform is available. You can still listen and record.',
   '原声波形暂时无法显示，仍可听原声并录音。': 'The original waveform is unavailable. You can still listen and record.',
+  '声音与台词时间轴': 'Audio and words timeline',
+  '逐词台词': 'Timed words',
   '声音波形对比': 'Voice waveform comparison',
   '你的声音 · 录音中': 'Your voice · Recording',
   '你的声音': 'Your voice',

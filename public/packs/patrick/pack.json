@@ -26,7 +26,34 @@
       "start": 3,
       "end": 4.95,
       "text": "Is this the Krusty Krab?",
-      "hint": "请问是蟹堡王吗？"
+      "hint": "请问是蟹堡王吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 3.804,
+          "end": 3.864
+        },
+        {
+          "text": "this",
+          "start": 3.905,
+          "end": 4.025
+        },
+        {
+          "text": "the",
+          "start": 4.086,
+          "end": 4.166
+        },
+        {
+          "text": "Krusty",
+          "start": 4.206,
+          "end": 4.508
+        },
+        {
+          "text": "Krab?",
+          "start": 4.568,
+          "end": 4.849
+        }
+      ]
     },
     {
       "id": "line_6Yw7M0iC",
@@ -34,7 +61,29 @@
       "start": 4.95,
       "end": 7.8,
       "text": "No, this is Patrick.",
-      "hint": "不，这是派大星。"
+      "hint": "不，这是派大星。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 5.592,
+          "end": 5.733
+        },
+        {
+          "text": "this",
+          "start": 5.893,
+          "end": 6.014
+        },
+        {
+          "text": "is",
+          "start": 6.114,
+          "end": 6.174
+        },
+        {
+          "text": "Patrick.",
+          "start": 6.295,
+          "end": 7.599
+        }
+      ]
     },
     {
       "id": "line_g72lqe2P",
@@ -42,7 +91,34 @@
       "start": 8.6,
       "end": 10.7,
       "text": "Is this the Krusty Krab?",
-      "hint": "请问是蟹堡王吗？"
+      "hint": "请问是蟹堡王吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 9.367,
+          "end": 9.428
+        },
+        {
+          "text": "this",
+          "start": 9.448,
+          "end": 9.549
+        },
+        {
+          "text": "the",
+          "start": 9.61,
+          "end": 9.67
+        },
+        {
+          "text": "Krusty",
+          "start": 9.711,
+          "end": 10.054
+        },
+        {
+          "text": "Krab?",
+          "start": 10.155,
+          "end": 10.518
+        }
+      ]
     },
     {
       "id": "line_3ShAx1P7",
@@ -50,7 +126,29 @@
       "start": 10.7,
       "end": 14.2,
       "text": "No! This is Patrick!",
-      "hint": "不！这是派大星！"
+      "hint": "不！这是派大星！",
+      "words": [
+        {
+          "text": "No!",
+          "start": 11.062,
+          "end": 11.384
+        },
+        {
+          "text": "This",
+          "start": 12.088,
+          "end": 12.309
+        },
+        {
+          "text": "is",
+          "start": 12.47,
+          "end": 12.671
+        },
+        {
+          "text": "Patrick!",
+          "start": 12.792,
+          "end": 13.395
+        }
+      ]
     }
   ],
   "rightsStatus": "redistribution-not-cleared",
@@ -63,6 +161,12 @@
     "changes": "选取原片 00:00–00:08 与 00:17–00:23.2，拼接、压缩并添加配音时间标记。"
   },
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/patrick/",
-  "waveform": "waveform-v1.json",
-  "poster": "patrick-poster-v1.jpg"
+  "waveform": "waveform-v2.json",
+  "poster": "patrick-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
 }

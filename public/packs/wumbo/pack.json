@@ -20,7 +20,29 @@
       "start": 0.2,
       "end": 3.1,
       "text": "I wumbo, you wumbo.",
-      "hint": "我 wumbo，你 wumbo。"
+      "hint": "我 wumbo，你 wumbo。",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.744,
+          "end": 0.764
+        },
+        {
+          "text": "wumbo,",
+          "start": 1.006,
+          "end": 1.569
+        },
+        {
+          "text": "you",
+          "start": 2.013,
+          "end": 2.194
+        },
+        {
+          "text": "wumbo.",
+          "start": 2.355,
+          "end": 3.08
+        }
+      ]
     },
     {
       "id": "line_e075yTAX",
@@ -28,7 +50,29 @@
       "start": 3.1,
       "end": 6.8,
       "text": "He, she, me, wumbo.",
-      "hint": "他、她、我，wumbo。这是剧中的虚构词。"
+      "hint": "他、她、我，wumbo。这是剧中的虚构词。",
+      "words": [
+        {
+          "text": "He,",
+          "start": 3.442,
+          "end": 3.643
+        },
+        {
+          "text": "she,",
+          "start": 3.804,
+          "end": 4.407
+        },
+        {
+          "text": "me,",
+          "start": 5.292,
+          "end": 6.036
+        },
+        {
+          "text": "wumbo.",
+          "start": 6.559,
+          "end": 6.8
+        }
+      ]
     }
   ],
   "rightsStatus": "redistribution-not-cleared",
@@ -41,6 +85,12 @@
     "changes": "选取原片 00:15.5–00:22.3，避开后续不适合儿童的对白，压缩并添加配音时间标记。Wumbo 是虚构词。"
   },
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/wumbo/",
-  "waveform": "waveform-v1.json",
-  "poster": "wumbo-poster-v1.jpg"
+  "waveform": "waveform-v2.json",
+  "poster": "wumbo-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
 }

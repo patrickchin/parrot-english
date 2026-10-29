@@ -26,7 +26,34 @@
       "start": 0.2,
       "end": 4.2,
       "text": "Chocolate? Did you say chocolate?",
-      "hint": "巧克力？你说的是巧克力吗？"
+      "hint": "巧克力？你说的是巧克力吗？",
+      "words": [
+        {
+          "text": "Chocolate?",
+          "start": 0.582,
+          "end": 1.165
+        },
+        {
+          "text": "Did",
+          "start": 2.21,
+          "end": 2.391
+        },
+        {
+          "text": "you",
+          "start": 2.471,
+          "end": 2.612
+        },
+        {
+          "text": "say",
+          "start": 2.773,
+          "end": 3.034
+        },
+        {
+          "text": "chocolate?",
+          "start": 3.396,
+          "end": 4.2
+        }
+      ]
     },
     {
       "id": "line_fE8Ckbk0",
@@ -34,7 +61,39 @@
       "start": 4.2,
       "end": 7.2,
       "text": "Yes, sir. With or without nuts?",
-      "hint": "是的，先生。要有坚果的，还是没有坚果的？"
+      "hint": "是的，先生。要有坚果的，还是没有坚果的？",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 4.663,
+          "end": 4.885
+        },
+        {
+          "text": "sir.",
+          "start": 5.005,
+          "end": 5.207
+        },
+        {
+          "text": "With",
+          "start": 5.69,
+          "end": 5.871
+        },
+        {
+          "text": "or",
+          "start": 5.952,
+          "end": 6.012
+        },
+        {
+          "text": "without",
+          "start": 6.093,
+          "end": 6.415
+        },
+        {
+          "text": "nuts?",
+          "start": 6.536,
+          "end": 6.838
+        }
+      ]
     },
     {
       "id": "line_OEtTH7kR",
@@ -42,7 +101,19 @@
       "start": 7.2,
       "end": 11.4,
       "text": "Chocolate?! Chocolate!",
-      "hint": "巧克力？！巧克力！"
+      "hint": "巧克力？！巧克力！",
+      "words": [
+        {
+          "text": "Chocolate?!",
+          "start": 7.361,
+          "end": 8.104
+        },
+        {
+          "text": "Chocolate!",
+          "start": 8.727,
+          "end": 10.616
+        }
+      ]
     }
   ],
   "rightsStatus": "redistribution-not-cleared",
@@ -55,6 +126,12 @@
     "changes": "选取原片 00:10.8–00:22.2，压缩并添加配音时间标记。"
   },
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/chocolate/",
-  "waveform": "waveform-v1.json",
-  "poster": "chocolate-poster-v1.jpg"
+  "waveform": "waveform-v2.json",
+  "poster": "chocolate-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
 }

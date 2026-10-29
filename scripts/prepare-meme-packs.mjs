@@ -43,8 +43,8 @@ for (const scene of scenes) {
   const pack = {
     version:1, id:previous?.id ?? id('pack'), title:scene.title,
     mediaBase:`https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/${scene.slug}/`,
-    description:'成人原型配音测试；选角色，听原声，录下自己的版本。', duration:scene.duration, video:`${scene.slug}-v1.mp4`, poster:previous?.poster, waveform:previous?.waveform, roles,
-    lines:scene.lines.map(([role,start,end,text,hint],i) => ({ id:previous?.lines[i]?.id ?? id('line'),roleId:roles[role].id,start,end,text,hint })),
+    description:'成人原型配音测试；选角色，听原声，录下自己的版本。', duration:scene.duration, video:`${scene.slug}-v1.mp4`, poster:previous?.poster, waveform:previous?.waveform, wordTiming:previous?.wordTiming, roles,
+    lines:scene.lines.map(([role,start,end,text,hint],i) => ({ id:previous?.lines[i]?.id ?? id('line'),roleId:roles[role].id,start,end,text,hint, words:previous?.lines[i]?.text === text && previous.lines[i].start === start && previous.lines[i].end === end ? previous.lines[i].words : undefined })),
     rightsStatus:'redistribution-not-cleared',
     credit:{ title:scene.slug==='onions' ? 'Shrek' : 'SpongeBob SquarePants', attribution:scene.slug==='onions' ? '原作：DreamWorks Animation' : '原作：Nickelodeon / Viacom', source:scene.source, licence:'未确认再分发许可', licenceUrl:'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes:scene.changes },
   };

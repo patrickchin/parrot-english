@@ -25,12 +25,12 @@ button:disabled { cursor: not-allowed; }
    may scroll rather than clipping controls or shrinking touch targets. */
 .player-shell { height: 100svh; min-height: 640px; display: flex; flex-direction: column; }
 .player-shell > header { width: 100%; flex: none; padding-block: 8px; }
-.player-main { width: 100%; max-width: 1280px; margin-inline: auto; padding: 0 16px; flex: 1; min-height: min-content; display: grid; grid-template-rows: minmax(140px, 1fr) auto; gap: 8px; }
+.player-main { width: 100%; max-width: 1280px; margin-inline: auto; padding: 0 16px; flex: 1; min-height: min-content; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(140px, 1fr) auto; gap: 8px; }
 .player-video { display: flex; flex-direction: column; flex: 1; min-height: 140px; }
 .player-screen { flex: 1; min-height: 0; }
 .player-transport { flex: none; height: 44px; }
 .player-transport button { height: 44px; }
-.player-workspace { flex: none; }
+.player-workspace { flex: none; min-width: 0; }
 .practice-meta { min-height: 44px; }
 .practice-caption { padding-block: 4px 6px; }
 .practice-caption [lang=en] { font-size: clamp(24px, 3.1vw, 40px); line-height: 1.12; }
@@ -58,3 +58,11 @@ button:disabled { cursor: not-allowed; }
   .player-footer { padding-inline: 32px; }
   .player-error { grid-column: 1 / -1; margin: 0; }
 }
+
+.practice-content { min-width: 0; }
+.voice-timeline { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: #174d4840 transparent; border-radius: 12px; }
+.voice-timeline:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+.timed-words { height: 44px; margin: 0; padding: 0; list-style: none; }
+.timed-word { position: relative; display: inline-block; white-space: nowrap; padding: 2px 3px; font-size: 18px; line-height: 28px; font-weight: 700; border-radius: 6px; }
+.timed-word::before { content: ''; position: absolute; top: 0; left: 0; height: 4px; width: 1px; background: var(--color-brand); opacity: .3; }
+.timed-words [aria-current=true] .timed-word { background: var(--color-coral); color: white; }

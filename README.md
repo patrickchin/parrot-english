@@ -21,9 +21,10 @@ the interface preference on this browser; switching languages keeps the current
 scene and recordings. English dialogue/audio and the optional Chinese meaning
 hints are independent of the UI language.
 
-The warm single-column player shows a teal original-audio envelope and a coral
-learner envelope with a synchronized playhead during listening, capture, and
-replay. This is timing and emphasis feedback, not pronunciation scoring. See
+The warm player shows detailed teal original-audio and coral learner waveforms
+with a synchronized playhead during listening, capture, and replay. English words
+sit at their spoken positions underneath the waveform; the timeline follows
+playback automatically on smaller screens. This is timing and emphasis feedback, not pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
 The shelf contains the four selected memes: **No, this is Patrick**, **Chocolate!**,
