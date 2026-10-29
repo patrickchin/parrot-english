@@ -1,13 +1,21 @@
 # Warm player and voice waveforms
 
 Chosen direction: 04-calm-clubhouse, approved on 2026-10-29. Warm ivory, forest teal,
-coral recording controls, a centered wordmark, and a single-column player. Keep the
-video, current sentence, and listen/record actions prominent. Match the visual
+coral recording controls, and a compact shared header. Desktop uses an action
+rail; phones use four large actions in two rows. Keep the video, current
+sentence, and listen/record actions prominent. Match the visual
 reference while preserving the real video aspect ratio, role choice, line skipping,
 retry, completed-take playback, errors, consent, and explicit session reset.
 
 The requested “sound profile” means the original and learner waveforms with a
 moving playhead, rather than music, UI sounds, voice filters, or scoring.
+
+The practice waveform sits immediately above the English line and its optional
+Chinese hint. Recording starts as soon as microphone permission and video readiness
+allow, with no count-in. A cancelled take keeps the previous accepted recording.
+“My recording” replays the matching video turn with the recorded voice and any
+pack backing track, using the same scheduler as the assembled dub. The original
+voice is muted for that turn; stopping or reaching its end pauses both.
 
 ## Signal and alignment
 

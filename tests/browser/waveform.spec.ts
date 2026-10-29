@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import type { Line } from '../../src/pack';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -6,6 +7,8 @@ import { join } from 'node:path';
 test('reference, live take, and saved take share a moving timeline; cancelling keeps the previous trace', async ({ page, browserName }, info) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');
   await page.goto('/#patrick');
+  const pack = await (await page.request.get('/packs/patrick/pack.json')).json();
+  const turn: Line = pack.lines.find((l: Line) => l.roleId === pack.roles[0].id);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const graph = page.getByRole('region', { name: '声音波形对比' });
   const cursor = graph.getByRole('progressbar', { name: '配音时间指针' });
@@ -16,8 +19,10 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
-  await expect(cursor).toHaveAttribute('aria-valuenow', '0');
-  await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible({ timeout: 1500 });
+  await expect(page.locator('video')).toHaveJSProperty('paused', false);
+  await expect(page.locator('video')).toHaveJSProperty('muted', true);
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.2);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
@@ -43,8 +48,19 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
     await page.screenshot({ path: join(folder, 'warm-waveform-mobile.png'), fullPage: true });
   }
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();
+  await expect(page.locator('video')).toHaveJSProperty('paused', false);
+  await expect(page.locator('video')).toHaveJSProperty('muted', true);
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.15);
+  // The role starts later in the scene; picture and cursor must share that offset.
+  await expect.poll(async () => Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - turn.start - Number(await cursor.getAttribute('aria-valuenow')))).toBeLessThan(0.15);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
+  await expect(page.locator('video')).toHaveJSProperty('paused', true);
+  await page.getByRole('button', { name: '听我的录音', exact: true }).click();
+  await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
+  await expect(page.locator('video')).toHaveJSProperty('paused', true);
+  const stoppedAt = await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime);
+  expect(stoppedAt).toBeGreaterThanOrEqual(turn.end);
+  expect(stoppedAt).toBeLessThan(turn.end + 0.2);
   await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();
@@ -86,6 +102,10 @@ test('scene, caption, waveforms and every main action fit one screen across the 
         expect(bounds!.y).toBeGreaterThanOrEqual(0);
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
       }
+      const graph = await page.getByRole('region', { name: '声音波形对比' }).boundingBox();
+      const caption = await page.getByRole('region', { name: '录制台词' }).locator('p[lang=en]').boundingBox();
+      expect(caption!.y).toBeGreaterThanOrEqual(graph!.y + graph!.height);
+      expect(caption!.y - graph!.y - graph!.height).toBeLessThanOrEqual(8);
       const scene = await page.getByRole('region', { name: '电影片段' }).boundingBox();
       const footer = await page.getByRole('contentinfo').boundingBox();
       const actions = await page.getByRole('group', { name: '配音操作' }).boundingBox();

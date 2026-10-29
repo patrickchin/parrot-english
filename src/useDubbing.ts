@@ -4,12 +4,11 @@ import { waveformStep } from './waveform';
 
 export type Take = { blob: Blob; url: string; duration: number; peaks: number[] };
 export type Takes = Record<string, Take>;
-type Phase = 'idle' | 'loading' | 'preview' | 'countdown' | 'recording' | 'saving' | 'replay' | 'listening';
+type Phase = 'idle' | 'loading' | 'preview' | 'recording' | 'saving' | 'replay' | 'listening';
 
 export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack, onTake: (id: string, take: Take) => void) {
   const [phase, setPhase] = useState<Phase>('idle');
   const [time, setTime] = useState(0);
-  const [countdown, setCountdown] = useState(3);
   const [error, setError] = useState('');
   const [level, setLevel] = useState(0);
   const [livePeaks, setLivePeaks] = useState<number[]>([]);
@@ -21,7 +20,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   const context = useRef<AudioContext | null>(null);
   const sources = useRef<AudioBufferSourceNode[]>([]);
   const finishRecording = useRef<(() => void) | null>(null);
-  const listenAudio = useRef<HTMLAudioElement | null>(null);
   const backing = useRef<AudioBuffer | null>(null);
   const lastTick = useRef(0);
   const captureCleanup = useRef<(() => void) | null>(null);
@@ -38,8 +36,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     recorder.current = null;
     captureCleanup.current?.(); captureCleanup.current = null;
     finishRecording.current = null;
-    listenAudio.current?.pause();
-    listenAudio.current = null;
     for (const source of sources.current) { try { source.stop(); } catch { /* Already ended. */ } }
     sources.current = [];
     if (video.current) { video.current.pause(); video.current.muted = false; }
@@ -105,18 +101,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   }
 
   async function listen(take: Take, line: Line) {
-    stop(); setError(''); setPhase('listening');
-    const id = operation.current;
-    const audio = new Audio(take.url);
-    setTime(line.start);
-    listenAudio.current = audio;
-    audio.onended = () => { if (id === operation.current) { setTime(Math.min(line.end, line.start + take.duration)); stop(); } };
-    audio.onerror = () => { if (id === operation.current) { stop(); setError('这次录音无法播放，请重新录一句。'); } };
-    try {
-      await audio.play();
-      const tick = () => { if (id !== operation.current) return; setTime(Math.min(line.end, line.start + audio.currentTime)); frame.current = requestAnimationFrame(tick); };
-      if (id === operation.current) frame.current = requestAnimationFrame(tick);
-    } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
+    await replay({ [line.id]: take }, line);
   }
 
   async function record(line: Line) {
@@ -171,45 +156,40 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       captured.getAudioTracks().forEach(track => { track.onended = () => {
         if (id === operation.current && capture.state === 'recording') { stop(); setError('麦克风已断开，请连接后再试一次。'); }
       }; });
-      setPhase('countdown'); setCountdown(3);
-      const countIn = async (left: number) => {
-        if (id !== operation.current) return;
-        if (left > 0) { setCountdown(left); timer.current = setTimeout(() => { void countIn(left - 1); }, 750); return; }
-        try {
-          await readyVideo(line.start, true);
-          if (id !== operation.current) return;
-          started = performance.now(); capture.start(); setPhase('recording');
-          finishRecording.current = () => {
-            if (capture.state === 'recording') { setPhase('saving'); capture.stop(); }
-          };
-          const meter = () => {
-            if (id !== operation.current || capture.state !== 'recording') return;
-            analyser.getFloatTimeDomainData(samples);
-            const rms = Math.sqrt(samples.reduce((sum, n) => sum + n * n, 0) / samples.length);
-            const index = Math.floor((performance.now() - started) / 1000 / waveformStep);
-            while (peaks.length <= index) peaks.push(0);
-            peaks[index] = Math.max(peaks[index], rms);
-            setLivePeaks([...peaks]);
-            peak = Math.max(peak, rms); setLevel(Math.min(1, rms * 12));
-            setTime(video.current?.currentTime ?? line.start);
-            frame.current = requestAnimationFrame(meter);
-          };
-          frame.current = requestAnimationFrame(meter);
-          timer.current = setTimeout(() => finishRecording.current?.(), (line.end - line.start) * 1000);
-        } catch (e) { if (id === operation.current) { input.disconnect(); stop(); setError(message(e)); } }
+      await readyVideo(line.start, true);
+      if (id !== operation.current) return;
+      started = performance.now(); capture.start(); setPhase('recording');
+      finishRecording.current = () => {
+        if (capture.state === 'recording') { setPhase('saving'); capture.stop(); }
       };
-      void countIn(3);
+      const meter = () => {
+        if (id !== operation.current || capture.state !== 'recording') return;
+        analyser.getFloatTimeDomainData(samples);
+        const rms = Math.sqrt(samples.reduce((sum, n) => sum + n * n, 0) / samples.length);
+        const index = Math.floor((performance.now() - started) / 1000 / waveformStep);
+        while (peaks.length <= index) peaks.push(0);
+        peaks[index] = Math.max(peaks[index], rms);
+        setLivePeaks([...peaks]);
+        peak = Math.max(peak, rms); setLevel(Math.min(1, rms * 12));
+        setTime(video.current?.currentTime ?? line.start);
+        frame.current = requestAnimationFrame(meter);
+      };
+      frame.current = requestAnimationFrame(meter);
+      timer.current = setTimeout(() => finishRecording.current?.(), (line.end - line.start) * 1000);
     } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
   }
 
-  async function replay(takes: Takes) {
+  async function replay(takes: Takes, line?: Line) {
     stop(); setError(''); setPhase('loading');
     const id = operation.current;
+    const start = line?.start ?? 0;
+    const end = line?.end ?? pack.duration;
+    setTime(start);
     try {
       if (!pack.lines.some(line => takes[line.id])) {
-        await readyVideo(0, false);
+        await readyVideo(start, false);
         if (id !== operation.current) return;
-        setPhase('replay'); watch(id, pack.duration); return;
+        setPhase(line ? 'listening' : 'replay'); watch(id, end); return;
       }
       context.current ??= new AudioContext();
       const ctx = context.current;
@@ -223,7 +203,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         backing.current = await ctx.decodeAudioData(await response.arrayBuffer());
       }
       if (id !== operation.current) return;
-      const el = await readyVideo(0, false);
+      const el = await readyVideo(start, pack.lines.some(l => takes[l.id] && start >= l.start && start < l.end));
       if (id !== operation.current) return;
       const base = ctx.currentTime - el.currentTime;
       if (buffers.length && backing.current) {
@@ -239,15 +219,18 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         music.onended = () => gain.disconnect(); sources.current.push(music);
       }
       for (const { line, buffer } of buffers) {
+        const offset = Math.max(0, el.currentTime - line.start);
+        const duration = Math.min(buffer.duration, line.end - line.start) - offset;
+        if (duration <= 0) continue;
         const source = ctx.createBufferSource(); source.buffer = buffer; source.connect(ctx.destination);
-        source.start(Math.max(ctx.currentTime, base + line.start), 0, Math.min(buffer.duration, line.end - line.start));
+        source.start(Math.max(ctx.currentTime, base + line.start), offset, duration);
         source.onended = () => source.disconnect(); sources.current.push(source);
       }
-      setPhase('replay'); watch(id, pack.duration, takes);
+      setPhase(line ? 'listening' : 'replay'); watch(id, end, takes);
     } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
   }
 
-  return { phase, time, countdown, level, livePeaks, error, setError, stop, preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, time, level, livePeaks, error, setError, stop, preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function message(error: unknown): string {
