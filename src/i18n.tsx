@@ -3,6 +3,11 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  '片段视图': 'Scene view',
+  '网格视图': 'Grid view',
+  '列表视图': 'List view',
+  '网格': 'Grid',
+  '列表': 'List',
   "查找片段": "Find a scene",
   "找片段或台词": "Find a scene or line",
   "没有找到片段。": "No scenes found.",
