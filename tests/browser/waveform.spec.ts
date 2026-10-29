@@ -152,7 +152,8 @@ test('words share the waveform time scale, stay readable, and follow playback wi
   const timeline = page.getByRole('group', { name: '声音与台词时间轴' });
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
   const onions = items.filter({ hasText: /^Onions$/ }).first();
-  await expect(onions).toHaveAttribute('aria-current', 'true', { timeout: 6000 });
+  // A short word highlight can fall between the default assertion retries.
+  await expect.poll(() => onions.getAttribute('aria-current'), { intervals: [25], timeout: 6000 }).toBe('true');
   const word = await onions.boundingBox(), visible = await timeline.boundingBox();
   expect(word!.x).toBeGreaterThanOrEqual(visible!.x);
   expect(word!.x + word!.width).toBeLessThanOrEqual(visible!.x + visible!.width);
