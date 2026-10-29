@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "id": "pack_y50gF2Cn",
+  "title": "谁都能做饭！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 1.869,
+  "video": "anyone-can-cook-v1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/anyone-can-cook/",
+  "roles": [
+    {
+      "id": "role_CwTyhoLe",
+      "name": "古斯托",
+      "label": "古斯托",
+      "hint": "跟着角色的语气说。"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_foq1p4RM",
+      "roleId": "role_CwTyhoLe",
+      "start": 0,
+      "end": 1.85,
+      "text": "Anyone can cook!",
+      "hint": "谁都能做饭！",
+      "words": [
+        {
+          "text": "Anyone",
+          "start": 0.402,
+          "end": 0.845
+        },
+        {
+          "text": "can",
+          "start": 1.046,
+          "end": 1.166
+        },
+        {
+          "text": "cook!",
+          "start": 1.327,
+          "end": 1.548
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Ratatouille",
+    "attribution": "原作：Disney / Pixar",
+    "source": "https://www.youtube.com/watch?v=thkDWSUzQDo&t=17s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "原上传约 17.20–19.05 秒的节选；添加中英台词和配音时间标记。"
+  },
+  "waveform": "waveform-v2.json",
+  "poster": "anyone-can-cook-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

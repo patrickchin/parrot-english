@@ -1,7 +1,7 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 const rate = 16000, step = 0.005;
-for (const slug of ['patrick', 'chocolate', 'wumbo', 'onions', 'sintel']) {
+for (const slug of process.argv.slice(2).length ? process.argv.slice(2) : (await readdir('public/packs', { withFileTypes: true })).filter(entry => entry.isDirectory()).map(entry => entry.name)) {
   const folder = `public/packs/${slug}`;
   const pack = JSON.parse(await readFile(`${folder}/pack.json`, 'utf8'));
   const source = `${slug === 'sintel' ? 'content/media/sintel' : 'content/local-dubbing'}/${pack.video}`;
@@ -17,7 +17,7 @@ for (const slug of ['patrick', 'chocolate', 'wumbo', 'onions', 'sintel']) {
   await writeFile(`${folder}/${pack.waveform}`, JSON.stringify({ version: 2, duration: pack.duration, step, peaks }) + '\n');
   if (slug !== 'sintel') {
     pack.poster = `${slug}-poster-v1.jpg`;
-    const still = spawnSync('ffmpeg', ['-v', 'error', '-ss', slug === 'patrick' ? '5.8' : '1', '-i', source, '-frames:v', '1', '-vf', 'scale=480:-2', '-q:v', '3', '-y', `content/local-dubbing/${pack.poster}`]);
+    const still = spawnSync('ffmpeg', ['-v', 'error', '-ss', String(Math.min(pack.duration / 2, slug === 'patrick' ? 5.8 : 1)), '-i', source, '-frames:v', '1', '-vf', 'scale=480:-2', '-q:v', '3', '-y', `content/local-dubbing/${pack.poster}`]);
     if (still.status !== 0) throw new Error(`Cannot prepare ${pack.poster}`);
   }
   await writeFile(`${folder}/pack.json`, JSON.stringify(pack, null, 2) + '\n');

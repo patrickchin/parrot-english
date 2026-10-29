@@ -1,4 +1,4 @@
-# First dubbing scenes
+# Dubbing scene sources
 
 Prepared on 2026-10-28 for the founder and colleague's adult prototype test.
 The player and pack metadata are separate. The four selected meme clips have
@@ -9,7 +9,10 @@ Original downloads, prepared meme excerpts, temporary speech transcripts, and th
 under the Git-ignored `content/local-dubbing/` directory. Uploading these excerpts
 does not establish a redistribution licence.
 
-## Selected meme shelf
+The 2026-10-29 expansion adds [20 more scenes](extra-clips.md), bringing the
+meme shelf to 24. The same OSS storage and unconfirmed-rights status apply.
+
+## Original meme shelf
 
 | Scene | YouTube reference | Prepared file | Duration / turns |
 | --- | --- | --- | --- |
@@ -93,8 +96,8 @@ The app does not imply endorsement by any film or television producer.
 
 ## Waveforms and scene thumbnails — 2026-10-29
 
-`node scripts/prepare-waveforms.mjs` derives 20 ms RMS envelopes from the actual
-prepared clips and extracts four small scene thumbnails. Numeric envelopes are
+`node scripts/prepare-waveforms.mjs` derives 5 ms peak envelopes from the actual
+prepared clips and extracts small scene thumbnails. Numeric envelopes are
 pack metadata; video/audio/JPEG media stays in OSS. Thumbnails use the same source
 excerpts and credits above. Learner envelopes are sampled from the microphone
 and retained only with the in-memory take. See [UI notes](ui-design.md) for the

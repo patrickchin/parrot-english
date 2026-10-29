@@ -23,7 +23,7 @@ torch.set_num_threads(4)
 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
 model = bundle.get_model(dl_kwargs={'progress': False}).eval()
 labels = {char: index for index, char in enumerate(bundle.get_labels())}
-for slug in sys.argv[1:] or ['patrick', 'chocolate', 'wumbo', 'onions', 'sintel']:
+for slug in sys.argv[1:] or sorted(p.name for p in Path('public/packs').iterdir() if p.is_dir()):
     folder = Path('public/packs') / slug
     pack = json.loads((folder / 'pack.json').read_text())
     source = Path('content/media/sintel' if slug == 'sintel' else 'content/local-dubbing') / pack['video']

@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "id": "pack_kuOni4tB",
+  "title": "今天是一份礼物！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 5.255,
+  "video": "today-is-a-gift-v1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/today-is-a-gift/",
+  "poster": "today-is-a-gift-poster-v1.jpg",
+  "waveform": "waveform-v2.json",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "roles": [
+    {
+      "id": "role__OrFsrNE",
+      "name": "乌龟大师",
+      "label": "乌龟大师",
+      "hint": "跟着角色的语气说。"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_TKvf4Dco",
+      "roleId": "role__OrFsrNE",
+      "start": 0,
+      "end": 2.5,
+      "text": "But today is a gift.",
+      "hint": "但今天是一份礼物。",
+      "words": [
+        {
+          "text": "But",
+          "start": 0.302,
+          "end": 0.464
+        },
+        {
+          "text": "today",
+          "start": 0.625,
+          "end": 1.169
+        },
+        {
+          "text": "is",
+          "start": 1.673,
+          "end": 1.734
+        },
+        {
+          "text": "a",
+          "start": 1.835,
+          "end": 1.855
+        },
+        {
+          "text": "gift.",
+          "start": 1.935,
+          "end": 2.238
+        }
+      ]
+    },
+    {
+      "id": "line_4a48I702",
+      "roleId": "role__OrFsrNE",
+      "start": 2.5,
+      "end": 5.25,
+      "text": "That is why it is called the present.",
+      "hint": "所以现在也叫作 present，它也有礼物的意思。",
+      "words": [
+        {
+          "text": "That",
+          "start": 3.203,
+          "end": 3.363
+        },
+        {
+          "text": "is",
+          "start": 3.464,
+          "end": 3.544
+        },
+        {
+          "text": "why",
+          "start": 3.644,
+          "end": 3.805
+        },
+        {
+          "text": "it",
+          "start": 3.905,
+          "end": 3.945
+        },
+        {
+          "text": "is",
+          "start": 4.046,
+          "end": 4.126
+        },
+        {
+          "text": "called",
+          "start": 4.206,
+          "end": 4.507
+        },
+        {
+          "text": "the",
+          "start": 4.568,
+          "end": 4.628
+        },
+        {
+          "text": "present.",
+          "start": 4.728,
+          "end": 5.089
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Kung Fu Panda",
+    "attribution": "原作：DreamWorks Animation",
+    "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=72s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "原上传约 72.20–77.45 秒的节选；添加中英台词和配音时间标记。"
+  }
+}

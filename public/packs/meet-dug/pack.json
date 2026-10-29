@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "id": "pack_IuDLtAby",
+  "title": "刚认识就喜欢你！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 2.76,
+  "video": "meet-dug-v1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/meet-dug/",
+  "roles": [
+    {
+      "id": "role_AkxqSDuU",
+      "name": "道格",
+      "label": "道格",
+      "hint": "跟着角色的语气说。"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_qOdPAuWc",
+      "roleId": "role_AkxqSDuU",
+      "start": 0,
+      "end": 2.75,
+      "text": "I have just met you, and I love you.",
+      "hint": "我才刚认识你，就已经喜欢你了。",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.442,
+          "end": 0.462
+        },
+        {
+          "text": "have",
+          "start": 0.562,
+          "end": 0.682
+        },
+        {
+          "text": "just",
+          "start": 0.763,
+          "end": 0.943
+        },
+        {
+          "text": "met",
+          "start": 1.044,
+          "end": 1.224
+        },
+        {
+          "text": "you,",
+          "start": 1.285,
+          "end": 1.405
+        },
+        {
+          "text": "and",
+          "start": 1.686,
+          "end": 1.766
+        },
+        {
+          "text": "I",
+          "start": 1.907,
+          "end": 1.927
+        },
+        {
+          "text": "love",
+          "start": 2.068,
+          "end": 2.328
+        },
+        {
+          "text": "you.",
+          "start": 2.449,
+          "end": 2.71
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Up",
+    "attribution": "原作：Disney / Pixar",
+    "source": "https://www.youtube.com/watch?v=xrAIGLkSMls&t=8s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "原上传约 8.40–11.15 秒的节选；添加中英台词和配音时间标记。"
+  },
+  "waveform": "waveform-v2.json",
+  "poster": "meet-dug-poster-v1.jpg",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

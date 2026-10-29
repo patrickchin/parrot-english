@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "id": "pack_uDawiVCK",
+  "title": "微笑，挥挥手！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 3.7,
+  "video": "smile-and-wave-v1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/smile-and-wave/",
+  "poster": "smile-and-wave-poster-v1.jpg",
+  "waveform": "waveform-v2.json",
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "roles": [
+    {
+      "id": "role_y89zbrnV",
+      "name": "队长",
+      "label": "队长",
+      "hint": "跟着角色的语气说。"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_lm0Xr9oD",
+      "roleId": "role_y89zbrnV",
+      "start": 0,
+      "end": 3.7,
+      "text": "Just smile and wave, boys. Smile and wave.",
+      "hint": "小伙子们，微笑，挥挥手。微笑，挥挥手。",
+      "words": [
+        {
+          "text": "Just",
+          "start": 0.261,
+          "end": 0.442
+        },
+        {
+          "text": "smile",
+          "start": 0.543,
+          "end": 0.965
+        },
+        {
+          "text": "and",
+          "start": 1.046,
+          "end": 1.106
+        },
+        {
+          "text": "wave,",
+          "start": 1.166,
+          "end": 1.448
+        },
+        {
+          "text": "boys.",
+          "start": 1.568,
+          "end": 2.051
+        },
+        {
+          "text": "Smile",
+          "start": 2.433,
+          "end": 2.815
+        },
+        {
+          "text": "and",
+          "start": 2.876,
+          "end": 2.956
+        },
+        {
+          "text": "wave.",
+          "start": 3.036,
+          "end": 3.459
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Madagascar",
+    "attribution": "原作：DreamWorks Animation",
+    "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=3s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "原上传约 3.10–6.80 秒的节选；添加中英台词和配音时间标记。"
+  }
+}
