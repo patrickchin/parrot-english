@@ -3,8 +3,10 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+test.use({ samplePack: true });
+
 test('shows the real clip, switches roles, and works at phone and tablet widths', async ({ page }, info) => {
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await expect(page.getByRole('heading', { name: '你在找谁？', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.videoWidth)).toBeGreaterThan(0);
@@ -39,7 +41,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
   test.skip(browserName !== 'chromium', 'A synthetic capture device is configured for Chromium only.');
   const uploads: string[] = [];
   page.on('request', req => { if (!['GET', 'HEAD'].includes(req.method())) uploads.push(req.url()); });
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: '开始录音', exact: true }).click();
@@ -76,7 +78,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
 
 test('denied microphone permission has a retry path without losing the selected line', async ({ page }) => {
   await page.addInitScript(() => { Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new DOMException('Denied for test', 'NotAllowedError'); } } }); });
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
@@ -87,7 +89,7 @@ test('denied microphone permission has a retry path without losing the selected 
 
 test('invalid packs are rejected and a failed video offers reload', async ({ page }) => {
   await page.route('**/pack.json', route => route.fulfill({ json: { version: 999 } }));
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: '重新加载', exact: true })).toBeEnabled();
   await page.unroute('**/pack.json');
@@ -105,7 +107,7 @@ test('silent input is rejected instead of marking the line complete', async ({ p
     setTimeout(() => { void context.close(); }, 15000);
     return stream;
   } } }); });
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
@@ -119,7 +121,7 @@ test('cancelling a pending microphone request stops a late stream', async ({ pag
   await page.addInitScript(() => { Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: () => new Promise(resolve => {
     (window as unknown as { resolveTestMic: (stream: MediaStream) => void }).resolveTestMic = resolve;
   }) } }); });
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();

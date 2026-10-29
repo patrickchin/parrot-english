@@ -31,7 +31,6 @@ The shelf contains **24 meme scenes**, including SpongeBob, Shrek, Toy Story,
 Finding Nemo, Cars, Up, Ratatouille, Kung Fu Panda, Minions, and Madagascar.
 Search by scene, English line, or film. Every scene opens directly from Alibaba
 OSS, with an original-audio waveform, aligned words, and Chinese meaning hints.
-A separate CC BY 3.0 **Sintel** sample is also available.
 See [clip sources](docs/clip-sources.md) and [the 20 additional scenes](docs/extra-clips.md)
 for YouTube links, source offsets, credits, and redistribution status.
 
@@ -46,7 +45,7 @@ npm run test:browser
 Application code and pack metadata belong in ESA; video, audio, and scene
 images belong in Alibaba OSS. `mediaBase` in each pack identifies its media
 location. Original downloads and meme authoring outputs remain ignored under
-`content/local-dubbing/`; licensed Sintel authoring files are in `content/media/`. No learner recording upload,
+`content/local-dubbing/`; the earlier licensed sample remains an internal test fixture only. No learner recording upload,
 account, database, voice generation, or speech scoring is involved. Microphone
 capture uses native browser APIs; actual iPhone/Android
 hardware and WeChat still need manual checks before a child pilot.

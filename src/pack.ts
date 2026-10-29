@@ -7,7 +7,7 @@ export type Pack = {
   base: string; mediaBase?: string; mode?: 'local';
   credit: { title: string; attribution: string; source: string; licence: string; licenceUrl: string; changes: string };
 };
-export const packRoot = '/packs/sintel/';
+export const packRoot = '/packs/patrick/';
 export const asset = (pack: Pack, path: string) => (pack.mediaBase ?? pack.base) + path;
 export function validatePack(value: unknown, base = packRoot): Pack {
   const p = value as Pack;

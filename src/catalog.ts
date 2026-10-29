@@ -6,7 +6,6 @@ export const clips = [
   { slug: 'wumbo', title: '调成 Wumbo！', english: 'I wumbo, you wumbo…', note: '一本正经地，胡说八道。', source: 'https://www.youtube.com/watch?v=--hsVknT1c0' },
   { slug: 'onions', title: '怪物就像洋葱', english: 'Ogres are like onions.', note: '一个认真解释，一个不停打岔。', source: 'https://www.youtube.com/shorts/LEmFWRWLeGU' },
   ...extraClips,
-  { slug: 'sintel', title: '你在找谁？', english: 'Sintel', note: '3 句简短台词，完整体验一次。', source: 'https://www.youtube.com/watch?v=eRsGyueVLvQ' },
 ] as const;
-export const memeClips = clips.filter(clip => clip.slug !== 'sintel');
+export const memeClips = clips;
 export type ClipSlug = typeof clips[number]['slug'];

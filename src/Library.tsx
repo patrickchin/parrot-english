@@ -2,7 +2,7 @@ import { useLanguage } from './i18n';
 import { useState } from 'react';
 import { memeClips, mediaRoot, type ClipSlug } from './catalog';
 import { AppHeader } from './app/AppHeader';
-import { Button, Icon } from './shared/ui';
+import { Icon } from './shared/ui';
 
 export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
   const { t } = useLanguage();
@@ -37,7 +37,6 @@ export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
           <h2 className="mt-3 font-display text-lg font-extrabold">{t(clip.title)}</h2>
         </>}
       </li>)}</ul>
-      <div className="mt-7 border-t border-brand/15 pt-6"><Button tone="quiet" onClick={() => onChoose('sintel')}>{t("试玩 Sintel")}<Icon name="arrow" /></Button></div>
       <p className="mt-6 max-w-3xl text-xs leading-6 text-muted">{t("成人原型测试 · 录音不上传，关闭或刷新清空。影视梗片段尚未确认再分发许可。")}</p>
     </main>
   </div>;

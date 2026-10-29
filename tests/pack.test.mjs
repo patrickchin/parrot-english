@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { asset, validatePack } from '../src/pack.ts';
 test('the independently loaded pack rejects traversal, missing roles and overlapping timings', async () => {
-  const pack = JSON.parse(await readFile(new URL('../public/packs/sintel/pack.json', import.meta.url), 'utf8'));
+  const pack = JSON.parse(await readFile(new URL('./fixtures/sintel/pack.json', import.meta.url), 'utf8'));
   assert.equal(validatePack(pack).lines.length, 5);
   assert.equal(asset(validatePack(pack), pack.video), pack.mediaBase + pack.video);
   for (const change of [
