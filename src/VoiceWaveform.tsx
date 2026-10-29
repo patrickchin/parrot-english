@@ -71,7 +71,6 @@ export function VoiceWaveform({ pack, start, end, time, recordings, recording = 
   return <section aria-label={t("声音波形对比")} className="mx-auto min-w-0 w-full max-w-4xl">
     <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
       <div className="flex items-center gap-5"><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-brand/70" />{t("原声")}</span><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-coral" />{recording ? t("你的声音 · 录音中") : t("你的声音")}</span></div>
-      <span>{Math.round((end - start) * 10) / 10} {t("秒")}</span>
     </div>
     <div ref={scroller} className="voice-timeline" role="group" aria-label={t('声音与台词时间轴')} tabIndex={words?.length ? 0 : undefined}>
       <div style={{ width: width + gutter + tail, paddingLeft: gutter, paddingRight: tail }}>

@@ -16,6 +16,7 @@ const english: Record<string, string> = {
   '换个故事，试试 Sintel 的对话。': 'Try a conversation from Sintel.',
   '试玩 Sintel': 'Try Sintel',
   '成人原型测试 · 录音只留在本次页面。四个梗片段尚未确认再分发许可；YouTube 链接供查看原片。': 'Adult prototype testing · Recordings stay on this page. Redistribution permission for the four meme clips is unconfirmed. YouTube links show the original clips.',
+  '成人原型测试 · 录音不上传，关闭或刷新清空。四个梗片段尚未确认再分发许可。': 'Adult prototype testing · No uploads; recordings clear on close or refresh. Redistribution permission for the four meme clips is unconfirmed.',
   '返回片段': 'Back to scenes',
   'Parrotbook 首页': 'Parrotbook home',
   '怎么配音？': 'How to dub',

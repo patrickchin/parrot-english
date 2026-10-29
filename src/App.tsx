@@ -112,7 +112,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   return <div className="player-shell bg-paper text-ink">
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); if (Object.keys(takes).length) { setReturnToLibrary(true); setModal('reset'); } else onBack(); }} />
     <main className="player-main" data-step={step}>
-      <h1 className="sr-only">{step === 'result' ? t("这一回，主角是你的声音。") : t(pack.title)}</h1>
+      {step !== 'result' && <h1 className="sr-only">{t(pack.title)}</h1>}
       <section aria-label={t("电影片段")} className="player-video overflow-hidden rounded-2xl border-2 border-brand bg-brand">
         <div className="player-screen relative bg-[#123c38]">
           <video ref={video} src={source} poster={pack.poster ? asset(pack, pack.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("{0} 对话片段", pack.credit.title)}
@@ -139,7 +139,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
         {step === 'practice' && <>
           <div className="practice-content">
             <div className="practice-meta flex items-center justify-between gap-2 text-sm">
-              <h2 className="font-display font-extrabold">{t(role.name)}</h2><span className="sr-only">{t('已完成 {0} / {1} 句', completed, rolesLines.length)}</span>
+              <span className="font-display font-extrabold">{t(role.name)}</span><span className="sr-only">{t('已完成 {0} / {1} 句', completed, rolesLines.length)}</span>
               <nav aria-label={t("你的台词")} className="flex justify-center">{rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("第 {0} 句：{1}", i + 1, l.text)} aria-current={i === lineIndex ? 'step' : undefined} className="flex h-11 min-w-11 items-center justify-center rounded-full text-sm text-muted aria-[current=step]:bg-brand/10 aria-[current=step]:font-extrabold aria-[current=step]:text-ink focus-visible:outline-3 focus-visible:outline-brand">{takes[l.id] ? <Icon name="check" /> : i + 1}{skipped.has(l.id) && <span className="sr-only">{t("原声")}</span>}</button>)}</nav>
               <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-semibold">{t("中文")}<input aria-label={t("显示中文提示")} type="checkbox" checked={hint} onChange={e => setHint(e.target.checked)} className="peer sr-only" /><span className="relative h-6 w-11 rounded-full bg-brand/20 peer-checked:bg-brand/75 peer-focus-visible:outline-3 peer-focus-visible:outline-offset-3 peer-focus-visible:outline-brand after:absolute after:top-0.75 after:left-0.75 after:h-4.5 after:w-4.5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" /></label>
             </div>
@@ -156,7 +156,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
           </div>
         </>}
         {step === 'result' && <div className="player-result text-center">
-          <h2 className="font-display text-2xl font-extrabold">{t("你的配音，完成啦！")}</h2><p className="mt-2 text-sm text-muted">{t('录了 {0} 句台词。', recorded)}{!recorded && t("这一次先听原声，下次试着录一句。")}</p>
+          <h1 className="font-display text-2xl font-extrabold">{t("你的配音，完成啦！")}</h1><p className="mt-2 text-sm text-muted">{t('录了 {0} 句台词。', recorded)}{!recorded && t("这一次先听原声，下次试着录一句。")}</p>
           <div className="mt-5 text-left"><VoiceWaveform pack={pack} start={0} end={pack.duration} time={media.time} recordings={graphRecordings} /></div>
           {currentCaption && <p lang="en" className="mt-4 font-display text-lg font-bold">{currentCaption.text}</p>}
           <div className="mt-5 flex flex-wrap justify-center gap-3"><Button tone="record" disabled={!videoReady} onClick={() => busy ? media.stop() : void media.replay(takes)}><Icon name={busy ? 'stop' : 'play'} />{busy ? t("停止播放") : t("播放我的配音")}</Button><Button tone="quiet" disabled={busy} onClick={() => { media.stop(); setStep('practice'); setLineIndex(0); }}><Icon name="repeat" />{t("再改一句")}</Button></div>
