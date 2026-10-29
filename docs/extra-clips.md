@@ -1,7 +1,7 @@
 # Twenty additional meme scenes — 2026-10-29
 
-Added for the existing adult prototype test, bringing the meme shelf to 24,
-plus the separate licensed Sintel sample. Every addition has selectable roles,
+Added for the existing adult prototype test, bringing the meme shelf to 24.
+The earlier Sintel sample was subsequently retired from the product. Every addition has selectable roles,
 English dialogue, Chinese meaning hints, 5 ms reference peaks, and word timings
 forced-aligned to its prepared audio. Learner recordings remain in memory.
 

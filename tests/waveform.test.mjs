@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { validateWaveform, waveformHeight, waveformPath } from '../src/waveform.ts';
 
 test('reference waveforms retain changing 5 ms audio peaks on a shared scale', async () => {
-  for (const slug of ['patrick', 'chocolate', 'wumbo', 'onions', 'sintel']) {
+  for (const slug of ['patrick', 'chocolate', 'wumbo', 'onions']) {
     const wave = validateWaveform(JSON.parse(await readFile(`public/packs/${slug}/waveform-v2.json`, 'utf8')));
     assert.ok(Math.max(...wave.peaks) - Math.min(...wave.peaks) > 0.05);
   }

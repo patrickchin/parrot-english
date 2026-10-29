@@ -15,12 +15,12 @@ test('the public build reads a selected device file without uploading it or requ
   const requests: string[] = [];
   page.on('request', req => { if (req.method() !== 'GET' || req.url().includes('/content/local-dubbing/')) requests.push(req.method() + ' ' + req.url()); });
   // Keep device-local pack support covered independently of the hosted scenes.
-  await page.route('**/packs/sintel/pack.json', async route => {
-    const pack = JSON.parse(await readFile('public/packs/sintel/pack.json', 'utf8'));
+  await page.route('**/packs/patrick/pack.json', async route => {
+    const pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8'));
     pack.mode = 'local'; delete pack.mediaBase;
     await route.fulfill({ json: pack });
   });
-  await page.goto('/#sintel');
+  await page.goto('/#patrick');
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeDisabled();
   await page.getByLabel('选择本地片段', { exact: true }).setInputFiles(resolve('content/media/sintel/search-v1.mp4'));
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();

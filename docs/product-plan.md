@@ -2,9 +2,9 @@
 
 Date: 2026-10-28
 
-Prototype status: the first browser dubbing flow now exists, using an immediately
-playable licensed Sintel excerpt and a shelf for four founder-selected meme
-scenes. Media is served from Alibaba OSS object storage, separately from the
+Prototype status: the browser dubbing flow offers 24 founder-selected meme
+scenes, with grid and list views. The earlier Sintel sample was removed from the
+product on 2026-10-29; licensed footage remains only as an internal test fixture. Media is served from Alibaba OSS object storage, separately from the
 ESA application code. Redistribution rights remain unconfirmed. See
 [clip sources](clip-sources.md) and [infrastructure](infrastructure.md) for the
 actual state. Adult browser testing is complete for the documented paths;

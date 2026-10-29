@@ -81,7 +81,7 @@ test('missing waveform metadata leaves recording and reference playback availabl
 
 
 test('scene, caption, waveforms and every main action fit one screen across the starter packs', async ({ page }, info) => {
-  for (const slug of ['onions', 'patrick', 'wumbo', 'chocolate', 'sintel']) {
+  for (const slug of ['onions', 'patrick', 'wumbo', 'chocolate', 'infinity']) {
     await page.goto('/#' + slug);
     await page.getByRole('button', { name: '片段与来源', exact: true }).click();
     await expect(page.getByRole('dialog').getByRole('link', { name: '观看原片' })).toBeVisible();

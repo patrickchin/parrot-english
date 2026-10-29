@@ -46,10 +46,10 @@ audio, and thumbnails remain in the existing OSS bucket. Live/saved learner
 recordings and waveform envelopes stay in memory and are never uploaded.
 
 After preparing a source clip, run `node scripts/prepare-waveforms.mjs`. It writes
-`public/packs/<slug>/waveform-v2.json` and updates each manifest. Four thumbnail
+`public/packs/<slug>/waveform-v2.json` and updates each manifest. Scene thumbnail
 JPEGs are prepared outside public/ under ignored content/local-dubbing/ and uploaded
-separately to the corresponding OSS clip folders. Sintel retains its existing
-licensed poster. The function build continues rejecting media files.
+separately to the corresponding OSS clip folders. The retired Sintel sample is
+kept only as an internal test fixture. The function build continues rejecting media files.
 
 If the reference envelope is absent or invalid, show a readable fallback while
 leaving original playback and microphone recording available.

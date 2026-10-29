@@ -3,6 +3,11 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  '片段视图': 'Scene view',
+  '网格视图': 'Grid view',
+  '列表视图': 'List view',
+  '网格': 'Grid',
+  '列表': 'List',
   "查找片段": "Find a scene",
   "找片段或台词": "Find a scene or line",
   "没有找到片段。": "No scenes found.",
@@ -54,8 +59,6 @@ const english: Record<string, string> = {
   'YouTube 原片 ↗': 'Original on YouTube ↗',
   '直接试玩': 'Try a scene',
   '你在找谁？': 'Who are you looking for?',
-  '换个故事，试试 Sintel 的对话。': 'Try a conversation from Sintel.',
-  '试玩 Sintel': 'Try Sintel',
   '成人原型测试 · 录音只留在本次页面。影视梗片段尚未确认再分发许可；YouTube 链接供查看原片。': 'Adult prototype testing · Recordings stay on this page. Redistribution permission for the meme clips is unconfirmed. YouTube links show the original clips.',
   '成人原型测试 · 录音不上传，关闭或刷新清空。影视梗片段尚未确认再分发许可。': 'Adult prototype testing · No uploads; recordings clear on close or refresh. Redistribution permission for the meme clips is unconfirmed.',
   '返回片段': 'Back to scenes',

@@ -51,9 +51,13 @@ four clips, so background sound also drops out during the replaced lines.
 Skipped turns retain the original sound. This is a limitation of this prototype,
 not source-separated dialogue or an exported finished movie.
 
-## Immediately playable sample: Sintel
+## Earlier sample: Sintel (retired)
 
-The public sample is an adapted excerpt of **Sintel (2010)**, the Durian Open
+Removed from the product on 2026-10-29 to focus on meme scenes. Its manifest
+and waveform now live under `tests/fixtures/sintel/`; it is not included in the
+production build or catalogue. The following records its original provenance.
+
+The earlier sample is an adapted excerpt of **Sintel (2010)**, the Durian Open
 Movie Project, with this attribution displayed in the player:
 
 © copyright Blender Foundation | www.sintel.org

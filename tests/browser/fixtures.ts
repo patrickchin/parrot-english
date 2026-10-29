@@ -5,8 +5,14 @@ import { existsSync } from 'node:fs';
 
 // Browser-flow tests use local authoring fixtures for the OSS media origin.
 // Actual OSS headers, hashes, and playback are verified after provisioning.
-export const test = base.extend({
-  page: async ({ page }, use) => {
+export const test = base.extend<{ samplePack: boolean }>({
+  samplePack: [false, { option: true }],
+  page: async ({ page, samplePack }, use) => {
+    // Licensed internal fixture exercises multi-line capture without publishing it in the app.
+    if (samplePack) await page.route('**/packs/patrick/*.json', async route => {
+      const file = new URL(route.request().url()).pathname.split('/').pop();
+      await route.fulfill({ body: await readFile(`tests/fixtures/sintel/${file}`), contentType: 'application/json' });
+    });
     if (!process.env.PARROTBOOK_LIVE_MEDIA) await page.route('https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/**', async route => {
       const match = /^\/clips\/([a-z0-9-]+)\/([a-zA-Z0-9_-]+\.(mp4|m4a|jpg))$/.exec(new URL(route.request().url()).pathname);
       if (!match) return route.abort();
