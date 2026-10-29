@@ -9,8 +9,8 @@ separate. Guardian consent and save/share controls belong in the grown-up area;
 the first product has no teacher workflow.
 
 Read the [product plan](docs/product-plan.md) for scope, content permissions,
-hosting, domain options, and the pilot sequence. This is a planning baseline;
-the earlier application and deployment automation have not been carried into it.
+hosting, domain options, and the pilot sequence. The earlier application remains
+archived; the current player and GitHub deployment configuration are on `main`.
 
 The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
@@ -71,4 +71,15 @@ These are source archives. Cloud databases, external media, credentials, and
 running services require separate backup or retirement decisions. Keep secrets
 and learner data out of Git.
 
-Future changes to main go through pull requests.
+## Development and deployment
+
+Use the shared `main` checkout at `/Users/patchin/Workspace/parrot-english` and
+pull with `git pull --ff-only` before editing. The owner selected this shared
+workflow on 2026-10-29; old feature worktrees are not the current application.
+
+Alibaba ESA connects directly to `patrickchin/parrot-english`. Only pushes to
+`main` build and deploy `parrotbook-prototype` to production. The build uses Node
+24, `npm ci`, then `npm test && npm run build`; `esa.jsonc` versions these settings.
+Do not upload local bundles or ZIPs, or publish feature branches to production.
+Check the ESA build's commit and `/api/health`'s `revision` against GitHub `main`
+after deployment. Media stays in OSS; the app build never uploads recordings.

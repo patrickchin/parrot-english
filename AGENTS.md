@@ -12,8 +12,12 @@
 
 ## Git
 
-- Changes to `main` go through a pull request; never merge feature branches
-  directly. The 2026-10-28 history reset was a one-time user-authorized exception.
+- Work in the shared `main` checkout at `/Users/patchin/Workspace/parrot-english`.
+  Pull with `--ff-only` before editing; coordinate around existing local changes.
+  Do not leave application work isolated on feature branches or old worktrees.
+- Production deploys automatically from GitHub `main` through the connected
+  Alibaba ESA build. Never publish a local bundle, ZIP, or feature branch to
+  production. Verify the build commit and live `/api/health` revision after a push.
 
 ## Implementation
 

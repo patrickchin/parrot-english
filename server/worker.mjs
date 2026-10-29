@@ -1,10 +1,10 @@
-export function createWorker(assets) {
+export function createWorker(assets, revision = null) {
   return {
     async fetch(request) {
       const path = new URL(request.url).pathname;
       const headers = { 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'no-store' };
       if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405, headers: { ...headers, Allow: 'GET, HEAD' } });
-      if (path === '/api/health') return new Response(request.method === 'HEAD' ? null : JSON.stringify({ ok: true, platform: 'Alibaba ESA', serverTime: new Date().toISOString() }), { headers: { ...headers, 'Content-Type': 'application/json' } });
+      if (path === '/api/health') return new Response(request.method === 'HEAD' ? null : JSON.stringify({ ok: true, platform: 'Alibaba ESA', revision, serverTime: new Date().toISOString() }), { headers: { ...headers, 'Content-Type': 'application/json' } });
       if (path === '/favicon.ico') return new Response(null, { status: 204, headers });
       const file = assets[path === '/' ? '/index.html' : path];
       if (!file) return new Response('Not found', { status: 404, headers });

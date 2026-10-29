@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createWorker } from '../server/worker.mjs';
 test('serves video byte ranges for mobile seeking without exposing unknown paths', async () => {
-  const worker = createWorker({ '/test.mp4': { type: 'video/mp4', body: btoa('0123456789') }, '/index.html': { type: 'text/html', body: btoa('hello') } });
+  const worker = createWorker({ '/test.mp4': { type: 'video/mp4', body: btoa('0123456789') }, '/index.html': { type: 'text/html', body: btoa('hello') } }, 'test-revision');
   const get = (path, options) => worker.fetch(new Request('https://parrotbook.test' + path, options));
   let response = await get('/test.mp4', { headers: { Range: 'bytes=2-5' } });
   assert.equal(response.status, 206); assert.equal(response.headers.get('content-range'), 'bytes 2-5/10'); assert.equal(await response.text(), '2345');
@@ -14,5 +14,7 @@ test('serves video byte ranges for mobile seeking without exposing unknown paths
   assert.equal((await get('/not-present')).status, 404);
   assert.equal((await get('/test.mp4', { method: 'POST' })).status, 405);
   assert.equal(await (await get('/')).text(), 'hello');
-  assert.equal((await (await get('/api/health')).json()).ok, true);
+  const health = await get('/api/health');
+  assert.equal(health.headers.get('cache-control'), 'no-store');
+  assert.equal((await health.json()).revision, 'test-revision');
 });
