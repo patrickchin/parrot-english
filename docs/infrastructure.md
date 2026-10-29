@@ -153,3 +153,26 @@ retired stylesheet hash. ESA site cache was purged (task 1775291466776611), then
 the root HTML, referenced JS/CSS MIME types, pack metadata, and waveform JSON
 were checked again. Clear/revalidate the HTML entry point as part of publication;
 a successful routine publish alone does not prove the browser has the new app.
+
+
+## Single-screen player update — 2026-10-29
+
+The player now keeps video, caption, waveform, and the four main actions together.
+Desktop uses a persistent right-hand action rail; phones use two rows of large
+buttons. Recording is emphasized before a take, then the next-line action is
+emphasized once a take exists. Your recording remains a full-size visible button.
+Repeated instructions were removed from the practice surface. Help, source credits,
+consent, reset confirmation, and the local-recording notice remain available.
+
+The layout reference is the Dub Mode screenshot on the creator's
+[official store page](https://yeahmaybe.itch.io/the-choicer-voicer), rather than
+unofficial browser clones. The approved warm palette and waveform overlay remain.
+
+The complete browser suite passed 39 checks with 8 WebKit microphone skips;
+five Node checks and the production build passed. A final three-browser layout
+check covers all five starter packs, source-credit dialogs, 360×640, 375×667,
+768×1024, 1024×600, and 1280×720 viewports. It verifies that all four actions are
+at least 56 pixels high, stay in view, and do not overlap the footer or require
+page scrolling. Recorded-take replay and next are also checked at 375×667.
+Smaller, zoomed, or error-expanded views may scroll to keep controls reachable.
+Physical mobile microphones and WeChat remain unverified.

@@ -22,9 +22,9 @@ export function VoiceWaveform({ pack, start, end, time, recordings, recording = 
   return <section aria-label="声音波形对比" className="mx-auto w-full max-w-4xl">
     <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
       <div className="flex items-center gap-5"><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-brand/70" />原声</span><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-coral" />{recording ? '你的声音 · 录音中' : '你的声音'}</span></div>
-      <span>声音强弱 · {Math.round((end - start) * 10) / 10} 秒</span>
+      <span>{Math.round((end - start) * 10) / 10} 秒</span>
     </div>
-    <div className="relative h-20 overflow-hidden rounded-xl bg-brand/4 sm:h-24">
+    <div className="voice-waveform relative overflow-hidden rounded-xl bg-brand/4">
       <div className="absolute inset-x-0 top-1/2 h-px bg-brand/10" />
       {reference && <svg role="img" aria-label="原声波形" viewBox="0 0 1000 80" preserveAspectRatio="none" className="absolute inset-0 h-full w-full"><path d={waveformPath(reference.peaks, start, end)} className="fill-brand/22 stroke-brand/70" strokeWidth="1" /></svg>}
       {recordings.some(r => r.peaks.length > 0) && <svg role="img" aria-label="你的声音波形" viewBox="0 0 1000 80" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">{recordings.map((r, i) => <path key={i} d={waveformPath(r.peaks, start, end, r.start)} className="fill-coral/35 stroke-coral" strokeWidth="1.25" />)}</svg>}

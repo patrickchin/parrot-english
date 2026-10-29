@@ -26,11 +26,18 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
     const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
     await mkdir(folder, { recursive: true });
     await page.setViewportSize({ width: 1440, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
     const desktopRecord = await page.getByRole('button', { name: '重新录这一句', exact: true }).boundingBox();
     expect(desktopRecord!.y + desktopRecord!.height).toBeLessThanOrEqual(900);
     await page.screenshot({ path: join(folder, 'warm-waveform-recorded.png'), fullPage: true });
-    await page.setViewportSize({ width: 375, height: 812 });
+    await page.setViewportSize({ width: 375, height: 667 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+    for (const name of ['听我的录音', '下一句']) {
+      const bounds = await page.getByRole('button', { name, exact: true }).boundingBox();
+      expect(bounds!.height).toBeGreaterThanOrEqual(56);
+      expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(667);
+    }
     const mobileRecord = await page.getByRole('button', { name: '重新录这一句', exact: true }).boundingBox();
     expect(mobileRecord!.y + mobileRecord!.height).toBeLessThanOrEqual(812);
     await page.screenshot({ path: join(folder, 'warm-waveform-mobile.png'), fullPage: true });
@@ -54,4 +61,41 @@ test('missing waveform metadata leaves recording and reference playback availabl
   await expect(page.getByText('原声波形暂时无法显示，仍可听原声并录音。')).toBeVisible();
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: '听这一句原声', exact: true })).toBeEnabled();
+});
+
+
+test('scene, caption, waveforms and every main action fit one screen across the starter packs', async ({ page }, info) => {
+  for (const slug of ['onions', 'patrick', 'wumbo', 'chocolate', 'sintel']) {
+    await page.goto('/#' + slug);
+    await page.getByRole('button', { name: '片段与来源', exact: true }).click();
+    await expect(page.getByRole('dialog').getByRole('link', { name: '观看原片' })).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
+    for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
+      await page.setViewportSize(viewport);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${slug} role picker at ${viewport.width}×${viewport.height}`).toBe(true);
+    }
+    await page.getByRole('button', { name: '开始配音', exact: true }).click();
+    for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
+      await page.setViewportSize(viewport);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${slug} player at ${viewport.width}×${viewport.height}`).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      for (const name of ['听这一句原声', '开始录音', '听我的录音', '下一句']) {
+        const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name: name === '下一句' ? /下一句|继续配音/ : name, exact: true });
+        const bounds = await action.boundingBox();
+        expect(bounds!.height).toBeGreaterThanOrEqual(56);
+        expect(bounds!.y).toBeGreaterThanOrEqual(0);
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
+      }
+      const scene = await page.getByRole('region', { name: '电影片段' }).boundingBox();
+      const footer = await page.getByRole('contentinfo').boundingBox();
+      const actions = await page.getByRole('group', { name: '配音操作' }).boundingBox();
+      expect(scene!.height).toBeGreaterThanOrEqual(140);
+      expect(footer!.y).toBeGreaterThanOrEqual(actions!.y + actions!.height);
+      if (slug === 'onions' && info.project.name === 'chromium' && [375, 1280].includes(viewport.width)) {
+        const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
+        await mkdir(folder, { recursive: true });
+        await page.screenshot({ path: join(folder, `compact-player-${viewport.width}.png`) });
+      }
+    }
+  }
 });
