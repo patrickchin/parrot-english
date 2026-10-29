@@ -16,6 +16,11 @@ The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
 Takes remain in memory and disappear on refresh, close, or an explicit reset.
 
+The header's UI language selector offers English and 简体中文. It remembers only
+the interface preference on this browser; switching languages keeps the current
+scene and recordings. English dialogue/audio and the optional Chinese meaning
+hints are independent of the UI language.
+
 The warm single-column player shows a teal original-audio envelope and a coral
 learner envelope with a synchronized playhead during listening, capture, and
 replay. This is timing and emphasis feedback, not pronunciation scoring. See
