@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "id": "pack_1eCjBRKF",
+  "title": "调成 Wumbo！",
+  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.8,
+  "video": "wumbo-v1.mp4",
+  "roles": [
+    {
+      "id": "role_v-seIUIJ",
+      "name": "派大星",
+      "label": "一本正经地解释虚构词 Wumbo",
+      "hint": "2 句台词 · 试着模仿语气"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_blxvlU8c",
+      "roleId": "role_v-seIUIJ",
+      "start": 0.2,
+      "end": 3.1,
+      "text": "I wumbo, you wumbo.",
+      "hint": "我 wumbo，你 wumbo。"
+    },
+    {
+      "id": "line_e075yTAX",
+      "roleId": "role_v-seIUIJ",
+      "start": 3.1,
+      "end": 6.8,
+      "text": "He, she, me, wumbo.",
+      "hint": "他、她、我，wumbo。这是剧中的虚构词。"
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "SpongeBob SquarePants",
+    "attribution": "原作：Nickelodeon / Viacom",
+    "source": "https://www.youtube.com/watch?v=--hsVknT1c0",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "选取原片 00:15.5–00:22.3，避开后续不适合儿童的对白，压缩并添加配音时间标记。Wumbo 是虚构词。"
+  },
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/wumbo/",
+  "waveform": "waveform-v1.json",
+  "poster": "wumbo-poster-v1.jpg"
+}

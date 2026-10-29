@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@theme {
+  --color-ink: #174d48;
+  --color-muted: #536967;
+  --color-paper: #fff9ef;
+  --color-brand: #174d48;
+  --color-coral: #da533d;
+  --color-lemon: #ffe178;
+  --color-mint: #e2efe5;
+  --color-danger: #b72f40;
+  --font-sans: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: ui-rounded, "Avenir Next", "PingFang SC", system-ui, sans-serif;
+}
+:root { color-scheme: light; }
+body { margin: 0; min-width: 320px; }
+button, a, input { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), summary, a { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+::selection { background: #f4c4ae; color: #174d48; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Keep the scene, timing cue, and next action together. Small/zoomed viewports
+   may scroll rather than clipping controls or shrinking touch targets. */
+.player-shell { height: 100svh; min-height: 640px; display: flex; flex-direction: column; }
+.player-shell > header { width: 100%; flex: none; padding-block: 8px; }
+.player-main { width: 100%; max-width: 1280px; margin-inline: auto; padding: 0 16px; flex: 1; min-height: min-content; display: grid; grid-template-rows: minmax(140px, 1fr) auto; gap: 8px; }
+.player-video { display: flex; flex-direction: column; flex: 1; min-height: 140px; }
+.player-screen { flex: 1; min-height: 0; }
+.player-transport { flex: none; height: 44px; }
+.player-transport button { height: 44px; }
+.player-workspace { flex: none; }
+.practice-meta { min-height: 44px; }
+.practice-caption { padding-block: 4px 6px; }
+.practice-caption [lang=en] { font-size: clamp(24px, 3.1vw, 40px); line-height: 1.12; }
+.voice-waveform { height: 64px; }
+.practice-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.practice-actions > button { min-height: 56px; padding: 10px 8px; font-size: 18px; gap: 8px; }
+.player-choose { padding-block: 10px; }
+.player-result { padding-block: 10px; }
+.player-result > div:last-child { display: grid; }
+.player-footer { flex: none; width: 100%; max-width: 1280px; margin-inline: auto; padding: 2px 16px max(2px, env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; }
+.player-error { margin-top: 10px; }
+@media (min-width: 900px) {
+  .player-shell { min-height: 560px; }
+  .player-shell > header { max-width: 1280px; padding-inline: 32px; }
+  .player-main { padding-inline: 32px; display: grid; grid-template-columns: minmax(0, 1fr) 280px; grid-template-rows: minmax(160px, 1fr) auto; gap: 16px 32px; }
+  .player-video { grid-column: 1; grid-row: 1; max-height: none; }
+  .player-main[data-step=practice] .player-workspace { display: contents; }
+  .practice-content { grid-column: 1; grid-row: 2; }
+  .practice-actions { grid-column: 2; grid-row: 1 / 3; display: flex; flex-direction: column; justify-content: center; gap: 16px; margin: 0; }
+  .practice-actions > button { min-height: 68px; font-size: 22px; }
+  .practice-actions > button:nth-child(4) { margin-top: 16px; }
+  .player-main:not([data-step=practice]) { grid-template-rows: minmax(160px, 1fr); }
+  .player-main:not([data-step=practice]) .player-workspace { align-self: center; }
+  .voice-waveform { height: 80px; }
+  .player-footer { padding-inline: 32px; }
+  .player-error { grid-column: 1 / -1; margin: 0; }
+}

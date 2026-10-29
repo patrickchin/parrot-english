@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { createWorker } from '../server/worker.mjs';
+test('serves video byte ranges for mobile seeking without exposing unknown paths', async () => {
+  const worker = createWorker({ '/test.mp4': { type: 'video/mp4', body: btoa('0123456789') }, '/index.html': { type: 'text/html', body: btoa('hello') } });
+  const get = (path, options) => worker.fetch(new Request('https://parrotbook.test' + path, options));
+  let response = await get('/test.mp4', { headers: { Range: 'bytes=2-5' } });
+  assert.equal(response.status, 206); assert.equal(response.headers.get('content-range'), 'bytes 2-5/10'); assert.equal(await response.text(), '2345');
+  assert.equal(await (await get('/test.mp4', { headers: { Range: 'bytes=-3' } })).text(), '789');
+  assert.equal(await (await get('/test.mp4', { headers: { Range: 'bytes=7-' } })).text(), '789');
+  for (const Range of ['bytes=20-', 'bytes=8-3', 'bytes=-', 'bytes=0-1,3-4', 'nonsense']) assert.equal((await get('/test.mp4', { headers: { Range } })).status, 416);
+  response = await get('/test.mp4', { method: 'HEAD', headers: { Range: 'bytes=2-5' } });
+  assert.equal(response.status, 206); assert.equal(await response.text(), ''); assert.equal(response.headers.get('content-length'), '4');
+  assert.equal((await get('/not-present')).status, 404);
+  assert.equal((await get('/test.mp4', { method: 'POST' })).status, 405);
+  assert.equal(await (await get('/')).text(), 'hello');
+  assert.equal((await (await get('/api/health')).json()).ok, true);
+});

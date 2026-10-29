@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "id": "pack_v6Rqp8sJ",
+  "title": "你在找谁？",
+  "description": "Sintel 正在寻找一位特别的朋友。试着用你的声音，演出这段对话。",
+  "duration": 21.1,
+  "video": "search-v1.mp4",
+  "backing": "backing-v1.m4a",
+  "poster": "poster-v1.jpg",
+  "roles": [
+    {
+      "id": "role_7qPw2a",
+      "name": "Sintel",
+      "label": "寻找朋友的女孩",
+      "portrait": "sintel-v1.jpg",
+      "hint": "3 句简短台词 · 先试这个"
+    },
+    {
+      "id": "role_p5Lx9k",
+      "name": "旅人",
+      "label": "热心的提问者",
+      "portrait": "traveller-v1.jpg",
+      "hint": "2 句台词 · 挑战长句"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_2mQ8vs",
+      "roleId": "role_7qPw2a",
+      "start": 0.2,
+      "end": 2.45,
+      "text": "Thank you.",
+      "hint": "谢谢你。"
+    },
+    {
+      "id": "line_z9Pk3s",
+      "roleId": "role_p5Lx9k",
+      "start": 2.45,
+      "end": 9.9,
+      "text": "So… what brings you to the land of the gatekeepers?",
+      "hint": "那么……你为什么来到守门人的领地？"
+    },
+    {
+      "id": "line_5rLs7a",
+      "roleId": "role_7qPw2a",
+      "start": 9.9,
+      "end": 12.95,
+      "text": "I'm searching for someone.",
+      "hint": "我在寻找一个人。"
+    },
+    {
+      "id": "line_j3Aw6t",
+      "roleId": "role_p5Lx9k",
+      "start": 12.95,
+      "end": 18.3,
+      "text": "Someone very dear? A kindred spirit?",
+      "hint": "一个很亲近的人？一位知心朋友？"
+    },
+    {
+      "id": "line_b4Nw8u",
+      "roleId": "role_7qPw2a",
+      "start": 18.3,
+      "end": 21.1,
+      "text": "A dragon.",
+      "hint": "一条龙。"
+    }
+  ],
+  "credit": {
+    "title": "Sintel (2010)",
+    "attribution": "© copyright Blender Foundation | www.sintel.org",
+    "source": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+    "licence": "CC BY 3.0",
+    "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "changes": "原片 02:04.900–02:26.000 的节选；压缩、裁切角色照片、添加中英字幕，并在本地播放时替换所选角色的对白。"
+  },
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/sintel/",
+  "waveform": "waveform-v1.json"
+}

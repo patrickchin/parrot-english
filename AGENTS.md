@@ -17,6 +17,18 @@
 
 ## Implementation
 
+- Use tools, services, frameworks, and components for their intended, documented
+  purpose, following established patterns. Convenience, fewer setup steps, or
+  fewer resources alone do not justify assigning a responsibility to the wrong
+  component. This applies to prototypes as well as production work.
+- Store video, audio, recordings, and content-pack media in blob/object storage
+  (Alibaba OSS for this prototype). Functions serve application code and APIs;
+  never embed media bytes or base64 media in a function bundle.
+- A quick prototype still uses these storage boundaries. Do not compress media
+  to fit function upload limits. Revisit an unsuitable architecture instead.
+- Before changing infrastructure, state which service holds code, media, and
+  structured data. Reuse the agreed architecture unless a concrete requirement
+  justifies changing it, and explain that change before implementation.
 - Prefer entity-prefixed, opaque, URL-safe random IDs for application records.
   Preserve identifiers required by external providers.
 - Prefer mature native platform integrations and standard UI when they fit.
