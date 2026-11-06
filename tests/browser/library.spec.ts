@@ -53,14 +53,23 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
   const search = page.getByRole('searchbox');
   await search.fill('Toy Story');
   await expect(page.getByRole('button', { name: /^选择片段：/ })).toHaveCount(3);
+  await expect(page.getByText('3 个片段', { exact: true })).toBeVisible();
   await search.fill('fluffy');
   await expect(page.getByRole('button', { name: '选择片段：太毛茸茸了！', exact: true })).toBeVisible();
   await search.fill('松鼠');
   await expect(page.getByRole('button', { name: '选择片段：松鼠！', exact: true })).toBeVisible();
   await search.fill('no-matching-scene');
   await expect(page.getByRole('status')).toHaveText('没有找到片段。');
+  await page.getByRole('button', { name: '查看全部片段', exact: true }).click();
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue('');
+  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await search.fill('no-matching-scene');
   await page.getByRole('combobox', { name: 'UI language / 界面语言' }).selectOption('en');
   await expect(page.getByRole('status')).toHaveText('No scenes found.');
+  await page.getByRole('button', { name: 'Clear search', exact: true }).click();
+  await expect(search).toBeFocused();
+  await expect(page.getByRole('listitem')).toHaveCount(24);
   await search.fill('mayonnaise');
   await page.getByRole('button', { name: 'Choose scene: Is mayonnaise an instrument?', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
@@ -135,4 +144,39 @@ test('the retired sample route returns to the meme library', async ({ page }) =>
   await expect(page.getByRole('heading', { level: 1, name: '今天，给谁配音？' })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(24);
   expect(sampleRequests).toEqual([]);
+});
+
+test('shadcn view controls support arrow keys and consent restores focus without requesting the microphone', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { micRequests: number }).micRequests = 0;
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {
+      getUserMedia: async () => { (window as unknown as { micRequests: number }).micRequests++; throw new DOMException('Denied', 'NotAllowedError'); },
+    } });
+  });
+  await page.goto('/');
+  const grid = page.getByRole('button', { name: '网格视图', exact: true });
+  const list = page.getByRole('button', { name: '列表视图', exact: true });
+  await grid.focus();
+  await grid.press('ArrowRight');
+  await expect(list).toBeFocused();
+  await list.press('Space');
+  await expect(list).toHaveAttribute('aria-pressed', 'true');
+  await list.press('Space');
+  await expect(list).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  const record = page.getByRole('button', { name: '开始录音', exact: true });
+  await record.click();
+  const consent = page.getByRole('dialog', { name: '准备好麦克风了吗？', exact: true });
+  await expect(consent).toBeVisible();
+  const agree = consent.getByRole('button', { name: '同意并开始录音', exact: true });
+  await agree.focus();
+  await agree.press('Tab');
+  await expect(consent.getByRole('button', { name: '暂时不录', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(agree).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(consent).toBeHidden();
+  await expect(record).toBeFocused();
+  expect(await page.evaluate(() => (window as unknown as { micRequests: number }).micRequests)).toBe(0);
 });
