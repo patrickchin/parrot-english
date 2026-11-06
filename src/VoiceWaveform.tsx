@@ -69,7 +69,7 @@ export function VoiceWaveform({ pack, start, end, time, recordings, recording = 
   }, [following, cursor, gutter, layout.width, words, time, start, end, width]);
   const originalPath = useMemo(() => reference ? waveformPath(reference.peaks, start, end) : '', [reference, start, end]);
   return <section aria-label={t("声音波形对比")} className="mx-auto min-w-0 w-full max-w-4xl">
-    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+    <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
       <div className="flex items-center gap-5"><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-brand/70" />{t("原声")}</span><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-coral" />{recording ? t("你的声音 · 录音中") : t("你的声音")}</span></div>
     </div>
     <div ref={scroller} className="voice-timeline" role="group" aria-label={t('声音与台词时间轴')} tabIndex={words?.length ? 0 : undefined}>
@@ -79,7 +79,7 @@ export function VoiceWaveform({ pack, start, end, time, recordings, recording = 
             <div className="absolute inset-x-0 top-1/2 h-px bg-brand/10" />
             {reference && <svg role="img" aria-label={t("原声波形")} viewBox="0 0 1000 80" preserveAspectRatio="none" className="absolute inset-0 h-full w-full"><path d={originalPath} className="fill-brand/22 stroke-brand/70" strokeWidth="0.6" /></svg>}
             {recordings.some(r => r.peaks.length > 0) && <svg role="img" aria-label={t("你的声音波形")} viewBox="0 0 1000 80" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">{recordings.map((r, i) => <path key={i} d={waveformPath(r.peaks, start, end, r.start)} className="fill-coral/25 stroke-coral" strokeWidth="0.75" />)}</svg>}
-            {!reference && <p role="status" className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-muted">{error ? t(error) : t("正在准备原声波形…")}</p>}
+            {!reference && <p role="status" className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-muted-foreground">{error ? t(error) : t("正在准备原声波形…")}</p>}
           </div>
           {words?.length ? <ol ref={labels} aria-label={t('逐词台词')} lang="en" className="timed-words relative" style={{ height: (Math.max(0, ...layout.lanes) + 1) * 32 + 4 }}>
             {words.map((word, index) => <li key={index} aria-current={following && time >= word.start && time < word.end ? 'true' : undefined} className="absolute top-0" style={{ top: (layout.lanes[index] ?? 0) * 32, left: (word.start - start) / (end - start) * 100 + '%' }}>

@@ -3,6 +3,12 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  '选一幕，听原声，换上你的声音。': 'Pick a scene. Hear it. Make it yours.',
+  '片段库': 'Scene library',
+  '{0} 个片段': '{0} scenes',
+  '清除搜索': 'Clear search',
+  '换个片名，或试试记得的那句台词。': 'Try a film title or a line you remember.',
+  '查看全部片段': 'Show all scenes',
   '片段视图': 'Scene view',
   '网格视图': 'Grid view',
   '列表视图': 'List view',
