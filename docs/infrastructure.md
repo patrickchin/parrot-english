@@ -54,7 +54,7 @@ not a completed deletion or a promise of zero ongoing cost.
 
 The apex and www records trigger the prototype directly, rather than forwarding
 visitors to the protected debug preview. The first player now records takes in
-browser memory with MediaRecorder and replays them locally. It has no database,
+browser memory with native AudioWorklet PCM capture and replays WAV takes locally. It has no database,
 account, learner-recording upload, or AI runtime dependency. Application code,
 HTML/CSS, and pack/waveform metadata are in ESA (0.38 MiB). Media bytes are in OSS;
 build tooling rejects media in the function bundle.

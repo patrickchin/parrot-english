@@ -161,3 +161,34 @@ test('words share the waveform time scale, stay readable, and follow playback wi
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
 });
+
+// Sample what was actually painted, rather than relying on an occasional poll.
+test('playhead advances on animation frames and stays on the video clock', async ({ page }) => {
+  await page.goto('/#onions');
+  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  const cursor = page.getByRole('progressbar', { name: '配音时间指针' });
+  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.1);
+  const samples = await cursor.evaluate(async (node, start) => {
+    const video = document.querySelector('video')!;
+    const samples: { time: number; media: number; cursor: number; x: number }[] = [];
+    const until = performance.now() + 1000;
+    await new Promise<void>(resolve => {
+      const sample = () => {
+        samples.push({ time: performance.now(), media: video.currentTime - start, cursor: Number(node.getAttribute('aria-valuenow')), x: node.getBoundingClientRect().x });
+        if (performance.now() < until) requestAnimationFrame(sample); else resolve();
+      };
+      requestAnimationFrame(sample);
+    });
+    return samples;
+  }, pack.lines[0].start);
+  const changes = samples.filter((s, i) => i > 0 && s.x !== samples[i - 1].x);
+  // The old 80 ms throttle produces at most 13 changes in this window.
+  expect(changes.length).toBeGreaterThan(samples.length * 0.65);
+  expect(changes.length).toBeGreaterThan(25);
+  expect(Math.max(...samples.map(s => Math.abs(s.media - s.cursor)))).toBeLessThan(0.06);
+  await page.getByRole('button', { name: '停止播放', exact: true }).click();
+  const stopped = Number(await cursor.getAttribute('aria-valuenow'));
+  expect(Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - pack.lines[0].start - stopped)).toBeLessThan(0.02);
+});
