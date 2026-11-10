@@ -2,85 +2,442 @@
   "version": 1,
   "id": "pack_uDawiVCK",
   "title": "微笑，挥挥手！",
-  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
-  "duration": 3.7,
-  "video": "smile-and-wave-v1.mp4",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 26.367,
+  "video": "smile-and-wave-review-cfe405f0e236.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/smile-and-wave/",
-  "poster": "smile-and-wave-poster-v1.jpg",
-  "waveform": "waveform-v2.json",
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
-  },
+  "poster": "smile-and-wave-poster-cfe405f0e236.jpg",
+  "waveform": "waveform-cfe405f0e236.json",
   "roles": [
     {
       "id": "role_y89zbrnV",
       "name": "队长",
       "label": "队长",
-      "hint": "跟着角色的语气说。"
+      "hint": "5 句台词"
+    },
+    {
+      "id": "role_csUjXkRdbuM",
+      "name": "科瓦斯基",
+      "label": "科瓦斯基",
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_48Y-QZ9fhhE",
+      "name": "菜鸟",
+      "label": "菜鸟",
+      "hint": "1 句台词"
     }
   ],
   "lines": [
     {
-      "id": "line_lm0Xr9oD",
+      "id": "line_QLjpP7d-kAs",
       "roleId": "role_y89zbrnV",
-      "start": 0,
-      "end": 3.7,
+      "start": 0.62,
+      "end": 3.881,
       "text": "Just smile and wave, boys. Smile and wave.",
       "hint": "小伙子们，微笑，挥挥手。微笑，挥挥手。",
       "words": [
         {
           "text": "Just",
-          "start": 0.261,
-          "end": 0.442
+          "start": 0.66,
+          "end": 0.84
         },
         {
           "text": "smile",
-          "start": 0.543,
-          "end": 0.965
+          "start": 0.94,
+          "end": 1.361
         },
         {
           "text": "and",
-          "start": 1.046,
-          "end": 1.106
+          "start": 1.441,
+          "end": 1.501
         },
         {
           "text": "wave,",
-          "start": 1.166,
-          "end": 1.448
+          "start": 1.561,
+          "end": 1.841
         },
         {
           "text": "boys.",
-          "start": 1.568,
-          "end": 2.051
+          "start": 1.961,
+          "end": 2.441
         },
         {
           "text": "Smile",
-          "start": 2.433,
-          "end": 2.815
+          "start": 2.821,
+          "end": 3.201
         },
         {
           "text": "and",
-          "start": 2.876,
-          "end": 2.956
+          "start": 3.261,
+          "end": 3.341
         },
         {
           "text": "wave.",
-          "start": 3.036,
-          "end": 3.459
+          "start": 3.401,
+          "end": 3.821
+        }
+      ]
+    },
+    {
+      "id": "line_lKOV59STChs",
+      "roleId": "role_y89zbrnV",
+      "start": 4.662,
+      "end": 6.282,
+      "text": "Kowalski, progress report.",
+      "hint": "科瓦斯基，报告进展。",
+      "words": [
+        {
+          "text": "Kowalski,",
+          "start": 4.702,
+          "end": 5.142
+        },
+        {
+          "text": "progress",
+          "start": 5.602,
+          "end": 5.902
+        },
+        {
+          "text": "report.",
+          "start": 5.942,
+          "end": 6.222
+        }
+      ]
+    },
+    {
+      "id": "line_mvk_MH0arsY",
+      "roleId": "role_csUjXkRdbuM",
+      "start": 7.483,
+      "end": 9.243,
+      "text": "We're only five hundred feet from the main sewer line.",
+      "hint": "距离主下水道只剩五百英尺了。",
+      "words": [
+        {
+          "text": "We're",
+          "start": 7.523,
+          "end": 7.643
+        },
+        {
+          "text": "only",
+          "start": 7.663,
+          "end": 7.803
+        },
+        {
+          "text": "five",
+          "start": 7.863,
+          "end": 8.063
+        },
+        {
+          "text": "hundred",
+          "start": 8.103,
+          "end": 8.263
+        },
+        {
+          "text": "feet",
+          "start": 8.303,
+          "end": 8.443
+        },
+        {
+          "text": "from",
+          "start": 8.463,
+          "end": 8.563
+        },
+        {
+          "text": "the",
+          "start": 8.603,
+          "end": 8.663
+        },
+        {
+          "text": "main",
+          "start": 8.703,
+          "end": 8.823
+        },
+        {
+          "text": "sewer",
+          "start": 8.903,
+          "end": 9.063
+        },
+        {
+          "text": "line.",
+          "start": 9.083,
+          "end": 9.183
+        }
+      ]
+    },
+    {
+      "id": "line_0y39FscYnjM",
+      "roleId": "role_y89zbrnV",
+      "start": 9.524,
+      "end": 10.344,
+      "text": "And the bad news?",
+      "hint": "那坏消息呢？",
+      "words": [
+        {
+          "text": "And",
+          "start": 9.564,
+          "end": 9.644
+        },
+        {
+          "text": "the",
+          "start": 9.664,
+          "end": 9.744
+        },
+        {
+          "text": "bad",
+          "start": 9.784,
+          "end": 9.944
+        },
+        {
+          "text": "news?",
+          "start": 10.004,
+          "end": 10.284
+        }
+      ]
+    },
+    {
+      "id": "line_tPv9M_Q9Y0k",
+      "roleId": "role_csUjXkRdbuM",
+      "start": 10.544,
+      "end": 11.985,
+      "text": "We've broken our last shovel.",
+      "hint": "我们的最后一把铲子也断了。",
+      "words": [
+        {
+          "text": "We've",
+          "start": 10.584,
+          "end": 10.784
+        },
+        {
+          "text": "broken",
+          "start": 10.904,
+          "end": 11.224
+        },
+        {
+          "text": "our",
+          "start": 11.324,
+          "end": 11.384
+        },
+        {
+          "text": "last",
+          "start": 11.444,
+          "end": 11.604
+        },
+        {
+          "text": "shovel.",
+          "start": 11.704,
+          "end": 11.925
+        }
+      ]
+    },
+    {
+      "id": "line_aAVPltl7PzE",
+      "roleId": "role_y89zbrnV",
+      "start": 12.965,
+      "end": 21.448,
+      "text": "Right. Rico, you're on litter patrol. We need shovels, and find more Popsicle sticks. You don't want to risk another cave-in.",
+      "hint": "好。瑞哥，你去找废弃物。我们需要铲子，再找些冰棒棍。你可不想再冒塌方的风险。",
+      "words": [
+        {
+          "text": "Right.",
+          "start": 13.005,
+          "end": 13.345
+        },
+        {
+          "text": "Rico,",
+          "start": 14.666,
+          "end": 14.966
+        },
+        {
+          "text": "you're",
+          "start": 15.426,
+          "end": 15.626
+        },
+        {
+          "text": "on",
+          "start": 15.686,
+          "end": 15.726
+        },
+        {
+          "text": "litter",
+          "start": 15.806,
+          "end": 16.026
+        },
+        {
+          "text": "patrol.",
+          "start": 16.066,
+          "end": 16.426
+        },
+        {
+          "text": "We",
+          "start": 16.946,
+          "end": 17.006
+        },
+        {
+          "text": "need",
+          "start": 17.086,
+          "end": 17.227
+        },
+        {
+          "text": "shovels,",
+          "start": 17.347,
+          "end": 17.707
+        },
+        {
+          "text": "and",
+          "start": 17.987,
+          "end": 18.067
+        },
+        {
+          "text": "find",
+          "start": 18.147,
+          "end": 18.307
+        },
+        {
+          "text": "more",
+          "start": 18.367,
+          "end": 18.507
+        },
+        {
+          "text": "Popsicle",
+          "start": 18.647,
+          "end": 19.107
+        },
+        {
+          "text": "sticks.",
+          "start": 19.167,
+          "end": 19.487
+        },
+        {
+          "text": "You",
+          "start": 19.868,
+          "end": 19.928
+        },
+        {
+          "text": "don't",
+          "start": 19.968,
+          "end": 20.108
+        },
+        {
+          "text": "want",
+          "start": 20.128,
+          "end": 20.208
+        },
+        {
+          "text": "to",
+          "start": 20.228,
+          "end": 20.268
+        },
+        {
+          "text": "risk",
+          "start": 20.308,
+          "end": 20.448
+        },
+        {
+          "text": "another",
+          "start": 20.548,
+          "end": 20.788
+        },
+        {
+          "text": "cave-in.",
+          "start": 20.948,
+          "end": 21.388
+        }
+      ]
+    },
+    {
+      "id": "line_cDAiqdIw5b0",
+      "roleId": "role_48Y-QZ9fhhE",
+      "start": 22.228,
+      "end": 23.369,
+      "text": "And me, Skipper?",
+      "hint": "那我呢，队长？",
+      "words": [
+        {
+          "text": "And",
+          "start": 22.268,
+          "end": 22.368
+        },
+        {
+          "text": "me,",
+          "start": 22.449,
+          "end": 22.549
+        },
+        {
+          "text": "Skipper?",
+          "start": 22.909,
+          "end": 23.309
+        }
+      ]
+    },
+    {
+      "id": "line_5XLGHIDcLPU",
+      "roleId": "role_y89zbrnV",
+      "start": 23.629,
+      "end": 26.35,
+      "text": "I want you to look cute and cuddly, Private.",
+      "hint": "你的任务是保持可爱，菜鸟。",
+      "words": [
+        {
+          "text": "I",
+          "start": 23.669,
+          "end": 23.689
+        },
+        {
+          "text": "want",
+          "start": 23.749,
+          "end": 23.929
+        },
+        {
+          "text": "you",
+          "start": 24.009,
+          "end": 24.129
+        },
+        {
+          "text": "to",
+          "start": 24.209,
+          "end": 24.269
+        },
+        {
+          "text": "look",
+          "start": 24.329,
+          "end": 24.489
+        },
+        {
+          "text": "cute",
+          "start": 24.649,
+          "end": 24.889
+        },
+        {
+          "text": "and",
+          "start": 24.989,
+          "end": 25.07
+        },
+        {
+          "text": "cuddly,",
+          "start": 25.31,
+          "end": 25.73
+        },
+        {
+          "text": "Private.",
+          "start": 25.97,
+          "end": 26.35
         }
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Madagascar",
     "attribution": "原作：DreamWorks Animation",
-    "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=3s",
+    "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=2s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "原上传约 3.10–6.80 秒的节选；添加中英台词和配音时间标记。"
+    "changes": "内部原型测试；原上传 2.7–29.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

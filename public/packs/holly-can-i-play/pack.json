@@ -1,0 +1,307 @@
+{
+  "version": 1,
+  "id": "pack_ue_rpVpccbk",
+  "title": "我可以和本一起玩吗？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 21.68,
+  "video": "holly-can-i-play-review-4f9f32a909c0.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/holly-can-i-play/",
+  "poster": "holly-can-i-play-poster-4f9f32a909c0.jpg",
+  "waveform": "waveform-4f9f32a909c0.json",
+  "roles": [
+    {
+      "id": "role_iNuzpzccAUs",
+      "name": "霍莉",
+      "label": "霍莉",
+      "hint": "3 句台词"
+    },
+    {
+      "id": "role_BIwW3pMFQ_o",
+      "name": "梅姨",
+      "label": "梅姨",
+      "hint": "2 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_WO0CQittTTA",
+      "roleId": "role_iNuzpzccAUs",
+      "start": 0.2,
+      "end": 5.3,
+      "text": "But Nanny Plum, I was going to play with Ben.",
+      "hint": "可是梅姨，我本来打算和本一起玩。",
+      "words": [
+        {
+          "text": "But",
+          "start": 1.646,
+          "end": 1.786
+        },
+        {
+          "text": "Nanny",
+          "start": 1.907,
+          "end": 2.188
+        },
+        {
+          "text": "Plum,",
+          "start": 2.348,
+          "end": 2.81
+        },
+        {
+          "text": "I",
+          "start": 3.694,
+          "end": 3.714
+        },
+        {
+          "text": "was",
+          "start": 3.834,
+          "end": 3.935
+        },
+        {
+          "text": "going",
+          "start": 3.995,
+          "end": 4.196
+        },
+        {
+          "text": "to",
+          "start": 4.256,
+          "end": 4.316
+        },
+        {
+          "text": "play",
+          "start": 4.417,
+          "end": 4.617
+        },
+        {
+          "text": "with",
+          "start": 4.718,
+          "end": 4.838
+        },
+        {
+          "text": "Ben.",
+          "start": 4.999,
+          "end": 5.18
+        }
+      ]
+    },
+    {
+      "id": "line_Hyo5gssiybw",
+      "roleId": "role_BIwW3pMFQ_o",
+      "start": 6.15,
+      "end": 11.3,
+      "text": "Princess Holly, there's a time for playing with elves and a time for wand practice.",
+      "hint": "霍莉公主，和精灵玩有玩的时间，练习魔法棒有练习的时间。",
+      "words": [
+        {
+          "text": "Princess",
+          "start": 6.15,
+          "end": 6.451
+        },
+        {
+          "text": "Holly,",
+          "start": 6.531,
+          "end": 6.851
+        },
+        {
+          "text": "there's",
+          "start": 7.272,
+          "end": 7.453
+        },
+        {
+          "text": "a",
+          "start": 7.493,
+          "end": 7.513
+        },
+        {
+          "text": "time",
+          "start": 7.593,
+          "end": 7.893
+        },
+        {
+          "text": "for",
+          "start": 7.954,
+          "end": 8.054
+        },
+        {
+          "text": "playing",
+          "start": 8.114,
+          "end": 8.374
+        },
+        {
+          "text": "with",
+          "start": 8.414,
+          "end": 8.515
+        },
+        {
+          "text": "elves",
+          "start": 8.715,
+          "end": 9.016
+        },
+        {
+          "text": "and",
+          "start": 9.136,
+          "end": 9.196
+        },
+        {
+          "text": "a",
+          "start": 9.256,
+          "end": 9.276
+        },
+        {
+          "text": "time",
+          "start": 9.376,
+          "end": 9.657
+        },
+        {
+          "text": "for",
+          "start": 9.757,
+          "end": 9.897
+        },
+        {
+          "text": "wand",
+          "start": 10.058,
+          "end": 10.478
+        },
+        {
+          "text": "practice.",
+          "start": 10.799,
+          "end": 11.28
+        }
+      ]
+    },
+    {
+      "id": "line_CANQhpi211w",
+      "roleId": "role_iNuzpzccAUs",
+      "start": 12.55,
+      "end": 15.8,
+      "text": "Please, Nanny. I promise to practise later.",
+      "hint": "求你了，梅姨。我保证待会儿练习。",
+      "words": [
+        {
+          "text": "Please,",
+          "start": 12.67,
+          "end": 13.453
+        },
+        {
+          "text": "Nanny.",
+          "start": 13.613,
+          "end": 13.934
+        },
+        {
+          "text": "I",
+          "start": 14.516,
+          "end": 14.536
+        },
+        {
+          "text": "promise",
+          "start": 14.837,
+          "end": 15.419
+        },
+        {
+          "text": "to",
+          "start": 15.439,
+          "end": 15.479
+        },
+        {
+          "text": "practise",
+          "start": 15.499,
+          "end": 15.68
+        },
+        {
+          "text": "later.",
+          "start": 15.7,
+          "end": 15.8
+        }
+      ]
+    },
+    {
+      "id": "line_C6tV7jdEmpw",
+      "roleId": "role_BIwW3pMFQ_o",
+      "start": 15.85,
+      "end": 19.65,
+      "text": "Hmm, very well, but come in when I—",
+      "hint": "嗯，好吧，不过等我叫你时就——",
+      "words": [
+        {
+          "text": "Hmm,",
+          "start": 16.172,
+          "end": 16.715
+        },
+        {
+          "text": "very",
+          "start": 17.8,
+          "end": 18.062
+        },
+        {
+          "text": "well,",
+          "start": 18.162,
+          "end": 18.504
+        },
+        {
+          "text": "but",
+          "start": 18.765,
+          "end": 18.866
+        },
+        {
+          "text": "come",
+          "start": 18.987,
+          "end": 19.188
+        },
+        {
+          "text": "in",
+          "start": 19.268,
+          "end": 19.328
+        },
+        {
+          "text": "when",
+          "start": 19.409,
+          "end": 19.509
+        },
+        {
+          "text": "I—",
+          "start": 19.57,
+          "end": 19.61
+        }
+      ]
+    },
+    {
+      "id": "line_mgUyJDQnK_4",
+      "roleId": "role_iNuzpzccAUs",
+      "start": 19.66,
+      "end": 21.4,
+      "text": "Thanks, Nanny. Bye!",
+      "hint": "谢谢梅姨。再见！",
+      "words": [
+        {
+          "text": "Thanks,",
+          "start": 19.66,
+          "end": 19.984
+        },
+        {
+          "text": "Nanny.",
+          "start": 20.146,
+          "end": 20.55
+        },
+        {
+          "text": "Bye!",
+          "start": 21.056,
+          "end": 21.36
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Ben and Holly’s Little Kingdom",
+    "attribution": "Ben and Holly’s Little Kingdom © Astley Baker Davies / Entertainment One / Hasbro.",
+    "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=12s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 12.2–33.85 秒的节选。"
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

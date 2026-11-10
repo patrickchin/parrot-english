@@ -32,8 +32,12 @@ sit at their spoken positions underneath the waveform; the timeline follows
 playback automatically on smaller screens. This is timing and emphasis feedback, not pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
-The shelf contains **24 meme scenes**, including SpongeBob, Shrek, Toy Story,
-Finding Nemo, Cars, Up, Ratatouille, Kung Fu Panda, Minions, and Madagascar.
+The internal-test shelf has two folders: **24 older-audience scenes** and
+**eight conversations for children around age five** from Peppa Pig and Ben and
+Holly. The 21 short meme excerpts have been expanded or replaced with complete
+exchanges; Patrick, Chocolate, and Onions retain their original edits.
+See [the meme re-edits](docs/meme-review.md) and
+[the younger scenes](docs/preschool-review.md) for the current cuts.
 Search by scene, English line, or film. Every scene opens directly from Alibaba
 OSS, with an original-audio waveform, aligned words, and Chinese meaning hints.
 See [clip sources](docs/clip-sources.md) and [the 20 additional scenes](docs/extra-clips.md)

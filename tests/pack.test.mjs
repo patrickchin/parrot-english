@@ -23,19 +23,20 @@ test('the independently loaded pack rejects traversal, missing roles and overlap
 });
 
 
-test('all twenty additional scenes have valid independent packs, timed words, and reference waveforms', async () => {
-  const scenes = JSON.parse(await readFile('content/extra-scenes.json', 'utf8'));
-  const catalog = JSON.parse(await readFile('src/extra-clips.json', 'utf8'));
+test('all 32 internal-test scenes have valid packs, timed words, waveforms and separate audience folders', async () => {
+  const scenes = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const { validateWaveform } = await import('../src/waveform.ts');
-  assert.equal(scenes.length, 20);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 20);
+  assert.equal(scenes.length, 32);
+  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 8);
+  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 24);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 32);
   const ids = new Set();
   for (const scene of scenes) {
     const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.slug}/pack.json`, 'utf8')));
     const wave = validateWaveform(JSON.parse(await readFile(`public/packs/${scene.slug}/${pack.waveform}`, 'utf8')));
     assert.equal(wave.duration, pack.duration);
-    assert.equal(pack.title, catalog.find(c => c.slug === scene.slug).title);
-    assert.equal(pack.credit.source, catalog.find(c => c.slug === scene.slug).source);
+    assert.equal(pack.title, scene.title);
+    assert.equal(pack.credit.source, scene.source);
     assert.equal(pack.mediaBase, `https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/${scene.slug}/`);
     assert.ok(pack.lines.every(l => l.words?.length));
     for (const entity of [pack, ...pack.roles, ...pack.lines]) {

@@ -13,10 +13,10 @@ for (const slug of process.argv.slice(2).length ? process.argv.slice(2) : (await
     for (let j = index * rate * step; j < (index + 1) * rate * step && j * 4 < samples.length; j++) { const sample = samples.readFloatLE(j * 4); peak = Math.max(peak, Math.abs(sample)); }
     return Number(Math.min(1, peak).toFixed(5));
   });
-  pack.waveform = 'waveform-v2.json';
+  pack.waveform ??= 'waveform-v2.json';
   await writeFile(`${folder}/${pack.waveform}`, JSON.stringify({ version: 2, duration: pack.duration, step, peaks }) + '\n');
   if (slug !== 'sintel') {
-    pack.poster = `${slug}-poster-v1.jpg`;
+    pack.poster ??= `${slug}-poster-v1.jpg`;
     const still = spawnSync('ffmpeg', ['-v', 'error', '-ss', String(Math.min(pack.duration / 2, slug === 'patrick' ? 5.8 : 1)), '-i', source, '-frames:v', '1', '-vf', 'scale=480:-2', '-q:v', '3', '-y', `content/local-dubbing/${pack.poster}`]);
     if (still.status !== 0) throw new Error(`Cannot prepare ${pack.poster}`);
   }

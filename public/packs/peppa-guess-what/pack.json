@@ -1,0 +1,327 @@
+{
+  "version": 1,
+  "id": "pack_y5A8q-8McdQ",
+  "title": "猜猜我们干什么了！",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 24.88,
+  "video": "peppa-guess-what-review-cd5c1dd92b95.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-guess-what/",
+  "poster": "peppa-guess-what-poster-cd5c1dd92b95.jpg",
+  "waveform": "waveform-cd5c1dd92b95.json",
+  "roles": [
+    {
+      "id": "role_nsjPD0zHc9g",
+      "name": "佩奇",
+      "label": "佩奇",
+      "hint": "4 句台词"
+    },
+    {
+      "id": "role_vzHo-mLf8QQ",
+      "name": "猪爸爸",
+      "label": "猪爸爸",
+      "hint": "3 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_WA_26hJ_wNY",
+      "roleId": "role_nsjPD0zHc9g",
+      "start": 0.2,
+      "end": 2.78,
+      "text": "Daddy, Daddy! Guess what we've been doing!",
+      "hint": "爸爸，爸爸！猜猜我们干什么了！",
+      "words": [
+        {
+          "text": "Daddy,",
+          "start": 0.482,
+          "end": 0.744
+        },
+        {
+          "text": "Daddy!",
+          "start": 0.764,
+          "end": 0.926
+        },
+        {
+          "text": "Guess",
+          "start": 1.389,
+          "end": 1.591
+        },
+        {
+          "text": "what",
+          "start": 1.671,
+          "end": 1.772
+        },
+        {
+          "text": "we've",
+          "start": 1.873,
+          "end": 2.155
+        },
+        {
+          "text": "been",
+          "start": 2.256,
+          "end": 2.417
+        },
+        {
+          "text": "doing!",
+          "start": 2.518,
+          "end": 2.76
+        }
+      ]
+    },
+    {
+      "id": "line_U9voOUu8BmM",
+      "roleId": "role_vzHo-mLf8QQ",
+      "start": 3.65,
+      "end": 6.78,
+      "text": "Let me think. Have you been watching television?",
+      "hint": "让我想想。你们在看电视吗？",
+      "words": [
+        {
+          "text": "Let",
+          "start": 3.811,
+          "end": 3.971
+        },
+        {
+          "text": "me",
+          "start": 4.051,
+          "end": 4.152
+        },
+        {
+          "text": "think.",
+          "start": 4.292,
+          "end": 4.533
+        },
+        {
+          "text": "Have",
+          "start": 5.697,
+          "end": 5.817
+        },
+        {
+          "text": "you",
+          "start": 5.837,
+          "end": 5.917
+        },
+        {
+          "text": "been",
+          "start": 5.957,
+          "end": 6.078
+        },
+        {
+          "text": "watching",
+          "start": 6.118,
+          "end": 6.439
+        },
+        {
+          "text": "television?",
+          "start": 6.519,
+          "end": 6.76
+        }
+      ]
+    },
+    {
+      "id": "line_kQ1FndPv3tM",
+      "roleId": "role_nsjPD0zHc9g",
+      "start": 7.4,
+      "end": 8.9,
+      "text": "No, no, Daddy.",
+      "hint": "不，不是，爸爸。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 7.886,
+          "end": 8.008
+        },
+        {
+          "text": "no,",
+          "start": 8.231,
+          "end": 8.393
+        },
+        {
+          "text": "Daddy.",
+          "start": 8.616,
+          "end": 8.88
+        }
+      ]
+    },
+    {
+      "id": "line_a5e_NGiuE2g",
+      "roleId": "role_vzHo-mLf8QQ",
+      "start": 10.15,
+      "end": 11.15,
+      "text": "Have you just had a bath?",
+      "hint": "你们刚洗完澡吗？",
+      "words": [
+        {
+          "text": "Have",
+          "start": 10.272,
+          "end": 10.374
+        },
+        {
+          "text": "you",
+          "start": 10.415,
+          "end": 10.477
+        },
+        {
+          "text": "just",
+          "start": 10.517,
+          "end": 10.64
+        },
+        {
+          "text": "had",
+          "start": 10.681,
+          "end": 10.783
+        },
+        {
+          "text": "a",
+          "start": 10.844,
+          "end": 10.864
+        },
+        {
+          "text": "bath?",
+          "start": 10.905,
+          "end": 11.15
+        }
+      ]
+    },
+    {
+      "id": "line_luLkDDddjeg",
+      "roleId": "role_nsjPD0zHc9g",
+      "start": 11.9,
+      "end": 14,
+      "text": "No, no.",
+      "hint": "不，不是。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 13.354,
+          "end": 13.455
+        },
+        {
+          "text": "no.",
+          "start": 13.798,
+          "end": 13.96
+        }
+      ]
+    },
+    {
+      "id": "line_0fBBJkYulqE",
+      "roleId": "role_vzHo-mLf8QQ",
+      "start": 14.75,
+      "end": 20.2,
+      "text": "I know! You've been jumping in muddy puddles!",
+      "hint": "我知道了！你们在泥坑里跳来跳去！",
+      "words": [
+        {
+          "text": "I",
+          "start": 16.934,
+          "end": 16.954
+        },
+        {
+          "text": "know!",
+          "start": 17.295,
+          "end": 17.635
+        },
+        {
+          "text": "You've",
+          "start": 18.236,
+          "end": 18.497
+        },
+        {
+          "text": "been",
+          "start": 18.557,
+          "end": 18.737
+        },
+        {
+          "text": "jumping",
+          "start": 18.858,
+          "end": 19.178
+        },
+        {
+          "text": "in",
+          "start": 19.238,
+          "end": 19.278
+        },
+        {
+          "text": "muddy",
+          "start": 19.378,
+          "end": 19.639
+        },
+        {
+          "text": "puddles!",
+          "start": 19.739,
+          "end": 20.18
+        }
+      ]
+    },
+    {
+      "id": "line_brRFuyabMB4",
+      "roleId": "role_nsjPD0zHc9g",
+      "start": 20.9,
+      "end": 24.6,
+      "text": "Yes, yes, Daddy! We've been jumping in muddy puddles!",
+      "hint": "对，对，爸爸！我们在泥坑里跳来跳去！",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 21.161,
+          "end": 21.362
+        },
+        {
+          "text": "yes,",
+          "start": 21.463,
+          "end": 21.724
+        },
+        {
+          "text": "Daddy!",
+          "start": 21.885,
+          "end": 22.247
+        },
+        {
+          "text": "We've",
+          "start": 22.73,
+          "end": 22.951
+        },
+        {
+          "text": "been",
+          "start": 22.971,
+          "end": 23.112
+        },
+        {
+          "text": "jumping",
+          "start": 23.192,
+          "end": 23.494
+        },
+        {
+          "text": "in",
+          "start": 23.574,
+          "end": 23.615
+        },
+        {
+          "text": "muddy",
+          "start": 23.695,
+          "end": 23.957
+        },
+        {
+          "text": "puddles!",
+          "start": 24.057,
+          "end": 24.419
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Peppa Pig",
+    "attribution": "Peppa Pig © Astley Baker Davies / Entertainment One / Hasbro.",
+    "source": "https://www.youtube.com/watch?v=QFdLgfy63cc&t=189s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 189.2–214.05 秒的节选。"
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}
