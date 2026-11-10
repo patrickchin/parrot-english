@@ -2,7 +2,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 
-const [cohort, ...selected] = process.argv.slice(2);
+const [cohort, ...args] = process.argv.slice(2);
+const captionsOnly = args.includes('--captions-only');
+const selected = args.filter(arg => arg !== '--captions-only');
 if (!['younger-age-5', 'older-audience'].includes(cohort)) throw new Error('Usage: node scripts/prepare-review-clips.mjs <younger-age-5|older-audience> [slug ...|--check]');
 const recipe = JSON.parse(await readFile(cohort === 'older-audience' ? 'content/meme-review-scenes.json' : 'content/preschool-review-scenes.json', 'utf8'));
 const root = `content/local-dubbing/review/${cohort}`;
@@ -20,10 +22,11 @@ for (const scene of recipe.scenes.filter(s => !selected.length || checkOnly || s
   if (!source || !/^[\w-]+$/.test(scene.slug) || !/^[\w-]+$/.test(source.id)) throw new Error(`Invalid source or slug: ${scene.slug}`);
   if (!(scene.end > scene.start) || !scene.lines.length || scene.lines.some(l => l.start < scene.start || l.end > scene.end || l.end <= l.start)) throw new Error(`Invalid timings: ${scene.slug}`);
   const roles = new Map(scene.roles?.map(r => [r.id, r.name]));
+  if (scene.lines.some(line => roles.get(line.roleId) !== line.speaker)) throw new Error(`Speaker name and role disagree: ${scene.slug}`);
   const turns = scene.lines.map(l => l.roleId).filter((id, i, all) => !i || id !== all[i - 1]);
   if (scene.end - scene.start < 10 || scene.end - scene.start > 40 || new Set(turns).size < 2 || turns.length < (cohort === 'older-audience' ? 2 : 3) || scene.lines.length < 3 || scene.lines.some(l => !roles.has(l.roleId) || /narrator|reference voice|children/i.test(roles.get(l.roleId)))) throw new Error(`Needs a complete character exchange: ${scene.slug}`);
   const file = scene.file ?? `${scene.slug}.mp4`;
-  if (!checkOnly && !scene.preserveMedia) run('ffmpeg', ['-v', 'error', '-ss', String(scene.start), '-i', source.localFile ?? `${root}/sources/${source.id}.mp4`, '-t', String(scene.end - scene.start), '-map', '0:v:0', '-map', '0:a:0', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-y', `${root}/${file}`]);
+  if (!checkOnly && !captionsOnly && !scene.preserveMedia) run('ffmpeg', ['-v', 'error', '-ss', String(scene.start), '-i', source.localFile ?? `${root}/sources/${source.id}.mp4`, '-t', String(scene.end - scene.start), '-map', '0:v:0', '-map', '0:a:0', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-y', `${root}/${file}`]);
   const probe = JSON.parse(run('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', `${root}/${file}`]));
   const duration = Number(probe.format.duration);
   if (Math.abs(duration - (scene.end - scene.start)) > 0.15 || !probe.streams.some(s => s.codec_type === 'audio') || !probe.streams.some(s => s.codec_type === 'video')) throw new Error(`Incomplete clip: ${file}`);

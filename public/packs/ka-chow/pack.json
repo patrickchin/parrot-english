@@ -3,11 +3,11 @@
   "id": "pack_p5BgIG-b",
   "title": "咔嚓！",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 14.1,
-  "video": "ka-chow-review-b3c03b6ea0d0.mp4",
+  "duration": 14.567,
+  "video": "ka-chow-review-6a207017ac2d.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ka-chow/",
-  "poster": "ka-chow-poster-b3c03b6ea0d0.jpg",
-  "waveform": "waveform-b3c03b6ea0d0.json",
+  "poster": "ka-chow-poster-6a207017ac2d.jpg",
+  "waveform": "waveform-6a207017ac2d.json",
   "roles": [
     {
       "id": "role_NauR2jpl",
@@ -25,9 +25,9 @@
   "lines": [
     {
       "id": "line_vSnfrJzTY2I",
-      "roleId": "role_NauR2jpl",
+      "roleId": "role_wyV97y-qVtA",
       "start": 0.22,
-      "end": 2.884,
+      "end": 3.044,
       "text": "Hey, fellas, how do you think I'd look in Dinoco blue?",
       "hint": "嘿，伙计们，你们觉得我涂上恐龙石油的蓝色会怎么样？",
       "words": [
@@ -90,9 +90,9 @@
     },
     {
       "id": "line_Zbl2M1c70rs",
-      "roleId": "role_wyV97y-qVtA",
+      "roleId": "role_NauR2jpl",
       "start": 3.325,
-      "end": 4.366,
+      "end": 4.526,
       "text": "Dinoco blue?",
       "hint": "恐龙石油的蓝色？",
       "words": [
@@ -142,7 +142,7 @@
       "id": "line_LEBCO4nqyig",
       "roleId": "role_wyV97y-qVtA",
       "start": 6.91,
-      "end": 9.313,
+      "end": 9.453,
       "text": "Yeah, right. Thunder? What's he talking about, thunder?",
       "hint": "是啊，才怪。雷声？他为什么说雷声？",
       "words": [
@@ -192,7 +192,7 @@
       "id": "line_BxYfECSGsEI",
       "roleId": "role_NauR2jpl",
       "start": 9.473,
-      "end": 14.1,
+      "end": 14.28,
       "text": "You know, because thunder always comes after lightning! Ka-chow!",
       "hint": "你知道的，因为雷声总在闪电之后！咔嚓！",
       "words": [
@@ -257,6 +257,6 @@
     "source": "https://www.youtube.com/watch?v=xwk4D4td0_4&t=13s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 13.1–27.2 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    "changes": "内部原型测试；原上传 13.1–27.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

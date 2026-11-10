@@ -318,7 +318,7 @@
           "roleId": "role_y7mBEj-GiRI",
           "speaker": "Marlin",
           "start": 6.322,
-          "end": 7.282,
+          "end": 7.303,
           "text": "I don't wanna know what you gotta do.",
           "hint": "我不想知道你要怎么办。",
           "words": [
@@ -486,7 +486,7 @@
           "roleId": "role_y7mBEj-GiRI",
           "speaker": "Marlin",
           "start": 14.649,
-          "end": 15.41,
+          "end": 15.57,
           "text": "Dory, no singing!",
           "hint": "多莉，别唱了！",
           "words": [
@@ -526,7 +526,7 @@
       "originalTitle": "鱼儿是朋友！",
       "sourceId": "c6mVl6fAxLw",
       "start": 15.4,
-      "end": 25.5,
+      "end": 25.65,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -549,7 +549,7 @@
           "roleId": "role_gkU-I3wxM6c",
           "speaker": "Sharks",
           "start": 15.701,
-          "end": 21.332,
+          "end": 21.372,
           "text": "I must first change myself. Fish are friends, not food.",
           "hint": "我必须先改变自己。鱼儿是朋友，不是食物。",
           "words": [
@@ -610,7 +610,7 @@
           "roleId": "role_gp1z-ZLSL6Y",
           "speaker": "Chum",
           "start": 21.392,
-          "end": 22.875,
+          "end": 22.915,
           "text": "Except stinking dolphins.",
           "hint": "那些讨厌的海豚除外。",
           "words": [
@@ -636,7 +636,7 @@
           "roleId": "role_74zNIJOZO7U",
           "speaker": "Anchor",
           "start": 22.935,
-          "end": 25.5,
+          "end": 25.65,
           "text": "Dolphins! Yeah, they think they're so cute.",
           "hint": "海豚！对，它们觉得自己可爱极了。",
           "words": [
@@ -715,7 +715,7 @@
           "roleId": "role_jPzYR5J6EIU",
           "speaker": "Woody",
           "start": 25.39,
-          "end": 26.391,
+          "end": 26.551,
           "text": "No, you can't.",
           "hint": "不，你不会。",
           "words": [
@@ -741,7 +741,7 @@
           "roleId": "role_ILLddUmwHyQ",
           "speaker": "Buzz",
           "start": 27.192,
-          "end": 28.433,
+          "end": 28.493,
           "text": "Yes, I can.",
           "hint": "不，我会。",
           "words": [
@@ -803,7 +803,7 @@
           "roleId": "role_ILLddUmwHyQ",
           "speaker": "Buzz",
           "start": 31.205,
-          "end": 33.637,
+          "end": 33.797,
           "text": "I tell you, I could fly around this room with my eyes closed.",
           "hint": "告诉你，我闭着眼睛都能绕着房间飞。",
           "words": [
@@ -879,7 +879,7 @@
           "roleId": "role_jPzYR5J6EIU",
           "speaker": "Woody",
           "start": 33.817,
-          "end": 35.919,
+          "end": 35.999,
           "text": "Okay, then, Mr. Lightyear. Prove it.",
           "hint": "那好吧，光年先生。证明给我看。",
           "words": [
@@ -920,7 +920,7 @@
           "roleId": "role_ILLddUmwHyQ",
           "speaker": "Buzz",
           "start": 36.019,
-          "end": 38.681,
+          "end": 38.841,
           "text": "All right, then I will. Stand back, everyone.",
           "hint": "好，我来证明。大家往后站。",
           "words": [
@@ -971,7 +971,7 @@
           "roleId": "role_ILLddUmwHyQ",
           "speaker": "Buzz",
           "start": 46.968,
-          "end": 49.79,
+          "end": 49.95,
           "text": "To infinity and beyond!",
           "hint": "飞向宇宙，浩瀚无垠！",
           "words": [
@@ -1035,7 +1035,7 @@
           "roleId": "role_AHTBCxbjxz0",
           "speaker": "Woody",
           "start": 45.571,
-          "end": 55.421,
+          "end": 55.581,
           "text": "You are a toy! You aren't the real Buzz Lightyear! You're an action figure! You are a child's plaything!",
           "hint": "你是个玩具！你不是真正的巴斯光年！你是一个人偶，是孩子的玩具！",
           "words": [
@@ -1141,7 +1141,7 @@
           "roleId": "role_q1JOcg9gD7M",
           "speaker": "Buzz",
           "start": 56.622,
-          "end": 60.707,
+          "end": 60.867,
           "text": "You are a sad, strange little man, and you have my pity. Farewell.",
           "hint": "你是一个可怜又奇怪的小家伙，我同情你。告辞。",
           "words": [
@@ -1217,7 +1217,7 @@
           "roleId": "role_AHTBCxbjxz0",
           "speaker": "Woody",
           "start": 61.448,
-          "end": 63.35,
+          "end": 63.51,
           "text": "Oh, yeah? Well, good riddance, you loony!",
           "hint": "哦，是吗？走了正好，你这个疯子！",
           "words": [
@@ -1296,7 +1296,7 @@
           "roleId": "role_PbbqOHSVd2c",
           "speaker": "Woody",
           "start": 20.991,
-          "end": 22.913,
+          "end": 22.993,
           "text": "Hey, Buzz! You're flying!",
           "hint": "嘿，巴斯！你在飞！",
           "words": [
@@ -1327,7 +1327,7 @@
           "roleId": "role_uCxMJvsDijM",
           "speaker": "Buzz",
           "start": 23.013,
-          "end": 26.276,
+          "end": 26.436,
           "text": "This isn't flying. This is falling with style.",
           "hint": "这不叫飞，这叫有风格地落下。",
           "words": [
@@ -1378,7 +1378,7 @@
           "roleId": "role_uCxMJvsDijM",
           "speaker": "Buzz",
           "start": 29.318,
-          "end": 35.463,
+          "end": 35.623,
           "text": "To infinity and beyond!",
           "hint": "飞向宇宙，浩瀚无垠！",
           "words": [
@@ -1409,7 +1409,7 @@
           "roleId": "role_PbbqOHSVd2c",
           "speaker": "Woody",
           "start": 39.507,
-          "end": 41.468,
+          "end": 41.628,
           "text": "Buzz! We missed the truck!",
           "hint": "巴斯！我们错过卡车了！",
           "words": [
@@ -1445,7 +1445,7 @@
           "roleId": "role_uCxMJvsDijM",
           "speaker": "Buzz",
           "start": 41.649,
-          "end": 43.13,
+          "end": 43.25,
           "text": "We're not aiming for the truck.",
           "hint": "我们的目标不是卡车。",
           "words": [
@@ -1511,13 +1511,18 @@
         {
           "id": "role_t3AskixQqcI",
           "name": "Lightning McQueen"
+        },
+        {
+          "id": "role_G8GuFY_TB7c",
+          "name": "Speed announcer",
+          "selectable": false
         }
       ],
       "lines": [
         {
           "id": "line_o9wCPmkYAu8",
-          "roleId": "role_arjkI9OdyX4",
-          "speaker": "Mater",
+          "roleId": "role_G8GuFY_TB7c",
+          "speaker": "Speed announcer",
           "start": 29.211,
           "end": 31.074,
           "text": "One hundred seventy-five miles per hour!",
@@ -1560,7 +1565,7 @@
           "roleId": "role_t3AskixQqcI",
           "speaker": "Lightning McQueen",
           "start": 31.094,
-          "end": 35.1,
+          "end": 35.26,
           "text": "Okay! You did it, buddy! You can back off now!",
           "hint": "好！你做到了，伙计！你现在可以慢下来了！",
           "words": [
@@ -1621,7 +1626,7 @@
           "roleId": "role_arjkI9OdyX4",
           "speaker": "Mater",
           "start": 35.281,
-          "end": 38.025,
+          "end": 38.185,
           "text": "Later! I am speed!",
           "hint": "回头见！我就是速度！",
           "words": [
@@ -1652,7 +1657,7 @@
           "roleId": "role_t3AskixQqcI",
           "speaker": "Lightning McQueen",
           "start": 39.889,
-          "end": 40.309,
+          "end": 40.469,
           "text": "Whoa!",
           "hint": "哇！",
           "words": [
@@ -1682,7 +1687,7 @@
       "originalTitle": "咔嚓！",
       "sourceId": "xwk4D4td0_4",
       "start": 13.1,
-      "end": 27.2,
+      "end": 27.65,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -1698,10 +1703,10 @@
       "lines": [
         {
           "id": "line_vSnfrJzTY2I",
-          "roleId": "role_FuMopiX_RTw",
-          "speaker": "Lightning McQueen",
+          "roleId": "role_wyV97y-qVtA",
+          "speaker": "Chick Hicks",
           "start": 13.32,
-          "end": 15.984,
+          "end": 16.144,
           "text": "Hey, fellas, how do you think I'd look in Dinoco blue?",
           "hint": "嘿，伙计们，你们觉得我涂上恐龙石油的蓝色会怎么样？",
           "words": [
@@ -1764,10 +1769,10 @@
         },
         {
           "id": "line_Zbl2M1c70rs",
-          "roleId": "role_wyV97y-qVtA",
-          "speaker": "Chick Hicks",
+          "roleId": "role_FuMopiX_RTw",
+          "speaker": "Lightning McQueen",
           "start": 16.425,
-          "end": 17.466,
+          "end": 17.626,
           "text": "Dinoco blue?",
           "hint": "恐龙石油的蓝色？",
           "words": [
@@ -1819,7 +1824,7 @@
           "roleId": "role_wyV97y-qVtA",
           "speaker": "Chick Hicks",
           "start": 20.01,
-          "end": 22.413,
+          "end": 22.553,
           "text": "Yeah, right. Thunder? What's he talking about, thunder?",
           "hint": "是啊，才怪。雷声？他为什么说雷声？",
           "words": [
@@ -1870,7 +1875,7 @@
           "roleId": "role_FuMopiX_RTw",
           "speaker": "Lightning McQueen",
           "start": 22.573,
-          "end": 27.2,
+          "end": 27.38,
           "text": "You know, because thunder always comes after lightning! Ka-chow!",
           "hint": "你知道的，因为雷声总在闪电之后！咔嚓！",
           "words": [
@@ -1946,7 +1951,8 @@
       "roles": [
         {
           "id": "role_ac_suThrxnA",
-          "name": "Margo"
+          "name": "Margo",
+          "selectable": false
         },
         {
           "id": "role_jzla1RP1Alo",
@@ -1967,7 +1973,7 @@
           "roleId": "role_ac_suThrxnA",
           "speaker": "Margo",
           "start": 23.74,
-          "end": 24.461,
+          "end": 24.641,
           "text": "She hit that!",
           "hint": "她打中了！",
           "words": [
@@ -1995,7 +2001,7 @@
           "text": "I saw that with my own eyes!",
           "hint": "我亲眼看到的！",
           "start": 25.121,
-          "end": 26.482,
+          "end": 26.662,
           "words": [
             {
               "text": "I",
@@ -2039,7 +2045,7 @@
           "roleId": "role_2YM2UXibtNQ",
           "speaker": "Carnival attendant",
           "start": 26.742,
-          "end": 30.865,
+          "end": 31.025,
           "text": "Let me explain something to you. You see how it's not knocked over?",
           "hint": "让我给你解释一下。看见了吗？它没有倒下。",
           "words": [
@@ -2115,7 +2121,7 @@
           "roleId": "role_AmEQPuK-wqk",
           "speaker": "Gru",
           "start": 31.305,
-          "end": 38.77,
+          "end": 38.93,
           "text": "Okay. My turn.",
           "hint": "好吧。轮到我了。",
           "words": [
@@ -2141,7 +2147,7 @@
           "roleId": "role_AmEQPuK-wqk",
           "speaker": "Gru",
           "start": 50.338,
-          "end": 52.319,
+          "end": 52.479,
           "text": "Knocked over!",
           "hint": "打倒了！",
           "words": [
@@ -2162,7 +2168,7 @@
           "roleId": "role_jzla1RP1Alo",
           "speaker": "Agnes",
           "start": 52.779,
-          "end": 53.98,
+          "end": 54,
           "text": "It's so fluffy!",
           "hint": "太毛茸茸了！",
           "words": [
@@ -2202,7 +2208,7 @@
       "originalTitle": "香蕉！",
       "sourceId": "CeOsRggJO4s",
       "start": 10.9,
-      "end": 29.5,
+      "end": 29.8,
       "editType": "replacement",
       "editNote": "The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise.",
       "roles": [
@@ -2216,11 +2222,8 @@
         },
         {
           "id": "role_Y1QH7lsWlSU",
-          "name": "Edith"
-        },
-        {
-          "id": "role_PrQjOT97Qvw",
-          "name": "Agnes"
+          "name": "Edith",
+          "selectable": false
         }
       ],
       "lines": [
@@ -2229,7 +2232,7 @@
           "roleId": "role_6qGKlj0DGGU",
           "speaker": "Gru",
           "start": 11.08,
-          "end": 15.585,
+          "end": 15.705,
           "text": "Rule number one: you will not touch anything.",
           "hint": "第一条：什么都不许碰。",
           "words": [
@@ -2280,7 +2283,7 @@
           "roleId": "role_ttD2BhSD_aQ",
           "speaker": "Margo",
           "start": 15.725,
-          "end": 17.127,
+          "end": 17.287,
           "text": "Uh-huh. What about the floor?",
           "hint": "嗯，那地板呢？",
           "words": [
@@ -2316,7 +2319,7 @@
           "roleId": "role_6qGKlj0DGGU",
           "speaker": "Gru",
           "start": 18.028,
-          "end": 19.669,
+          "end": 19.829,
           "text": "Yes, you may touch the floor.",
           "hint": "好，地板可以碰。",
           "words": [
@@ -2354,10 +2357,10 @@
         },
         {
           "id": "line_RDPRAtHC5cQ",
-          "roleId": "role_PrQjOT97Qvw",
-          "speaker": "Agnes",
+          "roleId": "role_ttD2BhSD_aQ",
+          "speaker": "Margo",
           "start": 19.99,
-          "end": 21.031,
+          "end": 21.191,
           "text": "What about the air?",
           "hint": "那空气呢？",
           "words": [
@@ -2388,7 +2391,7 @@
           "roleId": "role_6qGKlj0DGGU",
           "speaker": "Gru",
           "start": 21.251,
-          "end": 23.433,
+          "end": 23.514,
           "text": "Yes, you may touch the air.",
           "hint": "好，空气也可以碰。",
           "words": [
@@ -2429,7 +2432,7 @@
           "roleId": "role_Y1QH7lsWlSU",
           "speaker": "Edith",
           "start": 23.534,
-          "end": 24.254,
+          "end": 24.414,
           "text": "What about this?",
           "hint": "那这个呢？",
           "words": [
@@ -2455,7 +2458,7 @@
           "roleId": "role_6qGKlj0DGGU",
           "speaker": "Gru",
           "start": 27.838,
-          "end": 28.719,
+          "end": 28.879,
           "text": "Where did you get that?",
           "hint": "你从哪里拿到的？",
           "words": [
@@ -2491,7 +2494,7 @@
           "roleId": "role_Y1QH7lsWlSU",
           "speaker": "Edith",
           "start": 28.959,
-          "end": 29.46,
+          "end": 29.62,
           "text": "Found it.",
           "hint": "捡到的。",
           "words": [
@@ -2526,7 +2529,7 @@
       "originalTitle": "松鼠！",
       "sourceId": "Fi2i7iuA1n4",
       "start": 95,
-      "end": 109.05,
+      "end": 109.5,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -2545,7 +2548,7 @@
           "roleId": "role_ePAlAo5hAOs",
           "speaker": "Dug",
           "start": 95.701,
-          "end": 101.545,
+          "end": 101.605,
           "text": "My master made me this collar. He is a good and smart master, and he made me this collar so that I may talk.",
           "hint": "我的主人给我做了这个项圈。他是个善良又聪明的主人，这个项圈能让我说话。",
           "words": [
@@ -2676,7 +2679,7 @@
           "roleId": "role_ePAlAo5hAOs",
           "speaker": "Dug",
           "start": 101.625,
-          "end": 102.065,
+          "end": 102.225,
           "text": "Squirrel!",
           "hint": "松鼠！",
           "words": [
@@ -2692,7 +2695,7 @@
           "roleId": "role_ePAlAo5hAOs",
           "speaker": "Dug",
           "start": 104.487,
-          "end": 105.888,
+          "end": 105.908,
           "text": "My master is good and smart.",
           "hint": "我的主人善良又聪明。",
           "words": [
@@ -2733,7 +2736,7 @@
           "roleId": "role_tD36hMnXUVc",
           "speaker": "Carl",
           "start": 105.928,
-          "end": 107.049,
+          "end": 107.089,
           "text": "It's impossible!",
           "hint": "这不可能！",
           "words": [
@@ -2754,7 +2757,7 @@
           "roleId": "role_ePAlAo5hAOs",
           "speaker": "Dug",
           "start": 107.109,
-          "end": 109.05,
+          "end": 109.25,
           "text": "Oh, it is because my master is smart.",
           "hint": "哦，这有可能，因为我的主人很聪明。",
           "words": [
@@ -2825,7 +2828,8 @@
       "roles": [
         {
           "id": "role_LMfavnX8qAw",
-          "name": "Russell"
+          "name": "Russell",
+          "selectable": false
         },
         {
           "id": "role_FysReAnpHQg",
@@ -2842,7 +2846,7 @@
           "roleId": "role_LMfavnX8qAw",
           "speaker": "Russell",
           "start": 83.97,
-          "end": 84.451,
+          "end": 84.611,
           "text": "Speak!",
           "hint": "说话！",
           "words": [
@@ -2858,7 +2862,7 @@
           "roleId": "role_FysReAnpHQg",
           "speaker": "Dug",
           "start": 84.632,
-          "end": 85.172,
+          "end": 85.332,
           "text": "Hi there!",
           "hint": "你们好！",
           "words": [
@@ -2879,7 +2883,7 @@
           "roleId": "role_D1aZwWlTtkk",
           "speaker": "Carl",
           "start": 85.453,
-          "end": 89.159,
+          "end": 89.319,
           "text": "Did that dog just say hi there?",
           "hint": "那只狗刚才说了“你们好”吗？",
           "words": [
@@ -2925,7 +2929,7 @@
           "roleId": "role_FysReAnpHQg",
           "speaker": "Dug",
           "start": 89.34,
-          "end": 94.91,
+          "end": 95.05,
           "text": "Oh, yes! My name is Dug. I have just met you, and I love you.",
           "hint": "哦，是的！我叫道格。我刚认识你，就已经喜欢你了。",
           "words": [
@@ -3025,7 +3029,7 @@
       "originalTitle": "谁都能做饭！",
       "sourceId": "thkDWSUzQDo",
       "start": 11.8,
-      "end": 26.4,
+      "end": 26.5,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -3044,7 +3048,7 @@
           "roleId": "role_dUpyvjKLvlI",
           "speaker": "Gusteau",
           "start": 11.92,
-          "end": 12.921,
+          "end": 13.081,
           "text": "But he could.",
           "hint": "但是他可以学会。",
           "words": [
@@ -3070,7 +3074,7 @@
           "roleId": "role_43NdYGbMURo",
           "speaker": "Remy",
           "start": 13.442,
-          "end": 14.944,
+          "end": 15.104,
           "text": "Uh, no.",
           "hint": "呃，不行。",
           "words": [
@@ -3091,7 +3095,7 @@
           "roleId": "role_dUpyvjKLvlI",
           "speaker": "Gusteau",
           "start": 15.185,
-          "end": 18.81,
+          "end": 18.97,
           "text": "How do you know? What do I always say? Anyone can cook.",
           "hint": "你怎么知道？我常说什么？谁都能做饭。",
           "words": [
@@ -3162,7 +3166,7 @@
           "roleId": "role_43NdYGbMURo",
           "speaker": "Remy",
           "start": 19.37,
-          "end": 22.935,
+          "end": 23.095,
           "text": "Well, yeah, anyone can. That doesn't mean that anyone should.",
           "hint": "嗯，对，谁都能做。可这不代表谁都应该做。",
           "words": [
@@ -3223,7 +3227,7 @@
           "roleId": "role_dUpyvjKLvlI",
           "speaker": "Gusteau",
           "start": 23.216,
-          "end": 26.34,
+          "end": 26.5,
           "text": "Well, that is not stopping him. See?",
           "hint": "可这并没有让他停下来。看。",
           "words": [
@@ -3283,7 +3287,7 @@
       "originalTitle": "没有秘密配料！",
       "sourceId": "K7DnFGdqT8c",
       "start": 27.45,
-      "end": 50.2,
+      "end": 50.55,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -3302,7 +3306,7 @@
           "roleId": "role_lttd5_5qBvs",
           "speaker": "Mr. Ping",
           "start": 27.75,
-          "end": 33.052,
+          "end": 33.212,
           "text": "Come here. The secret ingredient is nothing.",
           "hint": "过来。秘密配料就是——什么都没有。",
           "words": [
@@ -3348,7 +3352,7 @@
           "roleId": "role_KLqdqSbZHmw",
           "speaker": "Po",
           "start": 34.313,
-          "end": 34.653,
+          "end": 34.813,
           "text": "Huh?",
           "hint": "啊？",
           "words": [
@@ -3364,7 +3368,7 @@
           "roleId": "role_lttd5_5qBvs",
           "speaker": "Mr. Ping",
           "start": 35.013,
-          "end": 39.255,
+          "end": 39.415,
           "text": "You heard me. Nothing. There is no secret ingredient.",
           "hint": "你没听错。什么都没有。没有什么秘密配料。",
           "words": [
@@ -3420,7 +3424,7 @@
           "roleId": "role_KLqdqSbZHmw",
           "speaker": "Po",
           "start": 39.895,
-          "end": 45.438,
+          "end": 45.578,
           "text": "Wait, wait. It's just plain old noodle soup? You don't add some kind of special sauce or something?",
           "hint": "等等，就是普通的面汤？你没有加什么特别的酱料之类的吗？",
           "words": [
@@ -3521,7 +3525,7 @@
           "roleId": "role_lttd5_5qBvs",
           "speaker": "Mr. Ping",
           "start": 45.598,
-          "end": 50.18,
+          "end": 50.34,
           "text": "Don't have to. To make something special, you just have to believe it's special.",
           "hint": "不需要。要让一样东西变得特别，只需要相信它是特别的。",
           "words": [
@@ -3616,7 +3620,7 @@
       "originalTitle": "今天是一份礼物！",
       "sourceId": "PSBfcpqICvY",
       "start": 0.25,
-      "end": 12,
+      "end": 12.3,
       "editType": "replacement",
       "editNote": "The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene.",
       "roles": [
@@ -3635,7 +3639,7 @@
           "roleId": "role_z8tBpYVF99Q",
           "speaker": "Oogway",
           "start": 0.55,
-          "end": 4.574,
+          "end": 4.734,
           "text": "I understand. You eat when you are upset.",
           "hint": "我理解。你不开心的时候就会吃东西。",
           "words": [
@@ -3686,7 +3690,7 @@
           "roleId": "role_-aBSnmfkqjk",
           "speaker": "Po",
           "start": 5.474,
-          "end": 8.697,
+          "end": 8.857,
           "text": "Upset? I'm not upset. What makes you think I'm upset?",
           "hint": "不开心？我没有不开心。你为什么觉得我不开心？",
           "words": [
@@ -3747,7 +3751,7 @@
           "roleId": "role_z8tBpYVF99Q",
           "speaker": "Oogway",
           "start": 10.419,
-          "end": 12,
+          "end": 12.2,
           "text": "So why are you upset?",
           "hint": "那么，你为什么不开心？",
           "words": [
@@ -3797,7 +3801,7 @@
       "originalTitle": "吼一声嘛！",
       "sourceId": "6I5B0jyLBUg",
       "start": 14.5,
-      "end": 30.55,
+      "end": 30.9,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -3815,7 +3819,8 @@
         },
         {
           "id": "role_c6niQ-oI2rA",
-          "name": "Fiona"
+          "name": "Fiona",
+          "selectable": false
         }
       ],
       "lines": [
@@ -3824,7 +3829,7 @@
           "roleId": "role_fQeXDxQ7A-I",
           "speaker": "Boy's father",
           "start": 14.74,
-          "end": 19.683,
+          "end": 19.843,
           "text": "Excuse me, Mr. Shrek. Could you do that ogre roar of yours for my son? He's a big, big fan.",
           "hint": "打扰了，史莱克先生。可以为我儿子表演一下怪物吼叫吗？他是你的超级粉丝。",
           "words": [
@@ -3935,7 +3940,7 @@
           "roleId": "role_oV11ggQinHU",
           "speaker": "Boy",
           "start": 20.144,
-          "end": 20.804,
+          "end": 20.924,
           "text": "Do the roar.",
           "hint": "吼一声嘛。",
           "words": [
@@ -3961,7 +3966,7 @@
           "roleId": "role_HxBpf2F4gNA",
           "speaker": "Shrek",
           "start": 20.944,
-          "end": 24.206,
+          "end": 24.226,
           "text": "You know, I'd rather not. It's my kids' birthday party.",
           "hint": "我还是不想。这是我孩子们的生日聚会。",
           "words": [
@@ -4048,7 +4053,7 @@
           "roleId": "role_HxBpf2F4gNA",
           "speaker": "Shrek",
           "start": 26.027,
-          "end": 27.768,
+          "end": 27.928,
           "text": "Honey, why don't you go check on the cake?",
           "hint": "亲爱的，你去看看蛋糕好吗？",
           "words": [
@@ -4104,7 +4109,7 @@
           "roleId": "role_c6niQ-oI2rA",
           "speaker": "Fiona",
           "start": 28.169,
-          "end": 30.55,
+          "end": 30.73,
           "text": "Sure. And don't forget the candles.",
           "hint": "好。别忘了蜡烛。",
           "words": [
@@ -4173,7 +4178,8 @@
         },
         {
           "id": "role_YoD156O5n0s",
-          "name": "Fiona"
+          "name": "Fiona",
+          "selectable": false
         }
       ],
       "lines": [
@@ -4182,7 +4188,7 @@
           "roleId": "role_EWM0kajCU-M",
           "speaker": "Donkey",
           "start": 15.261,
-          "end": 15.941,
+          "end": 16.042,
           "text": "Are we there yet?",
           "hint": "我们到了吗？",
           "words": [
@@ -4213,7 +4219,7 @@
           "roleId": "role_3MSkPfyxEYM",
           "speaker": "Shrek",
           "start": 16.062,
-          "end": 16.562,
+          "end": 16.722,
           "text": "No!",
           "hint": "没有！",
           "words": [
@@ -4229,7 +4235,7 @@
           "roleId": "role_EWM0kajCU-M",
           "speaker": "Donkey",
           "start": 17.083,
-          "end": 18.324,
+          "end": 18.384,
           "text": "Are we there yet?",
           "hint": "我们到了吗？",
           "words": [
@@ -4260,7 +4266,7 @@
           "roleId": "role_3MSkPfyxEYM",
           "speaker": "Shrek",
           "start": 18.404,
-          "end": 18.684,
+          "end": 18.844,
           "text": "Yes.",
           "hint": "到了。",
           "words": [
@@ -4276,7 +4282,7 @@
           "roleId": "role_EWM0kajCU-M",
           "speaker": "Donkey",
           "start": 18.904,
-          "end": 19.244,
+          "end": 19.325,
           "text": "Really?",
           "hint": "真的吗？",
           "words": [
@@ -4292,7 +4298,7 @@
           "roleId": "role_3MSkPfyxEYM",
           "speaker": "Shrek",
           "start": 19.345,
-          "end": 19.865,
+          "end": 20.025,
           "text": "No!",
           "hint": "没有！",
           "words": [
@@ -4308,7 +4314,7 @@
           "roleId": "role_EWM0kajCU-M",
           "speaker": "Donkey",
           "start": 20.586,
-          "end": 21.286,
+          "end": 21.327,
           "text": "Are we there yet?",
           "hint": "我们到了吗？",
           "words": [
@@ -4339,7 +4345,7 @@
           "roleId": "role_YoD156O5n0s",
           "speaker": "Fiona",
           "start": 21.347,
-          "end": 21.667,
+          "end": 21.827,
           "text": "No!",
           "hint": "没有！",
           "words": [
@@ -4386,7 +4392,7 @@
           "roleId": "role_3MSkPfyxEYM",
           "speaker": "Shrek",
           "start": 22.848,
-          "end": 23.489,
+          "end": 23.649,
           "text": "No, we are not!",
           "hint": "没有，我们还没到！",
           "words": [
@@ -4431,13 +4437,14 @@
       "originalTitle": "谁在我的沼泽里？",
       "sourceId": "xuS9UxuUZ3Y",
       "start": 96.4,
-      "end": 109.4,
+      "end": 109.6,
       "editType": "replacement",
       "editNote": "Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions.",
       "roles": [
         {
           "id": "role_Rp4xE21Pv6o",
-          "name": "Donkey"
+          "name": "Donkey",
+          "selectable": false
         },
         {
           "id": "role_stZNsPqJ3SU",
@@ -4458,7 +4465,7 @@
           "roleId": "role_Rp4xE21Pv6o",
           "speaker": "Donkey",
           "start": 96.58,
-          "end": 97.462,
+          "end": 97.622,
           "text": "I didn't invite them.",
           "hint": "不是我邀请他们的。",
           "words": [
@@ -4489,7 +4496,7 @@
           "roleId": "role_stZNsPqJ3SU",
           "speaker": "Pinocchio",
           "start": 97.902,
-          "end": 99.685,
+          "end": 99.845,
           "text": "Oh, gosh, no one invited us.",
           "hint": "天啊，没人邀请我们。",
           "words": [
@@ -4530,7 +4537,7 @@
           "roleId": "role_Rg2p2dm-Wo0",
           "speaker": "Shrek",
           "start": 100.006,
-          "end": 100.426,
+          "end": 100.586,
           "text": "What?",
           "hint": "什么？",
           "words": [
@@ -4546,7 +4553,7 @@
           "roleId": "role_stZNsPqJ3SU",
           "speaker": "Pinocchio",
           "start": 101.227,
-          "end": 102.589,
+          "end": 102.749,
           "text": "We were forced to come here.",
           "hint": "我们是被迫来这里的。",
           "words": [
@@ -4587,7 +4594,7 @@
           "roleId": "role_Rg2p2dm-Wo0",
           "speaker": "Shrek",
           "start": 102.95,
-          "end": 103.751,
+          "end": 103.872,
           "text": "By who?",
           "hint": "被谁逼的？",
           "words": [
@@ -4608,7 +4615,7 @@
           "roleId": "role_WP8iVeXihIk",
           "speaker": "Little pig",
           "start": 103.892,
-          "end": 104.813,
+          "end": 104.973,
           "text": "Lord Farquaad!",
           "hint": "法夸德领主！",
           "words": [
@@ -4675,7 +4682,7 @@
           "roleId": "role_stZNsPqJ3SU",
           "speaker": "Pinocchio",
           "start": 107.938,
-          "end": 109.3,
+          "end": 109.46,
           "text": "Signed an eviction notice.",
           "hint": "签了一张驱逐通知。",
           "words": [
@@ -4739,7 +4746,7 @@
           "roleId": "role_DwNcHLYFJm8",
           "speaker": "SpongeBob",
           "start": 18.481,
-          "end": 20.344,
+          "end": 20.424,
           "text": "I'm ready! I'm ready!",
           "hint": "我准备好了！我准备好了！",
           "words": [
@@ -4770,7 +4777,7 @@
           "roleId": "role_DwNcHLYFJm8",
           "speaker": "SpongeBob",
           "start": 20.444,
-          "end": 22.107,
+          "end": 22.267,
           "text": "Squidward! Squidward!",
           "hint": "章鱼哥！章鱼哥！",
           "words": [
@@ -4791,7 +4798,7 @@
           "roleId": "role_ZsxADi00XhU",
           "speaker": "Squidward",
           "start": 22.308,
-          "end": 22.809,
+          "end": 22.949,
           "text": "What?",
           "hint": "什么事？",
           "words": [
@@ -4807,7 +4814,7 @@
           "roleId": "role_DwNcHLYFJm8",
           "speaker": "SpongeBob",
           "start": 22.969,
-          "end": 24.191,
+          "end": 24.351,
           "text": "I'm ready, Squidward!",
           "hint": "章鱼哥，我准备好了！",
           "words": [
@@ -4833,7 +4840,7 @@
           "roleId": "role_ZsxADi00XhU",
           "speaker": "Squidward",
           "start": 24.632,
-          "end": 25.854,
+          "end": 25.995,
           "text": "Ready to move?",
           "hint": "准备好搬家了吗？",
           "words": [
@@ -4859,7 +4866,7 @@
           "roleId": "role_DwNcHLYFJm8",
           "speaker": "SpongeBob",
           "start": 26.015,
-          "end": 28.52,
+          "end": 28.68,
           "text": "No! I'm ready to pass my boating test!",
           "hint": "不是！我准备好通过驾驶考试了！",
           "words": [
@@ -4934,7 +4941,8 @@
         },
         {
           "id": "role_biDyZtCKZuA",
-          "name": "Plankton"
+          "name": "Plankton",
+          "selectable": false
         },
         {
           "id": "role_b_3tOMj86qY",
@@ -4947,7 +4955,7 @@
           "roleId": "role_Qk6bZeSausw",
           "speaker": "Squidward",
           "start": 9.37,
-          "end": 12.312,
+          "end": 12.472,
           "text": "How many of you have played musical instruments before?",
           "hint": "你们有多少人以前演奏过乐器？",
           "words": [
@@ -5003,7 +5011,7 @@
           "roleId": "role_biDyZtCKZuA",
           "speaker": "Plankton",
           "start": 12.572,
-          "end": 14.433,
+          "end": 14.593,
           "text": "Do instruments of torture count?",
           "hint": "刑具算不算？",
           "words": [
@@ -5039,7 +5047,7 @@
           "roleId": "role_Qk6bZeSausw",
           "speaker": "Squidward",
           "start": 14.794,
-          "end": 15.074,
+          "end": 15.234,
           "text": "No.",
           "hint": "不算。",
           "words": [
@@ -5055,7 +5063,7 @@
           "roleId": "role_b_3tOMj86qY",
           "speaker": "Patrick",
           "start": 15.494,
-          "end": 17.776,
+          "end": 17.936,
           "text": "Is mayonnaise an instrument?",
           "hint": "蛋黄酱是乐器吗？",
           "words": [
@@ -5086,7 +5094,7 @@
           "roleId": "role_Qk6bZeSausw",
           "speaker": "Squidward",
           "start": 18.176,
-          "end": 20.818,
+          "end": 20.978,
           "text": "No, Patrick, mayonnaise is not an instrument.",
           "hint": "不是，派大星，蛋黄酱不是乐器。",
           "words": [
@@ -5132,7 +5140,7 @@
           "roleId": "role_Qk6bZeSausw",
           "speaker": "Squidward",
           "start": 22.199,
-          "end": 24.14,
+          "end": 24.3,
           "text": "Horseradish is not an instrument either.",
           "hint": "辣根也不是乐器。",
           "words": [
@@ -5187,7 +5195,7 @@
       "originalTitle": "微笑，挥挥手！",
       "sourceId": "F64CJmF2dHM",
       "start": 2.7,
-      "end": 29.05,
+      "end": 29.4,
       "editType": "expanded",
       "editNote": "Expanded to include the surrounding character exchange and its payoff.",
       "roles": [
@@ -5201,7 +5209,8 @@
         },
         {
           "id": "role_48Y-QZ9fhhE",
-          "name": "Private"
+          "name": "Private",
+          "selectable": false
         }
       ],
       "lines": [
@@ -5210,7 +5219,7 @@
           "roleId": "role_JvQz8dWxoRY",
           "speaker": "Skipper",
           "start": 3.32,
-          "end": 6.581,
+          "end": 6.741,
           "text": "Just smile and wave, boys. Smile and wave.",
           "hint": "小伙子们，微笑，挥挥手。微笑，挥挥手。",
           "words": [
@@ -5261,7 +5270,7 @@
           "roleId": "role_JvQz8dWxoRY",
           "speaker": "Skipper",
           "start": 7.362,
-          "end": 8.982,
+          "end": 9.142,
           "text": "Kowalski, progress report.",
           "hint": "科瓦斯基，报告进展。",
           "words": [
@@ -5287,7 +5296,7 @@
           "roleId": "role_csUjXkRdbuM",
           "speaker": "Kowalski",
           "start": 10.183,
-          "end": 11.943,
+          "end": 12.103,
           "text": "We're only five hundred feet from the main sewer line.",
           "hint": "距离主下水道只剩五百英尺了。",
           "words": [
@@ -5348,7 +5357,7 @@
           "roleId": "role_JvQz8dWxoRY",
           "speaker": "Skipper",
           "start": 12.224,
-          "end": 13.044,
+          "end": 13.204,
           "text": "And the bad news?",
           "hint": "那坏消息呢？",
           "words": [
@@ -5379,7 +5388,7 @@
           "roleId": "role_csUjXkRdbuM",
           "speaker": "Kowalski",
           "start": 13.244,
-          "end": 14.685,
+          "end": 14.845,
           "text": "We've broken our last shovel.",
           "hint": "我们的最后一把铲子也断了。",
           "words": [
@@ -5415,7 +5424,7 @@
           "roleId": "role_JvQz8dWxoRY",
           "speaker": "Skipper",
           "start": 15.665,
-          "end": 24.148,
+          "end": 24.308,
           "text": "Right. Rico, you're on litter patrol. We need shovels, and find more Popsicle sticks. You don't want to risk another cave-in.",
           "hint": "好。瑞哥，你去找废弃物。我们需要铲子，再找些冰棒棍。你可不想再冒塌方的风险。",
           "words": [
@@ -5531,7 +5540,7 @@
           "roleId": "role_48Y-QZ9fhhE",
           "speaker": "Private",
           "start": 24.928,
-          "end": 26.069,
+          "end": 26.229,
           "text": "And me, Skipper?",
           "hint": "那我呢，队长？",
           "words": [
@@ -5557,7 +5566,7 @@
           "roleId": "role_JvQz8dWxoRY",
           "speaker": "Skipper",
           "start": 26.329,
-          "end": 29.05,
+          "end": 29.27,
           "text": "I want you to look cute and cuddly, Private.",
           "hint": "你的任务是保持可爱，菜鸟。",
           "words": [
@@ -5646,7 +5655,7 @@
           "roleId": "role_RN-lit1zrQU",
           "speaker": "Patrick",
           "start": 3.171,
-          "end": 4.652,
+          "end": 4.772,
           "text": "You know what the problem is?",
           "hint": "你知道问题是什么吗？",
           "words": [
@@ -5687,7 +5696,7 @@
           "roleId": "role_llrWB6OVSyA",
           "speaker": "SpongeBob",
           "start": 4.792,
-          "end": 5.073,
+          "end": 5.233,
           "text": "What?",
           "hint": "什么？",
           "words": [
@@ -5703,7 +5712,7 @@
           "roleId": "role_RN-lit1zrQU",
           "speaker": "Patrick",
           "start": 5.533,
-          "end": 10.578,
+          "end": 10.738,
           "text": "You got it set to M for mini, when it should be set to W for Wumbo.",
           "hint": "你把它设成了代表迷你的 M，而它应该设成代表 Wumbo 的 W。",
           "words": [
@@ -5799,7 +5808,7 @@
           "roleId": "role_llrWB6OVSyA",
           "speaker": "SpongeBob",
           "start": 11.019,
-          "end": 12.961,
+          "end": 13.121,
           "text": "Patrick, I don't think Wumbo is a real word.",
           "hint": "派大星，我觉得 Wumbo 不是一个真正的词。",
           "words": [
@@ -5855,7 +5864,7 @@
           "roleId": "role_RN-lit1zrQU",
           "speaker": "Patrick",
           "start": 13.221,
-          "end": 21.79,
+          "end": 21.95,
           "text": "Come on! You know, I Wumbo, you Wumbo. He, she, me, Wumbo.",
           "hint": "别这样！你知道的，我 Wumbo，你 Wumbo，他、她、我，Wumbo。（这是剧中的虚构词。）",
           "words": [

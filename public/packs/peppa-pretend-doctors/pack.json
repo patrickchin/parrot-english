@@ -25,13 +25,15 @@
       "id": "role_5uI-c2fNuK0",
       "name": "小羊苏西",
       "label": "小羊苏西",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     },
     {
       "id": "role_iEFhkfUkYtY",
       "name": "猪妈妈",
       "label": "猪妈妈",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     }
   ],
   "lines": [
@@ -39,7 +41,7 @@
       "id": "line_bMBHF7WQmJw",
       "roleId": "role_TqcAfKZEoEo",
       "start": 0.15,
-      "end": 2.6,
+      "end": 2.74,
       "text": "Oh no! What's wrong with George?",
       "hint": "哦，不！乔治怎么了？",
       "words": [
@@ -79,7 +81,7 @@
       "id": "line_t0R9bX9nTsA",
       "roleId": "role_ORPImTlyeZM",
       "start": 3.25,
-      "end": 5.2,
+      "end": 5.4,
       "text": "Don't worry, Daddy. It's only a game.",
       "hint": "别担心，爸爸。我们只是在玩游戏。",
       "words": [
@@ -124,7 +126,7 @@
       "id": "line_PFOU4sh136Q",
       "roleId": "role_5uI-c2fNuK0",
       "start": 5.65,
-      "end": 6.7,
+      "end": 6.92,
       "text": "George is our patient.",
       "hint": "乔治是我们的病人。",
       "words": [
@@ -154,7 +156,7 @@
       "id": "line_sE72umNOYd4",
       "roleId": "role_TqcAfKZEoEo",
       "start": 7.45,
-      "end": 11.3,
+      "end": 11.5,
       "text": "Oh, I see. Can the patient have a visitor?",
       "hint": "哦，我明白了。病人可以有访客吗？",
       "words": [
@@ -209,7 +211,7 @@
       "id": "line__bJ_pNLS8Zs",
       "roleId": "role_ORPImTlyeZM",
       "start": 12.3,
-      "end": 15.4,
+      "end": 15.6,
       "text": "Just for a little while. He might get tired.",
       "hint": "只能一小会儿。他可能会累的。",
       "words": [
@@ -264,7 +266,7 @@
       "id": "line_QiSwx4YzJXI",
       "roleId": "role_ORPImTlyeZM",
       "start": 16.95,
-      "end": 17.6,
+      "end": 17.658,
       "text": "Cookies!",
       "hint": "饼干！",
       "words": [
@@ -279,7 +281,7 @@
       "id": "line_lsITqeKiA9w",
       "roleId": "role_iEFhkfUkYtY",
       "start": 18.8,
-      "end": 23.15,
+      "end": 23.35,
       "text": "Yes, they're for George. They're his medicine to make him feel better.",
       "hint": "对，给乔治的。这是让他好起来的药。",
       "words": [
@@ -346,6 +348,12 @@
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Peppa Pig",
@@ -354,11 +362,5 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "内部原型测试；原上传 216.3–239.7 秒的节选。"
-  },
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
   }
 }

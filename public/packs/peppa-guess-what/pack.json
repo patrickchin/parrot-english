@@ -27,7 +27,7 @@
       "id": "line_WA_26hJ_wNY",
       "roleId": "role_nsjPD0zHc9g",
       "start": 0.2,
-      "end": 2.78,
+      "end": 2.98,
       "text": "Daddy, Daddy! Guess what we've been doing!",
       "hint": "爸爸，爸爸！猜猜我们干什么了！",
       "words": [
@@ -72,7 +72,7 @@
       "id": "line_U9voOUu8BmM",
       "roleId": "role_vzHo-mLf8QQ",
       "start": 3.65,
-      "end": 6.78,
+      "end": 6.98,
       "text": "Let me think. Have you been watching television?",
       "hint": "让我想想。你们在看电视吗？",
       "words": [
@@ -122,7 +122,7 @@
       "id": "line_kQ1FndPv3tM",
       "roleId": "role_nsjPD0zHc9g",
       "start": 7.4,
-      "end": 8.9,
+      "end": 9.1,
       "text": "No, no, Daddy.",
       "hint": "不，不是，爸爸。",
       "words": [
@@ -147,7 +147,7 @@
       "id": "line_a5e_NGiuE2g",
       "roleId": "role_vzHo-mLf8QQ",
       "start": 10.15,
-      "end": 11.15,
+      "end": 11.37,
       "text": "Have you just had a bath?",
       "hint": "你们刚洗完澡吗？",
       "words": [
@@ -187,7 +187,7 @@
       "id": "line_luLkDDddjeg",
       "roleId": "role_nsjPD0zHc9g",
       "start": 11.9,
-      "end": 14,
+      "end": 14.18,
       "text": "No, no.",
       "hint": "不，不是。",
       "words": [
@@ -207,7 +207,7 @@
       "id": "line_0fBBJkYulqE",
       "roleId": "role_vzHo-mLf8QQ",
       "start": 14.75,
-      "end": 20.2,
+      "end": 20.4,
       "text": "I know! You've been jumping in muddy puddles!",
       "hint": "我知道了！你们在泥坑里跳来跳去！",
       "words": [
@@ -257,7 +257,7 @@
       "id": "line_brRFuyabMB4",
       "roleId": "role_nsjPD0zHc9g",
       "start": 20.9,
-      "end": 24.6,
+      "end": 24.639,
       "text": "Yes, yes, Daddy! We've been jumping in muddy puddles!",
       "hint": "对，对，爸爸！我们在泥坑里跳来跳去！",
       "words": [
@@ -309,6 +309,12 @@
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Peppa Pig",
@@ -317,11 +323,5 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "内部原型测试；原上传 189.2–214.05 秒的节选。"
-  },
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
   }
 }

@@ -19,7 +19,8 @@
       "id": "role_biDyZtCKZuA",
       "name": "痞老板",
       "label": "痞老板",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     },
     {
       "id": "role_cGjaFVM0",
@@ -33,7 +34,7 @@
       "id": "line_lPkSfsE5Pvw",
       "roleId": "role_-6cZmGav",
       "start": 0.22,
-      "end": 3.162,
+      "end": 3.322,
       "text": "How many of you have played musical instruments before?",
       "hint": "你们有多少人以前演奏过乐器？",
       "words": [
@@ -88,7 +89,7 @@
       "id": "line_K345zIU8ZxA",
       "roleId": "role_biDyZtCKZuA",
       "start": 3.422,
-      "end": 5.283,
+      "end": 5.443,
       "text": "Do instruments of torture count?",
       "hint": "刑具算不算？",
       "words": [
@@ -123,7 +124,7 @@
       "id": "line_ypU-qMnk4tI",
       "roleId": "role_-6cZmGav",
       "start": 5.644,
-      "end": 5.924,
+      "end": 6.084,
       "text": "No.",
       "hint": "不算。",
       "words": [
@@ -138,7 +139,7 @@
       "id": "line_AcVCKOjFTA4",
       "roleId": "role_cGjaFVM0",
       "start": 6.344,
-      "end": 8.626,
+      "end": 8.786,
       "text": "Is mayonnaise an instrument?",
       "hint": "蛋黄酱是乐器吗？",
       "words": [
@@ -168,7 +169,7 @@
       "id": "line_F6s8FOKszm8",
       "roleId": "role_-6cZmGav",
       "start": 9.026,
-      "end": 11.668,
+      "end": 11.828,
       "text": "No, Patrick, mayonnaise is not an instrument.",
       "hint": "不是，派大星，蛋黄酱不是乐器。",
       "words": [
@@ -213,7 +214,7 @@
       "id": "line_8PKROFvEP_s",
       "roleId": "role_-6cZmGav",
       "start": 13.049,
-      "end": 14.99,
+      "end": 15.15,
       "text": "Horseradish is not an instrument either.",
       "hint": "辣根也不是乐器。",
       "words": [

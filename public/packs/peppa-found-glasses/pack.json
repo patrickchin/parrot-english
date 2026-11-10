@@ -33,7 +33,7 @@
       "id": "line_ggq9-44eKcg",
       "roleId": "role_JbjeUfpdQeo",
       "start": 0.2,
-      "end": 5,
+      "end": 5.2,
       "text": "Daddy Pig, you were sitting on them all the time!",
       "hint": "猪爸爸，你一直坐在眼镜上！",
       "words": [
@@ -93,7 +93,7 @@
       "id": "line_SEewejEfUoY",
       "roleId": "role_kG1Vhx3plc4",
       "start": 5.6,
-      "end": 6.15,
+      "end": 6.289,
       "text": "Oh!",
       "hint": "哦！",
       "words": [
@@ -108,7 +108,7 @@
       "id": "line__6Poa1PLtZY",
       "roleId": "role_Uivz-A7quiE",
       "start": 6.9,
-      "end": 9.6,
+      "end": 9.82,
       "text": "Silly Daddy!",
       "hint": "糊涂爸爸！",
       "words": [
@@ -128,7 +128,7 @@
       "id": "line_ze741oL_8vo",
       "roleId": "role_kG1Vhx3plc4",
       "start": 10.35,
-      "end": 14.6,
+      "end": 14.74,
       "text": "I don't know how they got there.",
       "hint": "我不知道眼镜怎么跑到那里了。",
       "words": [
@@ -170,6 +170,12 @@
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Peppa Pig",
@@ -178,11 +184,5 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "内部原型测试；原上传 243.15–258.15 秒的节选。"
-  },
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
   }
 }

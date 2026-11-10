@@ -3,11 +3,11 @@
   "id": "pack_kuOni4tB",
   "title": "我没有不开心！",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 11.762,
-  "video": "today-is-a-gift-review-ac73b94aec23.mp4",
+  "duration": 12.054,
+  "video": "today-is-a-gift-review-f697ac5d1902.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/today-is-a-gift/",
-  "poster": "today-is-a-gift-poster-ac73b94aec23.jpg",
-  "waveform": "waveform-ac73b94aec23.json",
+  "poster": "today-is-a-gift-poster-f697ac5d1902.jpg",
+  "waveform": "waveform-f697ac5d1902.json",
   "roles": [
     {
       "id": "role__OrFsrNE",
@@ -27,7 +27,7 @@
       "id": "line_lrafJLEP1oU",
       "roleId": "role__OrFsrNE",
       "start": 0.3,
-      "end": 4.324,
+      "end": 4.484,
       "text": "I understand. You eat when you are upset.",
       "hint": "我理解。你不开心的时候就会吃东西。",
       "words": [
@@ -77,7 +77,7 @@
       "id": "line_9XnFPzJGlxY",
       "roleId": "role_-aBSnmfkqjk",
       "start": 5.224,
-      "end": 8.447,
+      "end": 8.607,
       "text": "Upset? I'm not upset. What makes you think I'm upset?",
       "hint": "不开心？我没有不开心。你为什么觉得我不开心？",
       "words": [
@@ -137,7 +137,7 @@
       "id": "line_IFL8OkZrTEk",
       "roleId": "role__OrFsrNE",
       "start": 10.169,
-      "end": 11.75,
+      "end": 11.95,
       "text": "So why are you upset?",
       "hint": "那么，你为什么不开心？",
       "words": [
@@ -182,6 +182,6 @@
     "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=0s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 0.25–12 秒的节选。The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+    "changes": "内部原型测试；原上传 0.25–12.3 秒的节选。The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
   }
 }

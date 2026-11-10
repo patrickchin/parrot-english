@@ -3,11 +3,11 @@
   "id": "pack_4ds3OMdO",
   "title": "吼一声嘛！",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 16.058,
-  "video": "do-the-roar-review-d24fce01f3e4.mp4",
+  "duration": 16.433,
+  "video": "do-the-roar-review-4592e0d9dfc6.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/do-the-roar/",
-  "poster": "do-the-roar-poster-d24fce01f3e4.jpg",
-  "waveform": "waveform-d24fce01f3e4.json",
+  "poster": "do-the-roar-poster-4592e0d9dfc6.jpg",
+  "waveform": "waveform-4592e0d9dfc6.json",
   "roles": [
     {
       "id": "role_fQeXDxQ7A-I",
@@ -31,7 +31,8 @@
       "id": "role_c6niQ-oI2rA",
       "name": "菲奥娜",
       "label": "菲奥娜",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     }
   ],
   "lines": [
@@ -39,7 +40,7 @@
       "id": "line_Wp2M0OmupMM",
       "roleId": "role_fQeXDxQ7A-I",
       "start": 0.24,
-      "end": 5.183,
+      "end": 5.343,
       "text": "Excuse me, Mr. Shrek. Could you do that ogre roar of yours for my son? He's a big, big fan.",
       "hint": "打扰了，史莱克先生。可以为我儿子表演一下怪物吼叫吗？他是你的超级粉丝。",
       "words": [
@@ -149,7 +150,7 @@
       "id": "line_aDqrvyqYeW8",
       "roleId": "role_Kx8gM4db",
       "start": 5.644,
-      "end": 6.304,
+      "end": 6.424,
       "text": "Do the roar.",
       "hint": "吼一声嘛。",
       "words": [
@@ -174,7 +175,7 @@
       "id": "line_K1tsj2qrHFs",
       "roleId": "role_HxBpf2F4gNA",
       "start": 6.444,
-      "end": 9.706,
+      "end": 9.726,
       "text": "You know, I'd rather not. It's my kids' birthday party.",
       "hint": "我还是不想。这是我孩子们的生日聚会。",
       "words": [
@@ -259,7 +260,7 @@
       "id": "line_YZNdGHZUjkM",
       "roleId": "role_HxBpf2F4gNA",
       "start": 11.527,
-      "end": 13.268,
+      "end": 13.428,
       "text": "Honey, why don't you go check on the cake?",
       "hint": "亲爱的，你去看看蛋糕好吗？",
       "words": [
@@ -314,7 +315,7 @@
       "id": "line_fdbdWfUSHxE",
       "roleId": "role_c6niQ-oI2rA",
       "start": 13.669,
-      "end": 16.05,
+      "end": 16.23,
       "text": "Sure. And don't forget the candles.",
       "hint": "好。别忘了蜡烛。",
       "words": [
@@ -364,6 +365,6 @@
     "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg&t=14s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 14.5–30.55 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    "changes": "内部原型测试；原上传 14.5–30.9 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

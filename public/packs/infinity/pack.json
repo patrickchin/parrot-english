@@ -27,7 +27,7 @@
       "id": "line_HxHP0CUYMqE",
       "roleId": "role_jPzYR5J6EIU",
       "start": 0.24,
-      "end": 1.241,
+      "end": 1.401,
       "text": "No, you can't.",
       "hint": "不，你不会。",
       "words": [
@@ -52,7 +52,7 @@
       "id": "line_jekLQotZxp0",
       "roleId": "role_a9_OwCFQ",
       "start": 2.042,
-      "end": 3.283,
+      "end": 3.343,
       "text": "Yes, I can.",
       "hint": "不，我会。",
       "words": [
@@ -112,7 +112,7 @@
       "id": "line_SXR8w07PFd4",
       "roleId": "role_a9_OwCFQ",
       "start": 6.055,
-      "end": 8.487,
+      "end": 8.647,
       "text": "I tell you, I could fly around this room with my eyes closed.",
       "hint": "告诉你，我闭着眼睛都能绕着房间飞。",
       "words": [
@@ -187,7 +187,7 @@
       "id": "line_m0O_CRl25-E",
       "roleId": "role_jPzYR5J6EIU",
       "start": 8.667,
-      "end": 10.769,
+      "end": 10.849,
       "text": "Okay, then, Mr. Lightyear. Prove it.",
       "hint": "那好吧，光年先生。证明给我看。",
       "words": [
@@ -227,7 +227,7 @@
       "id": "line_czHEV1TQZVg",
       "roleId": "role_a9_OwCFQ",
       "start": 10.869,
-      "end": 13.531,
+      "end": 13.691,
       "text": "All right, then I will. Stand back, everyone.",
       "hint": "好，我来证明。大家往后站。",
       "words": [
@@ -277,7 +277,7 @@
       "id": "line_CfgXeUF6r2k",
       "roleId": "role_a9_OwCFQ",
       "start": 21.818,
-      "end": 24.64,
+      "end": 24.8,
       "text": "To infinity and beyond!",
       "hint": "飞向宇宙，浩瀚无垠！",
       "words": [

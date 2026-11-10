@@ -48,6 +48,13 @@
   Preserve names supplied by a learner or guardian. Keep visible text, artwork,
   and saved audio consistent when an authored name changes.
 - Do not use local, browser, or macOS system text-to-speech for any audio.
+- Verify authored speakers against the source performance, including off-screen
+  lines and speaker changes within a draft turn. Keep incidental speakers in the
+  original audio; mark their roles `selectable: false` when they offer too little
+  useful practice. Do not automatically exclude every one-line role.
+- Check cuts against the uncut source and retain complete final syllables with a
+  natural release where possible. Alignment inside an already-truncated window
+  cannot prove completeness. Keep the next speaker out of per-line prompts.
 
 ## Verification and screenshots
 

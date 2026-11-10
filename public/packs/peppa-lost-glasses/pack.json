@@ -33,7 +33,7 @@
       "id": "line_7cZvUgsw9JY",
       "roleId": "role_GZ118819nuE",
       "start": 0.15,
-      "end": 2.3,
+      "end": 2.52,
       "text": "Somebody must have put my glasses somewhere.",
       "hint": "一定有人把我的眼镜放到什么地方了。",
       "words": [
@@ -78,7 +78,7 @@
       "id": "line_7DqKV9u1qiA",
       "roleId": "role_zYkp26hxuB0",
       "start": 2.9,
-      "end": 5.95,
+      "end": 6.09,
       "text": "Do you remember where you last put them, Daddy Pig?",
       "hint": "猪爸爸，你记得上次把眼镜放在哪里了吗？",
       "words": [
@@ -138,7 +138,7 @@
       "id": "line_dY-w2zsBoso",
       "roleId": "role_GZ118819nuE",
       "start": 6.35,
-      "end": 11.25,
+      "end": 11.309,
       "text": "When I don't wear them, I always put them in my pocket. But they aren't there now.",
       "hint": "不戴的时候，我总把眼镜放在口袋里。可是现在不在里面。",
       "words": [
@@ -233,7 +233,7 @@
       "id": "line_RtqOB8WD11k",
       "roleId": "role_SAm7j7Q6lfE",
       "start": 11.65,
-      "end": 15.15,
+      "end": 15.35,
       "text": "Daddy, can we help find your glasses?",
       "hint": "爸爸，我们帮你找眼镜好吗？",
       "words": [
@@ -278,7 +278,7 @@
       "id": "line_Nydc6JXFTYM",
       "roleId": "role_zYkp26hxuB0",
       "start": 15.55,
-      "end": 20.25,
+      "end": 20.47,
       "text": "Good idea, Peppa. If you find them, Daddy will stop being so grumpy.",
       "hint": "好主意，佩奇。找到眼镜，爸爸就不会这么暴躁了。",
       "words": [
@@ -353,7 +353,7 @@
       "id": "line_G7O1_ohTGSY",
       "roleId": "role_GZ118819nuE",
       "start": 20.65,
-      "end": 22,
+      "end": 22.18,
       "text": "I'm not grumpy!",
       "hint": "我才没有暴躁呢！",
       "words": [
@@ -375,6 +375,12 @@
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Peppa Pig",
@@ -383,11 +389,5 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "内部原型测试；原上传 108.15–130.5 秒的节选。"
-  },
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
   }
 }
