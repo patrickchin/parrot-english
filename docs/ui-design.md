@@ -7,6 +7,11 @@ sentence, and listen/record actions prominent. Match the visual
 reference while preserving the real video aspect ratio, role choice, line skipping,
 retry, completed-take playback, errors, consent, and explicit session reset.
 
+The picture frame follows the source video's metadata instead of stretching to
+fill the viewport height. Fit the picture and its 44px neutral control strip
+within the available player cell; keep unused space outside the frame. Use a
+16:9 placeholder until metadata loads, and preserve the whole picture without cropping.
+
 The requested “sound profile” means the original and learner waveforms with a
 moving playhead, rather than music, UI sounds, voice filters, or scoring.
 

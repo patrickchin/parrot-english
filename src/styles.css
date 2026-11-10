@@ -50,8 +50,10 @@ button:disabled { cursor: not-allowed; }
 .player-shell { height: 100svh; min-height: 640px; display: flex; flex-direction: column; }
 .player-shell > header { width: 100%; flex: none; padding-block: 8px; }
 .player-main { width: 100%; max-width: 1280px; margin-inline: auto; padding: 0 16px; flex: 1; min-height: min-content; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(140px, 1fr) auto; gap: 8px; }
-.player-video { display: flex; flex-direction: column; flex: 1; min-height: 140px; }
-.player-screen { flex: 1; min-height: 0; }
+.player-video { display: flex; align-items: center; justify-content: center; min-height: 140px; container-type: size; }
+/* Fit the actual picture plus its controls inside the available grid cell. */
+.player-frame { flex: none; width: min(100%, calc((100cqh - 46px) * var(--video-aspect) + 2px)); }
+.player-screen { aspect-ratio: var(--video-aspect); }
 .player-transport { flex: none; height: 44px; }
 .player-transport button { height: 44px; }
 .player-workspace { flex: none; min-width: 0; }
