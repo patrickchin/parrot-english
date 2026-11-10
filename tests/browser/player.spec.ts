@@ -45,7 +45,6 @@ test('records three real fake-microphone takes, retries, replays, and clears the
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   for (let i = 0; i < 3; i++) {
     await page.getByRole('button', { name: '开始录音', exact: true }).click();
-    if (i === 0) await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
     await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
     if (i === 0) {
@@ -81,7 +80,6 @@ test('denied microphone permission has a retry path without losing the selected 
   await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('麦克风还没开启');
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
   await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
@@ -110,7 +108,6 @@ test('silent input is rejected instead of marking the line complete', async ({ p
   await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('没听到清楚的声音', { timeout: 12000 });
   await expect(page.getByText('已完成 0 / 3 句', { exact: true })).toHaveCount(1);
   await expect(page.getByRole('button', { name: '下一句', exact: true })).toBeDisabled();
@@ -124,7 +121,6 @@ test('cancelling a pending microphone request stops a late stream', async ({ pag
   await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
   const stopped = await page.evaluate(async () => {
     const context = new AudioContext();

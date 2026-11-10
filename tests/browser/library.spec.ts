@@ -42,7 +42,6 @@ for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'may
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 15000 });
 });
@@ -146,7 +145,7 @@ test('the retired sample route returns to the meme library', async ({ page }) =>
   expect(sampleRequests).toEqual([]);
 });
 
-test('shadcn view controls support arrow keys and consent restores focus without requesting the microphone', async ({ page }) => {
+test('shadcn view controls support arrow keys and help restores focus without requesting the microphone', async ({ page }) => {
   await page.addInitScript(() => {
     (window as unknown as { micRequests: number }).micRequests = 0;
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {
@@ -165,18 +164,48 @@ test('shadcn view controls support arrow keys and consent restores focus without
   await expect(list).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  const record = page.getByRole('button', { name: '开始录音', exact: true });
-  await record.click();
-  const consent = page.getByRole('dialog', { name: '准备好麦克风了吗？', exact: true });
-  await expect(consent).toBeVisible();
-  const agree = consent.getByRole('button', { name: '同意并开始录音', exact: true });
-  await agree.focus();
-  await agree.press('Tab');
-  await expect(consent.getByRole('button', { name: '暂时不录', exact: true })).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(agree).toBeFocused();
+  const help = page.getByRole('button', { name: '怎么配音？', exact: true });
+  await help.click();
+  const dialog = page.getByRole('dialog', { name: '给电影，换上你的声音。', exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('儿童使用前，请由监护人了解并同意录音用途。');
+  const close = dialog.getByRole('button', { name: '知道了', exact: true });
+  await close.focus();
+  await close.press('Tab');
+  await expect(close).toBeFocused();
   await page.keyboard.press('Escape');
-  await expect(consent).toBeHidden();
-  await expect(record).toBeFocused();
+  await expect(dialog).toBeHidden();
+  await expect(help).toBeFocused();
   expect(await page.evaluate(() => (window as unknown as { micRequests: number }).micRequests)).toBe(0);
+});
+
+test('record requests the microphone directly across scenes, retries and session resets', async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as unknown as { micRequests: number }).micRequests = 0;
+    Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: {
+      getUserMedia: async () => { (window as unknown as { micRequests: number }).micRequests++; throw new DOMException('Denied', 'NotAllowedError'); },
+    } });
+  });
+  const requests = () => page.evaluate(() => (window as unknown as { micRequests: number }).micRequests);
+  await page.goto('/');
+  let count = 0;
+  for (const clip of [clips[0], clips[1], clips[0]]) {
+    await page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true }).click();
+    await page.getByRole('button', { name: '开始配音', exact: true }).click();
+    expect(await requests()).toBe(count);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await page.getByRole('button', { name: '开始录音', exact: true }).click();
+      await expect(page.getByRole('alert')).toContainText('麦克风还没开启');
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      expect(await requests()).toBe(++count);
+    }
+    await page.getByRole('button', { name: '重新开始', exact: true }).click();
+    await page.getByRole('button', { name: '清空录音，重新开始', exact: true }).click();
+    await page.getByRole('button', { name: '开始配音', exact: true }).click();
+    await page.getByRole('button', { name: '开始录音', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('麦克风还没开启');
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    expect(await requests()).toBe(++count);
+    await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  }
 });

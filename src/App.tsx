@@ -45,8 +45,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   const takesRef = useRef<Takes>({});
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [hint, setHint] = useState(true);
-  const [consent, setConsent] = useState(false);
-  const [modal, setModal] = useState<'help' | 'details' | 'record' | 'reset' | null>(null);
+  const [modal, setModal] = useState<'help' | 'details' | 'reset' | null>(null);
   const [videoReady, setVideoReady] = useState(false);
   const [videoAspect, setVideoAspect] = useState(16 / 9);
   const [localVideo, setLocalVideo] = useState<string>();
@@ -79,7 +78,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   function reset() {
     media.stop(); media.setError('');
     Object.values(takesRef.current).forEach(t => URL.revokeObjectURL(t.url));
-    takesRef.current = {}; setTakes({}); setSkipped(new Set()); setLineIndex(0); setStep('choose'); setConsent(false); setModal(null);
+    takesRef.current = {}; setTakes({}); setSkipped(new Set()); setLineIndex(0); setStep('choose'); setModal(null);
     if (video.current) video.current.currentTime = 0;
     if (returnToLibrary) { setReturnToLibrary(false); onBack(); }
   }
@@ -91,10 +90,6 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
     const url = URL.createObjectURL(file); localVideoRef.current = url; setLocalVideo(url);
   }
   function chooseLine(index: number) { media.stop(); media.setError(''); setLineIndex(index); }
-  function startRecording() {
-    if (!consent) { setModal('record'); return; }
-    void media.record(line);
-  }
   function nextLine() {
     media.stop(); media.setError('');
     if (lineIndex < rolesLines.length - 1) setLineIndex(n => n + 1);
@@ -152,7 +147,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
           </div>
           <div className="practice-actions" role="group" aria-label={t("配音操作")}>
             <Button tone="quiet" aria-label={t("听这一句原声")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("听原声")}</Button>
-            {media.phase === 'recording' ? <Button tone="danger" onClick={media.finish}><Icon name="stop" />{t("停止录音")}</Button> : busy ? <Button tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("取消") : t("停止播放")}</Button> : <Button tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("重新录这一句") : t("开始录音")} disabled={!videoReady} onClick={startRecording}><Icon name="mic" />{currentTake ? t("重录") : t("开始录音")}</Button>}
+            {media.phase === 'recording' ? <Button tone="danger" onClick={media.finish}><Icon name="stop" />{t("停止录音")}</Button> : busy ? <Button tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("取消") : t("停止播放")}</Button> : <Button tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("重新录这一句") : t("开始录音")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("重录") : t("开始录音")}</Button>}
             <Button tone={currentTake ? 'primary' : 'quiet'} aria-label={t("听我的录音")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("听我的录音")}</Button>
             <Button tone={currentTake || skipped.has(line.id) ? 'record' : 'quiet'} disabled={busy || (!currentTake && !skipped.has(line.id))} onClick={nextLine}>{lineIndex === rolesLines.length - 1 && allDone ? t("看我的配音") : lineIndex === rolesLines.length - 1 ? t("继续配音") : t("下一句")}<Icon name="arrow" /></Button>
 
@@ -174,9 +169,8 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
 
     <Dialog open={modal !== null} onOpenChange={open => { if (!open) setModal(null); }}>
       <DialogContent showCloseButton={false} className="block max-h-[90dvh] overflow-y-auto p-6 sm:max-w-md">
-      {modal === 'help' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("给电影，换上你的声音。")}</DialogTitle><ol className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground"><li><strong className="text-ink">{t("1. 选角色。")}</strong>{t("先看一遍电影，再选想演的人。")}</li><li><strong className="text-ink">{t("2. 一句一句录。")}</strong>{t("听原声，点录音就开口。说完就点停止。")}</li><li><strong className="text-ink">{t("3. 看你的版本。")}</strong>{t("别的角色保留原声，你的角色换成你的录音。")}</li></ol><p className="mt-5 text-xs leading-6 text-muted-foreground">{t("最好戴上耳机。绿色是原声波形，橙色是你的声音；指针表示当前时间。波形显示声音强弱，不代表发音得分；原声也包含影片的音乐和音效。录音不会上传，关闭或刷新页面会清空。手机请用 Safari 或 Chrome；微信内录音尚未验证。")}</p><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("知道了")}</Button></>}
+      {modal === 'help' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("给电影，换上你的声音。")}</DialogTitle><ol className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground"><li><strong className="text-ink">{t("1. 选角色。")}</strong>{t("先看一遍电影，再选想演的人。")}</li><li><strong className="text-ink">{t("2. 一句一句录。")}</strong>{t("听原声，点录音就开口。说完就点停止。")}</li><li><strong className="text-ink">{t("3. 看你的版本。")}</strong>{t("别的角色保留原声，你的角色换成你的录音。")}</li></ol><p className="mt-5 text-xs leading-6 text-muted-foreground">{t("最好戴上耳机。绿色是原声波形，橙色是你的声音；指针表示当前时间。波形显示声音强弱，不代表发音得分；原声也包含影片的音乐和音效。录音不会上传，关闭或刷新页面会清空。手机请用 Safari 或 Chrome；微信内录音尚未验证。")}</p><p className="mt-3 text-xs leading-6 text-muted-foreground">{t("当前供你和同事测试。儿童使用前，请由监护人了解并同意录音用途。")}</p><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("知道了")}</Button></>}
       {modal === 'details' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("片段与来源")}</DialogTitle><div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground"><p>{pack.credit.title}</p><p>{pack.credit.attribution} · <a href={pack.credit.licenceUrl} target="_blank" rel="noreferrer" className="underline">{t(pack.credit.licence)}</a> · <a href={pack.credit.source} target="_blank" rel="noreferrer" className="underline">{t("观看原片")}</a></p><p>{t(pack.credit.changes)}</p><p>{pack.mode === 'local' ? t("此片段从你的设备读取，未上传；公开发布前需确认相应授权。") : t("本片段用于成人原型测试；完整电影并非儿童入门教材。")}{t("创作者未对本产品作出背书。")}</p></div><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("关闭")}</Button></>}
-      {modal === 'record' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("准备好麦克风了吗？")}</DialogTitle><DialogDescription className="mt-4 text-sm leading-7 text-muted-foreground">{t("接下来浏览器会询问麦克风权限。录音只在本次页面里使用，不会上传；刷新或关闭后就会清空。")}</DialogDescription><p className="mt-3 text-xs leading-6 text-muted-foreground">{t("当前供你和同事测试。儿童使用前，请由监护人了解并同意录音用途。")}</p><Button className="mt-6 w-full" onClick={() => { setConsent(true); setModal(null); void media.record(line); }}>{t("同意并开始录音")}</Button><Button tone="quiet" className="mt-3 w-full" onClick={() => setModal(null)}>{t("暂时不录")}</Button></>}
       {modal === 'reset' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("重新开始一场？")}</DialogTitle><DialogDescription className="mt-4 text-sm leading-7 text-muted-foreground">{t(returnToLibrary ? '这会清空本次所有录音，返回片段列表。清空后无法找回。' : '这会清空本次所有录音，返回选择角色。清空后无法找回。')}</DialogDescription><Button className="mt-6 w-full" onClick={reset}>{t("清空录音，重新开始")}</Button><Button tone="quiet" className="mt-3 w-full" onClick={() => setModal(null)}>{t("保留录音，继续玩")}</Button></>}
     </DialogContent>
     </Dialog>

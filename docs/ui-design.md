@@ -5,7 +5,12 @@ coral recording controls, and a compact shared header. Desktop uses an action
 rail; phones use four large actions in two rows. Keep the video, current
 sentence, and listen/record actions prominent. Match the visual
 reference while preserving the real video aspect ratio, role choice, line skipping,
-retry, completed-take playback, errors, consent, and explicit session reset.
+retry, completed-take playback, errors, and explicit session reset.
+
+Record starts microphone capture directly, without an app permission dialog on
+each scene or reset. The browser handles microphone access when needed. Keep
+the local-recording notice in the footer and guardian guidance in Help; guardian
+authorization before child use remains part of the planned grown-up setup.
 
 The picture frame follows the source video's metadata instead of stretching to
 fill the viewport height. Fit the picture and its 44px neutral control strip

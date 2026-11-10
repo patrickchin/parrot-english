@@ -52,7 +52,6 @@ test('capture is ready before the picture and preserves the opening sound throug
   const pack = await (await page.request.get('/packs/onions/pack.json')).json();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   const stop = page.getByRole('button', { name: '停止录音', exact: true });
   await expect(stop).toBeVisible();
   expect(await page.evaluate(() => (window as Window & { captureAtPlay?: boolean }).captureAtPlay)).toBe(true);
@@ -120,7 +119,6 @@ test('cancelling while recorder startup is pending keeps the picture paused and 
   await page.goto('/#onions');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as Window & { pendingCapture?: boolean }).pendingCapture)).toBe(true);
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(page.locator('video')).toHaveJSProperty('paused', true);

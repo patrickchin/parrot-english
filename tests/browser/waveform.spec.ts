@@ -18,7 +18,6 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.15);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible({ timeout: 1500 });
   await expect(page.locator('video')).toHaveJSProperty('paused', false);
   await expect(page.locator('video')).toHaveJSProperty('muted', true);
