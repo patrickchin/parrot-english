@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  '切换到浅色模式': 'Switch to light mode',
+  '切换到深色模式': 'Switch to dark mode',
   '选一幕，听原声，换上你的声音。': 'Pick a scene. Hear it. Make it yours.',
   '片段库': 'Scene library',
   '{0} 个片段': '{0} scenes',

@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 test('the simplified shelf keeps scenes, help, privacy and source details accessible', async ({ page }, info) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: '今天，给谁配音？' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
   for (const clip of memeClips) {
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
@@ -31,7 +31,7 @@ test('the simplified shelf keeps scenes, help, privacy and source details access
   await expect(page.getByRole('dialog').getByRole('link', { name: '观看原片' })).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: '今天，给谁配音？' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
 });
 
 for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'mayonnaise'].includes(c.slug))]) test(`hosted clip ${clip.slug} can play and record a turn`, async ({ page, browserName }) => {
@@ -140,7 +140,7 @@ test('the retired sample route returns to the meme library', async ({ page }) =>
   const sampleRequests: string[] = [];
   page.on('request', request => { if (request.url().includes('/packs/sintel/')) sampleRequests.push(request.url()); });
   await page.goto('/#sintel');
-  await expect(page.getByRole('heading', { level: 1, name: '今天，给谁配音？' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(24);
   expect(sampleRequests).toEqual([]);
 });

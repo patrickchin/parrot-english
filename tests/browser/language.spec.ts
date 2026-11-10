@@ -10,7 +10,7 @@ const selector = (page: import('@playwright/test').Page) => page.getByRole('comb
 test('UI language persists across navigation and reload while English dialogue and Chinese hints stay independent', async ({ page }, info) => {
   await page.goto('/');
   await selector(page).selectOption('en');
-  await expect(page.getByRole('heading', { level: 1, name: 'Who will you voice today?' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'No, this is Patrick!' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await page.getByRole('button', { name: 'Choose scene: No, this is Patrick!', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
@@ -44,7 +44,7 @@ test('UI language persists across navigation and reload while English dialogue a
   await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
   await page.reload();
   await expect(selector(page)).toHaveValue('en');
-  await expect(page.getByRole('heading', { name: 'Who will you voice today?' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'No, this is Patrick!' })).toBeVisible();
 });
 
 test('switching language during recording keeps the take, waveform and replay', async ({ page, browserName }) => {
