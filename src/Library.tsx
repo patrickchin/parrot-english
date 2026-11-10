@@ -22,13 +22,17 @@ export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
   };
   const clearSearch = () => { setQuery(''); search.current?.focus(); };
   const visible = memeClips.filter(clip => [clip.title, t(clip.title), clip.english, clip.note].join(' ').toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const featured = memeClips[0];
   return <div className="library-shell min-h-dvh bg-paper text-ink">
     <AppHeader onHelp={() => setHelp(v => !v)} helpExpanded={help} helpControls="library-help" />
     <main className="library-main">
-      <div className="library-intro">
-        <h1 className="font-display">{t('今天，给谁配音？')}</h1>
-        <p>{t('选一幕，听原声，换上你的声音。')}</p>
-      </div>
+      <section className="library-feature" aria-labelledby="featured-scene-title">
+        <div className="library-feature-copy">
+          <h1 id="featured-scene-title" className="font-display">{t(featured.title)}</h1>
+          <Button onClick={() => onChoose(featured.slug)} className="h-12 gap-3 px-6 text-base font-semibold">{t('开始配音')}<Icon name="arrow" /></Button>
+        </div>
+        <img src={`${mediaRoot}${featured.slug}/${featured.slug}-poster-v1.jpg`} alt="" fetchPriority="high" />
+      </section>
       {help && <aside id="library-help" className="library-help" aria-label={t('怎么配音？')}>
         <h2>{t('给电影，换上你的声音。')}</h2>
         <p>{t('选片段 → 选角色 → 听原声 → 一句一句录 → 看你的版本。')}</p>
@@ -48,11 +52,10 @@ export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
         </div>
         {!visible.length && <Card className="library-empty"><p role="status">{t('没有找到片段。')}</p><p>{t('换个片名，或试试记得的那句台词。')}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t('查看全部片段')}<Icon name="arrow" /></Button></Card>}
         <ul role="list" className="scene-shelf" data-view={view}>{visible.map(clip => <li key={clip.slug}>
-          <Card className="scene-card gap-0 py-0"><button onClick={() => onChoose(clip.slug)} aria-label={t('选择片段：{0}', t(clip.title))} className="scene-select">
+          <button onClick={() => onChoose(clip.slug)} aria-label={t('选择片段：{0}', t(clip.title))} className="scene-select">
             <img src={`${mediaRoot}${clip.slug}/${clip.slug}-poster-v1.jpg`} alt="" loading="lazy" decoding="async" />
             <span className="scene-copy"><span role="heading" aria-level={2} className="scene-title font-display">{t(clip.title)}</span><span lang="en" className="scene-line">{clip.english}</span></span>
-            <Icon name="play" className="scene-play" />
-          </button></Card>
+          </button>
         </li>)}</ul>
       </section>
       <p className="library-notice">{t('成人原型测试 · 录音不上传，关闭或刷新清空。影视梗片段尚未确认再分发许可。')}</p>
