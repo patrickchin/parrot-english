@@ -32,7 +32,6 @@ test('replay reuses decoded takes and aligns a rendered audio transient with the
   const line = pack.lines[0];
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针' });
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(1.1);

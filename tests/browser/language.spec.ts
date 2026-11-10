@@ -52,7 +52,6 @@ test('switching language during recording keeps the take, waveform and replay', 
   await page.goto('/#patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
-  await page.getByRole('button', { name: '同意并开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
   await selector(page).selectOption('en');
   await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled({ timeout: 15000 });
@@ -63,7 +62,7 @@ test('switching language during recording keeps the take, waveform and replay', 
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
 });
 
-test('language works without local storage and translates consent and microphone errors', async ({ page }) => {
+test('language works without local storage and translates recording guidance and microphone errors', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Unavailable', 'SecurityError'); } });
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new DOMException('Denied', 'NotAllowedError'); } } });
@@ -72,8 +71,8 @@ test('language works without local storage and translates consent and microphone
   await selector(page).selectOption('en');
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
-  await expect(page.getByRole('dialog')).toContainText('Recordings are used only on this page and are not uploaded.');
-  await page.getByRole('button', { name: 'Agree and record', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('No uploads · Clears on close', { exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toContainText('Microphone access is off.');
   await selector(page).selectOption('zh-CN');
   await expect(page.getByRole('alert')).toContainText('麦克风还没开启。');
