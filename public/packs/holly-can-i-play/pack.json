@@ -27,7 +27,7 @@
       "id": "line_WO0CQittTTA",
       "roleId": "role_iNuzpzccAUs",
       "start": 0.2,
-      "end": 5.3,
+      "end": 5.4,
       "text": "But Nanny Plum, I was going to play with Ben.",
       "hint": "可是梅姨，我本来打算和本一起玩。",
       "words": [
@@ -87,7 +87,7 @@
       "id": "line_Hyo5gssiybw",
       "roleId": "role_BIwW3pMFQ_o",
       "start": 6.15,
-      "end": 11.3,
+      "end": 11.5,
       "text": "Princess Holly, there's a time for playing with elves and a time for wand practice.",
       "hint": "霍莉公主，和精灵玩有玩的时间，练习魔法棒有练习的时间。",
       "words": [
@@ -172,7 +172,7 @@
       "id": "line_CANQhpi211w",
       "roleId": "role_iNuzpzccAUs",
       "start": 12.55,
-      "end": 15.8,
+      "end": 15.83,
       "text": "Please, Nanny. I promise to practise later.",
       "hint": "求你了，梅姨。我保证待会儿练习。",
       "words": [
@@ -267,7 +267,7 @@
       "id": "line_mgUyJDQnK_4",
       "roleId": "role_iNuzpzccAUs",
       "start": 19.66,
-      "end": 21.4,
+      "end": 21.58,
       "text": "Thanks, Nanny. Bye!",
       "hint": "谢谢梅姨。再见！",
       "words": [
@@ -289,6 +289,12 @@
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Ben and Holly’s Little Kingdom",
@@ -297,11 +303,5 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "内部原型测试；原上传 12.2–33.85 秒的节选。"
-  },
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
   }
 }

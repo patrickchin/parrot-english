@@ -13,7 +13,8 @@
       "id": "role_ac_suThrxnA",
       "name": "玛戈",
       "label": "玛戈",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     },
     {
       "id": "role_mZOwX2ys",
@@ -39,7 +40,7 @@
       "id": "line_dMLZ1IGcbEU",
       "roleId": "role_ac_suThrxnA",
       "start": 0.44,
-      "end": 1.161,
+      "end": 1.341,
       "text": "She hit that!",
       "hint": "她打中了！",
       "words": [
@@ -64,7 +65,7 @@
       "id": "line_LGeBJ-DQIqE",
       "roleId": "role_AmEQPuK-wqk",
       "start": 1.821,
-      "end": 3.182,
+      "end": 3.362,
       "text": "I saw that with my own eyes!",
       "hint": "我亲眼看到的！",
       "words": [
@@ -109,7 +110,7 @@
       "id": "line_xedvIDLo96E",
       "roleId": "role_2YM2UXibtNQ",
       "start": 3.442,
-      "end": 7.565,
+      "end": 7.725,
       "text": "Let me explain something to you. You see how it's not knocked over?",
       "hint": "让我给你解释一下。看见了吗？它没有倒下。",
       "words": [
@@ -184,7 +185,7 @@
       "id": "line_KxCliJfbErE",
       "roleId": "role_AmEQPuK-wqk",
       "start": 8.005,
-      "end": 15.47,
+      "end": 15.63,
       "text": "Okay. My turn.",
       "hint": "好吧。轮到我了。",
       "words": [
@@ -209,7 +210,7 @@
       "id": "line_Gu4xvkZ4xUI",
       "roleId": "role_AmEQPuK-wqk",
       "start": 27.038,
-      "end": 29.019,
+      "end": 29.179,
       "text": "Knocked over!",
       "hint": "打倒了！",
       "words": [
@@ -229,7 +230,7 @@
       "id": "line_lQMC9DBhNwo",
       "roleId": "role_mZOwX2ys",
       "start": 29.479,
-      "end": 30.68,
+      "end": 30.7,
       "text": "It's so fluffy!",
       "hint": "太毛茸茸了！",
       "words": [

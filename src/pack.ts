@@ -1,4 +1,4 @@
-export type Role = { id: string; name: string; label: string; portrait?: string; hint: string };
+export type Role = { id: string; name: string; label: string; portrait?: string; hint: string; selectable?: boolean };
 export type TimedWord = { text: string; start: number; end: number };
 export type Line = { id: string; roleId: string; start: number; end: number; text: string; hint: string; words?: TimedWord[] };
 export type Pack = {
@@ -24,7 +24,9 @@ export function validatePack(value: unknown, base = packRoot): Pack {
   const ids = new Set<string>();
   for (const role of p.roles) {
     if (!role || !/^role_[\w-]+$/.test(role.id) || ids.has(role.id) ||
-        (role.portrait !== undefined && !safeFile(role.portrait)) || ![role.name, role.label, role.hint].every(v => typeof v === 'string' && v.length < 120)) throw new Error('角色资料有误。');
+        (role.portrait !== undefined && !safeFile(role.portrait)) ||
+        (role.selectable !== undefined && typeof role.selectable !== 'boolean') ||
+        ![role.name, role.label, role.hint].every(v => typeof v === 'string' && v.length < 120)) throw new Error('角色资料有误。');
     ids.add(role.id);
   }
   const lineIds = new Set<string>();
@@ -47,6 +49,7 @@ export function validatePack(value: unknown, base = packRoot): Pack {
     }
     end = line.end; lineIds.add(line.id);
   }
+  if (!p.roles.some(role => role.selectable !== false) || p.roles.some(role => role.selectable !== false && !p.lines.some(line => line.roleId === role.id))) throw new Error('角色资料有误。');
   if (!p.credit || ![p.credit.title, p.credit.attribution, p.credit.source, p.credit.licence, p.credit.licenceUrl, p.credit.changes].every(v => typeof v === 'string' && v.length < 1000) ||
       ![p.credit.source, p.credit.licenceUrl].every(v => /^https:\/\//.test(v))) throw new Error('片段来源资料不完整。');
   return { ...p, base };

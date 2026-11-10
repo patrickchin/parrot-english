@@ -3,11 +3,11 @@
   "id": "pack_uDawiVCK",
   "title": "微笑，挥挥手！",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 26.367,
-  "video": "smile-and-wave-review-cfe405f0e236.mp4",
+  "duration": 26.7,
+  "video": "smile-and-wave-review-6f22ee3b0bb0.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/smile-and-wave/",
-  "poster": "smile-and-wave-poster-cfe405f0e236.jpg",
-  "waveform": "waveform-cfe405f0e236.json",
+  "poster": "smile-and-wave-poster-6f22ee3b0bb0.jpg",
+  "waveform": "waveform-6f22ee3b0bb0.json",
   "roles": [
     {
       "id": "role_y89zbrnV",
@@ -25,7 +25,8 @@
       "id": "role_48Y-QZ9fhhE",
       "name": "菜鸟",
       "label": "菜鸟",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     }
   ],
   "lines": [
@@ -33,7 +34,7 @@
       "id": "line_QLjpP7d-kAs",
       "roleId": "role_y89zbrnV",
       "start": 0.62,
-      "end": 3.881,
+      "end": 4.041,
       "text": "Just smile and wave, boys. Smile and wave.",
       "hint": "小伙子们，微笑，挥挥手。微笑，挥挥手。",
       "words": [
@@ -83,7 +84,7 @@
       "id": "line_lKOV59STChs",
       "roleId": "role_y89zbrnV",
       "start": 4.662,
-      "end": 6.282,
+      "end": 6.442,
       "text": "Kowalski, progress report.",
       "hint": "科瓦斯基，报告进展。",
       "words": [
@@ -108,7 +109,7 @@
       "id": "line_mvk_MH0arsY",
       "roleId": "role_csUjXkRdbuM",
       "start": 7.483,
-      "end": 9.243,
+      "end": 9.403,
       "text": "We're only five hundred feet from the main sewer line.",
       "hint": "距离主下水道只剩五百英尺了。",
       "words": [
@@ -168,7 +169,7 @@
       "id": "line_0y39FscYnjM",
       "roleId": "role_y89zbrnV",
       "start": 9.524,
-      "end": 10.344,
+      "end": 10.504,
       "text": "And the bad news?",
       "hint": "那坏消息呢？",
       "words": [
@@ -198,7 +199,7 @@
       "id": "line_tPv9M_Q9Y0k",
       "roleId": "role_csUjXkRdbuM",
       "start": 10.544,
-      "end": 11.985,
+      "end": 12.145,
       "text": "We've broken our last shovel.",
       "hint": "我们的最后一把铲子也断了。",
       "words": [
@@ -233,7 +234,7 @@
       "id": "line_aAVPltl7PzE",
       "roleId": "role_y89zbrnV",
       "start": 12.965,
-      "end": 21.448,
+      "end": 21.608,
       "text": "Right. Rico, you're on litter patrol. We need shovels, and find more Popsicle sticks. You don't want to risk another cave-in.",
       "hint": "好。瑞哥，你去找废弃物。我们需要铲子，再找些冰棒棍。你可不想再冒塌方的风险。",
       "words": [
@@ -348,7 +349,7 @@
       "id": "line_cDAiqdIw5b0",
       "roleId": "role_48Y-QZ9fhhE",
       "start": 22.228,
-      "end": 23.369,
+      "end": 23.529,
       "text": "And me, Skipper?",
       "hint": "那我呢，队长？",
       "words": [
@@ -373,7 +374,7 @@
       "id": "line_5XLGHIDcLPU",
       "roleId": "role_y89zbrnV",
       "start": 23.629,
-      "end": 26.35,
+      "end": 26.57,
       "text": "I want you to look cute and cuddly, Private.",
       "hint": "你的任务是保持可爱，菜鸟。",
       "words": [
@@ -438,6 +439,6 @@
     "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=2s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 2.7–29.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    "changes": "内部原型测试；原上传 2.7–29.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

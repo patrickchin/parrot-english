@@ -77,7 +77,7 @@
           "roleId": "role_nsjPD0zHc9g",
           "speaker": "Peppa",
           "start": 189.4,
-          "end": 191.98,
+          "end": 192.18,
           "text": "Daddy, Daddy! Guess what we've been doing!",
           "hint": "爸爸，爸爸！猜猜我们干什么了！",
           "words": [
@@ -123,7 +123,7 @@
           "roleId": "role_vzHo-mLf8QQ",
           "speaker": "Daddy Pig",
           "start": 192.85,
-          "end": 195.98,
+          "end": 196.18,
           "text": "Let me think. Have you been watching television?",
           "hint": "让我想想。你们在看电视吗？",
           "words": [
@@ -174,7 +174,7 @@
           "roleId": "role_nsjPD0zHc9g",
           "speaker": "Peppa",
           "start": 196.6,
-          "end": 198.1,
+          "end": 198.3,
           "text": "No, no, Daddy.",
           "hint": "不，不是，爸爸。",
           "words": [
@@ -200,7 +200,7 @@
           "roleId": "role_vzHo-mLf8QQ",
           "speaker": "Daddy Pig",
           "start": 199.35,
-          "end": 200.35,
+          "end": 200.57,
           "text": "Have you just had a bath?",
           "hint": "你们刚洗完澡吗？",
           "words": [
@@ -241,7 +241,7 @@
           "roleId": "role_nsjPD0zHc9g",
           "speaker": "Peppa",
           "start": 201.1,
-          "end": 203.2,
+          "end": 203.38,
           "text": "No, no.",
           "hint": "不，不是。",
           "words": [
@@ -262,7 +262,7 @@
           "roleId": "role_vzHo-mLf8QQ",
           "speaker": "Daddy Pig",
           "start": 203.95,
-          "end": 209.4,
+          "end": 209.6,
           "text": "I know! You've been jumping in muddy puddles!",
           "hint": "我知道了！你们在泥坑里跳来跳去！",
           "words": [
@@ -313,7 +313,7 @@
           "roleId": "role_nsjPD0zHc9g",
           "speaker": "Peppa",
           "start": 210.1,
-          "end": 213.8,
+          "end": 213.839,
           "text": "Yes, yes, Daddy! We've been jumping in muddy puddles!",
           "hint": "对，对，爸爸！我们在泥坑里跳来跳去！",
           "words": [
@@ -395,6 +395,11 @@
         {
           "id": "role_J5K-PqReqUY",
           "name": "George"
+        },
+        {
+          "id": "role_sC6qozH6L3I",
+          "name": "Madame Gazelle",
+          "selectable": false
         }
       ],
       "lines": [
@@ -403,29 +408,29 @@
           "roleId": "role__8jMontcRkc",
           "speaker": "Danny Dog",
           "start": 371.95,
-          "end": 372.85,
+          "end": 373.07,
           "text": "Is that a dinosaur?",
           "hint": "那是恐龙吗？",
           "words": [
             {
               "text": "Is",
               "start": 372.052,
-              "end": 372.114
+              "end": 372.113
             },
             {
               "text": "that",
-              "start": 372.175,
-              "end": 372.318
+              "start": 372.174,
+              "end": 372.317
             },
             {
               "text": "a",
-              "start": 372.461,
-              "end": 372.482
+              "start": 372.459,
+              "end": 372.479
             },
             {
               "text": "dinosaur?",
-              "start": 372.543,
-              "end": 372.85
+              "start": 372.541,
+              "end": 372.927
             }
           ]
         },
@@ -434,7 +439,7 @@
           "roleId": "role_MGcwyTjk6fU",
           "speaker": "Peppa",
           "start": 373.8,
-          "end": 375.8,
+          "end": 376.02,
           "text": "It's just a toy dinosaur.",
           "hint": "那只是一只玩具恐龙。",
           "words": [
@@ -445,23 +450,23 @@
             },
             {
               "text": "just",
-              "start": 374.487,
-              "end": 374.689
+              "start": 374.486,
+              "end": 374.688
             },
             {
               "text": "a",
-              "start": 374.83,
-              "end": 374.851
+              "start": 374.829,
+              "end": 374.849
             },
             {
               "text": "toy",
-              "start": 374.952,
-              "end": 375.295
+              "start": 374.95,
+              "end": 375.293
             },
             {
               "text": "dinosaur.",
-              "start": 375.457,
-              "end": 375.8
+              "start": 375.455,
+              "end": 376.02
             }
           ]
         },
@@ -470,19 +475,19 @@
           "roleId": "role_J5K-PqReqUY",
           "speaker": "George",
           "start": 376.55,
-          "end": 378.55,
+          "end": 378.75,
           "text": "Grr! Dinosaur!",
           "hint": "吼！恐龙！",
           "words": [
             {
               "text": "Grr!",
               "start": 376.671,
-              "end": 377.136
+              "end": 377.135
             },
             {
               "text": "Dinosaur!",
-              "start": 377.681,
-              "end": 378.53
+              "start": 377.68,
+              "end": 378.669
             }
           ]
         },
@@ -491,30 +496,30 @@
           "roleId": "role__8jMontcRkc",
           "speaker": "Danny Dog",
           "start": 379.2,
-          "end": 379.9,
+          "end": 380.099,
           "text": "Brilliant!",
           "hint": "太棒了！",
           "words": [
             {
               "text": "Brilliant!",
-              "start": 379.365,
-              "end": 379.879
+              "start": 379.241,
+              "end": 380.099
             }
           ]
         },
         {
           "id": "line_wlCRmCDO3ok",
-          "roleId": "role_MGcwyTjk6fU",
-          "speaker": "Peppa",
+          "roleId": "role__8jMontcRkc",
+          "speaker": "Danny Dog",
           "start": 380.75,
-          "end": 381.2,
+          "end": 381.277,
           "text": "What?",
           "hint": "什么？",
           "words": [
             {
               "text": "What?",
-              "start": 380.955,
-              "end": 381.057
+              "start": 380.953,
+              "end": 381.074
             }
           ]
         },
@@ -523,19 +528,19 @@
           "roleId": "role__8jMontcRkc",
           "speaker": "Danny Dog",
           "start": 382.15,
-          "end": 384.15,
+          "end": 384.229,
           "text": "Dinosaur! Grr!",
           "hint": "恐龙！吼！",
           "words": [
             {
               "text": "Dinosaur!",
               "start": 382.231,
-              "end": 382.837
+              "end": 382.836
             },
             {
               "text": "Grr!",
-              "start": 383.362,
-              "end": 384.009
+              "start": 383.361,
+              "end": 383.987
             }
           ]
         },
@@ -544,7 +549,7 @@
           "roleId": "role_J5K-PqReqUY",
           "speaker": "George",
           "start": 386.3,
-          "end": 389.45,
+          "end": 389.59,
           "text": "Dinosaur! Grr!",
           "hint": "恐龙！吼！",
           "words": [
@@ -556,38 +561,49 @@
             {
               "text": "Grr!",
               "start": 389.109,
-              "end": 389.37
+              "end": 389.51
             }
           ]
         },
         {
           "id": "line_I7J1qUNn9AA",
-          "roleId": "role__8jMontcRkc",
-          "speaker": "Danny Dog",
-          "start": 389.5,
-          "end": 395.3,
-          "text": "Really scary! That's brilliant!",
-          "hint": "真吓人！太棒了！",
+          "roleId": "role_sC6qozH6L3I",
+          "speaker": "Madame Gazelle",
+          "start": 391.05,
+          "end": 392.59,
+          "text": "Really scary!",
+          "hint": "真吓人！",
           "words": [
             {
               "text": "Really",
-              "start": 391.387,
-              "end": 391.728
+              "start": 391.394,
+              "end": 391.719
             },
             {
               "text": "scary!",
-              "start": 391.868,
-              "end": 392.37
-            },
+              "start": 391.881,
+              "end": 392.448
+            }
+          ]
+        },
+        {
+          "id": "line_754CcPAgbDI",
+          "roleId": "role__8jMontcRkc",
+          "speaker": "Danny Dog",
+          "start": 393.05,
+          "end": 395.52,
+          "text": "That's brilliant!",
+          "hint": "太棒了！",
+          "words": [
             {
               "text": "That's",
-              "start": 394.477,
-              "end": 394.798
+              "start": 394.456,
+              "end": 394.777
             },
             {
               "text": "brilliant!",
-              "start": 394.919,
-              "end": 395.3
+              "start": 394.897,
+              "end": 395.44
             }
           ]
         }
@@ -621,11 +637,13 @@
         },
         {
           "id": "role_5uI-c2fNuK0",
-          "name": "Suzy Sheep"
+          "name": "Suzy Sheep",
+          "selectable": false
         },
         {
           "id": "role_iEFhkfUkYtY",
-          "name": "Mummy Pig"
+          "name": "Mummy Pig",
+          "selectable": false
         }
       ],
       "lines": [
@@ -634,7 +652,7 @@
           "roleId": "role_TqcAfKZEoEo",
           "speaker": "Daddy Pig",
           "start": 216.45,
-          "end": 218.9,
+          "end": 219.04,
           "text": "Oh no! What's wrong with George?",
           "hint": "哦，不！乔治怎么了？",
           "words": [
@@ -675,7 +693,7 @@
           "roleId": "role_ORPImTlyeZM",
           "speaker": "Peppa",
           "start": 219.55,
-          "end": 221.5,
+          "end": 221.7,
           "text": "Don't worry, Daddy. It's only a game.",
           "hint": "别担心，爸爸。我们只是在玩游戏。",
           "words": [
@@ -721,7 +739,7 @@
           "roleId": "role_5uI-c2fNuK0",
           "speaker": "Suzy Sheep",
           "start": 221.95,
-          "end": 223,
+          "end": 223.22,
           "text": "George is our patient.",
           "hint": "乔治是我们的病人。",
           "words": [
@@ -752,7 +770,7 @@
           "roleId": "role_TqcAfKZEoEo",
           "speaker": "Daddy Pig",
           "start": 223.75,
-          "end": 227.6,
+          "end": 227.8,
           "text": "Oh, I see. Can the patient have a visitor?",
           "hint": "哦，我明白了。病人可以有访客吗？",
           "words": [
@@ -808,7 +826,7 @@
           "roleId": "role_ORPImTlyeZM",
           "speaker": "Peppa",
           "start": 228.6,
-          "end": 231.7,
+          "end": 231.9,
           "text": "Just for a little while. He might get tired.",
           "hint": "只能一小会儿。他可能会累的。",
           "words": [
@@ -864,7 +882,7 @@
           "roleId": "role_ORPImTlyeZM",
           "speaker": "Peppa",
           "start": 233.25,
-          "end": 233.9,
+          "end": 233.958,
           "text": "Cookies!",
           "hint": "饼干！",
           "words": [
@@ -880,7 +898,7 @@
           "roleId": "role_iEFhkfUkYtY",
           "speaker": "Mummy Pig",
           "start": 235.1,
-          "end": 239.45,
+          "end": 239.65,
           "text": "Yes, they're for George. They're his medicine to make him feel better.",
           "hint": "对，给乔治的。这是让他好起来的药。",
           "words": [
@@ -985,7 +1003,7 @@
           "roleId": "role_GZ118819nuE",
           "speaker": "Daddy Pig",
           "start": 108.3,
-          "end": 110.45,
+          "end": 110.67,
           "text": "Somebody must have put my glasses somewhere.",
           "hint": "一定有人把我的眼镜放到什么地方了。",
           "words": [
@@ -1031,7 +1049,7 @@
           "roleId": "role_zYkp26hxuB0",
           "speaker": "Mummy Pig",
           "start": 111.05,
-          "end": 114.1,
+          "end": 114.24,
           "text": "Do you remember where you last put them, Daddy Pig?",
           "hint": "猪爸爸，你记得上次把眼镜放在哪里了吗？",
           "words": [
@@ -1092,7 +1110,7 @@
           "roleId": "role_GZ118819nuE",
           "speaker": "Daddy Pig",
           "start": 114.5,
-          "end": 119.4,
+          "end": 119.459,
           "text": "When I don't wear them, I always put them in my pocket. But they aren't there now.",
           "hint": "不戴的时候，我总把眼镜放在口袋里。可是现在不在里面。",
           "words": [
@@ -1188,7 +1206,7 @@
           "roleId": "role_SAm7j7Q6lfE",
           "speaker": "Peppa",
           "start": 119.8,
-          "end": 123.3,
+          "end": 123.5,
           "text": "Daddy, can we help find your glasses?",
           "hint": "爸爸，我们帮你找眼镜好吗？",
           "words": [
@@ -1234,7 +1252,7 @@
           "roleId": "role_zYkp26hxuB0",
           "speaker": "Mummy Pig",
           "start": 123.7,
-          "end": 128.4,
+          "end": 128.62,
           "text": "Good idea, Peppa. If you find them, Daddy will stop being so grumpy.",
           "hint": "好主意，佩奇。找到眼镜，爸爸就不会这么暴躁了。",
           "words": [
@@ -1310,7 +1328,7 @@
           "roleId": "role_GZ118819nuE",
           "speaker": "Daddy Pig",
           "start": 128.8,
-          "end": 130.15,
+          "end": 130.33,
           "text": "I'm not grumpy!",
           "hint": "我才没有暴躁呢！",
           "words": [
@@ -1370,7 +1388,7 @@
           "roleId": "role_JbjeUfpdQeo",
           "speaker": "Mummy Pig",
           "start": 243.35,
-          "end": 248.15,
+          "end": 248.35,
           "text": "Daddy Pig, you were sitting on them all the time!",
           "hint": "猪爸爸，你一直坐在眼镜上！",
           "words": [
@@ -1431,7 +1449,7 @@
           "roleId": "role_kG1Vhx3plc4",
           "speaker": "Daddy Pig",
           "start": 248.75,
-          "end": 249.3,
+          "end": 249.439,
           "text": "Oh!",
           "hint": "哦！",
           "words": [
@@ -1447,7 +1465,7 @@
           "roleId": "role_Uivz-A7quiE",
           "speaker": "Peppa",
           "start": 250.05,
-          "end": 252.75,
+          "end": 252.97,
           "text": "Silly Daddy!",
           "hint": "糊涂爸爸！",
           "words": [
@@ -1468,7 +1486,7 @@
           "roleId": "role_kG1Vhx3plc4",
           "speaker": "Daddy Pig",
           "start": 253.5,
-          "end": 257.75,
+          "end": 257.89,
           "text": "I don't know how they got there.",
           "hint": "我不知道眼镜怎么跑到那里了。",
           "words": [
@@ -1544,7 +1562,7 @@
           "roleId": "role_iNuzpzccAUs",
           "speaker": "Holly",
           "start": 12.4,
-          "end": 17.5,
+          "end": 17.6,
           "text": "But Nanny Plum, I was going to play with Ben.",
           "hint": "可是梅姨，我本来打算和本一起玩。",
           "words": [
@@ -1605,7 +1623,7 @@
           "roleId": "role_BIwW3pMFQ_o",
           "speaker": "Nanny Plum",
           "start": 18.35,
-          "end": 23.5,
+          "end": 23.7,
           "text": "Princess Holly, there's a time for playing with elves and a time for wand practice.",
           "hint": "霍莉公主，和精灵玩有玩的时间，练习魔法棒有练习的时间。",
           "words": [
@@ -1691,7 +1709,7 @@
           "roleId": "role_iNuzpzccAUs",
           "speaker": "Holly",
           "start": 24.75,
-          "end": 28,
+          "end": 28.03,
           "text": "Please, Nanny. I promise to practise later.",
           "hint": "求你了，梅姨。我保证待会儿练习。",
           "words": [
@@ -1788,7 +1806,7 @@
           "roleId": "role_iNuzpzccAUs",
           "speaker": "Holly",
           "start": 31.86,
-          "end": 33.6,
+          "end": 33.78,
           "text": "Thanks, Nanny. Bye!",
           "hint": "谢谢梅姨。再见！",
           "words": [
@@ -1844,7 +1862,7 @@
           "roleId": "role_1eyadGyaZ-U",
           "speaker": "Holly",
           "start": 194.15,
-          "end": 197.35,
+          "end": 197.57,
           "text": "Sorry, Ben. Were you scared?",
           "hint": "对不起，本。你害怕了吗？",
           "words": [
@@ -1880,7 +1898,7 @@
           "roleId": "role_gYy8dSWMk40",
           "speaker": "Ben",
           "start": 198.1,
-          "end": 201.5,
+          "end": 201.72,
           "text": "I'm an elf. Elves are never scared.",
           "hint": "我是精灵。精灵从来不害怕。",
           "words": [
@@ -1926,7 +1944,7 @@
           "roleId": "role_1eyadGyaZ-U",
           "speaker": "Holly",
           "start": 202.15,
-          "end": 206.8,
+          "end": 206.98,
           "text": "Er, good. In that case, can I try again?",
           "hint": "呃，那就好。那我可以再试一次吗？",
           "words": [
@@ -1982,7 +2000,7 @@
           "roleId": "role_gYy8dSWMk40",
           "speaker": "Ben",
           "start": 207,
-          "end": 210.05,
+          "end": 210.23,
           "text": "Um, maybe later. See you!",
           "hint": "嗯，待会儿再说吧。再见！",
           "words": [
@@ -2018,7 +2036,7 @@
           "roleId": "role_1eyadGyaZ-U",
           "speaker": "Holly",
           "start": 210.3,
-          "end": 211.1,
+          "end": 211.299,
           "text": "Bye, Ben.",
           "hint": "再见，本。",
           "words": [
@@ -2051,7 +2069,7 @@
       "titleZh": "我看起来怎么样？",
       "sourceId": "Kmw12eUP4MM",
       "start": 564.65,
-      "end": 584.65,
+      "end": 589.7,
       "practice": "A magic hat turns Ben blue; everyone agrees his old hat is better, and Nanny restores it.",
       "roles": [
         {
@@ -2070,10 +2088,10 @@
       "lines": [
         {
           "id": "line_sCydWOJpgic",
-          "roleId": "role_YMmMf1wkkD0",
-          "speaker": "Nanny Plum",
+          "roleId": "role_VcebY2wPqqI",
+          "speaker": "Holly",
           "start": 564.85,
-          "end": 570,
+          "end": 570.22,
           "text": "Oh no! The magic hat has turned Ben blue!",
           "hint": "哦，不！魔法帽把本变蓝了！",
           "words": [
@@ -2099,28 +2117,28 @@
             },
             {
               "text": "hat",
-              "start": 567.756,
+              "start": 567.755,
               "end": 568.056
             },
             {
               "text": "has",
-              "start": 568.136,
-              "end": 568.257
+              "start": 568.156,
+              "end": 568.256
             },
             {
               "text": "turned",
               "start": 568.357,
-              "end": 568.738
+              "end": 568.737
             },
             {
               "text": "Ben",
               "start": 568.898,
-              "end": 569.198
+              "end": 569.218
             },
             {
               "text": "blue!",
               "start": 569.659,
-              "end": 570
+              "end": 570.14
             }
           ]
         },
@@ -2129,55 +2147,55 @@
           "roleId": "role_DJntnoCh-CI",
           "speaker": "Ben",
           "start": 570.9,
-          "end": 571.85,
+          "end": 571.949,
           "text": "How do I look?",
           "hint": "我看起来怎么样？",
           "words": [
             {
               "text": "How",
               "start": 571.021,
-              "end": 571.143
+              "end": 571.142
             },
             {
               "text": "do",
-              "start": 571.244,
+              "start": 571.243,
               "end": 571.324
             },
             {
               "text": "I",
-              "start": 571.446,
-              "end": 571.466
+              "start": 571.445,
+              "end": 571.465
             },
             {
               "text": "look?",
-              "start": 571.547,
-              "end": 571.729
+              "start": 571.546,
+              "end": 571.747
             }
           ]
         },
         {
           "id": "line_g-FGEKfQLhY",
-          "roleId": "role_VcebY2wPqqI",
-          "speaker": "Holly",
+          "roleId": "role_YMmMf1wkkD0",
+          "speaker": "Nanny Plum",
           "start": 572.2,
-          "end": 576.2,
+          "end": 576.36,
           "text": "Um, I think your old hat suits you better.",
           "hint": "嗯，我觉得你原来的帽子更适合你。",
           "words": [
             {
               "text": "Um,",
-              "start": 572.502,
+              "start": 572.501,
               "end": 572.582
             },
             {
               "text": "I",
-              "start": 573.306,
-              "end": 573.326
+              "start": 573.305,
+              "end": 573.325
             },
             {
               "text": "think",
-              "start": 573.507,
-              "end": 573.728
+              "start": 573.506,
+              "end": 573.727
             },
             {
               "text": "your",
@@ -2191,44 +2209,44 @@
             },
             {
               "text": "hat",
-              "start": 574.592,
-              "end": 574.833
+              "start": 574.591,
+              "end": 574.853
             },
             {
               "text": "suits",
-              "start": 575.034,
-              "end": 575.396
+              "start": 575.054,
+              "end": 575.415
             },
             {
               "text": "you",
-              "start": 575.476,
-              "end": 575.617
+              "start": 575.496,
+              "end": 575.616
             },
             {
               "text": "better.",
-              "start": 575.818,
-              "end": 576.14
+              "start": 575.817,
+              "end": 576.3
             }
           ]
         },
         {
           "id": "line_1uvrBZpyVCo",
-          "roleId": "role_DJntnoCh-CI",
-          "speaker": "Ben",
+          "roleId": "role_VcebY2wPqqI",
+          "speaker": "Holly",
           "start": 576.95,
-          "end": 577.9,
+          "end": 578.08,
           "text": "Me too.",
           "hint": "我也这么觉得。",
           "words": [
             {
               "text": "Me",
               "start": 577.152,
-              "end": 577.354
+              "end": 577.333
             },
             {
               "text": "too.",
-              "start": 577.597,
-              "end": 577.86
+              "start": 577.616,
+              "end": 578.08
             }
           ]
         },
@@ -2237,14 +2255,14 @@
           "roleId": "role_YMmMf1wkkD0",
           "speaker": "Nanny Plum",
           "start": 578.55,
-          "end": 579.65,
+          "end": 579.727,
           "text": "Abracazobody!",
           "hint": "阿布拉卡佐波迪！（剧中的魔法咒语）",
           "words": [
             {
               "text": "Abracazobody!",
-              "start": 578.794,
-              "end": 579.507
+              "start": 578.773,
+              "end": 579.605
             }
           ]
         },
@@ -2253,7 +2271,7 @@
           "roleId": "role_DJntnoCh-CI",
           "speaker": "Ben",
           "start": 580.05,
-          "end": 584.5,
+          "end": 584.72,
           "text": "Ah, it's good to have my old hat back again.",
           "hint": "啊，能重新戴上我的旧帽子真好。",
           "words": [
@@ -2269,7 +2287,7 @@
             },
             {
               "text": "good",
-              "start": 582.536,
+              "start": 582.535,
               "end": 582.736
             },
             {
@@ -2279,7 +2297,7 @@
             },
             {
               "text": "have",
-              "start": 582.957,
+              "start": 582.956,
               "end": 583.097
             },
             {
@@ -2289,23 +2307,104 @@
             },
             {
               "text": "old",
-              "start": 583.438,
+              "start": 583.457,
               "end": 583.578
             },
             {
               "text": "hat",
               "start": 583.698,
-              "end": 583.859
+              "end": 583.858
             },
             {
               "text": "back",
-              "start": 583.959,
-              "end": 584.139
+              "start": 583.958,
+              "end": 584.119
             },
             {
               "text": "again.",
-              "start": 584.259,
-              "end": 584.5
+              "start": 584.279,
+              "end": 584.62
+            }
+          ]
+        },
+        {
+          "id": "line_0AkBEyVrE14",
+          "roleId": "role_VcebY2wPqqI",
+          "speaker": "Holly",
+          "start": 584.75,
+          "end": 589.6,
+          "text": "And it's nice to have you back, wand. I will never lose you again.",
+          "hint": "魔法棒，你也回来了，真好。我再也不会把你弄丢了。",
+          "words": [
+            {
+              "text": "And",
+              "start": 584.89,
+              "end": 584.97
+            },
+            {
+              "text": "it's",
+              "start": 585.091,
+              "end": 585.191
+            },
+            {
+              "text": "nice",
+              "start": 585.251,
+              "end": 585.492
+            },
+            {
+              "text": "to",
+              "start": 585.572,
+              "end": 585.612
+            },
+            {
+              "text": "have",
+              "start": 585.672,
+              "end": 585.932
+            },
+            {
+              "text": "you",
+              "start": 586.053,
+              "end": 586.193
+            },
+            {
+              "text": "back,",
+              "start": 586.413,
+              "end": 586.614
+            },
+            {
+              "text": "wand.",
+              "start": 586.754,
+              "end": 587.115
+            },
+            {
+              "text": "I",
+              "start": 587.736,
+              "end": 587.756
+            },
+            {
+              "text": "will",
+              "start": 587.816,
+              "end": 588.017
+            },
+            {
+              "text": "never",
+              "start": 588.137,
+              "end": 588.438
+            },
+            {
+              "text": "lose",
+              "start": 588.558,
+              "end": 588.798
+            },
+            {
+              "text": "you",
+              "start": 588.899,
+              "end": 588.999
+            },
+            {
+              "text": "again.",
+              "start": 589.139,
+              "end": 589.38
             }
           ]
         }

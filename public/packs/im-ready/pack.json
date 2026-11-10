@@ -27,7 +27,7 @@
       "id": "line_A-5vCT83XPs",
       "roleId": "role_K490suAd",
       "start": 0.281,
-      "end": 2.144,
+      "end": 2.224,
       "text": "I'm ready! I'm ready!",
       "hint": "我准备好了！我准备好了！",
       "words": [
@@ -57,7 +57,7 @@
       "id": "line_dp2e5AB14fA",
       "roleId": "role_K490suAd",
       "start": 2.244,
-      "end": 3.907,
+      "end": 4.067,
       "text": "Squidward! Squidward!",
       "hint": "章鱼哥！章鱼哥！",
       "words": [
@@ -77,7 +77,7 @@
       "id": "line_MDEodZ1Qjqw",
       "roleId": "role_ZsxADi00XhU",
       "start": 4.108,
-      "end": 4.609,
+      "end": 4.749,
       "text": "What?",
       "hint": "什么事？",
       "words": [
@@ -92,7 +92,7 @@
       "id": "line_ra-U2m9Z28M",
       "roleId": "role_K490suAd",
       "start": 4.769,
-      "end": 5.991,
+      "end": 6.151,
       "text": "I'm ready, Squidward!",
       "hint": "章鱼哥，我准备好了！",
       "words": [
@@ -117,7 +117,7 @@
       "id": "line_DGSk1xG8g6M",
       "roleId": "role_ZsxADi00XhU",
       "start": 6.432,
-      "end": 7.654,
+      "end": 7.795,
       "text": "Ready to move?",
       "hint": "准备好搬家了吗？",
       "words": [
@@ -142,7 +142,7 @@
       "id": "line_7wq5GsDcPLA",
       "roleId": "role_K490suAd",
       "start": 7.815,
-      "end": 10.32,
+      "end": 10.48,
       "text": "No! I'm ready to pass my boating test!",
       "hint": "不是！我准备好通过驾驶考试了！",
       "words": [

@@ -1,7 +1,7 @@
 # Preschool scene review — 2026-11-10
 
 Private adult review material for children around age five. The current batch
-contains **eight continuous conversations**, 15–25 seconds each, with 2–4
+contains **eight continuous conversations**, 15–26 seconds each, with 2–4
 speaking characters and 4–8 actual dialogue turns per scene. English/Chinese
 subtitles, named roles, and source notes accompany every MP4. Suggested age fit,
 caption wording, and role assignments remain subject to adult listening review.
@@ -17,8 +17,8 @@ extra lines. Each selected scene is one uninterrupted source range, with no
 concatenation of unrelated moments.
 
 These cuts range slightly beyond the approximately 11–16 second reference
-clips where necessary to retain the complete exchange. The new longest scene is
-25 seconds. The eight conversations total approximately 168 seconds.
+clips where necessary to retain the complete exchange. The longest scene is approximately
+25 seconds. The eight conversations total approximately 173 seconds.
 
 ## Review folders
 
@@ -44,13 +44,13 @@ review recipes; media is stored separately in OSS.
 | File prefix | Scene | Characters | Dialogue turns | Duration | Source cut |
 | --- | --- | --- | --- | --- | --- |
 | 01 | Guess what we have been doing! | Peppa, Daddy Pig | 7 | 24.85 s | 189.20–214.05 s |
-| 02 | Is that a dinosaur? | Danny Dog, Peppa, George | 8 | 23.75 s | 371.80–395.55 s |
+| 02 | Is that a dinosaur? | Danny Dog, Peppa, George; Madame Gazelle supports | 7 | 23.75 s | 371.80–395.55 s |
 | 03 | Can the patient have a visitor? | Daddy Pig, Peppa, Suzy Sheep, Mummy Pig | 6 | 23.40 s | 216.30–239.70 s |
 | 04 | Can we help find your glasses? | Daddy Pig, Mummy Pig, Peppa | 6 | 22.35 s | 108.15–130.50 s |
 | 05 | You were sitting on them! | Mummy Pig, Daddy Pig, Peppa | 4 | 15.00 s | 243.15–258.15 s |
 | 06 | Can I play with Ben? | Holly, Nanny Plum | 5 | 21.65 s | 12.20–33.85 s |
 | 07 | Elves are never scared! | Holly, Ben | 5 | 17.35 s | 194.00–211.35 s |
-| 08 | How do I look? | Nanny Plum, Ben, Holly | 6 | 20.00 s | 564.65–584.65 s |
+| 08 | How do I look? | Holly, Ben, Nanny Plum | 7 | 25.05 s | 564.65–589.70 s |
 
 The scenes cover a guessing game, enjoying a toy dinosaur, pretend doctors,
 losing and finding glasses, asking permission to play, claiming to be brave,
@@ -151,3 +151,6 @@ selected folder through scene navigation and reload.
 
 This uses the existing deployment and access settings. It does not add or verify
 a VPN allowlist. Source and unconfirmed-rights notices remain visible.
+
+The [2026-11-10 speaker and cut audit](lesson-audit.md) corrects speaker labels,
+keeps minor parts out of the practice picker, and retains complete source endings.

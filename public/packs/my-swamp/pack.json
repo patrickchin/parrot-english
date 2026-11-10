@@ -3,17 +3,18 @@
   "id": "pack_XFfwULcF",
   "title": "谁让你们来这里的？",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 13.013,
-  "video": "my-swamp-review-192b73c4f147.mp4",
+  "duration": 13.222,
+  "video": "my-swamp-review-18fb523fc3a0.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/my-swamp/",
-  "poster": "my-swamp-poster-192b73c4f147.jpg",
-  "waveform": "waveform-192b73c4f147.json",
+  "poster": "my-swamp-poster-18fb523fc3a0.jpg",
+  "waveform": "waveform-18fb523fc3a0.json",
   "roles": [
     {
       "id": "role_Rp4xE21Pv6o",
       "name": "驴子",
       "label": "驴子",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "selectable": false
     },
     {
       "id": "role_stZNsPqJ3SU",
@@ -39,7 +40,7 @@
       "id": "line_U_g1Wge8bpU",
       "roleId": "role_Rp4xE21Pv6o",
       "start": 0.18,
-      "end": 1.062,
+      "end": 1.222,
       "text": "I didn't invite them.",
       "hint": "不是我邀请他们的。",
       "words": [
@@ -69,7 +70,7 @@
       "id": "line_VlV2ZoLTywo",
       "roleId": "role_stZNsPqJ3SU",
       "start": 1.502,
-      "end": 3.285,
+      "end": 3.445,
       "text": "Oh, gosh, no one invited us.",
       "hint": "天啊，没人邀请我们。",
       "words": [
@@ -109,7 +110,7 @@
       "id": "line_V-F5Oc4ozS4",
       "roleId": "role_VNG5X2g-",
       "start": 3.606,
-      "end": 4.026,
+      "end": 4.186,
       "text": "What?",
       "hint": "什么？",
       "words": [
@@ -124,7 +125,7 @@
       "id": "line_WqsowoV0q8g",
       "roleId": "role_stZNsPqJ3SU",
       "start": 4.827,
-      "end": 6.189,
+      "end": 6.349,
       "text": "We were forced to come here.",
       "hint": "我们是被迫来这里的。",
       "words": [
@@ -164,7 +165,7 @@
       "id": "line_tpCP72fRF3o",
       "roleId": "role_VNG5X2g-",
       "start": 6.55,
-      "end": 7.351,
+      "end": 7.472,
       "text": "By who?",
       "hint": "被谁逼的？",
       "words": [
@@ -184,7 +185,7 @@
       "id": "line_6HAbPBw97Eo",
       "roleId": "role_WP8iVeXihIk",
       "start": 7.492,
-      "end": 8.413,
+      "end": 8.573,
       "text": "Lord Farquaad!",
       "hint": "法夸德领主！",
       "words": [
@@ -249,7 +250,7 @@
       "id": "line_kvLufkyW75g",
       "roleId": "role_stZNsPqJ3SU",
       "start": 11.538,
-      "end": 12.9,
+      "end": 13.06,
       "text": "Signed an eviction notice.",
       "hint": "签了一张驱逐通知。",
       "words": [
@@ -289,6 +290,6 @@
     "source": "https://www.youtube.com/watch?v=xuS9UxuUZ3Y&t=96s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 96.4–109.4 秒的节选。Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+    "changes": "内部原型测试；原上传 96.4–109.6 秒的节选。Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
   }
 }

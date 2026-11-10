@@ -3,11 +3,11 @@
   "id": "pack_wr2NM2nf",
   "title": "没有秘密配料！",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 22.773,
-  "video": "secret-ingredient-review-0043da869f9b.mp4",
+  "duration": 23.106,
+  "video": "secret-ingredient-review-7e3595f151be.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/secret-ingredient/",
-  "poster": "secret-ingredient-poster-0043da869f9b.jpg",
-  "waveform": "waveform-0043da869f9b.json",
+  "poster": "secret-ingredient-poster-7e3595f151be.jpg",
+  "waveform": "waveform-7e3595f151be.json",
   "roles": [
     {
       "id": "role_q93mX0oX",
@@ -27,7 +27,7 @@
       "id": "line_QLVDSlr3avk",
       "roleId": "role_q93mX0oX",
       "start": 0.3,
-      "end": 5.602,
+      "end": 5.762,
       "text": "Come here. The secret ingredient is nothing.",
       "hint": "过来。秘密配料就是——什么都没有。",
       "words": [
@@ -72,7 +72,7 @@
       "id": "line_LsYo3TaloCE",
       "roleId": "role_KLqdqSbZHmw",
       "start": 6.863,
-      "end": 7.203,
+      "end": 7.363,
       "text": "Huh?",
       "hint": "啊？",
       "words": [
@@ -87,7 +87,7 @@
       "id": "line_uo-e8oAD2ew",
       "roleId": "role_q93mX0oX",
       "start": 7.563,
-      "end": 11.805,
+      "end": 11.965,
       "text": "You heard me. Nothing. There is no secret ingredient.",
       "hint": "你没听错。什么都没有。没有什么秘密配料。",
       "words": [
@@ -142,7 +142,7 @@
       "id": "line_Rmh6sZNs_x4",
       "roleId": "role_KLqdqSbZHmw",
       "start": 12.445,
-      "end": 17.988,
+      "end": 18.128,
       "text": "Wait, wait. It's just plain old noodle soup? You don't add some kind of special sauce or something?",
       "hint": "等等，就是普通的面汤？你没有加什么特别的酱料之类的吗？",
       "words": [
@@ -242,7 +242,7 @@
       "id": "line_2kRzWIC9ZQA",
       "roleId": "role_q93mX0oX",
       "start": 18.148,
-      "end": 22.73,
+      "end": 22.89,
       "text": "Don't have to. To make something special, you just have to believe it's special.",
       "hint": "不需要。要让一样东西变得特别，只需要相信它是特别的。",
       "words": [
@@ -332,6 +332,6 @@
     "source": "https://www.youtube.com/watch?v=K7DnFGdqT8c&t=27s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 27.45–50.2 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    "changes": "内部原型测试；原上传 27.45–50.55 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

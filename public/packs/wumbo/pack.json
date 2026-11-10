@@ -27,7 +27,7 @@
       "id": "line_JtTRPOFm8bM",
       "roleId": "role_v-seIUIJ",
       "start": 0.621,
-      "end": 2.102,
+      "end": 2.222,
       "text": "You know what the problem is?",
       "hint": "你知道问题是什么吗？",
       "words": [
@@ -67,7 +67,7 @@
       "id": "line_hItHIj2Nqgw",
       "roleId": "role_llrWB6OVSyA",
       "start": 2.242,
-      "end": 2.523,
+      "end": 2.683,
       "text": "What?",
       "hint": "什么？",
       "words": [
@@ -82,7 +82,7 @@
       "id": "line_nQHuFI115r0",
       "roleId": "role_v-seIUIJ",
       "start": 2.983,
-      "end": 8.028,
+      "end": 8.188,
       "text": "You got it set to M for mini, when it should be set to W for Wumbo.",
       "hint": "你把它设成了代表迷你的 M，而它应该设成代表 Wumbo 的 W。",
       "words": [
@@ -177,7 +177,7 @@
       "id": "line_g0xaQ_obdzE",
       "roleId": "role_llrWB6OVSyA",
       "start": 8.469,
-      "end": 10.411,
+      "end": 10.571,
       "text": "Patrick, I don't think Wumbo is a real word.",
       "hint": "派大星，我觉得 Wumbo 不是一个真正的词。",
       "words": [
@@ -232,7 +232,7 @@
       "id": "line_4HnsJcqmkag",
       "roleId": "role_v-seIUIJ",
       "start": 10.671,
-      "end": 19.24,
+      "end": 19.4,
       "text": "Come on! You know, I Wumbo, you Wumbo. He, she, me, Wumbo.",
       "hint": "别这样！你知道的，我 Wumbo，你 Wumbo，他、她、我，Wumbo。（这是剧中的虚构词。）",
       "words": [

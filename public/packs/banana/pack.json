@@ -3,11 +3,11 @@
   "id": "pack_CZ0bp6VC",
   "title": "那地板呢？",
   "description": "内部原型测试；选角色，听原声，录下自己的版本。",
-  "duration": 18.602,
-  "video": "banana-review-dd085b10bc4d.mp4",
+  "duration": 18.936,
+  "video": "banana-review-d90b2ac2df8d.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/banana/",
-  "poster": "banana-poster-dd085b10bc4d.jpg",
-  "waveform": "waveform-dd085b10bc4d.json",
+  "poster": "banana-poster-d90b2ac2df8d.jpg",
+  "waveform": "waveform-d90b2ac2df8d.json",
   "roles": [
     {
       "id": "role_6qGKlj0DGGU",
@@ -19,19 +19,14 @@
       "id": "role_ttD2BhSD_aQ",
       "name": "玛戈",
       "label": "玛戈",
-      "hint": "1 句台词"
+      "hint": "2 句台词"
     },
     {
       "id": "role_Y1QH7lsWlSU",
       "name": "伊迪丝",
       "label": "伊迪丝",
-      "hint": "2 句台词"
-    },
-    {
-      "id": "role_PrQjOT97Qvw",
-      "name": "艾格尼丝",
-      "label": "艾格尼丝",
-      "hint": "1 句台词"
+      "hint": "2 句台词",
+      "selectable": false
     }
   ],
   "lines": [
@@ -39,7 +34,7 @@
       "id": "line_CJfcCiT4lGE",
       "roleId": "role_6qGKlj0DGGU",
       "start": 0.18,
-      "end": 4.685,
+      "end": 4.805,
       "text": "Rule number one: you will not touch anything.",
       "hint": "第一条：什么都不许碰。",
       "words": [
@@ -89,7 +84,7 @@
       "id": "line_ChIFs6Uh-8c",
       "roleId": "role_ttD2BhSD_aQ",
       "start": 4.825,
-      "end": 6.227,
+      "end": 6.387,
       "text": "Uh-huh. What about the floor?",
       "hint": "嗯，那地板呢？",
       "words": [
@@ -124,7 +119,7 @@
       "id": "line_jyOr1NTEBAM",
       "roleId": "role_6qGKlj0DGGU",
       "start": 7.128,
-      "end": 8.769,
+      "end": 8.929,
       "text": "Yes, you may touch the floor.",
       "hint": "好，地板可以碰。",
       "words": [
@@ -162,9 +157,9 @@
     },
     {
       "id": "line_RDPRAtHC5cQ",
-      "roleId": "role_PrQjOT97Qvw",
+      "roleId": "role_ttD2BhSD_aQ",
       "start": 9.09,
-      "end": 10.131,
+      "end": 10.291,
       "text": "What about the air?",
       "hint": "那空气呢？",
       "words": [
@@ -194,7 +189,7 @@
       "id": "line_hbmqU-Uwj9s",
       "roleId": "role_6qGKlj0DGGU",
       "start": 10.351,
-      "end": 12.533,
+      "end": 12.614,
       "text": "Yes, you may touch the air.",
       "hint": "好，空气也可以碰。",
       "words": [
@@ -234,7 +229,7 @@
       "id": "line_Mry2rXubEPc",
       "roleId": "role_Y1QH7lsWlSU",
       "start": 12.634,
-      "end": 13.354,
+      "end": 13.514,
       "text": "What about this?",
       "hint": "那这个呢？",
       "words": [
@@ -259,7 +254,7 @@
       "id": "line_EZGMbxlg-6w",
       "roleId": "role_6qGKlj0DGGU",
       "start": 16.938,
-      "end": 17.819,
+      "end": 17.979,
       "text": "Where did you get that?",
       "hint": "你从哪里拿到的？",
       "words": [
@@ -294,7 +289,7 @@
       "id": "line_0spSPlLFQcY",
       "roleId": "role_Y1QH7lsWlSU",
       "start": 18.059,
-      "end": 18.56,
+      "end": 18.72,
       "text": "Found it.",
       "hint": "捡到的。",
       "words": [
@@ -324,6 +319,6 @@
     "source": "https://www.youtube.com/watch?v=CeOsRggJO4s&t=10s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "内部原型测试；原上传 10.9–29.5 秒的节选。The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+    "changes": "内部原型测试；原上传 10.9–29.8 秒的节选。The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
   }
 }

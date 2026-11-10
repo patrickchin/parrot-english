@@ -45,3 +45,27 @@ test('all 32 internal-test scenes have valid packs, timed words, waveforms and s
     }
   }
 });
+
+test('supporting speakers retain their dialogue without becoming practice roles', async () => {
+  const load = async slug => validatePack(JSON.parse(await readFile(`public/packs/${slug}/pack.json`, 'utf8')));
+  const ben = await load('ben-blue-hat');
+  const speakers = ben.lines.map(line => ben.roles.find(role => role.id === line.roleId).name);
+  assert.deepEqual(speakers, ['霍莉', '本', '梅姨', '霍莉', '梅姨', '本', '霍莉']);
+  assert.match(ben.lines.at(-1).text, /never lose you again/);
+  const dinosaur = await load('peppa-toy-dinosaur');
+  assert.equal(dinosaur.roles.find(role => role.id === dinosaur.lines.at(-2).roleId).selectable, false);
+  assert.equal(dinosaur.lines.at(-2).text, 'Really scary!');
+  assert.equal(dinosaur.roles.find(role => role.id === dinosaur.lines.at(-1).roleId).name, '小狗丹尼');
+  const cars = await load('ka-chow');
+  assert.deepEqual(cars.lines.slice(0, 2).map(line => cars.roles.find(role => role.id === line.roleId).name), ['奇克·海克斯', '闪电麦昆']);
+  const speed = await load('i-am-speed');
+  assert.equal(speed.roles.find(role => role.id === speed.lines[0].roleId).selectable, false);
+  const invalid = structuredClone(ben);
+  invalid.roles.forEach(role => { role.selectable = false; });
+  assert.throws(() => validatePack(invalid));
+  const unused = structuredClone(ben);
+  unused.roles.push({ id: 'role_unused', name: 'Unused', label: 'Unused', hint: '' });
+  assert.throws(() => validatePack(unused));
+  invalid.roles[0].selectable = 'yes';
+  assert.throws(() => validatePack(invalid));
+});

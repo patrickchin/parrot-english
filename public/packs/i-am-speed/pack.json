@@ -13,19 +13,26 @@
       "id": "role_MA9SyNmW",
       "name": "板牙",
       "label": "板牙",
-      "hint": "2 句台词"
+      "hint": "1 句台词"
     },
     {
       "id": "role_t3AskixQqcI",
       "name": "闪电麦昆",
       "label": "闪电麦昆",
       "hint": "2 句台词"
+    },
+    {
+      "id": "role_G8GuFY_TB7c",
+      "name": "测速播报员",
+      "label": "测速播报员",
+      "hint": "1 句台词",
+      "selectable": false
     }
   ],
   "lines": [
     {
       "id": "line_o9wCPmkYAu8",
-      "roleId": "role_MA9SyNmW",
+      "roleId": "role_G8GuFY_TB7c",
       "start": 0.261,
       "end": 2.124,
       "text": "One hundred seventy-five miles per hour!",
@@ -67,7 +74,7 @@
       "id": "line_1LHYqCogk0U",
       "roleId": "role_t3AskixQqcI",
       "start": 2.144,
-      "end": 6.15,
+      "end": 6.31,
       "text": "Okay! You did it, buddy! You can back off now!",
       "hint": "好！你做到了，伙计！你现在可以慢下来了！",
       "words": [
@@ -127,7 +134,7 @@
       "id": "line__CWP9gWKCd8",
       "roleId": "role_MA9SyNmW",
       "start": 6.331,
-      "end": 9.075,
+      "end": 9.235,
       "text": "Later! I am speed!",
       "hint": "回头见！我就是速度！",
       "words": [
@@ -157,7 +164,7 @@
       "id": "line_qILBp2_zPSI",
       "roleId": "role_t3AskixQqcI",
       "start": 10.939,
-      "end": 11.359,
+      "end": 11.519,
       "text": "Whoa!",
       "hint": "哇！",
       "words": [

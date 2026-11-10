@@ -39,7 +39,8 @@ export default function App() {
 function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   const { t } = useLanguage();
   const [step, setStep] = useState<'choose' | 'practice' | 'result'>('choose');
-  const [roleId, setRoleId] = useState(pack.roles[0].id);
+  const practiceRoles = pack.roles.filter(role => role.selectable !== false);
+  const [roleId, setRoleId] = useState(practiceRoles[0].id);
   const [lineIndex, setLineIndex] = useState(0);
   const [takes, setTakes] = useState<Takes>({});
   const takesRef = useRef<Takes>({});
@@ -132,7 +133,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
         {step === 'choose' && <div className="player-choose text-center">
           <h1 className="font-display text-2xl font-extrabold">{t(pack.title)}</h1>
           <h2 className="mt-3 text-base font-semibold text-muted-foreground">{t("想成为哪个角色？")}</h2>
-          <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{pack.roles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => setRoleId(r.id)} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait pack={pack} role={r} /><span className="flex-1"><span className="block font-bold">{t(r.name)}</span><span className="mt-0.5 block text-xs text-muted-foreground">{t(r.hint)}</span></span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
+          <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => setRoleId(r.id)} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait pack={pack} role={r} /><span className="flex-1"><span className="block font-bold">{t(r.name)}</span><span className="mt-0.5 block text-xs text-muted-foreground">{t(r.hint)}</span></span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
           <Button className="mt-5 w-full" disabled={!videoReady || busy} onClick={startPractice}>{t("开始配音")}<Icon name="arrow" /></Button>
         </div>}
         {step === 'practice' && <>

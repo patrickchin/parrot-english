@@ -27,7 +27,7 @@
       "id": "line_A6eXT7C5aoQ",
       "roleId": "role_1eyadGyaZ-U",
       "start": 0.15,
-      "end": 3.35,
+      "end": 3.57,
       "text": "Sorry, Ben. Were you scared?",
       "hint": "对不起，本。你害怕了吗？",
       "words": [
@@ -62,7 +62,7 @@
       "id": "line_0tm4DvPw9cM",
       "roleId": "role_gYy8dSWMk40",
       "start": 4.1,
-      "end": 7.5,
+      "end": 7.72,
       "text": "I'm an elf. Elves are never scared.",
       "hint": "我是精灵。精灵从来不害怕。",
       "words": [
@@ -107,7 +107,7 @@
       "id": "line_zVlVtxy66TQ",
       "roleId": "role_1eyadGyaZ-U",
       "start": 8.15,
-      "end": 12.8,
+      "end": 12.98,
       "text": "Er, good. In that case, can I try again?",
       "hint": "呃，那就好。那我可以再试一次吗？",
       "words": [
@@ -162,7 +162,7 @@
       "id": "line_iIge_IxB9rY",
       "roleId": "role_gYy8dSWMk40",
       "start": 13,
-      "end": 16.05,
+      "end": 16.23,
       "text": "Um, maybe later. See you!",
       "hint": "嗯，待会儿再说吧。再见！",
       "words": [
@@ -197,7 +197,7 @@
       "id": "line_UokDPArpoeg",
       "roleId": "role_1eyadGyaZ-U",
       "start": 16.3,
-      "end": 17.1,
+      "end": 17.299,
       "text": "Bye, Ben.",
       "hint": "再见，本。",
       "words": [
@@ -214,6 +214,12 @@
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Ben and Holly’s Little Kingdom",
@@ -222,11 +228,5 @@
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
     "changes": "内部原型测试；原上传 194–211.35 秒的节选。"
-  },
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
   }
 }

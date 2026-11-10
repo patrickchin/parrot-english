@@ -27,7 +27,7 @@
       "id": "line_mqRL_jjxFQQ",
       "roleId": "role_PbbqOHSVd2c",
       "start": 1.541,
-      "end": 3.463,
+      "end": 3.543,
       "text": "Hey, Buzz! You're flying!",
       "hint": "嘿，巴斯！你在飞！",
       "words": [
@@ -57,7 +57,7 @@
       "id": "line_5IttpmDt3Pk",
       "roleId": "role_dG7FU8MF",
       "start": 3.563,
-      "end": 6.826,
+      "end": 6.986,
       "text": "This isn't flying. This is falling with style.",
       "hint": "这不叫飞，这叫有风格地落下。",
       "words": [
@@ -107,7 +107,7 @@
       "id": "line_0Uboe1j80tw",
       "roleId": "role_dG7FU8MF",
       "start": 9.868,
-      "end": 16.013,
+      "end": 16.173,
       "text": "To infinity and beyond!",
       "hint": "飞向宇宙，浩瀚无垠！",
       "words": [
@@ -137,7 +137,7 @@
       "id": "line_6bSZ-1sijGE",
       "roleId": "role_PbbqOHSVd2c",
       "start": 20.057,
-      "end": 22.018,
+      "end": 22.178,
       "text": "Buzz! We missed the truck!",
       "hint": "巴斯！我们错过卡车了！",
       "words": [
@@ -172,7 +172,7 @@
       "id": "line_nfRkrbXMM7g",
       "roleId": "role_dG7FU8MF",
       "start": 22.199,
-      "end": 23.68,
+      "end": 23.8,
       "text": "We're not aiming for the truck.",
       "hint": "我们的目标不是卡车。",
       "words": [
