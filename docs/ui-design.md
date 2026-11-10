@@ -13,8 +13,10 @@ moving playhead, rather than music, UI sounds, voice filters, or scoring.
 The practice waveform and English words share one horizontal time axis. Words
 start beneath their measured speech onsets and highlight while spoken. Closely
 spaced words use up to two rows; the timeline pans with the playhead on smaller
-screens. The optional Chinese meaning hint remains below. Recording starts as soon as microphone permission and video readiness
-allow, with no count-in. A cancelled take keeps the previous accepted recording.
+screens. The optional Chinese meaning hint remains below. Microphone capture is
+confirmed ready while the picture is paused, then the picture starts with no count-in. Capture preroll is aligned to the native
+`playing` event and excluded from the learner turn on replay. A cancelled take
+keeps the previous accepted recording.
 “My recording” replays the matching video turn with the recorded voice and any
 pack backing track, using the same scheduler as the assembled dub. The original
 voice is muted for that turn; stopping or reaching its end pauses both.
@@ -27,13 +29,33 @@ voice is muted for that turn; stopping or reaching its end pauses both.
   than the previous fixed 240 bins. No decorative waveform samples are added.
 - Microphone peaks use the same 5 ms windows in a native AudioWorklet, so samples
   between UI animation frames are preserved. Fractional sample windows avoid
-  cumulative drift at 44.1 kHz. Saved takes keep these peaks in memory.
+  cumulative drift at 44.1 kHz. The same worklet captures PCM samples and their
+  peaks with one sample origin. Takes use standard mono PCM WAV instead of a
+  separately encoded MediaRecorder stream, whose startup sample origin differed
+  from the live worklet in the measured regression. Both stay in memory.
 - Both traces use the same square-root amplitude scale for readable quiet detail;
   neither is independently normalized. This is a peak envelope, not a phoneme
   detector, pronunciation score, or calibrated SPL meter.
 - The reference uses the original mix, including music/effects. Input hardware,
   echo cancellation, noise suppression, and browser gain affect microphone levels.
   Compare timing and relative emphasis; absolute vocal loudness is approximate.
+- The playhead samples the video clock on every animation frame, without a
+  separate easing animation. Saved waveform paths are cached while it moves.
+  Takes retain the clip position corresponding to blob sample zero, including
+  capture preroll, for both drawing and replay.
+  Recording ends at the video turn boundary and pauses the picture before
+  the final worklet sample block is received and serialized. Interrupted picture playback cancels the
+  attempt and preserves any accepted take; recorded replay stops on interruption
+  so its independently scheduled audio cannot run ahead of the picture.
+- Replay decodes each take once, keyed by its Blob in a WeakMap. Replacing or
+  clearing takes releases that cache entry with the old Blob; failed decodes can
+  retry. Listening to one line does not decode unrelated takes.
+- Replay schedules the full opening samples before advancing the picture.
+  `AudioContext.getOutputTimestamp()` maps render time to predicted audible
+  time; older engines use their reported base/output latencies. Both are platform
+  estimates, and engines exposing neither fall back to their render clock.
+  Device changes or interruptions outside the sync tolerance stop playback.
+  Hardware/input processing latency still requires real-device checks.
 - The practice graph shows the selected turn. The result graph places recorded
   turns on the full-scene timeline. The cursor follows original playback, live
   recording, take playback, and assembled replay. Reset removes the learner trace;
@@ -87,3 +109,23 @@ Checks cover measured word positions on the waveform axis, non-overlapping label
 active-word highlighting, following the playhead, responsive controls without page
 scrolling, live/saved microphone peaks, retries, and synchronized video replay.
 Physical phone microphones and WeChat remain unverified.
+
+Playback timing verification (2026-11-06): build and all seven Node checks pass;
+full browser suite passes 97 checks with 12 WebKit microphone skips. New checks
+sample painted cursor movement against the video clock in Chromium, mobile
+Chromium, and WebKit, and exercise delayed recording startup/save completion,
+waveform/replay offsets, and interruption without losing an accepted take.
+
+Audio pipeline verification (2026-11-10): build and all ten Node checks pass;
+full browser suite passes 104 checks with 11 existing WebKit capture skips.
+The new generated-input capture/replay checks run in Chromium, mobile Chromium,
+and WebKit without skips. They retain an opening 90 ms pulse through delayed
+readiness, preserve right-only stereo input through native mono downmix, compare
+WAV sample onset to its waveform, retain prior takes after audio interruption,
+and release the microphone on cancellation. An AudioWorklet test tap observes
+actual rendered replay PCM and projects its transient through the browser's
+output timestamp to the sampled video clock. Measured offsets were 41.2 ms,
+45.6 ms, and 7.8 ms respectively (60 ms test limit); each take decoded once
+across repeated listens. These are browser-reported output estimates, not a
+physical microphone/speaker or headset loopback measurement. Soundtrack
+separation was skipped at the user's request; no public pack backing changed.

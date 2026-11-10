@@ -171,6 +171,7 @@ const english: Record<string, string> = {
   '正在准备原声波形…': 'Loading the original waveform…',
   '视频暂时无法播放，请重新加载片段。': 'The video cannot play right now. Reload the scene.',
   '视频定位较慢，请稍后再试。': 'Seeking is taking too long. Please try again.',
+  '录音准备较慢，请稍后再试。': 'Microphone preparation is taking too long. Please try again.',
   '这次录音无法播放，请重新录一句。': 'This recording cannot play. Please record the line again.',
   '这个浏览器暂不支持录音。请用新版 Safari 或 Chrome 打开这个网址。': 'This browser does not support recording. Open this page in a recent version of Safari or Chrome.',
   '没听到清楚的声音。靠近麦克风，再试一次吧。': 'We could not hear you clearly. Move closer to the microphone and try again.',

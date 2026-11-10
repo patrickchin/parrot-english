@@ -1,5 +1,5 @@
 import { useLanguage } from './i18n';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppHeader } from './app/AppHeader';
 import { Button, Icon } from './shared/ui';
 import { asset, validatePack, type Pack, type Role } from './pack';
@@ -102,9 +102,10 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   }
   function startPractice() { media.stop(); media.setError(''); setStep('practice'); setLineIndex(0); }
 
-  const graphRecordings = step === 'result'
-    ? pack.lines.flatMap(l => takes[l.id] ? [{ start: l.start, peaks: takes[l.id].peaks }] : [])
-    : [{ start: line.start, peaks: media.phase === 'recording' || media.phase === 'saving' ? media.livePeaks : currentTake?.peaks ?? [] }];
+  const graphRecordings = useMemo(() => step === 'result'
+    ? pack.lines.flatMap(l => takes[l.id] ? [{ start: takes[l.id].start, peaks: takes[l.id].peaks }] : [])
+    : [{ start: capturing ? media.liveStart : currentTake?.start ?? line.start, peaks: capturing ? media.livePeaks : currentTake?.peaks ?? [] }],
+  [step, pack.lines, takes, line.start, capturing, media.liveStart, media.livePeaks, currentTake]);
 
   return <div className="player-shell bg-paper text-ink">
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); if (Object.keys(takes).length) { setReturnToLibrary(true); setModal('reset'); } else onBack(); }} />
