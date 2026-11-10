@@ -1,5 +1,5 @@
 import { useLanguage } from './i18n';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { AppHeader } from './app/AppHeader';
 import { Button, Icon } from './shared/ui';
 import { asset, validatePack, type Pack, type Role } from './pack';
@@ -48,6 +48,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   const [consent, setConsent] = useState(false);
   const [modal, setModal] = useState<'help' | 'details' | 'record' | 'reset' | null>(null);
   const [videoReady, setVideoReady] = useState(false);
+  const [videoAspect, setVideoAspect] = useState(16 / 9);
   const [localVideo, setLocalVideo] = useState<string>();
   const localVideoRef = useRef<string | undefined>(undefined);
   const source = pack.mode === 'local' ? localVideo ?? (import.meta.env.DEV ? `/content/local-dubbing/${pack.video}` : undefined) : asset(pack, pack.video);
@@ -111,21 +112,24 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); if (Object.keys(takes).length) { setReturnToLibrary(true); setModal('reset'); } else onBack(); }} />
     <main className="player-main" data-step={step}>
       {step === 'practice' && <h1 className="sr-only">{t(pack.title)}</h1>}
-      <section aria-label={t("电影片段")} className="player-video overflow-hidden rounded-xl border border-border bg-brand">
-        <div className="player-screen relative bg-[#123c38]">
-          <video ref={video} src={source} poster={pack.poster ? asset(pack, pack.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("{0} 对话片段", pack.credit.title)}
-            className="absolute inset-0 h-full w-full object-contain"
-            onCanPlay={() => { const duration = video.current?.duration ?? 0; if (pack.mode === 'local' && Math.abs(duration - pack.duration) > 0.7) { setVideoReady(false); media.setError('请选择准备好的片段文件，且时长须与参考片段一致。'); } else setVideoReady(true); }}
-            onWaiting={() => { if (media.phase === 'replay' || media.phase === 'listening' || media.phase === 'recording') { media.stop(); media.setError('视频缓冲中，请等一下再试。之前的录音还在。'); } }}
-            onError={() => { setVideoReady(false); media.stop(); media.setError('视频没能加载成功。请检查网络，然后重新加载。'); }} />
-          {!source ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-white"><p className="text-sm font-bold">{t("从设备载入这段视频")}</p><label className="cursor-pointer rounded-xl bg-paper px-5 py-3 text-sm font-bold text-ink">{t("选择本地片段")}<input aria-label={t("选择本地片段")} type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={e => openFile(e.target.files?.[0])} /></label><p className="text-xs text-white/80">{pack.video}{t("· 文件不会上传")}</p></div>
-            : !busy && <button onClick={() => step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady} aria-label={step === 'result' ? t("播放我的配音") : t("播放原片")} className="absolute inset-0 flex items-center justify-center text-white focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-lemon disabled:opacity-40"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/75 sm:h-17 sm:w-17"><Icon name="play" className="h-7 w-7" /></span></button>}
-          {media.phase === 'recording' && <span className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-danger px-3 py-1.5 text-xs font-bold text-white"><span className="h-2 w-2 rounded-full bg-white motion-safe:animate-pulse" />{t("录音中")}</span>}
-          {media.phase === 'loading' && <div className="absolute inset-0 flex items-center justify-center bg-brand/40 text-sm font-bold text-white" role="status">{t("正在准备…")}</div>}
-        </div>
-        <div className="player-transport flex items-center gap-2 px-2 text-white sm:px-4">
-          <button onClick={() => busy ? media.stop() : step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady} aria-label={busy ? t("停止播放或录音") : step === 'result' ? t("播放配音") : t("播放参考片段")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"><Icon name={busy ? 'stop' : 'play'} /></button>
-          <progress aria-label={t("片段播放进度")} max={pack.duration} value={media.time} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(pack.duration)}</span>
+      <section aria-label={t("电影片段")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
+        <div className="player-frame overflow-hidden rounded-xl border border-border">
+          <div className="player-screen relative bg-neutral-900">
+            <video ref={video} src={source} poster={pack.poster ? asset(pack, pack.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("{0} 对话片段", pack.credit.title)}
+              className="absolute inset-0 h-full w-full object-contain"
+              onLoadedMetadata={e => { const el = e.currentTarget; if (el.videoWidth && el.videoHeight) setVideoAspect(el.videoWidth / el.videoHeight); }}
+              onCanPlay={() => { const duration = video.current?.duration ?? 0; if (pack.mode === 'local' && Math.abs(duration - pack.duration) > 0.7) { setVideoReady(false); media.setError('请选择准备好的片段文件，且时长须与参考片段一致。'); } else setVideoReady(true); }}
+              onWaiting={() => { if (media.phase === 'replay' || media.phase === 'listening' || media.phase === 'recording') { media.stop(); media.setError('视频缓冲中，请等一下再试。之前的录音还在。'); } }}
+              onError={() => { setVideoReady(false); media.stop(); media.setError('视频没能加载成功。请检查网络，然后重新加载。'); }} />
+            {!source ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-white"><p className="text-sm font-bold">{t("从设备载入这段视频")}</p><label className="cursor-pointer rounded-xl bg-paper px-5 py-3 text-sm font-bold text-ink">{t("选择本地片段")}<input aria-label={t("选择本地片段")} type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={e => openFile(e.target.files?.[0])} /></label><p className="text-xs text-white/80">{pack.video}{t("· 文件不会上传")}</p></div>
+              : !busy && <button onClick={() => step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady} aria-label={step === 'result' ? t("播放我的配音") : t("播放原片")} className="absolute inset-0 flex items-center justify-center text-white focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-lemon disabled:opacity-40"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/75 sm:h-17 sm:w-17"><Icon name="play" className="h-7 w-7" /></span></button>}
+            {media.phase === 'recording' && <span className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-danger px-3 py-1.5 text-xs font-bold text-white"><span className="h-2 w-2 rounded-full bg-white motion-safe:animate-pulse" />{t("录音中")}</span>}
+            {media.phase === 'loading' && <div className="absolute inset-0 flex items-center justify-center bg-brand/40 text-sm font-bold text-white" role="status">{t("正在准备…")}</div>}
+          </div>
+          <div className="player-transport flex items-center gap-2 bg-neutral-900 px-2 text-white sm:px-4">
+            <button onClick={() => busy ? media.stop() : step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady} aria-label={busy ? t("停止播放或录音") : step === 'result' ? t("播放配音") : t("播放参考片段")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"><Icon name={busy ? 'stop' : 'play'} /></button>
+            <progress aria-label={t("片段播放进度")} max={pack.duration} value={media.time} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(pack.duration)}</span>
+          </div>
         </div>
       </section>
       <section aria-label={step === 'choose' ? t("选择角色") : step === 'result' ? t("配音完成") : t("录制台词")} className="player-workspace">
