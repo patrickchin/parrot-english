@@ -5,8 +5,6 @@
 - Follow `docs/product-plan.md`. Build for children using the dubbing player
   independently; teacher dashboards and classroom management are outside the
   initial scope.
-- Keep the player and content packs separate. Distributed content needs a
-  documented rights basis; separate packs do not clear third-party rights.
 - The earlier product is research preserved under the tags in `README.md`.
   Recover specific code only when it fits the new scope.
 
@@ -44,7 +42,9 @@
 
 ## Learner names and audio
 
-- For authored personal names, use only Bob, Mary, Rose, Jack, Ben, or Sam.
+- Prefer simple, common personal names that are familiar to English learners
+  from different countries, such as Bob, Mary, Rose, Jack, Ben, or Sam. These
+  are examples, not an exhaustive list; avoid obscure or unfamiliar names.
   Preserve names supplied by a learner or guardian. Keep visible text, artwork,
   and saved audio consistent when an authored name changes.
 - Do not use local, browser, or macOS system text-to-speech for any audio.
