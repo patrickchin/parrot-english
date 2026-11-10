@@ -1,121 +1,187 @@
 {
   "version": 1,
   "id": "pack_kuOni4tB",
-  "title": "今天是一份礼物！",
-  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
-  "duration": 5.255,
-  "video": "today-is-a-gift-v1.mp4",
+  "title": "我没有不开心！",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 11.762,
+  "video": "today-is-a-gift-review-ac73b94aec23.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/today-is-a-gift/",
-  "poster": "today-is-a-gift-poster-v1.jpg",
-  "waveform": "waveform-v2.json",
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
-  },
+  "poster": "today-is-a-gift-poster-ac73b94aec23.jpg",
+  "waveform": "waveform-ac73b94aec23.json",
   "roles": [
     {
       "id": "role__OrFsrNE",
       "name": "乌龟大师",
       "label": "乌龟大师",
-      "hint": "跟着角色的语气说。"
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_-aBSnmfkqjk",
+      "name": "阿宝",
+      "label": "阿宝",
+      "hint": "1 句台词"
     }
   ],
   "lines": [
     {
-      "id": "line_TKvf4Dco",
+      "id": "line_lrafJLEP1oU",
       "roleId": "role__OrFsrNE",
-      "start": 0,
-      "end": 2.5,
-      "text": "But today is a gift.",
-      "hint": "但今天是一份礼物。",
+      "start": 0.3,
+      "end": 4.324,
+      "text": "I understand. You eat when you are upset.",
+      "hint": "我理解。你不开心的时候就会吃东西。",
       "words": [
         {
-          "text": "But",
-          "start": 0.302,
-          "end": 0.464
+          "text": "I",
+          "start": 0.34,
+          "end": 0.36
         },
         {
-          "text": "today",
-          "start": 0.625,
-          "end": 1.169
+          "text": "understand.",
+          "start": 0.5,
+          "end": 1.161
         },
         {
-          "text": "is",
-          "start": 1.673,
-          "end": 1.734
+          "text": "You",
+          "start": 2.042,
+          "end": 2.182
         },
         {
-          "text": "a",
-          "start": 1.835,
-          "end": 1.855
+          "text": "eat",
+          "start": 2.502,
+          "end": 2.642
         },
         {
-          "text": "gift.",
-          "start": 1.935,
-          "end": 2.238
+          "text": "when",
+          "start": 2.862,
+          "end": 3.023
+        },
+        {
+          "text": "you",
+          "start": 3.103,
+          "end": 3.263
+        },
+        {
+          "text": "are",
+          "start": 3.483,
+          "end": 3.583
+        },
+        {
+          "text": "upset.",
+          "start": 3.803,
+          "end": 4.264
         }
       ]
     },
     {
-      "id": "line_4a48I702",
-      "roleId": "role__OrFsrNE",
-      "start": 2.5,
-      "end": 5.25,
-      "text": "That is why it is called the present.",
-      "hint": "所以现在也叫作 present，它也有礼物的意思。",
+      "id": "line_9XnFPzJGlxY",
+      "roleId": "role_-aBSnmfkqjk",
+      "start": 5.224,
+      "end": 8.447,
+      "text": "Upset? I'm not upset. What makes you think I'm upset?",
+      "hint": "不开心？我没有不开心。你为什么觉得我不开心？",
       "words": [
         {
-          "text": "That",
-          "start": 3.203,
-          "end": 3.363
+          "text": "Upset?",
+          "start": 5.264,
+          "end": 5.525
         },
         {
-          "text": "is",
-          "start": 3.464,
-          "end": 3.544
+          "text": "I'm",
+          "start": 6.065,
+          "end": 6.125
+        },
+        {
+          "text": "not",
+          "start": 6.185,
+          "end": 6.265
+        },
+        {
+          "text": "upset.",
+          "start": 6.325,
+          "end": 6.566
+        },
+        {
+          "text": "What",
+          "start": 6.886,
+          "end": 7.166
+        },
+        {
+          "text": "makes",
+          "start": 7.186,
+          "end": 7.406
+        },
+        {
+          "text": "you",
+          "start": 7.466,
+          "end": 7.566
+        },
+        {
+          "text": "think",
+          "start": 7.647,
+          "end": 7.787
+        },
+        {
+          "text": "I'm",
+          "start": 7.967,
+          "end": 8.067
+        },
+        {
+          "text": "upset?",
+          "start": 8.107,
+          "end": 8.387
+        }
+      ]
+    },
+    {
+      "id": "line_IFL8OkZrTEk",
+      "roleId": "role__OrFsrNE",
+      "start": 10.169,
+      "end": 11.75,
+      "text": "So why are you upset?",
+      "hint": "那么，你为什么不开心？",
+      "words": [
+        {
+          "text": "So",
+          "start": 10.209,
+          "end": 10.329
         },
         {
           "text": "why",
-          "start": 3.644,
-          "end": 3.805
+          "start": 10.489,
+          "end": 10.729
         },
         {
-          "text": "it",
-          "start": 3.905,
-          "end": 3.945
+          "text": "are",
+          "start": 10.969,
+          "end": 11.069
         },
         {
-          "text": "is",
-          "start": 4.046,
-          "end": 4.126
+          "text": "you",
+          "start": 11.149,
+          "end": 11.25
         },
         {
-          "text": "called",
-          "start": 4.206,
-          "end": 4.507
-        },
-        {
-          "text": "the",
-          "start": 4.568,
-          "end": 4.628
-        },
-        {
-          "text": "present.",
-          "start": 4.728,
-          "end": 5.089
+          "text": "upset?",
+          "start": 11.43,
+          "end": 11.73
         }
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Kung Fu Panda",
     "attribution": "原作：DreamWorks Animation",
-    "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=72s",
+    "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=0s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "原上传约 72.20–77.45 秒的节选；添加中英台词和配音时间标记。"
+    "changes": "内部原型测试；原上传 0.25–12 秒的节选。The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
   }
 }

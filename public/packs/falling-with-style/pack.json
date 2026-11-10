@@ -2,95 +2,226 @@
   "version": 1,
   "id": "pack_Ciq_cd4H",
   "title": "有风格地落下！",
-  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
-  "duration": 3.712,
-  "video": "falling-with-style-v1.mp4",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 23.815,
+  "video": "falling-with-style-review-ee6964ce2bcd.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/falling-with-style/",
-  "poster": "falling-with-style-poster-v1.jpg",
-  "waveform": "waveform-v2.json",
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
-  },
+  "poster": "falling-with-style-poster-ee6964ce2bcd.jpg",
+  "waveform": "waveform-ee6964ce2bcd.json",
   "roles": [
+    {
+      "id": "role_PbbqOHSVd2c",
+      "name": "胡迪",
+      "label": "胡迪",
+      "hint": "2 句台词"
+    },
     {
       "id": "role_dG7FU8MF",
       "name": "巴斯光年",
       "label": "巴斯光年",
-      "hint": "跟着角色的语气说。"
+      "hint": "3 句台词"
     }
   ],
   "lines": [
     {
-      "id": "line_oovtK_4h",
-      "roleId": "role_dG7FU8MF",
-      "start": 0,
-      "end": 1.3,
-      "text": "This isn't flying.",
-      "hint": "这不叫飞。",
+      "id": "line_mqRL_jjxFQQ",
+      "roleId": "role_PbbqOHSVd2c",
+      "start": 1.541,
+      "end": 3.463,
+      "text": "Hey, Buzz! You're flying!",
+      "hint": "嘿，巴斯！你在飞！",
       "words": [
         {
-          "text": "This",
-          "start": 0.305,
-          "end": 0.467
+          "text": "Hey,",
+          "start": 1.581,
+          "end": 1.681
         },
         {
-          "text": "isn't",
-          "start": 0.569,
-          "end": 0.792
+          "text": "Buzz!",
+          "start": 1.822,
+          "end": 2.162
         },
         {
-          "text": "flying.",
-          "start": 0.873,
-          "end": 1.3
+          "text": "You're",
+          "start": 2.662,
+          "end": 2.822
+        },
+        {
+          "text": "flying!",
+          "start": 3.083,
+          "end": 3.403
         }
       ]
     },
     {
-      "id": "line_mLm50BWf",
+      "id": "line_5IttpmDt3Pk",
       "roleId": "role_dG7FU8MF",
-      "start": 1.3,
-      "end": 3.7,
-      "text": "This is falling with style.",
-      "hint": "这叫有风格地落下。",
+      "start": 3.563,
+      "end": 6.826,
+      "text": "This isn't flying. This is falling with style.",
+      "hint": "这不叫飞，这叫有风格地落下。",
       "words": [
         {
           "text": "This",
-          "start": 1.542,
-          "end": 1.663
+          "start": 3.603,
+          "end": 3.763
+        },
+        {
+          "text": "isn't",
+          "start": 3.863,
+          "end": 4.063
+        },
+        {
+          "text": "flying.",
+          "start": 4.163,
+          "end": 4.584
+        },
+        {
+          "text": "This",
+          "start": 4.824,
+          "end": 4.944
         },
         {
           "text": "is",
-          "start": 1.744,
-          "end": 1.824
+          "start": 5.064,
+          "end": 5.124
         },
         {
           "text": "falling",
-          "start": 1.966,
-          "end": 2.389
+          "start": 5.244,
+          "end": 5.685
         },
         {
           "text": "with",
-          "start": 2.611,
-          "end": 2.833
+          "start": 5.885,
+          "end": 6.105
         },
         {
           "text": "style.",
-          "start": 2.994,
-          "end": 3.498
+          "start": 6.285,
+          "end": 6.766
+        }
+      ]
+    },
+    {
+      "id": "line_0Uboe1j80tw",
+      "roleId": "role_dG7FU8MF",
+      "start": 9.868,
+      "end": 16.013,
+      "text": "To infinity and beyond!",
+      "hint": "飞向宇宙，浩瀚无垠！",
+      "words": [
+        {
+          "text": "To",
+          "start": 9.908,
+          "end": 10.008
+        },
+        {
+          "text": "infinity",
+          "start": 10.249,
+          "end": 12.17
+        },
+        {
+          "text": "and",
+          "start": 13.311,
+          "end": 14.692
+        },
+        {
+          "text": "beyond!",
+          "start": 15.673,
+          "end": 15.953
+        }
+      ]
+    },
+    {
+      "id": "line_6bSZ-1sijGE",
+      "roleId": "role_PbbqOHSVd2c",
+      "start": 20.057,
+      "end": 22.018,
+      "text": "Buzz! We missed the truck!",
+      "hint": "巴斯！我们错过卡车了！",
+      "words": [
+        {
+          "text": "Buzz!",
+          "start": 20.097,
+          "end": 20.557
+        },
+        {
+          "text": "We",
+          "start": 21.018,
+          "end": 21.138
+        },
+        {
+          "text": "missed",
+          "start": 21.198,
+          "end": 21.438
+        },
+        {
+          "text": "the",
+          "start": 21.498,
+          "end": 21.578
+        },
+        {
+          "text": "truck!",
+          "start": 21.678,
+          "end": 21.958
+        }
+      ]
+    },
+    {
+      "id": "line_nfRkrbXMM7g",
+      "roleId": "role_dG7FU8MF",
+      "start": 22.199,
+      "end": 23.68,
+      "text": "We're not aiming for the truck.",
+      "hint": "我们的目标不是卡车。",
+      "words": [
+        {
+          "text": "We're",
+          "start": 22.239,
+          "end": 22.399
+        },
+        {
+          "text": "not",
+          "start": 22.439,
+          "end": 22.579
+        },
+        {
+          "text": "aiming",
+          "start": 22.679,
+          "end": 22.899
+        },
+        {
+          "text": "for",
+          "start": 22.939,
+          "end": 23.039
+        },
+        {
+          "text": "the",
+          "start": 23.119,
+          "end": 23.199
+        },
+        {
+          "text": "truck.",
+          "start": 23.3,
+          "end": 23.62
         }
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Toy Story",
     "attribution": "原作：Disney / Pixar",
-    "source": "https://www.youtube.com/watch?v=zffvi3dTVIo&t=192s",
+    "source": "https://www.youtube.com/watch?v=zffvi3dTVIo&t=189s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "原上传约 192.75–196.45 秒的节选；添加中英台词和配音时间标记。"
+    "changes": "内部原型测试；原上传 189.45–213.25 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

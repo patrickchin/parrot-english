@@ -2,50 +2,261 @@
   "version": 1,
   "id": "pack_p5BgIG-b",
   "title": "咔嚓！",
-  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
-  "duration": 3.003,
-  "video": "ka-chow-v1.mp4",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 14.1,
+  "video": "ka-chow-review-b3c03b6ea0d0.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ka-chow/",
+  "poster": "ka-chow-poster-b3c03b6ea0d0.jpg",
+  "waveform": "waveform-b3c03b6ea0d0.json",
   "roles": [
     {
       "id": "role_NauR2jpl",
       "name": "闪电麦昆",
       "label": "闪电麦昆",
-      "hint": "跟着角色的语气说。"
+      "hint": "3 句台词"
+    },
+    {
+      "id": "role_wyV97y-qVtA",
+      "name": "奇克·海克斯",
+      "label": "奇克·海克斯",
+      "hint": "2 句台词"
     }
   ],
   "lines": [
     {
-      "id": "line_anYjzLCy",
+      "id": "line_vSnfrJzTY2I",
       "roleId": "role_NauR2jpl",
-      "start": 0,
-      "end": 3,
-      "text": "Ka-chow!",
-      "hint": "咔嚓！这是麦昆的口头禅。",
+      "start": 0.22,
+      "end": 2.884,
+      "text": "Hey, fellas, how do you think I'd look in Dinoco blue?",
+      "hint": "嘿，伙计们，你们觉得我涂上恐龙石油的蓝色会怎么样？",
       "words": [
         {
+          "text": "Hey,",
+          "start": 0.26,
+          "end": 0.32
+        },
+        {
+          "text": "fellas,",
+          "start": 0.401,
+          "end": 0.681
+        },
+        {
+          "text": "how",
+          "start": 0.961,
+          "end": 1.062
+        },
+        {
+          "text": "do",
+          "start": 1.082,
+          "end": 1.122
+        },
+        {
+          "text": "you",
+          "start": 1.142,
+          "end": 1.202
+        },
+        {
+          "text": "think",
+          "start": 1.222,
+          "end": 1.342
+        },
+        {
+          "text": "I'd",
+          "start": 1.382,
+          "end": 1.462
+        },
+        {
+          "text": "look",
+          "start": 1.502,
+          "end": 1.622
+        },
+        {
+          "text": "in",
+          "start": 1.722,
+          "end": 1.762
+        },
+        {
+          "text": "Dinoco",
+          "start": 2.143,
+          "end": 2.564
+        },
+        {
+          "text": "blue?",
+          "start": 2.624,
+          "end": 2.824
+        }
+      ]
+    },
+    {
+      "id": "line_Zbl2M1c70rs",
+      "roleId": "role_wyV97y-qVtA",
+      "start": 3.325,
+      "end": 4.366,
+      "text": "Dinoco blue?",
+      "hint": "恐龙石油的蓝色？",
+      "words": [
+        {
+          "text": "Dinoco",
+          "start": 3.365,
+          "end": 3.886
+        },
+        {
+          "text": "blue?",
+          "start": 3.986,
+          "end": 4.306
+        }
+      ]
+    },
+    {
+      "id": "line_PC5MBm3_ppo",
+      "roleId": "role_NauR2jpl",
+      "start": 5.268,
+      "end": 6.91,
+      "text": "In your dreams, Thunder.",
+      "hint": "做梦吧，雷声先生。",
+      "words": [
+        {
+          "text": "In",
+          "start": 5.308,
+          "end": 5.368
+        },
+        {
+          "text": "your",
+          "start": 5.808,
+          "end": 5.928
+        },
+        {
+          "text": "dreams,",
+          "start": 6.049,
+          "end": 6.369
+        },
+        {
+          "text": "Thunder.",
+          "start": 6.449,
+          "end": 6.85
+        }
+      ]
+    },
+    {
+      "id": "line_LEBCO4nqyig",
+      "roleId": "role_wyV97y-qVtA",
+      "start": 6.91,
+      "end": 9.313,
+      "text": "Yeah, right. Thunder? What's he talking about, thunder?",
+      "hint": "是啊，才怪。雷声？他为什么说雷声？",
+      "words": [
+        {
+          "text": "Yeah,",
+          "start": 6.95,
+          "end": 7.19
+        },
+        {
+          "text": "right.",
+          "start": 7.29,
+          "end": 7.491
+        },
+        {
+          "text": "Thunder?",
+          "start": 7.811,
+          "end": 8.071
+        },
+        {
+          "text": "What's",
+          "start": 8.152,
+          "end": 8.312
+        },
+        {
+          "text": "he",
+          "start": 8.352,
+          "end": 8.412
+        },
+        {
+          "text": "talking",
+          "start": 8.452,
+          "end": 8.712
+        },
+        {
+          "text": "about,",
+          "start": 8.752,
+          "end": 8.893
+        },
+        {
+          "text": "thunder?",
+          "start": 8.993,
+          "end": 9.253
+        }
+      ]
+    },
+    {
+      "id": "line_BxYfECSGsEI",
+      "roleId": "role_NauR2jpl",
+      "start": 9.473,
+      "end": 14.1,
+      "text": "You know, because thunder always comes after lightning! Ka-chow!",
+      "hint": "你知道的，因为雷声总在闪电之后！咔嚓！",
+      "words": [
+        {
+          "text": "You",
+          "start": 9.513,
+          "end": 9.574
+        },
+        {
+          "text": "know,",
+          "start": 9.614,
+          "end": 9.734
+        },
+        {
+          "text": "because",
+          "start": 9.774,
+          "end": 9.974
+        },
+        {
+          "text": "thunder",
+          "start": 10.034,
+          "end": 10.355
+        },
+        {
+          "text": "always",
+          "start": 10.435,
+          "end": 10.675
+        },
+        {
+          "text": "comes",
+          "start": 10.735,
+          "end": 10.915
+        },
+        {
+          "text": "after",
+          "start": 10.996,
+          "end": 11.176
+        },
+        {
+          "text": "lightning!",
+          "start": 11.697,
+          "end": 12.338
+        },
+        {
           "text": "Ka-chow!",
-          "start": 1.168,
-          "end": 2.195
+          "start": 12.658,
+          "end": 14.06
         }
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Cars",
     "attribution": "原作：Disney / Pixar",
-    "source": "https://www.youtube.com/watch?v=bhOdIoonjP4&t=5s",
+    "source": "https://www.youtube.com/watch?v=xwk4D4td0_4&t=13s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "原上传约 5.20–8.20 秒的节选；添加中英台词和配音时间标记。"
-  },
-  "waveform": "waveform-v2.json",
-  "poster": "ka-chow-poster-v1.jpg",
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
+    "changes": "内部原型测试；原上传 13.1–27.2 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

@@ -1,0 +1,6103 @@
+{
+  "version": 1,
+  "audience": "Older learners; private adult review. Not an age rating.",
+  "purpose": "private-adult-review",
+  "rightsStatus": "redistribution-not-cleared",
+  "selectionCriteria": "A compact multi-character scene with context and payoff. At least two speaking roles and multiple dialogue lines. Three user-selected benchmark media files are preserved exactly.",
+  "sources": [
+    {
+      "id": "AsemWIZUk4k",
+      "url": "https://www.youtube.com/watch?v=AsemWIZUk4k",
+      "localFile": "content/local-dubbing/keep-swimming-source.mp4",
+      "sourceOffset": 0,
+      "title": "Finding Nemo",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "c6mVl6fAxLw",
+      "url": "https://www.youtube.com/watch?v=c6mVl6fAxLw",
+      "localFile": "content/local-dubbing/fish-friends-source.mp4",
+      "sourceOffset": 0,
+      "title": "Finding Nemo",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "T2b-Ve0GHBw",
+      "url": "https://www.youtube.com/watch?v=T2b-Ve0GHBw",
+      "localFile": "content/local-dubbing/infinity-source.mp4",
+      "sourceOffset": 0,
+      "title": "Toy Story",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "wRsTXf4jvhY",
+      "url": "https://www.youtube.com/watch?v=wRsTXf4jvhY",
+      "localFile": "content/local-dubbing/review/older-audience/sources/wRsTXf4jvhY.mp4",
+      "sourceOffset": 0,
+      "title": "Toy Story",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt",
+      "uploadTitle": "TOY STORY: \"You Are A Toy\" scene (in 41 languages)",
+      "channel": "【K】【E】【V】【I】【N】"
+    },
+    {
+      "id": "zffvi3dTVIo",
+      "url": "https://www.youtube.com/watch?v=zffvi3dTVIo",
+      "localFile": "content/local-dubbing/falling-clean-source.mp4",
+      "sourceOffset": 170,
+      "title": "Toy Story",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "y39L1PesHmc",
+      "url": "https://www.youtube.com/watch?v=y39L1PesHmc",
+      "localFile": "content/local-dubbing/speed-final-source.mp4",
+      "sourceOffset": 0,
+      "title": "Cars on the Road",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "xwk4D4td0_4",
+      "url": "https://www.youtube.com/watch?v=xwk4D4td0_4",
+      "localFile": "content/local-dubbing/review/older-audience/sources/xwk4D4td0_4.mp4",
+      "sourceOffset": 0,
+      "title": "Cars",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt",
+      "uploadTitle": "Lightning McQueen - Well, you know, because Thunder always comes after... Lightning!",
+      "channel": "The Team Awesomeness Vault"
+    },
+    {
+      "id": "82utG7Q3G_k",
+      "url": "https://www.youtube.com/watch?v=82utG7Q3G_k",
+      "localFile": "content/local-dubbing/so-fluffy-source.mp4",
+      "sourceOffset": 0,
+      "title": "Despicable Me",
+      "attribution": "原作：Universal Pictures / Illumination",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "CeOsRggJO4s",
+      "url": "https://www.youtube.com/watch?v=CeOsRggJO4s",
+      "localFile": "content/local-dubbing/review/older-audience/sources/CeOsRggJO4s.mp4",
+      "sourceOffset": 0,
+      "title": "Despicable Me",
+      "attribution": "Universal Pictures / Illumination",
+      "kind": "source-excerpt",
+      "uploadTitle": "Despicable Me - Gru Sets Some Ground Rules",
+      "channel": "Universal Pictures At Home"
+    },
+    {
+      "id": "Fi2i7iuA1n4",
+      "url": "https://www.youtube.com/watch?v=Fi2i7iuA1n4",
+      "localFile": "content/local-dubbing/review/older-audience/sources/Fi2i7iuA1n4.mp4",
+      "sourceOffset": 0,
+      "title": "Up",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt",
+      "uploadTitle": "UP Meet Dug 1440p HD",
+      "channel": "UP Pixar"
+    },
+    {
+      "id": "thkDWSUzQDo",
+      "url": "https://www.youtube.com/watch?v=thkDWSUzQDo",
+      "localFile": "content/local-dubbing/anyone-can-cook-source.mp4",
+      "sourceOffset": 0,
+      "title": "Ratatouille",
+      "attribution": "原作：Disney / Pixar",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "K7DnFGdqT8c",
+      "url": "https://www.youtube.com/watch?v=K7DnFGdqT8c",
+      "localFile": "content/local-dubbing/ingredient-final-source.mp4",
+      "sourceOffset": 0,
+      "title": "Kung Fu Panda",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "PSBfcpqICvY",
+      "url": "https://www.youtube.com/watch?v=PSBfcpqICvY",
+      "localFile": "content/local-dubbing/gift-final-source.mp4",
+      "sourceOffset": 0,
+      "title": "Kung Fu Panda",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "6I5B0jyLBUg",
+      "url": "https://www.youtube.com/watch?v=6I5B0jyLBUg",
+      "localFile": "content/local-dubbing/do-the-roar-source.mp4",
+      "sourceOffset": 0,
+      "title": "Shrek Forever After",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "Gn51xYvJhQI",
+      "url": "https://www.youtube.com/watch?v=Gn51xYvJhQI",
+      "localFile": "content/local-dubbing/are-we-there-yet-source.mp4",
+      "sourceOffset": 0,
+      "title": "Shrek 2",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "xuS9UxuUZ3Y",
+      "url": "https://www.youtube.com/watch?v=xuS9UxuUZ3Y",
+      "localFile": "content/local-dubbing/swamp-clean-source.mp4",
+      "sourceOffset": 0,
+      "title": "Shrek",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "AGTH7rOEbxE",
+      "url": "https://www.youtube.com/watch?v=AGTH7rOEbxE",
+      "localFile": "content/local-dubbing/im-ready-source.mp4",
+      "sourceOffset": 0,
+      "title": "SpongeBob SquarePants",
+      "attribution": "原作：Nickelodeon / Paramount",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "bJ1-CMJY7CE",
+      "url": "https://www.youtube.com/watch?v=bJ1-CMJY7CE",
+      "localFile": "content/local-dubbing/mayonnaise-source.mp4",
+      "sourceOffset": 0,
+      "title": "SpongeBob SquarePants",
+      "attribution": "原作：Nickelodeon / Paramount",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "F64CJmF2dHM",
+      "url": "https://www.youtube.com/watch?v=F64CJmF2dHM",
+      "localFile": "content/local-dubbing/smile-and-wave-source.mp4",
+      "sourceOffset": 0,
+      "title": "Madagascar",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "source-excerpt"
+    },
+    {
+      "id": "--hsVknT1c0",
+      "url": "https://www.youtube.com/watch?v=--hsVknT1c0",
+      "localFile": "content/local-dubbing/review/older-audience/sources/--hsVknT1c0.mp4",
+      "sourceOffset": 0,
+      "title": "SpongeBob SquarePants",
+      "attribution": "原作：Nickelodeon / Viacom",
+      "kind": "source-excerpt",
+      "uploadTitle": "SpongeBob Squarepants - Wumbo",
+      "channel": "Timmin"
+    },
+    {
+      "id": "dwifOuuMkfo",
+      "url": "https://www.youtube.com/watch?v=dwifOuuMkfo",
+      "localFile": "content/local-dubbing/patrick-v1.mp4",
+      "title": "SpongeBob SquarePants",
+      "attribution": "原作：Nickelodeon / Viacom",
+      "kind": "prepared-benchmark",
+      "changes": "选取原片 00:00–00:08 与 00:17–00:23.2，拼接、压缩并添加配音时间标记。"
+    },
+    {
+      "id": "NBhxIyT8Slg",
+      "url": "https://www.youtube.com/watch?v=NBhxIyT8Slg",
+      "localFile": "content/local-dubbing/chocolate-v1.mp4",
+      "title": "SpongeBob SquarePants",
+      "attribution": "原作：Nickelodeon / Viacom",
+      "kind": "prepared-benchmark",
+      "changes": "选取原片 00:10.8–00:22.2，压缩并添加配音时间标记。"
+    },
+    {
+      "id": "aJQmVZSAqlc",
+      "url": "https://www.youtube.com/watch?v=aJQmVZSAqlc",
+      "localFile": "content/local-dubbing/onions-v1.mp4",
+      "title": "Shrek",
+      "attribution": "原作：DreamWorks Animation",
+      "kind": "prepared-benchmark",
+      "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "clip_RnaeKHL4tz0",
+      "slug": "keep-swimming",
+      "file": "keep-swimming-review-v2.mp4",
+      "title": "Just keep swimming!",
+      "titleZh": "一直游下去！",
+      "originalTitle": "一直游下去！",
+      "sourceId": "AsemWIZUk4k",
+      "start": 4.5,
+      "end": 15.6,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_jzfWTAWpMUo",
+          "name": "Dory"
+        },
+        {
+          "id": "role_y7mBEj-GiRI",
+          "name": "Marlin"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_GwXkClrL2y8",
+          "roleId": "role_jzfWTAWpMUo",
+          "speaker": "Dory",
+          "start": 4.82,
+          "end": 6.322,
+          "text": "When life gets you down, you know what you gotta do?",
+          "hint": "当生活让你沮丧时，你知道该怎么办吗？",
+          "words": [
+            {
+              "text": "When",
+              "start": 4.86,
+              "end": 4.96
+            },
+            {
+              "text": "life",
+              "start": 5.02,
+              "end": 5.181
+            },
+            {
+              "text": "gets",
+              "start": 5.241,
+              "end": 5.381
+            },
+            {
+              "text": "you",
+              "start": 5.401,
+              "end": 5.461
+            },
+            {
+              "text": "down,",
+              "start": 5.521,
+              "end": 5.681
+            },
+            {
+              "text": "you",
+              "start": 5.721,
+              "end": 5.781
+            },
+            {
+              "text": "know",
+              "start": 5.801,
+              "end": 5.881
+            },
+            {
+              "text": "what",
+              "start": 5.901,
+              "end": 5.981
+            },
+            {
+              "text": "you",
+              "start": 6.001,
+              "end": 6.061
+            },
+            {
+              "text": "gotta",
+              "start": 6.081,
+              "end": 6.222
+            },
+            {
+              "text": "do?",
+              "start": 6.262,
+              "end": 6.302
+            }
+          ]
+        },
+        {
+          "id": "line_YPqb1v1NRsY",
+          "roleId": "role_y7mBEj-GiRI",
+          "speaker": "Marlin",
+          "start": 6.322,
+          "end": 7.282,
+          "text": "I don't wanna know what you gotta do.",
+          "hint": "我不想知道你要怎么办。",
+          "words": [
+            {
+              "text": "I",
+              "start": 6.342,
+              "end": 6.362
+            },
+            {
+              "text": "don't",
+              "start": 6.402,
+              "end": 6.502
+            },
+            {
+              "text": "wanna",
+              "start": 6.522,
+              "end": 6.642
+            },
+            {
+              "text": "know",
+              "start": 6.662,
+              "end": 6.742
+            },
+            {
+              "text": "what",
+              "start": 6.762,
+              "end": 6.842
+            },
+            {
+              "text": "you",
+              "start": 6.882,
+              "end": 6.942
+            },
+            {
+              "text": "gotta",
+              "start": 6.982,
+              "end": 7.122
+            },
+            {
+              "text": "do.",
+              "start": 7.162,
+              "end": 7.222
+            }
+          ]
+        },
+        {
+          "id": "line_mSPlXzR9wDM",
+          "roleId": "role_jzfWTAWpMUo",
+          "speaker": "Dory",
+          "start": 7.323,
+          "end": 12.637,
+          "text": "Just keep swimming. Just keep swimming. Just keep swimming, swimming, swimming, swimming.",
+          "hint": "一直游下去。一直游下去。游啊，游啊，游啊。",
+          "words": [
+            {
+              "text": "Just",
+              "start": 7.363,
+              "end": 7.543
+            },
+            {
+              "text": "keep",
+              "start": 7.643,
+              "end": 7.823
+            },
+            {
+              "text": "swimming.",
+              "start": 7.923,
+              "end": 8.243
+            },
+            {
+              "text": "Just",
+              "start": 8.584,
+              "end": 8.744
+            },
+            {
+              "text": "keep",
+              "start": 8.844,
+              "end": 9.004
+            },
+            {
+              "text": "swimming.",
+              "start": 9.164,
+              "end": 9.444
+            },
+            {
+              "text": "Just",
+              "start": 9.845,
+              "end": 10.025
+            },
+            {
+              "text": "keep",
+              "start": 10.125,
+              "end": 10.305
+            },
+            {
+              "text": "swimming,",
+              "start": 10.425,
+              "end": 10.926
+            },
+            {
+              "text": "swimming,",
+              "start": 11.066,
+              "end": 11.566
+            },
+            {
+              "text": "swimming,",
+              "start": 11.726,
+              "end": 12.227
+            },
+            {
+              "text": "swimming.",
+              "start": 12.247,
+              "end": 12.627
+            }
+          ]
+        },
+        {
+          "id": "line_4iHL4vjLw7I",
+          "roleId": "role_jzfWTAWpMUo",
+          "speaker": "Dory",
+          "start": 12.637,
+          "end": 14.629,
+          "text": "What do we do? We swim, swim.",
+          "hint": "我们要做什么？我们游啊，游啊。",
+          "words": [
+            {
+              "text": "What",
+              "start": 12.647,
+              "end": 12.827
+            },
+            {
+              "text": "do",
+              "start": 12.847,
+              "end": 12.907
+            },
+            {
+              "text": "we",
+              "start": 12.927,
+              "end": 12.987
+            },
+            {
+              "text": "do?",
+              "start": 13.068,
+              "end": 13.148
+            },
+            {
+              "text": "We",
+              "start": 13.388,
+              "end": 13.488
+            },
+            {
+              "text": "swim,",
+              "start": 13.668,
+              "end": 13.888
+            },
+            {
+              "text": "swim.",
+              "start": 14.369,
+              "end": 14.569
+            }
+          ]
+        },
+        {
+          "id": "line_SX6um_t7oEY",
+          "roleId": "role_y7mBEj-GiRI",
+          "speaker": "Marlin",
+          "start": 14.649,
+          "end": 15.41,
+          "text": "Dory, no singing!",
+          "hint": "多莉，别唱了！",
+          "words": [
+            {
+              "text": "Dory,",
+              "start": 14.689,
+              "end": 14.869
+            },
+            {
+              "text": "no",
+              "start": 14.889,
+              "end": 15.029
+            },
+            {
+              "text": "singing!",
+              "start": 15.069,
+              "end": 15.35
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_oq1hQgYa",
+      "publicSlug": "keep-swimming"
+    },
+    {
+      "id": "clip_Hjrlgu1agsw",
+      "slug": "fish-friends",
+      "file": "fish-friends-review-v2.mp4",
+      "title": "Fish are friends, not food",
+      "titleZh": "鱼儿是朋友，不是食物",
+      "originalTitle": "鱼儿是朋友！",
+      "sourceId": "c6mVl6fAxLw",
+      "start": 15.4,
+      "end": 25.5,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_gkU-I3wxM6c",
+          "name": "Sharks"
+        },
+        {
+          "id": "role_gp1z-ZLSL6Y",
+          "name": "Chum"
+        },
+        {
+          "id": "role_74zNIJOZO7U",
+          "name": "Anchor"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_Z-JtrayinxI",
+          "roleId": "role_gkU-I3wxM6c",
+          "speaker": "Sharks",
+          "start": 15.701,
+          "end": 21.332,
+          "text": "I must first change myself. Fish are friends, not food.",
+          "hint": "我必须先改变自己。鱼儿是朋友，不是食物。",
+          "words": [
+            {
+              "text": "I",
+              "start": 15.741,
+              "end": 15.761
+            },
+            {
+              "text": "must",
+              "start": 16.081,
+              "end": 16.302
+            },
+            {
+              "text": "first",
+              "start": 16.743,
+              "end": 17.504
+            },
+            {
+              "text": "change",
+              "start": 17.564,
+              "end": 17.965
+            },
+            {
+              "text": "myself.",
+              "start": 18.025,
+              "end": 18.566
+            },
+            {
+              "text": "Fish",
+              "start": 18.887,
+              "end": 19.167
+            },
+            {
+              "text": "are",
+              "start": 19.428,
+              "end": 19.528
+            },
+            {
+              "text": "friends,",
+              "start": 19.628,
+              "end": 19.989
+            },
+            {
+              "text": "not",
+              "start": 20.41,
+              "end": 20.711
+            },
+            {
+              "text": "food.",
+              "start": 20.911,
+              "end": 21.272
+            }
+          ]
+        },
+        {
+          "id": "line_8Y0I332Xyqg",
+          "roleId": "role_gp1z-ZLSL6Y",
+          "speaker": "Chum",
+          "start": 21.392,
+          "end": 22.875,
+          "text": "Except stinking dolphins.",
+          "hint": "那些讨厌的海豚除外。",
+          "words": [
+            {
+              "text": "Except",
+              "start": 21.432,
+              "end": 21.692
+            },
+            {
+              "text": "stinking",
+              "start": 21.773,
+              "end": 22.234
+            },
+            {
+              "text": "dolphins.",
+              "start": 22.274,
+              "end": 22.815
+            }
+          ]
+        },
+        {
+          "id": "line_5CnUw81PU6E",
+          "roleId": "role_74zNIJOZO7U",
+          "speaker": "Anchor",
+          "start": 22.935,
+          "end": 25.5,
+          "text": "Dolphins! Yeah, they think they're so cute.",
+          "hint": "海豚！对，它们觉得自己可爱极了。",
+          "words": [
+            {
+              "text": "Dolphins!",
+              "start": 22.975,
+              "end": 23.556
+            },
+            {
+              "text": "Yeah,",
+              "start": 23.797,
+              "end": 24.097
+            },
+            {
+              "text": "they",
+              "start": 24.217,
+              "end": 24.318
+            },
+            {
+              "text": "think",
+              "start": 24.358,
+              "end": 24.478
+            },
+            {
+              "text": "they're",
+              "start": 24.518,
+              "end": 24.698
+            },
+            {
+              "text": "so",
+              "start": 24.799,
+              "end": 25.019
+            },
+            {
+              "text": "cute.",
+              "start": 25.079,
+              "end": 25.5
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_EI_7V5r9",
+      "publicSlug": "fish-friends"
+    },
+    {
+      "id": "clip_-ivM8VxNjFA",
+      "slug": "infinity",
+      "file": "infinity-review-v2.mp4",
+      "title": "Prove you can fly!",
+      "titleZh": "证明你会飞！",
+      "originalTitle": "飞向宇宙！",
+      "sourceId": "T2b-Ve0GHBw",
+      "start": 25.15,
+      "end": 50.05,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_jPzYR5J6EIU",
+          "name": "Woody"
+        },
+        {
+          "id": "role_ILLddUmwHyQ",
+          "name": "Buzz"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_HxHP0CUYMqE",
+          "roleId": "role_jPzYR5J6EIU",
+          "speaker": "Woody",
+          "start": 25.39,
+          "end": 26.391,
+          "text": "No, you can't.",
+          "hint": "不，你不会。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 25.43,
+              "end": 25.55
+            },
+            {
+              "text": "you",
+              "start": 25.791,
+              "end": 25.891
+            },
+            {
+              "text": "can't.",
+              "start": 25.971,
+              "end": 26.331
+            }
+          ]
+        },
+        {
+          "id": "line_jekLQotZxp0",
+          "roleId": "role_ILLddUmwHyQ",
+          "speaker": "Buzz",
+          "start": 27.192,
+          "end": 28.433,
+          "text": "Yes, I can.",
+          "hint": "不，我会。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 27.232,
+              "end": 27.512
+            },
+            {
+              "text": "I",
+              "start": 28.012,
+              "end": 28.032
+            },
+            {
+              "text": "can.",
+              "start": 28.152,
+              "end": 28.373
+            }
+          ]
+        },
+        {
+          "id": "line_QO7gcWmVR2g",
+          "roleId": "role_jPzYR5J6EIU",
+          "speaker": "Woody",
+          "start": 28.513,
+          "end": 31.205,
+          "text": "You can't! Can't, can't, can't!",
+          "hint": "你不会！不会，不会，不会！",
+          "words": [
+            {
+              "text": "You",
+              "start": 28.553,
+              "end": 28.653
+            },
+            {
+              "text": "can't!",
+              "start": 28.713,
+              "end": 28.953
+            },
+            {
+              "text": "Can't,",
+              "start": 29.594,
+              "end": 29.914
+            },
+            {
+              "text": "can't,",
+              "start": 29.994,
+              "end": 30.314
+            },
+            {
+              "text": "can't!",
+              "start": 30.474,
+              "end": 31.195
+            }
+          ]
+        },
+        {
+          "id": "line_SXR8w07PFd4",
+          "roleId": "role_ILLddUmwHyQ",
+          "speaker": "Buzz",
+          "start": 31.205,
+          "end": 33.637,
+          "text": "I tell you, I could fly around this room with my eyes closed.",
+          "hint": "告诉你，我闭着眼睛都能绕着房间飞。",
+          "words": [
+            {
+              "text": "I",
+              "start": 31.215,
+              "end": 31.235
+            },
+            {
+              "text": "tell",
+              "start": 31.255,
+              "end": 31.415
+            },
+            {
+              "text": "you,",
+              "start": 31.455,
+              "end": 31.535
+            },
+            {
+              "text": "I",
+              "start": 31.615,
+              "end": 31.635
+            },
+            {
+              "text": "could",
+              "start": 31.675,
+              "end": 31.815
+            },
+            {
+              "text": "fly",
+              "start": 31.915,
+              "end": 32.076
+            },
+            {
+              "text": "around",
+              "start": 32.116,
+              "end": 32.296
+            },
+            {
+              "text": "this",
+              "start": 32.316,
+              "end": 32.436
+            },
+            {
+              "text": "room",
+              "start": 32.476,
+              "end": 32.596
+            },
+            {
+              "text": "with",
+              "start": 32.636,
+              "end": 32.716
+            },
+            {
+              "text": "my",
+              "start": 32.736,
+              "end": 32.796
+            },
+            {
+              "text": "eyes",
+              "start": 32.916,
+              "end": 33.056
+            },
+            {
+              "text": "closed.",
+              "start": 33.136,
+              "end": 33.577
+            }
+          ]
+        },
+        {
+          "id": "line_m0O_CRl25-E",
+          "roleId": "role_jPzYR5J6EIU",
+          "speaker": "Woody",
+          "start": 33.817,
+          "end": 35.919,
+          "text": "Okay, then, Mr. Lightyear. Prove it.",
+          "hint": "那好吧，光年先生。证明给我看。",
+          "words": [
+            {
+              "text": "Okay,",
+              "start": 33.857,
+              "end": 34.177
+            },
+            {
+              "text": "then,",
+              "start": 34.237,
+              "end": 34.337
+            },
+            {
+              "text": "Mr.",
+              "start": 34.417,
+              "end": 34.618
+            },
+            {
+              "text": "Lightyear.",
+              "start": 34.678,
+              "end": 35.098
+            },
+            {
+              "text": "Prove",
+              "start": 35.498,
+              "end": 35.718
+            },
+            {
+              "text": "it.",
+              "start": 35.799,
+              "end": 35.859
+            }
+          ]
+        },
+        {
+          "id": "line_czHEV1TQZVg",
+          "roleId": "role_ILLddUmwHyQ",
+          "speaker": "Buzz",
+          "start": 36.019,
+          "end": 38.681,
+          "text": "All right, then I will. Stand back, everyone.",
+          "hint": "好，我来证明。大家往后站。",
+          "words": [
+            {
+              "text": "All",
+              "start": 36.059,
+              "end": 36.159
+            },
+            {
+              "text": "right,",
+              "start": 36.239,
+              "end": 36.379
+            },
+            {
+              "text": "then",
+              "start": 36.399,
+              "end": 36.499
+            },
+            {
+              "text": "I",
+              "start": 36.579,
+              "end": 36.599
+            },
+            {
+              "text": "will.",
+              "start": 36.639,
+              "end": 36.819
+            },
+            {
+              "text": "Stand",
+              "start": 37.88,
+              "end": 38.08
+            },
+            {
+              "text": "back,",
+              "start": 38.14,
+              "end": 38.261
+            },
+            {
+              "text": "everyone.",
+              "start": 38.341,
+              "end": 38.621
+            }
+          ]
+        },
+        {
+          "id": "line_CfgXeUF6r2k",
+          "roleId": "role_ILLddUmwHyQ",
+          "speaker": "Buzz",
+          "start": 46.968,
+          "end": 49.79,
+          "text": "To infinity and beyond!",
+          "hint": "飞向宇宙，浩瀚无垠！",
+          "words": [
+            {
+              "text": "To",
+              "start": 47.008,
+              "end": 47.288
+            },
+            {
+              "text": "infinity",
+              "start": 47.588,
+              "end": 48.309
+            },
+            {
+              "text": "and",
+              "start": 49.009,
+              "end": 49.109
+            },
+            {
+              "text": "beyond!",
+              "start": 49.169,
+              "end": 49.73
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_fEAVzgFh",
+      "publicSlug": "infinity"
+    },
+    {
+      "id": "clip_3qlJJA5aosA",
+      "slug": "you-are-a-toy",
+      "file": "you-are-a-toy-review-v2.mp4",
+      "title": "You are a toy!",
+      "titleZh": "你是个玩具！",
+      "originalTitle": "你是个玩具！",
+      "sourceId": "wRsTXf4jvhY",
+      "start": 45.05,
+      "end": 63.65,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_AHTBCxbjxz0",
+          "name": "Woody"
+        },
+        {
+          "id": "role_q1JOcg9gD7M",
+          "name": "Buzz"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_EcLskVSCsUs",
+          "roleId": "role_AHTBCxbjxz0",
+          "speaker": "Woody",
+          "start": 45.571,
+          "end": 55.421,
+          "text": "You are a toy! You aren't the real Buzz Lightyear! You're an action figure! You are a child's plaything!",
+          "hint": "你是个玩具！你不是真正的巴斯光年！你是一个人偶，是孩子的玩具！",
+          "words": [
+            {
+              "text": "You",
+              "start": 45.611,
+              "end": 45.851
+            },
+            {
+              "text": "are",
+              "start": 46.572,
+              "end": 46.752
+            },
+            {
+              "text": "a",
+              "start": 47.232,
+              "end": 47.252
+            },
+            {
+              "text": "toy!",
+              "start": 47.633,
+              "end": 48.273
+            },
+            {
+              "text": "You",
+              "start": 48.934,
+              "end": 49.054
+            },
+            {
+              "text": "aren't",
+              "start": 49.074,
+              "end": 49.194
+            },
+            {
+              "text": "the",
+              "start": 49.214,
+              "end": 49.275
+            },
+            {
+              "text": "real",
+              "start": 49.355,
+              "end": 49.495
+            },
+            {
+              "text": "Buzz",
+              "start": 49.635,
+              "end": 49.855
+            },
+            {
+              "text": "Lightyear!",
+              "start": 49.955,
+              "end": 50.336
+            },
+            {
+              "text": "You're",
+              "start": 50.396,
+              "end": 50.596
+            },
+            {
+              "text": "an",
+              "start": 50.976,
+              "end": 51.397
+            },
+            {
+              "text": "action",
+              "start": 51.537,
+              "end": 51.817
+            },
+            {
+              "text": "figure!",
+              "start": 51.957,
+              "end": 52.418
+            },
+            {
+              "text": "You",
+              "start": 52.798,
+              "end": 52.918
+            },
+            {
+              "text": "are",
+              "start": 53.219,
+              "end": 53.339
+            },
+            {
+              "text": "a",
+              "start": 53.439,
+              "end": 53.459
+            },
+            {
+              "text": "child's",
+              "start": 53.679,
+              "end": 54.1
+            },
+            {
+              "text": "plaything!",
+              "start": 54.44,
+              "end": 55.361
+            }
+          ]
+        },
+        {
+          "id": "line_CNaza12crtI",
+          "roleId": "role_q1JOcg9gD7M",
+          "speaker": "Buzz",
+          "start": 56.622,
+          "end": 60.707,
+          "text": "You are a sad, strange little man, and you have my pity. Farewell.",
+          "hint": "你是一个可怜又奇怪的小家伙，我同情你。告辞。",
+          "words": [
+            {
+              "text": "You",
+              "start": 56.662,
+              "end": 56.763
+            },
+            {
+              "text": "are",
+              "start": 56.923,
+              "end": 57.043
+            },
+            {
+              "text": "a",
+              "start": 57.143,
+              "end": 57.163
+            },
+            {
+              "text": "sad,",
+              "start": 57.383,
+              "end": 57.684
+            },
+            {
+              "text": "strange",
+              "start": 57.864,
+              "end": 58.284
+            },
+            {
+              "text": "little",
+              "start": 58.344,
+              "end": 58.524
+            },
+            {
+              "text": "man,",
+              "start": 58.565,
+              "end": 58.765
+            },
+            {
+              "text": "and",
+              "start": 59.125,
+              "end": 59.205
+            },
+            {
+              "text": "you",
+              "start": 59.225,
+              "end": 59.285
+            },
+            {
+              "text": "have",
+              "start": 59.305,
+              "end": 59.506
+            },
+            {
+              "text": "my",
+              "start": 59.526,
+              "end": 59.566
+            },
+            {
+              "text": "pity.",
+              "start": 59.606,
+              "end": 59.746
+            },
+            {
+              "text": "Farewell.",
+              "start": 60.266,
+              "end": 60.647
+            }
+          ]
+        },
+        {
+          "id": "line_wrTIOx_y_5Q",
+          "roleId": "role_AHTBCxbjxz0",
+          "speaker": "Woody",
+          "start": 61.448,
+          "end": 63.35,
+          "text": "Oh, yeah? Well, good riddance, you loony!",
+          "hint": "哦，是吗？走了正好，你这个疯子！",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 61.488,
+              "end": 61.588
+            },
+            {
+              "text": "yeah?",
+              "start": 61.628,
+              "end": 61.928
+            },
+            {
+              "text": "Well,",
+              "start": 61.988,
+              "end": 62.148
+            },
+            {
+              "text": "good",
+              "start": 62.289,
+              "end": 62.449
+            },
+            {
+              "text": "riddance,",
+              "start": 62.509,
+              "end": 62.749
+            },
+            {
+              "text": "you",
+              "start": 62.809,
+              "end": 62.929
+            },
+            {
+              "text": "loony!",
+              "start": 62.989,
+              "end": 63.29
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_txYTl2tq",
+      "publicSlug": "you-are-a-toy"
+    },
+    {
+      "id": "clip_dqoZnV78SiQ",
+      "slug": "falling-with-style",
+      "file": "falling-with-style-review-v2.mp4",
+      "title": "This is falling with style",
+      "titleZh": "这叫有风格地落下",
+      "originalTitle": "有风格地落下！",
+      "sourceId": "zffvi3dTVIo",
+      "start": 19.45,
+      "end": 43.25,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_PbbqOHSVd2c",
+          "name": "Woody"
+        },
+        {
+          "id": "role_uCxMJvsDijM",
+          "name": "Buzz"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_mqRL_jjxFQQ",
+          "roleId": "role_PbbqOHSVd2c",
+          "speaker": "Woody",
+          "start": 20.991,
+          "end": 22.913,
+          "text": "Hey, Buzz! You're flying!",
+          "hint": "嘿，巴斯！你在飞！",
+          "words": [
+            {
+              "text": "Hey,",
+              "start": 21.031,
+              "end": 21.131
+            },
+            {
+              "text": "Buzz!",
+              "start": 21.272,
+              "end": 21.612
+            },
+            {
+              "text": "You're",
+              "start": 22.112,
+              "end": 22.272
+            },
+            {
+              "text": "flying!",
+              "start": 22.533,
+              "end": 22.853
+            }
+          ]
+        },
+        {
+          "id": "line_5IttpmDt3Pk",
+          "roleId": "role_uCxMJvsDijM",
+          "speaker": "Buzz",
+          "start": 23.013,
+          "end": 26.276,
+          "text": "This isn't flying. This is falling with style.",
+          "hint": "这不叫飞，这叫有风格地落下。",
+          "words": [
+            {
+              "text": "This",
+              "start": 23.053,
+              "end": 23.213
+            },
+            {
+              "text": "isn't",
+              "start": 23.313,
+              "end": 23.513
+            },
+            {
+              "text": "flying.",
+              "start": 23.613,
+              "end": 24.034
+            },
+            {
+              "text": "This",
+              "start": 24.274,
+              "end": 24.394
+            },
+            {
+              "text": "is",
+              "start": 24.514,
+              "end": 24.574
+            },
+            {
+              "text": "falling",
+              "start": 24.694,
+              "end": 25.135
+            },
+            {
+              "text": "with",
+              "start": 25.335,
+              "end": 25.555
+            },
+            {
+              "text": "style.",
+              "start": 25.735,
+              "end": 26.216
+            }
+          ]
+        },
+        {
+          "id": "line_0Uboe1j80tw",
+          "roleId": "role_uCxMJvsDijM",
+          "speaker": "Buzz",
+          "start": 29.318,
+          "end": 35.463,
+          "text": "To infinity and beyond!",
+          "hint": "飞向宇宙，浩瀚无垠！",
+          "words": [
+            {
+              "text": "To",
+              "start": 29.358,
+              "end": 29.458
+            },
+            {
+              "text": "infinity",
+              "start": 29.699,
+              "end": 31.62
+            },
+            {
+              "text": "and",
+              "start": 32.761,
+              "end": 34.142
+            },
+            {
+              "text": "beyond!",
+              "start": 35.123,
+              "end": 35.403
+            }
+          ]
+        },
+        {
+          "id": "line_6bSZ-1sijGE",
+          "roleId": "role_PbbqOHSVd2c",
+          "speaker": "Woody",
+          "start": 39.507,
+          "end": 41.468,
+          "text": "Buzz! We missed the truck!",
+          "hint": "巴斯！我们错过卡车了！",
+          "words": [
+            {
+              "text": "Buzz!",
+              "start": 39.547,
+              "end": 40.007
+            },
+            {
+              "text": "We",
+              "start": 40.468,
+              "end": 40.588
+            },
+            {
+              "text": "missed",
+              "start": 40.648,
+              "end": 40.888
+            },
+            {
+              "text": "the",
+              "start": 40.948,
+              "end": 41.028
+            },
+            {
+              "text": "truck!",
+              "start": 41.128,
+              "end": 41.408
+            }
+          ]
+        },
+        {
+          "id": "line_nfRkrbXMM7g",
+          "roleId": "role_uCxMJvsDijM",
+          "speaker": "Buzz",
+          "start": 41.649,
+          "end": 43.13,
+          "text": "We're not aiming for the truck.",
+          "hint": "我们的目标不是卡车。",
+          "words": [
+            {
+              "text": "We're",
+              "start": 41.689,
+              "end": 41.849
+            },
+            {
+              "text": "not",
+              "start": 41.889,
+              "end": 42.029
+            },
+            {
+              "text": "aiming",
+              "start": 42.129,
+              "end": 42.349
+            },
+            {
+              "text": "for",
+              "start": 42.389,
+              "end": 42.489
+            },
+            {
+              "text": "the",
+              "start": 42.569,
+              "end": 42.649
+            },
+            {
+              "text": "truck.",
+              "start": 42.75,
+              "end": 43.07
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_Ciq_cd4H",
+      "publicSlug": "falling-with-style"
+    },
+    {
+      "id": "clip_5t6SYMzRsUY",
+      "slug": "i-am-speed",
+      "file": "i-am-speed-review-v2.mp4",
+      "title": "You can back off now!",
+      "titleZh": "你现在可以慢下来了！",
+      "originalTitle": "我就是速度！",
+      "sourceId": "y39L1PesHmc",
+      "start": 28.95,
+      "end": 40.65,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_arjkI9OdyX4",
+          "name": "Mater"
+        },
+        {
+          "id": "role_t3AskixQqcI",
+          "name": "Lightning McQueen"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_o9wCPmkYAu8",
+          "roleId": "role_arjkI9OdyX4",
+          "speaker": "Mater",
+          "start": 29.211,
+          "end": 31.074,
+          "text": "One hundred seventy-five miles per hour!",
+          "hint": "每小时一百七十五英里！",
+          "words": [
+            {
+              "text": "One",
+              "start": 29.251,
+              "end": 29.331
+            },
+            {
+              "text": "hundred",
+              "start": 29.391,
+              "end": 29.591
+            },
+            {
+              "text": "seventy-five",
+              "start": 29.711,
+              "end": 30.232
+            },
+            {
+              "text": "miles",
+              "start": 30.292,
+              "end": 30.493
+            },
+            {
+              "text": "per",
+              "start": 30.653,
+              "end": 30.753
+            },
+            {
+              "text": "hour!",
+              "start": 30.853,
+              "end": 31.014
+            }
+          ]
+        },
+        {
+          "id": "line_1LHYqCogk0U",
+          "roleId": "role_t3AskixQqcI",
+          "speaker": "Lightning McQueen",
+          "start": 31.094,
+          "end": 35.1,
+          "text": "Okay! You did it, buddy! You can back off now!",
+          "hint": "好！你做到了，伙计！你现在可以慢下来了！",
+          "words": [
+            {
+              "text": "Okay!",
+              "start": 31.134,
+              "end": 31.715
+            },
+            {
+              "text": "You",
+              "start": 32.276,
+              "end": 32.376
+            },
+            {
+              "text": "did",
+              "start": 32.416,
+              "end": 32.476
+            },
+            {
+              "text": "it,",
+              "start": 32.516,
+              "end": 32.576
+            },
+            {
+              "text": "buddy!",
+              "start": 32.656,
+              "end": 33.598
+            },
+            {
+              "text": "You",
+              "start": 33.698,
+              "end": 33.778
+            },
+            {
+              "text": "can",
+              "start": 33.878,
+              "end": 34.019
+            },
+            {
+              "text": "back",
+              "start": 34.079,
+              "end": 34.259
+            },
+            {
+              "text": "off",
+              "start": 34.479,
+              "end": 34.6
+            },
+            {
+              "text": "now!",
+              "start": 34.72,
+              "end": 35.04
+            }
+          ]
+        },
+        {
+          "id": "line__CWP9gWKCd8",
+          "roleId": "role_arjkI9OdyX4",
+          "speaker": "Mater",
+          "start": 35.281,
+          "end": 38.025,
+          "text": "Later! I am speed!",
+          "hint": "回头见！我就是速度！",
+          "words": [
+            {
+              "text": "Later!",
+              "start": 35.321,
+              "end": 35.722
+            },
+            {
+              "text": "I",
+              "start": 36.543,
+              "end": 36.563
+            },
+            {
+              "text": "am",
+              "start": 36.984,
+              "end": 37.084
+            },
+            {
+              "text": "speed!",
+              "start": 37.505,
+              "end": 37.965
+            }
+          ]
+        },
+        {
+          "id": "line_qILBp2_zPSI",
+          "roleId": "role_t3AskixQqcI",
+          "speaker": "Lightning McQueen",
+          "start": 39.889,
+          "end": 40.309,
+          "text": "Whoa!",
+          "hint": "哇！",
+          "words": [
+            {
+              "text": "Whoa!",
+              "start": 39.929,
+              "end": 40.249
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_oSd4bYiR",
+      "publicSlug": "i-am-speed"
+    },
+    {
+      "id": "clip_DeDuMyuP4cU",
+      "slug": "ka-chow",
+      "file": "ka-chow-review-v2.mp4",
+      "title": "Thunder comes after lightning",
+      "titleZh": "雷声总在闪电之后",
+      "originalTitle": "咔嚓！",
+      "sourceId": "xwk4D4td0_4",
+      "start": 13.1,
+      "end": 27.2,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_FuMopiX_RTw",
+          "name": "Lightning McQueen"
+        },
+        {
+          "id": "role_wyV97y-qVtA",
+          "name": "Chick Hicks"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_vSnfrJzTY2I",
+          "roleId": "role_FuMopiX_RTw",
+          "speaker": "Lightning McQueen",
+          "start": 13.32,
+          "end": 15.984,
+          "text": "Hey, fellas, how do you think I'd look in Dinoco blue?",
+          "hint": "嘿，伙计们，你们觉得我涂上恐龙石油的蓝色会怎么样？",
+          "words": [
+            {
+              "text": "Hey,",
+              "start": 13.36,
+              "end": 13.42
+            },
+            {
+              "text": "fellas,",
+              "start": 13.501,
+              "end": 13.781
+            },
+            {
+              "text": "how",
+              "start": 14.061,
+              "end": 14.162
+            },
+            {
+              "text": "do",
+              "start": 14.182,
+              "end": 14.222
+            },
+            {
+              "text": "you",
+              "start": 14.242,
+              "end": 14.302
+            },
+            {
+              "text": "think",
+              "start": 14.322,
+              "end": 14.442
+            },
+            {
+              "text": "I'd",
+              "start": 14.482,
+              "end": 14.562
+            },
+            {
+              "text": "look",
+              "start": 14.602,
+              "end": 14.722
+            },
+            {
+              "text": "in",
+              "start": 14.822,
+              "end": 14.862
+            },
+            {
+              "text": "Dinoco",
+              "start": 15.243,
+              "end": 15.664
+            },
+            {
+              "text": "blue?",
+              "start": 15.724,
+              "end": 15.924
+            }
+          ]
+        },
+        {
+          "id": "line_Zbl2M1c70rs",
+          "roleId": "role_wyV97y-qVtA",
+          "speaker": "Chick Hicks",
+          "start": 16.425,
+          "end": 17.466,
+          "text": "Dinoco blue?",
+          "hint": "恐龙石油的蓝色？",
+          "words": [
+            {
+              "text": "Dinoco",
+              "start": 16.465,
+              "end": 16.986
+            },
+            {
+              "text": "blue?",
+              "start": 17.086,
+              "end": 17.406
+            }
+          ]
+        },
+        {
+          "id": "line_PC5MBm3_ppo",
+          "roleId": "role_FuMopiX_RTw",
+          "speaker": "Lightning McQueen",
+          "start": 18.368,
+          "end": 20.01,
+          "text": "In your dreams, Thunder.",
+          "hint": "做梦吧，雷声先生。",
+          "words": [
+            {
+              "text": "In",
+              "start": 18.408,
+              "end": 18.468
+            },
+            {
+              "text": "your",
+              "start": 18.908,
+              "end": 19.028
+            },
+            {
+              "text": "dreams,",
+              "start": 19.149,
+              "end": 19.469
+            },
+            {
+              "text": "Thunder.",
+              "start": 19.549,
+              "end": 19.95
+            }
+          ]
+        },
+        {
+          "id": "line_LEBCO4nqyig",
+          "roleId": "role_wyV97y-qVtA",
+          "speaker": "Chick Hicks",
+          "start": 20.01,
+          "end": 22.413,
+          "text": "Yeah, right. Thunder? What's he talking about, thunder?",
+          "hint": "是啊，才怪。雷声？他为什么说雷声？",
+          "words": [
+            {
+              "text": "Yeah,",
+              "start": 20.05,
+              "end": 20.29
+            },
+            {
+              "text": "right.",
+              "start": 20.39,
+              "end": 20.591
+            },
+            {
+              "text": "Thunder?",
+              "start": 20.911,
+              "end": 21.171
+            },
+            {
+              "text": "What's",
+              "start": 21.252,
+              "end": 21.412
+            },
+            {
+              "text": "he",
+              "start": 21.452,
+              "end": 21.512
+            },
+            {
+              "text": "talking",
+              "start": 21.552,
+              "end": 21.812
+            },
+            {
+              "text": "about,",
+              "start": 21.852,
+              "end": 21.993
+            },
+            {
+              "text": "thunder?",
+              "start": 22.093,
+              "end": 22.353
+            }
+          ]
+        },
+        {
+          "id": "line_BxYfECSGsEI",
+          "roleId": "role_FuMopiX_RTw",
+          "speaker": "Lightning McQueen",
+          "start": 22.573,
+          "end": 27.2,
+          "text": "You know, because thunder always comes after lightning! Ka-chow!",
+          "hint": "你知道的，因为雷声总在闪电之后！咔嚓！",
+          "words": [
+            {
+              "text": "You",
+              "start": 22.613,
+              "end": 22.674
+            },
+            {
+              "text": "know,",
+              "start": 22.714,
+              "end": 22.834
+            },
+            {
+              "text": "because",
+              "start": 22.874,
+              "end": 23.074
+            },
+            {
+              "text": "thunder",
+              "start": 23.134,
+              "end": 23.455
+            },
+            {
+              "text": "always",
+              "start": 23.535,
+              "end": 23.775
+            },
+            {
+              "text": "comes",
+              "start": 23.835,
+              "end": 24.015
+            },
+            {
+              "text": "after",
+              "start": 24.096,
+              "end": 24.276
+            },
+            {
+              "text": "lightning!",
+              "start": 24.797,
+              "end": 25.438
+            },
+            {
+              "text": "Ka-chow!",
+              "start": 25.758,
+              "end": 27.16
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_p5BgIG-b",
+      "publicSlug": "ka-chow"
+    },
+    {
+      "id": "clip_9sXsdrNOeOo",
+      "slug": "so-fluffy",
+      "file": "so-fluffy-review-v2.mp4",
+      "title": "Knocked over! So fluffy!",
+      "titleZh": "打倒了！太毛茸茸了！",
+      "originalTitle": "太毛茸茸了！",
+      "sourceId": "82utG7Q3G_k",
+      "start": 23.3,
+      "end": 54,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_ac_suThrxnA",
+          "name": "Margo"
+        },
+        {
+          "id": "role_jzla1RP1Alo",
+          "name": "Agnes"
+        },
+        {
+          "id": "role_2YM2UXibtNQ",
+          "name": "Carnival attendant"
+        },
+        {
+          "id": "role_AmEQPuK-wqk",
+          "name": "Gru"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_dMLZ1IGcbEU",
+          "roleId": "role_ac_suThrxnA",
+          "speaker": "Margo",
+          "start": 23.74,
+          "end": 24.461,
+          "text": "She hit that!",
+          "hint": "她打中了！",
+          "words": [
+            {
+              "text": "She",
+              "start": 23.78,
+              "end": 23.98
+            },
+            {
+              "text": "hit",
+              "start": 24.02,
+              "end": 24.101
+            },
+            {
+              "text": "that!",
+              "start": 24.221,
+              "end": 24.421
+            }
+          ]
+        },
+        {
+          "id": "line_LGeBJ-DQIqE",
+          "roleId": "role_AmEQPuK-wqk",
+          "speaker": "Gru",
+          "text": "I saw that with my own eyes!",
+          "hint": "我亲眼看到的！",
+          "start": 25.121,
+          "end": 26.482,
+          "words": [
+            {
+              "text": "I",
+              "start": 25.161,
+              "end": 25.181
+            },
+            {
+              "text": "saw",
+              "start": 25.261,
+              "end": 25.381
+            },
+            {
+              "text": "that",
+              "start": 25.501,
+              "end": 25.642
+            },
+            {
+              "text": "with",
+              "start": 25.742,
+              "end": 25.842
+            },
+            {
+              "text": "my",
+              "start": 25.942,
+              "end": 26.002
+            },
+            {
+              "text": "own",
+              "start": 26.062,
+              "end": 26.142
+            },
+            {
+              "text": "eyes!",
+              "start": 26.322,
+              "end": 26.442
+            }
+          ]
+        },
+        {
+          "id": "line_xedvIDLo96E",
+          "roleId": "role_2YM2UXibtNQ",
+          "speaker": "Carnival attendant",
+          "start": 26.742,
+          "end": 30.865,
+          "text": "Let me explain something to you. You see how it's not knocked over?",
+          "hint": "让我给你解释一下。看见了吗？它没有倒下。",
+          "words": [
+            {
+              "text": "Let",
+              "start": 26.782,
+              "end": 26.942
+            },
+            {
+              "text": "me",
+              "start": 27.022,
+              "end": 27.082
+            },
+            {
+              "text": "explain",
+              "start": 27.203,
+              "end": 27.583
+            },
+            {
+              "text": "something",
+              "start": 27.763,
+              "end": 28.143
+            },
+            {
+              "text": "to",
+              "start": 28.223,
+              "end": 28.343
+            },
+            {
+              "text": "you.",
+              "start": 28.423,
+              "end": 28.784
+            },
+            {
+              "text": "You",
+              "start": 28.844,
+              "end": 28.924
+            },
+            {
+              "text": "see",
+              "start": 29.004,
+              "end": 29.124
+            },
+            {
+              "text": "how",
+              "start": 29.184,
+              "end": 29.284
+            },
+            {
+              "text": "it's",
+              "start": 29.424,
+              "end": 29.564
+            },
+            {
+              "text": "not",
+              "start": 29.724,
+              "end": 29.944
+            },
+            {
+              "text": "knocked",
+              "start": 30.124,
+              "end": 30.465
+            },
+            {
+              "text": "over?",
+              "start": 30.545,
+              "end": 30.805
+            }
+          ]
+        },
+        {
+          "id": "line_KxCliJfbErE",
+          "roleId": "role_AmEQPuK-wqk",
+          "speaker": "Gru",
+          "start": 31.305,
+          "end": 38.77,
+          "text": "Okay. My turn.",
+          "hint": "好吧。轮到我了。",
+          "words": [
+            {
+              "text": "Okay.",
+              "start": 31.345,
+              "end": 31.746
+            },
+            {
+              "text": "My",
+              "start": 32.606,
+              "end": 32.966
+            },
+            {
+              "text": "turn.",
+              "start": 33.327,
+              "end": 38.71
+            }
+          ]
+        },
+        {
+          "id": "line_Gu4xvkZ4xUI",
+          "roleId": "role_AmEQPuK-wqk",
+          "speaker": "Gru",
+          "start": 50.338,
+          "end": 52.319,
+          "text": "Knocked over!",
+          "hint": "打倒了！",
+          "words": [
+            {
+              "text": "Knocked",
+              "start": 50.378,
+              "end": 50.798
+            },
+            {
+              "text": "over!",
+              "start": 51.318,
+              "end": 52.259
+            }
+          ]
+        },
+        {
+          "id": "line_lQMC9DBhNwo",
+          "roleId": "role_jzla1RP1Alo",
+          "speaker": "Agnes",
+          "start": 52.779,
+          "end": 53.98,
+          "text": "It's so fluffy!",
+          "hint": "太毛茸茸了！",
+          "words": [
+            {
+              "text": "It's",
+              "start": 52.819,
+              "end": 52.919
+            },
+            {
+              "text": "so",
+              "start": 52.959,
+              "end": 53.059
+            },
+            {
+              "text": "fluffy!",
+              "start": 53.32,
+              "end": 53.92
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_RPXXEtjf",
+      "publicSlug": "so-fluffy"
+    },
+    {
+      "id": "clip_yUY12PpfVy4",
+      "slug": "banana",
+      "file": "banana-review-v2.mp4",
+      "title": "What about the floor?",
+      "titleZh": "那地板呢？",
+      "originalTitle": "香蕉！",
+      "sourceId": "CeOsRggJO4s",
+      "start": 10.9,
+      "end": 29.5,
+      "editType": "replacement",
+      "editNote": "The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise.",
+      "roles": [
+        {
+          "id": "role_6qGKlj0DGGU",
+          "name": "Gru"
+        },
+        {
+          "id": "role_ttD2BhSD_aQ",
+          "name": "Margo"
+        },
+        {
+          "id": "role_Y1QH7lsWlSU",
+          "name": "Edith"
+        },
+        {
+          "id": "role_PrQjOT97Qvw",
+          "name": "Agnes"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_CJfcCiT4lGE",
+          "roleId": "role_6qGKlj0DGGU",
+          "speaker": "Gru",
+          "start": 11.08,
+          "end": 15.585,
+          "text": "Rule number one: you will not touch anything.",
+          "hint": "第一条：什么都不许碰。",
+          "words": [
+            {
+              "text": "Rule",
+              "start": 11.12,
+              "end": 11.501
+            },
+            {
+              "text": "number",
+              "start": 11.561,
+              "end": 11.801
+            },
+            {
+              "text": "one:",
+              "start": 12.001,
+              "end": 12.141
+            },
+            {
+              "text": "you",
+              "start": 12.942,
+              "end": 13.122
+            },
+            {
+              "text": "will",
+              "start": 13.383,
+              "end": 13.583
+            },
+            {
+              "text": "not",
+              "start": 13.643,
+              "end": 13.923
+            },
+            {
+              "text": "touch",
+              "start": 14.143,
+              "end": 14.584
+            },
+            {
+              "text": "anything.",
+              "start": 15.044,
+              "end": 15.525
+            }
+          ]
+        },
+        {
+          "id": "line_ChIFs6Uh-8c",
+          "roleId": "role_ttD2BhSD_aQ",
+          "speaker": "Margo",
+          "start": 15.725,
+          "end": 17.127,
+          "text": "Uh-huh. What about the floor?",
+          "hint": "嗯，那地板呢？",
+          "words": [
+            {
+              "text": "Uh-huh.",
+              "start": 15.765,
+              "end": 16.026
+            },
+            {
+              "text": "What",
+              "start": 16.346,
+              "end": 16.446
+            },
+            {
+              "text": "about",
+              "start": 16.486,
+              "end": 16.646
+            },
+            {
+              "text": "the",
+              "start": 16.686,
+              "end": 16.766
+            },
+            {
+              "text": "floor?",
+              "start": 16.806,
+              "end": 17.067
+            }
+          ]
+        },
+        {
+          "id": "line_jyOr1NTEBAM",
+          "roleId": "role_6qGKlj0DGGU",
+          "speaker": "Gru",
+          "start": 18.028,
+          "end": 19.669,
+          "text": "Yes, you may touch the floor.",
+          "hint": "好，地板可以碰。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 18.068,
+              "end": 18.408
+            },
+            {
+              "text": "you",
+              "start": 18.508,
+              "end": 18.608
+            },
+            {
+              "text": "may",
+              "start": 18.668,
+              "end": 18.768
+            },
+            {
+              "text": "touch",
+              "start": 18.849,
+              "end": 19.089
+            },
+            {
+              "text": "the",
+              "start": 19.189,
+              "end": 19.289
+            },
+            {
+              "text": "floor.",
+              "start": 19.329,
+              "end": 19.609
+            }
+          ]
+        },
+        {
+          "id": "line_RDPRAtHC5cQ",
+          "roleId": "role_PrQjOT97Qvw",
+          "speaker": "Agnes",
+          "start": 19.99,
+          "end": 21.031,
+          "text": "What about the air?",
+          "hint": "那空气呢？",
+          "words": [
+            {
+              "text": "What",
+              "start": 20.03,
+              "end": 20.15
+            },
+            {
+              "text": "about",
+              "start": 20.21,
+              "end": 20.41
+            },
+            {
+              "text": "the",
+              "start": 20.45,
+              "end": 20.55
+            },
+            {
+              "text": "air?",
+              "start": 20.791,
+              "end": 20.971
+            }
+          ]
+        },
+        {
+          "id": "line_hbmqU-Uwj9s",
+          "roleId": "role_6qGKlj0DGGU",
+          "speaker": "Gru",
+          "start": 21.251,
+          "end": 23.433,
+          "text": "Yes, you may touch the air.",
+          "hint": "好，空气也可以碰。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 21.291,
+              "end": 21.712
+            },
+            {
+              "text": "you",
+              "start": 21.832,
+              "end": 21.972
+            },
+            {
+              "text": "may",
+              "start": 22.072,
+              "end": 22.192
+            },
+            {
+              "text": "touch",
+              "start": 22.312,
+              "end": 22.653
+            },
+            {
+              "text": "the",
+              "start": 22.813,
+              "end": 22.933
+            },
+            {
+              "text": "air.",
+              "start": 23.233,
+              "end": 23.373
+            }
+          ]
+        },
+        {
+          "id": "line_Mry2rXubEPc",
+          "roleId": "role_Y1QH7lsWlSU",
+          "speaker": "Edith",
+          "start": 23.534,
+          "end": 24.254,
+          "text": "What about this?",
+          "hint": "那这个呢？",
+          "words": [
+            {
+              "text": "What",
+              "start": 23.574,
+              "end": 23.674
+            },
+            {
+              "text": "about",
+              "start": 23.714,
+              "end": 23.894
+            },
+            {
+              "text": "this?",
+              "start": 23.974,
+              "end": 24.194
+            }
+          ]
+        },
+        {
+          "id": "line_EZGMbxlg-6w",
+          "roleId": "role_6qGKlj0DGGU",
+          "speaker": "Gru",
+          "start": 27.838,
+          "end": 28.719,
+          "text": "Where did you get that?",
+          "hint": "你从哪里拿到的？",
+          "words": [
+            {
+              "text": "Where",
+              "start": 27.878,
+              "end": 28.058
+            },
+            {
+              "text": "did",
+              "start": 28.119,
+              "end": 28.239
+            },
+            {
+              "text": "you",
+              "start": 28.259,
+              "end": 28.339
+            },
+            {
+              "text": "get",
+              "start": 28.379,
+              "end": 28.479
+            },
+            {
+              "text": "that?",
+              "start": 28.539,
+              "end": 28.659
+            }
+          ]
+        },
+        {
+          "id": "line_0spSPlLFQcY",
+          "roleId": "role_Y1QH7lsWlSU",
+          "speaker": "Edith",
+          "start": 28.959,
+          "end": 29.46,
+          "text": "Found it.",
+          "hint": "捡到的。",
+          "words": [
+            {
+              "text": "Found",
+              "start": 28.999,
+              "end": 29.26
+            },
+            {
+              "text": "it.",
+              "start": 29.34,
+              "end": 29.4
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_CZ0bp6VC",
+      "publicSlug": "banana"
+    },
+    {
+      "id": "clip_aKB38kgwnqg",
+      "slug": "squirrel",
+      "file": "squirrel-review-v2.mp4",
+      "title": "A talking collar? Squirrel!",
+      "titleZh": "会说话的项圈？松鼠！",
+      "originalTitle": "松鼠！",
+      "sourceId": "Fi2i7iuA1n4",
+      "start": 95,
+      "end": 109.05,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_ePAlAo5hAOs",
+          "name": "Dug"
+        },
+        {
+          "id": "role_tD36hMnXUVc",
+          "name": "Carl"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_xmlXL2vFrek",
+          "roleId": "role_ePAlAo5hAOs",
+          "speaker": "Dug",
+          "start": 95.701,
+          "end": 101.545,
+          "text": "My master made me this collar. He is a good and smart master, and he made me this collar so that I may talk.",
+          "hint": "我的主人给我做了这个项圈。他是个善良又聪明的主人，这个项圈能让我说话。",
+          "words": [
+            {
+              "text": "My",
+              "start": 95.741,
+              "end": 95.841
+            },
+            {
+              "text": "master",
+              "start": 95.921,
+              "end": 96.221
+            },
+            {
+              "text": "made",
+              "start": 96.341,
+              "end": 96.521
+            },
+            {
+              "text": "me",
+              "start": 96.561,
+              "end": 96.641
+            },
+            {
+              "text": "this",
+              "start": 96.701,
+              "end": 96.861
+            },
+            {
+              "text": "collar.",
+              "start": 96.941,
+              "end": 97.242
+            },
+            {
+              "text": "He",
+              "start": 97.602,
+              "end": 97.682
+            },
+            {
+              "text": "is",
+              "start": 97.782,
+              "end": 97.822
+            },
+            {
+              "text": "a",
+              "start": 97.902,
+              "end": 97.922
+            },
+            {
+              "text": "good",
+              "start": 98.022,
+              "end": 98.162
+            },
+            {
+              "text": "and",
+              "start": 98.222,
+              "end": 98.282
+            },
+            {
+              "text": "smart",
+              "start": 98.342,
+              "end": 98.603
+            },
+            {
+              "text": "master,",
+              "start": 98.683,
+              "end": 98.963
+            },
+            {
+              "text": "and",
+              "start": 99.043,
+              "end": 99.103
+            },
+            {
+              "text": "he",
+              "start": 99.163,
+              "end": 99.243
+            },
+            {
+              "text": "made",
+              "start": 99.403,
+              "end": 99.583
+            },
+            {
+              "text": "me",
+              "start": 99.623,
+              "end": 99.683
+            },
+            {
+              "text": "this",
+              "start": 99.743,
+              "end": 99.863
+            },
+            {
+              "text": "collar",
+              "start": 99.924,
+              "end": 100.184
+            },
+            {
+              "text": "so",
+              "start": 100.484,
+              "end": 100.564
+            },
+            {
+              "text": "that",
+              "start": 100.624,
+              "end": 100.724
+            },
+            {
+              "text": "I",
+              "start": 100.904,
+              "end": 100.924
+            },
+            {
+              "text": "may",
+              "start": 101.004,
+              "end": 101.124
+            },
+            {
+              "text": "talk.",
+              "start": 101.224,
+              "end": 101.485
+            }
+          ]
+        },
+        {
+          "id": "line_na7IhTXwLuA",
+          "roleId": "role_ePAlAo5hAOs",
+          "speaker": "Dug",
+          "start": 101.625,
+          "end": 102.065,
+          "text": "Squirrel!",
+          "hint": "松鼠！",
+          "words": [
+            {
+              "text": "Squirrel!",
+              "start": 101.665,
+              "end": 102.005
+            }
+          ]
+        },
+        {
+          "id": "line_mlm1GCLXkvA",
+          "roleId": "role_ePAlAo5hAOs",
+          "speaker": "Dug",
+          "start": 104.487,
+          "end": 105.888,
+          "text": "My master is good and smart.",
+          "hint": "我的主人善良又聪明。",
+          "words": [
+            {
+              "text": "My",
+              "start": 104.527,
+              "end": 104.627
+            },
+            {
+              "text": "master",
+              "start": 104.707,
+              "end": 105.007
+            },
+            {
+              "text": "is",
+              "start": 105.087,
+              "end": 105.147
+            },
+            {
+              "text": "good",
+              "start": 105.207,
+              "end": 105.367
+            },
+            {
+              "text": "and",
+              "start": 105.427,
+              "end": 105.487
+            },
+            {
+              "text": "smart.",
+              "start": 105.568,
+              "end": 105.828
+            }
+          ]
+        },
+        {
+          "id": "line_Az1K25iQzD0",
+          "roleId": "role_tD36hMnXUVc",
+          "speaker": "Carl",
+          "start": 105.928,
+          "end": 107.049,
+          "text": "It's impossible!",
+          "hint": "这不可能！",
+          "words": [
+            {
+              "text": "It's",
+              "start": 105.968,
+              "end": 106.068
+            },
+            {
+              "text": "impossible!",
+              "start": 106.208,
+              "end": 106.989
+            }
+          ]
+        },
+        {
+          "id": "line_CZsXanp_LoQ",
+          "roleId": "role_ePAlAo5hAOs",
+          "speaker": "Dug",
+          "start": 107.109,
+          "end": 109.05,
+          "text": "Oh, it is because my master is smart.",
+          "hint": "哦，这有可能，因为我的主人很聪明。",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 107.149,
+              "end": 107.249
+            },
+            {
+              "text": "it",
+              "start": 107.309,
+              "end": 107.349
+            },
+            {
+              "text": "is",
+              "start": 107.469,
+              "end": 107.549
+            },
+            {
+              "text": "because",
+              "start": 107.629,
+              "end": 107.869
+            },
+            {
+              "text": "my",
+              "start": 107.949,
+              "end": 108.069
+            },
+            {
+              "text": "master",
+              "start": 108.149,
+              "end": 108.47
+            },
+            {
+              "text": "is",
+              "start": 108.55,
+              "end": 108.59
+            },
+            {
+              "text": "smart.",
+              "start": 108.75,
+              "end": 109.03
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_nJ9pMesA",
+      "publicSlug": "squirrel"
+    },
+    {
+      "id": "clip_3ShHvvD_mEE",
+      "slug": "meet-dug",
+      "file": "meet-dug-review-v2.mp4",
+      "title": "Did that dog just say hi?",
+      "titleZh": "那只狗刚才说话了吗？",
+      "originalTitle": "刚认识就喜欢你！",
+      "sourceId": "Fi2i7iuA1n4",
+      "start": 83.75,
+      "end": 95.05,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_LMfavnX8qAw",
+          "name": "Russell"
+        },
+        {
+          "id": "role_FysReAnpHQg",
+          "name": "Dug"
+        },
+        {
+          "id": "role_D1aZwWlTtkk",
+          "name": "Carl"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_xFqynNVc9Bc",
+          "roleId": "role_LMfavnX8qAw",
+          "speaker": "Russell",
+          "start": 83.97,
+          "end": 84.451,
+          "text": "Speak!",
+          "hint": "说话！",
+          "words": [
+            {
+              "text": "Speak!",
+              "start": 84.01,
+              "end": 84.391
+            }
+          ]
+        },
+        {
+          "id": "line_C1uc8QZ3R7E",
+          "roleId": "role_FysReAnpHQg",
+          "speaker": "Dug",
+          "start": 84.632,
+          "end": 85.172,
+          "text": "Hi there!",
+          "hint": "你们好！",
+          "words": [
+            {
+              "text": "Hi",
+              "start": 84.672,
+              "end": 84.792
+            },
+            {
+              "text": "there!",
+              "start": 84.892,
+              "end": 85.112
+            }
+          ]
+        },
+        {
+          "id": "line_dT2Lk4Lt3VA",
+          "roleId": "role_D1aZwWlTtkk",
+          "speaker": "Carl",
+          "start": 85.453,
+          "end": 89.159,
+          "text": "Did that dog just say hi there?",
+          "hint": "那只狗刚才说了“你们好”吗？",
+          "words": [
+            {
+              "text": "Did",
+              "start": 85.493,
+              "end": 86.916
+            },
+            {
+              "text": "that",
+              "start": 86.976,
+              "end": 87.176
+            },
+            {
+              "text": "dog",
+              "start": 87.316,
+              "end": 87.637
+            },
+            {
+              "text": "just",
+              "start": 87.777,
+              "end": 87.998
+            },
+            {
+              "text": "say",
+              "start": 88.078,
+              "end": 88.338
+            },
+            {
+              "text": "hi",
+              "start": 88.518,
+              "end": 88.699
+            },
+            {
+              "text": "there?",
+              "start": 88.839,
+              "end": 89.099
+            }
+          ]
+        },
+        {
+          "id": "line_VC8FkABCYtA",
+          "roleId": "role_FysReAnpHQg",
+          "speaker": "Dug",
+          "start": 89.34,
+          "end": 94.91,
+          "text": "Oh, yes! My name is Dug. I have just met you, and I love you.",
+          "hint": "哦，是的！我叫道格。我刚认识你，就已经喜欢你了。",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 89.38,
+              "end": 89.44
+            },
+            {
+              "text": "yes!",
+              "start": 89.52,
+              "end": 89.781
+            },
+            {
+              "text": "My",
+              "start": 91.143,
+              "end": 91.263
+            },
+            {
+              "text": "name",
+              "start": 91.384,
+              "end": 91.604
+            },
+            {
+              "text": "is",
+              "start": 91.684,
+              "end": 91.764
+            },
+            {
+              "text": "Dug.",
+              "start": 91.924,
+              "end": 92.205
+            },
+            {
+              "text": "I",
+              "start": 92.526,
+              "end": 92.546
+            },
+            {
+              "text": "have",
+              "start": 92.646,
+              "end": 92.786
+            },
+            {
+              "text": "just",
+              "start": 92.846,
+              "end": 93.026
+            },
+            {
+              "text": "met",
+              "start": 93.127,
+              "end": 93.307
+            },
+            {
+              "text": "you,",
+              "start": 93.387,
+              "end": 93.487
+            },
+            {
+              "text": "and",
+              "start": 93.768,
+              "end": 93.848
+            },
+            {
+              "text": "I",
+              "start": 93.988,
+              "end": 94.008
+            },
+            {
+              "text": "love",
+              "start": 94.168,
+              "end": 94.409
+            },
+            {
+              "text": "you.",
+              "start": 94.79,
+              "end": 94.85
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_IuDLtAby",
+      "publicSlug": "meet-dug"
+    },
+    {
+      "id": "clip_3uUuUICcgcE",
+      "slug": "anyone-can-cook",
+      "file": "anyone-can-cook-review-v2.mp4",
+      "title": "Anyone can cook?",
+      "titleZh": "谁都能做饭？",
+      "originalTitle": "谁都能做饭！",
+      "sourceId": "thkDWSUzQDo",
+      "start": 11.8,
+      "end": 26.4,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_dUpyvjKLvlI",
+          "name": "Gusteau"
+        },
+        {
+          "id": "role_43NdYGbMURo",
+          "name": "Remy"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_7w9CrX8RIdI",
+          "roleId": "role_dUpyvjKLvlI",
+          "speaker": "Gusteau",
+          "start": 11.92,
+          "end": 12.921,
+          "text": "But he could.",
+          "hint": "但是他可以学会。",
+          "words": [
+            {
+              "text": "But",
+              "start": 11.96,
+              "end": 12.1
+            },
+            {
+              "text": "he",
+              "start": 12.441,
+              "end": 12.521
+            },
+            {
+              "text": "could.",
+              "start": 12.621,
+              "end": 12.861
+            }
+          ]
+        },
+        {
+          "id": "line_3MIQAGMvrzs",
+          "roleId": "role_43NdYGbMURo",
+          "speaker": "Remy",
+          "start": 13.442,
+          "end": 14.944,
+          "text": "Uh, no.",
+          "hint": "呃，不行。",
+          "words": [
+            {
+              "text": "Uh,",
+              "start": 13.482,
+              "end": 13.582
+            },
+            {
+              "text": "no.",
+              "start": 14.804,
+              "end": 14.884
+            }
+          ]
+        },
+        {
+          "id": "line_2Xpw7xkPGZw",
+          "roleId": "role_dUpyvjKLvlI",
+          "speaker": "Gusteau",
+          "start": 15.185,
+          "end": 18.81,
+          "text": "How do you know? What do I always say? Anyone can cook.",
+          "hint": "你怎么知道？我常说什么？谁都能做饭。",
+          "words": [
+            {
+              "text": "How",
+              "start": 15.225,
+              "end": 15.325
+            },
+            {
+              "text": "do",
+              "start": 15.405,
+              "end": 15.445
+            },
+            {
+              "text": "you",
+              "start": 15.545,
+              "end": 15.625
+            },
+            {
+              "text": "know?",
+              "start": 15.665,
+              "end": 15.846
+            },
+            {
+              "text": "What",
+              "start": 16.286,
+              "end": 16.386
+            },
+            {
+              "text": "do",
+              "start": 16.426,
+              "end": 16.486
+            },
+            {
+              "text": "I",
+              "start": 16.587,
+              "end": 16.607
+            },
+            {
+              "text": "always",
+              "start": 16.727,
+              "end": 16.947
+            },
+            {
+              "text": "say?",
+              "start": 16.987,
+              "end": 17.227
+            },
+            {
+              "text": "Anyone",
+              "start": 17.588,
+              "end": 18.069
+            },
+            {
+              "text": "can",
+              "start": 18.229,
+              "end": 18.369
+            },
+            {
+              "text": "cook.",
+              "start": 18.529,
+              "end": 18.75
+            }
+          ]
+        },
+        {
+          "id": "line_AGWKvVMiHCg",
+          "roleId": "role_43NdYGbMURo",
+          "speaker": "Remy",
+          "start": 19.37,
+          "end": 22.935,
+          "text": "Well, yeah, anyone can. That doesn't mean that anyone should.",
+          "hint": "嗯，对，谁都能做。可这不代表谁都应该做。",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 19.41,
+              "end": 19.611
+            },
+            {
+              "text": "yeah,",
+              "start": 19.831,
+              "end": 20.071
+            },
+            {
+              "text": "anyone",
+              "start": 20.292,
+              "end": 20.572
+            },
+            {
+              "text": "can.",
+              "start": 20.692,
+              "end": 21.133
+            },
+            {
+              "text": "That",
+              "start": 21.413,
+              "end": 21.513
+            },
+            {
+              "text": "doesn't",
+              "start": 21.573,
+              "end": 21.774
+            },
+            {
+              "text": "mean",
+              "start": 21.814,
+              "end": 21.914
+            },
+            {
+              "text": "that",
+              "start": 21.954,
+              "end": 22.034
+            },
+            {
+              "text": "anyone",
+              "start": 22.114,
+              "end": 22.395
+            },
+            {
+              "text": "should.",
+              "start": 22.575,
+              "end": 22.875
+            }
+          ]
+        },
+        {
+          "id": "line_FxJd7cHzrGw",
+          "roleId": "role_dUpyvjKLvlI",
+          "speaker": "Gusteau",
+          "start": 23.216,
+          "end": 26.34,
+          "text": "Well, that is not stopping him. See?",
+          "hint": "可这并没有让他停下来。看。",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 23.256,
+              "end": 23.596
+            },
+            {
+              "text": "that",
+              "start": 23.877,
+              "end": 24.077
+            },
+            {
+              "text": "is",
+              "start": 24.177,
+              "end": 24.257
+            },
+            {
+              "text": "not",
+              "start": 24.297,
+              "end": 24.457
+            },
+            {
+              "text": "stopping",
+              "start": 24.517,
+              "end": 25.078
+            },
+            {
+              "text": "him.",
+              "start": 25.238,
+              "end": 25.459
+            },
+            {
+              "text": "See?",
+              "start": 26.1,
+              "end": 26.28
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_y50gF2Cn",
+      "publicSlug": "anyone-can-cook"
+    },
+    {
+      "id": "clip_IlTj6g2f2Zo",
+      "slug": "secret-ingredient",
+      "file": "secret-ingredient-review-v2.mp4",
+      "title": "There is no secret ingredient",
+      "titleZh": "没有秘密配料",
+      "originalTitle": "没有秘密配料！",
+      "sourceId": "K7DnFGdqT8c",
+      "start": 27.45,
+      "end": 50.2,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_lttd5_5qBvs",
+          "name": "Mr. Ping"
+        },
+        {
+          "id": "role_KLqdqSbZHmw",
+          "name": "Po"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_QLVDSlr3avk",
+          "roleId": "role_lttd5_5qBvs",
+          "speaker": "Mr. Ping",
+          "start": 27.75,
+          "end": 33.052,
+          "text": "Come here. The secret ingredient is nothing.",
+          "hint": "过来。秘密配料就是——什么都没有。",
+          "words": [
+            {
+              "text": "Come",
+              "start": 27.79,
+              "end": 27.91
+            },
+            {
+              "text": "here.",
+              "start": 27.93,
+              "end": 28.11
+            },
+            {
+              "text": "The",
+              "start": 28.591,
+              "end": 28.711
+            },
+            {
+              "text": "secret",
+              "start": 28.851,
+              "end": 29.311
+            },
+            {
+              "text": "ingredient",
+              "start": 29.471,
+              "end": 30.111
+            },
+            {
+              "text": "is",
+              "start": 30.411,
+              "end": 30.531
+            },
+            {
+              "text": "nothing.",
+              "start": 32.612,
+              "end": 32.992
+            }
+          ]
+        },
+        {
+          "id": "line_LsYo3TaloCE",
+          "roleId": "role_KLqdqSbZHmw",
+          "speaker": "Po",
+          "start": 34.313,
+          "end": 34.653,
+          "text": "Huh?",
+          "hint": "啊？",
+          "words": [
+            {
+              "text": "Huh?",
+              "start": 34.353,
+              "end": 34.593
+            }
+          ]
+        },
+        {
+          "id": "line_uo-e8oAD2ew",
+          "roleId": "role_lttd5_5qBvs",
+          "speaker": "Mr. Ping",
+          "start": 35.013,
+          "end": 39.255,
+          "text": "You heard me. Nothing. There is no secret ingredient.",
+          "hint": "你没听错。什么都没有。没有什么秘密配料。",
+          "words": [
+            {
+              "text": "You",
+              "start": 35.053,
+              "end": 35.173
+            },
+            {
+              "text": "heard",
+              "start": 35.313,
+              "end": 35.514
+            },
+            {
+              "text": "me.",
+              "start": 35.614,
+              "end": 35.734
+            },
+            {
+              "text": "Nothing.",
+              "start": 36.414,
+              "end": 36.814
+            },
+            {
+              "text": "There",
+              "start": 37.414,
+              "end": 37.574
+            },
+            {
+              "text": "is",
+              "start": 37.715,
+              "end": 37.815
+            },
+            {
+              "text": "no",
+              "start": 37.895,
+              "end": 37.995
+            },
+            {
+              "text": "secret",
+              "start": 38.215,
+              "end": 38.575
+            },
+            {
+              "text": "ingredient.",
+              "start": 38.695,
+              "end": 39.195
+            }
+          ]
+        },
+        {
+          "id": "line_Rmh6sZNs_x4",
+          "roleId": "role_KLqdqSbZHmw",
+          "speaker": "Po",
+          "start": 39.895,
+          "end": 45.438,
+          "text": "Wait, wait. It's just plain old noodle soup? You don't add some kind of special sauce or something?",
+          "hint": "等等，就是普通的面汤？你没有加什么特别的酱料之类的吗？",
+          "words": [
+            {
+              "text": "Wait,",
+              "start": 39.935,
+              "end": 40.056
+            },
+            {
+              "text": "wait.",
+              "start": 40.116,
+              "end": 40.276
+            },
+            {
+              "text": "It's",
+              "start": 40.876,
+              "end": 41.016
+            },
+            {
+              "text": "just",
+              "start": 41.076,
+              "end": 41.256
+            },
+            {
+              "text": "plain",
+              "start": 41.456,
+              "end": 41.676
+            },
+            {
+              "text": "old",
+              "start": 41.736,
+              "end": 41.856
+            },
+            {
+              "text": "noodle",
+              "start": 41.956,
+              "end": 42.236
+            },
+            {
+              "text": "soup?",
+              "start": 42.377,
+              "end": 42.597
+            },
+            {
+              "text": "You",
+              "start": 43.157,
+              "end": 43.237
+            },
+            {
+              "text": "don't",
+              "start": 43.277,
+              "end": 43.437
+            },
+            {
+              "text": "add",
+              "start": 43.537,
+              "end": 43.617
+            },
+            {
+              "text": "some",
+              "start": 43.677,
+              "end": 43.817
+            },
+            {
+              "text": "kind",
+              "start": 43.857,
+              "end": 43.997
+            },
+            {
+              "text": "of",
+              "start": 44.017,
+              "end": 44.057
+            },
+            {
+              "text": "special",
+              "start": 44.117,
+              "end": 44.437
+            },
+            {
+              "text": "sauce",
+              "start": 44.578,
+              "end": 44.878
+            },
+            {
+              "text": "or",
+              "start": 44.958,
+              "end": 45.018
+            },
+            {
+              "text": "something?",
+              "start": 45.058,
+              "end": 45.378
+            }
+          ]
+        },
+        {
+          "id": "line_2kRzWIC9ZQA",
+          "roleId": "role_lttd5_5qBvs",
+          "speaker": "Mr. Ping",
+          "start": 45.598,
+          "end": 50.18,
+          "text": "Don't have to. To make something special, you just have to believe it's special.",
+          "hint": "不需要。要让一样东西变得特别，只需要相信它是特别的。",
+          "words": [
+            {
+              "text": "Don't",
+              "start": 45.638,
+              "end": 45.878
+            },
+            {
+              "text": "have",
+              "start": 45.998,
+              "end": 46.238
+            },
+            {
+              "text": "to.",
+              "start": 46.318,
+              "end": 46.418
+            },
+            {
+              "text": "To",
+              "start": 46.979,
+              "end": 47.059
+            },
+            {
+              "text": "make",
+              "start": 47.159,
+              "end": 47.279
+            },
+            {
+              "text": "something",
+              "start": 47.339,
+              "end": 47.639
+            },
+            {
+              "text": "special,",
+              "start": 47.699,
+              "end": 48.019
+            },
+            {
+              "text": "you",
+              "start": 48.099,
+              "end": 48.179
+            },
+            {
+              "text": "just",
+              "start": 48.319,
+              "end": 48.539
+            },
+            {
+              "text": "have",
+              "start": 48.619,
+              "end": 48.759
+            },
+            {
+              "text": "to",
+              "start": 48.819,
+              "end": 48.879
+            },
+            {
+              "text": "believe",
+              "start": 48.999,
+              "end": 49.44
+            },
+            {
+              "text": "it's",
+              "start": 49.58,
+              "end": 49.68
+            },
+            {
+              "text": "special.",
+              "start": 49.7,
+              "end": 50.12
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_wr2NM2nf",
+      "publicSlug": "secret-ingredient"
+    },
+    {
+      "id": "clip_9KQZ5SebU3A",
+      "slug": "today-is-a-gift",
+      "file": "today-is-a-gift-review-v2.mp4",
+      "title": "I'm not upset!",
+      "titleZh": "我没有不开心！",
+      "originalTitle": "今天是一份礼物！",
+      "sourceId": "PSBfcpqICvY",
+      "start": 0.25,
+      "end": 12,
+      "editType": "replacement",
+      "editNote": "The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene.",
+      "roles": [
+        {
+          "id": "role_z8tBpYVF99Q",
+          "name": "Oogway"
+        },
+        {
+          "id": "role_-aBSnmfkqjk",
+          "name": "Po"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_lrafJLEP1oU",
+          "roleId": "role_z8tBpYVF99Q",
+          "speaker": "Oogway",
+          "start": 0.55,
+          "end": 4.574,
+          "text": "I understand. You eat when you are upset.",
+          "hint": "我理解。你不开心的时候就会吃东西。",
+          "words": [
+            {
+              "text": "I",
+              "start": 0.59,
+              "end": 0.61
+            },
+            {
+              "text": "understand.",
+              "start": 0.75,
+              "end": 1.411
+            },
+            {
+              "text": "You",
+              "start": 2.292,
+              "end": 2.432
+            },
+            {
+              "text": "eat",
+              "start": 2.752,
+              "end": 2.892
+            },
+            {
+              "text": "when",
+              "start": 3.112,
+              "end": 3.273
+            },
+            {
+              "text": "you",
+              "start": 3.353,
+              "end": 3.513
+            },
+            {
+              "text": "are",
+              "start": 3.733,
+              "end": 3.833
+            },
+            {
+              "text": "upset.",
+              "start": 4.053,
+              "end": 4.514
+            }
+          ]
+        },
+        {
+          "id": "line_9XnFPzJGlxY",
+          "roleId": "role_-aBSnmfkqjk",
+          "speaker": "Po",
+          "start": 5.474,
+          "end": 8.697,
+          "text": "Upset? I'm not upset. What makes you think I'm upset?",
+          "hint": "不开心？我没有不开心。你为什么觉得我不开心？",
+          "words": [
+            {
+              "text": "Upset?",
+              "start": 5.514,
+              "end": 5.775
+            },
+            {
+              "text": "I'm",
+              "start": 6.315,
+              "end": 6.375
+            },
+            {
+              "text": "not",
+              "start": 6.435,
+              "end": 6.515
+            },
+            {
+              "text": "upset.",
+              "start": 6.575,
+              "end": 6.816
+            },
+            {
+              "text": "What",
+              "start": 7.136,
+              "end": 7.416
+            },
+            {
+              "text": "makes",
+              "start": 7.436,
+              "end": 7.656
+            },
+            {
+              "text": "you",
+              "start": 7.716,
+              "end": 7.816
+            },
+            {
+              "text": "think",
+              "start": 7.897,
+              "end": 8.037
+            },
+            {
+              "text": "I'm",
+              "start": 8.217,
+              "end": 8.317
+            },
+            {
+              "text": "upset?",
+              "start": 8.357,
+              "end": 8.637
+            }
+          ]
+        },
+        {
+          "id": "line_IFL8OkZrTEk",
+          "roleId": "role_z8tBpYVF99Q",
+          "speaker": "Oogway",
+          "start": 10.419,
+          "end": 12,
+          "text": "So why are you upset?",
+          "hint": "那么，你为什么不开心？",
+          "words": [
+            {
+              "text": "So",
+              "start": 10.459,
+              "end": 10.579
+            },
+            {
+              "text": "why",
+              "start": 10.739,
+              "end": 10.979
+            },
+            {
+              "text": "are",
+              "start": 11.219,
+              "end": 11.319
+            },
+            {
+              "text": "you",
+              "start": 11.399,
+              "end": 11.5
+            },
+            {
+              "text": "upset?",
+              "start": 11.68,
+              "end": 11.98
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_kuOni4tB",
+      "publicSlug": "today-is-a-gift"
+    },
+    {
+      "id": "clip_ceVlv_1qb1A",
+      "slug": "do-the-roar",
+      "file": "do-the-roar-review-v2.mp4",
+      "title": "Could you do the roar?",
+      "titleZh": "可以吼一声吗？",
+      "originalTitle": "吼一声嘛！",
+      "sourceId": "6I5B0jyLBUg",
+      "start": 14.5,
+      "end": 30.55,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_fQeXDxQ7A-I",
+          "name": "Boy's father"
+        },
+        {
+          "id": "role_oV11ggQinHU",
+          "name": "Boy"
+        },
+        {
+          "id": "role_HxBpf2F4gNA",
+          "name": "Shrek"
+        },
+        {
+          "id": "role_c6niQ-oI2rA",
+          "name": "Fiona"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_Wp2M0OmupMM",
+          "roleId": "role_fQeXDxQ7A-I",
+          "speaker": "Boy's father",
+          "start": 14.74,
+          "end": 19.683,
+          "text": "Excuse me, Mr. Shrek. Could you do that ogre roar of yours for my son? He's a big, big fan.",
+          "hint": "打扰了，史莱克先生。可以为我儿子表演一下怪物吼叫吗？他是你的超级粉丝。",
+          "words": [
+            {
+              "text": "Excuse",
+              "start": 14.78,
+              "end": 15.04
+            },
+            {
+              "text": "me,",
+              "start": 15.08,
+              "end": 15.12
+            },
+            {
+              "text": "Mr.",
+              "start": 15.18,
+              "end": 15.381
+            },
+            {
+              "text": "Shrek.",
+              "start": 15.421,
+              "end": 15.661
+            },
+            {
+              "text": "Could",
+              "start": 16.181,
+              "end": 16.321
+            },
+            {
+              "text": "you",
+              "start": 16.341,
+              "end": 16.421
+            },
+            {
+              "text": "do",
+              "start": 16.481,
+              "end": 16.541
+            },
+            {
+              "text": "that",
+              "start": 16.601,
+              "end": 16.721
+            },
+            {
+              "text": "ogre",
+              "start": 16.901,
+              "end": 17.102
+            },
+            {
+              "text": "roar",
+              "start": 17.222,
+              "end": 17.362
+            },
+            {
+              "text": "of",
+              "start": 17.422,
+              "end": 17.462
+            },
+            {
+              "text": "yours",
+              "start": 17.482,
+              "end": 17.682
+            },
+            {
+              "text": "for",
+              "start": 17.742,
+              "end": 17.842
+            },
+            {
+              "text": "my",
+              "start": 17.902,
+              "end": 17.982
+            },
+            {
+              "text": "son?",
+              "start": 18.062,
+              "end": 18.262
+            },
+            {
+              "text": "He's",
+              "start": 18.603,
+              "end": 18.723
+            },
+            {
+              "text": "a",
+              "start": 18.763,
+              "end": 18.783
+            },
+            {
+              "text": "big,",
+              "start": 18.963,
+              "end": 19.083
+            },
+            {
+              "text": "big",
+              "start": 19.143,
+              "end": 19.283
+            },
+            {
+              "text": "fan.",
+              "start": 19.363,
+              "end": 19.623
+            }
+          ]
+        },
+        {
+          "id": "line_aDqrvyqYeW8",
+          "roleId": "role_oV11ggQinHU",
+          "speaker": "Boy",
+          "start": 20.144,
+          "end": 20.804,
+          "text": "Do the roar.",
+          "hint": "吼一声嘛。",
+          "words": [
+            {
+              "text": "Do",
+              "start": 20.184,
+              "end": 20.284
+            },
+            {
+              "text": "the",
+              "start": 20.344,
+              "end": 20.444
+            },
+            {
+              "text": "roar.",
+              "start": 20.504,
+              "end": 20.744
+            }
+          ]
+        },
+        {
+          "id": "line_K1tsj2qrHFs",
+          "roleId": "role_HxBpf2F4gNA",
+          "speaker": "Shrek",
+          "start": 20.944,
+          "end": 24.206,
+          "text": "You know, I'd rather not. It's my kids' birthday party.",
+          "hint": "我还是不想。这是我孩子们的生日聚会。",
+          "words": [
+            {
+              "text": "You",
+              "start": 20.984,
+              "end": 21.064
+            },
+            {
+              "text": "know,",
+              "start": 21.144,
+              "end": 21.344
+            },
+            {
+              "text": "I'd",
+              "start": 21.704,
+              "end": 21.805
+            },
+            {
+              "text": "rather",
+              "start": 21.865,
+              "end": 22.125
+            },
+            {
+              "text": "not.",
+              "start": 22.265,
+              "end": 22.465
+            },
+            {
+              "text": "It's",
+              "start": 22.605,
+              "end": 22.725
+            },
+            {
+              "text": "my",
+              "start": 22.785,
+              "end": 22.845
+            },
+            {
+              "text": "kids'",
+              "start": 22.985,
+              "end": 23.205
+            },
+            {
+              "text": "birthday",
+              "start": 23.265,
+              "end": 23.646
+            },
+            {
+              "text": "party.",
+              "start": 23.746,
+              "end": 24.146
+            }
+          ]
+        },
+        {
+          "id": "line_RF8oNzhRfCo",
+          "roleId": "role_oV11ggQinHU",
+          "speaker": "Boy",
+          "start": 24.246,
+          "end": 26.027,
+          "text": "Do the roar.",
+          "hint": "吼一声嘛。",
+          "words": [
+            {
+              "text": "Do",
+              "start": 24.286,
+              "end": 24.406
+            },
+            {
+              "text": "the",
+              "start": 24.546,
+              "end": 24.626
+            },
+            {
+              "text": "roar.",
+              "start": 24.906,
+              "end": 25.987
+            }
+          ]
+        },
+        {
+          "id": "line_YZNdGHZUjkM",
+          "roleId": "role_HxBpf2F4gNA",
+          "speaker": "Shrek",
+          "start": 26.027,
+          "end": 27.768,
+          "text": "Honey, why don't you go check on the cake?",
+          "hint": "亲爱的，你去看看蛋糕好吗？",
+          "words": [
+            {
+              "text": "Honey,",
+              "start": 26.067,
+              "end": 26.327
+            },
+            {
+              "text": "why",
+              "start": 26.548,
+              "end": 26.608
+            },
+            {
+              "text": "don't",
+              "start": 26.668,
+              "end": 26.788
+            },
+            {
+              "text": "you",
+              "start": 26.828,
+              "end": 26.888
+            },
+            {
+              "text": "go",
+              "start": 26.928,
+              "end": 26.968
+            },
+            {
+              "text": "check",
+              "start": 27.048,
+              "end": 27.188
+            },
+            {
+              "text": "on",
+              "start": 27.248,
+              "end": 27.288
+            },
+            {
+              "text": "the",
+              "start": 27.348,
+              "end": 27.408
+            },
+            {
+              "text": "cake?",
+              "start": 27.448,
+              "end": 27.708
+            }
+          ]
+        },
+        {
+          "id": "line_fdbdWfUSHxE",
+          "roleId": "role_c6niQ-oI2rA",
+          "speaker": "Fiona",
+          "start": 28.169,
+          "end": 30.55,
+          "text": "Sure. And don't forget the candles.",
+          "hint": "好。别忘了蜡烛。",
+          "words": [
+            {
+              "text": "Sure.",
+              "start": 28.209,
+              "end": 28.589
+            },
+            {
+              "text": "And",
+              "start": 28.969,
+              "end": 29.049
+            },
+            {
+              "text": "don't",
+              "start": 29.149,
+              "end": 29.369
+            },
+            {
+              "text": "forget",
+              "start": 29.469,
+              "end": 29.75
+            },
+            {
+              "text": "the",
+              "start": 29.85,
+              "end": 29.91
+            },
+            {
+              "text": "candles.",
+              "start": 29.97,
+              "end": 30.51
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_4ds3OMdO",
+      "publicSlug": "do-the-roar"
+    },
+    {
+      "id": "clip_tbOSb_pnz7w",
+      "slug": "are-we-there-yet",
+      "file": "are-we-there-yet-review-v2.mp4",
+      "title": "Are we there yet?",
+      "titleZh": "我们到了吗？",
+      "originalTitle": "我们到了吗？",
+      "sourceId": "Gn51xYvJhQI",
+      "start": 14.5,
+      "end": 24.95,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_EWM0kajCU-M",
+          "name": "Donkey"
+        },
+        {
+          "id": "role_3MSkPfyxEYM",
+          "name": "Shrek"
+        },
+        {
+          "id": "role_YoD156O5n0s",
+          "name": "Fiona"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_5UTwbfiH2J4",
+          "roleId": "role_EWM0kajCU-M",
+          "speaker": "Donkey",
+          "start": 15.261,
+          "end": 15.941,
+          "text": "Are we there yet?",
+          "hint": "我们到了吗？",
+          "words": [
+            {
+              "text": "Are",
+              "start": 15.301,
+              "end": 15.401
+            },
+            {
+              "text": "we",
+              "start": 15.441,
+              "end": 15.481
+            },
+            {
+              "text": "there",
+              "start": 15.541,
+              "end": 15.701
+            },
+            {
+              "text": "yet?",
+              "start": 15.721,
+              "end": 15.881
+            }
+          ]
+        },
+        {
+          "id": "line_jeUutVP0j4Q",
+          "roleId": "role_3MSkPfyxEYM",
+          "speaker": "Shrek",
+          "start": 16.062,
+          "end": 16.562,
+          "text": "No!",
+          "hint": "没有！",
+          "words": [
+            {
+              "text": "No!",
+              "start": 16.102,
+              "end": 16.502
+            }
+          ]
+        },
+        {
+          "id": "line_hg_JvwUDlvc",
+          "roleId": "role_EWM0kajCU-M",
+          "speaker": "Donkey",
+          "start": 17.083,
+          "end": 18.324,
+          "text": "Are we there yet?",
+          "hint": "我们到了吗？",
+          "words": [
+            {
+              "text": "Are",
+              "start": 17.123,
+              "end": 17.223
+            },
+            {
+              "text": "we",
+              "start": 17.363,
+              "end": 17.443
+            },
+            {
+              "text": "there",
+              "start": 17.583,
+              "end": 17.843
+            },
+            {
+              "text": "yet?",
+              "start": 18.043,
+              "end": 18.264
+            }
+          ]
+        },
+        {
+          "id": "line_EOXlrva9f1g",
+          "roleId": "role_3MSkPfyxEYM",
+          "speaker": "Shrek",
+          "start": 18.404,
+          "end": 18.684,
+          "text": "Yes.",
+          "hint": "到了。",
+          "words": [
+            {
+              "text": "Yes.",
+              "start": 18.444,
+              "end": 18.624
+            }
+          ]
+        },
+        {
+          "id": "line_3Z7Lq7DXdYY",
+          "roleId": "role_EWM0kajCU-M",
+          "speaker": "Donkey",
+          "start": 18.904,
+          "end": 19.244,
+          "text": "Really?",
+          "hint": "真的吗？",
+          "words": [
+            {
+              "text": "Really?",
+              "start": 18.944,
+              "end": 19.184
+            }
+          ]
+        },
+        {
+          "id": "line_LotIiv4nfzY",
+          "roleId": "role_3MSkPfyxEYM",
+          "speaker": "Shrek",
+          "start": 19.345,
+          "end": 19.865,
+          "text": "No!",
+          "hint": "没有！",
+          "words": [
+            {
+              "text": "No!",
+              "start": 19.385,
+              "end": 19.805
+            }
+          ]
+        },
+        {
+          "id": "line_gj_Zvegib_I",
+          "roleId": "role_EWM0kajCU-M",
+          "speaker": "Donkey",
+          "start": 20.586,
+          "end": 21.286,
+          "text": "Are we there yet?",
+          "hint": "我们到了吗？",
+          "words": [
+            {
+              "text": "Are",
+              "start": 20.626,
+              "end": 20.726
+            },
+            {
+              "text": "we",
+              "start": 20.746,
+              "end": 20.786
+            },
+            {
+              "text": "there",
+              "start": 20.866,
+              "end": 21.026
+            },
+            {
+              "text": "yet?",
+              "start": 21.086,
+              "end": 21.226
+            }
+          ]
+        },
+        {
+          "id": "line_r7yL9uhMv2o",
+          "roleId": "role_YoD156O5n0s",
+          "speaker": "Fiona",
+          "start": 21.347,
+          "end": 21.667,
+          "text": "No!",
+          "hint": "没有！",
+          "words": [
+            {
+              "text": "No!",
+              "start": 21.387,
+              "end": 21.607
+            }
+          ]
+        },
+        {
+          "id": "line_CrFytG3DIHY",
+          "roleId": "role_EWM0kajCU-M",
+          "speaker": "Donkey",
+          "start": 21.967,
+          "end": 22.848,
+          "text": "Are we there yet?",
+          "hint": "我们到了吗？",
+          "words": [
+            {
+              "text": "Are",
+              "start": 22.007,
+              "end": 22.107
+            },
+            {
+              "text": "we",
+              "start": 22.167,
+              "end": 22.247
+            },
+            {
+              "text": "there",
+              "start": 22.327,
+              "end": 22.608
+            },
+            {
+              "text": "yet?",
+              "start": 22.688,
+              "end": 22.808
+            }
+          ]
+        },
+        {
+          "id": "line_goIL_A1CjIU",
+          "roleId": "role_3MSkPfyxEYM",
+          "speaker": "Shrek",
+          "start": 22.848,
+          "end": 23.489,
+          "text": "No, we are not!",
+          "hint": "没有，我们还没到！",
+          "words": [
+            {
+              "text": "No,",
+              "start": 22.888,
+              "end": 22.948
+            },
+            {
+              "text": "we",
+              "start": 23.048,
+              "end": 23.088
+            },
+            {
+              "text": "are",
+              "start": 23.148,
+              "end": 23.248
+            },
+            {
+              "text": "not!",
+              "start": 23.288,
+              "end": 23.429
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_HY-tFxVL",
+      "publicSlug": "are-we-there-yet"
+    },
+    {
+      "id": "clip_adg_TpdQwV4",
+      "slug": "my-swamp",
+      "file": "my-swamp-review-v2.mp4",
+      "title": "Who sent you here?",
+      "titleZh": "谁让你们来这里的？",
+      "originalTitle": "谁在我的沼泽里？",
+      "sourceId": "xuS9UxuUZ3Y",
+      "start": 96.4,
+      "end": 109.4,
+      "editType": "replacement",
+      "editNote": "Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions.",
+      "roles": [
+        {
+          "id": "role_Rp4xE21Pv6o",
+          "name": "Donkey"
+        },
+        {
+          "id": "role_stZNsPqJ3SU",
+          "name": "Pinocchio"
+        },
+        {
+          "id": "role_Rg2p2dm-Wo0",
+          "name": "Shrek"
+        },
+        {
+          "id": "role_WP8iVeXihIk",
+          "name": "Little pig"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_U_g1Wge8bpU",
+          "roleId": "role_Rp4xE21Pv6o",
+          "speaker": "Donkey",
+          "start": 96.58,
+          "end": 97.462,
+          "text": "I didn't invite them.",
+          "hint": "不是我邀请他们的。",
+          "words": [
+            {
+              "text": "I",
+              "start": 96.62,
+              "end": 96.64
+            },
+            {
+              "text": "didn't",
+              "start": 96.72,
+              "end": 96.921
+            },
+            {
+              "text": "invite",
+              "start": 96.941,
+              "end": 97.241
+            },
+            {
+              "text": "them.",
+              "start": 97.281,
+              "end": 97.402
+            }
+          ]
+        },
+        {
+          "id": "line_VlV2ZoLTywo",
+          "roleId": "role_stZNsPqJ3SU",
+          "speaker": "Pinocchio",
+          "start": 97.902,
+          "end": 99.685,
+          "text": "Oh, gosh, no one invited us.",
+          "hint": "天啊，没人邀请我们。",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 97.942,
+              "end": 98.063
+            },
+            {
+              "text": "gosh,",
+              "start": 98.123,
+              "end": 98.483
+            },
+            {
+              "text": "no",
+              "start": 98.583,
+              "end": 98.663
+            },
+            {
+              "text": "one",
+              "start": 98.764,
+              "end": 98.824
+            },
+            {
+              "text": "invited",
+              "start": 98.884,
+              "end": 99.385
+            },
+            {
+              "text": "us.",
+              "start": 99.545,
+              "end": 99.625
+            }
+          ]
+        },
+        {
+          "id": "line_V-F5Oc4ozS4",
+          "roleId": "role_Rg2p2dm-Wo0",
+          "speaker": "Shrek",
+          "start": 100.006,
+          "end": 100.426,
+          "text": "What?",
+          "hint": "什么？",
+          "words": [
+            {
+              "text": "What?",
+              "start": 100.046,
+              "end": 100.366
+            }
+          ]
+        },
+        {
+          "id": "line_WqsowoV0q8g",
+          "roleId": "role_stZNsPqJ3SU",
+          "speaker": "Pinocchio",
+          "start": 101.227,
+          "end": 102.589,
+          "text": "We were forced to come here.",
+          "hint": "我们是被迫来这里的。",
+          "words": [
+            {
+              "text": "We",
+              "start": 101.267,
+              "end": 101.328
+            },
+            {
+              "text": "were",
+              "start": 101.388,
+              "end": 101.508
+            },
+            {
+              "text": "forced",
+              "start": 101.568,
+              "end": 101.868
+            },
+            {
+              "text": "to",
+              "start": 101.929,
+              "end": 102.009
+            },
+            {
+              "text": "come",
+              "start": 102.069,
+              "end": 102.269
+            },
+            {
+              "text": "here.",
+              "start": 102.349,
+              "end": 102.529
+            }
+          ]
+        },
+        {
+          "id": "line_tpCP72fRF3o",
+          "roleId": "role_Rg2p2dm-Wo0",
+          "speaker": "Shrek",
+          "start": 102.95,
+          "end": 103.751,
+          "text": "By who?",
+          "hint": "被谁逼的？",
+          "words": [
+            {
+              "text": "By",
+              "start": 102.99,
+              "end": 103.17
+            },
+            {
+              "text": "who?",
+              "start": 103.391,
+              "end": 103.691
+            }
+          ]
+        },
+        {
+          "id": "line_6HAbPBw97Eo",
+          "roleId": "role_WP8iVeXihIk",
+          "speaker": "Little pig",
+          "start": 103.892,
+          "end": 104.813,
+          "text": "Lord Farquaad!",
+          "hint": "法夸德领主！",
+          "words": [
+            {
+              "text": "Lord",
+              "start": 103.932,
+              "end": 104.152
+            },
+            {
+              "text": "Farquaad!",
+              "start": 104.212,
+              "end": 104.753
+            }
+          ]
+        },
+        {
+          "id": "line_09SxnOGPe5U",
+          "roleId": "role_WP8iVeXihIk",
+          "speaker": "Little pig",
+          "start": 105.474,
+          "end": 107.938,
+          "text": "He huffed and he puffed and he—",
+          "hint": "他呼哧呼哧地吹气，然后他——",
+          "words": [
+            {
+              "text": "He",
+              "start": 105.514,
+              "end": 105.594
+            },
+            {
+              "text": "huffed",
+              "start": 105.714,
+              "end": 106.015
+            },
+            {
+              "text": "and",
+              "start": 106.135,
+              "end": 106.255
+            },
+            {
+              "text": "he",
+              "start": 106.295,
+              "end": 106.355
+            },
+            {
+              "text": "puffed",
+              "start": 106.455,
+              "end": 106.756
+            },
+            {
+              "text": "and",
+              "start": 106.836,
+              "end": 106.916
+            },
+            {
+              "text": "he—",
+              "start": 107.818,
+              "end": 107.878
+            }
+          ]
+        },
+        {
+          "id": "line_kvLufkyW75g",
+          "roleId": "role_stZNsPqJ3SU",
+          "speaker": "Pinocchio",
+          "start": 107.938,
+          "end": 109.3,
+          "text": "Signed an eviction notice.",
+          "hint": "签了一张驱逐通知。",
+          "words": [
+            {
+              "text": "Signed",
+              "start": 107.978,
+              "end": 108.218
+            },
+            {
+              "text": "an",
+              "start": 108.258,
+              "end": 108.298
+            },
+            {
+              "text": "eviction",
+              "start": 108.398,
+              "end": 108.779
+            },
+            {
+              "text": "notice.",
+              "start": 108.859,
+              "end": 109.24
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_XFfwULcF",
+      "publicSlug": "my-swamp"
+    },
+    {
+      "id": "clip_FDCNCC_b4u8",
+      "slug": "im-ready",
+      "file": "im-ready-review-v2.mp4",
+      "title": "I'm ready, Squidward!",
+      "titleZh": "章鱼哥，我准备好了！",
+      "originalTitle": "我准备好了！",
+      "sourceId": "AGTH7rOEbxE",
+      "start": 18.2,
+      "end": 28.7,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_DwNcHLYFJm8",
+          "name": "SpongeBob"
+        },
+        {
+          "id": "role_ZsxADi00XhU",
+          "name": "Squidward"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_A-5vCT83XPs",
+          "roleId": "role_DwNcHLYFJm8",
+          "speaker": "SpongeBob",
+          "start": 18.481,
+          "end": 20.344,
+          "text": "I'm ready! I'm ready!",
+          "hint": "我准备好了！我准备好了！",
+          "words": [
+            {
+              "text": "I'm",
+              "start": 18.521,
+              "end": 18.601
+            },
+            {
+              "text": "ready!",
+              "start": 18.821,
+              "end": 19.282
+            },
+            {
+              "text": "I'm",
+              "start": 19.763,
+              "end": 19.883
+            },
+            {
+              "text": "ready!",
+              "start": 20.044,
+              "end": 20.284
+            }
+          ]
+        },
+        {
+          "id": "line_dp2e5AB14fA",
+          "roleId": "role_DwNcHLYFJm8",
+          "speaker": "SpongeBob",
+          "start": 20.444,
+          "end": 22.107,
+          "text": "Squidward! Squidward!",
+          "hint": "章鱼哥！章鱼哥！",
+          "words": [
+            {
+              "text": "Squidward!",
+              "start": 20.484,
+              "end": 21.146
+            },
+            {
+              "text": "Squidward!",
+              "start": 21.286,
+              "end": 22.047
+            }
+          ]
+        },
+        {
+          "id": "line_MDEodZ1Qjqw",
+          "roleId": "role_ZsxADi00XhU",
+          "speaker": "Squidward",
+          "start": 22.308,
+          "end": 22.809,
+          "text": "What?",
+          "hint": "什么事？",
+          "words": [
+            {
+              "text": "What?",
+              "start": 22.348,
+              "end": 22.749
+            }
+          ]
+        },
+        {
+          "id": "line_ra-U2m9Z28M",
+          "roleId": "role_DwNcHLYFJm8",
+          "speaker": "SpongeBob",
+          "start": 22.969,
+          "end": 24.191,
+          "text": "I'm ready, Squidward!",
+          "hint": "章鱼哥，我准备好了！",
+          "words": [
+            {
+              "text": "I'm",
+              "start": 23.009,
+              "end": 23.129
+            },
+            {
+              "text": "ready,",
+              "start": 23.23,
+              "end": 23.47
+            },
+            {
+              "text": "Squidward!",
+              "start": 23.59,
+              "end": 24.131
+            }
+          ]
+        },
+        {
+          "id": "line_DGSk1xG8g6M",
+          "roleId": "role_ZsxADi00XhU",
+          "speaker": "Squidward",
+          "start": 24.632,
+          "end": 25.854,
+          "text": "Ready to move?",
+          "hint": "准备好搬家了吗？",
+          "words": [
+            {
+              "text": "Ready",
+              "start": 24.672,
+              "end": 24.913
+            },
+            {
+              "text": "to",
+              "start": 25.033,
+              "end": 25.133
+            },
+            {
+              "text": "move?",
+              "start": 25.253,
+              "end": 25.794
+            }
+          ]
+        },
+        {
+          "id": "line_7wq5GsDcPLA",
+          "roleId": "role_DwNcHLYFJm8",
+          "speaker": "SpongeBob",
+          "start": 26.015,
+          "end": 28.52,
+          "text": "No! I'm ready to pass my boating test!",
+          "hint": "不是！我准备好通过驾驶考试了！",
+          "words": [
+            {
+              "text": "No!",
+              "start": 26.055,
+              "end": 26.396
+            },
+            {
+              "text": "I'm",
+              "start": 26.636,
+              "end": 26.736
+            },
+            {
+              "text": "ready",
+              "start": 26.796,
+              "end": 26.957
+            },
+            {
+              "text": "to",
+              "start": 26.997,
+              "end": 27.057
+            },
+            {
+              "text": "pass",
+              "start": 27.117,
+              "end": 27.317
+            },
+            {
+              "text": "my",
+              "start": 27.398,
+              "end": 27.518
+            },
+            {
+              "text": "boating",
+              "start": 27.678,
+              "end": 28.019
+            },
+            {
+              "text": "test!",
+              "start": 28.079,
+              "end": 28.46
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_MkR1_VOc",
+      "publicSlug": "im-ready"
+    },
+    {
+      "id": "clip_dHjWqyBN7_Y",
+      "slug": "mayonnaise",
+      "file": "mayonnaise-review-v2.mp4",
+      "title": "Is mayonnaise an instrument?",
+      "titleZh": "蛋黄酱是乐器吗？",
+      "originalTitle": "蛋黄酱是乐器吗？",
+      "sourceId": "bJ1-CMJY7CE",
+      "start": 9.15,
+      "end": 24.4,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_Qk6bZeSausw",
+          "name": "Squidward"
+        },
+        {
+          "id": "role_biDyZtCKZuA",
+          "name": "Plankton"
+        },
+        {
+          "id": "role_b_3tOMj86qY",
+          "name": "Patrick"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_lPkSfsE5Pvw",
+          "roleId": "role_Qk6bZeSausw",
+          "speaker": "Squidward",
+          "start": 9.37,
+          "end": 12.312,
+          "text": "How many of you have played musical instruments before?",
+          "hint": "你们有多少人以前演奏过乐器？",
+          "words": [
+            {
+              "text": "How",
+              "start": 9.41,
+              "end": 9.55
+            },
+            {
+              "text": "many",
+              "start": 9.63,
+              "end": 9.79
+            },
+            {
+              "text": "of",
+              "start": 9.89,
+              "end": 9.931
+            },
+            {
+              "text": "you",
+              "start": 9.991,
+              "end": 10.111
+            },
+            {
+              "text": "have",
+              "start": 10.311,
+              "end": 10.491
+            },
+            {
+              "text": "played",
+              "start": 10.591,
+              "end": 10.891
+            },
+            {
+              "text": "musical",
+              "start": 10.991,
+              "end": 11.351
+            },
+            {
+              "text": "instruments",
+              "start": 11.492,
+              "end": 11.912
+            },
+            {
+              "text": "before?",
+              "start": 11.972,
+              "end": 12.252
+            }
+          ]
+        },
+        {
+          "id": "line_K345zIU8ZxA",
+          "roleId": "role_biDyZtCKZuA",
+          "speaker": "Plankton",
+          "start": 12.572,
+          "end": 14.433,
+          "text": "Do instruments of torture count?",
+          "hint": "刑具算不算？",
+          "words": [
+            {
+              "text": "Do",
+              "start": 12.612,
+              "end": 12.772
+            },
+            {
+              "text": "instruments",
+              "start": 12.892,
+              "end": 13.413
+            },
+            {
+              "text": "of",
+              "start": 13.493,
+              "end": 13.533
+            },
+            {
+              "text": "torture",
+              "start": 13.633,
+              "end": 13.973
+            },
+            {
+              "text": "count?",
+              "start": 14.073,
+              "end": 14.373
+            }
+          ]
+        },
+        {
+          "id": "line_ypU-qMnk4tI",
+          "roleId": "role_Qk6bZeSausw",
+          "speaker": "Squidward",
+          "start": 14.794,
+          "end": 15.074,
+          "text": "No.",
+          "hint": "不算。",
+          "words": [
+            {
+              "text": "No.",
+              "start": 14.834,
+              "end": 15.014
+            }
+          ]
+        },
+        {
+          "id": "line_AcVCKOjFTA4",
+          "roleId": "role_b_3tOMj86qY",
+          "speaker": "Patrick",
+          "start": 15.494,
+          "end": 17.776,
+          "text": "Is mayonnaise an instrument?",
+          "hint": "蛋黄酱是乐器吗？",
+          "words": [
+            {
+              "text": "Is",
+              "start": 15.534,
+              "end": 15.674
+            },
+            {
+              "text": "mayonnaise",
+              "start": 15.814,
+              "end": 16.675
+            },
+            {
+              "text": "an",
+              "start": 16.895,
+              "end": 16.935
+            },
+            {
+              "text": "instrument?",
+              "start": 17.075,
+              "end": 17.716
+            }
+          ]
+        },
+        {
+          "id": "line_F6s8FOKszm8",
+          "roleId": "role_Qk6bZeSausw",
+          "speaker": "Squidward",
+          "start": 18.176,
+          "end": 20.818,
+          "text": "No, Patrick, mayonnaise is not an instrument.",
+          "hint": "不是，派大星，蛋黄酱不是乐器。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 18.216,
+              "end": 18.376
+            },
+            {
+              "text": "Patrick,",
+              "start": 18.556,
+              "end": 19.016
+            },
+            {
+              "text": "mayonnaise",
+              "start": 19.157,
+              "end": 19.697
+            },
+            {
+              "text": "is",
+              "start": 19.797,
+              "end": 19.877
+            },
+            {
+              "text": "not",
+              "start": 19.977,
+              "end": 20.137
+            },
+            {
+              "text": "an",
+              "start": 20.197,
+              "end": 20.237
+            },
+            {
+              "text": "instrument.",
+              "start": 20.317,
+              "end": 20.758
+            }
+          ]
+        },
+        {
+          "id": "line_8PKROFvEP_s",
+          "roleId": "role_Qk6bZeSausw",
+          "speaker": "Squidward",
+          "start": 22.199,
+          "end": 24.14,
+          "text": "Horseradish is not an instrument either.",
+          "hint": "辣根也不是乐器。",
+          "words": [
+            {
+              "text": "Horseradish",
+              "start": 22.239,
+              "end": 22.879
+            },
+            {
+              "text": "is",
+              "start": 22.979,
+              "end": 23.039
+            },
+            {
+              "text": "not",
+              "start": 23.099,
+              "end": 23.219
+            },
+            {
+              "text": "an",
+              "start": 23.279,
+              "end": 23.319
+            },
+            {
+              "text": "instrument",
+              "start": 23.399,
+              "end": 23.8
+            },
+            {
+              "text": "either.",
+              "start": 23.86,
+              "end": 24.08
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_F9ob5jiT",
+      "publicSlug": "mayonnaise"
+    },
+    {
+      "id": "clip_pDtNNzsp6TU",
+      "slug": "smile-and-wave",
+      "file": "smile-and-wave-review-v2.mp4",
+      "title": "Smile, wave, and plan the escape",
+      "titleZh": "微笑，挥手，计划逃跑",
+      "originalTitle": "微笑，挥挥手！",
+      "sourceId": "F64CJmF2dHM",
+      "start": 2.7,
+      "end": 29.05,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_JvQz8dWxoRY",
+          "name": "Skipper"
+        },
+        {
+          "id": "role_csUjXkRdbuM",
+          "name": "Kowalski"
+        },
+        {
+          "id": "role_48Y-QZ9fhhE",
+          "name": "Private"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_QLjpP7d-kAs",
+          "roleId": "role_JvQz8dWxoRY",
+          "speaker": "Skipper",
+          "start": 3.32,
+          "end": 6.581,
+          "text": "Just smile and wave, boys. Smile and wave.",
+          "hint": "小伙子们，微笑，挥挥手。微笑，挥挥手。",
+          "words": [
+            {
+              "text": "Just",
+              "start": 3.36,
+              "end": 3.54
+            },
+            {
+              "text": "smile",
+              "start": 3.64,
+              "end": 4.061
+            },
+            {
+              "text": "and",
+              "start": 4.141,
+              "end": 4.201
+            },
+            {
+              "text": "wave,",
+              "start": 4.261,
+              "end": 4.541
+            },
+            {
+              "text": "boys.",
+              "start": 4.661,
+              "end": 5.141
+            },
+            {
+              "text": "Smile",
+              "start": 5.521,
+              "end": 5.901
+            },
+            {
+              "text": "and",
+              "start": 5.961,
+              "end": 6.041
+            },
+            {
+              "text": "wave.",
+              "start": 6.101,
+              "end": 6.521
+            }
+          ]
+        },
+        {
+          "id": "line_lKOV59STChs",
+          "roleId": "role_JvQz8dWxoRY",
+          "speaker": "Skipper",
+          "start": 7.362,
+          "end": 8.982,
+          "text": "Kowalski, progress report.",
+          "hint": "科瓦斯基，报告进展。",
+          "words": [
+            {
+              "text": "Kowalski,",
+              "start": 7.402,
+              "end": 7.842
+            },
+            {
+              "text": "progress",
+              "start": 8.302,
+              "end": 8.602
+            },
+            {
+              "text": "report.",
+              "start": 8.642,
+              "end": 8.922
+            }
+          ]
+        },
+        {
+          "id": "line_mvk_MH0arsY",
+          "roleId": "role_csUjXkRdbuM",
+          "speaker": "Kowalski",
+          "start": 10.183,
+          "end": 11.943,
+          "text": "We're only five hundred feet from the main sewer line.",
+          "hint": "距离主下水道只剩五百英尺了。",
+          "words": [
+            {
+              "text": "We're",
+              "start": 10.223,
+              "end": 10.343
+            },
+            {
+              "text": "only",
+              "start": 10.363,
+              "end": 10.503
+            },
+            {
+              "text": "five",
+              "start": 10.563,
+              "end": 10.763
+            },
+            {
+              "text": "hundred",
+              "start": 10.803,
+              "end": 10.963
+            },
+            {
+              "text": "feet",
+              "start": 11.003,
+              "end": 11.143
+            },
+            {
+              "text": "from",
+              "start": 11.163,
+              "end": 11.263
+            },
+            {
+              "text": "the",
+              "start": 11.303,
+              "end": 11.363
+            },
+            {
+              "text": "main",
+              "start": 11.403,
+              "end": 11.523
+            },
+            {
+              "text": "sewer",
+              "start": 11.603,
+              "end": 11.763
+            },
+            {
+              "text": "line.",
+              "start": 11.783,
+              "end": 11.883
+            }
+          ]
+        },
+        {
+          "id": "line_0y39FscYnjM",
+          "roleId": "role_JvQz8dWxoRY",
+          "speaker": "Skipper",
+          "start": 12.224,
+          "end": 13.044,
+          "text": "And the bad news?",
+          "hint": "那坏消息呢？",
+          "words": [
+            {
+              "text": "And",
+              "start": 12.264,
+              "end": 12.344
+            },
+            {
+              "text": "the",
+              "start": 12.364,
+              "end": 12.444
+            },
+            {
+              "text": "bad",
+              "start": 12.484,
+              "end": 12.644
+            },
+            {
+              "text": "news?",
+              "start": 12.704,
+              "end": 12.984
+            }
+          ]
+        },
+        {
+          "id": "line_tPv9M_Q9Y0k",
+          "roleId": "role_csUjXkRdbuM",
+          "speaker": "Kowalski",
+          "start": 13.244,
+          "end": 14.685,
+          "text": "We've broken our last shovel.",
+          "hint": "我们的最后一把铲子也断了。",
+          "words": [
+            {
+              "text": "We've",
+              "start": 13.284,
+              "end": 13.484
+            },
+            {
+              "text": "broken",
+              "start": 13.604,
+              "end": 13.924
+            },
+            {
+              "text": "our",
+              "start": 14.024,
+              "end": 14.084
+            },
+            {
+              "text": "last",
+              "start": 14.144,
+              "end": 14.304
+            },
+            {
+              "text": "shovel.",
+              "start": 14.404,
+              "end": 14.625
+            }
+          ]
+        },
+        {
+          "id": "line_aAVPltl7PzE",
+          "roleId": "role_JvQz8dWxoRY",
+          "speaker": "Skipper",
+          "start": 15.665,
+          "end": 24.148,
+          "text": "Right. Rico, you're on litter patrol. We need shovels, and find more Popsicle sticks. You don't want to risk another cave-in.",
+          "hint": "好。瑞哥，你去找废弃物。我们需要铲子，再找些冰棒棍。你可不想再冒塌方的风险。",
+          "words": [
+            {
+              "text": "Right.",
+              "start": 15.705,
+              "end": 16.045
+            },
+            {
+              "text": "Rico,",
+              "start": 17.366,
+              "end": 17.666
+            },
+            {
+              "text": "you're",
+              "start": 18.126,
+              "end": 18.326
+            },
+            {
+              "text": "on",
+              "start": 18.386,
+              "end": 18.426
+            },
+            {
+              "text": "litter",
+              "start": 18.506,
+              "end": 18.726
+            },
+            {
+              "text": "patrol.",
+              "start": 18.766,
+              "end": 19.126
+            },
+            {
+              "text": "We",
+              "start": 19.646,
+              "end": 19.706
+            },
+            {
+              "text": "need",
+              "start": 19.786,
+              "end": 19.927
+            },
+            {
+              "text": "shovels,",
+              "start": 20.047,
+              "end": 20.407
+            },
+            {
+              "text": "and",
+              "start": 20.687,
+              "end": 20.767
+            },
+            {
+              "text": "find",
+              "start": 20.847,
+              "end": 21.007
+            },
+            {
+              "text": "more",
+              "start": 21.067,
+              "end": 21.207
+            },
+            {
+              "text": "Popsicle",
+              "start": 21.347,
+              "end": 21.807
+            },
+            {
+              "text": "sticks.",
+              "start": 21.867,
+              "end": 22.187
+            },
+            {
+              "text": "You",
+              "start": 22.568,
+              "end": 22.628
+            },
+            {
+              "text": "don't",
+              "start": 22.668,
+              "end": 22.808
+            },
+            {
+              "text": "want",
+              "start": 22.828,
+              "end": 22.908
+            },
+            {
+              "text": "to",
+              "start": 22.928,
+              "end": 22.968
+            },
+            {
+              "text": "risk",
+              "start": 23.008,
+              "end": 23.148
+            },
+            {
+              "text": "another",
+              "start": 23.248,
+              "end": 23.488
+            },
+            {
+              "text": "cave-in.",
+              "start": 23.648,
+              "end": 24.088
+            }
+          ]
+        },
+        {
+          "id": "line_cDAiqdIw5b0",
+          "roleId": "role_48Y-QZ9fhhE",
+          "speaker": "Private",
+          "start": 24.928,
+          "end": 26.069,
+          "text": "And me, Skipper?",
+          "hint": "那我呢，队长？",
+          "words": [
+            {
+              "text": "And",
+              "start": 24.968,
+              "end": 25.068
+            },
+            {
+              "text": "me,",
+              "start": 25.149,
+              "end": 25.249
+            },
+            {
+              "text": "Skipper?",
+              "start": 25.609,
+              "end": 26.009
+            }
+          ]
+        },
+        {
+          "id": "line_5XLGHIDcLPU",
+          "roleId": "role_JvQz8dWxoRY",
+          "speaker": "Skipper",
+          "start": 26.329,
+          "end": 29.05,
+          "text": "I want you to look cute and cuddly, Private.",
+          "hint": "你的任务是保持可爱，菜鸟。",
+          "words": [
+            {
+              "text": "I",
+              "start": 26.369,
+              "end": 26.389
+            },
+            {
+              "text": "want",
+              "start": 26.449,
+              "end": 26.629
+            },
+            {
+              "text": "you",
+              "start": 26.709,
+              "end": 26.829
+            },
+            {
+              "text": "to",
+              "start": 26.909,
+              "end": 26.969
+            },
+            {
+              "text": "look",
+              "start": 27.029,
+              "end": 27.189
+            },
+            {
+              "text": "cute",
+              "start": 27.349,
+              "end": 27.589
+            },
+            {
+              "text": "and",
+              "start": 27.689,
+              "end": 27.77
+            },
+            {
+              "text": "cuddly,",
+              "start": 28.01,
+              "end": 28.43
+            },
+            {
+              "text": "Private.",
+              "start": 28.67,
+              "end": 29.05
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_uDawiVCK",
+      "publicSlug": "smile-and-wave"
+    },
+    {
+      "id": "clip_h1ODs0Vv0qI",
+      "slug": "wumbo",
+      "file": "wumbo-review-v2.mp4",
+      "title": "M for mini, W for Wumbo",
+      "titleZh": "M 是迷你，W 是 Wumbo",
+      "originalTitle": "调成 Wumbo！",
+      "sourceId": "--hsVknT1c0",
+      "start": 2.55,
+      "end": 21.95,
+      "editType": "expanded",
+      "editNote": "Expanded to include the surrounding character exchange and its payoff.",
+      "roles": [
+        {
+          "id": "role_RN-lit1zrQU",
+          "name": "Patrick"
+        },
+        {
+          "id": "role_llrWB6OVSyA",
+          "name": "SpongeBob"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_JtTRPOFm8bM",
+          "roleId": "role_RN-lit1zrQU",
+          "speaker": "Patrick",
+          "start": 3.171,
+          "end": 4.652,
+          "text": "You know what the problem is?",
+          "hint": "你知道问题是什么吗？",
+          "words": [
+            {
+              "text": "You",
+              "start": 3.211,
+              "end": 3.291
+            },
+            {
+              "text": "know",
+              "start": 3.351,
+              "end": 3.471
+            },
+            {
+              "text": "what",
+              "start": 3.551,
+              "end": 3.651
+            },
+            {
+              "text": "the",
+              "start": 3.711,
+              "end": 3.791
+            },
+            {
+              "text": "problem",
+              "start": 3.851,
+              "end": 4.352
+            },
+            {
+              "text": "is?",
+              "start": 4.472,
+              "end": 4.592
+            }
+          ]
+        },
+        {
+          "id": "line_hItHIj2Nqgw",
+          "roleId": "role_llrWB6OVSyA",
+          "speaker": "SpongeBob",
+          "start": 4.792,
+          "end": 5.073,
+          "text": "What?",
+          "hint": "什么？",
+          "words": [
+            {
+              "text": "What?",
+              "start": 4.832,
+              "end": 5.013
+            }
+          ]
+        },
+        {
+          "id": "line_nQHuFI115r0",
+          "roleId": "role_RN-lit1zrQU",
+          "speaker": "Patrick",
+          "start": 5.533,
+          "end": 10.578,
+          "text": "You got it set to M for mini, when it should be set to W for Wumbo.",
+          "hint": "你把它设成了代表迷你的 M，而它应该设成代表 Wumbo 的 W。",
+          "words": [
+            {
+              "text": "You",
+              "start": 5.573,
+              "end": 5.653
+            },
+            {
+              "text": "got",
+              "start": 5.773,
+              "end": 5.933
+            },
+            {
+              "text": "it",
+              "start": 6.014,
+              "end": 6.054
+            },
+            {
+              "text": "set",
+              "start": 6.114,
+              "end": 6.314
+            },
+            {
+              "text": "to",
+              "start": 6.374,
+              "end": 6.474
+            },
+            {
+              "text": "M",
+              "start": 6.834,
+              "end": 6.874
+            },
+            {
+              "text": "for",
+              "start": 7.115,
+              "end": 7.275
+            },
+            {
+              "text": "mini,",
+              "start": 7.355,
+              "end": 7.615
+            },
+            {
+              "text": "when",
+              "start": 8.036,
+              "end": 8.136
+            },
+            {
+              "text": "it",
+              "start": 8.216,
+              "end": 8.256
+            },
+            {
+              "text": "should",
+              "start": 8.296,
+              "end": 8.496
+            },
+            {
+              "text": "be",
+              "start": 8.556,
+              "end": 8.636
+            },
+            {
+              "text": "set",
+              "start": 8.696,
+              "end": 8.917
+            },
+            {
+              "text": "to",
+              "start": 8.957,
+              "end": 9.057
+            },
+            {
+              "text": "W",
+              "start": 9.297,
+              "end": 9.317
+            },
+            {
+              "text": "for",
+              "start": 9.817,
+              "end": 9.958
+            },
+            {
+              "text": "Wumbo.",
+              "start": 10.098,
+              "end": 10.518
+            }
+          ]
+        },
+        {
+          "id": "line_g0xaQ_obdzE",
+          "roleId": "role_llrWB6OVSyA",
+          "speaker": "SpongeBob",
+          "start": 11.019,
+          "end": 12.961,
+          "text": "Patrick, I don't think Wumbo is a real word.",
+          "hint": "派大星，我觉得 Wumbo 不是一个真正的词。",
+          "words": [
+            {
+              "text": "Patrick,",
+              "start": 11.059,
+              "end": 11.379
+            },
+            {
+              "text": "I",
+              "start": 11.439,
+              "end": 11.459
+            },
+            {
+              "text": "don't",
+              "start": 11.519,
+              "end": 11.639
+            },
+            {
+              "text": "think",
+              "start": 11.679,
+              "end": 11.8
+            },
+            {
+              "text": "Wumbo",
+              "start": 11.84,
+              "end": 12.1
+            },
+            {
+              "text": "is",
+              "start": 12.18,
+              "end": 12.22
+            },
+            {
+              "text": "a",
+              "start": 12.28,
+              "end": 12.3
+            },
+            {
+              "text": "real",
+              "start": 12.38,
+              "end": 12.56
+            },
+            {
+              "text": "word.",
+              "start": 12.62,
+              "end": 12.901
+            }
+          ]
+        },
+        {
+          "id": "line_4HnsJcqmkag",
+          "roleId": "role_RN-lit1zrQU",
+          "speaker": "Patrick",
+          "start": 13.221,
+          "end": 21.79,
+          "text": "Come on! You know, I Wumbo, you Wumbo. He, she, me, Wumbo.",
+          "hint": "别这样！你知道的，我 Wumbo，你 Wumbo，他、她、我，Wumbo。（这是剧中的虚构词。）",
+          "words": [
+            {
+              "text": "Come",
+              "start": 13.261,
+              "end": 13.681
+            },
+            {
+              "text": "on!",
+              "start": 14.102,
+              "end": 14.242
+            },
+            {
+              "text": "You",
+              "start": 14.683,
+              "end": 14.803
+            },
+            {
+              "text": "know,",
+              "start": 14.883,
+              "end": 15.163
+            },
+            {
+              "text": "I",
+              "start": 16.364,
+              "end": 16.384
+            },
+            {
+              "text": "Wumbo,",
+              "start": 16.524,
+              "end": 17.125
+            },
+            {
+              "text": "you",
+              "start": 17.545,
+              "end": 17.726
+            },
+            {
+              "text": "Wumbo.",
+              "start": 17.886,
+              "end": 18.426
+            },
+            {
+              "text": "He,",
+              "start": 18.967,
+              "end": 19.107
+            },
+            {
+              "text": "she,",
+              "start": 19.347,
+              "end": 19.608
+            },
+            {
+              "text": "me,",
+              "start": 19.748,
+              "end": 19.948
+            },
+            {
+              "text": "Wumbo.",
+              "start": 20.488,
+              "end": 21.73
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "packId": "pack_1eCjBRKF",
+      "publicSlug": "wumbo"
+    },
+    {
+      "id": "pack_KHUVKWak",
+      "slug": "patrick",
+      "file": "patrick-v1.mp4",
+      "title": "不，这是派大星！",
+      "titleZh": "不，这是派大星！",
+      "originalTitle": "不，这是派大星！",
+      "sourceId": "dwifOuuMkfo",
+      "start": 0,
+      "end": 14.2,
+      "editType": "preserved-benchmark",
+      "preserveMedia": true,
+      "editNote": "Original user-selected benchmark; media bytes preserved.",
+      "roles": [
+        {
+          "id": "role_GMoleWKV",
+          "name": "派大星"
+        },
+        {
+          "id": "role_VMR9ThiJ",
+          "name": "来电者"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_HXrOVtsT",
+          "roleId": "role_VMR9ThiJ",
+          "speaker": "来电者",
+          "start": 3,
+          "end": 4.95,
+          "text": "Is this the Krusty Krab?",
+          "hint": "请问是蟹堡王吗？"
+        },
+        {
+          "id": "line_6Yw7M0iC",
+          "roleId": "role_GMoleWKV",
+          "speaker": "派大星",
+          "start": 4.95,
+          "end": 7.8,
+          "text": "No, this is Patrick.",
+          "hint": "不，这是派大星。"
+        },
+        {
+          "id": "line_g72lqe2P",
+          "roleId": "role_VMR9ThiJ",
+          "speaker": "来电者",
+          "start": 8.6,
+          "end": 10.7,
+          "text": "Is this the Krusty Krab?",
+          "hint": "请问是蟹堡王吗？"
+        },
+        {
+          "id": "line_3ShAx1P7",
+          "roleId": "role_GMoleWKV",
+          "speaker": "派大星",
+          "start": 10.7,
+          "end": 14.2,
+          "text": "No! This is Patrick!",
+          "hint": "不！这是派大星！"
+        }
+      ]
+    },
+    {
+      "id": "pack_LnSPbYi0",
+      "slug": "chocolate",
+      "file": "chocolate-v1.mp4",
+      "title": "巧克力？！",
+      "titleZh": "巧克力？！",
+      "originalTitle": "巧克力？！",
+      "sourceId": "NBhxIyT8Slg",
+      "start": 0,
+      "end": 11.4,
+      "editType": "preserved-benchmark",
+      "preserveMedia": true,
+      "editNote": "Original user-selected benchmark; media bytes preserved.",
+      "roles": [
+        {
+          "id": "role_-pse1q5d",
+          "name": "顾客"
+        },
+        {
+          "id": "role_S1FPrc0B",
+          "name": "派大星"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_TLWSACbZ",
+          "roleId": "role_-pse1q5d",
+          "speaker": "顾客",
+          "start": 0.2,
+          "end": 4.2,
+          "text": "Chocolate? Did you say chocolate?",
+          "hint": "巧克力？你说的是巧克力吗？"
+        },
+        {
+          "id": "line_fE8Ckbk0",
+          "roleId": "role_S1FPrc0B",
+          "speaker": "派大星",
+          "start": 4.2,
+          "end": 7.2,
+          "text": "Yes, sir. With or without nuts?",
+          "hint": "是的，先生。要有坚果的，还是没有坚果的？"
+        },
+        {
+          "id": "line_OEtTH7kR",
+          "roleId": "role_-pse1q5d",
+          "speaker": "顾客",
+          "start": 7.2,
+          "end": 11.4,
+          "text": "Chocolate?! Chocolate!",
+          "hint": "巧克力？！巧克力！"
+        }
+      ]
+    },
+    {
+      "id": "pack_BeIAKV4J",
+      "slug": "onions",
+      "file": "onions-v1.mp4",
+      "title": "怪物就像洋葱",
+      "titleZh": "怪物就像洋葱",
+      "originalTitle": "怪物就像洋葱",
+      "sourceId": "aJQmVZSAqlc",
+      "start": 0,
+      "end": 15.7,
+      "editType": "preserved-benchmark",
+      "preserveMedia": true,
+      "editNote": "Original user-selected benchmark; media bytes preserved.",
+      "roles": [
+        {
+          "id": "role_aBTF2CU4",
+          "name": "史莱克"
+        },
+        {
+          "id": "role_1xuLJg1A",
+          "name": "驴子"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_6x6hAhPK",
+          "roleId": "role_aBTF2CU4",
+          "speaker": "史莱克",
+          "start": 0,
+          "end": 7.6,
+          "text": "No! Layers! Onions have layers. Ogres have layers. Onions have layers.",
+          "hint": "不！层次！洋葱有层次，怪物也有层次。"
+        },
+        {
+          "id": "line_2jtMyyG8",
+          "roleId": "role_aBTF2CU4",
+          "speaker": "史莱克",
+          "start": 7.6,
+          "end": 9.9,
+          "text": "You get it? We both have layers.",
+          "hint": "你明白了吗？我们都有层次。"
+        },
+        {
+          "id": "line_wGmRgHYg",
+          "roleId": "role_1xuLJg1A",
+          "speaker": "驴子",
+          "start": 9.9,
+          "end": 15.7,
+          "text": "Oh, you both have layers.",
+          "hint": "哦，你们都有层次。"
+        }
+      ]
+    }
+  ]
+}

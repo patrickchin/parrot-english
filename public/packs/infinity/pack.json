@@ -2,65 +2,321 @@
   "version": 1,
   "id": "pack_fEAVzgFh",
   "title": "飞向宇宙！",
-  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
-  "duration": 3.2,
-  "video": "infinity-v1.mp4",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 24.92,
+  "video": "infinity-review-2dccdca1aa1a.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/infinity/",
+  "poster": "infinity-poster-2dccdca1aa1a.jpg",
+  "waveform": "waveform-2dccdca1aa1a.json",
   "roles": [
+    {
+      "id": "role_jPzYR5J6EIU",
+      "name": "胡迪",
+      "label": "胡迪",
+      "hint": "3 句台词"
+    },
     {
       "id": "role_a9_OwCFQ",
       "name": "巴斯光年",
       "label": "巴斯光年",
-      "hint": "跟着角色的语气说。"
+      "hint": "4 句台词"
     }
   ],
   "lines": [
     {
-      "id": "line_Yn563xFp",
+      "id": "line_HxHP0CUYMqE",
+      "roleId": "role_jPzYR5J6EIU",
+      "start": 0.24,
+      "end": 1.241,
+      "text": "No, you can't.",
+      "hint": "不，你不会。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 0.28,
+          "end": 0.4
+        },
+        {
+          "text": "you",
+          "start": 0.641,
+          "end": 0.741
+        },
+        {
+          "text": "can't.",
+          "start": 0.821,
+          "end": 1.181
+        }
+      ]
+    },
+    {
+      "id": "line_jekLQotZxp0",
       "roleId": "role_a9_OwCFQ",
-      "start": 0,
-      "end": 3.2,
+      "start": 2.042,
+      "end": 3.283,
+      "text": "Yes, I can.",
+      "hint": "不，我会。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 2.082,
+          "end": 2.362
+        },
+        {
+          "text": "I",
+          "start": 2.862,
+          "end": 2.882
+        },
+        {
+          "text": "can.",
+          "start": 3.002,
+          "end": 3.223
+        }
+      ]
+    },
+    {
+      "id": "line_QO7gcWmVR2g",
+      "roleId": "role_jPzYR5J6EIU",
+      "start": 3.363,
+      "end": 6.055,
+      "text": "You can't! Can't, can't, can't!",
+      "hint": "你不会！不会，不会，不会！",
+      "words": [
+        {
+          "text": "You",
+          "start": 3.403,
+          "end": 3.503
+        },
+        {
+          "text": "can't!",
+          "start": 3.563,
+          "end": 3.803
+        },
+        {
+          "text": "Can't,",
+          "start": 4.444,
+          "end": 4.764
+        },
+        {
+          "text": "can't,",
+          "start": 4.844,
+          "end": 5.164
+        },
+        {
+          "text": "can't!",
+          "start": 5.324,
+          "end": 6.045
+        }
+      ]
+    },
+    {
+      "id": "line_SXR8w07PFd4",
+      "roleId": "role_a9_OwCFQ",
+      "start": 6.055,
+      "end": 8.487,
+      "text": "I tell you, I could fly around this room with my eyes closed.",
+      "hint": "告诉你，我闭着眼睛都能绕着房间飞。",
+      "words": [
+        {
+          "text": "I",
+          "start": 6.065,
+          "end": 6.085
+        },
+        {
+          "text": "tell",
+          "start": 6.105,
+          "end": 6.265
+        },
+        {
+          "text": "you,",
+          "start": 6.305,
+          "end": 6.385
+        },
+        {
+          "text": "I",
+          "start": 6.465,
+          "end": 6.485
+        },
+        {
+          "text": "could",
+          "start": 6.525,
+          "end": 6.665
+        },
+        {
+          "text": "fly",
+          "start": 6.765,
+          "end": 6.926
+        },
+        {
+          "text": "around",
+          "start": 6.966,
+          "end": 7.146
+        },
+        {
+          "text": "this",
+          "start": 7.166,
+          "end": 7.286
+        },
+        {
+          "text": "room",
+          "start": 7.326,
+          "end": 7.446
+        },
+        {
+          "text": "with",
+          "start": 7.486,
+          "end": 7.566
+        },
+        {
+          "text": "my",
+          "start": 7.586,
+          "end": 7.646
+        },
+        {
+          "text": "eyes",
+          "start": 7.766,
+          "end": 7.906
+        },
+        {
+          "text": "closed.",
+          "start": 7.986,
+          "end": 8.427
+        }
+      ]
+    },
+    {
+      "id": "line_m0O_CRl25-E",
+      "roleId": "role_jPzYR5J6EIU",
+      "start": 8.667,
+      "end": 10.769,
+      "text": "Okay, then, Mr. Lightyear. Prove it.",
+      "hint": "那好吧，光年先生。证明给我看。",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 8.707,
+          "end": 9.027
+        },
+        {
+          "text": "then,",
+          "start": 9.087,
+          "end": 9.187
+        },
+        {
+          "text": "Mr.",
+          "start": 9.267,
+          "end": 9.468
+        },
+        {
+          "text": "Lightyear.",
+          "start": 9.528,
+          "end": 9.948
+        },
+        {
+          "text": "Prove",
+          "start": 10.348,
+          "end": 10.568
+        },
+        {
+          "text": "it.",
+          "start": 10.649,
+          "end": 10.709
+        }
+      ]
+    },
+    {
+      "id": "line_czHEV1TQZVg",
+      "roleId": "role_a9_OwCFQ",
+      "start": 10.869,
+      "end": 13.531,
+      "text": "All right, then I will. Stand back, everyone.",
+      "hint": "好，我来证明。大家往后站。",
+      "words": [
+        {
+          "text": "All",
+          "start": 10.909,
+          "end": 11.009
+        },
+        {
+          "text": "right,",
+          "start": 11.089,
+          "end": 11.229
+        },
+        {
+          "text": "then",
+          "start": 11.249,
+          "end": 11.349
+        },
+        {
+          "text": "I",
+          "start": 11.429,
+          "end": 11.449
+        },
+        {
+          "text": "will.",
+          "start": 11.489,
+          "end": 11.669
+        },
+        {
+          "text": "Stand",
+          "start": 12.73,
+          "end": 12.93
+        },
+        {
+          "text": "back,",
+          "start": 12.99,
+          "end": 13.111
+        },
+        {
+          "text": "everyone.",
+          "start": 13.191,
+          "end": 13.471
+        }
+      ]
+    },
+    {
+      "id": "line_CfgXeUF6r2k",
+      "roleId": "role_a9_OwCFQ",
+      "start": 21.818,
+      "end": 24.64,
       "text": "To infinity and beyond!",
       "hint": "飞向宇宙，浩瀚无垠！",
       "words": [
         {
           "text": "To",
-          "start": 0.382,
-          "end": 0.624
+          "start": 21.858,
+          "end": 22.138
         },
         {
           "text": "infinity",
-          "start": 0.986,
-          "end": 1.691
+          "start": 22.438,
+          "end": 23.159
         },
         {
           "text": "and",
-          "start": 2.415,
-          "end": 2.496
+          "start": 23.859,
+          "end": 23.959
         },
         {
           "text": "beyond!",
-          "start": 2.576,
-          "end": 3.039
+          "start": 24.019,
+          "end": 24.58
         }
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Toy Story",
     "attribution": "原作：Disney / Pixar",
-    "source": "https://www.youtube.com/watch?v=T2b-Ve0GHBw&t=46s",
+    "source": "https://www.youtube.com/watch?v=T2b-Ve0GHBw&t=25s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "原上传约 46.60–49.80 秒的节选；添加中英台词和配音时间标记。"
-  },
-  "waveform": "waveform-v2.json",
-  "poster": "infinity-poster-v1.jpg",
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
+    "changes": "内部原型测试；原上传 25.15–50.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

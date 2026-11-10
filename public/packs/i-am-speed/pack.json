@@ -2,60 +2,186 @@
   "version": 1,
   "id": "pack_oSd4bYiR",
   "title": "我就是速度！",
-  "description": "成人原型配音测试；选角色，听原声，录下自己的版本。",
-  "duration": 2.32,
-  "video": "i-am-speed-v1.mp4",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 11.72,
+  "video": "i-am-speed-review-8742eaee9998.mp4",
   "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-am-speed/",
-  "poster": "i-am-speed-poster-v1.jpg",
-  "waveform": "waveform-v2.json",
-  "wordTiming": {
-    "method": "CTC forced alignment",
-    "tool": "torchaudio 2.6.0",
-    "model": "WAV2VEC2_ASR_BASE_960H",
-    "language": "en"
-  },
+  "poster": "i-am-speed-poster-8742eaee9998.jpg",
+  "waveform": "waveform-8742eaee9998.json",
   "roles": [
     {
       "id": "role_MA9SyNmW",
       "name": "板牙",
       "label": "板牙",
-      "hint": "跟着角色的语气说。"
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_t3AskixQqcI",
+      "name": "闪电麦昆",
+      "label": "闪电麦昆",
+      "hint": "2 句台词"
     }
   ],
   "lines": [
     {
-      "id": "line_Wn_9F_3h",
+      "id": "line_o9wCPmkYAu8",
       "roleId": "role_MA9SyNmW",
-      "start": 0,
-      "end": 2.3,
-      "text": "I am speed.",
-      "hint": "我就是速度。",
+      "start": 0.261,
+      "end": 2.124,
+      "text": "One hundred seventy-five miles per hour!",
+      "hint": "每小时一百七十五英里！",
       "words": [
         {
+          "text": "One",
+          "start": 0.301,
+          "end": 0.381
+        },
+        {
+          "text": "hundred",
+          "start": 0.441,
+          "end": 0.641
+        },
+        {
+          "text": "seventy-five",
+          "start": 0.761,
+          "end": 1.282
+        },
+        {
+          "text": "miles",
+          "start": 1.342,
+          "end": 1.543
+        },
+        {
+          "text": "per",
+          "start": 1.703,
+          "end": 1.803
+        },
+        {
+          "text": "hour!",
+          "start": 1.903,
+          "end": 2.064
+        }
+      ]
+    },
+    {
+      "id": "line_1LHYqCogk0U",
+      "roleId": "role_t3AskixQqcI",
+      "start": 2.144,
+      "end": 6.15,
+      "text": "Okay! You did it, buddy! You can back off now!",
+      "hint": "好！你做到了，伙计！你现在可以慢下来了！",
+      "words": [
+        {
+          "text": "Okay!",
+          "start": 2.184,
+          "end": 2.765
+        },
+        {
+          "text": "You",
+          "start": 3.326,
+          "end": 3.426
+        },
+        {
+          "text": "did",
+          "start": 3.466,
+          "end": 3.526
+        },
+        {
+          "text": "it,",
+          "start": 3.566,
+          "end": 3.626
+        },
+        {
+          "text": "buddy!",
+          "start": 3.706,
+          "end": 4.648
+        },
+        {
+          "text": "You",
+          "start": 4.748,
+          "end": 4.828
+        },
+        {
+          "text": "can",
+          "start": 4.928,
+          "end": 5.069
+        },
+        {
+          "text": "back",
+          "start": 5.129,
+          "end": 5.309
+        },
+        {
+          "text": "off",
+          "start": 5.529,
+          "end": 5.65
+        },
+        {
+          "text": "now!",
+          "start": 5.77,
+          "end": 6.09
+        }
+      ]
+    },
+    {
+      "id": "line__CWP9gWKCd8",
+      "roleId": "role_MA9SyNmW",
+      "start": 6.331,
+      "end": 9.075,
+      "text": "Later! I am speed!",
+      "hint": "回头见！我就是速度！",
+      "words": [
+        {
+          "text": "Later!",
+          "start": 6.371,
+          "end": 6.772
+        },
+        {
           "text": "I",
-          "start": 0.686,
-          "end": 0.706
+          "start": 7.593,
+          "end": 7.613
         },
         {
           "text": "am",
-          "start": 1.15,
-          "end": 1.271
+          "start": 8.034,
+          "end": 8.134
         },
         {
-          "text": "speed.",
-          "start": 1.614,
-          "end": 2.159
+          "text": "speed!",
+          "start": 8.555,
+          "end": 9.015
+        }
+      ]
+    },
+    {
+      "id": "line_qILBp2_zPSI",
+      "roleId": "role_t3AskixQqcI",
+      "start": 10.939,
+      "end": 11.359,
+      "text": "Whoa!",
+      "hint": "哇！",
+      "words": [
+        {
+          "text": "Whoa!",
+          "start": 10.979,
+          "end": 11.299
         }
       ]
     }
   ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
   "rightsStatus": "redistribution-not-cleared",
   "credit": {
     "title": "Cars on the Road",
     "attribution": "原作：Disney / Pixar",
-    "source": "https://www.youtube.com/watch?v=y39L1PesHmc&t=35s",
+    "source": "https://www.youtube.com/watch?v=y39L1PesHmc&t=28s",
     "licence": "未确认再分发许可",
     "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
-    "changes": "原上传约 35.85–38.15 秒的节选；添加中英台词和配音时间标记。"
+    "changes": "内部原型测试；原上传 28.95–40.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
   }
 }

@@ -1,0 +1,283 @@
+{
+  "version": 1,
+  "id": "pack_gCp7ClczBfE",
+  "title": "我看起来怎么样？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 20,
+  "video": "ben-blue-hat-review-fdd5a53e2a6e.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-blue-hat/",
+  "poster": "ben-blue-hat-poster-fdd5a53e2a6e.jpg",
+  "waveform": "waveform-fdd5a53e2a6e.json",
+  "roles": [
+    {
+      "id": "role_YMmMf1wkkD0",
+      "name": "梅姨",
+      "label": "梅姨",
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_DJntnoCh-CI",
+      "name": "本",
+      "label": "本",
+      "hint": "3 句台词"
+    },
+    {
+      "id": "role_VcebY2wPqqI",
+      "name": "霍莉",
+      "label": "霍莉",
+      "hint": "1 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_sCydWOJpgic",
+      "roleId": "role_YMmMf1wkkD0",
+      "start": 0.2,
+      "end": 5.35,
+      "text": "Oh no! The magic hat has turned Ben blue!",
+      "hint": "哦，不！魔法帽把本变蓝了！",
+      "words": [
+        {
+          "text": "Oh",
+          "start": 0.861,
+          "end": 0.921
+        },
+        {
+          "text": "no!",
+          "start": 1.162,
+          "end": 1.583
+        },
+        {
+          "text": "The",
+          "start": 2.124,
+          "end": 2.244
+        },
+        {
+          "text": "magic",
+          "start": 2.424,
+          "end": 2.845
+        },
+        {
+          "text": "hat",
+          "start": 3.106,
+          "end": 3.406
+        },
+        {
+          "text": "has",
+          "start": 3.486,
+          "end": 3.607
+        },
+        {
+          "text": "turned",
+          "start": 3.707,
+          "end": 4.088
+        },
+        {
+          "text": "Ben",
+          "start": 4.248,
+          "end": 4.548
+        },
+        {
+          "text": "blue!",
+          "start": 5.009,
+          "end": 5.35
+        }
+      ]
+    },
+    {
+      "id": "line_aW63oqdeA-I",
+      "roleId": "role_DJntnoCh-CI",
+      "start": 6.25,
+      "end": 7.2,
+      "text": "How do I look?",
+      "hint": "我看起来怎么样？",
+      "words": [
+        {
+          "text": "How",
+          "start": 6.371,
+          "end": 6.493
+        },
+        {
+          "text": "do",
+          "start": 6.594,
+          "end": 6.674
+        },
+        {
+          "text": "I",
+          "start": 6.796,
+          "end": 6.816
+        },
+        {
+          "text": "look?",
+          "start": 6.897,
+          "end": 7.079
+        }
+      ]
+    },
+    {
+      "id": "line_g-FGEKfQLhY",
+      "roleId": "role_VcebY2wPqqI",
+      "start": 7.55,
+      "end": 11.55,
+      "text": "Um, I think your old hat suits you better.",
+      "hint": "嗯，我觉得你原来的帽子更适合你。",
+      "words": [
+        {
+          "text": "Um,",
+          "start": 7.852,
+          "end": 7.932
+        },
+        {
+          "text": "I",
+          "start": 8.656,
+          "end": 8.676
+        },
+        {
+          "text": "think",
+          "start": 8.857,
+          "end": 9.078
+        },
+        {
+          "text": "your",
+          "start": 9.178,
+          "end": 9.359
+        },
+        {
+          "text": "old",
+          "start": 9.62,
+          "end": 9.801
+        },
+        {
+          "text": "hat",
+          "start": 9.942,
+          "end": 10.183
+        },
+        {
+          "text": "suits",
+          "start": 10.384,
+          "end": 10.746
+        },
+        {
+          "text": "you",
+          "start": 10.826,
+          "end": 10.967
+        },
+        {
+          "text": "better.",
+          "start": 11.168,
+          "end": 11.49
+        }
+      ]
+    },
+    {
+      "id": "line_1uvrBZpyVCo",
+      "roleId": "role_DJntnoCh-CI",
+      "start": 12.3,
+      "end": 13.25,
+      "text": "Me too.",
+      "hint": "我也这么觉得。",
+      "words": [
+        {
+          "text": "Me",
+          "start": 12.502,
+          "end": 12.704
+        },
+        {
+          "text": "too.",
+          "start": 12.947,
+          "end": 13.21
+        }
+      ]
+    },
+    {
+      "id": "line_Zof2U70vNlQ",
+      "roleId": "role_YMmMf1wkkD0",
+      "start": 13.9,
+      "end": 15,
+      "text": "Abracazobody!",
+      "hint": "阿布拉卡佐波迪！（剧中的魔法咒语）",
+      "words": [
+        {
+          "text": "Abracazobody!",
+          "start": 14.144,
+          "end": 14.857
+        }
+      ]
+    },
+    {
+      "id": "line_tveTq4Z4Gmk",
+      "roleId": "role_DJntnoCh-CI",
+      "start": 15.4,
+      "end": 19.85,
+      "text": "Ah, it's good to have my old hat back again.",
+      "hint": "啊，能重新戴上我的旧帽子真好。",
+      "words": [
+        {
+          "text": "Ah,",
+          "start": 16.142,
+          "end": 16.462
+        },
+        {
+          "text": "it's",
+          "start": 17.605,
+          "end": 17.745
+        },
+        {
+          "text": "good",
+          "start": 17.886,
+          "end": 18.086
+        },
+        {
+          "text": "to",
+          "start": 18.166,
+          "end": 18.246
+        },
+        {
+          "text": "have",
+          "start": 18.307,
+          "end": 18.447
+        },
+        {
+          "text": "my",
+          "start": 18.567,
+          "end": 18.667
+        },
+        {
+          "text": "old",
+          "start": 18.788,
+          "end": 18.928
+        },
+        {
+          "text": "hat",
+          "start": 19.048,
+          "end": 19.209
+        },
+        {
+          "text": "back",
+          "start": 19.309,
+          "end": 19.489
+        },
+        {
+          "text": "again.",
+          "start": 19.609,
+          "end": 19.85
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Ben and Holly’s Little Kingdom",
+    "attribution": "Ben and Holly’s Little Kingdom © Astley Baker Davies / Entertainment One / Hasbro.",
+    "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=564s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 564.65–584.65 秒的节选。"
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}
