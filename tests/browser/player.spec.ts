@@ -26,9 +26,8 @@ test('shows the real clip, switches roles, and works at phone and tablet widths'
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
-  await page.getByRole('button', { name: '这句先用原声，跳过', exact: true }).click();
-  await page.getByRole('button', { name: '这句先用原声，跳过', exact: true }).click();
-  await page.getByRole('button', { name: '看我的配音', exact: true }).click();
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
   await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByText('这一次先听原声，下次试着录一句。')).toBeVisible();
@@ -56,7 +55,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
       await page.getByRole('button', { name: '取消', exact: true }).click();
       await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
     }
-    await page.getByRole('button', { name: i < 2 ? '下一句' : '看我的配音', exact: true }).click();
+    await page.getByRole('button', { name: i < 2 ? '下一步' : '看我的配音', exact: true }).click();
   }
   await expect(page.getByText('录了 3 句台词。', { exact: false })).toBeVisible();
   await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();
@@ -110,7 +109,7 @@ test('silent input is rejected instead of marking the line complete', async ({ p
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('没听到清楚的声音', { timeout: 12000 });
   await expect(page.getByText('已完成 0 / 3 句', { exact: true })).toHaveCount(1);
-  await expect(page.getByRole('button', { name: '下一句', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeEnabled();
 });
 
 test('cancelling a pending microphone request stops a late stream', async ({ page, browserName }) => {

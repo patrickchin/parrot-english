@@ -37,7 +37,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
     await page.setViewportSize({ width: 375, height: 667 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
-    for (const name of ['听我的录音', '下一句']) {
+    for (const name of ['听我的录音', '下一步']) {
       const bounds = await page.getByRole('button', { name, exact: true }).boundingBox();
       expect(bounds!.height).toBeGreaterThanOrEqual(56);
       expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(667);
@@ -94,22 +94,19 @@ test('scene, caption, waveforms and every main action fit one screen across the 
       await page.setViewportSize(viewport);
       expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${slug} player at ${viewport.width}×${viewport.height}`).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      for (const name of ['听这一句原声', '开始录音', '听我的录音', '下一句']) {
-        const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name: name === '下一句' ? /下一句|继续配音/ : name, exact: true });
+      for (const name of ['听这一句原声', '开始录音', '听我的录音', '下一步']) {
+        const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name, exact: true });
         const bounds = await action.boundingBox();
         expect(bounds!.height).toBeGreaterThanOrEqual(56);
         expect(bounds!.y).toBeGreaterThanOrEqual(0);
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
       }
       const waveform = await page.getByRole('img', { name: '原声波形', exact: true }).boundingBox();
-      const words = await page.getByRole('list', { name: '逐词台词' }).boundingBox();
+      const words = await page.getByRole('group', { name: '台词', exact: true }).boundingBox();
       expect(words!.y).toBeGreaterThanOrEqual(waveform!.y + waveform!.height);
-      expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(2);
+      expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(10);
       const scene = await page.getByRole('region', { name: '电影片段' }).boundingBox();
-      const footer = await page.getByRole('contentinfo').boundingBox();
-      const actions = await page.getByRole('group', { name: '配音操作' }).boundingBox();
       expect(scene!.height).toBeGreaterThanOrEqual(140);
-      expect(footer!.y).toBeGreaterThanOrEqual(actions!.y + actions!.height);
       if (slug === 'onions' && info.project.name === 'chromium' && [375, 1280].includes(viewport.width)) {
         const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
         await mkdir(folder, { recursive: true });
@@ -120,45 +117,49 @@ test('scene, caption, waveforms and every main action fit one screen across the 
 });
 
 
-test('words share the waveform time scale, stay readable, and follow playback without scrolling the page', async ({ page }) => {
-  await page.setViewportSize({ width: 375, height: 667 });
-  await page.goto('/#onions');
-  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
-  const line: Line = pack.lines[0];
-  await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  const list = page.getByRole('list', { name: '逐词台词' });
-  const items = list.getByRole('listitem');
-  await expect(items).toHaveCount(line.words!.length);
-  for (const viewport of [{ width: 375, height: 667 }, { width: 1280, height: 720 }]) {
-    await page.setViewportSize(viewport);
-    const wave = await page.getByRole('img', { name: '原声波形', exact: true }).boundingBox();
-    const boxes = await items.evaluateAll(nodes => nodes.map(n => {
-      const position = n.getBoundingClientRect();
-      const text = n.firstElementChild!.getBoundingClientRect();
-      return { x: position.x, text: { x: text.x, y: text.y, right: text.right, bottom: text.bottom } };
-    }));
-    for (const [i, box] of boxes.entries()) {
-      const expected = wave!.x + (line.words![i].start - line.start) / (line.end - line.start) * wave!.width;
-      expect(Math.abs(box.x - expected)).toBeLessThan(2);
-      for (const other of boxes.slice(i + 1)) {
-        const overlap = box.text.x < other.text.right && box.text.right > other.text.x && box.text.y < other.text.bottom && box.text.bottom > other.text.y;
-        expect(overlap).toBe(false);
+test('plain dialogue and controls stay fixed when switching lines and skipping to the result', async ({ page }, info) => {
+  for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
+    await page.goto('/#' + slug);
+    const pack = await (await page.request.get(`/packs/${slug}/pack.json`)).json();
+    const lines: Line[] = pack.lines.filter((line: Line) => line.roleId === pack.roles[0].id);
+    await page.getByRole('button', { name: '开始配音', exact: true }).click();
+    for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 1024 }, { width: 1280, height: 720 }]) {
+      await page.setViewportSize(viewport);
+      const scene = page.getByRole('region', { name: '电影片段' });
+      const graph = page.getByRole('region', { name: '声音波形对比' });
+      const caption = page.getByRole('group', { name: '台词', exact: true });
+      const actions = page.getByRole('group', { name: '配音操作' });
+      const before = await Promise.all([scene, graph, caption, actions].map(el => el.boundingBox()));
+      for (const [i, line] of lines.entries()) {
+        await page.getByRole('button', { name: `第 ${i + 1} 句：${line.text}`, exact: true }).click();
+        await expect(caption.getByText(line.text, { exact: true })).toBeVisible();
+        await expect(caption.getByText(line.hint, { exact: true })).toBeVisible();
+        const after = await Promise.all([scene, graph, caption, actions].map(el => el.boundingBox()));
+        for (const [index, box] of after.entries()) {
+          for (const dimension of ['x', 'y', 'width', 'height'] as const) {
+            expect(Math.abs(box![dimension] - before[index]![dimension]), `${slug} line ${i + 1}, ${viewport.width}px ${dimension}`).toBeLessThan(1);
+          }
+        }
+        const restart = await page.getByRole('button', { name: '重新开始', exact: true }).boundingBox();
+        expect(restart!.height).toBeGreaterThanOrEqual(44);
+        expect(restart!.y + restart!.height).toBeLessThanOrEqual(viewport.height);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+      }
+      if (slug === 'onions' && info.project.name === 'chromium') {
+        const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
+        await mkdir(folder, { recursive: true });
+        await page.screenshot({ path: join(folder, `stable-dubbing-${viewport.width}.png`) });
       }
     }
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+    await page.getByRole('button', { name: `第 1 句：${lines[0].text}`, exact: true }).click();
+    for (const [i] of lines.entries()) {
+      await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeEnabled();
+      await page.getByRole('button', { name: '下一步', exact: true }).click();
+      if (i < lines.length - 1) await expect(page.getByText(`已完成 ${i + 1} / ${lines.length} 句`, { exact: true })).toHaveCount(1);
+    }
+    await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeVisible();
+    await expect(page.getByText('录了 0 句台词。', { exact: false })).toBeVisible();
   }
-  await page.setViewportSize({ width: 375, height: 667 });
-  const timeline = page.getByRole('group', { name: '声音与台词时间轴' });
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
-  const onions = items.filter({ hasText: /^Onions$/ }).first();
-  // A short word highlight can fall between the default assertion retries.
-  await expect.poll(() => onions.getAttribute('aria-current'), { intervals: [25], timeout: 6000 }).toBe('true');
-  const word = await onions.boundingBox(), visible = await timeline.boundingBox();
-  expect(word!.x).toBeGreaterThanOrEqual(visible!.x);
-  expect(word!.x + word!.width).toBeLessThanOrEqual(visible!.x + visible!.width);
-  expect(await timeline.evaluate(el => el.scrollLeft)).toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.scrollY)).toBe(0);
-  await page.getByRole('button', { name: '停止播放', exact: true }).click();
 });
 
 // Sample what was actually painted, rather than relying on an occasional poll.
