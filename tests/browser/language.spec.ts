@@ -15,14 +15,12 @@ test('UI language persists across navigation and reload while English dialogue a
   await page.getByRole('button', { name: 'Choose scene: No, this is Patrick!', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await expect(page.getByText('Thank you.', { exact: true })).toHaveAttribute('lang', 'en');
-  const hints = page.getByRole('checkbox', { name: 'Show Chinese meaning hints' });
-  await hints.focus();
-  await hints.press('Space');
-  await expect(page.getByText('谢谢你。', { exact: true })).toHaveCount(0);
+  await expect(page.getByText('谢谢你。', { exact: true })).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Show Chinese meaning hints' })).toHaveCount(0);
   await selector(page).selectOption('zh-CN');
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeVisible();
   await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
-  await expect(page.getByRole('checkbox', { name: '显示中文提示' })).not.toBeChecked();
+  await expect(page.getByText('谢谢你。', { exact: true })).toBeVisible();
   await selector(page).selectOption('en');
   for (const viewport of [{ width: 320, height: 640 }, { width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
     await page.setViewportSize(viewport);
@@ -72,7 +70,7 @@ test('language works without local storage and translates recording guidance and
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await expect(page.getByText('No uploads · Clears on close', { exact: true })).toBeVisible();
+  await expect(page.getByText('No uploads · Clears on close', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('alert')).toContainText('Microphone access is off.');
   await selector(page).selectOption('zh-CN');
   await expect(page.getByRole('alert')).toContainText('麦克风还没开启。');

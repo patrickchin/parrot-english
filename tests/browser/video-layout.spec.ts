@@ -12,8 +12,7 @@ test('the picture follows the source proportions through role choice, practice a
       if (step === 'result') {
         const pack = await (await page.request.get(`/packs/${slug}/pack.json`)).json();
         const turns = pack.lines.filter((line: { roleId: string }) => line.roleId === pack.roles[0].id);
-        for (const _ of turns) await page.getByRole('button', { name: '这句先用原声，跳过', exact: true }).click();
-        await page.getByRole('button', { name: '看我的配音', exact: true }).click();
+        for (const _ of turns) await page.getByRole('button', { name: '下一步', exact: true }).click();
       }
       for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
         await page.setViewportSize(viewport);
