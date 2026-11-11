@@ -210,12 +210,16 @@ test('preview stays below the picture, fits responsive screens and supports redu
     await expect(current).toContainText('Onions have layers.');
     await expect(async () => {
       const picture = (await page.getByLabel('Shrek dialogue scene', { exact: true }).boundingBox())!;
+      const frame = await page.getByLabel('Shrek dialogue scene', { exact: true }).evaluate(el => {
+        const bounds = el.parentElement!.parentElement!.getBoundingClientRect();
+        return { y: bounds.y, height: bounds.height };
+      });
       const movie = (await page.getByRole('region', { name: 'Movie scene', exact: true }).boundingBox())!;
       const view = (await subtitles.boundingBox())!;
-      expect(Math.abs((picture.y + view.y + view.height) / 2 - movie.y - movie.height / 2), 'video and subtitles remain vertically centered').toBeLessThan(2);
+      expect(Math.abs((frame.y + view.y + view.height) / 2 - movie.y - movie.height / 2), 'viewing area and subtitles remain vertically centered').toBeLessThan(2);
       if (viewport.width >= 900) {
         const roles = (await page.getByRole('region', { name: 'Choose a role', exact: true }).boundingBox())!;
-        expect(Math.abs(roles.y - picture.y), 'side panel follows the top of the video').toBeLessThan(2);
+        expect(Math.abs(roles.y - frame.y), 'side panel follows the top of the viewing area').toBeLessThan(2);
       }
       const text = (await current.getByText('Onions have layers.', { exact: true }).boundingBox())!;
       expect(picture.width).toBeGreaterThan(100);

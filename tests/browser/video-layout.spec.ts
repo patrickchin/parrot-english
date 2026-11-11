@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 test('the picture follows the source proportions through role choice, practice and replay', async ({ page }) => {
-  for (const slug of ['onions', 'wumbo']) {
+  for (const slug of ['onions', 'wumbo', 'mayonnaise']) {
     await page.goto('/scenes/' + slug);
     await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
     const movie = page.getByRole('region', { name: '电影片段', exact: true });
@@ -37,13 +37,28 @@ test('the picture follows the source proportions through role choice, practice a
           }
           expect(Math.abs(bounds.width - bounds.height * aspect), `${slug} ${step} at ${viewport.width}`).toBeLessThan(1);
           const overlay = (await movie.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
-          expect(Math.abs(overlay.height - bounds.height)).toBeLessThan(1);
+          expect(overlay.width).toBeGreaterThanOrEqual(bounds.width - 1);
+          expect(overlay.height).toBeGreaterThanOrEqual(bounds.height - 1);
+          expect(Math.abs(overlay.x + overlay.width / 2 - bounds.x - bounds.width / 2), 'picture is centered within the black viewing area').toBeLessThan(1);
+          expect(Math.abs(overlay.y + overlay.height / 2 - bounds.y - bounds.height / 2)).toBeLessThan(1);
+          if (step !== 'choose') {
+            const graph = (await page.getByRole('region', { name: '声音波形对比', exact: true }).boundingBox())!;
+            expect(Math.abs(overlay.x - sceneBounds.x)).toBeLessThan(1);
+            expect(Math.abs(overlay.width - sceneBounds.width), 'viewing area fills the dialogue column').toBeLessThan(1);
+            expect(graph.x).toBeGreaterThanOrEqual(overlay.x);
+            expect(graph.x + graph.width).toBeLessThanOrEqual(overlay.x + overlay.width);
+            if (viewport.width >= 900 && step === 'practice') {
+              const controls = (await page.getByRole('group', { name: '配音操作', exact: true }).boundingBox())!;
+              expect(controls.x - overlay.x - overlay.width, 'controls sit close to the viewing area').toBeCloseTo(24, 0);
+              expect(Math.abs(controls.y - overlay.y)).toBeLessThan(1);
+            }
+          }
           const progress = (await movie.getByRole('progressbar', { name: '片段播放进度', exact: true }).boundingBox())!;
           expect(progress.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
           expect(bounds.y).toBeGreaterThanOrEqual(0);
           expect(progress.y + progress.height).toBeLessThan(viewport.height);
           expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-          if (step !== 'choose' || viewport.width >= 900) expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+          if (step !== 'choose' || viewport.width >= 900) expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${slug} ${step} at ${viewport.width} × ${viewport.height} fits without scrolling`).toBe(true);
         }).toPass({ timeout: 5000 });
       }
     }
