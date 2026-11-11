@@ -1,5 +1,5 @@
 import { test, expect, setLanguage } from './fixtures';
-import { youngerClips } from '../../src/catalog';
+import { clips, youngerClips } from '../../src/catalog';
 
 test('scene search finds tags and full dialogue while preserving audience folders', async ({ page }) => {
   await page.goto('/');
@@ -21,14 +21,15 @@ test('scene search finds tags and full dialogue while preserving audience folder
   await expect(page.getByRole('status')).toHaveText('没有找到片段。');
   await page.getByRole('button', { name: '清除搜索', exact: true }).click();
   await expect(search).toBeFocused();
-  await expect(results).toHaveCount(24);
-  await page.getByRole('group', { name: '片段分类' }).getByRole('button', { name: /^较小孩子/ }).click();
+  await expect(results).toHaveCount(clips.filter(clip => clip.cohort === 'older-audience').length);
+  await page.getByRole('group', { name: '片段分类' }).getByRole('button', { name: /^英语启蒙/ }).click();
   await expect(results).toHaveCount(youngerClips.length);
   await search.fill('SpongeBob');
   await expect(results).toHaveCount(0);
-  await search.fill('magic');
-  await expect(page.getByRole('button', { name: '选择片段：我看起来怎么样？', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '选择片段：我可以和本一起玩吗？', exact: true })).toBeVisible();
+  await search.fill('good morning');
+  await expect(page.getByRole('button', { name: '选择片段：早上好！你好吗？', exact: true })).toBeVisible();
+  await search.fill('swim');
+  await expect(page.getByRole('button', { name: '选择片段：你会游泳吗？', exact: true })).toBeVisible();
 });
 
 test('tag and title results rank above scenes that only mention the query in dialogue', async ({ page }) => {

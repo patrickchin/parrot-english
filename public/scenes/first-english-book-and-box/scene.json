@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "id": "scene_cjkZKJp7Wq0",
+  "title": "这是什么？一本书！",
+  "tags": [
+    "English Singsing",
+    "beginner",
+    "first English",
+    "英语启蒙",
+    "book",
+    "box",
+    "this",
+    "that",
+    "书",
+    "盒子"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 21.083,
+  "video": "first-english-book-and-box-review-7936e27ebfad.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-book-and-box/",
+  "poster": "first-english-book-and-box-poster-7936e27ebfad.jpg",
+  "waveform": "waveform-7936e27ebfad.json",
+  "roles": [
+    {
+      "id": "role_HDH0Ul9i7F8",
+      "name": "萨莉",
+      "label": "萨莉",
+      "hint": "2 句台词",
+      "portrait": "first-english-book-and-box-sally-portrait-9639c373f270.jpg"
+    },
+    {
+      "id": "role_biGkzogETqI",
+      "name": "蓝衣小朋友",
+      "label": "蓝衣小朋友",
+      "hint": "1 句台词",
+      "portrait": "first-english-book-and-box-blue-portrait-bea98015ee57.jpg"
+    },
+    {
+      "id": "role_Hh6xcW9eG7g",
+      "name": "紫衣小朋友",
+      "label": "紫衣小朋友",
+      "hint": "1 句台词",
+      "portrait": "first-english-book-and-box-purple-portrait-1ae145c94f63.jpg"
+    },
+    {
+      "id": "role_MXwPkAvrD98",
+      "name": "小狗",
+      "label": "小狗",
+      "hint": "1 句台词",
+      "portrait": "first-english-book-and-box-dog-portrait-9efd7ce3ac9d.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_0yxPH4VU8j0",
+      "roleId": "role_HDH0Ul9i7F8",
+      "start": 0.812,
+      "end": 1.733,
+      "text": "What's this?",
+      "hint": "这是什么？",
+      "words": [
+        {
+          "text": "What's",
+          "start": 0.852,
+          "end": 1.233
+        },
+        {
+          "text": "this?",
+          "start": 1.353,
+          "end": 1.673
+        }
+      ]
+    },
+    {
+      "id": "line_byw6lu8edRE",
+      "roleId": "role_biGkzogETqI",
+      "start": 2.774,
+      "end": 3.555,
+      "text": "It's a book.",
+      "hint": "这是一本书。",
+      "words": [
+        {
+          "text": "It's",
+          "start": 2.814,
+          "end": 2.974
+        },
+        {
+          "text": "a",
+          "start": 3.114,
+          "end": 3.134
+        },
+        {
+          "text": "book.",
+          "start": 3.214,
+          "end": 3.495
+        }
+      ]
+    },
+    {
+      "id": "line_NuCdnJKv29A",
+      "roleId": "role_Hh6xcW9eG7g",
+      "start": 11.241,
+      "end": 12.222,
+      "text": "What's that?",
+      "hint": "那是什么？",
+      "words": [
+        {
+          "text": "What's",
+          "start": 11.281,
+          "end": 11.642
+        },
+        {
+          "text": "that?",
+          "start": 11.762,
+          "end": 12.162
+        }
+      ]
+    },
+    {
+      "id": "line_TEOHtnWdsyo",
+      "roleId": "role_MXwPkAvrD98",
+      "start": 13.864,
+      "end": 15.785,
+      "text": "Haha, it's a box!",
+      "hint": "哈哈，那是一个盒子！",
+      "words": [
+        {
+          "text": "Haha,",
+          "start": 13.904,
+          "end": 14.244
+        },
+        {
+          "text": "it's",
+          "start": 14.865,
+          "end": 15.045
+        },
+        {
+          "text": "a",
+          "start": 15.205,
+          "end": 15.225
+        },
+        {
+          "text": "box!",
+          "start": 15.345,
+          "end": 15.725
+        }
+      ]
+    },
+    {
+      "id": "line_l4ndRId2o3o",
+      "roleId": "role_HDH0Ul9i7F8",
+      "start": 20.209,
+      "end": 20.83,
+      "text": "Wow!",
+      "hint": "哇！",
+      "words": [
+        {
+          "text": "Wow!",
+          "start": 20.249,
+          "end": 20.77
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "English Singsing — What's this? What's that?",
+    "attribution": "English Singsing — original educational animation and English performance",
+    "source": "https://www.youtube.com/watch?v=eUazfCkQq84&t=14s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 14.9–35.95 秒的连续节选。Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+  }
+}

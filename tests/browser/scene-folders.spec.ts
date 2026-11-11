@@ -4,16 +4,18 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+const filmCount = clips.filter(clip => clip.cohort === 'older-audience').length;
+
 const youngerCount = clips.filter(clip => clip.cohort === 'younger-age-5').length;
 
 test('audience folders keep the younger scenes separate and survive playback, language changes and reload', async ({ page }, info) => {
   await page.goto('/');
   const categories = page.getByRole('group', { name: '片段分类', exact: true });
-  const younger = categories.getByRole('button', { name: /^较小孩子/ });
+  const younger = categories.getByRole('button', { name: /^英语启蒙/ });
   await expect(categories.getByRole('button', { pressed: true })).toContainText('电影与动画');
   await expect(page.getByRole('combobox', { name: '片段文件夹', exact: true })).toHaveCount(0);
   await expect(categories.getByRole('button')).toHaveCount(4);
-  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await page.getByRole('searchbox').fill('Toy Story');
   await younger.click();
   await expect(younger).toHaveAttribute('aria-pressed', 'true');
@@ -34,14 +36,14 @@ test('audience folders keep the younger scenes separate and survive playback, la
       expect(bounds.x).toBeGreaterThanOrEqual(0);
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     }
-    await expect(categories.getByText('24 个片段', { exact: true })).toBeVisible();
+    await expect(categories.getByText(`${filmCount} 个片段`, { exact: true })).toBeVisible();
     await expect(younger.getByText(`${youngerCount} 个片段`, { exact: true })).toBeVisible();
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english'); await mkdir(shots, { recursive: true });
       await page.screenshot({ path: join(shots, `category-tabs-${width}.png`), animations: 'disabled', fullPage: true });
     }
   }
-  await page.getByRole('button', { name: '选择片段：猜猜我们干什么了！', exact: true }).click();
+  await page.getByRole('button', { name: '选择片段：早上好！你好吗？', exact: true }).click();
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(younger).toHaveAttribute('aria-pressed', 'true');
@@ -49,7 +51,7 @@ test('audience folders keep the younger scenes separate and survive playback, la
   await expect(younger).toHaveAttribute('aria-pressed', 'true');
   await setLanguage(page, 'en');
   const translatedCategories = page.getByRole('group', { name: 'Scene categories', exact: true });
-  const translatedYounger = translatedCategories.getByRole('button', { name: /^Younger children/ });
+  const translatedYounger = translatedCategories.getByRole('button', { name: /^First English/ });
   await expect(translatedYounger).toHaveAttribute('aria-pressed', 'true');
   await page.setViewportSize({ width: 320, height: 812 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -66,7 +68,7 @@ test('audience folders keep the younger scenes separate and survive playback, la
   await expect(films).toBeFocused();
   await films.press('Enter');
   await expect(films).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await translatedYounger.focus();
   await translatedYounger.press('Space');
   await expect(translatedYounger).toHaveAttribute('aria-pressed', 'true');
@@ -78,7 +80,7 @@ test('audience folders keep the younger scenes separate and survive playback, la
 
 test('a younger learner can record a line in a complete conversation', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
-  await page.goto('/scenes/ben-never-scared');
+  await page.goto('/scenes/first-english-good-morning');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 15000 });

@@ -32,15 +32,15 @@ test('the independently loaded scene rejects traversal, missing roles and overla
 });
 
 
-test('all 64 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
+test('all 69 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
   const scenes = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const { validateWaveform } = await import('../src/waveform.ts');
-  assert.equal(scenes.length, 64);
-  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 14);
-  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 24);
+  assert.equal(scenes.length, 69);
+  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 5);
+  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 38);
   assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 12);
   assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 64);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 69);
   assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const entry of scenes) {
@@ -128,4 +128,24 @@ test('the third batch keeps all twelve exchanges distinct and preserves the wate
   }
   const water = validateScene(JSON.parse(await readFile('public/scenes/himym-water-is-a-drink/scene.json', 'utf8')));
   assert.equal(water.roles.find(role => role.name === '马修').selectable, false);
+});
+
+
+test('First English requires explicit level review and contains only short complete learner dialogues', async () => {
+  const recipe = JSON.parse(await readFile('content/preschool-review-scenes.json', 'utf8'));
+  const catalog = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
+  const beginners = catalog.filter(scene => scene.cohort === 'younger-age-5');
+  assert.equal(beginners.length, 5);
+  for (const entry of beginners) {
+    const reviewed = recipe.scenes.find(scene => scene.publicSlug === entry.slug);
+    assert.equal(reviewed.beginnerSuitable, true);
+    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')));
+    assert.ok(scene.lines.every(line => line.text.split(/\s+/).length <= 5));
+    assert.ok(new Set(scene.lines.map(line => line.roleId)).size >= 2);
+    assert.ok(scene.lines.filter((line, i, lines) => !i || line.roleId !== lines[i - 1].roleId).length >= 3);
+    assert.ok(scene.roles.every(role => role.portrait));
+  }
+  const previous = recipe.scenes.filter(scene => scene.beginnerSuitable === false);
+  assert.equal(previous.length, 14);
+  for (const scene of previous) assert.equal(catalog.find(entry => entry.slug === scene.publicSlug).cohort, 'older-audience');
 });

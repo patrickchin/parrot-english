@@ -188,7 +188,7 @@
   },
   "categories": {
     "films": "电影与动画",
-    "younger": "较小孩子",
+    "younger": "英语启蒙",
     "older": "10–12岁",
     "teens": "青少年"
   },
@@ -512,6 +512,31 @@
       "title": "我可憋不了两千六百年",
       "licence": "未确认再分发许可",
       "changes": "内部原型测试；原上传 106.55–120.45 秒的连续节选。Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+    },
+    "scene_X42Wva5CnXM": {
+      "title": "早上好！你好吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 4.35–16.2 秒的连续节选。A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+    },
+    "scene_nvIB2uFTLc8": {
+      "title": "很高兴认识你",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 16.6–34 秒的连续节选。Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase."
+    },
+    "scene_cjkZKJp7Wq0": {
+      "title": "这是什么？一本书！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 14.9–35.95 秒的连续节选。Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+    },
+    "scene_xF5xlXcwdvw": {
+      "title": "你会游泳吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 28.7–39.2 秒的连续节选。Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+    },
+    "scene_soM_ejjEqc0": {
+      "title": "这是送给你的",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
     }
   },
   "roles": {
@@ -1154,6 +1179,66 @@
     "role_9ZB7SS6ZoTs": {
       "name": "谢尔顿",
       "hint": "3 句台词"
+    },
+    "role_9C7GkSJ3GZ4": {
+      "name": "同学们",
+      "hint": "3 句台词"
+    },
+    "role_z7O3Brz5bTs": {
+      "name": "老师",
+      "hint": "2 句台词"
+    },
+    "role_NbJyPNcbblM": {
+      "name": "老师",
+      "hint": "1 句台词"
+    },
+    "role_aj7joqDnZyA": {
+      "name": "凯特",
+      "hint": "3 句台词"
+    },
+    "role_sWh9h03ep24": {
+      "name": "同学们",
+      "hint": "1 句台词"
+    },
+    "role_JbyyfeuB93Q": {
+      "name": "蓝衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_HDH0Ul9i7F8": {
+      "name": "萨莉",
+      "hint": "2 句台词"
+    },
+    "role_biGkzogETqI": {
+      "name": "蓝衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_Hh6xcW9eG7g": {
+      "name": "紫衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_MXwPkAvrD98": {
+      "name": "小狗",
+      "hint": "1 句台词"
+    },
+    "role_Ex6aSXisvvs": {
+      "name": "蓝衣小朋友",
+      "hint": "2 句台词"
+    },
+    "role_-0NxEbZrU68": {
+      "name": "紫衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_VTNuIGSirwY": {
+      "name": "小狗",
+      "hint": "1 句台词"
+    },
+    "role_qMDOxsX3cME": {
+      "name": "萨莉",
+      "hint": "2 句台词"
+    },
+    "role_c20cLSGQdAQ": {
+      "name": "蓝衣小朋友",
+      "hint": "2 句台词"
     }
   },
   "app": {

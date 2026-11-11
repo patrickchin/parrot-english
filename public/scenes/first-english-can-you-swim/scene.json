@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "id": "scene_xF5xlXcwdvw",
+  "title": "你会游泳吗？",
+  "tags": [
+    "English Singsing",
+    "beginner",
+    "first English",
+    "英语启蒙",
+    "swim",
+    "can",
+    "yes",
+    "no",
+    "游泳"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 10.5,
+  "video": "first-english-can-you-swim-review-ad7761660c8a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-can-you-swim/",
+  "poster": "first-english-can-you-swim-poster-ad7761660c8a.jpg",
+  "waveform": "waveform-ad7761660c8a.json",
+  "roles": [
+    {
+      "id": "role_Ex6aSXisvvs",
+      "name": "蓝衣小朋友",
+      "label": "蓝衣小朋友",
+      "hint": "2 句台词",
+      "portrait": "first-english-can-you-swim-blue-portrait-bea98015ee57.jpg"
+    },
+    {
+      "id": "role_-0NxEbZrU68",
+      "name": "紫衣小朋友",
+      "label": "紫衣小朋友",
+      "hint": "1 句台词",
+      "portrait": "first-english-can-you-swim-purple-portrait-1ae145c94f63.jpg"
+    },
+    {
+      "id": "role_VTNuIGSirwY",
+      "name": "小狗",
+      "label": "小狗",
+      "hint": "1 句台词",
+      "portrait": "first-english-can-you-swim-dog-portrait-9efd7ce3ac9d.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_vdZkCK9MBl4",
+      "roleId": "role_Ex6aSXisvvs",
+      "start": 0.281,
+      "end": 1.142,
+      "text": "Can you swim?",
+      "hint": "你会游泳吗？",
+      "words": [
+        {
+          "text": "Can",
+          "start": 0.321,
+          "end": 0.461
+        },
+        {
+          "text": "you",
+          "start": 0.561,
+          "end": 0.661
+        },
+        {
+          "text": "swim?",
+          "start": 0.762,
+          "end": 1.082
+        }
+      ]
+    },
+    {
+      "id": "line_xxCMGx00VuQ",
+      "roleId": "role_-0NxEbZrU68",
+      "start": 2.305,
+      "end": 3.266,
+      "text": "Yes, I can.",
+      "hint": "是的，我会。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 2.345,
+          "end": 2.545
+        },
+        {
+          "text": "I",
+          "start": 2.745,
+          "end": 2.765
+        },
+        {
+          "text": "can.",
+          "start": 2.866,
+          "end": 3.206
+        }
+      ]
+    },
+    {
+      "id": "line_wHxZwHjeWV0",
+      "roleId": "role_Ex6aSXisvvs",
+      "start": 6.373,
+      "end": 7.234,
+      "text": "Can you swim?",
+      "hint": "你会游泳吗？",
+      "words": [
+        {
+          "text": "Can",
+          "start": 6.413,
+          "end": 6.553
+        },
+        {
+          "text": "you",
+          "start": 6.653,
+          "end": 6.753
+        },
+        {
+          "text": "swim?",
+          "start": 6.854,
+          "end": 7.174
+        }
+      ]
+    },
+    {
+      "id": "line_yLNKQvIJqfk",
+      "roleId": "role_VTNuIGSirwY",
+      "start": 8.777,
+      "end": 10.1,
+      "text": "No, I can't.",
+      "hint": "不，我不会。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 8.817,
+          "end": 9.018
+        },
+        {
+          "text": "I",
+          "start": 9.479,
+          "end": 9.499
+        },
+        {
+          "text": "can't.",
+          "start": 9.639,
+          "end": 10.08
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "English Singsing — Happy Birthday — This is for you",
+    "attribution": "English Singsing — original educational animation and English performance",
+    "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=28s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 28.7–39.2 秒的连续节选。Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+  }
+}

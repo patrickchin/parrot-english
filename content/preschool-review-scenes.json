@@ -3,7 +3,7 @@
   "audience": "Around age five; simple character dialogue. Adult suitability review pending.",
   "purpose": "private-adult-review",
   "rightsStatus": "redistribution-not-cleared",
-  "selectionCriteria": "Continuous character exchange with a setup, responses and payoff; at least two speaking characters and three actual dialogue turns. Duration alone is insufficient.",
+  "selectionCriteria": "First English is selected by language level, not the native-speaking age of the show. Explicit beginnerSuitable approval, concrete visual meaning, repeated everyday phrases, no idioms or sarcasm, and a complete multi-character exchange are required. Practice lines in this starter set have at most five words.",
   "sources": [
     {
       "id": "QFdLgfy63cc",
@@ -75,6 +75,45 @@
       "officialChannel": true,
       "attribution": "Peppa Pig © Astley Baker Davies / Entertainment One / Hasbro",
       "duration": 75
+    },
+    {
+      "id": "AA5hOCxlRaI",
+      "url": "https://www.youtube.com/watch?v=AA5hOCxlRaI",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/AA5hOCxlRaI.mp4",
+      "series": "English Singsing",
+      "episode": "Good morning. How are you?",
+      "uploadTitle": "[Greeting] Good morning. How are you? - Easy Dialogue - English video for Kids",
+      "title": "[Greeting] Good morning. How are you? - Easy Dialogue - English video for Kids",
+      "channel": "English Singsing",
+      "officialChannel": true,
+      "attribution": "English Singsing — original educational animation and English performance",
+      "duration": 87
+    },
+    {
+      "id": "eUazfCkQq84",
+      "url": "https://www.youtube.com/watch?v=eUazfCkQq84",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/eUazfCkQq84.mp4",
+      "series": "English Singsing",
+      "episode": "What's this? What's that?",
+      "uploadTitle": "[this & that] What's this? What's that? - Easy Dialogue - English educational animation for Kids.",
+      "title": "[this & that] What's this? What's that? - Easy Dialogue - English educational animation for Kids.",
+      "channel": "English Singsing",
+      "officialChannel": true,
+      "attribution": "English Singsing — original educational animation and English performance",
+      "duration": 150
+    },
+    {
+      "id": "LMs5M_IiQbc",
+      "url": "https://www.youtube.com/watch?v=LMs5M_IiQbc",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/LMs5M_IiQbc.mp4",
+      "series": "English Singsing",
+      "episode": "Happy Birthday — This is for you",
+      "uploadTitle": "Theme 6. Happy Birthday - This is for you. Thanks. | ESL Song & Story - Learning English for Kids",
+      "title": "Theme 6. Happy Birthday - This is for you. Thanks. | ESL Song & Story - Learning English for Kids",
+      "channel": "English Singsing",
+      "officialChannel": true,
+      "attribution": "English Singsing — original educational animation and English performance",
+      "duration": 291
     }
   ],
   "scenes": [
@@ -410,7 +449,10 @@
         "泥坑",
         "guessing",
         "猜谜"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Present-perfect guessing questions and long replies."
     },
     {
       "id": "clip_pfpYY0M22so",
@@ -669,7 +711,10 @@
         "恐龙",
         "toys",
         "玩具"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Faster character voices and expressive vocabulary; useful later, outside the first-English starter set."
     },
     {
       "id": "clip_du6M4U0ctb0",
@@ -1042,7 +1087,10 @@
         "医生",
         "pretend play",
         "角色扮演"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Patient, visitor and medicine vocabulary plus modal and conditional language."
     },
     {
       "id": "clip_1D2mQKlhTy0",
@@ -1441,7 +1489,10 @@
         "眼镜",
         "helping",
         "帮忙"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Long clauses, remembering earlier events, and grumpy/conditional language."
     },
     {
       "id": "clip_UHTGdynnGdQ",
@@ -1633,7 +1684,10 @@
         "眼镜",
         "family",
         "家庭"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Past-continuous phrasing and an implied joke."
     },
     {
       "id": "clip_sMyT3XmXoJU",
@@ -1949,7 +2003,10 @@
         "请求许可",
         "magic",
         "魔法"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Promises, tense changes, and a longer adult explanation."
     },
     {
       "id": "clip_BZWdiYsNp4A",
@@ -2190,7 +2247,10 @@
         "害怕",
         "elves",
         "精灵"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Scared, fantasy identity, and the idiom in that case."
     },
     {
       "id": "clip_eNcEU5Zprbo",
@@ -2562,7 +2622,10 @@
         "魔法",
         "hat",
         "帽子"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Present perfect, comparisons, a magic spell, and longer replies."
     },
     {
       "id": "clip_y0S7Eal57uE",
@@ -2943,7 +3006,10 @@
         "布鲁伊",
         "硬币",
         "家务"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Imaginary/real contrast, earning money, a conditional bargain, and adult irony."
     },
     {
       "id": "clip_R3bkFZXsqAE",
@@ -3181,7 +3247,10 @@
         "布鲁伊",
         "游戏",
         "公平"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Role-play irony, a long adult turn, and free and easy."
     },
     {
       "id": "clip_Xk9ek7up70Q",
@@ -3573,7 +3642,10 @@
         "佩奇",
         "煎饼",
         "做饭"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Long explanations and the idiom a simple matter."
     },
     {
       "id": "clip_SwFOcu9Nr9w",
@@ -3852,7 +3924,10 @@
         "佩奇",
         "捉迷藏",
         "轮流"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Taking turns, should, comparison, and future prediction."
     },
     {
       "id": "clip_zjYp_BQce8k",
@@ -4131,7 +4206,10 @@
         "霍莉",
         "练习",
         "出错"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Accidentally, reasons, tense changes, and extended explanations."
     },
     {
       "id": "clip_8cd74SpE6iQ",
@@ -4530,7 +4608,919 @@
         "霍莉",
         "计划",
         "寻找"
-      ]
+      ],
+      "beginnerSuitable": false,
+      "libraryFolder": "older-audience",
+      "beginnerReviewReason": "Future plans, past events, and an implied joke."
+    },
+    {
+      "id": "clip_Ya6a8p6NYZo",
+      "sceneId": "scene_X42Wva5CnXM",
+      "batch": "2026-11-11-first-english",
+      "cohort": "younger-age-5",
+      "slug": "15-first-english-good-morning",
+      "publicSlug": "first-english-good-morning",
+      "routeSlug": "first-english-good-morning",
+      "title": "Good morning! How are you?",
+      "titleZh": "早上好！你好吗？",
+      "sourceId": "AA5hOCxlRaI",
+      "start": 4.35,
+      "end": 16.2,
+      "roles": [
+        {
+          "id": "role_9C7GkSJ3GZ4",
+          "name": "Class",
+          "selectable": true,
+          "portrait": "first-english-good-morning-class-portrait-0859d6a07752.jpg"
+        },
+        {
+          "id": "role_z7O3Brz5bTs",
+          "name": "Teacher",
+          "selectable": true,
+          "portrait": "first-english-good-morning-teacher-portrait-c4ce9f369155.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_BoxfqUwM25I",
+          "roleId": "role_9C7GkSJ3GZ4",
+          "speaker": "Class",
+          "start": 4.702,
+          "end": 5.923,
+          "text": "Good morning.",
+          "hint": "早上好。",
+          "words": [
+            {
+              "text": "Good",
+              "start": 4.742,
+              "end": 5.002
+            },
+            {
+              "text": "morning.",
+              "start": 5.082,
+              "end": 5.863
+            }
+          ]
+        },
+        {
+          "id": "line_ah5igD3GQnE",
+          "roleId": "role_z7O3Brz5bTs",
+          "speaker": "Teacher",
+          "start": 7.125,
+          "end": 8.447,
+          "text": "Good morning, everyone.",
+          "hint": "大家早上好。",
+          "words": [
+            {
+              "text": "Good",
+              "start": 7.165,
+              "end": 7.346
+            },
+            {
+              "text": "morning,",
+              "start": 7.446,
+              "end": 7.746
+            },
+            {
+              "text": "everyone.",
+              "start": 7.867,
+              "end": 8.387
+            }
+          ]
+        },
+        {
+          "id": "line_h1rvvP3U7fM",
+          "roleId": "role_9C7GkSJ3GZ4",
+          "speaker": "Class",
+          "start": 9.609,
+          "end": 10.391,
+          "text": "How are you?",
+          "hint": "你好吗？",
+          "words": [
+            {
+              "text": "How",
+              "start": 9.649,
+              "end": 9.85
+            },
+            {
+              "text": "are",
+              "start": 9.97,
+              "end": 10.09
+            },
+            {
+              "text": "you?",
+              "start": 10.15,
+              "end": 10.331
+            }
+          ]
+        },
+        {
+          "id": "line_jL71pcMnZus",
+          "roleId": "role_z7O3Brz5bTs",
+          "speaker": "Teacher",
+          "start": 11.853,
+          "end": 13.716,
+          "text": "Fine, thanks. How are you?",
+          "hint": "我很好，谢谢。你们好吗？",
+          "words": [
+            {
+              "text": "Fine,",
+              "start": 11.893,
+              "end": 12.153
+            },
+            {
+              "text": "thanks.",
+              "start": 12.234,
+              "end": 12.534
+            },
+            {
+              "text": "How",
+              "start": 13.035,
+              "end": 13.175
+            },
+            {
+              "text": "are",
+              "start": 13.335,
+              "end": 13.436
+            },
+            {
+              "text": "you?",
+              "start": 13.516,
+              "end": 13.656
+            }
+          ]
+        },
+        {
+          "id": "line_1SWNi9dtwRs",
+          "roleId": "role_9C7GkSJ3GZ4",
+          "speaker": "Class",
+          "start": 15.098,
+          "end": 15.839,
+          "text": "Great!",
+          "hint": "很好！",
+          "words": [
+            {
+              "text": "Great!",
+              "start": 15.138,
+              "end": 15.779
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Greeting and a repeated how-are-you exchange; one to five words per line.",
+      "practice": "Greeting and a repeated how-are-you exchange; one to five words per line.",
+      "summary": "Greeting and a repeated how-are-you exchange; one to five words per line.",
+      "contentNotes": "A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings.",
+      "observedDialogueTurnsAtLeast": 5,
+      "reviewStatus": "short-phrase vocabulary, cast, visuals and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "greetings",
+        "good morning",
+        "how are you",
+        "问好"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_IdAvekKYRmc",
+      "sceneId": "scene_nvIB2uFTLc8",
+      "batch": "2026-11-11-first-english",
+      "cohort": "younger-age-5",
+      "slug": "16-first-english-nice-to-meet-you",
+      "publicSlug": "first-english-nice-to-meet-you",
+      "routeSlug": "first-english-nice-to-meet-you",
+      "title": "Nice to meet you",
+      "titleZh": "很高兴认识你",
+      "sourceId": "AA5hOCxlRaI",
+      "start": 16.6,
+      "end": 34.0,
+      "roles": [
+        {
+          "id": "role_NbJyPNcbblM",
+          "name": "Teacher",
+          "selectable": true,
+          "portrait": "first-english-nice-to-meet-you-teacher-portrait-c4ce9f369155.jpg"
+        },
+        {
+          "id": "role_aj7joqDnZyA",
+          "name": "Kate",
+          "selectable": true,
+          "portrait": "first-english-nice-to-meet-you-kate-portrait-03287b3cb599.jpg"
+        },
+        {
+          "id": "role_sWh9h03ep24",
+          "name": "Class",
+          "selectable": true,
+          "portrait": "first-english-nice-to-meet-you-class-portrait-0859d6a07752.jpg"
+        },
+        {
+          "id": "role_JbyyfeuB93Q",
+          "name": "Child in blue",
+          "selectable": true,
+          "portrait": "first-english-nice-to-meet-you-blue-portrait-bea98015ee57.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_ZH2WxmfN4-Y",
+          "roleId": "role_NbJyPNcbblM",
+          "speaker": "Teacher",
+          "start": 16.88,
+          "end": 17.861,
+          "text": "Come in, please.",
+          "hint": "请进。",
+          "words": [
+            {
+              "text": "Come",
+              "start": 16.92,
+              "end": 17.121
+            },
+            {
+              "text": "in,",
+              "start": 17.221,
+              "end": 17.281
+            },
+            {
+              "text": "please.",
+              "start": 17.441,
+              "end": 17.801
+            }
+          ]
+        },
+        {
+          "id": "line_Sz3-Ipzw3VY",
+          "roleId": "role_aj7joqDnZyA",
+          "speaker": "Kate",
+          "start": 21.145,
+          "end": 22.206,
+          "text": "Nice to meet you.",
+          "hint": "很高兴认识你。",
+          "words": [
+            {
+              "text": "Nice",
+              "start": 21.185,
+              "end": 21.446
+            },
+            {
+              "text": "to",
+              "start": 21.546,
+              "end": 21.606
+            },
+            {
+              "text": "meet",
+              "start": 21.686,
+              "end": 21.886
+            },
+            {
+              "text": "you.",
+              "start": 21.966,
+              "end": 22.146
+            }
+          ]
+        },
+        {
+          "id": "line_L7lXgpnqtt8",
+          "roleId": "role_aj7joqDnZyA",
+          "speaker": "Kate",
+          "start": 23.368,
+          "end": 24.549,
+          "text": "My name is Kate.",
+          "hint": "我叫凯特。",
+          "words": [
+            {
+              "text": "My",
+              "start": 23.408,
+              "end": 23.568
+            },
+            {
+              "text": "name",
+              "start": 23.668,
+              "end": 23.848
+            },
+            {
+              "text": "is",
+              "start": 23.928,
+              "end": 23.988
+            },
+            {
+              "text": "Kate.",
+              "start": 24.089,
+              "end": 24.489
+            }
+          ]
+        },
+        {
+          "id": "line_V7eG2DRR-rA",
+          "roleId": "role_sWh9h03ep24",
+          "speaker": "Class",
+          "start": 26.151,
+          "end": 27.613,
+          "text": "Nice to meet you, too.",
+          "hint": "我们也很高兴认识你。",
+          "words": [
+            {
+              "text": "Nice",
+              "start": 26.191,
+              "end": 26.471
+            },
+            {
+              "text": "to",
+              "start": 26.571,
+              "end": 26.652
+            },
+            {
+              "text": "meet",
+              "start": 26.732,
+              "end": 26.932
+            },
+            {
+              "text": "you,",
+              "start": 27.012,
+              "end": 27.172
+            },
+            {
+              "text": "too.",
+              "start": 27.292,
+              "end": 27.553
+            }
+          ]
+        },
+        {
+          "id": "line_VbsDTPFXBqU",
+          "roleId": "role_JbyyfeuB93Q",
+          "speaker": "Child in blue",
+          "start": 30.676,
+          "end": 31.918,
+          "text": "Sit down, please.",
+          "hint": "请坐。",
+          "words": [
+            {
+              "text": "Sit",
+              "start": 30.716,
+              "end": 30.957
+            },
+            {
+              "text": "down,",
+              "start": 31.057,
+              "end": 31.337
+            },
+            {
+              "text": "please.",
+              "start": 31.457,
+              "end": 31.858
+            }
+          ]
+        },
+        {
+          "id": "line_T4wWo4QCGe4",
+          "roleId": "role_aj7joqDnZyA",
+          "speaker": "Kate",
+          "start": 32.859,
+          "end": 33.64,
+          "text": "Thank you.",
+          "hint": "谢谢。",
+          "words": [
+            {
+              "text": "Thank",
+              "start": 32.899,
+              "end": 33.159
+            },
+            {
+              "text": "you.",
+              "start": 33.239,
+              "end": 33.58
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Meeting someone, a name, and please/thank-you phrases; every line has two to five words.",
+      "practice": "Meeting someone, a name, and please/thank-you phrases; every line has two to five words.",
+      "summary": "Meeting someone, a name, and please/thank-you phrases; every line has two to five words.",
+      "contentNotes": "Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase.",
+      "observedDialogueTurnsAtLeast": 5,
+      "reviewStatus": "short-phrase vocabulary, cast, visuals and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "introductions",
+        "please",
+        "thank you",
+        "classroom",
+        "认识朋友"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_qT_nYe1AcZ0",
+      "sceneId": "scene_cjkZKJp7Wq0",
+      "batch": "2026-11-11-first-english",
+      "cohort": "younger-age-5",
+      "slug": "17-first-english-book-and-box",
+      "publicSlug": "first-english-book-and-box",
+      "routeSlug": "first-english-book-and-box",
+      "title": "What's this? A book!",
+      "titleZh": "这是什么？一本书！",
+      "sourceId": "eUazfCkQq84",
+      "start": 14.9,
+      "end": 35.95,
+      "roles": [
+        {
+          "id": "role_HDH0Ul9i7F8",
+          "name": "Sally",
+          "selectable": true,
+          "portrait": "first-english-book-and-box-sally-portrait-9639c373f270.jpg"
+        },
+        {
+          "id": "role_biGkzogETqI",
+          "name": "Child in blue",
+          "selectable": true,
+          "portrait": "first-english-book-and-box-blue-portrait-bea98015ee57.jpg"
+        },
+        {
+          "id": "role_Hh6xcW9eG7g",
+          "name": "Child in purple",
+          "selectable": true,
+          "portrait": "first-english-book-and-box-purple-portrait-1ae145c94f63.jpg"
+        },
+        {
+          "id": "role_MXwPkAvrD98",
+          "name": "Dog",
+          "selectable": true,
+          "portrait": "first-english-book-and-box-dog-portrait-9efd7ce3ac9d.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_0yxPH4VU8j0",
+          "roleId": "role_HDH0Ul9i7F8",
+          "speaker": "Sally",
+          "start": 15.712,
+          "end": 16.633,
+          "text": "What's this?",
+          "hint": "这是什么？",
+          "words": [
+            {
+              "text": "What's",
+              "start": 15.752,
+              "end": 16.133
+            },
+            {
+              "text": "this?",
+              "start": 16.253,
+              "end": 16.573
+            }
+          ]
+        },
+        {
+          "id": "line_byw6lu8edRE",
+          "roleId": "role_biGkzogETqI",
+          "speaker": "Child in blue",
+          "start": 17.674,
+          "end": 18.455,
+          "text": "It's a book.",
+          "hint": "这是一本书。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 17.714,
+              "end": 17.874
+            },
+            {
+              "text": "a",
+              "start": 18.014,
+              "end": 18.034
+            },
+            {
+              "text": "book.",
+              "start": 18.114,
+              "end": 18.395
+            }
+          ]
+        },
+        {
+          "id": "line_NuCdnJKv29A",
+          "roleId": "role_Hh6xcW9eG7g",
+          "speaker": "Child in purple",
+          "start": 26.141,
+          "end": 27.122,
+          "text": "What's that?",
+          "hint": "那是什么？",
+          "words": [
+            {
+              "text": "What's",
+              "start": 26.181,
+              "end": 26.542
+            },
+            {
+              "text": "that?",
+              "start": 26.662,
+              "end": 27.062
+            }
+          ]
+        },
+        {
+          "id": "line_TEOHtnWdsyo",
+          "roleId": "role_MXwPkAvrD98",
+          "speaker": "Dog",
+          "start": 28.764,
+          "end": 30.685,
+          "text": "Haha, it's a box!",
+          "hint": "哈哈，那是一个盒子！",
+          "words": [
+            {
+              "text": "Haha,",
+              "start": 28.804,
+              "end": 29.144
+            },
+            {
+              "text": "it's",
+              "start": 29.765,
+              "end": 29.945
+            },
+            {
+              "text": "a",
+              "start": 30.105,
+              "end": 30.125
+            },
+            {
+              "text": "box!",
+              "start": 30.245,
+              "end": 30.625
+            }
+          ]
+        },
+        {
+          "id": "line_l4ndRId2o3o",
+          "roleId": "role_HDH0Ul9i7F8",
+          "speaker": "Sally",
+          "start": 35.109,
+          "end": 35.73,
+          "text": "Wow!",
+          "hint": "哇！",
+          "words": [
+            {
+              "text": "Wow!",
+              "start": 35.149,
+              "end": 35.67
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "A visible book and box, two repeated question/answer patterns, and a short reaction.",
+      "practice": "A visible book and box, two repeated question/answer patterns, and a short reaction.",
+      "summary": "A visible book and box, two repeated question/answer patterns, and a short reaction.",
+      "contentNotes": "Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen.",
+      "observedDialogueTurnsAtLeast": 5,
+      "reviewStatus": "short-phrase vocabulary, cast, visuals and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "book",
+        "box",
+        "this",
+        "that",
+        "书",
+        "盒子"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_-dXqHL2hPok",
+      "sceneId": "scene_xF5xlXcwdvw",
+      "batch": "2026-11-11-first-english",
+      "cohort": "younger-age-5",
+      "slug": "18-first-english-can-you-swim",
+      "publicSlug": "first-english-can-you-swim",
+      "routeSlug": "first-english-can-you-swim",
+      "title": "Can you swim?",
+      "titleZh": "你会游泳吗？",
+      "sourceId": "LMs5M_IiQbc",
+      "start": 28.7,
+      "end": 39.2,
+      "roles": [
+        {
+          "id": "role_Ex6aSXisvvs",
+          "name": "Child in blue",
+          "selectable": true,
+          "portrait": "first-english-can-you-swim-blue-portrait-bea98015ee57.jpg"
+        },
+        {
+          "id": "role_-0NxEbZrU68",
+          "name": "Child in purple",
+          "selectable": true,
+          "portrait": "first-english-can-you-swim-purple-portrait-1ae145c94f63.jpg"
+        },
+        {
+          "id": "role_VTNuIGSirwY",
+          "name": "Dog",
+          "selectable": true,
+          "portrait": "first-english-can-you-swim-dog-portrait-9efd7ce3ac9d.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_vdZkCK9MBl4",
+          "roleId": "role_Ex6aSXisvvs",
+          "speaker": "Child in blue",
+          "start": 28.981,
+          "end": 29.842,
+          "text": "Can you swim?",
+          "hint": "你会游泳吗？",
+          "words": [
+            {
+              "text": "Can",
+              "start": 29.021,
+              "end": 29.161
+            },
+            {
+              "text": "you",
+              "start": 29.261,
+              "end": 29.361
+            },
+            {
+              "text": "swim?",
+              "start": 29.462,
+              "end": 29.782
+            }
+          ]
+        },
+        {
+          "id": "line_xxCMGx00VuQ",
+          "roleId": "role_-0NxEbZrU68",
+          "speaker": "Child in purple",
+          "start": 31.005,
+          "end": 31.966,
+          "text": "Yes, I can.",
+          "hint": "是的，我会。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 31.045,
+              "end": 31.245
+            },
+            {
+              "text": "I",
+              "start": 31.445,
+              "end": 31.465
+            },
+            {
+              "text": "can.",
+              "start": 31.566,
+              "end": 31.906
+            }
+          ]
+        },
+        {
+          "id": "line_wHxZwHjeWV0",
+          "roleId": "role_Ex6aSXisvvs",
+          "speaker": "Child in blue",
+          "start": 35.073,
+          "end": 35.934,
+          "text": "Can you swim?",
+          "hint": "你会游泳吗？",
+          "words": [
+            {
+              "text": "Can",
+              "start": 35.113,
+              "end": 35.253
+            },
+            {
+              "text": "you",
+              "start": 35.353,
+              "end": 35.453
+            },
+            {
+              "text": "swim?",
+              "start": 35.554,
+              "end": 35.874
+            }
+          ]
+        },
+        {
+          "id": "line_yLNKQvIJqfk",
+          "roleId": "role_VTNuIGSirwY",
+          "speaker": "Dog",
+          "start": 37.477,
+          "end": 38.8,
+          "text": "No, I can't.",
+          "hint": "不，我不会。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 37.517,
+              "end": 37.718
+            },
+            {
+              "text": "I",
+              "start": 38.179,
+              "end": 38.199
+            },
+            {
+              "text": "can't.",
+              "start": 38.339,
+              "end": 38.78
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "One repeated question with yes/no answers; three words per line.",
+      "practice": "One repeated question with yes/no answers; three words per line.",
+      "summary": "One repeated question with yes/no answers; three words per line.",
+      "contentNotes": "Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded.",
+      "observedDialogueTurnsAtLeast": 4,
+      "reviewStatus": "short-phrase vocabulary, cast, visuals and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "swim",
+        "can",
+        "yes",
+        "no",
+        "游泳"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_9-2nMFLhKY4",
+      "sceneId": "scene_soM_ejjEqc0",
+      "batch": "2026-11-11-first-english",
+      "cohort": "younger-age-5",
+      "slug": "19-first-english-birthday-present",
+      "publicSlug": "first-english-birthday-present",
+      "routeSlug": "first-english-birthday-present",
+      "title": "This is for you",
+      "titleZh": "这是送给你的",
+      "sourceId": "LMs5M_IiQbc",
+      "start": 45.7,
+      "end": 56.5,
+      "roles": [
+        {
+          "id": "role_qMDOxsX3cME",
+          "name": "Sally",
+          "selectable": true,
+          "portrait": "first-english-birthday-present-sally-portrait-9639c373f270.jpg"
+        },
+        {
+          "id": "role_c20cLSGQdAQ",
+          "name": "Child in blue",
+          "selectable": true,
+          "portrait": "first-english-birthday-present-blue-portrait-bea98015ee57.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_BtUWUoOX6ak",
+          "roleId": "role_qMDOxsX3cME",
+          "speaker": "Sally",
+          "start": 47.026,
+          "end": 48.268,
+          "text": "Welcome, everyone.",
+          "hint": "欢迎大家。",
+          "words": [
+            {
+              "text": "Welcome,",
+              "start": 47.066,
+              "end": 47.547
+            },
+            {
+              "text": "everyone.",
+              "start": 47.647,
+              "end": 48.208
+            }
+          ]
+        },
+        {
+          "id": "line_061hcPuSdUQ",
+          "roleId": "role_c20cLSGQdAQ",
+          "speaker": "Child in blue",
+          "start": 49.53,
+          "end": 50.691,
+          "text": "Happy birthday!",
+          "hint": "生日快乐！",
+          "words": [
+            {
+              "text": "Happy",
+              "start": 49.57,
+              "end": 49.93
+            },
+            {
+              "text": "birthday!",
+              "start": 50.03,
+              "end": 50.631
+            }
+          ]
+        },
+        {
+          "id": "line_Puy7irYGmfI",
+          "roleId": "role_c20cLSGQdAQ",
+          "speaker": "Child in blue",
+          "start": 52.334,
+          "end": 53.435,
+          "text": "This is for you.",
+          "hint": "这是送给你的。",
+          "words": [
+            {
+              "text": "This",
+              "start": 52.374,
+              "end": 52.574
+            },
+            {
+              "text": "is",
+              "start": 52.754,
+              "end": 52.794
+            },
+            {
+              "text": "for",
+              "start": 52.935,
+              "end": 53.075
+            },
+            {
+              "text": "you.",
+              "start": 53.175,
+              "end": 53.375
+            }
+          ]
+        },
+        {
+          "id": "line_HVyYjcTLHMI",
+          "roleId": "role_qMDOxsX3cME",
+          "speaker": "Sally",
+          "start": 55.418,
+          "end": 56.219,
+          "text": "Thank you.",
+          "hint": "谢谢。",
+          "words": [
+            {
+              "text": "Thank",
+              "start": 55.458,
+              "end": 55.719
+            },
+            {
+              "text": "you.",
+              "start": 55.819,
+              "end": 56.159
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "A visible birthday gift, handing it over, and saying thank you; two to four words per line.",
+      "practice": "A visible birthday gift, handing it over, and saying thank you; two to four words per line.",
+      "summary": "A visible birthday gift, handing it over, and saying thank you; two to four words per line.",
+      "contentNotes": "Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage.",
+      "observedDialogueTurnsAtLeast": 3,
+      "reviewStatus": "short-phrase vocabulary, cast, visuals and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "birthday",
+        "present",
+        "thank you",
+        "生日",
+        "礼物"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
     }
   ]
 }

@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "id": "scene_soM_ejjEqc0",
+  "title": "这是送给你的",
+  "tags": [
+    "English Singsing",
+    "beginner",
+    "first English",
+    "英语启蒙",
+    "birthday",
+    "present",
+    "thank you",
+    "生日",
+    "礼物"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 10.8,
+  "video": "first-english-birthday-present-review-f51f0fc3f84a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-birthday-present/",
+  "poster": "first-english-birthday-present-poster-f51f0fc3f84a.jpg",
+  "waveform": "waveform-f51f0fc3f84a.json",
+  "roles": [
+    {
+      "id": "role_qMDOxsX3cME",
+      "name": "萨莉",
+      "label": "萨莉",
+      "hint": "2 句台词",
+      "portrait": "first-english-birthday-present-sally-portrait-9639c373f270.jpg"
+    },
+    {
+      "id": "role_c20cLSGQdAQ",
+      "name": "蓝衣小朋友",
+      "label": "蓝衣小朋友",
+      "hint": "2 句台词",
+      "portrait": "first-english-birthday-present-blue-portrait-bea98015ee57.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_BtUWUoOX6ak",
+      "roleId": "role_qMDOxsX3cME",
+      "start": 1.326,
+      "end": 2.568,
+      "text": "Welcome, everyone.",
+      "hint": "欢迎大家。",
+      "words": [
+        {
+          "text": "Welcome,",
+          "start": 1.366,
+          "end": 1.847
+        },
+        {
+          "text": "everyone.",
+          "start": 1.947,
+          "end": 2.508
+        }
+      ]
+    },
+    {
+      "id": "line_061hcPuSdUQ",
+      "roleId": "role_c20cLSGQdAQ",
+      "start": 3.83,
+      "end": 4.991,
+      "text": "Happy birthday!",
+      "hint": "生日快乐！",
+      "words": [
+        {
+          "text": "Happy",
+          "start": 3.87,
+          "end": 4.23
+        },
+        {
+          "text": "birthday!",
+          "start": 4.33,
+          "end": 4.931
+        }
+      ]
+    },
+    {
+      "id": "line_Puy7irYGmfI",
+      "roleId": "role_c20cLSGQdAQ",
+      "start": 6.634,
+      "end": 7.735,
+      "text": "This is for you.",
+      "hint": "这是送给你的。",
+      "words": [
+        {
+          "text": "This",
+          "start": 6.674,
+          "end": 6.874
+        },
+        {
+          "text": "is",
+          "start": 7.054,
+          "end": 7.094
+        },
+        {
+          "text": "for",
+          "start": 7.235,
+          "end": 7.375
+        },
+        {
+          "text": "you.",
+          "start": 7.475,
+          "end": 7.675
+        }
+      ]
+    },
+    {
+      "id": "line_HVyYjcTLHMI",
+      "roleId": "role_qMDOxsX3cME",
+      "start": 9.718,
+      "end": 10.519,
+      "text": "Thank you.",
+      "hint": "谢谢。",
+      "words": [
+        {
+          "text": "Thank",
+          "start": 9.758,
+          "end": 10.019
+        },
+        {
+          "text": "you.",
+          "start": 10.119,
+          "end": 10.459
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "English Singsing — Happy Birthday — This is for you",
+    "attribution": "English Singsing — original educational animation and English performance",
+    "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=45s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+  }
+}

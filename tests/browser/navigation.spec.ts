@@ -43,7 +43,7 @@ test('folder paths follow selection, reload, Back and Forward', async ({ page })
 });
 
 test('scene paths open directly, reload and return to their audience folder', async ({ page }) => {
-  await page.goto('/scenes/ben-blue-hat');
+  await page.goto('/scenes/first-english-good-morning');
   const start = page.getByRole('button', { name: '开始配音', exact: true });
   await expect(start).toBeEnabled();
   await page.reload();
@@ -51,9 +51,9 @@ test('scene paths open directly, reload and return to their audience folder', as
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(page).toHaveURL(/\/library\/younger-age-5$/);
-  await expect(page.getByRole('group', { name: '片段分类', exact: true }).getByRole('button', { pressed: true })).toContainText('较小孩子');
-  await page.getByRole('button', { name: '选择片段：我看起来怎么样？', exact: true }).click();
-  await expect(page).toHaveURL(/\/scenes\/ben-blue-hat$/);
+  await expect(page.getByRole('group', { name: '片段分类', exact: true }).getByRole('button', { pressed: true })).toContainText('英语启蒙');
+  await page.getByRole('button', { name: '选择片段：早上好！你好吗？', exact: true }).click();
+  await expect(page).toHaveURL(/\/scenes\/first-english-good-morning$/);
   await expect(start).toBeEnabled();
 });
 

@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "id": "scene_nvIB2uFTLc8",
+  "title": "很高兴认识你",
+  "tags": [
+    "English Singsing",
+    "beginner",
+    "first English",
+    "英语启蒙",
+    "introductions",
+    "please",
+    "thank you",
+    "classroom",
+    "认识朋友"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 17.417,
+  "video": "first-english-nice-to-meet-you-review-34f9c54930f9.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-nice-to-meet-you/",
+  "poster": "first-english-nice-to-meet-you-poster-34f9c54930f9.jpg",
+  "waveform": "waveform-34f9c54930f9.json",
+  "roles": [
+    {
+      "id": "role_NbJyPNcbblM",
+      "name": "老师",
+      "label": "老师",
+      "hint": "1 句台词",
+      "portrait": "first-english-nice-to-meet-you-teacher-portrait-c4ce9f369155.jpg"
+    },
+    {
+      "id": "role_aj7joqDnZyA",
+      "name": "凯特",
+      "label": "凯特",
+      "hint": "3 句台词",
+      "portrait": "first-english-nice-to-meet-you-kate-portrait-03287b3cb599.jpg"
+    },
+    {
+      "id": "role_sWh9h03ep24",
+      "name": "同学们",
+      "label": "同学们",
+      "hint": "1 句台词",
+      "portrait": "first-english-nice-to-meet-you-class-portrait-0859d6a07752.jpg"
+    },
+    {
+      "id": "role_JbyyfeuB93Q",
+      "name": "蓝衣小朋友",
+      "label": "蓝衣小朋友",
+      "hint": "1 句台词",
+      "portrait": "first-english-nice-to-meet-you-blue-portrait-bea98015ee57.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_ZH2WxmfN4-Y",
+      "roleId": "role_NbJyPNcbblM",
+      "start": 0.28,
+      "end": 1.261,
+      "text": "Come in, please.",
+      "hint": "请进。",
+      "words": [
+        {
+          "text": "Come",
+          "start": 0.32,
+          "end": 0.521
+        },
+        {
+          "text": "in,",
+          "start": 0.621,
+          "end": 0.681
+        },
+        {
+          "text": "please.",
+          "start": 0.841,
+          "end": 1.201
+        }
+      ]
+    },
+    {
+      "id": "line_Sz3-Ipzw3VY",
+      "roleId": "role_aj7joqDnZyA",
+      "start": 4.545,
+      "end": 5.606,
+      "text": "Nice to meet you.",
+      "hint": "很高兴认识你。",
+      "words": [
+        {
+          "text": "Nice",
+          "start": 4.585,
+          "end": 4.846
+        },
+        {
+          "text": "to",
+          "start": 4.946,
+          "end": 5.006
+        },
+        {
+          "text": "meet",
+          "start": 5.086,
+          "end": 5.286
+        },
+        {
+          "text": "you.",
+          "start": 5.366,
+          "end": 5.546
+        }
+      ]
+    },
+    {
+      "id": "line_L7lXgpnqtt8",
+      "roleId": "role_aj7joqDnZyA",
+      "start": 6.768,
+      "end": 7.949,
+      "text": "My name is Kate.",
+      "hint": "我叫凯特。",
+      "words": [
+        {
+          "text": "My",
+          "start": 6.808,
+          "end": 6.968
+        },
+        {
+          "text": "name",
+          "start": 7.068,
+          "end": 7.248
+        },
+        {
+          "text": "is",
+          "start": 7.328,
+          "end": 7.388
+        },
+        {
+          "text": "Kate.",
+          "start": 7.489,
+          "end": 7.889
+        }
+      ]
+    },
+    {
+      "id": "line_V7eG2DRR-rA",
+      "roleId": "role_sWh9h03ep24",
+      "start": 9.551,
+      "end": 11.013,
+      "text": "Nice to meet you, too.",
+      "hint": "我们也很高兴认识你。",
+      "words": [
+        {
+          "text": "Nice",
+          "start": 9.591,
+          "end": 9.871
+        },
+        {
+          "text": "to",
+          "start": 9.971,
+          "end": 10.052
+        },
+        {
+          "text": "meet",
+          "start": 10.132,
+          "end": 10.332
+        },
+        {
+          "text": "you,",
+          "start": 10.412,
+          "end": 10.572
+        },
+        {
+          "text": "too.",
+          "start": 10.692,
+          "end": 10.953
+        }
+      ]
+    },
+    {
+      "id": "line_VbsDTPFXBqU",
+      "roleId": "role_JbyyfeuB93Q",
+      "start": 14.076,
+      "end": 15.318,
+      "text": "Sit down, please.",
+      "hint": "请坐。",
+      "words": [
+        {
+          "text": "Sit",
+          "start": 14.116,
+          "end": 14.357
+        },
+        {
+          "text": "down,",
+          "start": 14.457,
+          "end": 14.737
+        },
+        {
+          "text": "please.",
+          "start": 14.857,
+          "end": 15.258
+        }
+      ]
+    },
+    {
+      "id": "line_T4wWo4QCGe4",
+      "roleId": "role_aj7joqDnZyA",
+      "start": 16.259,
+      "end": 17.04,
+      "text": "Thank you.",
+      "hint": "谢谢。",
+      "words": [
+        {
+          "text": "Thank",
+          "start": 16.299,
+          "end": 16.559
+        },
+        {
+          "text": "you.",
+          "start": 16.639,
+          "end": 16.98
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "English Singsing — Good morning. How are you?",
+    "attribution": "English Singsing — original educational animation and English performance",
+    "source": "https://www.youtube.com/watch?v=AA5hOCxlRaI&t=16s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 16.6–34 秒的连续节选。Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase."
+  }
+}

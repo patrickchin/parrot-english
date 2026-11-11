@@ -13,12 +13,13 @@ const generated=[]; const changed=[]; const media=[]; const translations={...eng
 for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'],['younger-age-5','content/preschool-review-scenes.json']]) {
  const recipe=JSON.parse(await readFile(file,'utf8'));
  for (const entry of recipe.scenes) {
+  const libraryFolder=cohort==='younger-age-5'&&entry.beginnerSuitable!==true?'older-audience':cohort;
   const slug=cohort==='younger-age-5'?entry.slug.replace(/^\d+-/,''):entry.slug;
   const source=recipe.sources.find(s=>s.id===entry.sourceId); let head,working;
   try {working=JSON.parse(await readFile(`public/scenes/${slug}/scene.json`,'utf8'));} catch (error) {if(error.code!=='ENOENT')throw error;}
   try {head=JSON.parse(execFileSync('git',['show',`HEAD:public/scenes/${slug}/scene.json`],{encoding:'utf8',stdio:['ignore','pipe','ignore']}));} catch {head=working;}
   if (entry.preserveMedia) {
-   generated.push({id:head.id,slug,title:head.title,english:({patrick:'No, this is Patrick.',chocolate:'Chocolate!',onions:'Ogres are like onions.'}[slug]??head.lines[0].text),note:head.credit.title,source:head.credit.source,cohort,poster:root+slug+'/'+head.poster});continue;
+   generated.push({id:head.id,slug,title:head.title,english:({patrick:'No, this is Patrick.',chocolate:'Chocolate!',onions:'Ogres are like onions.'}[slug]??head.lines[0].text),note:head.credit.title,source:head.credit.source,cohort:libraryFolder,poster:root+slug+'/'+head.poster});continue;
   }
   entry.sceneId ??=head?.id??'scene_'+randomBytes(8).toString('base64url');entry.publicSlug=slug;
   const original=`${local}/review/${cohort}/${entry.file??entry.slug+'.mp4'}`;
@@ -39,14 +40,16 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
   for (const r of overlay.roles) {const prior=working?.roles.find(old=>old.id===r.id);if(prior?.portrait)r.portrait=prior.portrait;}
   await mkdir(`public/scenes/${slug}`,{recursive:true});await writeFile(`public/scenes/${slug}/scene.json`,JSON.stringify(overlay,null,2)+'\n');await writeFile(`${canonical}/${slug}.json`,JSON.stringify(scene,null,2)+'\n');
   changed.push(slug);media.push({file:`${local}/${video}`,key:`clips/${slug}/${video}`},{file:`${local}/${scene.poster}`,key:`clips/${slug}/${scene.poster}`});
-  generated.push({id:scene.id,slug,title,english:summaries[slug]??(cohort==='younger-age-5'?entry.title:entry.editType==='replacement'?entry.title:head.lines[0].text),note:scene.credit.title,source:scene.credit.source,cohort,poster:scene.mediaBase+scene.poster});
+  generated.push({id:scene.id,slug,title,english:summaries[slug]??(cohort==='younger-age-5'?entry.title:entry.editType==='replacement'?entry.title:head.lines[0].text),note:scene.credit.title,source:scene.credit.source,cohort:libraryFolder,poster:scene.mediaBase+scene.poster});
  }
  await writeFile(file,JSON.stringify(recipe,null,2)+'\n');
 }
 await writeFile(`${canonical}/translations.json`,JSON.stringify(translations,null,2)+'\n');await writeFile(`${canonical}/media.json`,JSON.stringify(media,null,2)+'\n');await writeFile(`${canonical}/changed.json`,JSON.stringify(changed)+'\n');
 // Preserve the familiar older-scene order; the preschool folder is a separate selection.
 const order=['patrick','chocolate','wumbo','onions',...JSON.parse(await readFile('src/extra-clips.json','utf8')).map(s=>s.slug)];generated.sort((a,b)=>(a.cohort===b.cohort?(a.cohort==='older-audience'?order.indexOf(a.slug)-order.indexOf(b.slug):a.slug.localeCompare(b.slug)):a.cohort==='older-audience'?-1:1));
-await writeFile('src/review-clips.json',JSON.stringify(generated.map(entry=>({...entry,...(routeSlugs[entry.slug]?{routeSlug:routeSlugs[entry.slug]}:{})})),null,2)+'\n');
+const changedSlugs=new Set(generated.map(scene=>scene.slug));
+const untouched=catalog.filter(scene=>!changedSlugs.has(scene.slug));
+await writeFile('src/review-clips.json',JSON.stringify([...generated.map(entry=>({...entry,...(routeSlugs[entry.slug]?{routeSlug:routeSlugs[entry.slug]}:{})})),...untouched],null,2)+'\n');
 console.log(`Prepared ${generated.length} catalogue entries, ${changed.length} revised/new scenes, and ${media.length} media uploads. Existing portrait work is preserved separately.`);
 
 execFileSync(process.execPath, ['scripts/prepare-waveforms.mjs', ...changed], {stdio:'inherit'});

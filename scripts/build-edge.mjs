@@ -1,6 +1,7 @@
 import { readdir, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { gzipSync } from 'node:zlib';
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 const assets = {};
 async function collect(folder) {
@@ -12,7 +13,10 @@ async function collect(folder) {
       if (!type) throw new Error('Keep media in object storage, outside the function bundle: ' + path);
       const text = await readFile('dist' + path, 'utf8');
       const body = extname(entry.name) === '.json' ? JSON.stringify(JSON.parse(text)) : text;
-      assets[path] = { type, body, encoding: 'utf8' };
+      const gzip = gzipSync(body, { level: 9 });
+      assets[path] = gzip.length * 4 / 3 < Buffer.byteLength(JSON.stringify(body))
+        ? { type, body: gzip.toString('base64'), encoding: 'base64', contentEncoding: 'gzip' }
+        : { type, body, encoding: 'utf8' };
     }
   }
 }

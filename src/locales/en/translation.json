@@ -188,7 +188,7 @@
   },
   "categories": {
     "films": "Films & animation",
-    "younger": "Younger children",
+    "younger": "First English",
     "older": "Ages 10–12",
     "teens": "Teenagers"
   },
@@ -512,6 +512,31 @@
       "title": "Not for two thousand six hundred years",
       "licence": "Redistribution permission unconfirmed",
       "changes": "Internal prototype testing; excerpt from 106.55–120.45 seconds of the original upload. Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+    },
+    "scene_X42Wva5CnXM": {
+      "title": "Good morning! How are you?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous excerpt from 4.35–16.2 seconds of the source upload. A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+    },
+    "scene_nvIB2uFTLc8": {
+      "title": "Nice to meet you",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous excerpt from 16.6–34 seconds of the source upload. Original source name Kate is preserved in text and audio. The class reply is a chorus; the child in blue offers a seat. All roles provide a complete reusable phrase."
+    },
+    "scene_cjkZKJp7Wq0": {
+      "title": "What's this? A book!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous excerpt from 14.9–35.95 seconds of the source upload. Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+    },
+    "scene_xF5xlXcwdvw": {
+      "title": "Can you swim?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous excerpt from 28.7–39.2 seconds of the source upload. Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+    },
+    "scene_soM_ejjEqc0": {
+      "title": "This is for you",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous excerpt from 45.7–56.5 seconds of the source upload. Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
     }
   },
   "roles": {
@@ -1154,6 +1179,66 @@
     "role_9ZB7SS6ZoTs": {
       "name": "Sheldon",
       "hint": "3 lines"
+    },
+    "role_9C7GkSJ3GZ4": {
+      "name": "Class",
+      "hint": "3 lines"
+    },
+    "role_z7O3Brz5bTs": {
+      "name": "Teacher",
+      "hint": "2 lines"
+    },
+    "role_NbJyPNcbblM": {
+      "name": "Teacher",
+      "hint": "1 line"
+    },
+    "role_aj7joqDnZyA": {
+      "name": "Kate",
+      "hint": "3 lines"
+    },
+    "role_sWh9h03ep24": {
+      "name": "Class",
+      "hint": "1 line"
+    },
+    "role_JbyyfeuB93Q": {
+      "name": "Child in blue",
+      "hint": "1 line"
+    },
+    "role_HDH0Ul9i7F8": {
+      "name": "Sally",
+      "hint": "2 lines"
+    },
+    "role_biGkzogETqI": {
+      "name": "Child in blue",
+      "hint": "1 line"
+    },
+    "role_Hh6xcW9eG7g": {
+      "name": "Child in purple",
+      "hint": "1 line"
+    },
+    "role_MXwPkAvrD98": {
+      "name": "Dog",
+      "hint": "1 line"
+    },
+    "role_Ex6aSXisvvs": {
+      "name": "Child in blue",
+      "hint": "2 lines"
+    },
+    "role_-0NxEbZrU68": {
+      "name": "Child in purple",
+      "hint": "1 line"
+    },
+    "role_VTNuIGSirwY": {
+      "name": "Dog",
+      "hint": "1 line"
+    },
+    "role_qMDOxsX3cME": {
+      "name": "Sally",
+      "hint": "2 lines"
+    },
+    "role_c20cLSGQdAQ": {
+      "name": "Child in blue",
+      "hint": "2 lines"
     }
   },
   "app": {

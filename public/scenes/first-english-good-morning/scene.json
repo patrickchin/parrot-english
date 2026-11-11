@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "id": "scene_X42Wva5CnXM",
+  "title": "早上好！你好吗？",
+  "tags": [
+    "English Singsing",
+    "beginner",
+    "first English",
+    "英语启蒙",
+    "greetings",
+    "good morning",
+    "how are you",
+    "问好"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 11.875,
+  "video": "first-english-good-morning-review-ed7e4a5c9236.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-good-morning/",
+  "poster": "first-english-good-morning-poster-ed7e4a5c9236.jpg",
+  "waveform": "waveform-ed7e4a5c9236.json",
+  "roles": [
+    {
+      "id": "role_9C7GkSJ3GZ4",
+      "name": "同学们",
+      "label": "同学们",
+      "hint": "3 句台词",
+      "portrait": "first-english-good-morning-class-portrait-0859d6a07752.jpg"
+    },
+    {
+      "id": "role_z7O3Brz5bTs",
+      "name": "老师",
+      "label": "老师",
+      "hint": "2 句台词",
+      "portrait": "first-english-good-morning-teacher-portrait-c4ce9f369155.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_BoxfqUwM25I",
+      "roleId": "role_9C7GkSJ3GZ4",
+      "start": 0.352,
+      "end": 1.573,
+      "text": "Good morning.",
+      "hint": "早上好。",
+      "words": [
+        {
+          "text": "Good",
+          "start": 0.392,
+          "end": 0.652
+        },
+        {
+          "text": "morning.",
+          "start": 0.732,
+          "end": 1.513
+        }
+      ]
+    },
+    {
+      "id": "line_ah5igD3GQnE",
+      "roleId": "role_z7O3Brz5bTs",
+      "start": 2.775,
+      "end": 4.097,
+      "text": "Good morning, everyone.",
+      "hint": "大家早上好。",
+      "words": [
+        {
+          "text": "Good",
+          "start": 2.815,
+          "end": 2.996
+        },
+        {
+          "text": "morning,",
+          "start": 3.096,
+          "end": 3.396
+        },
+        {
+          "text": "everyone.",
+          "start": 3.517,
+          "end": 4.037
+        }
+      ]
+    },
+    {
+      "id": "line_h1rvvP3U7fM",
+      "roleId": "role_9C7GkSJ3GZ4",
+      "start": 5.259,
+      "end": 6.041,
+      "text": "How are you?",
+      "hint": "你好吗？",
+      "words": [
+        {
+          "text": "How",
+          "start": 5.299,
+          "end": 5.5
+        },
+        {
+          "text": "are",
+          "start": 5.62,
+          "end": 5.74
+        },
+        {
+          "text": "you?",
+          "start": 5.8,
+          "end": 5.981
+        }
+      ]
+    },
+    {
+      "id": "line_jL71pcMnZus",
+      "roleId": "role_z7O3Brz5bTs",
+      "start": 7.503,
+      "end": 9.366,
+      "text": "Fine, thanks. How are you?",
+      "hint": "我很好，谢谢。你们好吗？",
+      "words": [
+        {
+          "text": "Fine,",
+          "start": 7.543,
+          "end": 7.803
+        },
+        {
+          "text": "thanks.",
+          "start": 7.884,
+          "end": 8.184
+        },
+        {
+          "text": "How",
+          "start": 8.685,
+          "end": 8.825
+        },
+        {
+          "text": "are",
+          "start": 8.985,
+          "end": 9.086
+        },
+        {
+          "text": "you?",
+          "start": 9.166,
+          "end": 9.306
+        }
+      ]
+    },
+    {
+      "id": "line_1SWNi9dtwRs",
+      "roleId": "role_9C7GkSJ3GZ4",
+      "start": 10.748,
+      "end": 11.489,
+      "text": "Great!",
+      "hint": "很好！",
+      "words": [
+        {
+          "text": "Great!",
+          "start": 10.788,
+          "end": 11.429
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "English Singsing — Good morning. How are you?",
+    "attribution": "English Singsing — original educational animation and English performance",
+    "source": "https://www.youtube.com/watch?v=AA5hOCxlRaI&t=4s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 4.35–16.2 秒的连续节选。A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+  }
+}
