@@ -15,7 +15,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
     authoredScenes++;
     await page.goto(scenePath(clip.slug));
     for (const role of scene.roles.filter((role: { selectable?: boolean }) => role.selectable !== false)) {
-      const button = page.getByRole('button', { name: new RegExp('^' + role.name) });
+      const button = page.getByRole('button', { name: role.name, exact: true });
       await expect(button).toBeVisible();
       if (role.name === '来电者') continue; // Never appears in the scene.
       expect(role.portrait).toBeTruthy();
