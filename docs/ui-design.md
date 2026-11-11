@@ -68,14 +68,43 @@ voice is muted for that turn; stopping or reaching its end pauses both.
   Hardware/input processing latency still requires real-device checks.
 - The practice graph shows the selected turn. The result graph places recorded
   turns on the full-scene timeline. The cursor follows original playback, live
-  recording, take playback, and assembled replay. Reset removes the learner trace;
+  recording, take playback, and assembled replay. Starting a new attempt clears
+  the current trace and preserves the old attempt in My dubs;
   cancelling a retake preserves the previously accepted take.
 
 ## Storage and authoring
 
 ESA holds app code and manifests plus small numeric waveform metadata. Video,
-audio, and thumbnails remain in the existing OSS bucket. Live/saved learner
-recordings and waveform envelopes stay in memory and are never uploaded.
+audio, and thumbnails remain in the existing OSS bucket. Live audio stays in
+memory; accepted recordings and waveform envelopes autosave locally in IndexedDB
+and are never uploaded. A metadata store lists attempts without reading every
+audio file, and a separate media store holds binary audio buffers and optional
+selected source video. Binary buffers avoid WebKit's Blob preparation failures.
+
+Each started session receives a random `dub_…` ID. The URL remembers the current
+draft after a committed save. Reloading restores its role, current turn,
+skipped/recorded dispositions, completion state, and recordings. My dubs on the
+shelf opens older attempts and confirms individual deletions. Starting over
+keeps the previous session. Media bytes and lesson metadata commit atomically;
+the UI reports Saved only after the latest transaction completes. Unsaved or
+actively captured work retains the navigation warning. Quota/blocked storage
+errors keep current takes in memory and offer retry and a separate tab for
+managing saved attempts. Changed pack timings or missing media reject a restore
+without overwriting the saved data. Browser storage persistence is requested
+where available, and the shelf explains that clearing site data deletes drafts.
+
+Adult testers can download a completed dub as an MP4 from the result screen.
+The browser mixes the original scene, backing, and accepted takes locally, then
+uses a lazily loaded Mediabunny module to package MP4 with native AAC audio
+encoding. Existing H.264 picture packets are copied unchanged, in decode order;
+other supported source formats are encoded to H.264 through WebCodecs. This avoids
+real-time capture clocks and preserves original picture quality for shipped packs.
+Original audio remains for other characters and skipped turns. No extra
+permission gate or backend is added. Export need not wait for the scene to play;
+progress, cancel, retry, and a repeat-download link are available. An interruption
+or cancellation discards the partial file and preserves the takes. Browsers
+without the required MP4 encoder get a readable error. A downloaded file remains
+on the tester's device after the session is cleared.
 
 After preparing a source clip, run `node scripts/prepare-waveforms.mjs`. It writes
 `public/packs/<slug>/waveform-v2.json` and updates each manifest. Scene thumbnail

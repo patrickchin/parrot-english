@@ -14,7 +14,11 @@ archived; the current player and GitHub deployment configuration are on `main`.
 
 The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
-Takes remain in memory and disappear on refresh, close, or an explicit reset.
+The adult POC autosaves partial and completed attempts in this browser's
+IndexedDB. **My dubs** reopens a saved session with its role, current line,
+recordings, and progress. Starting over preserves the previous attempt;
+individual attempts can be deleted from My dubs. Nothing is uploaded. Clearing
+site data removes saved dubs; download important finished videos as backups.
 
 The header's styled language menu offers English and 简体中文. It remembers only
 the interface preference on this browser; switching languages keeps the current

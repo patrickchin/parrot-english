@@ -1,21 +1,24 @@
-import { useEffect, useRef, useState, type RefObject } from 'react';
+import { useEffect, useReducer, useRef, useState, type RefObject } from 'react';
 import { asset, type Pack, type Line } from './pack';
 import { waveformStep } from './waveform';
 import { encodePcmWav } from './pcm-recording';
 import { audibleContextTime, decodeTake } from './audio-timing';
+import { idleMedia, transitionMedia, type Activity, type MediaEvent } from './media-state';
+import { waitForVideo } from './video-events';
 
 export type Take = { blob: Blob; url: string; duration: number; start: number; peaks: number[] };
 export type Takes = Record<string, Take>;
-type Phase = 'idle' | 'loading' | 'preview' | 'recording' | 'saving' | 'replay' | 'listening';
 
 export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack, onTake: (id: string, take: Take) => void) {
-  const [phase, setPhase] = useState<Phase>('idle');
+  const [state, dispatch] = useReducer(transitionMedia, idleMedia);
+  const phase = state.phase;
+  const error = state.phase === 'idle' ? state.error : '';
   const [time, setTime] = useState(0);
-  const [error, setError] = useState('');
   const [level, setLevel] = useState(0);
   const [livePeaks, setLivePeaks] = useState<number[]>([]);
   const [liveStart, setLiveStart] = useState(0);
   const operation = useRef(0);
+  const cancellation = useRef(new AbortController());
   const frame = useRef(0);
   const stream = useRef<MediaStream | null>(null);
   const context = useRef<AudioContext | null>(null);
@@ -25,17 +28,12 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   const backing = useRef<AudioBuffer | null>(null);
   const decodedTakes = useRef(new WeakMap<Blob, Promise<AudioBuffer>>());
   const replayClock = useRef<{ context: AudioContext; start: number; startAt: number } | null>(null);
-  const pendingReplay = useRef<(() => void) | null>(null);
   const captureCleanup = useRef<(() => void) | null>(null);
-  const pendingSeek = useRef<AbortController | null>(null);
-  const pendingCapture = useRef<AbortController | null>(null);
 
-  function stop() {
+  function release() {
     operation.current++;
-    pendingReplay.current?.(); pendingReplay.current = null;
+    cancellation.current.abort(); cancellation.current = new AbortController();
     replayClock.current = null;
-    pendingSeek.current?.abort(); pendingSeek.current = null;
-    pendingCapture.current?.abort(); pendingCapture.current = null;
     cancelAnimationFrame(frame.current);
     stream.current?.getTracks().forEach(track => track.stop());
     stream.current = null;
@@ -45,7 +43,31 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     sources.current = [];
     if (video.current) { video.current.pause(); video.current.muted = false; setTime(video.current.currentTime); }
     setLevel(0);
-    setPhase('idle');
+  }
+
+  function stop(error?: string) {
+    release();
+    dispatch({ type: 'STOP', error });
+  }
+
+  function setError(error: string) {
+    if (error) stop(error); else dispatch({ type: 'CLEAR_ERROR' });
+  }
+  function begin(activity: Activity) {
+    stop();
+    const id = operation.current;
+    dispatch({ type: 'START', operation: id, activity });
+    return id;
+  }
+  function advance(type: Exclude<MediaEvent['type'], 'START' | 'STOP' | 'CLEAR_ERROR'>, id: number) {
+    dispatch({ type, operation: id });
+  }
+  function fail(id: number, error: unknown) { if (id === operation.current) stop(message(error)); }
+  function playVideo(el: HTMLVideoElement, id: number, options: Parameters<typeof waitForVideo>[3] = {}) {
+    if (id !== operation.current) throw new DOMException('Cancelled', 'AbortError');
+    return waitForVideo(el, 'playing', cancellation.current.signal, {
+      start: () => el.play(), onLateError: error => fail(id, error), ...options,
+    });
   }
 
   useEffect(() => {
@@ -55,45 +77,22 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       document.removeEventListener('visibilitychange', hidden);
       stop();
       void context.current?.close();
-      context.current = null;
+      context.current = null; waveformModule.current = null;
     };
   }, []);
 
-  async function readyVideo(start: number, muted: boolean, play = true) {
+  async function readyVideo(start: number, muted: boolean) {
     const el = video.current;
     if (!el || el.error) throw new Error('视频暂时无法播放，请重新加载片段。');
-    const id = operation.current;
+    const id = operation.current, signal = cancellation.current.signal;
     el.muted = muted;
     if (Math.abs(el.currentTime - start) > 0.025) {
-      const abort = new AbortController(); pendingSeek.current = abort;
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => finish(new Error('视频定位较慢，请稍后再试。')), 8000);
-        const finish = (error?: Error) => { clearTimeout(timeout); el.removeEventListener('seeked', ready); el.removeEventListener('error', failed); abort.signal.removeEventListener('abort', cancelled); if (pendingSeek.current === abort) pendingSeek.current = null; error ? reject(error) : resolve(); };
-        const ready = () => finish();
-        const failed = () => finish(new Error('视频暂时无法播放，请重新加载片段。'));
-        const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
-        el.addEventListener('seeked', ready, { once: true }); el.addEventListener('error', failed, { once: true }); abort.signal.addEventListener('abort', cancelled, { once: true });
-        el.currentTime = start;
-      });
+      await waitForVideo(el, 'seeked', signal, { start: () => { el.currentTime = start; } });
     }
-    if (id !== operation.current) throw new DOMException('Cancelled', 'AbortError');
-    if (el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
-      const abort = new AbortController(); pendingSeek.current = abort;
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => finish(new Error('视频定位较慢，请稍后再试。')), 8000);
-        const finish = (error?: Error) => {
-          clearTimeout(timeout); el.removeEventListener('canplay', ready); el.removeEventListener('error', failed); abort.signal.removeEventListener('abort', cancelled);
-          if (pendingSeek.current === abort) pendingSeek.current = null;
-          error ? reject(error) : resolve();
-        };
-        const ready = () => finish();
-        const failed = () => finish(new Error('视频暂时无法播放，请重新加载片段。'));
-        const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
-        el.addEventListener('canplay', ready, { once: true }); el.addEventListener('error', failed, { once: true }); abort.signal.addEventListener('abort', cancelled, { once: true });
-      });
-    }
-    if (id !== operation.current) throw new DOMException('Cancelled', 'AbortError');
-    if (play) await el.play();
+    signal.throwIfAborted();
+    if (el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) await waitForVideo(el, 'canplay', signal);
+    signal.throwIfAborted();
+    advance('VIDEO_READY', id);
     return el;
   }
 
@@ -101,8 +100,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     const tick = () => {
       const el = video.current;
       if (id !== operation.current || !el) return;
-      if (takes && !el.ended && el.currentTime < end && (el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1)) {
-        stop(); setError('播放或录音暂时中断了，请再试一次。'); return;
+      if (!el.ended && el.currentTime < end && (el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1)) {
+        stop('播放或录音暂时中断了，请再试一次。'); return;
       }
       const clock = replayClock.current;
       if (clock && !el.ended && el.currentTime < end) {
@@ -110,7 +109,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         // Stop rather than silently accepting a shifted dub after an output
         // device change or a picture startup/stall outside the sync tolerance.
         if (clock.context.state !== 'running' || Math.abs(audible - el.currentTime) > 0.12) {
-          stop(); setError('播放或录音暂时中断了，请再试一次。'); return;
+          stop('播放或录音暂时中断了，请再试一次。'); return;
         }
       }
       if (takes) el.muted = pack.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end);
@@ -123,14 +122,14 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   }
 
   async function preview(line?: Line) {
-    stop(); setError(''); setPhase('loading');
-    const id = operation.current;
+    const id = begin('preview');
     setTime(line?.start ?? 0);
     try {
-      await readyVideo(line?.start ?? 0, false);
+      const el = await readyVideo(line?.start ?? 0, false);
+      await playVideo(el, id);
       if (id !== operation.current) return;
-      setPhase('preview'); watch(id, line?.end ?? pack.duration);
-    } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
+      advance('PLAYING', id); watch(id, line?.end ?? pack.duration);
+    } catch (e) { fail(id, e); }
   }
 
   async function listen(take: Take, line: Line) {
@@ -138,12 +137,10 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
   }
 
   async function record(line: Line) {
-    stop(); setError('');
+    const id = begin('recording');
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
       setError('这个浏览器暂不支持录音。请用新版 Safari 或 Chrome 打开这个网址。'); return;
     }
-    const id = operation.current;
-    setPhase('loading');
     setLivePeaks([]); setLiveStart(line.start); setTime(line.start);
     try {
       context.current ??= new AudioContext();
@@ -152,30 +149,34 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       void ctx.resume().catch(() => {});
       const captured = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
       if (id !== operation.current) { captured.getTracks().forEach(track => track.stop()); return; }
-      stream.current = captured;
+      stream.current = captured; advance('MICROPHONE_GRANTED', id);
       const input = ctx.createMediaStreamSource(captured);
+      captureCleanup.current = () => input.disconnect();
       waveformModule.current ??= ctx.audioWorklet.addModule(new URL('./capture-waveform.worklet.js?no-inline', import.meta.url));
       try { await waveformModule.current; } catch (error) { waveformModule.current = null; throw error; }
       if (id !== operation.current) { input.disconnect(); return; }
+      advance('WORKLET_READY', id);
       const detail = new AudioWorkletNode(ctx, 'capture-waveform', { channelCount: 1, channelCountMode: 'explicit' });
       input.connect(detail).connect(ctx.destination);
-      const abort = new AbortController(); pendingCapture.current = abort;
+      const signal = cancellation.current.signal;
       let saveTimeout: ReturnType<typeof setTimeout> | undefined;
       const disconnectInput = () => {
-        abort.abort(); clearTimeout(saveTimeout);
-        if (pendingCapture.current === abort) pendingCapture.current = null;
+        clearTimeout(saveTimeout);
         input.disconnect(); detail.disconnect(); detail.port.close();
       };
       captureCleanup.current = disconnectInput;
       await ctx.resume();
       if (id !== operation.current) return;
+      advance('AUDIO_READY', id);
       const chunks: Float32Array[] = [], peaks: number[] = [];
-      let captureContextStart = 0, captureStart = line.start, stopping = false;
+      let captureContextStart = 0, captureStart = line.start;
+      let captureStage: 'starting' | 'recording' | 'saving' | 'finished' = 'starting';
       detail.port.onmessage = event => {
         if (id !== operation.current) return;
         const data = event.data;
         if (data.type === 'data') { chunks.push(data.samples); peaks.push(...data.peaks); }
-        if (data.type !== 'stopped' || !stopping) return;
+        if (data.type !== 'stopped' || captureStage !== 'saving') return;
+        captureStage = 'finished';
         // The audio thread sends its final partial block before this acknowledgement.
         disconnectInput();
         if (captureCleanup.current === disconnectInput) captureCleanup.current = null;
@@ -185,24 +186,26 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         const duration = frames / ctx.sampleRate;
         const preroll = Math.max(0, line.start - captureStart);
         const peak = peaks.slice(Math.ceil(preroll / waveformStep)).reduce((max, value) => Math.max(max, value), 0);
-        setLevel(0); setPhase('idle');
+        setLevel(0);
         if (duration - preroll < 0.3 || peak < 0.003) {
           setError('没听到清楚的声音。靠近麦克风，再试一次吧。'); return;
         }
         const blob = encodePcmWav(chunks, ctx.sampleRate);
         onTake(line.id, { blob, url: URL.createObjectURL(blob), duration, start: captureStart, peaks });
+        release();
+        advance('SAVED', id);
       };
-      detail.onprocessorerror = () => { if (id === operation.current) { stop(); setError('录音中断了，请再试一次。上一次录音还在。'); } };
+      detail.onprocessorerror = () => { if (id === operation.current) stop('录音中断了，请再试一次。上一次录音还在。'); };
       captured.getAudioTracks().forEach(track => { track.onended = () => {
-        if (id === operation.current && !stopping) { stop(); setError('麦克风已断开，请连接后再试一次。'); }
+        if (id === operation.current && (captureStage === 'starting' || captureStage === 'recording')) stop('麦克风已断开，请连接后再试一次。');
       }; });
-      const el = await readyVideo(line.start, true, false);
+      const el = await readyVideo(line.start, true);
       if (id !== operation.current) return;
       // Acknowledge the first retained PCM frame before releasing the picture.
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => finish(new Error('录音准备较慢，请稍后再试。')), 8000);
         const finish = (error?: unknown) => {
-          clearTimeout(timeout); detail.port.removeEventListener('message', ready); abort.signal.removeEventListener('abort', cancelled);
+          clearTimeout(timeout); detail.port.removeEventListener('message', ready); signal.removeEventListener('abort', cancelled);
           error ? reject(error) : resolve();
         };
         const ready = (event: MessageEvent) => {
@@ -210,40 +213,31 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
           captureContextStart = event.data.time; finish();
         };
         const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
-        detail.port.addEventListener('message', ready); abort.signal.addEventListener('abort', cancelled, { once: true });
+        detail.port.addEventListener('message', ready); signal.addEventListener('abort', cancelled, { once: true });
         detail.port.postMessage('start');
       });
       if (id !== operation.current) return;
-      await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => finish(new Error('视频定位较慢，请稍后再试。')), 8000);
-        const finish = (error?: unknown) => {
-          clearTimeout(timeout); el.removeEventListener('playing', playing); abort.signal.removeEventListener('abort', cancelled);
-          error ? reject(error) : resolve();
-        };
-        const playing = () => {
-          // Both the WAV and live peaks start at this exact audio-context frame.
-          captureStart = el.currentTime - (ctx.currentTime - captureContextStart);
-          setLiveStart(captureStart); finish();
-        };
-        const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
-        el.addEventListener('playing', playing, { once: true }); abort.signal.addEventListener('abort', cancelled, { once: true });
-        void el.play().catch(finish);
-      });
+      advance('CAPTURE_READY', id);
+      await playVideo(el, id, { onReady: () => {
+        // Both the WAV and live peaks start at this exact audio-context frame.
+        captureStart = el.currentTime - (ctx.currentTime - captureContextStart);
+        setLiveStart(captureStart);
+      } });
       if (id !== operation.current) return;
-      setPhase('recording');
+      captureStage = 'recording'; advance('PLAYING', id);
       finishRecording.current = () => {
-        if (stopping) return;
-        stopping = true; cancelAnimationFrame(frame.current); el.pause(); setTime(el.currentTime); setPhase('saving');
-        saveTimeout = setTimeout(() => { if (id === operation.current) { stop(); setError('录音中断了，请再试一次。上一次录音还在。'); } }, 8000);
+        if (captureStage !== 'recording') return;
+        captureStage = 'saving'; cancelAnimationFrame(frame.current); el.pause(); setTime(el.currentTime); advance('FINISH', id);
+        saveTimeout = setTimeout(() => { if (id === operation.current) stop('录音中断了，请再试一次。上一次录音还在。'); }, 8000);
         detail.port.postMessage('stop');
       };
       let shownPeaks = 0;
       const meter = () => {
-        if (id !== operation.current || stopping) return;
+        if (id !== operation.current || captureStage !== 'recording') return;
         setTime(el.currentTime);
         if (el.ended || el.currentTime >= line.end) { finishRecording.current?.(); return; }
         if (ctx.state !== 'running' || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
-          stop(); setError('播放或录音暂时中断了，请再试一次。'); return;
+          stop('播放或录音暂时中断了，请再试一次。'); return;
         }
         if (peaks.length !== shownPeaks) {
           shownPeaks = peaks.length; setLivePeaks([...peaks]);
@@ -252,34 +246,42 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         frame.current = requestAnimationFrame(meter);
       };
       frame.current = requestAnimationFrame(meter);
-    } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
+    } catch (e) { fail(id, e); }
   }
 
   async function replay(takes: Takes, line?: Line) {
-    stop(); setError(''); setPhase('loading');
-    const id = operation.current;
+    const id = begin(line ? 'listening' : 'replay');
     const start = line?.start ?? 0;
     const end = line?.end ?? pack.duration;
     setTime(start);
     try {
       if (!pack.lines.some(line => takes[line.id])) {
-        await readyVideo(start, false);
+        advance('USE_ORIGINAL', id);
+        const el = await readyVideo(start, false);
+        await playVideo(el, id);
         if (id !== operation.current) return;
-        setPhase(line ? 'listening' : 'replay'); watch(id, end); return;
+        advance('PLAYING', id); watch(id, end); return;
       }
       context.current ??= new AudioContext();
       const ctx = context.current;
       await ctx.resume();
+      if (id !== operation.current) return;
+      advance('AUDIO_READY', id);
       const buffers = await Promise.all(pack.lines.filter(turn => takes[turn.id] && (!line || turn.id === line.id)).map(async line => ({
         line, buffer: await decodeTake(decodedTakes.current, ctx, takes[line.id].blob),
       })));
+      if (id !== operation.current) return;
+      advance('TAKES_READY', id);
       if (buffers.length && pack.backing && !backing.current) {
-        const response = await fetch(asset(pack, pack.backing));
+        const response = await fetch(asset(pack, pack.backing), { signal: cancellation.current.signal });
         if (!response.ok) throw new Error('背景声音未加载成功，请再试一次。');
-        backing.current = await ctx.decodeAudioData(await response.arrayBuffer());
+        const decoded = await ctx.decodeAudioData(await response.arrayBuffer());
+        if (id !== operation.current) return;
+        backing.current = decoded;
       }
       if (id !== operation.current) return;
-      const el = await readyVideo(start, pack.lines.some(l => takes[l.id] && start >= l.start && start < l.end), false);
+      advance('BACKING_READY', id);
+      const el = await readyVideo(start, pack.lines.some(l => takes[l.id] && start >= l.start && start < l.end));
       if (id !== operation.current) return;
       // Schedule before starting the picture, so compensation never cuts the
       // opening syllable. One render quantum gives Web Audio its native lead.
@@ -310,30 +312,16 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       // Start the prepared picture when that first sample reaches the output
       // device, rather than when it enters the render graph. The playing event
       // marks real startup; a delayed play() promise must not delay the watcher.
-      await new Promise<void>((resolve, reject) => {
-        let started = false;
-        const delay = Math.max(0, (startAt - audibleContextTime(ctx)) * 1000);
-        const cleanup = () => { clearTimeout(timer); clearTimeout(deadline); el.removeEventListener('playing', playing); el.removeEventListener('error', failed); if (pendingReplay.current === cancel) pendingReplay.current = null; };
-        const playing = () => { started = true; cleanup(); resolve(); };
-        const failed = () => { cleanup(); reject(new Error('视频暂时无法播放，请重新加载片段。')); };
-        const cancel = () => { cleanup(); reject(new DOMException('Cancelled', 'AbortError')); };
-        el.addEventListener('playing', playing, { once: true }); el.addEventListener('error', failed, { once: true });
-        const timer = setTimeout(() => {
-          if (id !== operation.current) { cancel(); return; }
-          void el.play().catch(error => {
-            if (!started) { cleanup(); reject(error); }
-            else if (id === operation.current) { stop(); setError(message(error)); }
-          });
-        }, delay);
-        const deadline = setTimeout(failed, delay + 120);
-        pendingReplay.current = cancel;
+      await playVideo(el, id, {
+        delay: Math.max(0, (startAt - audibleContextTime(ctx)) * 1000),
+        timeout: 120, timeoutMessage: '视频暂时无法播放，请重新加载片段。',
       });
       if (id !== operation.current) return;
-      setPhase(line ? 'listening' : 'replay'); watch(id, end, takes);
-    } catch (e) { if (id === operation.current) { stop(); setError(message(e)); } }
+      advance('PLAYING', id); watch(id, end, takes);
+    } catch (e) { fail(id, e); }
   }
 
-  return { phase, time, level, livePeaks, liveStart, error, setError, stop, preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { state, phase, time, level, livePeaks, liveStart, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function message(error: unknown): string {

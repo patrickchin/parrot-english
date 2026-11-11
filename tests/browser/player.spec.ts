@@ -68,7 +68,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
   await page.getByRole('button', { name: '保留录音，继续玩', exact: true }).click();
   await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeVisible();
   await page.getByRole('button', { name: '重新开始', exact: true }).click();
-  await page.getByRole('button', { name: '清空录音，重新开始', exact: true }).click();
+  await page.getByRole('button', { name: '开始新的配音', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeDisabled();
   await expect(page.getByText('已完成 0 / 3 句', { exact: true })).toHaveCount(1);

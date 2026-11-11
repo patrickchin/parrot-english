@@ -2,16 +2,16 @@
 class CaptureWaveform extends AudioWorkletProcessor {
   constructor() {
     super();
-    this.active = false;
+    this.state = 'inactive';
     this.window = sampleRate * 0.005;
     this.port.onmessage = event => {
       if (event.data === 'stop') {
-        if (!this.active) return;
+        if (this.state === 'inactive') return;
         if (this.count) this.peaks.push(this.peak);
-        this.flush(); this.active = false;
+        this.flush(); this.state = 'inactive';
         this.port.postMessage({ type: 'stopped' });
-      } else {
-        this.active = true; this.starting = true;
+      } else if (event.data === 'start' && this.state === 'inactive') {
+        this.state = 'starting';
         this.count = 0; this.peak = 0; this.peaks = [];
         this.samples = new Float32Array(512); this.filled = 0;
       }
@@ -25,9 +25,9 @@ class CaptureWaveform extends AudioWorkletProcessor {
   }
   process(inputs) {
     const samples = inputs[0]?.[0];
-    if (this.active && samples) {
-      if (this.starting) {
-        this.starting = false;
+    if (this.state !== 'inactive' && samples) {
+      if (this.state === 'starting') {
+        this.state = 'capturing';
         this.port.postMessage({ type: 'started', time: currentFrame / sampleRate });
       }
       for (const sample of samples) {

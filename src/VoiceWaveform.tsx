@@ -1,5 +1,6 @@
 import { useLanguage } from './i18n';
 import { useEffect, useMemo, useState } from 'react';
+import type { LoadState } from './load-state';
 import type { Pack } from './pack';
 import { validateWaveform, waveformPath, type ReferenceWaveform } from './waveform';
 
@@ -8,16 +9,17 @@ export function VoiceWaveform({ pack, start, end, time, recordings, recording = 
   recordings: { start: number; peaks: number[] }[]; recording?: boolean;
 }) {
   const { t } = useLanguage();
-  const [reference, setReference] = useState<ReferenceWaveform>();
-  const [error, setError] = useState('');
+  const [load, setLoad] = useState<LoadState<ReferenceWaveform>>({ status: 'loading' });
+  const reference = load.status === 'ready' ? load.value : undefined;
+  const error = load.status === 'error' ? load.error : '';
   useEffect(() => {
     const abort = new AbortController();
-    setReference(undefined); setError('');
-    if (!pack.waveform) { setError('此片段暂无原声波形，仍可听原声并录音。'); return; }
+    setLoad({ status: 'loading' });
+    if (!pack.waveform) { setLoad({ status: 'error', error: '此片段暂无原声波形，仍可听原声并录音。' }); return; }
     fetch(pack.base + pack.waveform, { signal: abort.signal })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(data => { const wave = validateWaveform(data); if (Math.abs(wave.duration - pack.duration) > 0.05) throw new Error(); if (!abort.signal.aborted) setReference(wave); })
-      .catch(() => { if (!abort.signal.aborted) setError('原声波形暂时无法显示，仍可听原声并录音。'); });
+      .then(data => { const wave = validateWaveform(data); if (Math.abs(wave.duration - pack.duration) > 0.05) throw new Error(); if (!abort.signal.aborted) setLoad({ status: 'ready', value: wave }); })
+      .catch(() => { if (!abort.signal.aborted) setLoad({ status: 'error', error: '原声波形暂时无法显示，仍可听原声并录音。' }); });
     return () => abort.abort();
   }, [pack]);
   const elapsed = Math.min(end - start, Math.max(0, time - start));

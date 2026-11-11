@@ -64,7 +64,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '重新开始', exact: true }).click();
-  await page.getByRole('button', { name: '清空录音，重新开始', exact: true }).click();
+  await page.getByRole('button', { name: '开始新的配音', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toHaveCount(0);
 });

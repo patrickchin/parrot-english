@@ -10,6 +10,24 @@ ESA application code. Redistribution rights remain unconfirmed. See
 actual state. Adult browser testing is complete for the documented paths;
 physical-device validation and any child pilot remain subsequent work.
 
+Adult POC sharing (2026-11-11): after completing a dub with at least one recorded
+line, testers can download an MP4 generated entirely on their device, then send
+or upload the file using their usual messaging or social apps. This adult-only
+test flow has no parent/child approval step, account, recording upload, or hosted
+sharing page. It does not change the guardian setup planned for a later child
+release. Current pack redistribution permissions remain unconfirmed.
+
+Adult POC saving (2026-11-11): accepted recordings and partial/completed lesson
+state autosave in browser IndexedDB. Each started session has its own `dub_…`
+identifier. My dubs lists saved attempts for continuing or deleting; starting
+over retains the earlier session. Saving preserves roles, line position,
+skipped/recorded turns, waveforms, and any selected local source file. There is
+no server recording store or account. Save failures remain visible and keep the
+current takes in memory for retry. Browser persistence is requested where
+supported, but clearing site data removes the drafts, and downloaded videos are
+the user's backup. This adult-test behavior supersedes session-only storage for
+the POC; the later child release still needs its planned guardian save controls.
+
 Preserve the existing Parrot English prototype as research and build an English
 dubbing player inspired by The Choicer Voicer. The initial route to market is
 through the founder's contacts who work with children. Keep the player usable
@@ -198,7 +216,7 @@ Proposed pilot architecture:
 | Player | Small React/Vite app; selectively recover suitable controls from the archive |
 | Public app and approved packs | Mainland Alibaba OSS with HTTPS delivery through CDN or ESA |
 | Recording and assembled playback | Browser microphone and audio/video APIs; takes remain on the device |
-| Session state | In memory; explicit clear/new-learner action |
+| Session state | Adult POC drafts and recordings in local IndexedDB; playback state in memory |
 | Accounts and database | Omitted until a pilot demonstrates a need |
 | Optional later API | Mainland Function Compute and private OSS, introduced with access control and retention |
 
@@ -240,7 +258,7 @@ rules are needed. Design a clear recording notice, limited purpose and
 retention, withdrawal, and deletion. Local processing reduces transfers but is
 not an automatic exemption. [PIPL, articles 28–31](https://www.cac.gov.cn/2021-08/20/c_1631050028355286.htm).
 
-Use session-only takes by default, collect no child names or voice analytics,
+For the later child release, use session-only takes by default, collect no child names or voice analytics,
 and clear recordings before another learner starts. Persistent local save or
 export needs an adult action, a clear shared-device warning, and a deletion
 path. Do not reuse the prototype's shared guest identity or automatically

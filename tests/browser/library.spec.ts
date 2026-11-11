@@ -12,7 +12,7 @@ test('the simplified shelf keeps scenes, help, privacy and source details access
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { level: 2, name: clip.title, exact: true })).toBeVisible();
   }
-  await expect(page.getByText('成人原型测试 · 录音不上传，关闭或刷新清空。影视梗片段尚未确认再分发许可。', { exact: true })).toBeVisible();
+  await expect(page.getByText('成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。', { exact: true })).toBeVisible();
   for (const width of [375, 1280]) {
     await page.setViewportSize({ width, height: 812 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -156,7 +156,7 @@ test('record requests the microphone directly across scenes, retries and session
       expect(await requests()).toBe(++count);
     }
     await page.getByRole('button', { name: '重新开始', exact: true }).click();
-    await page.getByRole('button', { name: '清空录音，重新开始', exact: true }).click();
+    await page.getByRole('button', { name: '开始新的配音', exact: true }).click();
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
     await page.getByRole('button', { name: '开始录音', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('麦克风还没开启');
