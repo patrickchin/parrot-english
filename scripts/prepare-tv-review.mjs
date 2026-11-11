@@ -5,6 +5,10 @@ import { createHash } from 'node:crypto';
 
 const recipe = JSON.parse(await readFile('content/tv-review-scenes.json', 'utf8'));
 const checkOnly = process.argv.includes('--check');
+const metadataOnly = process.argv.includes('--metadata-only');
+const selected = process.argv.slice(2).filter(arg => !['--check', '--metadata-only'].includes(arg));
+const selectedScenes = recipe.scenes.filter(scene => !selected.length || selected.includes(scene.slug));
+if (!selectedScenes.length) throw new Error('No selected TV conversations.');
 const root = 'content/local-dubbing/review';
 const timestamp = seconds => new Date(Math.round(seconds * 1000)).toISOString().slice(11, 23);
 const ids = new Set();
@@ -15,8 +19,7 @@ const run = (command, args) => {
 };
 const probe = file => JSON.parse(run('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', file]));
 
-if (recipe.scenes.length !== 8) throw new Error('Expected eight selected TV conversations.');
-for (const scene of recipe.scenes) {
+for (const scene of selectedScenes) {
   const source = recipe.sources.find(source => source.id === scene.sourceId);
   if (!source || !['older-children', 'teens'].includes(scene.cohort) || !/^[a-z0-9-]+$/.test(scene.slug)) throw new Error(`Invalid source or scene: ${scene.slug}`);
   if (scene.end - scene.start < 10 || scene.end - scene.start > 40 || scene.start < 0 || scene.end > source.duration || scene.roles.length < 2 || scene.observedDialogueTurnsAtLeast < 3) throw new Error(`Needs a complete dialogue exchange: ${scene.slug}`);
@@ -27,7 +30,7 @@ for (const scene of recipe.scenes) {
   const folder = `${root}/${scene.cohort}`;
   const output = `${folder}/${scene.slug}.mp4`;
   await mkdir(folder, { recursive: true });
-  if (!checkOnly) run('ffmpeg', ['-v', 'error', '-ss', String(scene.start), '-i', source.localFile, '-t', String(scene.end - scene.start), '-map', '0:v:0', '-map', '0:a:0', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-y', output]);
+  if (!checkOnly && !metadataOnly) run('ffmpeg', ['-v', 'error', '-ss', String(scene.start), '-i', source.localFile, '-t', String(scene.end - scene.start), '-map', '0:v:0', '-map', '0:a:0', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-y', output]);
   if (!checkOnly && scene.lines?.length) await writeFile(`${folder}/${scene.slug}.vtt`, 'WEBVTT\n\n' + scene.lines.map((line, index) => `${index + 1}\n${timestamp(line.start - scene.start)} --> ${timestamp(line.end - scene.start)}\n${line.text}\n${line.hint}\n`).join('\n'));
   const media = probe(output);
   if (Math.abs(Number(media.format.duration) - (scene.end - scene.start)) > 0.15 || !media.streams.some(s => s.codec_type === 'audio') || !media.streams.some(s => s.codec_type === 'video')) throw new Error(`Incomplete clip: ${output}`);
@@ -38,7 +41,6 @@ for (const scene of recipe.scenes) {
 
 if (!checkOnly) for (const cohort of ['older-children', 'teens']) {
   const scenes = recipe.scenes.filter(scene => scene.cohort === cohort);
-  if (scenes.length !== (cohort === 'teens' ? 5 : 3)) throw new Error(`Unexpected cohort count: ${cohort}`);
   const index = [];
   for (const scene of scenes) {
     const file = `${scene.slug}.mp4`;

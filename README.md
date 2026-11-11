@@ -37,8 +37,8 @@ playback automatically on smaller screens. This is timing and emphasis feedback,
 [the UI and waveform notes](docs/ui-design.md).
 
 The internal-test shelf has four folders: **24 film/animation scenes**,
-**eight younger-child conversations**, **three Young Sheldon conversations for
-ages 10–12**, and **five Friends/HIMYM conversations for teens**.
+**eight younger-child conversations**, **nine Young Sheldon/Harry Potter conversations for
+ages 10–12**, and **11 Friends/HIMYM/Big Bang Theory conversations for teens**.
 See [the TV scenes](docs/tv-review.md) for sources and content notes. The 21 short meme excerpts have been expanded or replaced with complete
 exchanges; Patrick, Chocolate, and Onions retain their original edits.
 The folder dropdown shows stacked video previews and scene counts, and keeps the

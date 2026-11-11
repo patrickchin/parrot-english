@@ -23,15 +23,15 @@ test('the independently loaded pack rejects traversal, missing roles and overlap
 });
 
 
-test('all 40 internal-test scenes have valid packs, timed words, waveforms and separate audience folders', async () => {
+test('all 52 internal-test scenes have valid packs, timed words, waveforms and separate audience folders', async () => {
   const scenes = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const { validateWaveform } = await import('../src/waveform.ts');
-  assert.equal(scenes.length, 40);
+  assert.equal(scenes.length, 52);
   assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 8);
   assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 24);
-  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 3);
-  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 5);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 40);
+  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 9);
+  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 11);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 52);
   const ids = new Set();
   for (const scene of scenes) {
     const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.slug}/pack.json`, 'utf8')));
@@ -79,11 +79,26 @@ test('TV packs preserve independent roles and the shared sofa response', async (
     const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.publicSlug}/pack.json`, 'utf8')));
     assert.ok(pack.roles.filter(role => role.selectable !== false).length >= 2);
     assert.ok(pack.lines.length >= 3);
-    assert.ok(pack.duration >= 20 && pack.duration <= 40);
+    assert.ok(pack.duration >= 10 && pack.duration <= 40);
     assert.equal(pack.lines.length, scene.lines.length);
   }
   const sofa = validatePack(JSON.parse(await readFile('public/packs/friends-moving-couch/pack.json', 'utf8')));
   const reply = sofa.lines.at(-1);
   assert.equal(reply.text, 'You think?');
   assert.equal(sofa.roles.find(role => role.id === reply.roleId).selectable, false);
+});
+
+
+test('successive TV batches use distinct source ranges and preserve the new cast', async () => {
+  const recipe = JSON.parse(await readFile('content/tv-review-scenes.json', 'utf8'));
+  assert.equal(recipe.scenes.filter(scene => scene.batch === '2026-11-11-b').length, 12);
+  for (const [index, scene] of recipe.scenes.entries()) {
+    for (const other of recipe.scenes.slice(index + 1)) {
+      if (scene.sourceId === other.sourceId) assert.ok(scene.end <= other.start || other.end <= scene.start, `overlapping cuts: ${scene.slug}, ${other.slug}`);
+    }
+  }
+  const game = validatePack(JSON.parse(await readFile('public/packs/big-bang-the-present/pack.json', 'utf8')));
+  assert.equal(game.roles.find(role => role.name === '艾米').selectable, false);
+  const einstein = validatePack(JSON.parse(await readFile('public/packs/young-sheldon-einstein/pack.json', 'utf8')));
+  assert.equal(einstein.roles.find(role => role.id === einstein.lines[0].roleId).name, '斯特吉斯博士');
 });

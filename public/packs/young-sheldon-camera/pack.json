@@ -1,0 +1,382 @@
+{
+  "version": 1,
+  "id": "pack_eMvqUxta4mg",
+  "title": "可以挪一下摄像机吗？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 23.482,
+  "video": "young-sheldon-camera-review-64fb2098128d.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-camera/",
+  "poster": "young-sheldon-camera-poster-64fb2098128d.jpg",
+  "waveform": "waveform-64fb2098128d.json",
+  "roles": [
+    {
+      "id": "role_5uKRB1qozDw",
+      "name": "米茜",
+      "label": "米茜",
+      "hint": "5 句台词"
+    },
+    {
+      "id": "role_2NFZc18LwH0",
+      "name": "研究员",
+      "label": "研究员",
+      "hint": "5 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_3JRv3mEO7UY",
+      "roleId": "role_5uKRB1qozDw",
+      "start": 0.22,
+      "end": 1.441,
+      "text": "Is that camera gonna be on?",
+      "hint": "那台摄像机会开着吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 0.26,
+          "end": 0.34
+        },
+        {
+          "text": "that",
+          "start": 0.38,
+          "end": 0.5
+        },
+        {
+          "text": "camera",
+          "start": 0.58,
+          "end": 0.86
+        },
+        {
+          "text": "gonna",
+          "start": 0.88,
+          "end": 1.06
+        },
+        {
+          "text": "be",
+          "start": 1.12,
+          "end": 1.181
+        },
+        {
+          "text": "on?",
+          "start": 1.301,
+          "end": 1.381
+        }
+      ]
+    },
+    {
+      "id": "line_UeYEexF8bWY",
+      "roleId": "role_2NFZc18LwH0",
+      "start": 2.361,
+      "end": 2.681,
+      "text": "Yes.",
+      "hint": "会的。",
+      "words": [
+        {
+          "text": "Yes.",
+          "start": 2.401,
+          "end": 2.621
+        }
+      ]
+    },
+    {
+      "id": "line_x7hy31xiP5A",
+      "roleId": "role_5uKRB1qozDw",
+      "start": 3.081,
+      "end": 4.382,
+      "text": "Can you move it over to that side?",
+      "hint": "你能把它挪到那边吗？",
+      "words": [
+        {
+          "text": "Can",
+          "start": 3.121,
+          "end": 3.221
+        },
+        {
+          "text": "you",
+          "start": 3.281,
+          "end": 3.341
+        },
+        {
+          "text": "move",
+          "start": 3.381,
+          "end": 3.522
+        },
+        {
+          "text": "it",
+          "start": 3.542,
+          "end": 3.582
+        },
+        {
+          "text": "over",
+          "start": 3.642,
+          "end": 3.742
+        },
+        {
+          "text": "to",
+          "start": 3.782,
+          "end": 3.842
+        },
+        {
+          "text": "that",
+          "start": 3.882,
+          "end": 4.022
+        },
+        {
+          "text": "side?",
+          "start": 4.102,
+          "end": 4.322
+        }
+      ]
+    },
+    {
+      "id": "line_4xm_mnYpqa0",
+      "roleId": "role_2NFZc18LwH0",
+      "start": 4.902,
+      "end": 5.182,
+      "text": "Why?",
+      "hint": "为什么？",
+      "words": [
+        {
+          "text": "Why?",
+          "start": 4.942,
+          "end": 5.122
+        }
+      ]
+    },
+    {
+      "id": "line_xXajofy4GLs",
+      "roleId": "role_5uKRB1qozDw",
+      "start": 5.542,
+      "end": 9.044,
+      "text": "If I've learned one thing from school picture day, it's that I look better from that side.",
+      "hint": "学校拍照日让我明白了一件事：从那边拍我更好看。",
+      "words": [
+        {
+          "text": "If",
+          "start": 5.582,
+          "end": 5.662
+        },
+        {
+          "text": "I've",
+          "start": 5.742,
+          "end": 5.822
+        },
+        {
+          "text": "learned",
+          "start": 5.883,
+          "end": 6.023
+        },
+        {
+          "text": "one",
+          "start": 6.283,
+          "end": 6.383
+        },
+        {
+          "text": "thing",
+          "start": 6.443,
+          "end": 6.583
+        },
+        {
+          "text": "from",
+          "start": 6.663,
+          "end": 6.763
+        },
+        {
+          "text": "school",
+          "start": 6.843,
+          "end": 7.043
+        },
+        {
+          "text": "picture",
+          "start": 7.103,
+          "end": 7.383
+        },
+        {
+          "text": "day,",
+          "start": 7.423,
+          "end": 7.543
+        },
+        {
+          "text": "it's",
+          "start": 7.683,
+          "end": 7.763
+        },
+        {
+          "text": "that",
+          "start": 7.783,
+          "end": 7.863
+        },
+        {
+          "text": "I",
+          "start": 7.903,
+          "end": 7.923
+        },
+        {
+          "text": "look",
+          "start": 7.963,
+          "end": 8.083
+        },
+        {
+          "text": "better",
+          "start": 8.143,
+          "end": 8.344
+        },
+        {
+          "text": "from",
+          "start": 8.404,
+          "end": 8.484
+        },
+        {
+          "text": "that",
+          "start": 8.564,
+          "end": 8.684
+        },
+        {
+          "text": "side.",
+          "start": 8.744,
+          "end": 8.984
+        }
+      ]
+    },
+    {
+      "id": "line_oW0KnWEprKc",
+      "roleId": "role_2NFZc18LwH0",
+      "start": 10.504,
+      "end": 15.637,
+      "text": "Sure, I'll move it. Okay...",
+      "hint": "当然，我来挪。好了……",
+      "words": [
+        {
+          "text": "Sure,",
+          "start": 10.544,
+          "end": 10.745
+        },
+        {
+          "text": "I'll",
+          "start": 11.545,
+          "end": 11.665
+        },
+        {
+          "text": "move",
+          "start": 11.685,
+          "end": 11.825
+        },
+        {
+          "text": "it.",
+          "start": 11.865,
+          "end": 11.925
+        },
+        {
+          "text": "Okay...",
+          "start": 15.226,
+          "end": 15.627
+        }
+      ]
+    },
+    {
+      "id": "line_ncw5zjxPESI",
+      "roleId": "role_5uKRB1qozDw",
+      "start": 15.637,
+      "end": 16.647,
+      "text": "And bring it a little closer.",
+      "hint": "再拿近一点。",
+      "words": [
+        {
+          "text": "And",
+          "start": 15.647,
+          "end": 15.727
+        },
+        {
+          "text": "bring",
+          "start": 15.767,
+          "end": 15.887
+        },
+        {
+          "text": "it",
+          "start": 15.947,
+          "end": 15.987
+        },
+        {
+          "text": "a",
+          "start": 16.027,
+          "end": 16.047
+        },
+        {
+          "text": "little",
+          "start": 16.067,
+          "end": 16.227
+        },
+        {
+          "text": "closer.",
+          "start": 16.247,
+          "end": 16.587
+        }
+      ]
+    },
+    {
+      "id": "line_j_F-u0OCpM4",
+      "roleId": "role_2NFZc18LwH0",
+      "start": 20.489,
+      "end": 20.869,
+      "text": "How's that?",
+      "hint": "这样怎么样？",
+      "words": [
+        {
+          "text": "How's",
+          "start": 20.529,
+          "end": 20.669
+        },
+        {
+          "text": "that?",
+          "start": 20.709,
+          "end": 20.809
+        }
+      ]
+    },
+    {
+      "id": "line_NETwx3317-U",
+      "roleId": "role_5uKRB1qozDw",
+      "start": 21.169,
+      "end": 21.529,
+      "text": "Great.",
+      "hint": "很好。",
+      "words": [
+        {
+          "text": "Great.",
+          "start": 21.209,
+          "end": 21.469
+        }
+      ]
+    },
+    {
+      "id": "line_paO0yYZ7bcs",
+      "roleId": "role_2NFZc18LwH0",
+      "start": 22.109,
+      "end": 22.47,
+      "text": "Okay.",
+      "hint": "好。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 22.149,
+          "end": 22.41
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Young Sheldon — S2 E5",
+    "attribution": "Warner Bros. Television / CBS",
+    "source": "https://www.youtube.com/watch?v=Twb47ynU4lw&t=158s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 158.55–182 秒的连续节选。Picture-day appearance preference; the later adult/body joke in the source is excluded."
+  }
+}

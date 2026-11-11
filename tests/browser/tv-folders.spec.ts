@@ -4,16 +4,19 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+const olderChildCount = clips.filter(clip => clip.cohort === 'older-children').length;
+const teenCount = clips.filter(clip => clip.cohort === 'teens').length;
+
 test('TV folders open directly, keep complete scenes separate, and survive language changes and reload', async ({ page }, info) => {
   await page.goto('/?folder=older-children');
   const folder = page.getByRole('combobox', { name: '片段文件夹', exact: true });
   await expect(folder).toContainText('10–12岁');
-  await expect(page.getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('listitem')).toHaveCount(olderChildCount);
   await page.getByRole('searchbox').fill('not-a-scene');
   await folder.click();
   await page.getByRole('option', { name: /^青少年/ }).click();
   await expect(page.getByRole('searchbox')).toHaveValue('');
-  await expect(page.getByRole('listitem')).toHaveCount(5);
+  await expect(page.getByRole('listitem')).toHaveCount(teenCount);
   for (const clip of clips.filter(clip => clip.cohort === 'teens')) await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
   for (const width of [320, 768, 1280]) {
     await page.setViewportSize({ width, height: 812 });
@@ -23,8 +26,8 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
     await expect(menu.getByRole('option')).toHaveCount(4);
     const labelBounds = (await page.getByText('片段文件夹', { exact: true }).boundingBox())!;
     expect(labelBounds.y).toBeGreaterThanOrEqual(0);
-    await expect(menu.getByText('3 个片段', { exact: true })).toBeVisible();
-    await expect(menu.getByText('5 个片段', { exact: true })).toBeVisible();
+    await expect(menu.getByText(`${olderChildCount} 个片段`, { exact: true })).toBeVisible();
+    await expect(menu.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
     const bounds = (await menu.boundingBox())!;
     expect(bounds.x).toBeGreaterThanOrEqual(0);
     expect(bounds.y).toBeGreaterThanOrEqual(0);
@@ -45,10 +48,10 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
   await setLanguage(page, 'en');
   await page.reload();
   await expect(page.getByRole('combobox', { name: 'Scene folder', exact: true })).toContainText('Teenagers');
-  await expect(page.getByRole('listitem')).toHaveCount(5);
+  await expect(page.getByRole('listitem')).toHaveCount(teenCount);
 });
 
-for (const slug of ['young-sheldon-library', 'himym-driving-lesson']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
+for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
   await page.goto('/#' + slug);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
