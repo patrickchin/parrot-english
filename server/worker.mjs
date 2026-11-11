@@ -7,7 +7,9 @@ export function createWorker(assets, revision = null) {
       if (path === '/api/health') return new Response(request.method === 'HEAD' ? null : JSON.stringify({ ok: true, platform: 'Alibaba ESA', revision, serverTime: new Date().toISOString() }), { headers: { ...headers, 'Content-Type': 'application/json' } });
       if (path === '/favicon.ico') return new Response(null, { status: 204, headers });
       const appRoute = path === '/' || /^\/library\/[a-z0-9-]+\/?$/.test(path) || /^\/scenes\/[a-z0-9-]+(?:\/dubs\/[A-Za-z0-9_-]+)?\/?$/.test(path);
-      const file = assets[appRoute ? '/index.html' : path];
+      // Older open tabs still request their original manifest and waveform URLs.
+      const assetPath = path.startsWith('/packs/') ? path.replace(/^\/packs\//, '/scenes/').replace(/\/pack\.json$/, '/scene.json') : path;
+      const file = assets[appRoute ? '/index.html' : assetPath];
       if (!file) return new Response('Not found', { status: 404, headers });
       const text = atob(file.body);
       const bytes = Uint8Array.from(text, char => char.charCodeAt(0));

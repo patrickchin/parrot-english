@@ -728,7 +728,7 @@
         45,
         235
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "marlin",
@@ -741,7 +741,7 @@
         40,
         160
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "sharks",
@@ -754,7 +754,7 @@
         0,
         400
       ],
-      "source": "pack-credit",
+      "source": "scene-credit",
       "brightness": 1.65
     },
     {
@@ -768,7 +768,7 @@
         50,
         175
       ],
-      "source": "pack-credit",
+      "source": "scene-credit",
       "brightness": 1.65
     },
     {
@@ -782,7 +782,7 @@
         50,
         170
       ],
-      "source": "pack-credit",
+      "source": "scene-credit",
       "brightness": 1.65
     },
     {
@@ -796,7 +796,7 @@
         12,
         160
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "butterpants-father",
@@ -809,7 +809,7 @@
         60,
         150
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "butterpants",
@@ -822,7 +822,7 @@
         15,
         210
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "librarian",
@@ -835,7 +835,7 @@
         25,
         120
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "sturgis",
@@ -848,7 +848,7 @@
         5,
         245
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "researcher",
@@ -861,7 +861,7 @@
         0,
         200
       ],
-      "source": "pack-credit"
+      "source": "scene-credit"
     },
     {
       "key": "shop-assistant",
@@ -874,7 +874,7 @@
         20,
         210
       ],
-      "source": "pack-credit",
+      "source": "scene-credit",
       "brightness": 1.65
     }
   ]

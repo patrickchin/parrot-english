@@ -7,14 +7,14 @@ test('the picture follows the source proportions through role choice, practice a
   for (const slug of ['onions', 'wumbo']) {
     await page.goto('/scenes/' + slug);
     await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
-    const scene = page.getByRole('region', { name: '电影片段', exact: true });
-    const picture = scene.getByLabel(/对话片段$/);
+    const movie = page.getByRole('region', { name: '电影片段', exact: true });
+    const picture = movie.getByLabel(/对话片段$/);
     const aspect = await picture.evaluate((video: HTMLVideoElement) => video.videoWidth / video.videoHeight);
     for (const step of ['choose', 'practice', 'result']) {
       if (step === 'practice') await page.getByRole('button', { name: '开始配音', exact: true }).click();
       if (step === 'result') {
-        const pack = await (await page.request.get(`/packs/${slug}/pack.json`)).json();
-        const turns = pack.lines.filter((line: { roleId: string }) => line.roleId === pack.roles[0].id);
+        const scene = await (await page.request.get(`/scenes/${slug}/scene.json`)).json();
+        const turns = scene.lines.filter((line: { roleId: string }) => line.roleId === scene.roles[0].id);
         for (const _ of turns) await page.getByRole('button', { name: '下一步', exact: true }).click();
       }
       for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
@@ -28,9 +28,9 @@ test('the picture follows the source proportions through role choice, practice a
             expect(Math.abs(roles.y + roles.height / 2 - main.y - main.height / 2), 'role choices remain vertically centered').toBeLessThan(1);
           }
           expect(Math.abs(bounds.width - bounds.height * aspect), `${slug} ${step} at ${viewport.width}`).toBeLessThan(1);
-          const overlay = (await scene.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
+          const overlay = (await movie.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
           expect(Math.abs(overlay.height - bounds.height)).toBeLessThan(1);
-          const progress = (await scene.getByRole('progressbar', { name: '片段播放进度', exact: true }).boundingBox())!;
+          const progress = (await movie.getByRole('progressbar', { name: '片段播放进度', exact: true }).boundingBox())!;
           expect(progress.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
           expect(bounds.y).toBeGreaterThanOrEqual(0);
           expect(progress.y + progress.height).toBeLessThan(viewport.height);
@@ -43,17 +43,17 @@ test('the picture follows the source proportions through role choice, practice a
 
 test('completion and replay keep the recording waveform and subtitles in place', async ({ page }, info) => {
   await page.goto('/scenes/onions');
-  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
-  const lines = pack.lines.filter((line: { roleId: string }) => line.roleId === pack.roles[0].id);
+  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
+  const lines = scene.lines.filter((line: { roleId: string }) => line.roleId === scene.roles[0].id);
   for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     // A reload now resumes the saved dub. Open a fresh attempt for each layout.
     await page.goto('/scenes/onions');
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
-    const scene = page.getByRole('region', { name: '电影片段', exact: true });
+    const movie = page.getByRole('region', { name: '电影片段', exact: true });
     const graph = page.getByRole('region', { name: '声音波形对比', exact: true });
     const caption = page.getByRole('group', { name: '台词', exact: true });
-    const regions = [scene, graph, caption];
+    const regions = [movie, graph, caption];
     const recording = await Promise.all(regions.map(region => region.boundingBox()));
     const type = await caption.getByText(lines[0].text, { exact: true }).evaluate(el => ({ size: parseFloat(getComputedStyle(el).fontSize), weight: Number(getComputedStyle(el).fontWeight) }));
     expect(type.size).toBeLessThanOrEqual(22);
@@ -71,7 +71,7 @@ test('completion and replay keep the recording waveform and subtitles in place',
     await expect(page.getByRole('heading', { level: 1, name: '你的配音，完成啦！' })).toBeVisible();
     await expectFixed();
     await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();
-    await expect(caption.getByText(pack.lines[0].text, { exact: true })).toBeVisible();
+    await expect(caption.getByText(scene.lines[0].text, { exact: true })).toBeVisible();
     await expectFixed();
     if (info.project.name === 'chromium' && [375, 1440].includes(viewport.width)) {
       const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');

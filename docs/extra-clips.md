@@ -37,13 +37,13 @@ do not establish clearance for a child pilot or public commercial catalogue.
 ## Authoring and storage
 
 `content/extra-scenes.json` is the source recipe. `src/extra-clips.json` is its
-generated library index. The files in `public/packs/<slug>/` are JSON manifests
+generated library index. The files in `public/scenes/<slug>/` are JSON manifests
 and numeric waveform metadata only. Video and JPEG media are uploaded separately
 to the existing Alibaba OSS bucket in Hong Kong; ESA contains application code
 and metadata. No runtime speech recognition or voice generation was added.
 
 ```sh
-node scripts/prepare-extra-packs.mjs [slug ...]
+node scripts/prepare-extra-scenes.mjs [slug ...]
 node scripts/prepare-waveforms.mjs [slug ...]
 uv run --python 3.12 scripts/align-words.py [slug ...]
 npm test
@@ -52,7 +52,7 @@ npm run test:browser
 ```
 
 The preparation script needs FFmpeg and the named source files under the ignored
-`content/local-dubbing/` folder. It preserves existing pack, role, and line IDs.
+`content/local-dubbing/` folder. It preserves existing scene, role, and line IDs.
 The source downloads, prepared video, thumbnails, and temporary speech transcripts
 stay out of Git and the app build. After preparing changed media, publish it under
 a fresh object filename if that filename has already shipped: media uses immutable
@@ -66,20 +66,20 @@ character catchphrase, and Minion speech is a performance exercise rather than a
 model of standard English. Only the excerpt is included, not a recommendation of
 the entire source upload for children.
 
-As with the original meme packs, there is no separate music/effects stem: a take
+As with the original meme scenes, there is no separate music/effects stem: a take
 replaces the full original audio mix during the selected character's line. Each
 scene's **Scene credits / 片段与来源** panel provides its YouTube link.
 
 
 ## Verification
 
-- All 20 manifests pass the shared pack validator, have globally distinct entity
+- All 20 manifests pass the shared scene validator, have globally distinct entity
   IDs, complete word cues, and a reference waveform matching their duration.
 - All 40 new OSS media objects match local SHA-256 digests, return byte ranges,
   and allow anonymous CORS reads from the app origin with correct media types.
 - The browser suite covers all 24 shelf cards and bilingual search, playback of
-  every meme pack, and recording a turn in both a new one-role scene and a new
+  every meme scene, and recording a turn in both a new one-role scene and a new
   two-role scene. Desktop and phone Chromium use synthetic microphones; WebKit
   microphone capture remains a physical-device check.
-- The production preview also plays all 24 meme packs directly from OSS, without
+- The production preview also plays all 24 meme scenes directly from OSS, without
   local media routes. No new runtime packages or infrastructure services were added.

@@ -1,7 +1,7 @@
 # Dubbing scene sources
 
 Prepared on 2026-10-28 for the founder and colleague's adult prototype test.
-The player and pack metadata are separate. The four selected meme clips have
+The player and scene metadata are separate. The four selected meme clips have
 **not** been cleared for redistribution. At the owner’s explicit request, the
 four prepared excerpts are hosted in dedicated Alibaba OSS object storage
 so they load directly. They are not embedded in the ESA function.
@@ -27,13 +27,13 @@ an official upload, which also does not itself grant permission for our edits
 or distribution. The actual prepared Shrek footage comes from a
 [landscape upload of the same conversation](https://www.youtube.com/watch?v=aJQmVZSAqlc).
 Both links remain documented rather than presenting the hosted excerpt as an
-officially authorized pack.
+officially authorized scene.
 
-`scripts/prepare-meme-packs.mjs` records the exact source offsets, edit choices,
+`scripts/prepare-meme-scenes.mjs` records the exact source offsets, edit choices,
 dialogue timings, Chinese hints, and role definitions. It writes metadata to
-`public/packs/<scene>/pack.json` and normalized H.264/AAC video to the ignored
+`public/scenes/<scene>/scene.json` and normalized H.264/AAC video to the ignored
 authoring directory for a separate upload to OSS.
-Existing opaque pack/role/line IDs are retained on reruns.
+Existing opaque scene/role/line IDs are retained on reruns.
 It requires FFmpeg and the named private source files; it does not fetch files
 or credentials during app builds.
 
@@ -77,7 +77,7 @@ Three stills were extracted for the poster and character portraits. The player
 adds Chinese hints and substitutes locally recorded takes on playback.
 
 This is a quiet conversation excerpt for adult technical testing, not a claim
-that the entire fantasy film is appropriate as a young child's learning pack.
+that the entire fantasy film is appropriate as a young child's learning scene.
 The app does not imply endorsement by any film or television producer.
 
 ## Verification
@@ -102,7 +102,7 @@ The app does not imply endorsement by any film or television producer.
 
 `node scripts/prepare-waveforms.mjs` derives 5 ms peak envelopes from the actual
 prepared clips and extracts small scene thumbnails. Numeric envelopes are
-pack metadata; video/audio/JPEG media stays in OSS. Thumbnails use the same source
+scene metadata; video/audio/JPEG media stays in OSS. Thumbnails use the same source
 excerpts and credits above. Learner envelopes are sampled from the microphone
 and retained only with the in-memory take. See [UI notes](ui-design.md) for the
 shared loudness scale, alignment, source-mix limitation, and recording controls.
@@ -125,9 +125,9 @@ Run `uv run scripts/prepare-portraits.py` to produce 192-pixel JPEGs in the igno
 `content/local-dubbing/` authoring directory. The picker displays them at 64 pixels.
 The command updates only role portrait references and writes
 `content/local-dubbing/avatar-uploads.json`. Upload those objects to their existing
-pack directories in OSS before releasing the manifests. Filenames include the
+scene directories in OSS before releasing the manifests. Filenames include the
 image content hash so cached older stills cannot replace the new avatars.
-Pack-authoring commands preserve existing portrait references; rerun avatar
+Scene-authoring commands preserve existing portrait references; rerun avatar
 preparation when adding or changing roles. Media stays outside the ESA bundle.
 
 All 117 avatar objects were uploaded on 2026-11-11. Anonymous HTTPS reads verified

@@ -110,9 +110,9 @@ test('export retains padded voice, keeps surrounding original audio, and protect
     const { mixDubAudio } = await import(mixerPath);
     const { encodePcmWav } = await import(wavPath);
     const wav = (level: number) => encodePcmWav([new Float32Array(48000 * 4).fill(level)], 48000);
-    const pack = { duration: 4, lines: [{ id: 'line_previous', start: 0, end: 1 }, { id: 'line_short', start: 1.4, end: 2.02 }, { id: 'line_next', start: 2.82, end: 4 }] };
+    const scene = { duration: 4, lines: [{ id: 'line_previous', start: 0, end: 1 }, { id: 'line_short', start: 1.4, end: 2.02 }, { id: 'line_next', start: 2.82, end: 4 }] };
     const takes = { line_short: { start: 0.9, blob: wav(0.4) } };
-    const result: AudioBuffer = await mixDubAudio(pack, takes, await wav(0.1).arrayBuffer());
+    const result: AudioBuffer = await mixDubAudio(scene, takes, await wav(0.1).arrayBuffer());
     return [0.95, 1.1, 1.3, 1.5, 2.1, 2.5, 2.9].map(time => result.getChannelData(0)[Math.round(time * 48000)]);
   });
   for (const [index, level] of [0.1, 0.1, 0.5, 0.4, 0.5, 0.1, 0.1].entries()) expect(levels[index]).toBeCloseTo(level, 3);

@@ -4,7 +4,7 @@ An English dubbing player for children, designed for independent use on phones
 and tablets and delivery through Chinese infrastructure.
 
 Choose a scene and character, hear each line, record your version, and watch
-the finished scene with your own voice. The player and content packs are
+the finished scene with your own voice. The player and scene content are
 separate. Guardian consent and save/share controls belong in the grown-up area;
 the first product has no teacher workflow.
 
@@ -58,19 +58,33 @@ npm test
 npm run test:browser
 ```
 
-Application code and pack metadata belong in ESA; video, audio, and scene
-images belong in Alibaba OSS. `mediaBase` in each pack identifies its media
+Application code and scene metadata belong in ESA; video, audio, and scene
+images belong in Alibaba OSS. `mediaBase` in each scene identifies its media
 location. Original downloads and meme authoring outputs remain ignored under
 `content/local-dubbing/`; the earlier licensed sample remains an internal test fixture only. No learner recording upload,
 account, database, voice generation, or speech scoring is involved. Microphone
 capture uses native browser APIs; actual iPhone/Android
 hardware and WeChat still need manual checks before a child pilot.
 
-`npm run build` emits application code, HTML/CSS, and pack metadata in
+`npm run build` emits application code, HTML/CSS, and scene metadata in
 `build/edge-worker.mjs` for Alibaba ESA. It rejects media in the public build
 instead of embedding it in the function. The retained [account smoke test](prototype/README.md)
 records the earlier deployment proof. The [infrastructure record](docs/infrastructure.md)
 describes the current service and previous services parked with data retained.
+
+## Scene manifests
+
+One playable activity is a **scene**: a video, roles, timed dialogue, and optional
+backing audio, portraits, and waveforms. Its manifest is
+`public/scenes/<slug>/scene.json`, validated by the `Scene` model in `src/scene.ts`.
+Authoring commands use the same name, such as `scripts/prepare-meme-scenes.mjs`.
+Folders in the library group multiple scenes.
+
+Existing opaque IDs are preserved so saved recordings remain usable. New scenes
+use `scene_…` IDs; legacy `pack_…` IDs and saved `packId` fields are read for
+compatibility. Previously loaded clients can still request `/packs/<slug>/pack.json`
+and waveform metadata through the worker's legacy URL alias. Media URLs in OSS
+are unchanged.
 
 ## Research archive
 

@@ -15,11 +15,11 @@ for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a de
 test('the public build reads a selected device file without uploading it or requesting private server media', async ({ page }) => {
   const requests: string[] = [];
   page.on('request', req => { if (req.method() !== 'GET' || req.url().includes('/content/local-dubbing/')) requests.push(req.method() + ' ' + req.url()); });
-  // Keep device-local pack support covered independently of the hosted scenes.
-  await page.route('**/packs/patrick/pack.json', async route => {
-    const pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8'));
-    pack.mode = 'local'; delete pack.mediaBase;
-    await route.fulfill({ json: pack });
+  // Keep device-local scene support covered independently of the hosted scenes.
+  await page.route('**/scenes/patrick/scene.json', async route => {
+    const scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
+    scene.mode = 'local'; delete scene.mediaBase;
+    await route.fulfill({ json: scene });
   });
   await page.goto('/scenes/patrick');
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeDisabled();

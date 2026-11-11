@@ -1,13 +1,13 @@
 import { useEffect, useReducer, useRef } from 'react';
 import { exportDub } from '../export-dub';
-import type { Pack } from '../pack';
+import type { Scene } from '../scene';
 import type { Takes } from '../useDubbing';
 import { useLanguage } from '../i18n';
 import { Button, Icon } from '../shared/ui';
 import { buttonVariants } from '../components/ui/button';
 import { transitionExport } from '../export-state';
 
-export function DubDownload({ pack, takes, source, active, disabled, onExportingChange }: { pack: Pack; takes: Takes; source?: string; active: boolean; disabled: boolean; onExportingChange: (busy: boolean) => void }) {
+export function DubDownload({ scene, takes, source, active, disabled, onExportingChange }: { scene: Scene; takes: Takes; source?: string; active: boolean; disabled: boolean; onExportingChange: (busy: boolean) => void }) {
   const { t } = useLanguage();
   const [state, send] = useReducer(transitionExport, { status: 'idle' });
   const operation = useRef(0);
@@ -24,7 +24,7 @@ export function DubDownload({ pack, takes, source, active, disabled, onExporting
       if (url.current) URL.revokeObjectURL(url.current);
       url.current = undefined;
     };
-  }, [pack, takes, source, active]);
+  }, [scene, takes, source, active]);
 
   async function download() {
     if (!active || disabled || !source || controller.current) return;
@@ -32,7 +32,7 @@ export function DubDownload({ pack, takes, source, active, disabled, onExporting
     const id = ++operation.current;
     send({ type: 'START', operation: id });
     try {
-      const blob = await exportDub(pack, takes, source, abort.signal, percent => {
+      const blob = await exportDub(scene, takes, source, abort.signal, percent => {
         if (controller.current === abort && !abort.signal.aborted) send({ type: 'PROGRESS', operation: id, percent });
       });
       if (abort.signal.aborted || controller.current !== abort) return;
@@ -49,7 +49,7 @@ export function DubDownload({ pack, takes, source, active, disabled, onExporting
     {state.status === 'exporting'
       ? <Button tone="quiet" aria-label={t('取消导出')} className="py-1" onClick={() => { controller.current?.abort(); controller.current = null; send({ type: 'RESET' }); }}><span><span className="block">{t('取消导出')} · {state.percent}%</span><span className="block text-xs font-normal">{t('请保持页面打开')}</span></span></Button>
       : state.status === 'ready'
-        ? <a ref={link} href={downloadUrl} download={`parrotbook-${pack.id}.mp4`} className={buttonVariants({ size: 'lg', className: 'min-h-14 gap-3 px-5 py-3 text-lg font-semibold' })}><Icon name="download" />{t('再次下载视频')}</a>
+        ? <a ref={link} href={downloadUrl} download={`parrotbook-${scene.id.replace(/^pack_/, 'scene_')}.mp4`} className={buttonVariants({ size: 'lg', className: 'min-h-14 gap-3 px-5 py-3 text-lg font-semibold' })}><Icon name="download" />{t('再次下载视频')}</a>
         : <Button tone="primary" title={t('视频在本机生成，不会上传。')} disabled={disabled || !source} onClick={() => void download()}><Icon name="download" />{t('下载配音视频')}</Button>}
     {state.status === 'error' ? <p role="alert" className="text-sm text-destructive">{t(state.error)}</p>
       : <p role="status" className="sr-only">{state.status === 'exporting' ? t('正在生成视频 {0}%，请保持页面打开。', state.percent)

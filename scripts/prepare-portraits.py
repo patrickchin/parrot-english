@@ -84,11 +84,11 @@ try {
 
 uploads = []
 catalogue = json.loads((repo / 'src/review-clips.json').read_text())
-for scene in catalogue:
-    slug = scene['slug']
-    path = repo / f'public/packs/{slug}/pack.json'
-    pack = json.loads(path.read_text())
-    for role in pack['roles']:
+for entry in catalogue:
+    slug = entry['slug']
+    path = repo / f'public/scenes/{slug}/scene.json'
+    scene = json.loads(path.read_text())
+    for role in scene['roles']:
         if role.get('selectable') is False or role['name'] == '\u6765\u7535\u8005':
             continue  # The unseen caller uses the phone symbol in the player.
         matches = [a for a in recipes['avatars'] if a['name'] == role['name']
@@ -99,6 +99,6 @@ for scene in catalogue:
         role['portrait'] = filename
         uploads.append({'file': str((local / filename).relative_to(repo)),
                         'key': f'clips/{slug}/{filename}'})
-    path.write_text(json.dumps(pack, ensure_ascii=False, indent=2) + '\n')
+    path.write_text(json.dumps(scene, ensure_ascii=False, indent=2) + '\n')
 (local / 'avatar-uploads.json').write_text(json.dumps(uploads, indent=2) + '\n')
 print(f"Prepared {len(prepared)} avatars and {len(uploads)} OSS uploads; upload before releasing manifests.")

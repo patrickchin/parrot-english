@@ -1,4 +1,4 @@
-import type { Pack } from './pack';
+import type { Scene } from './scene';
 import type { Take, Takes } from './useDubbing';
 
 export type LineProgress = { status: 'unattempted' | 'skipped' } | { status: 'recorded'; take: Take };
@@ -16,10 +16,10 @@ export type LessonEvent =
   | { type: 'SAVE_TAKE'; id: string; take: Take }
   | { type: 'OPEN_OVERLAY'; overlay: Exclude<LessonState['overlay'], 'none'> };
 
-export function createLesson(pack: Pack): LessonState {
+export function createLesson(scene: Scene): LessonState {
   return {
-    step: 'choose', roleId: pack.roles.find(role => role.selectable !== false)!.id, lineIndex: 0,
-    progress: Object.fromEntries(pack.lines.map(line => [line.id, { status: 'unattempted' }])), overlay: 'none',
+    step: 'choose', roleId: scene.roles.find(role => role.selectable !== false)!.id, lineIndex: 0,
+    progress: Object.fromEntries(scene.lines.map(line => [line.id, { status: 'unattempted' }])), overlay: 'none',
   };
 }
 
@@ -27,11 +27,11 @@ export function lessonTakes(progress: LessonState['progress']): Takes {
   return Object.fromEntries(Object.entries(progress).flatMap(([id, line]) => line.status === 'recorded' ? [[id, line.take]] : []));
 }
 
-export function transitionLesson(state: LessonState, event: LessonEvent, pack: Pack): LessonState {
-  const lines = pack.lines.filter(line => line.roleId === state.roleId);
+export function transitionLesson(state: LessonState, event: LessonEvent, scene: Scene): LessonState {
+  const lines = scene.lines.filter(line => line.roleId === state.roleId);
   switch (event.type) {
     case 'SELECT_ROLE':
-      return state.step === 'choose' && pack.roles.some(role => role.id === event.roleId && role.selectable !== false)
+      return state.step === 'choose' && scene.roles.some(role => role.id === event.roleId && role.selectable !== false)
         ? { ...state, roleId: event.roleId, lineIndex: 0 } : state;
     case 'START': return state.step === 'choose' ? { ...state, step: 'practice', lineIndex: 0 } : state;
     case 'CHOOSE_LINE': return state.step !== 'choose' && lines[event.index]
@@ -46,7 +46,7 @@ export function transitionLesson(state: LessonState, event: LessonEvent, pack: P
       const remaining = lines.findIndex(line => progress[line.id].status === 'unattempted');
       return remaining < 0 ? { ...state, progress, step: 'result' } : { ...state, progress, lineIndex: remaining };
     }
-    case 'RESET': return { ...createLesson(pack), roleId: state.roleId };
+    case 'RESET': return { ...createLesson(scene), roleId: state.roleId };
     case 'OPEN_OVERLAY': return { ...state, overlay: event.overlay };
     case 'CLOSE_OVERLAY': return { ...state, overlay: 'none' };
   }

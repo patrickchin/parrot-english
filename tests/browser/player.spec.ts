@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-test.use({ samplePack: true });
+test.use({ sampleScene: true });
 
 test('shows the real clip, switches roles, and works at phone and tablet widths', async ({ page }, info) => {
   await page.goto('/scenes/patrick');
@@ -84,12 +84,12 @@ test('denied microphone permission has a retry path without losing the selected 
   await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
 });
 
-test('invalid packs are rejected and a failed video offers reload', async ({ page }) => {
-  await page.route('**/pack.json', route => route.fulfill({ json: { version: 999 } }));
+test('invalid scenes are rejected and a failed video offers reload', async ({ page }) => {
+  await page.route('**/scene.json', route => route.fulfill({ json: { version: 999 } }));
   await page.goto('/scenes/patrick');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: '重新加载', exact: true })).toBeEnabled();
-  await page.unroute('**/pack.json');
+  await page.unroute('**/scene.json');
   await page.route('**/search-v1.mp4', route => route.abort());
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('视频没能加载成功');

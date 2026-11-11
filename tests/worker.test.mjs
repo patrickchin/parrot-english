@@ -30,7 +30,24 @@ test('serves the app on page paths while missing assets and API routes stay 404'
     assert.equal(await response.text(), 'app');
     assert.equal(await (await get(path, 'HEAD')).text(), '');
   }
-  for (const path of ['/assets/missing.js', '/packs/missing/pack.json', '/api/missing', '/scenes/patrick/missing.js']) {
+  for (const path of ['/assets/missing.js', '/scenes/missing/scene.json', '/api/missing', '/scenes/patrick/missing.js']) {
     assert.equal((await get(path)).status, 404);
   }
+});
+
+test('scene metadata URLs and legacy cached-client URLs serve the same JSON', async () => {
+  const worker = createWorker({
+    '/index.html': { type: 'text/html', body: btoa('app') },
+    '/scenes/patrick/scene.json': { type: 'application/json', body: btoa('{"id":"pack_existing"}') },
+    '/scenes/patrick/waveform-v2.json': { type: 'application/json', body: btoa('{"peaks":[]}') },
+  });
+  const get = path => worker.fetch(new Request('https://parrotbook.test' + path));
+  for (const path of ['/scenes/patrick/scene.json', '/packs/patrick/pack.json']) {
+    const response = await get(path);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'application/json');
+    assert.equal((await response.json()).id, 'pack_existing');
+  }
+  assert.deepEqual(await (await get('/packs/patrick/waveform-v2.json')).json(), { peaks: [] });
+  assert.equal((await get('/packs/missing/pack.json')).status, 404);
 });

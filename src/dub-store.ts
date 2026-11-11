@@ -1,16 +1,24 @@
 import { createLesson, type LessonState } from './lesson-state';
-import type { Pack } from './pack';
+import type { Scene } from './scene';
 import type { Take } from './useDubbing';
 
 type Disposition = 'unattempted' | 'skipped' | 'recorded';
 export type SavedDub = {
-  id: string; slug: string; packId: string; signature: string; title: string;
+  id: string; slug: string; sceneId: string; signature: string; title: string;
   roleName: string; createdAt: number; updatedAt: number;
   step: 'practice' | 'result'; roleId: string; lineIndex: number;
   progress: Record<string, Disposition>; recorded: number; total: number;
 };
 type SavedMedia = { dubId: string; lineId: string; bytes?: ArrayBuffer; mimeType?: string; blob?: Blob; duration?: number; start?: number; peaks?: number[] };
 export type RestoredDub = { saved: SavedDub; lesson: LessonState; source?: Blob };
+
+type StoredDub = SavedDub | (Omit<SavedDub, 'sceneId'> & { packId: string });
+
+function readSavedDub(saved: StoredDub): SavedDub {
+  if ('sceneId' in saved) return saved;
+  const { packId, ...rest } = saved;
+  return { ...rest, sceneId: packId };
+}
 
 export function newDubId() {
   return 'dub_' + Array.from(crypto.getRandomValues(new Uint8Array(15)), byte => byte.toString(16).padStart(2, '0')).join('');
@@ -21,9 +29,9 @@ function mediaBlob(media?: SavedMedia) {
   return media?.blob instanceof Blob ? media.blob : undefined;
 }
 
-function signature(pack: Pack) {
-  return JSON.stringify([pack.id, pack.video, pack.mediaBase, pack.duration, pack.roles.map(role => [role.id, role.selectable]),
-    pack.lines.map(line => [line.id, line.roleId, line.start, line.end, line.text])]);
+function signature(scene: Scene) {
+  return JSON.stringify([scene.id, scene.video, scene.mediaBase, scene.duration, scene.roles.map(role => [role.id, role.selectable]),
+    scene.lines.map(line => [line.id, line.roleId, line.start, line.end, line.text])]);
 }
 
 async function database() {
@@ -54,23 +62,23 @@ async function transaction<T>(mode: IDBTransactionMode, run: (tx: IDBTransaction
 export function listDubs(): Promise<SavedDub[]> {
   return transaction('readonly', tx => {
     const request = tx.objectStore('dubs').getAll();
-    return () => (request.result as SavedDub[]).sort((a, b) => b.updatedAt - a.updatedAt);
+    return () => (request.result as StoredDub[]).map(readSavedDub).sort((a, b) => b.updatedAt - a.updatedAt);
   });
 }
 
-export async function loadDub(id: string, pack: Pack): Promise<RestoredDub> {
+export async function loadDub(id: string, scene: Scene): Promise<RestoredDub> {
   const { saved, media } = await transaction('readonly', tx => {
     const saved = tx.objectStore('dubs').get(id), media = tx.objectStore('media').index('dubId').getAll(id);
-    return () => ({ saved: saved.result as SavedDub | undefined, media: media.result as SavedMedia[] });
+    return () => ({ saved: saved.result ? readSavedDub(saved.result as StoredDub) : undefined, media: media.result as SavedMedia[] });
   }).catch(error => { throw new Error('无法读取本机配音。请重试；现有配音不会被删除。', { cause: error }); });
   if (!saved) throw new Error('这次配音已被删除或无法找到。');
-  if (saved.signature !== signature(pack)) throw new Error('片段已更新，这次配音无法继续。已保存的录音仍保留在本机。');
-  const lines = pack.lines.filter(line => line.roleId === saved.roleId);
-  if (!saved.progress || !lines[saved.lineIndex] || !pack.roles.some(role => role.id === saved.roleId && role.selectable !== false) ||
+  if (saved.signature !== signature(scene)) throw new Error('片段已更新，这次配音无法继续。已保存的录音仍保留在本机。');
+  const lines = scene.lines.filter(line => line.roleId === saved.roleId);
+  if (!saved.progress || !lines[saved.lineIndex] || !scene.roles.some(role => role.id === saved.roleId && role.selectable !== false) ||
       !['practice', 'result'].includes(saved.step)) throw new Error('这次配音的数据不完整，无法打开。');
-  const lesson = createLesson(pack);
+  const lesson = createLesson(scene);
   // Validate everything before creating object URLs, so a damaged draft leaks none.
-  for (const line of pack.lines) {
+  for (const line of scene.lines) {
     const status = saved.progress[line.id];
     if (!['unattempted', 'skipped', 'recorded'].includes(status)) throw new Error('这次配音的数据不完整，无法打开。');
     if (status === 'recorded') {
@@ -79,7 +87,7 @@ export async function loadDub(id: string, pack: Pack): Promise<RestoredDub> {
           take.duration! <= 0 || !Array.isArray(take.peaks) || !take.peaks.every(value => Number.isFinite(value) && value >= 0)) throw new Error('这次配音的数据不完整，无法打开。');
     }
   }
-  for (const line of pack.lines) {
+  for (const line of scene.lines) {
     const status = saved.progress[line.id];
     if (status !== 'recorded') lesson.progress[line.id] = { status };
     else {
@@ -91,11 +99,11 @@ export async function loadDub(id: string, pack: Pack): Promise<RestoredDub> {
   return { saved, lesson: { ...lesson, step: saved.step, roleId: saved.roleId, lineIndex: saved.lineIndex }, source: mediaBlob(media.find(item => item.lineId === 'source')) };
 }
 
-export async function saveDub(id: string, createdAt: number, slug: string, pack: Pack, lesson: LessonState, source?: Blob) {
-  const lines = pack.lines.filter(line => line.roleId === lesson.roleId);
+export async function saveDub(id: string, createdAt: number, slug: string, scene: Scene, lesson: LessonState, source?: Blob) {
+  const lines = scene.lines.filter(line => line.roleId === lesson.roleId);
   const saved: SavedDub = {
-    id, slug, packId: pack.id, signature: signature(pack), title: pack.title,
-    roleName: pack.roles.find(role => role.id === lesson.roleId)!.name,
+    id, slug, sceneId: scene.id, signature: signature(scene), title: scene.title,
+    roleName: scene.roles.find(role => role.id === lesson.roleId)!.name,
     createdAt, updatedAt: Date.now(), step: lesson.step === 'result' ? 'result' : 'practice',
     roleId: lesson.roleId, lineIndex: lesson.lineIndex,
     progress: Object.fromEntries(Object.entries(lesson.progress).map(([id, line]) => [id, line.status])),

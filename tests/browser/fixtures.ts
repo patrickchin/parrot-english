@@ -5,11 +5,11 @@ import { existsSync } from 'node:fs';
 
 // Browser-flow tests use local authoring fixtures for the OSS media origin.
 // Actual OSS headers, hashes, and playback are verified after provisioning.
-export const test = base.extend<{ samplePack: boolean }>({
-  samplePack: [false, { option: true }],
-  page: async ({ page, samplePack }, use) => {
+export const test = base.extend<{ sampleScene: boolean }>({
+  sampleScene: [false, { option: true }],
+  page: async ({ page, sampleScene }, use) => {
     // Licensed internal fixture exercises multi-line capture without publishing it in the app.
-    if (samplePack) await page.route('**/packs/patrick/*.json', async route => {
+    if (sampleScene) await page.route('**/scenes/patrick/*.json', async route => {
       const file = new URL(route.request().url()).pathname.split('/').pop();
       await route.fulfill({ body: await readFile(`tests/fixtures/sintel/${file}`), contentType: 'application/json' });
     });

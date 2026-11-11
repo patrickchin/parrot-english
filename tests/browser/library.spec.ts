@@ -104,7 +104,7 @@ test('the scene shelf stays a keyboard-accessible grid even with an old list pre
 
 test('the retired sample route returns to the meme library', async ({ page }) => {
   const sampleRequests: string[] = [];
-  page.on('request', request => { if (request.url().includes('/packs/sintel/')) sampleRequests.push(request.url()); });
+  page.on('request', request => { if (request.url().includes('/scenes/sintel/')) sampleRequests.push(request.url()); });
   await page.goto('/scenes/sintel');
   await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(24);

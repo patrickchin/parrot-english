@@ -49,7 +49,7 @@ test('capture is ready before the picture and preserves the opening sound throug
     } } });
   });
   await page.goto('/scenes/onions');
-  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
+  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const stop = page.getByRole('button', { name: '停止录音', exact: true });
@@ -76,7 +76,7 @@ test('capture is ready before the picture and preserves the opening sound throug
   const onset = await page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').evaluate((path, line) => {
     const first = [...path.getAttribute('d')!.matchAll(/L([\d.]+) ([\d.]+)/g)].find(point => Number(point[2]) < 39)!;
     return line.start + Number(first[1]) / 1000 * (line.end - line.start);
-  }, pack.lines[0]);
+  }, scene.lines[0]);
   // Compare real encoded PCM to its plotted envelope, not to an assumed mic latency.
   expect(Math.abs(onset - signal.onset)).toBeLessThan(0.02);
   const savedWave = await page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').getAttribute('d');

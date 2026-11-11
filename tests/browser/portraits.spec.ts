@@ -9,9 +9,9 @@ test('each selectable character has a loaded avatar in the role picker', async (
   test.setTimeout(180000);
   const avatars = new Map<string, string>();
   for (const clip of clips) {
-    const pack = JSON.parse(await readFile(`public/packs/${clip.slug}/pack.json`, 'utf8'));
+    const scene = JSON.parse(await readFile(`public/scenes/${clip.slug}/scene.json`, 'utf8'));
     await page.goto(scenePath(clip.slug));
-    for (const role of pack.roles.filter((role: { selectable?: boolean }) => role.selectable !== false)) {
+    for (const role of scene.roles.filter((role: { selectable?: boolean }) => role.selectable !== false)) {
       const button = page.getByRole('button', { name: new RegExp('^' + role.name) });
       await expect(button).toBeVisible();
       if (role.name === '来电者') continue; // Never appears in the scene.
@@ -20,7 +20,7 @@ test('each selectable character has a loaded avatar in the role picker', async (
       await expect(portrait).toBeVisible();
       await expect.poll(() => portrait.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(192);
       const filename = (await portrait.getAttribute('src'))!.split('/').pop()!;
-      const character = role.name === '谢尔顿' ? pack.credit.title.split(' — ')[0] + role.name : role.name;
+      const character = role.name === '谢尔顿' ? scene.credit.title.split(' — ')[0] + role.name : role.name;
       if (avatars.has(character)) expect(filename).toBe(avatars.get(character));
       avatars.set(character, filename);
       await button.click();

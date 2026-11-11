@@ -15,7 +15,7 @@ line, testers can download an MP4 generated entirely on their device, then send
 or upload the file using their usual messaging or social apps. This adult-only
 test flow has no parent/child approval step, account, recording upload, or hosted
 sharing page. It does not change the guardian setup planned for a later child
-release. Current pack redistribution permissions remain unconfirmed.
+release. Current scene redistribution permissions remain unconfirmed.
 
 Adult POC saving (2026-11-11): accepted recordings and partial/completed lesson
 state autosave in browser IndexedDB. Each started session has its own `dub_…`
@@ -31,10 +31,10 @@ the POC; the later child release still needs its planned guardian save controls.
 Preserve the existing Parrot English prototype as research and build an English
 dubbing player inspired by The Choicer Voicer. The initial route to market is
 through the founder's contacts who work with children. Keep the player usable
-by older learners through different content packs and language levels.
+by older learners through different scene content and language levels.
 
 The first release is designed for children to use themselves, with three
-separate starter packs. Learners hear a line, perform it, and watch the scene
+separate starter scenes. Learners hear a line, perform it, and watch the scene
 with their own voices. A guardian handles necessary consent and save/share
 settings; the activity does not depend on a teacher. Prototype playback and recording locally before adding
 accounts, cloud recordings, automated assessment, or public community hosting.
@@ -66,20 +66,20 @@ exception.
 
 Use Parrotbook as the working brand. Build our own code, visual identity, and
 content format; use The Choicer Voicer as an interaction reference. Its
-developer describes a customizable player with external packs and a Dub Mode
+developer describes a customizable player with external content packs and a Dub Mode
 on the [official game page](https://yeahmaybe.itch.io/the-choicer-voicer).
 
 Design the first pilot around a child choosing and completing an activity on
 their own device. Prioritize touch interaction on phones and tablets, while
 keeping larger screens usable. Confirm actual devices before choosing the
-delivery platform. Pre-A1/A1 English is the proposed starter-pack level; exact
+delivery platform. Pre-A1/A1 English is the proposed starter-scene level; exact
 ages and learning needs should come from pilot families. The founder's contacts
 can help recruit families; teacher tools are outside the initial scope.
 
 The minimum complete activity is:
 
 1. A guardian completes the required recording notice and authorization setup.
-   The child then chooses a scene from the starter-pack shelf.
+   The child then chooses a scene from the scene library.
 2. The child chooses a role, watches the reference scene, and hears a line.
 3. The player shows a short video lead-in with a moving cursor, records the line
    with a little extra room at either end, and offers listen and retry.
@@ -89,39 +89,39 @@ The minimum complete activity is:
 
 Use a prominent play/record action, visible recording states, and short Chinese
 instructions alongside English dialogue. Avoid requiring a child to import a
-ZIP or understand audio settings: starter packs appear as playable scenes, and
-custom-pack import belongs in the grown-up area. Show English subtitles and
+ZIP or understand audio settings: starter scenes appear as playable scenes, and
+custom-scene import belongs in the grown-up area. Show English subtitles and
 optional Chinese meaning hints. Allow skipping a line, hearing it again, and
 stopping immediately. Use completion and replay as
 the initial feedback. Treat pronunciation assessment as a separate future
 feature requiring validation with Chinese learners; voice similarity is not
 evidence of English proficiency. Private local video export can follow reliable
-playback and confirmation that each pack permits exported dubs.
+playback and confirmation that each scene permits exported dubs.
 
 The initial release excludes teacher dashboards, classroom management,
 online multiplayer, public rankings, open chat,
-voice cloning, AI conversations, subscriptions, and a public pack marketplace.
+voice cloning, AI conversations, subscriptions, and a public scene marketplace.
 These are separate additions after the core activity earns repeat use.
 
-## Content packs and permissions
+## Scene content and permissions
 
-Use one versioned pack format for founder-made and community-made scenes. Ship
-starter packs separately from the player, with the same loading and validation
-path. Separate distribution supports reuse and independent updates. Packs made
+Use one versioned scene format for founder-made and community-made scenes. Ship
+starter scenes separately from the player, with the same loading and validation
+path. Separate distribution supports reuse and independent updates. Scenes made
 by the founder still belong in the product's rights review.
 
 Chinese copyright law protects qualifying foreign works. Article 24 lists
 specific exceptions, including a limited school-classroom use; it does not
 provide a general short-clip or educational-app exemption. The plan therefore
-requires a documented rights basis for distributed starter packs.
+requires a documented rights basis for distributed starter scenes.
 [PRC Copyright Law, articles 2 and 24](https://www.ncac.gov.cn/xxfb/flfg/flfg_532/202103/t20210309_50530.html).
 
-Separate software and packs do not automatically remove liability. The Supreme
+Separate software and scenes do not automatically remove liability. The Supreme
 People's Court addresses joint provision of works and knowing assistance to
 infringement. Review our own hosting, promotion, linking, and contribution to
-packs together. [Judicial interpretation on network dissemination](https://www.court.gov.cn/fabu/xiangqing/282671.html).
+scenes together. [Judicial interpretation on network dissemination](https://www.court.gov.cn/fabu/xiangqing/282671.html).
 
-For the first three packs, use original short scenes or material whose actual
+For the first three scenes, use original short scenes or material whose actual
 rights holder gives permission for this use. An authorization must cover the
 relevant footage, dialogue, performances, and music, plus editing, dialogue
 replacement, mainland-China delivery, and any allowed exports or commercial
@@ -149,31 +149,31 @@ these scenes recognizable and entertaining without depending on famous TV
 characters. Record human guide performances first; follow project audio rules
 if generated audio is later commissioned.
 
-Community participation starts with invited adult creators sending packs for
+Community participation starts with invited adult creators sending scenes for
 review. Local import is a software capability, not a claim that every imported
 file is cleared. Before offering public distribution, introduce rights and
 child-suitability review, attribution, reporting and removal, contributor
-terms, and a named adult contact for each pack. Keep child performances private.
+terms, and a named adult contact for each scene. Keep child performances private.
 
-## Pack format and authoring
+## Scene format and authoring
 
-A pack contains a JSON manifest, a browser-compatible scene video, line
+A scene contains a JSON manifest, a browser-compatible scene video, line
 reference audio, and optionally a separate music/effects backing track. The
 manifest describes version, title, English level, roles, English text, optional
 Chinese hints, line timings, credits, and permissions metadata. Use opaque,
-URL-safe IDs such as `pack_…`, `role_…`, and `line_…`; paths stay relative to
+URL-safe IDs such as `scene_…`, `role_…`, and `line_…`; paths stay relative to
 the package. Keep permission evidence in a private rights register and publish
 only the credit and usage terms intended for users.
 
 Start with a documented folder format and a small authoring/validation command.
 Add ZIP import if it materially improves delivery on the chosen devices. Do
-not build a full browser video editor for three packs. Use FFmpeg during
+not build a full browser video editor for three scenes. Use FFmpeg during
 authoring to normalize video and prepare prompt segments, with human review of
 every caption and timing.
 
 Validate at import: manifest version, file types, size and expanded-size limits,
 safe relative paths, referenced-file completeness, IDs, and timings within media
-duration. Packs contain no executable code, arbitrary HTML, or tracking URLs.
+duration. Scenes contain no executable code, arbitrary HTML, or tracking URLs.
 An imported file must not trigger a microphone request until the user starts
 the recording flow. Do not claim compatibility with Choicer Voicer packs
 without implementing and testing an adapter separately.
@@ -215,7 +215,7 @@ Proposed pilot architecture:
 | Component | First implementation |
 | --- | --- |
 | Player | Small React/Vite app; selectively recover suitable controls from the archive |
-| Public app and approved packs | Mainland Alibaba OSS with HTTPS delivery through CDN or ESA |
+| Public app and approved scenes | Mainland Alibaba OSS with HTTPS delivery through CDN or ESA |
 | Recording and assembled playback | Browser microphone and audio/video APIs; takes remain on the device |
 | Session state | Adult POC drafts and recordings in local IndexedDB; playback state in memory |
 | Accounts and database | Omitted until a pilot demonstrates a need |
@@ -292,7 +292,7 @@ assumed exempt from applicable rules.
 | Preserve research | Fresh main root plus annotated research tags | Completed: prior source recoverable; cloud retirement remains separate |
 | Confirm pilot | Device, age/level, operator and guardian setup decisions | Pilot families agree to a concrete activity; permissions and classification route established |
 | Prove dubbing | One original scene, role selection, per-line recording, assembled replay, clear session | A child completes the flow on a target phone or tablet without teacher help or overseas runtime services |
-| Make content portable | Validated format and three rights-cleared packs | Each loads independently; a second adult can prepare a pack from the guide |
+| Make content portable | Validated format and three rights-cleared scenes | Each loads independently; a second adult can prepare a scene from the guide |
 | Deliver in mainland China | Eligible domain, HTTPS, OSS and chosen delivery service | Actual home/mobile networks tested; microphone, playback and reset verified |
 | Run observed pilot | Proposed 10–20 learners recruited through existing contacts | Independent completion, repeat use and learner willingness measured with minimal data |
 | Choose expansion | Home practice, older learners, or creator contributions | Select the route supported by observed use; add only its required services |
@@ -301,12 +301,12 @@ Suggested pilot success thresholds are product hypotheses: at least 80% of
 participants finish one short scene after guardian setup without step-by-step
 adult help, at least half voluntarily retry a line or choose another scene,
 and at least half return for a second session within a week. Ask parents
-whether they would pay for the tool or packs. Record technical failures and
+whether they would pay for the tool or scenes. Record technical failures and
 consented observations rather than uploading child voices for analytics. A
 pilot measures usability and demand; it does not establish learning efficacy.
 
 Browser verification should cover denied microphone permission, no input,
-interrupted playback, retries, timing drift, invalid packs, missing media, and
+interrupted playback, retries, timing drift, invalid scenes, missing media, and
 clearing one learner's takes before the next learner. When the browser app is scaffolded, provide `npm run test:browser` and use
 Playwright accessible locators for responsive UI changes, plus manual audio
 checks on real target devices. Estimate schedule and hosting cost after device,
@@ -320,7 +320,7 @@ operator, rights, and filing decisions; those dependencies can dominate coding.
 - Eligibility and willingness to use the existing company as the mainland
   operator, its filing province, and domain ownership arrangements; create a
   dedicated company only if the operating or ownership requirements call for it.
-- Available original content, performers, and a budget for three starter packs.
+- Available original content, performers, and a budget for three starter scenes.
 - Whether local playback is sufficient for the pilot or an adult needs private
   video export immediately.
 - Whether the first payer is a parent or an institution distributing family

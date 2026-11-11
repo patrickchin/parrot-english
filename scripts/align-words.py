@@ -3,7 +3,7 @@
 # dependencies = ["torch==2.6.0", "torchaudio==2.6.0", "numpy>=2,<3"]
 # ///
 """Force-align authored English words to source clips; never processes learner takes.
-Run: uv run --python 3.12 scripts/align-words.py [pack slug ...]
+Run: uv run --python 3.12 scripts/align-words.py [scene slug ...]
 """
 import json
 import re
@@ -23,13 +23,13 @@ torch.set_num_threads(4)
 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
 model = bundle.get_model(dl_kwargs={'progress': False}).eval()
 labels = {char: index for index, char in enumerate(bundle.get_labels())}
-for slug in sys.argv[1:] or sorted(p.name for p in Path('public/packs').iterdir() if p.is_dir()):
-    folder = Path('public/packs') / slug
-    pack = json.loads((folder / 'pack.json').read_text())
-    source = Path('content/media/sintel' if slug == 'sintel' else 'content/local-dubbing') / pack['video']
+for slug in sys.argv[1:] or sorted(p.name for p in Path('public/scenes').iterdir() if p.is_dir()):
+    folder = Path('public/scenes') / slug
+    scene = json.loads((folder / 'scene.json').read_text())
+    source = Path('content/media/sintel' if slug == 'sintel' else 'content/local-dubbing') / scene['video']
     audio = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(source), '-vn', '-ac', '1', '-ar', str(bundle.sample_rate), '-f', 'f32le', 'pipe:1'])
     pcm = np.frombuffer(audio, dtype='<f4').copy()
-    for line in pack['lines']:
+    for line in scene['lines']:
         words = line['text'].split()
         normalized = [re.sub("[^A-Z']", '', w.upper()) for w in words]
         if not all(normalized):
@@ -55,5 +55,5 @@ for slug in sys.argv[1:] or sorted(p.name for p in Path('public/packs').iterdir(
             raise ValueError(f'{slug}: alignment needs review: {timings}')
         line['words'] = timings
         print(slug, line['text'], timings, flush=True)
-    pack['wordTiming'] = {'method': 'CTC forced alignment', 'tool': 'torchaudio 2.6.0', 'model': 'WAV2VEC2_ASR_BASE_960H', 'language': 'en'}
-    (folder / 'pack.json').write_text(json.dumps(pack, ensure_ascii=False, indent=2) + '\n')
+    scene['wordTiming'] = {'method': 'CTC forced alignment', 'tool': 'torchaudio 2.6.0', 'model': 'WAV2VEC2_ASR_BASE_960H', 'language': 'en'}
+    (folder / 'scene.json').write_text(json.dumps(scene, ensure_ascii=False, indent=2) + '\n')
