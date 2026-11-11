@@ -36,9 +36,11 @@ sit at their spoken positions underneath the waveform; the timeline follows
 playback automatically on smaller screens. This is timing and emphasis feedback, not pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
-The internal-test shelf has four folders: **24 film/animation scenes**,
-**14 younger-child conversations**, **12 Young Sheldon/Harry Potter conversations for
+The internal-test shelf has four folders: **38 film/animation scenes**,
+**five First English conversations**, **12 Young Sheldon/Harry Potter conversations for
 ages 10–12**, and **14 Friends/HIMYM/Big Bang Theory conversations for teens**.
+The First English folder now uses language level, with slow, concrete phrases;
+see [the beginner review](docs/first-english-review.md).
 See [the latest 12 scenes](docs/clip-expansion-2026-11-11-c.md) and
 [the earlier TV scenes](docs/tv-review.md) for sources and content notes. The 21 short meme excerpts have been expanded or replaced with complete
 exchanges; Patrick, Chocolate, and Onions retain their original edits.

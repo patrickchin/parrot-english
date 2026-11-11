@@ -5,6 +5,8 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+const filmCount = clips.filter(clip => clip.cohort === 'older-audience').length;
+
 test('the simplified shelf keeps scenes, privacy and source details accessible without a Help button', async ({ page }, info) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
@@ -62,13 +64,13 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
   await page.getByRole('button', { name: '查看全部片段', exact: true }).click();
   await expect(search).toBeFocused();
   await expect(search).toHaveValue('');
-  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await search.fill('no-matching-scene');
   await setLanguage(page, 'en');
   await expect(page.getByRole('status')).toHaveText('No scenes found.');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(search).toBeFocused();
-  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await search.fill('mayonnaise');
   await page.getByRole('button', { name: 'Choose scene: Is mayonnaise an instrument?', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
@@ -98,7 +100,7 @@ test('the scene shelf stays a keyboard-accessible grid even with an old list pre
   await expect(back).toHaveText('');
   await back.click();
   await page.reload();
-  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
 });
 
 test('the retired sample route returns to the meme library', async ({ page }) => {
@@ -106,7 +108,7 @@ test('the retired sample route returns to the meme library', async ({ page }) =>
   page.on('request', request => { if (request.url().includes('/scenes/sintel/')) sampleRequests.push(request.url()); });
   await page.goto('/scenes/sintel');
   await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(24);
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   expect(sampleRequests).toEqual([]);
 });
 

@@ -3,6 +3,18 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  "老师": "Teacher",
+  "同学们": "Class",
+  "凯特": "Kate",
+  "蓝衣小朋友": "Child in blue",
+  "紫衣小朋友": "Child in purple",
+  "小狗": "Dog",
+  "萨莉": "Sally",
+  "早上好！你好吗？": "Good morning! How are you?",
+  "很高兴认识你": "Nice to meet you",
+  "这是什么？一本书！": "What's this? A book!",
+  "你会游泳吗？": "Can you swim?",
+  "这是送给你的": "This is for you",
   "布鲁伊": "Bluey",
   "班迪特爸爸": "Bandit",
   "奇莉妈妈": "Chilli",
@@ -116,7 +128,7 @@ const english: Record<string, string> = {
   "我看起来怎么样？": "How do I look?",
   "片段分类": "Scene categories",
   "较大孩子": "Older children",
-  "较小孩子": "Younger children",
+  "英语启蒙": "First English",
   '切换到浅色模式': 'Switch to light mode',
   '切换到深色模式': 'Switch to dark mode',
   '选一幕，听原声，换上你的声音。': 'Pick a scene. Hear it. Make it yours.',

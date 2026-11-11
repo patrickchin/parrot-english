@@ -1939,5 +1939,128 @@
       "Not for two thousand six hundred years.",
       "我可憋不了两千六百年。"
     ]
+  },
+  "first-english-good-morning": {
+    "tags": [
+      "English Singsing",
+      "beginner",
+      "first English",
+      "英语启蒙",
+      "greetings",
+      "good morning",
+      "how are you",
+      "问好"
+    ],
+    "quotes": [
+      "Good morning.",
+      "早上好。",
+      "Good morning, everyone.",
+      "大家早上好。",
+      "How are you?",
+      "你好吗？",
+      "Fine, thanks. How are you?",
+      "我很好，谢谢。你们好吗？",
+      "Great!",
+      "很好！"
+    ]
+  },
+  "first-english-nice-to-meet-you": {
+    "tags": [
+      "English Singsing",
+      "beginner",
+      "first English",
+      "英语启蒙",
+      "introductions",
+      "please",
+      "thank you",
+      "classroom",
+      "认识朋友"
+    ],
+    "quotes": [
+      "Come in, please.",
+      "请进。",
+      "Nice to meet you.",
+      "很高兴认识你。",
+      "My name is Kate.",
+      "我叫凯特。",
+      "Nice to meet you, too.",
+      "我们也很高兴认识你。",
+      "Sit down, please.",
+      "请坐。",
+      "Thank you.",
+      "谢谢。"
+    ]
+  },
+  "first-english-book-and-box": {
+    "tags": [
+      "English Singsing",
+      "beginner",
+      "first English",
+      "英语启蒙",
+      "book",
+      "box",
+      "this",
+      "that",
+      "书",
+      "盒子"
+    ],
+    "quotes": [
+      "What's this?",
+      "这是什么？",
+      "It's a book.",
+      "这是一本书。",
+      "What's that?",
+      "那是什么？",
+      "Haha, it's a box!",
+      "哈哈，那是一个盒子！",
+      "Wow!",
+      "哇！"
+    ]
+  },
+  "first-english-can-you-swim": {
+    "tags": [
+      "English Singsing",
+      "beginner",
+      "first English",
+      "英语启蒙",
+      "swim",
+      "can",
+      "yes",
+      "no",
+      "游泳"
+    ],
+    "quotes": [
+      "Can you swim?",
+      "你会游泳吗？",
+      "Yes, I can.",
+      "是的，我会。",
+      "Can you swim?",
+      "你会游泳吗？",
+      "No, I can't.",
+      "不，我不会。"
+    ]
+  },
+  "first-english-birthday-present": {
+    "tags": [
+      "English Singsing",
+      "beginner",
+      "first English",
+      "英语启蒙",
+      "birthday",
+      "present",
+      "thank you",
+      "生日",
+      "礼物"
+    ],
+    "quotes": [
+      "Welcome, everyone.",
+      "欢迎大家。",
+      "Happy birthday!",
+      "生日快乐！",
+      "This is for you.",
+      "这是送给你的。",
+      "Thank you.",
+      "谢谢。"
+    ]
   }
 }
