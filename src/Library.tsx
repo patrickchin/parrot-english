@@ -6,9 +6,10 @@ import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CategorySelect } from './app/CategorySelect';
+import { SavedDubs } from './app/SavedDubs';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 
-export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
+export function Library({ onChoose }: { onChoose: (slug: ClipSlug, draftId?: string) => void }) {
   const { t } = useLanguage();
   const [folder, setFolder] = useState(() => {
     const requested = new URLSearchParams(location.search).get('folder');
@@ -34,10 +35,11 @@ export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
         </div>
         <img src={featured.poster} alt="" fetchPriority="high" />
       </section>
+      <SavedDubs onChoose={onChoose} />
       {help && <aside id="library-help" className="library-help" aria-label={t('怎么配音？')}>
         <h2>{t('给电影，换上你的声音。')}</h2>
         <p>{t('选片段 → 选角色 → 听原声 → 一句一句录 → 看你的版本。')}</p>
-        <p>{t('绿色波形是原声，橙色是你的声音，指针跟着播放和录音移动。录音不会上传；关闭或刷新页面会清空录音。')}</p>
+        <p>{t('绿色波形是原声，橙色是你的声音，指针跟着播放和录音移动。配音会自动保存在此浏览器，不会上传。')}</p>
       </aside>}
       <section aria-label={t('片段库')}>
         <CategorySelect value={folder} onValueChange={chooseFolder} />
@@ -57,7 +59,7 @@ export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
           </button>
         </li>)}</ul>
       </section>
-      <p className="library-notice">{t('成人原型测试 · 录音不上传，关闭或刷新清空。影视梗片段尚未确认再分发许可。')}</p>
+      <p className="library-notice">{t('成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。')}</p>
     </main>
   </div>;
 }

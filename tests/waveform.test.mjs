@@ -39,16 +39,22 @@ test('microphone PCM and peaks share a sample origin, preserve the stop tail, an
     processor.port.postMessage = data => messages.push(data);
     processor.process([[new Float32Array(128).fill(0.9)]]);
     assert.equal(messages.length, 0, 'do not include audio before recording');
+    processor.port.onmessage({ data: 'unknown' });
+    processor.process([[new Float32Array(128).fill(0.9)]]);
+    assert.equal(messages.length, 0, 'unknown commands cannot start capture');
     processor.port.onmessage({ data: 'start' });
     const pcm = new Float32Array(frames).fill(0.2); pcm[5] = -0.9;
     for (let offset = 0; offset < pcm.length; offset += 128) {
       environment.currentFrame = 1000 + offset;
       processor.process([[pcm.subarray(offset, offset + 128)]]);
+      if (offset === 0) processor.port.onmessage({ data: 'start' }); // A duplicate must not reset retained PCM.
     }
     processor.port.onmessage({ data: 'stop' });
     assert.equal(messages[0].type, 'started');
     assert.equal(messages[0].time, 1000 / 44100, 'acknowledge the exact first retained frame');
     assert.equal(messages.at(-1).type, 'stopped', 'drain final PCM before confirming stop');
+    processor.port.onmessage({ data: 'stop' });
+    assert.equal(messages.filter(message => message.type === 'stopped').length, 1, 'duplicate stop is inert');
     const data = messages.filter(message => message.type === 'data');
     const saved = data.flatMap(message => [...message.samples]);
     assert.deepEqual(saved, [...pcm], 'retain sample zero and the final partial block');
