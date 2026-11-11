@@ -160,7 +160,9 @@
     "showAllScenes": "Ver todas las escenas",
     "chooseScene": "Elegir escena: {{title}}",
     "prototypeNotice": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
-    "sceneCategories": "Categorías de escenas"
+    "sceneCategories": "Categorías de escenas",
+    "showsAndFilms": "Series y películas",
+    "allShowsAndFilms": "Todas las series y películas"
   },
   "waveform": {
     "voiceWaveformComparison": "Comparación de las ondas de voz",

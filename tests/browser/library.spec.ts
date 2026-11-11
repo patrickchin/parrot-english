@@ -13,7 +13,7 @@ test('the simplified shelf keeps scenes, privacy and source details accessible w
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
   for (const clip of clips.filter(clip => clip.cohort === 'older-audience')) {
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 2, name: clip.title, exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 4, name: clip.title, exact: true })).toBeVisible();
   }
   await expect(page.getByText('成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。', { exact: true })).toBeVisible();
   for (const width of [375, 1280]) {
