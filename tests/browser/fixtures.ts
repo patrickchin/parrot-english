@@ -1,5 +1,5 @@
 import { languages, type Language } from '../../src/locale';
-import { test as base, expect, type Page } from '@playwright/test';
+import { test as base, expect, type Page, type Locator } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { existsSync } from 'node:fs';
@@ -47,4 +47,14 @@ export async function headerDestination(page: Page, name: string) {
     return page.getByRole('menuitem', { name, exact: true });
   }
   return page.getByRole('link', { name, exact: true });
+}
+
+// Scrolling to reach controls must not look like a layout shift.
+export async function documentBoxes(page: Page, locators: Locator[]) {
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const offset = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
+  return Promise.all(locators.map(async locator => {
+    const box = await locator.boundingBox();
+    return box && { ...box, x: box.x + offset.x, y: box.y + offset.y };
+  }));
 }

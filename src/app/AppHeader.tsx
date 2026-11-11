@@ -10,7 +10,7 @@ import { dubsPath, libraryPath } from './routes';
 import { useSceneNavigation } from './useSceneNavigation';
 import { languagePath } from '../locale';
 
-export function AppHeader({ onHelp, onBack, helpExpanded, helpControls }: { onHelp?: () => void; onBack?: () => void; helpExpanded?: boolean; helpControls?: string }) {
+export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: () => void }) {
   const { language } = useLanguage();
   const { t } = useTranslation();
   const navigation = useSceneNavigation();
@@ -42,6 +42,6 @@ export function AppHeader({ onHelp, onBack, helpExpanded, helpControls }: { onHe
     </nav>}
     <LanguageSelect />
     <Button variant="ghost" size="icon" onClick={() => setDark(value => !value)} aria-label={t(dark ? "theme.light" : "theme.dark")} className="size-11 shrink-0"><Icon name={dark ? 'sun' : 'moon'} /></Button>
-    {onHelp && <Button variant="ghost" size="icon" onClick={onHelp} aria-label={t("navigation.howToDub")} aria-expanded={helpExpanded} aria-controls={helpControls} className="size-11 shrink-0"><Icon name="help" /></Button>}
+    {onHelp && <Button variant="ghost" size="icon" onClick={onHelp} aria-label={t("navigation.howToDub")} className="size-11 shrink-0"><Icon name="help" /></Button>}
   </header>;
 }

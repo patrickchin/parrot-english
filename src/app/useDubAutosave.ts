@@ -25,7 +25,7 @@ export function useDubAutosave(scene: Scene, slug: string, lesson: LessonState, 
     }
     const id = ++operation.current;
     send({ type: 'SAVE', operation: id, snapshot });
-    const save = queue.current.catch(() => {}).then(() => saveDub(snapshot.id, snapshot.createdAt, slug, scene, { ...snapshot, overlay: 'none' }, snapshot.source));
+    const save = queue.current.then(() => saveDub(snapshot.id, snapshot.createdAt, slug, scene, { ...snapshot, overlay: 'none' }, snapshot.source));
     queue.current = save.then(() => {}, () => {});
     void save.then(() => send({ type: 'SAVED', operation: id, snapshot }), error => send({ type: 'FAILED', operation: id, error: storageError(error) }));
   }, [scene, slug, snapshot, retry, view.dirty]);

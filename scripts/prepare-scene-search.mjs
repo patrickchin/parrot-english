@@ -5,7 +5,7 @@ import { validateScene } from '../src/scene.ts';
 const catalog = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
 const index = {};
 for (const entry of catalog) {
-  const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')));
+  const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')), `/scenes/${entry.slug}/`);
   index[entry.slug] = { tags: scene.tags ?? [], quotes: scene.lines.flatMap(line => [line.text, line.hint]) };
 }
 const path = 'src/scene-search-index.json';

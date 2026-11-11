@@ -34,6 +34,7 @@
     "microphoneMissing": "No se ha encontrado un micrófono. Conecta uno y vuelve a intentarlo.",
     "microphoneBusy": "Otra aplicación está usando el micrófono. Ciérrala y vuelve a intentarlo.",
     "seekTimeout": "El vídeo está tardando demasiado en cambiar de posición. Inténtalo de nuevo.",
+    "pageNotFound": "Página no encontrada",
     "unexpected": "Algo ha fallado. Inténtalo de nuevo."
   },
   "dubs": {

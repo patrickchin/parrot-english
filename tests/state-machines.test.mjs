@@ -41,7 +41,7 @@ test('lesson keeps line dispositions exclusive, wraps unfinished lines, and rese
   let state = createLesson(scene);
   const send = event => { state = transitionLesson(state, event, scene); };
   const lines = scene.lines.filter(line => line.roleId === state.roleId);
-  const take = { blob: new Blob(['take']), url: 'blob:test', duration: 1, start: 0, peaks: [0.2] };
+  const take = { blob: new Blob(['take']), duration: 1, start: 0, peaks: [0.2] };
   send({ type: 'START' });
   send({ type: 'CHOOSE_LINE', index: lines.length - 1 });
   send({ type: 'NEXT' });

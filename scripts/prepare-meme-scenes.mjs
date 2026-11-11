@@ -38,7 +38,7 @@ for (const entry of scenes) {
   const path = `public/scenes/${entry.slug}`;
   await mkdir(path, { recursive: true });
   let previous;
-  try { previous = JSON.parse(await readFile(path + '/scene.json', 'utf8')); } catch { /* First authoring run. */ }
+  try { previous = JSON.parse(await readFile(path + '/scene.json', 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const roles = entry.roles.map(([name,label,hint],i) => ({ id: previous?.roles[i]?.id ?? id('role'), name,label,hint,portrait:previous?.roles[i]?.portrait }));
   const scene = {
     version:1, id:previous?.id ?? id('scene'), title:entry.title, tags:entry.tags ?? previous?.tags,

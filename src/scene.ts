@@ -7,9 +7,8 @@ export type Scene = {
   base: string; mediaBase?: string; mode?: 'local';
   credit: { title: string; attribution: string; source: string; licence: string; licenceUrl: string; changes: string };
 };
-export const sceneRoot = '/scenes/patrick/';
 export const asset = (scene: Scene, path: string) => (scene.mediaBase ?? scene.base) + path;
-export function validateScene(value: unknown, base = sceneRoot): Scene {
+export function validateScene(value: unknown, base: string): Scene {
   const p = value as Scene;
   const safeFile = (s: unknown) => typeof s === 'string' && /^[a-zA-Z0-9_-]+\.(mp4|m4a|jpg)$/.test(s);
   if (!p || p.version !== 1 || !/^scene_[\w-]+$/.test(p.id) ||

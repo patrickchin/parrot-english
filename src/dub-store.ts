@@ -9,7 +9,7 @@ export type SavedDub = {
   step: 'practice' | 'result'; roleId: string; lineIndex: number;
   progress: Record<string, Disposition>; recorded: number; total: number;
 };
-type SavedMedia = { dubId: string; lineId: string; bytes?: ArrayBuffer; mimeType?: string; blob?: Blob; duration?: number; start?: number; peaks?: number[] };
+type SavedMedia = { dubId: string; lineId: string; bytes: ArrayBuffer; mimeType: string; duration?: number; start?: number; peaks?: number[] };
 export type RestoredDub = { saved: SavedDub; lesson: LessonState; source?: Blob };
 
 export function newDubId() {
@@ -17,8 +17,7 @@ export function newDubId() {
 }
 
 function mediaBlob(media?: SavedMedia) {
-  if (media?.bytes instanceof ArrayBuffer) return new Blob([media.bytes], { type: media.mimeType ?? 'audio/wav' });
-  return media?.blob instanceof Blob ? media.blob : undefined;
+  if (media?.bytes instanceof ArrayBuffer && typeof media.mimeType === 'string') return new Blob([media.bytes], { type: media.mimeType });
 }
 
 function signature(scene: Scene) {
@@ -69,23 +68,16 @@ export async function loadDub(id: string, scene: Scene): Promise<RestoredDub> {
   if (!saved.progress || !lines[saved.lineIndex] || !scene.roles.some(role => role.id === saved.roleId && role.selectable !== false) ||
       !['practice', 'result'].includes(saved.step)) throw new Error("errors.dubDamaged");
   const lesson = createLesson(scene);
-  // Validate everything before creating object URLs, so a damaged draft leaks none.
   for (const line of scene.lines) {
     const status = saved.progress[line.id];
     if (!['unattempted', 'skipped', 'recorded'].includes(status)) throw new Error("errors.dubDamaged");
-    if (status === 'recorded') {
-      const take = media.find(item => item.lineId === line.id);
-      if (!mediaBlob(take)?.size || !take || !Number.isFinite(take.start) || !Number.isFinite(take.duration) ||
-          take.duration! <= 0 || !Array.isArray(take.peaks) || !take.peaks.every(value => Number.isFinite(value) && value >= 0)) throw new Error("errors.dubDamaged");
-    }
-  }
-  for (const line of scene.lines) {
-    const status = saved.progress[line.id];
     if (status !== 'recorded') lesson.progress[line.id] = { status };
     else {
-      const take = media.find(item => item.lineId === line.id)!;
-      const blob = mediaBlob(take)!;
-      lesson.progress[line.id] = { status, take: { blob, url: URL.createObjectURL(blob), duration: take.duration!, start: take.start!, peaks: take.peaks! } };
+      const take = media.find(item => item.lineId === line.id);
+      const blob = mediaBlob(take);
+      if (!blob?.size || !take || !Number.isFinite(take.start) || !Number.isFinite(take.duration) ||
+          take.duration! <= 0 || !Array.isArray(take.peaks) || !take.peaks.every(value => Number.isFinite(value) && value >= 0)) throw new Error("errors.dubDamaged");
+      lesson.progress[line.id] = { status, take: { blob, duration: take.duration!, start: take.start!, peaks: take.peaks! } };
     }
   }
   return { saved, lesson: { ...lesson, step: saved.step, roleId: saved.roleId, lineIndex: saved.lineIndex }, source: mediaBlob(media.find(item => item.lineId === 'source')) };

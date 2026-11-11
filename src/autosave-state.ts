@@ -15,7 +15,7 @@ export type AutosaveEvent =
   | { type: 'SAVED'; operation: number; snapshot: DubSnapshot }
   | { type: 'FAILED'; operation: number; error: string };
 
-export function sameSnapshot(a: DubSnapshot | undefined, b: DubSnapshot | undefined) {
+function sameSnapshot(a: DubSnapshot | undefined, b: DubSnapshot | undefined) {
   return a === b || !!a && !!b && a.id === b.id && a.step === b.step && a.roleId === b.roleId &&
     a.lineIndex === b.lineIndex && a.progress === b.progress && a.source === b.source;
 }

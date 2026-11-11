@@ -34,7 +34,7 @@ test('an unprefixed entry uses the saved preference without adding a Back entry'
 
 test('language history preserves the running player, saved dub and selected line', async ({ page }) => {
   let loads = 0;
-  page.on('request', request => { if (new URL(request.url()).pathname === '/packs/patrick/pack.json') loads++; });
+  page.on('request', request => { if (new URL(request.url()).pathname === '/scenes/patrick/scene.json') loads++; });
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
@@ -45,6 +45,7 @@ test('language history preserves the running player, saved dub and selected line
   const chinese = page.url();
   const video = await page.locator('video').elementHandle();
   const initialLoads = loads;
+  expect(initialLoads).toBeGreaterThan(0);
   await setLanguage(page, 'en');
   await expect(page).toHaveURL(chinese.replace('/zh/', '/en/'));
   await expect(page.getByRole('button', { name: `Line 2: ${line}`, exact: true })).toHaveAttribute('aria-current', 'step');

@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 // Exercise real encoder output, including the first sound after the picture starts.
 test('capture is ready before the picture and preserves the opening sound through delayed startup', async ({ page }) => {
   await page.addInitScript(() => {
-    type CaptureWindow = Window & { captureAtPlay?: boolean; captureReady?: boolean; savedCapture?: Blob; context?: BaseAudioContext; sampleZero?: number; clipOrigin?: number };
+    type CaptureWindow = Window & { captureAtPlay?: boolean; captureReady?: boolean; context?: BaseAudioContext; sampleZero?: number; clipOrigin?: number };
     const state = window as CaptureWindow;
     const NativeWorklet = AudioWorkletNode;
     Object.defineProperty(window, 'AudioWorkletNode', { configurable: true, value: class extends NativeWorklet {
@@ -22,11 +22,6 @@ test('capture is ready before the picture and preserves the opening sound throug
     HTMLMediaElement.prototype.play = async function () {
       await nativePlay.call(this);
       await new Promise(resolve => setTimeout(resolve, 350));
-    };
-    const nativeURL = URL.createObjectURL;
-    URL.createObjectURL = function (object) {
-      if (object instanceof Blob && object.type.startsWith('audio/')) state.savedCapture = object;
-      return nativeURL.call(URL, object);
     };
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => {
       const context = new AudioContext(); await context.resume();
@@ -59,8 +54,14 @@ test('capture is ready before the picture and preserves the opening sound throug
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.65);
   await stop.click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  const signal = await page.evaluate(async () => {
-    const blob = (window as unknown as Window & { savedCapture: Blob }).savedCapture;
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  const signal = await page.evaluate(async scene => {
+    const path = '/src/dub-store.ts';
+    const { loadDub } = await import(path) as typeof import('../../src/dub-store');
+    const draft = await loadDub(location.pathname.split('/').at(-1)!, scene);
+    const progress = Object.values(draft.lesson.progress).find(line => line.status === 'recorded')!;
+    if (progress.status !== 'recorded') throw new Error('No recorded take');
+    const blob = progress.take.blob;
     const context = new AudioContext();
     const buffer = await context.decodeAudioData(await blob.arrayBuffer());
     const samples = buffer.getChannelData(0);
@@ -70,7 +71,7 @@ test('capture is ready before the picture and preserves the opening sound throug
     const firstSample = samples.findIndex(sample => Math.abs(sample) > 0.03);
     const origin = (window as Window & { clipOrigin?: number }).clipOrigin!;
     return { peak, duration: buffer.duration, onset: origin + firstSample / buffer.sampleRate };
-  });
+  }, scene);
   expect(signal.peak).toBeGreaterThan(0.03);
   expect(signal.duration).toBeGreaterThan(0.65);
   const onset = await page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').evaluate((path, line) => {

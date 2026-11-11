@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { clips, folders, mediaRoot } from '../catalog';
+import { clips, folders } from '../catalog';
 import { Button } from '@/components/ui/button';
 
 export function CategoryTabs({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
@@ -13,7 +13,7 @@ export function CategoryTabs({ value, onValueChange }: { value: string; onValueC
         aria-pressed={folder.value === value}
         onClick={() => onValueChange(folder.value)}
         className="category-tab">
-        <img className="category-thumbnail" src={cover.poster ?? `${mediaRoot}${cover.slug}/${cover.slug}-poster-v1.jpg`} alt="" />
+        <img className="category-thumbnail" src={cover.poster} alt="" />
         <span className="category-copy">
           <span className="category-name">{t(folder.title)}</span>
           <span className="category-description">{t("library.sceneCount", { count: scenes.length })}</span>

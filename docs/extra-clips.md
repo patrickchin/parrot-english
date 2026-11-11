@@ -36,7 +36,7 @@ do not establish clearance for a child pilot or public commercial catalogue.
 
 ## Authoring and storage
 
-`content/extra-scenes.json` is the source recipe. `src/extra-clips.json` is its
+`content/extra-scenes.json` is the source recipe. `src/review-clips.json` is the current
 generated library index. The files in `public/scenes/<slug>/` are JSON manifests
 and numeric waveform metadata only. Video and JPEG media are uploaded separately
 to the existing Alibaba OSS bucket in Hong Kong; ESA contains application code
