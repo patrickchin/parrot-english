@@ -80,7 +80,7 @@ test('UI language persists across navigation and reload while English dialogue a
 
 test('switching language during recording keeps the take, waveform and replay', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit recording requires a physical-device check.');
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
@@ -98,7 +98,7 @@ test('language works without local storage and translates recording guidance and
     Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Unavailable', 'SecurityError'); } });
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => { throw new DOMException('Denied', 'NotAllowedError'); } } });
   });
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await setLanguage(page, 'en');
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
@@ -111,7 +111,7 @@ test('language works without local storage and translates recording guidance and
 
 test('failed scene loading keeps the language selector available', async ({ page }) => {
   await page.route('**/packs/patrick/pack.json', route => route.fulfill({ status: 503 }));
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await expect(page.getByRole('alert')).toBeVisible();
   await setLanguage(page, 'en');
   await expect(page.getByRole('alert')).toHaveText('The scene could not load. Please try again.');

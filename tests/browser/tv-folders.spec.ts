@@ -8,7 +8,7 @@ const olderChildCount = clips.filter(clip => clip.cohort === 'older-children').l
 const teenCount = clips.filter(clip => clip.cohort === 'teens').length;
 
 test('TV folders open directly, keep complete scenes separate, and survive language changes and reload', async ({ page }, info) => {
-  await page.goto('/?folder=older-children');
+  await page.goto('/library/older-children');
   const folder = page.getByRole('combobox', { name: '片段文件夹', exact: true });
   await expect(folder).toContainText('10–12岁');
   await expect(page.getByRole('listitem')).toHaveCount(olderChildCount);
@@ -53,7 +53,7 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
 
 for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
-  await page.goto('/#' + slug);
+  await page.goto('/scenes/' + slug);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
@@ -63,7 +63,7 @@ for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-pott
 });
 
 test('an unknown folder returns to the established film library', async ({ page }) => {
-  await page.goto('/?folder=unknown');
+  await page.goto('/library/unknown');
   await expect(page.getByRole('combobox', { name: '片段文件夹', exact: true })).toContainText('电影与动画');
   await expect(page.getByRole('listitem')).toHaveCount(24);
 });

@@ -46,7 +46,7 @@ test('a short Joey line has moving video context and retains early and late voic
       return output.stream;
     } } });
   });
-  await page.goto('/#friends-thesaurus');
+  await page.goto('/scenes/friends-thesaurus');
   await page.getByRole('button', { name: '乔伊 3 句台词', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: "第 2 句：What'd I just say?", exact: true }).click();

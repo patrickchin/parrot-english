@@ -27,7 +27,7 @@ test('replay reuses decoded takes and aligns a rendered audio transient with the
     delete pack.backing;
     await route.fulfill({ json: pack });
   });
-  await page.goto('/#onions');
+  await page.goto('/scenes/onions');
   const pack = await (await page.request.get('/packs/onions/pack.json')).json();
   const line = pack.lines[0];
   await page.getByRole('button', { name: '开始配音', exact: true }).click();

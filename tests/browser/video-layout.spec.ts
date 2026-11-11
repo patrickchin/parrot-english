@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 test('the picture follows the source proportions through role choice, practice and replay', async ({ page }) => {
   for (const slug of ['onions', 'wumbo']) {
-    await page.goto('/#' + slug);
+    await page.goto('/scenes/' + slug);
     await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
     const scene = page.getByRole('region', { name: '电影片段', exact: true });
     const picture = scene.getByLabel(/对话片段$/);
@@ -37,13 +37,13 @@ test('the picture follows the source proportions through role choice, practice a
 });
 
 test('completion and replay keep the recording waveform and subtitles in place', async ({ page }, info) => {
-  await page.goto('/#onions');
+  await page.goto('/scenes/onions');
   const pack = await (await page.request.get('/packs/onions/pack.json')).json();
   const lines = pack.lines.filter((line: { roleId: string }) => line.roleId === pack.roles[0].id);
   for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     // A reload now resumes the saved dub. Open a fresh attempt for each layout.
-    await page.goto('/#onions');
+    await page.goto('/scenes/onions');
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
     const scene = page.getByRole('region', { name: '电影片段', exact: true });
     const graph = page.getByRole('region', { name: '声音波形对比', exact: true });

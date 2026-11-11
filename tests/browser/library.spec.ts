@@ -1,3 +1,4 @@
+import { scenePath } from '../../src/app/routes';
 import { test, expect, setLanguage } from './fixtures';
 import { clips, memeClips } from '../../src/catalog';
 import { mkdir } from 'node:fs/promises';
@@ -36,7 +37,7 @@ test('the simplified shelf keeps scenes, help, privacy and source details access
 
 for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'mayonnaise'].includes(c.slug))]) test(`hosted clip ${clip.slug} can play and record a turn`, async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture requires a physical-device check.');
-  await page.goto('/#' + clip.slug);
+  await page.goto(scenePath(clip.slug));
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
@@ -104,7 +105,7 @@ test('the scene shelf stays a keyboard-accessible grid even with an old list pre
 test('the retired sample route returns to the meme library', async ({ page }) => {
   const sampleRequests: string[] = [];
   page.on('request', request => { if (request.url().includes('/packs/sintel/')) sampleRequests.push(request.url()); });
-  await page.goto('/#sintel');
+  await page.goto('/scenes/sintel');
   await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(24);
   expect(sampleRequests).toEqual([]);

@@ -1,3 +1,4 @@
+import { scenePath } from '../../src/app/routes';
 import { test, expect } from './fixtures';
 import type { Line } from '../../src/pack';
 import { mkdir } from 'node:fs/promises';
@@ -6,7 +7,7 @@ import { join } from 'node:path';
 
 test('reference, live take, and saved take share a moving timeline; cancelling keeps the previous trace', async ({ page, browserName }, info) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   const pack = await (await page.request.get('/packs/patrick/pack.json')).json();
   const turn: Line = pack.lines.find((l: Line) => l.roleId === pack.roles[0].id);
   const nextTurn: Line | undefined = pack.lines[pack.lines.findIndex((l: Line) => l.id === turn.id) + 1];
@@ -73,7 +74,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
 
 test('missing waveform metadata leaves recording and reference playback available', async ({ page }) => {
   await page.route('**/waveform-v2.json', route => route.fulfill({ json: { version: 1, peaks: ['invalid'] } }));
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByText('原声波形暂时无法显示，仍可听原声并录音。')).toBeVisible();
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
@@ -83,7 +84,7 @@ test('missing waveform metadata leaves recording and reference playback availabl
 
 test('scene, caption, waveforms and every main action fit one screen across the starter packs', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'chocolate', 'infinity']) {
-    await page.goto('/#' + slug);
+    await page.goto(scenePath(slug));
     await page.getByRole('button', { name: '片段与来源', exact: true }).click();
     await expect(page.getByRole('dialog').getByRole('link', { name: '观看原片' })).toBeVisible();
     await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
@@ -121,7 +122,7 @@ test('scene, caption, waveforms and every main action fit one screen across the 
 
 test('plain dialogue and controls stay fixed when switching lines and skipping to the result', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
-    await page.goto('/#' + slug);
+    await page.goto(scenePath(slug));
     const pack = await (await page.request.get(`/packs/${slug}/pack.json`)).json();
     const lines: Line[] = pack.lines.filter((line: Line) => line.roleId === pack.roles[0].id);
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
@@ -166,7 +167,7 @@ test('plain dialogue and controls stay fixed when switching lines and skipping t
 
 // Sample what was actually painted, rather than relying on an occasional poll.
 test('playhead advances on animation frames and stays on the video clock', async ({ page }) => {
-  await page.goto('/#onions');
+  await page.goto('/scenes/onions');
   const pack = await (await page.request.get('/packs/onions/pack.json')).json();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针' });

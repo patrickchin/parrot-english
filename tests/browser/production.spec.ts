@@ -1,10 +1,11 @@
+import { scenePath } from '../../src/app/routes';
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { clips } from '../../src/catalog';
 
 for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
-  await page.goto('/#' + clip.slug);
+  await page.goto(scenePath(clip.slug));
   await expect(page.getByLabel('选择本地片段', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '播放原片', exact: true }).click();
@@ -20,7 +21,7 @@ test('the public build reads a selected device file without uploading it or requ
     pack.mode = 'local'; delete pack.mediaBase;
     await route.fulfill({ json: pack });
   });
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeDisabled();
   await page.getByLabel('选择本地片段', { exact: true }).setInputFiles(resolve('content/media/sintel/search-v1.mp4'));
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();

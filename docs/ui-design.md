@@ -12,6 +12,32 @@ each scene or reset. The browser handles microphone access when needed. Keep
 the local-recording notice in the footer and guardian guidance in Help; guardian
 authorization before child use remains part of the planned grown-up setup.
 
+Page navigation uses `/library/:folder`, `/scenes/:slug`, and
+`/scenes/:slug/dubs/:dubId`. The root opens the default film library. Audience
+selection adds a history entry, and direct scene links return to that scene's
+audience folder. Saved dub IDs replace the current scene address without
+reloading the player. UI language remains a saved browser preference.
+
+Approved sitemap:
+
+```text
+/                                      Default scene library
+/library/older-audience                Films & animation
+/library/younger-age-5                 Younger children
+/library/older-children                Ages 10–12
+/library/teens                         Teenagers
+/scenes/patrick                        Patrick scene
+/scenes/friends-cheesecake             Friends cheesecake scene
+/scenes/toy-story-infinity             Toy Story scene
+/scenes/:scene-name/dubs/:dub-id        Continue a saved dub
+```
+
+Scene URLs use stable readable names, separate from translated display titles.
+An optional catalog `routeSlug` provides a public name that differs from the
+pack folder, preserving media locations and the scene references in saved dubs.
+"My dubs" remains a section in the library. Role selection, recording, and the
+finished result are steps within the scene player.
+
 The picture frame follows the source video's metadata instead of stretching to
 fill the viewport height. Fit the picture and its 44px neutral control strip
 within the available player cell; keep unused space outside the frame. Use a

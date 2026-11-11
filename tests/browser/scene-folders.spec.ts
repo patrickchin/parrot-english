@@ -61,7 +61,7 @@ test('audience folders keep the eight younger scenes separate and survive playba
 
 test('a younger learner can record a line in a complete conversation', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
-  await page.goto('/?folder=younger-age-5#ben-never-scared');
+  await page.goto('/scenes/ben-never-scared');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 15000 });
