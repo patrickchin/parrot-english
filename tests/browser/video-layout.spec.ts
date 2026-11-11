@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, documentBoxes } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -63,18 +63,21 @@ test('completion and replay keep the recording waveform and subtitles in place',
     const graph = page.getByRole('region', { name: '声音波形对比', exact: true });
     const caption = page.getByRole('group', { name: '台词', exact: true });
     const regions = [movie, graph, caption];
-    const recording = await Promise.all(regions.map(region => region.boundingBox()));
+    const recording = await documentBoxes(page, regions);
     const type = await caption.getByText(lines[0].text, { exact: true }).evaluate(el => ({ size: parseFloat(getComputedStyle(el).fontSize), weight: Number(getComputedStyle(el).fontWeight) }));
     expect(type.size).toBeLessThanOrEqual(22);
     expect(type.weight).toBeLessThanOrEqual(500);
     const expectFixed = async () => {
-      const positions = await Promise.all(regions.map(region => region.boundingBox()));
+      const positions = await documentBoxes(page, regions);
       for (const [i, box] of positions.entries()) {
         for (const dimension of ['x', 'y', 'width', 'height'] as const) {
           expect(Math.abs(box![dimension] - recording[i]![dimension]), `${viewport.width}px region ${i} ${dimension}`).toBeLessThan(1);
         }
       }
-      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+      const credits = page.getByRole('button', { name: '片段与来源', exact: true });
+      await credits.scrollIntoViewIfNeeded();
+      await expect(credits).toBeInViewport();
     };
     for (const _ of lines) await page.getByRole('button', { name: '下一步', exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: '你的配音，完成啦！' })).toBeVisible();

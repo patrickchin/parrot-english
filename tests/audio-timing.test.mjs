@@ -19,14 +19,14 @@ test('audio readiness waits for the render clock, cancels promptly, and rejects 
   await assert.rejects(waitForAudioClock({ ...clock, state: 'suspended' }, new AbortController().signal));
 });
 
-test('audible clock uses the output sample timestamp and platform latency fallback', () => {
+test('audible clock uses the output sample timestamp and measured startup latency', () => {
   const context = { currentTime: 10, baseLatency: 0.01, outputLatency: 0.09, getOutputTimestamp: () => ({ contextTime: 9.85, performanceTime: 1000 }) };
   assert.equal(audibleContextTime(context, 1050), 9.9);
   assert.equal(audibleContextTime(context, 1500), 10, 'never extrapolate beyond rendered samples');
   context.getOutputTimestamp = () => ({ contextTime: 0, performanceTime: 0 });
   assert.equal(audibleContextTime(context, 1050), 9.9);
   assert.ok(Math.abs(audibleContextTime({ ...context, currentTime: 0 }, 1050) + 0.1) < 1e-9, 'retain startup output latency before the first sample');
-  assert.equal(audibleContextTime({ currentTime: 10 }, 1050), 10, 'old engines without either latency API');
+  assert.throws(() => audibleContextTime({ currentTime: 10 }, 1050), TypeError, 'engines without output timing must not silently assume zero latency');
 });
 
 test('decoded takes share pending work by Blob, replacements decode independently, and failures retry', async () => {

@@ -8,7 +8,7 @@ for (const entry of scenes.filter(s => !selected.length || selected.includes(s.s
   const folder = `public/scenes/${entry.slug}`;
   await mkdir(folder, { recursive: true });
   let previous;
-  try { previous = JSON.parse(await readFile(`${folder}/scene.json`, 'utf8')); } catch { /* New content scene. */ }
+  try { previous = JSON.parse(await readFile(`${folder}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const file = `${entry.slug}-v1.mp4`;
   const result = spawnSync('ffmpeg', ['-v','error','-ss',String(entry.start),'-i',`content/local-dubbing/${entry.input}`,'-t',String(entry.end-entry.start),'-vf','scale=trunc(iw/2)*2:trunc(ih/2)*2','-c:v','libx264','-preset','fast','-crf','20','-pix_fmt','yuv420p','-c:a','aac','-ac','2','-b:a','96k','-movflags','+faststart','-y',`content/local-dubbing/${file}`]);
   if (result.status !== 0) throw new Error(`Cannot prepare ${entry.slug}`);
@@ -24,4 +24,3 @@ for (const entry of scenes.filter(s => !selected.length || selected.includes(s.s
   await writeFile(`${folder}/scene.json`, JSON.stringify(scene,null,2)+'\n');
   console.log(`${entry.slug}: ${duration}s; media prepared separately for OSS.`);
 }
-await writeFile('src/extra-clips.json',JSON.stringify(scenes.map(s=>({slug:s.slug,title:s.title,english:s.english,note:s.film,source:s.source+`&t=${Math.floor((s.sourceOffset ?? 0)+s.start)}s`})),null,2)+'\n');

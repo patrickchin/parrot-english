@@ -1,6 +1,6 @@
 import { scenePath } from '../../src/app/routes';
 import { test, expect, setLanguage } from './fixtures';
-import { clips, memeClips } from '../../src/catalog';
+import { clips } from '../../src/catalog';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -11,9 +11,9 @@ test('the simplified shelf keeps scenes, privacy and source details accessible w
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
-  for (const clip of memeClips) {
+  for (const clip of clips.filter(clip => clip.cohort === 'older-audience')) {
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 2, name: clip.title, exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 4, name: clip.title, exact: true })).toBeVisible();
   }
   await expect(page.getByText('成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。', { exact: true })).toBeVisible();
   for (const width of [375, 1280]) {
@@ -79,8 +79,7 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
 });
 
 
-test('the scene shelf stays a keyboard-accessible grid even with an old list preference', async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem('parrotbook-library-view', 'list'));
+test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('button', { name: '列表视图', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '网格视图', exact: true })).toHaveCount(0);
@@ -103,13 +102,14 @@ test('the scene shelf stays a keyboard-accessible grid even with an old list pre
   await expect(page.getByRole('listitem')).toHaveCount(filmCount);
 });
 
-test('the retired sample route returns to the meme library', async ({ page }) => {
-  const sampleRequests: string[] = [];
-  page.on('request', request => { if (request.url().includes('/scenes/sintel/')) sampleRequests.push(request.url()); });
-  await page.goto('/scenes/sintel');
-  await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
-  expect(sampleRequests).toEqual([]);
+test('unknown pages, scenes and folders show an explicit error instead of another scene shelf', async ({ page }) => {
+  for (const path of ['/scenes/missing-scene', '/library/missing-folder', '/missing-page']) {
+    await page.goto(path);
+    await expect(page.getByRole('heading', { level: 1, name: '页面不存在', exact: true })).toBeVisible();
+    await expect(page.getByRole('searchbox')).toHaveCount(0);
+    await page.getByRole('button', { name: '片段库', exact: true }).click();
+    await expect(page.getByRole('searchbox')).toBeVisible();
+  }
 });
 
 test('help restores focus without requesting the microphone', async ({ page }) => {

@@ -1,24 +1,20 @@
 # Alibaba account smoke test
 
 Historical deployment proof: the public domain now serves the dubbing player
-described in the root README. This file and `worker.mjs` retain the initial
-account check for reference; they are not the current deployed application.
+described in the root README. This document retains the initial account check
+for reference. Its retired smoke-test worker and tests have been removed; Git
+history preserves them.
 
-One ESA edge function serves a small page and `GET /api/health`. The backend
-returns its platform and current server time; the page's **Check backend** button
-measures the round trip. There are no database or recording dependencies.
-
-Run the backend check locally:
-
-```sh
-node --test prototype/worker.test.mjs
-```
+The smoke test used one ESA edge function to serve a small page and
+`GET /api/health`. The backend returned its platform and current server time;
+the page's **Check backend** button measured the round trip. It had no database
+or recording dependencies.
 
 ## Deployment
 
 - ESA routine: `parrotbook-prototype`
 - Code version: `1793173312655798735`
-- Source: `worker.mjs`, uploaded directly as the routine's JavaScript code
+- Historical source: `prototype/worker.mjs` in Git history
 - Environments: staging and production of this separate prototype routine
 - Public domains: <https://parrotbook.com/> and <https://www.parrotbook.com/>
 - Default preview: <https://parrotbook-prototype-1263482499936169.debug.er.aliyun-esa.net/>

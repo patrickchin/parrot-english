@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { asset, type Scene, type Line } from './scene';
 import { waveformStep } from './waveform';
 import { encodePcmWav } from './pcm-recording';
@@ -7,15 +7,21 @@ import { idleMedia, transitionMedia, type Activity, type MediaEvent } from './me
 import { waitForVideo } from './video-events';
 import { lineWindow } from './line-window';
 
-export type Take = { blob: Blob; url: string; duration: number; start: number; peaks: number[] };
+export type Take = { blob: Blob; duration: number; start: number; peaks: number[] };
 export type Takes = Record<string, Take>;
 
 export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Scene, onTake: (id: string, take: Take) => void) {
-  const [state, dispatch] = useReducer(transitionMedia, idleMedia);
+  // Worklet callbacks and rendering share one machine, including before React
+  // commits a render. This prevents a second capture lifecycle drifting from it.
+  const machine = useRef(idleMedia);
+  const [state, setState] = useState(idleMedia);
+  function dispatch(event: MediaEvent) {
+    machine.current = transitionMedia(machine.current, event);
+    setState(machine.current);
+  }
   const phase = state.phase;
   const error = state.phase === 'idle' ? state.error : '';
   const [time, setTime] = useState(0);
-  const [level, setLevel] = useState(0);
   const [livePeaks, setLivePeaks] = useState<number[]>([]);
   const [liveStart, setLiveStart] = useState(0);
   const operation = useRef(0);
@@ -43,7 +49,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     for (const source of sources.current) { try { source.stop(); } catch { /* Already ended. */ } }
     sources.current = [];
     if (video.current) { video.current.pause(); video.current.muted = false; setTime(video.current.currentTime); }
-    setLevel(0);
   }
 
   function stop(error?: string) {
@@ -175,13 +180,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       advance('AUDIO_READY', id);
       const chunks: Float32Array[] = [], peaks: number[] = [];
       let captureContextStart = 0, captureStart = window.start;
-      let captureStage: 'starting' | 'recording' | 'saving' | 'finished' = 'starting';
       detail.port.onmessage = event => {
         if (id !== operation.current) return;
         const data = event.data;
         if (data.type === 'data') { chunks.push(data.samples); peaks.push(...data.peaks); }
-        if (data.type !== 'stopped' || captureStage !== 'saving') return;
-        captureStage = 'finished';
+        if (data.type !== 'stopped' || machine.current.phase !== 'saving') return;
         // The audio thread sends its final partial block before this acknowledgement.
         disconnectInput();
         if (captureCleanup.current === disconnectInput) captureCleanup.current = null;
@@ -191,18 +194,17 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         const duration = frames / ctx.sampleRate;
         const preroll = Math.max(0, window.voiceStart - captureStart);
         const peak = peaks.slice(Math.ceil(preroll / waveformStep), Math.ceil((window.voiceEnd - captureStart) / waveformStep)).reduce((max, value) => Math.max(max, value), 0);
-        setLevel(0);
         if (duration - preroll < 0.3 || peak < 0.003) {
           setError("errors.quietRecording"); return;
         }
         const blob = encodePcmWav(chunks, ctx.sampleRate);
-        onTake(line.id, { blob, url: URL.createObjectURL(blob), duration, start: captureStart, peaks });
+        onTake(line.id, { blob, duration, start: captureStart, peaks });
         release();
         advance('SAVED', id);
       };
       detail.onprocessorerror = () => { if (id === operation.current) stop("errors.recordingInterrupted"); };
       captured.getAudioTracks().forEach(track => { track.onended = () => {
-        if (id === operation.current && (captureStage === 'starting' || captureStage === 'recording')) stop("errors.microphoneDisconnected");
+        if (id === operation.current && (machine.current.phase === 'loading' || machine.current.phase === 'recording')) stop("errors.microphoneDisconnected");
       }; });
       const el = await readyVideo(window.start, window.start >= line.start);
       if (id !== operation.current) return;
@@ -229,16 +231,16 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         setLiveStart(captureStart);
       } });
       if (id !== operation.current) return;
-      captureStage = 'recording'; advance('PLAYING', id);
+      advance('PLAYING', id);
       finishRecording.current = () => {
-        if (captureStage !== 'recording') return;
-        captureStage = 'saving'; cancelAnimationFrame(frame.current); el.pause(); setTime(el.currentTime); advance('FINISH', id);
+        if (machine.current.phase !== 'recording') return;
+        cancelAnimationFrame(frame.current); el.pause(); setTime(el.currentTime); advance('FINISH', id);
         saveTimeout = setTimeout(() => { if (id === operation.current) stop("errors.recordingInterrupted"); }, 8000);
         detail.port.postMessage('stop');
       };
       let shownPeaks = 0;
       const meter = () => {
-        if (id !== operation.current || captureStage !== 'recording') return;
+        if (id !== operation.current || machine.current.phase !== 'recording') return;
         setTime(el.currentTime);
         if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
         if (ctx.state !== 'running' || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
@@ -247,7 +249,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         el.muted = el.currentTime >= line.start && el.currentTime < line.end;
         if (peaks.length !== shownPeaks) {
           shownPeaks = peaks.length; setLivePeaks([...peaks]);
-          setLevel(Math.min(1, (peaks.at(-1) ?? 0) * 3));
         }
         frame.current = requestAnimationFrame(meter);
       };
@@ -337,12 +338,12 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     } catch (e) { fail(id, e); }
   }
 
-  return { state, phase, time, level, livePeaks, liveStart, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, time, livePeaks, liveStart, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function message(error: unknown): string {
   if (error instanceof DOMException) {
-    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') return "errors.microphoneDenied";
+    if (error.name === 'NotAllowedError') return "errors.microphoneDenied";
     if (error.name === 'NotFoundError') return "errors.microphoneMissing";
     if (error.name === 'NotReadableError') return "errors.microphoneBusy";
   }

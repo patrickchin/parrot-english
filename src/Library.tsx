@@ -1,22 +1,32 @@
 import { useTranslation } from 'react-i18next';
 import { useEffect, useRef, useState } from 'react';
-import { clips, mediaRoot, type ClipSlug } from './catalog';
+import { useSearchParams } from 'react-router';
+import { clips, type ClipSlug } from './catalog';
 import { searchScenes } from './scene-search';
 import { AppHeader } from './app/AppHeader';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CategoryTabs } from './app/CategoryTabs';
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 
 export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug: ClipSlug, draftId?: string) => void; folder: string; onFolderChange: (folder: string) => void }) {
   const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const categoryScenes = clips.filter(clip => clip.cohort === folder);
+  const shows = [...new Set(categoryScenes.map(clip => clip.note))];
+  const show = shows.find(title => title === params.get('show')) ?? '';
   const [query, setQuery] = useState('');
-  useEffect(() => setQuery(''), [folder]);
+  useEffect(() => setQuery(''), [folder, show]);
   const search = useRef<HTMLInputElement>(null);
   const clearSearch = () => { setQuery(''); search.current?.focus(); };
-  const visible = searchScenes(clips.filter(clip => clip.cohort === folder), query, clip => t(`scenes.${clip.id}.title`, { defaultValue: clip.title }));
-  const featured = clips.find(clip => clip.cohort === folder)!;
+  const scoped = categoryScenes.filter(clip => !show || clip.note === show);
+  const visible = searchScenes(scoped, query, clip => t(`scenes.${clip.id}.title`, { defaultValue: clip.title }));
+  // Search keeps relevance order; browsing gathers each show's scenes together.
+  const shelves = query.trim() ? [{ title: '', scenes: visible }] : shows
+    .map(title => ({ title, scenes: visible.filter(clip => clip.note === title) }))
+    .filter(shelf => shelf.scenes.length);
+  const featured = scoped[0];
   return <div className="library-shell min-h-dvh bg-paper text-ink">
     <AppHeader />
     <main className="library-main">
@@ -29,21 +39,34 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
       </section>
       <section aria-label={t("navigation.library")}>
         <CategoryTabs value={folder} onValueChange={onFolderChange} />
+        <div role="group" aria-label={t('library.showsAndFilms')} className="show-filters">
+          {['', ...shows].map(title => <Button key={title} variant="secondary" aria-pressed={show === title}
+            onClick={() => setParams(previous => {
+              const next = new URLSearchParams(previous);
+              if (title) next.set('show', title); else next.delete('show');
+              return next;
+            })}>
+            {title || t('library.allShowsAndFilms')}
+          </Button>)}
+        </div>
         <div className="library-toolbar">
           <div className="library-scope"><h2>{t("navigation.library")}</h2><span>{t("library.sceneCount", { count: visible.length })}</span></div>
           <InputGroup className="library-search h-12 bg-card">
             <InputGroupAddon><Icon name="search" /></InputGroupAddon>
             <InputGroupInput ref={search} type="search" aria-label={t("library.findAScene")} placeholder={t("library.titleCharacterTagOrLine")} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
-            {query && <InputGroupAddon align="inline-end"><InputGroupButton onClick={clearSearch} aria-label={t("library.clearSearch")} size="icon-sm" className="size-11"><Icon name="close" /></InputGroupButton></InputGroupAddon>}
+            {query && <InputGroupAddon align="inline-end"><Button variant="ghost" size="icon" onClick={clearSearch} aria-label={t("library.clearSearch")} className="size-11 p-0"><Icon name="close" /></Button></InputGroupAddon>}
           </InputGroup>
         </div>
         {!visible.length && <Card className="library-empty"><p role="status">{t("library.noScenesFound")}</p><p>{t("library.searchSuggestion")}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t("library.showAllScenes")}<Icon name="arrow" /></Button></Card>}
-        <ul role="list" className="scene-shelf">{visible.map(clip => <li key={clip.slug}>
-          <button onClick={() => onChoose(clip.slug)} aria-label={t("library.chooseScene", { title: t(`scenes.${clip.id}.title`, { defaultValue: clip.title }) })} className="scene-select">
-            <img src={clip.poster ?? `${mediaRoot}${clip.slug}/${clip.slug}-poster-v1.jpg`} alt="" loading="lazy" decoding="async" />
-            <span className="scene-copy"><span role="heading" aria-level={2} className="scene-title font-display">{t(`scenes.${clip.id}.title`, { defaultValue: clip.title })}</span></span>
-          </button>
-        </li>)}</ul>
+        {shelves.map(shelf => <section key={shelf.title} aria-label={shelf.title || undefined} className="show-shelf">
+          {shelf.title && <div className="show-heading"><h3>{shelf.title}</h3><span>{t('library.sceneCount', { count: shelf.scenes.length })}</span></div>}
+          <ul role="list" className="scene-shelf">{shelf.scenes.map(clip => <li key={clip.slug}>
+            <button onClick={() => onChoose(clip.slug)} aria-label={t("library.chooseScene", { title: t(`scenes.${clip.id}.title`, { defaultValue: clip.title }) })} className="scene-select">
+              <img src={clip.poster} alt="" loading="lazy" decoding="async" />
+              <span className="scene-copy"><span role="heading" aria-level={shelf.title ? 4 : 3} className="scene-title font-display">{t(`scenes.${clip.id}.title`, { defaultValue: clip.title })}</span></span>
+            </button>
+          </li>)}</ul>
+        </section>)}
       </section>
       <p className="library-notice">{t("library.prototypeNotice")}</p>
     </main>

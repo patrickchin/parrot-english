@@ -1,5 +1,5 @@
 import { scenePath } from '../../src/app/routes';
-import { test, expect } from './fixtures';
+import { test, expect, documentBoxes } from './fixtures';
 import type { Line } from '../../src/scene';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -82,7 +82,7 @@ test('missing waveform metadata leaves recording and reference playback availabl
 });
 
 
-test('scene, caption, waveforms and every main action fit one screen across the starter scenes', async ({ page }, info) => {
+test('scene, caption, waveforms and every main action remain reachable across the starter scenes', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'chocolate', 'infinity']) {
     await page.goto(scenePath(slug));
     await page.getByRole('button', { name: '片段与来源', exact: true }).click();
@@ -90,19 +90,21 @@ test('scene, caption, waveforms and every main action fit one screen across the 
     await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
     for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
       await page.setViewportSize(viewport);
-      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${slug} role picker at ${viewport.width}×${viewport.height}`).toBe(true);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${slug} role picker at ${viewport.width}×${viewport.height}`).toBe(true);
+      const start = page.getByRole('button', { name: '开始配音', exact: true });
+      await start.scrollIntoViewIfNeeded();
+      await expect(start).toBeInViewport();
     }
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
     for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
       await page.setViewportSize(viewport);
-      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1), `${slug} player at ${viewport.width}×${viewport.height}`).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       for (const name of ['听这一句原声', '开始录音', '听我的录音', '下一步']) {
         const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name, exact: true });
         const bounds = await action.boundingBox();
         expect(bounds!.height).toBeGreaterThanOrEqual(56);
-        expect(bounds!.y).toBeGreaterThanOrEqual(0);
-        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height);
+        await action.scrollIntoViewIfNeeded();
+        await expect(action).toBeInViewport();
       }
       const waveform = await page.getByRole('img', { name: '原声波形', exact: true }).boundingBox();
       const words = await page.getByRole('group', { name: '台词', exact: true }).boundingBox();
@@ -132,12 +134,12 @@ test('plain dialogue and controls stay fixed when switching lines and skipping t
       const graph = page.getByRole('region', { name: '声音波形对比' });
       const caption = page.getByRole('group', { name: '台词', exact: true });
       const actions = page.getByRole('group', { name: '配音操作' });
-      const before = await Promise.all([entry, graph, caption, actions].map(el => el.boundingBox()));
+      const before = await documentBoxes(page, [entry, graph, caption, actions]);
       for (const [i, line] of lines.entries()) {
         await page.getByRole('button', { name: `第 ${i + 1} 句：${line.text}`, exact: true }).click();
         await expect(caption.getByText(line.text, { exact: true })).toBeVisible();
         await expect(caption.getByText(line.hint, { exact: true })).toBeVisible();
-        const after = await Promise.all([entry, graph, caption, actions].map(el => el.boundingBox()));
+        const after = await documentBoxes(page, [entry, graph, caption, actions]);
         for (const [index, box] of after.entries()) {
           for (const dimension of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(box![dimension] - before[index]![dimension]), `${slug} line ${i + 1}, ${viewport.width}px ${dimension}`).toBeLessThan(1);
@@ -145,8 +147,10 @@ test('plain dialogue and controls stay fixed when switching lines and skipping t
         }
         const restart = await page.getByRole('button', { name: '重新开始', exact: true }).boundingBox();
         expect(restart!.height).toBeGreaterThanOrEqual(44);
-        expect(restart!.y + restart!.height).toBeLessThanOrEqual(viewport.height);
-        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+        const reset = page.getByRole('button', { name: '重新开始', exact: true });
+        await reset.scrollIntoViewIfNeeded();
+        await expect(reset).toBeInViewport();
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       }
       if (slug === 'onions' && info.project.name === 'chromium') {
         const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');

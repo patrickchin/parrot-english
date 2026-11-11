@@ -10,7 +10,7 @@ import { languages } from './locale.ts';
 export const i18n = createInstance();
 void i18n.use(initReactI18next).init({
   resources: { en: { translation: en }, 'zh-CN': { translation: zhCN }, es: { translation: es }, ja: { translation: ja }, ko: { translation: ko } },
-  lng: 'zh-CN', supportedLngs: languages.map(language => language.value), fallbackLng: 'zh-CN',
+  lng: 'zh-CN', supportedLngs: languages.map(language => language.value), fallbackLng: false,
   initAsync: false,
   interpolation: { escapeValue: false },
   react: { useSuspense: false },

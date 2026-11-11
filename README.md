@@ -20,7 +20,7 @@ recordings, and progress. Starting over preserves the previous attempt;
 individual attempts can be deleted from My dubs. Nothing is uploaded. Clearing
 site data removes saved dubs; download important finished videos as backups.
 
-The header's styled language menu offers English and 简体中文. It remembers only
+The header's language menu offers English, 简体中文, Español, 日本語, and 한국어. It remembers only
 the interface preference on this browser; switching languages keeps the current
 scene and recordings. English dialogue/audio and the optional Chinese meaning
 hints are independent of the UI language.
@@ -31,9 +31,9 @@ and remembers that choice on this browser, including across scene navigation.
 Changing appearance preserves the current scene and recordings.
 
 The warm player shows detailed teal original-audio and coral learner waveforms
-with a synchronized playhead during listening, capture, and replay. English words
-sit at their spoken positions underneath the waveform; the timeline follows
-playback automatically on smaller screens. This is timing and emphasis feedback, not pronunciation scoring. See
+with a synchronized playhead during listening, capture, and replay. Dialogue
+captions show the current turn. This is timing and emphasis feedback, not
+pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
 The internal-test shelf has four folders: **38 film/animation scenes**,
@@ -45,8 +45,8 @@ see [the beginner review](docs/first-english-review.md).
 See [the latest 12 scenes](docs/clip-expansion-2026-11-11-c.md) and
 [the earlier TV scenes](docs/tv-review.md) for sources and content notes. The 21 short meme excerpts have been expanded or replaced with complete
 exchanges; Patrick, Chocolate, and Onions retain their original edits.
-The folder dropdown shows stacked video previews and scene counts, and keeps the
-selected folder across playback, language changes, and reloads.
+The category tabs show scene previews and counts, and keep the selected folder
+across playback, language changes, and reloads.
 See [the meme re-edits](docs/meme-review.md) and
 [the younger scenes](docs/preschool-review.md) for the current cuts.
 Browse the thumbnail grid or search within the selected folder by title, series,
@@ -81,7 +81,11 @@ hardware and WeChat still need manual checks before a child pilot.
 
 `npm run build` emits application code, HTML/CSS, and scene metadata in
 `build/edge-worker.mjs` for Alibaba ESA. It rejects media in the public build
-instead of embedding it in the function. The retained [account smoke test](prototype/README.md)
+instead of embedding it in the function. Only the waveform named by each scene
+manifest is bundled; obsolete `waveform-*.json` files from earlier edits are
+omitted. The build reports embedded sizes for app assets, manifests, and waveforms,
+plus remaining space under the 4 MiB code limit.
+The retained [account smoke test](prototype/README.md)
 records the earlier deployment proof. The [infrastructure record](docs/infrastructure.md)
 describes the current service and previous services parked with data retained.
 

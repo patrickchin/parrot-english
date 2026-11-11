@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { asset, validateScene } from '../src/scene.ts';
 test('the independently loaded scene rejects traversal, missing roles and overlapping timings', async () => {
   const scene = JSON.parse(await readFile(new URL('./fixtures/sintel/scene.json', import.meta.url), 'utf8'));
-  assert.equal(validateScene(scene).lines.length, 5);
-  assert.equal(asset(validateScene(scene), scene.video), scene.mediaBase + scene.video);
-  assert.deepEqual(validateScene({ ...scene, tags: ['SpongeBob', '海绵宝宝'] }).tags, ['SpongeBob', '海绵宝宝']);
-  assert.equal(validateScene({ ...scene, id: 'scene_example' }).id, 'scene_example');
+  assert.equal(validateScene(scene, '/fixture/').lines.length, 5);
+  assert.equal(asset(validateScene(scene, '/fixture/'), scene.video), scene.mediaBase + scene.video);
+  assert.deepEqual(validateScene({ ...scene, tags: ['SpongeBob', '海绵宝宝'] }, '/fixture/').tags, ['SpongeBob', '海绵宝宝']);
+  assert.equal(validateScene({ ...scene, id: 'scene_example' }, '/fixture/').id, 'scene_example');
   for (const change of [
     p => { p.tags = 'SpongeBob'; },
     p => { p.tags = [null]; },
@@ -28,7 +28,7 @@ test('the independently loaded scene rejects traversal, missing roles and overla
     p => { p.lines[0].words[0].end = 500; },
     p => { p.lines[0].words[0].text = 'wrong'; },
     p => { p.lines[0].words[1].start = p.lines[0].start - 0.1; },
-  ]) { const invalid = structuredClone(scene); change(invalid); assert.throws(() => validateScene(invalid)); }
+  ]) { const invalid = structuredClone(scene); change(invalid); assert.throws(() => validateScene(invalid, '/fixture/')); }
 });
 
 
@@ -45,7 +45,8 @@ test('all 79 internal-test scenes have valid scenes, timed words, waveforms and 
   const ids = new Set();
   for (const entry of scenes) {
     assert.match(entry.routeSlug ?? entry.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
-    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')));
+    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')), `/scenes/${entry.slug}/`);
+    assert.deepEqual((await readdir(`public/scenes/${entry.slug}`)).sort(), ['scene.json', scene.waveform].sort(), 'ship only the waveform referenced by the scene');
     const wave = validateWaveform(JSON.parse(await readFile(`public/scenes/${entry.slug}/${scene.waveform}`, 'utf8')));
     assert.equal(wave.duration, scene.duration);
     assert.equal(scene.title, entry.title);
@@ -60,7 +61,7 @@ test('all 79 internal-test scenes have valid scenes, timed words, waveforms and 
 });
 
 test('supporting speakers retain their dialogue without becoming practice roles', async () => {
-  const load = async slug => validateScene(JSON.parse(await readFile(`public/scenes/${slug}/scene.json`, 'utf8')));
+  const load = async slug => validateScene(JSON.parse(await readFile(`public/scenes/${slug}/scene.json`, 'utf8')), `/scenes/${slug}/`);
   const ben = await load('ben-blue-hat');
   const speakers = ben.lines.map(line => ben.roles.find(role => role.id === line.roleId).name);
   assert.deepEqual(speakers, ['霍莉', '本', '梅姨', '霍莉', '梅姨', '本', '霍莉']);
@@ -75,25 +76,25 @@ test('supporting speakers retain their dialogue without becoming practice roles'
   assert.equal(speed.roles.find(role => role.id === speed.lines[0].roleId).selectable, false);
   const invalid = structuredClone(ben);
   invalid.roles.forEach(role => { role.selectable = false; });
-  assert.throws(() => validateScene(invalid));
+  assert.throws(() => validateScene(invalid, '/fixture/'));
   const unused = structuredClone(ben);
   unused.roles.push({ id: 'role_unused', name: 'Unused', label: 'Unused', hint: '' });
-  assert.throws(() => validateScene(unused));
+  assert.throws(() => validateScene(unused, '/fixture/'));
   invalid.roles[0].selectable = 'yes';
-  assert.throws(() => validateScene(invalid));
+  assert.throws(() => validateScene(invalid, '/fixture/'));
 });
 
 
 test('TV scenes preserve independent roles and the shared sofa response', async () => {
   const recipe = JSON.parse(await readFile('content/tv-review-scenes.json', 'utf8'));
   for (const entry of recipe.scenes) {
-    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.publicSlug}/scene.json`, 'utf8')));
+    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.publicSlug}/scene.json`, 'utf8')), `/scenes/${entry.publicSlug}/`);
     assert.ok(scene.roles.filter(role => role.selectable !== false).length >= 2);
     assert.ok(scene.lines.length >= 3);
     assert.ok(scene.duration >= 10 && scene.duration <= 40);
     assert.equal(scene.lines.length, entry.lines.length);
   }
-  const sofa = validateScene(JSON.parse(await readFile('public/scenes/friends-moving-couch/scene.json', 'utf8')));
+  const sofa = validateScene(JSON.parse(await readFile('public/scenes/friends-moving-couch/scene.json', 'utf8')), '/scenes/friends-moving-couch/');
   const reply = sofa.lines.at(-1);
   assert.equal(reply.text, 'You think?');
   assert.equal(sofa.roles.find(role => role.id === reply.roleId).selectable, false);
@@ -108,9 +109,9 @@ test('successive TV batches use distinct source ranges and preserve the new cast
       if (entry.sourceId === other.sourceId) assert.ok(entry.end <= other.start || other.end <= entry.start, `overlapping cuts: ${entry.slug}, ${other.slug}`);
     }
   }
-  const game = validateScene(JSON.parse(await readFile('public/scenes/big-bang-the-present/scene.json', 'utf8')));
+  const game = validateScene(JSON.parse(await readFile('public/scenes/big-bang-the-present/scene.json', 'utf8')), '/scenes/big-bang-the-present/');
   assert.equal(game.roles.find(role => role.name === '艾米').selectable, false);
-  const einstein = validateScene(JSON.parse(await readFile('public/scenes/young-sheldon-einstein/scene.json', 'utf8')));
+  const einstein = validateScene(JSON.parse(await readFile('public/scenes/young-sheldon-einstein/scene.json', 'utf8')), '/scenes/young-sheldon-einstein/');
   assert.equal(einstein.roles.find(role => role.id === einstein.lines[0].roleId).name, '斯特吉斯博士');
 });
 
@@ -126,7 +127,7 @@ test('the third batch keeps all twelve exchanges distinct and preserves the wate
     assert.ok(scene.lines.filter((line, i, lines) => !i || line.roleId !== lines[i - 1].roleId).length >= 3);
     for (const other of all) if (scene !== other && scene.sourceId === other.sourceId) assert.ok(scene.end <= other.start || other.end <= scene.start, `overlapping scenes: ${scene.slug}, ${other.slug}`);
   }
-  const water = validateScene(JSON.parse(await readFile('public/scenes/himym-water-is-a-drink/scene.json', 'utf8')));
+  const water = validateScene(JSON.parse(await readFile('public/scenes/himym-water-is-a-drink/scene.json', 'utf8')), '/scenes/himym-water-is-a-drink/');
   assert.equal(water.roles.find(role => role.name === '马修').selectable, false);
 });
 
@@ -139,7 +140,7 @@ test('First English requires explicit level review and contains only short compl
   for (const entry of beginners) {
     const reviewed = recipe.scenes.find(scene => scene.publicSlug === entry.slug);
     assert.equal(reviewed.beginnerSuitable, true);
-    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')));
+    const scene = validateScene(JSON.parse(await readFile(`public/scenes/${entry.slug}/scene.json`, 'utf8')), `/scenes/${entry.slug}/`);
     assert.ok(scene.lines.every(line => line.text.split(/\s+/).length <= 5));
     assert.ok(new Set(scene.lines.map(line => line.roleId)).size >= 2);
     assert.ok(scene.lines.filter((line, i, lines) => !i || line.roleId !== lines[i - 1].roleId).length >= 3);

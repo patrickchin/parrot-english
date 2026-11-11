@@ -34,6 +34,7 @@
     "microphoneMissing": "No microphone was found. Connect one and try again.",
     "microphoneBusy": "Another app is using the microphone. Close that app and try again.",
     "seekTimeout": "Seeking is taking too long. Please try again.",
+    "pageNotFound": "Page not found",
     "unexpected": "Something went wrong. Please try again."
   },
   "dubs": {
@@ -159,7 +160,9 @@
     "showAllScenes": "Show all scenes",
     "chooseScene": "Choose scene: {{title}}",
     "prototypeNotice": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
-    "sceneCategories": "Scene categories"
+    "sceneCategories": "Scene categories",
+    "showsAndFilms": "Shows & films",
+    "allShowsAndFilms": "All shows & films"
   },
   "waveform": {
     "voiceWaveformComparison": "Voice waveform comparison",

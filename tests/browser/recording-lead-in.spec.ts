@@ -5,14 +5,9 @@ import { join } from 'node:path';
 
 test('a short Joey line has moving video context and retains early and late voice through replay and saving', async ({ page }, info) => {
   await page.addInitScript(() => {
-    type Probe = { blob?: Blob; videoStart?: number; leadInAudible?: boolean; replayVoiceDuration?: number };
+    type Probe = { videoStart?: number; leadInAudible?: boolean; replayVoiceDuration?: number };
     const probe: Probe = {};
     (window as unknown as { leadInProbe: Probe }).leadInProbe = probe;
-    const nativeURL = URL.createObjectURL;
-    URL.createObjectURL = function (object) {
-      if (object instanceof Blob && object.type.startsWith('audio/')) probe.blob = object;
-      return nativeURL.call(URL, object);
-    };
     const NativeContext = AudioContext;
     window.AudioContext = class extends NativeContext {
       createBufferSource() {
@@ -47,7 +42,8 @@ test('a short Joey line has moving video context and retains early and late voic
     } } });
   });
   await page.goto('/scenes/friends-thesaurus');
-  await page.getByRole('button', { name: '乔伊 3 句台词', exact: true }).click();
+  const scene = await (await page.request.get('/scenes/friends-thesaurus/scene.json')).json();
+  await page.getByRole('button', { name: '乔伊', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: "第 2 句：What'd I just say?", exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针', exact: true });
@@ -62,17 +58,23 @@ test('a short Joey line has moving video context and retains early and late voic
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.1);
   await expect(page.locator('video')).toHaveJSProperty('muted', true);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  const capture = await page.evaluate(async () => {
-    const probe = (window as unknown as { leadInProbe: { blob: Blob; videoStart: number; leadInAudible: boolean } }).leadInProbe;
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  const capture = await page.evaluate(async scene => {
+    const probe = (window as unknown as { leadInProbe: { videoStart: number; leadInAudible: boolean } }).leadInProbe;
+    const path = '/src/dub-store.ts';
+    const { loadDub } = await import(path) as typeof import('../../src/dub-store');
+    const draft = await loadDub(location.pathname.split('/').at(-1)!, scene);
+    const progress = Object.values(draft.lesson.progress).find(line => line.status === 'recorded')!;
+    if (progress.status !== 'recorded') throw new Error('No recorded take');
     const context = new AudioContext();
-    const buffer = await context.decodeAudioData(await probe.blob.arrayBuffer());
+    const buffer = await context.decodeAudioData(await progress.take.blob.arrayBuffer());
     const samples = buffer.getChannelData(0);
     const first = samples.findIndex(sample => Math.abs(sample) > 0.03);
     let last = samples.length - 1;
     while (last >= 0 && Math.abs(samples[last]) < 0.03) last--;
     await context.close();
     return { videoStart: probe.videoStart, leadInAudible: probe.leadInAudible, duration: buffer.duration, voiceDuration: (last - first) / buffer.sampleRate };
-  });
+  }, scene);
   expect(capture.videoStart).toBeCloseTo(9.465, 1);
   expect(capture.leadInAudible).toBe(true);
   expect(capture.duration).toBeGreaterThan(1.6);
