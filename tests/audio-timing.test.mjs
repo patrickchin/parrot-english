@@ -1,6 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { audibleContextTime, decodeTake } from '../src/audio-timing.ts';
+import { audibleContextTime, decodeTake, waitForAudioClock } from '../src/audio-timing.ts';
+
+test('audio readiness waits for the render clock, cancels promptly, and rejects a stopped context', async () => {
+  const clock = { currentTime: 0, sampleRate: 48000, state: 'running' };
+  let ready = false;
+  const operation = new AbortController();
+  const waiting = waitForAudioClock(clock, operation.signal).then(() => { ready = true; });
+  clock.currentTime = 128 / clock.sampleRate;
+  await new Promise(resolve => setTimeout(resolve, 15));
+  assert.equal(ready, false, 'the first parked render quantum is not enough');
+  clock.currentTime = 256 / clock.sampleRate;
+  await waiting;
+  assert.equal(ready, true);
+  const cancelled = waitForAudioClock(clock, operation.signal);
+  operation.abort();
+  await assert.rejects(cancelled, { name: 'AbortError' });
+  await assert.rejects(waitForAudioClock({ ...clock, state: 'suspended' }, new AbortController().signal));
+});
 
 test('audible clock uses the output sample timestamp and platform latency fallback', () => {
   const context = { currentTime: 10, baseLatency: 0.01, outputLatency: 0.09, getOutputTimestamp: () => ({ contextTime: 9.85, performanceTime: 1000 }) };

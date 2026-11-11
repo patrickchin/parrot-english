@@ -81,7 +81,8 @@ The minimum complete activity is:
 1. A guardian completes the required recording notice and authorization setup.
    The child then chooses a scene from the starter-pack shelf.
 2. The child chooses a role, watches the reference scene, and hears a line.
-3. The player gives a count-in, records the line, and offers listen and retry.
+3. The player shows a short video lead-in with a moving cursor, records the line
+   with a little extra room at either end, and offers listen and retry.
 4. The learner continues through the scene and watches the assembled dub.
 5. The child watches the result, retries a line, or chooses another scene.
    Starting a new learner/session clears the previous learner's takes.

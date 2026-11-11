@@ -9,6 +9,8 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await page.goto('/#patrick');
   const pack = await (await page.request.get('/packs/patrick/pack.json')).json();
   const turn: Line = pack.lines.find((l: Line) => l.roleId === pack.roles[0].id);
+  const nextTurn: Line | undefined = pack.lines[pack.lines.findIndex((l: Line) => l.id === turn.id) + 1];
+  const windowEnd = Math.min(pack.duration, turn.end + 0.5, nextTurn?.start ?? pack.duration);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const graph = page.getByRole('region', { name: '声音波形对比' });
   const cursor = graph.getByRole('progressbar', { name: '配音时间指针' });
@@ -51,15 +53,15 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await expect(page.locator('video')).toHaveJSProperty('muted', true);
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.15);
   // The role starts later in the scene; picture and cursor must share that offset.
-  await expect.poll(async () => Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - turn.start - Number(await cursor.getAttribute('aria-valuenow')))).toBeLessThan(0.15);
+  await expect.poll(async () => Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - Math.max(0, turn.start - 0.5) - Number(await cursor.getAttribute('aria-valuenow')))).toBeLessThan(0.15);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await expect(page.locator('video')).toHaveJSProperty('paused', true);
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await expect(page.locator('video')).toHaveJSProperty('paused', true);
   const stoppedAt = await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime);
-  expect(stoppedAt).toBeGreaterThanOrEqual(turn.end);
-  expect(stoppedAt).toBeLessThan(turn.end + 0.2);
+  expect(stoppedAt).toBeGreaterThanOrEqual(windowEnd);
+  expect(stoppedAt).toBeLessThan(windowEnd + 0.2);
   await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();

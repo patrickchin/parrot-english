@@ -2,9 +2,10 @@ import { useEffect, useReducer, useRef, useState, type RefObject } from 'react';
 import { asset, type Pack, type Line } from './pack';
 import { waveformStep } from './waveform';
 import { encodePcmWav } from './pcm-recording';
-import { audibleContextTime, decodeTake } from './audio-timing';
+import { audibleContextTime, decodeTake, waitForAudioClock } from './audio-timing';
 import { idleMedia, transitionMedia, type Activity, type MediaEvent } from './media-state';
 import { waitForVideo } from './video-events';
+import { lineWindow } from './line-window';
 
 export type Take = { blob: Blob; url: string; duration: number; start: number; peaks: number[] };
 export type Takes = Record<string, Take>;
@@ -138,10 +139,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
 
   async function record(line: Line) {
     const id = begin('recording');
+    const window = lineWindow(pack, line);
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
       setError('这个浏览器暂不支持录音。请用新版 Safari 或 Chrome 打开这个网址。'); return;
     }
-    setLivePeaks([]); setLiveStart(line.start); setTime(line.start);
+    setLivePeaks([]); setLiveStart(window.start); setTime(window.start);
     try {
       context.current ??= new AudioContext();
       const ctx = context.current;
@@ -169,7 +171,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       if (id !== operation.current) return;
       advance('AUDIO_READY', id);
       const chunks: Float32Array[] = [], peaks: number[] = [];
-      let captureContextStart = 0, captureStart = line.start;
+      let captureContextStart = 0, captureStart = window.start;
       let captureStage: 'starting' | 'recording' | 'saving' | 'finished' = 'starting';
       detail.port.onmessage = event => {
         if (id !== operation.current) return;
@@ -184,8 +186,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
         stream.current = null; finishRecording.current = null;
         const frames = chunks.reduce((total, chunk) => total + chunk.length, 0);
         const duration = frames / ctx.sampleRate;
-        const preroll = Math.max(0, line.start - captureStart);
-        const peak = peaks.slice(Math.ceil(preroll / waveformStep)).reduce((max, value) => Math.max(max, value), 0);
+        const preroll = Math.max(0, window.voiceStart - captureStart);
+        const peak = peaks.slice(Math.ceil(preroll / waveformStep), Math.ceil((window.voiceEnd - captureStart) / waveformStep)).reduce((max, value) => Math.max(max, value), 0);
         setLevel(0);
         if (duration - preroll < 0.3 || peak < 0.003) {
           setError('没听到清楚的声音。靠近麦克风，再试一次吧。'); return;
@@ -199,7 +201,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       captured.getAudioTracks().forEach(track => { track.onended = () => {
         if (id === operation.current && (captureStage === 'starting' || captureStage === 'recording')) stop('麦克风已断开，请连接后再试一次。');
       }; });
-      const el = await readyVideo(line.start, true);
+      const el = await readyVideo(window.start, window.start >= line.start);
       if (id !== operation.current) return;
       // Acknowledge the first retained PCM frame before releasing the picture.
       await new Promise<void>((resolve, reject) => {
@@ -235,10 +237,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       const meter = () => {
         if (id !== operation.current || captureStage !== 'recording') return;
         setTime(el.currentTime);
-        if (el.ended || el.currentTime >= line.end) { finishRecording.current?.(); return; }
+        if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
         if (ctx.state !== 'running' || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
           stop('播放或录音暂时中断了，请再试一次。'); return;
         }
+        el.muted = el.currentTime >= line.start && el.currentTime < line.end;
         if (peaks.length !== shownPeaks) {
           shownPeaks = peaks.length; setLivePeaks([...peaks]);
           setLevel(Math.min(1, (peaks.at(-1) ?? 0) * 3));
@@ -251,8 +254,9 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
 
   async function replay(takes: Takes, line?: Line) {
     const id = begin(line ? 'listening' : 'replay');
-    const start = line?.start ?? 0;
-    const end = line?.end ?? pack.duration;
+    const window = line && lineWindow(pack, line);
+    const start = window?.start ?? 0;
+    const end = window?.end ?? pack.duration;
     setTime(start);
     try {
       if (!pack.lines.some(line => takes[line.id])) {
@@ -265,6 +269,13 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       context.current ??= new AudioContext();
       const ctx = context.current;
       await ctx.resume();
+      if (id !== operation.current) return;
+      // Keep the output clock running through the lead-in, even when the first
+      // voice starts later. A fresh WebKit context can otherwise park at sample 128.
+      const output = ctx.createBufferSource(); output.buffer = ctx.createBuffer(1, 128, ctx.sampleRate); output.loop = true;
+      output.connect(ctx.destination); output.start();
+      output.onended = () => output.disconnect(); sources.current.push(output);
+      await waitForAudioClock(ctx, cancellation.current.signal);
       if (id !== operation.current) return;
       advance('AUDIO_READY', id);
       const buffers = await Promise.all(pack.lines.filter(turn => takes[turn.id] && (!line || turn.id === line.id)).map(async line => ({
@@ -301,11 +312,13 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       }
       for (const { line, buffer } of buffers) {
         const takeStart = takes[line.id].start;
-        const offset = Math.max(0, start - takeStart);
-        const duration = Math.min(buffer.duration, line.end - takeStart) - offset;
+        const window = lineWindow(pack, line);
+        const voiceStart = Math.max(start, window.voiceStart, takeStart);
+        const offset = voiceStart - takeStart;
+        const duration = Math.min(buffer.duration, window.voiceEnd - takeStart) - offset;
         if (duration <= 0) continue;
         const source = ctx.createBufferSource(); source.buffer = buffer; source.connect(ctx.destination);
-        source.start(Math.max(startAt, base + takeStart), offset, duration);
+        source.start(base + voiceStart, offset, duration);
         source.onended = () => source.disconnect(); sources.current.push(source);
       }
       replayClock.current = { context: ctx, start, startAt };
