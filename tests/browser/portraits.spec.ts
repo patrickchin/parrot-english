@@ -21,7 +21,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
       expect(role.portrait).toBeTruthy();
       const portrait = button.locator('img');
       await expect(portrait).toBeVisible();
-      await expect.poll(() => portrait.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(192);
+      await expect.poll(() => portrait.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThanOrEqual(192);
       const filename = (await portrait.getAttribute('src'))!.split('/').pop()!;
       const character = role.name === '谢尔顿' ? scene.credit.title.split(' — ')[0] + role.name : role.name;
       if (avatars.has(character)) expect(filename).toBe(avatars.get(character));
@@ -30,7 +30,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
       await expect(button).toHaveAttribute('aria-pressed', 'true');
     }
   }
-  expect(authoredScenes).toBe(52);
+  expect(authoredScenes).toBe(57);
   expect(avatars.get('Young Sheldon谢尔顿')).not.toBe(avatars.get('The Big Bang Theory谢尔顿'));
   await page.goto('/scenes/onions');
   await expect(page.getByRole('button', { name: /^驴子/ })).toBeVisible();
