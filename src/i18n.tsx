@@ -3,6 +3,21 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  "布鲁伊": "Bluey",
+  "班迪特爸爸": "Bandit",
+  "奇莉妈妈": "Chilli",
+  "能给我们几个真硬币吗？": "Can we have some real coins?",
+  "爸爸，这不公平！": "Dad, this is not fair!",
+  "煎饼飞得太高啦！": "That pancake went too high!",
+  "再给乔治一次机会": "Let George have another turn",
+  "我的魔法出了一点错": "My magic went a bit wrong",
+  "我有一个简单的计划": "I have got a simple plan",
+  "这样可不好感谢主人": "That is no way to thank our hosts",
+  "你可以自己做早餐": "You can make your own breakfast",
+  "会给我计时吗？": "Will I be timed?",
+  "那个棕色罐子里装的是什么？": "What was in that brown jar?",
+  "水原来是这么用的吗？": "Is that how water works?",
+  "我可憋不了两千六百年": "Not for two thousand six hundred years",
   "原片字幕": "Preview subtitles",
   "米茜": "Missy",
   "小乔治": "Georgie",

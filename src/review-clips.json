@@ -467,5 +467,125 @@
     "source": "https://www.youtube.com/watch?v=C-0azcoEvks&t=17s",
     "cohort": "teens",
     "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-literally/himym-literally-poster-9fa0918f2ad5.jpg"
+  },
+  {
+    "slug": "bluey-real-coins",
+    "routeSlug": "can-we-have-some-real-coins",
+    "title": "能给我们几个真硬币吗？",
+    "english": "Can we have some real coins?",
+    "note": "Bluey",
+    "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=9s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-real-coins/bluey-real-coins-poster-48976104fa5c.jpg"
+  },
+  {
+    "slug": "bluey-magic-claw",
+    "routeSlug": "dad-this-is-not-fair",
+    "title": "爸爸，这不公平！",
+    "english": "Dad, this is not fair!",
+    "note": "Bluey",
+    "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=84s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-magic-claw/bluey-magic-claw-poster-bbd3ecc853a0.jpg"
+  },
+  {
+    "slug": "peppa-pancake",
+    "routeSlug": "that-pancake-went-too-high",
+    "title": "煎饼飞得太高啦！",
+    "english": "That pancake went too high!",
+    "note": "Peppa Pig",
+    "source": "https://www.youtube.com/watch?v=mzGkxm7lLrg&t=0s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-pancake/peppa-pancake-poster-9b63f7cba22c.jpg"
+  },
+  {
+    "slug": "peppa-another-turn",
+    "routeSlug": "let-george-have-another-turn",
+    "title": "再给乔治一次机会",
+    "english": "Let George have another turn",
+    "note": "Peppa Pig",
+    "source": "https://www.youtube.com/watch?v=SHi4XJxgfVs&t=145s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-another-turn/peppa-another-turn-poster-4d682a01a0f8.jpg"
+  },
+  {
+    "slug": "holly-magic-mistake",
+    "routeSlug": "my-magic-went-a-bit-wrong",
+    "title": "我的魔法出了一点错",
+    "english": "My magic went a bit wrong",
+    "note": "Ben and Holly’s Little Kingdom",
+    "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=119s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/holly-magic-mistake/holly-magic-mistake-poster-2ea121b97714.jpg"
+  },
+  {
+    "slug": "ben-simple-plan",
+    "routeSlug": "i-have-got-a-simple-plan",
+    "title": "我有一个简单的计划",
+    "english": "I have got a simple plan",
+    "note": "Ben and Holly’s Little Kingdom",
+    "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=310s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-simple-plan/ben-simple-plan-poster-c4dc1fb282e3.jpg"
+  },
+  {
+    "slug": "young-sheldon-good-guest",
+    "routeSlug": "that-is-no-way-to-thank-our-hosts",
+    "title": "这样可不好感谢主人",
+    "english": "That is no way to thank our hosts",
+    "note": "Young Sheldon",
+    "source": "https://www.youtube.com/watch?v=VSrdPFnxYNA&t=0s",
+    "cohort": "older-children",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-good-guest/young-sheldon-good-guest-poster-8c3477d1dd5d.jpg"
+  },
+  {
+    "slug": "young-sheldon-own-breakfast",
+    "routeSlug": "you-can-make-your-own-breakfast",
+    "title": "你可以自己做早餐",
+    "english": "You can make your own breakfast",
+    "note": "Young Sheldon",
+    "source": "https://www.youtube.com/watch?v=sSd7LrihSik&t=114s",
+    "cohort": "older-children",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-own-breakfast/young-sheldon-own-breakfast-poster-55c94eb1bc0b.jpg"
+  },
+  {
+    "slug": "young-sheldon-timed-test",
+    "routeSlug": "will-i-be-timed",
+    "title": "会给我计时吗？",
+    "english": "Will I be timed?",
+    "note": "Young Sheldon",
+    "source": "https://www.youtube.com/watch?v=Twb47ynU4lw&t=110s",
+    "cohort": "older-children",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-timed-test/young-sheldon-timed-test-poster-077d0593185c.jpg"
+  },
+  {
+    "slug": "friends-brown-jar",
+    "routeSlug": "what-was-in-that-brown-jar",
+    "title": "那个棕色罐子里装的是什么？",
+    "english": "What was in that brown jar?",
+    "note": "Friends",
+    "source": "https://www.youtube.com/watch?v=IHJI6_VpH00&t=7s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-brown-jar/friends-brown-jar-poster-ba64e48c5ef8.jpg"
+  },
+  {
+    "slug": "himym-water-is-a-drink",
+    "routeSlug": "is-that-how-water-works",
+    "title": "水原来是这么用的吗？",
+    "english": "Is that how water works?",
+    "note": "How I Met Your Mother",
+    "source": "https://www.youtube.com/watch?v=C-0azcoEvks&t=1s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-water-is-a-drink/himym-water-is-a-drink-poster-cd8da710eff5.jpg"
+  },
+  {
+    "slug": "big-bang-long-lesson",
+    "routeSlug": "not-for-two-thousand-six-hundred-years",
+    "title": "我可憋不了两千六百年",
+    "english": "Not for two thousand six hundred years",
+    "note": "The Big Bang Theory",
+    "source": "https://www.youtube.com/watch?v=hiBXVUMDugY&t=106s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/big-bang-long-lesson/big-bang-long-lesson-poster-56c3606bec56.jpg"
   }
 ]

@@ -1,0 +1,389 @@
+{
+  "version": 1,
+  "id": "pack_pZDW-Ao5SAw",
+  "title": "煎饼飞得太高啦！",
+  "tags": [
+    "Peppa Pig",
+    "Peppa",
+    "Daddy Pig",
+    "Mummy Pig",
+    "pancakes",
+    "cooking",
+    "佩奇",
+    "煎饼",
+    "做饭"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 29.76,
+  "video": "peppa-pancake-review-9b63f7cba22c.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-pancake/",
+  "poster": "peppa-pancake-poster-9b63f7cba22c.jpg",
+  "waveform": "waveform-9b63f7cba22c.json",
+  "roles": [
+    {
+      "id": "role_hUKB1yRtZXw",
+      "name": "猪爸爸",
+      "label": "猪爸爸",
+      "hint": "5 句台词"
+    },
+    {
+      "id": "role_ivc93Nvkxm8",
+      "name": "佩奇",
+      "label": "佩奇",
+      "hint": "1 句台词"
+    },
+    {
+      "id": "role_k125HlEUqb8",
+      "name": "猪妈妈",
+      "label": "猪妈妈",
+      "hint": "1 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_3uKb1ZFnRDg",
+      "roleId": "role_hUKB1yRtZXw",
+      "start": 0.32,
+      "end": 1.6,
+      "text": "Is everyone watching?",
+      "hint": "大家都在看吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 0.36,
+          "end": 0.42
+        },
+        {
+          "text": "everyone",
+          "start": 0.56,
+          "end": 0.98
+        },
+        {
+          "text": "watching?",
+          "start": 1.06,
+          "end": 1.54
+        }
+      ]
+    },
+    {
+      "id": "line_-hgO5K9WwP0",
+      "roleId": "role_hUKB1yRtZXw",
+      "start": 4.421,
+      "end": 8.903,
+      "text": "The secret of making a good pancake is to flip it high into the air.",
+      "hint": "做出好煎饼的秘诀，就是把它高高地翻到空中。",
+      "words": [
+        {
+          "text": "The",
+          "start": 4.461,
+          "end": 4.541
+        },
+        {
+          "text": "secret",
+          "start": 4.681,
+          "end": 5.042
+        },
+        {
+          "text": "of",
+          "start": 5.122,
+          "end": 5.162
+        },
+        {
+          "text": "making",
+          "start": 5.242,
+          "end": 5.482
+        },
+        {
+          "text": "a",
+          "start": 5.562,
+          "end": 5.602
+        },
+        {
+          "text": "good",
+          "start": 5.702,
+          "end": 5.882
+        },
+        {
+          "text": "pancake",
+          "start": 5.982,
+          "end": 6.442
+        },
+        {
+          "text": "is",
+          "start": 6.882,
+          "end": 6.942
+        },
+        {
+          "text": "to",
+          "start": 7.002,
+          "end": 7.082
+        },
+        {
+          "text": "flip",
+          "start": 7.202,
+          "end": 7.382
+        },
+        {
+          "text": "it",
+          "start": 7.462,
+          "end": 7.522
+        },
+        {
+          "text": "high",
+          "start": 7.742,
+          "end": 8.142
+        },
+        {
+          "text": "into",
+          "start": 8.242,
+          "end": 8.403
+        },
+        {
+          "text": "the",
+          "start": 8.463,
+          "end": 8.543
+        },
+        {
+          "text": "air.",
+          "start": 8.703,
+          "end": 8.843
+        }
+      ]
+    },
+    {
+      "id": "line_KLZ2mCfC0H4",
+      "roleId": "role_hUKB1yRtZXw",
+      "start": 10.343,
+      "end": 15.405,
+      "text": "A-one, two, three, hoopla!",
+      "hint": "一、二、三，嘿！",
+      "words": [
+        {
+          "text": "A-one,",
+          "start": 10.383,
+          "end": 10.843
+        },
+        {
+          "text": "two,",
+          "start": 11.724,
+          "end": 11.984
+        },
+        {
+          "text": "three,",
+          "start": 13.044,
+          "end": 13.404
+        },
+        {
+          "text": "hoopla!",
+          "start": 14.284,
+          "end": 15.345
+        }
+      ]
+    },
+    {
+      "id": "line_vDjMCtG12Y8",
+      "roleId": "role_ivc93Nvkxm8",
+      "start": 17.1,
+      "end": 20.226,
+      "text": "Silly Daddy!",
+      "hint": "傻爸爸！",
+      "words": [
+        {
+          "text": "Silly",
+          "start": 19.446,
+          "end": 19.706
+        },
+        {
+          "text": "Daddy!",
+          "start": 19.826,
+          "end": 20.166
+        }
+      ]
+    },
+    {
+      "id": "line_5tZwT1ZUr2I",
+      "roleId": "role_hUKB1yRtZXw",
+      "start": 20.786,
+      "end": 23.267,
+      "text": "Oh, maybe that was just a bit too high.",
+      "hint": "哦，可能刚才翻得有点太高了。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 20.826,
+          "end": 20.886
+        },
+        {
+          "text": "maybe",
+          "start": 21.587,
+          "end": 21.807
+        },
+        {
+          "text": "that",
+          "start": 21.847,
+          "end": 21.947
+        },
+        {
+          "text": "was",
+          "start": 22.007,
+          "end": 22.087
+        },
+        {
+          "text": "just",
+          "start": 22.147,
+          "end": 22.287
+        },
+        {
+          "text": "a",
+          "start": 22.347,
+          "end": 22.367
+        },
+        {
+          "text": "bit",
+          "start": 22.407,
+          "end": 22.527
+        },
+        {
+          "text": "too",
+          "start": 22.647,
+          "end": 22.847
+        },
+        {
+          "text": "high.",
+          "start": 22.927,
+          "end": 23.207
+        }
+      ]
+    },
+    {
+      "id": "line_Nh8UmhbAdqQ",
+      "roleId": "role_k125HlEUqb8",
+      "start": 23.447,
+      "end": 27.108,
+      "text": "Oh, what a shame. That was the last pancake.",
+      "hint": "哦，真可惜，那是最后一张煎饼了。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 23.487,
+          "end": 23.567
+        },
+        {
+          "text": "what",
+          "start": 24.387,
+          "end": 24.587
+        },
+        {
+          "text": "a",
+          "start": 24.687,
+          "end": 24.727
+        },
+        {
+          "text": "shame.",
+          "start": 24.908,
+          "end": 25.348
+        },
+        {
+          "text": "That",
+          "start": 25.728,
+          "end": 25.828
+        },
+        {
+          "text": "was",
+          "start": 25.888,
+          "end": 25.968
+        },
+        {
+          "text": "the",
+          "start": 26.028,
+          "end": 26.088
+        },
+        {
+          "text": "last",
+          "start": 26.148,
+          "end": 26.388
+        },
+        {
+          "text": "pancake.",
+          "start": 26.468,
+          "end": 27.048
+        }
+      ]
+    },
+    {
+      "id": "line__hm8RuWpxOw",
+      "roleId": "role_hUKB1yRtZXw",
+      "start": 27.668,
+      "end": 29.589,
+      "text": "It should be a simple matter to get it down.",
+      "hint": "把它弄下来应该很简单。",
+      "words": [
+        {
+          "text": "It",
+          "start": 27.708,
+          "end": 27.748
+        },
+        {
+          "text": "should",
+          "start": 27.828,
+          "end": 28.028
+        },
+        {
+          "text": "be",
+          "start": 28.068,
+          "end": 28.129
+        },
+        {
+          "text": "a",
+          "start": 28.189,
+          "end": 28.209
+        },
+        {
+          "text": "simple",
+          "start": 28.269,
+          "end": 28.509
+        },
+        {
+          "text": "matter",
+          "start": 28.569,
+          "end": 28.789
+        },
+        {
+          "text": "to",
+          "start": 28.849,
+          "end": 28.889
+        },
+        {
+          "text": "get",
+          "start": 28.929,
+          "end": 29.029
+        },
+        {
+          "text": "it",
+          "start": 29.109,
+          "end": 29.149
+        },
+        {
+          "text": "down.",
+          "start": 29.209,
+          "end": 29.529
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Peppa Pig — Pancakes",
+    "attribution": "Peppa Pig © Astley Baker Davies / Entertainment One / Hasbro",
+    "source": "https://www.youtube.com/watch?v=mzGkxm7lLrg&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–29.75 秒的连续节选。Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+  }
+}

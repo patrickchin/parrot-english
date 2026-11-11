@@ -1,3 +1,4 @@
+import { scenePath } from '../../src/app/routes';
 import { test, expect, setLanguage } from './fixtures';
 import { clips } from '../../src/catalog';
 import { mkdir } from 'node:fs/promises';
@@ -23,7 +24,7 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(categories.getByRole('button')).toHaveCount(4);
     await expect(categories.getByText(`${olderChildCount} 个片段`, { exact: true })).toBeVisible();
-    await expect(categories.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
+    await expect(teens.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
     await expect(teens).toHaveAttribute('aria-pressed', 'true');
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
@@ -42,9 +43,9 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
   await expect(page.getByRole('listitem')).toHaveCount(teenCount);
 });
 
-for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
+for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook', 'bluey-real-coins', 'young-sheldon-good-guest', 'big-bang-long-lesson']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
-  await page.goto('/scenes/' + slug);
+  await page.goto(scenePath(slug));
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
