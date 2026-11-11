@@ -23,7 +23,7 @@
   purpose, following established patterns. Convenience, fewer setup steps, or
   fewer resources alone do not justify assigning a responsibility to the wrong
   component. This applies to prototypes as well as production work.
-- Store video, audio, recordings, and content-pack media in blob/object storage
+- Store video, audio, recordings, and content-scene media in blob/object storage
   (Alibaba OSS for this prototype). Functions serve application code and APIs;
   never embed media bytes or base64 media in a function bundle.
 - A quick prototype still uses these storage boundaries. Do not compress media

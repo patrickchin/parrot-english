@@ -1,6 +1,6 @@
 import { scenePath } from '../../src/app/routes';
 import { test, expect } from './fixtures';
-import type { Line } from '../../src/pack';
+import type { Line } from '../../src/scene';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -8,10 +8,10 @@ import { join } from 'node:path';
 test('reference, live take, and saved take share a moving timeline; cancelling keeps the previous trace', async ({ page, browserName }, info) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');
   await page.goto('/scenes/patrick');
-  const pack = await (await page.request.get('/packs/patrick/pack.json')).json();
-  const turn: Line = pack.lines.find((l: Line) => l.roleId === pack.roles[0].id);
-  const nextTurn: Line | undefined = pack.lines[pack.lines.findIndex((l: Line) => l.id === turn.id) + 1];
-  const windowEnd = Math.min(pack.duration, turn.end + 0.5, nextTurn?.start ?? pack.duration);
+  const scene = await (await page.request.get('/scenes/patrick/scene.json')).json();
+  const turn: Line = scene.lines.find((l: Line) => l.roleId === scene.roles[0].id);
+  const nextTurn: Line | undefined = scene.lines[scene.lines.findIndex((l: Line) => l.id === turn.id) + 1];
+  const windowEnd = Math.min(scene.duration, turn.end + 0.5, nextTurn?.start ?? scene.duration);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const graph = page.getByRole('region', { name: '声音波形对比' });
   const cursor = graph.getByRole('progressbar', { name: '配音时间指针' });
@@ -82,7 +82,7 @@ test('missing waveform metadata leaves recording and reference playback availabl
 });
 
 
-test('scene, caption, waveforms and every main action fit one screen across the starter packs', async ({ page }, info) => {
+test('scene, caption, waveforms and every main action fit one screen across the starter scenes', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'chocolate', 'infinity']) {
     await page.goto(scenePath(slug));
     await page.getByRole('button', { name: '片段与来源', exact: true }).click();
@@ -108,8 +108,8 @@ test('scene, caption, waveforms and every main action fit one screen across the 
       const words = await page.getByRole('group', { name: '台词', exact: true }).boundingBox();
       expect(words!.y).toBeGreaterThanOrEqual(waveform!.y + waveform!.height);
       expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(10);
-      const scene = await page.getByRole('region', { name: '电影片段' }).boundingBox();
-      expect(scene!.height).toBeGreaterThanOrEqual(140);
+      const entry = await page.getByRole('region', { name: '电影片段' }).boundingBox();
+      expect(entry!.height).toBeGreaterThanOrEqual(140);
       if (slug === 'onions' && info.project.name === 'chromium' && [375, 1280].includes(viewport.width)) {
         const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
         await mkdir(folder, { recursive: true });
@@ -123,21 +123,21 @@ test('scene, caption, waveforms and every main action fit one screen across the 
 test('plain dialogue and controls stay fixed when switching lines and skipping to the result', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
     await page.goto(scenePath(slug));
-    const pack = await (await page.request.get(`/packs/${slug}/pack.json`)).json();
-    const lines: Line[] = pack.lines.filter((line: Line) => line.roleId === pack.roles[0].id);
+    const scene = await (await page.request.get(`/scenes/${slug}/scene.json`)).json();
+    const lines: Line[] = scene.lines.filter((line: Line) => line.roleId === scene.roles[0].id);
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
     for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 1024 }, { width: 1280, height: 720 }]) {
       await page.setViewportSize(viewport);
-      const scene = page.getByRole('region', { name: '电影片段' });
+      const entry = page.getByRole('region', { name: '电影片段' });
       const graph = page.getByRole('region', { name: '声音波形对比' });
       const caption = page.getByRole('group', { name: '台词', exact: true });
       const actions = page.getByRole('group', { name: '配音操作' });
-      const before = await Promise.all([scene, graph, caption, actions].map(el => el.boundingBox()));
+      const before = await Promise.all([entry, graph, caption, actions].map(el => el.boundingBox()));
       for (const [i, line] of lines.entries()) {
         await page.getByRole('button', { name: `第 ${i + 1} 句：${line.text}`, exact: true }).click();
         await expect(caption.getByText(line.text, { exact: true })).toBeVisible();
         await expect(caption.getByText(line.hint, { exact: true })).toBeVisible();
-        const after = await Promise.all([scene, graph, caption, actions].map(el => el.boundingBox()));
+        const after = await Promise.all([entry, graph, caption, actions].map(el => el.boundingBox()));
         for (const [index, box] of after.entries()) {
           for (const dimension of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(box![dimension] - before[index]![dimension]), `${slug} line ${i + 1}, ${viewport.width}px ${dimension}`).toBeLessThan(1);
@@ -168,7 +168,7 @@ test('plain dialogue and controls stay fixed when switching lines and skipping t
 // Sample what was actually painted, rather than relying on an occasional poll.
 test('playhead advances on animation frames and stays on the video clock', async ({ page }) => {
   await page.goto('/scenes/onions');
-  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
+  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针' });
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
@@ -185,7 +185,7 @@ test('playhead advances on animation frames and stays on the video clock', async
       requestAnimationFrame(sample);
     });
     return samples;
-  }, pack.lines[0].start);
+  }, scene.lines[0].start);
   const changes = samples.filter((s, i) => i > 0 && s.x !== samples[i - 1].x);
   // The old 80 ms throttle produces at most 13 changes in this window.
   expect(changes.length).toBeGreaterThan(samples.length * 0.65);
@@ -193,5 +193,5 @@ test('playhead advances on animation frames and stays on the video clock', async
   expect(Math.max(...samples.map(s => Math.abs(s.media - s.cursor)))).toBeLessThan(0.06);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   const stopped = Number(await cursor.getAttribute('aria-valuenow'));
-  expect(Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - pack.lines[0].start - stopped)).toBeLessThan(0.02);
+  expect(Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - scene.lines[0].start - stopped)).toBeLessThan(0.02);
 });

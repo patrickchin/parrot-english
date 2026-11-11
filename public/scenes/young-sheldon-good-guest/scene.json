@@ -1,0 +1,467 @@
+{
+  "version": 1,
+  "id": "scene_v-EwUnOY6rw",
+  "title": "这样可不好感谢主人",
+  "tags": [
+    "Young Sheldon",
+    "Sheldon",
+    "George Cooper",
+    "sleepover",
+    "kindness",
+    "谢尔顿",
+    "做客",
+    "礼貌"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 25.734,
+  "video": "young-sheldon-good-guest-review-8c3477d1dd5d.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-good-guest/",
+  "poster": "young-sheldon-good-guest-poster-8c3477d1dd5d.jpg",
+  "waveform": "waveform-8c3477d1dd5d.json",
+  "roles": [
+    {
+      "id": "role_g5_sn-Abuf0",
+      "name": "乔治爸爸",
+      "label": "乔治爸爸",
+      "hint": "4 句台词"
+    },
+    {
+      "id": "role_K78BsqE_7Yc",
+      "name": "谢尔顿",
+      "label": "谢尔顿",
+      "hint": "3 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_Dht8R4TiIiA",
+      "roleId": "role_g5_sn-Abuf0",
+      "start": 0.28,
+      "end": 7.706,
+      "text": "Hey, here's a funny prank you can try tonight. When Tam falls asleep, put some shaving cream in his hand and then tickle his nose.",
+      "hint": "嘿，今晚你可以试个好玩的恶作剧。等谭睡着，在他手上放点剃须膏，再挠挠他的鼻子。",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 0.36,
+          "end": 0.62
+        },
+        {
+          "text": "here's",
+          "start": 1.801,
+          "end": 1.962
+        },
+        {
+          "text": "a",
+          "start": 2.002,
+          "end": 2.022
+        },
+        {
+          "text": "funny",
+          "start": 2.062,
+          "end": 2.242
+        },
+        {
+          "text": "prank",
+          "start": 2.302,
+          "end": 2.502
+        },
+        {
+          "text": "you",
+          "start": 2.562,
+          "end": 2.622
+        },
+        {
+          "text": "can",
+          "start": 2.682,
+          "end": 2.762
+        },
+        {
+          "text": "try",
+          "start": 2.822,
+          "end": 2.942
+        },
+        {
+          "text": "tonight.",
+          "start": 3.042,
+          "end": 3.403
+        },
+        {
+          "text": "When",
+          "start": 3.863,
+          "end": 3.963
+        },
+        {
+          "text": "Tam",
+          "start": 4.003,
+          "end": 4.183
+        },
+        {
+          "text": "falls",
+          "start": 4.263,
+          "end": 4.463
+        },
+        {
+          "text": "asleep,",
+          "start": 4.524,
+          "end": 4.784
+        },
+        {
+          "text": "put",
+          "start": 4.864,
+          "end": 4.964
+        },
+        {
+          "text": "some",
+          "start": 5.004,
+          "end": 5.124
+        },
+        {
+          "text": "shaving",
+          "start": 5.184,
+          "end": 5.504
+        },
+        {
+          "text": "cream",
+          "start": 5.544,
+          "end": 5.785
+        },
+        {
+          "text": "in",
+          "start": 5.865,
+          "end": 5.925
+        },
+        {
+          "text": "his",
+          "start": 5.965,
+          "end": 6.065
+        },
+        {
+          "text": "hand",
+          "start": 6.105,
+          "end": 6.325
+        },
+        {
+          "text": "and",
+          "start": 6.725,
+          "end": 6.785
+        },
+        {
+          "text": "then",
+          "start": 6.805,
+          "end": 6.885
+        },
+        {
+          "text": "tickle",
+          "start": 6.945,
+          "end": 7.166
+        },
+        {
+          "text": "his",
+          "start": 7.226,
+          "end": 7.326
+        },
+        {
+          "text": "nose.",
+          "start": 7.366,
+          "end": 7.646
+        }
+      ]
+    },
+    {
+      "id": "line_m_pTVLlh8CM",
+      "roleId": "role_K78BsqE_7Yc",
+      "start": 8.206,
+      "end": 8.547,
+      "text": "Why?",
+      "hint": "为什么？",
+      "words": [
+        {
+          "text": "Why?",
+          "start": 8.246,
+          "end": 8.487
+        }
+      ]
+    },
+    {
+      "id": "line_374JsBEugb0",
+      "roleId": "role_g5_sn-Abuf0",
+      "start": 9.367,
+      "end": 14.071,
+      "text": "Because then he'll go to scratch his nose and get shaving cream on his face.",
+      "hint": "这样他去挠鼻子，就会把剃须膏弄到脸上。",
+      "words": [
+        {
+          "text": "Because",
+          "start": 9.407,
+          "end": 9.748
+        },
+        {
+          "text": "then",
+          "start": 10.208,
+          "end": 10.308
+        },
+        {
+          "text": "he'll",
+          "start": 10.368,
+          "end": 10.548
+        },
+        {
+          "text": "go",
+          "start": 10.588,
+          "end": 10.648
+        },
+        {
+          "text": "to",
+          "start": 10.728,
+          "end": 10.768
+        },
+        {
+          "text": "scratch",
+          "start": 11.649,
+          "end": 11.929
+        },
+        {
+          "text": "his",
+          "start": 11.989,
+          "end": 12.049
+        },
+        {
+          "text": "nose",
+          "start": 12.129,
+          "end": 12.41
+        },
+        {
+          "text": "and",
+          "start": 12.49,
+          "end": 12.55
+        },
+        {
+          "text": "get",
+          "start": 12.61,
+          "end": 12.71
+        },
+        {
+          "text": "shaving",
+          "start": 12.77,
+          "end": 13.09
+        },
+        {
+          "text": "cream",
+          "start": 13.17,
+          "end": 13.37
+        },
+        {
+          "text": "on",
+          "start": 13.531,
+          "end": 13.591
+        },
+        {
+          "text": "his",
+          "start": 13.651,
+          "end": 13.751
+        },
+        {
+          "text": "face.",
+          "start": 13.791,
+          "end": 14.011
+        }
+      ]
+    },
+    {
+      "id": "line_t3_8dM35UwM",
+      "roleId": "role_K78BsqE_7Yc",
+      "start": 14.892,
+      "end": 15.552,
+      "text": "And then what?",
+      "hint": "然后呢？",
+      "words": [
+        {
+          "text": "And",
+          "start": 14.932,
+          "end": 15.032
+        },
+        {
+          "text": "then",
+          "start": 15.072,
+          "end": 15.212
+        },
+        {
+          "text": "what?",
+          "start": 15.312,
+          "end": 15.492
+        }
+      ]
+    },
+    {
+      "id": "line_BQjE6ydssvU",
+      "roleId": "role_g5_sn-Abuf0",
+      "start": 16.293,
+      "end": 18.554,
+      "text": "Well, that's it.",
+      "hint": "呃，就这样。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 16.333,
+          "end": 16.573
+        },
+        {
+          "text": "that's",
+          "start": 18.034,
+          "end": 18.214
+        },
+        {
+          "text": "it.",
+          "start": 18.414,
+          "end": 18.494
+        }
+      ]
+    },
+    {
+      "id": "line_1Kpn60Nsa8w",
+      "roleId": "role_K78BsqE_7Yc",
+      "start": 19.635,
+      "end": 24.179,
+      "text": "But I'm a guest in their home, and that doesn't seem like a very good way to repay their kindness.",
+      "hint": "可我是他们家的客人，这样似乎不太能报答他们的好意。",
+      "words": [
+        {
+          "text": "But",
+          "start": 19.675,
+          "end": 19.775
+        },
+        {
+          "text": "I'm",
+          "start": 19.895,
+          "end": 19.956
+        },
+        {
+          "text": "a",
+          "start": 20.036,
+          "end": 20.056
+        },
+        {
+          "text": "guest",
+          "start": 20.136,
+          "end": 20.316
+        },
+        {
+          "text": "in",
+          "start": 20.436,
+          "end": 20.476
+        },
+        {
+          "text": "their",
+          "start": 20.556,
+          "end": 20.656
+        },
+        {
+          "text": "home,",
+          "start": 20.716,
+          "end": 21.016
+        },
+        {
+          "text": "and",
+          "start": 21.317,
+          "end": 21.377
+        },
+        {
+          "text": "that",
+          "start": 21.417,
+          "end": 21.497
+        },
+        {
+          "text": "doesn't",
+          "start": 21.557,
+          "end": 21.777
+        },
+        {
+          "text": "seem",
+          "start": 21.857,
+          "end": 21.997
+        },
+        {
+          "text": "like",
+          "start": 22.077,
+          "end": 22.197
+        },
+        {
+          "text": "a",
+          "start": 22.277,
+          "end": 22.297
+        },
+        {
+          "text": "very",
+          "start": 22.337,
+          "end": 22.518
+        },
+        {
+          "text": "good",
+          "start": 22.578,
+          "end": 22.698
+        },
+        {
+          "text": "way",
+          "start": 22.758,
+          "end": 22.858
+        },
+        {
+          "text": "to",
+          "start": 22.898,
+          "end": 22.958
+        },
+        {
+          "text": "repay",
+          "start": 22.978,
+          "end": 23.238
+        },
+        {
+          "text": "their",
+          "start": 23.338,
+          "end": 23.438
+        },
+        {
+          "text": "kindness.",
+          "start": 23.518,
+          "end": 24.119
+        }
+      ]
+    },
+    {
+      "id": "line_8PPgarKRg6U",
+      "roleId": "role_g5_sn-Abuf0",
+      "start": 24.959,
+      "end": 25.46,
+      "text": "Never mind.",
+      "hint": "算了，当我没说。",
+      "words": [
+        {
+          "text": "Never",
+          "start": 24.999,
+          "end": 25.16
+        },
+        {
+          "text": "mind.",
+          "start": 25.22,
+          "end": 25.4
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Young Sheldon — S2 E4",
+    "attribution": "Warner Bros. Television / CBS",
+    "source": "https://www.youtube.com/watch?v=VSrdPFnxYNA&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0.4–26.1 秒的连续节选。A shaving-cream prank is described and rejected; it is not performed. The later eye-stinging discussion and cultural stereotypes are excluded."
+  }
+}

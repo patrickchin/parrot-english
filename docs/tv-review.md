@@ -19,7 +19,7 @@ Under `content/local-dubbing/review/` in the shared main checkout:
 
 Open an individual MP4 or `play-all.m3u8`. Matching TXT files contain source
 links, characters, summaries, practice goals, and specific content notes.
-`index.json` records the source ranges and output SHA-256 hashes. The application packs include original English audio, bilingual dialogue,
+`index.json` records the source ranges and output SHA-256 hashes. The application scenes include original English audio, bilingual dialogue,
 selectable speaking roles, timed words, and reference waveforms.
 
 ## First batch
@@ -121,9 +121,9 @@ frame sheets are under `~/Pictures/Screenshots/Codex/parrot-english/` with the
 The batch retains `redistribution-not-cleared` status and the existing internal
 test access settings. Public-release rights have not been established.
 
-`node scripts/prepare-tv-packs.mjs` prepares independent packs and appends
+`node scripts/prepare-tv-scenes.mjs` prepares independent scenes and appends
 them to the catalogue. Their hashed MP4 and poster files are stored in the
-existing OSS bucket; ESA holds only code and structured pack/waveform metadata.
+existing OSS bucket; ESA holds only code and structured scene/waveform metadata.
 The upload manifest is generated under the ignored `tv-release/media.json`.
 The first batch uploaded 16 media objects; the second batch adds 24 objects.
 Uploads are checked against MD5/size metadata.

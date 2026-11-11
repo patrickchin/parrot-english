@@ -1,0 +1,264 @@
+{
+  "version": 1,
+  "id": "scene_y50gF2Cn",
+  "title": "谁都能做饭！",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 14.715,
+  "video": "anyone-can-cook-review-d688ba8a437a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/anyone-can-cook/",
+  "poster": "anyone-can-cook-poster-d688ba8a437a.jpg",
+  "waveform": "waveform-d688ba8a437a.json",
+  "roles": [
+    {
+      "id": "role_CwTyhoLe",
+      "name": "古斯托",
+      "label": "古斯托",
+      "hint": "3 句台词",
+      "portrait": "gusteau-avatar-d72b11189b1d.jpg"
+    },
+    {
+      "id": "role_43NdYGbMURo",
+      "name": "小米",
+      "label": "小米",
+      "hint": "2 句台词",
+      "portrait": "remy-avatar-f22873b7892b.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_7w9CrX8RIdI",
+      "roleId": "role_CwTyhoLe",
+      "start": 0.12,
+      "end": 1.281,
+      "text": "But he could.",
+      "hint": "但是他可以学会。",
+      "words": [
+        {
+          "text": "But",
+          "start": 0.16,
+          "end": 0.3
+        },
+        {
+          "text": "he",
+          "start": 0.641,
+          "end": 0.721
+        },
+        {
+          "text": "could.",
+          "start": 0.821,
+          "end": 1.061
+        }
+      ]
+    },
+    {
+      "id": "line_3MIQAGMvrzs",
+      "roleId": "role_43NdYGbMURo",
+      "start": 1.642,
+      "end": 3.304,
+      "text": "Uh, no.",
+      "hint": "呃，不行。",
+      "words": [
+        {
+          "text": "Uh,",
+          "start": 1.682,
+          "end": 1.782
+        },
+        {
+          "text": "no.",
+          "start": 3.004,
+          "end": 3.084
+        }
+      ]
+    },
+    {
+      "id": "line_2Xpw7xkPGZw",
+      "roleId": "role_CwTyhoLe",
+      "start": 3.385,
+      "end": 7.17,
+      "text": "How do you know? What do I always say? Anyone can cook.",
+      "hint": "你怎么知道？我常说什么？谁都能做饭。",
+      "words": [
+        {
+          "text": "How",
+          "start": 3.425,
+          "end": 3.525
+        },
+        {
+          "text": "do",
+          "start": 3.605,
+          "end": 3.645
+        },
+        {
+          "text": "you",
+          "start": 3.745,
+          "end": 3.825
+        },
+        {
+          "text": "know?",
+          "start": 3.865,
+          "end": 4.046
+        },
+        {
+          "text": "What",
+          "start": 4.486,
+          "end": 4.586
+        },
+        {
+          "text": "do",
+          "start": 4.626,
+          "end": 4.686
+        },
+        {
+          "text": "I",
+          "start": 4.787,
+          "end": 4.807
+        },
+        {
+          "text": "always",
+          "start": 4.927,
+          "end": 5.147
+        },
+        {
+          "text": "say?",
+          "start": 5.187,
+          "end": 5.427
+        },
+        {
+          "text": "Anyone",
+          "start": 5.788,
+          "end": 6.269
+        },
+        {
+          "text": "can",
+          "start": 6.429,
+          "end": 6.569
+        },
+        {
+          "text": "cook.",
+          "start": 6.729,
+          "end": 6.95
+        }
+      ]
+    },
+    {
+      "id": "line_AGWKvVMiHCg",
+      "roleId": "role_43NdYGbMURo",
+      "start": 7.57,
+      "end": 11.295,
+      "text": "Well, yeah, anyone can. That doesn't mean that anyone should.",
+      "hint": "嗯，对，谁都能做。可这不代表谁都应该做。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 7.61,
+          "end": 7.811
+        },
+        {
+          "text": "yeah,",
+          "start": 8.031,
+          "end": 8.271
+        },
+        {
+          "text": "anyone",
+          "start": 8.492,
+          "end": 8.772
+        },
+        {
+          "text": "can.",
+          "start": 8.892,
+          "end": 9.333
+        },
+        {
+          "text": "That",
+          "start": 9.613,
+          "end": 9.713
+        },
+        {
+          "text": "doesn't",
+          "start": 9.773,
+          "end": 9.974
+        },
+        {
+          "text": "mean",
+          "start": 10.014,
+          "end": 10.114
+        },
+        {
+          "text": "that",
+          "start": 10.154,
+          "end": 10.234
+        },
+        {
+          "text": "anyone",
+          "start": 10.314,
+          "end": 10.595
+        },
+        {
+          "text": "should.",
+          "start": 10.775,
+          "end": 11.075
+        }
+      ]
+    },
+    {
+      "id": "line_FxJd7cHzrGw",
+      "roleId": "role_CwTyhoLe",
+      "start": 11.416,
+      "end": 14.7,
+      "text": "Well, that is not stopping him. See?",
+      "hint": "可这并没有让他停下来。看。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 11.456,
+          "end": 11.796
+        },
+        {
+          "text": "that",
+          "start": 12.077,
+          "end": 12.277
+        },
+        {
+          "text": "is",
+          "start": 12.377,
+          "end": 12.457
+        },
+        {
+          "text": "not",
+          "start": 12.497,
+          "end": 12.657
+        },
+        {
+          "text": "stopping",
+          "start": 12.717,
+          "end": 13.278
+        },
+        {
+          "text": "him.",
+          "start": 13.438,
+          "end": 13.659
+        },
+        {
+          "text": "See?",
+          "start": 14.3,
+          "end": 14.48
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Ratatouille",
+    "attribution": "原作：Disney / Pixar",
+    "source": "https://www.youtube.com/watch?v=thkDWSUzQDo&t=11s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 11.8–26.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+  }
+}

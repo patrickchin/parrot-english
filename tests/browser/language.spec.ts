@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-test.use({ samplePack: true });
+test.use({ sampleScene: true });
 
 const selector = (page: import('@playwright/test').Page) => page.getByRole('combobox', { name: 'UI language / 界面语言' });
 
@@ -110,7 +110,7 @@ test('language works without local storage and translates recording guidance and
 });
 
 test('failed scene loading keeps the language selector available', async ({ page }) => {
-  await page.route('**/packs/patrick/pack.json', route => route.fulfill({ status: 503 }));
+  await page.route('**/scenes/patrick/scene.json', route => route.fulfill({ status: 503 }));
   await page.goto('/scenes/patrick');
   await expect(page.getByRole('alert')).toBeVisible();
   await setLanguage(page, 'en');

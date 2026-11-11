@@ -1,0 +1,326 @@
+{
+  "version": 1,
+  "id": "scene_CZ0bp6VC",
+  "title": "那地板呢？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 18.936,
+  "video": "banana-review-d90b2ac2df8d.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/banana/",
+  "poster": "banana-poster-d90b2ac2df8d.jpg",
+  "waveform": "waveform-d90b2ac2df8d.json",
+  "roles": [
+    {
+      "id": "role_6qGKlj0DGGU",
+      "name": "格鲁",
+      "label": "格鲁",
+      "hint": "4 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
+    },
+    {
+      "id": "role_ttD2BhSD_aQ",
+      "name": "玛戈",
+      "label": "玛戈",
+      "hint": "2 句台词",
+      "portrait": "margo-avatar-e7dfb1b37895.jpg"
+    },
+    {
+      "id": "role_Y1QH7lsWlSU",
+      "name": "伊迪丝",
+      "label": "伊迪丝",
+      "hint": "2 句台词",
+      "selectable": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_CJfcCiT4lGE",
+      "roleId": "role_6qGKlj0DGGU",
+      "start": 0.18,
+      "end": 4.805,
+      "text": "Rule number one: you will not touch anything.",
+      "hint": "第一条：什么都不许碰。",
+      "words": [
+        {
+          "text": "Rule",
+          "start": 0.22,
+          "end": 0.601
+        },
+        {
+          "text": "number",
+          "start": 0.661,
+          "end": 0.901
+        },
+        {
+          "text": "one:",
+          "start": 1.101,
+          "end": 1.241
+        },
+        {
+          "text": "you",
+          "start": 2.042,
+          "end": 2.222
+        },
+        {
+          "text": "will",
+          "start": 2.483,
+          "end": 2.683
+        },
+        {
+          "text": "not",
+          "start": 2.743,
+          "end": 3.023
+        },
+        {
+          "text": "touch",
+          "start": 3.243,
+          "end": 3.684
+        },
+        {
+          "text": "anything.",
+          "start": 4.144,
+          "end": 4.625
+        }
+      ]
+    },
+    {
+      "id": "line_ChIFs6Uh-8c",
+      "roleId": "role_ttD2BhSD_aQ",
+      "start": 4.825,
+      "end": 6.387,
+      "text": "Uh-huh. What about the floor?",
+      "hint": "嗯，那地板呢？",
+      "words": [
+        {
+          "text": "Uh-huh.",
+          "start": 4.865,
+          "end": 5.126
+        },
+        {
+          "text": "What",
+          "start": 5.446,
+          "end": 5.546
+        },
+        {
+          "text": "about",
+          "start": 5.586,
+          "end": 5.746
+        },
+        {
+          "text": "the",
+          "start": 5.786,
+          "end": 5.866
+        },
+        {
+          "text": "floor?",
+          "start": 5.906,
+          "end": 6.167
+        }
+      ]
+    },
+    {
+      "id": "line_jyOr1NTEBAM",
+      "roleId": "role_6qGKlj0DGGU",
+      "start": 7.128,
+      "end": 8.929,
+      "text": "Yes, you may touch the floor.",
+      "hint": "好，地板可以碰。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 7.168,
+          "end": 7.508
+        },
+        {
+          "text": "you",
+          "start": 7.608,
+          "end": 7.708
+        },
+        {
+          "text": "may",
+          "start": 7.768,
+          "end": 7.868
+        },
+        {
+          "text": "touch",
+          "start": 7.949,
+          "end": 8.189
+        },
+        {
+          "text": "the",
+          "start": 8.289,
+          "end": 8.389
+        },
+        {
+          "text": "floor.",
+          "start": 8.429,
+          "end": 8.709
+        }
+      ]
+    },
+    {
+      "id": "line_RDPRAtHC5cQ",
+      "roleId": "role_ttD2BhSD_aQ",
+      "start": 9.09,
+      "end": 10.291,
+      "text": "What about the air?",
+      "hint": "那空气呢？",
+      "words": [
+        {
+          "text": "What",
+          "start": 9.13,
+          "end": 9.25
+        },
+        {
+          "text": "about",
+          "start": 9.31,
+          "end": 9.51
+        },
+        {
+          "text": "the",
+          "start": 9.55,
+          "end": 9.65
+        },
+        {
+          "text": "air?",
+          "start": 9.891,
+          "end": 10.071
+        }
+      ]
+    },
+    {
+      "id": "line_hbmqU-Uwj9s",
+      "roleId": "role_6qGKlj0DGGU",
+      "start": 10.351,
+      "end": 12.614,
+      "text": "Yes, you may touch the air.",
+      "hint": "好，空气也可以碰。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 10.391,
+          "end": 10.812
+        },
+        {
+          "text": "you",
+          "start": 10.932,
+          "end": 11.072
+        },
+        {
+          "text": "may",
+          "start": 11.172,
+          "end": 11.292
+        },
+        {
+          "text": "touch",
+          "start": 11.412,
+          "end": 11.753
+        },
+        {
+          "text": "the",
+          "start": 11.913,
+          "end": 12.033
+        },
+        {
+          "text": "air.",
+          "start": 12.333,
+          "end": 12.473
+        }
+      ]
+    },
+    {
+      "id": "line_Mry2rXubEPc",
+      "roleId": "role_Y1QH7lsWlSU",
+      "start": 12.634,
+      "end": 13.514,
+      "text": "What about this?",
+      "hint": "那这个呢？",
+      "words": [
+        {
+          "text": "What",
+          "start": 12.674,
+          "end": 12.774
+        },
+        {
+          "text": "about",
+          "start": 12.814,
+          "end": 12.994
+        },
+        {
+          "text": "this?",
+          "start": 13.074,
+          "end": 13.294
+        }
+      ]
+    },
+    {
+      "id": "line_EZGMbxlg-6w",
+      "roleId": "role_6qGKlj0DGGU",
+      "start": 16.938,
+      "end": 17.979,
+      "text": "Where did you get that?",
+      "hint": "你从哪里拿到的？",
+      "words": [
+        {
+          "text": "Where",
+          "start": 16.978,
+          "end": 17.158
+        },
+        {
+          "text": "did",
+          "start": 17.219,
+          "end": 17.339
+        },
+        {
+          "text": "you",
+          "start": 17.359,
+          "end": 17.439
+        },
+        {
+          "text": "get",
+          "start": 17.479,
+          "end": 17.579
+        },
+        {
+          "text": "that?",
+          "start": 17.639,
+          "end": 17.759
+        }
+      ]
+    },
+    {
+      "id": "line_0spSPlLFQcY",
+      "roleId": "role_Y1QH7lsWlSU",
+      "start": 18.059,
+      "end": 18.72,
+      "text": "Found it.",
+      "hint": "捡到的。",
+      "words": [
+        {
+          "text": "Found",
+          "start": 18.099,
+          "end": 18.36
+        },
+        {
+          "text": "it.",
+          "start": 18.44,
+          "end": 18.5
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Despicable Me",
+    "attribution": "Universal Pictures / Illumination",
+    "source": "https://www.youtube.com/watch?v=CeOsRggJO4s&t=10s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 10.9–29.8 秒的节选。The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+  }
+}

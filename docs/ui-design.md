@@ -35,7 +35,7 @@ Approved sitemap:
 
 Scene URLs use stable readable names, separate from translated display titles.
 An optional catalog `routeSlug` provides a public name that differs from the
-pack folder, preserving media locations and the scene references in saved dubs.
+scene folder, preserving media locations and the scene references in saved dubs.
 "My dubs" is a separate page at `/dubs`, reached through header navigation on
 the same row as the language and theme controls. Narrow screens use a navigation
 menu in that row. Saved attempts retain continue/delete actions, loading and
@@ -72,7 +72,7 @@ MP4 export use the same limits. Capture startup is aligned to the native
 `playing` event. A cancelled take
 keeps the previous accepted recording.
 “My recording” replays the matching video window with the recorded voice and any
-pack backing track, using the same scheduler as the assembled dub. The original
+scene backing track, using the same scheduler as the assembled dub. The original
 voice is muted for that turn; stopping or reaching the padded window's end pauses both.
 
 ## Signal and alignment
@@ -133,7 +133,7 @@ keeps the previous session. Media bytes and lesson metadata commit atomically;
 the UI reports Saved only after the latest transaction completes. Unsaved or
 actively captured work retains the navigation warning. Quota/blocked storage
 errors keep current takes in memory and offer retry and a separate tab for
-managing saved attempts. Changed pack timings or missing media reject a restore
+managing saved attempts. Changed scene timings or missing media reject a restore
 without overwriting the saved data. Browser storage persistence is requested
 where available, and the shelf explains that clearing site data deletes drafts.
 
@@ -142,7 +142,7 @@ The browser mixes the original scene, backing, and accepted takes locally, then
 uses a lazily loaded Mediabunny module to package MP4 with native AAC audio
 encoding. Existing H.264 picture packets are copied unchanged, in decode order;
 other supported source formats are encoded to H.264 through WebCodecs. This avoids
-real-time capture clocks and preserves original picture quality for shipped packs.
+real-time capture clocks and preserves original picture quality for shipped scenes.
 Original audio remains for other characters and skipped turns. No extra
 permission gate or backend is added. Export need not wait for the scene to play;
 progress, cancel, retry, and a repeat-download link are available. An interruption
@@ -151,7 +151,7 @@ without the required MP4 encoder get a readable error. A downloaded file remains
 on the tester's device after the session is cleared.
 
 After preparing a source clip, run `node scripts/prepare-waveforms.mjs`. It writes
-`public/packs/<slug>/waveform-v2.json` and updates each manifest. Scene thumbnail
+`public/scenes/<slug>/waveform-v2.json` and updates each manifest. Scene thumbnail
 JPEGs are prepared outside public/ under ignored content/local-dubbing/ and uploaded
 separately to the corresponding OSS clip folders. The retired Sintel sample is
 kept only as an internal test fixture. The function build continues rejecting media files.
@@ -168,7 +168,7 @@ accessible controls, or real microphone and envelope data.
 
 `Line.words` contains `{text, start, end}` in absolute clip seconds. The words must
 reproduce the authored English text, stay within their turn, have positive
-ordered intervals, and never overlap. Packs without word timings retain the
+ordered intervals, and never overlap. Scenes without word timings retain the
 full-sentence fallback rather than inventing equal word spacing.
 
 Run `uv run --python 3.12 scripts/align-words.py` on the prepared source media.
@@ -183,7 +183,7 @@ The authoring model and source audio stay outside the app build. Only numeric
 waveform and timing metadata ship through ESA; audio/video stays in OSS. There
 is no learner transcription, voice upload, or runtime model dependency. The
 microphone overlay follows the original script timeline; it does not infer which
-words the learner said. Regenerating unchanged meme packs preserves word timings.
+words the learner said. Regenerating unchanged meme scenes preserves word timings.
 
 
 Verification for the timed waveform update: production build and six Node checks
@@ -211,4 +211,4 @@ output timestamp to the sampled video clock. Measured offsets were 41.2 ms,
 45.6 ms, and 7.8 ms respectively (60 ms test limit); each take decoded once
 across repeated listens. These are browser-reported output estimates, not a
 physical microphone/speaker or headset loopback measurement. Soundtrack
-separation was skipped at the user's request; no public pack backing changed.
+separation was skipped at the user's request; no public scene backing changed.

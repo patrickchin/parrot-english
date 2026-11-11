@@ -1,0 +1,819 @@
+{
+  "version": 1,
+  "id": "scene_qs532GUZz7E",
+  "title": "请爸爸和老师谈一谈",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 34.952,
+  "video": "young-sheldon-homework-review-30a45d7c9537.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-homework/",
+  "poster": "young-sheldon-homework-poster-30a45d7c9537.jpg",
+  "waveform": "waveform-30a45d7c9537.json",
+  "roles": [
+    {
+      "id": "role_9VX0JklGCdk",
+      "name": "乔治爸爸",
+      "label": "乔治爸爸",
+      "hint": "7 句台词",
+      "portrait": "george-cooper-avatar-f792b5644c5c.jpg"
+    },
+    {
+      "id": "role_mPMtxEzSrfc",
+      "name": "谢尔顿",
+      "label": "谢尔顿",
+      "hint": "7 句台词",
+      "portrait": "young-sheldon-avatar-344053947282.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_U0tVN1CtgMo",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 0.24,
+      "end": 0.98,
+      "text": "What's going on?",
+      "hint": "怎么了？",
+      "words": [
+        {
+          "text": "What's",
+          "start": 0.28,
+          "end": 0.48
+        },
+        {
+          "text": "going",
+          "start": 0.54,
+          "end": 0.72
+        },
+        {
+          "text": "on?",
+          "start": 0.86,
+          "end": 0.92
+        }
+      ]
+    },
+    {
+      "id": "line_Hh6u2Jl9XT4",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 1.58,
+      "end": 6.282,
+      "text": "I can't figure out this engineering project, and every time I turn it in, my professor just rips it up.",
+      "hint": "我做不明白这个工程作业，每次交上去，教授都直接把它撕了。",
+      "words": [
+        {
+          "text": "I",
+          "start": 1.62,
+          "end": 1.64
+        },
+        {
+          "text": "can't",
+          "start": 1.74,
+          "end": 1.981
+        },
+        {
+          "text": "figure",
+          "start": 2.061,
+          "end": 2.341
+        },
+        {
+          "text": "out",
+          "start": 2.381,
+          "end": 2.481
+        },
+        {
+          "text": "this",
+          "start": 2.521,
+          "end": 2.661
+        },
+        {
+          "text": "engineering",
+          "start": 2.741,
+          "end": 3.221
+        },
+        {
+          "text": "project,",
+          "start": 3.301,
+          "end": 3.661
+        },
+        {
+          "text": "and",
+          "start": 3.961,
+          "end": 4.021
+        },
+        {
+          "text": "every",
+          "start": 4.061,
+          "end": 4.201
+        },
+        {
+          "text": "time",
+          "start": 4.261,
+          "end": 4.381
+        },
+        {
+          "text": "I",
+          "start": 4.441,
+          "end": 4.461
+        },
+        {
+          "text": "turn",
+          "start": 4.521,
+          "end": 4.641
+        },
+        {
+          "text": "it",
+          "start": 4.761,
+          "end": 4.801
+        },
+        {
+          "text": "in,",
+          "start": 4.861,
+          "end": 4.921
+        },
+        {
+          "text": "my",
+          "start": 4.981,
+          "end": 5.041
+        },
+        {
+          "text": "professor",
+          "start": 5.101,
+          "end": 5.462
+        },
+        {
+          "text": "just",
+          "start": 5.522,
+          "end": 5.662
+        },
+        {
+          "text": "rips",
+          "start": 5.762,
+          "end": 5.982
+        },
+        {
+          "text": "it",
+          "start": 6.042,
+          "end": 6.082
+        },
+        {
+          "text": "up.",
+          "start": 6.162,
+          "end": 6.222
+        }
+      ]
+    },
+    {
+      "id": "line_grdqrqRLYmc",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 6.962,
+      "end": 8.202,
+      "text": "Well, ain't this the fella you liked?",
+      "hint": "这不是你挺喜欢的那个老师吗？",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 7.002,
+          "end": 7.102
+        },
+        {
+          "text": "ain't",
+          "start": 7.122,
+          "end": 7.262
+        },
+        {
+          "text": "this",
+          "start": 7.282,
+          "end": 7.422
+        },
+        {
+          "text": "the",
+          "start": 7.442,
+          "end": 7.502
+        },
+        {
+          "text": "fella",
+          "start": 7.542,
+          "end": 7.722
+        },
+        {
+          "text": "you",
+          "start": 7.782,
+          "end": 7.862
+        },
+        {
+          "text": "liked?",
+          "start": 7.922,
+          "end": 8.142
+        }
+      ]
+    },
+    {
+      "id": "line_ELWati6xWqY",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 8.843,
+      "end": 13.304,
+      "text": "I did when I thought he was pushing me to be all I could be, but it turns out all he can be is mean.",
+      "hint": "我以为他在激发我的潜能时是挺喜欢他。结果他只会刻薄。",
+      "words": [
+        {
+          "text": "I",
+          "start": 8.883,
+          "end": 8.903
+        },
+        {
+          "text": "did",
+          "start": 9.003,
+          "end": 9.163
+        },
+        {
+          "text": "when",
+          "start": 9.223,
+          "end": 9.323
+        },
+        {
+          "text": "I",
+          "start": 9.383,
+          "end": 9.403
+        },
+        {
+          "text": "thought",
+          "start": 9.443,
+          "end": 9.603
+        },
+        {
+          "text": "he",
+          "start": 9.623,
+          "end": 9.663
+        },
+        {
+          "text": "was",
+          "start": 9.723,
+          "end": 9.803
+        },
+        {
+          "text": "pushing",
+          "start": 9.863,
+          "end": 10.163
+        },
+        {
+          "text": "me",
+          "start": 10.203,
+          "end": 10.263
+        },
+        {
+          "text": "to",
+          "start": 10.323,
+          "end": 10.363
+        },
+        {
+          "text": "be",
+          "start": 10.403,
+          "end": 10.483
+        },
+        {
+          "text": "all",
+          "start": 10.683,
+          "end": 10.803
+        },
+        {
+          "text": "I",
+          "start": 10.883,
+          "end": 10.903
+        },
+        {
+          "text": "could",
+          "start": 10.983,
+          "end": 11.123
+        },
+        {
+          "text": "be,",
+          "start": 11.163,
+          "end": 11.283
+        },
+        {
+          "text": "but",
+          "start": 11.483,
+          "end": 11.583
+        },
+        {
+          "text": "it",
+          "start": 11.723,
+          "end": 11.763
+        },
+        {
+          "text": "turns",
+          "start": 11.803,
+          "end": 11.983
+        },
+        {
+          "text": "out",
+          "start": 12.023,
+          "end": 12.083
+        },
+        {
+          "text": "all",
+          "start": 12.123,
+          "end": 12.244
+        },
+        {
+          "text": "he",
+          "start": 12.304,
+          "end": 12.384
+        },
+        {
+          "text": "can",
+          "start": 12.484,
+          "end": 12.584
+        },
+        {
+          "text": "be",
+          "start": 12.664,
+          "end": 12.724
+        },
+        {
+          "text": "is",
+          "start": 12.844,
+          "end": 12.924
+        },
+        {
+          "text": "mean.",
+          "start": 13.004,
+          "end": 13.244
+        }
+      ]
+    },
+    {
+      "id": "line_TAMgxstRy3c",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 14.404,
+      "end": 15.444,
+      "text": "I'm sure you'll figure it out.",
+      "hint": "你肯定能想明白的。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 14.444,
+          "end": 14.544
+        },
+        {
+          "text": "sure",
+          "start": 14.604,
+          "end": 14.724
+        },
+        {
+          "text": "you'll",
+          "start": 14.764,
+          "end": 14.924
+        },
+        {
+          "text": "figure",
+          "start": 14.944,
+          "end": 15.184
+        },
+        {
+          "text": "it",
+          "start": 15.204,
+          "end": 15.244
+        },
+        {
+          "text": "out.",
+          "start": 15.324,
+          "end": 15.384
+        }
+      ]
+    },
+    {
+      "id": "line_t4562iYrjmU",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 16.485,
+      "end": 17.325,
+      "text": "Could you talk to him?",
+      "hint": "你能跟他谈谈吗？",
+      "words": [
+        {
+          "text": "Could",
+          "start": 16.525,
+          "end": 16.645
+        },
+        {
+          "text": "you",
+          "start": 16.685,
+          "end": 16.765
+        },
+        {
+          "text": "talk",
+          "start": 16.825,
+          "end": 17.005
+        },
+        {
+          "text": "to",
+          "start": 17.065,
+          "end": 17.125
+        },
+        {
+          "text": "him?",
+          "start": 17.185,
+          "end": 17.265
+        }
+      ]
+    },
+    {
+      "id": "line_V9SkgXDy5jk",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 18.185,
+      "end": 20.786,
+      "text": "You're in college now. Don't you think you should fight your own battles?",
+      "hint": "你都上大学了，不该自己解决问题了吗？",
+      "words": [
+        {
+          "text": "You're",
+          "start": 18.225,
+          "end": 18.385
+        },
+        {
+          "text": "in",
+          "start": 18.405,
+          "end": 18.445
+        },
+        {
+          "text": "college",
+          "start": 18.465,
+          "end": 18.645
+        },
+        {
+          "text": "now.",
+          "start": 18.665,
+          "end": 18.725
+        },
+        {
+          "text": "Don't",
+          "start": 18.745,
+          "end": 18.865
+        },
+        {
+          "text": "you",
+          "start": 18.925,
+          "end": 19.085
+        },
+        {
+          "text": "think",
+          "start": 19.446,
+          "end": 19.606
+        },
+        {
+          "text": "you",
+          "start": 19.646,
+          "end": 19.706
+        },
+        {
+          "text": "should",
+          "start": 19.766,
+          "end": 19.906
+        },
+        {
+          "text": "fight",
+          "start": 19.966,
+          "end": 20.146
+        },
+        {
+          "text": "your",
+          "start": 20.206,
+          "end": 20.306
+        },
+        {
+          "text": "own",
+          "start": 20.346,
+          "end": 20.446
+        },
+        {
+          "text": "battles?",
+          "start": 20.486,
+          "end": 20.726
+        }
+      ]
+    },
+    {
+      "id": "line_i75o_wdK6O0",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 21.286,
+      "end": 23.787,
+      "text": "Does telling on him to the president of the university count?",
+      "hint": "那向大学校长告状算不算？",
+      "words": [
+        {
+          "text": "Does",
+          "start": 21.326,
+          "end": 21.446
+        },
+        {
+          "text": "telling",
+          "start": 21.526,
+          "end": 21.806
+        },
+        {
+          "text": "on",
+          "start": 21.906,
+          "end": 21.946
+        },
+        {
+          "text": "him",
+          "start": 22.006,
+          "end": 22.086
+        },
+        {
+          "text": "to",
+          "start": 22.146,
+          "end": 22.206
+        },
+        {
+          "text": "the",
+          "start": 22.266,
+          "end": 22.346
+        },
+        {
+          "text": "president",
+          "start": 22.386,
+          "end": 22.706
+        },
+        {
+          "text": "of",
+          "start": 22.747,
+          "end": 22.787
+        },
+        {
+          "text": "the",
+          "start": 22.827,
+          "end": 22.887
+        },
+        {
+          "text": "university",
+          "start": 22.967,
+          "end": 23.447
+        },
+        {
+          "text": "count?",
+          "start": 23.507,
+          "end": 23.727
+        }
+      ]
+    },
+    {
+      "id": "line_Vgivv1Lu4GY",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 24.127,
+      "end": 24.687,
+      "text": "Did it work?",
+      "hint": "管用了吗？",
+      "words": [
+        {
+          "text": "Did",
+          "start": 24.167,
+          "end": 24.287
+        },
+        {
+          "text": "it",
+          "start": 24.327,
+          "end": 24.367
+        },
+        {
+          "text": "work?",
+          "start": 24.427,
+          "end": 24.627
+        }
+      ]
+    },
+    {
+      "id": "line_j7unBtkFh5U",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 25.107,
+      "end": 25.307,
+      "text": "No.",
+      "hint": "没有。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 25.147,
+          "end": 25.247
+        }
+      ]
+    },
+    {
+      "id": "line_PmvsaaUXG0M",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 25.607,
+      "end": 25.987,
+      "text": "Then no.",
+      "hint": "那就不算。",
+      "words": [
+        {
+          "text": "Then",
+          "start": 25.647,
+          "end": 25.747
+        },
+        {
+          "text": "no.",
+          "start": 25.827,
+          "end": 25.927
+        }
+      ]
+    },
+    {
+      "id": "line_QVgQZkjgG0k",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 27.048,
+      "end": 28.228,
+      "text": "Will you please talk to him?",
+      "hint": "拜托你跟他谈谈好吗？",
+      "words": [
+        {
+          "text": "Will",
+          "start": 27.088,
+          "end": 27.248
+        },
+        {
+          "text": "you",
+          "start": 27.268,
+          "end": 27.348
+        },
+        {
+          "text": "please",
+          "start": 27.428,
+          "end": 27.668
+        },
+        {
+          "text": "talk",
+          "start": 27.748,
+          "end": 27.908
+        },
+        {
+          "text": "to",
+          "start": 27.968,
+          "end": 28.028
+        },
+        {
+          "text": "him?",
+          "start": 28.088,
+          "end": 28.168
+        }
+      ]
+    },
+    {
+      "id": "line_-92sXuOqKW4",
+      "roleId": "role_9VX0JklGCdk",
+      "start": 29.669,
+      "end": 30.609,
+      "text": "What if your mom does it?",
+      "hint": "让你妈妈去怎么样？",
+      "words": [
+        {
+          "text": "What",
+          "start": 29.709,
+          "end": 29.829
+        },
+        {
+          "text": "if",
+          "start": 29.869,
+          "end": 29.909
+        },
+        {
+          "text": "your",
+          "start": 29.949,
+          "end": 30.049
+        },
+        {
+          "text": "mom",
+          "start": 30.069,
+          "end": 30.189
+        },
+        {
+          "text": "does",
+          "start": 30.289,
+          "end": 30.449
+        },
+        {
+          "text": "it?",
+          "start": 30.509,
+          "end": 30.549
+        }
+      ]
+    },
+    {
+      "id": "line_rHIsNpUda3M",
+      "roleId": "role_mPMtxEzSrfc",
+      "start": 30.929,
+      "end": 34.95,
+      "text": "But you were both in the army, and you're both crabby and impatient. There's a lot of common ground.",
+      "hint": "可你们都当过兵，都脾气暴躁、没耐心。共同点可多了。",
+      "words": [
+        {
+          "text": "But",
+          "start": 30.969,
+          "end": 31.049
+        },
+        {
+          "text": "you",
+          "start": 31.089,
+          "end": 31.169
+        },
+        {
+          "text": "were",
+          "start": 31.209,
+          "end": 31.329
+        },
+        {
+          "text": "both",
+          "start": 31.369,
+          "end": 31.509
+        },
+        {
+          "text": "in",
+          "start": 31.569,
+          "end": 31.609
+        },
+        {
+          "text": "the",
+          "start": 31.629,
+          "end": 31.709
+        },
+        {
+          "text": "army,",
+          "start": 31.789,
+          "end": 32.009
+        },
+        {
+          "text": "and",
+          "start": 32.249,
+          "end": 32.309
+        },
+        {
+          "text": "you're",
+          "start": 32.329,
+          "end": 32.469
+        },
+        {
+          "text": "both",
+          "start": 32.509,
+          "end": 32.609
+        },
+        {
+          "text": "crabby",
+          "start": 32.669,
+          "end": 32.929
+        },
+        {
+          "text": "and",
+          "start": 32.949,
+          "end": 33.009
+        },
+        {
+          "text": "impatient.",
+          "start": 33.029,
+          "end": 33.45
+        },
+        {
+          "text": "There's",
+          "start": 33.75,
+          "end": 33.95
+        },
+        {
+          "text": "a",
+          "start": 33.99,
+          "end": 34.01
+        },
+        {
+          "text": "lot",
+          "start": 34.07,
+          "end": 34.19
+        },
+        {
+          "text": "of",
+          "start": 34.23,
+          "end": 34.27
+        },
+        {
+          "text": "common",
+          "start": 34.29,
+          "end": 34.53
+        },
+        {
+          "text": "ground.",
+          "start": 34.59,
+          "end": 34.89
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Young Sheldon — S5 E7",
+    "attribution": "Warner Bros. Television / CBS",
+    "source": "https://www.youtube.com/watch?v=GJ0y2haVfFI&t=16s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 16.5–51.45 秒的连续节选。College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded."
+  }
+}

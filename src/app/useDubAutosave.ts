@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { LessonState } from '../lesson-state';
 import { newDubId, saveDub, storageError, type RestoredDub } from '../dub-store';
-import type { Pack } from '../pack';
+import type { Scene } from '../scene';
 import { autosaveView, transitionAutosave, type AutosaveState, type DubSnapshot } from '../autosave-state';
 
-export function useDubAutosave(pack: Pack, slug: string, lesson: LessonState, initial: RestoredDub | undefined, source?: Blob) {
+export function useDubAutosave(scene: Scene, slug: string, lesson: LessonState, initial: RestoredDub | undefined, source?: Blob) {
   const [identity, setIdentity] = useState(() => ({ id: initial?.saved.id ?? newDubId(), createdAt: initial?.saved.createdAt ?? Date.now() }));
   const [retry, setRetry] = useState(0);
   const operation = useRef(0);
@@ -25,9 +25,9 @@ export function useDubAutosave(pack: Pack, slug: string, lesson: LessonState, in
     }
     const id = ++operation.current;
     send({ type: 'SAVE', operation: id, snapshot });
-    const save = queue.current.catch(() => {}).then(() => saveDub(snapshot.id, snapshot.createdAt, slug, pack, { ...snapshot, overlay: 'none' }, snapshot.source));
+    const save = queue.current.catch(() => {}).then(() => saveDub(snapshot.id, snapshot.createdAt, slug, scene, { ...snapshot, overlay: 'none' }, snapshot.source));
     queue.current = save.then(() => {}, () => {});
     void save.then(() => send({ type: 'SAVED', operation: id, snapshot }), error => send({ type: 'FAILED', operation: id, error: storageError(error) }));
-  }, [pack, slug, snapshot, retry, view.dirty]);
+  }, [scene, slug, snapshot, retry, view.dirty]);
   return { ...view, id: identity.id, retry: () => setRetry(n => n + 1), startNew: () => setIdentity({ id: newDubId(), createdAt: Date.now() }) };
 }

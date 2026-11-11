@@ -1,6 +1,6 @@
 import { test, expect, headerDestination } from './fixtures';
 
-test.use({ samplePack: true });
+test.use({ sampleScene: true });
 
 test('completed recording releases its operation so late capture errors cannot change its outcome', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');

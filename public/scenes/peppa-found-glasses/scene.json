@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "id": "scene_9aW-AUNHyhc",
+  "title": "你一直坐在眼镜上！",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 15,
+  "video": "peppa-found-glasses-review-b4297f3f9d8a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-found-glasses/",
+  "poster": "peppa-found-glasses-poster-b4297f3f9d8a.jpg",
+  "waveform": "waveform-b4297f3f9d8a.json",
+  "roles": [
+    {
+      "id": "role_JbjeUfpdQeo",
+      "name": "猪妈妈",
+      "label": "猪妈妈",
+      "hint": "1 句台词",
+      "portrait": "mummy-pig-avatar-c0d3839d28a8.jpg"
+    },
+    {
+      "id": "role_kG1Vhx3plc4",
+      "name": "猪爸爸",
+      "label": "猪爸爸",
+      "hint": "2 句台词",
+      "portrait": "daddy-pig-avatar-8bb968fbe8e3.jpg"
+    },
+    {
+      "id": "role_Uivz-A7quiE",
+      "name": "佩奇",
+      "label": "佩奇",
+      "hint": "1 句台词",
+      "portrait": "peppa-avatar-b1e0af9df646.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_ggq9-44eKcg",
+      "roleId": "role_JbjeUfpdQeo",
+      "start": 0.2,
+      "end": 5.2,
+      "text": "Daddy Pig, you were sitting on them all the time!",
+      "hint": "猪爸爸，你一直坐在眼镜上！",
+      "words": [
+        {
+          "text": "Daddy",
+          "start": 1.626,
+          "end": 1.927
+        },
+        {
+          "text": "Pig,",
+          "start": 2.048,
+          "end": 2.349
+        },
+        {
+          "text": "you",
+          "start": 2.831,
+          "end": 2.931
+        },
+        {
+          "text": "were",
+          "start": 3.012,
+          "end": 3.132
+        },
+        {
+          "text": "sitting",
+          "start": 3.233,
+          "end": 3.554
+        },
+        {
+          "text": "on",
+          "start": 3.654,
+          "end": 3.695
+        },
+        {
+          "text": "them",
+          "start": 3.775,
+          "end": 3.855
+        },
+        {
+          "text": "all",
+          "start": 4.056,
+          "end": 4.217
+        },
+        {
+          "text": "the",
+          "start": 4.297,
+          "end": 4.377
+        },
+        {
+          "text": "time!",
+          "start": 4.478,
+          "end": 4.98
+        }
+      ]
+    },
+    {
+      "id": "line_SEewejEfUoY",
+      "roleId": "role_kG1Vhx3plc4",
+      "start": 5.6,
+      "end": 6.289,
+      "text": "Oh!",
+      "hint": "哦！",
+      "words": [
+        {
+          "text": "Oh!",
+          "start": 5.967,
+          "end": 6.069
+        }
+      ]
+    },
+    {
+      "id": "line__6Poa1PLtZY",
+      "roleId": "role_Uivz-A7quiE",
+      "start": 6.9,
+      "end": 9.82,
+      "text": "Silly Daddy!",
+      "hint": "糊涂爸爸！",
+      "words": [
+        {
+          "text": "Silly",
+          "start": 8.915,
+          "end": 9.237
+        },
+        {
+          "text": "Daddy!",
+          "start": 9.338,
+          "end": 9.6
+        }
+      ]
+    },
+    {
+      "id": "line_ze741oL_8vo",
+      "roleId": "role_kG1Vhx3plc4",
+      "start": 10.35,
+      "end": 14.74,
+      "text": "I don't know how they got there.",
+      "hint": "我不知道眼镜怎么跑到那里了。",
+      "words": [
+        {
+          "text": "I",
+          "start": 12.976,
+          "end": 12.996
+        },
+        {
+          "text": "don't",
+          "start": 13.076,
+          "end": 13.217
+        },
+        {
+          "text": "know",
+          "start": 13.237,
+          "end": 13.357
+        },
+        {
+          "text": "how",
+          "start": 13.437,
+          "end": 13.638
+        },
+        {
+          "text": "they",
+          "start": 13.738,
+          "end": 13.858
+        },
+        {
+          "text": "got",
+          "start": 13.938,
+          "end": 14.079
+        },
+        {
+          "text": "there.",
+          "start": 14.199,
+          "end": 14.52
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Peppa Pig",
+    "attribution": "Peppa Pig © Astley Baker Davies / Entertainment One / Hasbro.",
+    "source": "https://www.youtube.com/watch?v=Izul_xs5dWo&t=243s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 243.15–258.15 秒的节选。"
+  }
+}

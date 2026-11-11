@@ -2,20 +2,20 @@ import { test, expect, setLanguage, headerDestination } from './fixtures';
 import { readFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { Pack } from '../../src/pack';
+import type { Scene } from '../../src/scene';
 import { routeShortScene } from './short-scene';
 
-test.use({ samplePack: true });
-async function shortPack() {
-  const pack: Pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8'));
-  delete pack.backing;
-  pack.duration = 3.2;
-  pack.lines = pack.lines.slice(0, 3).map((line, index) => ({ ...line, start: 0.2 + index, end: 1.2 + index, words: undefined }));
-  return pack;
+test.use({ sampleScene: true });
+async function shortScene() {
+  const scene: Scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
+  delete scene.backing;
+  scene.duration = 3.2;
+  scene.lines = scene.lines.slice(0, 3).map((line, index) => ({ ...line, start: 0.2 + index, end: 1.2 + index, words: undefined }));
+  return scene;
 }
 test.beforeEach(async ({ page }) => {
   await page.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
-  await page.route('**/packs/patrick/pack.json', async route => route.fulfill({ json: await shortPack() }));
+  await page.route('**/scenes/patrick/scene.json', async route => route.fulfill({ json: await shortScene() }));
   await routeShortScene(page);
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => {
@@ -58,8 +58,8 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   // A fresh page in the same browser has the same IndexedDB, not the old JS state.
   const second = await context.newPage();
   await second.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
-  await second.route('**/packs/patrick/*.json', async route => route.fulfill({ body: await readFile('tests/fixtures/sintel/' + new URL(route.request().url()).pathname.split('/').pop()), contentType: 'application/json' }));
-  await second.route('**/packs/patrick/pack.json', async route => route.fulfill({ json: await shortPack() }));
+  await second.route('**/scenes/patrick/*.json', async route => route.fulfill({ body: await readFile('tests/fixtures/sintel/' + new URL(route.request().url()).pathname.split('/').pop()), contentType: 'application/json' }));
+  await second.route('**/scenes/patrick/scene.json', async route => route.fulfill({ json: await shortScene() }));
   await routeShortScene(second);
   await second.goto(url);
   await expect(second.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
@@ -139,7 +139,7 @@ test('quota errors preserve the last saved attempt and in-memory take, then retr
 
 test('changed content cannot overwrite a saved dub and My dubs translates', async ({ page }) => {
   await page.goto('/scenes/patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click(); await record(page);
-  await page.route('**/packs/patrick/pack.json', async route => { const pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8')); pack.video = 'changed.mp4'; await route.fulfill({ json: pack }); });
+  await page.route('**/scenes/patrick/scene.json', async route => { const scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8')); scene.video = 'changed.mp4'; await route.fulfill({ json: scene }); });
   await page.reload(); await expect(page.getByRole('alert')).toContainText('片段已更新');
   await page.getByRole('button', { name: '返回片段', exact: true }).click(); await setLanguage(page, 'en');
   await (await headerDestination(page, 'My dubs')).click();

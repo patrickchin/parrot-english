@@ -41,7 +41,7 @@ source clip permit it. Existing windows are never shortened to create a gap.
 The So fluffy source file itself ends at 54.054 s; its “It’s so fluffy!” payoff
 is already complete in the saved source transcript. No synthetic silence or
 repeated video frames were added. Existing media/audio remain in Alibaba OSS;
-ESA holds code and structured pack/waveform metadata. Learner takes remain in
+ESA holds code and structured scene/waveform metadata. Learner takes remain in
 browser memory.
 
 ## Authoring checks
@@ -57,7 +57,7 @@ browser memory.
    original soundtrack and manifest even when their speaker is not selectable.
 5. Rebuild captions after timing/role edits with
    `node scripts/prepare-review-clips.mjs <cohort> --captions-only`. Recut changed
-   source ranges first. Run `--check` for both cohorts, pack tests, and browser
+   source ranges first. Run `--check` for both cohorts, scene tests, and browser
    checks for the corrected role flow and end-of-line playback.
 
 All 32 local MP4s passed full FFmpeg decoding, stream/duration checks, and

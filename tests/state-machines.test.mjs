@@ -37,10 +37,10 @@ test('preview, listening, and replay have distinct original and decoded-audio pr
 });
 
 test('lesson keeps line dispositions exclusive, wraps unfinished lines, and resets without stale takes', async () => {
-  const pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8'));
-  let state = createLesson(pack);
-  const send = event => { state = transitionLesson(state, event, pack); };
-  const lines = pack.lines.filter(line => line.roleId === state.roleId);
+  const scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
+  let state = createLesson(scene);
+  const send = event => { state = transitionLesson(state, event, scene); };
+  const lines = scene.lines.filter(line => line.roleId === state.roleId);
   const take = { blob: new Blob(['take']), url: 'blob:test', duration: 1, start: 0, peaks: [0.2] };
   send({ type: 'START' });
   send({ type: 'CHOOSE_LINE', index: lines.length - 1 });
@@ -56,7 +56,7 @@ test('lesson keeps line dispositions exclusive, wraps unfinished lines, and rese
   send({ type: 'SAVE_TAKE', id: lines.at(-1).id, take });
   assert.equal(state.progress[lines.at(-1).id].status, 'recorded', 'recording replaces skipped disposition');
   const roleId = state.roleId;
-  send({ type: 'SELECT_ROLE', roleId: pack.roles.find(role => role.id !== roleId).id });
+  send({ type: 'SELECT_ROLE', roleId: scene.roles.find(role => role.id !== roleId).id });
   assert.equal(state.roleId, roleId, 'role cannot change during practice');
   send({ type: 'OPEN_OVERLAY', overlay: 'reset' });
   send({ type: 'CLOSE_OVERLAY' });

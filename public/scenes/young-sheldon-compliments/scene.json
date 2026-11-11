@@ -1,0 +1,339 @@
+{
+  "version": 1,
+  "id": "scene_K-EnMBJWy2E",
+  "title": "试着照书上说的做",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 27.277,
+  "video": "young-sheldon-compliments-review-5f417636adff.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-compliments/",
+  "poster": "young-sheldon-compliments-poster-5f417636adff.jpg",
+  "waveform": "waveform-5f417636adff.json",
+  "roles": [
+    {
+      "id": "role_tc1hthFv9GM",
+      "name": "谢尔顿",
+      "label": "谢尔顿",
+      "hint": "3 句台词",
+      "portrait": "young-sheldon-avatar-344053947282.jpg"
+    },
+    {
+      "id": "role_80084y8FUOo",
+      "name": "乔治爸爸",
+      "label": "乔治爸爸",
+      "hint": "2 句台词",
+      "portrait": "george-cooper-avatar-f792b5644c5c.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_I4w64-D6IHA",
+      "roleId": "role_tc1hthFv9GM",
+      "start": 0.26,
+      "end": 5.422,
+      "text": "Do you feel complimented when I say your name, George? The book says you should. George.",
+      "hint": "我叫你的名字时，你觉得受到赞美了吗，乔治？书上说你会的。乔治。",
+      "words": [
+        {
+          "text": "Do",
+          "start": 0.3,
+          "end": 0.34
+        },
+        {
+          "text": "you",
+          "start": 0.38,
+          "end": 0.46
+        },
+        {
+          "text": "feel",
+          "start": 0.5,
+          "end": 0.66
+        },
+        {
+          "text": "complimented",
+          "start": 0.78,
+          "end": 1.441
+        },
+        {
+          "text": "when",
+          "start": 1.521,
+          "end": 1.641
+        },
+        {
+          "text": "I",
+          "start": 1.721,
+          "end": 1.741
+        },
+        {
+          "text": "say",
+          "start": 1.861,
+          "end": 2.001
+        },
+        {
+          "text": "your",
+          "start": 2.061,
+          "end": 2.181
+        },
+        {
+          "text": "name,",
+          "start": 2.221,
+          "end": 2.421
+        },
+        {
+          "text": "George?",
+          "start": 2.561,
+          "end": 2.881
+        },
+        {
+          "text": "The",
+          "start": 3.341,
+          "end": 3.421
+        },
+        {
+          "text": "book",
+          "start": 3.481,
+          "end": 3.621
+        },
+        {
+          "text": "says",
+          "start": 3.701,
+          "end": 3.861
+        },
+        {
+          "text": "you",
+          "start": 3.961,
+          "end": 4.061
+        },
+        {
+          "text": "should.",
+          "start": 4.142,
+          "end": 4.362
+        },
+        {
+          "text": "George.",
+          "start": 5.062,
+          "end": 5.362
+        }
+      ]
+    },
+    {
+      "id": "line_t5tye3XMuG0",
+      "roleId": "role_80084y8FUOo",
+      "start": 6.142,
+      "end": 10.344,
+      "text": "I suppose. Kind of overdoing it a little. Sheldon.",
+      "hint": "算是吧。你有点做过头了。谢尔顿。",
+      "words": [
+        {
+          "text": "I",
+          "start": 6.182,
+          "end": 6.202
+        },
+        {
+          "text": "suppose.",
+          "start": 6.262,
+          "end": 6.722
+        },
+        {
+          "text": "Kind",
+          "start": 7.743,
+          "end": 7.863
+        },
+        {
+          "text": "of",
+          "start": 7.923,
+          "end": 7.963
+        },
+        {
+          "text": "overdoing",
+          "start": 7.983,
+          "end": 8.283
+        },
+        {
+          "text": "it",
+          "start": 8.303,
+          "end": 8.343
+        },
+        {
+          "text": "a",
+          "start": 8.403,
+          "end": 8.423
+        },
+        {
+          "text": "little.",
+          "start": 8.463,
+          "end": 8.663
+        },
+        {
+          "text": "Sheldon.",
+          "start": 9.924,
+          "end": 10.284
+        }
+      ]
+    },
+    {
+      "id": "line_3YIBnESAKIM",
+      "roleId": "role_tc1hthFv9GM",
+      "start": 10.784,
+      "end": 16.226,
+      "text": "Well, thank you for your criticism. It also says I should praise any improvements that you've made.",
+      "hint": "谢谢你的批评。书上还说，我应该表扬你的进步。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 10.824,
+          "end": 10.964
+        },
+        {
+          "text": "thank",
+          "start": 11.004,
+          "end": 11.164
+        },
+        {
+          "text": "you",
+          "start": 11.224,
+          "end": 11.304
+        },
+        {
+          "text": "for",
+          "start": 11.364,
+          "end": 11.464
+        },
+        {
+          "text": "your",
+          "start": 11.524,
+          "end": 11.624
+        },
+        {
+          "text": "criticism.",
+          "start": 11.664,
+          "end": 12.224
+        },
+        {
+          "text": "It",
+          "start": 12.985,
+          "end": 13.045
+        },
+        {
+          "text": "also",
+          "start": 13.105,
+          "end": 13.325
+        },
+        {
+          "text": "says",
+          "start": 13.425,
+          "end": 13.625
+        },
+        {
+          "text": "I",
+          "start": 13.725,
+          "end": 13.745
+        },
+        {
+          "text": "should",
+          "start": 13.825,
+          "end": 14.005
+        },
+        {
+          "text": "praise",
+          "start": 14.065,
+          "end": 14.345
+        },
+        {
+          "text": "any",
+          "start": 14.485,
+          "end": 14.605
+        },
+        {
+          "text": "improvements",
+          "start": 14.705,
+          "end": 15.366
+        },
+        {
+          "text": "that",
+          "start": 15.466,
+          "end": 15.586
+        },
+        {
+          "text": "you've",
+          "start": 15.626,
+          "end": 15.846
+        },
+        {
+          "text": "made.",
+          "start": 15.906,
+          "end": 16.166
+        }
+      ]
+    },
+    {
+      "id": "line_JCrqNVaW0oY",
+      "roleId": "role_80084y8FUOo",
+      "start": 17.907,
+      "end": 18.347,
+      "text": "Okay.",
+      "hint": "好啊。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 17.947,
+          "end": 18.287
+        }
+      ]
+    },
+    {
+      "id": "line_xYbc8yoA-LE",
+      "roleId": "role_tc1hthFv9GM",
+      "start": 21.348,
+      "end": 25.829,
+      "text": "I'll get back to you. George.",
+      "hint": "有了我再告诉你。乔治。",
+      "words": [
+        {
+          "text": "I'll",
+          "start": 21.388,
+          "end": 21.548
+        },
+        {
+          "text": "get",
+          "start": 21.588,
+          "end": 21.708
+        },
+        {
+          "text": "back",
+          "start": 21.808,
+          "end": 21.988
+        },
+        {
+          "text": "to",
+          "start": 22.128,
+          "end": 22.228
+        },
+        {
+          "text": "you.",
+          "start": 22.288,
+          "end": 22.388
+        },
+        {
+          "text": "George.",
+          "start": 25.349,
+          "end": 25.769
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Young Sheldon — S1 E2",
+    "attribution": "Warner Bros. Television / CBS",
+    "source": "https://www.youtube.com/watch?v=RlQzUX-UOW4&t=108s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 108.2–135.45 秒的连续节选。Family sarcasm. The cut ends after the final name repetition and before the channel end card."
+  }
+}

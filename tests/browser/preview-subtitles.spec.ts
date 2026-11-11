@@ -4,7 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/packs/onions/pack.json', async route => {
+  await page.route('**/scenes/onions/scene.json', async route => {
     const scene = await (await route.fetch()).json();
     scene.lines = [
       { id: 'line_preview_a', roleId: scene.roles[0].id, start: 0, end: 0.8, text: 'Onions have layers.', hint: '洋葱有层次。' },
@@ -136,7 +136,7 @@ test('preview scrolls every speaker into focus with faded context and resets on 
 });
 
 test('speaker names follow the UI language and longer subtitles wrap over two balanced lines', async ({ page }, info) => {
-  await page.unroute('**/packs/onions/pack.json');
+  await page.unroute('**/scenes/onions/scene.json');
   await page.goto('/scenes/onions');
   await setLanguage(page, 'en');
   for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
@@ -169,8 +169,8 @@ test('speaker names follow the UI language and longer subtitles wrap over two ba
 
 test('long subtitles remain readable and a finished preview returns to role choice', async ({ page }) => {
   const longText = 'Onions have layers. Ogres have layers. '.repeat(7).trim();
-  await page.unroute('**/packs/onions/pack.json');
-  await page.route('**/packs/onions/pack.json', async route => {
+  await page.unroute('**/scenes/onions/scene.json');
+  await page.route('**/scenes/onions/scene.json', async route => {
     const scene = await (await route.fetch()).json();
     scene.lines[0].text = longText;
     delete scene.lines[0].words;

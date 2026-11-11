@@ -1,0 +1,881 @@
+{
+  "version": 1,
+  "size": 192,
+  "rightsStatus": "source-permissions-unconfirmed",
+  "avatars": [
+    {
+      "key": "patrick",
+      "name": "派大星",
+      "kind": "character-artwork",
+      "file": "patrick-source.png",
+      "source": "https://en.wikipedia.org/wiki/Patrick_Star",
+      "image": "https://upload.wikimedia.org/wikipedia/commons/2/28/Patrick_Star_character.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "spongebob",
+      "name": "海绵宝宝",
+      "kind": "character-artwork",
+      "file": "spongebob-source.png",
+      "source": "https://en.wikipedia.org/wiki/SpongeBob_SquarePants_(character)",
+      "image": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/SpongeBob_character.svg/960px-SpongeBob_character.svg.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.8
+      ]
+    },
+    {
+      "key": "squidward",
+      "name": "章鱼哥",
+      "kind": "character-artwork",
+      "file": "squidward-original.png",
+      "source": "https://www.clipartmax.com/middle/m2i8b1N4i8Z5G6i8_squidward-tentacles-spongebob-squarepants-squidward/",
+      "image": "https://www.clipartmax.com/png/full/196-1963248_squidward-tentacles-spongebob-squarepants-squidward.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.6
+      ]
+    },
+    {
+      "key": "shrek",
+      "name": "史莱克",
+      "kind": "character-artwork",
+      "file": "shrek-source.png",
+      "source": "https://en.wikipedia.org/wiki/Shrek_(character)",
+      "image": "https://upload.wikimedia.org/wikipedia/en/4/4d/Shrek_%28character%29.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.58
+      ]
+    },
+    {
+      "key": "donkey",
+      "name": "驴子",
+      "kind": "character-artwork",
+      "file": "donkey-source.png",
+      "source": "https://en.wikipedia.org/wiki/Donkey_(Shrek)",
+      "image": "https://upload.wikimedia.org/wikipedia/en/6/6c/Donkey_%28Shrek%29.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.58
+      ]
+    },
+    {
+      "key": "dory",
+      "name": "多莉",
+      "kind": "character-artwork",
+      "file": "dory-source.png",
+      "source": "https://en.wikipedia.org/wiki/Dory_(Finding_Nemo)",
+      "image": "https://upload.wikimedia.org/wikipedia/en/a/ae/Dory_%28Finding_Nemo%29.png"
+    },
+    {
+      "key": "woody",
+      "name": "胡迪",
+      "kind": "character-artwork",
+      "file": "woody-original.png",
+      "source": "https://www.pngaaa.com/detail/216498",
+      "image": "https://image.pngaaa.com/498/216498.png",
+      "crop": [
+        0.12,
+        0,
+        0.9,
+        0.48
+      ]
+    },
+    {
+      "key": "buzz",
+      "name": "巴斯光年",
+      "kind": "character-artwork",
+      "file": "buzz-original.png",
+      "source": "https://www.pngaaa.com/detail/216530",
+      "image": "https://image.pngaaa.com/530/216530.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.63
+      ]
+    },
+    {
+      "key": "mater",
+      "name": "板牙",
+      "kind": "character-artwork",
+      "file": "mater-source.png",
+      "source": "https://en.wikipedia.org/wiki/Mater_(Cars)",
+      "image": "https://upload.wikimedia.org/wikipedia/en/f/f7/Mater_%28Cars%29.png"
+    },
+    {
+      "key": "mcqueen",
+      "name": "闪电麦昆",
+      "kind": "character-artwork",
+      "file": "mcqueen-source.png",
+      "source": "https://en.wikipedia.org/wiki/Lightning_McQueen",
+      "image": "https://upload.wikimedia.org/wikipedia/en/8/82/Lightning_McQueen.png"
+    },
+    {
+      "key": "chick-hicks",
+      "name": "奇克·海克斯",
+      "kind": "character-artwork",
+      "file": "chick-hicks-original.png",
+      "source": "https://www.pngaaa.com/detail/4570043",
+      "image": "https://image.pngaaa.com/43/4570043.png"
+    },
+    {
+      "key": "agnes",
+      "name": "艾格尼丝",
+      "kind": "character-artwork",
+      "file": "agnes-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/despicable-me/agnes-despicable-me",
+      "image": "https://assets.stickpng.com/images/597a2ab7588e2808c03fdec9.png",
+      "crop": [
+        0,
+        0.22,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "gru",
+      "name": "格鲁",
+      "kind": "character-artwork",
+      "file": "gru-source.png",
+      "source": "https://en.wikipedia.org/wiki/Gru",
+      "image": "https://upload.wikimedia.org/wikipedia/en/0/09/Gru_from_DM4.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.5
+      ]
+    },
+    {
+      "key": "margo",
+      "name": "玛戈",
+      "kind": "character-artwork",
+      "file": "margo-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/despicable-me/margo-standing-despicable-me",
+      "image": "https://assets.stickpng.com/images/597a2b7e588e2808c03fdecd.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.48
+      ]
+    },
+    {
+      "key": "dug",
+      "name": "道格",
+      "kind": "character-artwork",
+      "file": "dug-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/up/dug-the-dog",
+      "image": "https://assets.stickpng.com/images/5a18857d8d421802430d2cf8.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.82
+      ]
+    },
+    {
+      "key": "carl",
+      "name": "卡尔",
+      "kind": "character-artwork",
+      "file": "carl-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/up/carl-fredricksen",
+      "image": "https://assets.stickpng.com/images/5a1885288d421802430d2cef.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.6
+      ]
+    },
+    {
+      "key": "gusteau",
+      "name": "古斯托",
+      "kind": "character-artwork",
+      "file": "gusteau-logo.png",
+      "source": "https://www.pngaaa.com/detail/2795547",
+      "image": "https://image.pngaaa.com/547/2795547.png",
+      "crop": [
+        0.23,
+        0,
+        0.78,
+        0.8
+      ]
+    },
+    {
+      "key": "remy",
+      "name": "小米",
+      "kind": "character-artwork",
+      "file": "remy-original.png",
+      "source": "https://www.pngaaa.com/detail/5038893",
+      "image": "https://image.pngaaa.com/893/5038893.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.66
+      ]
+    },
+    {
+      "key": "ping",
+      "name": "平先生",
+      "kind": "character-artwork",
+      "file": "ping-original.png",
+      "source": "https://www.pngaaa.com/detail/400451",
+      "image": "https://image.pngaaa.com/451/400451.png",
+      "crop": [
+        0.18,
+        0,
+        0.62,
+        0.52
+      ]
+    },
+    {
+      "key": "po",
+      "name": "阿宝",
+      "kind": "character-artwork",
+      "file": "po-source.png",
+      "source": "https://en.wikipedia.org/wiki/Po_(Kung_Fu_Panda)",
+      "image": "https://upload.wikimedia.org/wikipedia/en/3/3d/Po_from_DreamWorks_Animation%27s_Kung_Fu_Panda.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.65
+      ]
+    },
+    {
+      "key": "oogway",
+      "name": "乌龟大师",
+      "kind": "character-artwork",
+      "file": "oogway-original.png",
+      "source": "https://www.pngaaa.com/detail/462146",
+      "image": "https://image.pngaaa.com/146/462146.png",
+      "crop": [
+        0.28,
+        0,
+        1,
+        0.62
+      ]
+    },
+    {
+      "key": "pinocchio",
+      "name": "匹诺曹",
+      "kind": "character-artwork",
+      "file": "pinocchio-art.png",
+      "source": "https://www.deviantart.com/imaryanreynoldsstan/art/Pinocchio-Shrek-Transparent-PNG-1001433168",
+      "image": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/a61e669c-673d-4814-a845-8f6e4100d345/dgk86s0-e6875e0c-b0e6-4482-9c5b-a1688e23a8f1.png/v1/fill/w_400%2Ch_400/pinocchio__shrek___transparent_png__by_imaryanreynoldsstan_dgk86s0-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9NDAwIiwicGF0aCI6Ii9mL2E2MWU2NjljLTY3M2QtNDgxNC1hODQ1LThmNmU0MTAwZDM0NS9kZ2s4NnMwLWU2ODc1ZTBjLWIwZTYtNDQ4Mi05YzViLWExNjg4ZTIzYThmMS5wbmciLCJ3aWR0aCI6Ijw9NDAwIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmltYWdlLm9wZXJhdGlvbnMiXX0.R5VN-ilehsFKMxmSlok9TpsatGRtQbYqQZzuOe8RWlE",
+      "crop": [
+        0.23,
+        0,
+        0.7,
+        0.46
+      ]
+    },
+    {
+      "key": "little-pig",
+      "name": "小猪",
+      "kind": "character-artwork",
+      "file": "little-pig-original.png",
+      "source": "https://www.pngaaa.com/detail/1792829",
+      "image": "https://image.pngaaa.com/829/1792829.png",
+      "crop": [
+        0.33,
+        0,
+        0.67,
+        0.7
+      ]
+    },
+    {
+      "key": "skipper",
+      "name": "队长",
+      "kind": "character-artwork",
+      "file": "skipper-original.png",
+      "source": "https://www.pngaaa.com/detail/279486",
+      "image": "https://image.pngaaa.com/486/279486.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.82
+      ]
+    },
+    {
+      "key": "kowalski",
+      "name": "科瓦斯基",
+      "kind": "character-artwork",
+      "file": "kowalski-original.png",
+      "source": "https://www.pngaaa.com/detail/279382",
+      "image": "https://image.pngaaa.com/382/279382.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.62
+      ]
+    },
+    {
+      "key": "nanny",
+      "name": "梅姨",
+      "kind": "character-artwork",
+      "file": "nanny-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/ben-and-holly/nanny-plum",
+      "image": "https://assets.stickpng.com/images/5954c96cdeaf2c03413be37b.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.65
+      ]
+    },
+    {
+      "key": "ben",
+      "name": "本",
+      "kind": "character-artwork",
+      "file": "ben-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/ben-and-holly/ben-sounding-horn",
+      "image": "https://assets.stickpng.com/images/5954c9b7deaf2c03413be384.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.78
+      ]
+    },
+    {
+      "key": "holly",
+      "name": "霍莉",
+      "kind": "character-artwork",
+      "file": "holly-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/ben-and-holly/princess-holly",
+      "image": "https://assets.stickpng.com/images/5954c95fdeaf2c03413be37a.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.85
+      ]
+    },
+    {
+      "key": "mummy-pig",
+      "name": "猪妈妈",
+      "kind": "character-artwork",
+      "file": "mummy-pig-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/peppa-pig/mummy-pig",
+      "image": "https://assets.stickpng.com/images/589eec7164b351149f22a88b.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.78
+      ]
+    },
+    {
+      "key": "daddy-pig",
+      "name": "猪爸爸",
+      "kind": "character-artwork",
+      "file": "daddy-pig-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/peppa-pig/daddy-pig",
+      "image": "https://assets.stickpng.com/images/589eec6964b351149f22a88a.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.78
+      ]
+    },
+    {
+      "key": "peppa",
+      "name": "佩奇",
+      "kind": "character-artwork",
+      "file": "peppa-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/peppa-pig/peppa-pig",
+      "image": "https://assets.stickpng.com/images/589eec5264b351149f22a888.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.84
+      ]
+    },
+    {
+      "key": "danny-dog",
+      "name": "小狗丹尼",
+      "kind": "character-artwork",
+      "file": "danny-dog.svg",
+      "source": "https://peppapigworld.co.uk/pages/danny-dog",
+      "image": "https://peppapigworld.co.uk/cdn/shop/t/200/assets/danny-dog.svg?v=20474274671826314071793267390"
+    },
+    {
+      "key": "george-pig",
+      "name": "乔治",
+      "kind": "character-artwork",
+      "file": "george-pig-art.png",
+      "source": "https://www.stickpng.com/img/cartoons/peppa-pig/peppa-pig-brother-george",
+      "image": "https://assets.stickpng.com/images/589eec7764b351149f22a88c.png",
+      "crop": [
+        0,
+        0,
+        1,
+        0.84
+      ]
+    },
+    {
+      "key": "young-sheldon",
+      "name": "谢尔顿",
+      "kind": "publicity-photo",
+      "file": "young-sheldon-promo.jpg",
+      "source": "https://www.imdb.com/title/tt6226232/mediaviewer/rm3003000576",
+      "image": "https://m.media-amazon.com/images/M/MV5BNWQyYWIwNzMtNjY0ZC00MjY4LWJjOWQtMzY1YjBkMWYwMDQ0XkEyXkFqcGc%40._V1_.jpg",
+      "scenes": "young-sheldon-",
+      "crop": [
+        0.12,
+        0,
+        0.88,
+        0.5
+      ]
+    },
+    {
+      "key": "sheldon",
+      "name": "谢尔顿",
+      "kind": "publicity-photo",
+      "file": "sheldon-promo.jpg",
+      "source": "https://www.televisa.com/canal5/series/dr-sheldon-cooper",
+      "image": "https://st1.uvnimg.com/3c/a8/4f39bc05a9a717c3b13c60b479f9/dr-sheldon-cooper.jpg",
+      "scenes": "big-bang-",
+      "crop": [
+        0,
+        0,
+        1,
+        1
+      ]
+    },
+    {
+      "key": "george-cooper",
+      "name": "乔治爸爸",
+      "kind": "publicity-photo",
+      "file": "george-cooper-promo2.jpg",
+      "source": "https://www.yahoo.com/entertainment/plays-young-sheldon-see-full-200126203.html",
+      "image": "https://s.yimg.com/ny/api/res/1.2/u0m.dpDwwuLLx1kDb.utlg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTk2MDtoPTE0Mzk7Y2Y9d2VicA--/https%3A/media.zenfs.com/en/usa_today_entertainment_893/b89b1969a1570c53314c721ba2f22fb6",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "rachel",
+      "name": "瑞秋",
+      "kind": "publicity-photo",
+      "file": "rachel-promo.jpg",
+      "source": "https://www.vogue.fr/beaute/article/rouge-a-levres-rachel-green-friends",
+      "image": "https://media.vogue.fr/photos/5da46eeee189b20008ababeb/master/pass/GettyImages-908311.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "ross",
+      "name": "罗斯",
+      "kind": "publicity-photo",
+      "file": "ross-promo2.jpg",
+      "source": "https://www.imdb.com/title/tt0108778/mediaviewer/rm1474813184",
+      "image": "https://m.media-amazon.com/images/M/MV5BMjA1MzEwMTk5M15BMl5BanBnXkFtZTgwNDk2ODU0MDE%40._V1_.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "chandler",
+      "name": "钱德勒",
+      "kind": "publicity-photo",
+      "file": "chandler-promo2.jpg",
+      "source": "https://friends-druzya.ru/characters/chandler-bing",
+      "image": "https://friends-druzya.ru/images/characters/chandler-bing/cover.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "joey",
+      "name": "乔伊",
+      "kind": "publicity-photo",
+      "file": "joey-promo.jpg",
+      "source": "https://www.pinterest.com/pin/465067098991854869/",
+      "image": "https://i.pinimg.com/originals/ec/cd/04/eccd0434a34f3ec70994bde7b962dc8a.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "barney",
+      "name": "巴尼",
+      "kind": "publicity-photo",
+      "file": "barney-promo.jpg",
+      "source": "https://getwallpapers.com/collection/barney-stinson-wallpapers",
+      "image": "https://getwallpapers.com/wallpaper/full/d/7/d/937247-barney-stinson-wallpapers-1920x2560-for-htc.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "ted",
+      "name": "泰德",
+      "kind": "publicity-photo",
+      "file": "ted-promo2.jpg",
+      "source": "https://www.pinterest.com/pin/391672498812894102/",
+      "image": "https://i.pinimg.com/originals/bd/66/4c/bd664c8d9a652a9ea15ad417dff0f56c.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "marshall",
+      "name": "马修",
+      "kind": "publicity-photo",
+      "file": "marshall-promo.jpg",
+      "source": "https://allabouthowimetyourmother.blogspot.com/p/marshall-eriksen.html",
+      "image": "https://3.bp.blogspot.com/-wLyg7v4dVQQ/VGCW4aw2FUI/AAAAAAAAAB0/bR_e00acudk/s1600/Jason-Segel-marshall-eriksen-how-i-met-your-mother-35294750-596-794.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "robin",
+      "name": "罗宾",
+      "kind": "publicity-photo",
+      "file": "robin-promo2.jpg",
+      "source": "https://galeri.uludagsozluk.com/r/robin-scherbatsky-264346/",
+      "image": "https://galeri3.uludagsozluk.com/197/robin-scherbatsky_264346.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "lily",
+      "name": "莉莉",
+      "kind": "publicity-photo",
+      "file": "lily-promo.jpg",
+      "source": "https://www.pinterest.com/pin/how-i-met-your-mother-photo-lily-hq--391672498812894090/",
+      "image": "https://i.pinimg.com/originals/7d/ac/9f/7dac9f81fca10de05030a9a1f16d60b7.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "missy",
+      "name": "米茜",
+      "kind": "publicity-photo",
+      "file": "missy-promo.jpg",
+      "source": "https://www.imdb.com/title/tt6226232/mediaviewer/rm3003000576",
+      "image": "https://m.media-amazon.com/images/M/MV5BMjdjZTQ5ZDItZTIyYy00ZGRmLWJiMDEtNTcwNjA2MTg1MTdjXkEyXkFqcGc%40._V1_.jpg",
+      "crop": [
+        0.1,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "georgie",
+      "name": "小乔治",
+      "kind": "publicity-photo",
+      "file": "georgie-promo.jpg",
+      "source": "https://tvline.com/gallery/young-sheldon-season-1-photos/",
+      "image": "https://www.tvline.com/tvline/gallery/young-sheldon-season-1-photos/young-sheldon-montana-jordan-georgie.jpg",
+      "crop": [
+        0.12,
+        0,
+        0.9,
+        0.48
+      ]
+    },
+    {
+      "key": "mandy",
+      "name": "曼迪",
+      "kind": "publicity-photo",
+      "file": "mandy-promo.jpg",
+      "source": "https://www.adorocinema.com/personalidades/personalidade-67967/fotos/detalhe/?cmediafile=21310769",
+      "image": "https://br.web.img2.acsta.net/r_1280_720/pictures/16/05/25/10/03/424281.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "harry",
+      "name": "哈利",
+      "kind": "publicity-photo",
+      "file": "harry-promo.jpg",
+      "source": "https://www.harrypotterfanzone.com/harry-potter-movie-stills/movie-1/",
+      "image": "https://media.harrypotterfanzone.com/harry-potter-philosophers-stone-portrait-8-630x0-c-default.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "ron",
+      "name": "罗恩",
+      "kind": "publicity-photo",
+      "file": "ron-young-promo.jpg",
+      "source": "https://www.harrypotterfanzone.com/harry-potter-movie-stills/movie-1/",
+      "image": "https://media.harrypotterfanzone.com/ron-weasley-philosophers-stone-portrait-4-630x0-c-default.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "monica",
+      "name": "莫妮卡",
+      "kind": "publicity-photo",
+      "file": "monica-promo.jpg",
+      "source": "https://friends-druzya.ru/characters/monica-geller",
+      "image": "https://friends-druzya.ru/images/characters/monica-geller/cover.jpg",
+      "crop": [
+        0,
+        0.08,
+        1,
+        0.8
+      ]
+    },
+    {
+      "key": "penny",
+      "name": "佩妮",
+      "kind": "publicity-photo",
+      "file": "penny-promo.jpg",
+      "source": "https://www.pinterest.com/pin/kaley-cuoco-penny-the-big-bang-theory-promo-photo--14003448817935192/",
+      "image": "https://i.pinimg.com/736x/55/b9/bc/55b9bcb6b12bb5d7a79e3e9e5a0b75e2.jpg",
+      "crop": [
+        0.08,
+        0,
+        0.92,
+        0.5
+      ]
+    },
+    {
+      "key": "leonard",
+      "name": "莱纳德",
+      "kind": "publicity-photo",
+      "file": "leonard-promo.jpg",
+      "source": "https://www.pinterest.com/pin/johnny-galecki-as-leonard-hofstadter-in-the-big-bang-theory-in-2025--128000814405116173/",
+      "image": "https://i.pinimg.com/736x/05/c0/06/05c006cc731f31eb9a0384150eda1aa8.jpg",
+      "crop": [
+        0,
+        0,
+        1,
+        0.7
+      ]
+    },
+    {
+      "key": "tom-fish",
+      "name": "顾客",
+      "kind": "video-still",
+      "video": "chocolate-v1.mp4",
+      "time": 2.2,
+      "frameCrop": [
+        120,
+        45,
+        235
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "marlin",
+      "name": "马林",
+      "kind": "video-still",
+      "video": "keep-swimming-review-d2e6c6472194.mp4",
+      "time": 2.312,
+      "frameCrop": [
+        250,
+        40,
+        160
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "sharks",
+      "name": "鲨鱼合声",
+      "kind": "video-still",
+      "video": "fish-friends-review-09f37d88c736.mp4",
+      "time": 6.753,
+      "frameCrop": [
+        35,
+        0,
+        400
+      ],
+      "source": "scene-credit",
+      "brightness": 1.65
+    },
+    {
+      "key": "chum",
+      "name": "查姆",
+      "kind": "video-still",
+      "video": "fish-friends-review-09f37d88c736.mp4",
+      "time": 6.753,
+      "frameCrop": [
+        65,
+        50,
+        175
+      ],
+      "source": "scene-credit",
+      "brightness": 1.65
+    },
+    {
+      "key": "anchor",
+      "name": "安可",
+      "kind": "video-still",
+      "video": "fish-friends-review-09f37d88c736.mp4",
+      "time": 8.893,
+      "frameCrop": [
+        300,
+        50,
+        170
+      ],
+      "source": "scene-credit",
+      "brightness": 1.65
+    },
+    {
+      "key": "carnival-attendant",
+      "name": "游乐场摊主",
+      "kind": "video-still",
+      "video": "so-fluffy-review-c54addceb505.mp4",
+      "time": 11,
+      "frameCrop": [
+        75,
+        12,
+        160
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "butterpants-father",
+      "name": "男孩的爸爸",
+      "kind": "video-still",
+      "video": "do-the-roar-review-4592e0d9dfc6.mp4",
+      "time": 1.5,
+      "frameCrop": [
+        30,
+        60,
+        150
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "butterpants",
+      "name": "小男孩",
+      "kind": "video-still",
+      "video": "do-the-roar-review-4592e0d9dfc6.mp4",
+      "time": 6.034,
+      "frameCrop": [
+        120,
+        15,
+        210
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "librarian",
+      "name": "图书管理员",
+      "kind": "video-still",
+      "video": "young-sheldon-library-review-9f9d2305ab2b.mp4",
+      "time": 3.663,
+      "frameCrop": [
+        120,
+        25,
+        120
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "sturgis",
+      "name": "斯特吉斯博士",
+      "kind": "video-still",
+      "video": "young-sheldon-einstein-review-4ecb5b8418ae.mp4",
+      "time": 3.073,
+      "frameCrop": [
+        55,
+        5,
+        245
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "researcher",
+      "name": "研究员",
+      "kind": "video-still",
+      "video": "young-sheldon-camera-review-64fb2098128d.mp4",
+      "time": 2.521,
+      "frameCrop": [
+        55,
+        0,
+        200
+      ],
+      "source": "scene-credit"
+    },
+    {
+      "key": "shop-assistant",
+      "name": "店员",
+      "kind": "video-still",
+      "video": "friends-return-couch-review-55c443822fb4.mp4",
+      "time": 1.661,
+      "frameCrop": [
+        245,
+        20,
+        210
+      ],
+      "source": "scene-credit",
+      "brightness": 1.65
+    }
+  ]
+}

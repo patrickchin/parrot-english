@@ -3,21 +3,21 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import type { Pack } from '../../src/pack';
+import type { Scene } from '../../src/scene';
 import { routeShortScene } from './short-scene';
 
-test.use({ samplePack: true });
+test.use({ sampleScene: true });
 
 test.beforeEach(async ({ page }) => {
   // A development hot reload must not reset the session during a real-time export.
   await page.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
-  const pack: Pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8'));
+  const scene: Scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
   // Match the shipped catalog, whose clips keep the original video audio and
   // have no separate backing asset. The offline mix check covers a backing bed.
-  delete pack.backing;
-  pack.duration = 3.2;
-  pack.lines = pack.lines.slice(0, 3).map((line, index) => ({ ...line, start: 0.2 + index, end: 1.2 + index, words: undefined }));
-  await page.route('**/packs/patrick/pack.json', route => route.fulfill({ json: pack }));
+  delete scene.backing;
+  scene.duration = 3.2;
+  scene.lines = scene.lines.slice(0, 3).map((line, index) => ({ ...line, start: 0.2 + index, end: 1.2 + index, words: undefined }));
+  await page.route('**/scenes/patrick/scene.json', route => route.fulfill({ json: scene }));
   await routeShortScene(page);
   await page.addInitScript(() => {
     // A known microphone tone makes the exported voice independently measurable.
@@ -68,7 +68,7 @@ test('downloads a real local H.264/AAC MP4 with the recorded voice and original 
   await page.getByRole('button', { name: '下载配音视频', exact: true }).click();
   await expect(page.getByRole('link', { name: '再次下载视频', exact: true })).toBeVisible({ timeout: 12000 });
   const file = await download;
-  expect(file.suggestedFilename()).toMatch(/^parrotbook-pack_.*\.mp4$/);
+  expect(file.suggestedFilename()).toMatch(/^parrotbook-scene_.*\.mp4$/);
   const path = info.outputPath('dub.mp4'); await file.saveAs(path);
   const metadata = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', path], { encoding: 'utf8' }));
   expect(metadata.streams.map((stream: { codec_name: string }) => stream.codec_name).sort()).toEqual(['aac', 'h264']);
@@ -121,9 +121,9 @@ test('local mix keeps backing, skipped dialogue, and the retained take offset at
     const { mixDubAudio } = await import(mixerPath);
     const { encodePcmWav } = await import(wavPath);
     const wav = (level: number) => encodePcmWav([new Float32Array(48000).fill(level)], 48000);
-    const pack = { duration: 1, lines: [{ id: 'line_recorded', start: 0.2, end: 0.6 }, { id: 'line_skipped', start: 0.6, end: 1 }] };
+    const scene = { duration: 1, lines: [{ id: 'line_recorded', start: 0.2, end: 0.6 }, { id: 'line_skipped', start: 0.6, end: 1 }] };
     const takes = { line_recorded: { start: 0.1, blob: wav(0.4) } };
-    const result: AudioBuffer = await mixDubAudio(pack, takes, await wav(0.1).arrayBuffer(), await wav(0.2).arrayBuffer());
+    const result: AudioBuffer = await mixDubAudio(scene, takes, await wav(0.1).arrayBuffer(), await wav(0.2).arrayBuffer());
     return [0.05, 0.15, 0.3, 0.55, 0.65, 0.99].map(time => result.getChannelData(0)[Math.floor(time * 48000)]);
   });
   for (const [index, level] of [0.1, 0.5, 0.6, 0.6, 0.1, 0.1].entries()) expect(levels[index]).toBeCloseTo(level, 3);

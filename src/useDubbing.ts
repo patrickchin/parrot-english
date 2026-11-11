@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState, type RefObject } from 'react';
-import { asset, type Pack, type Line } from './pack';
+import { asset, type Scene, type Line } from './scene';
 import { waveformStep } from './waveform';
 import { encodePcmWav } from './pcm-recording';
 import { audibleContextTime, decodeTake, waitForAudioClock } from './audio-timing';
@@ -10,7 +10,7 @@ import { lineWindow } from './line-window';
 export type Take = { blob: Blob; url: string; duration: number; start: number; peaks: number[] };
 export type Takes = Record<string, Take>;
 
-export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack, onTake: (id: string, take: Take) => void) {
+export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Scene, onTake: (id: string, take: Take) => void) {
   const [state, dispatch] = useReducer(transitionMedia, idleMedia);
   const phase = state.phase;
   const error = state.phase === 'idle' ? state.error : '';
@@ -116,10 +116,10 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
           stop('播放或录音暂时中断了，请再试一次。'); return;
         }
       }
-      if (takes) el.muted = pack.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end);
+      if (takes) el.muted = scene.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end);
       // Follow the media clock on every paint; throttling this made the playhead step.
       setTime(el.currentTime);
-      if (el.ended || el.currentTime >= end) { setTime(Math.min(el.currentTime, pack.duration)); stop(); return; }
+      if (el.ended || el.currentTime >= end) { setTime(Math.min(el.currentTime, scene.duration)); stop(); return; }
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
@@ -132,7 +132,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       const el = await readyVideo(line?.start ?? 0, false);
       await playVideo(el, id);
       if (id !== operation.current) return;
-      advance('PLAYING', id); watch(id, line?.end ?? pack.duration);
+      advance('PLAYING', id); watch(id, line?.end ?? scene.duration);
     } catch (e) { fail(id, e); }
   }
 
@@ -142,7 +142,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
 
   async function record(line: Line) {
     const id = begin('recording');
-    const window = lineWindow(pack, line);
+    const window = lineWindow(scene, line);
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
       setError('这个浏览器暂不支持录音。请用新版 Safari 或 Chrome 打开这个网址。'); return;
     }
@@ -257,12 +257,12 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
 
   async function replay(takes: Takes, line?: Line) {
     const id = begin(line ? 'listening' : 'replay');
-    const window = line && lineWindow(pack, line);
+    const window = line && lineWindow(scene, line);
     const start = window?.start ?? 0;
-    const end = window?.end ?? pack.duration;
+    const end = window?.end ?? scene.duration;
     setTime(start);
     try {
-      if (!pack.lines.some(line => takes[line.id])) {
+      if (!scene.lines.some(line => takes[line.id])) {
         advance('USE_ORIGINAL', id);
         const el = await readyVideo(start, false);
         await playVideo(el, id);
@@ -281,13 +281,13 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       await waitForAudioClock(ctx, cancellation.current.signal);
       if (id !== operation.current) return;
       advance('AUDIO_READY', id);
-      const buffers = await Promise.all(pack.lines.filter(turn => takes[turn.id] && (!line || turn.id === line.id)).map(async line => ({
+      const buffers = await Promise.all(scene.lines.filter(turn => takes[turn.id] && (!line || turn.id === line.id)).map(async line => ({
         line, buffer: await decodeTake(decodedTakes.current, ctx, takes[line.id].blob),
       })));
       if (id !== operation.current) return;
       advance('TAKES_READY', id);
-      if (buffers.length && pack.backing && !backing.current) {
-        const response = await fetch(asset(pack, pack.backing), { signal: cancellation.current.signal });
+      if (buffers.length && scene.backing && !backing.current) {
+        const response = await fetch(asset(scene, scene.backing), { signal: cancellation.current.signal });
         if (!response.ok) throw new Error('背景声音未加载成功，请再试一次。');
         const decoded = await ctx.decodeAudioData(await response.arrayBuffer());
         if (id !== operation.current) return;
@@ -295,7 +295,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       }
       if (id !== operation.current) return;
       advance('BACKING_READY', id);
-      const el = await readyVideo(start, pack.lines.some(l => takes[l.id] && start >= l.start && start < l.end));
+      const el = await readyVideo(start, scene.lines.some(l => takes[l.id] && start >= l.start && start < l.end));
       if (id !== operation.current) return;
       // Schedule before starting the picture, so compensation never cuts the
       // opening syllable. One render quantum gives Web Audio its native lead.
@@ -315,7 +315,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
       }
       for (const { line, buffer } of buffers) {
         const takeStart = takes[line.id].start;
-        const window = lineWindow(pack, line);
+        const window = lineWindow(scene, line);
         const voiceStart = Math.max(start, window.voiceStart, takeStart);
         const offset = voiceStart - takeStart;
         const duration = Math.min(buffer.duration, window.voiceEnd - takeStart) - offset;

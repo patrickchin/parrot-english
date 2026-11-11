@@ -36,7 +36,7 @@ Open `content/local-dubbing/review/` in the shared main checkout:
 
 The raw downloads, media, temporary transcripts, and local review indexes stay
 inside the existing Git-ignored authoring directory. The owner subsequently approved these scenes for the existing internal test
-deployment. Application packs and folder selection are prepared from these
+deployment. Application scenes and folder selection are prepared from these
 review recipes; media is stored separately in OSS.
 
 ## Replacement scenes
@@ -138,8 +138,8 @@ Screenshots and preview sheets are saved under
 
 ## Internal test integration
 
-`node scripts/prepare-test-packs.mjs` prepares the 32-scene application catalogue,
-pack manifests, hashed media filenames, posters, and original-audio waveforms.
+`node scripts/prepare-test-scenes.mjs` prepares the 32-scene application catalogue,
+scene manifests, hashed media filenames, posters, and original-audio waveforms.
 It uses the saved word alignments and preserves the three benchmark media files.
 Upload media from the generated ignored `release-metadata/media.json` manifest
 to the existing OSS bucket before merging metadata changes. This release uses

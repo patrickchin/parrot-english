@@ -56,7 +56,7 @@ The apex and www records trigger the prototype directly, rather than forwarding
 visitors to the protected debug preview. The first player now records takes in
 browser memory with native AudioWorklet PCM capture and replays WAV takes locally. It has no database,
 account, learner-recording upload, or AI runtime dependency. Application code,
-HTML/CSS, and pack/waveform metadata are in ESA (0.38 MiB). Media bytes are in OSS;
+HTML/CSS, and scene/waveform metadata are in ESA (0.38 MiB). Media bytes are in OSS;
 build tooling rejects media in the function bundle.
 
 ## Current media storage
@@ -158,7 +158,7 @@ cancellation was performed.
 ## Warm player and waveform update — 2026-10-29
 
 The approved warm-ivory/forest/coral design now uses a single-column player and
-actual scene thumbnails. Each pack includes numeric original-audio RMS envelopes;
+actual scene thumbnails. Each scene includes numeric original-audio RMS envelopes;
 the microphone overlay and recorded takes stay in browser memory. Native media
 seeking completes before playback/capture. There is no new database, sound-effect
 service, generated speech, voice filter, or change to the established storage split.
@@ -174,7 +174,7 @@ Previous production version 1793182979894750925 remains available for rollback.
 
 The final live check initially received an older HTML entry point referencing a
 retired stylesheet hash. ESA site cache was purged (task 1775291466776611), then
-the root HTML, referenced JS/CSS MIME types, pack metadata, and waveform JSON
+the root HTML, referenced JS/CSS MIME types, scene metadata, and waveform JSON
 were checked again. Clear/revalidate the HTML entry point as part of publication;
 a successful routine publish alone does not prove the browser has the new app.
 
@@ -194,7 +194,7 @@ unofficial browser clones. The approved warm palette and waveform overlay remain
 
 The complete browser suite passed 39 checks with 8 WebKit microphone skips;
 five Node checks and the production build passed. A final three-browser layout
-check covers all five starter packs, source-credit dialogs, 360×640, 375×667,
+check covers all five starter scenes, source-credit dialogs, 360×640, 375×667,
 768×1024, 1024×600, and 1280×720 viewports. It verifies that all four actions are
 at least 56 pixels high, stay in view, and do not overlap the footer or require
 page scrolling. Recorded-take replay and next are also checked at 375×667.

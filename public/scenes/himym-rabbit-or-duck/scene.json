@@ -1,0 +1,638 @@
+{
+  "version": 1,
+  "id": "scene_ON8p1LWII74",
+  "title": "兔子还是鸭子更合适？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 32.741,
+  "video": "himym-rabbit-or-duck-review-6f4ca9b32956.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-rabbit-or-duck/",
+  "poster": "himym-rabbit-or-duck-poster-6f4ca9b32956.jpg",
+  "waveform": "waveform-6f4ca9b32956.json",
+  "roles": [
+    {
+      "id": "role_crBU1TtFewA",
+      "name": "马修",
+      "label": "马修",
+      "hint": "3 句台词",
+      "portrait": "marshall-avatar-f3d00a18b465.jpg"
+    },
+    {
+      "id": "role_8H5N8-HWEJc",
+      "name": "泰德",
+      "label": "泰德",
+      "hint": "1 句台词",
+      "portrait": "ted-avatar-e92754003c8f.jpg"
+    },
+    {
+      "id": "role_SDdf7QMVejg",
+      "name": "罗宾",
+      "label": "罗宾",
+      "hint": "1 句台词",
+      "portrait": "robin-avatar-0e3d7ee91ef4.jpg"
+    },
+    {
+      "id": "role_L7o4_XurX_4",
+      "name": "莉莉",
+      "label": "莉莉",
+      "hint": "1 句台词",
+      "portrait": "lily-avatar-9a839fdd2f1b.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_kAqjkcntfok",
+      "roleId": "role_crBU1TtFewA",
+      "start": 0,
+      "end": 10.886,
+      "text": "Relationships are like that. I mean, look, when you first met Don, you hated him. You thought, this guy's a duck. But one of these days, you're gonna realize this is actually someone that I love. He's a rabbit.",
+      "hint": "关系就是这样。你刚认识唐时很讨厌他，觉得他像只鸭子。但总有一天，你会发现自己喜欢他。他其实是只兔子。",
+      "words": [
+        {
+          "text": "Relationships",
+          "start": 0.02,
+          "end": 0.52
+        },
+        {
+          "text": "are",
+          "start": 0.58,
+          "end": 0.64
+        },
+        {
+          "text": "like",
+          "start": 0.68,
+          "end": 0.8
+        },
+        {
+          "text": "that.",
+          "start": 0.861,
+          "end": 0.981
+        },
+        {
+          "text": "I",
+          "start": 1.041,
+          "end": 1.061
+        },
+        {
+          "text": "mean,",
+          "start": 1.101,
+          "end": 1.201
+        },
+        {
+          "text": "look,",
+          "start": 1.281,
+          "end": 1.401
+        },
+        {
+          "text": "when",
+          "start": 1.741,
+          "end": 1.821
+        },
+        {
+          "text": "you",
+          "start": 1.861,
+          "end": 1.941
+        },
+        {
+          "text": "first",
+          "start": 2.061,
+          "end": 2.261
+        },
+        {
+          "text": "met",
+          "start": 2.341,
+          "end": 2.481
+        },
+        {
+          "text": "Don,",
+          "start": 2.541,
+          "end": 2.902
+        },
+        {
+          "text": "you",
+          "start": 2.982,
+          "end": 3.062
+        },
+        {
+          "text": "hated",
+          "start": 3.122,
+          "end": 3.422
+        },
+        {
+          "text": "him.",
+          "start": 3.482,
+          "end": 3.602
+        },
+        {
+          "text": "You",
+          "start": 3.682,
+          "end": 3.762
+        },
+        {
+          "text": "thought,",
+          "start": 3.822,
+          "end": 4.062
+        },
+        {
+          "text": "this",
+          "start": 4.423,
+          "end": 4.603
+        },
+        {
+          "text": "guy's",
+          "start": 4.703,
+          "end": 5.203
+        },
+        {
+          "text": "a",
+          "start": 5.303,
+          "end": 5.323
+        },
+        {
+          "text": "duck.",
+          "start": 5.403,
+          "end": 5.663
+        },
+        {
+          "text": "But",
+          "start": 5.843,
+          "end": 5.983
+        },
+        {
+          "text": "one",
+          "start": 6.584,
+          "end": 6.664
+        },
+        {
+          "text": "of",
+          "start": 6.704,
+          "end": 6.744
+        },
+        {
+          "text": "these",
+          "start": 6.784,
+          "end": 6.924
+        },
+        {
+          "text": "days,",
+          "start": 7.004,
+          "end": 7.304
+        },
+        {
+          "text": "you're",
+          "start": 7.344,
+          "end": 7.484
+        },
+        {
+          "text": "gonna",
+          "start": 7.504,
+          "end": 7.624
+        },
+        {
+          "text": "realize",
+          "start": 7.644,
+          "end": 7.905
+        },
+        {
+          "text": "this",
+          "start": 7.985,
+          "end": 8.065
+        },
+        {
+          "text": "is",
+          "start": 8.145,
+          "end": 8.185
+        },
+        {
+          "text": "actually",
+          "start": 8.285,
+          "end": 8.545
+        },
+        {
+          "text": "someone",
+          "start": 8.625,
+          "end": 8.925
+        },
+        {
+          "text": "that",
+          "start": 9.005,
+          "end": 9.105
+        },
+        {
+          "text": "I",
+          "start": 9.205,
+          "end": 9.225
+        },
+        {
+          "text": "love.",
+          "start": 9.305,
+          "end": 9.526
+        },
+        {
+          "text": "He's",
+          "start": 10.126,
+          "end": 10.406
+        },
+        {
+          "text": "a",
+          "start": 10.466,
+          "end": 10.486
+        },
+        {
+          "text": "rabbit.",
+          "start": 10.566,
+          "end": 10.826
+        }
+      ]
+    },
+    {
+      "id": "line_C0lvkvlhS4A",
+      "roleId": "role_8H5N8-HWEJc",
+      "start": 10.986,
+      "end": 18.271,
+      "text": "Whoa, I think you got it backwards there, buddy. The duck is the thing you love. The rabbit is the thing you hate.",
+      "hint": "等等，老兄，你说反了吧。鸭子是你喜欢的，兔子才是你讨厌的。",
+      "words": [
+        {
+          "text": "Whoa,",
+          "start": 11.026,
+          "end": 11.227
+        },
+        {
+          "text": "I",
+          "start": 11.327,
+          "end": 11.347
+        },
+        {
+          "text": "think",
+          "start": 11.787,
+          "end": 11.907
+        },
+        {
+          "text": "you",
+          "start": 11.927,
+          "end": 11.987
+        },
+        {
+          "text": "got",
+          "start": 12.047,
+          "end": 12.127
+        },
+        {
+          "text": "it",
+          "start": 12.187,
+          "end": 12.227
+        },
+        {
+          "text": "backwards",
+          "start": 12.267,
+          "end": 12.567
+        },
+        {
+          "text": "there,",
+          "start": 12.607,
+          "end": 12.727
+        },
+        {
+          "text": "buddy.",
+          "start": 12.767,
+          "end": 12.948
+        },
+        {
+          "text": "The",
+          "start": 13.608,
+          "end": 13.708
+        },
+        {
+          "text": "duck",
+          "start": 13.928,
+          "end": 14.228
+        },
+        {
+          "text": "is",
+          "start": 14.949,
+          "end": 15.029
+        },
+        {
+          "text": "the",
+          "start": 15.069,
+          "end": 15.149
+        },
+        {
+          "text": "thing",
+          "start": 15.189,
+          "end": 15.309
+        },
+        {
+          "text": "you",
+          "start": 15.349,
+          "end": 15.449
+        },
+        {
+          "text": "love.",
+          "start": 15.529,
+          "end": 15.749
+        },
+        {
+          "text": "The",
+          "start": 16.47,
+          "end": 16.55
+        },
+        {
+          "text": "rabbit",
+          "start": 16.73,
+          "end": 17.19
+        },
+        {
+          "text": "is",
+          "start": 17.57,
+          "end": 17.63
+        },
+        {
+          "text": "the",
+          "start": 17.67,
+          "end": 17.73
+        },
+        {
+          "text": "thing",
+          "start": 17.77,
+          "end": 17.89
+        },
+        {
+          "text": "you",
+          "start": 17.91,
+          "end": 17.99
+        },
+        {
+          "text": "hate.",
+          "start": 18.07,
+          "end": 18.211
+        }
+      ]
+    },
+    {
+      "id": "line_zS0CXAg4drI",
+      "roleId": "role_crBU1TtFewA",
+      "start": 18.771,
+      "end": 18.991,
+      "text": "What?",
+      "hint": "什么？",
+      "words": [
+        {
+          "text": "What?",
+          "start": 18.811,
+          "end": 18.931
+        }
+      ]
+    },
+    {
+      "id": "line_5a6_zVtp12o",
+      "roleId": "role_SDdf7QMVejg",
+      "start": 19.271,
+      "end": 21.633,
+      "text": "Yeah, I gotta agree. Ducks up, rabbits down.",
+      "hint": "对，我同意。鸭子好，兔子差。",
+      "words": [
+        {
+          "text": "Yeah,",
+          "start": 19.311,
+          "end": 19.431
+        },
+        {
+          "text": "I",
+          "start": 19.591,
+          "end": 19.611
+        },
+        {
+          "text": "gotta",
+          "start": 19.731,
+          "end": 19.972
+        },
+        {
+          "text": "agree.",
+          "start": 20.132,
+          "end": 20.332
+        },
+        {
+          "text": "Ducks",
+          "start": 20.412,
+          "end": 20.652
+        },
+        {
+          "text": "up,",
+          "start": 20.732,
+          "end": 20.812
+        },
+        {
+          "text": "rabbits",
+          "start": 20.952,
+          "end": 21.272
+        },
+        {
+          "text": "down.",
+          "start": 21.332,
+          "end": 21.573
+        }
+      ]
+    },
+    {
+      "id": "line_b6z4JEe3mMA",
+      "roleId": "role_L7o4_XurX_4",
+      "start": 21.633,
+      "end": 23.203,
+      "text": "Definitely. Ducks are better than rabbits.",
+      "hint": "绝对的，鸭子比兔子好。",
+      "words": [
+        {
+          "text": "Definitely.",
+          "start": 21.673,
+          "end": 22.033
+        },
+        {
+          "text": "Ducks",
+          "start": 22.113,
+          "end": 22.393
+        },
+        {
+          "text": "are",
+          "start": 22.453,
+          "end": 22.533
+        },
+        {
+          "text": "better",
+          "start": 22.573,
+          "end": 22.793
+        },
+        {
+          "text": "than",
+          "start": 22.813,
+          "end": 22.893
+        },
+        {
+          "text": "rabbits.",
+          "start": 22.973,
+          "end": 23.173
+        }
+      ]
+    },
+    {
+      "id": "line_3GCNnFMteGU",
+      "roleId": "role_crBU1TtFewA",
+      "start": 23.203,
+      "end": 32.599,
+      "text": "Hey, I got... ducks are, ducks are... Rabbits are adorable! Ducks are... Have you ever been in a fight with a duck? I mean, ducks are jerks!",
+      "hint": "鸭子……兔子多可爱啊！鸭子嘛……你们跟鸭子打过架吗？我是说，鸭子可讨厌了！",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 23.233,
+          "end": 23.314
+        },
+        {
+          "text": "I",
+          "start": 23.614,
+          "end": 23.634
+        },
+        {
+          "text": "got...",
+          "start": 23.714,
+          "end": 23.854
+        },
+        {
+          "text": "ducks",
+          "start": 24.434,
+          "end": 24.614
+        },
+        {
+          "text": "are,",
+          "start": 24.674,
+          "end": 24.754
+        },
+        {
+          "text": "ducks",
+          "start": 25.295,
+          "end": 25.475
+        },
+        {
+          "text": "are...",
+          "start": 25.535,
+          "end": 25.775
+        },
+        {
+          "text": "Rabbits",
+          "start": 26.535,
+          "end": 26.776
+        },
+        {
+          "text": "are",
+          "start": 26.836,
+          "end": 26.916
+        },
+        {
+          "text": "adorable!",
+          "start": 26.976,
+          "end": 27.576
+        },
+        {
+          "text": "Ducks",
+          "start": 27.676,
+          "end": 27.876
+        },
+        {
+          "text": "are...",
+          "start": 27.936,
+          "end": 29.037
+        },
+        {
+          "text": "Have",
+          "start": 29.257,
+          "end": 29.357
+        },
+        {
+          "text": "you",
+          "start": 29.377,
+          "end": 29.457
+        },
+        {
+          "text": "ever",
+          "start": 29.477,
+          "end": 29.557
+        },
+        {
+          "text": "been",
+          "start": 29.577,
+          "end": 29.697
+        },
+        {
+          "text": "in",
+          "start": 29.737,
+          "end": 29.797
+        },
+        {
+          "text": "a",
+          "start": 29.857,
+          "end": 29.877
+        },
+        {
+          "text": "fight",
+          "start": 29.957,
+          "end": 30.178
+        },
+        {
+          "text": "with",
+          "start": 30.238,
+          "end": 30.378
+        },
+        {
+          "text": "a",
+          "start": 30.458,
+          "end": 30.478
+        },
+        {
+          "text": "duck?",
+          "start": 30.678,
+          "end": 30.878
+        },
+        {
+          "text": "I",
+          "start": 30.998,
+          "end": 31.018
+        },
+        {
+          "text": "mean,",
+          "start": 31.078,
+          "end": 31.158
+        },
+        {
+          "text": "ducks",
+          "start": 31.238,
+          "end": 31.458
+        },
+        {
+          "text": "are",
+          "start": 31.498,
+          "end": 31.618
+        },
+        {
+          "text": "jerks!",
+          "start": 32.099,
+          "end": 32.539
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "How I Met Your Mother — S5 E15",
+    "attribution": "20th Television",
+    "source": "https://www.youtube.com/watch?v=thn1SOwjXT0&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–32.7 秒的连续节选。A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion."
+  }
+}

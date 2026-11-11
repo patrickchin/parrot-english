@@ -1,0 +1,336 @@
+{
+  "version": 1,
+  "id": "scene_d6ZZqjpfSfA",
+  "title": "字面意思，还是打个比方？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 17.083,
+  "video": "himym-literally-review-9fa0918f2ad5.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-literally/",
+  "poster": "himym-literally-poster-9fa0918f2ad5.jpg",
+  "waveform": "waveform-9fa0918f2ad5.json",
+  "roles": [
+    {
+      "id": "role_eZTUQldp_mA",
+      "name": "泰德",
+      "label": "泰德",
+      "hint": "3 句台词",
+      "portrait": "ted-avatar-e92754003c8f.jpg"
+    },
+    {
+      "id": "role_GfE4n2EIVkQ",
+      "name": "罗宾",
+      "label": "罗宾",
+      "hint": "2 句台词",
+      "portrait": "robin-avatar-0e3d7ee91ef4.jpg"
+    },
+    {
+      "id": "role_UJ50J1mgRbA",
+      "name": "巴尼和马修",
+      "label": "巴尼和马修",
+      "hint": "1 句台词",
+      "selectable": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_xPImRfRS9v0",
+      "roleId": "role_eZTUQldp_mA",
+      "start": 0.46,
+      "end": 0.941,
+      "text": "What's with you?",
+      "hint": "你怎么了？",
+      "words": [
+        {
+          "text": "What's",
+          "start": 0.5,
+          "end": 0.62
+        },
+        {
+          "text": "with",
+          "start": 0.66,
+          "end": 0.76
+        },
+        {
+          "text": "you?",
+          "start": 0.8,
+          "end": 0.881
+        }
+      ]
+    },
+    {
+      "id": "line_V2srXYihwS8",
+      "roleId": "role_GfE4n2EIVkQ",
+      "start": 1.661,
+      "end": 3.082,
+      "text": "You're always correcting people.",
+      "hint": "你总是纠正别人。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 1.701,
+          "end": 1.861
+        },
+        {
+          "text": "always",
+          "start": 1.921,
+          "end": 2.161
+        },
+        {
+          "text": "correcting",
+          "start": 2.261,
+          "end": 2.662
+        },
+        {
+          "text": "people.",
+          "start": 2.722,
+          "end": 3.022
+        }
+      ]
+    },
+    {
+      "id": "line_Z9kyoWxnyT4",
+      "roleId": "role_UJ50J1mgRbA",
+      "start": 4.983,
+      "end": 6.874,
+      "text": "You totally do that! That's absolutely right.",
+      "hint": "你确实总这样！一点没错。",
+      "words": [
+        {
+          "text": "You",
+          "start": 5.023,
+          "end": 5.203
+        },
+        {
+          "text": "totally",
+          "start": 5.283,
+          "end": 5.463
+        },
+        {
+          "text": "do",
+          "start": 5.483,
+          "end": 5.523
+        },
+        {
+          "text": "that!",
+          "start": 5.563,
+          "end": 5.643
+        },
+        {
+          "text": "That's",
+          "start": 5.743,
+          "end": 5.923
+        },
+        {
+          "text": "absolutely",
+          "start": 5.943,
+          "end": 6.464
+        },
+        {
+          "text": "right.",
+          "start": 6.644,
+          "end": 6.864
+        }
+      ]
+    },
+    {
+      "id": "line_5OyPWVphLWA",
+      "roleId": "role_GfE4n2EIVkQ",
+      "start": 6.874,
+      "end": 10.146,
+      "text": "Right? I never noticed it before, and now it's literally driving me crazy.",
+      "hint": "对吧？我以前没注意，现在简直要被他逼疯了。",
+      "words": [
+        {
+          "text": "Right?",
+          "start": 6.884,
+          "end": 7.004
+        },
+        {
+          "text": "I",
+          "start": 7.024,
+          "end": 7.044
+        },
+        {
+          "text": "never",
+          "start": 7.064,
+          "end": 7.264
+        },
+        {
+          "text": "noticed",
+          "start": 7.364,
+          "end": 7.685
+        },
+        {
+          "text": "it",
+          "start": 7.745,
+          "end": 7.785
+        },
+        {
+          "text": "before,",
+          "start": 7.845,
+          "end": 8.125
+        },
+        {
+          "text": "and",
+          "start": 8.205,
+          "end": 8.265
+        },
+        {
+          "text": "now",
+          "start": 8.325,
+          "end": 8.485
+        },
+        {
+          "text": "it's",
+          "start": 8.585,
+          "end": 8.685
+        },
+        {
+          "text": "literally",
+          "start": 8.805,
+          "end": 9.225
+        },
+        {
+          "text": "driving",
+          "start": 9.285,
+          "end": 9.606
+        },
+        {
+          "text": "me",
+          "start": 9.646,
+          "end": 9.706
+        },
+        {
+          "text": "crazy.",
+          "start": 9.766,
+          "end": 10.126
+        }
+      ]
+    },
+    {
+      "id": "line_UzajwhLnCl0",
+      "roleId": "role_eZTUQldp_mA",
+      "start": 10.146,
+      "end": 10.986,
+      "text": "Figuratively.",
+      "hint": "是“比喻意义上”。",
+      "words": [
+        {
+          "text": "Figuratively.",
+          "start": 10.166,
+          "end": 10.926
+        }
+      ]
+    },
+    {
+      "id": "line_kZ0tP6n4jdY",
+      "roleId": "role_eZTUQldp_mA",
+      "start": 12.187,
+      "end": 16.71,
+      "text": "Okay, maybe so, but it's no worse than you using the word literally in every other sentence.",
+      "hint": "好吧，也许是。但总比你说两句话就用一次“字面意义上”好不到哪儿去。",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 12.227,
+          "end": 12.427
+        },
+        {
+          "text": "maybe",
+          "start": 12.627,
+          "end": 12.828
+        },
+        {
+          "text": "so,",
+          "start": 12.928,
+          "end": 13.088
+        },
+        {
+          "text": "but",
+          "start": 13.228,
+          "end": 13.328
+        },
+        {
+          "text": "it's",
+          "start": 13.368,
+          "end": 13.468
+        },
+        {
+          "text": "no",
+          "start": 13.488,
+          "end": 13.548
+        },
+        {
+          "text": "worse",
+          "start": 13.608,
+          "end": 13.768
+        },
+        {
+          "text": "than",
+          "start": 13.788,
+          "end": 13.888
+        },
+        {
+          "text": "you",
+          "start": 13.948,
+          "end": 14.028
+        },
+        {
+          "text": "using",
+          "start": 14.168,
+          "end": 14.348
+        },
+        {
+          "text": "the",
+          "start": 14.388,
+          "end": 14.448
+        },
+        {
+          "text": "word",
+          "start": 14.468,
+          "end": 14.569
+        },
+        {
+          "text": "literally",
+          "start": 14.769,
+          "end": 15.249
+        },
+        {
+          "text": "in",
+          "start": 15.349,
+          "end": 15.389
+        },
+        {
+          "text": "every",
+          "start": 15.589,
+          "end": 15.809
+        },
+        {
+          "text": "other",
+          "start": 15.909,
+          "end": 16.069
+        },
+        {
+          "text": "sentence.",
+          "start": 16.21,
+          "end": 16.65
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "How I Met Your Mother — S3 E8",
+    "attribution": "20th Television",
+    "source": "https://www.youtube.com/watch?v=C-0azcoEvks&t=17s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 17.4–34.45 秒的连续节选。Friends bicker. Stops before the Canadian stereotype, threats, singing and later alcohol celebration."
+  }
+}

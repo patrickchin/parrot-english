@@ -13,7 +13,7 @@ test('the picture follows the source proportions through role choice, practice a
     for (const step of ['choose', 'practice', 'result']) {
       if (step === 'practice') await page.getByRole('button', { name: '开始配音', exact: true }).click();
       if (step === 'result') {
-        const scene = await (await page.request.get(`/packs/${slug}/pack.json`)).json();
+        const scene = await (await page.request.get(`/scenes/${slug}/scene.json`)).json();
         const turns = scene.lines.filter((line: { roleId: string }) => line.roleId === scene.roles[0].id);
         for (const _ of turns) await page.getByRole('button', { name: '下一步', exact: true }).click();
       }
@@ -52,7 +52,7 @@ test('the picture follows the source proportions through role choice, practice a
 
 test('completion and replay keep the recording waveform and subtitles in place', async ({ page }, info) => {
   await page.goto('/scenes/onions');
-  const scene = await (await page.request.get('/packs/onions/pack.json')).json();
+  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
   const lines = scene.lines.filter((line: { roleId: string }) => line.roleId === scene.roles[0].id);
   for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);

@@ -1,0 +1,459 @@
+{
+  "version": 1,
+  "id": "scene__ZPXHnc-PuE",
+  "title": "选哪一半芝士蛋糕",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 29.738,
+  "video": "friends-cheesecake-review-7c4243dbd2b7.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-cheesecake/",
+  "poster": "friends-cheesecake-poster-7c4243dbd2b7.jpg",
+  "waveform": "waveform-7c4243dbd2b7.json",
+  "roles": [
+    {
+      "id": "role_taz3h1D5Pw4",
+      "name": "瑞秋",
+      "label": "瑞秋",
+      "hint": "4 句台词",
+      "portrait": "rachel-avatar-0ae447c0241f.jpg"
+    },
+    {
+      "id": "role_Jy_lg0MhfG4",
+      "name": "钱德勒",
+      "label": "钱德勒",
+      "hint": "2 句台词",
+      "portrait": "chandler-avatar-2bd1d55514a3.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_I5SyRiU7zFU",
+      "roleId": "role_taz3h1D5Pw4",
+      "start": 0,
+      "end": 1.001,
+      "text": "All right, pick a half.",
+      "hint": "好，选一半吧。",
+      "words": [
+        {
+          "text": "All",
+          "start": 0,
+          "end": 0.08
+        },
+        {
+          "text": "right,",
+          "start": 0.1,
+          "end": 0.28
+        },
+        {
+          "text": "pick",
+          "start": 0.44,
+          "end": 0.58
+        },
+        {
+          "text": "a",
+          "start": 0.66,
+          "end": 0.68
+        },
+        {
+          "text": "half.",
+          "start": 0.74,
+          "end": 0.941
+        }
+      ]
+    },
+    {
+      "id": "line_poryR5T3ss0",
+      "roleId": "role_Jy_lg0MhfG4",
+      "start": 1.361,
+      "end": 12.468,
+      "text": "Okay, well, this side looks bigger. Uh, there's more crust on this side. Y'know? So, maybe if I measured...",
+      "hint": "好吧。这边看着大一些。不过这边的饼皮更多。你看？要不我量一下……",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 1.401,
+          "end": 1.801
+        },
+        {
+          "text": "well,",
+          "start": 2.682,
+          "end": 2.942
+        },
+        {
+          "text": "this",
+          "start": 3.723,
+          "end": 3.863
+        },
+        {
+          "text": "side",
+          "start": 3.963,
+          "end": 4.223
+        },
+        {
+          "text": "looks",
+          "start": 4.263,
+          "end": 4.463
+        },
+        {
+          "text": "bigger.",
+          "start": 4.523,
+          "end": 4.783
+        },
+        {
+          "text": "Uh,",
+          "start": 6.324,
+          "end": 6.404
+        },
+        {
+          "text": "there's",
+          "start": 7.225,
+          "end": 7.465
+        },
+        {
+          "text": "more",
+          "start": 7.565,
+          "end": 7.725
+        },
+        {
+          "text": "crust",
+          "start": 7.925,
+          "end": 8.226
+        },
+        {
+          "text": "on",
+          "start": 8.406,
+          "end": 8.446
+        },
+        {
+          "text": "this",
+          "start": 8.526,
+          "end": 8.666
+        },
+        {
+          "text": "side.",
+          "start": 8.766,
+          "end": 9.086
+        },
+        {
+          "text": "Y'know?",
+          "start": 9.707,
+          "end": 10.347
+        },
+        {
+          "text": "So,",
+          "start": 10.967,
+          "end": 11.107
+        },
+        {
+          "text": "maybe",
+          "start": 11.648,
+          "end": 11.748
+        },
+        {
+          "text": "if",
+          "start": 11.828,
+          "end": 11.868
+        },
+        {
+          "text": "I",
+          "start": 11.968,
+          "end": 11.988
+        },
+        {
+          "text": "measured...",
+          "start": 12.108,
+          "end": 12.448
+        }
+      ]
+    },
+    {
+      "id": "line_92jC3jXpc-Y",
+      "roleId": "role_taz3h1D5Pw4",
+      "start": 12.468,
+      "end": 13.629,
+      "text": "Oh, for God's sake, just pick a piece!",
+      "hint": "天哪，你就随便选一块吧！",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 12.488,
+          "end": 12.548
+        },
+        {
+          "text": "for",
+          "start": 12.629,
+          "end": 12.729
+        },
+        {
+          "text": "God's",
+          "start": 12.769,
+          "end": 12.949
+        },
+        {
+          "text": "sake,",
+          "start": 12.969,
+          "end": 13.089
+        },
+        {
+          "text": "just",
+          "start": 13.129,
+          "end": 13.229
+        },
+        {
+          "text": "pick",
+          "start": 13.249,
+          "end": 13.369
+        },
+        {
+          "text": "a",
+          "start": 13.389,
+          "end": 13.409
+        },
+        {
+          "text": "piece!",
+          "start": 13.469,
+          "end": 13.569
+        }
+      ]
+    },
+    {
+      "id": "line_NV1kDbJJ6xc",
+      "roleId": "role_Jy_lg0MhfG4",
+      "start": 13.64,
+      "end": 14.28,
+      "text": "All right, pick that.",
+      "hint": "好吧，我选那块。",
+      "words": [
+        {
+          "text": "All",
+          "start": 13.7,
+          "end": 13.73
+        },
+        {
+          "text": "right,",
+          "start": 13.73,
+          "end": 13.79
+        },
+        {
+          "text": "pick",
+          "start": 13.79,
+          "end": 13.96
+        },
+        {
+          "text": "that.",
+          "start": 13.96,
+          "end": 14.2
+        }
+      ]
+    },
+    {
+      "id": "line_-V8sDwtkaeQ",
+      "roleId": "role_taz3h1D5Pw4",
+      "start": 14.32,
+      "end": 16.36,
+      "text": "That's also the smaller piece.",
+      "hint": "那块也更小一些。",
+      "words": [
+        {
+          "text": "That's",
+          "start": 14.4,
+          "end": 14.63
+        },
+        {
+          "text": "also",
+          "start": 14.63,
+          "end": 15.3
+        },
+        {
+          "text": "the",
+          "start": 15.3,
+          "end": 15.48
+        },
+        {
+          "text": "smaller",
+          "start": 15.48,
+          "end": 15.78
+        },
+        {
+          "text": "piece.",
+          "start": 15.78,
+          "end": 16.24
+        }
+      ]
+    },
+    {
+      "id": "line_RKf_qeZ8eOE",
+      "roleId": "role_taz3h1D5Pw4",
+      "start": 18.533,
+      "end": 29.5,
+      "text": "Okay. There you go. Enjoy your half, my friend, but that is it. No sharing, no switching, and don't come crying to me if you eat your piece too fast.",
+      "hint": "行，给你。好好享用你那一半吧，朋友。不过说定了，不分着吃、不交换。要是你吃得太快，可别来求我。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 18.573,
+          "end": 19.173
+        },
+        {
+          "text": "There",
+          "start": 19.593,
+          "end": 19.813
+        },
+        {
+          "text": "you",
+          "start": 19.893,
+          "end": 19.973
+        },
+        {
+          "text": "go.",
+          "start": 20.033,
+          "end": 20.194
+        },
+        {
+          "text": "Enjoy",
+          "start": 20.614,
+          "end": 21.014
+        },
+        {
+          "text": "your",
+          "start": 21.094,
+          "end": 21.294
+        },
+        {
+          "text": "half,",
+          "start": 21.374,
+          "end": 21.595
+        },
+        {
+          "text": "my",
+          "start": 21.735,
+          "end": 21.855
+        },
+        {
+          "text": "friend,",
+          "start": 21.995,
+          "end": 22.315
+        },
+        {
+          "text": "but",
+          "start": 22.455,
+          "end": 22.575
+        },
+        {
+          "text": "that",
+          "start": 22.715,
+          "end": 22.895
+        },
+        {
+          "text": "is",
+          "start": 22.975,
+          "end": 23.015
+        },
+        {
+          "text": "it.",
+          "start": 23.136,
+          "end": 23.236
+        },
+        {
+          "text": "No",
+          "start": 23.896,
+          "end": 23.996
+        },
+        {
+          "text": "sharing,",
+          "start": 24.176,
+          "end": 24.637
+        },
+        {
+          "text": "no",
+          "start": 24.777,
+          "end": 24.897
+        },
+        {
+          "text": "switching,",
+          "start": 25.157,
+          "end": 25.657
+        },
+        {
+          "text": "and",
+          "start": 25.757,
+          "end": 25.837
+        },
+        {
+          "text": "don't",
+          "start": 25.877,
+          "end": 26.058
+        },
+        {
+          "text": "come",
+          "start": 26.158,
+          "end": 26.338
+        },
+        {
+          "text": "crying",
+          "start": 26.458,
+          "end": 26.918
+        },
+        {
+          "text": "to",
+          "start": 26.978,
+          "end": 27.038
+        },
+        {
+          "text": "me",
+          "start": 27.098,
+          "end": 27.218
+        },
+        {
+          "text": "if",
+          "start": 27.779,
+          "end": 27.819
+        },
+        {
+          "text": "you",
+          "start": 27.959,
+          "end": 28.159
+        },
+        {
+          "text": "eat",
+          "start": 28.399,
+          "end": 28.479
+        },
+        {
+          "text": "your",
+          "start": 28.519,
+          "end": 28.679
+        },
+        {
+          "text": "piece",
+          "start": 28.739,
+          "end": 28.939
+        },
+        {
+          "text": "too",
+          "start": 28.98,
+          "end": 29.08
+        },
+        {
+          "text": "fast.",
+          "start": 29.16,
+          "end": 29.44
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC alignment with original-source ASR and frame review at the short off-screen speaker change",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Friends — S7 E11",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=FxLDcqiOSZI&t=55s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 55.7–85.4 秒的连续节选。Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded."
+  }
+}

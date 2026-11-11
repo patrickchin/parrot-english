@@ -1,0 +1,564 @@
+{
+  "version": 1,
+  "id": "scene_lPxb4HHQVrQ",
+  "title": "乔伊发现同义词词典",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 37.204,
+  "video": "friends-thesaurus-review-d0f3a596607a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-thesaurus/",
+  "poster": "friends-thesaurus-poster-d0f3a596607a.jpg",
+  "waveform": "waveform-d0f3a596607a.json",
+  "roles": [
+    {
+      "id": "role_XaaU0DIckP8",
+      "name": "罗斯",
+      "label": "罗斯",
+      "hint": "5 句台词",
+      "portrait": "ross-avatar-6852ef573d6b.jpg"
+    },
+    {
+      "id": "role_9o381Ya55Qo",
+      "name": "乔伊",
+      "label": "乔伊",
+      "hint": "3 句台词",
+      "portrait": "joey-avatar-bed9d2de1433.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_5QOcooEaRso",
+      "roleId": "role_XaaU0DIckP8",
+      "start": 0.66,
+      "end": 1.841,
+      "text": "What... what you working on?",
+      "hint": "你……你在忙什么？",
+      "words": [
+        {
+          "text": "What...",
+          "start": 0.7,
+          "end": 0.94
+        },
+        {
+          "text": "what",
+          "start": 1.201,
+          "end": 1.321
+        },
+        {
+          "text": "you",
+          "start": 1.341,
+          "end": 1.401
+        },
+        {
+          "text": "working",
+          "start": 1.441,
+          "end": 1.681
+        },
+        {
+          "text": "on?",
+          "start": 1.721,
+          "end": 1.781
+        }
+      ]
+    },
+    {
+      "id": "line_nZt--bSj3JI",
+      "roleId": "role_9o381Ya55Qo",
+      "start": 2.161,
+      "end": 7.554,
+      "text": "Oh, Monica and Chandler's recommendation. I want it to sound smart, but I don't know any big words or anything, so...",
+      "hint": "给莫妮卡和钱德勒写推荐信。我想写得有水平，可我不认识什么高级词汇，所以……",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 2.201,
+          "end": 2.281
+        },
+        {
+          "text": "Monica",
+          "start": 2.581,
+          "end": 2.821
+        },
+        {
+          "text": "and",
+          "start": 2.841,
+          "end": 2.921
+        },
+        {
+          "text": "Chandler's",
+          "start": 2.942,
+          "end": 3.282
+        },
+        {
+          "text": "recommendation.",
+          "start": 3.342,
+          "end": 4.002
+        },
+        {
+          "text": "I",
+          "start": 4.422,
+          "end": 4.442
+        },
+        {
+          "text": "want",
+          "start": 4.522,
+          "end": 4.642
+        },
+        {
+          "text": "it",
+          "start": 4.662,
+          "end": 4.702
+        },
+        {
+          "text": "to",
+          "start": 4.742,
+          "end": 4.802
+        },
+        {
+          "text": "sound",
+          "start": 4.842,
+          "end": 5.043
+        },
+        {
+          "text": "smart,",
+          "start": 5.143,
+          "end": 5.463
+        },
+        {
+          "text": "but",
+          "start": 5.543,
+          "end": 5.643
+        },
+        {
+          "text": "I",
+          "start": 6.043,
+          "end": 6.063
+        },
+        {
+          "text": "don't",
+          "start": 6.103,
+          "end": 6.203
+        },
+        {
+          "text": "know",
+          "start": 6.223,
+          "end": 6.323
+        },
+        {
+          "text": "any",
+          "start": 6.343,
+          "end": 6.443
+        },
+        {
+          "text": "big",
+          "start": 6.503,
+          "end": 6.643
+        },
+        {
+          "text": "words",
+          "start": 6.703,
+          "end": 7.024
+        },
+        {
+          "text": "or",
+          "start": 7.084,
+          "end": 7.124
+        },
+        {
+          "text": "anything,",
+          "start": 7.144,
+          "end": 7.444
+        },
+        {
+          "text": "so...",
+          "start": 7.504,
+          "end": 7.544
+        }
+      ]
+    },
+    {
+      "id": "line_o7die8up6Hc",
+      "roleId": "role_XaaU0DIckP8",
+      "start": 7.554,
+      "end": 9.265,
+      "text": "Well, why don't you use your thesaurus?",
+      "hint": "那你为什么不用同义词词典呢？",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 7.564,
+          "end": 7.684
+        },
+        {
+          "text": "why",
+          "start": 7.944,
+          "end": 8.004
+        },
+        {
+          "text": "don't",
+          "start": 8.084,
+          "end": 8.224
+        },
+        {
+          "text": "you",
+          "start": 8.264,
+          "end": 8.344
+        },
+        {
+          "text": "use",
+          "start": 8.444,
+          "end": 8.544
+        },
+        {
+          "text": "your",
+          "start": 8.584,
+          "end": 8.704
+        },
+        {
+          "text": "thesaurus?",
+          "start": 8.784,
+          "end": 9.205
+        }
+      ]
+    },
+    {
+      "id": "line_UKRia55wv4A",
+      "roleId": "role_9o381Ya55Qo",
+      "start": 9.965,
+      "end": 10.585,
+      "text": "What'd I just say?",
+      "hint": "我刚才说什么来着？",
+      "words": [
+        {
+          "text": "What'd",
+          "start": 10.005,
+          "end": 10.145
+        },
+        {
+          "text": "I",
+          "start": 10.165,
+          "end": 10.185
+        },
+        {
+          "text": "just",
+          "start": 10.245,
+          "end": 10.365
+        },
+        {
+          "text": "say?",
+          "start": 10.405,
+          "end": 10.525
+        }
+      ]
+    },
+    {
+      "id": "line_DvMsrWKFD04",
+      "roleId": "role_XaaU0DIckP8",
+      "start": 13.267,
+      "end": 19.95,
+      "text": "Watch. Here, you, uh, you highlight the word you want to change, go under Tools...",
+      "hint": "看这里。你选中想改的词，再打开“工具”……",
+      "words": [
+        {
+          "text": "Watch.",
+          "start": 13.307,
+          "end": 14.808
+        },
+        {
+          "text": "Here,",
+          "start": 14.908,
+          "end": 15.068
+        },
+        {
+          "text": "you,",
+          "start": 15.228,
+          "end": 15.328
+        },
+        {
+          "text": "uh,",
+          "start": 15.468,
+          "end": 15.508
+        },
+        {
+          "text": "you",
+          "start": 16.188,
+          "end": 16.268
+        },
+        {
+          "text": "highlight",
+          "start": 16.368,
+          "end": 16.749
+        },
+        {
+          "text": "the",
+          "start": 16.889,
+          "end": 16.949
+        },
+        {
+          "text": "word",
+          "start": 17.009,
+          "end": 17.249
+        },
+        {
+          "text": "you",
+          "start": 17.329,
+          "end": 17.409
+        },
+        {
+          "text": "want",
+          "start": 17.469,
+          "end": 17.589
+        },
+        {
+          "text": "to",
+          "start": 17.629,
+          "end": 17.669
+        },
+        {
+          "text": "change,",
+          "start": 17.729,
+          "end": 18.069
+        },
+        {
+          "text": "go",
+          "start": 18.91,
+          "end": 18.97
+        },
+        {
+          "text": "under",
+          "start": 19.07,
+          "end": 19.25
+        },
+        {
+          "text": "Tools...",
+          "start": 19.43,
+          "end": 19.89
+        }
+      ]
+    },
+    {
+      "id": "line_h40kznNYR1M",
+      "roleId": "role_XaaU0DIckP8",
+      "start": 20.23,
+      "end": 27.094,
+      "text": "And the thesaurus generates, gives, gives a whole list of choices.",
+      "hint": "同义词词典就会生成，给出……给出一整列选项。",
+      "words": [
+        {
+          "text": "And",
+          "start": 20.27,
+          "end": 20.35
+        },
+        {
+          "text": "the",
+          "start": 20.41,
+          "end": 20.47
+        },
+        {
+          "text": "thesaurus",
+          "start": 20.55,
+          "end": 21.071
+        },
+        {
+          "text": "generates,",
+          "start": 21.251,
+          "end": 21.771
+        },
+        {
+          "text": "gives,",
+          "start": 22.071,
+          "end": 22.371
+        },
+        {
+          "text": "gives",
+          "start": 24.713,
+          "end": 25.133
+        },
+        {
+          "text": "a",
+          "start": 25.533,
+          "end": 25.553
+        },
+        {
+          "text": "whole",
+          "start": 25.733,
+          "end": 25.953
+        },
+        {
+          "text": "list",
+          "start": 26.073,
+          "end": 26.333
+        },
+        {
+          "text": "of",
+          "start": 26.454,
+          "end": 26.494
+        },
+        {
+          "text": "choices.",
+          "start": 26.594,
+          "end": 27.034
+        }
+      ]
+    },
+    {
+      "id": "line_50p5--KlPRE",
+      "roleId": "role_XaaU0DIckP8",
+      "start": 27.254,
+      "end": 29.315,
+      "text": "You can pick the word that sounds smartest.",
+      "hint": "你可以挑听起来最有学问的那个词。",
+      "words": [
+        {
+          "text": "You",
+          "start": 27.294,
+          "end": 27.394
+        },
+        {
+          "text": "can",
+          "start": 27.434,
+          "end": 27.514
+        },
+        {
+          "text": "pick",
+          "start": 27.614,
+          "end": 27.774
+        },
+        {
+          "text": "the",
+          "start": 27.874,
+          "end": 27.954
+        },
+        {
+          "text": "word",
+          "start": 28.014,
+          "end": 28.194
+        },
+        {
+          "text": "that",
+          "start": 28.254,
+          "end": 28.354
+        },
+        {
+          "text": "sounds",
+          "start": 28.455,
+          "end": 28.775
+        },
+        {
+          "text": "smartest.",
+          "start": 28.835,
+          "end": 29.255
+        }
+      ]
+    },
+    {
+      "id": "line_bOkKjyfzGz4",
+      "roleId": "role_9o381Ya55Qo",
+      "start": 29.535,
+      "end": 36.599,
+      "text": "Oh my God, that's great! I'm smart! No, no, I'm brainy, bright, clever. I love this thing!",
+      "hint": "天哪，太棒了！我真聪明！不，不，我是才思敏捷、机灵、睿智。我爱这个功能！",
+      "words": [
+        {
+          "text": "Oh",
+          "start": 29.575,
+          "end": 29.675
+        },
+        {
+          "text": "my",
+          "start": 29.955,
+          "end": 30.015
+        },
+        {
+          "text": "God,",
+          "start": 30.135,
+          "end": 30.436
+        },
+        {
+          "text": "that's",
+          "start": 30.496,
+          "end": 30.676
+        },
+        {
+          "text": "great!",
+          "start": 30.756,
+          "end": 31.136
+        },
+        {
+          "text": "I'm",
+          "start": 31.676,
+          "end": 31.776
+        },
+        {
+          "text": "smart!",
+          "start": 31.896,
+          "end": 32.397
+        },
+        {
+          "text": "No,",
+          "start": 32.497,
+          "end": 32.577
+        },
+        {
+          "text": "no,",
+          "start": 32.677,
+          "end": 32.817
+        },
+        {
+          "text": "I'm",
+          "start": 32.997,
+          "end": 33.057
+        },
+        {
+          "text": "brainy,",
+          "start": 34.057,
+          "end": 34.418
+        },
+        {
+          "text": "bright,",
+          "start": 34.698,
+          "end": 34.978
+        },
+        {
+          "text": "clever.",
+          "start": 35.118,
+          "end": 35.438
+        },
+        {
+          "text": "I",
+          "start": 35.578,
+          "end": 35.598
+        },
+        {
+          "text": "love",
+          "start": 35.738,
+          "end": 35.898
+        },
+        {
+          "text": "this",
+          "start": 35.938,
+          "end": 36.118
+        },
+        {
+          "text": "thing!",
+          "start": 36.178,
+          "end": 36.539
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Friends — S10 E5",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=ZeTeCcvIVMo&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–37.2 秒的连续节选。Adoption recommendation is the background. The later dating innuendo is excluded."
+  }
+}

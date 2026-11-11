@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures';
 
-test.use({ samplePack: true });
+test.use({ sampleScene: true });
 
 test('a video already at its target time must finish a pending seek before playback starts', async ({ page }) => {
   await page.goto('/scenes/patrick');

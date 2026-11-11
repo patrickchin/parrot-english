@@ -1,0 +1,273 @@
+{
+  "version": 1,
+  "id": "scene_RPXXEtjf",
+  "title": "太毛茸茸了！",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 30.739,
+  "video": "so-fluffy-review-c54addceb505.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/so-fluffy/",
+  "poster": "so-fluffy-poster-c54addceb505.jpg",
+  "waveform": "waveform-c54addceb505.json",
+  "roles": [
+    {
+      "id": "role_ac_suThrxnA",
+      "name": "玛戈",
+      "label": "玛戈",
+      "hint": "1 句台词",
+      "selectable": false
+    },
+    {
+      "id": "role_mZOwX2ys",
+      "name": "艾格尼丝",
+      "label": "艾格尼丝",
+      "hint": "1 句台词",
+      "portrait": "agnes-avatar-0e0649781100.jpg"
+    },
+    {
+      "id": "role_2YM2UXibtNQ",
+      "name": "游乐场摊主",
+      "label": "游乐场摊主",
+      "hint": "1 句台词",
+      "portrait": "carnival-attendant-avatar-7fc7e20a89bf.jpg"
+    },
+    {
+      "id": "role_AmEQPuK-wqk",
+      "name": "格鲁",
+      "label": "格鲁",
+      "hint": "3 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_dMLZ1IGcbEU",
+      "roleId": "role_ac_suThrxnA",
+      "start": 0.44,
+      "end": 1.341,
+      "text": "She hit that!",
+      "hint": "她打中了！",
+      "words": [
+        {
+          "text": "She",
+          "start": 0.48,
+          "end": 0.68
+        },
+        {
+          "text": "hit",
+          "start": 0.72,
+          "end": 0.801
+        },
+        {
+          "text": "that!",
+          "start": 0.921,
+          "end": 1.121
+        }
+      ]
+    },
+    {
+      "id": "line_LGeBJ-DQIqE",
+      "roleId": "role_AmEQPuK-wqk",
+      "start": 1.821,
+      "end": 3.362,
+      "text": "I saw that with my own eyes!",
+      "hint": "我亲眼看到的！",
+      "words": [
+        {
+          "text": "I",
+          "start": 1.861,
+          "end": 1.881
+        },
+        {
+          "text": "saw",
+          "start": 1.961,
+          "end": 2.081
+        },
+        {
+          "text": "that",
+          "start": 2.201,
+          "end": 2.342
+        },
+        {
+          "text": "with",
+          "start": 2.442,
+          "end": 2.542
+        },
+        {
+          "text": "my",
+          "start": 2.642,
+          "end": 2.702
+        },
+        {
+          "text": "own",
+          "start": 2.762,
+          "end": 2.842
+        },
+        {
+          "text": "eyes!",
+          "start": 3.022,
+          "end": 3.142
+        }
+      ]
+    },
+    {
+      "id": "line_xedvIDLo96E",
+      "roleId": "role_2YM2UXibtNQ",
+      "start": 3.442,
+      "end": 7.725,
+      "text": "Let me explain something to you. You see how it's not knocked over?",
+      "hint": "让我给你解释一下。看见了吗？它没有倒下。",
+      "words": [
+        {
+          "text": "Let",
+          "start": 3.482,
+          "end": 3.642
+        },
+        {
+          "text": "me",
+          "start": 3.722,
+          "end": 3.782
+        },
+        {
+          "text": "explain",
+          "start": 3.903,
+          "end": 4.283
+        },
+        {
+          "text": "something",
+          "start": 4.463,
+          "end": 4.843
+        },
+        {
+          "text": "to",
+          "start": 4.923,
+          "end": 5.043
+        },
+        {
+          "text": "you.",
+          "start": 5.123,
+          "end": 5.484
+        },
+        {
+          "text": "You",
+          "start": 5.544,
+          "end": 5.624
+        },
+        {
+          "text": "see",
+          "start": 5.704,
+          "end": 5.824
+        },
+        {
+          "text": "how",
+          "start": 5.884,
+          "end": 5.984
+        },
+        {
+          "text": "it's",
+          "start": 6.124,
+          "end": 6.264
+        },
+        {
+          "text": "not",
+          "start": 6.424,
+          "end": 6.644
+        },
+        {
+          "text": "knocked",
+          "start": 6.824,
+          "end": 7.165
+        },
+        {
+          "text": "over?",
+          "start": 7.245,
+          "end": 7.505
+        }
+      ]
+    },
+    {
+      "id": "line_KxCliJfbErE",
+      "roleId": "role_AmEQPuK-wqk",
+      "start": 8.005,
+      "end": 15.63,
+      "text": "Okay. My turn.",
+      "hint": "好吧。轮到我了。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 8.045,
+          "end": 8.446
+        },
+        {
+          "text": "My",
+          "start": 9.306,
+          "end": 9.666
+        },
+        {
+          "text": "turn.",
+          "start": 10.027,
+          "end": 15.41
+        }
+      ]
+    },
+    {
+      "id": "line_Gu4xvkZ4xUI",
+      "roleId": "role_AmEQPuK-wqk",
+      "start": 27.038,
+      "end": 29.179,
+      "text": "Knocked over!",
+      "hint": "打倒了！",
+      "words": [
+        {
+          "text": "Knocked",
+          "start": 27.078,
+          "end": 27.498
+        },
+        {
+          "text": "over!",
+          "start": 28.018,
+          "end": 28.959
+        }
+      ]
+    },
+    {
+      "id": "line_lQMC9DBhNwo",
+      "roleId": "role_mZOwX2ys",
+      "start": 29.479,
+      "end": 30.7,
+      "text": "It's so fluffy!",
+      "hint": "太毛茸茸了！",
+      "words": [
+        {
+          "text": "It's",
+          "start": 29.519,
+          "end": 29.619
+        },
+        {
+          "text": "so",
+          "start": 29.659,
+          "end": 29.759
+        },
+        {
+          "text": "fluffy!",
+          "start": 30.02,
+          "end": 30.62
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Despicable Me",
+    "attribution": "原作：Universal Pictures / Illumination",
+    "source": "https://www.youtube.com/watch?v=82utG7Q3G_k&t=23s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 23.3–54 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+  }
+}

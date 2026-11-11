@@ -30,7 +30,7 @@ test('serves the app on page paths while missing assets and API routes stay 404'
     assert.equal(await response.text(), 'app');
     assert.equal(await (await get(path, 'HEAD')).text(), '');
   }
-  for (const path of ['/assets/missing.js', '/packs/missing/pack.json', '/api/missing', '/scenes/patrick/missing.js']) {
+  for (const path of ['/assets/missing.js', '/scenes/missing/scene.json', '/api/missing', '/scenes/patrick/missing.js']) {
     assert.equal((await get(path)).status, 404);
   }
 });

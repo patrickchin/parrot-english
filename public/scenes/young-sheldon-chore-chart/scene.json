@@ -1,0 +1,374 @@
+{
+  "version": 1,
+  "id": "scene_VgEVwH_D_ZM",
+  "title": "每个人都有家务",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 18.852,
+  "video": "young-sheldon-chore-chart-review-2fd865e93926.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-chore-chart/",
+  "poster": "young-sheldon-chore-chart-poster-2fd865e93926.jpg",
+  "waveform": "waveform-2fd865e93926.json",
+  "roles": [
+    {
+      "id": "role_PD9C_E7Icic",
+      "name": "乔治爸爸",
+      "label": "乔治爸爸",
+      "hint": "4 句台词",
+      "portrait": "george-cooper-avatar-f792b5644c5c.jpg"
+    },
+    {
+      "id": "role_G1aMm5UAPYw",
+      "name": "米茜",
+      "label": "米茜",
+      "hint": "4 句台词",
+      "portrait": "missy-avatar-31251f080e54.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_GSFwmmSphXk",
+      "roleId": "role_PD9C_E7Icic",
+      "start": 1.441,
+      "end": 2.121,
+      "text": "Chore chart?",
+      "hint": "家务表？",
+      "words": [
+        {
+          "text": "Chore",
+          "start": 1.481,
+          "end": 1.741
+        },
+        {
+          "text": "chart?",
+          "start": 1.761,
+          "end": 2.061
+        }
+      ]
+    },
+    {
+      "id": "line_F-MDndk5ueo",
+      "roleId": "role_G1aMm5UAPYw",
+      "start": 2.802,
+      "end": 3.282,
+      "text": "That's right.",
+      "hint": "没错。",
+      "words": [
+        {
+          "text": "That's",
+          "start": 2.842,
+          "end": 2.962
+        },
+        {
+          "text": "right.",
+          "start": 3.042,
+          "end": 3.222
+        }
+      ]
+    },
+    {
+      "id": "line_jZ7i_FSrsHU",
+      "roleId": "role_PD9C_E7Icic",
+      "start": 4.542,
+      "end": 6.724,
+      "text": "You realize it's my job to pay for all this?",
+      "hint": "你知道这些都是我挣钱买的吧？",
+      "words": [
+        {
+          "text": "You",
+          "start": 4.582,
+          "end": 4.662
+        },
+        {
+          "text": "realize",
+          "start": 4.743,
+          "end": 5.043
+        },
+        {
+          "text": "it's",
+          "start": 5.123,
+          "end": 5.203
+        },
+        {
+          "text": "my",
+          "start": 5.243,
+          "end": 5.323
+        },
+        {
+          "text": "job",
+          "start": 5.423,
+          "end": 5.583
+        },
+        {
+          "text": "to",
+          "start": 5.663,
+          "end": 5.723
+        },
+        {
+          "text": "pay",
+          "start": 5.783,
+          "end": 5.983
+        },
+        {
+          "text": "for",
+          "start": 6.063,
+          "end": 6.163
+        },
+        {
+          "text": "all",
+          "start": 6.243,
+          "end": 6.343
+        },
+        {
+          "text": "this?",
+          "start": 6.403,
+          "end": 6.664
+        }
+      ]
+    },
+    {
+      "id": "line_7SjFmomWqPQ",
+      "roleId": "role_G1aMm5UAPYw",
+      "start": 7.424,
+      "end": 8.865,
+      "text": "That is true. Thank you.",
+      "hint": "确实如此。谢谢你。",
+      "words": [
+        {
+          "text": "That",
+          "start": 7.464,
+          "end": 7.564
+        },
+        {
+          "text": "is",
+          "start": 7.624,
+          "end": 7.684
+        },
+        {
+          "text": "true.",
+          "start": 7.744,
+          "end": 7.884
+        },
+        {
+          "text": "Thank",
+          "start": 8.525,
+          "end": 8.665
+        },
+        {
+          "text": "you.",
+          "start": 8.725,
+          "end": 8.805
+        }
+      ]
+    },
+    {
+      "id": "line_FcJ-i6yCSTs",
+      "roleId": "role_PD9C_E7Icic",
+      "start": 9.545,
+      "end": 10.325,
+      "text": "You're welcome.",
+      "hint": "不用谢。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 9.585,
+          "end": 9.765
+        },
+        {
+          "text": "welcome.",
+          "start": 9.845,
+          "end": 10.265
+        }
+      ]
+    },
+    {
+      "id": "line_l9WGCw5hXTo",
+      "roleId": "role_G1aMm5UAPYw",
+      "start": 10.626,
+      "end": 13.327,
+      "text": "And thank you in advance for doing the laundry and taking out the garbage.",
+      "hint": "也先谢谢你洗衣服、倒垃圾。",
+      "words": [
+        {
+          "text": "And",
+          "start": 10.666,
+          "end": 10.746
+        },
+        {
+          "text": "thank",
+          "start": 10.786,
+          "end": 10.906
+        },
+        {
+          "text": "you",
+          "start": 10.946,
+          "end": 11.026
+        },
+        {
+          "text": "in",
+          "start": 11.066,
+          "end": 11.106
+        },
+        {
+          "text": "advance",
+          "start": 11.166,
+          "end": 11.486
+        },
+        {
+          "text": "for",
+          "start": 11.546,
+          "end": 11.626
+        },
+        {
+          "text": "doing",
+          "start": 11.666,
+          "end": 11.806
+        },
+        {
+          "text": "the",
+          "start": 11.826,
+          "end": 11.886
+        },
+        {
+          "text": "laundry",
+          "start": 11.906,
+          "end": 12.267
+        },
+        {
+          "text": "and",
+          "start": 12.367,
+          "end": 12.467
+        },
+        {
+          "text": "taking",
+          "start": 12.507,
+          "end": 12.707
+        },
+        {
+          "text": "out",
+          "start": 12.727,
+          "end": 12.787
+        },
+        {
+          "text": "the",
+          "start": 12.827,
+          "end": 12.887
+        },
+        {
+          "text": "garbage.",
+          "start": 12.927,
+          "end": 13.267
+        }
+      ]
+    },
+    {
+      "id": "line_d4MWLegySRo",
+      "roleId": "role_PD9C_E7Icic",
+      "start": 14.268,
+      "end": 15.068,
+      "text": "What about Georgie?",
+      "hint": "那小乔治呢？",
+      "words": [
+        {
+          "text": "What",
+          "start": 14.308,
+          "end": 14.428
+        },
+        {
+          "text": "about",
+          "start": 14.468,
+          "end": 14.648
+        },
+        {
+          "text": "Georgie?",
+          "start": 14.708,
+          "end": 15.008
+        }
+      ]
+    },
+    {
+      "id": "line_7mYHYi0eOP0",
+      "roleId": "role_G1aMm5UAPYw",
+      "start": 15.668,
+      "end": 18.69,
+      "text": "Look at the chart. Georgie mows the lawn and cleans the toilet.",
+      "hint": "看表格。小乔治割草、打扫厕所。",
+      "words": [
+        {
+          "text": "Look",
+          "start": 15.708,
+          "end": 15.808
+        },
+        {
+          "text": "at",
+          "start": 15.848,
+          "end": 15.888
+        },
+        {
+          "text": "the",
+          "start": 15.928,
+          "end": 15.988
+        },
+        {
+          "text": "chart.",
+          "start": 16.008,
+          "end": 16.209
+        },
+        {
+          "text": "Georgie",
+          "start": 16.949,
+          "end": 17.209
+        },
+        {
+          "text": "mows",
+          "start": 17.269,
+          "end": 17.409
+        },
+        {
+          "text": "the",
+          "start": 17.489,
+          "end": 17.549
+        },
+        {
+          "text": "lawn",
+          "start": 17.589,
+          "end": 17.789
+        },
+        {
+          "text": "and",
+          "start": 17.889,
+          "end": 17.95
+        },
+        {
+          "text": "cleans",
+          "start": 17.99,
+          "end": 18.17
+        },
+        {
+          "text": "the",
+          "start": 18.21,
+          "end": 18.27
+        },
+        {
+          "text": "toilet.",
+          "start": 18.31,
+          "end": 18.63
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Young Sheldon — S7 E2",
+    "attribution": "Warner Bros. Television / CBS",
+    "source": "https://www.youtube.com/watch?v=sSd7LrihSik&t=139s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 139.85–158.7 秒的连续节选。Family bargaining and sarcasm. The earlier crude dialogue is excluded."
+  }
+}

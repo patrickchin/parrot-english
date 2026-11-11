@@ -7,7 +7,7 @@
     "older-children": "Approximately 10–12; editorial starting point, not a formal age rating.",
     "teens": "Approximately 13+; selected exchanges from adult sitcoms, not approval of whole episodes."
   },
-  "selectionCriteria": "One continuous source range, at least two speaking characters and three actual turns; keep setup, replies and payoff. Original English audio only. Review notes are summaries, not subtitles or finished application packs.",
+  "selectionCriteria": "One continuous source range, at least two speaking characters and three actual turns; keep setup, replies and payoff. Original English audio only. Review notes are summaries, not subtitles or finished application scenes.",
   "sources": [
     {
       "id": "RlQzUX-UOW4",
@@ -255,7 +255,7 @@
       "practice": "Asking for help, offering suggestions, responding with dry humour.",
       "contentNotes": "A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_F6ws6xrH7b0",
+      "sceneId": "scene_F6ws6xrH7b0",
       "publicSlug": "young-sheldon-library",
       "lines": [
         {
@@ -713,7 +713,7 @@
       "practice": "Questions, feedback and playful disagreement.",
       "contentNotes": "Family sarcasm. The cut ends after the final name repetition and before the channel end card.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_K-EnMBJWy2E",
+      "sceneId": "scene_K-EnMBJWy2E",
       "publicSlug": "young-sheldon-compliments",
       "lines": [
         {
@@ -1050,7 +1050,7 @@
       "practice": "Explaining a problem, requests, reasons and refusal.",
       "contentNotes": "College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_qs532GUZz7E",
+      "sceneId": "scene_qs532GUZz7E",
       "publicSlug": "young-sheldon-homework",
       "lines": [
         {
@@ -1886,7 +1886,7 @@
       "practice": "Directions, urgent delivery and reacting to frustration.",
       "contentNotes": "Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_pywI3ZgiZ-Y",
+      "sceneId": "scene_pywI3ZgiZ-Y",
       "publicSlug": "friends-moving-couch",
       "lines": [
         {
@@ -2199,7 +2199,7 @@
       "practice": "Asking for clarification, explaining a process and expressing delight.",
       "contentNotes": "Adoption recommendation is the background. The later dating innuendo is excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_lPxb4HHQVrQ",
+      "sceneId": "scene_lPxb4HHQVrQ",
       "publicSlug": "friends-thesaurus",
       "lines": [
         {
@@ -2764,7 +2764,7 @@
       "practice": "Comparisons, choices, negotiation and setting conditions.",
       "contentNotes": "Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack__ZPXHnc-PuE",
+      "sceneId": "scene__ZPXHnc-PuE",
       "publicSlug": "friends-cheesecake",
       "lines": [
         {
@@ -3222,7 +3222,7 @@
       "practice": "Reassurance, urgent requests and concise instructions.",
       "contentNotes": "Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_kNsWCUYPVwU",
+      "sceneId": "scene_kNsWCUYPVwU",
       "publicSlug": "himym-driving-lesson",
       "lines": [
         {
@@ -3615,7 +3615,7 @@
       "practice": "Opinions, comparisons, disagreement and emphasis.",
       "contentNotes": "A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "packId": "pack_ON8p1LWII74",
+      "sceneId": "scene_ON8p1LWII74",
       "publicSlug": "himym-rabbit-or-duck",
       "lines": [
         {
@@ -4214,7 +4214,7 @@
     },
     {
       "id": "clip_YSYdU4e8FmI",
-      "packId": "pack_yjYJv1eTPR4",
+      "sceneId": "scene_yjYJv1eTPR4",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "04-young-sheldon-einstein",
@@ -4632,7 +4632,7 @@
     },
     {
       "id": "clip_ARdqABsW4Tg",
-      "packId": "pack_eMvqUxta4mg",
+      "sceneId": "scene_eMvqUxta4mg",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "05-young-sheldon-camera",
@@ -5020,7 +5020,7 @@
     },
     {
       "id": "clip_VdEHR88LCKs",
-      "packId": "pack_hua0i_EVO5o",
+      "sceneId": "scene_hua0i_EVO5o",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "06-young-sheldon-breakfast",
@@ -5544,7 +5544,7 @@
     },
     {
       "id": "clip_pCOn9LnZxso",
-      "packId": "pack_VgEVwH_D_ZM",
+      "sceneId": "scene_VgEVwH_D_ZM",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "07-young-sheldon-chore-chart",
@@ -5920,7 +5920,7 @@
     },
     {
       "id": "clip_P1pVYlGCqS8",
-      "packId": "pack_cgQRAEx-Czo",
+      "sceneId": "scene_cgQRAEx-Czo",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "08-harry-potter-moving-card",
@@ -6122,7 +6122,7 @@
     },
     {
       "id": "clip_uFLtSyvVJd4",
-      "packId": "pack_3YCRbWX5VTE",
+      "sceneId": "scene_3YCRbWX5VTE",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "09-harry-potter-new-friend",
@@ -6469,7 +6469,7 @@
     },
     {
       "id": "clip_OQ4LJptCyKU",
-      "packId": "pack_ib-oCCujJSU",
+      "sceneId": "scene_ib-oCCujJSU",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "06-friends-return-couch",
@@ -6955,7 +6955,7 @@
     },
     {
       "id": "clip_cpwh9ilXMRw",
-      "packId": "pack_VcyyHi5Kk4A",
+      "sceneId": "scene_VcyyHi5Kk4A",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "07-friends-vacuum-attachments",
@@ -7338,7 +7338,7 @@
     },
     {
       "id": "clip_RjhpcIBvmHs",
-      "packId": "pack_U4HGHLNvT3k",
+      "sceneId": "scene_U4HGHLNvT3k",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "08-friends-unpaid-bill",
@@ -7615,7 +7615,7 @@
     },
     {
       "id": "clip_8AKpqP9H2vs",
-      "packId": "pack_s8bVKn-BMFI",
+      "sceneId": "scene_s8bVKn-BMFI",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "09-big-bang-the-present",
@@ -7986,7 +7986,7 @@
     },
     {
       "id": "clip_O2ZhybUyZ3E",
-      "packId": "pack_guZULjk7gGk",
+      "sceneId": "scene_guZULjk7gGk",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "10-big-bang-notebook",
@@ -8403,7 +8403,7 @@
     },
     {
       "id": "clip_LC3l_KtvYIM",
-      "packId": "pack_d6ZZqjpfSfA",
+      "sceneId": "scene_d6ZZqjpfSfA",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "11-himym-literally",
@@ -9205,7 +9205,7 @@
         "做客",
         "礼貌"
       ],
-      "packId": "pack_v-EwUnOY6rw"
+      "sceneId": "scene_v-EwUnOY6rw"
     },
     {
       "id": "clip_Yy81EfEyFFo",
@@ -9655,7 +9655,7 @@
         "早餐",
         "家务"
       ],
-      "packId": "pack_LiOGfPU3EPE"
+      "sceneId": "scene_LiOGfPU3EPE"
     },
     {
       "id": "clip_ZCr2kCUepOo",
@@ -10032,7 +10032,7 @@
         "测试",
         "计时"
       ],
-      "packId": "pack_W-m8Y8JwqZc"
+      "sceneId": "scene_W-m8Y8JwqZc"
     },
     {
       "id": "clip_6yg5AewmIa8",
@@ -10312,7 +10312,7 @@
         "冰箱",
         "食物"
       ],
-      "packId": "pack_h81smyBB8mI"
+      "sceneId": "scene_h81smyBB8mI"
     },
     {
       "id": "clip_FuJ0diUuNTM",
@@ -10699,7 +10699,7 @@
         "喝水",
         "反讽"
       ],
-      "packId": "pack_Jjy8Z_ovOQI"
+      "sceneId": "scene_Jjy8Z_ovOQI"
     },
     {
       "id": "clip_ywckYM8F-38",
@@ -11030,7 +11030,7 @@
         "上课",
         "洗手间"
       ],
-      "packId": "pack_5XN5XS_M_Mw"
+      "sceneId": "scene_5XN5XS_M_Mw"
     }
   ]
 }

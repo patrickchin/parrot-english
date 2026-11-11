@@ -7,7 +7,7 @@ import { validateWaveform, waveformHeight, waveformPath } from '../src/waveform.
 
 test('reference waveforms retain changing 5 ms audio peaks on a shared scale', async () => {
   for (const slug of ['patrick', 'chocolate', 'wumbo', 'onions']) {
-    const wave = validateWaveform(JSON.parse(await readFile(`public/packs/${slug}/waveform-v2.json`, 'utf8')));
+    const wave = validateWaveform(JSON.parse(await readFile(`public/scenes/${slug}/waveform-v2.json`, 'utf8')));
     assert.ok(Math.max(...wave.peaks) - Math.min(...wave.peaks) > 0.05);
   }
   assert.equal(waveformHeight(0), 0);

@@ -22,14 +22,14 @@ test('replay reuses decoded takes and aligns a rendered audio transient with the
       return output.stream;
     } } });
   });
-  await page.route('**/packs/onions/pack.json', async route => {
-    const pack = await (await route.fetch()).json();
-    delete pack.backing;
-    await route.fulfill({ json: pack });
+  await page.route('**/scenes/onions/scene.json', async route => {
+    const scene = await (await route.fetch()).json();
+    delete scene.backing;
+    await route.fulfill({ json: scene });
   });
   await page.goto('/scenes/onions');
-  const pack = await (await page.request.get('/packs/onions/pack.json')).json();
-  const line = pack.lines[0];
+  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
+  const line = scene.lines[0];
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针' });

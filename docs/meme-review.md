@@ -104,7 +104,7 @@ was made and no speech was generated.
 ## Reproduce and verify
 
 The shared preparation command serves both actual review cohorts. It does not
-write application packs or upload media:
+write application scenes or upload media:
 
 ```sh
 node scripts/prepare-review-clips.mjs older-audience

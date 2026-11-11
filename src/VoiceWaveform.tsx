@@ -1,11 +1,11 @@
 import { useLanguage } from './i18n';
 import { useEffect, useMemo, useState } from 'react';
 import type { LoadState } from './load-state';
-import type { Pack } from './pack';
+import type { Scene } from './scene';
 import { validateWaveform, waveformPath, type ReferenceWaveform } from './waveform';
 
-export function VoiceWaveform({ pack, start, end, target, time, recordings, recording = false }: {
-  pack: Pack; start: number; end: number; time: number;
+export function VoiceWaveform({ scene, start, end, target, time, recordings, recording = false }: {
+  scene: Scene; start: number; end: number; time: number;
   target?: { start: number; end: number };
   recordings: { start: number; peaks: number[] }[]; recording?: boolean;
 }) {
@@ -16,13 +16,13 @@ export function VoiceWaveform({ pack, start, end, target, time, recordings, reco
   useEffect(() => {
     const abort = new AbortController();
     setLoad({ status: 'loading' });
-    if (!pack.waveform) { setLoad({ status: 'error', error: '此片段暂无原声波形，仍可听原声并录音。' }); return; }
-    fetch(pack.base + pack.waveform, { signal: abort.signal })
+    if (!scene.waveform) { setLoad({ status: 'error', error: '此片段暂无原声波形，仍可听原声并录音。' }); return; }
+    fetch(scene.base + scene.waveform, { signal: abort.signal })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
-      .then(data => { const wave = validateWaveform(data); if (Math.abs(wave.duration - pack.duration) > 0.05) throw new Error(); if (!abort.signal.aborted) setLoad({ status: 'ready', value: wave }); })
+      .then(data => { const wave = validateWaveform(data); if (Math.abs(wave.duration - scene.duration) > 0.05) throw new Error(); if (!abort.signal.aborted) setLoad({ status: 'ready', value: wave }); })
       .catch(() => { if (!abort.signal.aborted) setLoad({ status: 'error', error: '原声波形暂时无法显示，仍可听原声并录音。' }); });
     return () => abort.abort();
-  }, [pack]);
+  }, [scene]);
   const elapsed = Math.min(end - start, Math.max(0, time - start));
   const cursor = elapsed / (end - start) * 100;
   const originalPath = useMemo(() => reference ? waveformPath(reference.peaks, start, end) : '', [reference, start, end]);
