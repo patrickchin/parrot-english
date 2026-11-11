@@ -13,9 +13,9 @@ export function createWorker(assets, revision = null) {
       const bytes = file.encoding === 'utf8'
         ? new TextEncoder().encode(file.body)
         : Uint8Array.from(atob(file.body), char => char.charCodeAt(0));
-      const responseHeaders = { ...headers, 'Content-Type': file.type, 'Content-Length': String(bytes.length), 'Accept-Ranges': 'bytes', 'Cache-Control': path.startsWith('/assets/') || /-v1\.(mp4|m4a|jpg)$/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache' };
+      const responseHeaders = { ...headers, 'Content-Type': file.type, 'Content-Length': String(bytes.length), 'Accept-Ranges': file.contentEncoding ? 'none' : 'bytes', ...(file.contentEncoding ? { 'Content-Encoding': file.contentEncoding } : {}), 'Cache-Control': path.startsWith('/assets/') || /-v1\.(mp4|m4a|jpg)$/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache' };
       const range = request.headers.get('Range');
-      if (range) {
+      if (range && !file.contentEncoding) {
         const match = /^bytes=(\d*)-(\d*)$/.exec(range);
         let start = 0, end = bytes.length - 1;
         if (!match || (!match[1] && !match[2])) return new Response(null, { status: 416, headers: { ...responseHeaders, 'Content-Length': '0', 'Content-Range': `bytes */${bytes.length}` } });

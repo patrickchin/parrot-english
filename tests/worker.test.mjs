@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import { createWorker } from '../server/worker.mjs';
 test('serves video byte ranges for mobile seeking without exposing unknown paths', async () => {
   const worker = createWorker({ '/test.mp4': { type: 'video/mp4', body: btoa('0123456789') }, '/index.html': { type: 'text/html', body: btoa('hello') } }, 'test-revision');
@@ -50,4 +51,25 @@ test('native text assets preserve Unicode JSON and byte lengths for GET, HEAD an
   const range = await get({ headers: { Range: 'bytes=0-17' } });
   assert.equal(range.status, 206);
   assert.deepEqual(new Uint8Array(await range.arrayBuffer()), bytes.slice(0, 18));
+});
+
+
+test('gzip text assets preserve Unicode content and ignore byte ranges of the compressed representation', async () => {
+  const body = JSON.stringify({ title: '英语启蒙', lines: ['Good morning.', 'How are you?'] });
+  const bytes = gzipSync(body);
+  const worker = createWorker({ '/scene.json': { type: 'application/json; charset=utf-8', body: bytes.toString('base64'), encoding: 'base64', contentEncoding: 'gzip' } });
+  const get = options => worker.fetch(new Request('https://parrotbook.test/scene.json', options));
+  for (const options of [undefined, { headers: { Range: 'bytes=0-17' } }]) {
+    const response = await get(options);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-encoding'), 'gzip');
+    assert.equal(response.headers.get('content-length'), String(bytes.length));
+    assert.equal(response.headers.get('accept-ranges'), 'none');
+    assert.equal(response.headers.get('content-range'), null);
+    assert.equal(gunzipSync(Buffer.from(await response.arrayBuffer())).toString(), body);
+  }
+  const head = await get({ method: 'HEAD' });
+  assert.equal(head.headers.get('content-encoding'), 'gzip');
+  assert.equal(head.headers.get('content-length'), String(bytes.length));
+  assert.equal(await head.text(), '');
 });
