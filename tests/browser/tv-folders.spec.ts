@@ -42,7 +42,7 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
   await expect(page.getByRole('listitem')).toHaveCount(teenCount);
 });
 
-for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
+for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook', 'bluey-real-coins', 'young-sheldon-good-guest', 'big-bang-long-lesson']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
   await page.goto('/scenes/' + slug);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();

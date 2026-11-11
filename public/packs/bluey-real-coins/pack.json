@@ -1,0 +1,379 @@
+{
+  "version": 1,
+  "id": "pack_ow8KQy0Ni_U",
+  "title": "能给我们几个真硬币吗？",
+  "tags": [
+    "Bluey",
+    "Bluey",
+    "Bandit",
+    "Chilli",
+    "coins",
+    "chores",
+    "布鲁伊",
+    "硬币",
+    "家务"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 22.72,
+  "video": "bluey-real-coins-review-48976104fa5c.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-real-coins/",
+  "poster": "bluey-real-coins-poster-48976104fa5c.jpg",
+  "waveform": "waveform-48976104fa5c.json",
+  "roles": [
+    {
+      "id": "role_7weef38VGuI",
+      "name": "班迪特爸爸",
+      "label": "班迪特爸爸",
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_L2VcbrWL4bA",
+      "name": "布鲁伊",
+      "label": "布鲁伊",
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_YETwbI6_lYI",
+      "name": "奇莉妈妈",
+      "label": "奇莉妈妈",
+      "hint": "2 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_PhJsAwaZkFI",
+      "roleId": "role_7weef38VGuI",
+      "start": 0.801,
+      "end": 6.406,
+      "text": "This machine doesn't take imaginary coins. Go and get a job and earn real ones.",
+      "hint": "这台机器不收想象出来的硬币。去干点活，挣几个真的吧。",
+      "words": [
+        {
+          "text": "This",
+          "start": 0.841,
+          "end": 1.281
+        },
+        {
+          "text": "machine",
+          "start": 1.421,
+          "end": 1.762
+        },
+        {
+          "text": "doesn't",
+          "start": 1.842,
+          "end": 2.142
+        },
+        {
+          "text": "take",
+          "start": 2.202,
+          "end": 2.402
+        },
+        {
+          "text": "imaginary",
+          "start": 2.522,
+          "end": 3.203
+        },
+        {
+          "text": "coins.",
+          "start": 3.303,
+          "end": 3.743
+        },
+        {
+          "text": "Go",
+          "start": 4.164,
+          "end": 4.324
+        },
+        {
+          "text": "and",
+          "start": 4.464,
+          "end": 4.564
+        },
+        {
+          "text": "get",
+          "start": 4.624,
+          "end": 4.784
+        },
+        {
+          "text": "a",
+          "start": 4.864,
+          "end": 4.884
+        },
+        {
+          "text": "job",
+          "start": 4.964,
+          "end": 5.205
+        },
+        {
+          "text": "and",
+          "start": 5.365,
+          "end": 5.445
+        },
+        {
+          "text": "earn",
+          "start": 5.585,
+          "end": 5.705
+        },
+        {
+          "text": "real",
+          "start": 5.765,
+          "end": 5.945
+        },
+        {
+          "text": "ones.",
+          "start": 6.165,
+          "end": 6.346
+        }
+      ]
+    },
+    {
+      "id": "line_bXoXBjjSQR0",
+      "roleId": "role_L2VcbrWL4bA",
+      "start": 7.71,
+      "end": 9.59,
+      "text": "Mum, can we have some real coins?",
+      "hint": "妈妈，能给我们几个真硬币吗？",
+      "words": [
+        {
+          "start": 7.77,
+          "end": 8.47,
+          "text": "Mum,"
+        },
+        {
+          "start": 8.59,
+          "end": 8.67,
+          "text": "can"
+        },
+        {
+          "start": 8.67,
+          "end": 8.77,
+          "text": "we"
+        },
+        {
+          "start": 8.77,
+          "end": 8.89,
+          "text": "have"
+        },
+        {
+          "start": 8.89,
+          "end": 9.05,
+          "text": "some"
+        },
+        {
+          "start": 9.05,
+          "end": 9.25,
+          "text": "real"
+        },
+        {
+          "start": 9.25,
+          "end": 9.51,
+          "text": "coins?"
+        }
+      ]
+    },
+    {
+      "id": "line_ZqxGppSmmy4",
+      "roleId": "role_7weef38VGuI",
+      "start": 10.77,
+      "end": 12.691,
+      "text": "I said go and get a job.",
+      "hint": "我说了，去干点活。",
+      "words": [
+        {
+          "text": "I",
+          "start": 10.81,
+          "end": 10.83
+        },
+        {
+          "text": "said",
+          "start": 11.03,
+          "end": 11.27
+        },
+        {
+          "text": "go",
+          "start": 11.69,
+          "end": 11.81
+        },
+        {
+          "text": "and",
+          "start": 11.91,
+          "end": 11.971
+        },
+        {
+          "text": "get",
+          "start": 12.011,
+          "end": 12.151
+        },
+        {
+          "text": "a",
+          "start": 12.231,
+          "end": 12.251
+        },
+        {
+          "text": "job.",
+          "start": 12.331,
+          "end": 12.631
+        }
+      ]
+    },
+    {
+      "id": "line_694BlqNA_V4",
+      "roleId": "role_YETwbI6_lYI",
+      "start": 13.252,
+      "end": 17.155,
+      "text": "Well, if you kids make Mum and Dad's bed, I'll give you twenty cents.",
+      "hint": "好吧，你们把爸爸妈妈的床铺好，我就给你们二十分钱。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 13.292,
+          "end": 13.832
+        },
+        {
+          "text": "if",
+          "start": 14.293,
+          "end": 14.333
+        },
+        {
+          "text": "you",
+          "start": 14.413,
+          "end": 14.533
+        },
+        {
+          "text": "kids",
+          "start": 14.673,
+          "end": 14.893
+        },
+        {
+          "text": "make",
+          "start": 14.973,
+          "end": 15.113
+        },
+        {
+          "text": "Mum",
+          "start": 15.173,
+          "end": 15.253
+        },
+        {
+          "text": "and",
+          "start": 15.354,
+          "end": 15.434
+        },
+        {
+          "text": "Dad's",
+          "start": 15.454,
+          "end": 15.714
+        },
+        {
+          "text": "bed,",
+          "start": 15.794,
+          "end": 15.994
+        },
+        {
+          "text": "I'll",
+          "start": 16.054,
+          "end": 16.194
+        },
+        {
+          "text": "give",
+          "start": 16.214,
+          "end": 16.314
+        },
+        {
+          "text": "you",
+          "start": 16.354,
+          "end": 16.434
+        },
+        {
+          "text": "twenty",
+          "start": 16.495,
+          "end": 16.735
+        },
+        {
+          "text": "cents.",
+          "start": 16.815,
+          "end": 17.095
+        }
+      ]
+    },
+    {
+      "id": "line_BkHevnpAU1Q",
+      "roleId": "role_L2VcbrWL4bA",
+      "start": 17.55,
+      "end": 18.95,
+      "text": "Oh, come on, Bingo!",
+      "hint": "哦，来吧，宾果！",
+      "words": [
+        {
+          "start": 17.61,
+          "end": 17.67,
+          "text": "Oh,"
+        },
+        {
+          "start": 18.13,
+          "end": 18.23,
+          "text": "come"
+        },
+        {
+          "start": 18.23,
+          "end": 18.45,
+          "text": "on,"
+        },
+        {
+          "start": 18.49,
+          "end": 18.87,
+          "text": "Bingo!"
+        }
+      ]
+    },
+    {
+      "id": "line_nHfUw8xqCfs",
+      "roleId": "role_YETwbI6_lYI",
+      "start": 20.918,
+      "end": 22.56,
+      "text": "I'm watching you, Magic Claw.",
+      "hint": "我盯着你呢，魔法抓娃娃机。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 20.958,
+          "end": 21.039
+        },
+        {
+          "text": "watching",
+          "start": 21.139,
+          "end": 21.539
+        },
+        {
+          "text": "you,",
+          "start": 21.579,
+          "end": 21.659
+        },
+        {
+          "text": "Magic",
+          "start": 21.759,
+          "end": 22.079
+        },
+        {
+          "text": "Claw.",
+          "start": 22.18,
+          "end": 22.5
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Bluey — The Claw",
+    "attribution": "Bluey © Ludo Studio / BBC Studios",
+    "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=9s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 9.65–32.35 秒的连续节选。Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+  }
+}

@@ -3,14 +3,16 @@ import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 
-const recipe = JSON.parse(await readFile('content/tv-review-scenes.json', 'utf8'));
-const selected = process.argv.slice(2);
+const preschool = process.argv.includes('--preschool');
+const recipe = JSON.parse(await readFile(preschool ? 'content/preschool-review-scenes.json' : 'content/tv-review-scenes.json', 'utf8'));
+const selected = process.argv.slice(2).filter(arg => arg !== '--preschool');
 const scenes = recipe.scenes.filter(scene => !selected.length || selected.includes(scene.slug));
 if (!scenes.length) throw new Error('No selected TV conversations.');
 const local = 'content/local-dubbing';
-const output = `${local}/tv-release`;
+const output = `${local}/${preschool ? 'preschool-release' : 'tv-release'}`;
+const existingCatalog = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
 const root = 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/';
-const names = { Sheldon: '谢尔顿', Librarian: '图书管理员', 'George Cooper Sr.': '乔治爸爸', Rachel: '瑞秋', Ross: '罗斯', Chandler: '钱德勒', 'Rachel and Chandler': '瑞秋和钱德勒', Joey: '乔伊', Barney: '巴尼', Ted: '泰德', Marshall: '马修', Robin: '罗宾', Lily: '莉莉', Missy: '米茜', Georgie: '小乔治', Mandy: '曼迪', 'Dr. Sturgis': '斯特吉斯博士', Researcher: '研究员', Harry: '哈利', Ron: '罗恩', 'Shop assistant': '店员', Monica: '莫妮卡', Penny: '佩妮', Leonard: '莱纳德', Amy: '艾米', 'Barney and Marshall': '巴尼和马修' };
+const names = { Sheldon: '谢尔顿', Librarian: '图书管理员', 'George Cooper Sr.': '乔治爸爸', Rachel: '瑞秋', Ross: '罗斯', Chandler: '钱德勒', 'Rachel and Chandler': '瑞秋和钱德勒', Joey: '乔伊', Barney: '巴尼', Ted: '泰德', Marshall: '马修', Robin: '罗宾', Lily: '莉莉', Missy: '米茜', Georgie: '小乔治', Mandy: '曼迪', 'Dr. Sturgis': '斯特吉斯博士', Researcher: '研究员', Harry: '哈利', Ron: '罗恩', 'Shop assistant': '店员', Monica: '莫妮卡', Penny: '佩妮', Leonard: '莱纳德', Amy: '艾米', 'Barney and Marshall': '巴尼和马修', Peppa: '佩奇', 'Daddy Pig': '猪爸爸', 'Mummy Pig': '猪妈妈', Holly: '霍莉', Ben: '本', 'Nanny Plum': '梅姨', Bluey: '布鲁伊', Bandit: '班迪特爸爸', Chilli: '奇莉妈妈' };
 const translations = Object.fromEntries(Object.entries(names).map(([en, zh]) => [zh, en]));
 const media = [], entries = [], slugs = [];
 await mkdir(output, { recursive: true });
@@ -24,7 +26,7 @@ for (const scene of scenes) {
   await copyFile(original, `${local}/${video}`);
   const duration = +Number(JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'json', original], { encoding: 'utf8' })).format.duration).toFixed(3);
   const pack = {
-    version: 1, id: scene.packId, title: scene.titleZh,
+    version: 1, id: scene.packId, title: scene.titleZh, tags: scene.tags,
     description: '内部原型测试；选角色，听原声，录下自己的版本。',
     duration, video, mediaBase: `${root}${slug}/`,
     poster: `${slug}-poster-${hash}.jpg`, waveform: `waveform-${hash}.json`,
@@ -36,16 +38,16 @@ for (const scene of scenes) {
     }),
     lines: scene.lines.map(line => ({ id: line.id, roleId: line.roleId, start: +(line.start - scene.start).toFixed(3), end: +(line.end - scene.start).toFixed(3), text: line.text, hint: line.hint, words: line.words.map(word => ({ ...word, start: +(word.start - scene.start).toFixed(3), end: +(word.end - scene.start).toFixed(3) })) })),
     wordTiming: scene.wordTiming, rightsStatus: recipe.rightsStatus,
-    credit: { title: `${source.series} — ${source.episode}`, attribution: source.attribution, source: `${source.url}&t=${Math.floor(scene.start)}s`, licence: '未确认再分发许可', licenceUrl: 'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes: `内部原型测试；原上传 ${scene.start}–${scene.end} 秒的连续节选。${scene.contentNotes}` },
+    credit: { title: `${source.series} — ${source.episode}`, attribution: source.attribution, source: `${source.url}&t=${Math.floor(scene.start)}s`, licence: '未确认再分发许可', licenceUrl: 'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes: `内部原型测试；原上传 ${scene.start}–${scene.end} 秒的连续节选。${scene.contentNotes ?? scene.practice}` },
   };
   await mkdir(`public/packs/${slug}`, { recursive: true });
   await writeFile(`public/packs/${slug}/pack.json`, JSON.stringify(pack, null, 2) + '\n');
   translations[scene.titleZh] = scene.title;
-  entries.push({ slug, title: scene.titleZh, english: scene.title, note: source.series, source: pack.credit.source, cohort: scene.cohort, poster: pack.mediaBase + pack.poster });
+  entries.push({ slug, routeSlug: scene.routeSlug ?? existingCatalog.find(clip => clip.slug === slug)?.routeSlug ?? slug, title: scene.titleZh, english: scene.title, note: source.series, source: pack.credit.source, cohort: scene.cohort, poster: pack.mediaBase + pack.poster });
   slugs.push(slug);
   media.push({ file: `${local}/${video}`, key: `clips/${slug}/${video}` }, { file: `${local}/${pack.poster}`, key: `clips/${slug}/${pack.poster}` });
 }
-const catalog = JSON.parse(await readFile('src/review-clips.json', 'utf8')).filter(clip => !slugs.includes(clip.slug));
+const catalog = existingCatalog.filter(clip => !slugs.includes(clip.slug));
 await writeFile('src/review-clips.json', JSON.stringify([...catalog, ...entries], null, 2) + '\n');
 await writeFile(`${output}/media.json`, JSON.stringify(media, null, 2) + '\n');
 await writeFile(`${output}/translations.json`, JSON.stringify(translations, null, 2) + '\n');
