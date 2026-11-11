@@ -22,13 +22,13 @@ export function validateScene(value: unknown, base = sceneRoot): Scene {
       (p.mediaBase !== undefined && (typeof p.mediaBase !== 'string' || !/^https:\/\/[a-z0-9.-]+\/[a-zA-Z0-9_/-]*\/$/.test(p.mediaBase))) ||
       (p.mode !== undefined && p.mode !== 'local') ||
       !Array.isArray(p.roles) || p.roles.length < 1 || p.roles.length > 8 ||
-      !Array.isArray(p.lines) || p.lines.length < 1 || p.lines.length > 60) throw new Error('片段文件不完整，请重新加载。');
+      !Array.isArray(p.lines) || p.lines.length < 1 || p.lines.length > 60) throw new Error("errors.sceneInvalid");
   const ids = new Set<string>();
   for (const role of p.roles) {
     if (!role || !/^role_[\w-]+$/.test(role.id) || ids.has(role.id) ||
         (role.portrait !== undefined && !safeFile(role.portrait)) ||
         (role.selectable !== undefined && typeof role.selectable !== 'boolean') ||
-        ![role.name, role.label, role.hint].every(v => typeof v === 'string' && v.length < 120)) throw new Error('角色资料有误。');
+        ![role.name, role.label, role.hint].every(v => typeof v === 'string' && v.length < 120)) throw new Error("errors.rolesInvalid");
     ids.add(role.id);
   }
   const lineIds = new Set<string>();
@@ -37,22 +37,22 @@ export function validateScene(value: unknown, base = sceneRoot): Scene {
     if (!line || !/^line_[\w-]+$/.test(line.id) || lineIds.has(line.id) || !ids.has(line.roleId) ||
         !Number.isFinite(line.start) || !Number.isFinite(line.end) || line.start < end ||
         line.end <= line.start || line.end > p.duration + 0.01 ||
-        ![line.text, line.hint].every(v => typeof v === 'string' && v.length < 300)) throw new Error('台词时间有误。');
+        ![line.text, line.hint].every(v => typeof v === 'string' && v.length < 300)) throw new Error("errors.timingsInvalid");
     if (line.words !== undefined) {
       if (!Array.isArray(line.words) || !line.words.length || line.words.length > 80 ||
-          line.words.map(w => w?.text).join('').replace(/\s/g, '') !== line.text.replace(/\s/g, '')) throw new Error('台词时间有误。');
+          line.words.map(w => w?.text).join('').replace(/\s/g, '') !== line.text.replace(/\s/g, '')) throw new Error("errors.timingsInvalid");
       let previous = line.start;
       for (const word of line.words) {
         if (!word || typeof word.text !== 'string' || !word.text.trim() || word.text.length > 80 ||
             !Number.isFinite(word.start) || !Number.isFinite(word.end) || word.start < previous - 0.001 ||
-            word.end <= word.start || word.end > line.end + 0.001) throw new Error('台词时间有误。');
+            word.end <= word.start || word.end > line.end + 0.001) throw new Error("errors.timingsInvalid");
         previous = word.end;
       }
     }
     end = line.end; lineIds.add(line.id);
   }
-  if (!p.roles.some(role => role.selectable !== false) || p.roles.some(role => role.selectable !== false && !p.lines.some(line => line.roleId === role.id))) throw new Error('角色资料有误。');
+  if (!p.roles.some(role => role.selectable !== false) || p.roles.some(role => role.selectable !== false && !p.lines.some(line => line.roleId === role.id))) throw new Error("errors.rolesInvalid");
   if (!p.credit || ![p.credit.title, p.credit.attribution, p.credit.source, p.credit.licence, p.credit.licenceUrl, p.credit.changes].every(v => typeof v === 'string' && v.length < 1000) ||
-      ![p.credit.source, p.credit.licenceUrl].every(v => /^https:\/\//.test(v))) throw new Error('片段来源资料不完整。');
+      ![p.credit.source, p.credit.licenceUrl].every(v => /^https:\/\//.test(v))) throw new Error("errors.creditsInvalid");
   return { ...p, base };
 }

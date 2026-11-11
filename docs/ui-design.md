@@ -16,21 +16,25 @@ Page navigation uses `/library/:folder`, `/dubs`, `/scenes/:slug`, and
 `/scenes/:slug/dubs/:dubId`. The root opens the default film library. Audience
 selection adds a history entry, and direct scene links return to that scene's
 audience folder. Saved dub IDs replace the current scene address without
-reloading the player. UI language remains a saved browser preference.
+reloading the player. Each page has `/en/` and `/zh/` versions, with the URL
+determining the interface language. An unprefixed entry uses the saved browser
+preference, defaulting to Chinese, and replaces its address with the prefixed URL.
 
 Approved sitemap:
 
 ```text
-/                                      Default scene library
-/library/older-audience                Films & animation
-/library/younger-age-5                 Younger children
-/library/older-children                Ages 10–12
-/library/teens                         Teenagers
-/dubs                                  My dubs
-/scenes/patrick                        Patrick scene
-/scenes/friends-cheesecake             Friends cheesecake scene
-/scenes/toy-story-infinity             Toy Story scene
-/scenes/:scene-name/dubs/:dub-id        Continue a saved dub
+/                                      Open the preferred language
+/en/                                   English scene library
+/zh/                                   Chinese scene library
+/:language/library/older-audience      Films & animation
+/:language/library/younger-age-5       Younger children
+/:language/library/older-children      Ages 10–12
+/:language/library/teens               Teenagers
+/:language/dubs                        My dubs
+/en/scenes/patrick                     Patrick scene in English UI
+/zh/scenes/friends-cheesecake          Friends scene in Chinese UI
+/en/scenes/toy-story-infinity          Toy Story scene in English UI
+/:language/scenes/:name/dubs/:dub-id    Continue a saved dub
 ```
 
 Scene URLs use stable readable names, separate from translated display titles.
@@ -42,6 +46,19 @@ menu in that row. Saved attempts retain continue/delete actions, loading and
 storage errors, and an empty state with a route back to scene selection. The
 home page omits Help; the dubbing player retains its Help and guardian guidance.
 Role selection, recording, and the finished result are steps within the player.
+
+Navigation uses React Router data routing, route matching, redirects, and
+navigation blockers. Translations use i18next and react-i18next directly, with
+separate JSON resources in `src/locales/en` and `src/locales/zh-CN`. Use stable
+semantic keys and named `{{variables}}`; scene and role content is keyed by record
+ID. `useTranslation()` renders messages, while `useLanguage()` exposes only the
+URL language and language selector action. The navigation adapter preserves the
+running recording session when a language or autosave URL changes.
+
+Language switching changes only the prefix, preserving the scene, saved-dub ID,
+selected line, unsaved takes, and active recording. Language-only Back/Forward
+navigation does not reload the player. Theme remains a separate browser preference.
+Pack metadata, application assets, APIs, and OSS media keep their unprefixed URLs.
 
 Browse prerecorded videos using visible, solid category buttons for Films &
 animation, Younger children, Ages 10–12, and Teenagers. Each shows its scene

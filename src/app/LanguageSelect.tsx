@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Select } from '@base-ui/react/select';
 import { ChevronDown, Languages } from 'lucide-react';
 import { useLanguage } from '../i18n';
@@ -9,7 +10,8 @@ const languages = [
 ];
 
 export function LanguageSelect() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   return <Select.Root items={languages} value={language} onValueChange={value => {
     if (value === 'en' || value === 'zh-CN') setLanguage(value);
   }}>
@@ -21,7 +23,7 @@ export function LanguageSelect() {
     <Select.Portal>
       <Select.Positioner align="end" sideOffset={8} alignItemWithTrigger={false} className="app-select-positioner">
         <Select.Popup className="app-select-popup">
-          <div className="app-select-label">{t('界面语言')}</div>
+          <div className="app-select-label">{t("navigation.language")}</div>
           <Select.List>
             {languages.map(({ value, label }) => <Select.Item key={value} value={value} className="app-select-option">
               <Select.ItemText lang={value === 'en' ? 'en' : 'zh-CN'}>{label}</Select.ItemText>

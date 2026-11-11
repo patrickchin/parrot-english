@@ -22,7 +22,7 @@ test('serves video byte ranges for mobile seeking without exposing unknown paths
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
   const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: btoa('app') } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
-  for (const path of ['/dubs', '/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/']) {
+  for (const path of ['/dubs', '/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/dubs', '/zh/dubs/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123']) {
     const response = await get(path);
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type'), /^text\/html/);
@@ -30,7 +30,7 @@ test('serves the app on page paths while missing assets and API routes stay 404'
     assert.equal(await response.text(), 'app');
     assert.equal(await (await get(path, 'HEAD')).text(), '');
   }
-  for (const path of ['/assets/missing.js', '/scenes/missing/scene.json', '/api/missing', '/scenes/patrick/missing.js']) {
+  for (const path of ['/assets/missing.js', '/scenes/missing/scene.json', '/api/missing', '/scenes/patrick/missing.js', '/en/assets/missing.js', '/zh/api/health', '/fr/scenes/patrick']) {
     assert.equal((await get(path)).status, 404);
   }
 });

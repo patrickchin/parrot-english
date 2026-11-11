@@ -2,7 +2,7 @@ import { asset, type Scene } from './scene';
 import type { Takes } from './useDubbing';
 import { lineWindow } from './line-window';
 
-const unsupported = '这个浏览器暂不支持导出 MP4。请用新版 Safari 或 Chrome 重试。';
+const unsupported = "errors.exportUnsupported";
 
 // The same line windows as replay: original voices outside replaced turns,
 // backing under replaced turns, and each take at its retained capture offset.
@@ -57,7 +57,7 @@ export async function exportDub(scene: Scene, takes: Takes, source: string, sign
   try {
     const bytes = async (url: string) => {
       const response = await fetch(url, { signal });
-      if (!response.ok) throw new Error('视频素材加载失败，请重试。');
+      if (!response.ok) throw new Error("errors.exportAssets");
       return response.arrayBuffer();
     };
     const [original, backing] = await Promise.all([
@@ -68,7 +68,7 @@ export async function exportDub(scene: Scene, takes: Takes, source: string, sign
     signal.throwIfAborted(); progress(20);
     input = new Input({ formats: [MP4, QTFF, WEBM], source: new BufferSource(original) });
     const track = await input.getPrimaryVideoTrack();
-    if (!track) throw new Error('视频导出失败，请重试。');
+    if (!track) throw new Error("errors.exportFailed");
     const codec = await track.getCodec(), config = await track.getDecoderConfig();
     if (!codec || !config) throw new Error(unsupported);
     const target = new BufferTarget();
@@ -102,10 +102,10 @@ export async function exportDub(scene: Scene, takes: Takes, source: string, sign
       voices.add(audio).then(() => voices.close()),
     ]);
     signal.throwIfAborted(); await output.finalize(); signal.throwIfAborted();
-    if (!target.buffer?.byteLength) throw new Error('视频导出失败，请重试。');
+    if (!target.buffer?.byteLength) throw new Error("errors.exportFailed");
     progress(100); return new Blob([target.buffer], { type: 'video/mp4' });
   } catch (error) {
-    if (!signal.aborted && (error instanceof TypeError || error instanceof DOMException)) throw new Error('视频导出失败，请重试。', { cause: error });
+    if (!signal.aborted && (error instanceof TypeError || error instanceof DOMException)) throw new Error("errors.exportFailed", { cause: error });
     throw error;
   } finally {
     signal.removeEventListener('abort', cancel);

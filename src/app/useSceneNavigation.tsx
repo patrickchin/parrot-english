@@ -1,17 +1,22 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPath, useBeforeUnload, useBlocker, useLocation, useNavigate, type BlockerFunction } from 'react-router';
 import { libraryPath, readRoute, scenePath } from './routes';
+import { languagePath, type Language } from '../locale';
 
-type RouteState =
-  | { status: 'active'; href: string }
-  | { status: 'confirming'; href: string; destination: string };
+type Page = ReturnType<typeof readRoute>;
+function languageOnly(previous: Page, next: Page) {
+  return previous.language !== next.language && !!next.slug && next.slug === previous.slug && !next.draftId && !!previous.draftId;
+}
+function samePage(previous: Page, next: Page) {
+  return next.page === previous.page && next.slug === previous.slug && next.folder === previous.folder &&
+    (next.draftId === previous.draftId || languageOnly(previous, next));
+}
 
 const NavigationContext = createContext<ReturnType<typeof useNavigationState> | null>(null);
-
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const navigation = useNavigationState();
   return <NavigationContext value={navigation}>{children}</NavigationContext>;
 }
-
 export function useSceneNavigation() {
   const navigation = useContext(NavigationContext);
   if (!navigation) throw new Error('NavigationProvider is missing.');
@@ -19,60 +24,65 @@ export function useSceneNavigation() {
 }
 
 function useNavigationState() {
-  const [route, setRoute] = useState<RouteState>(() => ({ status: 'active', href: location.href }));
-  const current = useRef(route);
-  const [dirty, setDirty] = useState(false);
-  const [revision, setRevision] = useState(0);
+  const location = useLocation();
+  const go = useNavigate();
+  const href = createPath(location);
+  const replacement = useRef<string | undefined>(undefined);
   const protectedSession = useRef(false);
-  function update(next: RouteState) { current.current = next; setRoute(next); }
-  const protect = useCallback((value: boolean) => { protectedSession.current = value; setDirty(value); }, []);
-  function accept(href: string) {
-    if (location.href !== href) history.pushState(null, '', href);
-    update({ status: 'active', href });
-    setRevision(value => value + 1);
+  // This checkpoint owns only the running player session. React Router owns URL
+  // matching, history, redirects, navigation, and the blocked destination.
+  const [active, setActive] = useState(() => ({ href, page: readRoute(href), revision: 0 }));
+  if (active.href !== href) {
+    const page = readRoute(href);
+    const preserve = replacement.current === href || samePage(active.page, page);
+    if (languageOnly(active.page, page)) page.draftId = active.page.draftId;
+    setActive({ href, page, revision: active.revision + (preserve ? 0 : 1) });
   }
-  function request(href: string) {
-    if (href === current.current.href) { update({ status: 'active', href }); return; }
-    if (protectedSession.current) update({ status: 'confirming', href: current.current.href, destination: href });
-    else accept(href);
-  }
+  const current = useRef(active);
+  useLayoutEffect(() => { current.current = active; }, [active]);
+  const blocker = useBlocker(useCallback<BlockerFunction>(({ currentLocation, nextLocation }) =>
+    protectedSession.current && replacement.current !== createPath(nextLocation) &&
+    !samePage(readRoute(createPath(currentLocation)), readRoute(createPath(nextLocation))), []));
+  const blocked = blocker.state === 'blocked';
+  const blockedRef = useRef(blocked);
+  useLayoutEffect(() => { blockedRef.current = blocked; }, [blocked]);
+  useBeforeUnload(useCallback(event => {
+    if (protectedSession.current) { event.preventDefault(); event.returnValue = ''; }
+  }, []));
+
   useEffect(() => {
-    // Keep the current Player mounted during history navigation until the
-    // learner confirms. Cancelling restores its address without reloading it.
-    const change = () => request(location.href);
-    window.addEventListener('popstate', change);
-    return () => window.removeEventListener('popstate', change);
-  }, []);
-  useEffect(() => {
-    if (!dirty) return;
-    const leaving = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
-    window.addEventListener('beforeunload', leaving);
-    return () => window.removeEventListener('beforeunload', leaving);
-  }, [dirty]);
+    // An autosave may add an ID after an older language-history entry was made.
+    const actual = readRoute(href);
+    if (active.page.draftId && !actual.draftId && actual.slug === active.page.slug) {
+      const path = scenePath(actual.slug, active.page.draftId, actual.language);
+      replacement.current = path;
+      void go(path, { replace: true });
+    } else if (replacement.current === href) replacement.current = undefined;
+  }, [href, active.page, go]);
+
+  const protect = useCallback((value: boolean) => { protectedSession.current = value; }, []);
   const rememberDraft = useCallback((id?: string) => {
-    if (current.current.status !== 'active') return;
-    const url = new URL(scenePath(readRoute(current.current.href).slug, id), current.current.href);
-    history.replaceState(null, '', url);
-    const next = { status: 'active' as const, href: url.href };
-    current.current = next; setRoute(next);
-  }, []);
+    if (blockedRef.current) return;
+    const { page, href } = current.current;
+    const path = scenePath(page.slug, id, page.language);
+    if (path === href) return;
+    replacement.current = path;
+    void go(path, { replace: true });
+  }, [go]);
   return {
-    ...readRoute(route.href),
-    revision, rememberDraft,
-    navigateTo(path: string) { request(new URL(path, current.current.href).href); },
-    pending: route.status === 'confirming',
-    protect,
+    ...active.page, revision: active.revision, rememberDraft, protect,
+    pending: blocked,
+    navigateTo(path: string) { void go(path); },
+    setLanguage(language: Language) {
+      const url = new URL(current.current.href, window.location.origin);
+      void go(languagePath(url.pathname, language) + url.search + url.hash);
+    },
     navigate(slug: string, draftId?: string) {
-      const path = slug ? scenePath(slug, draftId) : libraryPath(readRoute(current.current.href).folder);
-      request(new URL(path, current.current.href).href);
+      const { page } = current.current;
+      void go(slug ? scenePath(slug, draftId, page.language) : libraryPath(page.folder, page.language));
     },
-    chooseFolder(folder: string) {
-      request(new URL(libraryPath(folder), current.current.href).href);
-    },
-    confirm() { const state = current.current; if (state.status === 'confirming') accept(state.destination); },
-    cancel() {
-      if (location.href !== current.current.href) history.pushState(null, '', current.current.href);
-      update({ status: 'active', href: current.current.href });
-    },
+    chooseFolder(folder: string) { void go(libraryPath(folder, current.current.page.language)); },
+    confirm() { if (blocker.state === 'blocked') blocker.proceed(); },
+    cancel() { if (blocker.state === 'blocked') blocker.reset(); },
   };
 }
