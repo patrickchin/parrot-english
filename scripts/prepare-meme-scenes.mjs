@@ -41,7 +41,7 @@ for (const entry of scenes) {
   try { previous = JSON.parse(await readFile(path + '/scene.json', 'utf8')); } catch { /* First authoring run. */ }
   const roles = entry.roles.map(([name,label,hint],i) => ({ id: previous?.roles[i]?.id ?? id('role'), name,label,hint,portrait:previous?.roles[i]?.portrait }));
   const scene = {
-    version:1, id:previous?.id ?? id('scene'), title:entry.title,
+    version:1, id:previous?.id ?? id('scene'), title:entry.title, tags:entry.tags ?? previous?.tags,
     mediaBase:`https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/${entry.slug}/`,
     description:'成人原型配音测试；选角色，听原声，录下自己的版本。', duration:entry.duration, video:`${entry.slug}-v1.mp4`, poster:previous?.poster, waveform:previous?.waveform, wordTiming:previous?.wordTiming, roles,
     lines:entry.lines.map(([role,start,end,text,hint],i) => ({ id:previous?.lines[i]?.id ?? id('line'),roleId:roles[role].id,start,end,text,hint, words:previous?.lines[i]?.text === text && previous.lines[i].start === start && previous.lines[i].end === end ? previous.lines[i].words : undefined })),

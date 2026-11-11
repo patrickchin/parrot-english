@@ -515,7 +515,20 @@
         "language": "en"
       },
       "sceneId": "scene_oq1hQgYa",
-      "publicSlug": "keep-swimming"
+      "publicSlug": "keep-swimming",
+      "tags": [
+        "Finding Nemo",
+        "海底总动员",
+        "Nemo",
+        "Dory",
+        "Marlin",
+        "多莉",
+        "马林",
+        "swimming",
+        "游泳",
+        "encouragement",
+        "鼓励"
+      ]
     },
     {
       "id": "clip_Hjrlgu1agsw",
@@ -685,7 +698,22 @@
         "language": "en"
       },
       "sceneId": "scene_EI_7V5r9",
-      "publicSlug": "fish-friends"
+      "publicSlug": "fish-friends",
+      "tags": [
+        "Finding Nemo",
+        "海底总动员",
+        "Nemo",
+        "Sharks",
+        "Chum",
+        "Anchor",
+        "鲨鱼合声",
+        "查姆",
+        "安可",
+        "friendship",
+        "友谊",
+        "sharks",
+        "鲨鱼"
+      ]
     },
     {
       "id": "clip_-ivM8VxNjFA",
@@ -1005,7 +1033,20 @@
         "language": "en"
       },
       "sceneId": "scene_fEAVzgFh",
-      "publicSlug": "infinity"
+      "publicSlug": "infinity",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "flying",
+        "飞行",
+        "challenge",
+        "挑战"
+      ]
     },
     {
       "id": "clip_3qlJJA5aosA",
@@ -1266,7 +1307,20 @@
         "language": "en"
       },
       "sceneId": "scene_txYTl2tq",
-      "publicSlug": "you-are-a-toy"
+      "publicSlug": "you-are-a-toy",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "toys",
+        "玩具",
+        "argument",
+        "争论"
+      ]
     },
     {
       "id": "clip_dqoZnV78SiQ",
@@ -1489,7 +1543,20 @@
         "language": "en"
       },
       "sceneId": "scene_Ciq_cd4H",
-      "publicSlug": "falling-with-style"
+      "publicSlug": "falling-with-style",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "flying",
+        "飞行",
+        "adventure",
+        "冒险"
+      ]
     },
     {
       "id": "clip_5t6SYMzRsUY",
@@ -1676,7 +1743,23 @@
         "language": "en"
       },
       "sceneId": "scene_oSd4bYiR",
-      "publicSlug": "i-am-speed"
+      "publicSlug": "i-am-speed",
+      "tags": [
+        "Cars on the Road",
+        "Cars",
+        "赛车总动员",
+        "公路旅行",
+        "Mater",
+        "Lightning McQueen",
+        "Speed announcer",
+        "板牙",
+        "闪电麦昆",
+        "测速播报员",
+        "driving",
+        "驾驶",
+        "racing",
+        "赛车"
+      ]
     },
     {
       "id": "clip_DeDuMyuP4cU",
@@ -1934,7 +2017,21 @@
         "language": "en"
       },
       "sceneId": "scene_p5BgIG-b",
-      "publicSlug": "ka-chow"
+      "publicSlug": "ka-chow",
+      "tags": [
+        "Cars",
+        "赛车总动员",
+        "Lightning McQueen",
+        "Chick Hicks",
+        "闪电麦昆",
+        "奇克·海克斯",
+        "Dinoco",
+        "恐龙石油",
+        "racing",
+        "赛车",
+        "wordplay",
+        "文字游戏"
+      ]
     },
     {
       "id": "clip_9sXsdrNOeOo",
@@ -2197,7 +2294,26 @@
         "language": "en"
       },
       "sceneId": "scene_RPXXEtjf",
-      "publicSlug": "so-fluffy"
+      "publicSlug": "so-fluffy",
+      "tags": [
+        "Despicable Me",
+        "神偷奶爸",
+        "卑鄙的我",
+        "Margo",
+        "Agnes",
+        "Carnival attendant",
+        "Gru",
+        "玛戈",
+        "艾格尼丝",
+        "游乐场摊主",
+        "格鲁",
+        "carnival",
+        "游乐场",
+        "unicorn",
+        "独角兽",
+        "toys",
+        "玩具"
+      ]
     },
     {
       "id": "clip_yUY12PpfVy4",
@@ -2518,7 +2634,22 @@
         "language": "en"
       },
       "sceneId": "scene_CZ0bp6VC",
-      "publicSlug": "banana"
+      "publicSlug": "banana",
+      "tags": [
+        "Despicable Me",
+        "神偷奶爸",
+        "卑鄙的我",
+        "Gru",
+        "Margo",
+        "Edith",
+        "格鲁",
+        "玛戈",
+        "伊迪丝",
+        "rules",
+        "规则",
+        "family",
+        "家庭"
+      ]
     },
     {
       "id": "clip_aKB38kgwnqg",
@@ -2811,7 +2942,21 @@
         "language": "en"
       },
       "sceneId": "scene_nJ9pMesA",
-      "publicSlug": "squirrel"
+      "publicSlug": "squirrel",
+      "tags": [
+        "Up",
+        "飞屋环游记",
+        "Dug",
+        "Carl",
+        "道格",
+        "卡尔",
+        "dog",
+        "狗",
+        "animals",
+        "动物",
+        "talking collar",
+        "会说话的项圈"
+      ]
     },
     {
       "id": "clip_3ShHvvD_mEE",
@@ -3018,7 +3163,23 @@
         "language": "en"
       },
       "sceneId": "scene_IuDLtAby",
-      "publicSlug": "meet-dug"
+      "publicSlug": "meet-dug",
+      "tags": [
+        "Up",
+        "飞屋环游记",
+        "Russell",
+        "Dug",
+        "Carl",
+        "罗素",
+        "道格",
+        "卡尔",
+        "dog",
+        "狗",
+        "greetings",
+        "打招呼",
+        "friendship",
+        "友谊"
+      ]
     },
     {
       "id": "clip_3uUuUICcgcE",
@@ -3276,7 +3437,20 @@
         "language": "en"
       },
       "sceneId": "scene_y50gF2Cn",
-      "publicSlug": "anyone-can-cook"
+      "publicSlug": "anyone-can-cook",
+      "tags": [
+        "Ratatouille",
+        "料理鼠王",
+        "美食总动员",
+        "Gusteau",
+        "Remy",
+        "古斯托",
+        "小米",
+        "cooking",
+        "做饭",
+        "food",
+        "食物"
+      ]
     },
     {
       "id": "clip_IlTj6g2f2Zo",
@@ -3609,7 +3783,21 @@
         "language": "en"
       },
       "sceneId": "scene_wr2NM2nf",
-      "publicSlug": "secret-ingredient"
+      "publicSlug": "secret-ingredient",
+      "tags": [
+        "Kung Fu Panda",
+        "功夫熊猫",
+        "Mr. Ping",
+        "Po",
+        "平先生",
+        "阿宝",
+        "cooking",
+        "做饭",
+        "noodles",
+        "面条",
+        "belief",
+        "信念"
+      ]
     },
     {
       "id": "clip_9KQZ5SebU3A",
@@ -3790,7 +3978,19 @@
         "language": "en"
       },
       "sceneId": "scene_kuOni4tB",
-      "publicSlug": "today-is-a-gift"
+      "publicSlug": "today-is-a-gift",
+      "tags": [
+        "Kung Fu Panda",
+        "功夫熊猫",
+        "Oogway",
+        "Po",
+        "乌龟大师",
+        "阿宝",
+        "feelings",
+        "情绪",
+        "food",
+        "食物"
+      ]
     },
     {
       "id": "clip_ceVlv_1qb1A",
@@ -4153,7 +4353,24 @@
         "language": "en"
       },
       "sceneId": "scene_4ds3OMdO",
-      "publicSlug": "do-the-roar"
+      "publicSlug": "do-the-roar",
+      "tags": [
+        "Shrek Forever After",
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Boy's father",
+        "Boy",
+        "Fiona",
+        "男孩的爸爸",
+        "小男孩",
+        "史莱克",
+        "菲奥娜",
+        "birthday",
+        "生日",
+        "party",
+        "派对"
+      ]
     },
     {
       "id": "clip_tbOSb_pnz7w",
@@ -4426,7 +4643,22 @@
         "language": "en"
       },
       "sceneId": "scene_HY-tFxVL",
-      "publicSlug": "are-we-there-yet"
+      "publicSlug": "are-we-there-yet",
+      "tags": [
+        "Shrek 2",
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Donkey",
+        "Fiona",
+        "驴子",
+        "史莱克",
+        "菲奥娜",
+        "travel",
+        "旅行",
+        "impatience",
+        "不耐烦"
+      ]
     },
     {
       "id": "clip_adg_TpdQwV4",
@@ -4716,7 +4948,23 @@
         "language": "en"
       },
       "sceneId": "scene_XFfwULcF",
-      "publicSlug": "my-swamp"
+      "publicSlug": "my-swamp",
+      "tags": [
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Donkey",
+        "Pinocchio",
+        "Little pig",
+        "驴子",
+        "匹诺曹",
+        "史莱克",
+        "小猪",
+        "fairy tales",
+        "童话",
+        "eviction",
+        "驱逐"
+      ]
     },
     {
       "id": "clip_FDCNCC_b4u8",
@@ -4920,7 +5168,19 @@
         "language": "en"
       },
       "sceneId": "scene_MkR1_VOc",
-      "publicSlug": "im-ready"
+      "publicSlug": "im-ready",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Squidward",
+        "章鱼哥",
+        "driving test",
+        "驾驶考试",
+        "excitement",
+        "兴奋"
+      ]
     },
     {
       "id": "clip_dHjWqyBN7_Y",
@@ -5184,7 +5444,25 @@
         "language": "en"
       },
       "sceneId": "scene_F9ob5jiT",
-      "publicSlug": "mayonnaise"
+      "publicSlug": "mayonnaise",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Squidward",
+        "Plankton",
+        "Patrick",
+        "章鱼哥",
+        "痞老板",
+        "派大星",
+        "music",
+        "音乐",
+        "instruments",
+        "乐器",
+        "food",
+        "食物"
+      ]
     },
     {
       "id": "clip_pDtNNzsp6TU",
@@ -5625,7 +5903,23 @@
         "language": "en"
       },
       "sceneId": "scene_uDawiVCK",
-      "publicSlug": "smile-and-wave"
+      "publicSlug": "smile-and-wave",
+      "tags": [
+        "Madagascar",
+        "马达加斯加",
+        "Penguins",
+        "企鹅",
+        "Skipper",
+        "Kowalski",
+        "Private",
+        "队长",
+        "科瓦斯基",
+        "菜鸟",
+        "escape",
+        "逃脱",
+        "teamwork",
+        "合作"
+      ]
     },
     {
       "id": "clip_h1ODs0Vv0qI",
@@ -5938,7 +6232,19 @@
         "language": "en"
       },
       "sceneId": "scene_1eCjBRKF",
-      "publicSlug": "wumbo"
+      "publicSlug": "wumbo",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Patrick",
+        "派大星",
+        "wordplay",
+        "文字游戏",
+        "mini",
+        "迷你"
+      ]
     },
     {
       "id": "scene_KHUVKWak",
@@ -6000,6 +6306,20 @@
           "text": "No! This is Patrick!",
           "hint": "不！这是派大星！"
         }
+      ],
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "派大星",
+        "来电者",
+        "Patrick",
+        "Caller",
+        "phone call",
+        "电话",
+        "Krusty Krab",
+        "蟹堡王"
       ]
     },
     {
@@ -6053,6 +6373,20 @@
           "text": "Chocolate?! Chocolate!",
           "hint": "巧克力？！巧克力！"
         }
+      ],
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "顾客",
+        "派大星",
+        "Patrick",
+        "Customer",
+        "food",
+        "食物",
+        "selling",
+        "推销"
       ]
     },
     {
@@ -6106,6 +6440,18 @@
           "text": "Oh, you both have layers.",
           "hint": "哦，你们都有层次。"
         }
+      ],
+      "tags": [
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "史莱克",
+        "驴子",
+        "Donkey",
+        "food",
+        "食物",
+        "layers",
+        "层次"
       ]
     }
   ]

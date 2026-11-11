@@ -7,8 +7,11 @@
     "node": "24.x"
   },
   "scripts": {
+    "prepare:search": "node scripts/prepare-scene-search.mjs",
+    "predev": "npm run prepare:search",
     "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1",
+    "prebuild": "npm run prepare:search",
     "build": "tsc --noEmit && vite build && node scripts/build-edge.mjs",
     "test": "node --test prototype/worker.test.mjs tests/*.test.mjs",
     "test:browser": "playwright test"
@@ -17,6 +20,7 @@
     "@base-ui/react": "1.9.0",
     "class-variance-authority": "0.7.1",
     "cn": "0.5.0",
+    "fuse.js": "7.5.0",
     "lucide-react": "1.64.0",
     "mediabunny": "1.65.2",
     "react": "19.2.6",

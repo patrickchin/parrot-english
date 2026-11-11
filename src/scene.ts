@@ -2,7 +2,7 @@ export type Role = { id: string; name: string; label: string; portrait?: string;
 export type TimedWord = { text: string; start: number; end: number };
 export type Line = { id: string; roleId: string; start: number; end: number; text: string; hint: string; words?: TimedWord[] };
 export type Scene = {
-  version: 1; id: string; title: string; description: string; duration: number;
+  version: 1; id: string; title: string; description: string; duration: number; tags?: string[];
   video: string; backing?: string; poster?: string; waveform?: string; roles: Role[]; lines: Line[];
   base: string; mediaBase?: string; mode?: 'local';
   credit: { title: string; attribution: string; source: string; licence: string; licenceUrl: string; changes: string };
@@ -14,6 +14,8 @@ export function validateScene(value: unknown, base = sceneRoot): Scene {
   const safeFile = (s: unknown) => typeof s === 'string' && /^[a-zA-Z0-9_-]+\.(mp4|m4a|jpg)$/.test(s);
   if (!p || p.version !== 1 || !/^scene_[\w-]+$/.test(p.id) ||
       typeof p.title !== 'string' || typeof p.description !== 'string' ||
+      (p.tags !== undefined && (!Array.isArray(p.tags) || p.tags.length > 32 ||
+        !p.tags.every(tag => typeof tag === 'string' && tag.trim().length > 0 && tag.length <= 80))) ||
       !Number.isFinite(p.duration) || p.duration <= 0 || p.duration > 120 ||
       !safeFile(p.video) || ![p.backing, p.poster].every(v => v === undefined || safeFile(v)) ||
       (p.waveform !== undefined && (typeof p.waveform !== 'string' || !/^[a-zA-Z0-9_-]+\.json$/.test(p.waveform))) ||

@@ -46,7 +46,10 @@ The folder dropdown shows stacked video previews and scene counts, and keeps the
 selected folder across playback, language changes, and reloads.
 See [the meme re-edits](docs/meme-review.md) and
 [the younger scenes](docs/preschool-review.md) for the current cuts.
-Browse the thumbnail grid or search by scene, English line, or film. Every scene opens directly from Alibaba
+Browse the thumbnail grid or search within the selected folder by title, series,
+character, topic tag, or any English dialogue/Chinese meaning hint. Fuse.js provides
+typo-tolerant matching across query words; title and tag matches rank ahead of
+dialogue-only matches. Every scene opens directly from Alibaba
 OSS, with an original-audio waveform, aligned words, and Chinese meaning hints.
 See [clip sources](docs/clip-sources.md) and [the 20 additional scenes](docs/extra-clips.md)
 for YouTube links, source offsets, credits, and redistribution status.
@@ -58,6 +61,12 @@ npm run build
 npm test
 npm run test:browser
 ```
+
+Scene manifests support optional `tags` (up to 32 nonempty strings, 80 characters
+each). Keep authored tags in the review recipe as well so scene regeneration
+preserves them. `npm run prepare:search` rebuilds the lightweight library index
+from the shipped manifests; dev startup and production builds run it automatically.
+Run it after editing tags or dialogue during an existing dev session.
 
 Application code and scene metadata belong in ESA; video, audio, and scene
 images belong in Alibaba OSS. `mediaBase` in each scene identifies its media

@@ -6,8 +6,14 @@ test('the independently loaded scene rejects traversal, missing roles and overla
   const scene = JSON.parse(await readFile(new URL('./fixtures/sintel/scene.json', import.meta.url), 'utf8'));
   assert.equal(validateScene(scene).lines.length, 5);
   assert.equal(asset(validateScene(scene), scene.video), scene.mediaBase + scene.video);
+  assert.deepEqual(validateScene({ ...scene, tags: ['SpongeBob', '海绵宝宝'] }).tags, ['SpongeBob', '海绵宝宝']);
   assert.equal(validateScene({ ...scene, id: 'scene_example' }).id, 'scene_example');
   for (const change of [
+    p => { p.tags = 'SpongeBob'; },
+    p => { p.tags = [null]; },
+    p => { p.tags = ['   ']; },
+    p => { p.tags = ['x'.repeat(81)]; },
+    p => { p.tags = Array(33).fill('tag'); },
     p => { p.id = 'unknown_example'; },
     p => { p.id = 'pack_example'; },
     p => { p.video = '../../secrets.mp4'; },

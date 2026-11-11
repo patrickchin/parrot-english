@@ -685,7 +685,22 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Sheldon",
+        "Librarian",
+        "谢尔顿",
+        "图书管理员",
+        "library",
+        "图书馆",
+        "books",
+        "书",
+        "friendship",
+        "交朋友"
+      ]
     },
     {
       "id": "clip_ePLx_ZCOfs0",
@@ -1022,7 +1037,22 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Sheldon",
+        "George Cooper Sr.",
+        "谢尔顿",
+        "乔治爸爸",
+        "compliments",
+        "赞美",
+        "books",
+        "书",
+        "advice",
+        "建议"
+      ]
     },
     {
       "id": "clip_aazmMXhTmwY",
@@ -1848,7 +1878,22 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "George Cooper Sr.",
+        "Sheldon",
+        "乔治爸爸",
+        "谢尔顿",
+        "homework",
+        "作业",
+        "engineering",
+        "工程",
+        "school",
+        "学校"
+      ]
     },
     {
       "id": "clip_yxchm8bYGF8",
@@ -2171,7 +2216,25 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Rachel",
+        "Ross",
+        "Chandler",
+        "Rachel and Chandler",
+        "瑞秋",
+        "罗斯",
+        "钱德勒",
+        "瑞秋和钱德勒",
+        "couch",
+        "sofa",
+        "沙发",
+        "moving",
+        "搬家"
+      ]
     },
     {
       "id": "clip_JZlydeJAJ5w",
@@ -2736,7 +2799,20 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Ross",
+        "Joey",
+        "罗斯",
+        "乔伊",
+        "thesaurus",
+        "同义词词典",
+        "vocabulary",
+        "词汇"
+      ]
     },
     {
       "id": "clip_Y8DtqCOaS3g",
@@ -3194,7 +3270,22 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Rachel",
+        "Chandler",
+        "瑞秋",
+        "钱德勒",
+        "cheesecake",
+        "芝士蛋糕",
+        "food",
+        "食物",
+        "sharing",
+        "分享"
+      ]
     },
     {
       "id": "clip_pJWd_zC4k9g",
@@ -3577,7 +3668,21 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "老爸老妈的浪漫史",
+        "老爸老妈浪漫史",
+        "Barney",
+        "Ted",
+        "巴尼",
+        "泰德",
+        "driving",
+        "驾驶",
+        "fear",
+        "害怕"
+      ]
     },
     {
       "id": "clip_krC6SHgq0fE",
@@ -4210,7 +4315,27 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "老爸老妈的浪漫史",
+        "老爸老妈浪漫史",
+        "Marshall",
+        "Ted",
+        "Robin",
+        "Lily",
+        "马修",
+        "泰德",
+        "罗宾",
+        "莉莉",
+        "rabbit",
+        "兔子",
+        "duck",
+        "鸭子",
+        "argument",
+        "争论"
+      ]
     },
     {
       "id": "clip_YSYdU4e8FmI",
@@ -4628,7 +4753,24 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Dr. Sturgis",
+        "Missy",
+        "Sheldon",
+        "斯特吉斯博士",
+        "米茜",
+        "谢尔顿",
+        "Einstein",
+        "爱因斯坦",
+        "science",
+        "科学",
+        "family",
+        "家庭"
+      ]
     },
     {
       "id": "clip_ARdqABsW4Tg",
@@ -5016,7 +5158,20 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Missy",
+        "Researcher",
+        "米茜",
+        "研究员",
+        "camera",
+        "摄像机",
+        "research",
+        "研究"
+      ]
     },
     {
       "id": "clip_VdEHR88LCKs",
@@ -5540,7 +5695,22 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Missy",
+        "Georgie",
+        "Mandy",
+        "米茜",
+        "小乔治",
+        "曼迪",
+        "breakfast",
+        "早餐",
+        "wordplay",
+        "文字游戏"
+      ]
     },
     {
       "id": "clip_pCOn9LnZxso",
@@ -5916,7 +6086,20 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "George Cooper Sr.",
+        "Missy",
+        "乔治爸爸",
+        "米茜",
+        "chores",
+        "家务",
+        "family",
+        "家庭"
+      ]
     },
     {
       "id": "clip_P1pVYlGCqS8",
@@ -6118,7 +6301,25 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Harry Potter and the Philosopher’s Stone",
+        "Harry Potter",
+        "Harry Potter and the Sorcerer's Stone",
+        "哈利波特",
+        "哈利·波特",
+        "魔法石",
+        "Harry",
+        "Ron",
+        "哈利",
+        "罗恩",
+        "magic",
+        "魔法",
+        "Dumbledore",
+        "邓布利多",
+        "chocolate frog",
+        "巧克力蛙"
+      ]
     },
     {
       "id": "clip_uFLtSyvVJd4",
@@ -6465,7 +6666,25 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Harry Potter and the Philosopher’s Stone",
+        "Harry Potter",
+        "Harry Potter and the Sorcerer's Stone",
+        "哈利波特",
+        "哈利·波特",
+        "魔法石",
+        "Ron",
+        "Harry",
+        "罗恩",
+        "哈利",
+        "friendship",
+        "交朋友",
+        "train",
+        "火车",
+        "greetings",
+        "打招呼"
+      ]
     },
     {
       "id": "clip_OQ4LJptCyKU",
@@ -6951,7 +7170,21 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Shop assistant",
+        "Ross",
+        "店员",
+        "罗斯",
+        "couch",
+        "sofa",
+        "沙发",
+        "returns",
+        "退货"
+      ]
     },
     {
       "id": "clip_cpwh9ilXMRw",
@@ -7334,7 +7567,20 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Rachel",
+        "Chandler",
+        "瑞秋",
+        "钱德勒",
+        "vacuum",
+        "吸尘器",
+        "cleaning",
+        "打扫"
+      ]
     },
     {
       "id": "clip_RjhpcIBvmHs",
@@ -7611,7 +7857,20 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Ross",
+        "Monica",
+        "罗斯",
+        "莫妮卡",
+        "phone bill",
+        "电话账单",
+        "money",
+        "钱"
+      ]
     },
     {
       "id": "clip_8AKpqP9H2vs",
@@ -7982,7 +8241,26 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "The Big Bang Theory",
+        "Big Bang Theory",
+        "生活大爆炸",
+        "Penny",
+        "Amy",
+        "Sheldon",
+        "Leonard",
+        "佩妮",
+        "艾米",
+        "谢尔顿",
+        "莱纳德",
+        "Pictionary",
+        "你画我猜",
+        "wordplay",
+        "文字游戏",
+        "gift",
+        "礼物"
+      ]
     },
     {
       "id": "clip_O2ZhybUyZ3E",
@@ -8399,7 +8677,22 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "The Big Bang Theory",
+        "Big Bang Theory",
+        "生活大爆炸",
+        "Sheldon",
+        "Penny",
+        "谢尔顿",
+        "佩妮",
+        "notebook",
+        "笔记本",
+        "school",
+        "学校",
+        "studying",
+        "学习"
+      ]
     },
     {
       "id": "clip_LC3l_KtvYIM",
@@ -8734,10 +9027,29 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "老爸老妈的浪漫史",
+        "老爸老妈浪漫史",
+        "Ted",
+        "Robin",
+        "Barney and Marshall",
+        "泰德",
+        "罗宾",
+        "巴尼和马修",
+        "wordplay",
+        "文字游戏",
+        "grammar",
+        "语法",
+        "argument",
+        "争论"
+      ]
     },
     {
       "id": "clip_GlA5VriXguE",
+      "sceneId": "scene_v-EwUnOY6rw",
       "batch": "2026-11-11-c",
       "cohort": "older-children",
       "slug": "10-young-sheldon-good-guest",
@@ -9204,11 +9516,11 @@
         "谢尔顿",
         "做客",
         "礼貌"
-      ],
-      "sceneId": "scene_v-EwUnOY6rw"
+      ]
     },
     {
       "id": "clip_Yy81EfEyFFo",
+      "sceneId": "scene_LiOGfPU3EPE",
       "batch": "2026-11-11-c",
       "cohort": "older-children",
       "slug": "11-young-sheldon-own-breakfast",
@@ -9654,11 +9966,11 @@
         "米茜",
         "早餐",
         "家务"
-      ],
-      "sceneId": "scene_LiOGfPU3EPE"
+      ]
     },
     {
       "id": "clip_ZCr2kCUepOo",
+      "sceneId": "scene_W-m8Y8JwqZc",
       "batch": "2026-11-11-c",
       "cohort": "older-children",
       "slug": "12-young-sheldon-timed-test",
@@ -10031,11 +10343,11 @@
         "谢尔顿",
         "测试",
         "计时"
-      ],
-      "sceneId": "scene_W-m8Y8JwqZc"
+      ]
     },
     {
       "id": "clip_6yg5AewmIa8",
+      "sceneId": "scene_h81smyBB8mI",
       "batch": "2026-11-11-c",
       "cohort": "teens",
       "slug": "12-friends-brown-jar",
@@ -10311,11 +10623,11 @@
         "钱德勒",
         "冰箱",
         "食物"
-      ],
-      "sceneId": "scene_h81smyBB8mI"
+      ]
     },
     {
       "id": "clip_FuJ0diUuNTM",
+      "sceneId": "scene_Jjy8Z_ovOQI",
       "batch": "2026-11-11-c",
       "cohort": "teens",
       "slug": "13-himym-water-is-a-drink",
@@ -10698,11 +11010,11 @@
         "罗宾",
         "喝水",
         "反讽"
-      ],
-      "sceneId": "scene_Jjy8Z_ovOQI"
+      ]
     },
     {
       "id": "clip_ywckYM8F-38",
+      "sceneId": "scene_5XN5XS_M_Mw",
       "batch": "2026-11-11-c",
       "cohort": "teens",
       "slug": "14-big-bang-long-lesson",
@@ -11029,8 +11341,7 @@
         "谢尔顿",
         "上课",
         "洗手间"
-      ],
-      "sceneId": "scene_5XN5XS_M_Mw"
+      ]
     }
   ]
 }

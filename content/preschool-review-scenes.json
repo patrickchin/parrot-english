@@ -398,7 +398,19 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Peppa",
+        "Daddy Pig",
+        "佩奇",
+        "猪爸爸",
+        "muddy puddles",
+        "泥坑",
+        "guessing",
+        "猜谜"
+      ]
     },
     {
       "id": "clip_pfpYY0M22so",
@@ -641,7 +653,23 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Danny Dog",
+        "Peppa",
+        "George",
+        "Madame Gazelle",
+        "小狗丹尼",
+        "佩奇",
+        "乔治",
+        "羚羊夫人",
+        "dinosaur",
+        "恐龙",
+        "toys",
+        "玩具"
+      ]
     },
     {
       "id": "clip_du6M4U0ctb0",
@@ -998,7 +1026,23 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Daddy Pig",
+        "Peppa",
+        "Suzy Sheep",
+        "Mummy Pig",
+        "猪爸爸",
+        "佩奇",
+        "小羊苏西",
+        "猪妈妈",
+        "doctor",
+        "医生",
+        "pretend play",
+        "角色扮演"
+      ]
     },
     {
       "id": "clip_1D2mQKlhTy0",
@@ -1383,7 +1427,21 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Daddy Pig",
+        "Mummy Pig",
+        "Peppa",
+        "猪爸爸",
+        "猪妈妈",
+        "佩奇",
+        "glasses",
+        "眼镜",
+        "helping",
+        "帮忙"
+      ]
     },
     {
       "id": "clip_UHTGdynnGdQ",
@@ -1561,7 +1619,21 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Mummy Pig",
+        "Daddy Pig",
+        "Peppa",
+        "猪妈妈",
+        "猪爸爸",
+        "佩奇",
+        "glasses",
+        "眼镜",
+        "family",
+        "家庭"
+      ]
     },
     {
       "id": "clip_sMyT3XmXoJU",
@@ -1861,7 +1933,23 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Holly",
+        "Nanny Plum",
+        "霍莉",
+        "梅姨",
+        "playing",
+        "玩耍",
+        "asking permission",
+        "请求许可",
+        "magic",
+        "魔法"
+      ]
     },
     {
       "id": "clip_BZWdiYsNp4A",
@@ -2086,7 +2174,23 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Holly",
+        "Ben",
+        "霍莉",
+        "本",
+        "feelings",
+        "情绪",
+        "fear",
+        "害怕",
+        "elves",
+        "精灵"
+      ]
     },
     {
       "id": "clip_eNcEU5Zprbo",
@@ -2442,10 +2546,27 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
-      }
+      },
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Nanny Plum",
+        "Ben",
+        "Holly",
+        "梅姨",
+        "本",
+        "霍莉",
+        "magic",
+        "魔法",
+        "hat",
+        "帽子"
+      ]
     },
     {
       "id": "clip_y0S7Eal57uE",
+      "sceneId": "scene_ow8KQy0Ni_U",
       "batch": "2026-11-11-c",
       "cohort": "younger-age-5",
       "slug": "09-bluey-real-coins",
@@ -2822,11 +2943,11 @@
         "布鲁伊",
         "硬币",
         "家务"
-      ],
-      "sceneId": "scene_ow8KQy0Ni_U"
+      ]
     },
     {
       "id": "clip_R3bkFZXsqAE",
+      "sceneId": "scene_rWVQAIy-SYw",
       "batch": "2026-11-11-c",
       "cohort": "younger-age-5",
       "slug": "10-bluey-magic-claw",
@@ -3060,11 +3181,11 @@
         "布鲁伊",
         "游戏",
         "公平"
-      ],
-      "sceneId": "scene_rWVQAIy-SYw"
+      ]
     },
     {
       "id": "clip_Xk9ek7up70Q",
+      "sceneId": "scene_pZDW-Ao5SAw",
       "batch": "2026-11-11-c",
       "cohort": "younger-age-5",
       "slug": "11-peppa-pancake",
@@ -3452,11 +3573,11 @@
         "佩奇",
         "煎饼",
         "做饭"
-      ],
-      "sceneId": "scene_pZDW-Ao5SAw"
+      ]
     },
     {
       "id": "clip_SwFOcu9Nr9w",
+      "sceneId": "scene_kSciHakPXA0",
       "batch": "2026-11-11-c",
       "cohort": "younger-age-5",
       "slug": "12-peppa-another-turn",
@@ -3731,11 +3852,11 @@
         "佩奇",
         "捉迷藏",
         "轮流"
-      ],
-      "sceneId": "scene_kSciHakPXA0"
+      ]
     },
     {
       "id": "clip_zjYp_BQce8k",
+      "sceneId": "scene_dc581WltScU",
       "batch": "2026-11-11-c",
       "cohort": "younger-age-5",
       "slug": "13-holly-magic-mistake",
@@ -4010,11 +4131,11 @@
         "霍莉",
         "练习",
         "出错"
-      ],
-      "sceneId": "scene_dc581WltScU"
+      ]
     },
     {
       "id": "clip_8cd74SpE6iQ",
+      "sceneId": "scene_ljYOYpWoouw",
       "batch": "2026-11-11-c",
       "cohort": "younger-age-5",
       "slug": "14-ben-simple-plan",
@@ -4409,8 +4530,7 @@
         "霍莉",
         "计划",
         "寻找"
-      ],
-      "sceneId": "scene_ljYOYpWoouw"
+      ]
     }
   ]
 }
