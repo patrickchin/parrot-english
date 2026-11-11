@@ -23,7 +23,7 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(categories.getByRole('button')).toHaveCount(4);
     await expect(categories.getByText(`${olderChildCount} 个片段`, { exact: true })).toBeVisible();
-    await expect(categories.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
+    await expect(teens.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
     await expect(teens).toHaveAttribute('aria-pressed', 'true');
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
