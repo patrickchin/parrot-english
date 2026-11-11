@@ -32,8 +32,10 @@ test('all 52 internal-test scenes have valid packs, timed words, waveforms and s
   assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 9);
   assert.equal(scenes.filter(s => s.cohort === 'teens').length, 11);
   assert.equal(new Set(scenes.map(s => s.slug)).size, 52);
+  assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const scene of scenes) {
+    assert.match(scene.routeSlug ?? scene.slug, /^[a-z0-9]+(?:-[a-z0-9]+)*$/);
     const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.slug}/pack.json`, 'utf8')));
     const wave = validateWaveform(JSON.parse(await readFile(`public/packs/${scene.slug}/${pack.waveform}`, 'utf8')));
     assert.equal(wave.duration, pack.duration);

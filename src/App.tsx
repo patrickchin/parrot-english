@@ -43,7 +43,7 @@ export default function App() {
     return () => abort.abort();
   // Saving an ID into the current URL does not reload the running Player.
   }, [attempt, selected, navigation.revision]);
-  if (!selected) return <Library onChoose={choose} />;
+  if (!selected) return <Library onChoose={choose} folder={navigation.folder} onFolderChange={navigation.chooseFolder} />;
   const load: LoadState<Pack> = scene.slug === selected.slug ? scene.load : { status: 'loading' };
   const error = load.status === 'error' ? load.error : '';
   if (load.status !== 'ready') return <div className="min-h-dvh bg-paper text-ink"><AppHeader onBack={back} /><main className="flex min-h-[70dvh] items-center justify-center px-6"><div className="max-w-md text-center"><h1 className="font-display text-3xl font-extrabold">Parrotbook</h1><p role={error ? 'alert' : 'status'} className="my-6 text-muted-foreground">{error ? t(error) : t("正在准备你的小片场…")}</p>{error && <><Button onClick={() => setAttempt(n => n + 1)}>{t("重新加载")}</Button>{navigation.draftId && <Button tone="quiet" onClick={() => choose(selected.slug)}>{t('开始新的配音')}</Button>}</>}</div></main></div>;

@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 test.use({ samplePack: true });
 
 test('a video already at its target time must finish a pending seek before playback starts', async ({ page }) => {
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await page.locator('video').evaluate((video: HTMLVideoElement) => {
     const original = video.play.bind(video);

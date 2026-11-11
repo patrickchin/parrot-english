@@ -13,7 +13,7 @@ test('completed recording releases its operation so late capture errors cannot c
       }
     };
   });
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
@@ -44,14 +44,14 @@ test('browser Back keeps saved takes and Forward restores the same session', asy
   await expect(waveform.locator('path')).toHaveAttribute('d', saved!);
 });
 
-test('changing the scene hash leaves the saved attempt available in My dubs', async ({ page, browserName }) => {
+test('changing the scene path leaves the saved attempt available in My dubs', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
   await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
-  await page.evaluate(() => { location.hash = 'chocolate'; });
+  await page.goto('/scenes/chocolate');
   await expect(page.getByRole('heading', { name: '巧克力？！', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await page.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }).click();
@@ -59,7 +59,7 @@ test('changing the scene hash leaves the saved attempt available in My dubs', as
 });
 
 test('stalled original playback leaves loading with a retryable error', async ({ page }) => {
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.evaluate(() => {
     const original = HTMLMediaElement.prototype.play;
@@ -77,7 +77,7 @@ test('stalled original playback leaves loading with a retryable error', async ({
 });
 
 test('interrupted original playback returns to idle with the selected line intact', async ({ page }) => {
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();

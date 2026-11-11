@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 
 async function saved(page: import('@playwright/test').Page) {
   await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
-  await expect(page).toHaveURL(/dub=dub_[a-f0-9]{30}.*#patrick$/);
+  await expect(page).toHaveURL(/\/scenes\/patrick\/dubs\/dub_[a-f0-9]{30}$/);
 }
 async function record(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
@@ -42,7 +42,7 @@ async function record(page: import('@playwright/test').Page) {
 test('partial dubs survive reload and a new tab with exact audio, waveform, role, and line progress', async ({ page, context }) => {
   const uploads: string[] = [];
   page.on('request', request => { if (!['GET', 'HEAD'].includes(request.method())) uploads.push(request.url()); });
-  await page.goto('/#patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  await page.goto('/scenes/patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await record(page);
   const wave = page.getByRole('img', { name: '你的声音波形', exact: true });
   const originalPath = await wave.locator('path').getAttribute('d');
@@ -77,7 +77,7 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
 });
 
 test('completed and partial attempts stay separate; restarting keeps history and deleting removes only that attempt', async ({ page }, info) => {
-  await page.goto('/#patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  await page.goto('/scenes/patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await record(page);
   const firstUrl = page.url();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
@@ -115,7 +115,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
 });
 
 test('quota errors preserve the last saved attempt and in-memory take, then retry saves it', async ({ page }) => {
-  await page.goto('/#patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click(); await saved(page);
+  await page.goto('/scenes/patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click(); await saved(page);
   await page.evaluate(() => {
     const put = IDBObjectStore.prototype.put;
     (window as unknown as { restoreStorage: () => void }).restoreStorage = () => { IDBObjectStore.prototype.put = put; };
@@ -136,7 +136,7 @@ test('quota errors preserve the last saved attempt and in-memory take, then retr
 });
 
 test('changed content cannot overwrite a saved dub and My dubs translates', async ({ page }) => {
-  await page.goto('/#patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click(); await record(page);
+  await page.goto('/scenes/patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click(); await record(page);
   await page.route('**/packs/patrick/pack.json', async route => { const pack = JSON.parse(await readFile('tests/fixtures/sintel/pack.json', 'utf8')); pack.video = 'changed.mp4'; await route.fulfill({ json: pack }); });
   await page.reload(); await expect(page.getByRole('alert')).toContainText('片段已更新');
   await page.getByRole('button', { name: '返回片段', exact: true }).click(); await setLanguage(page, 'en');
@@ -163,7 +163,7 @@ test('unavailable storage keeps recording usable and retry can save the current 
 
 test('queued writes cannot mark newer progress saved and a failed latest write remains retryable', async ({ page }) => {
   type AuditWindow = Window & { pendingWrites: { finish: () => void; fail: () => void }[]; restoreArrayBuffer: () => void };
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await saved(page);
   await page.evaluate(() => {
@@ -199,7 +199,7 @@ test('queued writes cannot mark newer progress saved and a failed latest write r
 });
 
 test('a deletion failure belongs to its confirmation dialog and can be cancelled or retried', async ({ page }) => {
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await saved(page);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();

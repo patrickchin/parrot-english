@@ -1,6 +1,6 @@
 import { useLanguage } from './i18n';
-import { useRef, useState } from 'react';
-import { clips, folders, mediaRoot, type ClipSlug } from './catalog';
+import { useEffect, useRef, useState } from 'react';
+import { clips, mediaRoot, type ClipSlug } from './catalog';
 import { AppHeader } from './app/AppHeader';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
@@ -9,18 +9,11 @@ import { CategorySelect } from './app/CategorySelect';
 import { SavedDubs } from './app/SavedDubs';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 
-export function Library({ onChoose }: { onChoose: (slug: ClipSlug, draftId?: string) => void }) {
+export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug: ClipSlug, draftId?: string) => void; folder: string; onFolderChange: (folder: string) => void }) {
   const { t } = useLanguage();
-  const [folder, setFolder] = useState(() => {
-    const requested = new URLSearchParams(location.search).get('folder');
-    return folders.find(folder => folder.value === requested)?.value ?? 'older-audience';
-  });
-  const chooseFolder = (value: string) => {
-    setFolder(value); setQuery('');
-    const url = new URL(location.href); url.searchParams.set('folder', value); history.replaceState(null, '', url);
-  };
   const [help, setHelp] = useState(false);
   const [query, setQuery] = useState('');
+  useEffect(() => setQuery(''), [folder]);
   const search = useRef<HTMLInputElement>(null);
   const clearSearch = () => { setQuery(''); search.current?.focus(); };
   const visible = clips.filter(clip => clip.cohort === folder).filter(clip => [clip.title, t(clip.title), clip.english, clip.note, clip.slug.replaceAll('-', ' ')].join(' ').toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
@@ -42,7 +35,7 @@ export function Library({ onChoose }: { onChoose: (slug: ClipSlug, draftId?: str
         <p>{t('绿色波形是原声，橙色是你的声音，指针跟着播放和录音移动。配音会自动保存在此浏览器，不会上传。')}</p>
       </aside>}
       <section aria-label={t('片段库')}>
-        <CategorySelect value={folder} onValueChange={chooseFolder} />
+        <CategorySelect value={folder} onValueChange={onFolderChange} />
         <div className="library-toolbar">
           <div className="library-scope"><h2>{t('片段库')}</h2><span>{t('{0} 个片段', visible.length)}</span></div>
           <InputGroup className="library-search h-12 bg-card">

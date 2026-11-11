@@ -6,7 +6,9 @@ const local='content/local-dubbing', canonical=local+'/release-metadata'; await 
 const root='https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/';
 const names={Dory:'多莉',Marlin:'马林',Sharks:'鲨鱼合声',Bruce:'布鲁斯',Chum:'查姆',Anchor:'安可',Woody:'胡迪',Buzz:'巴斯光年',Mater:'板牙','Lightning McQueen':'闪电麦昆','Chick Hicks':'奇克·海克斯',Margo:'玛戈',Agnes:'艾格尼丝',Edith:'伊迪丝','Carnival attendant':'游乐场摊主',Gru:'格鲁',Dug:'道格',Carl:'卡尔',Russell:'罗素',Gusteau:'古斯托',Remy:'小米','Mr. Ping':'平先生',Po:'阿宝',Oogway:'乌龟大师',"Boy's father":'男孩的爸爸',Boy:'小男孩',Shrek:'史莱克',Fiona:'菲奥娜',Donkey:'驴子',Pinocchio:'匹诺曹','Little pig':'小猪',SpongeBob:'海绵宝宝',Squidward:'章鱼哥',Patrick:'派大星',Plankton:'痞老板',Skipper:'队长',Kowalski:'科瓦斯基',Private:'菜鸟',Peppa:'佩奇','Daddy Pig':'猪爸爸','Mummy Pig':'猪妈妈','Danny Dog':'小狗丹尼',George:'乔治','Suzy Sheep':'小羊苏西',Holly:'霍莉',Ben:'本','Nanny Plum':'梅姨','Madame Gazelle':'羚羊夫人','Speed announcer':'测速播报员'};
 const english=Object.fromEntries(Object.entries(names).map(([en,zh])=>[zh,en]));
-const summaries=Object.fromEntries(JSON.parse(await readFile('src/review-clips.json','utf8')).map(scene=>[scene.slug,scene.english]));
+const catalog=JSON.parse(await readFile('src/review-clips.json','utf8'));
+const summaries=Object.fromEntries(catalog.map(scene=>[scene.slug,scene.english]));
+const routeSlugs=Object.fromEntries(catalog.filter(scene=>scene.routeSlug).map(scene=>[scene.slug,scene.routeSlug]));
 const generated=[]; const changed=[]; const media=[]; const translations={...english};
 for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'],['younger-age-5','content/preschool-review-scenes.json']]) {
  const recipe=JSON.parse(await readFile(file,'utf8'));
@@ -43,7 +45,7 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
 await writeFile(`${canonical}/translations.json`,JSON.stringify(translations,null,2)+'\n');await writeFile(`${canonical}/media.json`,JSON.stringify(media,null,2)+'\n');await writeFile(`${canonical}/changed.json`,JSON.stringify(changed)+'\n');
 // Preserve the familiar older-scene order; the preschool folder is a separate selection.
 const order=['patrick','chocolate','wumbo','onions',...JSON.parse(await readFile('src/extra-clips.json','utf8')).map(s=>s.slug)];generated.sort((a,b)=>(a.cohort===b.cohort?(a.cohort==='older-audience'?order.indexOf(a.slug)-order.indexOf(b.slug):a.slug.localeCompare(b.slug)):a.cohort==='older-audience'?-1:1));
-await writeFile('src/review-clips.json',JSON.stringify(generated,null,2)+'\n');
+await writeFile('src/review-clips.json',JSON.stringify(generated.map(scene=>({...scene,...(routeSlugs[scene.slug]?{routeSlug:routeSlugs[scene.slug]}:{})})),null,2)+'\n');
 console.log(`Prepared ${generated.length} catalogue entries, ${changed.length} revised/new packs, and ${media.length} media uploads. Existing portrait work is preserved separately.`);
 
 execFileSync(process.execPath, ['scripts/prepare-waveforms.mjs', ...changed], {stdio:'inherit'});

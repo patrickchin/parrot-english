@@ -37,7 +37,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function completeDub(page: import('@playwright/test').Page) {
-  await page.goto('/#patrick');
+  await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });

@@ -48,7 +48,7 @@ test('capture is ready before the picture and preserves the opening sound throug
       return output.stream;
     } } });
   });
-  await page.goto('/#onions');
+  await page.goto('/scenes/onions');
   const pack = await (await page.request.get('/packs/onions/pack.json')).json();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
@@ -116,7 +116,7 @@ test('cancelling while recorder startup is pending keeps the picture paused and 
       return output.stream;
     } } });
   });
-  await page.goto('/#onions');
+  await page.goto('/scenes/onions');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect.poll(() => page.evaluate(() => (window as Window & { pendingCapture?: boolean }).pendingCapture)).toBe(true);

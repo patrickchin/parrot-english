@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 
 test('Holly practises her own lines including the complete closing response', async ({ page }) => {
-  await page.goto('/?folder=younger-age-5#ben-blue-hat');
+  await page.goto('/scenes/ben-blue-hat');
   await page.getByRole('button', { name: /^霍莉/ }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByText('Oh no! The magic hat has turned Ben blue!', { exact: true })).toBeVisible();
@@ -16,7 +16,7 @@ test('Holly practises her own lines including the complete closing response', as
 });
 
 test('brief supporting speakers remain in the scene and are omitted from role selection', async ({ page }) => {
-  await page.goto('/#mayonnaise');
+  await page.goto('/scenes/mayonnaise');
   await expect(page.getByRole('button', { name: /^章鱼哥/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^派大星/ })).toBeVisible();
   await expect(page.getByRole('button', { name: /^痞老板/ })).toHaveCount(0);
