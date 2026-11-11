@@ -22,7 +22,7 @@ test('serves video byte ranges for mobile seeking without exposing unknown paths
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
   const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: btoa('app') } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
-  for (const path of ['/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/']) {
+  for (const path of ['/dubs', '/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/']) {
     const response = await get(path);
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type'), /^text\/html/);

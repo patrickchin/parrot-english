@@ -6,12 +6,10 @@ import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CategoryTabs } from './app/CategoryTabs';
-import { SavedDubs } from './app/SavedDubs';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 
 export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug: ClipSlug, draftId?: string) => void; folder: string; onFolderChange: (folder: string) => void }) {
   const { t } = useLanguage();
-  const [help, setHelp] = useState(false);
   const [query, setQuery] = useState('');
   useEffect(() => setQuery(''), [folder]);
   const search = useRef<HTMLInputElement>(null);
@@ -19,7 +17,7 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
   const visible = clips.filter(clip => clip.cohort === folder).filter(clip => [clip.title, t(clip.title), clip.english, clip.note, clip.slug.replaceAll('-', ' ')].join(' ').toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
   const featured = clips.find(clip => clip.cohort === folder)!;
   return <div className="library-shell min-h-dvh bg-paper text-ink">
-    <AppHeader onHelp={() => setHelp(v => !v)} helpExpanded={help} helpControls="library-help" />
+    <AppHeader />
     <main className="library-main">
       <section className="library-feature" aria-labelledby="featured-scene-title">
         <div className="library-feature-copy">
@@ -28,12 +26,6 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
         </div>
         <img src={featured.poster} alt="" fetchPriority="high" />
       </section>
-      <SavedDubs onChoose={onChoose} />
-      {help && <aside id="library-help" className="library-help" aria-label={t('怎么配音？')}>
-        <h2>{t('给电影，换上你的声音。')}</h2>
-        <p>{t('选片段 → 选角色 → 听原声 → 一句一句录 → 看你的版本。')}</p>
-        <p>{t('绿色波形是原声，橙色是你的声音，指针跟着播放和录音移动。配音会自动保存在此浏览器，不会上传。')}</p>
-      </aside>}
       <section aria-label={t('片段库')}>
         <CategoryTabs value={folder} onValueChange={onFolderChange} />
         <div className="library-toolbar">
