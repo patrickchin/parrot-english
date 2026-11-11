@@ -1,5 +1,5 @@
 import { useLanguage } from './i18n';
-import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { AppHeader } from './app/AppHeader';
 import { DubDownload } from './app/DubDownload';
 import { Button, Icon } from './shared/ui';
@@ -7,6 +7,7 @@ import { asset, validatePack, type Pack, type Role } from './pack';
 import { useDubbing, type Take } from './useDubbing';
 import { Library } from './Library';
 import { VoiceWaveform } from './VoiceWaveform';
+import { PreviewSubtitles } from './PreviewSubtitles';
 import { lineWindow } from './line-window';
 import { clips } from './catalog';
 import { createLesson, lessonTakes, transitionLesson, type LessonEvent, type LessonState } from './lesson-state';
@@ -80,6 +81,8 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
   const autosave = useDubAutosave(pack, slug, lesson, initial, localSource);
   const source = pack.mode === 'local' ? localVideo ?? (import.meta.env.DEV ? `/content/local-dubbing/${pack.video}` : undefined) : asset(pack, pack.video);
   const video = useRef<HTMLVideoElement>(null);
+  const main = useRef<HTMLElement>(null);
+  const videoFrame = useRef<HTMLDivElement>(null);
   const rolesLines = pack.lines.filter(line => line.roleId === roleId);
   const line = rolesLines[lineIndex];
   const window = lineWindow(pack, line);
@@ -88,6 +91,22 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
   const [exporting, setExporting] = useState(false);
   const busy = media.phase !== 'idle';
   const capturing = media.phase === 'recording' || media.phase === 'saving';
+  useLayoutEffect(() => {
+    const root = main.current!;
+    const frame = videoFrame.current!;
+    const alignPanel = () => {
+      const offset = frame.getBoundingClientRect().top - root.getBoundingClientRect().top;
+      root.style.setProperty('--video-top', `${Math.max(0, offset)}px`);
+    };
+    alignPanel();
+    let alignmentFrame = 0;
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(alignmentFrame);
+      alignmentFrame = requestAnimationFrame(alignPanel);
+    });
+    for (const element of [root, frame.parentElement!, ...frame.parentElement!.children]) observer.observe(element);
+    return () => { observer.disconnect(); cancelAnimationFrame(alignmentFrame); };
+  }, [step]);
   const completed = rolesLines.filter(l => takes[l.id] || skipped.has(l.id)).length;
   const recorded = rolesLines.filter(l => takes[l.id]).length;
   const currentTake = takes[line.id];
@@ -141,10 +160,10 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
 
   return <div className="player-shell bg-paper text-ink">
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); onBack(); }} />
-    <main className="player-main" data-step={step}>
+    <main ref={main} className="player-main" data-step={step}>
       {step === 'practice' && <h1 className="sr-only">{t(pack.title)}</h1>}
       <section aria-label={t("电影片段")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
-        <div className="player-frame overflow-hidden rounded-xl border border-border">
+        <div ref={videoFrame} className="player-frame overflow-hidden rounded-xl border border-border">
           <div className="player-screen relative bg-neutral-900">
             <video ref={video} src={source} poster={pack.poster ? asset(pack, pack.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("{0} 对话片段", pack.credit.title)}
               className="absolute inset-0 h-full w-full object-contain"
@@ -162,6 +181,7 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
             <progress aria-label={t("片段播放进度")} max={pack.duration} value={media.time} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(pack.duration)}</span>
           </div>
         </div>
+        {step === 'choose' && <PreviewSubtitles pack={pack} time={media.time} />}
       </section>
       <section aria-label={step === 'choose' ? t("选择角色") : step === 'result' ? t("配音完成") : t("录制台词")} className="player-workspace">
         {step === 'choose' && <div className="player-choose text-center">

@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 type Language = 'zh-CN' | 'en';
 const storageKey = 'parrotbook-ui-language';
 const english: Record<string, string> = {
+  "原片字幕": "Preview subtitles",
   "米茜": "Missy",
   "小乔治": "Georgie",
   "曼迪": "Mandy",
