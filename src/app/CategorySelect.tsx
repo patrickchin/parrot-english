@@ -1,13 +1,8 @@
 import { Select } from '@base-ui/react/select';
 import { ChevronDown, FolderOpen } from 'lucide-react';
-import { clips, mediaRoot } from '../catalog';
+import { clips, folders, mediaRoot } from '../catalog';
 import { useLanguage } from '../i18n';
 import { Icon } from '../shared/ui';
-
-const folders = [
-  { value: 'older-audience', title: '较大孩子' },
-  { value: 'younger-age-5', title: '较小孩子' },
-];
 
 export function CategorySelect({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
   const { t } = useLanguage();
@@ -27,8 +22,8 @@ export function CategorySelect({ value, onValueChange }: { value: string; onValu
       </Select.Trigger>
       <Select.Portal>
         <Select.Positioner align="start" sideOffset={8} alignItemWithTrigger={false} className="app-select-positioner">
-          <Select.Popup className="app-select-popup category-popup">
-            <div className="app-select-label">{t('片段文件夹')}</div>
+          <Select.Popup className="app-select-popup category-popup max-h-[var(--available-height)] overflow-y-auto overscroll-contain">
+            <div className="app-select-label sticky top-0 z-10 bg-popover">{t('片段文件夹')}</div>
             <Select.List>
               {categories.map(category => <Select.Item key={category.value} value={category.value} className="app-select-option category-option">
                 <span className="category-cover" aria-hidden="true">

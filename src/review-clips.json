@@ -286,5 +286,77 @@
     "source": "https://www.youtube.com/watch?v=SHi4XJxgfVs&t=371s",
     "cohort": "younger-age-5",
     "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-toy-dinosaur/peppa-toy-dinosaur-poster-8226511ce837.jpg"
+  },
+  {
+    "slug": "young-sheldon-library",
+    "title": "找一本教人交朋友的书",
+    "english": "A book about making friends",
+    "note": "Young Sheldon",
+    "source": "https://www.youtube.com/watch?v=RlQzUX-UOW4&t=29s",
+    "cohort": "older-children",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-library/young-sheldon-library-poster-9f9d2305ab2b.jpg"
+  },
+  {
+    "slug": "young-sheldon-compliments",
+    "title": "试着照书上说的做",
+    "english": "Trying out a book’s advice",
+    "note": "Young Sheldon",
+    "source": "https://www.youtube.com/watch?v=RlQzUX-UOW4&t=108s",
+    "cohort": "older-children",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-compliments/young-sheldon-compliments-poster-5f417636adff.jpg"
+  },
+  {
+    "slug": "young-sheldon-homework",
+    "title": "请爸爸和老师谈一谈",
+    "english": "Asking Dad to talk to a teacher",
+    "note": "Young Sheldon",
+    "source": "https://www.youtube.com/watch?v=GJ0y2haVfFI&t=16s",
+    "cohort": "older-children",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-homework/young-sheldon-homework-poster-30a45d7c9537.jpg"
+  },
+  {
+    "slug": "friends-moving-couch",
+    "title": "转不过弯的沙发",
+    "english": "A sofa that will not turn",
+    "note": "Friends",
+    "source": "https://www.youtube.com/watch?v=UJHa8Bjjy1k&t=165s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-moving-couch/friends-moving-couch-poster-e23b414e4b24.jpg"
+  },
+  {
+    "slug": "friends-thesaurus",
+    "title": "乔伊发现同义词词典",
+    "english": "Joey discovers a thesaurus",
+    "note": "Friends",
+    "source": "https://www.youtube.com/watch?v=ZeTeCcvIVMo&t=0s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-thesaurus/friends-thesaurus-poster-d0f3a596607a.jpg"
+  },
+  {
+    "slug": "friends-cheesecake",
+    "title": "选哪一半芝士蛋糕",
+    "english": "Choosing a half of the cheesecake",
+    "note": "Friends",
+    "source": "https://www.youtube.com/watch?v=FxLDcqiOSZI&t=55s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-cheesecake/friends-cheesecake-poster-7c4243dbd2b7.jpg"
+  },
+  {
+    "slug": "himym-driving-lesson",
+    "title": "紧张的驾驶课",
+    "english": "A very nervous driving lesson",
+    "note": "How I Met Your Mother",
+    "source": "https://www.youtube.com/watch?v=aYa-yIHXDAg&t=92s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-driving-lesson/himym-driving-lesson-poster-7c8c8285db76.jpg"
+  },
+  {
+    "slug": "himym-rabbit-or-duck",
+    "title": "兔子还是鸭子更合适？",
+    "english": "Which animal is the better comparison?",
+    "note": "How I Met Your Mother",
+    "source": "https://www.youtube.com/watch?v=thn1SOwjXT0&t=0s",
+    "cohort": "teens",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-rabbit-or-duck/himym-rabbit-or-duck-poster-6f4ca9b32956.jpg"
   }
 ]

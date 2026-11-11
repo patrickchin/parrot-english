@@ -7,7 +7,7 @@ import { join } from 'node:path';
 test('audience folders keep the eight younger scenes separate and survive playback, language changes and reload', async ({ page }, info) => {
   await page.goto('/');
   const folder = page.getByRole('combobox', { name: '片段文件夹', exact: true });
-  await expect(folder).toContainText('较大孩子');
+  await expect(folder).toContainText('电影与动画');
   await expect(page.getByRole('listitem')).toHaveCount(24);
   await page.getByRole('searchbox').fill('Toy Story');
   await folder.click();
@@ -21,11 +21,13 @@ test('audience folders keep the eight younger scenes separate and survive playba
     expect((await folder.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await folder.click();
     const popup = page.getByRole('listbox');
-    await expect(popup.getByRole('option')).toHaveCount(2);
+    await expect(popup.getByRole('option')).toHaveCount(4);
     await expect(popup.getByText('24 个片段', { exact: true })).toBeVisible();
     await expect(popup.getByText('8 个片段', { exact: true })).toBeVisible();
     const bounds = (await popup.boundingBox())!;
     expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(812);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english'); await mkdir(shots, { recursive: true });
@@ -49,9 +51,9 @@ test('audience folders keep the eight younger scenes separate and survive playba
   await expect(page.getByRole('listbox')).toBeVisible();
   await expect(page.getByRole('option', { name: /^Younger children/ })).toBeFocused();
   await page.keyboard.press('Home');
-  await expect(page.getByRole('option', { name: /^Older children/ })).toBeFocused();
+  await expect(page.getByRole('option', { name: /^Films & animation/ })).toBeFocused();
   await page.keyboard.press('Enter');
-  await expect(translatedFolder).toContainText('Older children');
+  await expect(translatedFolder).toContainText('Films & animation');
   await expect(page.getByRole('listitem')).toHaveCount(24);
   await page.getByRole('searchbox').fill('banana');
   await expect(page.getByRole('button', { name: 'Choose scene: What about the floor?', exact: true })).toBeVisible();

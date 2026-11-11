@@ -1,9 +1,9 @@
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { memeClips } from '../../src/catalog';
+import { clips } from '../../src/catalog';
 
-for (const clip of memeClips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
+for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
   await page.goto('/#' + clip.slug);
   await expect(page.getByLabel('选择本地片段', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();

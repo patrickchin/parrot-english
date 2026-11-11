@@ -23,13 +23,15 @@ test('the independently loaded pack rejects traversal, missing roles and overlap
 });
 
 
-test('all 32 internal-test scenes have valid packs, timed words, waveforms and separate audience folders', async () => {
+test('all 40 internal-test scenes have valid packs, timed words, waveforms and separate audience folders', async () => {
   const scenes = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const { validateWaveform } = await import('../src/waveform.ts');
-  assert.equal(scenes.length, 32);
+  assert.equal(scenes.length, 40);
   assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 8);
   assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 24);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 32);
+  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 3);
+  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 5);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 40);
   const ids = new Set();
   for (const scene of scenes) {
     const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.slug}/pack.json`, 'utf8')));
@@ -68,4 +70,20 @@ test('supporting speakers retain their dialogue without becoming practice roles'
   assert.throws(() => validatePack(unused));
   invalid.roles[0].selectable = 'yes';
   assert.throws(() => validatePack(invalid));
+});
+
+
+test('TV packs preserve independent roles and the shared sofa response', async () => {
+  const recipe = JSON.parse(await readFile('content/tv-review-scenes.json', 'utf8'));
+  for (const scene of recipe.scenes) {
+    const pack = validatePack(JSON.parse(await readFile(`public/packs/${scene.publicSlug}/pack.json`, 'utf8')));
+    assert.ok(pack.roles.filter(role => role.selectable !== false).length >= 2);
+    assert.ok(pack.lines.length >= 3);
+    assert.ok(pack.duration >= 20 && pack.duration <= 40);
+    assert.equal(pack.lines.length, scene.lines.length);
+  }
+  const sofa = validatePack(JSON.parse(await readFile('public/packs/friends-moving-couch/pack.json', 'utf8')));
+  const reply = sofa.lines.at(-1);
+  assert.equal(reply.text, 'You think?');
+  assert.equal(sofa.roles.find(role => role.id === reply.roleId).selectable, false);
 });

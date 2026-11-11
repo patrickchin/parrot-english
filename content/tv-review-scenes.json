@@ -1,0 +1,4082 @@
+{
+  "version": 1,
+  "date": "2026-11-11",
+  "purpose": "private-adult-review",
+  "rightsStatus": "redistribution-not-cleared",
+  "ageGuidance": {
+    "older-children": "Approximately 10–12; editorial starting point, not a formal age rating.",
+    "teens": "Approximately 13+; selected exchanges from adult sitcoms, not approval of whole episodes."
+  },
+  "selectionCriteria": "One continuous source range, at least two speaking characters and three actual turns; keep setup, replies and payoff. Original English audio only. Review notes are summaries, not subtitles or finished application packs.",
+  "sources": [
+    {
+      "id": "RlQzUX-UOW4",
+      "url": "https://www.youtube.com/watch?v=RlQzUX-UOW4",
+      "localFile": "content/local-dubbing/review/older-children/sources/RlQzUX-UOW4.mp4",
+      "series": "Young Sheldon",
+      "episode": "S1 E2",
+      "uploadTitle": "Young Sheldon: How to Make Friends (Season 1 Episode 2 Clip) | TBS",
+      "channel": "TBS",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television / CBS",
+      "duration": 149
+    },
+    {
+      "id": "GJ0y2haVfFI",
+      "url": "https://www.youtube.com/watch?v=GJ0y2haVfFI",
+      "localFile": "content/local-dubbing/review/older-children/sources/GJ0y2haVfFI.mp4",
+      "series": "Young Sheldon",
+      "episode": "S5 E7",
+      "uploadTitle": "Sheldon Struggles With Engineering Homework | Young Sheldon",
+      "channel": "Young Sheldon",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television / CBS",
+      "duration": 217
+    },
+    {
+      "id": "UJHa8Bjjy1k",
+      "url": "https://www.youtube.com/watch?v=UJHa8Bjjy1k",
+      "localFile": "content/local-dubbing/review/teens/sources/UJHa8Bjjy1k.mp4",
+      "series": "Friends",
+      "episode": "S5 E16",
+      "uploadTitle": "Ross Can't Get His New Couch up the Stairs | Friends",
+      "channel": "Friends",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television",
+      "duration": 289
+    },
+    {
+      "id": "ZeTeCcvIVMo",
+      "url": "https://www.youtube.com/watch?v=ZeTeCcvIVMo",
+      "localFile": "content/local-dubbing/review/teens/sources/ZeTeCcvIVMo.mp4",
+      "series": "Friends",
+      "episode": "S10 E5",
+      "uploadTitle": "Joey Learns How to Use a Thesaurus | Friends",
+      "channel": "Friends",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television",
+      "duration": 52
+    },
+    {
+      "id": "FxLDcqiOSZI",
+      "url": "https://www.youtube.com/watch?v=FxLDcqiOSZI",
+      "localFile": "content/local-dubbing/review/teens/sources/FxLDcqiOSZI.mp4",
+      "series": "Friends",
+      "episode": "S7 E11",
+      "uploadTitle": "Rachel And Chandler Drop The Cheesecake (Clip) | Friends | TBS",
+      "channel": "TBS",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television",
+      "duration": 279
+    },
+    {
+      "id": "aYa-yIHXDAg",
+      "url": "https://www.youtube.com/watch?v=aYa-yIHXDAg",
+      "localFile": "content/local-dubbing/review/teens/sources/aYa-yIHXDAg.mp4",
+      "series": "How I Met Your Mother",
+      "episode": "S2 E17",
+      "uploadTitle": "Barney Learns to Drive - HIMYM",
+      "channel": "Day Drunk",
+      "officialChannel": false,
+      "attribution": "20th Television",
+      "duration": 205
+    },
+    {
+      "id": "thn1SOwjXT0",
+      "url": "https://www.youtube.com/watch?v=thn1SOwjXT0",
+      "localFile": "content/local-dubbing/review/teens/sources/thn1SOwjXT0.mp4",
+      "series": "How I Met Your Mother",
+      "episode": "S5 E15",
+      "uploadTitle": "How I Met Your Mother - Rabbit or Duck",
+      "channel": "Cool Ones",
+      "officialChannel": false,
+      "attribution": "20th Television",
+      "duration": 101
+    }
+  ],
+  "scenes": [
+    {
+      "id": "clip_sH9RLhbZ-ok",
+      "cohort": "older-children",
+      "slug": "01-young-sheldon-library",
+      "title": "A book about making friends",
+      "titleZh": "找一本教人交朋友的书",
+      "sourceId": "RlQzUX-UOW4",
+      "start": 29.7,
+      "end": 60.3,
+      "roles": [
+        {
+          "id": "role_0BkC3THi_I8",
+          "name": "Sheldon",
+          "selectable": true
+        },
+        {
+          "id": "role_QUPzEFZwnEw",
+          "name": "Librarian",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 5,
+      "summary": "A librarian offers science books; Sheldon asks for help making a friend, and she finds a book for him.",
+      "practice": "Asking for help, offering suggestions, responding with dry humour.",
+      "contentNotes": "A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_F6ws6xrH7b0",
+      "publicSlug": "young-sheldon-library",
+      "lines": [
+        {
+          "id": "line_APYFMxoa__4",
+          "roleId": "role_QUPzEFZwnEw",
+          "speaker": "Librarian",
+          "text": "Hey there, Sheldon. What can I get for you today? Chemistry? Quantum mechanics? Astronomy?",
+          "hint": "嗨，谢尔顿。今天想找什么？化学？量子力学？天文学？",
+          "start": 29.94,
+          "end": 36.785,
+          "words": [
+            {
+              "text": "Hey",
+              "start": 29.98,
+              "end": 30.14
+            },
+            {
+              "text": "there,",
+              "start": 30.22,
+              "end": 30.4
+            },
+            {
+              "text": "Sheldon.",
+              "start": 30.481,
+              "end": 30.761
+            },
+            {
+              "text": "What",
+              "start": 31.461,
+              "end": 31.621
+            },
+            {
+              "text": "can",
+              "start": 31.661,
+              "end": 31.741
+            },
+            {
+              "text": "I",
+              "start": 31.801,
+              "end": 31.821
+            },
+            {
+              "text": "get",
+              "start": 31.901,
+              "end": 32.002
+            },
+            {
+              "text": "for",
+              "start": 32.062,
+              "end": 32.122
+            },
+            {
+              "text": "you",
+              "start": 32.182,
+              "end": 32.242
+            },
+            {
+              "text": "today?",
+              "start": 32.282,
+              "end": 32.582
+            },
+            {
+              "text": "Chemistry?",
+              "start": 33.603,
+              "end": 34.343
+            },
+            {
+              "text": "Quantum",
+              "start": 34.863,
+              "end": 35.164
+            },
+            {
+              "text": "mechanics?",
+              "start": 35.204,
+              "end": 36.004
+            },
+            {
+              "text": "Astronomy?",
+              "start": 36.124,
+              "end": 36.725
+            }
+          ]
+        },
+        {
+          "id": "line_U_Ixu1O10gM",
+          "roleId": "role_0BkC3THi_I8",
+          "speaker": "Sheldon",
+          "text": "No, nothing fun today. I need to learn how to make a friend.",
+          "hint": "不，今天不找有趣的东西。我得学学怎么交朋友。",
+          "start": 37.205,
+          "end": 40.427,
+          "words": [
+            {
+              "text": "No,",
+              "start": 37.245,
+              "end": 37.405
+            },
+            {
+              "text": "nothing",
+              "start": 37.585,
+              "end": 37.885
+            },
+            {
+              "text": "fun",
+              "start": 38.005,
+              "end": 38.186
+            },
+            {
+              "text": "today.",
+              "start": 38.306,
+              "end": 38.566
+            },
+            {
+              "text": "I",
+              "start": 38.726,
+              "end": 38.746
+            },
+            {
+              "text": "need",
+              "start": 38.806,
+              "end": 38.966
+            },
+            {
+              "text": "to",
+              "start": 39.026,
+              "end": 39.066
+            },
+            {
+              "text": "learn",
+              "start": 39.146,
+              "end": 39.326
+            },
+            {
+              "text": "how",
+              "start": 39.406,
+              "end": 39.506
+            },
+            {
+              "text": "to",
+              "start": 39.586,
+              "end": 39.647
+            },
+            {
+              "text": "make",
+              "start": 39.727,
+              "end": 39.867
+            },
+            {
+              "text": "a",
+              "start": 39.947,
+              "end": 39.967
+            },
+            {
+              "text": "friend.",
+              "start": 40.047,
+              "end": 40.367
+            }
+          ]
+        },
+        {
+          "id": "line_F8UNV29iVUs",
+          "roleId": "role_QUPzEFZwnEw",
+          "speaker": "Librarian",
+          "text": "Oh, honey. You having a hard time adjusting to high school?",
+          "hint": "哦，亲爱的。你还不太适应高中吗？",
+          "start": 40.747,
+          "end": 43.489,
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 40.787,
+              "end": 40.927
+            },
+            {
+              "text": "honey.",
+              "start": 41.027,
+              "end": 41.248
+            },
+            {
+              "text": "You",
+              "start": 41.748,
+              "end": 41.848
+            },
+            {
+              "text": "having",
+              "start": 41.908,
+              "end": 42.068
+            },
+            {
+              "text": "a",
+              "start": 42.088,
+              "end": 42.108
+            },
+            {
+              "text": "hard",
+              "start": 42.128,
+              "end": 42.248
+            },
+            {
+              "text": "time",
+              "start": 42.288,
+              "end": 42.448
+            },
+            {
+              "text": "adjusting",
+              "start": 42.508,
+              "end": 42.889
+            },
+            {
+              "text": "to",
+              "start": 42.909,
+              "end": 42.969
+            },
+            {
+              "text": "high",
+              "start": 43.029,
+              "end": 43.209
+            },
+            {
+              "text": "school?",
+              "start": 43.249,
+              "end": 43.429
+            }
+          ]
+        },
+        {
+          "id": "line_1tZc6Rx5VmI",
+          "roleId": "role_0BkC3THi_I8",
+          "speaker": "Sheldon",
+          "text": "I'm having a hard time adjusting to Earth.",
+          "hint": "我还不太适应地球。",
+          "start": 44.009,
+          "end": 46.111,
+          "words": [
+            {
+              "text": "I'm",
+              "start": 44.049,
+              "end": 44.149
+            },
+            {
+              "text": "having",
+              "start": 44.229,
+              "end": 44.45
+            },
+            {
+              "text": "a",
+              "start": 44.51,
+              "end": 44.53
+            },
+            {
+              "text": "hard",
+              "start": 44.59,
+              "end": 44.77
+            },
+            {
+              "text": "time",
+              "start": 44.83,
+              "end": 45.03
+            },
+            {
+              "text": "adjusting",
+              "start": 45.11,
+              "end": 45.59
+            },
+            {
+              "text": "to",
+              "start": 45.67,
+              "end": 45.75
+            },
+            {
+              "text": "Earth.",
+              "start": 45.871,
+              "end": 46.051
+            }
+          ]
+        },
+        {
+          "id": "line_7SgvMk0xzfA",
+          "roleId": "role_QUPzEFZwnEw",
+          "speaker": "Librarian",
+          "text": "Yeah, you and me both.",
+          "hint": "是啊，咱俩都一样。",
+          "start": 46.751,
+          "end": 48.252,
+          "words": [
+            {
+              "text": "Yeah,",
+              "start": 46.791,
+              "end": 46.991
+            },
+            {
+              "text": "you",
+              "start": 47.432,
+              "end": 47.512
+            },
+            {
+              "text": "and",
+              "start": 47.612,
+              "end": 47.692
+            },
+            {
+              "text": "me",
+              "start": 47.752,
+              "end": 47.812
+            },
+            {
+              "text": "both.",
+              "start": 47.932,
+              "end": 48.192
+            }
+          ]
+        },
+        {
+          "id": "line_MdjFpm6eGx0",
+          "roleId": "role_QUPzEFZwnEw",
+          "speaker": "Librarian",
+          "text": "Try this. It's been around a while, but it's still quite popular. Unlike me, who's just been around a while.",
+          "hint": "试试这本。它出版很久了，但依然很受欢迎。不像我，只有年头长。",
+          "start": 52.335,
+          "end": 59.78,
+          "words": [
+            {
+              "text": "Try",
+              "start": 52.375,
+              "end": 52.515
+            },
+            {
+              "text": "this.",
+              "start": 52.615,
+              "end": 52.835
+            },
+            {
+              "text": "It's",
+              "start": 53.395,
+              "end": 53.536
+            },
+            {
+              "text": "been",
+              "start": 53.556,
+              "end": 53.696
+            },
+            {
+              "text": "around",
+              "start": 53.736,
+              "end": 53.956
+            },
+            {
+              "text": "a",
+              "start": 54.016,
+              "end": 54.036
+            },
+            {
+              "text": "while,",
+              "start": 54.076,
+              "end": 54.316
+            },
+            {
+              "text": "but",
+              "start": 54.396,
+              "end": 54.536
+            },
+            {
+              "text": "it's",
+              "start": 54.616,
+              "end": 54.736
+            },
+            {
+              "text": "still",
+              "start": 54.776,
+              "end": 54.977
+            },
+            {
+              "text": "quite",
+              "start": 55.017,
+              "end": 55.157
+            },
+            {
+              "text": "popular.",
+              "start": 55.217,
+              "end": 55.637
+            },
+            {
+              "text": "Unlike",
+              "start": 56.798,
+              "end": 57.098
+            },
+            {
+              "text": "me,",
+              "start": 57.178,
+              "end": 57.278
+            },
+            {
+              "text": "who's",
+              "start": 58.359,
+              "end": 58.559
+            },
+            {
+              "text": "just",
+              "start": 58.619,
+              "end": 58.759
+            },
+            {
+              "text": "been",
+              "start": 58.939,
+              "end": 59.079
+            },
+            {
+              "text": "around",
+              "start": 59.119,
+              "end": 59.319
+            },
+            {
+              "text": "a",
+              "start": 59.459,
+              "end": 59.479
+            },
+            {
+              "text": "while.",
+              "start": 59.519,
+              "end": 59.72
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_ePLx_ZCOfs0",
+      "cohort": "older-children",
+      "slug": "02-young-sheldon-compliments",
+      "title": "Trying out a book’s advice",
+      "titleZh": "试着照书上说的做",
+      "sourceId": "RlQzUX-UOW4",
+      "start": 108.2,
+      "end": 135.45,
+      "roles": [
+        {
+          "id": "role_tc1hthFv9GM",
+          "name": "Sheldon",
+          "selectable": true
+        },
+        {
+          "id": "role_80084y8FUOo",
+          "name": "George Cooper Sr.",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 5,
+      "summary": "Sheldon repeatedly uses his father’s name and asks whether the technique is working; George points out that he is overdoing it.",
+      "practice": "Questions, feedback and playful disagreement.",
+      "contentNotes": "Family sarcasm. The cut ends after the final name repetition and before the channel end card.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_K-EnMBJWy2E",
+      "publicSlug": "young-sheldon-compliments",
+      "lines": [
+        {
+          "id": "line_I4w64-D6IHA",
+          "roleId": "role_tc1hthFv9GM",
+          "speaker": "Sheldon",
+          "text": "Do you feel complimented when I say your name, George? The book says you should. George.",
+          "hint": "我叫你的名字时，你觉得受到赞美了吗，乔治？书上说你会的。乔治。",
+          "start": 108.46,
+          "end": 113.622,
+          "words": [
+            {
+              "text": "Do",
+              "start": 108.5,
+              "end": 108.54
+            },
+            {
+              "text": "you",
+              "start": 108.58,
+              "end": 108.66
+            },
+            {
+              "text": "feel",
+              "start": 108.7,
+              "end": 108.86
+            },
+            {
+              "text": "complimented",
+              "start": 108.98,
+              "end": 109.641
+            },
+            {
+              "text": "when",
+              "start": 109.721,
+              "end": 109.841
+            },
+            {
+              "text": "I",
+              "start": 109.921,
+              "end": 109.941
+            },
+            {
+              "text": "say",
+              "start": 110.061,
+              "end": 110.201
+            },
+            {
+              "text": "your",
+              "start": 110.261,
+              "end": 110.381
+            },
+            {
+              "text": "name,",
+              "start": 110.421,
+              "end": 110.621
+            },
+            {
+              "text": "George?",
+              "start": 110.761,
+              "end": 111.081
+            },
+            {
+              "text": "The",
+              "start": 111.541,
+              "end": 111.621
+            },
+            {
+              "text": "book",
+              "start": 111.681,
+              "end": 111.821
+            },
+            {
+              "text": "says",
+              "start": 111.901,
+              "end": 112.061
+            },
+            {
+              "text": "you",
+              "start": 112.161,
+              "end": 112.261
+            },
+            {
+              "text": "should.",
+              "start": 112.342,
+              "end": 112.562
+            },
+            {
+              "text": "George.",
+              "start": 113.262,
+              "end": 113.562
+            }
+          ]
+        },
+        {
+          "id": "line_t5tye3XMuG0",
+          "roleId": "role_80084y8FUOo",
+          "speaker": "George Cooper Sr.",
+          "text": "I suppose. Kind of overdoing it a little. Sheldon.",
+          "hint": "算是吧。你有点做过头了。谢尔顿。",
+          "start": 114.342,
+          "end": 118.544,
+          "words": [
+            {
+              "text": "I",
+              "start": 114.382,
+              "end": 114.402
+            },
+            {
+              "text": "suppose.",
+              "start": 114.462,
+              "end": 114.922
+            },
+            {
+              "text": "Kind",
+              "start": 115.943,
+              "end": 116.063
+            },
+            {
+              "text": "of",
+              "start": 116.123,
+              "end": 116.163
+            },
+            {
+              "text": "overdoing",
+              "start": 116.183,
+              "end": 116.483
+            },
+            {
+              "text": "it",
+              "start": 116.503,
+              "end": 116.543
+            },
+            {
+              "text": "a",
+              "start": 116.603,
+              "end": 116.623
+            },
+            {
+              "text": "little.",
+              "start": 116.663,
+              "end": 116.863
+            },
+            {
+              "text": "Sheldon.",
+              "start": 118.124,
+              "end": 118.484
+            }
+          ]
+        },
+        {
+          "id": "line_3YIBnESAKIM",
+          "roleId": "role_tc1hthFv9GM",
+          "speaker": "Sheldon",
+          "text": "Well, thank you for your criticism. It also says I should praise any improvements that you've made.",
+          "hint": "谢谢你的批评。书上还说，我应该表扬你的进步。",
+          "start": 118.984,
+          "end": 124.426,
+          "words": [
+            {
+              "text": "Well,",
+              "start": 119.024,
+              "end": 119.164
+            },
+            {
+              "text": "thank",
+              "start": 119.204,
+              "end": 119.364
+            },
+            {
+              "text": "you",
+              "start": 119.424,
+              "end": 119.504
+            },
+            {
+              "text": "for",
+              "start": 119.564,
+              "end": 119.664
+            },
+            {
+              "text": "your",
+              "start": 119.724,
+              "end": 119.824
+            },
+            {
+              "text": "criticism.",
+              "start": 119.864,
+              "end": 120.424
+            },
+            {
+              "text": "It",
+              "start": 121.185,
+              "end": 121.245
+            },
+            {
+              "text": "also",
+              "start": 121.305,
+              "end": 121.525
+            },
+            {
+              "text": "says",
+              "start": 121.625,
+              "end": 121.825
+            },
+            {
+              "text": "I",
+              "start": 121.925,
+              "end": 121.945
+            },
+            {
+              "text": "should",
+              "start": 122.025,
+              "end": 122.205
+            },
+            {
+              "text": "praise",
+              "start": 122.265,
+              "end": 122.545
+            },
+            {
+              "text": "any",
+              "start": 122.685,
+              "end": 122.805
+            },
+            {
+              "text": "improvements",
+              "start": 122.905,
+              "end": 123.566
+            },
+            {
+              "text": "that",
+              "start": 123.666,
+              "end": 123.786
+            },
+            {
+              "text": "you've",
+              "start": 123.826,
+              "end": 124.046
+            },
+            {
+              "text": "made.",
+              "start": 124.106,
+              "end": 124.366
+            }
+          ]
+        },
+        {
+          "id": "line_JCrqNVaW0oY",
+          "roleId": "role_80084y8FUOo",
+          "speaker": "George Cooper Sr.",
+          "text": "Okay.",
+          "hint": "好啊。",
+          "start": 126.107,
+          "end": 126.547,
+          "words": [
+            {
+              "text": "Okay.",
+              "start": 126.147,
+              "end": 126.487
+            }
+          ]
+        },
+        {
+          "id": "line_xYbc8yoA-LE",
+          "roleId": "role_tc1hthFv9GM",
+          "speaker": "Sheldon",
+          "text": "I'll get back to you. George.",
+          "hint": "有了我再告诉你。乔治。",
+          "start": 129.548,
+          "end": 134.029,
+          "words": [
+            {
+              "text": "I'll",
+              "start": 129.588,
+              "end": 129.748
+            },
+            {
+              "text": "get",
+              "start": 129.788,
+              "end": 129.908
+            },
+            {
+              "text": "back",
+              "start": 130.008,
+              "end": 130.188
+            },
+            {
+              "text": "to",
+              "start": 130.328,
+              "end": 130.428
+            },
+            {
+              "text": "you.",
+              "start": 130.488,
+              "end": 130.588
+            },
+            {
+              "text": "George.",
+              "start": 133.549,
+              "end": 133.969
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_aazmMXhTmwY",
+      "cohort": "older-children",
+      "slug": "03-young-sheldon-homework",
+      "title": "Asking Dad to talk to a teacher",
+      "titleZh": "请爸爸和老师谈一谈",
+      "sourceId": "GJ0y2haVfFI",
+      "start": 16.5,
+      "end": 51.45,
+      "roles": [
+        {
+          "id": "role_9VX0JklGCdk",
+          "name": "George Cooper Sr.",
+          "selectable": true
+        },
+        {
+          "id": "role_mPMtxEzSrfc",
+          "name": "Sheldon",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 14,
+      "summary": "Sheldon explains a difficult assignment and tries several arguments to persuade his father to speak to his professor.",
+      "practice": "Explaining a problem, requests, reasons and refusal.",
+      "contentNotes": "College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_qs532GUZz7E",
+      "publicSlug": "young-sheldon-homework",
+      "lines": [
+        {
+          "id": "line_U0tVN1CtgMo",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "What's going on?",
+          "hint": "怎么了？",
+          "start": 16.74,
+          "end": 17.48,
+          "words": [
+            {
+              "text": "What's",
+              "start": 16.78,
+              "end": 16.98
+            },
+            {
+              "text": "going",
+              "start": 17.04,
+              "end": 17.22
+            },
+            {
+              "text": "on?",
+              "start": 17.36,
+              "end": 17.42
+            }
+          ]
+        },
+        {
+          "id": "line_Hh6u2Jl9XT4",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "I can't figure out this engineering project, and every time I turn it in, my professor just rips it up.",
+          "hint": "我做不明白这个工程作业，每次交上去，教授都直接把它撕了。",
+          "start": 18.08,
+          "end": 22.782,
+          "words": [
+            {
+              "text": "I",
+              "start": 18.12,
+              "end": 18.14
+            },
+            {
+              "text": "can't",
+              "start": 18.24,
+              "end": 18.481
+            },
+            {
+              "text": "figure",
+              "start": 18.561,
+              "end": 18.841
+            },
+            {
+              "text": "out",
+              "start": 18.881,
+              "end": 18.981
+            },
+            {
+              "text": "this",
+              "start": 19.021,
+              "end": 19.161
+            },
+            {
+              "text": "engineering",
+              "start": 19.241,
+              "end": 19.721
+            },
+            {
+              "text": "project,",
+              "start": 19.801,
+              "end": 20.161
+            },
+            {
+              "text": "and",
+              "start": 20.461,
+              "end": 20.521
+            },
+            {
+              "text": "every",
+              "start": 20.561,
+              "end": 20.701
+            },
+            {
+              "text": "time",
+              "start": 20.761,
+              "end": 20.881
+            },
+            {
+              "text": "I",
+              "start": 20.941,
+              "end": 20.961
+            },
+            {
+              "text": "turn",
+              "start": 21.021,
+              "end": 21.141
+            },
+            {
+              "text": "it",
+              "start": 21.261,
+              "end": 21.301
+            },
+            {
+              "text": "in,",
+              "start": 21.361,
+              "end": 21.421
+            },
+            {
+              "text": "my",
+              "start": 21.481,
+              "end": 21.541
+            },
+            {
+              "text": "professor",
+              "start": 21.601,
+              "end": 21.962
+            },
+            {
+              "text": "just",
+              "start": 22.022,
+              "end": 22.162
+            },
+            {
+              "text": "rips",
+              "start": 22.262,
+              "end": 22.482
+            },
+            {
+              "text": "it",
+              "start": 22.542,
+              "end": 22.582
+            },
+            {
+              "text": "up.",
+              "start": 22.662,
+              "end": 22.722
+            }
+          ]
+        },
+        {
+          "id": "line_grdqrqRLYmc",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "Well, ain't this the fella you liked?",
+          "hint": "这不是你挺喜欢的那个老师吗？",
+          "start": 23.462,
+          "end": 24.702,
+          "words": [
+            {
+              "text": "Well,",
+              "start": 23.502,
+              "end": 23.602
+            },
+            {
+              "text": "ain't",
+              "start": 23.622,
+              "end": 23.762
+            },
+            {
+              "text": "this",
+              "start": 23.782,
+              "end": 23.922
+            },
+            {
+              "text": "the",
+              "start": 23.942,
+              "end": 24.002
+            },
+            {
+              "text": "fella",
+              "start": 24.042,
+              "end": 24.222
+            },
+            {
+              "text": "you",
+              "start": 24.282,
+              "end": 24.362
+            },
+            {
+              "text": "liked?",
+              "start": 24.422,
+              "end": 24.642
+            }
+          ]
+        },
+        {
+          "id": "line_ELWati6xWqY",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "I did when I thought he was pushing me to be all I could be, but it turns out all he can be is mean.",
+          "hint": "我以为他在激发我的潜能时是挺喜欢他。结果他只会刻薄。",
+          "start": 25.343,
+          "end": 29.804,
+          "words": [
+            {
+              "text": "I",
+              "start": 25.383,
+              "end": 25.403
+            },
+            {
+              "text": "did",
+              "start": 25.503,
+              "end": 25.663
+            },
+            {
+              "text": "when",
+              "start": 25.723,
+              "end": 25.823
+            },
+            {
+              "text": "I",
+              "start": 25.883,
+              "end": 25.903
+            },
+            {
+              "text": "thought",
+              "start": 25.943,
+              "end": 26.103
+            },
+            {
+              "text": "he",
+              "start": 26.123,
+              "end": 26.163
+            },
+            {
+              "text": "was",
+              "start": 26.223,
+              "end": 26.303
+            },
+            {
+              "text": "pushing",
+              "start": 26.363,
+              "end": 26.663
+            },
+            {
+              "text": "me",
+              "start": 26.703,
+              "end": 26.763
+            },
+            {
+              "text": "to",
+              "start": 26.823,
+              "end": 26.863
+            },
+            {
+              "text": "be",
+              "start": 26.903,
+              "end": 26.983
+            },
+            {
+              "text": "all",
+              "start": 27.183,
+              "end": 27.303
+            },
+            {
+              "text": "I",
+              "start": 27.383,
+              "end": 27.403
+            },
+            {
+              "text": "could",
+              "start": 27.483,
+              "end": 27.623
+            },
+            {
+              "text": "be,",
+              "start": 27.663,
+              "end": 27.783
+            },
+            {
+              "text": "but",
+              "start": 27.983,
+              "end": 28.083
+            },
+            {
+              "text": "it",
+              "start": 28.223,
+              "end": 28.263
+            },
+            {
+              "text": "turns",
+              "start": 28.303,
+              "end": 28.483
+            },
+            {
+              "text": "out",
+              "start": 28.523,
+              "end": 28.583
+            },
+            {
+              "text": "all",
+              "start": 28.623,
+              "end": 28.744
+            },
+            {
+              "text": "he",
+              "start": 28.804,
+              "end": 28.884
+            },
+            {
+              "text": "can",
+              "start": 28.984,
+              "end": 29.084
+            },
+            {
+              "text": "be",
+              "start": 29.164,
+              "end": 29.224
+            },
+            {
+              "text": "is",
+              "start": 29.344,
+              "end": 29.424
+            },
+            {
+              "text": "mean.",
+              "start": 29.504,
+              "end": 29.744
+            }
+          ]
+        },
+        {
+          "id": "line_TAMgxstRy3c",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "I'm sure you'll figure it out.",
+          "hint": "你肯定能想明白的。",
+          "start": 30.904,
+          "end": 31.944,
+          "words": [
+            {
+              "text": "I'm",
+              "start": 30.944,
+              "end": 31.044
+            },
+            {
+              "text": "sure",
+              "start": 31.104,
+              "end": 31.224
+            },
+            {
+              "text": "you'll",
+              "start": 31.264,
+              "end": 31.424
+            },
+            {
+              "text": "figure",
+              "start": 31.444,
+              "end": 31.684
+            },
+            {
+              "text": "it",
+              "start": 31.704,
+              "end": 31.744
+            },
+            {
+              "text": "out.",
+              "start": 31.824,
+              "end": 31.884
+            }
+          ]
+        },
+        {
+          "id": "line_t4562iYrjmU",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "Could you talk to him?",
+          "hint": "你能跟他谈谈吗？",
+          "start": 32.985,
+          "end": 33.825,
+          "words": [
+            {
+              "text": "Could",
+              "start": 33.025,
+              "end": 33.145
+            },
+            {
+              "text": "you",
+              "start": 33.185,
+              "end": 33.265
+            },
+            {
+              "text": "talk",
+              "start": 33.325,
+              "end": 33.505
+            },
+            {
+              "text": "to",
+              "start": 33.565,
+              "end": 33.625
+            },
+            {
+              "text": "him?",
+              "start": 33.685,
+              "end": 33.765
+            }
+          ]
+        },
+        {
+          "id": "line_V9SkgXDy5jk",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "You're in college now. Don't you think you should fight your own battles?",
+          "hint": "你都上大学了，不该自己解决问题了吗？",
+          "start": 34.685,
+          "end": 37.286,
+          "words": [
+            {
+              "text": "You're",
+              "start": 34.725,
+              "end": 34.885
+            },
+            {
+              "text": "in",
+              "start": 34.905,
+              "end": 34.945
+            },
+            {
+              "text": "college",
+              "start": 34.965,
+              "end": 35.145
+            },
+            {
+              "text": "now.",
+              "start": 35.165,
+              "end": 35.225
+            },
+            {
+              "text": "Don't",
+              "start": 35.245,
+              "end": 35.365
+            },
+            {
+              "text": "you",
+              "start": 35.425,
+              "end": 35.585
+            },
+            {
+              "text": "think",
+              "start": 35.946,
+              "end": 36.106
+            },
+            {
+              "text": "you",
+              "start": 36.146,
+              "end": 36.206
+            },
+            {
+              "text": "should",
+              "start": 36.266,
+              "end": 36.406
+            },
+            {
+              "text": "fight",
+              "start": 36.466,
+              "end": 36.646
+            },
+            {
+              "text": "your",
+              "start": 36.706,
+              "end": 36.806
+            },
+            {
+              "text": "own",
+              "start": 36.846,
+              "end": 36.946
+            },
+            {
+              "text": "battles?",
+              "start": 36.986,
+              "end": 37.226
+            }
+          ]
+        },
+        {
+          "id": "line_i75o_wdK6O0",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "Does telling on him to the president of the university count?",
+          "hint": "那向大学校长告状算不算？",
+          "start": 37.786,
+          "end": 40.287,
+          "words": [
+            {
+              "text": "Does",
+              "start": 37.826,
+              "end": 37.946
+            },
+            {
+              "text": "telling",
+              "start": 38.026,
+              "end": 38.306
+            },
+            {
+              "text": "on",
+              "start": 38.406,
+              "end": 38.446
+            },
+            {
+              "text": "him",
+              "start": 38.506,
+              "end": 38.586
+            },
+            {
+              "text": "to",
+              "start": 38.646,
+              "end": 38.706
+            },
+            {
+              "text": "the",
+              "start": 38.766,
+              "end": 38.846
+            },
+            {
+              "text": "president",
+              "start": 38.886,
+              "end": 39.206
+            },
+            {
+              "text": "of",
+              "start": 39.247,
+              "end": 39.287
+            },
+            {
+              "text": "the",
+              "start": 39.327,
+              "end": 39.387
+            },
+            {
+              "text": "university",
+              "start": 39.467,
+              "end": 39.947
+            },
+            {
+              "text": "count?",
+              "start": 40.007,
+              "end": 40.227
+            }
+          ]
+        },
+        {
+          "id": "line_Vgivv1Lu4GY",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "Did it work?",
+          "hint": "管用了吗？",
+          "start": 40.627,
+          "end": 41.187,
+          "words": [
+            {
+              "text": "Did",
+              "start": 40.667,
+              "end": 40.787
+            },
+            {
+              "text": "it",
+              "start": 40.827,
+              "end": 40.867
+            },
+            {
+              "text": "work?",
+              "start": 40.927,
+              "end": 41.127
+            }
+          ]
+        },
+        {
+          "id": "line_j7unBtkFh5U",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "No.",
+          "hint": "没有。",
+          "start": 41.607,
+          "end": 41.807,
+          "words": [
+            {
+              "text": "No.",
+              "start": 41.647,
+              "end": 41.747
+            }
+          ]
+        },
+        {
+          "id": "line_PmvsaaUXG0M",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "Then no.",
+          "hint": "那就不算。",
+          "start": 42.107,
+          "end": 42.487,
+          "words": [
+            {
+              "text": "Then",
+              "start": 42.147,
+              "end": 42.247
+            },
+            {
+              "text": "no.",
+              "start": 42.327,
+              "end": 42.427
+            }
+          ]
+        },
+        {
+          "id": "line_QVgQZkjgG0k",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "Will you please talk to him?",
+          "hint": "拜托你跟他谈谈好吗？",
+          "start": 43.548,
+          "end": 44.728,
+          "words": [
+            {
+              "text": "Will",
+              "start": 43.588,
+              "end": 43.748
+            },
+            {
+              "text": "you",
+              "start": 43.768,
+              "end": 43.848
+            },
+            {
+              "text": "please",
+              "start": 43.928,
+              "end": 44.168
+            },
+            {
+              "text": "talk",
+              "start": 44.248,
+              "end": 44.408
+            },
+            {
+              "text": "to",
+              "start": 44.468,
+              "end": 44.528
+            },
+            {
+              "text": "him?",
+              "start": 44.588,
+              "end": 44.668
+            }
+          ]
+        },
+        {
+          "id": "line_-92sXuOqKW4",
+          "roleId": "role_9VX0JklGCdk",
+          "speaker": "George Cooper Sr.",
+          "text": "What if your mom does it?",
+          "hint": "让你妈妈去怎么样？",
+          "start": 46.169,
+          "end": 47.109,
+          "words": [
+            {
+              "text": "What",
+              "start": 46.209,
+              "end": 46.329
+            },
+            {
+              "text": "if",
+              "start": 46.369,
+              "end": 46.409
+            },
+            {
+              "text": "your",
+              "start": 46.449,
+              "end": 46.549
+            },
+            {
+              "text": "mom",
+              "start": 46.569,
+              "end": 46.689
+            },
+            {
+              "text": "does",
+              "start": 46.789,
+              "end": 46.949
+            },
+            {
+              "text": "it?",
+              "start": 47.009,
+              "end": 47.049
+            }
+          ]
+        },
+        {
+          "id": "line_rHIsNpUda3M",
+          "roleId": "role_mPMtxEzSrfc",
+          "speaker": "Sheldon",
+          "text": "But you were both in the army, and you're both crabby and impatient. There's a lot of common ground.",
+          "hint": "可你们都当过兵，都脾气暴躁、没耐心。共同点可多了。",
+          "start": 47.429,
+          "end": 51.45,
+          "words": [
+            {
+              "text": "But",
+              "start": 47.469,
+              "end": 47.549
+            },
+            {
+              "text": "you",
+              "start": 47.589,
+              "end": 47.669
+            },
+            {
+              "text": "were",
+              "start": 47.709,
+              "end": 47.829
+            },
+            {
+              "text": "both",
+              "start": 47.869,
+              "end": 48.009
+            },
+            {
+              "text": "in",
+              "start": 48.069,
+              "end": 48.109
+            },
+            {
+              "text": "the",
+              "start": 48.129,
+              "end": 48.209
+            },
+            {
+              "text": "army,",
+              "start": 48.289,
+              "end": 48.509
+            },
+            {
+              "text": "and",
+              "start": 48.749,
+              "end": 48.809
+            },
+            {
+              "text": "you're",
+              "start": 48.829,
+              "end": 48.969
+            },
+            {
+              "text": "both",
+              "start": 49.009,
+              "end": 49.109
+            },
+            {
+              "text": "crabby",
+              "start": 49.169,
+              "end": 49.429
+            },
+            {
+              "text": "and",
+              "start": 49.449,
+              "end": 49.509
+            },
+            {
+              "text": "impatient.",
+              "start": 49.529,
+              "end": 49.95
+            },
+            {
+              "text": "There's",
+              "start": 50.25,
+              "end": 50.45
+            },
+            {
+              "text": "a",
+              "start": 50.49,
+              "end": 50.51
+            },
+            {
+              "text": "lot",
+              "start": 50.57,
+              "end": 50.69
+            },
+            {
+              "text": "of",
+              "start": 50.73,
+              "end": 50.77
+            },
+            {
+              "text": "common",
+              "start": 50.79,
+              "end": 51.03
+            },
+            {
+              "text": "ground.",
+              "start": 51.09,
+              "end": 51.39
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_yxchm8bYGF8",
+      "cohort": "teens",
+      "slug": "01-friends-moving-couch",
+      "title": "A sofa that will not turn",
+      "titleZh": "转不过弯的沙发",
+      "sourceId": "UJHa8Bjjy1k",
+      "start": 165.9,
+      "end": 198.4,
+      "roles": [
+        {
+          "id": "role_2N9MYrRXSfA",
+          "name": "Rachel",
+          "selectable": true
+        },
+        {
+          "id": "role_63qAU3MP3yo",
+          "name": "Ross",
+          "selectable": true
+        },
+        {
+          "id": "role_4x8NV4PfgqM",
+          "name": "Chandler",
+          "selectable": true
+        },
+        {
+          "id": "role_JcuuVsaRRGI",
+          "name": "Rachel and Chandler",
+          "selectable": false
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 5,
+      "summary": "Rachel doubts the sofa will fit, Ross keeps directing the move, and Chandler loses patience before the failed-move punchline.",
+      "practice": "Directions, urgent delivery and reacting to frustration.",
+      "contentNotes": "Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_pywI3ZgiZ-Y",
+      "publicSlug": "friends-moving-couch",
+      "lines": [
+        {
+          "id": "line_WY_rTfd9kd8",
+          "roleId": "role_2N9MYrRXSfA",
+          "speaker": "Rachel",
+          "text": "I just don't think it's gonna fit.",
+          "hint": "我觉得这根本放不进去。",
+          "start": 166.852,
+          "end": 168.219,
+          "words": [
+            {
+              "text": "I",
+              "start": 166.892,
+              "end": 166.912
+            },
+            {
+              "text": "just",
+              "start": 166.992,
+              "end": 167.153
+            },
+            {
+              "text": "don't",
+              "start": 167.193,
+              "end": 167.354
+            },
+            {
+              "text": "think",
+              "start": 167.375,
+              "end": 167.495
+            },
+            {
+              "text": "it's",
+              "start": 167.536,
+              "end": 167.636
+            },
+            {
+              "text": "gonna",
+              "start": 167.656,
+              "end": 167.837
+            },
+            {
+              "text": "fit.",
+              "start": 167.998,
+              "end": 168.119
+            }
+          ]
+        },
+        {
+          "id": "line_1jdl02x2pSY",
+          "roleId": "role_63qAU3MP3yo",
+          "speaker": "Ross",
+          "text": "Oh, yeah, it will! Come on. Up, up, up, up, up! Yes! Here we go! Pivot! Pivot! Pivot! Pivot! Pivot! Pivot!",
+          "hint": "能放进去的！来，往上、往上、往上、往上、往上！对了！来吧。转！转！转！转！转！转！",
+          "start": 168.32,
+          "end": 187.7,
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 168.36,
+              "end": 168.46
+            },
+            {
+              "text": "yeah,",
+              "start": 168.48,
+              "end": 168.6
+            },
+            {
+              "text": "it",
+              "start": 168.62,
+              "end": 168.68
+            },
+            {
+              "text": "will!",
+              "start": 168.76,
+              "end": 168.92
+            },
+            {
+              "text": "Come",
+              "start": 168.94,
+              "end": 169.04
+            },
+            {
+              "text": "on.",
+              "start": 169.1,
+              "end": 169.22
+            },
+            {
+              "text": "Up,",
+              "start": 169.28,
+              "end": 169.321
+            },
+            {
+              "text": "up,",
+              "start": 169.501,
+              "end": 169.541
+            },
+            {
+              "text": "up,",
+              "start": 169.681,
+              "end": 169.721
+            },
+            {
+              "text": "up,",
+              "start": 169.861,
+              "end": 169.901
+            },
+            {
+              "text": "up!",
+              "start": 171.642,
+              "end": 171.722
+            },
+            {
+              "text": "Yes!",
+              "start": 172.542,
+              "end": 172.742
+            },
+            {
+              "text": "Here",
+              "start": 173.082,
+              "end": 173.943
+            },
+            {
+              "text": "we",
+              "start": 174.023,
+              "end": 174.083
+            },
+            {
+              "text": "go!",
+              "start": 174.143,
+              "end": 174.243
+            },
+            {
+              "text": "Pivot!",
+              "start": 174.48,
+              "end": 174.94
+            },
+            {
+              "text": "Pivot!",
+              "start": 176.72,
+              "end": 177.18
+            },
+            {
+              "text": "Pivot!",
+              "start": 179.6,
+              "end": 180.06
+            },
+            {
+              "text": "Pivot!",
+              "start": 181.52,
+              "end": 181.98
+            },
+            {
+              "text": "Pivot!",
+              "start": 184.48,
+              "end": 184.94
+            },
+            {
+              "text": "Pivot!",
+              "start": 187.04,
+              "end": 187.5
+            }
+          ]
+        },
+        {
+          "id": "line_GaFF4I7yleE",
+          "roleId": "role_4x8NV4PfgqM",
+          "speaker": "Chandler",
+          "text": "Shut up! Shut up! Shut up!",
+          "hint": "闭嘴！闭嘴！闭嘴！",
+          "start": 188.1,
+          "end": 190.279,
+          "words": [
+            {
+              "text": "Shut",
+              "start": 188.1,
+              "end": 188.322
+            },
+            {
+              "text": "up!",
+              "start": 188.443,
+              "end": 188.524
+            },
+            {
+              "text": "Shut",
+              "start": 188.827,
+              "end": 189.069
+            },
+            {
+              "text": "up!",
+              "start": 189.21,
+              "end": 189.291
+            },
+            {
+              "text": "Shut",
+              "start": 189.553,
+              "end": 189.775
+            },
+            {
+              "text": "up!",
+              "start": 190.118,
+              "end": 190.179
+            }
+          ]
+        },
+        {
+          "id": "line_yWsgKhgYcIk",
+          "roleId": "role_63qAU3MP3yo",
+          "speaker": "Ross",
+          "text": "Okay. I don't think it's gonna pivot anymore.",
+          "hint": "好吧，我觉得它转不动了。",
+          "start": 195.131,
+          "end": 197.42,
+          "words": [
+            {
+              "text": "Okay.",
+              "start": 195.171,
+              "end": 195.512
+            },
+            {
+              "text": "I",
+              "start": 195.753,
+              "end": 195.773
+            },
+            {
+              "text": "don't",
+              "start": 195.813,
+              "end": 195.934
+            },
+            {
+              "text": "think",
+              "start": 195.954,
+              "end": 196.054
+            },
+            {
+              "text": "it's",
+              "start": 196.094,
+              "end": 196.175
+            },
+            {
+              "text": "gonna",
+              "start": 196.195,
+              "end": 196.396
+            },
+            {
+              "text": "pivot",
+              "start": 196.576,
+              "end": 196.858
+            },
+            {
+              "text": "anymore.",
+              "start": 196.938,
+              "end": 197.4
+            }
+          ]
+        },
+        {
+          "id": "line_2-UagJpi78Y",
+          "roleId": "role_JcuuVsaRRGI",
+          "speaker": "Rachel and Chandler",
+          "text": "You think?",
+          "hint": "你才发现啊？",
+          "start": 197.502,
+          "end": 198.154,
+          "words": [
+            {
+              "text": "You",
+              "start": 197.542,
+              "end": 197.624
+            },
+            {
+              "text": "think?",
+              "start": 197.726,
+              "end": 198.054
+            }
+          ]
+        }
+      ],
+      "speakerNotes": "Rachel and Chandler answer together at the end. Keep their overlapping response in the original audio as a non-selectable supporting role.",
+      "wordTiming": {
+        "method": "CTC forced alignment with original-source caption review for repeated directions",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_JZlydeJAJ5w",
+      "cohort": "teens",
+      "slug": "02-friends-thesaurus",
+      "title": "Joey discovers a thesaurus",
+      "titleZh": "乔伊发现同义词词典",
+      "sourceId": "ZeTeCcvIVMo",
+      "start": 0.0,
+      "end": 37.2,
+      "roles": [
+        {
+          "id": "role_XaaU0DIckP8",
+          "name": "Ross",
+          "selectable": true
+        },
+        {
+          "id": "role_9o381Ya55Qo",
+          "name": "Joey",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 6,
+      "summary": "Joey wants his recommendation to sound smarter; Ross demonstrates a tool, and Joey proudly tries the alternatives.",
+      "practice": "Asking for clarification, explaining a process and expressing delight.",
+      "contentNotes": "Adoption recommendation is the background. The later dating innuendo is excluded.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_lPxb4HHQVrQ",
+      "publicSlug": "friends-thesaurus",
+      "lines": [
+        {
+          "id": "line_5QOcooEaRso",
+          "roleId": "role_XaaU0DIckP8",
+          "speaker": "Ross",
+          "text": "What... what you working on?",
+          "hint": "你……你在忙什么？",
+          "start": 0.66,
+          "end": 1.841,
+          "words": [
+            {
+              "text": "What...",
+              "start": 0.7,
+              "end": 0.94
+            },
+            {
+              "text": "what",
+              "start": 1.201,
+              "end": 1.321
+            },
+            {
+              "text": "you",
+              "start": 1.341,
+              "end": 1.401
+            },
+            {
+              "text": "working",
+              "start": 1.441,
+              "end": 1.681
+            },
+            {
+              "text": "on?",
+              "start": 1.721,
+              "end": 1.781
+            }
+          ]
+        },
+        {
+          "id": "line_nZt--bSj3JI",
+          "roleId": "role_9o381Ya55Qo",
+          "speaker": "Joey",
+          "text": "Oh, Monica and Chandler's recommendation. I want it to sound smart, but I don't know any big words or anything, so...",
+          "hint": "给莫妮卡和钱德勒写推荐信。我想写得有水平，可我不认识什么高级词汇，所以……",
+          "start": 2.161,
+          "end": 7.554,
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 2.201,
+              "end": 2.281
+            },
+            {
+              "text": "Monica",
+              "start": 2.581,
+              "end": 2.821
+            },
+            {
+              "text": "and",
+              "start": 2.841,
+              "end": 2.921
+            },
+            {
+              "text": "Chandler's",
+              "start": 2.942,
+              "end": 3.282
+            },
+            {
+              "text": "recommendation.",
+              "start": 3.342,
+              "end": 4.002
+            },
+            {
+              "text": "I",
+              "start": 4.422,
+              "end": 4.442
+            },
+            {
+              "text": "want",
+              "start": 4.522,
+              "end": 4.642
+            },
+            {
+              "text": "it",
+              "start": 4.662,
+              "end": 4.702
+            },
+            {
+              "text": "to",
+              "start": 4.742,
+              "end": 4.802
+            },
+            {
+              "text": "sound",
+              "start": 4.842,
+              "end": 5.043
+            },
+            {
+              "text": "smart,",
+              "start": 5.143,
+              "end": 5.463
+            },
+            {
+              "text": "but",
+              "start": 5.543,
+              "end": 5.643
+            },
+            {
+              "text": "I",
+              "start": 6.043,
+              "end": 6.063
+            },
+            {
+              "text": "don't",
+              "start": 6.103,
+              "end": 6.203
+            },
+            {
+              "text": "know",
+              "start": 6.223,
+              "end": 6.323
+            },
+            {
+              "text": "any",
+              "start": 6.343,
+              "end": 6.443
+            },
+            {
+              "text": "big",
+              "start": 6.503,
+              "end": 6.643
+            },
+            {
+              "text": "words",
+              "start": 6.703,
+              "end": 7.024
+            },
+            {
+              "text": "or",
+              "start": 7.084,
+              "end": 7.124
+            },
+            {
+              "text": "anything,",
+              "start": 7.144,
+              "end": 7.444
+            },
+            {
+              "text": "so...",
+              "start": 7.504,
+              "end": 7.544
+            }
+          ]
+        },
+        {
+          "id": "line_o7die8up6Hc",
+          "roleId": "role_XaaU0DIckP8",
+          "speaker": "Ross",
+          "text": "Well, why don't you use your thesaurus?",
+          "hint": "那你为什么不用同义词词典呢？",
+          "start": 7.554,
+          "end": 9.265,
+          "words": [
+            {
+              "text": "Well,",
+              "start": 7.564,
+              "end": 7.684
+            },
+            {
+              "text": "why",
+              "start": 7.944,
+              "end": 8.004
+            },
+            {
+              "text": "don't",
+              "start": 8.084,
+              "end": 8.224
+            },
+            {
+              "text": "you",
+              "start": 8.264,
+              "end": 8.344
+            },
+            {
+              "text": "use",
+              "start": 8.444,
+              "end": 8.544
+            },
+            {
+              "text": "your",
+              "start": 8.584,
+              "end": 8.704
+            },
+            {
+              "text": "thesaurus?",
+              "start": 8.784,
+              "end": 9.205
+            }
+          ]
+        },
+        {
+          "id": "line_UKRia55wv4A",
+          "roleId": "role_9o381Ya55Qo",
+          "speaker": "Joey",
+          "text": "What'd I just say?",
+          "hint": "我刚才说什么来着？",
+          "start": 9.965,
+          "end": 10.585,
+          "words": [
+            {
+              "text": "What'd",
+              "start": 10.005,
+              "end": 10.145
+            },
+            {
+              "text": "I",
+              "start": 10.165,
+              "end": 10.185
+            },
+            {
+              "text": "just",
+              "start": 10.245,
+              "end": 10.365
+            },
+            {
+              "text": "say?",
+              "start": 10.405,
+              "end": 10.525
+            }
+          ]
+        },
+        {
+          "id": "line_DvMsrWKFD04",
+          "roleId": "role_XaaU0DIckP8",
+          "speaker": "Ross",
+          "text": "Watch. Here, you, uh, you highlight the word you want to change, go under Tools...",
+          "hint": "看这里。你选中想改的词，再打开“工具”……",
+          "start": 13.267,
+          "end": 19.95,
+          "words": [
+            {
+              "text": "Watch.",
+              "start": 13.307,
+              "end": 14.808
+            },
+            {
+              "text": "Here,",
+              "start": 14.908,
+              "end": 15.068
+            },
+            {
+              "text": "you,",
+              "start": 15.228,
+              "end": 15.328
+            },
+            {
+              "text": "uh,",
+              "start": 15.468,
+              "end": 15.508
+            },
+            {
+              "text": "you",
+              "start": 16.188,
+              "end": 16.268
+            },
+            {
+              "text": "highlight",
+              "start": 16.368,
+              "end": 16.749
+            },
+            {
+              "text": "the",
+              "start": 16.889,
+              "end": 16.949
+            },
+            {
+              "text": "word",
+              "start": 17.009,
+              "end": 17.249
+            },
+            {
+              "text": "you",
+              "start": 17.329,
+              "end": 17.409
+            },
+            {
+              "text": "want",
+              "start": 17.469,
+              "end": 17.589
+            },
+            {
+              "text": "to",
+              "start": 17.629,
+              "end": 17.669
+            },
+            {
+              "text": "change,",
+              "start": 17.729,
+              "end": 18.069
+            },
+            {
+              "text": "go",
+              "start": 18.91,
+              "end": 18.97
+            },
+            {
+              "text": "under",
+              "start": 19.07,
+              "end": 19.25
+            },
+            {
+              "text": "Tools...",
+              "start": 19.43,
+              "end": 19.89
+            }
+          ]
+        },
+        {
+          "id": "line_h40kznNYR1M",
+          "roleId": "role_XaaU0DIckP8",
+          "speaker": "Ross",
+          "text": "And the thesaurus generates, gives, gives a whole list of choices.",
+          "hint": "同义词词典就会生成，给出……给出一整列选项。",
+          "start": 20.23,
+          "end": 27.094,
+          "words": [
+            {
+              "text": "And",
+              "start": 20.27,
+              "end": 20.35
+            },
+            {
+              "text": "the",
+              "start": 20.41,
+              "end": 20.47
+            },
+            {
+              "text": "thesaurus",
+              "start": 20.55,
+              "end": 21.071
+            },
+            {
+              "text": "generates,",
+              "start": 21.251,
+              "end": 21.771
+            },
+            {
+              "text": "gives,",
+              "start": 22.071,
+              "end": 22.371
+            },
+            {
+              "text": "gives",
+              "start": 24.713,
+              "end": 25.133
+            },
+            {
+              "text": "a",
+              "start": 25.533,
+              "end": 25.553
+            },
+            {
+              "text": "whole",
+              "start": 25.733,
+              "end": 25.953
+            },
+            {
+              "text": "list",
+              "start": 26.073,
+              "end": 26.333
+            },
+            {
+              "text": "of",
+              "start": 26.454,
+              "end": 26.494
+            },
+            {
+              "text": "choices.",
+              "start": 26.594,
+              "end": 27.034
+            }
+          ]
+        },
+        {
+          "id": "line_50p5--KlPRE",
+          "roleId": "role_XaaU0DIckP8",
+          "speaker": "Ross",
+          "text": "You can pick the word that sounds smartest.",
+          "hint": "你可以挑听起来最有学问的那个词。",
+          "start": 27.254,
+          "end": 29.315,
+          "words": [
+            {
+              "text": "You",
+              "start": 27.294,
+              "end": 27.394
+            },
+            {
+              "text": "can",
+              "start": 27.434,
+              "end": 27.514
+            },
+            {
+              "text": "pick",
+              "start": 27.614,
+              "end": 27.774
+            },
+            {
+              "text": "the",
+              "start": 27.874,
+              "end": 27.954
+            },
+            {
+              "text": "word",
+              "start": 28.014,
+              "end": 28.194
+            },
+            {
+              "text": "that",
+              "start": 28.254,
+              "end": 28.354
+            },
+            {
+              "text": "sounds",
+              "start": 28.455,
+              "end": 28.775
+            },
+            {
+              "text": "smartest.",
+              "start": 28.835,
+              "end": 29.255
+            }
+          ]
+        },
+        {
+          "id": "line_bOkKjyfzGz4",
+          "roleId": "role_9o381Ya55Qo",
+          "speaker": "Joey",
+          "text": "Oh my God, that's great! I'm smart! No, no, I'm brainy, bright, clever. I love this thing!",
+          "hint": "天哪，太棒了！我真聪明！不，不，我是才思敏捷、机灵、睿智。我爱这个功能！",
+          "start": 29.535,
+          "end": 36.599,
+          "words": [
+            {
+              "text": "Oh",
+              "start": 29.575,
+              "end": 29.675
+            },
+            {
+              "text": "my",
+              "start": 29.955,
+              "end": 30.015
+            },
+            {
+              "text": "God,",
+              "start": 30.135,
+              "end": 30.436
+            },
+            {
+              "text": "that's",
+              "start": 30.496,
+              "end": 30.676
+            },
+            {
+              "text": "great!",
+              "start": 30.756,
+              "end": 31.136
+            },
+            {
+              "text": "I'm",
+              "start": 31.676,
+              "end": 31.776
+            },
+            {
+              "text": "smart!",
+              "start": 31.896,
+              "end": 32.397
+            },
+            {
+              "text": "No,",
+              "start": 32.497,
+              "end": 32.577
+            },
+            {
+              "text": "no,",
+              "start": 32.677,
+              "end": 32.817
+            },
+            {
+              "text": "I'm",
+              "start": 32.997,
+              "end": 33.057
+            },
+            {
+              "text": "brainy,",
+              "start": 34.057,
+              "end": 34.418
+            },
+            {
+              "text": "bright,",
+              "start": 34.698,
+              "end": 34.978
+            },
+            {
+              "text": "clever.",
+              "start": 35.118,
+              "end": 35.438
+            },
+            {
+              "text": "I",
+              "start": 35.578,
+              "end": 35.598
+            },
+            {
+              "text": "love",
+              "start": 35.738,
+              "end": 35.898
+            },
+            {
+              "text": "this",
+              "start": 35.938,
+              "end": 36.118
+            },
+            {
+              "text": "thing!",
+              "start": 36.178,
+              "end": 36.539
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_Y8DtqCOaS3g",
+      "cohort": "teens",
+      "slug": "03-friends-cheesecake",
+      "title": "Choosing a half of the cheesecake",
+      "titleZh": "选哪一半芝士蛋糕",
+      "sourceId": "FxLDcqiOSZI",
+      "start": 55.7,
+      "end": 85.4,
+      "roles": [
+        {
+          "id": "role_taz3h1D5Pw4",
+          "name": "Rachel",
+          "selectable": true
+        },
+        {
+          "id": "role_Jy_lg0MhfG4",
+          "name": "Chandler",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 5,
+      "summary": "Two friends try to divide a cake fairly, negotiate which piece to take, and lay down rules about sharing.",
+      "practice": "Comparisons, choices, negotiation and setting conditions.",
+      "contentNotes": "Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack__ZPXHnc-PuE",
+      "publicSlug": "friends-cheesecake",
+      "lines": [
+        {
+          "id": "line_I5SyRiU7zFU",
+          "roleId": "role_taz3h1D5Pw4",
+          "speaker": "Rachel",
+          "text": "All right, pick a half.",
+          "hint": "好，选一半吧。",
+          "start": 55.7,
+          "end": 56.701,
+          "words": [
+            {
+              "text": "All",
+              "start": 55.7,
+              "end": 55.78
+            },
+            {
+              "text": "right,",
+              "start": 55.8,
+              "end": 55.98
+            },
+            {
+              "text": "pick",
+              "start": 56.14,
+              "end": 56.28
+            },
+            {
+              "text": "a",
+              "start": 56.36,
+              "end": 56.38
+            },
+            {
+              "text": "half.",
+              "start": 56.44,
+              "end": 56.641
+            }
+          ]
+        },
+        {
+          "id": "line_poryR5T3ss0",
+          "roleId": "role_Jy_lg0MhfG4",
+          "speaker": "Chandler",
+          "text": "Okay, well, this side looks bigger. Uh, there's more crust on this side. Y'know? So, maybe if I measured...",
+          "hint": "好吧。这边看着大一些。不过这边的饼皮更多。你看？要不我量一下……",
+          "start": 57.061,
+          "end": 68.168,
+          "words": [
+            {
+              "text": "Okay,",
+              "start": 57.101,
+              "end": 57.501
+            },
+            {
+              "text": "well,",
+              "start": 58.382,
+              "end": 58.642
+            },
+            {
+              "text": "this",
+              "start": 59.423,
+              "end": 59.563
+            },
+            {
+              "text": "side",
+              "start": 59.663,
+              "end": 59.923
+            },
+            {
+              "text": "looks",
+              "start": 59.963,
+              "end": 60.163
+            },
+            {
+              "text": "bigger.",
+              "start": 60.223,
+              "end": 60.483
+            },
+            {
+              "text": "Uh,",
+              "start": 62.024,
+              "end": 62.104
+            },
+            {
+              "text": "there's",
+              "start": 62.925,
+              "end": 63.165
+            },
+            {
+              "text": "more",
+              "start": 63.265,
+              "end": 63.425
+            },
+            {
+              "text": "crust",
+              "start": 63.625,
+              "end": 63.926
+            },
+            {
+              "text": "on",
+              "start": 64.106,
+              "end": 64.146
+            },
+            {
+              "text": "this",
+              "start": 64.226,
+              "end": 64.366
+            },
+            {
+              "text": "side.",
+              "start": 64.466,
+              "end": 64.786
+            },
+            {
+              "text": "Y'know?",
+              "start": 65.407,
+              "end": 66.047
+            },
+            {
+              "text": "So,",
+              "start": 66.667,
+              "end": 66.807
+            },
+            {
+              "text": "maybe",
+              "start": 67.348,
+              "end": 67.448
+            },
+            {
+              "text": "if",
+              "start": 67.528,
+              "end": 67.568
+            },
+            {
+              "text": "I",
+              "start": 67.668,
+              "end": 67.688
+            },
+            {
+              "text": "measured...",
+              "start": 67.808,
+              "end": 68.148
+            }
+          ]
+        },
+        {
+          "id": "line_92jC3jXpc-Y",
+          "roleId": "role_taz3h1D5Pw4",
+          "speaker": "Rachel",
+          "text": "Oh, for God's sake, just pick a piece!",
+          "hint": "天哪，你就随便选一块吧！",
+          "start": 68.168,
+          "end": 69.329,
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 68.188,
+              "end": 68.248
+            },
+            {
+              "text": "for",
+              "start": 68.329,
+              "end": 68.429
+            },
+            {
+              "text": "God's",
+              "start": 68.469,
+              "end": 68.649
+            },
+            {
+              "text": "sake,",
+              "start": 68.669,
+              "end": 68.789
+            },
+            {
+              "text": "just",
+              "start": 68.829,
+              "end": 68.929
+            },
+            {
+              "text": "pick",
+              "start": 68.949,
+              "end": 69.069
+            },
+            {
+              "text": "a",
+              "start": 69.089,
+              "end": 69.109
+            },
+            {
+              "text": "piece!",
+              "start": 69.169,
+              "end": 69.269
+            }
+          ]
+        },
+        {
+          "id": "line_NV1kDbJJ6xc",
+          "roleId": "role_Jy_lg0MhfG4",
+          "speaker": "Chandler",
+          "text": "All right, pick that.",
+          "hint": "好吧，我选那块。",
+          "start": 69.34,
+          "end": 69.98,
+          "words": [
+            {
+              "text": "All",
+              "start": 69.4,
+              "end": 69.43
+            },
+            {
+              "text": "right,",
+              "start": 69.43,
+              "end": 69.49
+            },
+            {
+              "text": "pick",
+              "start": 69.49,
+              "end": 69.66
+            },
+            {
+              "text": "that.",
+              "start": 69.66,
+              "end": 69.9
+            }
+          ]
+        },
+        {
+          "id": "line_-V8sDwtkaeQ",
+          "roleId": "role_taz3h1D5Pw4",
+          "speaker": "Rachel",
+          "text": "That's also the smaller piece.",
+          "hint": "那块也更小一些。",
+          "start": 70.02,
+          "end": 72.06,
+          "words": [
+            {
+              "text": "That's",
+              "start": 70.1,
+              "end": 70.33
+            },
+            {
+              "text": "also",
+              "start": 70.33,
+              "end": 71.0
+            },
+            {
+              "text": "the",
+              "start": 71.0,
+              "end": 71.18
+            },
+            {
+              "text": "smaller",
+              "start": 71.18,
+              "end": 71.48
+            },
+            {
+              "text": "piece.",
+              "start": 71.48,
+              "end": 71.94
+            }
+          ]
+        },
+        {
+          "id": "line_RKf_qeZ8eOE",
+          "roleId": "role_taz3h1D5Pw4",
+          "speaker": "Rachel",
+          "text": "Okay. There you go. Enjoy your half, my friend, but that is it. No sharing, no switching, and don't come crying to me if you eat your piece too fast.",
+          "hint": "行，给你。好好享用你那一半吧，朋友。不过说定了，不分着吃、不交换。要是你吃得太快，可别来求我。",
+          "start": 74.233,
+          "end": 85.2,
+          "words": [
+            {
+              "text": "Okay.",
+              "start": 74.273,
+              "end": 74.873
+            },
+            {
+              "text": "There",
+              "start": 75.293,
+              "end": 75.513
+            },
+            {
+              "text": "you",
+              "start": 75.593,
+              "end": 75.673
+            },
+            {
+              "text": "go.",
+              "start": 75.733,
+              "end": 75.894
+            },
+            {
+              "text": "Enjoy",
+              "start": 76.314,
+              "end": 76.714
+            },
+            {
+              "text": "your",
+              "start": 76.794,
+              "end": 76.994
+            },
+            {
+              "text": "half,",
+              "start": 77.074,
+              "end": 77.295
+            },
+            {
+              "text": "my",
+              "start": 77.435,
+              "end": 77.555
+            },
+            {
+              "text": "friend,",
+              "start": 77.695,
+              "end": 78.015
+            },
+            {
+              "text": "but",
+              "start": 78.155,
+              "end": 78.275
+            },
+            {
+              "text": "that",
+              "start": 78.415,
+              "end": 78.595
+            },
+            {
+              "text": "is",
+              "start": 78.675,
+              "end": 78.715
+            },
+            {
+              "text": "it.",
+              "start": 78.836,
+              "end": 78.936
+            },
+            {
+              "text": "No",
+              "start": 79.596,
+              "end": 79.696
+            },
+            {
+              "text": "sharing,",
+              "start": 79.876,
+              "end": 80.337
+            },
+            {
+              "text": "no",
+              "start": 80.477,
+              "end": 80.597
+            },
+            {
+              "text": "switching,",
+              "start": 80.857,
+              "end": 81.357
+            },
+            {
+              "text": "and",
+              "start": 81.457,
+              "end": 81.537
+            },
+            {
+              "text": "don't",
+              "start": 81.577,
+              "end": 81.758
+            },
+            {
+              "text": "come",
+              "start": 81.858,
+              "end": 82.038
+            },
+            {
+              "text": "crying",
+              "start": 82.158,
+              "end": 82.618
+            },
+            {
+              "text": "to",
+              "start": 82.678,
+              "end": 82.738
+            },
+            {
+              "text": "me",
+              "start": 82.798,
+              "end": 82.918
+            },
+            {
+              "text": "if",
+              "start": 83.479,
+              "end": 83.519
+            },
+            {
+              "text": "you",
+              "start": 83.659,
+              "end": 83.859
+            },
+            {
+              "text": "eat",
+              "start": 84.099,
+              "end": 84.179
+            },
+            {
+              "text": "your",
+              "start": 84.219,
+              "end": 84.379
+            },
+            {
+              "text": "piece",
+              "start": 84.439,
+              "end": 84.639
+            },
+            {
+              "text": "too",
+              "start": 84.68,
+              "end": 84.78
+            },
+            {
+              "text": "fast.",
+              "start": 84.86,
+              "end": 85.14
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC alignment with original-source ASR and frame review at the short off-screen speaker change",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_pJWd_zC4k9g",
+      "cohort": "teens",
+      "slug": "04-himym-driving-lesson",
+      "title": "A very nervous driving lesson",
+      "titleZh": "紧张的驾驶课",
+      "sourceId": "aYa-yIHXDAg",
+      "start": 92.5,
+      "end": 115.38,
+      "roles": [
+        {
+          "id": "role_fZjB1iall7g",
+          "name": "Barney",
+          "selectable": true
+        },
+        {
+          "id": "role_a0XqqgzuhVA",
+          "name": "Ted",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 4,
+      "summary": "Barney panics at the car’s slow speed and a dog ahead; Ted responds with calm instructions and a sarcastic deadline for braking.",
+      "practice": "Reassurance, urgent requests and concise instructions.",
+      "contentNotes": "Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_kNsWCUYPVwU",
+      "publicSlug": "himym-driving-lesson",
+      "lines": [
+        {
+          "id": "line_pu_M-CTaIlQ",
+          "roleId": "role_fZjB1iall7g",
+          "speaker": "Barney",
+          "text": "This isn't right. God never meant for us to travel at such breakneck speeds.",
+          "hint": "这不对。上帝可没打算让我们以这么快的速度行驶。",
+          "start": 95.162,
+          "end": 98.765,
+          "words": [
+            {
+              "text": "This",
+              "start": 95.202,
+              "end": 95.302
+            },
+            {
+              "text": "isn't",
+              "start": 95.363,
+              "end": 95.543
+            },
+            {
+              "text": "right.",
+              "start": 95.603,
+              "end": 95.783
+            },
+            {
+              "text": "God",
+              "start": 96.584,
+              "end": 96.744
+            },
+            {
+              "text": "never",
+              "start": 96.804,
+              "end": 96.964
+            },
+            {
+              "text": "meant",
+              "start": 97.004,
+              "end": 97.144
+            },
+            {
+              "text": "for",
+              "start": 97.184,
+              "end": 97.244
+            },
+            {
+              "text": "us",
+              "start": 97.284,
+              "end": 97.324
+            },
+            {
+              "text": "to",
+              "start": 97.364,
+              "end": 97.404
+            },
+            {
+              "text": "travel",
+              "start": 97.464,
+              "end": 97.705
+            },
+            {
+              "text": "at",
+              "start": 97.765,
+              "end": 97.805
+            },
+            {
+              "text": "such",
+              "start": 97.865,
+              "end": 98.005
+            },
+            {
+              "text": "breakneck",
+              "start": 98.065,
+              "end": 98.385
+            },
+            {
+              "text": "speeds.",
+              "start": 98.425,
+              "end": 98.705
+            }
+          ]
+        },
+        {
+          "id": "line_uIZRG3r1JEY",
+          "roleId": "role_a0XqqgzuhVA",
+          "speaker": "Ted",
+          "text": "Relax, you're doing great. Ignore the old lady on the Rascal. This isn't a race.",
+          "hint": "放松，你开得很好。别管那个开代步车的老太太，这又不是比赛。",
+          "start": 99.846,
+          "end": 104.851,
+          "words": [
+            {
+              "text": "Relax,",
+              "start": 99.886,
+              "end": 100.227
+            },
+            {
+              "text": "you're",
+              "start": 100.547,
+              "end": 100.747
+            },
+            {
+              "text": "doing",
+              "start": 100.787,
+              "end": 100.887
+            },
+            {
+              "text": "great.",
+              "start": 100.947,
+              "end": 101.228
+            },
+            {
+              "text": "Ignore",
+              "start": 101.288,
+              "end": 102.749
+            },
+            {
+              "text": "the",
+              "start": 102.809,
+              "end": 102.869
+            },
+            {
+              "text": "old",
+              "start": 102.909,
+              "end": 103.009
+            },
+            {
+              "text": "lady",
+              "start": 103.069,
+              "end": 103.249
+            },
+            {
+              "text": "on",
+              "start": 103.309,
+              "end": 103.349
+            },
+            {
+              "text": "the",
+              "start": 103.41,
+              "end": 103.47
+            },
+            {
+              "text": "Rascal.",
+              "start": 103.51,
+              "end": 103.85
+            },
+            {
+              "text": "This",
+              "start": 103.91,
+              "end": 103.99
+            },
+            {
+              "text": "isn't",
+              "start": 104.07,
+              "end": 104.17
+            },
+            {
+              "text": "a",
+              "start": 104.27,
+              "end": 104.29
+            },
+            {
+              "text": "race.",
+              "start": 104.33,
+              "end": 104.791
+            }
+          ]
+        },
+        {
+          "id": "line_PheuMBzT00g",
+          "roleId": "role_fZjB1iall7g",
+          "speaker": "Barney",
+          "text": "Dude! A dog!",
+          "hint": "老兄！有只狗！",
+          "start": 106.853,
+          "end": 107.933,
+          "words": [
+            {
+              "text": "Dude!",
+              "start": 106.893,
+              "end": 107.133
+            },
+            {
+              "text": "A",
+              "start": 107.533,
+              "end": 107.553
+            },
+            {
+              "text": "dog!",
+              "start": 107.593,
+              "end": 107.873
+            }
+          ]
+        },
+        {
+          "id": "line_cYMvVnRxHag",
+          "roleId": "role_a0XqqgzuhVA",
+          "speaker": "Ted",
+          "text": "Zitch-dog! Yes! One-nothing!",
+          "hint": "找狗游戏！耶！一比零！",
+          "start": 108.534,
+          "end": 110.055,
+          "words": [
+            {
+              "text": "Zitch-dog!",
+              "start": 108.574,
+              "end": 108.954
+            },
+            {
+              "text": "Yes!",
+              "start": 109.155,
+              "end": 109.355
+            },
+            {
+              "text": "One-nothing!",
+              "start": 109.635,
+              "end": 109.995
+            }
+          ]
+        },
+        {
+          "id": "line_HwjdyASYqzI",
+          "roleId": "role_fZjB1iall7g",
+          "speaker": "Barney",
+          "text": "Crap! What do I do? Tell me what to do, Ted!",
+          "hint": "糟了！我该怎么办？告诉我该怎么办，泰德！",
+          "start": 110.216,
+          "end": 112.517,
+          "words": [
+            {
+              "text": "Crap!",
+              "start": 110.256,
+              "end": 110.416
+            },
+            {
+              "text": "What",
+              "start": 111.336,
+              "end": 111.417
+            },
+            {
+              "text": "do",
+              "start": 111.437,
+              "end": 111.477
+            },
+            {
+              "text": "I",
+              "start": 111.497,
+              "end": 111.517
+            },
+            {
+              "text": "do?",
+              "start": 111.597,
+              "end": 111.637
+            },
+            {
+              "text": "Tell",
+              "start": 111.797,
+              "end": 111.917
+            },
+            {
+              "text": "me",
+              "start": 111.937,
+              "end": 111.977
+            },
+            {
+              "text": "what",
+              "start": 111.997,
+              "end": 112.097
+            },
+            {
+              "text": "to",
+              "start": 112.137,
+              "end": 112.177
+            },
+            {
+              "text": "do,",
+              "start": 112.197,
+              "end": 112.257
+            },
+            {
+              "text": "Ted!",
+              "start": 112.337,
+              "end": 112.457
+            }
+          ]
+        },
+        {
+          "id": "line_UpYtMAYAWS8",
+          "roleId": "role_a0XqqgzuhVA",
+          "speaker": "Ted",
+          "text": "Step on the brake. Sometime in the next twenty minutes.",
+          "hint": "踩刹车吧。争取在接下来二十分钟内踩下去。",
+          "start": 112.938,
+          "end": 115.38,
+          "words": [
+            {
+              "text": "Step",
+              "start": 112.978,
+              "end": 113.118
+            },
+            {
+              "text": "on",
+              "start": 113.178,
+              "end": 113.218
+            },
+            {
+              "text": "the",
+              "start": 113.238,
+              "end": 113.298
+            },
+            {
+              "text": "brake.",
+              "start": 113.338,
+              "end": 113.618
+            },
+            {
+              "text": "Sometime",
+              "start": 114.119,
+              "end": 114.539
+            },
+            {
+              "text": "in",
+              "start": 114.579,
+              "end": 114.619
+            },
+            {
+              "text": "the",
+              "start": 114.639,
+              "end": 114.699
+            },
+            {
+              "text": "next",
+              "start": 114.739,
+              "end": 114.86
+            },
+            {
+              "text": "twenty",
+              "start": 114.96,
+              "end": 115.14
+            },
+            {
+              "text": "minutes.",
+              "start": 115.16,
+              "end": 115.34
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_krC6SHgq0fE",
+      "cohort": "teens",
+      "slug": "05-himym-rabbit-or-duck",
+      "title": "Which animal is the better comparison?",
+      "titleZh": "兔子还是鸭子更合适？",
+      "sourceId": "thn1SOwjXT0",
+      "start": 0.0,
+      "end": 32.7,
+      "roles": [
+        {
+          "id": "role_crBU1TtFewA",
+          "name": "Marshall",
+          "selectable": true
+        },
+        {
+          "id": "role_8H5N8-HWEJc",
+          "name": "Ted",
+          "selectable": true
+        },
+        {
+          "id": "role_SDdf7QMVejg",
+          "name": "Robin",
+          "selectable": true
+        },
+        {
+          "id": "role_L7o4_XurX_4",
+          "name": "Lily",
+          "selectable": true
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 6,
+      "summary": "Marshall uses an animal comparison for changing feelings about someone; the group disputes which animal should represent liking someone.",
+      "practice": "Opinions, comparisons, disagreement and emphasis.",
+      "contentNotes": "A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion.",
+      "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
+      "packId": "pack_ON8p1LWII74",
+      "publicSlug": "himym-rabbit-or-duck",
+      "lines": [
+        {
+          "id": "line_kAqjkcntfok",
+          "roleId": "role_crBU1TtFewA",
+          "speaker": "Marshall",
+          "text": "Relationships are like that. I mean, look, when you first met Don, you hated him. You thought, this guy's a duck. But one of these days, you're gonna realize this is actually someone that I love. He's a rabbit.",
+          "hint": "关系就是这样。你刚认识唐时很讨厌他，觉得他像只鸭子。但总有一天，你会发现自己喜欢他。他其实是只兔子。",
+          "start": 0.0,
+          "end": 10.886,
+          "words": [
+            {
+              "text": "Relationships",
+              "start": 0.02,
+              "end": 0.52
+            },
+            {
+              "text": "are",
+              "start": 0.58,
+              "end": 0.64
+            },
+            {
+              "text": "like",
+              "start": 0.68,
+              "end": 0.8
+            },
+            {
+              "text": "that.",
+              "start": 0.861,
+              "end": 0.981
+            },
+            {
+              "text": "I",
+              "start": 1.041,
+              "end": 1.061
+            },
+            {
+              "text": "mean,",
+              "start": 1.101,
+              "end": 1.201
+            },
+            {
+              "text": "look,",
+              "start": 1.281,
+              "end": 1.401
+            },
+            {
+              "text": "when",
+              "start": 1.741,
+              "end": 1.821
+            },
+            {
+              "text": "you",
+              "start": 1.861,
+              "end": 1.941
+            },
+            {
+              "text": "first",
+              "start": 2.061,
+              "end": 2.261
+            },
+            {
+              "text": "met",
+              "start": 2.341,
+              "end": 2.481
+            },
+            {
+              "text": "Don,",
+              "start": 2.541,
+              "end": 2.902
+            },
+            {
+              "text": "you",
+              "start": 2.982,
+              "end": 3.062
+            },
+            {
+              "text": "hated",
+              "start": 3.122,
+              "end": 3.422
+            },
+            {
+              "text": "him.",
+              "start": 3.482,
+              "end": 3.602
+            },
+            {
+              "text": "You",
+              "start": 3.682,
+              "end": 3.762
+            },
+            {
+              "text": "thought,",
+              "start": 3.822,
+              "end": 4.062
+            },
+            {
+              "text": "this",
+              "start": 4.423,
+              "end": 4.603
+            },
+            {
+              "text": "guy's",
+              "start": 4.703,
+              "end": 5.203
+            },
+            {
+              "text": "a",
+              "start": 5.303,
+              "end": 5.323
+            },
+            {
+              "text": "duck.",
+              "start": 5.403,
+              "end": 5.663
+            },
+            {
+              "text": "But",
+              "start": 5.843,
+              "end": 5.983
+            },
+            {
+              "text": "one",
+              "start": 6.584,
+              "end": 6.664
+            },
+            {
+              "text": "of",
+              "start": 6.704,
+              "end": 6.744
+            },
+            {
+              "text": "these",
+              "start": 6.784,
+              "end": 6.924
+            },
+            {
+              "text": "days,",
+              "start": 7.004,
+              "end": 7.304
+            },
+            {
+              "text": "you're",
+              "start": 7.344,
+              "end": 7.484
+            },
+            {
+              "text": "gonna",
+              "start": 7.504,
+              "end": 7.624
+            },
+            {
+              "text": "realize",
+              "start": 7.644,
+              "end": 7.905
+            },
+            {
+              "text": "this",
+              "start": 7.985,
+              "end": 8.065
+            },
+            {
+              "text": "is",
+              "start": 8.145,
+              "end": 8.185
+            },
+            {
+              "text": "actually",
+              "start": 8.285,
+              "end": 8.545
+            },
+            {
+              "text": "someone",
+              "start": 8.625,
+              "end": 8.925
+            },
+            {
+              "text": "that",
+              "start": 9.005,
+              "end": 9.105
+            },
+            {
+              "text": "I",
+              "start": 9.205,
+              "end": 9.225
+            },
+            {
+              "text": "love.",
+              "start": 9.305,
+              "end": 9.526
+            },
+            {
+              "text": "He's",
+              "start": 10.126,
+              "end": 10.406
+            },
+            {
+              "text": "a",
+              "start": 10.466,
+              "end": 10.486
+            },
+            {
+              "text": "rabbit.",
+              "start": 10.566,
+              "end": 10.826
+            }
+          ]
+        },
+        {
+          "id": "line_C0lvkvlhS4A",
+          "roleId": "role_8H5N8-HWEJc",
+          "speaker": "Ted",
+          "text": "Whoa, I think you got it backwards there, buddy. The duck is the thing you love. The rabbit is the thing you hate.",
+          "hint": "等等，老兄，你说反了吧。鸭子是你喜欢的，兔子才是你讨厌的。",
+          "start": 10.986,
+          "end": 18.271,
+          "words": [
+            {
+              "text": "Whoa,",
+              "start": 11.026,
+              "end": 11.227
+            },
+            {
+              "text": "I",
+              "start": 11.327,
+              "end": 11.347
+            },
+            {
+              "text": "think",
+              "start": 11.787,
+              "end": 11.907
+            },
+            {
+              "text": "you",
+              "start": 11.927,
+              "end": 11.987
+            },
+            {
+              "text": "got",
+              "start": 12.047,
+              "end": 12.127
+            },
+            {
+              "text": "it",
+              "start": 12.187,
+              "end": 12.227
+            },
+            {
+              "text": "backwards",
+              "start": 12.267,
+              "end": 12.567
+            },
+            {
+              "text": "there,",
+              "start": 12.607,
+              "end": 12.727
+            },
+            {
+              "text": "buddy.",
+              "start": 12.767,
+              "end": 12.948
+            },
+            {
+              "text": "The",
+              "start": 13.608,
+              "end": 13.708
+            },
+            {
+              "text": "duck",
+              "start": 13.928,
+              "end": 14.228
+            },
+            {
+              "text": "is",
+              "start": 14.949,
+              "end": 15.029
+            },
+            {
+              "text": "the",
+              "start": 15.069,
+              "end": 15.149
+            },
+            {
+              "text": "thing",
+              "start": 15.189,
+              "end": 15.309
+            },
+            {
+              "text": "you",
+              "start": 15.349,
+              "end": 15.449
+            },
+            {
+              "text": "love.",
+              "start": 15.529,
+              "end": 15.749
+            },
+            {
+              "text": "The",
+              "start": 16.47,
+              "end": 16.55
+            },
+            {
+              "text": "rabbit",
+              "start": 16.73,
+              "end": 17.19
+            },
+            {
+              "text": "is",
+              "start": 17.57,
+              "end": 17.63
+            },
+            {
+              "text": "the",
+              "start": 17.67,
+              "end": 17.73
+            },
+            {
+              "text": "thing",
+              "start": 17.77,
+              "end": 17.89
+            },
+            {
+              "text": "you",
+              "start": 17.91,
+              "end": 17.99
+            },
+            {
+              "text": "hate.",
+              "start": 18.07,
+              "end": 18.211
+            }
+          ]
+        },
+        {
+          "id": "line_zS0CXAg4drI",
+          "roleId": "role_crBU1TtFewA",
+          "speaker": "Marshall",
+          "text": "What?",
+          "hint": "什么？",
+          "start": 18.771,
+          "end": 18.991,
+          "words": [
+            {
+              "text": "What?",
+              "start": 18.811,
+              "end": 18.931
+            }
+          ]
+        },
+        {
+          "id": "line_5a6_zVtp12o",
+          "roleId": "role_SDdf7QMVejg",
+          "speaker": "Robin",
+          "text": "Yeah, I gotta agree. Ducks up, rabbits down.",
+          "hint": "对，我同意。鸭子好，兔子差。",
+          "start": 19.271,
+          "end": 21.633,
+          "words": [
+            {
+              "text": "Yeah,",
+              "start": 19.311,
+              "end": 19.431
+            },
+            {
+              "text": "I",
+              "start": 19.591,
+              "end": 19.611
+            },
+            {
+              "text": "gotta",
+              "start": 19.731,
+              "end": 19.972
+            },
+            {
+              "text": "agree.",
+              "start": 20.132,
+              "end": 20.332
+            },
+            {
+              "text": "Ducks",
+              "start": 20.412,
+              "end": 20.652
+            },
+            {
+              "text": "up,",
+              "start": 20.732,
+              "end": 20.812
+            },
+            {
+              "text": "rabbits",
+              "start": 20.952,
+              "end": 21.272
+            },
+            {
+              "text": "down.",
+              "start": 21.332,
+              "end": 21.573
+            }
+          ]
+        },
+        {
+          "id": "line_b6z4JEe3mMA",
+          "roleId": "role_L7o4_XurX_4",
+          "speaker": "Lily",
+          "text": "Definitely. Ducks are better than rabbits.",
+          "hint": "绝对的，鸭子比兔子好。",
+          "start": 21.633,
+          "end": 23.203,
+          "words": [
+            {
+              "text": "Definitely.",
+              "start": 21.673,
+              "end": 22.033
+            },
+            {
+              "text": "Ducks",
+              "start": 22.113,
+              "end": 22.393
+            },
+            {
+              "text": "are",
+              "start": 22.453,
+              "end": 22.533
+            },
+            {
+              "text": "better",
+              "start": 22.573,
+              "end": 22.793
+            },
+            {
+              "text": "than",
+              "start": 22.813,
+              "end": 22.893
+            },
+            {
+              "text": "rabbits.",
+              "start": 22.973,
+              "end": 23.173
+            }
+          ]
+        },
+        {
+          "id": "line_3GCNnFMteGU",
+          "roleId": "role_crBU1TtFewA",
+          "speaker": "Marshall",
+          "text": "Hey, I got... ducks are, ducks are... Rabbits are adorable! Ducks are... Have you ever been in a fight with a duck? I mean, ducks are jerks!",
+          "hint": "鸭子……兔子多可爱啊！鸭子嘛……你们跟鸭子打过架吗？我是说，鸭子可讨厌了！",
+          "start": 23.203,
+          "end": 32.599,
+          "words": [
+            {
+              "text": "Hey,",
+              "start": 23.233,
+              "end": 23.314
+            },
+            {
+              "text": "I",
+              "start": 23.614,
+              "end": 23.634
+            },
+            {
+              "text": "got...",
+              "start": 23.714,
+              "end": 23.854
+            },
+            {
+              "text": "ducks",
+              "start": 24.434,
+              "end": 24.614
+            },
+            {
+              "text": "are,",
+              "start": 24.674,
+              "end": 24.754
+            },
+            {
+              "text": "ducks",
+              "start": 25.295,
+              "end": 25.475
+            },
+            {
+              "text": "are...",
+              "start": 25.535,
+              "end": 25.775
+            },
+            {
+              "text": "Rabbits",
+              "start": 26.535,
+              "end": 26.776
+            },
+            {
+              "text": "are",
+              "start": 26.836,
+              "end": 26.916
+            },
+            {
+              "text": "adorable!",
+              "start": 26.976,
+              "end": 27.576
+            },
+            {
+              "text": "Ducks",
+              "start": 27.676,
+              "end": 27.876
+            },
+            {
+              "text": "are...",
+              "start": 27.936,
+              "end": 29.037
+            },
+            {
+              "text": "Have",
+              "start": 29.257,
+              "end": 29.357
+            },
+            {
+              "text": "you",
+              "start": 29.377,
+              "end": 29.457
+            },
+            {
+              "text": "ever",
+              "start": 29.477,
+              "end": 29.557
+            },
+            {
+              "text": "been",
+              "start": 29.577,
+              "end": 29.697
+            },
+            {
+              "text": "in",
+              "start": 29.737,
+              "end": 29.797
+            },
+            {
+              "text": "a",
+              "start": 29.857,
+              "end": 29.877
+            },
+            {
+              "text": "fight",
+              "start": 29.957,
+              "end": 30.178
+            },
+            {
+              "text": "with",
+              "start": 30.238,
+              "end": 30.378
+            },
+            {
+              "text": "a",
+              "start": 30.458,
+              "end": 30.478
+            },
+            {
+              "text": "duck?",
+              "start": 30.678,
+              "end": 30.878
+            },
+            {
+              "text": "I",
+              "start": 30.998,
+              "end": 31.018
+            },
+            {
+              "text": "mean,",
+              "start": 31.078,
+              "end": 31.158
+            },
+            {
+              "text": "ducks",
+              "start": 31.238,
+              "end": 31.458
+            },
+            {
+              "text": "are",
+              "start": 31.498,
+              "end": 31.618
+            },
+            {
+              "text": "jerks!",
+              "start": 32.099,
+              "end": 32.539
+            }
+          ]
+        }
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 import { useLanguage } from './i18n';
 import { useRef, useState } from 'react';
-import { clips, mediaRoot, type ClipSlug } from './catalog';
+import { clips, folders, mediaRoot, type ClipSlug } from './catalog';
 import { AppHeader } from './app/AppHeader';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,10 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 
 export function Library({ onChoose }: { onChoose: (slug: ClipSlug) => void }) {
   const { t } = useLanguage();
-  const [folder, setFolder] = useState(() => new URLSearchParams(location.search).get('folder') === 'younger-age-5' ? 'younger-age-5' : 'older-audience');
+  const [folder, setFolder] = useState(() => {
+    const requested = new URLSearchParams(location.search).get('folder');
+    return folders.find(folder => folder.value === requested)?.value ?? 'older-audience';
+  });
   const chooseFolder = (value: string) => {
     setFolder(value); setQuery('');
     const url = new URL(location.href); url.searchParams.set('folder', value); history.replaceState(null, '', url);
