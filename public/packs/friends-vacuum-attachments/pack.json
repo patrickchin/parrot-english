@@ -1,0 +1,382 @@
+{
+  "version": 1,
+  "id": "pack_VcyyHi5Kk4A",
+  "title": "那个吸尘器配件是做什么的？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 19.978,
+  "video": "friends-vacuum-attachments-review-35fbfce24f48.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-vacuum-attachments/",
+  "poster": "friends-vacuum-attachments-poster-35fbfce24f48.jpg",
+  "waveform": "waveform-35fbfce24f48.json",
+  "roles": [
+    {
+      "id": "role_rTn_pxCsnxc",
+      "name": "瑞秋",
+      "label": "瑞秋",
+      "hint": "3 句台词"
+    },
+    {
+      "id": "role_h_9HmVzsQ1E",
+      "name": "钱德勒",
+      "label": "钱德勒",
+      "hint": "2 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_VuAKbDarYnE",
+      "roleId": "role_rTn_pxCsnxc",
+      "start": 0.2,
+      "end": 1.78,
+      "text": "Ta-da!",
+      "hint": "看！",
+      "words": [
+        {
+          "text": "Ta-da!",
+          "start": 0.34,
+          "end": 1.6
+        }
+      ]
+    },
+    {
+      "id": "line_FUlDBWU12vQ",
+      "roleId": "role_h_9HmVzsQ1E",
+      "start": 3.382,
+      "end": 5.663,
+      "text": "Are we greeting each other this way now? Because I like that.",
+      "hint": "咱们现在这样打招呼了吗？我挺喜欢。",
+      "words": [
+        {
+          "text": "Are",
+          "start": 3.422,
+          "end": 3.502
+        },
+        {
+          "text": "we",
+          "start": 3.562,
+          "end": 3.602
+        },
+        {
+          "text": "greeting",
+          "start": 3.682,
+          "end": 3.922
+        },
+        {
+          "text": "each",
+          "start": 3.962,
+          "end": 4.062
+        },
+        {
+          "text": "other",
+          "start": 4.122,
+          "end": 4.262
+        },
+        {
+          "text": "this",
+          "start": 4.322,
+          "end": 4.442
+        },
+        {
+          "text": "way",
+          "start": 4.502,
+          "end": 4.602
+        },
+        {
+          "text": "now?",
+          "start": 4.682,
+          "end": 4.802
+        },
+        {
+          "text": "Because",
+          "start": 4.902,
+          "end": 5.083
+        },
+        {
+          "text": "I",
+          "start": 5.123,
+          "end": 5.143
+        },
+        {
+          "text": "like",
+          "start": 5.243,
+          "end": 5.383
+        },
+        {
+          "text": "that.",
+          "start": 5.443,
+          "end": 5.603
+        }
+      ]
+    },
+    {
+      "id": "line_S_59ib4nCL8",
+      "roleId": "role_rTn_pxCsnxc",
+      "start": 8.084,
+      "end": 12.166,
+      "text": "Look! I cleaned! I did the windows, I did the floors.",
+      "hint": "看，我打扫了！我擦了窗户，清了地板。",
+      "words": [
+        {
+          "text": "Look!",
+          "start": 8.124,
+          "end": 8.404
+        },
+        {
+          "text": "I",
+          "start": 8.844,
+          "end": 8.864
+        },
+        {
+          "text": "cleaned!",
+          "start": 9.005,
+          "end": 9.605
+        },
+        {
+          "text": "I",
+          "start": 10.045,
+          "end": 10.065
+        },
+        {
+          "text": "did",
+          "start": 10.125,
+          "end": 10.205
+        },
+        {
+          "text": "the",
+          "start": 10.245,
+          "end": 10.305
+        },
+        {
+          "text": "windows,",
+          "start": 10.385,
+          "end": 11.006
+        },
+        {
+          "text": "I",
+          "start": 11.126,
+          "end": 11.146
+        },
+        {
+          "text": "did",
+          "start": 11.206,
+          "end": 11.286
+        },
+        {
+          "text": "the",
+          "start": 11.306,
+          "end": 11.366
+        },
+        {
+          "text": "floors.",
+          "start": 11.506,
+          "end": 12.106
+        }
+      ]
+    },
+    {
+      "id": "line_m54CJqg1AVA",
+      "roleId": "role_rTn_pxCsnxc",
+      "start": 12.406,
+      "end": 17.489,
+      "text": "I even used all those attachments on the vacuum, except for that little round one with the bristles. I don't know what that's for.",
+      "hint": "我连吸尘器那些配件都用上了，除了那个带刷毛的小圆头。我不知道它是干什么的。",
+      "words": [
+        {
+          "text": "I",
+          "start": 12.446,
+          "end": 12.466
+        },
+        {
+          "text": "even",
+          "start": 12.546,
+          "end": 12.706
+        },
+        {
+          "text": "used",
+          "start": 12.766,
+          "end": 12.886
+        },
+        {
+          "text": "all",
+          "start": 12.926,
+          "end": 13.027
+        },
+        {
+          "text": "those",
+          "start": 13.047,
+          "end": 13.167
+        },
+        {
+          "text": "attachments",
+          "start": 13.247,
+          "end": 13.667
+        },
+        {
+          "text": "on",
+          "start": 13.707,
+          "end": 13.747
+        },
+        {
+          "text": "the",
+          "start": 13.787,
+          "end": 13.867
+        },
+        {
+          "text": "vacuum,",
+          "start": 13.907,
+          "end": 14.307
+        },
+        {
+          "text": "except",
+          "start": 14.387,
+          "end": 14.587
+        },
+        {
+          "text": "for",
+          "start": 14.607,
+          "end": 14.687
+        },
+        {
+          "text": "that",
+          "start": 14.727,
+          "end": 14.827
+        },
+        {
+          "text": "little",
+          "start": 15.228,
+          "end": 15.428
+        },
+        {
+          "text": "round",
+          "start": 15.508,
+          "end": 15.748
+        },
+        {
+          "text": "one",
+          "start": 15.888,
+          "end": 15.968
+        },
+        {
+          "text": "with",
+          "start": 16.008,
+          "end": 16.088
+        },
+        {
+          "text": "the",
+          "start": 16.128,
+          "end": 16.188
+        },
+        {
+          "text": "bristles.",
+          "start": 16.228,
+          "end": 16.548
+        },
+        {
+          "text": "I",
+          "start": 16.568,
+          "end": 16.588
+        },
+        {
+          "text": "don't",
+          "start": 16.608,
+          "end": 16.708
+        },
+        {
+          "text": "know",
+          "start": 16.748,
+          "end": 16.828
+        },
+        {
+          "text": "what",
+          "start": 16.848,
+          "end": 16.928
+        },
+        {
+          "text": "that's",
+          "start": 16.948,
+          "end": 17.069
+        },
+        {
+          "text": "for.",
+          "start": 17.169,
+          "end": 17.429
+        }
+      ]
+    },
+    {
+      "id": "line_Pfu4ys2hmf8",
+      "roleId": "role_h_9HmVzsQ1E",
+      "start": 17.589,
+      "end": 19.71,
+      "text": "Oh, yeah, nobody knows, and we're not supposed to ask.",
+      "hint": "哦，没人知道，而且咱们还不能问。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 17.629,
+          "end": 17.689
+        },
+        {
+          "text": "yeah,",
+          "start": 17.769,
+          "end": 17.909
+        },
+        {
+          "text": "nobody",
+          "start": 17.969,
+          "end": 18.229
+        },
+        {
+          "text": "knows,",
+          "start": 18.289,
+          "end": 18.549
+        },
+        {
+          "text": "and",
+          "start": 18.649,
+          "end": 18.709
+        },
+        {
+          "text": "we're",
+          "start": 18.769,
+          "end": 18.889
+        },
+        {
+          "text": "not",
+          "start": 18.909,
+          "end": 18.99
+        },
+        {
+          "text": "supposed",
+          "start": 19.03,
+          "end": 19.29
+        },
+        {
+          "text": "to",
+          "start": 19.31,
+          "end": 19.35
+        },
+        {
+          "text": "ask.",
+          "start": 19.53,
+          "end": 19.65
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment with original-source ASR review of the opening interjection",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Friends — S1 E6",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=fOcYm9udNQA&t=4s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 4.1–24.05 秒的连续节选。Dry sarcasm. Source title mentions OCD; this cut is about cleaning and does not teach a diagnosis."
+  }
+}

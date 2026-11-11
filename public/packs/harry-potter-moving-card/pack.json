@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "id": "pack_cgQRAEx-Czo",
+  "title": "照片里的人去哪儿了？",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 11.72,
+  "video": "harry-potter-moving-card-review-e2a719acfbb1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-moving-card/",
+  "poster": "harry-potter-moving-card-poster-e2a719acfbb1.jpg",
+  "waveform": "waveform-e2a719acfbb1.json",
+  "roles": [
+    {
+      "id": "role_fbJuCJMGfVg",
+      "name": "哈利",
+      "label": "哈利",
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_F4XSF4Edmng",
+      "name": "罗恩",
+      "label": "罗恩",
+      "hint": "2 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_cKRPxMe_uHI",
+      "roleId": "role_fbJuCJMGfVg",
+      "start": 1.282,
+      "end": 2.264,
+      "text": "I've got Dumbledore!",
+      "hint": "我抽到邓布利多了！",
+      "words": [
+        {
+          "text": "I've",
+          "start": 1.322,
+          "end": 1.422
+        },
+        {
+          "text": "got",
+          "start": 1.463,
+          "end": 1.583
+        },
+        {
+          "text": "Dumbledore!",
+          "start": 1.623,
+          "end": 2.204
+        }
+      ]
+    },
+    {
+      "id": "line_a6W7OslH2_M",
+      "roleId": "role_F4XSF4Edmng",
+      "start": 2.925,
+      "end": 4.027,
+      "text": "I've got about six of him.",
+      "hint": "我大概已经有六张他了。",
+      "words": [
+        {
+          "text": "I've",
+          "start": 2.965,
+          "end": 3.045
+        },
+        {
+          "text": "got",
+          "start": 3.065,
+          "end": 3.165
+        },
+        {
+          "text": "about",
+          "start": 3.185,
+          "end": 3.386
+        },
+        {
+          "text": "six",
+          "start": 3.506,
+          "end": 3.646
+        },
+        {
+          "text": "of",
+          "start": 3.746,
+          "end": 3.786
+        },
+        {
+          "text": "him.",
+          "start": 3.847,
+          "end": 3.967
+        }
+      ]
+    },
+    {
+      "id": "line_6UCKum7clvI",
+      "roleId": "role_fbJuCJMGfVg",
+      "start": 4.267,
+      "end": 7.753,
+      "text": "Hey, he's gone!",
+      "hint": "嘿，他不见了！",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 4.307,
+          "end": 4.768
+        },
+        {
+          "text": "he's",
+          "start": 7.292,
+          "end": 7.413
+        },
+        {
+          "text": "gone!",
+          "start": 7.473,
+          "end": 7.693
+        }
+      ]
+    },
+    {
+      "id": "line_0DyWvZmHFFk",
+      "roleId": "role_F4XSF4Edmng",
+      "start": 8.254,
+      "end": 11.379,
+      "text": "Well, you can't expect him to hang around all day, can you?",
+      "hint": "你总不能指望他整天都待在那儿吧？",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 8.294,
+          "end": 8.474
+        },
+        {
+          "text": "you",
+          "start": 8.515,
+          "end": 8.595
+        },
+        {
+          "text": "can't",
+          "start": 8.675,
+          "end": 8.895
+        },
+        {
+          "text": "expect",
+          "start": 8.975,
+          "end": 9.356
+        },
+        {
+          "text": "him",
+          "start": 9.396,
+          "end": 9.456
+        },
+        {
+          "text": "to",
+          "start": 9.476,
+          "end": 9.516
+        },
+        {
+          "text": "hang",
+          "start": 9.556,
+          "end": 9.697
+        },
+        {
+          "text": "around",
+          "start": 9.717,
+          "end": 9.917
+        },
+        {
+          "text": "all",
+          "start": 10.037,
+          "end": 10.217
+        },
+        {
+          "text": "day,",
+          "start": 10.278,
+          "end": 10.398
+        },
+        {
+          "text": "can",
+          "start": 10.859,
+          "end": 10.979
+        },
+        {
+          "text": "you?",
+          "start": 11.099,
+          "end": 11.319
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Harry Potter and the Philosopher’s Stone — Hogwarts Express",
+    "attribution": "Warner Bros. Pictures",
+    "source": "https://www.youtube.com/watch?v=phdwdrPs3Bo&t=14s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 14.65–26.35 秒的连续节选。Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+  }
+}
