@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from './i18n';
-import { useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { AppHeader } from './app/AppHeader';
 import { DubDownload } from './app/DubDownload';
 import { Button, Icon } from './shared/ui';
@@ -83,8 +83,6 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
   const autosave = useDubAutosave(scene, slug, lesson, initial, localSource);
   const source = scene.mode === 'local' ? localVideo : asset(scene, scene.video);
   const video = useRef<HTMLVideoElement>(null);
-  const main = useRef<HTMLElement>(null);
-  const videoFrame = useRef<HTMLDivElement>(null);
   const rolesLines = scene.lines.filter(line => line.roleId === roleId);
   const line = rolesLines[lineIndex];
   const window = lineWindow(scene, line);
@@ -93,22 +91,6 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
   const [exporting, setExporting] = useState(false);
   const busy = media.phase !== 'idle';
   const capturing = media.phase === 'recording' || media.phase === 'saving';
-  useLayoutEffect(() => {
-    const root = main.current!;
-    const frame = videoFrame.current!;
-    const alignPanel = () => {
-      const offset = frame.getBoundingClientRect().top - root.getBoundingClientRect().top;
-      root.style.setProperty('--video-top', `${Math.max(0, offset)}px`);
-    };
-    alignPanel();
-    let alignmentFrame = 0;
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(alignmentFrame);
-      alignmentFrame = requestAnimationFrame(alignPanel);
-    });
-    for (const element of [root, frame.parentElement!, ...frame.parentElement!.children]) observer.observe(element);
-    return () => { observer.disconnect(); cancelAnimationFrame(alignmentFrame); };
-  }, [step]);
   const completed = rolesLines.filter(l => takes[l.id] || skipped.has(l.id)).length;
   const recorded = rolesLines.filter(l => takes[l.id]).length;
   const currentTake = takes[line.id];
@@ -152,13 +134,13 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
 
   return <div className="player-shell bg-paper text-ink">
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); onBack(); }} />
-    <main ref={main} className="player-main" data-step={step}>
+    <main className="player-main" data-step={step}>
       {step === 'practice' && <h1 className="sr-only">{t(`scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>}
       <section aria-label={t("player.movieScene")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
-        <div ref={videoFrame} className="player-frame overflow-hidden rounded-xl border border-border">
-          <div className="player-screen relative bg-neutral-900">
+        <div className="player-frame overflow-hidden rounded-xl">
+          <div className="player-screen relative">
             <video ref={video} src={source} poster={scene.poster ? asset(scene, scene.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("player.dialogueScene", { title: scene.credit.title })}
-              className="absolute inset-0 h-full w-full object-contain"
+              className="player-picture"
               onLoadedMetadata={e => { const el = e.currentTarget; if (el.videoWidth && el.videoHeight) setVideoAspect(el.videoWidth / el.videoHeight); }}
               onCanPlay={() => { const duration = video.current?.duration ?? 0; if (scene.mode === 'local' && Math.abs(duration - scene.duration) > 0.7) { setVideoStatus('error'); media.setError("errors.videoDuration"); } else setVideoStatus('ready'); }}
               onWaiting={() => { if (media.phase === 'preview' || media.phase === 'replay' || media.phase === 'listening' || media.phase === 'recording') media.setError("errors.videoBuffering"); }}

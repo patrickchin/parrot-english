@@ -92,17 +92,19 @@ button:disabled { cursor: not-allowed; }
    may scroll rather than clipping controls or shrinking touch targets. */
 .player-shell { height: 100svh; min-height: 640px; display: flex; flex-direction: column; }
 .player-shell > header { width: 100%; flex: none; padding-block: 8px; }
-.player-main { width: 100%; max-width: 1280px; margin-inline: auto; padding: 0 16px; flex: 1; min-height: min-content; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(140px, 1fr) auto; gap: 8px; }
+.player-main { width: 100%; max-width: 1280px; margin-inline: auto; padding: 8px 16px 16px; flex: 1; min-height: min-content; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(140px, 1fr) auto; gap: 12px; }
 .player-video { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 140px; container-type: size; }
-/* Fit the actual picture plus its controls inside the available grid cell. */
-.player-frame { flex: none; width: min(100%, calc((100cqh - 46px) * var(--video-aspect) + 2px)); }
-.player-screen { aspect-ratio: var(--video-aspect); }
+/* The viewing area shares the dialogue column's edges. Fit the complete source
+   inside it, with black bars taking up any unused width or height. */
+.player-frame { flex: none; width: 100%; }
+.player-screen { height: calc(100cqh - 44px); container-type: size; background: #000; }
+.player-picture { position: absolute; left: 50%; top: 50%; translate: -50% -50%; width: min(100cqw, calc(100cqh * var(--video-aspect))); height: min(100cqh, calc(100cqw / var(--video-aspect))); object-fit: contain; }
 .player-transport { flex: none; height: 44px; }
 .player-transport > span { font-family: var(--font-sans); font-variant-numeric: tabular-nums; }
 .player-transport button { height: 44px; }
 .player-workspace { flex: none; min-width: 0; }
 .player-main[data-step=choose] .player-video { gap: 12px; min-height: calc(var(--subtitle-height, 180px) + 198px); }
-.player-main[data-step=choose] .player-frame { width: min(100%, calc((100cqh - var(--subtitle-height, 180px) - 58px) * var(--video-aspect) + 2px)); }
+.player-main[data-step=choose] .player-screen { height: calc(100cqh - var(--subtitle-height, 180px) - 56px); }
 .preview-subtitles { position: relative; flex: none; width: 100%; overflow: hidden; padding-block: 80px; text-align: center; mask-image: linear-gradient(transparent, black 64px, black calc(100% - 64px), transparent); } /* taste-skill-ignore: This mask fades subtitle context, not a surface fill. */
 .preview-subtitle-size { display: grid; visibility: hidden; }
 .preview-subtitle-size > div { grid-area: 1 / 1; }
@@ -135,6 +137,8 @@ button:disabled { cursor: not-allowed; }
 .player-error { margin-top: 10px; }
 @media (max-width: 899px) and (max-height: 700px) {
   .player-shell > header { padding-block: 6px; }
+  .player-main { padding-block: 0 8px; grid-template-rows: minmax(120px, 1fr) auto; gap: 8px; }
+  .player-video { min-height: 120px; }
   .player-controls { margin-top: 8px; }
   .practice-caption { padding-block: 6px 4px; }
   .voice-waveform { height: 48px; }
@@ -143,24 +147,29 @@ button:disabled { cursor: not-allowed; }
 }
 @media (min-width: 900px) {
   .player-shell { min-height: 560px; }
-  .player-shell > header { max-width: 1280px; padding-inline: 32px; }
-  .player-main { padding-inline: 32px; display: grid; grid-template-columns: minmax(0, 1fr) 280px; grid-template-rows: minmax(160px, 1fr) auto; gap: 16px 32px; }
+  .player-shell > header { max-width: 1280px; padding: 16px 32px; }
+  /* At the maximum width: 912px viewing column + 24px gap + 280px controls. */
+  .player-main { padding: 8px 32px 24px; display: grid; grid-template-columns: minmax(0, 1fr) 280px; grid-template-rows: minmax(160px, 1fr) auto; gap: 16px 24px; }
   .player-video { grid-column: 1; grid-row: 1; max-height: none; }
   .player-main:not([data-step=choose]) .player-workspace { display: contents; }
   .practice-content { grid-column: 1; grid-row: 2; }
-  .player-controls { grid-column: 2; grid-row: 1 / 3; align-self: start; margin: 0; transform: translateY(var(--video-top, 0px)); }
-  .practice-actions { display: flex; flex-direction: column; justify-content: flex-start; gap: 16px; margin: 0; }
-  .practice-actions > button { min-height: 68px; font-size: 22px; }
-  .practice-actions > button:nth-child(4) { margin-top: 16px; }
+  .player-controls { grid-column: 2; grid-row: 1 / 3; align-self: start; margin: 0; }
+  .practice-actions { display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; margin: 0; }
+  .practice-actions > button { min-height: 56px; font-size: 18px; }
+  .practice-actions > button:nth-child(4) { margin-top: 12px; }
   .player-main[data-step=choose] { grid-template-rows: minmax(160px, 1fr); }
-  .player-main[data-step=choose] .player-workspace { align-self: start; transform: translateY(var(--video-top, 0px)); }
+  .player-main[data-step=choose] .player-workspace { align-self: start; }
   .player-result { align-self: start; gap: 12px; }
   .player-result h1 { font-size: 22px; }
   .result-actions { grid-template-columns: minmax(0, 1fr); margin-top: 4px; }
-  .result-actions > button { min-height: 68px; font-size: 22px; }
+  .result-actions > button { min-height: 56px; font-size: 18px; }
   .voice-waveform { height: 80px; }
   .player-footer { padding-inline: 32px; }
   .player-error { grid-column: 1 / -1; margin: 0; }
+}
+@media (min-width: 900px) and (max-height: 700px) {
+  .player-shell > header { padding-block: 8px; }
+  .player-main { padding-block: 0 8px; }
 }
 
 .practice-content { min-width: 0; padding: 12px 16px 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
