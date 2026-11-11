@@ -22,6 +22,11 @@ test('the picture follows the source proportions through role choice, practice a
         // Mobile viewport and text metrics can settle on the next browser frame.
         await expect(async () => {
           const bounds = (await picture.boundingBox())!;
+          if (step === 'choose' && viewport.width >= 900) {
+            const roles = (await page.getByRole('region', { name: '选择角色', exact: true }).boundingBox())!;
+            const main = (await page.getByRole('main').boundingBox())!;
+            expect(Math.abs(roles.y + roles.height / 2 - main.y - main.height / 2), 'role choices remain vertically centered').toBeLessThan(1);
+          }
           expect(Math.abs(bounds.width - bounds.height * aspect), `${slug} ${step} at ${viewport.width}`).toBeLessThan(1);
           const overlay = (await scene.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
           expect(Math.abs(overlay.height - bounds.height)).toBeLessThan(1);

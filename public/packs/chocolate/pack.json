@@ -10,13 +10,15 @@
       "id": "role_-pse1q5d",
       "name": "顾客",
       "label": "从好奇到激动的巧克力爱好者",
-      "hint": "2 句台词 · 演出情绪变化"
+      "hint": "2 句台词 · 演出情绪变化",
+      "portrait": "tom-fish-avatar-93078bab34ad.jpg"
     },
     {
       "id": "role_S1FPrc0B",
       "name": "派大星",
       "label": "认真推销巧克力",
-      "hint": "1 句台词 · with or without"
+      "hint": "1 句台词 · with or without",
+      "portrait": "patrick-avatar-0c3553b5a20e.jpg"
     }
   ],
   "lines": [

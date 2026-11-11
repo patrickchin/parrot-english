@@ -13,13 +13,15 @@
       "id": "role_y89zbrnV",
       "name": "队长",
       "label": "队长",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "skipper-avatar-75fd06aec68b.jpg"
     },
     {
       "id": "role_csUjXkRdbuM",
       "name": "科瓦斯基",
       "label": "科瓦斯基",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "kowalski-avatar-e906f8aadee5.jpg"
     },
     {
       "id": "role_48Y-QZ9fhhE",

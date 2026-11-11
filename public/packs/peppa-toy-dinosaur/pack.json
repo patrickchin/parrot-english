@@ -13,19 +13,22 @@
       "id": "role__8jMontcRkc",
       "name": "小狗丹尼",
       "label": "小狗丹尼",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "danny-dog-avatar-f7bc39c1a5dd.jpg"
     },
     {
       "id": "role_MGcwyTjk6fU",
       "name": "佩奇",
       "label": "佩奇",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "peppa-avatar-b1e0af9df646.jpg"
     },
     {
       "id": "role_J5K-PqReqUY",
       "name": "乔治",
       "label": "乔治",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "george-pig-avatar-b439f7c6a745.jpg"
     },
     {
       "id": "role_sC6qozH6L3I",

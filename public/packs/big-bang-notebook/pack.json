@@ -13,13 +13,15 @@
       "id": "role_ThTu0ZZV87U",
       "name": "谢尔顿",
       "label": "谢尔顿",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "sheldon-avatar-edb28a75cfc9.jpg"
     },
     {
       "id": "role_Euuq4k13lbM",
       "name": "佩妮",
       "label": "佩妮",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "penny-avatar-f8296aa2bcf6.jpg"
     }
   ],
   "lines": [

@@ -13,13 +13,15 @@
       "id": "role_fZjB1iall7g",
       "name": "巴尼",
       "label": "巴尼",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "barney-avatar-185e05103792.jpg"
     },
     {
       "id": "role_a0XqqgzuhVA",
       "name": "泰德",
       "label": "泰德",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "ted-avatar-e92754003c8f.jpg"
     }
   ],
   "lines": [

@@ -230,7 +230,6 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
 function clock(time: number) { const seconds = Math.max(0, Math.floor(time)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; }
 
 function RolePortrait({ pack, role }: { pack: Pack; role: Role }) {
-  const { t } = useLanguage();
   const [failed, setFailed] = useState(false);
-  return <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-brand/10 font-display text-xl font-extrabold text-brand" aria-hidden="true">{role.portrait && !failed ? <img src={asset(pack, role.portrait)} alt="" width={192} height={192} onError={() => setFailed(true)} className="h-full w-full object-cover" /> : t(role.name).slice(0, 1)}</span>;
+  return <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground" aria-hidden="true">{role.portrait && !failed ? <img src={asset(pack, role.portrait)} alt="" width={192} height={192} onError={() => setFailed(true)} className="h-full w-full object-cover" /> : <Icon name={role.name === '来电者' ? 'phone' : 'person'} className="size-7" />}</span>;
 }

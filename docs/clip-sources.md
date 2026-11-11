@@ -106,3 +106,29 @@ pack metadata; video/audio/JPEG media stays in OSS. Thumbnails use the same sour
 excerpts and credits above. Learner envelopes are sampled from the microphone
 and retained only with the in-memory take. See [UI notes](ui-design.md) for the
 shared loudness scale, alignment, source-mix limitation, and recording controls.
+
+## Character avatars — 2026-11-11
+
+The role picker uses standalone character artwork and cast publicity portraits
+for main roles, with reviewed video crops for minor speaking roles. This replaces
+the earlier all-stills approach. No generated portraits are used. The unseen
+telephone caller uses a phone symbol; an unavailable image uses a person symbol
+while keeping the role's name and selection control available.
+
+[`content/character-avatars.json`](../content/character-avatars.json) records the
+65 source/crop recipes, including source-page and image URLs for found artwork.
+Young and adult Sheldon have separate portraits. Other repeated characters reuse
+the same image across scenes. The source artwork and clips retain their existing
+unconfirmed redistribution status; the source register is not a rights clearance.
+
+Run `uv run scripts/prepare-portraits.py` to produce 192-pixel JPEGs in the ignored
+`content/local-dubbing/` authoring directory. The picker displays them at 64 pixels.
+The command updates only role portrait references and writes
+`content/local-dubbing/avatar-uploads.json`. Upload those objects to their existing
+pack directories in OSS before releasing the manifests. Filenames include the
+image content hash so cached older stills cannot replace the new avatars.
+Pack-authoring commands preserve existing portrait references; rerun avatar
+preparation when adding or changing roles. Media stays outside the ESA bundle.
+
+All 117 avatar objects were uploaded on 2026-11-11. Anonymous HTTPS reads verified
+their JPEG content type, CORS headers, and SHA-256 hashes (953,829 bytes total).

@@ -13,13 +13,15 @@
       "id": "role_YET3ltc6fQU",
       "name": "店员",
       "label": "店员",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "shop-assistant-avatar-2f1c1d0985a8.jpg"
     },
     {
       "id": "role_Oo3yWRIKTU0",
       "name": "罗斯",
       "label": "罗斯",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "ross-avatar-6852ef573d6b.jpg"
     }
   ],
   "lines": [

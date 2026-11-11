@@ -13,13 +13,15 @@
       "id": "role_NauR2jpl",
       "name": "闪电麦昆",
       "label": "闪电麦昆",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "mcqueen-avatar-8c53b8a25c63.jpg"
     },
     {
       "id": "role_wyV97y-qVtA",
       "name": "奇克·海克斯",
       "label": "奇克·海克斯",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "chick-hicks-avatar-aa69a938032b.jpg"
     }
   ],
   "lines": [

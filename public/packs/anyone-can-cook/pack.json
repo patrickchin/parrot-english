@@ -13,13 +13,15 @@
       "id": "role_CwTyhoLe",
       "name": "古斯托",
       "label": "古斯托",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "gusteau-avatar-d72b11189b1d.jpg"
     },
     {
       "id": "role_43NdYGbMURo",
       "name": "小米",
       "label": "小米",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "remy-avatar-f22873b7892b.jpg"
     }
   ],
   "lines": [

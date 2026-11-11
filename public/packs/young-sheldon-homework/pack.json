@@ -13,13 +13,15 @@
       "id": "role_9VX0JklGCdk",
       "name": "乔治爸爸",
       "label": "乔治爸爸",
-      "hint": "7 句台词"
+      "hint": "7 句台词",
+      "portrait": "george-cooper-avatar-f792b5644c5c.jpg"
     },
     {
       "id": "role_mPMtxEzSrfc",
       "name": "谢尔顿",
       "label": "谢尔顿",
-      "hint": "7 句台词"
+      "hint": "7 句台词",
+      "portrait": "young-sheldon-avatar-344053947282.jpg"
     }
   ],
   "lines": [

@@ -13,19 +13,22 @@
       "id": "role_GZ118819nuE",
       "name": "猪爸爸",
       "label": "猪爸爸",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "daddy-pig-avatar-8bb968fbe8e3.jpg"
     },
     {
       "id": "role_zYkp26hxuB0",
       "name": "猪妈妈",
       "label": "猪妈妈",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "mummy-pig-avatar-c0d3839d28a8.jpg"
     },
     {
       "id": "role_SAm7j7Q6lfE",
       "name": "佩奇",
       "label": "佩奇",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "peppa-avatar-b1e0af9df646.jpg"
     }
   ],
   "lines": [

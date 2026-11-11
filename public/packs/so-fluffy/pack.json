@@ -20,19 +20,22 @@
       "id": "role_mZOwX2ys",
       "name": "艾格尼丝",
       "label": "艾格尼丝",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "agnes-avatar-0e0649781100.jpg"
     },
     {
       "id": "role_2YM2UXibtNQ",
       "name": "游乐场摊主",
       "label": "游乐场摊主",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "carnival-attendant-avatar-7fc7e20a89bf.jpg"
     },
     {
       "id": "role_AmEQPuK-wqk",
       "name": "格鲁",
       "label": "格鲁",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
     }
   ],
   "lines": [

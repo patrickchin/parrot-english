@@ -13,13 +13,15 @@
       "id": "role_q93mX0oX",
       "name": "平先生",
       "label": "平先生",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "ping-avatar-dbb905f7c19c.jpg"
     },
     {
       "id": "role_KLqdqSbZHmw",
       "name": "阿宝",
       "label": "阿宝",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "po-avatar-05b8203f6846.jpg"
     }
   ],
   "lines": [

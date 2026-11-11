@@ -13,13 +13,15 @@
       "id": "role_5uKRB1qozDw",
       "name": "米茜",
       "label": "米茜",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "missy-avatar-31251f080e54.jpg"
     },
     {
       "id": "role_2NFZc18LwH0",
       "name": "研究员",
       "label": "研究员",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "researcher-avatar-980430ccdbc8.jpg"
     }
   ],
   "lines": [

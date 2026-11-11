@@ -13,13 +13,15 @@
       "id": "role__OrFsrNE",
       "name": "乌龟大师",
       "label": "乌龟大师",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "oogway-avatar-8869f7edca25.jpg"
     },
     {
       "id": "role_-aBSnmfkqjk",
       "name": "阿宝",
       "label": "阿宝",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "po-avatar-05b8203f6846.jpg"
     }
   ],
   "lines": [

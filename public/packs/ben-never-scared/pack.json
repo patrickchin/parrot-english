@@ -13,13 +13,15 @@
       "id": "role_1eyadGyaZ-U",
       "name": "霍莉",
       "label": "霍莉",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "holly-avatar-2c2aeeafdec3.jpg"
     },
     {
       "id": "role_gYy8dSWMk40",
       "name": "本",
       "label": "本",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "ben-avatar-e1987fbf72d2.jpg"
     }
   ],
   "lines": [

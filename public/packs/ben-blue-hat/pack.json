@@ -13,19 +13,22 @@
       "id": "role_YMmMf1wkkD0",
       "name": "梅姨",
       "label": "梅姨",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "nanny-avatar-91f27471cfc6.jpg"
     },
     {
       "id": "role_DJntnoCh-CI",
       "name": "本",
       "label": "本",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "ben-avatar-e1987fbf72d2.jpg"
     },
     {
       "id": "role_VcebY2wPqqI",
       "name": "霍莉",
       "label": "霍莉",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "holly-avatar-2c2aeeafdec3.jpg"
     }
   ],
   "lines": [

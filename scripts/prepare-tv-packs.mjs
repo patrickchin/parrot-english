@@ -16,6 +16,8 @@ const media = [], entries = [], slugs = [];
 await mkdir(output, { recursive: true });
 for (const scene of scenes) {
   const slug = scene.publicSlug;
+  let previous;
+  try { previous = JSON.parse(await readFile(`public/packs/${slug}/pack.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (!scene.packId || !scene.lines?.length || !scene.lines.every(line => line.words?.length)) throw new Error(`Align the dialogue before preparing ${slug}`);
   const source = recipe.sources.find(source => source.id === scene.sourceId);
   const original = `${local}/review/${scene.cohort}/${scene.slug}.mp4`;
@@ -32,7 +34,8 @@ for (const scene of scenes) {
       const count = scene.lines.filter(line => line.roleId === role.id).length;
       const hint = `${count} 句台词`;
       translations[hint] = `${count} ${count === 1 ? 'line' : 'lines'}`;
-      return { id: role.id, name: names[role.name] ?? role.name, label: names[role.name] ?? role.name, hint, ...(role.selectable === false ? { selectable: false } : {}) };
+      const portrait = previous?.roles.find(old => old.id === role.id)?.portrait;
+      return { id: role.id, name: names[role.name] ?? role.name, label: names[role.name] ?? role.name, hint, ...(portrait ? { portrait } : {}), ...(role.selectable === false ? { selectable: false } : {}) };
     }),
     lines: scene.lines.map(line => ({ id: line.id, roleId: line.roleId, start: +(line.start - scene.start).toFixed(3), end: +(line.end - scene.start).toFixed(3), text: line.text, hint: line.hint, words: line.words.map(word => ({ ...word, start: +(word.start - scene.start).toFixed(3), end: +(word.end - scene.start).toFixed(3) })) })),
     wordTiming: scene.wordTiming, rightsStatus: recipe.rightsStatus,

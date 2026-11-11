@@ -13,13 +13,15 @@
       "id": "role_f58ELG8A",
       "name": "胡迪",
       "label": "胡迪",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "woody-avatar-0c43e7536f10.jpg"
     },
     {
       "id": "role_q1JOcg9gD7M",
       "name": "巴斯光年",
       "label": "巴斯光年",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "buzz-avatar-52c4aa58fd7d.jpg"
     }
   ],
   "lines": [

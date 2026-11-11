@@ -13,13 +13,15 @@
       "id": "role_0BkC3THi_I8",
       "name": "谢尔顿",
       "label": "谢尔顿",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "young-sheldon-avatar-344053947282.jpg"
     },
     {
       "id": "role_QUPzEFZwnEw",
       "name": "图书管理员",
       "label": "图书管理员",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "librarian-avatar-1e3652b67891.jpg"
     }
   ],
   "lines": [

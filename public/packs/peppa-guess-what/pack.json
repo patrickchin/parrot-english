@@ -13,13 +13,15 @@
       "id": "role_nsjPD0zHc9g",
       "name": "佩奇",
       "label": "佩奇",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "peppa-avatar-b1e0af9df646.jpg"
     },
     {
       "id": "role_vzHo-mLf8QQ",
       "name": "猪爸爸",
       "label": "猪爸爸",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "daddy-pig-avatar-8bb968fbe8e3.jpg"
     }
   ],
   "lines": [

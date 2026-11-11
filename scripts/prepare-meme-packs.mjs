@@ -39,7 +39,7 @@ for (const scene of scenes) {
   await mkdir(path, { recursive: true });
   let previous;
   try { previous = JSON.parse(await readFile(path + '/pack.json', 'utf8')); } catch { /* First authoring run. */ }
-  const roles = scene.roles.map(([name,label,hint],i) => ({ id: previous?.roles[i]?.id ?? id('role'), name,label,hint }));
+  const roles = scene.roles.map(([name,label,hint],i) => ({ id: previous?.roles[i]?.id ?? id('role'), name,label,hint,portrait:previous?.roles[i]?.portrait }));
   const pack = {
     version:1, id:previous?.id ?? id('pack'), title:scene.title,
     mediaBase:`https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/${scene.slug}/`,

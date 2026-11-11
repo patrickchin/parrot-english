@@ -13,19 +13,22 @@
       "id": "role_gkU-I3wxM6c",
       "name": "鲨鱼合声",
       "label": "鲨鱼合声",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "sharks-avatar-fa418c190d6d.jpg"
     },
     {
       "id": "role_gp1z-ZLSL6Y",
       "name": "查姆",
       "label": "查姆",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "chum-avatar-3bb1963fc0b8.jpg"
     },
     {
       "id": "role_74zNIJOZO7U",
       "name": "安可",
       "label": "安可",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "anchor-avatar-e068cbce8592.jpg"
     }
   ],
   "lines": [

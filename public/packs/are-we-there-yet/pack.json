@@ -13,13 +13,15 @@
       "id": "role_OhnCGoVU",
       "name": "驴子",
       "label": "驴子",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "donkey-avatar-7bb0ec39e0c1.jpg"
     },
     {
       "id": "role__qQJ8UfC",
       "name": "史莱克",
       "label": "史莱克",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "shrek-avatar-811a87206e47.jpg"
     },
     {
       "id": "role_YoD156O5n0s",

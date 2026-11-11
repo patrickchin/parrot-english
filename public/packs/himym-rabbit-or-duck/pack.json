@@ -13,25 +13,29 @@
       "id": "role_crBU1TtFewA",
       "name": "马修",
       "label": "马修",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "marshall-avatar-f3d00a18b465.jpg"
     },
     {
       "id": "role_8H5N8-HWEJc",
       "name": "泰德",
       "label": "泰德",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "ted-avatar-e92754003c8f.jpg"
     },
     {
       "id": "role_SDdf7QMVejg",
       "name": "罗宾",
       "label": "罗宾",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "robin-avatar-0e3d7ee91ef4.jpg"
     },
     {
       "id": "role_L7o4_XurX_4",
       "name": "莉莉",
       "label": "莉莉",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "lily-avatar-9a839fdd2f1b.jpg"
     }
   ],
   "lines": [

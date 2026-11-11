@@ -13,13 +13,15 @@
       "id": "role_v-seIUIJ",
       "name": "派大星",
       "label": "派大星",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "patrick-avatar-0c3553b5a20e.jpg"
     },
     {
       "id": "role_llrWB6OVSyA",
       "name": "海绵宝宝",
       "label": "海绵宝宝",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "spongebob-avatar-1adac741ee68.jpg"
     }
   ],
   "lines": [

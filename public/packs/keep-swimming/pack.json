@@ -13,13 +13,15 @@
       "id": "role_k7e1KRth",
       "name": "多莉",
       "label": "多莉",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "dory-avatar-3c95c4a20bb0.jpg"
     },
     {
       "id": "role_y7mBEj-GiRI",
       "name": "马林",
       "label": "马林",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "marlin-avatar-169e500acee4.jpg"
     }
   ],
   "lines": [

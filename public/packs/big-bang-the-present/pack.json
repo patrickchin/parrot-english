@@ -13,7 +13,8 @@
       "id": "role_diR5NHLuXjg",
       "name": "佩妮",
       "label": "佩妮",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "penny-avatar-f8296aa2bcf6.jpg"
     },
     {
       "id": "role_aq9wnwNPoEw",
@@ -26,13 +27,15 @@
       "id": "role_NpF-EvAghCU",
       "name": "谢尔顿",
       "label": "谢尔顿",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "sheldon-avatar-edb28a75cfc9.jpg"
     },
     {
       "id": "role_ZGo8poyoQiY",
       "name": "莱纳德",
       "label": "莱纳德",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "leonard-avatar-a071594dacda.jpg"
     }
   ],
   "lines": [

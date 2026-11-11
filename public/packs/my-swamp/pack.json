@@ -20,19 +20,22 @@
       "id": "role_stZNsPqJ3SU",
       "name": "匹诺曹",
       "label": "匹诺曹",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "pinocchio-avatar-d6bab76d281c.jpg"
     },
     {
       "id": "role_VNG5X2g-",
       "name": "史莱克",
       "label": "史莱克",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "shrek-avatar-811a87206e47.jpg"
     },
     {
       "id": "role_WP8iVeXihIk",
       "name": "小猪",
       "label": "小猪",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "little-pig-avatar-4068e1fae340.jpg"
     }
   ],
   "lines": [

@@ -13,13 +13,15 @@
       "id": "role_taz3h1D5Pw4",
       "name": "瑞秋",
       "label": "瑞秋",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "rachel-avatar-0ae447c0241f.jpg"
     },
     {
       "id": "role_Jy_lg0MhfG4",
       "name": "钱德勒",
       "label": "钱德勒",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "chandler-avatar-2bd1d55514a3.jpg"
     }
   ],
   "lines": [

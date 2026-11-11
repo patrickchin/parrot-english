@@ -13,13 +13,15 @@
       "id": "role_fbJuCJMGfVg",
       "name": "哈利",
       "label": "哈利",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "harry-avatar-eebde66f2a0e.jpg"
     },
     {
       "id": "role_F4XSF4Edmng",
       "name": "罗恩",
       "label": "罗恩",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "ron-avatar-12a7b89fb3f8.jpg"
     }
   ],
   "lines": [

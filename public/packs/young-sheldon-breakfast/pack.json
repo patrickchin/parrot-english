@@ -13,19 +13,22 @@
       "id": "role_alEoy-ZA9Xc",
       "name": "米茜",
       "label": "米茜",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "missy-avatar-31251f080e54.jpg"
     },
     {
       "id": "role_XWR3eWbv6BY",
       "name": "小乔治",
       "label": "小乔治",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "georgie-avatar-4a4dabe10806.jpg"
     },
     {
       "id": "role_4InIxg67GRk",
       "name": "曼迪",
       "label": "曼迪",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "mandy-avatar-3ef3948f7df5.jpg"
     }
   ],
   "lines": [

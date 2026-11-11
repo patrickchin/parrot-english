@@ -13,13 +13,15 @@
       "id": "role_6qGKlj0DGGU",
       "name": "格鲁",
       "label": "格鲁",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
     },
     {
       "id": "role_ttD2BhSD_aQ",
       "name": "玛戈",
       "label": "玛戈",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "margo-avatar-e7dfb1b37895.jpg"
     },
     {
       "id": "role_Y1QH7lsWlSU",

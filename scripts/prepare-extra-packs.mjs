@@ -14,7 +14,7 @@ for (const scene of scenes.filter(s => !selected.length || selected.includes(s.s
   if (result.status !== 0) throw new Error(`Cannot prepare ${scene.slug}`);
   const probe = spawnSync('ffprobe',['-v','error','-show_entries','format=duration','-of','csv=p=0',`content/local-dubbing/${file}`],{encoding:'utf8'});
   const duration = Math.round(Number(probe.stdout.trim())*1000)/1000;
-  const roles = scene.roles.map((name,i) => ({id:previous?.roles[i]?.id ?? id('role'), name, label:name, hint:'跟着角色的语气说。'}));
+  const roles = scene.roles.map((name,i) => ({id:previous?.roles[i]?.id ?? id('role'), name, portrait:previous?.roles[i]?.portrait, label:name, hint:'跟着角色的语气说。'}));
   const source = scene.source + `&t=${Math.floor((scene.sourceOffset ?? 0)+scene.start)}s`;
   const isPixar = ['Finding Nemo','Toy Story','Cars','Cars on the Road','Up','Ratatouille'].includes(scene.film);
   const attribution = isPixar ? '原作：Disney / Pixar' : scene.film === 'SpongeBob SquarePants' ? '原作：Nickelodeon / Paramount' : ['Despicable Me','Minions'].includes(scene.film) ? '原作：Universal Pictures / Illumination' : '原作：DreamWorks Animation';

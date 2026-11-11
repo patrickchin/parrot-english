@@ -13,13 +13,15 @@
       "id": "role_eZTUQldp_mA",
       "name": "泰德",
       "label": "泰德",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "ted-avatar-e92754003c8f.jpg"
     },
     {
       "id": "role_GfE4n2EIVkQ",
       "name": "罗宾",
       "label": "罗宾",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "robin-avatar-0e3d7ee91ef4.jpg"
     },
     {
       "id": "role_UJ50J1mgRbA",

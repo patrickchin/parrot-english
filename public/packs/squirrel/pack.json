@@ -13,13 +13,15 @@
       "id": "role_i_3nIjrN",
       "name": "道格",
       "label": "道格",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "dug-avatar-66da5a12f9a0.jpg"
     },
     {
       "id": "role_tD36hMnXUVc",
       "name": "卡尔",
       "label": "卡尔",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "carl-avatar-e8c66060b5e7.jpg"
     }
   ],
   "lines": [

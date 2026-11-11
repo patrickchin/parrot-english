@@ -13,13 +13,15 @@
       "id": "role_XaaU0DIckP8",
       "name": "罗斯",
       "label": "罗斯",
-      "hint": "5 句台词"
+      "hint": "5 句台词",
+      "portrait": "ross-avatar-6852ef573d6b.jpg"
     },
     {
       "id": "role_9o381Ya55Qo",
       "name": "乔伊",
       "label": "乔伊",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "joey-avatar-bed9d2de1433.jpg"
     }
   ],
   "lines": [

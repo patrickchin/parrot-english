@@ -13,19 +13,22 @@
       "id": "role_zZ-586P-_DY",
       "name": "斯特吉斯博士",
       "label": "斯特吉斯博士",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "sturgis-avatar-ee13c9fe21b3.jpg"
     },
     {
       "id": "role_OMjL-BEtZ3M",
       "name": "米茜",
       "label": "米茜",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "missy-avatar-31251f080e54.jpg"
     },
     {
       "id": "role_e-_eXKF-0UY",
       "name": "谢尔顿",
       "label": "谢尔顿",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "young-sheldon-avatar-344053947282.jpg"
     }
   ],
   "lines": [

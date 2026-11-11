@@ -10,13 +10,15 @@
       "id": "role_aBTF2CU4",
       "name": "史莱克",
       "label": "认真地解释怪物与洋葱",
-      "hint": "2 句台词 · 挑战一段解释"
+      "hint": "2 句台词 · 挑战一段解释",
+      "portrait": "shrek-avatar-811a87206e47.jpg"
     },
     {
       "id": "role_1xuLJg1A",
       "name": "驴子",
       "label": "慢半拍理解朋友的意思",
-      "hint": "1 句台词 · 模仿恍然大悟"
+      "hint": "1 句台词 · 模仿恍然大悟",
+      "portrait": "donkey-avatar-7bb0ec39e0c1.jpg"
     }
   ],
   "lines": [

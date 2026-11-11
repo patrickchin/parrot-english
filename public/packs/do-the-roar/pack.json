@@ -13,19 +13,22 @@
       "id": "role_fQeXDxQ7A-I",
       "name": "男孩的爸爸",
       "label": "男孩的爸爸",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "butterpants-father-avatar-e840d4116e22.jpg"
     },
     {
       "id": "role_Kx8gM4db",
       "name": "小男孩",
       "label": "小男孩",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "butterpants-avatar-2a93b6a41d56.jpg"
     },
     {
       "id": "role_HxBpf2F4gNA",
       "name": "史莱克",
       "label": "史莱克",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "shrek-avatar-811a87206e47.jpg"
     },
     {
       "id": "role_c6niQ-oI2rA",

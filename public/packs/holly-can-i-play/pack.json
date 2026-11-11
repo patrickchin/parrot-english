@@ -13,13 +13,15 @@
       "id": "role_iNuzpzccAUs",
       "name": "霍莉",
       "label": "霍莉",
-      "hint": "3 句台词"
+      "hint": "3 句台词",
+      "portrait": "holly-avatar-2c2aeeafdec3.jpg"
     },
     {
       "id": "role_BIwW3pMFQ_o",
       "name": "梅姨",
       "label": "梅姨",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "nanny-avatar-91f27471cfc6.jpg"
     }
   ],
   "lines": [

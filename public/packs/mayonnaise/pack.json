@@ -13,7 +13,8 @@
       "id": "role_-6cZmGav",
       "name": "章鱼哥",
       "label": "章鱼哥",
-      "hint": "4 句台词"
+      "hint": "4 句台词",
+      "portrait": "squidward-avatar-dee628390569.jpg"
     },
     {
       "id": "role_biDyZtCKZuA",
@@ -26,7 +27,8 @@
       "id": "role_cGjaFVM0",
       "name": "派大星",
       "label": "派大星",
-      "hint": "1 句台词"
+      "hint": "1 句台词",
+      "portrait": "patrick-avatar-0c3553b5a20e.jpg"
     }
   ],
   "lines": [

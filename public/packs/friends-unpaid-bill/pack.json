@@ -13,13 +13,15 @@
       "id": "role_VQ73BCpz9sk",
       "name": "罗斯",
       "label": "罗斯",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "ross-avatar-6852ef573d6b.jpg"
     },
     {
       "id": "role_hl4hEF54S8A",
       "name": "莫妮卡",
       "label": "莫妮卡",
-      "hint": "2 句台词"
+      "hint": "2 句台词",
+      "portrait": "monica-avatar-145a34fb5519.jpg"
     }
   ],
   "lines": [
