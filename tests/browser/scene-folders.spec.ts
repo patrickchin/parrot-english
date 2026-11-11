@@ -26,6 +26,8 @@ test('audience folders keep the eight younger scenes separate and survive playba
     await expect(popup.getByText('8 个片段', { exact: true })).toBeVisible();
     const bounds = (await popup.boundingBox())!;
     expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(812);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english'); await mkdir(shots, { recursive: true });

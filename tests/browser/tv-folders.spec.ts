@@ -25,6 +25,8 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
     await expect(menu.getByText('5 个片段', { exact: true })).toBeVisible();
     const bounds = (await menu.boundingBox())!;
     expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(812);
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
