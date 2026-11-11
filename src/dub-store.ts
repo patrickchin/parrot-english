@@ -36,7 +36,7 @@ async function database() {
     };
     request.onsuccess = () => { if (blocked) request.result.close(); else resolve(request.result); };
     request.onerror = () => reject(request.error);
-    request.onblocked = () => { blocked = true; reject(new Error('请关闭其他 Parrotbook 标签页后重试。')); };
+    request.onblocked = () => { blocked = true; reject(new Error("errors.storageBlocked")); };
   });
 }
 
@@ -44,7 +44,7 @@ async function transaction<T>(mode: IDBTransactionMode, run: (tx: IDBTransaction
   const db = await database();
   return new Promise<T>((resolve, reject) => {
     const tx = db.transaction(['dubs', 'media'], mode);
-    tx.onabort = () => { db.close(); reject(tx.error ?? new Error('本机保存失败。')); };
+    tx.onabort = () => { db.close(); reject(tx.error ?? new Error('errors.dubSave')); };
     tx.oncomplete = () => { db.close(); resolve(result()); };
     let result: () => T;
     try { result = run(tx); } catch (error) { tx.abort(); reject(error); }
@@ -62,21 +62,21 @@ export async function loadDub(id: string, scene: Scene): Promise<RestoredDub> {
   const { saved, media } = await transaction('readonly', tx => {
     const saved = tx.objectStore('dubs').get(id), media = tx.objectStore('media').index('dubId').getAll(id);
     return () => ({ saved: saved.result as SavedDub | undefined, media: media.result as SavedMedia[] });
-  }).catch(error => { throw new Error('无法读取本机配音。请重试；现有配音不会被删除。', { cause: error }); });
-  if (!saved) throw new Error('这次配音已被删除或无法找到。');
-  if (saved.signature !== signature(scene)) throw new Error('片段已更新，这次配音无法继续。已保存的录音仍保留在本机。');
+  }).catch(error => { throw new Error("errors.dubsRead", { cause: error }); });
+  if (!saved) throw new Error("errors.dubMissing");
+  if (saved.signature !== signature(scene)) throw new Error("errors.sceneChanged");
   const lines = scene.lines.filter(line => line.roleId === saved.roleId);
   if (!saved.progress || !lines[saved.lineIndex] || !scene.roles.some(role => role.id === saved.roleId && role.selectable !== false) ||
-      !['practice', 'result'].includes(saved.step)) throw new Error('这次配音的数据不完整，无法打开。');
+      !['practice', 'result'].includes(saved.step)) throw new Error("errors.dubDamaged");
   const lesson = createLesson(scene);
   // Validate everything before creating object URLs, so a damaged draft leaks none.
   for (const line of scene.lines) {
     const status = saved.progress[line.id];
-    if (!['unattempted', 'skipped', 'recorded'].includes(status)) throw new Error('这次配音的数据不完整，无法打开。');
+    if (!['unattempted', 'skipped', 'recorded'].includes(status)) throw new Error("errors.dubDamaged");
     if (status === 'recorded') {
       const take = media.find(item => item.lineId === line.id);
       if (!mediaBlob(take)?.size || !take || !Number.isFinite(take.start) || !Number.isFinite(take.duration) ||
-          take.duration! <= 0 || !Array.isArray(take.peaks) || !take.peaks.every(value => Number.isFinite(value) && value >= 0)) throw new Error('这次配音的数据不完整，无法打开。');
+          take.duration! <= 0 || !Array.isArray(take.peaks) || !take.peaks.every(value => Number.isFinite(value) && value >= 0)) throw new Error("errors.dubDamaged");
     }
   }
   for (const line of scene.lines) {
@@ -127,6 +127,6 @@ export function deleteDub(id: string) {
 }
 
 export function storageError(error: unknown) {
-  if (error instanceof DOMException && error.name === 'QuotaExceededError') return '本机存储空间不足，新的改动还没保存。请删除不需要的配音后重试。';
-  return '无法保存到本机，新的改动只在当前页面。请保持页面打开并重试。';
+  if (error instanceof DOMException && error.name === 'QuotaExceededError') return "errors.storageFull";
+  return "errors.dubSave";
 }

@@ -1,0 +1,1247 @@
+{
+  "errors": {
+    "sceneLoad": "片段没能加载成功，请再试一次。",
+    "sceneLoadFailed": "片段加载失败。",
+    "invalidVideoFile": "请选择小于 100 MB 的 MP4、WebM 或 MOV 视频。",
+    "videoDuration": "请选择准备好的片段文件，且时长须与参考片段一致。",
+    "videoBuffering": "视频缓冲中，请等一下再试。之前的录音还在。",
+    "videoLoad": "视频没能加载成功。请检查网络，然后重新加载。",
+    "waveformUnavailable": "原声波形暂时无法显示，仍可听原声并录音。",
+    "exportFailed": "视频导出失败，请重试。",
+    "dubsRead": "无法读取本机配音。请重试；现有配音不会被删除。",
+    "dubDelete": "无法删除这次配音，请重试。",
+    "storageBlocked": "请关闭其他 Parrotbook 标签页后重试。",
+    "dubMissing": "这次配音已被删除或无法找到。",
+    "sceneChanged": "片段已更新，这次配音无法继续。已保存的录音仍保留在本机。",
+    "dubDamaged": "这次配音的数据不完整，无法打开。",
+    "storageFull": "本机存储空间不足，新的改动还没保存。请删除不需要的配音后重试。",
+    "dubSave": "无法保存到本机，新的改动只在当前页面。请保持页面打开并重试。",
+    "exportUnsupported": "这个浏览器暂不支持导出 MP4。请用新版 Safari 或 Chrome 重试。",
+    "exportAssets": "视频素材加载失败，请重试。",
+    "sceneInvalid": "片段文件不完整，请重新加载。",
+    "rolesInvalid": "角色资料有误。",
+    "timingsInvalid": "台词时间有误。",
+    "creditsInvalid": "片段来源资料不完整。",
+    "videoPlayback": "视频暂时无法播放，请重新加载片段。",
+    "mediaInterrupted": "播放或录音暂时中断了，请再试一次。",
+    "recordingUnsupported": "这个浏览器暂不支持录音。请用新版 Safari 或 Chrome 打开这个网址。",
+    "quietRecording": "没听到清楚的声音。靠近麦克风，再试一次吧。",
+    "recordingInterrupted": "录音中断了，请再试一次。上一次录音还在。",
+    "microphoneDisconnected": "麦克风已断开，请连接后再试一次。",
+    "microphoneTimeout": "录音准备较慢，请稍后再试。",
+    "backingLoad": "背景声音未加载成功，请再试一次。",
+    "microphoneDenied": "麦克风还没开启。请在浏览器的网站设置里允许麦克风，再点录音。",
+    "microphoneMissing": "没有找到麦克风。请连接麦克风，再试一次。",
+    "microphoneBusy": "麦克风正被其他应用使用。关闭占用麦克风的应用，再试一次。",
+    "seekTimeout": "视频定位较慢，请稍后再试。",
+    "unexpected": "出了点问题，请再试一次。"
+  },
+  "dubs": {
+    "deleteDescription": "这次配音的录音和进度会从此浏览器删除，无法找回。其他配音和已下载的视频不会受影响。",
+    "storageNotice": "只保存在此浏览器。清除网站数据会删除配音；重要作品请下载视频备份。",
+    "loadingSavedDubs": "正在读取本机配音…",
+    "noDubsYet": "还没有配音",
+    "emptyDescription": "选一个片段，录下你的第一句台词。",
+    "browseScenes": "去选片段",
+    "retry": "重试",
+    "continueLabel": "继续配音：{{title}}，{{role}}",
+    "complete": "已完成",
+    "inProgress": "未完成",
+    "recordedLines": "已录 {{recorded}} / {{total}} 句",
+    "deleteLabel": "删除配音：{{title}}",
+    "deleteThisDub": "删除这次配音？",
+    "deleteDub": "删除配音",
+    "keepDub": "保留配音"
+  },
+  "player": {
+    "loading": "正在准备你的小片场…",
+    "reload": "重新加载",
+    "startANewDub": "开始新的配音",
+    "movieScene": "电影片段",
+    "dialogueScene": "{{title}} 对话片段",
+    "loadTheVideoFromYourDevice": "从设备载入这段视频",
+    "chooseALocalVideo": "选择本地片段",
+    "fileStaysOnYourDevice": "· 文件不会上传",
+    "playMyDub": "播放我的配音",
+    "playOriginalScene": "播放原片",
+    "recording": "录音中",
+    "gettingReady": "正在准备…",
+    "stopPlaybackOrRecording": "停止播放或录音",
+    "playDub": "播放配音",
+    "playReferenceScene": "播放参考片段",
+    "scenePlaybackProgress": "片段播放进度",
+    "chooseARole": "选择角色",
+    "dubComplete": "配音完成",
+    "recordYourLines": "录制台词",
+    "chooseRolePrompt": "想成为哪个角色？",
+    "startDubbing": "开始配音",
+    "savedOnThisDevice": "已保存到本机",
+    "saving": "正在保存…",
+    "notSavedYet": "尚未保存",
+    "savedOnThisDeviceOnly": "仅在此设备保存",
+    "yourLines": "你的台词",
+    "original": "原声",
+    "dialogue": "台词",
+    "preparingYourRecording": "正在整理这次录音…",
+    "dubbingControls": "配音操作",
+    "listenToTheOriginalLine": "听这一句原声",
+    "stopRecording": "停止录音",
+    "cancel": "取消",
+    "stopPlayback": "停止播放",
+    "recordThisLineAgain": "重新录这一句",
+    "record": "开始录音",
+    "recordAgain": "重录",
+    "myRecording": "听我的录音",
+    "watchMyDub": "看我的配音",
+    "next": "下一步",
+    "startOver": "重新开始",
+    "sceneCredits": "片段与来源",
+    "resultTitle": "你的配音，完成啦！",
+    "emptyResult": "这一次先听原声，下次试着录一句。",
+    "editALine": "再改一句",
+    "reloadVideo": "重新加载视频",
+    "retrySaving": "重试保存",
+    "manageSavedDubsInANewTab": "在新标签页管理已保存的配音",
+    "gotIt": "知道了",
+    "watchTheOriginal": "观看原片",
+    "close": "关闭",
+    "leaveThisDub": "离开这次配音？",
+    "startANewSession": "重新开始一场？",
+    "unsavedChangesWarning": "新的改动还没保存。继续会丢失未保存的改动，之前保存的配音仍会保留。",
+    "savedDubNotice": "这次配音会保留在「我的配音」里，随时可以继续。",
+    "discardUnsavedChanges": "丢弃未保存的改动",
+    "leaveScene": "离开片段",
+    "keepRecordingsAndContinue": "保留录音，继续玩",
+    "previewSubtitles": "原片字幕"
+  },
+  "recording": {
+    "speakingGuidance": "正在录音，跟着指针说。",
+    "takeReady": "录音已保存，可听录音或继续下一句。",
+    "listenFirst": "先听原声，再录音。",
+    "completedLines": "已完成 {{completed}} / {{total}} 句",
+    "lineLabel": "第 {{number}} 句：{{text}}",
+    "lineNumber": "第 {{number}} / {{total}} 句",
+    "listenOriginal": "听原声",
+    "recordedLines": "录了 {{count}} 句台词。"
+  },
+  "help": {
+    "title": "给电影，换上你的声音。",
+    "chooseRoleTitle": "1. 选角色。",
+    "chooseRoleDescription": "先看一遍电影，再选想演的人。",
+    "recordTitle": "2. 一句一句录。",
+    "recordDescription": "听原声，点录音就开口。说完就点停止。",
+    "watchTitle": "3. 看你的版本。",
+    "watchDescription": "别的角色保留原声，你的角色换成你的录音。",
+    "recordingAdvice": "最好戴上耳机。绿色是原声波形，橙色是你的声音；指针表示当前时间。波形显示声音强弱，不代表发音得分；原声也包含影片的音乐和音效。配音会自动保存在此浏览器，不会上传，可在「我的配音」继续或删除。手机请用 Safari 或 Chrome；微信内录音尚未验证。",
+    "guardianConsent": "当前供你和同事测试。儿童使用前，请由监护人了解并同意录音用途。"
+  },
+  "credits": {
+    "localVideoNotice": "此片段从你的设备读取，未上传；公开发布前需确认相应授权。",
+    "prototypeNotice": "本片段用于成人原型测试；完整电影并非儿童入门教材。",
+    "noEndorsement": "创作者未对本产品作出背书。"
+  },
+  "navigation": {
+    "library": "片段库",
+    "backToScenes": "返回片段",
+    "home": "Parrotbook 首页",
+    "main": "主导航",
+    "howToDub": "怎么配音？",
+    "language": "界面语言",
+    "dubs": "我的配音"
+  },
+  "library": {
+    "sceneCount": "{{count}} 个片段",
+    "findAScene": "查找片段",
+    "titleCharacterTagOrLine": "片名、角色、标签或台词",
+    "clearSearch": "清除搜索",
+    "noScenesFound": "没有找到片段。",
+    "searchSuggestion": "试试片名、角色、标签，或记得的那句台词。",
+    "showAllScenes": "查看全部片段",
+    "chooseScene": "选择片段：{{title}}",
+    "prototypeNotice": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+    "sceneCategories": "片段分类"
+  },
+  "waveform": {
+    "voiceWaveformComparison": "声音波形对比",
+    "yourVoiceRecording": "你的声音 · 录音中",
+    "yourVoice": "你的声音",
+    "targetLineTiming": "台词时间范围",
+    "originalAudioWaveform": "原声波形",
+    "yourVoiceWaveform": "你的声音波形",
+    "loadingTheOriginalWaveform": "正在准备原声波形…",
+    "dubbingPlayhead": "配音时间指针",
+    "elapsed": "{{elapsed}} / {{duration}} 秒",
+    "unavailable": "此片段暂无原声波形，仍可听原声并录音。"
+  },
+  "theme": {
+    "light": "切换到浅色模式",
+    "dark": "切换到深色模式"
+  },
+  "download": {
+    "cancelExport": "取消导出",
+    "keepThisPageOpen": "请保持页面打开",
+    "downloadAgain": "再次下载视频",
+    "privacyNotice": "视频在本机生成，不会上传。",
+    "downloadVideo": "下载配音视频",
+    "progress": "正在生成视频 {{percent}}%，请保持页面打开。",
+    "ready": "视频已生成，可保存后分享。"
+  },
+  "categories": {
+    "films": "电影与动画",
+    "younger": "英语启蒙",
+    "older": "10–12岁",
+    "teens": "青少年"
+  },
+  "scenes": {
+    "scene_KHUVKWak": {
+      "title": "不，这是派大星！",
+      "licence": "未确认再分发许可",
+      "changes": "选取原片 00:00–00:08 与 00:17–00:23.2，拼接、压缩并添加配音时间标记。"
+    },
+    "scene_LnSPbYi0": {
+      "title": "巧克力？！",
+      "licence": "未确认再分发许可",
+      "changes": "选取原片 00:10.8–00:22.2，压缩并添加配音时间标记。"
+    },
+    "scene_1eCjBRKF": {
+      "title": "调成 Wumbo！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 2.55–21.95 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_BeIAKV4J": {
+      "title": "怪物就像洋葱",
+      "licence": "未确认再分发许可",
+      "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
+    },
+    "scene_oq1hQgYa": {
+      "title": "一直游下去！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 4.5–15.6 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_EI_7V5r9": {
+      "title": "鱼儿是朋友！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 15.4–25.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_fEAVzgFh": {
+      "title": "飞向宇宙！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 25.15–50.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_txYTl2tq": {
+      "title": "你是个玩具！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 45.05–63.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_Ciq_cd4H": {
+      "title": "有风格地落下！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 189.45–213.25 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_oSd4bYiR": {
+      "title": "我就是速度！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 28.95–40.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_p5BgIG-b": {
+      "title": "咔嚓！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 13.1–27.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_RPXXEtjf": {
+      "title": "太毛茸茸了！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 23.3–54 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_CZ0bp6VC": {
+      "title": "那地板呢？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 10.9–29.8 秒的节选。The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+    },
+    "scene_nJ9pMesA": {
+      "title": "松鼠！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 95–109.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_IuDLtAby": {
+      "title": "刚认识就喜欢你！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 83.75–95.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_y50gF2Cn": {
+      "title": "谁都能做饭！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 11.8–26.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_wr2NM2nf": {
+      "title": "没有秘密配料！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 27.45–50.55 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_kuOni4tB": {
+      "title": "我没有不开心！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 0.25–12.3 秒的节选。The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+    },
+    "scene_4ds3OMdO": {
+      "title": "吼一声嘛！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 14.5–30.9 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_HY-tFxVL": {
+      "title": "我们到了吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 14.5–24.95 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_XFfwULcF": {
+      "title": "谁让你们来这里的？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 96.4–109.6 秒的节选。Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+    },
+    "scene_MkR1_VOc": {
+      "title": "我准备好了！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 18.2–28.7 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_F9ob5jiT": {
+      "title": "蛋黄酱是乐器吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 9.15–24.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_uDawiVCK": {
+      "title": "微笑，挥挥手！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 2.7–29.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_gCp7ClczBfE": {
+      "title": "我看起来怎么样？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 564.65–589.7 秒的节选。"
+    },
+    "scene_oHKH4UW2j7Q": {
+      "title": "精灵从来不害怕！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 194–211.35 秒的节选。"
+    },
+    "scene_ue_rpVpccbk": {
+      "title": "我可以和本一起玩吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 12.2–33.85 秒的节选。"
+    },
+    "scene_9aW-AUNHyhc": {
+      "title": "你一直坐在眼镜上！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 243.15–258.15 秒的节选。"
+    },
+    "scene_y5A8q-8McdQ": {
+      "title": "猜猜我们干什么了！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 189.2–214.05 秒的节选。"
+    },
+    "scene_dJ3aIJ7VuJ0": {
+      "title": "我们帮你找眼镜好吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 108.15–130.5 秒的节选。"
+    },
+    "scene_I2NmYZZ4ICk": {
+      "title": "病人可以有访客吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 216.3–239.7 秒的节选。"
+    },
+    "scene_bxQM0S-Xsn4": {
+      "title": "那是恐龙吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 371.8–395.55 秒的节选。"
+    },
+    "scene_F6ws6xrH7b0": {
+      "title": "找一本教人交朋友的书",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 29.7–60.3 秒的连续节选。A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular."
+    },
+    "scene_K-EnMBJWy2E": {
+      "title": "试着照书上说的做",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 108.2–135.45 秒的连续节选。Family sarcasm. The cut ends after the final name repetition and before the channel end card."
+    },
+    "scene_qs532GUZz7E": {
+      "title": "请爸爸和老师谈一谈",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 16.5–51.45 秒的连续节选。College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded."
+    },
+    "scene_pywI3ZgiZ-Y": {
+      "title": "转不过弯的沙发",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 165.9–198.4 秒的连续节选。Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded."
+    },
+    "scene_lPxb4HHQVrQ": {
+      "title": "乔伊发现同义词词典",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 0–37.2 秒的连续节选。Adoption recommendation is the background. The later dating innuendo is excluded."
+    },
+    "scene__ZPXHnc-PuE": {
+      "title": "选哪一半芝士蛋糕",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 55.7–85.4 秒的连续节选。Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded."
+    },
+    "scene_kNsWCUYPVwU": {
+      "title": "紧张的驾驶课",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 92.5–115.38 秒的连续节选。Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word."
+    },
+    "scene_ON8p1LWII74": {
+      "title": "兔子还是鸭子更合适？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 0–32.7 秒的连续节选。A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion."
+    },
+    "scene_yjYJv1eTPR4": {
+      "title": "爱因斯坦的头发和熟悉的性格",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 19.15–42.45 秒的连续节选。Fictionalised historical anecdote and teasing about childhood behaviour; not a medical or biographical lesson."
+    },
+    "scene_eMvqUxta4mg": {
+      "title": "可以挪一下摄像机吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 158.55–182 秒的连续节选。Picture-day appearance preference; the later adult/body joke in the source is excluded."
+    },
+    "scene_hua0i_EVO5o": {
+      "title": "早餐和一句话的不同含义",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 29.05–53.05 秒的连续节选。Family sarcasm about sounding like their mother. Later pregnancy and mattress innuendo are excluded."
+    },
+    "scene_VgEVwH_D_ZM": {
+      "title": "每个人都有家务",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 139.85–158.7 秒的连续节选。Family bargaining and sarcasm. The earlier crude dialogue is excluded."
+    },
+    "scene_cgQRAEx-Czo": {
+      "title": "照片里的人去哪儿了？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 14.65–26.35 秒的连续节选。Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+    },
+    "scene_3YCRbWX5VTE": {
+      "title": "在火车上认识新朋友",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 1.1–30.45 秒的连续节选。Fantasy setting and a brief look at Harry’s healed scar. Stops before the sweets trolley conversation."
+    },
+    "scene_ib-oCCujJSU": {
+      "title": "退回半张沙发",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 239.1–277.65 秒的连续节选。Comic dishonest return attempt, not consumer advice. No earlier sketch innuendo."
+    },
+    "scene_VcyyHi5Kk4A": {
+      "title": "那个吸尘器配件是做什么的？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 4.1–24.05 秒的连续节选。Dry sarcasm. Source title mentions OCD; this cut is about cleaning and does not teach a diagnosis."
+    },
+    "scene_U4HGHLNvT3k": {
+      "title": "想象一下不马上付账单",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 103.35–123.72 秒的连续节选。Teasing about rigid habits and a slang label. Comic hypothetical, not financial advice. Later family insults are excluded."
+    },
+    "scene_s8bVKn-BMFI": {
+      "title": "一份礼物，还是现在？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 29.75–59.82 秒的连续节选。Competitive sarcasm; the final remark about winning is figurative. Later technical jargon is excluded."
+    },
+    "scene_guZULjk7gGk": {
+      "title": "上课得准备笔记本",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 0.2–29.15 秒的连续节选。Condescending sarcasm and a college-ruled notebook joke. Stops before the long physics monologue."
+    },
+    "scene_d6ZZqjpfSfA": {
+      "title": "字面意思，还是打个比方？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 17.4–34.45 秒的连续节选。Friends bicker. Stops before the Canadian stereotype, threats, singing and later alcohol celebration."
+    },
+    "scene_ow8KQy0Ni_U": {
+      "title": "能给我们几个真硬币吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 9.65–32.35 秒的连续节选。Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+    },
+    "scene_rWVQAIy-SYw": {
+      "title": "爸爸，这不公平！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 84.8–106.44 秒的连续节选。The intentionally unfair pretend game is a family comedy. Mechanical sounds and the full attempt remain in the original audio; sound effects are not vocabulary prompts."
+    },
+    "scene_pZDW-Ao5SAw": {
+      "title": "煎饼飞得太高啦！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 0–29.75 秒的连续节选。Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+    },
+    "scene_kSciHakPXA0": {
+      "title": "再给乔治一次机会",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 145.4–166.12 秒的连续节选。Gentle sibling comparison. Stops before Peppa begins the next counting turn; no narrator practice role."
+    },
+    "scene_dc581WltScU": {
+      "title": "我的魔法出了一点错",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 119.15–138.85 秒的连续节选。Fantasy: Ben has become a hat. No spell or invented magic words are used as English prompts."
+    },
+    "scene_ljYOYpWoouw": {
+      "title": "我有一个简单的计划",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 310.55–336.3 秒的连续节选。Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+    },
+    "scene_v-EwUnOY6rw": {
+      "title": "这样可不好感谢主人",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 0.4–26.1 秒的连续节选。A shaving-cream prank is described and rejected; it is not performed. The later eye-stinging discussion and cultural stereotypes are excluded."
+    },
+    "scene_LiOGfPU3EPE": {
+      "title": "你可以自己做早餐",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 114.4–137.3 秒的连续节选。Family sarcasm. The earlier crude family dialogue is excluded; the separate existing chore-chart scene begins later."
+    },
+    "scene_W-m8Y8JwqZc": {
+      "title": "会给我计时吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 110.78–134.6 秒的连续节选。Test names are proper nouns, not a medical assessment. Mild bathroom-reading joke; source avoids later appearance/body comments."
+    },
+    "scene_h81smyBB8mI": {
+      "title": "那个棕色罐子里装的是什么？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 7.2–23.25 秒的连续节选。Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot."
+    },
+    "scene_Jjy8Z_ovOQI": {
+      "title": "水原来是这么用的吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 1.45–16.95 秒的连续节选。Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange."
+    },
+    "scene_5XN5XS_M_Mw": {
+      "title": "我可憋不了两千六百年",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 106.55–120.45 秒的连续节选。Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+    },
+    "scene_X42Wva5CnXM": {
+      "title": "早上好！你好吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 4.35–16.2 秒的连续节选。A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+    },
+    "scene_nvIB2uFTLc8": {
+      "title": "很高兴认识你",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 16.6–34 秒的连续节选。Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase."
+    },
+    "scene_cjkZKJp7Wq0": {
+      "title": "这是什么？一本书！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 14.9–35.95 秒的连续节选。Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+    },
+    "scene_xF5xlXcwdvw": {
+      "title": "你会游泳吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 28.7–39.2 秒的连续节选。Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+    },
+    "scene_soM_ejjEqc0": {
+      "title": "这是送给你的",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+    }
+  },
+  "roles": {
+    "role_GMoleWKV": {
+      "name": "派大星",
+      "hint": "2 句台词 · 试试两种语气"
+    },
+    "role_VMR9ThiJ": {
+      "name": "来电者",
+      "hint": "2 句相同的问题"
+    },
+    "role_-pse1q5d": {
+      "name": "顾客",
+      "hint": "2 句台词 · 演出情绪变化"
+    },
+    "role_S1FPrc0B": {
+      "name": "派大星",
+      "hint": "1 句台词 · with or without"
+    },
+    "role_v-seIUIJ": {
+      "name": "派大星",
+      "hint": "3 句台词"
+    },
+    "role_llrWB6OVSyA": {
+      "name": "海绵宝宝",
+      "hint": "2 句台词"
+    },
+    "role_aBTF2CU4": {
+      "name": "史莱克",
+      "hint": "2 句台词 · 挑战一段解释"
+    },
+    "role_1xuLJg1A": {
+      "name": "驴子",
+      "hint": "1 句台词 · 模仿恍然大悟"
+    },
+    "role_k7e1KRth": {
+      "name": "多莉",
+      "hint": "3 句台词"
+    },
+    "role_y7mBEj-GiRI": {
+      "name": "马林",
+      "hint": "2 句台词"
+    },
+    "role_gkU-I3wxM6c": {
+      "name": "鲨鱼合声",
+      "hint": "1 句台词"
+    },
+    "role_gp1z-ZLSL6Y": {
+      "name": "查姆",
+      "hint": "1 句台词"
+    },
+    "role_74zNIJOZO7U": {
+      "name": "安可",
+      "hint": "1 句台词"
+    },
+    "role_jPzYR5J6EIU": {
+      "name": "胡迪",
+      "hint": "3 句台词"
+    },
+    "role_a9_OwCFQ": {
+      "name": "巴斯光年",
+      "hint": "4 句台词"
+    },
+    "role_f58ELG8A": {
+      "name": "胡迪",
+      "hint": "2 句台词"
+    },
+    "role_q1JOcg9gD7M": {
+      "name": "巴斯光年",
+      "hint": "1 句台词"
+    },
+    "role_PbbqOHSVd2c": {
+      "name": "胡迪",
+      "hint": "2 句台词"
+    },
+    "role_dG7FU8MF": {
+      "name": "巴斯光年",
+      "hint": "3 句台词"
+    },
+    "role_MA9SyNmW": {
+      "name": "板牙",
+      "hint": "1 句台词"
+    },
+    "role_t3AskixQqcI": {
+      "name": "闪电麦昆",
+      "hint": "2 句台词"
+    },
+    "role_G8GuFY_TB7c": {
+      "name": "测速播报员",
+      "hint": "1 句台词"
+    },
+    "role_NauR2jpl": {
+      "name": "闪电麦昆",
+      "hint": "3 句台词"
+    },
+    "role_wyV97y-qVtA": {
+      "name": "奇克·海克斯",
+      "hint": "2 句台词"
+    },
+    "role_ac_suThrxnA": {
+      "name": "玛戈",
+      "hint": "1 句台词"
+    },
+    "role_mZOwX2ys": {
+      "name": "艾格尼丝",
+      "hint": "1 句台词"
+    },
+    "role_2YM2UXibtNQ": {
+      "name": "游乐场摊主",
+      "hint": "1 句台词"
+    },
+    "role_AmEQPuK-wqk": {
+      "name": "格鲁",
+      "hint": "3 句台词"
+    },
+    "role_6qGKlj0DGGU": {
+      "name": "格鲁",
+      "hint": "4 句台词"
+    },
+    "role_ttD2BhSD_aQ": {
+      "name": "玛戈",
+      "hint": "2 句台词"
+    },
+    "role_Y1QH7lsWlSU": {
+      "name": "伊迪丝",
+      "hint": "2 句台词"
+    },
+    "role_i_3nIjrN": {
+      "name": "道格",
+      "hint": "4 句台词"
+    },
+    "role_tD36hMnXUVc": {
+      "name": "卡尔",
+      "hint": "1 句台词"
+    },
+    "role_LMfavnX8qAw": {
+      "name": "罗素",
+      "hint": "1 句台词"
+    },
+    "role_AkxqSDuU": {
+      "name": "道格",
+      "hint": "2 句台词"
+    },
+    "role_D1aZwWlTtkk": {
+      "name": "卡尔",
+      "hint": "1 句台词"
+    },
+    "role_CwTyhoLe": {
+      "name": "古斯托",
+      "hint": "3 句台词"
+    },
+    "role_43NdYGbMURo": {
+      "name": "小米",
+      "hint": "2 句台词"
+    },
+    "role_q93mX0oX": {
+      "name": "平先生",
+      "hint": "3 句台词"
+    },
+    "role_KLqdqSbZHmw": {
+      "name": "阿宝",
+      "hint": "2 句台词"
+    },
+    "role__OrFsrNE": {
+      "name": "乌龟大师",
+      "hint": "2 句台词"
+    },
+    "role_-aBSnmfkqjk": {
+      "name": "阿宝",
+      "hint": "1 句台词"
+    },
+    "role_fQeXDxQ7A-I": {
+      "name": "男孩的爸爸",
+      "hint": "1 句台词"
+    },
+    "role_Kx8gM4db": {
+      "name": "小男孩",
+      "hint": "2 句台词"
+    },
+    "role_HxBpf2F4gNA": {
+      "name": "史莱克",
+      "hint": "2 句台词"
+    },
+    "role_c6niQ-oI2rA": {
+      "name": "菲奥娜",
+      "hint": "1 句台词"
+    },
+    "role_OhnCGoVU": {
+      "name": "驴子",
+      "hint": "5 句台词"
+    },
+    "role__qQJ8UfC": {
+      "name": "史莱克",
+      "hint": "4 句台词"
+    },
+    "role_YoD156O5n0s": {
+      "name": "菲奥娜",
+      "hint": "1 句台词"
+    },
+    "role_Rp4xE21Pv6o": {
+      "name": "驴子",
+      "hint": "1 句台词"
+    },
+    "role_stZNsPqJ3SU": {
+      "name": "匹诺曹",
+      "hint": "3 句台词"
+    },
+    "role_VNG5X2g-": {
+      "name": "史莱克",
+      "hint": "2 句台词"
+    },
+    "role_WP8iVeXihIk": {
+      "name": "小猪",
+      "hint": "2 句台词"
+    },
+    "role_K490suAd": {
+      "name": "海绵宝宝",
+      "hint": "4 句台词"
+    },
+    "role_ZsxADi00XhU": {
+      "name": "章鱼哥",
+      "hint": "2 句台词"
+    },
+    "role_-6cZmGav": {
+      "name": "章鱼哥",
+      "hint": "4 句台词"
+    },
+    "role_biDyZtCKZuA": {
+      "name": "痞老板",
+      "hint": "1 句台词"
+    },
+    "role_cGjaFVM0": {
+      "name": "派大星",
+      "hint": "1 句台词"
+    },
+    "role_y89zbrnV": {
+      "name": "队长",
+      "hint": "5 句台词"
+    },
+    "role_csUjXkRdbuM": {
+      "name": "科瓦斯基",
+      "hint": "2 句台词"
+    },
+    "role_48Y-QZ9fhhE": {
+      "name": "菜鸟",
+      "hint": "1 句台词"
+    },
+    "role_YMmMf1wkkD0": {
+      "name": "梅姨",
+      "hint": "2 句台词"
+    },
+    "role_DJntnoCh-CI": {
+      "name": "本",
+      "hint": "2 句台词"
+    },
+    "role_VcebY2wPqqI": {
+      "name": "霍莉",
+      "hint": "3 句台词"
+    },
+    "role_1eyadGyaZ-U": {
+      "name": "霍莉",
+      "hint": "3 句台词"
+    },
+    "role_gYy8dSWMk40": {
+      "name": "本",
+      "hint": "2 句台词"
+    },
+    "role_iNuzpzccAUs": {
+      "name": "霍莉",
+      "hint": "3 句台词"
+    },
+    "role_BIwW3pMFQ_o": {
+      "name": "梅姨",
+      "hint": "2 句台词"
+    },
+    "role_JbjeUfpdQeo": {
+      "name": "猪妈妈",
+      "hint": "1 句台词"
+    },
+    "role_kG1Vhx3plc4": {
+      "name": "猪爸爸",
+      "hint": "2 句台词"
+    },
+    "role_Uivz-A7quiE": {
+      "name": "佩奇",
+      "hint": "1 句台词"
+    },
+    "role_nsjPD0zHc9g": {
+      "name": "佩奇",
+      "hint": "4 句台词"
+    },
+    "role_vzHo-mLf8QQ": {
+      "name": "猪爸爸",
+      "hint": "3 句台词"
+    },
+    "role_GZ118819nuE": {
+      "name": "猪爸爸",
+      "hint": "3 句台词"
+    },
+    "role_zYkp26hxuB0": {
+      "name": "猪妈妈",
+      "hint": "2 句台词"
+    },
+    "role_SAm7j7Q6lfE": {
+      "name": "佩奇",
+      "hint": "1 句台词"
+    },
+    "role_TqcAfKZEoEo": {
+      "name": "猪爸爸",
+      "hint": "2 句台词"
+    },
+    "role_ORPImTlyeZM": {
+      "name": "佩奇",
+      "hint": "3 句台词"
+    },
+    "role_5uI-c2fNuK0": {
+      "name": "小羊苏西",
+      "hint": "1 句台词"
+    },
+    "role_iEFhkfUkYtY": {
+      "name": "猪妈妈",
+      "hint": "1 句台词"
+    },
+    "role__8jMontcRkc": {
+      "name": "小狗丹尼",
+      "hint": "5 句台词"
+    },
+    "role_MGcwyTjk6fU": {
+      "name": "佩奇",
+      "hint": "1 句台词"
+    },
+    "role_J5K-PqReqUY": {
+      "name": "乔治",
+      "hint": "2 句台词"
+    },
+    "role_sC6qozH6L3I": {
+      "name": "羚羊夫人",
+      "hint": "1 句台词"
+    },
+    "role_0BkC3THi_I8": {
+      "name": "谢尔顿",
+      "hint": "2 句台词"
+    },
+    "role_QUPzEFZwnEw": {
+      "name": "图书管理员",
+      "hint": "4 句台词"
+    },
+    "role_tc1hthFv9GM": {
+      "name": "谢尔顿",
+      "hint": "3 句台词"
+    },
+    "role_80084y8FUOo": {
+      "name": "乔治爸爸",
+      "hint": "2 句台词"
+    },
+    "role_9VX0JklGCdk": {
+      "name": "乔治爸爸",
+      "hint": "7 句台词"
+    },
+    "role_mPMtxEzSrfc": {
+      "name": "谢尔顿",
+      "hint": "7 句台词"
+    },
+    "role_2N9MYrRXSfA": {
+      "name": "瑞秋",
+      "hint": "1 句台词"
+    },
+    "role_63qAU3MP3yo": {
+      "name": "罗斯",
+      "hint": "2 句台词"
+    },
+    "role_4x8NV4PfgqM": {
+      "name": "钱德勒",
+      "hint": "1 句台词"
+    },
+    "role_JcuuVsaRRGI": {
+      "name": "瑞秋和钱德勒",
+      "hint": "1 句台词"
+    },
+    "role_XaaU0DIckP8": {
+      "name": "罗斯",
+      "hint": "5 句台词"
+    },
+    "role_9o381Ya55Qo": {
+      "name": "乔伊",
+      "hint": "3 句台词"
+    },
+    "role_taz3h1D5Pw4": {
+      "name": "瑞秋",
+      "hint": "4 句台词"
+    },
+    "role_Jy_lg0MhfG4": {
+      "name": "钱德勒",
+      "hint": "2 句台词"
+    },
+    "role_fZjB1iall7g": {
+      "name": "巴尼",
+      "hint": "3 句台词"
+    },
+    "role_a0XqqgzuhVA": {
+      "name": "泰德",
+      "hint": "3 句台词"
+    },
+    "role_crBU1TtFewA": {
+      "name": "马修",
+      "hint": "3 句台词"
+    },
+    "role_8H5N8-HWEJc": {
+      "name": "泰德",
+      "hint": "1 句台词"
+    },
+    "role_SDdf7QMVejg": {
+      "name": "罗宾",
+      "hint": "1 句台词"
+    },
+    "role_L7o4_XurX_4": {
+      "name": "莉莉",
+      "hint": "1 句台词"
+    },
+    "role_zZ-586P-_DY": {
+      "name": "斯特吉斯博士",
+      "hint": "2 句台词"
+    },
+    "role_OMjL-BEtZ3M": {
+      "name": "米茜",
+      "hint": "2 句台词"
+    },
+    "role_e-_eXKF-0UY": {
+      "name": "谢尔顿",
+      "hint": "1 句台词"
+    },
+    "role_5uKRB1qozDw": {
+      "name": "米茜",
+      "hint": "5 句台词"
+    },
+    "role_2NFZc18LwH0": {
+      "name": "研究员",
+      "hint": "5 句台词"
+    },
+    "role_alEoy-ZA9Xc": {
+      "name": "米茜",
+      "hint": "5 句台词"
+    },
+    "role_XWR3eWbv6BY": {
+      "name": "小乔治",
+      "hint": "4 句台词"
+    },
+    "role_4InIxg67GRk": {
+      "name": "曼迪",
+      "hint": "2 句台词"
+    },
+    "role_PD9C_E7Icic": {
+      "name": "乔治爸爸",
+      "hint": "4 句台词"
+    },
+    "role_G1aMm5UAPYw": {
+      "name": "米茜",
+      "hint": "4 句台词"
+    },
+    "role_fbJuCJMGfVg": {
+      "name": "哈利",
+      "hint": "2 句台词"
+    },
+    "role_F4XSF4Edmng": {
+      "name": "罗恩",
+      "hint": "2 句台词"
+    },
+    "role_OK4t0IU4neI": {
+      "name": "罗恩",
+      "hint": "5 句台词"
+    },
+    "role_yc3TOAmqHEU": {
+      "name": "哈利",
+      "hint": "4 句台词"
+    },
+    "role_YET3ltc6fQU": {
+      "name": "店员",
+      "hint": "4 句台词"
+    },
+    "role_Oo3yWRIKTU0": {
+      "name": "罗斯",
+      "hint": "4 句台词"
+    },
+    "role_rTn_pxCsnxc": {
+      "name": "瑞秋",
+      "hint": "3 句台词"
+    },
+    "role_h_9HmVzsQ1E": {
+      "name": "钱德勒",
+      "hint": "2 句台词"
+    },
+    "role_VQ73BCpz9sk": {
+      "name": "罗斯",
+      "hint": "2 句台词"
+    },
+    "role_hl4hEF54S8A": {
+      "name": "莫妮卡",
+      "hint": "2 句台词"
+    },
+    "role_diR5NHLuXjg": {
+      "name": "佩妮",
+      "hint": "2 句台词"
+    },
+    "role_aq9wnwNPoEw": {
+      "name": "艾米",
+      "hint": "1 句台词"
+    },
+    "role_NpF-EvAghCU": {
+      "name": "谢尔顿",
+      "hint": "2 句台词"
+    },
+    "role_ZGo8poyoQiY": {
+      "name": "莱纳德",
+      "hint": "1 句台词"
+    },
+    "role_ThTu0ZZV87U": {
+      "name": "谢尔顿",
+      "hint": "5 句台词"
+    },
+    "role_Euuq4k13lbM": {
+      "name": "佩妮",
+      "hint": "4 句台词"
+    },
+    "role_eZTUQldp_mA": {
+      "name": "泰德",
+      "hint": "3 句台词"
+    },
+    "role_GfE4n2EIVkQ": {
+      "name": "罗宾",
+      "hint": "2 句台词"
+    },
+    "role_UJ50J1mgRbA": {
+      "name": "巴尼和马修",
+      "hint": "1 句台词"
+    },
+    "role_7weef38VGuI": {
+      "name": "班迪特爸爸",
+      "hint": "2 句台词"
+    },
+    "role_L2VcbrWL4bA": {
+      "name": "布鲁伊",
+      "hint": "2 句台词"
+    },
+    "role_YETwbI6_lYI": {
+      "name": "奇莉妈妈",
+      "hint": "2 句台词"
+    },
+    "role_qv1zScGHWaw": {
+      "name": "布鲁伊",
+      "hint": "2 句台词"
+    },
+    "role_3OkXi5CB_xA": {
+      "name": "班迪特爸爸",
+      "hint": "2 句台词"
+    },
+    "role_hUKB1yRtZXw": {
+      "name": "猪爸爸",
+      "hint": "5 句台词"
+    },
+    "role_ivc93Nvkxm8": {
+      "name": "佩奇",
+      "hint": "1 句台词"
+    },
+    "role_k125HlEUqb8": {
+      "name": "猪妈妈",
+      "hint": "1 句台词"
+    },
+    "role_shoymM1aoQM": {
+      "name": "佩奇",
+      "hint": "2 句台词"
+    },
+    "role_mUwDImJFuLo": {
+      "name": "猪爸爸",
+      "hint": "2 句台词"
+    },
+    "role_60DwRWhXHns": {
+      "name": "梅姨",
+      "hint": "2 句台词"
+    },
+    "role_vRt7TOzwQLI": {
+      "name": "霍莉",
+      "hint": "2 句台词"
+    },
+    "role_Wyexw2YGEUw": {
+      "name": "霍莉",
+      "hint": "4 句台词"
+    },
+    "role_6um5do5ReBs": {
+      "name": "本",
+      "hint": "4 句台词"
+    },
+    "role_g5_sn-Abuf0": {
+      "name": "乔治爸爸",
+      "hint": "4 句台词"
+    },
+    "role_K78BsqE_7Yc": {
+      "name": "谢尔顿",
+      "hint": "3 句台词"
+    },
+    "role_zuTeBzcMsTI": {
+      "name": "乔治爸爸",
+      "hint": "3 句台词"
+    },
+    "role_fBXr-KJbR5s": {
+      "name": "米茜",
+      "hint": "3 句台词"
+    },
+    "role_OOU1lIZ-hMw": {
+      "name": "斯特吉斯博士",
+      "hint": "4 句台词"
+    },
+    "role_tSxcC_9Ky4g": {
+      "name": "谢尔顿",
+      "hint": "4 句台词"
+    },
+    "role_aR1LFDLlZOg": {
+      "name": "钱德勒",
+      "hint": "2 句台词"
+    },
+    "role_eUgVQq3TJ18": {
+      "name": "乔伊",
+      "hint": "3 句台词"
+    },
+    "role_wdNMXASdk5c": {
+      "name": "泰德",
+      "hint": "2 句台词"
+    },
+    "role_KfPCH2pob7g": {
+      "name": "罗宾",
+      "hint": "3 句台词"
+    },
+    "role_XyMomtlHVYE": {
+      "name": "马修",
+      "hint": "1 句台词"
+    },
+    "role_oerHj7CpZxs": {
+      "name": "佩妮",
+      "hint": "3 句台词"
+    },
+    "role_9ZB7SS6ZoTs": {
+      "name": "谢尔顿",
+      "hint": "3 句台词"
+    },
+    "role_9C7GkSJ3GZ4": {
+      "name": "同学们",
+      "hint": "3 句台词"
+    },
+    "role_z7O3Brz5bTs": {
+      "name": "老师",
+      "hint": "2 句台词"
+    },
+    "role_NbJyPNcbblM": {
+      "name": "老师",
+      "hint": "1 句台词"
+    },
+    "role_aj7joqDnZyA": {
+      "name": "凯特",
+      "hint": "3 句台词"
+    },
+    "role_sWh9h03ep24": {
+      "name": "同学们",
+      "hint": "1 句台词"
+    },
+    "role_JbyyfeuB93Q": {
+      "name": "蓝衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_HDH0Ul9i7F8": {
+      "name": "萨莉",
+      "hint": "2 句台词"
+    },
+    "role_biGkzogETqI": {
+      "name": "蓝衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_Hh6xcW9eG7g": {
+      "name": "紫衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_MXwPkAvrD98": {
+      "name": "小狗",
+      "hint": "1 句台词"
+    },
+    "role_Ex6aSXisvvs": {
+      "name": "蓝衣小朋友",
+      "hint": "2 句台词"
+    },
+    "role_-0NxEbZrU68": {
+      "name": "紫衣小朋友",
+      "hint": "1 句台词"
+    },
+    "role_VTNuIGSirwY": {
+      "name": "小狗",
+      "hint": "1 句台词"
+    },
+    "role_qMDOxsX3cME": {
+      "name": "萨莉",
+      "hint": "2 句台词"
+    },
+    "role_c20cLSGQdAQ": {
+      "name": "蓝衣小朋友",
+      "hint": "2 句台词"
+    }
+  },
+  "app": {
+    "title": "Parrotbook · 小小配音员"
+  }
+}

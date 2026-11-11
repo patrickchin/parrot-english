@@ -17,7 +17,7 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
   await expect(page).toHaveURL(savedUrl);
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
   await setLanguage(page, 'en');
-  await expect(page).toHaveURL(savedUrl);
+  await expect(page).toHaveURL(savedUrl.replace('/zh/', '/en/'));
   await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeEnabled();
 });
 
@@ -38,7 +38,7 @@ test('folder paths follow selection, reload, Back and Forward', async ({ page })
   await page.reload();
   await expect(folder).toContainText('青少年');
   await setLanguage(page, 'en');
-  await expect(page).toHaveURL(/\/library\/teens$/);
+  await expect(page).toHaveURL(/\/en\/library\/teens$/);
   await expect(page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { pressed: true })).toContainText('Teenagers');
 });
 
@@ -81,7 +81,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
   await page.goto('/library/older-children');
   await expect(page.getByRole('region', { name: '我的配音', exact: true })).toHaveCount(0);
   const dubsLink = await headerDestination(page, '我的配音');
-  await expect(dubsLink).toHaveAttribute('href', '/dubs');
+  await expect(dubsLink).toHaveAttribute('href', '/zh/dubs');
   await dubsLink.click();
   await expect(page).toHaveURL(/\/dubs$/);
   await expect(await headerDestination(page, '我的配音')).toHaveAttribute('aria-current', 'page');

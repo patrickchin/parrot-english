@@ -46,7 +46,7 @@ for (const entry of scenes) {
   await mkdir(`public/scenes/${slug}`, { recursive: true });
   await writeFile(`public/scenes/${slug}/scene.json`, JSON.stringify(scene, null, 2) + '\n');
   translations[entry.titleZh] = entry.title;
-  entries.push({ slug, routeSlug: entry.routeSlug ?? existingCatalog.find(clip => clip.slug === slug)?.routeSlug ?? slug, title: entry.titleZh, english: entry.title, note: source.series, source: scene.credit.source, cohort: preschool && entry.beginnerSuitable !== true ? 'older-audience' : entry.cohort, poster: scene.mediaBase + scene.poster });
+  entries.push({ id: scene.id, slug, routeSlug: entry.routeSlug ?? existingCatalog.find(clip => clip.slug === slug)?.routeSlug ?? slug, title: entry.titleZh, english: entry.title, note: source.series, source: scene.credit.source, cohort: preschool && entry.beginnerSuitable !== true ? 'older-audience' : entry.cohort, poster: scene.mediaBase + scene.poster });
   slugs.push(slug);
   media.push({ file: `${local}/${video}`, key: `clips/${slug}/${video}` }, { file: `${local}/${scene.poster}`, key: `clips/${slug}/${scene.poster}` });
 }

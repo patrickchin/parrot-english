@@ -19,6 +19,10 @@
 
 ## Implementation
 
+- Ask whether backward compatibility is required before preserving legacy
+  behavior, unless the user has already specified. Default to backward
+  compatibility not being needed. Add compatibility layers, legacy aliases, or
+  migration code only when explicitly required.
 - Use tools, services, frameworks, and components for their intended, documented
   purpose, following established patterns. Convenience, fewer setup steps, or
   fewer resources alone do not justify assigning a responsibility to the wrong

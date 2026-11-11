@@ -7,14 +7,14 @@ export function waitForAudioClock(context: Pick<AudioContext, 'currentTime' | 's
   const readyAt = context.currentTime + 256 / context.sampleRate;
   return new Promise<void>((resolve, reject) => {
     let poll: ReturnType<typeof setTimeout>;
-    const deadline = setTimeout(() => finish(new Error('播放或录音暂时中断了，请再试一次。')), 8000);
+    const deadline = setTimeout(() => finish(new Error("errors.mediaInterrupted")), 8000);
     const finish = (error?: unknown) => {
       clearTimeout(poll); clearTimeout(deadline); signal.removeEventListener('abort', cancelled);
       error ? reject(error) : resolve();
     };
     const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
     const check = () => {
-      if (context.state !== 'running') finish(new Error('播放或录音暂时中断了，请再试一次。'));
+      if (context.state !== 'running') finish(new Error("errors.mediaInterrupted"));
       else if (context.currentTime >= readyAt) finish();
       else poll = setTimeout(check, 5);
     };

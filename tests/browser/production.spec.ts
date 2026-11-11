@@ -30,3 +30,14 @@ test('the public build reads a selected device file without uploading it or requ
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   expect(requests).toEqual([]);
 });
+
+for (const path of ['/en/', '/zh/', '/en/library/teens', '/zh/library/younger-age-5', '/en/scenes/toy-story-infinity', '/en/dubs', '/zh/dubs/']) test(`localized production path ${path} opens in its requested language`, async ({ page }) => {
+  const response = await page.goto(path);
+  expect(response?.status()).toBe(200);
+  const english = path.startsWith('/en/');
+  await expect(page.locator('html')).toHaveAttribute('lang', english ? 'en' : 'zh-CN');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  if (path.includes('/scenes/')) await expect(page.getByRole('button', { name: english ? 'Start dubbing' : '开始配音', exact: true })).toBeEnabled();
+  else if (path.includes('/dubs')) await expect(page.getByRole('heading', { level: 1 })).toHaveText(english ? 'My dubs' : '我的配音');
+  else await expect(page.getByRole('searchbox', { name: english ? 'Find a scene' : '查找片段', exact: true })).toBeVisible();
+});

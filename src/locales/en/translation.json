@@ -1,0 +1,1247 @@
+{
+  "errors": {
+    "sceneLoad": "The scene could not load. Please try again.",
+    "sceneLoadFailed": "The scene could not load.",
+    "invalidVideoFile": "Choose an MP4, WebM or MOV video smaller than 100 MB.",
+    "videoDuration": "Choose the prepared scene file with the same duration as the reference.",
+    "videoBuffering": "The video is buffering. Wait a moment and try again. Your previous recordings are still here.",
+    "videoLoad": "The video could not load. Check your connection, then reload.",
+    "waveformUnavailable": "The original waveform is unavailable. You can still listen and record.",
+    "exportFailed": "Could not create the video. Please try again.",
+    "dubsRead": "Could not read saved dubs. Try again. Existing dubs will not be deleted.",
+    "dubDelete": "Could not delete this dub. Please try again.",
+    "storageBlocked": "Close other Parrotbook tabs and try again.",
+    "dubMissing": "This dub was deleted or could not be found.",
+    "sceneChanged": "The scene has changed, so this dub cannot resume. Your saved recordings remain on this device.",
+    "dubDamaged": "This dub is incomplete or damaged and cannot be opened.",
+    "storageFull": "This device’s storage is full. Your latest changes have not saved. Delete unwanted dubs, then try again.",
+    "dubSave": "Could not save on this device. Your latest changes are only on this page. Keep it open and try again.",
+    "exportUnsupported": "This browser cannot export MP4. Try a recent Safari or Chrome.",
+    "exportAssets": "Could not load the video files. Please try again.",
+    "sceneInvalid": "The scene file is incomplete. Please reload.",
+    "rolesInvalid": "The role information is invalid.",
+    "timingsInvalid": "The line timings are invalid.",
+    "creditsInvalid": "The scene credits are incomplete.",
+    "videoPlayback": "The video cannot play right now. Reload the scene.",
+    "mediaInterrupted": "Playback or recording was interrupted. Please try again.",
+    "recordingUnsupported": "This browser does not support recording. Open this page in a recent version of Safari or Chrome.",
+    "quietRecording": "We could not hear you clearly. Move closer to the microphone and try again.",
+    "recordingInterrupted": "Recording was interrupted. Try again. Your previous take is still here.",
+    "microphoneDisconnected": "The microphone disconnected. Reconnect it and try again.",
+    "microphoneTimeout": "Microphone preparation is taking too long. Please try again.",
+    "backingLoad": "The background audio could not load. Please try again.",
+    "microphoneDenied": "Microphone access is off. Allow it in your browser’s site settings, then press record.",
+    "microphoneMissing": "No microphone was found. Connect one and try again.",
+    "microphoneBusy": "Another app is using the microphone. Close that app and try again.",
+    "seekTimeout": "Seeking is taking too long. Please try again.",
+    "unexpected": "Something went wrong. Please try again."
+  },
+  "dubs": {
+    "deleteDescription": "This permanently deletes this attempt’s recordings and progress from this browser. Other dubs and downloaded videos are kept.",
+    "storageNotice": "Saved only in this browser. Clearing site data deletes your dubs. Download important videos as a backup.",
+    "loadingSavedDubs": "Loading saved dubs…",
+    "noDubsYet": "No dubs yet",
+    "emptyDescription": "Choose a scene and record your first line.",
+    "browseScenes": "Browse scenes",
+    "retry": "Retry",
+    "continueLabel": "Continue dub: {{title}}, {{role}}",
+    "complete": "Complete",
+    "inProgress": "In progress",
+    "recordedLines": "Recorded {{recorded}} of {{total}} lines",
+    "deleteLabel": "Delete dub: {{title}}",
+    "deleteThisDub": "Delete this dub?",
+    "deleteDub": "Delete dub",
+    "keepDub": "Keep dub"
+  },
+  "player": {
+    "loading": "Getting your scene ready…",
+    "reload": "Reload",
+    "startANewDub": "Start a new dub",
+    "movieScene": "Movie scene",
+    "dialogueScene": "{{title}} dialogue scene",
+    "loadTheVideoFromYourDevice": "Load the video from your device",
+    "chooseALocalVideo": "Choose a local video",
+    "fileStaysOnYourDevice": "· File stays on your device",
+    "playMyDub": "Play my dub",
+    "playOriginalScene": "Play original scene",
+    "recording": "Recording",
+    "gettingReady": "Getting ready…",
+    "stopPlaybackOrRecording": "Stop playback or recording",
+    "playDub": "Play dub",
+    "playReferenceScene": "Play reference scene",
+    "scenePlaybackProgress": "Scene playback progress",
+    "chooseARole": "Choose a role",
+    "dubComplete": "Dub complete",
+    "recordYourLines": "Record your lines",
+    "chooseRolePrompt": "Who would you like to be?",
+    "startDubbing": "Start dubbing",
+    "savedOnThisDevice": "Saved on this device",
+    "saving": "Saving…",
+    "notSavedYet": "Not saved yet",
+    "savedOnThisDeviceOnly": "Saved on this device only",
+    "yourLines": "Your lines",
+    "original": "Original",
+    "dialogue": "Dialogue",
+    "preparingYourRecording": "Preparing your recording…",
+    "dubbingControls": "Dubbing controls",
+    "listenToTheOriginalLine": "Listen to the original line",
+    "stopRecording": "Stop recording",
+    "cancel": "Cancel",
+    "stopPlayback": "Stop playback",
+    "recordThisLineAgain": "Record this line again",
+    "record": "Record",
+    "recordAgain": "Record again",
+    "myRecording": "My recording",
+    "watchMyDub": "Watch my dub",
+    "next": "Next",
+    "startOver": "Start over",
+    "sceneCredits": "Scene credits",
+    "resultTitle": "Your dub is ready!",
+    "emptyResult": "Try recording a line next time.",
+    "editALine": "Edit a line",
+    "reloadVideo": "Reload video",
+    "retrySaving": "Retry saving",
+    "manageSavedDubsInANewTab": "Manage saved dubs in a new tab",
+    "gotIt": "Got it",
+    "watchTheOriginal": "Watch the original",
+    "close": "Close",
+    "leaveThisDub": "Leave this dub?",
+    "startANewSession": "Start a new session?",
+    "unsavedChangesWarning": "Your latest changes have not saved. Continuing discards those changes. Previously saved dubs will remain.",
+    "savedDubNotice": "This attempt stays in My dubs. You can continue it at any time.",
+    "discardUnsavedChanges": "Discard unsaved changes",
+    "leaveScene": "Leave scene",
+    "keepRecordingsAndContinue": "Keep recordings and continue",
+    "previewSubtitles": "Preview subtitles"
+  },
+  "recording": {
+    "speakingGuidance": "Recording. Speak along with the cursor.",
+    "takeReady": "Your take is ready. Listen to it or go to the next line.",
+    "listenFirst": "Listen to the original, then record.",
+    "completedLines": "Completed {{completed}} of {{total}} lines",
+    "lineLabel": "Line {{number}}: {{text}}",
+    "lineNumber": "Line {{number}} of {{total}}",
+    "listenOriginal": "Original",
+    "recordedLines": "Recorded lines: {{count}}."
+  },
+  "help": {
+    "title": "Give the scene your voice.",
+    "chooseRoleTitle": "1. Pick a role.",
+    "chooseRoleDescription": "Watch the scene, then choose who you want to play.",
+    "recordTitle": "2. Record each line.",
+    "recordDescription": "Listen to the original, press record, and speak. Press stop when you finish.",
+    "watchTitle": "3. Watch your version.",
+    "watchDescription": "Your recording replaces your character’s lines. Other characters keep their original voices.",
+    "recordingAdvice": "Headphones work best. Green shows the original audio, orange shows your voice, and the cursor shows the current time. Waveforms show loudness, not pronunciation scores; the original includes music and effects. Dubs save in this browser. Continue or delete them in My dubs. No uploads. On phones, use Safari or Chrome; recording inside WeChat has not been verified.",
+    "guardianConsent": "Currently for you and your colleagues to test. Before a child uses it, a guardian must understand and agree to the recording purpose."
+  },
+  "credits": {
+    "localVideoNotice": "This video is read from your device and is not uploaded. Confirm permissions before publishing it.",
+    "prototypeNotice": "This scene is for adult prototype testing. The full film is not beginner learning material for children.",
+    "noEndorsement": "The creators do not endorse this product."
+  },
+  "navigation": {
+    "library": "Scene library",
+    "backToScenes": "Back to scenes",
+    "home": "Parrotbook home",
+    "main": "Main navigation",
+    "howToDub": "How to dub",
+    "language": "UI language",
+    "dubs": "My dubs"
+  },
+  "library": {
+    "sceneCount": "{{count}} scenes",
+    "findAScene": "Find a scene",
+    "titleCharacterTagOrLine": "Title, character, tag or line",
+    "clearSearch": "Clear search",
+    "noScenesFound": "No scenes found.",
+    "searchSuggestion": "Try a title, character, tag, or a line you remember.",
+    "showAllScenes": "Show all scenes",
+    "chooseScene": "Choose scene: {{title}}",
+    "prototypeNotice": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+    "sceneCategories": "Scene categories"
+  },
+  "waveform": {
+    "voiceWaveformComparison": "Voice waveform comparison",
+    "yourVoiceRecording": "Your voice · Recording",
+    "yourVoice": "Your voice",
+    "targetLineTiming": "Target line timing",
+    "originalAudioWaveform": "Original audio waveform",
+    "yourVoiceWaveform": "Your voice waveform",
+    "loadingTheOriginalWaveform": "Loading the original waveform…",
+    "dubbingPlayhead": "Dubbing playhead",
+    "elapsed": "{{elapsed}} / {{duration}} seconds",
+    "unavailable": "No original waveform is available. You can still listen and record."
+  },
+  "theme": {
+    "light": "Switch to light mode",
+    "dark": "Switch to dark mode"
+  },
+  "download": {
+    "cancelExport": "Cancel export",
+    "keepThisPageOpen": "Keep this page open",
+    "downloadAgain": "Download again",
+    "privacyNotice": "Created on this device. No uploads.",
+    "downloadVideo": "Download video",
+    "progress": "Creating video {{percent}}%. Keep this page open.",
+    "ready": "Your video is ready to save and share."
+  },
+  "categories": {
+    "films": "Films & animation",
+    "younger": "First English",
+    "older": "Ages 10–12",
+    "teens": "Teenagers"
+  },
+  "scenes": {
+    "scene_KHUVKWak": {
+      "title": "No, this is Patrick!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Excerpts from 00:00–00:08 and 00:17–00:23.2, joined and compressed with dubbing timing markers."
+    },
+    "scene_LnSPbYi0": {
+      "title": "Chocolate?!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Excerpt from 00:10.8–00:22.2, compressed with dubbing timing markers."
+    },
+    "scene_1eCjBRKF": {
+      "title": "Set it to Wumbo!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 2.55–21.95 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_BeIAKV4J": {
+      "title": "Ogres are like onions",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Excerpt from 00:19.4–00:35.1 of a landscape upload of the onion conversation, compressed with dubbing timing markers."
+    },
+    "scene_oq1hQgYa": {
+      "title": "Just keep swimming!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 4.5–15.6 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_EI_7V5r9": {
+      "title": "Fish are friends!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 15.4–25.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_fEAVzgFh": {
+      "title": "To infinity and beyond!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 25.15–50.05 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_txYTl2tq": {
+      "title": "You are a toy!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 45.05–63.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_Ciq_cd4H": {
+      "title": "Falling with style!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 189.45–213.25 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_oSd4bYiR": {
+      "title": "I am speed!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 28.95–40.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_p5BgIG-b": {
+      "title": "Ka-chow!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 13.1–27.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_RPXXEtjf": {
+      "title": "It’s so fluffy!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 23.3–54 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_CZ0bp6VC": {
+      "title": "What about the floor?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 10.9–29.8 seconds of the original upload. The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+    },
+    "scene_nJ9pMesA": {
+      "title": "Squirrel!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 95–109.5 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_IuDLtAby": {
+      "title": "I just met you!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 83.75–95.05 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_y50gF2Cn": {
+      "title": "Anyone can cook!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 11.8–26.5 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_wr2NM2nf": {
+      "title": "No secret ingredient!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 27.45–50.55 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_kuOni4tB": {
+      "title": "I'm not upset!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 0.25–12.3 seconds of the original upload. The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+    },
+    "scene_4ds3OMdO": {
+      "title": "Do the roar!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 14.5–30.9 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_HY-tFxVL": {
+      "title": "Are we there yet?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 14.5–24.95 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_XFfwULcF": {
+      "title": "Who sent you here?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 96.4–109.6 seconds of the original upload. Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+    },
+    "scene_MkR1_VOc": {
+      "title": "I’m ready!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 18.2–28.7 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_F9ob5jiT": {
+      "title": "Is mayonnaise an instrument?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 9.15–24.4 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_uDawiVCK": {
+      "title": "Smile and wave!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 2.7–29.4 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+    },
+    "scene_gCp7ClczBfE": {
+      "title": "How do I look?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 564.65–589.7 seconds of the original upload."
+    },
+    "scene_oHKH4UW2j7Q": {
+      "title": "Elves are never scared!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 194–211.35 seconds of the original upload."
+    },
+    "scene_ue_rpVpccbk": {
+      "title": "Can I play with Ben?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 12.2–33.85 seconds of the original upload."
+    },
+    "scene_9aW-AUNHyhc": {
+      "title": "You were sitting on them!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 243.15–258.15 seconds of the original upload."
+    },
+    "scene_y5A8q-8McdQ": {
+      "title": "Guess what we have been doing!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 189.2–214.05 seconds of the original upload."
+    },
+    "scene_dJ3aIJ7VuJ0": {
+      "title": "Can we help find your glasses?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 108.15–130.5 seconds of the original upload."
+    },
+    "scene_I2NmYZZ4ICk": {
+      "title": "Can the patient have a visitor?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 216.3–239.7 seconds of the original upload."
+    },
+    "scene_bxQM0S-Xsn4": {
+      "title": "Is that a dinosaur?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 371.8–395.55 seconds of the original upload."
+    },
+    "scene_F6ws6xrH7b0": {
+      "title": "A book about making friends",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 29.7–60.3 seconds of the original upload. A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular."
+    },
+    "scene_K-EnMBJWy2E": {
+      "title": "Trying out a book’s advice",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 108.2–135.45 seconds of the original upload. Family sarcasm. The cut ends after the final name repetition and before the channel end card."
+    },
+    "scene_qs532GUZz7E": {
+      "title": "Asking Dad to talk to a teacher",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 16.5–51.45 seconds of the original upload. College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded."
+    },
+    "scene_pywI3ZgiZ-Y": {
+      "title": "A sofa that will not turn",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 165.9–198.4 seconds of the original upload. Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded."
+    },
+    "scene_lPxb4HHQVrQ": {
+      "title": "Joey discovers a thesaurus",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 0–37.2 seconds of the original upload. Adoption recommendation is the background. The later dating innuendo is excluded."
+    },
+    "scene__ZPXHnc-PuE": {
+      "title": "Choosing a half of the cheesecake",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 55.7–85.4 seconds of the original upload. Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded."
+    },
+    "scene_kNsWCUYPVwU": {
+      "title": "A very nervous driving lesson",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 92.5–115.38 seconds of the original upload. Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word."
+    },
+    "scene_ON8p1LWII74": {
+      "title": "Which animal is the better comparison?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 0–32.7 seconds of the original upload. A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion."
+    },
+    "scene_yjYJv1eTPR4": {
+      "title": "Einstein’s hair and a familiar personality",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 19.15–42.45 seconds of the original upload. Fictionalised historical anecdote and teasing about childhood behaviour; not a medical or biographical lesson."
+    },
+    "scene_eMvqUxta4mg": {
+      "title": "Could you move the camera?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 158.55–182 seconds of the original upload. Picture-day appearance preference; the later adult/body joke in the source is excluded."
+    },
+    "scene_hua0i_EVO5o": {
+      "title": "Breakfast and a difference in meaning",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 29.05–53.05 seconds of the original upload. Family sarcasm about sounding like their mother. Later pregnancy and mattress innuendo are excluded."
+    },
+    "scene_VgEVwH_D_ZM": {
+      "title": "Everyone gets a chore",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 139.85–158.7 seconds of the original upload. Family bargaining and sarcasm. The earlier crude dialogue is excluded."
+    },
+    "scene_cgQRAEx-Czo": {
+      "title": "Where did the picture go?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 14.65–26.35 seconds of the original upload. Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+    },
+    "scene_3YCRbWX5VTE": {
+      "title": "Meeting a new friend on the train",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 1.1–30.45 seconds of the original upload. Fantasy setting and a brief look at Harry’s healed scar. Stops before the sweets trolley conversation."
+    },
+    "scene_ib-oCCujJSU": {
+      "title": "Returning half a sofa",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 239.1–277.65 seconds of the original upload. Comic dishonest return attempt, not consumer advice. No earlier sketch innuendo."
+    },
+    "scene_VcyyHi5Kk4A": {
+      "title": "What is that vacuum attachment for?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 4.1–24.05 seconds of the original upload. Dry sarcasm. Source title mentions OCD; this cut is about cleaning and does not teach a diagnosis."
+    },
+    "scene_U4HGHLNvT3k": {
+      "title": "Imagine not paying the bill immediately",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 103.35–123.72 seconds of the original upload. Teasing about rigid habits and a slang label. Comic hypothetical, not financial advice. Later family insults are excluded."
+    },
+    "scene_s8bVKn-BMFI": {
+      "title": "A present or the present?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 29.75–59.82 seconds of the original upload. Competitive sarcasm; the final remark about winning is figurative. Later technical jargon is excluded."
+    },
+    "scene_guZULjk7gGk": {
+      "title": "A lesson needs a notebook",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 0.2–29.15 seconds of the original upload. Condescending sarcasm and a college-ruled notebook joke. Stops before the long physics monologue."
+    },
+    "scene_d6ZZqjpfSfA": {
+      "title": "Literally or figuratively?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 17.4–34.45 seconds of the original upload. Friends bicker. Stops before the Canadian stereotype, threats, singing and later alcohol celebration."
+    },
+    "scene_ow8KQy0Ni_U": {
+      "title": "Can we have some real coins?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 9.65–32.35 seconds of the original upload. Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+    },
+    "scene_rWVQAIy-SYw": {
+      "title": "Dad, this is not fair!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 84.8–106.44 seconds of the original upload. The intentionally unfair pretend game is a family comedy. Mechanical sounds and the full attempt remain in the original audio; sound effects are not vocabulary prompts."
+    },
+    "scene_pZDW-Ao5SAw": {
+      "title": "That pancake went too high!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 0–29.75 seconds of the original upload. Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+    },
+    "scene_kSciHakPXA0": {
+      "title": "Let George have another turn",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 145.4–166.12 seconds of the original upload. Gentle sibling comparison. Stops before Peppa begins the next counting turn; no narrator practice role."
+    },
+    "scene_dc581WltScU": {
+      "title": "My magic went a bit wrong",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 119.15–138.85 seconds of the original upload. Fantasy: Ben has become a hat. No spell or invented magic words are used as English prompts."
+    },
+    "scene_ljYOYpWoouw": {
+      "title": "I have got a simple plan",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 310.55–336.3 seconds of the original upload. Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+    },
+    "scene_v-EwUnOY6rw": {
+      "title": "That is no way to thank our hosts",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 0.4–26.1 seconds of the original upload. A shaving-cream prank is described and rejected; it is not performed. The later eye-stinging discussion and cultural stereotypes are excluded."
+    },
+    "scene_LiOGfPU3EPE": {
+      "title": "You can make your own breakfast",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 114.4–137.3 seconds of the original upload. Family sarcasm. The earlier crude family dialogue is excluded; the separate existing chore-chart scene begins later."
+    },
+    "scene_W-m8Y8JwqZc": {
+      "title": "Will I be timed?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 110.78–134.6 seconds of the original upload. Test names are proper nouns, not a medical assessment. Mild bathroom-reading joke; source avoids later appearance/body comments."
+    },
+    "scene_h81smyBB8mI": {
+      "title": "What was in that brown jar?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 7.2–23.25 seconds of the original upload. Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot."
+    },
+    "scene_Jjy8Z_ovOQI": {
+      "title": "Is that how water works?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 1.45–16.95 seconds of the original upload. Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange."
+    },
+    "scene_5XN5XS_M_Mw": {
+      "title": "Not for two thousand six hundred years",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype testing; excerpt from 106.55–120.45 seconds of the original upload. Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+    },
+    "scene_X42Wva5CnXM": {
+      "title": "Good morning! How are you?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "内部原型测试；原上传 4.35–16.2 秒的连续节选。A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+    },
+    "scene_nvIB2uFTLc8": {
+      "title": "Nice to meet you",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "内部原型测试；原上传 16.6–34 秒的连续节选。Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase."
+    },
+    "scene_cjkZKJp7Wq0": {
+      "title": "What's this? A book!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "内部原型测试；原上传 14.9–35.95 秒的连续节选。Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+    },
+    "scene_xF5xlXcwdvw": {
+      "title": "Can you swim?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "内部原型测试；原上传 28.7–39.2 秒的连续节选。Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+    },
+    "scene_soM_ejjEqc0": {
+      "title": "This is for you",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+    }
+  },
+  "roles": {
+    "role_GMoleWKV": {
+      "name": "Patrick",
+      "hint": "2 lines · Try two moods"
+    },
+    "role_VMR9ThiJ": {
+      "name": "Caller",
+      "hint": "2 lines · Ask the same question"
+    },
+    "role_-pse1q5d": {
+      "name": "Customer",
+      "hint": "2 lines · Show a change in mood"
+    },
+    "role_S1FPrc0B": {
+      "name": "Patrick",
+      "hint": "1 line · With or without"
+    },
+    "role_v-seIUIJ": {
+      "name": "Patrick",
+      "hint": "3 lines"
+    },
+    "role_llrWB6OVSyA": {
+      "name": "SpongeBob",
+      "hint": "2 lines"
+    },
+    "role_aBTF2CU4": {
+      "name": "Shrek",
+      "hint": "2 lines · Try an explanation"
+    },
+    "role_1xuLJg1A": {
+      "name": "Donkey",
+      "hint": "1 line · Have a sudden realization"
+    },
+    "role_k7e1KRth": {
+      "name": "Dory",
+      "hint": "3 lines"
+    },
+    "role_y7mBEj-GiRI": {
+      "name": "Marlin",
+      "hint": "2 lines"
+    },
+    "role_gkU-I3wxM6c": {
+      "name": "Sharks",
+      "hint": "1 line"
+    },
+    "role_gp1z-ZLSL6Y": {
+      "name": "Chum",
+      "hint": "1 line"
+    },
+    "role_74zNIJOZO7U": {
+      "name": "Anchor",
+      "hint": "1 line"
+    },
+    "role_jPzYR5J6EIU": {
+      "name": "Woody",
+      "hint": "3 lines"
+    },
+    "role_a9_OwCFQ": {
+      "name": "Buzz Lightyear",
+      "hint": "4 lines"
+    },
+    "role_f58ELG8A": {
+      "name": "Woody",
+      "hint": "2 lines"
+    },
+    "role_q1JOcg9gD7M": {
+      "name": "Buzz Lightyear",
+      "hint": "1 line"
+    },
+    "role_PbbqOHSVd2c": {
+      "name": "Woody",
+      "hint": "2 lines"
+    },
+    "role_dG7FU8MF": {
+      "name": "Buzz Lightyear",
+      "hint": "3 lines"
+    },
+    "role_MA9SyNmW": {
+      "name": "Mater",
+      "hint": "1 line"
+    },
+    "role_t3AskixQqcI": {
+      "name": "Lightning McQueen",
+      "hint": "2 lines"
+    },
+    "role_G8GuFY_TB7c": {
+      "name": "Speed announcer",
+      "hint": "1 line"
+    },
+    "role_NauR2jpl": {
+      "name": "Lightning McQueen",
+      "hint": "3 lines"
+    },
+    "role_wyV97y-qVtA": {
+      "name": "Chick Hicks",
+      "hint": "2 lines"
+    },
+    "role_ac_suThrxnA": {
+      "name": "Margo",
+      "hint": "1 line"
+    },
+    "role_mZOwX2ys": {
+      "name": "Agnes",
+      "hint": "1 line"
+    },
+    "role_2YM2UXibtNQ": {
+      "name": "Carnival attendant",
+      "hint": "1 line"
+    },
+    "role_AmEQPuK-wqk": {
+      "name": "Gru",
+      "hint": "3 lines"
+    },
+    "role_6qGKlj0DGGU": {
+      "name": "Gru",
+      "hint": "4 lines"
+    },
+    "role_ttD2BhSD_aQ": {
+      "name": "Margo",
+      "hint": "2 lines"
+    },
+    "role_Y1QH7lsWlSU": {
+      "name": "Edith",
+      "hint": "2 lines"
+    },
+    "role_i_3nIjrN": {
+      "name": "Dug",
+      "hint": "4 lines"
+    },
+    "role_tD36hMnXUVc": {
+      "name": "Carl",
+      "hint": "1 line"
+    },
+    "role_LMfavnX8qAw": {
+      "name": "Russell",
+      "hint": "1 line"
+    },
+    "role_AkxqSDuU": {
+      "name": "Dug",
+      "hint": "2 lines"
+    },
+    "role_D1aZwWlTtkk": {
+      "name": "Carl",
+      "hint": "1 line"
+    },
+    "role_CwTyhoLe": {
+      "name": "Gusteau",
+      "hint": "3 lines"
+    },
+    "role_43NdYGbMURo": {
+      "name": "Remy",
+      "hint": "2 lines"
+    },
+    "role_q93mX0oX": {
+      "name": "Mr. Ping",
+      "hint": "3 lines"
+    },
+    "role_KLqdqSbZHmw": {
+      "name": "Po",
+      "hint": "2 lines"
+    },
+    "role__OrFsrNE": {
+      "name": "Oogway",
+      "hint": "2 lines"
+    },
+    "role_-aBSnmfkqjk": {
+      "name": "Po",
+      "hint": "1 line"
+    },
+    "role_fQeXDxQ7A-I": {
+      "name": "Boy's father",
+      "hint": "1 line"
+    },
+    "role_Kx8gM4db": {
+      "name": "Boy",
+      "hint": "2 lines"
+    },
+    "role_HxBpf2F4gNA": {
+      "name": "Shrek",
+      "hint": "2 lines"
+    },
+    "role_c6niQ-oI2rA": {
+      "name": "Fiona",
+      "hint": "1 line"
+    },
+    "role_OhnCGoVU": {
+      "name": "Donkey",
+      "hint": "5 lines"
+    },
+    "role__qQJ8UfC": {
+      "name": "Shrek",
+      "hint": "4 lines"
+    },
+    "role_YoD156O5n0s": {
+      "name": "Fiona",
+      "hint": "1 line"
+    },
+    "role_Rp4xE21Pv6o": {
+      "name": "Donkey",
+      "hint": "1 line"
+    },
+    "role_stZNsPqJ3SU": {
+      "name": "Pinocchio",
+      "hint": "3 lines"
+    },
+    "role_VNG5X2g-": {
+      "name": "Shrek",
+      "hint": "2 lines"
+    },
+    "role_WP8iVeXihIk": {
+      "name": "Little pig",
+      "hint": "2 lines"
+    },
+    "role_K490suAd": {
+      "name": "SpongeBob",
+      "hint": "4 lines"
+    },
+    "role_ZsxADi00XhU": {
+      "name": "Squidward",
+      "hint": "2 lines"
+    },
+    "role_-6cZmGav": {
+      "name": "Squidward",
+      "hint": "4 lines"
+    },
+    "role_biDyZtCKZuA": {
+      "name": "Plankton",
+      "hint": "1 line"
+    },
+    "role_cGjaFVM0": {
+      "name": "Patrick",
+      "hint": "1 line"
+    },
+    "role_y89zbrnV": {
+      "name": "Skipper",
+      "hint": "5 lines"
+    },
+    "role_csUjXkRdbuM": {
+      "name": "Kowalski",
+      "hint": "2 lines"
+    },
+    "role_48Y-QZ9fhhE": {
+      "name": "Private",
+      "hint": "1 line"
+    },
+    "role_YMmMf1wkkD0": {
+      "name": "Nanny Plum",
+      "hint": "2 lines"
+    },
+    "role_DJntnoCh-CI": {
+      "name": "Ben",
+      "hint": "2 lines"
+    },
+    "role_VcebY2wPqqI": {
+      "name": "Holly",
+      "hint": "3 lines"
+    },
+    "role_1eyadGyaZ-U": {
+      "name": "Holly",
+      "hint": "3 lines"
+    },
+    "role_gYy8dSWMk40": {
+      "name": "Ben",
+      "hint": "2 lines"
+    },
+    "role_iNuzpzccAUs": {
+      "name": "Holly",
+      "hint": "3 lines"
+    },
+    "role_BIwW3pMFQ_o": {
+      "name": "Nanny Plum",
+      "hint": "2 lines"
+    },
+    "role_JbjeUfpdQeo": {
+      "name": "Mummy Pig",
+      "hint": "1 line"
+    },
+    "role_kG1Vhx3plc4": {
+      "name": "Daddy Pig",
+      "hint": "2 lines"
+    },
+    "role_Uivz-A7quiE": {
+      "name": "Peppa",
+      "hint": "1 line"
+    },
+    "role_nsjPD0zHc9g": {
+      "name": "Peppa",
+      "hint": "4 lines"
+    },
+    "role_vzHo-mLf8QQ": {
+      "name": "Daddy Pig",
+      "hint": "3 lines"
+    },
+    "role_GZ118819nuE": {
+      "name": "Daddy Pig",
+      "hint": "3 lines"
+    },
+    "role_zYkp26hxuB0": {
+      "name": "Mummy Pig",
+      "hint": "2 lines"
+    },
+    "role_SAm7j7Q6lfE": {
+      "name": "Peppa",
+      "hint": "1 line"
+    },
+    "role_TqcAfKZEoEo": {
+      "name": "Daddy Pig",
+      "hint": "2 lines"
+    },
+    "role_ORPImTlyeZM": {
+      "name": "Peppa",
+      "hint": "3 lines"
+    },
+    "role_5uI-c2fNuK0": {
+      "name": "Suzy Sheep",
+      "hint": "1 line"
+    },
+    "role_iEFhkfUkYtY": {
+      "name": "Mummy Pig",
+      "hint": "1 line"
+    },
+    "role__8jMontcRkc": {
+      "name": "Danny Dog",
+      "hint": "5 lines"
+    },
+    "role_MGcwyTjk6fU": {
+      "name": "Peppa",
+      "hint": "1 line"
+    },
+    "role_J5K-PqReqUY": {
+      "name": "George",
+      "hint": "2 lines"
+    },
+    "role_sC6qozH6L3I": {
+      "name": "Madame Gazelle",
+      "hint": "1 line"
+    },
+    "role_0BkC3THi_I8": {
+      "name": "Sheldon",
+      "hint": "2 lines"
+    },
+    "role_QUPzEFZwnEw": {
+      "name": "Librarian",
+      "hint": "4 lines"
+    },
+    "role_tc1hthFv9GM": {
+      "name": "Sheldon",
+      "hint": "3 lines"
+    },
+    "role_80084y8FUOo": {
+      "name": "George Cooper Sr.",
+      "hint": "2 lines"
+    },
+    "role_9VX0JklGCdk": {
+      "name": "George Cooper Sr.",
+      "hint": "7 lines"
+    },
+    "role_mPMtxEzSrfc": {
+      "name": "Sheldon",
+      "hint": "7 lines"
+    },
+    "role_2N9MYrRXSfA": {
+      "name": "Rachel",
+      "hint": "1 line"
+    },
+    "role_63qAU3MP3yo": {
+      "name": "Ross",
+      "hint": "2 lines"
+    },
+    "role_4x8NV4PfgqM": {
+      "name": "Chandler",
+      "hint": "1 line"
+    },
+    "role_JcuuVsaRRGI": {
+      "name": "Rachel and Chandler",
+      "hint": "1 line"
+    },
+    "role_XaaU0DIckP8": {
+      "name": "Ross",
+      "hint": "5 lines"
+    },
+    "role_9o381Ya55Qo": {
+      "name": "Joey",
+      "hint": "3 lines"
+    },
+    "role_taz3h1D5Pw4": {
+      "name": "Rachel",
+      "hint": "4 lines"
+    },
+    "role_Jy_lg0MhfG4": {
+      "name": "Chandler",
+      "hint": "2 lines"
+    },
+    "role_fZjB1iall7g": {
+      "name": "Barney",
+      "hint": "3 lines"
+    },
+    "role_a0XqqgzuhVA": {
+      "name": "Ted",
+      "hint": "3 lines"
+    },
+    "role_crBU1TtFewA": {
+      "name": "Marshall",
+      "hint": "3 lines"
+    },
+    "role_8H5N8-HWEJc": {
+      "name": "Ted",
+      "hint": "1 line"
+    },
+    "role_SDdf7QMVejg": {
+      "name": "Robin",
+      "hint": "1 line"
+    },
+    "role_L7o4_XurX_4": {
+      "name": "Lily",
+      "hint": "1 line"
+    },
+    "role_zZ-586P-_DY": {
+      "name": "Dr. Sturgis",
+      "hint": "2 lines"
+    },
+    "role_OMjL-BEtZ3M": {
+      "name": "Missy",
+      "hint": "2 lines"
+    },
+    "role_e-_eXKF-0UY": {
+      "name": "Sheldon",
+      "hint": "1 line"
+    },
+    "role_5uKRB1qozDw": {
+      "name": "Missy",
+      "hint": "5 lines"
+    },
+    "role_2NFZc18LwH0": {
+      "name": "Researcher",
+      "hint": "5 lines"
+    },
+    "role_alEoy-ZA9Xc": {
+      "name": "Missy",
+      "hint": "5 lines"
+    },
+    "role_XWR3eWbv6BY": {
+      "name": "Georgie",
+      "hint": "4 lines"
+    },
+    "role_4InIxg67GRk": {
+      "name": "Mandy",
+      "hint": "2 lines"
+    },
+    "role_PD9C_E7Icic": {
+      "name": "George Cooper Sr.",
+      "hint": "4 lines"
+    },
+    "role_G1aMm5UAPYw": {
+      "name": "Missy",
+      "hint": "4 lines"
+    },
+    "role_fbJuCJMGfVg": {
+      "name": "Harry",
+      "hint": "2 lines"
+    },
+    "role_F4XSF4Edmng": {
+      "name": "Ron",
+      "hint": "2 lines"
+    },
+    "role_OK4t0IU4neI": {
+      "name": "Ron",
+      "hint": "5 lines"
+    },
+    "role_yc3TOAmqHEU": {
+      "name": "Harry",
+      "hint": "4 lines"
+    },
+    "role_YET3ltc6fQU": {
+      "name": "Shop assistant",
+      "hint": "4 lines"
+    },
+    "role_Oo3yWRIKTU0": {
+      "name": "Ross",
+      "hint": "4 lines"
+    },
+    "role_rTn_pxCsnxc": {
+      "name": "Rachel",
+      "hint": "3 lines"
+    },
+    "role_h_9HmVzsQ1E": {
+      "name": "Chandler",
+      "hint": "2 lines"
+    },
+    "role_VQ73BCpz9sk": {
+      "name": "Ross",
+      "hint": "2 lines"
+    },
+    "role_hl4hEF54S8A": {
+      "name": "Monica",
+      "hint": "2 lines"
+    },
+    "role_diR5NHLuXjg": {
+      "name": "Penny",
+      "hint": "2 lines"
+    },
+    "role_aq9wnwNPoEw": {
+      "name": "Amy",
+      "hint": "1 line"
+    },
+    "role_NpF-EvAghCU": {
+      "name": "Sheldon",
+      "hint": "2 lines"
+    },
+    "role_ZGo8poyoQiY": {
+      "name": "Leonard",
+      "hint": "1 line"
+    },
+    "role_ThTu0ZZV87U": {
+      "name": "Sheldon",
+      "hint": "5 lines"
+    },
+    "role_Euuq4k13lbM": {
+      "name": "Penny",
+      "hint": "4 lines"
+    },
+    "role_eZTUQldp_mA": {
+      "name": "Ted",
+      "hint": "3 lines"
+    },
+    "role_GfE4n2EIVkQ": {
+      "name": "Robin",
+      "hint": "2 lines"
+    },
+    "role_UJ50J1mgRbA": {
+      "name": "Barney and Marshall",
+      "hint": "1 line"
+    },
+    "role_7weef38VGuI": {
+      "name": "Bandit",
+      "hint": "2 lines"
+    },
+    "role_L2VcbrWL4bA": {
+      "name": "Bluey",
+      "hint": "2 lines"
+    },
+    "role_YETwbI6_lYI": {
+      "name": "Chilli",
+      "hint": "2 lines"
+    },
+    "role_qv1zScGHWaw": {
+      "name": "Bluey",
+      "hint": "2 lines"
+    },
+    "role_3OkXi5CB_xA": {
+      "name": "Bandit",
+      "hint": "2 lines"
+    },
+    "role_hUKB1yRtZXw": {
+      "name": "Daddy Pig",
+      "hint": "5 lines"
+    },
+    "role_ivc93Nvkxm8": {
+      "name": "Peppa",
+      "hint": "1 line"
+    },
+    "role_k125HlEUqb8": {
+      "name": "Mummy Pig",
+      "hint": "1 line"
+    },
+    "role_shoymM1aoQM": {
+      "name": "Peppa",
+      "hint": "2 lines"
+    },
+    "role_mUwDImJFuLo": {
+      "name": "Daddy Pig",
+      "hint": "2 lines"
+    },
+    "role_60DwRWhXHns": {
+      "name": "Nanny Plum",
+      "hint": "2 lines"
+    },
+    "role_vRt7TOzwQLI": {
+      "name": "Holly",
+      "hint": "2 lines"
+    },
+    "role_Wyexw2YGEUw": {
+      "name": "Holly",
+      "hint": "4 lines"
+    },
+    "role_6um5do5ReBs": {
+      "name": "Ben",
+      "hint": "4 lines"
+    },
+    "role_g5_sn-Abuf0": {
+      "name": "George Cooper Sr.",
+      "hint": "4 lines"
+    },
+    "role_K78BsqE_7Yc": {
+      "name": "Sheldon",
+      "hint": "3 lines"
+    },
+    "role_zuTeBzcMsTI": {
+      "name": "George Cooper Sr.",
+      "hint": "3 lines"
+    },
+    "role_fBXr-KJbR5s": {
+      "name": "Missy",
+      "hint": "3 lines"
+    },
+    "role_OOU1lIZ-hMw": {
+      "name": "Dr. Sturgis",
+      "hint": "4 lines"
+    },
+    "role_tSxcC_9Ky4g": {
+      "name": "Sheldon",
+      "hint": "4 lines"
+    },
+    "role_aR1LFDLlZOg": {
+      "name": "Chandler",
+      "hint": "2 lines"
+    },
+    "role_eUgVQq3TJ18": {
+      "name": "Joey",
+      "hint": "3 lines"
+    },
+    "role_wdNMXASdk5c": {
+      "name": "Ted",
+      "hint": "2 lines"
+    },
+    "role_KfPCH2pob7g": {
+      "name": "Robin",
+      "hint": "3 lines"
+    },
+    "role_XyMomtlHVYE": {
+      "name": "Marshall",
+      "hint": "1 line"
+    },
+    "role_oerHj7CpZxs": {
+      "name": "Penny",
+      "hint": "3 lines"
+    },
+    "role_9ZB7SS6ZoTs": {
+      "name": "Sheldon",
+      "hint": "3 lines"
+    },
+    "role_9C7GkSJ3GZ4": {
+      "name": "Class",
+      "hint": "3 lines"
+    },
+    "role_z7O3Brz5bTs": {
+      "name": "Teacher",
+      "hint": "2 lines"
+    },
+    "role_NbJyPNcbblM": {
+      "name": "Teacher",
+      "hint": "1 line"
+    },
+    "role_aj7joqDnZyA": {
+      "name": "Kate",
+      "hint": "3 lines"
+    },
+    "role_sWh9h03ep24": {
+      "name": "Class",
+      "hint": "1 line"
+    },
+    "role_JbyyfeuB93Q": {
+      "name": "Child in blue",
+      "hint": "1 line"
+    },
+    "role_HDH0Ul9i7F8": {
+      "name": "Sally",
+      "hint": "2 lines"
+    },
+    "role_biGkzogETqI": {
+      "name": "Child in blue",
+      "hint": "1 line"
+    },
+    "role_Hh6xcW9eG7g": {
+      "name": "Child in purple",
+      "hint": "1 line"
+    },
+    "role_MXwPkAvrD98": {
+      "name": "Dog",
+      "hint": "1 line"
+    },
+    "role_Ex6aSXisvvs": {
+      "name": "Child in blue",
+      "hint": "2 lines"
+    },
+    "role_-0NxEbZrU68": {
+      "name": "Child in purple",
+      "hint": "1 line"
+    },
+    "role_VTNuIGSirwY": {
+      "name": "Dog",
+      "hint": "1 line"
+    },
+    "role_qMDOxsX3cME": {
+      "name": "Sally",
+      "hint": "2 lines"
+    },
+    "role_c20cLSGQdAQ": {
+      "name": "Child in blue",
+      "hint": "2 lines"
+    }
+  },
+  "app": {
+    "title": "Parrotbook · English dubbing"
+  }
+}

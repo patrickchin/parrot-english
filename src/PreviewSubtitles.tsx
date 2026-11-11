@@ -1,9 +1,9 @@
+import { useTranslation } from 'react-i18next';
 import { useLayoutEffect, useRef } from 'react';
-import { useLanguage } from './i18n';
 import type { Scene } from './scene';
 
 export function PreviewSubtitles({ scene, time }: { scene: Scene; time: number }) {
-  const { t } = useLanguage();
+  const { t } = useTranslation();
   const viewport = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLOListElement>(null);
   const next = scene.lines.findIndex(line => line.start > time);
@@ -36,12 +36,12 @@ export function PreviewSubtitles({ scene, time }: { scene: Scene; time: number }
   }, [index, scene.lines]);
 
   const text = (line: Scene['lines'][number]) => <>
-    <span className="preview-subtitle-speaker">{t(scene.roles.find(role => role.id === line.roleId)!.name)}</span>
+    <span className="preview-subtitle-speaker">{t(`roles.${line.roleId}.name`, { defaultValue: scene.roles.find(role => role.id === line.roleId)!.name })}</span>
     <p lang="en">{line.text}</p>
     {line.hint && <p lang="zh-CN">{line.hint}</p>}
   </>;
 
-  return <div ref={viewport} role="region" aria-label={t('原片字幕')} className="preview-subtitles">
+  return <div ref={viewport} role="region" aria-label={t("player.previewSubtitles")} className="preview-subtitles">
     {/* Reserve the longest turn at this width so scrolling never moves the video. */}
     <div className="preview-subtitle-size" aria-hidden="true">{scene.lines.map(line => <div key={line.id}>{text(line)}</div>)}</div>
     <ol ref={track} className="preview-subtitle-track">
