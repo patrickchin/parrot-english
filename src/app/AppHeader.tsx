@@ -25,7 +25,7 @@ export function AppHeader({ onHelp, onBack, helpExpanded, helpControls }: { onHe
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#151c17' : '#fafcf7');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--background').trim());
     try { localStorage.setItem('parrotbook-theme', dark ? 'dark' : 'light'); } catch { /* The current page still remembers the choice. */ }
   }, [dark]);
   return <header className="app-header mx-auto flex max-w-6xl items-center gap-0 px-4 py-4 sm:gap-4 sm:px-8 sm:py-5">
