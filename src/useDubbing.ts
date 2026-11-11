@@ -89,6 +89,9 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, pack: Pack
     el.muted = muted;
     if (Math.abs(el.currentTime - start) > 0.025) {
       await waitForVideo(el, 'seeked', signal, { start: () => { el.currentTime = start; } });
+    } else if (el.seeking) {
+      // currentTime changes before a seek settles, including a reset to zero.
+      await waitForVideo(el, 'seeked', signal);
     }
     signal.throwIfAborted();
     if (el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) await waitForVideo(el, 'canplay', signal);
