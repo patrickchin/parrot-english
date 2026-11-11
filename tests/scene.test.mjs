@@ -32,15 +32,15 @@ test('the independently loaded scene rejects traversal, missing roles and overla
 });
 
 
-test('all 73 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
+test('all 79 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
   const scenes = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const { validateWaveform } = await import('../src/waveform.ts');
-  assert.equal(scenes.length, 73);
-  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 9);
+  assert.equal(scenes.length, 79);
+  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 15);
   assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 38);
   assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 12);
   assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 73);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 79);
   assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const entry of scenes) {
@@ -135,7 +135,7 @@ test('First English requires explicit level review and contains only short compl
   const recipe = JSON.parse(await readFile('content/preschool-review-scenes.json', 'utf8'));
   const catalog = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const beginners = catalog.filter(scene => scene.cohort === 'younger-age-5');
-  assert.equal(beginners.length, 9);
+  assert.equal(beginners.length, 15);
   for (const entry of beginners) {
     const reviewed = recipe.scenes.find(scene => scene.publicSlug === entry.slug);
     assert.equal(reviewed.beginnerSuitable, true);

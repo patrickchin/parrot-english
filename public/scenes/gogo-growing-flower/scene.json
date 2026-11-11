@@ -1,0 +1,295 @@
+{
+  "version": 1,
+  "id": "scene_yF-Ktpm3Rec",
+  "title": "一会儿大，一会儿小！",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "magic",
+    "flower",
+    "big",
+    "small",
+    "Jeeby",
+    "friend",
+    "魔法",
+    "花朵",
+    "大小",
+    "朋友"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 27.32,
+  "video": "gogo-growing-flower-review-9bc044ed2556.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-growing-flower/",
+  "poster": "gogo-growing-flower-poster-9bc044ed2556.jpg",
+  "waveform": "waveform-9bc044ed2556.json",
+  "roles": [
+    {
+      "id": "role_SJXtL6AHKYc",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "4 句台词",
+      "portrait": "gogo-growing-flower-gogo-portrait-a8ffbdab8f8a.jpg"
+    },
+    {
+      "id": "role_8-K5CgHvc0U",
+      "name": "Jeeby",
+      "label": "Jeeby",
+      "hint": "1 句台词",
+      "portrait": "gogo-growing-flower-jeeby-portrait-2da3dd7189b7.jpg"
+    },
+    {
+      "id": "role_vmvZHeTGKSg",
+      "name": "绿色朋友",
+      "label": "绿色朋友",
+      "hint": "2 句台词",
+      "portrait": "gogo-growing-flower-green-friend-portrait-b36bc9d943ac.jpg"
+    },
+    {
+      "id": "role_SzpEQCemp48",
+      "name": "朋友（惊叹）",
+      "label": "朋友（惊叹）",
+      "hint": "1 句台词",
+      "portrait": "gogo-growing-flower-friends-portrait-d4240d4bfd49.jpg",
+      "selectable": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_lgvFsCGjSD0",
+      "roleId": "role_SJXtL6AHKYc",
+      "start": 2.202,
+      "end": 3.763,
+      "text": "What's that, Jeeby?",
+      "hint": "Jeeby，那是什么？",
+      "words": [
+        {
+          "text": "What's",
+          "start": 2.242,
+          "end": 2.482
+        },
+        {
+          "text": "that,",
+          "start": 2.582,
+          "end": 2.742
+        },
+        {
+          "text": "Jeeby?",
+          "start": 3.002,
+          "end": 3.703
+        }
+      ]
+    },
+    {
+      "id": "line__bFjgC9Wn48",
+      "roleId": "role_8-K5CgHvc0U",
+      "start": 4.303,
+      "end": 6.105,
+      "text": "It's a flower, Gogo.",
+      "hint": "Gogo，那是一朵花。",
+      "words": [
+        {
+          "text": "It's",
+          "start": 4.343,
+          "end": 4.443
+        },
+        {
+          "text": "a",
+          "start": 4.523,
+          "end": 4.543
+        },
+        {
+          "text": "flower,",
+          "start": 4.604,
+          "end": 5.264
+        },
+        {
+          "text": "Gogo.",
+          "start": 5.504,
+          "end": 6.045
+        }
+      ]
+    },
+    {
+      "id": "line_cPN0gkY8VX0",
+      "roleId": "role_SJXtL6AHKYc",
+      "start": 7.186,
+      "end": 9.167,
+      "text": "It's small, Jeeby.",
+      "hint": "Jeeby，它很小。",
+      "words": [
+        {
+          "text": "It's",
+          "start": 7.226,
+          "end": 7.386
+        },
+        {
+          "text": "small,",
+          "start": 7.466,
+          "end": 7.946
+        },
+        {
+          "text": "Jeeby.",
+          "start": 8.767,
+          "end": 9.107
+        }
+      ]
+    },
+    {
+      "id": "line_vK9TuooIe80",
+      "roleId": "role_SzpEQCemp48",
+      "start": 11.81,
+      "end": 14.41,
+      "text": "Oh, Gogo!",
+      "hint": "哦，Gogo！",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 11.85,
+          "end": 12.25
+        },
+        {
+          "text": "Gogo!",
+          "start": 12.35,
+          "end": 14.35
+        }
+      ]
+    },
+    {
+      "id": "line_5L0385IENms",
+      "roleId": "role_SJXtL6AHKYc",
+      "start": 15.032,
+      "end": 16.873,
+      "text": "It isn't small now, Jeeby.",
+      "hint": "Jeeby，它现在不小了。",
+      "words": [
+        {
+          "text": "It",
+          "start": 15.072,
+          "end": 15.112
+        },
+        {
+          "text": "isn't",
+          "start": 15.212,
+          "end": 15.432
+        },
+        {
+          "text": "small",
+          "start": 15.512,
+          "end": 15.832
+        },
+        {
+          "text": "now,",
+          "start": 15.972,
+          "end": 16.212
+        },
+        {
+          "text": "Jeeby.",
+          "start": 16.413,
+          "end": 16.813
+        }
+      ]
+    },
+    {
+      "id": "line_7JJkZZzKb_U",
+      "roleId": "role_SJXtL6AHKYc",
+      "start": 17.634,
+      "end": 18.514,
+      "text": "It's big.",
+      "hint": "它变大了。",
+      "words": [
+        {
+          "text": "It's",
+          "start": 17.674,
+          "end": 17.854
+        },
+        {
+          "text": "big.",
+          "start": 18.154,
+          "end": 18.454
+        }
+      ]
+    },
+    {
+      "id": "line_nQZRBzte_e8",
+      "roleId": "role_vmvZHeTGKSg",
+      "start": 20.616,
+      "end": 22.477,
+      "text": "It isn't big now.",
+      "hint": "它现在不大了。",
+      "words": [
+        {
+          "text": "It",
+          "start": 20.656,
+          "end": 21.096
+        },
+        {
+          "text": "isn't",
+          "start": 21.236,
+          "end": 21.476
+        },
+        {
+          "text": "big",
+          "start": 21.617,
+          "end": 21.817
+        },
+        {
+          "text": "now.",
+          "start": 22.057,
+          "end": 22.417
+        }
+      ]
+    },
+    {
+      "id": "line_vQHW20FGmRs",
+      "roleId": "role_vmvZHeTGKSg",
+      "start": 23.043,
+      "end": 26.176,
+      "text": "Ha! Ha! It's small.",
+      "hint": "哈哈！它变小了。",
+      "words": [
+        {
+          "text": "Ha!",
+          "start": 23.083,
+          "end": 23.605
+        },
+        {
+          "text": "Ha!",
+          "start": 23.866,
+          "end": 23.906
+        },
+        {
+          "text": "It's",
+          "start": 25.092,
+          "end": 25.273
+        },
+        {
+          "text": "small.",
+          "start": 25.433,
+          "end": 26.116
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en",
+    "review": "The incidental Oh, Gogo reaction uses a broad source-reviewed subtitle window; other words use CTC alignment."
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — You're big",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=201s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 201.1–228.4 秒的连续节选。Jeeby is the blue friend addressed by name in the original captions; the green friend uses a descriptive label rather than an unverified name. The green friend says both final small-flower lines. Stops before the lesson song. Original source captions remain visible. The brief Oh, Gogo reaction is not assigned to a verified individual among the pictured friends; it uses a descriptive non-selectable supporting role and retains the original voice. Its broad cue follows the source subtitle/reaction window, not a precise phonetic claim."
+  }
+}

@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "id": "scene_kvazEdhTetI",
+  "title": "一共有多少级台阶？",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "counting",
+    "numbers",
+    "one",
+    "ten",
+    "steps",
+    "Tony",
+    "Jenny",
+    "数数",
+    "数字",
+    "台阶"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 25.32,
+  "video": "gogo-counting-steps-review-5c0dddfaddec.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-counting-steps/",
+  "poster": "gogo-counting-steps-poster-5c0dddfaddec.jpg",
+  "waveform": "waveform-5c0dddfaddec.json",
+  "roles": [
+    {
+      "id": "role_TswQKem2LCM",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "4 句台词",
+      "portrait": "gogo-counting-steps-gogo-portrait-a8ffbdab8f8a.jpg"
+    },
+    {
+      "id": "role_SdXqOYmlXcg",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "1 句台词",
+      "portrait": "gogo-counting-steps-jenny-portrait-bb6627374bb1.jpg"
+    },
+    {
+      "id": "role_7Vi0O1v-C2o",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "1 句台词",
+      "portrait": "gogo-counting-steps-tony-portrait-752f75bae87c.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_kABRjzIpqxk",
+      "roleId": "role_SdXqOYmlXcg",
+      "start": 1.281,
+      "end": 2.822,
+      "text": "How many are there, Gogo?",
+      "hint": "Gogo，一共有多少级？",
+      "words": [
+        {
+          "text": "How",
+          "start": 1.321,
+          "end": 1.461
+        },
+        {
+          "text": "many",
+          "start": 1.561,
+          "end": 1.761
+        },
+        {
+          "text": "are",
+          "start": 1.922,
+          "end": 2.022
+        },
+        {
+          "text": "there,",
+          "start": 2.062,
+          "end": 2.282
+        },
+        {
+          "text": "Gogo?",
+          "start": 2.362,
+          "end": 2.762
+        }
+      ]
+    },
+    {
+      "id": "line_dXMGBe292pI",
+      "roleId": "role_TswQKem2LCM",
+      "start": 4.021,
+      "end": 8.06,
+      "text": "One, two, three, four, five.",
+      "hint": "一、二、三、四、五。",
+      "words": [
+        {
+          "text": "One,",
+          "start": 4.061,
+          "end": 4.182
+        },
+        {
+          "text": "two,",
+          "start": 4.966,
+          "end": 5.187
+        },
+        {
+          "text": "three,",
+          "start": 5.83,
+          "end": 6.111
+        },
+        {
+          "text": "four,",
+          "start": 6.694,
+          "end": 7.015
+        },
+        {
+          "text": "five.",
+          "start": 7.699,
+          "end": 8
+        }
+      ]
+    },
+    {
+      "id": "line_BEwrGSGLOQc",
+      "roleId": "role_TswQKem2LCM",
+      "start": 10.148,
+      "end": 12.29,
+      "text": "One, two, three.",
+      "hint": "一、二、三。",
+      "words": [
+        {
+          "text": "One,",
+          "start": 10.188,
+          "end": 10.308
+        },
+        {
+          "text": "two,",
+          "start": 10.769,
+          "end": 11.009
+        },
+        {
+          "text": "three.",
+          "start": 11.889,
+          "end": 12.23
+        }
+      ]
+    },
+    {
+      "id": "line_FdTPYo9DAVw",
+      "roleId": "role_TswQKem2LCM",
+      "start": 13.01,
+      "end": 15.872,
+      "text": "Four, five, six.",
+      "hint": "四、五、六。",
+      "words": [
+        {
+          "text": "Four,",
+          "start": 13.05,
+          "end": 13.411
+        },
+        {
+          "text": "five,",
+          "start": 14.231,
+          "end": 14.712
+        },
+        {
+          "text": "six.",
+          "start": 15.532,
+          "end": 15.812
+        }
+      ]
+    },
+    {
+      "id": "line_e2ShOU_pTww",
+      "roleId": "role_TswQKem2LCM",
+      "start": 16.573,
+      "end": 20.536,
+      "text": "Seven, eight, nine, ten.",
+      "hint": "七、八、九、十。",
+      "words": [
+        {
+          "text": "Seven,",
+          "start": 16.613,
+          "end": 17.094
+        },
+        {
+          "text": "eight,",
+          "start": 17.854,
+          "end": 18.114
+        },
+        {
+          "text": "nine,",
+          "start": 18.835,
+          "end": 19.275
+        },
+        {
+          "text": "ten.",
+          "start": 20.056,
+          "end": 20.476
+        }
+      ]
+    },
+    {
+      "id": "line_jUqHIAcuejI",
+      "roleId": "role_7Vi0O1v-C2o",
+      "start": 22.498,
+      "end": 24.219,
+      "text": "There are ten steps, Gogo.",
+      "hint": "Gogo，一共有十级台阶。",
+      "words": [
+        {
+          "text": "There",
+          "start": 22.538,
+          "end": 22.718
+        },
+        {
+          "text": "are",
+          "start": 22.778,
+          "end": 22.858
+        },
+        {
+          "text": "ten",
+          "start": 22.938,
+          "end": 23.158
+        },
+        {
+          "text": "steps,",
+          "start": 23.298,
+          "end": 23.599
+        },
+        {
+          "text": "Gogo.",
+          "start": 23.719,
+          "end": 24.159
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — How many are there?",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=ZvD4DLnfeo0&t=137s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 137.7–163 秒的连续节选。Jenny asks the opening question; Gogo counts; Tony gives the final answer. Counting groups follow the source pauses and source caption groupings. A brief comic stumble and nonverbal yelp remain in the original performance. Ends before the fantasy-world counting segment."
+  }
+}

@@ -1,0 +1,421 @@
+{
+  "version": 1,
+  "id": "scene_2hAmFois_LI",
+  "title": "我的笔不见了！",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "school",
+    "pen",
+    "ruler",
+    "notebook",
+    "missing",
+    "classroom",
+    "学校",
+    "笔",
+    "尺子",
+    "笔记本",
+    "不见了"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 39.72,
+  "video": "gogo-missing-pen-review-d6c9b8341576.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-missing-pen/",
+  "poster": "gogo-missing-pen-poster-d6c9b8341576.jpg",
+  "waveform": "waveform-d6c9b8341576.json",
+  "roles": [
+    {
+      "id": "role_-B3qQVi8XkE",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "8 句台词",
+      "portrait": "gogo-missing-pen-tony-portrait-752f75bae87c.jpg"
+    },
+    {
+      "id": "role_SrKIbbNYflA",
+      "name": "Gogo的老师",
+      "label": "Gogo的老师",
+      "hint": "4 句台词",
+      "portrait": "gogo-missing-pen-teacher-portrait-1bc5e4d604ab.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_ZVOABgQNCrU",
+      "roleId": "role_SrKIbbNYflA",
+      "start": 0.096,
+      "end": 1.787,
+      "text": "Stand up, please, Tony.",
+      "hint": "托尼，请站起来。",
+      "words": [
+        {
+          "text": "Stand",
+          "start": 0.136,
+          "end": 0.378
+        },
+        {
+          "text": "up,",
+          "start": 0.478,
+          "end": 0.539
+        },
+        {
+          "text": "please,",
+          "start": 0.64,
+          "end": 0.982
+        },
+        {
+          "text": "Tony.",
+          "start": 1.042,
+          "end": 1.727
+        }
+      ]
+    },
+    {
+      "id": "line_ATb7Y70-jBM",
+      "roleId": "role_SrKIbbNYflA",
+      "start": 2.721,
+      "end": 3.702,
+      "text": "Have you got a pen?",
+      "hint": "你有笔吗？",
+      "words": [
+        {
+          "text": "Have",
+          "start": 2.761,
+          "end": 2.861
+        },
+        {
+          "text": "you",
+          "start": 2.881,
+          "end": 2.941
+        },
+        {
+          "text": "got",
+          "start": 3.002,
+          "end": 3.122
+        },
+        {
+          "text": "a",
+          "start": 3.202,
+          "end": 3.222
+        },
+        {
+          "text": "pen?",
+          "start": 3.402,
+          "end": 3.642
+        }
+      ]
+    },
+    {
+      "id": "line_fgPVaNT1hLQ",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 5.663,
+      "end": 6.843,
+      "text": "Yes, I have.",
+      "hint": "是的，我有。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 5.703,
+          "end": 5.903
+        },
+        {
+          "text": "I",
+          "start": 6.223,
+          "end": 6.243
+        },
+        {
+          "text": "have.",
+          "start": 6.403,
+          "end": 6.783
+        }
+      ]
+    },
+    {
+      "id": "line_s61vu7Mihcg",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 8.945,
+      "end": 11.106,
+      "text": "Oh, I'm sorry.",
+      "hint": "哦，对不起。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 8.985,
+          "end": 9.145
+        },
+        {
+          "text": "I'm",
+          "start": 10.425,
+          "end": 10.485
+        },
+        {
+          "text": "sorry.",
+          "start": 10.645,
+          "end": 11.046
+        }
+      ]
+    },
+    {
+      "id": "line_QNGcF8wt7Ok",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 11.873,
+      "end": 13.226,
+      "text": "I haven't got a pen.",
+      "hint": "我没有笔。",
+      "words": [
+        {
+          "text": "I",
+          "start": 11.913,
+          "end": 11.933
+        },
+        {
+          "text": "haven't",
+          "start": 12.054,
+          "end": 12.378
+        },
+        {
+          "text": "got",
+          "start": 12.479,
+          "end": 12.681
+        },
+        {
+          "text": "a",
+          "start": 12.782,
+          "end": 12.802
+        },
+        {
+          "text": "pen.",
+          "start": 12.903,
+          "end": 13.166
+        }
+      ]
+    },
+    {
+      "id": "line_xT4P2TjHLcY",
+      "roleId": "role_SrKIbbNYflA",
+      "start": 17.169,
+      "end": 18.349,
+      "text": "Have you got a ruler?",
+      "hint": "你有尺子吗？",
+      "words": [
+        {
+          "text": "Have",
+          "start": 17.209,
+          "end": 17.349
+        },
+        {
+          "text": "you",
+          "start": 17.389,
+          "end": 17.489
+        },
+        {
+          "text": "got",
+          "start": 17.569,
+          "end": 17.689
+        },
+        {
+          "text": "a",
+          "start": 17.769,
+          "end": 17.789
+        },
+        {
+          "text": "ruler?",
+          "start": 17.849,
+          "end": 18.289
+        }
+      ]
+    },
+    {
+      "id": "line_y8RNOy8qF0g",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 20.21,
+      "end": 22.131,
+      "text": "No, I haven't.",
+      "hint": "不，我没有。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 20.25,
+          "end": 20.49
+        },
+        {
+          "text": "I",
+          "start": 21.511,
+          "end": 21.531
+        },
+        {
+          "text": "haven't.",
+          "start": 21.631,
+          "end": 22.071
+        }
+      ]
+    },
+    {
+      "id": "line_xac83qgIXbQ",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 22.792,
+      "end": 24.272,
+      "text": "I haven't got a ruler.",
+      "hint": "我没有尺子。",
+      "words": [
+        {
+          "text": "I",
+          "start": 22.832,
+          "end": 22.852
+        },
+        {
+          "text": "haven't",
+          "start": 22.952,
+          "end": 23.252
+        },
+        {
+          "text": "got",
+          "start": 23.372,
+          "end": 23.532
+        },
+        {
+          "text": "a",
+          "start": 23.652,
+          "end": 23.672
+        },
+        {
+          "text": "ruler.",
+          "start": 23.752,
+          "end": 24.212
+        }
+      ]
+    },
+    {
+      "id": "line_udEHQIjBIpQ",
+      "roleId": "role_SrKIbbNYflA",
+      "start": 26.814,
+      "end": 28.094,
+      "text": "Have you got a notebook?",
+      "hint": "你有笔记本吗？",
+      "words": [
+        {
+          "text": "Have",
+          "start": 26.854,
+          "end": 26.974
+        },
+        {
+          "text": "you",
+          "start": 27.014,
+          "end": 27.094
+        },
+        {
+          "text": "got",
+          "start": 27.154,
+          "end": 27.274
+        },
+        {
+          "text": "a",
+          "start": 27.354,
+          "end": 27.374
+        },
+        {
+          "text": "notebook?",
+          "start": 27.474,
+          "end": 28.034
+        }
+      ]
+    },
+    {
+      "id": "line_iVTDrDmbYk4",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 29.275,
+      "end": 30.916,
+      "text": "No, I haven't.",
+      "hint": "不，我没有。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 29.315,
+          "end": 29.555
+        },
+        {
+          "text": "I",
+          "start": 30.235,
+          "end": 30.255
+        },
+        {
+          "text": "haven't.",
+          "start": 30.375,
+          "end": 30.856
+        }
+      ]
+    },
+    {
+      "id": "line_S6NIx926QL8",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 31.532,
+      "end": 33.085,
+      "text": "I haven't got a notebook.",
+      "hint": "我没有笔记本。",
+      "words": [
+        {
+          "text": "I",
+          "start": 31.572,
+          "end": 31.592
+        },
+        {
+          "text": "haven't",
+          "start": 31.733,
+          "end": 32.056
+        },
+        {
+          "text": "got",
+          "start": 32.157,
+          "end": 32.319
+        },
+        {
+          "text": "a",
+          "start": 32.46,
+          "end": 32.48
+        },
+        {
+          "text": "notebook.",
+          "start": 32.581,
+          "end": 33.025
+        }
+      ]
+    },
+    {
+      "id": "line_dlrwlmovVMQ",
+      "roleId": "role_-B3qQVi8XkE",
+      "start": 36.83,
+      "end": 39.11,
+      "text": "Gogo!",
+      "hint": "Gogo！",
+      "words": [
+        {
+          "text": "Gogo!",
+          "start": 36.87,
+          "end": 39.05
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en",
+    "review": "The final proper-name reaction uses a broad source-reviewed window; other words use CTC alignment."
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — Have you got a ruler?",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=165s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 165.15–204.85 秒的连续节选。The teacher asks and Tony answers. Gogo is a silent visual participant. Tony’s last Gogo reaction completes the reveal. Longer natural turns split only at complete sentence boundaries, retaining the source order and original gaps."
+  }
+}
