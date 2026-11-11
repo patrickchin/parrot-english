@@ -23,7 +23,7 @@ export function CategorySelect({ value, onValueChange }: { value: string; onValu
       <Select.Portal>
         <Select.Positioner align="start" sideOffset={8} alignItemWithTrigger={false} className="app-select-positioner">
           <Select.Popup className="app-select-popup category-popup max-h-[var(--available-height)] overflow-y-auto overscroll-contain">
-            <div className="app-select-label">{t('片段文件夹')}</div>
+            <div className="app-select-label sticky top-0 z-10 bg-popover">{t('片段文件夹')}</div>
             <Select.List>
               {categories.map(category => <Select.Item key={category.value} value={category.value} className="app-select-option category-option">
                 <span className="category-cover" aria-hidden="true">

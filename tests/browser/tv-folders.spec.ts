@@ -21,6 +21,8 @@ test('TV folders open directly, keep complete scenes separate, and survive langu
     await folder.click();
     const menu = page.getByRole('listbox');
     await expect(menu.getByRole('option')).toHaveCount(4);
+    const labelBounds = (await page.getByText('片段文件夹', { exact: true }).boundingBox())!;
+    expect(labelBounds.y).toBeGreaterThanOrEqual(0);
     await expect(menu.getByText('3 个片段', { exact: true })).toBeVisible();
     await expect(menu.getByText('5 个片段', { exact: true })).toBeVisible();
     const bounds = (await menu.boundingBox())!;
