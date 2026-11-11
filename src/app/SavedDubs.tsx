@@ -55,13 +55,13 @@ export function SavedDubs({ onChoose }: { onChoose: (slug: string, id: string) =
         <h1 id="saved-dubs-heading" className="font-display text-2xl sm:text-3xl font-bold">{t("navigation.dubs")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("dubs.storageNotice")}</p>
         {shelf.status === 'loading' && <p role="status" className="mt-6">{t("dubs.loadingSavedDubs")}</p>}
-        {shelf.status === 'ready' && !dubs.length && <div className="mt-6 rounded-xl bg-card p-6 sm:p-8">
+        {shelf.status === 'ready' && !dubs.length && <div className="saved-dubs-empty mt-6 p-6 sm:p-8">
           <h2 className="text-lg font-semibold">{t("dubs.noDubsYet")}</h2>
           <p className="mt-2 text-muted-foreground">{t("dubs.emptyDescription")}</p>
           <Button className="mt-5" onClick={() => navigation.navigateTo(libraryPath(navigation.folder, language))}>{t("dubs.browseScenes")}<Icon name="arrow" /></Button>
         </div>}
         {shelf.status === 'error' && <div className="mt-2"><p role="alert">{t(shelf.error, { defaultValue: t('errors.unexpected') })}</p><Button tone="quiet" onClick={() => setAttempt(n => n + 1)}>{t("dubs.retry")}</Button></div>}
-        {!!dubs.length && <ul className="mt-6 grid gap-2">{dubs.map(dub => <li key={dub.id} className="flex min-w-0 items-center gap-2 rounded-xl bg-card p-2">
+        {!!dubs.length && <ul className="mt-6 grid gap-3">{dubs.map(dub => <li key={dub.id} className="saved-dub-row flex min-w-0 items-center gap-2">
           <button className="min-h-14 min-w-0 flex-1 rounded-lg px-2 py-1 text-left focus-visible:outline-3 focus-visible:outline-brand" onClick={() => onChoose(dub.slug, dub.id)} aria-label={t("dubs.continueLabel", { title: t(`scenes.${dub.sceneId}.title`, { defaultValue: dub.title }), role: t(`roles.${dub.roleId}.name`, { defaultValue: dub.roleName }) })}>
             <span className="block font-semibold">{t(`scenes.${dub.sceneId}.title`, { defaultValue: dub.title })} · {t(`roles.${dub.roleId}.name`, { defaultValue: dub.roleName })}</span>
             <span className="block text-xs leading-5 text-muted-foreground">{t(dub.step === 'result' ? "dubs.complete" : "dubs.inProgress")} · {t("dubs.recordedLines", { recorded: dub.recorded, total: dub.total })} · <time dateTime={new Date(dub.updatedAt).toISOString()}>{new Intl.DateTimeFormat(language, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(dub.updatedAt)}</time></span>

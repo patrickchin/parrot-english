@@ -1,11 +1,59 @@
-# Warm player and voice waveforms
+# Quiet media studio
 
-Chosen direction: 04-calm-clubhouse, approved on 2026-10-29. Warm ivory, forest teal,
-coral recording controls, and a compact shared header. Desktop uses an action
-rail; phones use four large actions in two rows. Keep the video, current
-sentence, and listen/record actions prominent. Match the visual
-reference while preserving the real video aspect ratio, role choice, line skipping,
-retry, completed-take playback, errors, and explicit session reset.
+Taste-skill design pass, 2026-11-11: **Accent ladder**, seed `1986612481`.
+The product's film stills, character portraits, and actual voice traces supply
+its identity. Forest green marks primary actions, selection, and original voice;
+coral identifies recording and the learner's voice. Large surfaces stay neutral.
+Keep the existing system/CJK typography and rounded wordmark; use tabular
+figures in the playback clock rather than introducing a third typeface.
+
+The library answers “Which scene shall I dub?” with real film artwork and an
+immediate start action. The player answers “What do I hear or say next?” with
+the picture, actual waveform, current sentence, and large actions. My dubs
+answers “Where can I continue?” with the learner's real saved attempts and
+honest loading, empty, storage-error, and deletion states.
+
+Use `#f3f5f2` for the light page, white for working surfaces, `#202a24` for ink,
+`#214e3a` for the primary, and `#e0ebe2` for selected tints. Surface borders use
+`#dce2dc`; interactive outlines use `#7b897e`. Dark mode uses neutral `#171717`
+and `#222222` surfaces, light text, and restrained green highlights. Keep the
+shared tokens authoritative, including the browser theme color. Panels use
+8px corners and controls approximately 6px; menus alone carry a shadow.
+Disabled shared controls retain readable text on a quiet neutral fill.
+
+The desktop library keeps its 1100px content grid: four 263px scene columns
+and three 16px gaps. Its featured scene is a white bordered panel. Phones use
+a compact title/start row, with the real artwork in the scene shelf beneath
+the four visible category controls. The player keeps its existing action rail
+on desktop and four large actions in two rows on phones. Its practice surface
+has the same white fill and fine border as the other routes. Preserve video
+aspect ratios, role choice, skipping, retry, replay, errors, and session reset.
+
+The dealt creator-home blueprint requires greetings and metric tiles that do
+not belong to this product. Compose the library and saved attempts as media
+lists and the player as an object detail, following the skill's app rules.
+One shell redraw still produced a sidebar layout; retain the documented
+no-sidebar shell because the product has two top-level destinations and the
+video needs the width. Keep touch controls at least 44px, above the skill's
+desktop administrative-control sizes. Use real catalog and saved data only.
+
+Waveform traces retain solid green/coral outlines at 1.2 viewBox units and
+35% fills. Their shapes, timing and amplitude remain actual signal data.
+
+Review status: the library, role-selection and saved-dub previews were inspected
+at 1440, 768 and 390px with no measured text-contrast or horizontal-overflow
+failures. Library colored area fell from 25.8% to 7.8% on desktop. Tablet color
+share comes mainly from the film stills; the empty saved-dubs page deliberately
+keeps empty space rather than inventing attempts. Practice actions were checked
+at the same widths in light mode and at 1440/390px in dark mode. Source lint has
+no failures; the remaining recording pulse, clock formatting and menu-shadow
+warnings have functional purposes.
+
+Implementation is isolated on `codex/taste-studio`, based on current GitHub
+`main`. The source build passes. The development preview uses port 4322 and
+browser verification uses ports 4322/4323, separate from the shared checkout.
+The focused appearance and library checks pass all 12 cases across desktop
+Chromium, mobile Chromium and WebKit.
 
 Record starts microphone capture directly, without an app permission dialog on
 each scene or reset. The browser handles microphone access when needed. Keep
@@ -176,7 +224,7 @@ kept only as an internal test fixture. The function build continues rejecting me
 If the reference envelope is absent or invalid, show a readable fallback while
 leaving original playback and microphone recording available.
 
-Selected reference: output/imagegen/ui-directions-2026-10-29/04-calm-clubhouse.png.
+Original visual reference (2026-10-29): output/imagegen/ui-directions-2026-10-29/04-calm-clubhouse.png.
 The mockup is a visual reference, not a replacement for the functioning video,
 accessible controls, or real microphone and envelope data.
 
