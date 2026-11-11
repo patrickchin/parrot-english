@@ -160,7 +160,9 @@
     "showAllScenes": "查看全部片段",
     "chooseScene": "选择片段：{{title}}",
     "prototypeNotice": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
-    "sceneCategories": "片段分类"
+    "sceneCategories": "片段分类",
+    "showsAndFilms": "剧集与电影",
+    "allShowsAndFilms": "全部剧集与电影"
   },
   "waveform": {
     "voiceWaveformComparison": "声音波形对比",

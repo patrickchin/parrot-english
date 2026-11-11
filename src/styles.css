@@ -177,6 +177,13 @@ button:disabled { cursor: not-allowed; }
 .library-scope > span { font-size: 13px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
 .library-search { width: min(360px, 36%); }
 .library-search input::-webkit-search-cancel-button { appearance: none; }
+.show-filters { display: flex; gap: 8px; overflow-x: auto; padding: 4px; margin: 16px -4px 0; }
+.show-filters > button { flex: none; min-height: 44px; }
+.show-filters > button[aria-pressed=true] { background: var(--foreground); color: var(--background); }
+.show-shelf + .show-shelf { margin-top: 32px; }
+.show-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; margin-bottom: 16px; }
+.show-heading h3 { font-size: 18px; font-weight: 650; }
+.show-heading > span { color: var(--muted-foreground); font-size: 13px; font-variant-numeric: tabular-nums; }
 .scene-shelf { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 .scene-shelf > li { min-width: 0; }
 .scene-select { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; border-radius: var(--radius); }

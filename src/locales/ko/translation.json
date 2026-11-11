@@ -160,7 +160,9 @@
     "showAllScenes": "모든 장면 보기",
     "chooseScene": "장면 선택: {{title}}",
     "prototypeNotice": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
-    "sceneCategories": "장면 분류"
+    "sceneCategories": "장면 분류",
+    "showsAndFilms": "프로그램과 영화",
+    "allShowsAndFilms": "모든 프로그램과 영화"
   },
   "waveform": {
     "voiceWaveformComparison": "음성 파형 비교",

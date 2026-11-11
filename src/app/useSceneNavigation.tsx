@@ -54,7 +54,7 @@ function useNavigationState() {
     // An autosave may add an ID after an older language-history entry was made.
     const actual = readRoute(href);
     if (active.page.draftId && !actual.draftId && actual.slug === active.page.slug) {
-      const path = scenePath(actual.slug, active.page.draftId, actual.language);
+      const path = scenePath(actual.slug, active.page.draftId, actual.language) + new URL(href, window.location.origin).search;
       replacement.current = path;
       void go(path, { replace: true });
     } else if (replacement.current === href) replacement.current = undefined;
@@ -64,7 +64,7 @@ function useNavigationState() {
   const rememberDraft = useCallback((id?: string) => {
     if (blockedRef.current) return;
     const { page, href } = current.current;
-    const path = scenePath(page.slug, id, page.language);
+    const path = scenePath(page.slug, id, page.language) + new URL(href, window.location.origin).search;
     if (path === href) return;
     replacement.current = path;
     void go(path, { replace: true });
@@ -78,8 +78,9 @@ function useNavigationState() {
       void go(languagePath(url.pathname, language) + url.search + url.hash);
     },
     navigate(slug: string, draftId?: string) {
-      const { page } = current.current;
-      void go(slug ? scenePath(slug, draftId, page.language) : libraryPath(page.folder, page.language));
+      const { page, href } = current.current;
+      const search = new URL(href, window.location.origin).search;
+      void go((slug ? scenePath(slug, draftId, page.language) : libraryPath(page.folder, page.language)) + search);
     },
     chooseFolder(folder: string) { void go(libraryPath(folder, current.current.page.language)); },
     confirm() { if (blocker.state === 'blocked') blocker.proceed(); },

@@ -160,7 +160,9 @@
     "showAllScenes": "Show all scenes",
     "chooseScene": "Choose scene: {{title}}",
     "prototypeNotice": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
-    "sceneCategories": "Scene categories"
+    "sceneCategories": "Scene categories",
+    "showsAndFilms": "Shows & films",
+    "allShowsAndFilms": "All shows & films"
   },
   "waveform": {
     "voiceWaveformComparison": "Voice waveform comparison",

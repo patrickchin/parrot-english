@@ -160,7 +160,9 @@
     "showAllScenes": "すべてのシーンを見る",
     "chooseScene": "シーンを選ぶ：{{title}}",
     "prototypeNotice": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
-    "sceneCategories": "シーンの分類"
+    "sceneCategories": "シーンの分類",
+    "showsAndFilms": "番組と映画",
+    "allShowsAndFilms": "すべての番組と映画"
   },
   "waveform": {
     "voiceWaveformComparison": "声の波形を比べる",
