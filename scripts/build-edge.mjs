@@ -10,7 +10,9 @@ async function collect(folder) {
     else {
       const type = types[extname(entry.name)];
       if (!type) throw new Error('Keep media in object storage, outside the function bundle: ' + path);
-      assets[path] = { type, body: (await readFile('dist' + path)).toString('base64') };
+      const text = await readFile('dist' + path, 'utf8');
+      const body = extname(entry.name) === '.json' ? JSON.stringify(JSON.parse(text)) : text;
+      assets[path] = { type, body, encoding: 'utf8' };
     }
   }
 }
@@ -19,5 +21,6 @@ await mkdir('build', { recursive: true });
 const code = await readFile('server/worker.mjs', 'utf8');
 const revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
 const output = `const assets = ${JSON.stringify(assets)};\n${code}\nexport default createWorker(assets, ${JSON.stringify(revision)});\n`;
+if (Buffer.byteLength(output) > 4 * 1024 * 1024) throw new Error('ESA application exceeds the 4 MiB code budget; review structured-asset delivery before adding more scenes.');
 await writeFile('build/edge-worker.mjs', output);
 console.log(`Built ESA application: ${Object.keys(assets).length} app assets, ${(Buffer.byteLength(output) / 1024 / 1024).toFixed(2)} MiB. Media loads separately from OSS.`);
